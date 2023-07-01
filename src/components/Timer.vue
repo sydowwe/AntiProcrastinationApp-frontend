@@ -52,16 +52,13 @@
       </div>
       <save-modal></save-modal>
       <hr />
-      <select name="timerType" id="timerType" class="form-select-lg mb-3">
-        <option value="timer" selected>Timer</option>
-        <option value="stopwatch">Stopwatch</option>
-        <option value="alarm">Alarm</option>
-      </select>
+      <timer-type-select></timer-type-select>
     </div>
   </div>
 </template>
 <script>
 import SaveModal from './modals/SaveModal.vue'
+import TimerTypeSelect from './TimerTypeSelect.vue';
 import {
   addNewActivityToHistory
 } from "./global.js";
@@ -70,7 +67,8 @@ import ActivitySelectionForm from "./ActivitySelectionForm.vue";
 export default {
   components: {
     ActivitySelectionForm,
-    SaveModal
+    SaveModal,
+    TimerTypeSelect
   },
   props: {
     id: {

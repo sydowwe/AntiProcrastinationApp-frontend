@@ -13,24 +13,26 @@
     "@fortawesome/free-regular-svg-icons": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/vue-fontawesome": "^3.0.3",
-    "bootstrap": "^5.2.3",
-    "jquery": "^3.7.0",
+    "@vee-validate/i18n": "^4.9.6",
+    "@vee-validate/rules": "^4.9.6",
+    "axios": "^1.4.0",
+    "bootstrap": "^5.3.0",
+    "bootstrap-vue-next": "^0.9.15",
     "moment": "^2.29.4",
     "pinia": "^2.0.36",
-    "vee-validate": "^4.9.4",
+    "sortable": "^2.0.0",
+    "vee-validate": "^4.9.6",
     "volar-service-vetur": "latest",
     "vue": "^3.3.2",
+    "vue-draggable-next": "^2.2.0",
     "vue-i18n": "^9.2.2",
-    "vue-moment": "^4.1.0",
     "vue-router": "^4.2.0",
-    "vue-router-permissions": "^0.1.5",
-    "vue-select": "^4.0.0-beta.6",
-    "vuedraggable": "^2.24.3",
-    "vuetify": "^3.3.0"
+    "vuetify": "^3.3.6"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
     "@vitejs/plugin-vue-jsx": "^3.0.1",
+    "unplugin-vue-components": "^0.25.1",
     "vite": "^4.3.5"
   }
 }

@@ -1,46 +1,64 @@
 import './assets/main.css'
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-
-import App from './App.vue'
-import router from './plugins/router'
-import vuetify from './plugins/vuetify'; 
-import 'bootstrap/dist/css/bootstrap.css';
-import 'font-awesome/css/font-awesome.css';
-import 'vuedraggable/dist/vuedraggable.css';
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import moment from 'moment';
-import VueI18n from 'vue-i18n';
-import VueMoment from 'vue-moment';
-import VueRouterPermissions from 'vue-router-permissions';
-import VueSelect from 'vue-select';
-import VeeValidate from 'vee-validate';
-import { FontAwesomeIcon } from 'font-awesome';
 
+import './plugins/vuetify';
+import router from './plugins/router';
+import App from './App.vue';
+
+import axios from 'axios';
+
+import sortable from 'sortable';
+import { VueDraggableNext } from 'vue-draggable-next';
 import { createI18n } from 'vue-i18n';
 
-import en from './locales/en.json';
-import sk from './locales/sk.json';
-import cs from './locales/cs.json';
+const app = createApp(App);
 
-const i18n = createI18n({
-  locale: 'en', 
-  messages: {
-    en,
-    sk,
-    cs,
-  },
-});
-const app = createApp(App)
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import { vuetify } from './plugins/vuetify';
+import '../node_modules/vuetify/dist/vuetify.css'
 
-app.use(createPinia())
+import '../node_modules/bootstrap/dist/css/bootstrap.css'
+import '../node_modules/bootstrap-vue-next/dist/bootstrap-vue-next.css'
+library.add(faUserSecret)
+
+// import './plugins/veeValidate'
+// Import your language files
+// import en from './locales/en.json';
+// import sk from './locales/sk.json';
+// import cz from './locales/cz.json';
+
+
+
+app.use(createPinia());
+
 app.use(router);
+
 app.use(vuetify);
-app.use(i18n);
-app.use(VueMoment, { moment });
-app.use(VueRouterPermissions);
-app.use(VueSelect);
-app.use(VeeValidate);
+
+
+app.use(moment);
+
+
+app.component(VueDraggableNext);
 
 app.component('font-awesome-icon', FontAwesomeIcon);
-app.mount('#app')
+
+
+// Create and use VueI18n instance for localization
+// const i18n = createI18n({
+//   locale: 'en',
+//   messages: {
+//     en,
+//     sk,
+//     cs,
+//   },
+// });
+// app.use(i18n);
+
+
+app.mount('#app');

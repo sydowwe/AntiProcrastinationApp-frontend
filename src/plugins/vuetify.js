@@ -1,10 +1,31 @@
-import { createVuetify} from 'vuetify';
+import '@fortawesome/fontawesome-svg-core';
+import '@fortawesome/free-brands-svg-icons';
+import '@fortawesome/free-solid-svg-icons';
+import '@fortawesome/free-regular-svg-icons';
+import '@fortawesome/vue-fontawesome';
 
-import '@fortawesome/fontawesome-free/css/all.css';
-import { i18n } from './main'; 
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
-export default createVuetify({
+import { fa } from 'vuetify/iconsets/fa-svg'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+
+export const vuetify =  createVuetify({
+  components,
+  directives,
+  
+  icons: {
+    defaultSet: 'mdi-svg',
+    aliases,
+    sets: {
+      mdi,
+      fa
+    },
+  },
   theme: {
+    //defaultTheme: 'dark',
     dark: true, // Enable dark theme
     themes: {
       dark: {
@@ -17,8 +38,5 @@ export default createVuetify({
         warning: '#FFC107',
       },
     },
-  },
-  icons: {
-    iconfont: 'faSvg', // Use Font Awesome SVG icons
-  },
-}).use(i18n);
+  } 
+})
