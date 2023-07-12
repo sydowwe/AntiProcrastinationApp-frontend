@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../../views/HomeView.vue'
+import HomeView from '../../views/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
+import StopWatchView from '../../views/StopWatchView.vue'
+import TimerView from '../../views/TimerView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,6 +16,16 @@ const router = createRouter({
       path: '/createNewActivity',
       name: 'createNewActivity',
       component: CreateNewActivityView
+    },
+    {
+      path: '/stopwatch',
+      name: 'stopwatch',
+      component: StopWatchView
+    },
+    {
+      path: '/timer',
+      name: 'timer',
+      component: TimerView
     },
     // {
     //   path: '/about',

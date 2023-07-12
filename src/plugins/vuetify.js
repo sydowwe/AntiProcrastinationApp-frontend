@@ -25,7 +25,7 @@ export const vuetify =  createVuetify({
     },
   },
   theme: {
-    //defaultTheme: 'dark',
+    defaultTheme: 'dark',
     dark: true, // Enable dark theme
     themes: {
       dark: {

@@ -1,182 +1,126 @@
 <template>
-    <div class="p-4">
-        <div class="form-group mb-3" id="fromToDoListDiv">
-            <label for="fromToDoListSelect">Select from to-do list</label>
-            <select class="form-select" name="fromToDoList" id="fromToDoListSelect"></select>
-        </div>
-        <hr />
-        <div class="form-group row mb-3" id="roleCategoryDiv">
-            <span class="col-12 col-lg-5 mb-3 mb-lg-0">
-                <label for="roleSelect">Role</label>
-                <select class="form-select select2" name="role" id="roleSelect"></select>
-            </span>
-            <span class="col-12 col-lg-7">
-                <label for="categorySelect">Category</label>
-                <select class="form-select select2" name="category" id="categorySelect"></select>
-            </span>
-        </div>
-        <div class="form-group mb-3" id="activitySelectDiv">
-            <label for="activitySelect">Activity</label>
-            <select class="form-select select2" name="activity" id="activitySelect"></select>
-        </div>
-        <button type="button" class="btn btn-success" id="createActivityBtn">Vytvoriť novú aktivitu</button>
-    </div>
+    <v-container fluid>
+        <v-row class="justify-center py-2" align="center">
+            <v-col cols="auto" class="py-2">
+                <v-checkbox label="From to-do list" v-model="isFromToDoList" hide-details="true"></v-checkbox>
+            </v-col>
+            <v-col v-if="isFromToDoList" cols="12" md="5" lg="3" class="pb-4 pt-2 py-lg-0">
+                <v-select v-model="selectedUrgency" label="Task urgency" :items="taskUrgencyOptions" variant="outlined" hide-details="lg" clearable></v-select>
+            </v-col>
+            <v-col cols="12">
+                <v-row>
+                    <v-col cols="12" lg="5" class="py-2">
+                        <v-autocomplete v-model="selectedRole" :items="roleOptions" label="Role" variant="outlined" clearable></v-autocomplete>
+                    </v-col>
+                    <v-col cols="12" lg="7" class="py-2">
+                        <v-autocomplete v-model="selectedCategory" :items="categoryOptions" label="Category" variant="outlined" clearable></v-autocomplete>
+                    </v-col>
+                    <v-col cols="12" class="py-2">
+                        <v-autocomplete v-model="selectedActivity" :items="activityOptions" label="Activity" variant="outlined" clearable></v-autocomplete>
+                    </v-col>
+                </v-row>
+            </v-col>
+            <v-col cols="auto" class="py-2">
+                <v-btn @click="addNewActivity" color="success">Pridať novú aktivitu</v-btn>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
+
 <script>
     export default {
-        data(){
+        props: {
+            activityLength: {
+                type: Number,
+                default: 0,
+            },
+        },
+        data() {
             return {
-                SELECTS: ["role", "category", "activity"],
-                ROLE_CATEGORY_SELECTS: ["role","category"]
-            }
+                selectedUrgency: null,
+                taskUrgencyOptions: [
+                    { title: 'Today', value: 1 },
+                    { title: 'High Priority / Urgent', value: 2 },
+                    { title: 'Medium Priority', value: 3 },
+                    { title: 'Low Priority', value: 4 },
+                    { title: 'Future / Long-Term', value: 5 },
+                    { title: 'On Hold', value: 6 },
+                ],
+                isFromToDoList: false,
+                selectedRole: null,
+                roleOptions: [],
+                selectedCategory: null,
+                categoryOptions: [],
+                selectedActivity: null,
+                activityOptions: [],
+            };
         },
         created() {
-            newActivityModalTemplate.setAbortBtnClickFunction = () => {
-                myModal.hide();
-                addNewActivityTemplate.reset();
-            };
-
-            newActivityModalTemplate.setSuccessBtnClickFunction = () => {
-                myModal.hide();
-
-                addNewActivityTemplate.reset();
-            };
-            $(this.#template)
-                .find('#createActivityBtn')
-                .click(() => {
-                    /*ked to bude pomale pridaj kontrolu či bola updatnuta rola alebo category*/
-                    myModal.show();
-                    this.populateUnfilteredSelects(modalElement);
-                });
-
-            this.updateAfterSelect($(this.#template));
-            this.populateFilteredSelects(this.#template);
-
-            /* $(this.#template).find('#activitySelect').on('select2:select', e=>{
-            console.log(e.params.data.id);
-            $.ajax({
-                type: "POST",
-                contentType: "application/json",
-                url: "/newRecord/get-by-activity",
-                data: JSON.stringify(e.params.data.id),
-                dataType: 'json'
-            }).done(data => {
-                console.log(typeof data.activityId);
-                console.log(data.roleId);
-                console.log(data.categoryId);
-                console.log(e);
-                console.log($(this.#template).find('#roleSelect'));
-                console.log($(this.#template).find('#roleSelect').val());
-                console.log($(this.#template).find('#activitySelect').val());
-
-                $(this.#template).find('#roleSelect').val(2).trigger("change");
-                $("#roleSelect").val(2).trigger("change");
-                console.log($(this.#template).find('#roleSelect').val());
-                $(this.#template).find('#categorySelect').val(data.categoryId).trigger('change');
-            });
-        });*/
+            this.populateSelects('toDoListOptions', '/to-do-list/get-all');
+            this.populateSelects('roleOptions', '/role/get-all');
+            this.populateSelects('categoryOptions', '/category/get-all');
+            this.populateSelects('activityOptions', '/activity/get-all');
+        },
+        watch: {
+            selectedRole(newValue) {
+                console.log(newValue);
+                this.updateCategoriesAndActivities;
+            },
+            selectedCategory(newValue) {
+                console.log(newValue);
+                this.updateActivities;
+            },
         },
         methods: {
-            populateSelects(template, selects, suffix = '') {
-                selects.forEach((e) => {
-                    template.find(`#${e}${suffix}Select`).select2({
-                        placeholder: `Select by ${e}`,
-                        dropdownParent: template,
-                        allowClear: true,
-                        ajax: {
-                            url: `/newRecord/${e}-get-all`,
-                            type: 'GET',
-                            dataType: 'json',
-                            processResults: function (data) {
-                                return {
-                                    results: $.map(data, function (item) {
-                                        return {
-                                            text: item.name,
-                                            id: item.id,
-                                        };
-                                    }),
-                                };
-                            },
-                            cache: true,
-                        },
+            populateSelects(dataKey, url) {
+                axios
+                    .get(url)
+                    .then((response) => {
+                        this[dataKey] = response.data;
+                    })
+                    .catch((error) => {
+                        console.log(error);
                     });
-                });
             },
-            populateFilteredSelects(template) {
-                populateSelects($(template), this.SELECTS);
+            updateCategoriesAndActivities() {
+                this.selectedCategory = null;
+                this.selectedActivity = null;
+                if (this.selectedRole) {
+                    this.populateSelects('categoryOptions', `/category/get-by-role/${this.selectedRole.id}`);
+                } else {
+                    this.categoryOptions = [];
+                    this.activityOptions = [];
+                }
             },
-            populateUnfilteredSelects(template) {
-                populateSelects($(template), this.ROLE_CATEGORY_SELECTS, 'Unfiltered');
+            updateActivities() {
+                this.selectedActivity = null;
+                if (this.selectedCategory) {
+                    this.populateSelects('activityOptions', `/activity/get-by-category/${this.selectedCategory.id}`);
+                } else {
+                    this.activityOptions = [];
+                }
             },
-            updateAfterSelect(template) {
-                let otherSelect;
-                let otherSelectOptions;
-                this.ROLE_CATEGORY_SELECTS.forEach((select) => {
-                    template.find(`#${select}Select`).on('select2:select', (e) => {
-                        $.ajax({
-                            type: 'POST',
-                            contentType: 'application/json',
-                            url: `/newRecord/get-by-${select}`,
-                            data: JSON.stringify(e.params.data.id),
-                            dataType: 'json',
-                        }).done((data) => {
-                            switch (select) {
-                                case 'role':
-                                    otherSelect = 'category';
-                                    otherSelectOptions = data.categories;
-                                    break;
-                                case 'category':
-                                    otherSelect = 'role';
-                                    otherSelectOptions = data.roles;
-                                    break;
-                            }
-                            template.find(`#${otherSelect}Select`).val(null).trigger('change');
-                            template.find(`#activitySelect`).val(null).trigger('change');
-                            template
-                                .find(`#${otherSelect}Select`)
-                                .empty()
-                                .select2({
-                                    data: $.map(otherSelectOptions, function (item) {
-                                        return {
-                                            text: item.name,
-                                            id: item.id,
-                                        };
-                                    }),
-                                });
-                            template
-                                .find(`#activitySelect`)
-                                .empty()
-                                .select2({
-                                    data: $.map(data.activities, function (item) {
-                                        return {
-                                            text: item.name,
-                                            id: item.id,
-                                        };
-                                    }),
-                                });
-                        });
-                    });
-                });
-            },
-            addNewActivityToHistory(activityId, lengthInMilliSeconds) {
-                const startInMillis = Date.now() - lengthInMilliSeconds;
+            addNewActivity() {
+                const startInMillis = Date.now() - this.activityLength;
                 const start = new Date(startInMillis);
 
-                let recordJsonObject = {
-                    activityId: parseInt(activityId),
-                    length: lengthInMilliSeconds,
+                const recordJsonObject = {
+                    id: parseInt(this.selectedActivity.id),
+                    length: this.activityLength,
                     timeOfStart: start.toISOString().replace('T', ' ').replace('Z', ''),
+                    roleId: parseInt(this.selectedRole.id),
+                    categoryId: parseInt(this.selectedCategory.id),
                 };
-                $.ajax({
-                    type: 'POST',
-                    contentType: 'application/json',
-                    url: `/newRecord/add-new-activity-to-history`,
-                    data: JSON.stringify(recordJsonObject),
-                    dataType: 'json',
-                }).done((data) => {
-                    alert('Added record of activity to history');
-                });
-            }
+
+                axios
+                    .post('/newRecord/add-new-activity-to-history', recordJsonObject)
+                    .then((response) => {
+                        alert('Added record of activity to history');
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            },
         },
     };
 </script>

@@ -5,18 +5,15 @@
 <template>
     <v-app>
         <header>
-            <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-            <nav>
-                <v-app-bar app>
-                    <v-toolbar-title>My Navigation Menu</v-toolbar-title>
-                    <v-spacer></v-spacer>
-                    <v-toolbar-items>
-                        <RouterLink to="/">Home</RouterLink>
-                        <RouterLink to="/createNewActivity">Create activity</RouterLink>
-                    </v-toolbar-items>
-                </v-app-bar>
-            </nav>
+            <v-app-bar app>
+                <v-toolbar-title>My Navigation Menu</v-toolbar-title>
+                <v-toolbar-items>
+                    <RouterLink to="/">Home</RouterLink>
+                    <RouterLink to="/createNewActivity">Create activity</RouterLink>
+                    <RouterLink to="/stopwatch">Stopwatch</RouterLink>
+                    <RouterLink to="/timer">Timer</RouterLink>
+                </v-toolbar-items>
+            </v-app-bar>
         </header>
         <v-main>
             <v-container fluid>

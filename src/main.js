@@ -9,6 +9,9 @@ import router from './plugins/router';
 import App from './App.vue';
 
 import axios from 'axios';
+window.axios = axios.create({
+    // Configure axios options if needed
+});
 
 import sortable from 'sortable';
 import { VueDraggableNext } from 'vue-draggable-next';
