@@ -10,7 +10,7 @@ import App from './App.vue';
 
 import axios from 'axios';
 window.axios = axios.create({
-    // Configure axios options if needed
+    baseURL: 'http://localhost:8080', 
 });
 
 import sortable from 'sortable';
@@ -22,11 +22,10 @@ const app = createApp(App);
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
+
 import { vuetify } from './plugins/vuetify';
 import '../node_modules/vuetify/dist/vuetify.css'
 
-import '../node_modules/bootstrap/dist/css/bootstrap.css'
-import '../node_modules/bootstrap-vue-next/dist/bootstrap-vue-next.css'
 library.add(faUserSecret)
 
 // import './plugins/veeValidate'

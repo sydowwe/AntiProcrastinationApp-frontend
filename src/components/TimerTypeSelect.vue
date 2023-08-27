@@ -1,23 +1,28 @@
 <template>
-    <div>
-        <label for="timerType">Select type of length measurement</label>
-        <select name="timerType" id="timerType" class="form-select-lg mb-3" v-model="selectedTimerType" @change="redirect">
-            <option value="timer">Timer</option>
-            <option value="stopwatch">Stopwatch</option>
-            <option value="alarm">Alarm</option>
-        </select>
-    </div>
+    <v-select label="Type of time measurment" :items="items" variant="outlined" v-model="selectedTimerType" @change="redirect()"></v-select>
 </template>
 <script>
     export default {
+        props: {
+            currentType: {
+                type: String,
+                default: 'timer',
+            },
+        },
         data() {
             return {
-                selectedTimerType: 'timer',
+                selectedTimerType: this.currentType,
+                items: [
+                    { title: 'Timer', value: 'timer' },
+                    { title: 'Stopwatch', value: 'stopwatch' },
+                    { title: 'Alarm', value: 'alarm' },
+                ],
             };
         },
         methods: {
             redirect() {
-                this.$router.push('/' + this.selectedTimerType);
+                console.log('asssssd');
+                //this.$router.push('/' + this.selectedTimerType);
             },
         },
     };

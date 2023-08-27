@@ -2,13 +2,13 @@
     <v-container fluid>
         <v-form ref="form" class="mt-5">
             <v-row justify="center">
-                <v-col :cols="12" :sm="10" :md="8" :lg="4">
+                <v-col  :cols="12" :sm="10" :md="8" :lg="4">
                     <v-label>Role</v-label>
                     <v-autocomplete
                         v-if="!formData.isCustomRole"
                         v-model="formData.roleId"
                         :items="roleOptions"
-                        item-title="label"
+                        item-title="name"
                         item-value="id"
                         density="comfortable"
                         clearable
@@ -23,7 +23,7 @@
                         v-if="!formData.isCustomCategory"
                         v-model="formData.categoryId"
                         :items="categoryOptions"
-                        item-title="label"
+                        item-title="name"
                         item-value="id"
                         density="comfortable"
                         clearable
@@ -39,45 +39,33 @@
                         <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatoryActivity" density="comfortable" hide-details></v-checkbox>
                         <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" density="comfortable" hide-details></v-checkbox>
                     </v-row>
+                    <v-btn class="mt-3" width="200" color="primary" @click="validate()">Create</v-btn>
                 </v-col>
             </v-row>
         </v-form>
-        <v-row justify="center">            
+        <v-row justify="center">
             <v-dialog v-model="dialog" persistent max-width="512">
-                <template v-slot:activator="{ props }">
-                    <v-btn class="mt-3" width="200" color="primary" v-bind="props">Create</v-btn>
-                </template>
                 <v-card>
                     <v-card-title>
-                        <span class="text-h5">User Profile</span>
+                        <span class="text-h5">Confirm submission</span>
                     </v-card-title>
-                    <v-card-text>
-                        <v-container>
-                            <v-row>
-                                <v-col cols="12">
-                                    <v-text-field label="Legal first name*" required></v-text-field>
-                                </v-col>
-                            </v-row>
-                        </v-container>
-                        <small>*indicates required field</small>
-                    </v-card-text>
+                    <v-card-text> Are u sure u want to create new activity - {{ formData.activity }} </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
                         <v-btn color="blue-darken-1" variant="outlined" @click="dialog = false">Close</v-btn>
-                        <v-btn color="blue-darken-1" variant="elevated" @click="validate">Save</v-btn>
+                        <v-btn color="blue-darken-1" variant="elevated" @click="createNewActivity()">Create</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
         </v-row>
         <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000" location="center">
             {{ snackbarMessage }}
-        </v-snackbar>        
+        </v-snackbar>
     </v-container>
 </template>
 <script>
     export default {
-        components: {
-        },
+        components: {},
         data() {
             return {
                 showSnackbar: false,
@@ -94,11 +82,8 @@
                     isObligatoryActivity: false,
                     isOnToDoList: false,
                 },
-                roleOptions: [{ label: 'role', id: '1' }],
-                categoryOptions: [
-                    { label: 'cat', id: '1' },
-                    { label: 'aaaaaaaa', id: '0' },
-                ],
+                roleOptions: [],
+                categoryOptions: [],
                 dialog: false,
                 roleIdRules: [(v) => !!v || 'Role is required'],
                 customRoleRules: [(v) => !!v || 'Custom role is required'],
@@ -133,7 +118,7 @@
                     customRole: '',
                     categoryId: null,
                     customCategory: '',
-                    activity: '',
+                    name: '',
                     isCustomRole: false,
                     isCustomCategory: false,
                     isObligatoryActivity: false,
@@ -142,28 +127,26 @@
             },
             async validate() {
                 const { valid } = await this.$refs.form.validate();
-                if (valid) {                   
-                    createNewActivity();
+                if (valid) {
+                    this.dialog = true;
                 } else {
                     this.showSnackbar = true;
                     this.snackbarMessage = 'Please fix the form errors.';
                     this.snackbarColor = 'error';
                 }
-                this.dialog = false;
             },
             createNewActivity() {
-                alert('Form is valid');
-                // axios
-                //     .post('/activity/create', this.formData)
-                //     .then((response) => {
-                //         console.log(response);
-                //         this.showSnackbar = true;
-                //         this.snackbarMessage = 'Succesfully created new activity';
-                //         this.snackbarColor = 'success';
-                //     })
-                //     .catch((error) => {
-                //         console.error('Form submission error', error);
-                //     });
+                axios
+                    .post('/activity/create', this.formData)
+                    .then((response) => {
+                        console.log(response);
+                        this.showSnackbar = true;
+                        this.snackbarMessage = 'Succesfully created new activity';
+                        this.snackbarColor = 'success';
+                    })
+                    .catch((error) => {
+                        console.error('Form submission error', error);
+                    });
             },
         },
         watch: {
@@ -176,9 +159,3 @@
         },
     };
 </script>
-<style scoped>
-.v-selection-control .v-selection-control--density-default .v-checkbox-btn {
-    background-color: red;
-  transform: translateY(-30px); /* Adjust the value as needed */
-}
-</style>

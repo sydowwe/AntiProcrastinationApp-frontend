@@ -4,24 +4,24 @@
             <v-col cols="auto" class="py-2">
                 <v-checkbox label="From to-do list" v-model="isFromToDoList" hide-details="true"></v-checkbox>
             </v-col>
-            <v-col v-if="isFromToDoList" cols="12" md="5" lg="3" class="pb-4 pt-2 py-lg-0">
+            <v-col v-show="isFromToDoList" cols="12" md="5" lg="3" class="pb-4 pt-2 py-lg-0">
                 <v-select v-model="selectedUrgency" label="Task urgency" :items="taskUrgencyOptions" variant="outlined" hide-details="lg" clearable></v-select>
             </v-col>
             <v-col cols="12">
                 <v-row>
                     <v-col cols="12" lg="5" class="py-2">
-                        <v-autocomplete v-model="selectedRole" :items="roleOptions" label="Role" variant="outlined" clearable></v-autocomplete>
+                        <v-autocomplete v-model="selectedRole" :items="roleOptions" label="Role" variant="outlined" item-value="id" item-title="name" clearable></v-autocomplete>
                     </v-col>
                     <v-col cols="12" lg="7" class="py-2">
-                        <v-autocomplete v-model="selectedCategory" :items="categoryOptions" label="Category" variant="outlined" clearable></v-autocomplete>
+                        <v-autocomplete v-model="selectedCategory" :items="categoryOptions" label="Category" variant="outlined" item-value="id" item-title="name" clearable></v-autocomplete>
                     </v-col>
                     <v-col cols="12" class="py-2">
-                        <v-autocomplete v-model="selectedActivity" :items="activityOptions" label="Activity" variant="outlined" clearable></v-autocomplete>
+                        <v-autocomplete v-model="selectedActivity" :items="activityOptions" label="Activity" variant="outlined" item-value="id" item-title="name" clearable></v-autocomplete>
                     </v-col>
                 </v-row>
             </v-col>
             <v-col cols="auto" class="py-2">
-                <v-btn @click="addNewActivity" color="success">Pridať novú aktivitu</v-btn>
+                <v-btn @click="createNewActivity()" color="success">Vytvoriť novú aktivitu</v-btn>
             </v-col>
         </v-row>
     </v-container>
@@ -33,6 +33,7 @@
             activityLength: {
                 type: Number,
                 default: 0,
+                required: true
             },
         },
         data() {
@@ -72,10 +73,12 @@
             },
         },
         methods: {
+            isValid(){},
             populateSelects(dataKey, url) {
                 axios
-                    .get(url)
+                    .post(url)
                     .then((response) => {
+                        console.log(response.data);
                         this[dataKey] = response.data;
                     })
                     .catch((error) => {
@@ -100,20 +103,18 @@
                     this.activityOptions = [];
                 }
             },
-            addNewActivity() {
+            addActivityToHistory() {
                 const startInMillis = Date.now() - this.activityLength;
                 const start = new Date(startInMillis);
 
                 const recordJsonObject = {
-                    id: parseInt(this.selectedActivity.id),
                     length: this.activityLength,
                     timeOfStart: start.toISOString().replace('T', ' ').replace('Z', ''),
-                    roleId: parseInt(this.selectedRole.id),
-                    categoryId: parseInt(this.selectedCategory.id),
+                    activityId: parseInt(this.selectedActivity?.id)                   
                 };
-
+                console.log(recordJsonObject);
                 axios
-                    .post('/newRecord/add-new-activity-to-history', recordJsonObject)
+                    .post('/history/add-new-activity', recordJsonObject)
                     .then((response) => {
                         alert('Added record of activity to history');
                     })
@@ -121,6 +122,9 @@
                         console.log(error);
                     });
             },
+            createNewActivity(){
+                this.$router.push('/createNewActivity');
+            }
         },
     };
 </script>
