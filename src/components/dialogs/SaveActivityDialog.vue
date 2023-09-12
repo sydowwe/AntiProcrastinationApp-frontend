@@ -32,10 +32,12 @@
             },
             closeDialog() {
                 this.dialog = false;
+                this.$emit('resetTime');
             },
             saveActivity() {
-                this.$emit('saved');
                 this.dialog = false;
+                this.$emit('saved');
+                this.$emit('resetTime');
             },
         },
     };

@@ -2,16 +2,16 @@
     <v-container fluid>
         <v-row justify="center">
             <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
-                <TimeDisplay :hours="hours" :minutes="minutes" :seconds="seconds"></TimeDisplay>
+                <TimeDisplay :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
                     <v-btn size="large" class="mr-4" color="green" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
                     <v-btn size="large" class="mr-4" color="blue" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
                     <v-btn size="large" color="red" @click="stop" :disabled="intervalId === null">Stop</v-btn>
                 </v-row>
                 <hr />
-                <ActivitySelectionForm ref="activitySelectionForm" :activityLength="activityLength"></ActivitySelectionForm>
+                <ActivitySelectionForm ref="activitySelectionForm" :activity-length="time" :startTimestamp="startTimestamp" :formDisabled="formDisabled"></ActivitySelectionForm>
                 <TimerTypeSelect current-type="stopwatch"></TimerTypeSelect>
-                <SaveActivityDialog ref="saveDialog" @saved="saveActivity()"></SaveActivityDialog>
+                <SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTime()"></SaveActivityDialog>
             </v-col>
         </v-row>
     </v-container>
@@ -31,17 +31,19 @@
         },
         data() {
             return {
-                hours: 0,
-                minutes: 0,
-                seconds: 0,
+                time: {
+                    hours: 0,
+                    minutes: 0,
+                    seconds: 0,
+                },
                 paused: false,
                 intervalId: null,
-                activityLength: 0,
+                startTimestamp: 0,
+                formDisabled: false
             };
         },
         created() {
             this.intervalId = null;
-
             // let url = ``;
             // axios.get(url).then((response) => {
             //   // Handle the response data
@@ -51,35 +53,44 @@
         },
         methods: {
             start() {
-                this.paused = false;
-                this.intervalId = setInterval(() => {
-                    if (this.seconds < 59) {
-                        this.seconds++;
-                    } else if (this.minutes < 59) {
-                        this.seconds = 0;
-                        this.minutes++;
-                    } else {
-                        this.seconds = 0;
-                        this.minutes = 0;
-                        this.hours++;
-                    }
-                }, 1000);
+                if (this.$refs.activitySelectionForm.isValid()) {
+                    this.formDisabled = true;
+                    this.paused = false;
+                    this.startTimestamp = Date.now();
+                    this.intervalId = setInterval(() => {
+                        if (this.time.seconds < 59) {
+                            this.time.seconds++;
+                        } else if (this.time.minutes < 59) {
+                            this.time.seconds = 0;
+                            this.time.minutes++;
+                        } else {
+                            this.time.seconds = 0;
+                            this.time.minutes = 0;
+                            this.time.hours++;
+                        }
+                    }, 1000);
+                } else {
+                    alert('select activity please');
+                }
             },
             pause() {
                 clearInterval(this.intervalId);
                 this.paused = true;
+                this.formDisabled = false;
             },
             stop() {
                 clearInterval(this.intervalId);
-                this.activityLength = this.hours * 3600 + this.minutes * 60 + this.seconds;
-                this.showSaveDialog(`${this.hours != 0 ? this.hours + 'h' : ''} ${this.minutes != 0 ? this.minutes + 'm' : ''} ${this.seconds}s`);
-                this.hours = this.minutes = this.seconds = 0;
-                this.intervalId = null;
+                this.showSaveDialog(`${this.time.hours != 0 ? this.time.hours + 'h' : ''} ${this.time.minutes != 0 ? this.time.minutes + 'm' : ''} ${this.time.seconds}s`);
+            },
+            resetTime() {
+                this.time.hours = this.time.minutes = this.time.seconds = 0;
                 this.paused = false;
+                this.intervalId = null;
+                this.formDisabled = false;
             },
             showSaveDialog(timeSpentNice) {
-                let activity = this.$refs.activitySelectionForm.selectedActivity;
-                this.$refs.saveDialog.openDialog(activity, timeSpentNice);
+                let activityName = this.$refs.activitySelectionForm.selectedActivityName;
+                this.$refs.saveDialog.openDialog(activityName, timeSpentNice);
             },
             saveActivity() {
                 this.$refs.activitySelectionForm.addActivityToHistory();

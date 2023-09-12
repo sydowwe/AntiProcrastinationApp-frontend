@@ -9,24 +9,20 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
-import { fa } from 'vuetify/iconsets/fa-svg'
-import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { aliases,mdi } from 'vuetify/lib/iconsets/mdi-svg.mjs'
 
 export const vuetify =  createVuetify({
   components,
-  directives,
-  
+  directives,  
   icons: {
-    defaultSet: 'mdi-svg',
+    defaultSet: 'mdi',
     aliases,
     sets: {
       mdi,
-      fa
     },
   },
   theme: {
     defaultTheme: 'dark',
-    dark: true, // Enable dark theme
     themes: {
       dark: {
         primary: '#1976D2',

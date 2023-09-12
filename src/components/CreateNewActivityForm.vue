@@ -1,48 +1,64 @@
 <template>
-    <v-container fluid>
-        <v-form ref="form" class="mt-5">
-            <v-row justify="center">
-                <v-col  :cols="12" :sm="10" :md="8" :lg="4">
+    <VContainer fluid>
+        <VForm ref="form" class="mt-5">
+            <VRow justify="center">
+                <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-10 pa-md-8 pa-sm-6 pa-5">
                     <v-label>Role</v-label>
-                    <v-autocomplete
-                        v-if="!formData.isCustomRole"
-                        v-model="formData.roleId"
-                        :items="roleOptions"
-                        item-title="name"
-                        item-value="id"
-                        density="comfortable"
-                        clearable
-                        variant="outlined"
-                        :rules="roleIdRules"
-                    ></v-autocomplete>
-                    <v-text-field v-else v-model="formData.customRole" density="comfortable" clearable variant="outlined" :rules="customRoleRules"></v-text-field>
-                    <v-checkbox label="Custom role" v-model="formData.isCustomRole" hide-details></v-checkbox>
-
+                    <VRow no-gutters>
+                        <v-autocomplete
+                            v-model="formData.roleId"
+                            :items="roleOptions"
+                            item-title="label"
+                            item-value="id"
+                            density="comfortable"
+                            clearable
+                            variant="outlined"
+                            :rules="roleIdRules"
+                        ></v-autocomplete>
+                        <VBtn class="ml-2" icon="$plus" color="green" @click="toggleRoleDialog()"></VBtn>
+                    </VRow>
                     <v-label>Category</v-label>
-                    <v-autocomplete
-                        v-if="!formData.isCustomCategory"
-                        v-model="formData.categoryId"
-                        :items="categoryOptions"
-                        item-title="name"
-                        item-value="id"
-                        density="comfortable"
-                        clearable
-                        variant="outlined"
-                        :rules="categoryIdRules"
-                    ></v-autocomplete>
-                    <v-text-field v-else v-model="formData.customCategory" density="comfortable" clearable variant="outlined" :rules="customCategoryRules"></v-text-field>
-                    <v-checkbox label="Custom category" v-model="formData.isCustomCategory" hide-details></v-checkbox>
-
+                    <VRow no-gutters>
+                        <v-autocomplete
+                            v-model="formData.categoryId"
+                            :items="categoryOptions"
+                            item-title="label"
+                            item-value="id"
+                            density="comfortable"
+                            clearable
+                            variant="outlined"
+                            :rules="categoryIdRules"
+                        ></v-autocomplete>
+                        <VBtn class="ml-2" icon="$plus" color="green" @click="toggleCategoryDialog()"></VBtn>
+                    </VRow>
                     <v-label>Activity</v-label>
-                    <v-text-field v-model="formData.activity" density="comfortable" clearable variant="outlined" :rules="activityRules"></v-text-field>
-                    <v-row no-gutters>
+                    <VRow no-gutters>
+                        <v-text-field v-model="formData.activity" density="comfortable" clearable variant="outlined" :rules="activityRules"></v-text-field>
+                        <VBtn class="ml-2" icon="$info" color="blue"></VBtn>
+                    </VRow>
+                    <v-textarea label="Activity description" variant="outlined" v-model="formData.description"></v-textarea>
+                    <VRow no-gutters>
                         <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatoryActivity" density="comfortable" hide-details></v-checkbox>
                         <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" density="comfortable" hide-details></v-checkbox>
-                    </v-row>
-                    <v-btn class="mt-3" width="200" color="primary" @click="validate()">Create</v-btn>
-                </v-col>
-            </v-row>
-        </v-form>
+                    </VRow>
+                    <VRow justify="center" no-gutters>
+                        <v-btn class="mt-3" width="200" color="green" @click="validate()">Create</v-btn>
+                    </VRow>
+                </VCol>
+            </VRow>
+        </VForm>
+        <ContentDialog ref="addRoleDialog" title="Add new role" confirmBtnLabel="Create" @confirmed="createRole()">
+            <v-text-field label="Name" v-model="newRole.name" density="comfortable" clearable variant="outlined" :rules="customRoleRules"></v-text-field>
+            <VTextarea label="Text" v-model="newRole.text" density="comfortable" clearable variant="outlined" :rules="customRoleRules"></VTextarea>
+            <VLabel>Color</VLabel>
+            <VColorPicker label="Color" v-model="newRole.color" hide-inputs></VColorPicker>
+        </ContentDialog>
+        <ContentDialog ref="addCategoryDialog" title="Add new category" confirmBtnLabel="Create" @confirmed="createCategory()">
+            <v-text-field label="Name" v-model="newCategory.name" density="comfortable" clearable variant="outlined" :rules="customCategoryRules"></v-text-field>
+            <VTextarea label="Text" v-model="newCategory.text" density="comfortable" clearable variant="outlined" :rules="customCategoryRules"></VTextarea>
+            <VLabel>Color</VLabel>
+            <VColorPicker v-model="newCategory.color" hide-inputs></VColorPicker>
+        </ContentDialog>
         <v-row justify="center">
             <v-dialog v-model="dialog" persistent max-width="512">
                 <v-card>
@@ -61,26 +77,38 @@
         <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000" location="center">
             {{ snackbarMessage }}
         </v-snackbar>
-    </v-container>
+    </VContainer>
 </template>
 <script>
+    import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+    import ContentDialog from './dialogs/ContentDialog.vue';
     export default {
-        components: {},
+        components: {
+            ContentDialog,
+            FontAwesomeIcon,
+        },
         data() {
-            return {
+            return {              
                 showSnackbar: false,
                 snackbarMessage: '',
                 snackbarColor: '',
                 formData: {
                     roleId: null,
-                    customRole: '',
                     categoryId: null,
-                    customCategory: '',
                     activity: '',
-                    isCustomRole: false,
-                    isCustomCategory: false,
-                    isObligatoryActivity: false,
+                    description: '',
+                    isObligatory: false,
                     isOnToDoList: false,
+                },
+                newRole: {
+                    name: null,
+                    text: null,
+                    color: null
+                },
+                newCategory: {
+                    name: null,
+                    text: null,
+                    color: null
                 },
                 roleOptions: [],
                 categoryOptions: [],
@@ -112,16 +140,21 @@
                 });
         },
         methods: {
+            toggleRoleDialog() {
+                this.$refs.addRoleDialog.openDialog();
+            },
+            toggleCategoryDialog() {
+                this.$refs.addCategoryDialog.openDialog();
+            },
             reset() {
                 this.formData = {
                     roleId: null,
                     customRole: '',
                     categoryId: null,
                     customCategory: '',
-                    name: '',
-                    isCustomRole: false,
-                    isCustomCategory: false,
-                    isObligatoryActivity: false,
+                    activity: '',
+                    description: '',
+                    isObligatory: false,
                     isOnToDoList: false,
                 };
             },
@@ -148,6 +181,32 @@
                         console.error('Form submission error', error);
                     });
             },
+            createRole() {
+                axios
+                    .post('/role/create', this.newRole)
+                    .then((response) => {
+                        console.log(response);
+                        this.showSnackbar = true;
+                        this.snackbarMessage = 'Succesfully created new role';
+                        this.snackbarColor = 'success';
+                    })
+                    .catch((error) => {
+                        console.error('Form submission error', error);
+                    });
+            },
+            createCategory() {
+                axios
+                    .post('/category/create', this.newCategory)
+                    .then((response) => {
+                        console.log(response);
+                        this.showSnackbar = true;
+                        this.snackbarMessage = 'Succesfully created new category';
+                        this.snackbarColor = 'success';
+                    })
+                    .catch((error) => {
+                        console.error('Form submission error', error);
+                    });
+            },
         },
         watch: {
             'formData.roleId'(newValue) {
@@ -159,3 +218,9 @@
         },
     };
 </script>
+<style scoped>
+    .border {
+        border: 2px solid #9b9b9b !important;
+        border-radius: 1rem;
+    }
+</style>

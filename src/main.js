@@ -21,12 +21,12 @@ const app = createApp(App);
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import { faUserSecret,faPlus } from '@fortawesome/free-solid-svg-icons'
 
 import { vuetify } from './plugins/vuetify';
 import '../node_modules/vuetify/dist/vuetify.css'
 
-library.add(faUserSecret)
+library.add([faUserSecret,faPlus])
 
 // import './plugins/veeValidate'
 // Import your language files
@@ -48,7 +48,7 @@ app.use(moment);
 
 app.component(VueDraggableNext);
 
-app.component('font-awesome-icon', FontAwesomeIcon);
+app.component('FontAwesomeIcon', FontAwesomeIcon);
 
 
 // Create and use VueI18n instance for localization

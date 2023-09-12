@@ -6,13 +6,14 @@
     <v-app>
         <header>
             <v-app-bar app>
-                <v-toolbar-title>My Navigation Menu</v-toolbar-title>
-                <v-toolbar-items>
-                    <RouterLink to="/">Home</RouterLink>
-                    <RouterLink to="/createNewActivity">Create activity</RouterLink>
-                    <RouterLink to="/stopwatch">Stopwatch</RouterLink>
-                    <RouterLink to="/timer">Timer</RouterLink>
-                </v-toolbar-items>
+                <VAppBarTitle> AntiProcrastination app </VAppBarTitle>
+                <RouterLink class="my-auto pa-2" to="/">Home</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/history">History</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/toDoList">To-do list</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/createNewActivity">Create activity</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/timer">Timer</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/stopwatch">Stopwatch</RouterLink>
+                <VAppBarNavIcon></VAppBarNavIcon>
             </v-app-bar>
         </header>
         <v-main>
