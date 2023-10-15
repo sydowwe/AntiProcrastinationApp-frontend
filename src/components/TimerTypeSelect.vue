@@ -1,5 +1,5 @@
 <template>
-    <v-select label="Type of time measurment" :items="items" variant="outlined" v-model="selectedTimerType" @change="redirect()"></v-select>
+    <v-select label="Type of time measurment" v-model="selectedTimerType" :items="items"  :clearable="false" @change="redirect()"></v-select>
 </template>
 <script>
     export default {

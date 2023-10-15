@@ -7,17 +7,24 @@
         <header>
             <v-app-bar app>
                 <VAppBarTitle> AntiProcrastination app </VAppBarTitle>
+                <select v-model="$i18n.locale">
+                    <option v-for="locale in $i18n.availableLocales" :key="`locale-${locale}`" :value="locale">{{ locale }}</option>
+                </select>
                 <RouterLink class="my-auto pa-2" to="/">Home</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/login">Login</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/registration">Register</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/history">History</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/toDoList">To-do list</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/createNewActivity">Create activity</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/timer">Timer</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/stopwatch">Stopwatch</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/timer">Timer</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/alarm">Alarm</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/addActivityManually">Add activity to history</RouterLink>
                 <VAppBarNavIcon></VAppBarNavIcon>
             </v-app-bar>
         </header>
         <v-main>
-            <v-container fluid>
+            <v-container class="h-100" fluid>
                 <RouterView />
             </v-container>
         </v-main>

@@ -1,66 +1,113 @@
 import './assets/main.css'
-
 import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import moment from 'moment';
-
-import './plugins/vuetify';
-import router from './plugins/router';
 import App from './App.vue';
-
-import axios from 'axios';
-window.axios = axios.create({
-    baseURL: 'http://localhost:8080', 
-});
-
-import sortable from 'sortable';
-import { VueDraggableNext } from 'vue-draggable-next';
-import { createI18n } from 'vue-i18n';
-
 const app = createApp(App);
 
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faUserSecret,faPlus } from '@fortawesome/free-solid-svg-icons'
-
-import { vuetify } from './plugins/vuetify';
-import '../node_modules/vuetify/dist/vuetify.css'
-
-library.add([faUserSecret,faPlus])
-
-// import './plugins/veeValidate'
-// Import your language files
-// import en from './locales/en.json';
-// import sk from './locales/sk.json';
-// import cz from './locales/cz.json';
-
-
-
+// PINIA
+import { createPinia } from 'pinia';
 app.use(createPinia());
 
-app.use(router);
-
-app.use(vuetify);
 
 
+//IDK
+import moment from 'moment';
+import sortable from 'sortable';
+import { VueDraggableNext } from 'vue-draggable-next';
 app.use(moment);
-
-
 app.component(VueDraggableNext);
 
+// ROUTER
+import router from './plugins/router';
+app.use(router);
+
+// AXIOS
+import axios from 'axios';
+window.axios = axios.create({
+    baseURL: 'http://localhost:8080',
+});
+
+// FONT-AWESOME
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faUserSecret, faPlus, } from '@fortawesome/free-solid-svg-icons'
+library.add([faUserSecret, faPlus]);
 app.component('FontAwesomeIcon', FontAwesomeIcon);
 
+// I18N INTERNATIONALIZATION
+import { createI18n, useI18n } from 'vue-i18n'
+import en from './locales/en';
+import sk from './locales/sk';
+import cz from './locales/cz';
 
-// Create and use VueI18n instance for localization
-// const i18n = createI18n({
-//   locale: 'en',
-//   messages: {
-//     en,
-//     sk,
-//     cs,
-//   },
-// });
-// app.use(i18n);
+const i18n = createI18n({
+    legacy: false,
+    locale: 'sk',
+    fallbackLocale: 'en',
+    messages: {
+        en,
+        sk,
+        cz,
+    },
+});
+app.use(i18n);
+
+// VEEVALIDATE
+// import './plugins/veeValidate'
+
+// VUETIFY
+import '../node_modules/vuetify/dist/vuetify.css'
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+
+import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg.mjs'
+
+export const vuetify = createVuetify({
+    locale: {
+        adapter: createVueI18nAdapter({ i18n, useI18n }),
+    },
+    components,
+    directives,
+    icons: {
+        iconfont: 'mdiSvg',
+        defaultSet: 'mdi',
+        aliases,
+        sets: {
+            mdi,
+        },
+    },
+    aliases:{
+    },
+    defaults: {
+        VCardActions: {
+            VBtn: { variant: 'elevated' },
+        },
+        VBtn: { variant: 'elevated' },
+        VTextField: { variant: 'outlined', clearable: true, density: 'comfortable' },
+        VAutocomplete: { variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'label' },
+        VSelect: { variant: 'outlined', clearable: true, density: 'comfortable' },
+        VTextarea: { variant: 'outlined', clearable: true, density: 'comfortable' },
+        VCheckbox: { density: 'comfortable' },
+
+    },
+    theme: {
+        defaultTheme: 'dark',
+        themes: {
+            dark: {
+                primary: '#1976D2',
+                secondary: '#424242',
+                accent: '#82B1FF',
+                error: '#FF5252',
+                info: '#2196F3',
+                success: '#4CAF50',
+                warning: '#FFC107',
+            },
+        },
+    }
+})
+app.use(vuetify);
 
 
 app.mount('#app');

@@ -4,10 +4,9 @@
             <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
                 <VRow v-if="timeInputVisible" justify="center">
                     <VCol cols="12" lg="6" md="8" sm="10">
-                        <TimePicker ref="timePicker" @timeChange="updateTimeInitial"></TimePicker>
+                        <DateTimePicker ref="timePicker" @timeChange="updateTimeInitial"></DateTimePicker>
                     </VCol>
                 </VRow>
-                <TimeDisplay v-else :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
                     <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
                     <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
@@ -26,17 +25,15 @@
 <script>
     import TimerTypeSelect from '../components/TimerTypeSelect.vue';
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-    import TimePicker from '../components/TimePicker.vue';
+    import DateTimePicker from '../components/DateTimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
-    import TimeDisplay from '../components/TimeDisplay.vue';
 
     export default {
         components: {
             ActivitySelectionForm,
             SaveActivityDialog,
             TimerTypeSelect,
-            TimePicker,
-            TimeDisplay,
+            DateTimePicker,
         },
         data() {
             return {
@@ -74,10 +71,7 @@
                 return timeInSeconds;
             },
             start() {
-                if (this.paused) {
-                    this.resume();
-                } else {
-                    if (this.$refs.activitySelectionForm.isValid()) {
+                if (this.$refs.activitySelectionForm.isValid()) {
                         this.formDisabled = true;
                         this.startTimestamp = Date.now();
                         this.timeInputVisible = false;
@@ -87,8 +81,36 @@
                     } else {
                         alert('select activity please');
                     }
+
+
+                const currentTime = new Date();
+                const currentHours = currentTime.getHours();
+                const currentMinutes = currentTime.getMinutes();
+                const currentSeconds = currentTime.getSeconds();
+
+                const alarmHours = this.alarmTime.hours;
+                const alarmMinutes = this.alarmTime.minutes;
+                const alarmSeconds = this.alarmTime.seconds;
+
+                const hoursDiff = alarmHours - currentHours;
+                const minutesDiff = alarmMinutes - currentMinutes;
+                const secondsDiff = alarmSeconds - currentSeconds;
+
+                const totalMilliseconds = hoursDiff * 60 * 60 * 1000 + minutesDiff * 60 * 1000 + secondsDiff * 1000;
+
+                if (totalMilliseconds > 0) {
+                    setTimeout(() => {
+                        this.triggerAlarm();
+                    }, totalMilliseconds);
+                } else {
+                    console.log('Invalid alarm time. Please set a future time.');
                 }
             },
+
+            triggerAlarm() {
+                console.log('Alarm! Time to wake up!');
+                // You can add more logic here, such as playing a sound.
+            },            
             pause() {
                 clearInterval(this.intervalId);
                 this.paused = true;
@@ -107,8 +129,7 @@
             },
             stop() {
                 clearInterval(this.intervalId);
-                const timeSpentNice = this.timeRemaining == 0 ? this.getTimeNice(this.timeInitial) 
-                : this.getTimeNice(this.getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
+                const timeSpentNice = this.timeRemaining == 0 ? this.getTimeNice(this.timeInitial) : this.getTimeNice(this.getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
 
                 this.showSaveDialog(timeSpentNice);
             },

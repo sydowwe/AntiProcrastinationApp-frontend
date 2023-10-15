@@ -3,8 +3,12 @@ import HomeView from '../../views/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
 import StopWatchView from '../../views/StopWatchView.vue'
 import TimerView from '../../views/TimerView.vue'
+import AlarmView from '../../views/AlarmView.vue'
 import HistoryView from '../../views/HistoryView.vue'
 import ToDoListView from '../../views/ToDoListView.vue'
+import AddActivityManuallyView from '../../views/AddActivityManuallyView.vue'
+import LoginView from '../../views/LoginView.vue'
+import RegistrationView from '../../views/RegistrationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +17,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView
+    },
+    {
+      path: '/registration',
+      name: 'registration',
+      component: RegistrationView
     },
     {
       path: '/history',
@@ -38,6 +52,16 @@ const router = createRouter({
       path: '/timer',
       name: 'timer',
       component: TimerView
+    },
+    {
+      path: '/alarm',
+      name: 'alarm',
+      component: AlarmView
+    },
+    {
+      path: '/addActivityManually',
+      name: 'addActivityManually',
+      component: AddActivityManuallyView
     },
     // {
     //   path: '/about',

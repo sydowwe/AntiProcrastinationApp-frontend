@@ -10,12 +10,9 @@
                             :items="roleOptions"
                             item-title="label"
                             item-value="id"
-                            density="comfortable"
-                            clearable
-                            variant="outlined"
                             :rules="roleIdRules"
                         ></v-autocomplete>
-                        <VBtn class="ml-2" icon="$plus" color="green" @click="toggleRoleDialog()"></VBtn>
+                        <VBtn class="ml-2" icon="$plus" color="success" @click="toggleRoleDialog()"></VBtn>
                     </VRow>
                     <v-label>Category</v-label>
                     <VRow no-gutters>
@@ -24,38 +21,36 @@
                             :items="categoryOptions"
                             item-title="label"
                             item-value="id"
-                            density="comfortable"
-                            clearable
-                            variant="outlined"
+                           
                             :rules="categoryIdRules"
                         ></v-autocomplete>
-                        <VBtn class="ml-2" icon="$plus" color="green" @click="toggleCategoryDialog()"></VBtn>
+                        <VBtn class="ml-2" icon="$plus" color="success" @click="toggleCategoryDialog()"></VBtn>
                     </VRow>
                     <v-label>Activity</v-label>
                     <VRow no-gutters>
-                        <v-text-field v-model="formData.activity" density="comfortable" clearable variant="outlined" :rules="activityRules"></v-text-field>
-                        <VBtn class="ml-2" icon="$info" color="blue"></VBtn>
+                        <v-text-field v-model="formData.activity" :rules="activityRules"></v-text-field>
+                        <VBtn class="ml-2" icon="$info" color="primary"></VBtn>
                     </VRow>
-                    <v-textarea label="Activity description" variant="outlined" v-model="formData.description"></v-textarea>
+                    <v-textarea label="Activity description" v-model="formData.description"></v-textarea>
                     <VRow no-gutters>
-                        <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatoryActivity" density="comfortable" hide-details></v-checkbox>
-                        <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" density="comfortable" hide-details></v-checkbox>
+                        <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatoryActivity" hide-details></v-checkbox>
+                        <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" hide-details></v-checkbox>
                     </VRow>
                     <VRow justify="center" no-gutters>
-                        <v-btn class="mt-3" width="200" color="green" @click="validate()">Create</v-btn>
+                        <v-btn class="mt-3" width="200" color="success" @click="validate()">Create</v-btn>
                     </VRow>
                 </VCol>
             </VRow>
         </VForm>
         <ContentDialog ref="addRoleDialog" title="Add new role" confirmBtnLabel="Create" @confirmed="createRole()">
-            <v-text-field label="Name" v-model="newRole.name" density="comfortable" clearable variant="outlined" :rules="customRoleRules"></v-text-field>
-            <VTextarea label="Text" v-model="newRole.text" density="comfortable" clearable variant="outlined" :rules="customRoleRules"></VTextarea>
+            <v-text-field label="Name" v-model="newRole.name" :rules="customRoleRules"></v-text-field>
+            <VTextarea label="Text" v-model="newRole.text" :rules="customRoleRules"></VTextarea>
             <VLabel>Color</VLabel>
             <VColorPicker label="Color" v-model="newRole.color" hide-inputs></VColorPicker>
         </ContentDialog>
         <ContentDialog ref="addCategoryDialog" title="Add new category" confirmBtnLabel="Create" @confirmed="createCategory()">
-            <v-text-field label="Name" v-model="newCategory.name" density="comfortable" clearable variant="outlined" :rules="customCategoryRules"></v-text-field>
-            <VTextarea label="Text" v-model="newCategory.text" density="comfortable" clearable variant="outlined" :rules="customCategoryRules"></VTextarea>
+            <v-text-field label="Name" v-model="newCategory.name" :rules="customCategoryRules"></v-text-field>
+            <VTextarea label="Text" v-model="newCategory.text" :rules="customCategoryRules"></VTextarea>
             <VLabel>Color</VLabel>
             <VColorPicker v-model="newCategory.color" hide-inputs></VColorPicker>
         </ContentDialog>
@@ -88,7 +83,7 @@
             FontAwesomeIcon,
         },
         data() {
-            return {              
+            return {
                 showSnackbar: false,
                 snackbarMessage: '',
                 snackbarColor: '',
@@ -103,12 +98,12 @@
                 newRole: {
                     name: null,
                     text: null,
-                    color: null
+                    color: null,
                 },
                 newCategory: {
                     name: null,
                     text: null,
-                    color: null
+                    color: null,
                 },
                 roleOptions: [],
                 categoryOptions: [],
