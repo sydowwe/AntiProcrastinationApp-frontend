@@ -2,13 +2,21 @@
     <VRow justify="center" class="mt-16">
         <VCol cols="12" sm="10" md="8" lg="6">
             <h2 class="text-center mb-5">{{ $t('authorization.login') }}</h2>
-            <VForm @submit.prevent="handleSubmit()" class="d-flex flex-column">
-                <VTextField :label="$t('authorization.usernameOrEmail')" v-model="formData.login"></VTextField>
-                <VTextField type="password" :label="$t('authorization.password')" v-model="formData.password"></VTextField>
+            <VForm ref="form" @submit.prevent="validateAndSendForm()" class="d-flex flex-column">
+                <VTextField class="mb-3" :label="$t('authorization.usernameOrEmail')" v-model="formData.login" :rules="usernameEmailRules"></VTextField>
+                <VTextField                    
+                    :label="$t('authorization.password')"
+                    v-model="formData.password"
+                    :rules="passwordRules"
+                    :type="showPassword ? 'text' : 'password'"
+                    :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                    @click:append-inner="showPassword = !showPassword"
+                ></VTextField>
+                <VCheckbox class="mb-2" :label="$t('authorization.stayLoggedIn')" v-model="formData.stayLoggedIn" hide-details></VCheckbox>
                 <VRow justify="center">
                     <VCol cols="10" sm="8" md="6" lg="6">
-                        <VBtn width="100%" color="success">{{ $t('authorization.logIn') }}</VBtn>
-                        <div class="my-2 text-center">
+                        <VBtn type="submit" width="100%" color="success">{{ $t('authorization.logIn') }}</VBtn>
+                        <div class="mt-3 mb-2 text-center">
                             {{ $t('authorization.dontHaveAccountYet') }}
                             <router-link to="/registration">{{ $t('authorization.register') }}</router-link>
                         </div>
@@ -24,7 +32,9 @@
                 </VRow>
             </VForm>
         </VCol>
-        <VDialog v-model="dialog" width="auto" persistent> 
+
+
+        <VDialog v-model="dialog" width="auto" persistent>
             <VCard>
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
                 <VCardText>
@@ -51,52 +61,56 @@
         },
         data() {
             return {
-                modalRef: null,
                 formData: {
                     login: '',
                     password: '',
+                    stayLoggedIn: false,
                 },
+                usernameEmailRules: [
+                    (v) => !!v || this.$t('authorization.usernameOrEmailRequired'),
+                    (v) => this.validateUsernameOrEmail(v) || (v.includes('@') ? this.$t('authorization.invalidEmail') : this.$t('authorization.invalidUsername')),
+                ],
+                passwordRules: [(v) => !!v || this.$t('authorization.passwordRequired'), (v) => v.length >= 8 || this.$t('authorization.invalidPasswordLength')],
+                showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
+
                 body: null,
                 isError: false,
                 errorMessage: 'error',
             };
         },
         methods: {
-            checkFormValidity() {},
+            validateUsernameOrEmail(value) {
+                if (value.includes('@')) {
+                    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                    return emailRegex.test(value);
+                } else {
+                    const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
+                    return alphanumericRegex.test(value);
+                }
+            },
+            async validateAndSendForm() {
+                const { valid } = await this.$refs.form.validate();
+
+                if (valid) {
+                    axios
+                        .post('/user/login', this.formData)
+                        .then((response) => {
+                            console.log(response);
+                            this.$router.push('/stopwatch');
+                        })
+                        .catch((error) => {
+                            console.log(error);
+                        });
+                }
+            },
             showDialog(title) {
                 this.dialogTitle = title;
                 this.dialog = true;
             },
             hideDialog() {
                 this.dialog = false;
-            },
-            handleSubmit() {
-                $.ajax({
-                    type: 'POST',
-                    contentType: 'application/json',
-                    url: '/zad1/api/login.php',
-                    data: JSON.stringify(this.formData),
-                    dataType: 'json',
-                })
-                    .done((data) => {
-                        this.isError = data.error;
-                        if (!this.isError) {
-                            this.body = data.body;
-                            this.showDialog('Google authenticator');
-                        } else {
-                            this.errorMessage = data.body;
-                            this.showDialog('Chyba!');
-                        }
-                    })
-                    .fail((error) => {
-                        console.log(error);
-                    });
-            },
-            sumbitQR() {
-                const verifyQrCode = this.$refs.verifyQrCode;
-                verifyQrCode.handleSubmit();
             },
         },
     };

@@ -14,12 +14,12 @@
                 <RouterLink class="my-auto pa-2" to="/login">Login</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/registration">Register</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/history">History</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/toDoList">To-do list</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/createNewActivity">Create activity</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/to-do-list">To-do list</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/create-new-activity">Create activity</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/stopwatch">Stopwatch</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/timer">Timer</RouterLink>
                 <RouterLink class="my-auto pa-2" to="/alarm">Alarm</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/addActivityManually">Add activity to history</RouterLink>
+                <RouterLink class="my-auto pa-2" to="/add-activity-manually">Add activity to history</RouterLink>
                 <VAppBarNavIcon></VAppBarNavIcon>
             </v-app-bar>
         </header>

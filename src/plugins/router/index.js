@@ -9,6 +9,7 @@ import ToDoListView from '../../views/ToDoListView.vue'
 import AddActivityManuallyView from '../../views/AddActivityManuallyView.vue'
 import LoginView from '../../views/LoginView.vue'
 import RegistrationView from '../../views/RegistrationView.vue'
+import TermsAndConditionsView from '../../views/TermsAndConditionsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/terms-and-conditions',
+      name: 'termsAndConditions',
+      component: TermsAndConditionsView
     },
     {
       path: '/login',
@@ -34,12 +40,12 @@ const router = createRouter({
       component: HistoryView
     },
     {
-      path: '/toDoList',
+      path: '/to-do-list',
       name: 'toDoList',
       component: ToDoListView
     },
     {
-      path: '/createNewActivity',
+      path: '/create-new-activity',
       name: 'createNewActivity',
       component: CreateNewActivityView
     },
@@ -59,7 +65,7 @@ const router = createRouter({
       component: AlarmView
     },
     {
-      path: '/addActivityManually',
+      path: '/add-activity-manually',
       name: 'addActivityManually',
       component: AddActivityManuallyView
     },

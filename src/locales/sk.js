@@ -101,6 +101,7 @@ const sk = {
         close: `Zavrieť`,
         send: `Odoslať`,
         save: `Uložiť`,
+        iAgreeTo: 'Súhlasím s',
     },
     authorization: {
         logIn: `Prihláste sa`,
@@ -115,6 +116,22 @@ const sk = {
         surname: `Priezvisko`,
         continueWithGoogle: `Pokračujte pomocou Google`,
         dontHaveAccountYet: `Nemáte ešte účet`,
+
+        usernameOrEmailRequired: 'Používateľské meno alebo email je povinné',
+        emailRequired: 'Email je povinný',
+        invalidEmail: 'Neplatný formát emailu',
+        usernameRequired: 'Používateľské meno je povinné',
+        invalidUsername: 'Používateľské meno môže obsahovať len písmená, čísla, podtržník(_), bodku(.) alebo pomlčku(-)',
+        passwordRequired: 'Heslo je povinné',
+        invalidPasswordLength: 'Heslo musí obsahovať aspoň 8 znakov',
+        invalidPassword: 'Heslo musí obsahovať aspoň 2 malé písmená, 2 veľké písmená, 3 číslice a 1 špeciálny znak', 
+        nameRequired: 'Meno je povinné',
+        invalidName: 'Meno môže obsahovať len písmená alebo medzery',
+        surnameRequired: 'Priezvisko je povinné',
+        invalidSurname: 'Priezvisko môže obsahovať len písmená alebo medzery',
+
+        stayLoggedIn: 'Zostať prihlásený?',
+        termsAndConditions: 'Všeobecnými obchodnými podmienkami',
     }
 }
 export default sk;

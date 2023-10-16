@@ -101,6 +101,7 @@ const en = {
         close: `Close`,
         send: `Send`,
         save: `Save`,
+        iAgreeTo: 'I agree to the',
     },
     authorization: {
         logIn: `Log in`,
@@ -115,6 +116,22 @@ const en = {
         surname: `Surname`,
         continueWithGoogle: `Continue with google`,
         dontHaveAccountYet: `Don't have an account yet`,
+
+        usernameOrEmailRequired: 'Username or Email is required',
+        emailRequired: 'Email is required',
+        invalidEmail: 'Invalid email format',
+        usernameRequired: 'Username is required',
+        invalidUsername: 'Username can only include letters, numbers, underscores(_), dots(.) or hyphens(-)',
+        passwordRequired: 'Password is required',
+        invalidPasswordLength: 'Password must be at least 8 characters long',
+        invalidPassword: 'Password must contain at least 2 lowercase letters, 2 uppercase letters, 3 numbers and 1 special character',
+        nameRequired: 'Name is required', 
+        invalidName: 'Name can only contain letters or spaces',
+        surnameRequired: 'Surname is required',
+        invalidSurname: 'Surname can only contain letters or spaces',
+
+        stayLoggedIn: 'Stay logged in?',
+        termsAndConditions: 'Terms and conditions',
     }
 }
 export default en
