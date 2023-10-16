@@ -26,13 +26,6 @@ window.axios = axios.create({
     baseURL: 'http://localhost:8080',
 });
 
-// FONT-AWESOME
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faUserSecret, faPlus, } from '@fortawesome/free-solid-svg-icons'
-library.add([faUserSecret, faPlus]);
-app.component('FontAwesomeIcon', FontAwesomeIcon);
-
 // I18N INTERNATIONALIZATION
 import { createI18n, useI18n } from 'vue-i18n'
 import en from './locales/en';
@@ -54,6 +47,13 @@ app.use(i18n);
 // VEEVALIDATE
 // import './plugins/veeValidate'
 
+// FONT-AWESOME
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faUserSecret, faPlus, faEye, faEyeSlash,fas } from '@fortawesome/free-solid-svg-icons'
+library.add(fas);
+app.component('FontAwesomeIcon', FontAwesomeIcon);
+
 // VUETIFY
 import '../node_modules/vuetify/dist/vuetify.css'
 import 'vuetify/styles'
@@ -71,7 +71,7 @@ export const vuetify = createVuetify({
     components,
     directives,
     icons: {
-        iconfont: 'mdiSvg',
+        iconfont: 'faSvg',
         defaultSet: 'mdi',
         aliases,
         sets: {

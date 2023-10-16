@@ -78,8 +78,7 @@
                 return this.selectedActivity != null ? true : false;
             },
             populateSelects(dataKey, url) {
-                axios
-                    .post(url)
+                axios.post(url)
                     .then((response) => {
                         this[dataKey] = response.data;
                     })
@@ -132,7 +131,7 @@
                     });
             },
             createNewActivity() {
-                this.$router.push('/createNewActivity');
+                this.$router.push({name:'createNewActivity'});
             },
         },
     };

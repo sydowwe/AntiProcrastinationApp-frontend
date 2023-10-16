@@ -1,20 +1,37 @@
 <template>
     <VRow justify="center" class="mt-16">
         <VCol cols="12" sm="10" md="8" lg="6">
-            <h2 class="text-center mb-2">{{ $t('authorization.registration') }}</h2>
-            <VForm @submit.prevent="handleSubmit" class="d-flex flex-column">
-                <VTextField :label="$t('authorization.name')" v-model="formData.name"></VTextField>
-                <VTextField :label="$t('authorization.surname')" v-model="formData.surname"></VTextField>
-                <VTextField :label="$t('authorization.username')" v-model="formData.username"></VTextField>
-                <VTextField :label="$t('authorization.email')" v-model="formData.email"></VTextField>
-                <VTextField :label="$t('authorization.password')" v-model="formData.password"></VTextField>
+            <h2 class="text-center mb-5">{{ $t('authorization.registration') }}</h2>
+            <VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
+                <VTextField class="mb-3" :label="$t('authorization.name')" v-model="formData.name" :rules="nameRules"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.surname')" v-model="formData.surname" :rules="surnameRules"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.username')" v-model="formData.username" :rules="usernameRules"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules"></VTextField>
+                <VTextField 
+                    :label="$t('authorization.password')"
+                    v-model="formData.password"
+                    :rules="passwordRules"
+                    :type="showPassword ? 'text' : 'password'"
+                    :append-inner-icon="showPassword ? 'faEyeSlash' : 'faEye'"
+                    @click:append-inner="showPassword = !showPassword"
+                ></VTextField>
+                <VCheckbox class="mb-3" v-model="formData.stayLoggedIn" hide-details>
+                    <template v-slot:label>
+                        {{ $t('general.iAgreeTo') }}&nbsp;
+                        <RouterLink to="/terms-and-conditions">
+                            {{ $t('authorization.termsAndConditions') }}
+                        </RouterLink>
+                    </template>
+                </VCheckbox>
+
                 <VRow justify="center">
                     <VCol cols="10" sm="8" md="6" lg="6">
-                        <VBtn width="100%" color="success">{{ $t('authorization.register') }}</VBtn>
+                        <VBtn type="submit" width="100%" color="success">{{ $t('authorization.register') }}</VBtn>
                     </VCol>
                 </VRow>
             </VForm>
         </VCol>
+
         <VDialog v-model="dialog" width="auto" persistent>
             <VCard>
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
@@ -35,7 +52,7 @@
                 </VCardActions>
             </VCard>
         </VDialog>
-    </VRow> 
+    </VRow>
 </template>
 
 <script>
@@ -50,15 +67,46 @@
                     email: '',
                     password: '',
                 },
+                termsOfConditions: false,
+                nameRules: [(v) => !!v || this.$t('authorization.nameRequired'), (v) => this.validateName(v) || this.$t('authorization.invalidName')],
+                surnameRules: [(v) => !!v || this.$t('authorization.surnameRequired'), (v) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
+                usernameRules: [(v) => !!v || this.$t('authorization.usernameRequired'), (v) => this.validateUsername(v) || this.$t('authorization.invalidUsername')],
+                emailRules: [(v) => !!v || this.$t('authorization.emailRequired'), (v) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
+                passwordRules: [
+                    (v) => !!v || this.$t('authorization.passwordRequired'),
+                    (v) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
+                    (v) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
+                ],
+                showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
                 qrcodeUrl: '',
                 isError: false,
                 errorMessage: '',
-                invalidFields: [],
             };
-        },   
+        },
         methods: {
+            validateName(value) {
+                const letterRegex = /^[a-zA-Z ]+$/;
+                return letterRegex.test(value);
+            },
+            validateSurname(value) {
+                const letterRegex = /^[a-zA-Z ]+$/;
+                return letterRegex.test(value);
+            },
+            validateEmail(value) {
+                //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                return emailRegex.test(value);
+            },
+            validateUsername(value) {
+                const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
+                return alphanumericRegex.test(value);
+            },
+            validatePassword(value) {
+                const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
+                return passwordRegex.test(value);
+            },
             showDialog(title) {
                 this.dialogTitle = title;
                 this.dialog = true;
@@ -66,17 +114,14 @@
             hideDialog() {
                 this.dialog = false;
             },
-          
-            handleSubmit() {
-                if (this.checkFormValidity()) {
-                    $.ajax({
-                        type: 'POST',
-                        contentType: 'application/json',
-                        url: '/zad1/api/register.php',
-                        data: JSON.stringify(this.formData),
-                        dataType: 'json',
-                    })
-                        .done((data) => {
+            async validateAndSendForm() {
+                const { valid } = await this.$refs.form.validate();
+
+                if (valid) {
+                    axios
+                        .post('/user/register', this.formData)
+                        .then((response) => {
+                            console.log(response);
                             this.isError = data.error;
                             if (!this.isError) {
                                 this.qrcodeUrl = data.body;
@@ -85,66 +130,13 @@
                                 this.errorMessage = `User with username: ${data.body.username} or email: ${data.body.email} already exists`;
                                 this.showModal('Chyba!');
                             }
+                            this.$router.push('/login');
                         })
-                        .fail((error) => {
+                        .catch((error) => {
                             console.log(error);
                         });
                 }
             },
-            // validateTextField(fieldId) {
-            //     const fieldValue = this.formData[fieldId];
-            //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
-            //     if (!regex.test(fieldValue)) {
-            //         if (!this.invalidFields.includes(fieldId)) {
-            //             this.invalidFields.push(fieldId);
-            //         }
-            //     } else {
-            //         const index = this.invalidFields.indexOf(fieldId);
-            //         if (index !== -1) {
-            //             this.invalidFields.splice(index, 1);
-            //         }
-            //     }
-            // },
-            // validateEmail(fieldId) {
-            //     const fieldValue = this.formData[fieldId];
-            //     const regex = /^\w{2,}([.-]?\w+)@\w+([.-]?\w+)(.\w{2,4})+$/;
-            //     if (!regex.test(fieldValue)) {
-            //         if (!this.invalidFields.includes(fieldId)) {
-            //             this.invalidFields.push(fieldId);
-            //         }
-            //     } else {
-            //         const index = this.invalidFields.indexOf(fieldId);
-            //         if (index !== -1) {
-            //             this.invalidFields.splice(index, 1);
-            //         }
-            //     }
-            // },
-            // checkFormValidity() {
-            //     const invalidFieldsTexts = [];
-            //     this.$el.querySelectorAll('[data-required]').forEach((field) => {
-            //         if (!field.value.trim()) {
-            //             const label = this.$el.querySelector(`label[for=${field.id}]`).textContent;
-            //             invalidFieldsTexts.push(label);
-            //             this.isError = true;
-            //         }
-            //     });
-
-            //     if (this.invalidFields.length > 0) {
-            //         this.invalidFields.forEach((fieldId) => {
-            //             console.log(fieldId);
-            //             const label = this.$el.querySelector(`label[for=${fieldId}]`).textContent;
-            //             invalidFieldsTexts.push(label);
-            //             this.isError = true;
-            //         });
-            //     }
-
-            //     if (this.isError) {
-            //         this.errorModalMessage = `Nasledujúce polia sú neplatné: ${invalidFieldsTexts.join(', ')}. Prosím, opravte ich.`;
-            //         this.showModal('Chyba!');
-            //         return false;
-            //     }
-            //     return true;
-            // },
         },
     };
 </script>
