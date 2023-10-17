@@ -27,10 +27,12 @@
                 <VRow justify="center">
                     <VCol cols="10" sm="8" md="6" lg="6">
                         <VBtn type="submit" width="100%" color="success">{{ $t('authorization.register') }}</VBtn>
+                        <VBtn type="submit" width="100%" color="success">{{ $t('authorization.register') }}</VBtn>
                     </VCol>
                 </VRow>
             </VForm>
         </VCol>
+
 
         <VDialog v-model="dialog" width="auto" persistent>
             <VCard>
@@ -109,6 +111,27 @@
                 const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
                 return passwordRegex.test(value);
             },
+            validateName(value) {
+                const letterRegex = /^[a-zA-Z ]+$/;
+                return letterRegex.test(value);
+            },
+            validateSurname(value) {
+                const letterRegex = /^[a-zA-Z ]+$/;
+                return letterRegex.test(value);
+            },
+            validateEmail(value) {
+                //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                return emailRegex.test(value);
+            },
+            validateUsername(value) {
+                const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
+                return alphanumericRegex.test(value);
+            },
+            validatePassword(value) {
+                const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
+                return passwordRegex.test(value);
+            },
             showDialog(title) {
                 this.dialogTitle = title;
                 this.dialog = true;
@@ -132,6 +155,7 @@
                                 this.errorMessage = `User with username: ${data.body.username} or email: ${data.body.email} already exists`;
                                 this.showModal('Chyba!');
                             }
+                            this.$router.push('/login');
                             this.$router.push('/login');
                         })
                         .catch((error) => {
