@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '../stores/user';
 import HomeView from '../../views/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
 import StopWatchView from '../../views/StopWatchView.vue'
@@ -9,6 +10,7 @@ import ToDoListView from '../../views/ToDoListView.vue'
 import AddActivityManuallyView from '../../views/AddActivityManuallyView.vue'
 import LoginView from '../../views/LoginView.vue'
 import RegistrationView from '../../views/RegistrationView.vue'
+import ForgottenPasswordView from '../../views/ForgottenPasswordView.vue'
 import TermsAndConditionsView from '../../views/TermsAndConditionsView.vue'
 
 const router = createRouter({
@@ -33,6 +35,11 @@ const router = createRouter({
       path: '/registration',
       name: 'registration',
       component: RegistrationView
+    },
+    {
+      path: '/forgotten-password',
+      name: 'forgottenPasswordView',
+      component: ForgottenPasswordView
     },
     {
       path: '/history',
@@ -78,6 +85,13 @@ const router = createRouter({
     //   component: () => import('../views/AboutView.vue')
     // }
   ]
-})
-
+});
+const allowedRoutes = ['login','registration','termsAndConditions','forgottenPasswordView'];
+router.beforeEach((to, from, next) => {
+  if (!allowedRoutes.includes(to.name) && !useUserStore().getToken) {
+    next('/login');
+  } else {
+    next();
+  }
+});
 export default router

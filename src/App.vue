@@ -6,21 +6,33 @@
     <v-app>
         <header>
             <v-app-bar app>
-                <VAppBarTitle> AntiProcrastination app </VAppBarTitle>
-                <select v-model="$i18n.locale">
-                    <option v-for="locale in $i18n.availableLocales" :key="`locale-${locale}`" :value="locale">{{ locale }}</option>
-                </select>
-                <RouterLink class="my-auto pa-2" to="/">Home</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/login">Login</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/registration">Register</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/history">History</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/to-do-list">To-do list</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/create-new-activity">Create activity</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/stopwatch">Stopwatch</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/timer">Timer</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/alarm">Alarm</RouterLink>
-                <RouterLink class="my-auto pa-2" to="/add-activity-manually">Add activity to history</RouterLink>
-                <VAppBarNavIcon></VAppBarNavIcon>
+                <div class="d-flex justify-space-between w-100">
+                    <div class="d-flex align-center">
+                        <VAppBarTitle class="flex-0-0 mx-3"> AntiProcrastination app </VAppBarTitle>
+                        <template v-if="userStore.getEmail">
+                            <RouterLink class="my-auto pa-2" to="/">{{ $t('navigation.home') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/history">{{ $t('navigation.history') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/to-do-list">{{ $t('navigation.toDoList') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/create-new-activity">{{ $t('navigation.createNewActivity') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/alarm">{{ $t('navigation.alarm') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
+                        </template>
+                    </div>
+                    <div class="d-flex align-center">
+                        <div v-if="!userStore.getEmail">
+                            <RouterLink class="my-auto pa-2" to="/registration">{{ $t('authorization.registration') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/login">{{ $t('authorization.login') }}</RouterLink>
+                        </div>
+                        <div v-else>
+                            <VLabel class="ml-3 mr-1">{{ userStore.getEmail }}</VLabel>
+                            <RouterLink class="my-auto pa-2" to="/login" @click="logout">{{ $t('authorization.logOut') }}</RouterLink>
+                        </div>
+                        <VSelect class="flex-0-0 mx-2" v-model="$i18n.locale" :items="$i18n.availableLocales" density="compact" width="auto" hide-details :clearable="false"> </VSelect>
+                        <!-- <VAppBarNavIcon></VAppBarNavIcon> -->
+                    </div>
+                </div>
             </v-app-bar>
         </header>
         <v-main>
@@ -30,6 +42,40 @@
         </v-main>
     </v-app>
 </template>
+<script>
+    import { useUserStore } from './plugins/stores/user';
+    export default {
+        data() {
+            return {};
+        },
+        computed: {
+            userStore() {
+                return useUserStore();
+            },
+        },
+        mounted() {},
+        methods: {
+            logout() {
+                axios
+                    .post(
+                        '/user/auth/logout',
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${this.userStore.getToken}`,
+                            },
+                        }
+                    )
+                    .then((response) => {
+                        this.userStore.logout();
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            },
+        },
+    };
+</script>
 
 <style scoped>
     header {

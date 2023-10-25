@@ -22,9 +22,19 @@ app.use(router);
 
 // AXIOS
 import axios from 'axios';
-window.axios = axios.create({
-    baseURL: 'http://localhost:8080',
+import { useUserStore } from './plugins/stores/user';
+const authStore = useUserStore();
+const axiosInstance = axios.create({
+    baseURL: 'http://localhost:8080',  
 });
+axiosInstance.interceptors.request.use((config) => {
+    if(authStore.getToken){
+        config.headers.Authorization = `Bearer ${authStore.getToken}`;
+    }
+    return config;
+  });
+window.axios = axiosInstance;
+
 
 // I18N INTERNATIONALIZATION
 import { createI18n, useI18n } from 'vue-i18n'
@@ -63,6 +73,7 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg.mjs'
+
 
 export const vuetify = createVuetify({
     locale: {

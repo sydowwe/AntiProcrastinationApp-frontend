@@ -94,6 +94,19 @@ const en = {
             loadMore: `Load more`,
             empty: `No more`
         }
+    },   
+    navigation:{
+        home: `Home`,
+        history: `History`,
+        toDoList: `To-do list`,
+        createNewActivity: `Create new kind of activity`,
+        stopwatch: `Stopwatch`,
+        timer: `Timer`,
+        alarm: `Alarm`,
+        addActivityManually: `Add activity to history`,
+    },
+    history:{
+        history: `History`,
     },
     general: {
         or: `Or`,
@@ -104,24 +117,26 @@ const en = {
         iAgreeTo: 'I agree to the',
     },
     authorization: {
+        logOut: `Log out`,
         logIn: `Log in`,
         login: `Login`,
         register: `Register`,
         registration: `Registration`,
         password: `Password`,
-        username: `Username`,
+        forgotPassword: `Forgot password?`,
         email: `Email`,
-        usernameOrEmail: `@:authorization.username / @:authorization.email`,
+        // username: `Username`,
+        // usernameOrEmail: `@:authorization.username / @:authorization.email`,
         name: `Name`,
         surname: `Surname`,
         continueWithGoogle: `Continue with google`,
         dontHaveAccountYet: `Don't have an account yet`,
 
-        usernameOrEmailRequired: 'Username or Email is required',
+        // usernameOrEmailRequired: 'Username or Email is required',
         emailRequired: 'Email is required',
         invalidEmail: 'Invalid email format',
-        usernameRequired: 'Username is required',
-        invalidUsername: 'Username can only include letters, numbers, underscores(_), dots(.) or hyphens(-)',
+        // usernameRequired: 'Username is required',
+        // invalidUsername: 'Username can only include letters, numbers, underscores(_), dots(.) or hyphens(-)',
         passwordRequired: 'Password is required',
         invalidPasswordLength: 'Password must be at least 8 characters long',
         invalidPassword: 'Password must contain at least 2 lowercase letters, 2 uppercase letters, 3 numbers and 1 special character',
@@ -132,6 +147,7 @@ const en = {
 
         stayLoggedIn: 'Stay logged in?',
         termsAndConditions: 'Terms and conditions',
+        use2FA: 'Do you want to use google 2 factor authentication?',
     }
 }
 export default en
