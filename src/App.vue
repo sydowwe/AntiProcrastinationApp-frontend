@@ -54,6 +54,9 @@
             },
         },
         mounted() {},
+        created(){
+            console.log(this.userStore.getEmail);
+        },
         methods: {
             logout() {
                 axios
@@ -67,11 +70,12 @@
                         }
                     )
                     .then((response) => {
-                        this.userStore.logout();
+                        
                     })
                     .catch((error) => {
                         console.log(error);
                     });
+                    this.userStore.logout();
             },
         },
     };

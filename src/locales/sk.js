@@ -95,17 +95,6 @@ const sk = {
             empty: `No more`
         }
     },
-    general: {
-        or: `Alebo`,
-        please: `Prosím`,
-        close: `Zavrieť`,
-        send: `Odoslať`,
-        save: `Uložiť`,
-        iAgreeTo: 'Súhlasím s',
-    },
-    history:{
-        history: `History`,
-    },
     navigation:{
         home: `Domov`,
         toDoList: `To-do list`,
@@ -116,10 +105,56 @@ const sk = {
         timer: `Časovač`,
         alarm: `Alarm`,
     },
+    general: {
+        or: `Alebo`,
+        please: `Prosím`,
+        close: `Zavrieť`,
+        create: `Vytvoriť`,
+        filter: `Filtrovať`,
+        send: `Odoslať`,
+        save: `Uložiť`,
+        cancel: `Zrušiť`,
+        edit: `Upraviť`,
+        add: `Pridať`,
+        iAgreeTo: 'Súhlasím s',
+        name: `Názov`,
+        text: `Text`,
+    },
+    dateTime:{
+        when: `Kedy`,
+        length: `Dĺžka`,
+        date: `Dátum`,
+        year: `Rok`,
+        month: `Mesiac`,
+        day: `Deň`,
+        hour: `Hodina`,
+        minute: `Minúta`,
+        second: `Sekunda`,
+        dateFrom: `Dátum od`,
+        howManyHoursBack: `Koľko hodín späť`
+    }, 
+    activities:{
+        role: `Role`,
+        category: `Kategória`,
+        activity: `Aktivita`,
+        activityDescription: `Popis aktivity`,
+        isActivityUnavoidable: `Je aktivita nevyhnutná`,
+        placeOnToDoList: `Pridať na to-do list`,
+        //===============================
+        fromToDoList: `Je z to-do listu`,
+        createNewActivity: `Vytvoriť novú aktivity`,
+        addActivityToHistory: `Pridať aktivitu do histórie`,
+        start: `Začať`,
+        pause: `Pozastaviť`,
+        stop: `Ukončiť`,
+        //=========
+
+    },
     authorization: {
-        logout: `Odhlásiť sa`,
+        logOut: `Odhlásiť sa`,
         logIn: `Prihlásiť sa`,
         login: `Prihlásenie`,
+        goToLogin: `Prejsť na prihlásenie`,
         register: `Registrovať sa`,
         registration: `Registrácia`,
         forgotPassword: `Zabudli ste heslo?`,
@@ -147,7 +182,16 @@ const sk = {
 
         stayLoggedIn: 'Zostať prihlásený?',
         termsAndConditions: 'Všeobecnými obchodnými podmienkami',
+        termsAndConditionsRequired: `Pred pokračovaním musíte súhlasiť`,
         use2FA: 'Prajete si pridať google dvojfaktorové overenie?',
+        twoFA: `Dvojfaktorové overenie`,
+        code: `Kód`,
+        code2FA: `Kód z vašej overovacej aplikácie (Google Authenticator)`,
+    },
+    toDoList:{
+        add: 'Pridať',
+        toDoList: 'To-do list',
+        urgency: `Naliehavosť`,
     }
 }
 export default sk;

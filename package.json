@@ -13,20 +13,16 @@
     "@fortawesome/free-regular-svg-icons": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/vue-fontawesome": "^3.0.3",
-    "@vee-validate/i18n": "^4.9.6",
-    "@vee-validate/rules": "^4.9.6",
-    "@vuepic/vue-datepicker": "^7.0.0",
     "axios": "^1.4.0",
     "moment": "^2.29.4",
     "pinia": "^2.0.36",
     "sortable": "^2.0.0",
-    "vee-validate": "^4.9.6",
     "volar-service-vetur": "latest",
     "vue": "^3.3.2",
     "vue-draggable-next": "^2.2.0",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.2.0",
-    "vuetify": "^3.4.0-alpha.0"
+    "vuetify": "latest"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

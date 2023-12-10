@@ -5,7 +5,20 @@ const app = createApp(App);
 
 // PINIA
 import { createPinia } from 'pinia';
-app.use(createPinia());
+const pinia = createPinia();
+pinia.use((context) => {
+    const storeId = context.store.$id;
+    const fromStorage = JSON.parse(window.sessionStorage.getItem(storeId));
+  
+    if (fromStorage) {
+      context.store.$patch(fromStorage);
+    }
+  
+    context.store.$subscribe((mutation, state) => {
+      window.sessionStorage.setItem(storeId, JSON.stringify(state));
+    });
+  });
+app.use(pinia);
 
 
 
@@ -58,10 +71,12 @@ app.use(i18n);
 // import './plugins/veeValidate'
 
 // FONT-AWESOME
-import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faUserSecret, faPlus, faEye, faEyeSlash,fas } from '@fortawesome/free-solid-svg-icons'
-library.add(fas);
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+library.add(fas)
+library.add(far)
 app.component('FontAwesomeIcon', FontAwesomeIcon);
 
 // VUETIFY
@@ -72,8 +87,8 @@ import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
-import { aliases, mdi } from 'vuetify/lib/iconsets/mdi-svg.mjs'
 
+import { aliases, fa } from 'vuetify/lib/iconsets/fa-svg.mjs'
 
 export const vuetify = createVuetify({
     locale: {
@@ -82,11 +97,10 @@ export const vuetify = createVuetify({
     components,
     directives,
     icons: {
-        iconfont: 'faSvg',
-        defaultSet: 'mdi',
+        defaultSet: 'fa',
         aliases,
         sets: {
-            mdi,
+            fa,            
         },
     },
     aliases:{
@@ -105,15 +119,16 @@ export const vuetify = createVuetify({
     },
     theme: {
         defaultTheme: 'dark',
+        theme:'dark',
         themes: {
             dark: {
-                primary: '#1976D2',
+                primary: '#5b42fc',
                 secondary: '#424242',
                 accent: '#82B1FF',
                 error: '#FF5252',
                 info: '#2196F3',
                 success: '#4CAF50',
-                warning: '#FFC107',
+                warning: '#ffe554',
             },
         },
     }

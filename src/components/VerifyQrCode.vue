@@ -1,60 +1,57 @@
 <template>
-  <div class="container">
-    <h4 class="text-center mb-2">Zadajte QR kód z aplikácie</h4>
-    <form @submit.prevent="handleSubmit" class="d-flex flex-column">
-      <div class="form-group mb-2">
-        <label class="form-label" for="code">QR kód</label>
-        <input
-          type="text"
-          id="code"
-          class="form-control form-control-lg"
-          v-model="code"
-        />
-      </div>
-    </form>
-  </div>
+    <VRow justify="center">
+        <h4 class="w-100 pl-md-4">{{ $t('authorization.code2FA') }}</h4>
+        <VCol cols="12" sm="10" md="8" lg="6">
+            <VTextField :label="$t('authorization.code')" v-model="code" type="number" hide-details autofocus></VTextField>
+        </VCol>
+    </VRow>
 </template>
-<script>
-export default {
-  props: {
-    personData: {
-      type: Object,
-      required: true,
-    },
-    modalRef: {
-      type: Object,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      code: "",
-    };
-  },
-  created() {},
-  methods: {
-    handleSubmit() {
-      this.personData.code = this.code;
-      $.ajax({
-        type: "POST",
-        contentType: "application/json",
-        url: "/zad1/api/verifyQR.php",
-        data: JSON.stringify(this.personData),
-        dataType: "json",
-      })
-        .done((data) => {
-          this.isError = data.error;
-          if (!this.isError) {
-            this.modalRef.hideModal();
-            this.$router.push({ name: "home" });
-          } else {
-            alert("Nesprávny QR kód!");
-          }
-        })
-        .fail((error) => {
-          console.log(error);
-        });
-    },
-  },
-};
+<script lang="ts">
+    import { defineComponent } from 'vue';
+    import { useUserStore } from '../plugins/stores/user';
+    export default defineComponent({
+        props: {
+            email: {
+                type: String,
+                required: true,
+            },
+            stayLoggedIn: {
+                type: Boolean,
+                required: true,
+            },
+        },
+        data() {
+            return {
+                code: '',
+            };
+        },
+        created() {},
+        methods: {
+            submit() {
+                const googleAuthRequest = {
+                    email: this.email,
+                    code: this.code,
+                    stayLoggedIn: this.stayLoggedIn,
+                };
+                axios
+                    .post('/user/auth/validate2FA', googleAuthRequest)
+                    .then((response) => {
+                      console.log(response);
+                        if (response.data?.authorized) {
+                            if (response.data?.token) {
+                                useUserStore().login(this.email, response.data.token);
+                                this.$router.push('/');
+                            } else {
+                                console.error('No token!!!');
+                            }
+                        } else {
+                            this.code = '';
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            },
+        },
+    });
 </script>

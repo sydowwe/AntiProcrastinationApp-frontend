@@ -29,6 +29,7 @@
     import TimePicker from '../components/TimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
+    import {showNotification,checkNotificationPermission} from '../scripts/notifications';
 
     export default {
         components: {
@@ -60,6 +61,7 @@
         },
         created() {
             this.intervalId = null;
+            checkNotificationPermission();
         },
         methods: {
             getTimeObjectFromSeconds(timeInSeconds) {
@@ -82,7 +84,6 @@
                         this.startTimestamp = Date.now();
                         this.timeInputVisible = false;
                         this.timeRemaining = this.getSecondsFromTimeObject(this.timeInitial);
-
                         this.resume();
                     } else {
                         alert('select activity please');
@@ -97,8 +98,8 @@
                 this.paused = false;
                 this.time = this.getTimeObjectFromSeconds(this.timeRemaining);
                 this.intervalId = setInterval(() => {
-                    if (this.timeRemaining == 0) {
-                        this.stop(true);
+                    if (this.timeRemaining == 0) {                        
+                        this.stop();
                     } else {
                         this.timeRemaining--;
                         this.time = this.getTimeObjectFromSeconds(this.timeRemaining);
@@ -110,7 +111,9 @@
                 const timeSpentNice = this.timeRemaining == 0 ? this.getTimeNice(this.timeInitial) 
                 : this.getTimeNice(this.getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
 
-                this.showSaveDialog(timeSpentNice);
+                let activityName = this.$refs.activitySelectionForm.selectedActivityName;
+                showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
+                this.showSaveDialog(timeSpentNice, activityName);
             },
             resetTime() {
                 this.time = {
@@ -125,8 +128,7 @@
                 this.timeRemaining = 0;
                 this.startTimestamp = 0;
             },
-            showSaveDialog(timeSpentNice) {
-                let activityName = this.$refs.activitySelectionForm.selectedActivityName;
+            showSaveDialog(timeSpentNice, activityName) {                
                 this.$refs.saveDialog.openDialog(activityName, timeSpentNice);
             },
             saveActivity() {
@@ -140,7 +142,7 @@
                 return this.getSecondsFromTimeObject(this.timeInitial) - this.getSecondsFromTimeObject(this.time);
             },
             getTimeNice(timeObject) {
-                return `${timeObject.hours != 0 ? timeObject.hours + 'h' : ''} ${timeObject.minutes != 0 ? timeObject.minutes + 'm' : ''} ${timeObject.seconds}s`;
+                return `${timeObject.hours != 0 ? timeObject.hours + 'h' : ''}${timeObject.minutes != 0 ? timeObject.minutes + 'm' : ''}${timeObject.seconds}s`;
             },
         },
     };

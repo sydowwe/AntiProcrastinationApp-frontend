@@ -3,7 +3,7 @@
         <VCol cols="12" sm="10" md="8" lg="6">
             <h2 class="text-center mb-5">{{ $t('authorization.registration') }}</h2>
             <VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
-                <VTextField class="mb-3" :label="$t('authorization.name')" v-model="formData.name" :rules="nameRules"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.name')" v-model="formData.name" :rules="nameRules" autofocus></VTextField>
                 <VTextField class="mb-3" :label="$t('authorization.surname')" v-model="formData.surname" :rules="surnameRules"></VTextField>
                 <!-- <VTextField class="mb-3" :label="$t('authorization.username')" v-model="formData.username" :rules="usernameRules"></VTextField> -->
                 <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules"></VTextField>
@@ -12,11 +12,11 @@
                     v-model="formData.password"
                     :rules="passwordRules"
                     :type="showPassword ? 'text' : 'password'"
-                    :append-inner-icon="showPassword ? 'mdiEye' : 'mdiEye'"
+                    :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
                 ></VTextField>
                 <VCheckbox :label="$t('authorization.use2FA')" v-model="formData.use2FA" hide-details></VCheckbox>
-                <VCheckbox class="mb-3" v-model="termsAndConditions" hide-details>
+                <VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
                     <template v-slot:label>
                         {{ $t('general.iAgreeTo') }}&nbsp;
                         <RouterLink to="/terms-and-conditions">
@@ -35,12 +35,12 @@
 
         <VDialog v-model="dialog" width="auto" persistent>
             <VCard>
-                <VCardTitle>{{ dialogTitle }}</VCardTitle>
+                <VCardTitle class="center">{{ dialogTitle }}</VCardTitle>
                 <VCardText>
                     <template v-if="!isError">
                         <div class="d-flex flex-column align-items-center">
                             <span id="qrPrompt">Scan QR code with google authentificator app: </span>
-                            <img :src="qrcodeUrl" alt="qr code for 2fa" />
+                            <img :src="qrCodeImageUrl" alt="QR code for 2fa" />
                         </div>
                     </template>
                     <template v-else>
@@ -49,7 +49,7 @@
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
                     <VBtn color="error" @click="hideDialog">{{ $t('general.close') }}</VBtn>
-                    <router-link id="redirect" class="btn btn-success" to="/login" v-if="!isError">Prejsť na prihlásenie</router-link>
+                    <VBtn color="success" @click="goToLogin" v-if="!isError">{{ $t('authorization.goToLogin') }}</VBtn>
                 </VCardActions>
             </VCard>
         </VDialog>
@@ -57,7 +57,7 @@
 </template>
 
 <script>
-    import { useUserStore } from '../plugins/stores/user.js';
+    import { useUserStore } from '../plugins/stores/user.ts';
     export default {
         components: {},
         data() {
@@ -81,10 +81,11 @@
                     (v) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
                     (v) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
                 ],
+                termsAndConditionsRules: [(v) => v!==false || this.$t('authorization.termsAndConditionsRequired')],
                 showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
-                qrcodeUrl: '',
+                qrCodeImageUrl: '',
                 isError: false,
                 errorMessage: '',
             };
@@ -119,18 +120,19 @@
                         .post('/user/auth/register', this.formData)
                         .then((response) => {
                             const userStore = useUserStore();
-                            if (response.data?.token) {
+                            if (response.data?.email) {
                                 userStore.setEmail(response.data.email);
-                                userStore.setToken(response.data.token);
-                                if (response.data.userData.use2FA) {
-                                    this.dialogTitle = 'Scan in Google Auth app'; //TODO preklad
+                                if (response.data?.has2FA) {
+                                    const qrCode = response.data.qrCode;
                                     this.isError = false;
-                                    this.this.dialog = true;
+                                    this.qrCodeImageUrl = `data:image/png;base64,${response.data.qrCode}`;
+                                    this.dialogTitle = this.$t('authorization.twoFA');
+                                    this.dialog = true;
                                 } else {
-                                    this.$router.push({ name: 'login', params: { email: response.data.email } });
+                                    this.goToLogin();
                                 }
                             } else {
-                                console.error('No token!!!');
+                                console.error('No email!!!');
                             }
                         })
                         .catch((error) => {
@@ -138,6 +140,16 @@
                         });
                 }
             },
+            goToLogin(){
+                this.$router.push({ name: 'login', params: { email: this.formData.email } });
+            }
         },
     };
 </script>
+<style>
+.v-checkbox > .v-input__details{
+    margin-top: -7px;
+    padding-top: 0px !important;
+    padding-left: 16px;
+}
+</style>

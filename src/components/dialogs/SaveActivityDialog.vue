@@ -1,21 +1,21 @@
 <template>
     <v-dialog v-model="dialog" max-width="600">
         <v-card>
-            <v-card-title class="headline">Record New Activity</v-card-title>
+            <v-card-title class="headline">Record new activity</v-card-title>
             <v-card-text>
                 <div class="text-center">
-                    <span>Confirm saving activity - {{ activity }} - done for {{ timeSpent }} ?</span>
+                    <span>Confirm saving activity - <i>{{ activity }}</i> done for {{ timeSpent }} ?</span>
                 </div>
             </v-card-text>
             <v-card-actions class="justify-center">
-                <v-btn color="red" @click="closeDialog" >Cancel</v-btn>
-                <v-btn color="green" @click="saveActivity">Save Activity</v-btn>
+                <v-btn color="red" @click="closeDialog" >{{ $t('general.cancel') }}</v-btn>
+                <v-btn color="green" @click="saveActivity">Save activity</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
-<script>
+<script lang="ts">
     export default {
         data() {
             return {
@@ -25,7 +25,7 @@
             };
         },
         methods: {
-            openDialog(activity, timeSpent) {
+            openDialog(activity: string, timeSpent:string) {
                 this.activity = activity ?? this.activity;
                 this.timeSpent = timeSpent;
                 this.dialog = true;

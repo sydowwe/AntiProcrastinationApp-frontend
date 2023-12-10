@@ -10,7 +10,7 @@
                     </v-col>
                     <v-col class="bordered bordered-right" cols="12" md="5">
                         <VLabel>Length</VLabel>
-                        <TimePicker ref="timePicker"></TimePicker>
+                        <TimePicker @timeChange="updateTime"></TimePicker>
                     </v-col>
                     <VCol cols="auto">
                         <VBtn @click="saveActivity()" color="success">Add activity to history</VBtn>
@@ -20,7 +20,7 @@
         </v-row>
     </v-container>
 </template>
-<script>
+<script lang="js">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import TimePicker from '../components/TimePicker.vue';
@@ -36,6 +36,11 @@
             return {
                 formDisabled: false,
                 dateTime: '',
+                lengthOfActivity: {
+                    hours: 0,
+                    minutes: 0,
+                    seconds: 0,
+                },
             };
         },
         computed: {
@@ -47,19 +52,24 @@
                     return null;
                 }
             },
-            time() {
-                return this.$refs.timePicker.getTime();
-            },
+           
         },
         watch: {
         },
         methods: {
             saveActivity() {
-                this.$refs.activitySelectionForm.addActivityToHistory(this.time,this.dateTime);
+                this.$refs.activitySelectionForm.addActivityToHistory(this.lengthOfActivity,this.dateTime);
             },
             updateDateTime(dateTime) {
                 this.dateTime = dateTime;
             },
+            updateLengthOfActivity(formattedTime){
+                this.lengthOfActivity = formattedTime ?? new {
+                    hours: 0,
+                    minutes: 0,
+                    seconds: 0,
+                };
+            }
         },
     };
 </script>

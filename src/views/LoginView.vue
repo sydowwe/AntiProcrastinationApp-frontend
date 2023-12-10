@@ -3,16 +3,16 @@
         <VCol cols="12" sm="10" md="8" lg="6">
             <h2 class="text-center mb-5">{{ $t('authorization.login') }}</h2>
             <VForm ref="form" @submit.prevent="validateAndSendForm()" class="d-flex flex-column">
-                <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules" :autofocus="!isRedirectedFromRegistration()"></VTextField>
                 <VTextField
                     :label="$t('authorization.password')"
                     v-model="formData.password"
                     :rules="passwordRules"
                     :type="showPassword ? 'text' : 'password'"
-                    :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                    :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
+                    :autofocus="isRedirectedFromRegistration()"
                 ></VTextField>
-
                 <VRow justify="center">
                     <VCol cols="12" sm="6" class="pb-0 pb-sm-3">
                         <VCheckbox :label="$t('authorization.stayLoggedIn')" v-model="formData.stayLoggedIn" hide-details></VCheckbox>
@@ -44,15 +44,15 @@
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
                 <VCardText>
                     <template v-if="!isError && formData.email">
-                        <VerifyQrCode :email="formData.email" ref="verifyQrCode"></VerifyQrCode>
+                        <VerifyQrCode :email="formData.email" :stayLoggedIn="formData.stayLoggedIn" ref="verifyQrCode"></VerifyQrCode>
                     </template>
                     <template v-else>
                         {{ errorMessage }}
                     </template>
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
-                    <VBtn color="error" @click="hideDialog">{{ $t('general.close') }}</VBtn>
-                    <VBtn color="primary" v-if="!isError" @click="sumbitQR">{{ $t('general.send') }}</VBtn>
+                    <VBtn color="error" @click="dialog=false">{{ $t('general.close') }}</VBtn>
+                    <VBtn color="primary" v-if="!isError" @click="submit2FA">{{ $t('general.send') }}</VBtn>
                 </VCardActions>
             </VCard>
         </VDialog>
@@ -77,7 +77,6 @@
                 showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
-                userData: null,
                 isError: false,
                 errorMessage: 'error',
             };
@@ -96,27 +95,33 @@
                     return false;
                 }
             },
+            isRedirectedFromRegistration(){
+                if(this.formData.email){
+                    return true;
+                }
+                else{
+                    return false;
+                };
+            },
             async validateAndSendForm() {
                 const { valid } = await this.$refs.form.validate();
-
                 if (valid) {
                     axios
                         .post('/user/auth/login', this.formData)
                         .then((response) => {
                             console.log(response);
                             const userStore = useUserStore();
-                            if (response.data?.token) {
-                                userStore.setEmail(response.data.email);
-                                userStore.setToken(response.data.token);
-                                if (response.data.use2FA) {
-                                    this.dialogTitle = 'Use google authenticator app'; //TODO preklad
-                                    this.isError = false;
-                                    this.this.dialog = true;
-                                } else {
-                                    this.$router.push('/');
-                                }
+                            if (response.data?.has2FA) {
+                                this.dialogTitle = this.$t('authorization.twoFA');
+                                this.isError = false;
+                                this.dialog = true;
                             } else {
-                                console.error('No token!!!');
+                                if (response.data?.token) {
+                                    userStore.login(response.data.email, response.data.token);
+                                    this.$router.push('/');
+                                } else {
+                                    console.error('No token!!!');
+                                }
                             }
                         })
                         .catch((error) => {
@@ -124,6 +129,9 @@
                         });
                 }
             },
+            submit2FA(){
+                this.$refs.verifyQrCode.submit();
+            }
         },
     };
 </script>

@@ -6,14 +6,14 @@
                 <slot></slot>
             </v-card-text>
             <v-card-actions class="justify-center">
-                <VBtn variant="elevated" color="red" @click="closeDialog()">Cancel</VBtn>
+                <VBtn variant="elevated" color="red" @click="closeDialog()">{{ $t('cancel') }}</VBtn>
                 <VBtn variant="elevated" color="green" @click="confirmed()" >{{confirmBtnLabel}}</VBtn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
-<script>
+<script lang="ts">
     export default {
         props: {            
             title: String,
