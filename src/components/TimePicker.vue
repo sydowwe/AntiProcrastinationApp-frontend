@@ -13,30 +13,28 @@
         </v-row>
     </div>
 </template>
-<script>
-    export default {
+<script lang="ts">
+    import { defineComponent } from 'vue';
+    import { TimeObject } from '../classes/TimeUtils';
+    export default defineComponent({
         data() {
             return {
-                time: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                },
+                time: new TimeObject(),
             };
         },
         watch: {
             time: {
-                handler(newTime) {
+                handler(newTime:TimeObject) {
                     const formattedTime = {
-                        hours: parseInt(newTime.hours),
-                        minutes: parseInt(newTime.minutes),
-                        seconds: parseInt(newTime.seconds),
+                        hours: newTime.hours,
+                        minutes: newTime.minutes,
+                        seconds: newTime.seconds,
                     };
                     this.$emit('timeChange', formattedTime);
                 },
                 deep: true,
             },
         },
-        emits: ['timeChange']
-    };
+        emits: ['timeChange'],
+    });
 </script>

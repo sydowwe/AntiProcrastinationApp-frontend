@@ -5,26 +5,13 @@
                 <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-10 pa-md-8 pa-sm-6 pa-5">
                     <v-label>Role</v-label>
                     <VRow no-gutters>
-                        <v-autocomplete
-                            v-model="formData.roleId"
-                            :items="roleOptions"
-                            item-title="label"
-                            item-value="id"
-                            :rules="roleIdRules"
-                        ></v-autocomplete>
-                        <VBtn class="ml-2" icon="$plus" color="success" @click="toggleRoleDialog()"></VBtn>
+                        <v-autocomplete v-model="formData.roleId" :items="roleOptions" item-title="label" item-value="id" :rules="roleIdRules"></v-autocomplete>
+                        <VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.open()"></VBtn>
                     </VRow>
                     <v-label>Category</v-label>
                     <VRow no-gutters>
-                        <v-autocomplete
-                            v-model="formData.categoryId"
-                            :items="categoryOptions"
-                            item-title="label"
-                            item-value="id"
-                           
-                            :rules="categoryIdRules"
-                        ></v-autocomplete>
-                        <VBtn class="ml-2" icon="$plus" color="success" @click="toggleCategoryDialog()"></VBtn>
+                        <v-autocomplete v-model="formData.categoryId" :items="categoryOptions" item-title="label" item-value="id" :rules="categoryIdRules"></v-autocomplete>
+                        <VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.open()"></VBtn>
                     </VRow>
                     <v-label>Activity</v-label>
                     <VRow no-gutters>
@@ -33,7 +20,7 @@
                     </VRow>
                     <v-textarea label="Activity description" v-model="formData.description"></v-textarea>
                     <VRow no-gutters>
-                        <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatoryActivity" hide-details></v-checkbox>
+                        <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatory" hide-details></v-checkbox>
                         <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" hide-details></v-checkbox>
                     </VRow>
                     <VRow justify="center" no-gutters>
@@ -43,16 +30,16 @@
             </VRow>
         </VForm>
         <ContentDialog ref="addRoleDialog" title="Add new role" confirmBtnLabel="Create" @confirmed="createRole()">
-            <v-text-field label="Name" v-model="newRole.name" :rules="customRoleRules"></v-text-field>
-            <VTextarea label="Text" v-model="newRole.text" :rules="customRoleRules"></VTextarea>
+            <v-text-field label="Name" v-model="newRole?.name" :rules="customRoleRules"></v-text-field>
+            <VTextarea label="Text" v-model="newRole?.text" :rules="customRoleRules"></VTextarea>
             <VLabel>Color</VLabel>
-            <VColorPicker label="Color" v-model="newRole.color" hide-inputs></VColorPicker>
+            <VColorPicker label="Color" v-model="newRole?.color" hide-inputs></VColorPicker>
         </ContentDialog>
         <ContentDialog ref="addCategoryDialog" title="Add new category" confirmBtnLabel="Create" @confirmed="createCategory()">
-            <v-text-field label="Name" v-model="newCategory.name" :rules="customCategoryRules"></v-text-field>
-            <VTextarea label="Text" v-model="newCategory.text" :rules="customCategoryRules"></VTextarea>
+            <v-text-field label="Name" v-model="newCategory?.name" :rules="customCategoryRules"></v-text-field>
+            <VTextarea label="Text" v-model="newCategory?.text" :rules="customCategoryRules"></VTextarea>
             <VLabel>Color</VLabel>
-            <VColorPicker v-model="newCategory.color" hide-inputs></VColorPicker>
+            <VColorPicker v-model="newCategory?.color" hide-inputs></VColorPicker>
         </ContentDialog>
         <v-row justify="center">
             <v-dialog v-model="dialog" persistent max-width="512">
@@ -74,10 +61,20 @@
         </v-snackbar>
     </VContainer>
 </template>
-<script>
+<script lang="ts">
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
     import ContentDialog from './dialogs/ContentDialog.vue';
-    export default {
+    import { VuetifyFormType, DialogType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    import { Role } from '../classes/DTOs/Role';
+    import { Category } from '../classes/DTOs/Category';
+    export default defineComponent({
+        setup() {
+            const form = ref<VuetifyFormType>({} as VuetifyFormType);
+            const addCategoryDialog = ref<DialogType>({} as DialogType);
+            const addRoleDialog = ref<DialogType>({} as DialogType);
+            return { form, addCategoryDialog, addRoleDialog };
+        },
         components: {
             ContentDialog,
             FontAwesomeIcon,
@@ -88,38 +85,30 @@
                 snackbarMessage: '',
                 snackbarColor: '',
                 formData: {
-                    roleId: null,
-                    categoryId: null,
+                    roleId: null as number | null,
+                    categoryId: null as number | null,
                     activity: '',
                     description: '',
                     isObligatory: false,
                     isOnToDoList: false,
                 },
-                newRole: {
-                    name: null,
-                    text: null,
-                    color: null,
-                },
-                newCategory: {
-                    name: null,
-                    text: null,
-                    color: null,
-                },
-                roleOptions: [],
-                categoryOptions: [],
+                newRole: null as null | Role,
+                newCategory: null as null | Category,
+                roleOptions: [] as Role[],
+                categoryOptions: [] as Category[],
                 dialog: false,
-                roleIdRules: [(v) => !!v || 'Role is required'],
-                customRoleRules: [(v) => !!v || 'Custom role is required'],
-                categoryIdRules: [(v) => !!v || 'Category is required'],
-                customCategoryRules: [(v) => !!v || 'Custom category is required'],
-                activityRules: [(v) => !!v || 'Activity is required'],
+                roleIdRules: [(v: number | null) => !!v || 'Role is required'],
+                customRoleRules: [(v: string) => !!v || 'Custom role is required'],
+                categoryIdRules: [(v: number | null) => !!v || 'Category is required'],
+                customCategoryRules: [(v: string) => !!v || 'Custom category is required'],
+                activityRules: [(v: string) => !!v || 'Activity is required'],
             };
         },
         created() {
             axios
                 .post('/role/get-all')
                 .then((response) => {
-                    this.roleOptions = response.data;
+                    this.roleOptions = response.data as Role[];
                     console.log(response);
                 })
                 .catch((error) => {
@@ -128,25 +117,17 @@
             axios
                 .post('/category/get-all')
                 .then((response) => {
-                    this.categoryOptions = response.data;
+                    this.categoryOptions = response.data as Category[];
                 })
                 .catch((error) => {
                     console.error(error);
                 });
         },
         methods: {
-            toggleRoleDialog() {
-                this.$refs.addRoleDialog.openDialog();
-            },
-            toggleCategoryDialog() {
-                this.$refs.addCategoryDialog.openDialog();
-            },
             reset() {
                 this.formData = {
                     roleId: null,
-                    customRole: '',
                     categoryId: null,
-                    customCategory: '',
                     activity: '',
                     description: '',
                     isObligatory: false,
@@ -154,7 +135,7 @@
                 };
             },
             async validate() {
-                const { valid } = await this.$refs.form.validate();
+                const { valid } = await this.form.validate();
                 if (valid) {
                     this.dialog = true;
                 } else {
@@ -181,6 +162,7 @@
                     .post('/role/create', this.newRole)
                     .then((response) => {
                         console.log(response);
+                        this.roleOptions.push(response.data as Role);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new role';
                         this.snackbarColor = 'success';
@@ -194,6 +176,7 @@
                     .post('/category/create', this.newCategory)
                     .then((response) => {
                         console.log(response);
+                        this.categoryOptions.push(response.data as Category);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new category';
                         this.snackbarColor = 'success';
@@ -211,7 +194,7 @@
                 console.log(newValue);
             },
         },
-    };
+    });
 </script>
 <style scoped>
     .border {

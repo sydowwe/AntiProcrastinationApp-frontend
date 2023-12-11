@@ -1,14 +1,11 @@
-<template>
- 
-</template>
-<script>
-import CreateNewActivityForm from '../components/CreateNewActivityForm.vue';
-export default {
-    components: {
-        CreateNewActivityForm
-    }    
-}
+<template></template>
+<script lang="ts">
+    import CreateNewActivityForm from '../components/CreateNewActivityForm.vue';
+    import { defineComponent } from 'vue';
+    export default defineComponent({
+        components: {
+            CreateNewActivityForm,
+        },
+    });
 </script>
-<style>
-    
-</style>
+<style></style>

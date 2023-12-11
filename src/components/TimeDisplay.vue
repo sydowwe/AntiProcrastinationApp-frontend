@@ -13,21 +13,16 @@
     </v-container>
 </template>
 
-<script>
-    export default {
+<script lang="ts">
+    import { defineComponent } from 'vue';
+import { TimeObject } from '../classes/TimeUtils';
+    export default defineComponent({
         props: {
-            hours: {
-                type: Number,
-                default: 0,
-            },
-            minutes: {
-                type: Number,
-                default: 0,
-            },
-            seconds: {
-                type: Number,
-                default: 0,
-            },
+            timeObject: {
+                type: TimeObject,
+                default: new TimeObject(),
+                required: true
+            },           
         },
         data() {
             return {
@@ -40,25 +35,18 @@
         },
         computed: {
             computedTimeValues() {
-                return {
-                    hours: this.hours,
-                    minutes: this.minutes,
-                    seconds: this.seconds,
-                };
+                return this.timeObject;
             },
         },
         methods: {
-            formatTime(time) {
-                if (typeof time !== 'number' || isNaN(time)) {
+            formatTime(time:number) {
+                if (isNaN(time) || time < 0) {
                     return '00';
-                }
-                if (time < 0) {
-                    time = 0;
-                }
+                }              
                 return Math.floor(time).toString().padStart(2, '0');
             },
         },
-    };
+    });
 </script>
 
 <style scoped>

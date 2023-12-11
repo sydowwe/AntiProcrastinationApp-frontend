@@ -4,18 +4,18 @@
             <v-checkbox label="From to-do list" v-model="isFromToDoList" :disabled="formDisabled" hide-details></v-checkbox>
         </v-col>
         <v-col v-show="isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-            <v-select v-model="selectedUrgency" :items="taskUrgencyOptions" hide-details="lg"></v-select>
+            <v-select v-model="selectedUrgencyId" :items="taskUrgencyOptions" hide-details></v-select>
         </v-col>
         <v-col cols="12" class="pt-1">
             <v-row>
                 <v-col cols="12" lg="5">
-                    <v-autocomplete label="Role" v-model="selectedRole" :items="roleOptions" :disabled="formDisabled" hide-details></v-autocomplete>
+                    <v-autocomplete label="Role" v-model="selectedRoleId" :items="roleOptions" :disabled="formDisabled" hide-details></v-autocomplete>
                 </v-col>
                 <v-col cols="12" lg="7">
-                    <v-autocomplete label="Category" v-model="selectedCategory" :items="categoryOptions" :disabled="formDisabled" hide-details></v-autocomplete>
+                    <v-autocomplete label="Category" v-model="selectedCategoryId" :items="categoryOptions" :disabled="formDisabled" hide-details></v-autocomplete>
                 </v-col>
                 <v-col cols="12">
-                    <v-autocomplete label="Activity" v-model="selectedActivity" :items="activityOptions" :disabled="formDisabled" hide-details></v-autocomplete>
+                    <v-autocomplete label="Activity" v-model="selectedActivityId" :items="activityOptions" :disabled="formDisabled" hide-details></v-autocomplete>
                 </v-col>
             </v-row>
         </v-col>
@@ -25,8 +25,14 @@
     </v-row>
 </template>
 
-<script>
-    export default {
+<script lang="ts">
+    import { defineComponent } from 'vue';
+    import { TimeObject } from '../classes/TimeUtils';
+    import { UrgencyEntity } from '../classes/UrgencyEntity';
+    import { Role } from '../classes/DTOs/Role';
+    import { Category } from '../classes/DTOs/Category';
+    import { Activity } from '../classes/DTOs/Activity';
+    export default defineComponent({
         props: {
             formDisabled: {
                 type: Boolean,
@@ -36,15 +42,15 @@
         },
         data() {
             return {
-                selectedUrgency: null,
-                taskUrgencyOptions: [],
+                selectedUrgencyId: 1,
+                taskUrgencyOptions: [] as UrgencyEntity[],
                 isFromToDoList: false,
-                selectedRole: null,
-                roleOptions: [],
-                selectedCategory: null,
-                categoryOptions: [],
-                selectedActivity: null,
-                activityOptions: [],
+                selectedRoleId: null as number | null,
+                roleOptions: [] as Role[],
+                selectedCategoryId: null as number | null,
+                categoryOptions: [] as Category[],
+                selectedActivityId: null as number | null,
+                activityOptions: [] as Activity[],
             };
         },
         created() {
@@ -54,42 +60,43 @@
             this.populateSelects('activityOptions', '/activity/get-all');
         },
         computed: {
-            selectedActivityName() {
+            selectedActivityIdName() {
                 let name =
                     this.activityOptions.find((item) => {
-                        return item.id === this.selectedActivity;
-                    })?.label ?? null;
+                        return item.id === this.selectedActivityId;
+                    })?.name ?? null;
                 return name;
             },
         },
         watch: {
-            selectedRole(newValue) {
+            selectedRoleId(newValue) {
                 console.log(newValue);
                 this.updateCategoriesAndActivities();
             },
-            selectedCategory(newValue) {
+            selectedCategoryId(newValue) {
                 console.log(newValue);
                 this.updateRolesAndActivities();
             },
-            selectedActivity(newValue) {},
+            selectedActivityId(newValue) {},
         },
         methods: {
             isValid() {
-                return this.selectedActivity != null ? true : false;
+                return this.selectedActivityId != null ? true : false;
             },
-            populateSelects(dataKey, url) {
-                axios.post(url)
+            populateSelects(dataKey: string, url: string) {
+                axios
+                    .post(url)
                     .then((response) => {
-                        this[dataKey] = response.data;
+                        (this as any)[dataKey] = response.data;
                     })
                     .catch((error) => {
                         console.log(error);
                     });
             },
             updateRolesAndActivities() {
-                this.selectedActivity = null;
-                if (this.selectedCategory) {
-                    this.populateSelects('roleOptions', `/role/get-by-category/${this.selectedCategory}`);
+                this.selectedActivityId = null;
+                if (this.selectedCategoryId) {
+                    this.populateSelects('roleOptions', `/role/get-by-category/${this.selectedCategoryId}`);
                     this.updateActivitiesBy('category');
                 } else {
                     this.populateSelects('roleOptions', '/role/get-all');
@@ -97,29 +104,29 @@
                 }
             },
             updateCategoriesAndActivities() {
-                this.selectedActivity = null;
-                if (this.selectedRole) {
-                    this.populateSelects('categoryOptions', `/category/get-by-role/${this.selectedRole}`);
+                this.selectedActivityId = null;
+                if (this.selectedRoleId) {
+                    this.populateSelects('categoryOptions', `/category/get-by-role/${this.selectedRoleId}`);
                     this.updateActivitiesBy('role');
                 } else {
                     this.populateSelects('categoryOptions', '/category/get-all');
                     this.populateSelects('activityOptions', '/activity/get-all');
                 }
             },
-            updateActivitiesBy(byWhat) {
-                this.selectedActivity = null;
-                if (this.selectedCategory || this.selectedRole) {
-                    this.populateSelects('activityOptions', `/activity/get-by-${byWhat === 'category' ? 'category/' + this.selectedCategory : 'role/' + this.selectedRole}`);
+            updateActivitiesBy(byWhat: string) {
+                this.selectedActivityId = null;
+                if (this.selectedCategoryId || this.selectedRoleId) {
+                    this.populateSelects('activityOptions', `/activity/get-by-${byWhat === 'category' ? 'category/' + this.selectedCategoryId : 'role/' + this.selectedRoleId}`);
                 } else {
                     this.activityOptions = [];
                 }
             },
-            addActivityToHistory(activityLength, startTimestamp) {
+            addActivityToHistory(activityLength: TimeObject, startTimestamp: string) {
                 const start = new Date(startTimestamp);
                 const newRecordRequest = {
                     startTimestamp: start.toISOString(),
                     length: activityLength,
-                    activityId: parseInt(this.selectedActivity),
+                    activityId: this.selectedActivityId,
                 };
                 axios
                     .post('/history/add-new-record', newRecordRequest)
@@ -131,8 +138,8 @@
                     });
             },
             createNewActivity() {
-                this.$router.push({name:'createNewActivity'});
+                this.$router.push({ name: 'createNewActivity' });
             },
         },
-    };
+    });
 </script>

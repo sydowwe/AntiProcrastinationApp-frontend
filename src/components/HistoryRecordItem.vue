@@ -22,60 +22,50 @@
         </v-card>
     </div>
 </template>
-<script>
-    export default {
+<script lang="ts">
+    import { defineComponent } from 'vue';
+    import { ActivityRecord } from '../classes/ActivityRecord';
+    import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../classes/TimeUtils';
+
+    export default defineComponent({
         props: {
             record: {
-                type: Object,
+                type: ActivityRecord,
                 required: true,
             },
         },
         data() {
             return {
-                lastDate: null,
+                lastDate: null as Date | null,
             };
         },
         computed: {
             formattedStartTimestamp() {
-                return (record) => this.getNiceTimestamp(record.startTimestamp);
+                return (record: ActivityRecord) => this.getNiceTimestamp(record.startTimestamp);
             },
             formattedLength() {
-                return (record) => this.getNiceTime(record.length);
+                return (record: ActivityRecord) => getTimeNiceFromTimeObject(getTimeObjectFromSeconds(record.length));
             },
             formattedEndTimestamp() {
-                return (record) => this.getNiceTimestamp(this.getEndOfActivityTime(record.startTimestamp, record.length));
+                return (record: ActivityRecord) => this.getNiceTimestamp(this.getEndOfActivityTime(record.startTimestamp, record.length));
             },
-        },
-        created() {
         },
         methods: {
-            getNiceTime(timeInSec) {
-                const hours = Math.floor(timeInSec / 3600);
-                const minutes = Math.floor((timeInSec % 3600) / 60);
-                const seconds = timeInSec % 60;
-                const timeParts = [];
-                if (hours > 0) timeParts.push(`${hours}h`);
-                if (minutes > 0) timeParts.push(`${minutes}m`);
-                if (seconds > 0 && hours < 1) timeParts.push(`${seconds}s`);
-                return timeParts.join(' ');
-            },
-            getEndOfActivityTime(startTimestamp, length) {
-                const start = new Date(startTimestamp);
-                const endInMillis = start.getTime() + length * 1000;
+            getEndOfActivityTime(startTimestamp: Date, length: number) {
+                const endInMillis = startTimestamp.getTime() + length * 1000;
                 return new Date(endInMillis);
             },
-            getNiceTimestamp(timestamp) {
-                const newDate = new Date(timestamp);
-                const currentDate = newDate.toLocaleDateString();
-                const currentTime = newDate.toLocaleTimeString();
-                if (currentDate !== this.lastDate) {
-                    this.lastDate = currentDate;
-                    return newDate.toLocaleString();
+            getNiceTimestamp(timestamp: Date) {
+                const currentDate = timestamp.toLocaleDateString();
+                const currentTime = timestamp.toLocaleTimeString();
+                if (timestamp !== this.lastDate) {
+                    this.lastDate = timestamp;
+                    return timestamp.toLocaleString();
                 } else {
                     return currentTime;
                 }
             },
         },
-    };
+    });
 </script>
 <style lang=""></style>

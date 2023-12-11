@@ -183,6 +183,7 @@ const en = {
         termsAndConditions: 'Terms and conditions',
         termsAndConditionsRequired: `Must accept before proceeding`,
         use2FA: 'Do you want to use google 2 factor authentication?',
+        scan2FAQrCode: `Scan the QR code in your authentication app (Google Authenticator)`,
         twoFA: `Two factor authorization`,
         code: `Code(number only)`,
         code2FA: `Code from your authenticator application (Google Authenticator)`,

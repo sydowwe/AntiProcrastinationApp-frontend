@@ -184,6 +184,7 @@ const sk = {
         termsAndConditions: 'Všeobecnými obchodnými podmienkami',
         termsAndConditionsRequired: `Pred pokračovaním musíte súhlasiť`,
         use2FA: 'Prajete si pridať google dvojfaktorové overenie?',
+        scan2FAQrCode: `Naskenujte QR kód vo vašej overovacej aplikácii (Google authenicator)`,
         twoFA: `Dvojfaktorové overenie`,
         code: `Kód`,
         code2FA: `Kód z vašej overovacej aplikácie (Google Authenticator)`,

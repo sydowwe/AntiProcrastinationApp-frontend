@@ -9,9 +9,9 @@
                 </VRow>
                 <TimeDisplay v-else :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
-                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
-                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
-                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === null">Stop</v-btn>
+                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</v-btn>
+                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</v-btn>
+                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Stop</v-btn>
                 </v-row>
                 <hr />
                 <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
@@ -22,16 +22,22 @@
         </v-row>
     </v-container>
 </template>
-
-<script>
+<script lang="ts">
     import TimerTypeSelect from '../components/TimerTypeSelect.vue';
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import TimePicker from '../components/TimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
-    import {showNotification,checkNotificationPermission} from '../scripts/notifications';
-
-    export default {
+    import { showNotification, checkNotificationPermission } from '../scripts/notifications';
+    import { TimeObject, getTimeObjectFromSeconds, getSecondsFromTimeObject, getTimeNiceFromTimeObject } from '../classes/TimeUtils';
+    import { DialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    export default defineComponent({
+        setup() {
+            const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+            const saveDialog = ref<DialogType>({} as DialogType);
+            return { activitySelectionForm, saveDialog };
+        },
         components: {
             ActivitySelectionForm,
             SaveActivityDialog,
@@ -45,45 +51,33 @@
                     hours: 0,
                     minutes: 0,
                     seconds: 0,
-                },
+                } as TimeObject,
                 timeInitial: {
                     hours: 0,
                     minutes: 0,
                     seconds: 0,
-                },
+                } as TimeObject,
                 timeInputVisible: true,
                 timeRemaining: 0,
                 paused: false,
-                intervalId: null,
+                intervalId: undefined as number | undefined,
                 startTimestamp: 0,
                 formDisabled: false,
             };
         },
         created() {
-            this.intervalId = null;
             checkNotificationPermission();
         },
         methods: {
-            getTimeObjectFromSeconds(timeInSeconds) {
-                return {
-                    hours: parseInt(timeInSeconds / 3600),
-                    minutes: parseInt((timeInSeconds % 3600) / 60),
-                    seconds: parseInt(timeInSeconds % 60),
-                };
-            },
-            getSecondsFromTimeObject(timeObject) {
-                const timeInSeconds = timeObject.hours * 3600 + timeObject.minutes * 60 + timeObject.seconds;
-                return timeInSeconds;
-            },
             start() {
                 if (this.paused) {
                     this.resume();
                 } else {
-                    if (this.$refs.activitySelectionForm.isValid()) {
+                    if (this.activitySelectionForm.validate()) {
                         this.formDisabled = true;
                         this.startTimestamp = Date.now();
                         this.timeInputVisible = false;
-                        this.timeRemaining = this.getSecondsFromTimeObject(this.timeInitial);
+                        this.timeRemaining = getSecondsFromTimeObject(this.timeInitial);
                         this.resume();
                     } else {
                         alert('select activity please');
@@ -96,24 +90,23 @@
             },
             resume() {
                 this.paused = false;
-                this.time = this.getTimeObjectFromSeconds(this.timeRemaining);
+                this.time = getTimeObjectFromSeconds(this.timeRemaining);
                 this.intervalId = setInterval(() => {
-                    if (this.timeRemaining == 0) {                        
+                    if (this.timeRemaining == 0) {
                         this.stop();
                     } else {
                         this.timeRemaining--;
-                        this.time = this.getTimeObjectFromSeconds(this.timeRemaining);
+                        this.time = getTimeObjectFromSeconds(this.timeRemaining);
                     }
                 }, 1000);
             },
             stop() {
                 clearInterval(this.intervalId);
-                const timeSpentNice = this.timeRemaining == 0 ? this.getTimeNice(this.timeInitial) 
-                : this.getTimeNice(this.getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
+                const timeSpentNice = this.timeRemaining == 0 ? getTimeNiceFromTimeObject(this.timeInitial) : getTimeNiceFromTimeObject(getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
 
-                let activityName = this.$refs.activitySelectionForm.selectedActivityName;
+                let activityName = this.activitySelectionForm.selectedActivityName;
                 showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
-                this.showSaveDialog(timeSpentNice, activityName);
+                this.saveDialog.open(activityName, timeSpentNice);
             },
             resetTime() {
                 this.time = {
@@ -122,28 +115,22 @@
                     seconds: 0,
                 };
                 this.paused = false;
-                this.intervalId = null;
+                this.intervalId = undefined;
                 this.formDisabled = false;
                 this.timeInputVisible = true;
                 this.timeRemaining = 0;
                 this.startTimestamp = 0;
             },
-            showSaveDialog(timeSpentNice, activityName) {                
-                this.$refs.saveDialog.openDialog(activityName, timeSpentNice);
-            },
             saveActivity() {
-                const timeInSeconds = this.timeRemaining == 0 ? this.timeInitial : this.getElapsedTimeInSeconds();
-                this.$refs.activitySelectionForm.addActivityToHistory(this.getTimeObjectFromSeconds(timeInSeconds), this.startTimestamp);
+                const timeInSeconds = this.timeRemaining == 0 ? getSecondsFromTimeObject(this.timeInitial) : this.getElapsedTimeInSeconds();
+                this.activitySelectionForm.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), this.startTimestamp);
             },
-            updateTimeInitial(timeInitial) {
+            updateTimeInitial(timeInitial: TimeObject) {
                 this.timeInitial = timeInitial;
             },
             getElapsedTimeInSeconds() {
-                return this.getSecondsFromTimeObject(this.timeInitial) - this.getSecondsFromTimeObject(this.time);
-            },
-            getTimeNice(timeObject) {
-                return `${timeObject.hours != 0 ? timeObject.hours + 'h' : ''}${timeObject.minutes != 0 ? timeObject.minutes + 'm' : ''}${timeObject.seconds}s`;
+                return getSecondsFromTimeObject(this.timeInitial) - getSecondsFromTimeObject(this.time);
             },
         },
-    };
+    });
 </script>

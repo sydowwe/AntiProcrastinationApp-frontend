@@ -1,8 +1,9 @@
 <template>
-    <v-select label="Type of time measurment" v-model="selectedTimerType" :items="items"  :clearable="false" @change="redirect()"></v-select>
+    <v-select label="Type of time measurment" v-model="selectedTimerType" :items="items" :clearable="false" @change="redirect()"></v-select>
 </template>
-<script>
-    export default {
+<script lang="ts">
+    import { defineComponent } from 'vue';
+    export default defineComponent({
         props: {
             currentType: {
                 type: String,
@@ -25,5 +26,5 @@
                 //this.$router.push('/' + this.selectedTimerType);
             },
         },
-    };
+    });
 </script>

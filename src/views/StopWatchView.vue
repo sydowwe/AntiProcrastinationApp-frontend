@@ -4,9 +4,9 @@
             <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
                 <TimeDisplay :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
-                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
-                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
-                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === null">Stop</v-btn>
+                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</v-btn>
+                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</v-btn>
+                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Stop</v-btn>
                 </v-row>
                 <hr />
                 <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
@@ -17,13 +17,20 @@
         </v-row>
     </v-container>
 </template>
-
-<script>
+<script lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import TimerTypeSelect from '../components/TimerTypeSelect.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
-    export default {
+    import { TimeObject} from '../classes/TimeUtils';
+    import { DialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    export default defineComponent({
+        setup() {
+            const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+            const saveDialog = ref<DialogType>({} as DialogType);
+            return { activitySelectionForm, saveDialog };
+        },
         components: {
             ActivitySelectionForm,
             TimerTypeSelect,
@@ -36,19 +43,16 @@
                     hours: 0,
                     minutes: 0,
                     seconds: 0,
-                },
+                } as TimeObject,
                 paused: false,
-                intervalId: null,
+                intervalId: undefined as number | undefined,
                 startTimestamp: 0,
                 formDisabled: false,
             };
         },
-        created() {
-            this.intervalId = null;
-        },
         methods: {
             start() {
-                if (this.$refs.activitySelectionForm.isValid()) {
+                if (this.activitySelectionForm.validate()) {
                     this.formDisabled = true;
                     this.paused = false;
                     this.startTimestamp = Date.now();
@@ -75,22 +79,24 @@
             },
             stop() {
                 clearInterval(this.intervalId);
-                this.showSaveDialog(`${this.time.hours != 0 ? this.time.hours + 'h' : ''} ${this.time.minutes != 0 ? this.time.minutes + 'm' : ''} ${this.time.seconds}s`);
-             
+                this.showSaveDialog(`${this.time.hours != 0 ? this.time.hours + 'h' : ''} ${this.time.minutes != 0 ? this.time.minutes + 'm' : ''} ${this.time.seconds}s`);             
             },
             resetTime() {
                 this.time.hours = this.time.minutes = this.time.seconds = 0;
                 this.paused = false;
-                this.intervalId = null;
+                this.intervalId = undefined;
                 this.formDisabled = false;
             },
-            showSaveDialog(timeSpentNice) {
-                let activityName = this.$refs.activitySelectionForm.selectedActivityName;
-                this.$refs.saveDialog.openDialog(activityName, timeSpentNice);               
+            showSaveDialog(timeSpentNice:string) {
+                let activityName = this.activitySelectionForm.selectedActivityName;
+                if(activityName!==undefined){
+                    this.saveDialog.open(activityName, timeSpentNice);
+                }
             },
             saveActivity() {
-                this.$refs.activitySelectionForm.addActivityToHistory(this.time, this.startTimestamp);
+                this.activitySelectionForm.addActivityToHistory(this.time, this.startTimestamp);
             },
         },
-    };
+    });
 </script>
+../classes/TimeUtils

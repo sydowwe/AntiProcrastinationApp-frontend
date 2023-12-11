@@ -9,50 +9,39 @@
     </v-row>
 </template>
 
-<script>
+<script lang="ts">
+    import { defineComponent } from 'vue';
     import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/HistoryRecordItem.vue';
-    export default {
+    import { ActivityRecord } from '../classes/ActivityRecord';
+    import { HistoryFilter } from '../classes/History';
+    export default defineComponent({
         components: { HistoryPanelFilter, HistoryRecordItem },
         data() {
             return {
-                records: [],
-                selectedRole: null,
-                selectedCategory: null,
-                selectedActivity: null,
-                isFromToDoList: false,
-                dateNice: null,
-                hoursBack: 24,
+                records: [] as ActivityRecord[],
+                filter: new HistoryFilter(),
             };
-        },
-        computed: {},
-        created() {
         },
         methods: {
             getAllRecords() {
                 let url = `/history/get-last-x-hours-records`;
-                let data = { date: this.date , hours: this.hoursBack };
+                let data = { date: this.filter.date, hours: this.filter.hoursBack };
                 axios
                     .post(url, data)
                     .then((response) => {
-                        this.records = response.data;
+                        this.records = response.data as ActivityRecord[];
                         console.log(this.records);
                     })
                     .catch((error) => {});
             },
-            handleFilterApplied(filterData) {
-                this.selectedRole = filterData.selectedRole;
-                this.selectedCategory = filterData.selectedCategory;
-                this.selectedActivity = filterData.selectedActivity;
-                this.isFromToDoList = filterData.isFromToDoList;
-                this.date = filterData.date;
-                this.hoursBack = filterData.hoursBack;
+            handleFilterApplied(filterData: HistoryFilter) {
+                this.filter = filterData;
                 this.getAllRecords();
             },
         },
-    };
+    });
 </script>
-
 <style scoped>
     /* .startTime,
     .endTime {

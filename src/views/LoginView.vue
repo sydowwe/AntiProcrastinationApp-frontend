@@ -51,19 +51,23 @@
                     </template>
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
-                    <VBtn color="error" @click="dialog=false">{{ $t('general.close') }}</VBtn>
+                    <VBtn color="error" @click="dialog = false">{{ $t('general.close') }}</VBtn>
                     <VBtn color="primary" v-if="!isError" @click="submit2FA">{{ $t('general.send') }}</VBtn>
                 </VCardActions>
             </VCard>
         </VDialog>
     </VRow>
 </template>
-<script>
+<script lang="ts">
     import VerifyQrCode from '../components/VerifyQrCode.vue';
     import { useUserStore } from '../plugins/stores/user';
-    export default {
-        components: {
-            VerifyQrCode,
+    import { VuetifyFormType, SubmittableType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    export default defineComponent({
+        setup() {
+            const form = ref<VuetifyFormType>({} as VuetifyFormType);
+            const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
+            return { form, verifyQrCode };
         },
         data() {
             return {
@@ -72,8 +76,8 @@
                     password: '',
                     stayLoggedIn: false,
                 },
-                emailRules: [(v) => !!v || this.$t('authorization.emailRequired'), (v) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
-                passwordRules: [(v) => !!v || this.$t('authorization.passwordRequired'), (v) => v.length >= 8 || this.$t('authorization.invalidPasswordLength')],
+                emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
+                passwordRules: [(v: string) => !!v || this.$t('authorization.passwordRequired'), (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength')],
                 showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
@@ -82,10 +86,10 @@
             };
         },
         mounted() {
-            this.formData.email = this.$route.params.email;
+            this.formData.email = this.$route.params.email[0];
         },
         methods: {
-            validateEmail(value) {
+            validateEmail(value: string) {
                 if (value.includes('@')) {
                     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
                     return emailRegex.test(value);
@@ -95,16 +99,15 @@
                     return false;
                 }
             },
-            isRedirectedFromRegistration(){
-                if(this.formData.email){
+            isRedirectedFromRegistration() {
+                if (this.formData.email) {
                     return true;
-                }
-                else{
+                } else {
                     return false;
-                };
+                }
             },
             async validateAndSendForm() {
-                const { valid } = await this.$refs.form.validate();
+                const { valid } = await this.form.validate();
                 if (valid) {
                     axios
                         .post('/user/auth/login', this.formData)
@@ -129,9 +132,9 @@
                         });
                 }
             },
-            submit2FA(){
-                this.$refs.verifyQrCode.submit();
-            }
+            submit2FA() {
+                this.verifyQrCode.submit();
+            },
         },
-    };
+    });
 </script>

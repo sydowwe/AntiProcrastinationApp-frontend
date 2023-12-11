@@ -10,7 +10,7 @@
                     </v-col>
                     <v-col class="bordered bordered-right" cols="12" md="5">
                         <VLabel>Length</VLabel>
-                        <TimePicker @timeChange="updateTime"></TimePicker>
+                        <TimePicker @timeChange="updateLengthOfActivity"></TimePicker>
                     </v-col>
                     <VCol cols="auto">
                         <VBtn @click="saveActivity()" color="success">Add activity to history</VBtn>
@@ -20,12 +20,19 @@
         </v-row>
     </v-container>
 </template>
-<script lang="js">
+<script lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import TimePicker from '../components/TimePicker.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
-    export default {
+    import { TimeObject } from '../classes/TimeUtils';
+    import { ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    export default defineComponent({
+        setup() {
+            const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+            return { activitySelectionForm };
+        },
         components: {
             ActivitySelectionForm,
             SaveActivityDialog,
@@ -35,43 +42,26 @@
         data() {
             return {
                 formDisabled: false,
-                dateTime: '',
+                dateTime: new Date(),
                 lengthOfActivity: {
                     hours: 0,
                     minutes: 0,
                     seconds: 0,
-                },
+                } as TimeObject,
             };
-        },
-        computed: {
-            dateNice() {
-                if (this.datePickerValue) {
-                    const date = new Date(this.datePickerValue);
-                    return date.toLocaleDateString();
-                } else {
-                    return null;
-                }
-            },
-           
-        },
-        watch: {
-        },
+        },     
         methods: {
             saveActivity() {
-                this.$refs.activitySelectionForm.addActivityToHistory(this.lengthOfActivity,this.dateTime);
+                this.activitySelectionForm?.addActivityToHistory(this.lengthOfActivity,this.dateTime.valueOf());
             },
-            updateDateTime(dateTime) {
+            updateDateTime(dateTime: Date) {
                 this.dateTime = dateTime;
             },
-            updateLengthOfActivity(formattedTime){
-                this.lengthOfActivity = formattedTime ?? new {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                };
+            updateLengthOfActivity(formattedTime: TimeObject | undefined){
+                this.lengthOfActivity = formattedTime ?? new TimeObject(0,0,0);
             }
         },
-    };
+    });
 </script>
 <style scoped>
     .bordered{

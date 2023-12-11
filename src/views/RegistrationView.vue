@@ -39,7 +39,7 @@
                 <VCardText>
                     <template v-if="!isError">
                         <div class="d-flex flex-column align-items-center">
-                            <span id="qrPrompt">Scan QR code with google authentificator app: </span>
+                            <span id="qrPrompt">{{ $t('authorization.scan2FAQrCode') }}</span>
                             <img :src="qrCodeImageUrl" alt="QR code for 2fa" />
                         </div>
                     </template>
@@ -48,7 +48,7 @@
                     </template>
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
-                    <VBtn color="error" @click="hideDialog">{{ $t('general.close') }}</VBtn>
+                    <VBtn color="error" @click="dialog=false">{{ $t('general.close') }}</VBtn>
                     <VBtn color="success" @click="goToLogin" v-if="!isError">{{ $t('authorization.goToLogin') }}</VBtn>
                 </VCardActions>
             </VCard>
@@ -56,10 +56,15 @@
     </VRow>
 </template>
 
-<script>
-    import { useUserStore } from '../plugins/stores/user.ts';
-    export default {
-        components: {},
+<script lang="ts">
+    import { useUserStore } from '../plugins/stores/user';
+    import { VuetifyFormType } from '../classes/RefTypeInterfaces';
+    import { defineComponent, ref } from 'vue';
+    export default defineComponent({
+        setup() {
+            const form = ref<VuetifyFormType>({} as VuetifyFormType);
+            return { form };
+        },
         data() {
             return {
                 formData: {
@@ -72,16 +77,16 @@
                 },
                 googleAuthCode: '',
                 termsAndConditions: false,
-                nameRules: [(v) => !!v || this.$t('authorization.nameRequired'), (v) => this.validateName(v) || this.$t('authorization.invalidName')],
-                surnameRules: [(v) => !!v || this.$t('authorization.surnameRequired'), (v) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
-                // usernameRules: [(v) => !!v || this.$t('authorization.usernameRequired'), (v) => this.validateUsername(v) || this.$t('authorization.invalidUsername')],
-                emailRules: [(v) => !!v || this.$t('authorization.emailRequired'), (v) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
+                nameRules: [(v: string) => !!v || this.$t('authorization.nameRequired'), (v: string) => this.validateName(v) || this.$t('authorization.invalidName')],
+                surnameRules: [(v: string) => !!v || this.$t('authorization.surnameRequired'), (v: string) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
+                // usernameRules: [(v: string) => !!v || this.$t('authorization.usernameRequired'), (v: string) => this.validateUsername(v) || this.$t('authorization.invalidUsername')],
+                emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
                 passwordRules: [
-                    (v) => !!v || this.$t('authorization.passwordRequired'),
-                    (v) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
-                    (v) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
+                    (v: string) => !!v || this.$t('authorization.passwordRequired'),
+                    (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
+                    (v: string) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
                 ],
-                termsAndConditionsRules: [(v) => v!==false || this.$t('authorization.termsAndConditionsRequired')],
+                termsAndConditionsRules: [(v: boolean) => v !== false || this.$t('authorization.termsAndConditionsRequired')],
                 showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
@@ -91,15 +96,15 @@
             };
         },
         methods: {
-            validateName(value) {
+            validateName(value: string) {
                 const letterRegex = /^[a-zA-Z ]+$/;
                 return letterRegex.test(value);
             },
-            validateSurname(value) {
+            validateSurname(value: string) {
                 const letterRegex = /^[a-zA-Z ]+$/;
                 return letterRegex.test(value);
             },
-            validateEmail(value) {
+            validateEmail(value: string) {
                 //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
                 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
                 return emailRegex.test(value);
@@ -108,12 +113,12 @@
             //     const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
             //     return alphanumericRegex.test(value);
             // },
-            validatePassword(value) {
+            validatePassword(value: string) {
                 const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
                 return passwordRegex.test(value);
             },
             async validateAndSendForm() {
-                const { valid } = await this.$refs.form.validate();
+                const { valid } = await this.form.validate();
                 if (valid) {
                     console.log(this.formData);
                     axios
@@ -140,16 +145,16 @@
                         });
                 }
             },
-            goToLogin(){
+            goToLogin() {
                 this.$router.push({ name: 'login', params: { email: this.formData.email } });
-            }
+            },
         },
-    };
+    });
 </script>
 <style>
-.v-checkbox > .v-input__details{
-    margin-top: -7px;
-    padding-top: 0px !important;
-    padding-left: 16px;
-}
+    .v-checkbox > .v-input__details {
+        margin-top: -7px;
+        padding-top: 0px !important;
+        padding-left: 16px;
+    }
 </style>
