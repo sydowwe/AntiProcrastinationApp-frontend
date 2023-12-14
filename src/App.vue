@@ -9,7 +9,7 @@
                 <div class="d-flex justify-space-between w-100">
                     <div class="d-flex align-center">
                         <VAppBarTitle class="flex-0-0 mx-3"> AntiProcrastination app </VAppBarTitle>
-                        <template v-if="userStore.getEmail">
+                        <template v-if="userStore.getToken">
                             <RouterLink class="my-auto pa-2" to="/">{{ $t('navigation.home') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/history">{{ $t('navigation.history') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/to-do-list">{{ $t('navigation.toDoList') }}</RouterLink>
@@ -21,12 +21,12 @@
                         </template>
                     </div>
                     <div class="d-flex align-center">
-                        <div v-if="!userStore.getEmail">
+                        <div v-if="!userStore.getToken">
                             <RouterLink class="my-auto pa-2" to="/registration">{{ $t('authorization.registration') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/login">{{ $t('authorization.login') }}</RouterLink>
                         </div>
                         <div v-else>
-                            <VLabel class="ml-3 mr-1">{{ userStore.getEmail }}</VLabel>
+                            <VLabel class="ml-3 mr-1">{{ userStore.email }}</VLabel>
                             <RouterLink class="my-auto pa-2" to="/login" @click="logout">{{ $t('authorization.logOut') }}</RouterLink>
                         </div>
                         <VSelect class="flex-0-0 mx-2" v-model="$i18n.locale" :items="$i18n.availableLocales" density="compact" width="auto" hide-details :clearable="false"> </VSelect>
@@ -53,11 +53,25 @@
                 return useUserStore();
             },
         },
-        mounted() {},
         created(){
-            console.log(this.userStore.getEmail);
+            this.checkTokenValid();
         },
         methods: {
+            checkTokenValid(){                
+                axios
+                    .post(
+                        '/user/auth/checkTokenValidity',
+                        {},                        
+                    )
+                    .then((response) => {
+                        
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        this.userStore.logout();    
+                        this.$router.push({name: "login"});                    
+                    });
+            },
             logout() {
                 axios
                     .post(
@@ -76,6 +90,7 @@
                         console.log(error);
                     });
                     this.userStore.logout();
+                    this.$router.push({name: "login"});
             },
         },
     };

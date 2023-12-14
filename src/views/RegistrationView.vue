@@ -120,7 +120,6 @@
             async validateAndSendForm() {
                 const { valid } = await this.form.validate();
                 if (valid) {
-                    console.log(this.formData);
                     axios
                         .post('/user/auth/register', this.formData)
                         .then((response) => {
@@ -145,7 +144,7 @@
                         });
                 }
             },
-            goToLogin() {
+            goToLogin() {                
                 this.$router.push({ name: 'login', params: { email: this.formData.email } });
             },
         },

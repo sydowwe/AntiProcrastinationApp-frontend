@@ -43,11 +43,7 @@
             return {
                 formDisabled: false,
                 dateTime: new Date(),
-                lengthOfActivity: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
+                lengthOfActivity: new TimeObject(),
             };
         },     
         methods: {

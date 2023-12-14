@@ -8,8 +8,8 @@
                 </div>
             </v-card-text>
             <v-card-actions class="justify-center">
-                <v-btn color="red" @click="closeDialog" >{{ $t('general.cancel') }}</v-btn>
-                <v-btn color="green" @click="saveActivity">Save activity</v-btn>
+                <v-btn color="red" @click="close" >{{ $t('general.cancel') }}</v-btn>
+                <v-btn color="green" @click="saveActivity">{{ $t('activities.saveActivity') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -25,12 +25,12 @@
             };
         },
         methods: {
-            openDialog(activity: string, timeSpent:string) {
+            open(activity: string, timeSpent:string) {
                 this.activity = activity ?? this.activity;
                 this.timeSpent = timeSpent;
                 this.dialog = true;
             },
-            closeDialog() {
+            close() {
                 this.dialog = false;
                 this.$emit('resetTime');
             },

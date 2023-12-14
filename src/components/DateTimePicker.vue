@@ -4,7 +4,7 @@
             <VCol cols="6">
                 <VTextField label="Date" v-model="dateNice"  :clearable="false" readonly hide-details>
                     <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
-                        <VDatePicker v-model:datePickerValue.sync="datePickerValue" :max="Date.now()" title="" @click:cancel="menuValue = false" @click:save="menuValue = false">
+                        <VDatePicker v-model="datePickerValue" :ok-text="$t('general.ok')" :cancel-text="$t('general.cancel')" :max="Date.now()" title="" @click:cancel="menuValue = false" @click:save="menuValue = false">
                             <template v-slot:header></template>
                         </VDatePicker>
                     </VMenu>

@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row justify="center">
             <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
-                <TimeDisplay :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
+                <TimeDisplay :timeObject="time"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
                     <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</v-btn>
                     <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</v-btn>
@@ -39,11 +39,7 @@
         },
         data() {
             return {
-                time: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
+                time: new TimeObject(),
                 paused: false,
                 intervalId: undefined as number | undefined,
                 startTimestamp: 0,
@@ -87,8 +83,10 @@
                 this.intervalId = undefined;
                 this.formDisabled = false;
             },
-            showSaveDialog(timeSpentNice:string) {
+            showSaveDialog(timeSpentNice:string) {                
                 let activityName = this.activitySelectionForm.selectedActivityName;
+                console.log(activityName);
+                
                 if(activityName!==undefined){
                     this.saveDialog.open(activityName, timeSpentNice);
                 }

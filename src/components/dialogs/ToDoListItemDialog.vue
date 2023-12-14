@@ -8,7 +8,7 @@
                <VSelect :label="$t('toDoList.urgency')" v-model="toDoListItem.urgencyId" :clearable="false" hide-details item-title="text" item-value="id" :items="urgencyOptions"></VSelect>
             </v-card-text>
             <v-card-actions class="justify-end px-0">
-                <v-btn color="red" @click="closeDialog" >{{ $t('general.cancel') }}</v-btn>
+                <v-btn color="red" @click="close" >{{ $t('general.cancel') }}</v-btn>
                 <v-btn color="green" @click="save">{{ isEdit ? $t('general.edit') : $t('general.add') }}</v-btn>
             </v-card-actions>
         </v-card>
@@ -41,7 +41,7 @@ import { ToDoListItemDTO } from '../../classes/DTOs/ToDoListItemDTO';
                     .catch((error) => {
                     });
             },
-            openDialog(oldToDoListItem: ToDoListItemDTO | null, id: number | null) {   
+            open(oldToDoListItem: ToDoListItemDTO | null, id: number | null) {   
                 if(oldToDoListItem){                 
                     if(id){
                         this.toDoListItem = oldToDoListItem;
@@ -54,7 +54,7 @@ import { ToDoListItemDTO } from '../../classes/DTOs/ToDoListItemDTO';
                 }                  
                 this.dialog = true;
             },
-            closeDialog() {
+            close() {
                 this.dialog = false;
             },
             save() {

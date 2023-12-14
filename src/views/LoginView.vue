@@ -69,6 +69,9 @@
             const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
             return { form, verifyQrCode };
         },
+        components:{
+            VerifyQrCode
+        },
         data() {
             return {
                 formData: {
@@ -86,7 +89,7 @@
             };
         },
         mounted() {
-            this.formData.email = this.$route.params.email[0];
+            this.formData.email = this.$route.params?.email ? this.$route.params?.email[0] : '';
         },
         methods: {
             validateEmail(value: string) {
@@ -100,7 +103,7 @@
                 }
             },
             isRedirectedFromRegistration() {
-                if (this.formData.email) {
+                if (this.formData.email.length>0) {
                     return true;
                 } else {
                     return false;
@@ -112,7 +115,6 @@
                     axios
                         .post('/user/auth/login', this.formData)
                         .then((response) => {
-                            console.log(response);
                             const userStore = useUserStore();
                             if (response.data?.has2FA) {
                                 this.dialogTitle = this.$t('authorization.twoFA');

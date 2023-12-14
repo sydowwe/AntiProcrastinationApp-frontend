@@ -1,7 +1,7 @@
 <template>
     <v-row justify="center">
-        <v-col cols="12" sm="10" md="10" lg="10">
-            <HistoryPanelFilter @filter-applied="handleFilterApplied"></HistoryPanelFilter>
+        <v-col cols="12" sm="10" md="10" lg="10" class="pt-0 pt-md-2">
+            <HistoryPanelFilter @filterApplied="handleFilterApplied"></HistoryPanelFilter>
             <div v-for="record in records" :key="record.id" class="my-3">
                 <HistoryRecordItem :record="record"></HistoryRecordItem>
             </div>
@@ -31,7 +31,6 @@
                     .post(url, data)
                     .then((response) => {
                         this.records = response.data as ActivityRecord[];
-                        console.log(this.records);
                     })
                     .catch((error) => {});
             },

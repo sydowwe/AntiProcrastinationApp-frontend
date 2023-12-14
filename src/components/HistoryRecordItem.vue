@@ -52,17 +52,16 @@
         },
         methods: {
             getEndOfActivityTime(startTimestamp: Date, length: number) {
-                const endInMillis = startTimestamp.getTime() + length * 1000;
+                const endInMillis = new Date(startTimestamp).getTime() + length * 1000;
                 return new Date(endInMillis);
             },
             getNiceTimestamp(timestamp: Date) {
-                const currentDate = timestamp.toLocaleDateString();
-                const currentTime = timestamp.toLocaleTimeString();
+                const dateTime = new Date(timestamp);
                 if (timestamp !== this.lastDate) {
                     this.lastDate = timestamp;
-                    return timestamp.toLocaleString();
+                    return dateTime.toLocaleString();
                 } else {
-                    return currentTime;
+                    return dateTime.toLocaleTimeString();
                 }
             },
         },

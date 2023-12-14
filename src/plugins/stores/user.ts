@@ -22,7 +22,7 @@ export const useUserStore = defineStore('user', {
       this.email = email;
     },
     logout() {
-      this.$reset();
+      this.$reset();      
     },
   },
 });

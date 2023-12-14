@@ -7,7 +7,7 @@
                         <TimePicker ref="timePicker" @timeChange="updateTimeInitial"></TimePicker>
                     </VCol>
                 </VRow>
-                <TimeDisplay v-else :hours="time.hours" :minutes="time.minutes" :seconds="time.seconds"></TimeDisplay>
+                <TimeDisplay v-else :timeObject="time"></TimeDisplay>
                 <v-row justify="center" class="mt-4 mb-7">
                     <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</v-btn>
                     <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</v-btn>
@@ -47,16 +47,8 @@
         },
         data() {
             return {
-                time: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
-                timeInitial: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
+                time: new TimeObject(),
+                timeInitial: new TimeObject(),
                 timeInputVisible: true,
                 timeRemaining: 0,
                 paused: false,

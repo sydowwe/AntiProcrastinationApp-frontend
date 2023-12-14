@@ -147,6 +147,8 @@ const sk = {
         start: `Začať`,
         pause: `Pozastaviť`,
         stop: `Ukončiť`,
+        saveActivity: `Uložit aktivitu`,
+
         //=========
 
     },

@@ -1,41 +1,39 @@
 <template>
-    <v-container fluid>
-        <v-row class="justify-center my-2" align="center">
-            <v-col cols="12" lg="5" md="6">
-                <v-autocomplete label="Role" v-model="filterData.selectedRole" :items="roleOptions" hide-details></v-autocomplete>
-            </v-col>
-            <v-col cols="12" lg="7" md="6">
-                <v-autocomplete label="Category" v-model="filterData.selectedCategory" :items="categoryOptions" hide-details></v-autocomplete>
-            </v-col>
-        </v-row>
-        <div class="d-flex flex-md-row flex-column-reverse my-md-3">
-            <v-checkbox class="flex-grow-0 pr-md-3 mx-auto mt-2 mt-md-0" label="From to-do list" v-model="filterData.isFromToDoList" hide-details></v-checkbox>
-            <v-autocomplete label="Activity" v-model="filterData.selectedActivity" class="flex-grow-1" :items="activityOptions" hide-details></v-autocomplete>
-        </div>
-        <v-row class="justify-center my-0" align="center">
-            <v-col cols="12" lg="5" md="6">
-                <VTextField label="Date from" v-model="dateNice" :clearable="false" readonly hide-details>
-                    <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
-                        <VDatePicker v-model:filterData.date.sync="filterData.date" :max="Date.now()" title="" @click:cancel="menuValue = false" @click:save="menuValue = false">
-                            <template v-slot:header></template>
-                        </VDatePicker>
-                    </VMenu>
-                </VTextField>
-            </v-col>
-            <v-col cols="12" lg="7" md="6">
-                <v-slider label="Hours back" v-model="filterData.hoursBack" :min="0" :max="72" :step="1" hide-details class="mx-0">
-                    <template v-slot:append>
-                        <VTextField v-model="filterData.hoursBack" :min="0" :max="72" type="number" style="width: 80px" hide-details></VTextField>
-                    </template>
-                </v-slider>
-            </v-col>
-        </v-row>
-        <v-row class="justify-center my-0">
-            <v-col cols="12" lg="4" md="5">
-                <VBtn class="w-100" @click="applyFilter" color="primary">Filter</VBtn>
-            </v-col>
-        </v-row>
-    </v-container>
+    <v-row class="justify-center my-2" align="center">
+        <v-col cols="12" lg="5" md="6">
+            <v-autocomplete label="Role" v-model="filterData.selectedRole" :items="roleOptions" hide-details></v-autocomplete>
+        </v-col>
+        <v-col cols="12" lg="7" md="6">
+            <v-autocomplete label="Category" v-model="filterData.selectedCategory" :items="categoryOptions" hide-details></v-autocomplete>
+        </v-col>
+    </v-row>
+    <div class="d-flex flex-md-row flex-column-reverse my-md-3">
+        <v-checkbox class="flex-grow-0 pr-md-3 mx-auto mt-2 mt-md-0" label="From to-do list" v-model="filterData.isFromToDoList" hide-details></v-checkbox>
+        <v-autocomplete label="Activity" v-model="filterData.selectedActivity" class="flex-grow-1" :items="activityOptions" hide-details></v-autocomplete>
+    </div>
+    <v-row class="justify-center my-0" align="center">
+        <v-col cols="12" lg="5" md="6">
+            <VTextField label="Date from" v-model="dateNice" :clearable="false" readonly hide-details>
+                <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
+                    <VDatePicker v-model="filterData.date" :max="Date.now()" title="" @click:cancel="menuValue = false" @click:save="menuValue = false" :multiple="false">
+                        <template v-slot:header></template>
+                    </VDatePicker>
+                </VMenu>
+            </VTextField>
+        </v-col>
+        <v-col cols="12" lg="7" md="6" class="d-flex flex-column flex-md-row">
+            <VLabel>Hours back</VLabel>
+            <div class="d-flex flex-1-0 align-center">
+                <v-slider class="flex-1-0 mx-2 mx-md-4" v-model="filterData.hoursBack" :min="0" :max="72" :step="1" hide-details></v-slider>
+                <VTextField class="flex-0-1" v-model="filterData.hoursBack" :min="0" :max="72" type="number" :clearable="false" hide-details></VTextField>
+            </div>
+        </v-col>
+    </v-row>
+    <v-row class="justify-center my-0">
+        <v-col cols="12" lg="4" md="5">
+            <VBtn class="w-100" @click="applyFilter" color="primary">Filter</VBtn>
+        </v-col>
+    </v-row>
 </template>
 
 <script lang="ts">
@@ -49,7 +47,6 @@
         components: {
             VDatePicker,
         },
-        props: {},
         data() {
             return {
                 filterData: new HistoryFilter(),
@@ -69,7 +66,7 @@
         },
         computed: {
             dateNice() {
-                if (this.filterData.date) {
+                if (this.filterData.date) {                    
                     return this.filterData.date.toLocaleDateString();
                 } else {
                     return null;
@@ -120,11 +117,11 @@
                 }
             },
             applyFilter() {
-                this.$emit('filter-applied', this.filterData);
+                this.$emit('filterApplied', this.filterData);
             },
         },
         emits: {
-            'filter-applied': (filterData: HistoryFilter) => true,
+            filterApplied: (filterData: HistoryFilter) => true,
         },
     });
 </script>

@@ -30,16 +30,16 @@
             </VRow>
         </VForm>
         <ContentDialog ref="addRoleDialog" title="Add new role" confirmBtnLabel="Create" @confirmed="createRole()">
-            <v-text-field label="Name" v-model="newRole?.name" :rules="customRoleRules"></v-text-field>
-            <VTextarea label="Text" v-model="newRole?.text" :rules="customRoleRules"></VTextarea>
+            <v-text-field label="Name" v-model="newRole.name" :rules="customRoleRules"></v-text-field>
+            <VTextarea label="Text" v-model="newRole.text" :rules="customRoleRules"></VTextarea>
             <VLabel>Color</VLabel>
-            <VColorPicker label="Color" v-model="newRole?.color" hide-inputs></VColorPicker>
+            <VColorPicker label="Color" v-model="newRole.color" hide-inputs></VColorPicker>
         </ContentDialog>
         <ContentDialog ref="addCategoryDialog" title="Add new category" confirmBtnLabel="Create" @confirmed="createCategory()">
-            <v-text-field label="Name" v-model="newCategory?.name" :rules="customCategoryRules"></v-text-field>
-            <VTextarea label="Text" v-model="newCategory?.text" :rules="customCategoryRules"></VTextarea>
+            <v-text-field label="Name" v-model="newCategory.name" :rules="customCategoryRules"></v-text-field>
+            <VTextarea label="Text" v-model="newCategory.text" :rules="customCategoryRules"></VTextarea>
             <VLabel>Color</VLabel>
-            <VColorPicker v-model="newCategory?.color" hide-inputs></VColorPicker>
+            <VColorPicker v-model="newCategory.color" hide-inputs></VColorPicker>
         </ContentDialog>
         <v-row justify="center">
             <v-dialog v-model="dialog" persistent max-width="512">
@@ -56,7 +56,7 @@
                 </v-card>
             </v-dialog>
         </v-row>
-        <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000" location="center">
+        <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="2000" location="center center">
             {{ snackbarMessage }}
         </v-snackbar>
     </VContainer>
@@ -92,8 +92,8 @@
                     isObligatory: false,
                     isOnToDoList: false,
                 },
-                newRole: null as null | Role,
-                newCategory: null as null | Category,
+                newRole: {} as Role,
+                newCategory: {} as Category,
                 roleOptions: [] as Role[],
                 categoryOptions: [] as Category[],
                 dialog: false,
@@ -109,7 +109,6 @@
                 .post('/role/get-all')
                 .then((response) => {
                     this.roleOptions = response.data as Role[];
-                    console.log(response);
                 })
                 .catch((error) => {
                     console.error(error);
@@ -148,10 +147,11 @@
                 axios
                     .post('/activity/create', this.formData)
                     .then((response) => {
-                        console.log(response);
+                        this.reset();
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new activity';
                         this.snackbarColor = 'success';
+                        this.dialog = false;
                     })
                     .catch((error) => {
                         console.error('Form submission error', error);
@@ -161,7 +161,6 @@
                 axios
                     .post('/role/create', this.newRole)
                     .then((response) => {
-                        console.log(response);
                         this.roleOptions.push(response.data as Role);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new role';
@@ -175,7 +174,6 @@
                 axios
                     .post('/category/create', this.newCategory)
                     .then((response) => {
-                        console.log(response);
                         this.categoryOptions.push(response.data as Category);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new category';
@@ -188,10 +186,8 @@
         },
         watch: {
             'formData.roleId'(newValue) {
-                console.log(newValue);
             },
             'formData.categoryId'(newValue) {
-                console.log(newValue);
             },
         },
     });

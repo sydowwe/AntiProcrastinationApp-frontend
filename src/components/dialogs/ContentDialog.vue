@@ -6,7 +6,7 @@
                 <slot></slot>
             </v-card-text>
             <v-card-actions class="justify-center">
-                <VBtn variant="elevated" color="red" @click="closeDialog()">{{ $t('cancel') }}</VBtn>
+                <VBtn variant="elevated" color="red" @click="close()">{{ $t('general.cancel') }}</VBtn>
                 <VBtn variant="elevated" color="green" @click="confirmed()" >{{confirmBtnLabel}}</VBtn>
             </v-card-actions>
         </v-card>
@@ -19,7 +19,7 @@
             title: String,
             confirmBtnLabel: {
                 type: String,
-                default: 'Save',
+                requrired: true
             },
         },
         data() {
@@ -28,10 +28,10 @@
             };
         },       
         methods: {
-            openDialog() {
+            open() {
                 this.dialog = true;
             },
-            closeDialog() {
+            close() {
                 this.dialog = false;
             },
             confirmed() {

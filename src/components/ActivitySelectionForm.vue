@@ -29,9 +29,7 @@
     import { defineComponent } from 'vue';
     import { TimeObject } from '../classes/TimeUtils';
     import { UrgencyEntity } from '../classes/UrgencyEntity';
-    import { Role } from '../classes/DTOs/Role';
-    import { Category } from '../classes/DTOs/Category';
-    import { Activity } from '../classes/DTOs/Activity';
+import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
     export default defineComponent({
         props: {
             formDisabled: {
@@ -46,11 +44,11 @@
                 taskUrgencyOptions: [] as UrgencyEntity[],
                 isFromToDoList: false,
                 selectedRoleId: null as number | null,
-                roleOptions: [] as Role[],
+                roleOptions: [] as IdLabelOption[],
                 selectedCategoryId: null as number | null,
-                categoryOptions: [] as Category[],
+                categoryOptions: [] as IdLabelOption[],
                 selectedActivityId: null as number | null,
-                activityOptions: [] as Activity[],
+                activityOptions: [] as IdLabelOption[],
             };
         },
         created() {
@@ -60,27 +58,23 @@
             this.populateSelects('activityOptions', '/activity/get-all');
         },
         computed: {
-            selectedActivityIdName() {
+            selectedActivityName() {
                 let name =
-                    this.activityOptions.find((item) => {
-                        return item.id === this.selectedActivityId;
-                    })?.name ?? null;
+                    this.activityOptions.find((item) => item.id === this.selectedActivityId)?.label ?? undefined;
                 return name;
             },
         },
         watch: {
             selectedRoleId(newValue) {
-                console.log(newValue);
                 this.updateCategoriesAndActivities();
             },
             selectedCategoryId(newValue) {
-                console.log(newValue);
                 this.updateRolesAndActivities();
             },
             selectedActivityId(newValue) {},
         },
         methods: {
-            isValid() {
+            validate() {
                 return this.selectedActivityId != null ? true : false;
             },
             populateSelects(dataKey: string, url: string) {

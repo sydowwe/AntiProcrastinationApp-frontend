@@ -43,16 +43,8 @@
         },
         data() {
             return {
-                alarmTime: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
-                timeInitial: {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                } as TimeObject,
+                alarmTime: new TimeObject(),
+                timeInitial: new TimeObject(),
                 timeInputVisible: true,
                 timeRemaining: 0,
                 paused: false,

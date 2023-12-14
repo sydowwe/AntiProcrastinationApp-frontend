@@ -147,6 +147,7 @@ const en = {
         start: `Start`,
         pause: `Pause`,
         stop: `Stop`,
+        saveActivity: `Save activity`,
         //=========
     },   
     authorization: {
