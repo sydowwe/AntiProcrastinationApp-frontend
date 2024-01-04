@@ -1,12 +1,19 @@
 <template>
-    <v-row justify="center">
-        <v-col cols="12" sm="10" md="10" lg="10" class="pt-0 pt-md-2">
+    <VRow justify="center">
+        <VCol cols="10" sm="8" md="10" lg="8" class="pt-0 pt-md-2">
             <HistoryPanelFilter @filterApplied="handleFilterApplied"></HistoryPanelFilter>
-            <div v-for="record in records" :key="record.id" class="my-3">
-                <HistoryRecordItem :record="record"></HistoryRecordItem>
-            </div>
-        </v-col>
-    </v-row>
+        </VCol>
+        <VCol cols="12" class="pt-md-0 px-sm-6 px-md-8 px-lg-10">
+            <VRow justify="center">
+                <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
+                    <HistoryRecordItem class="my-2 my-md-3 w-100" :record="record" v-for="record in records.slice(0, records.length / 2 + 1)" :key="record.id"></HistoryRecordItem>
+                </VCol>
+                <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
+                    <HistoryRecordItem class="my-2 my-md-3 w-100" :record="record" v-for="record in records.slice(records.length / 2 + 1)" :key="record.id"></HistoryRecordItem>
+                </VCol>
+            </VRow>
+        </VCol>
+    </VRow>
 </template>
 
 <script lang="ts">
@@ -23,30 +30,22 @@
                 filter: new HistoryFilter(),
             };
         },
+        created() {
+            this.getAllRecords();
+        },
         methods: {
             getAllRecords() {
-                let url = `/history/get-last-x-hours-records`;
-                let data = { date: this.filter.date, hours: this.filter.hoursBack };
+                let url = `/history/get-all`;
                 axios
-                    .post(url, data)
+                    .post(url)
                     .then((response) => {
-                        this.records = response.data as ActivityRecord[];
+                        this.records = response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item));
                     })
                     .catch((error) => {});
             },
-            handleFilterApplied(filterData: HistoryFilter) {
-                this.filter = filterData;
-                this.getAllRecords();
+            handleFilterApplied(records: ActivityRecord[]) {
+                this.records = records;
             },
         },
     });
 </script>
-<style scoped>
-    /* .startTime,
-    .endTime {
-    } */
-    .line {
-        border-width: 2px;
-        min-width: 1rem !important;
-    }
-</style>

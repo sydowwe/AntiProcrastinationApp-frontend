@@ -119,6 +119,9 @@ const en = {
         iAgreeTo: 'I agree to the',
         name: `Name`,
         text: `Text`,
+        continue: `Continue`,
+        done: `Done`,
+
     },
     dateTime:{
         when: `When`,
@@ -149,6 +152,7 @@ const en = {
         stop: `Stop`,
         saveActivity: `Save activity`,
         //=========
+        enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,
     },   
     authorization: {
         logOut: `Log out`,
@@ -159,6 +163,11 @@ const en = {
         registration: `Registration`,
         password: `Password`,
         forgotPassword: `Forgot password?`,
+        enterEmailToResetPassword: `Enter your email to which a temporary password will be sent`,
+        resetPassword: `Reset password`,
+        temporarryPasswordSent: `To your email, we've sent a temporary password which you can use to log in and then change to your desired one`,
+        passwordReset: `Password reset`,
+
         email: `Email`,
         // username: `Username`,
         // usernameOrEmail: `@:authorization.username / @:authorization.email`,
@@ -170,6 +179,7 @@ const en = {
         // usernameOrEmailRequired: 'Username or Email is required',
         emailRequired: 'Email is required',
         invalidEmail: 'Invalid email format',
+        emailNotFound: `The user with this email doesn't exist.`,
         // usernameRequired: 'Username is required',
         // invalidUsername: 'Username can only include letters, numbers, underscores(_), dots(.) or hyphens(-)',
         passwordRequired: 'Password is required',
@@ -183,16 +193,28 @@ const en = {
         stayLoggedIn: 'Stay logged in?',
         termsAndConditions: 'Terms and conditions',
         termsAndConditionsRequired: `Must accept before proceeding`,
-        use2FA: 'Do you want to use google 2 factor authentication?',
+        use2FASetup: 'Do you want to use google 2 factor authentication?',
         scan2FAQrCode: `Scan the QR code in your authentication app (Google Authenticator)`,
-        twoFA: `Two factor authorization`,
-        code: `Code(number only)`,
+        twoFA: `Two factor authentication`,
+        code: `Code`,
         code2FA: `Code from your authenticator application (Google Authenticator)`,
+        verifyYour2FA: `Verify your two factor authentication`,
     },
     toDoList:{
         add: 'Add',
         toDoList: 'To-do list',
         urgency: `Urgency`,
+    },
+    user: {
+        userSettings: `User settings`,
+        changePassword: `Change password`,
+        deleteAccount: `Delete account`,
+        newPassword: `New password`,
+        confirmNewPassword: `Confirm new password`,
+        passwordChange: `Password change`,
+        use2FA: `Use two-factor authentication`,
+        toContinueEnterPassword: `To continue enter your password`,
+        show2FAQrCode: `Show 2FA qr code`,
     }
 }
 export default en

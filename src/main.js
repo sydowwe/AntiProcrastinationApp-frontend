@@ -9,15 +9,15 @@ const pinia = createPinia();
 pinia.use((context) => {
     const storeId = context.store.$id;
     const fromStorage = JSON.parse(window.sessionStorage.getItem(storeId));
-  
+
     if (fromStorage) {
-      context.store.$patch(fromStorage);
+        context.store.$patch(fromStorage);
     }
-  
+
     context.store.$subscribe((mutation, state) => {
-      window.sessionStorage.setItem(storeId, JSON.stringify(state));
+        window.sessionStorage.setItem(storeId, JSON.stringify(state));
     });
-  });
+});
 app.use(pinia);
 
 
@@ -35,10 +35,16 @@ app.use(router);
 
 // AXIOS
 import axios from 'axios';
-import { useUserStore } from './plugins/stores/user';
+import { useUserStore } from './plugins/stores/userStore';
 const authStore = useUserStore();
+
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8080',  
+    baseURL: 'http://localhost:8080/api',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+    responseType: 'json'
 });
 axiosInstance.interceptors.request.use((config) => {
     if(authStore.getToken){
@@ -46,7 +52,11 @@ axiosInstance.interceptors.request.use((config) => {
     }
     return config;
   });
+  axiosInstance.defaults.headers.common = {
+    "Content-Type": "application/json"
+  }
 window.axios = axiosInstance;
+// window.axios.defaults.headers.common['Content-Type'] = "application/json";
 
 
 // I18N INTERNATIONALIZATION
@@ -100,10 +110,10 @@ export const vuetify = createVuetify({
         defaultSet: 'fa',
         aliases,
         sets: {
-            fa,            
+            fa,
         },
     },
-    aliases:{
+    aliases: {
     },
     defaults: {
         VCardActions: {
@@ -119,7 +129,7 @@ export const vuetify = createVuetify({
     },
     theme: {
         defaultTheme: 'dark',
-        theme:'dark',
+        theme: 'dark',
         themes: {
             dark: {
                 primary: '#5b42fc',

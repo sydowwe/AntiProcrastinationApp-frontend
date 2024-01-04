@@ -119,6 +119,8 @@ const sk = {
         iAgreeTo: 'Súhlasím s',
         name: `Názov`,
         text: `Text`,
+        continue: `Pokračovať`,
+        done: `Hotovo`,
     },
     dateTime:{
         when: `Kedy`,
@@ -150,7 +152,7 @@ const sk = {
         saveActivity: `Uložit aktivitu`,
 
         //=========
-
+        enableNotificationsInWindows: `V systéme Windows prejdite na Nastavenia > Systém > Oznámenia a akcie > V sekcii Získať oznámenia a akcie od týchto odosielateľov vyberte Google Chrome.`,
     },
     authorization: {
         logOut: `Odhlásiť sa`,
@@ -160,6 +162,11 @@ const sk = {
         register: `Registrovať sa`,
         registration: `Registrácia`,
         forgotPassword: `Zabudli ste heslo?`,
+        enterEmailToResetPassword: `Zadajte svoj email na ktorý vám bude zaslané dočasné heslo`,
+        resetPassword: `Obnoviť heslo`,
+        temporarryPasswordSent: `Na váš e-mail sme poslali dočasné heslo, ktoré môžete použiť na prihlásenie a neskôr si ho zmeniť na žiadané heslo`,
+        passwordReset: `Password reset`,
+
         password: `Heslo`,
         email: `Email`,
         // username: `Používateľské meno`, 
@@ -172,6 +179,7 @@ const sk = {
         // usernameOrEmailRequired: 'Používateľské meno alebo email je povinné',
         emailRequired: 'Email je povinný',
         invalidEmail: 'Neplatný formát emailu',
+        emailNotFound: 'Užívateľ so zadaným emailom neexistuje',
         // usernameRequired: 'Používateľské meno je povinné',
         // invalidUsername: 'Používateľské meno môže obsahovať len písmená, čísla, podtržník(_), bodku(.) alebo pomlčku(-)',
         passwordRequired: 'Heslo je povinné',
@@ -185,16 +193,28 @@ const sk = {
         stayLoggedIn: 'Zostať prihlásený?',
         termsAndConditions: 'Všeobecnými obchodnými podmienkami',
         termsAndConditionsRequired: `Pred pokračovaním musíte súhlasiť`,
-        use2FA: 'Prajete si pridať google dvojfaktorové overenie?',
+        use2FASetup: 'Prajete si pridať google dvojfaktorové overenie?',
         scan2FAQrCode: `Naskenujte QR kód vo vašej overovacej aplikácii (Google authenicator)`,
         twoFA: `Dvojfaktorové overenie`,
         code: `Kód`,
         code2FA: `Kód z vašej overovacej aplikácie (Google Authenticator)`,
+        verifyYour2FA: `Potvrďte svoje dvojfaktorové overenie`,
+
     },
     toDoList:{
         add: 'Pridať',
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
+    },
+    user: {
+        userSettings: `Uživateľské nastavenia`,
+        changePassword: `Zmeniť heslo`,
+        deleteAccount: `Vymazať účet`,
+        newPassword: `Nové heslo`,
+        confirmNewPassword: `Potvrďte nové heslo`,
+        passwordChange: `Zmena hesla`,
+        use2FA: `Použiť dvojfaktorové overenie`,
+        toContinueEnterPassword: `Pre pokračovanie zadajte heslo`,
     }
 }
 export default sk;

@@ -53,9 +53,9 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
         },
         created() {
             this.populateSelects('taskUrgencyOptions', '/urgency/get-all');
-            this.populateSelects('roleOptions', '/role/get-all');
-            this.populateSelects('categoryOptions', '/category/get-all');
-            this.populateSelects('activityOptions', '/activity/get-all');
+            this.populateSelects('roleOptions', '/role/get-all-options');
+            this.populateSelects('categoryOptions', '/category/get-all-options');
+            this.populateSelects('activityOptions', '/activity/get-all-options');
         },
         computed: {
             selectedActivityName() {
@@ -90,27 +90,27 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
             updateRolesAndActivities() {
                 this.selectedActivityId = null;
                 if (this.selectedCategoryId) {
-                    this.populateSelects('roleOptions', `/role/get-by-category/${this.selectedCategoryId}`);
+                    this.populateSelects('roleOptions', `/role/get-options-by-category/${this.selectedCategoryId}`);
                     this.updateActivitiesBy('category');
                 } else {
-                    this.populateSelects('roleOptions', '/role/get-all');
-                    this.populateSelects('activityOptions', '/activity/get-all');
+                    this.populateSelects('roleOptions', '/role/get-all-options');
+                    this.populateSelects('activityOptions', '/activity/get-all-options');
                 }
             },
             updateCategoriesAndActivities() {
                 this.selectedActivityId = null;
                 if (this.selectedRoleId) {
-                    this.populateSelects('categoryOptions', `/category/get-by-role/${this.selectedRoleId}`);
+                    this.populateSelects('categoryOptions', `/category/get-options-by-role/${this.selectedRoleId}`);
                     this.updateActivitiesBy('role');
                 } else {
-                    this.populateSelects('categoryOptions', '/category/get-all');
-                    this.populateSelects('activityOptions', '/activity/get-all');
+                    this.populateSelects('categoryOptions', '/category/get-all-options');
+                    this.populateSelects('activityOptions', '/activity/get-all-options');
                 }
             },
             updateActivitiesBy(byWhat: string) {
                 this.selectedActivityId = null;
                 if (this.selectedCategoryId || this.selectedRoleId) {
-                    this.populateSelects('activityOptions', `/activity/get-by-${byWhat === 'category' ? 'category/' + this.selectedCategoryId : 'role/' + this.selectedRoleId}`);
+                    this.populateSelects('activityOptions', `/activity/get-options-by-${byWhat === 'category' ? 'category/' + this.selectedCategoryId : 'role/' + this.selectedRoleId}`);
                 } else {
                     this.activityOptions = [];
                 }

@@ -26,7 +26,7 @@
                             <RouterLink class="my-auto pa-2" to="/login">{{ $t('authorization.login') }}</RouterLink>
                         </div>
                         <div v-else>
-                            <VLabel class="ml-3 mr-1">{{ userStore.email }}</VLabel>
+                            <RouterLink class="ml-3 mr-1 my-auto pa-2 bg-blue-grey" to="/user-settings">{{ userStore.getEmail }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/login" @click="logout">{{ $t('authorization.logOut') }}</RouterLink>
                         </div>
                         <VSelect class="flex-0-0 mx-2" v-model="$i18n.locale" :items="$i18n.availableLocales" density="compact" width="auto" hide-details :clearable="false"> </VSelect>
@@ -43,8 +43,10 @@
     </v-app>
 </template>
 <script>
-    import { useUserStore } from './plugins/stores/user';
-    export default {
+    import { useUserStore } from './plugins/stores/userStore';
+    import { defineComponent } from 'vue';
+
+    export default defineComponent({
         data() {
             return {};
         },
@@ -53,23 +55,18 @@
                 return useUserStore();
             },
         },
-        created(){
-            this.checkTokenValid();
+        created() {
+            // this.checkTokenValid();
         },
         methods: {
-            checkTokenValid(){                
+            checkTokenValid() {
                 axios
-                    .post(
-                        '/user/auth/checkTokenValidity',
-                        {},                        
-                    )
-                    .then((response) => {
-                        
-                    })
+                    .post('/user/auth/checkTokenValidity', {})
+                    .then((response) => {})
                     .catch((error) => {
                         console.log(error);
-                        this.userStore.logout();    
-                        this.$router.push({name: "login"});                    
+                        this.userStore.logout();
+                        this.$router.push({ name: 'login' });
                     });
             },
             logout() {
@@ -83,19 +80,16 @@
                             },
                         }
                     )
-                    .then((response) => {
-                        
-                    })
+                    .then((response) => {})
                     .catch((error) => {
                         console.log(error);
                     });
-                    this.userStore.logout();
-                    this.$router.push({name: "login"});
+                this.userStore.logout();
+                this.$router.push({ name: 'login' });
             },
         },
-    };
+    });
 </script>
-
 <style scoped>
     header {
         line-height: 1.5;
@@ -159,3 +153,4 @@
         }
     }
 </style>
+./plugins/stores/userStore

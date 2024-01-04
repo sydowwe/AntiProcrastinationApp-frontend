@@ -5,7 +5,6 @@
             <VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
                 <VTextField class="mb-3" :label="$t('authorization.name')" v-model="formData.name" :rules="nameRules" autofocus></VTextField>
                 <VTextField class="mb-3" :label="$t('authorization.surname')" v-model="formData.surname" :rules="surnameRules"></VTextField>
-                <!-- <VTextField class="mb-3" :label="$t('authorization.username')" v-model="formData.username" :rules="usernameRules"></VTextField> -->
                 <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules"></VTextField>
                 <VTextField
                     :label="$t('authorization.password')"
@@ -15,7 +14,7 @@
                     :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
                 ></VTextField>
-                <VCheckbox :label="$t('authorization.use2FA')" v-model="formData.use2FA" hide-details></VCheckbox>
+                <VCheckbox :label="$t('authorization.use2FASetup')" v-model="formData.use2FA" hide-details></VCheckbox>
                 <VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
                     <template v-slot:label>
                         {{ $t('general.iAgreeTo') }}&nbsp;
@@ -32,45 +31,33 @@
                 </VRow>
             </VForm>
         </VCol>
-
-        <VDialog v-model="dialog" width="auto" persistent>
-            <VCard>
-                <VCardTitle class="center">{{ dialogTitle }}</VCardTitle>
-                <VCardText>
-                    <template v-if="!isError">
-                        <div class="d-flex flex-column align-items-center">
-                            <span id="qrPrompt">{{ $t('authorization.scan2FAQrCode') }}</span>
-                            <img :src="qrCodeImageUrl" alt="QR code for 2fa" />
-                        </div>
-                    </template>
-                    <template v-else>
-                        {{ errorMessage }}
-                    </template>
-                </VCardText>
-                <VCardActions class="d-flex justify-end mr-2 mb-2">
-                    <VBtn color="error" @click="dialog=false">{{ $t('general.close') }}</VBtn>
-                    <VBtn color="success" @click="goToLogin" v-if="!isError">{{ $t('authorization.goToLogin') }}</VBtn>
-                </VCardActions>
-            </VCard>
-        </VDialog>
+        <QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImageUrl="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
+        <ErrorDialog ref="errorDialog" :title="errodDialogTitle" :message="errorDialogMessage"></ErrorDialog>
     </VRow>
 </template>
 
 <script lang="ts">
-    import { useUserStore } from '../plugins/stores/user';
-    import { VuetifyFormType } from '../classes/RefTypeInterfaces';
+    import { useUserStore } from '../plugins/stores/userStore';
+    import { VuetifyFormType, DialogType } from '../classes/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
+    import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
+    import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
     export default defineComponent({
+        components: {
+            QrCodeFor2FADialog,
+            ErrorDialog,
+        },
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            return { form };
+            const qrCode2FADialog = ref<DialogType>({} as DialogType);
+            const errorDialog = ref<DialogType>({} as DialogType);
+            return { form, qrCode2FADialog, errorDialog };
         },
         data() {
             return {
                 formData: {
                     name: '',
                     surname: '',
-                    // username: '',
                     email: '',
                     password: '',
                     use2FA: true,
@@ -79,7 +66,6 @@
                 termsAndConditions: false,
                 nameRules: [(v: string) => !!v || this.$t('authorization.nameRequired'), (v: string) => this.validateName(v) || this.$t('authorization.invalidName')],
                 surnameRules: [(v: string) => !!v || this.$t('authorization.surnameRequired'), (v: string) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
-                // usernameRules: [(v: string) => !!v || this.$t('authorization.usernameRequired'), (v: string) => this.validateUsername(v) || this.$t('authorization.invalidUsername')],
                 emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
                 passwordRules: [
                     (v: string) => !!v || this.$t('authorization.passwordRequired'),
@@ -88,11 +74,11 @@
                 ],
                 termsAndConditionsRules: [(v: boolean) => v !== false || this.$t('authorization.termsAndConditionsRequired')],
                 showPassword: false,
-                dialogTitle: 'Dialog',
-                dialog: false,
-                qrCodeImageUrl: '',
-                isError: false,
-                errorMessage: '',
+
+                qrCodeImage: '',
+
+                errodDialogTitle: 'Dialog',
+                errorDialogMessage: '',
             };
         },
         methods: {
@@ -127,11 +113,12 @@
                             if (response.data?.email) {
                                 userStore.setEmail(response.data.email);
                                 if (response.data?.has2FA) {
-                                    const qrCode = response.data.qrCode;
-                                    this.isError = false;
-                                    this.qrCodeImageUrl = `data:image/png;base64,${response.data.qrCode}`;
-                                    this.dialogTitle = this.$t('authorization.twoFA');
-                                    this.dialog = true;
+                                    if (response.data.qrCode) {
+                                        this.qrCodeImage = response.data.qrCode;
+                                        this.qrCode2FADialog.open();
+                                    } else {
+                                        console.error('No qrCode!!!');
+                                    }
                                 } else {
                                     this.goToLogin();
                                 }
@@ -144,7 +131,7 @@
                         });
                 }
             },
-            goToLogin() {                
+            goToLogin() {
                 this.$router.push({ name: 'login', params: { email: this.formData.email } });
             },
         },

@@ -6,7 +6,7 @@
                     <VCol cols="12" lg="6" md="8" sm="10">
                         <DateTimePicker ref="timePicker" @timeChange="updateTimeInitial"></DateTimePicker>
                     </VCol>
-                </VRow>
+                </VRow>                
                 <v-row justify="center" class="mt-4 mb-7">
                     <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
                     <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
@@ -26,13 +26,13 @@
     import DateTimePicker from '../components/DateTimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import { TimeObject, getTimeObjectFromSeconds, getSecondsFromTimeObject, getTimeNiceFromTimeObject } from '../classes/TimeUtils';
-    import { DialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
 
     export default defineComponent({
         setup() {
             const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-            const saveDialog = ref<DialogType>({} as DialogType);
+            const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
             return { activitySelectionForm, saveDialog };
         },
         components: {

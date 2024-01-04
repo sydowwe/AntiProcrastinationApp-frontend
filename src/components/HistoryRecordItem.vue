@@ -1,19 +1,19 @@
 <template lang="">
     <div class="d-flex">
-        <div class="d-flex flex-column align-end justify-space-between">
-            <div class="d-flex align-center w-100">
+        <div class="flex-0-1 d-flex flex-column justify-space-between">
+            <div class="d-flex align-center justify-end w-100">
                 <VSheet class="startTime pa-1" rounded="lg" :elevation="15" color="green-darken-4">{{ formattedStartTimestamp(record) }}</VSheet>
                 <hr class="line" />
             </div>
             <div class="d-flex justify-end w-100">
                 <VSheet class="length pa-1" rounded :elevation="15" color="teal-accent-4">{{ formattedLength(record) }}</VSheet>
             </div>
-            <div class="d-flex align-center w-100">
+            <div class="d-flex align-center justify-end w-100">
                 <VSheet class="endTime pa-1" color="indigo-darken-3" rounded="lg" :elevation="15">{{ formattedEndTimestamp(record) }}</VSheet>
                 <hr class="line" />
             </div>
         </div>
-        <v-card class="elevation-2">
+        <v-card class="elevation-2 flex-1-0">
             <v-card-title class="headline">{{ record.activity.name }}</v-card-title>
             <v-card-subtitle>{{ record.activity.role.name }}</v-card-subtitle>
             <v-card-text>
@@ -33,6 +33,10 @@
                 type: ActivityRecord,
                 required: true,
             },
+        },
+        created(){
+            console.log(typeof this.record.activity);
+            
         },
         data() {
             return {
@@ -67,4 +71,9 @@
         },
     });
 </script>
-<style lang=""></style>
+<style scoped>
+.line {
+    border-width: 2px;
+    min-width: 1rem !important;
+}
+</style>

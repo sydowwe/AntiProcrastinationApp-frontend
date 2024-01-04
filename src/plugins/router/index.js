@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '../stores/user';
+import { useUserStore } from '../stores/userStore';
 import HomeView from '../../views/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
 import StopWatchView from '../../views/StopWatchView.vue'
@@ -12,6 +12,7 @@ import LoginView from '../../views/LoginView.vue'
 import RegistrationView from '../../views/RegistrationView.vue'
 import ForgottenPasswordView from '../../views/ForgottenPasswordView.vue'
 import TermsAndConditionsView from '../../views/TermsAndConditionsView.vue'
+import UserSettingsView from '../../views/UserSettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,8 +39,13 @@ const router = createRouter({
     },
     {
       path: '/forgotten-password',
-      name: 'forgottenPasswordView',
+      name: 'forgottenPassword',
       component: ForgottenPasswordView
+    },
+    {
+      path: '/user-settings',
+      name: 'userSettings',
+      component: UserSettingsView
     },
     {
       path: '/history',

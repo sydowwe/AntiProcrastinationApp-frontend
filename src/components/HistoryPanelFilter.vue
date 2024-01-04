@@ -1,39 +1,47 @@
 <template>
-    <v-row class="justify-center my-2" align="center">
-        <v-col cols="12" lg="5" md="6">
-            <v-autocomplete label="Role" v-model="filterData.selectedRole" :items="roleOptions" hide-details></v-autocomplete>
-        </v-col>
-        <v-col cols="12" lg="7" md="6">
-            <v-autocomplete label="Category" v-model="filterData.selectedCategory" :items="categoryOptions" hide-details></v-autocomplete>
-        </v-col>
-    </v-row>
-    <div class="d-flex flex-md-row flex-column-reverse my-md-3">
+    <VRow class="justify-center my-2" align="center">
+        <VCol cols="12" lg="5" md="6">
+            <v-autocomplete label="Role" v-model="filterData.roleId" :items="roleOptions" hide-details></v-autocomplete>
+        </VCol>
+        <VCol cols="12" lg="7" md="6">
+            <v-autocomplete label="Category" v-model="filterData.categoryId" :items="categoryOptions" hide-details></v-autocomplete>
+        </VCol>
+    </VRow>
+    <div class="d-flex flex-md-row flex-column-reverse my-3 mb-2 mb-md-3">
         <v-checkbox class="flex-grow-0 pr-md-3 mx-auto mt-2 mt-md-0" label="From to-do list" v-model="filterData.isFromToDoList" hide-details></v-checkbox>
-        <v-autocomplete label="Activity" v-model="filterData.selectedActivity" class="flex-grow-1" :items="activityOptions" hide-details></v-autocomplete>
+        <v-autocomplete label="Activity" v-model="filterData.activityId" class="flex-grow-1" :items="activityOptions" hide-details></v-autocomplete>
     </div>
-    <v-row class="justify-center my-0" align="center">
-        <v-col cols="12" lg="5" md="6">
-            <VTextField label="Date from" v-model="dateNice" :clearable="false" readonly hide-details>
-                <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
-                    <VDatePicker v-model="filterData.date" :max="Date.now()" title="" @click:cancel="menuValue = false" @click:save="menuValue = false" :multiple="false">
+    <div class="d-flex flex-column flex-md-row mb-3">
+        <div class="flex-1-0 d-flex align-center mb-3 mb-md-0 mt-md-3">
+            <VTextField class="flex-1-0" :label="$t('history.dateFrom')" v-model="dateFromNice" clearable @click:clear="clearDateFrom" readonly hide-details>
+                <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateFromPicker" transition="scale-transition" style="width: fit-content !important">
+                    <VDatePicker v-model="filterData.dateFrom" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateFrom" @click:save="showDateFromPicker = false" :multiple="false">
                         <template v-slot:header></template>
                     </VDatePicker>
                 </VMenu>
             </VTextField>
-        </v-col>
-        <v-col cols="12" lg="7" md="6" class="d-flex flex-column flex-md-row">
-            <VLabel>Hours back</VLabel>
+            <VCheckbox class="flex-0-1 mx-2 mx-md-3" v-model="dateRange" :label="$t('history.dateRange')" hide-details density="compact"></VCheckbox>
+        </div>
+        <VTextField class="mt-3" v-if="dateRange" :label="$t('history.dateTo')" v-model="dateToNice" clearable @click:clear="clearDateTo" readonly hide-details>
+            <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateToPicker" transition="scale-transition" style="width: fit-content !important">
+                <VDatePicker v-model="filterData.dateTo" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateTo" @click:save="showDateToPicker = false" :multiple="false">
+                    <template v-slot:header></template>
+                </VDatePicker>
+            </VMenu>
+        </VTextField>
+        <div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
             <div class="d-flex flex-1-0 align-center">
-                <v-slider class="flex-1-0 mx-2 mx-md-4" v-model="filterData.hoursBack" :min="0" :max="72" :step="1" hide-details></v-slider>
-                <VTextField class="flex-0-1" v-model="filterData.hoursBack" :min="0" :max="72" type="number" :clearable="false" hide-details></VTextField>
+                <VTextField class="flex-0-1" v-model="filterData.hoursBack" :min="2" :max="72" type="number" :clearable="false" hide-details></VTextField>
+                <VLabel class="ml-2">{{$t('history.hoursBack')}}</VLabel>
+                <v-slider class="flex-1-0 mx-2" v-model="filterData.hoursBack" :min="2" :max="72" :step="1" hide-details></v-slider>
             </div>
-        </v-col>
-    </v-row>
-    <v-row class="justify-center my-0">
-        <v-col cols="12" lg="4" md="5">
+        </div>
+    </div>
+    <VRow class="justify-center my-0">
+        <VCol cols="12" lg="4" md="5">
             <VBtn class="w-100" @click="applyFilter" color="primary">Filter</VBtn>
-        </v-col>
-    </v-row>
+        </VCol>
+    </VRow>
 </template>
 
 <script lang="ts">
@@ -43,6 +51,8 @@
     import { Role } from '../classes/DTOs/Role';
     import { Category } from '../classes/DTOs/Category';
     import { Activity } from '../classes/DTOs/Activity';
+    import { ActivityRecord } from '../classes/ActivityRecord';
+
     export default defineComponent({
         components: {
             VDatePicker,
@@ -53,21 +63,29 @@
                 roleOptions: [] as Role[],
                 categoryOptions: [] as Category[],
                 activityOptions: [] as Activity[],
-                menuValue: false,
+                showDateFromPicker: false,
+                showDateToPicker: false,
+                dateRange: true,
             };
         },
         created() {
-            this.populateSelects('roleOptions', '/role/get-all');
-            this.populateSelects('categoryOptions', '/category/get-all');
-            this.populateSelects('activityOptions', '/activity/get-all');
+            this.populateSelects('roleOptions', '/role/get-all-options');
+            this.populateSelects('categoryOptions', '/category/get-all-options');
+            this.populateSelects('activityOptions', '/activity/get-all-options');
         },
         mounted() {
-            this.applyFilter();
         },
         computed: {
-            dateNice() {
-                if (this.filterData.date) {                    
-                    return this.filterData.date.toLocaleDateString();
+            dateFromNice() {
+                if (this.filterData.dateFrom) {
+                    return this.filterData.dateFrom.toLocaleDateString();
+                } else {
+                    return null;
+                }
+            },
+            dateToNice() {
+                if (this.filterData.dateTo) {
+                    return this.filterData.dateTo.toLocaleDateString();
                 } else {
                     return null;
                 }
@@ -88,6 +106,14 @@
             },
         },
         methods: {
+            clearDateFrom() {
+                this.filterData.dateFrom = null;
+                this.showDateFromPicker = false;
+            },
+            clearDateTo() {
+                this.filterData.dateTo = null;
+                this.showDateToPicker = false;
+            },
             populateSelects(dataKey: string, url: string) {
                 axios
                     .post(url)
@@ -99,29 +125,40 @@
                     });
             },
             updateCategoriesAndActivities() {
-                this.filterData.selectedCategory = null;
-                this.filterData.selectedActivity = null;
-                if (this.filterData.selectedRole) {
-                    this.populateSelects('categoryOptions', `/category/get-by-role/${this.filterData.selectedRole}`);
+                this.filterData.categoryId = null;
+                this.filterData.activityId = null;
+                if (this.filterData.roleId) {
+                    this.populateSelects('categoryOptions', `/category/get-options-by-role/${this.filterData.roleId}`);
                 } else {
                     this.categoryOptions = [];
                     this.activityOptions = [];
                 }
             },
             updateActivities() {
-                this.filterData.selectedActivity = null;
-                if (this.filterData.selectedCategory) {
-                    this.populateSelects('activityOptions', `/activity/get-by-category/${this.filterData.selectedCategory}`);
+                this.filterData.activityId = null;
+                if (this.filterData.categoryId) {
+                    this.populateSelects('activityOptions', `/activity/get-options-by-category/${this.filterData.categoryId}`);
                 } else {
                     this.activityOptions = [];
                 }
             },
             applyFilter() {
-                this.$emit('filterApplied', this.filterData);
+                let filter = { ...this.filterData };
+                if(!filter.dateFrom || filter.dateTo){
+                    filter.hoursBack = null;
+                }
+                console.log(this.filterData);
+                console.log(filter);
+                axios
+                    .post(`/history/filter`, filter)
+                    .then((response) => {
+                        this.$emit('filterApplied', response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item)));
+                    })
+                    .catch((error) => {});
             },
         },
         emits: {
-            filterApplied: (filterData: HistoryFilter) => true,
+            filterApplied: (records: ActivityRecord[]) => true,
         },
     });
 </script>

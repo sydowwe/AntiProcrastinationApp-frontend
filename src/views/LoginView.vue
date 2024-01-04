@@ -39,12 +39,12 @@
             </VForm>
         </VCol>
 
-        <VDialog v-model="dialog" width="auto" persistent>
+        <VDialog v-model="dialog" width="small" persistent>
             <VCard>
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
                 <VCardText>
                     <template v-if="!isError && formData.email">
-                        <VerifyQrCode :email="formData.email" :stayLoggedIn="formData.stayLoggedIn" ref="verifyQrCode"></VerifyQrCode>
+                        <LoginVerifyQrCode :email="formData.email" ref="verifyQrCode"></LoginVerifyQrCode>
                     </template>
                     <template v-else>
                         {{ errorMessage }}
@@ -52,25 +52,25 @@
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
                     <VBtn color="error" @click="dialog = false">{{ $t('general.close') }}</VBtn>
-                    <VBtn color="primary" v-if="!isError" @click="submit2FA">{{ $t('general.send') }}</VBtn>
                 </VCardActions>
             </VCard>
         </VDialog>
     </VRow>
 </template>
 <script lang="ts">
-    import VerifyQrCode from '../components/VerifyQrCode.vue';
-    import { useUserStore } from '../plugins/stores/user';
+    import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
+    import { useUserStore } from '../plugins/stores/userStore';
     import { VuetifyFormType, SubmittableType } from '../classes/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
+    import { UserStoreItem } from '../classes/DTOs/User';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
             const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
             return { form, verifyQrCode };
         },
-        components:{
-            VerifyQrCode
+        components: {
+            LoginVerifyQrCode,
         },
         data() {
             return {
@@ -91,19 +91,18 @@
         mounted() {
             this.formData.email = this.$route.params?.email ? this.$route.params?.email[0] : '';
         },
+        computed: {
+            userStore() {
+                return useUserStore();
+            },
+        },
         methods: {
             validateEmail(value: string) {
-                if (value.includes('@')) {
-                    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-                    return emailRegex.test(value);
-                } else {
-                    // const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
-                    // return alphanumericRegex.test(value);
-                    return false;
-                }
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                return emailRegex.test(value);
             },
             isRedirectedFromRegistration() {
-                if (this.formData.email.length>0) {
+                if (this.formData.email.length > 0) {
                     return true;
                 } else {
                     return false;
@@ -115,27 +114,28 @@
                     axios
                         .post('/user/auth/login', this.formData)
                         .then((response) => {
-                            const userStore = useUserStore();
-                            if (response.data?.has2FA) {
-                                this.dialogTitle = this.$t('authorization.twoFA');
-                                this.isError = false;
-                                this.dialog = true;
-                            } else {
-                                if (response.data?.token) {
-                                    userStore.login(response.data.email, response.data.token);
-                                    this.$router.push('/');
-                                } else {
-                                    console.error('No token!!!');
+                            if (response.data) {                                
+                                const user = response.data as UserStoreItem;
+                                this.userStore.setUser(user);
+                                if (response.data.has2FA) {
+                                    this.dialogTitle = this.$t('authorization.twoFA');
+                                    this.isError = false;
+                                    this.dialog = true;
+                                } else {                                    
+                                    if (user.token) {
+                                        this.$router.push('/');
+                                    } else {
+                                        console.error('No token!!!');
+                                    }
                                 }
+                            } else {
+                                console.error('No user!!!');
                             }
                         })
                         .catch((error) => {
                             console.log(error);
                         });
                 }
-            },
-            submit2FA() {
-                this.verifyQrCode.submit();
             },
         },
     });

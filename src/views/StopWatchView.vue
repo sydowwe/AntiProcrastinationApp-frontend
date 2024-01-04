@@ -23,12 +23,12 @@
     import TimeDisplay from '../components/TimeDisplay.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import { TimeObject} from '../classes/TimeUtils';
-    import { DialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
     export default defineComponent({
         setup() {
             const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-            const saveDialog = ref<DialogType>({} as DialogType);
+            const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
             return { activitySelectionForm, saveDialog };
         },
         components: {

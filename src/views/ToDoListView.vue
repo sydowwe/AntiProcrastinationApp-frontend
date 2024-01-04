@@ -52,11 +52,11 @@
                     .catch((error) => {});
             },
             openAddDialog() {
-                (this.$refs.toDoListItemDialog as { openDialog(editedToDoListItem: ToDoListItemDTO | null): () => void }).openDialog(null);
+                (this.$refs.toDoListItemDialog as { open(editedToDoListItem: ToDoListItemDTO | null): () => void }).open(null);
             },
             openEditDialog(editedToDoListItem: ToDoListItemEntity) {
                 let toDoListItemDTO = ToDoListItemDTO.fromEntity(editedToDoListItem);
-                (this.$refs.toDoListItemDialog as { openDialog(editedToDoListItem: ToDoListItemDTO | null, id: number): () => void }).openDialog(toDoListItemDTO, editedToDoListItem.id);
+                (this.$refs.toDoListItemDialog as { open(editedToDoListItem: ToDoListItemDTO | null, id: number): () => void }).open(toDoListItemDTO, editedToDoListItem.id);
             },
             add(toDoListItem: ToDoListItemDTO) {
                 window.axios

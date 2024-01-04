@@ -68,6 +68,7 @@
     import { defineComponent, ref } from 'vue';
     import { Role } from '../classes/DTOs/Role';
     import { Category } from '../classes/DTOs/Category';
+import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -94,8 +95,8 @@
                 },
                 newRole: {} as Role,
                 newCategory: {} as Category,
-                roleOptions: [] as Role[],
-                categoryOptions: [] as Category[],
+                roleOptions: [] as IdLabelOption[],
+                categoryOptions: [] as IdLabelOption[],
                 dialog: false,
                 roleIdRules: [(v: number | null) => !!v || 'Role is required'],
                 customRoleRules: [(v: string) => !!v || 'Custom role is required'],
@@ -106,17 +107,17 @@
         },
         created() {
             axios
-                .post('/role/get-all')
+                .post('/role/get-all-options')
                 .then((response) => {
-                    this.roleOptions = response.data as Role[];
+                    this.roleOptions = response.data as IdLabelOption[];
                 })
                 .catch((error) => {
                     console.error(error);
                 });
             axios
-                .post('/category/get-all')
+                .post('/category/get-all-options')
                 .then((response) => {
-                    this.categoryOptions = response.data as Category[];
+                    this.categoryOptions = response.data as IdLabelOption[];
                 })
                 .catch((error) => {
                     console.error(error);
@@ -161,7 +162,7 @@
                 axios
                     .post('/role/create', this.newRole)
                     .then((response) => {
-                        this.roleOptions.push(response.data as Role);
+                        this.roleOptions.push(response.data as IdLabelOption);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new role';
                         this.snackbarColor = 'success';
@@ -174,7 +175,7 @@
                 axios
                     .post('/category/create', this.newCategory)
                     .then((response) => {
-                        this.categoryOptions.push(response.data as Category);
+                        this.categoryOptions.push(response.data as IdLabelOption);
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new category';
                         this.snackbarColor = 'success';

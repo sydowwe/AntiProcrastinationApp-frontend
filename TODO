@@ -1,20 +1,19 @@
-Historia - dorobit filtrovanie podla activity,categorie role, todolist
+todolist fix zapisovanie !!
 
 Google Sign in
 
-zabudnute heslo 
-
-todolist fix zapisovanie !!
-
 prerobit celu databazu aj s UserId
 
-user settings - aspon zakladne
+spravit notifikacie poriadne
 
-spravit server http
-    spravit notifikacie
+ALARM dorobit
 
+pridat loadingy na vsetky stranky
+
+dorobit EmailService 
 
 ====future plans====
+
 pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
 
 pridat planovanie ako rozvrh aby som si mohol naplanovat dennu rutinu atd
