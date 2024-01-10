@@ -1,4 +1,5 @@
 import { TimeObject } from './TimeUtils';
+import { ToDoListItemRequest } from './ToDoListItemEntity';
 export interface VuetifyFormType {
     validate(): Promise<{ valid: boolean }>;
 }
@@ -11,6 +12,9 @@ export interface DialogType{
 }
 export interface ActivityDialogType{
     open(activityName:string, timeSpentNice:string): void; 
+}
+export interface ToDoListItemDialog {
+    open(oldToDoListItem: ToDoListItemRequest, id: number): void; 
 }
 export interface DialogFormType extends DialogType, FormType{
 

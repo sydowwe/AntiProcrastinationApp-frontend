@@ -23,17 +23,18 @@
             };
         },
         watch: {
+
             time: {
                 handler(newTime:TimeObject) {
-                    const formattedTime = {
-                        hours: newTime.hours,
-                        minutes: newTime.minutes,
-                        seconds: newTime.seconds,
-                    };
-                    this.$emit('timeChange', formattedTime);
+                    this.$emit('timeChange', newTime);
                 },
                 deep: true,
             },
+        },
+        methods:{
+            get(){
+                return this.time;
+            }
         },
         emits: ['timeChange'],
     });

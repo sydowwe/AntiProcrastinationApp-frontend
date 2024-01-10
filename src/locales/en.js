@@ -134,7 +134,10 @@ const en = {
         minute: `Minute`,
         second: `Second`,
         dateFrom: `Date from`,
-        howManyHoursBack: `How many hours back`
+        dateTo: `Date to`,
+        howManyHoursBack: `How many hours back`,
+        dateRange: `Date range`,
+        hoursBack: `Hours back`,
     },    
     activities:{
         role: `Role`,

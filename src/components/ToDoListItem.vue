@@ -1,5 +1,5 @@
 <template>
-    <v-list-item :base-color="toDoListItem.urgency.color">
+    <v-list-item :base-color="toDoListItem.urgency.color" class="align-center">
         <template v-slot:prepend="{ isActive }">
             <v-list-item-action start>
                 <v-checkbox-btn :model-value="isActive" base-color="white" color="white"></v-checkbox-btn>
@@ -58,7 +58,6 @@
                 this.$emit('edit', this.toDoListItem);
             },
             delete() {
-                console.log(this.toDoListItem.id);
                 this.$emit('delete', this.toDoListItem.id);
             },
             select() {

@@ -45,30 +45,39 @@
                 dateTime: new Date(),
                 lengthOfActivity: new TimeObject(),
             };
-        },     
+        },
         methods: {
             saveActivity() {
-                this.activitySelectionForm?.addActivityToHistory(this.lengthOfActivity,this.dateTime.valueOf());
+                if (this.dateTime.valueOf() <= Date.now()) {
+                    if (this.lengthOfActivity.isNotZero()) {
+                        this.activitySelectionForm?.addActivityToHistory(this.lengthOfActivity, this.dateTime.valueOf());
+                    } else {
+                        alert("length not set")
+                        //TODO warn length not set
+                    }
+                } else {
+                    //TODO Really wanna add activity in future
+                }
             },
             updateDateTime(dateTime: Date) {
                 this.dateTime = dateTime;
             },
-            updateLengthOfActivity(formattedTime: TimeObject | undefined){
-                this.lengthOfActivity = formattedTime ?? new TimeObject(0,0,0);
-            }
+            updateLengthOfActivity(formattedTime: TimeObject | undefined) {
+                this.lengthOfActivity = formattedTime ?? new TimeObject(0, 0, 0);
+            },
         },
     });
 </script>
 <style scoped>
-    .bordered{
-        border: 1px solid white;        
+    .bordered {
+        border: 1px solid white;
         border-collapse: collapse;
         padding: 10px 20px;
     }
-    .bordered-left{
+    .bordered-left {
         border-radius: 5px 0px 0px 5px;
     }
-    .bordered-right{
+    .bordered-right {
         border-radius: 0px 5px 5px 0px;
     }
 </style>

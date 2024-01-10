@@ -158,6 +158,7 @@
                         .then((response) => {
                             console.log(response);
                             this.userStore.logout();
+                            this.$router.push({ name: 'registration' });
                         })
                         .catch((error) => {
                             console.log(error);

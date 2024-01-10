@@ -1,7 +1,8 @@
+//TODO fix
 <template>
     <v-container>
         <v-row align="center" justify="center">
-            <v-col cols="2" v-for="(value, key) in computedTimeValues" :key="key">
+            <v-col cols="2" v-for="(value, key) in timeObject" :key="key">
                 <v-card class="time-card">
                     <v-card-text class="text-center">
                         <span class="time-value">{{ formatTime(value) }}</span>
@@ -20,7 +21,6 @@ import { TimeObject } from '../classes/TimeUtils';
         props: {
             timeObject: {
                 type: TimeObject,
-                default: new TimeObject(),
                 required: true
             },           
         },
@@ -32,12 +32,7 @@ import { TimeObject } from '../classes/TimeUtils';
                     seconds: 'S',
                 },
             };
-        },
-        computed: {
-            computedTimeValues() {
-                return this.timeObject;
-            },
-        },
+        },      
         methods: {
             formatTime(time:number) {
                 if (isNaN(time) || time < 0) {

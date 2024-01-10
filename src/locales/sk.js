@@ -133,7 +133,11 @@ const sk = {
         minute: `Minúta`,
         second: `Sekunda`,
         dateFrom: `Dátum od`,
-        howManyHoursBack: `Koľko hodín späť`
+        dateTo: `Dátum do`,
+        howManyHoursBack: `Koľko hodín späť`,
+        dateRange: `Rozmedzie dátumov`,
+        hoursBack: `Hodín späť`,
+
     }, 
     activities:{
         role: `Role`,

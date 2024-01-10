@@ -12,19 +12,9 @@
         <v-autocomplete label="Activity" v-model="filterData.activityId" class="flex-grow-1" :items="activityOptions" hide-details></v-autocomplete>
     </div>
     <div class="d-flex flex-column flex-md-row mb-3">
-        <div class="flex-1-0 d-flex align-center mb-3 mb-md-0 mt-md-3">
-            <VTextField class="flex-1-0" :label="$t('history.dateFrom')" v-model="dateFromNice" clearable @click:clear="clearDateFrom" readonly hide-details>
-                <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateFromPicker" transition="scale-transition" style="width: fit-content !important">
-                    <VDatePicker v-model="filterData.dateFrom" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateFrom" @click:save="showDateFromPicker = false" :multiple="false">
-                        <template v-slot:header></template>
-                    </VDatePicker>
-                </VMenu>
-            </VTextField>
-            <VCheckbox class="flex-0-1 mx-2 mx-md-3" v-model="dateRange" :label="$t('history.dateRange')" hide-details density="compact"></VCheckbox>
-        </div>
-        <VTextField class="mt-3" v-if="dateRange" :label="$t('history.dateTo')" v-model="dateToNice" clearable @click:clear="clearDateTo" readonly hide-details>
-            <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateToPicker" transition="scale-transition" style="width: fit-content !important">
-                <VDatePicker v-model="filterData.dateTo" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateTo" @click:save="showDateToPicker = false" :multiple="false">
+        <VTextField v-if="dateRange" class="mt-3" :label="$t('history.dateFrom')" v-model="dateFromNice" clearable @click:clear="clearDateFrom" readonly hide-details>
+            <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateFromPicker" transition="scale-transition" style="width: fit-content !important">
+                <VDatePicker v-model="filterData.dateFrom" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateFrom" @click:save="showDateFromPicker = false" :multiple="false">
                     <template v-slot:header></template>
                 </VDatePicker>
             </VMenu>
@@ -32,9 +22,19 @@
         <div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
             <div class="d-flex flex-1-0 align-center">
                 <VTextField class="flex-0-1" v-model="filterData.hoursBack" :min="2" :max="72" type="number" :clearable="false" hide-details></VTextField>
-                <VLabel class="ml-2">{{$t('history.hoursBack')}}</VLabel>
+                <VLabel class="ml-2">{{ $t('dateTime.hoursBack') }}</VLabel>
                 <v-slider class="flex-1-0 mx-2" v-model="filterData.hoursBack" :min="2" :max="72" :step="1" hide-details></v-slider>
             </div>
+        </div>
+        <div class="flex-1-0 d-flex align-center mb-3 mb-md-0 mt-md-3">
+            <VCheckbox class="flex-0-1 mx-2 mx-md-3" v-model="dateRange" :label="$t('dateTime.dateRange')" hide-details density="compact"></VCheckbox>
+            <VTextField class="flex-1-0"  :label="$t('dateTime.dateTo')" v-model="dateToNice" clearable @click:clear="clearDateTo" readonly hide-details>
+                <VMenu activator="parent" lazy :close-on-content-click="false" v-model="showDateToPicker" transition="scale-transition" style="width: fit-content !important">
+                    <VDatePicker v-model="filterData.dateTo" :max="Date.now()" title="" cancel-text="Clear" @click:cancel="clearDateTo" @click:save="showDateToPicker = false" :multiple="false">
+                        <template v-slot:header></template>
+                    </VDatePicker>
+                </VMenu>
+            </VTextField>
         </div>
     </div>
     <VRow class="justify-center my-0">
@@ -65,7 +65,7 @@
                 activityOptions: [] as Activity[],
                 showDateFromPicker: false,
                 showDateToPicker: false,
-                dateRange: true,
+                dateRange: false,
             };
         },
         created() {
@@ -73,8 +73,7 @@
             this.populateSelects('categoryOptions', '/category/get-all-options');
             this.populateSelects('activityOptions', '/activity/get-all-options');
         },
-        mounted() {
-        },
+        mounted() {},
         computed: {
             dateFromNice() {
                 if (this.filterData.dateFrom) {
@@ -144,17 +143,23 @@
             },
             applyFilter() {
                 let filter = { ...this.filterData };
-                if(!filter.dateFrom || filter.dateTo){
+
+                if (this.dateRange) {
                     filter.hoursBack = null;
+                } else {
+                    filter.dateTo = null;
                 }
-                console.log(this.filterData);
-                console.log(filter);
                 axios
                     .post(`/history/filter`, filter)
                     .then((response) => {
-                        this.$emit('filterApplied', response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item)));
+                        this.$emit(
+                            'filterApplied',
+                            response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item))
+                        );
                     })
-                    .catch((error) => {});
+                    .catch((error) => {
+                        console.log(error);
+                    });
             },
         },
         emits: {

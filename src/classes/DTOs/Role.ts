@@ -1,9 +1,9 @@
 export class Role {
   constructor(
-    public id: number | null,
-    public name : string | null,
-    public text: string | null,
-    public color: string | null,
-    public icon: string | null,
+    public id: number = 0,
+    public name : string = '',
+    public text: string | null = null,
+    public color: string | null = null,
+    public icon: string | null = null,
   ) {}
   }

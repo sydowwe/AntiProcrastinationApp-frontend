@@ -1,8 +1,7 @@
 <template>
-    <VContainer fluid>
-        <VForm ref="form" class="mt-5">
-            <VRow justify="center">
-                <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-10 pa-md-8 pa-sm-6 pa-5">
+        <VForm ref="form" class="mt-5">            
+            <VRow justify="center" no-gutters>
+                <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-8 pa-md-8 pa-sm-6 pa-5">
                     <v-label>Role</v-label>
                     <VRow no-gutters>
                         <v-autocomplete v-model="formData.roleId" :items="roleOptions" item-title="label" item-value="id" :rules="roleIdRules"></v-autocomplete>
@@ -18,7 +17,7 @@
                         <v-text-field v-model="formData.activity" :rules="activityRules"></v-text-field>
                         <VBtn class="ml-2" icon="$info" color="primary"></VBtn>
                     </VRow>
-                    <v-textarea label="Activity description" v-model="formData.description"></v-textarea>
+                    <v-textarea class="my-3" label="Activity description" v-model="formData.description" hide-details></v-textarea>
                     <VRow no-gutters>
                         <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatory" hide-details></v-checkbox>
                         <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" hide-details></v-checkbox>
@@ -59,7 +58,6 @@
         <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="2000" location="center center">
             {{ snackbarMessage }}
         </v-snackbar>
-    </VContainer>
 </template>
 <script lang="ts">
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
@@ -166,6 +164,7 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new role';
                         this.snackbarColor = 'success';
+                        this.newRole = new Role();
                     })
                     .catch((error) => {
                         console.error('Form submission error', error);
@@ -179,6 +178,7 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
                         this.showSnackbar = true;
                         this.snackbarMessage = 'Succesfully created new category';
                         this.snackbarColor = 'success';
+                        this.newCategory = new Category();
                     })
                     .catch((error) => {
                         console.error('Form submission error', error);
