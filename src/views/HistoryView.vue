@@ -1,5 +1,5 @@
 <template>
-    <VRow justify="center">
+    <VRow justify="center" noGutters>
         <VCol cols="10" sm="8" md="10" lg="8" class="pt-0 pt-md-2">
             <HistoryPanelFilter @filterApplied="handleFilterApplied"></HistoryPanelFilter>
         </VCol>
@@ -20,13 +20,13 @@
     import { defineComponent } from 'vue';
     import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/HistoryRecordItem.vue';
-    import { ActivityRecord } from '../classes/ActivityRecord';
+    import { HistoryRecord } from '../classes/HistoryRecord';
     import { HistoryFilter } from '../classes/History';
     export default defineComponent({
         components: { HistoryPanelFilter, HistoryRecordItem },
         data() {
             return {
-                records: [] as ActivityRecord[],
+                records: [] as HistoryRecord[],
                 filter: new HistoryFilter(),
             };
         },
@@ -39,13 +39,14 @@
                 axios
                     .post(url)
                     .then((response) => {
-                        this.records = response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item));
+                        this.records = HistoryRecord.listFromObjects(response.data);
                     })
                     .catch((error) => {});
             },
-            handleFilterApplied(records: ActivityRecord[]) {
+            handleFilterApplied(records: HistoryRecord[]) {
                 this.records = records;
             },
         },
     });
 </script>
+../classes/HistoryRecord

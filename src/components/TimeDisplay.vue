@@ -1,28 +1,26 @@
 //TODO fix
 <template>
-    <v-container>
-        <v-row align="center" justify="center">
-            <v-col cols="2" v-for="(value, key) in timeObject" :key="key">
-                <v-card class="time-card">
-                    <v-card-text class="text-center">
-                        <span class="time-value">{{ formatTime(value) }}</span>
-                        <span class="time-label">{{ timeLabels[key] }}</span>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-        </v-row>
-    </v-container>
+    <VRow align="center" justify="center" noGutters>
+        <VCol cols="2" v-for="(value, key) in timeObject" :key="key">
+            <VCard class="time-card">
+                <VCardText class="text-center">
+                    <span class="time-value">{{ formatTime(value) }}</span>
+                    <span class="time-label">{{ timeLabels[key] }}</span>
+                </VCardText>
+            </VCard>
+        </VCol>
+    </VRow>
 </template>
 
 <script lang="ts">
     import { defineComponent } from 'vue';
-import { TimeObject } from '../classes/TimeUtils';
+    import { TimeObject } from '../classes/TimeUtils';
     export default defineComponent({
         props: {
             timeObject: {
                 type: TimeObject,
-                required: true
-            },           
+                required: true,
+            },
         },
         data() {
             return {
@@ -32,12 +30,12 @@ import { TimeObject } from '../classes/TimeUtils';
                     seconds: 'S',
                 },
             };
-        },      
+        },
         methods: {
-            formatTime(time:number) {
+            formatTime(time: number) {
                 if (isNaN(time) || time < 0) {
                     return '00';
-                }              
+                }
                 return Math.floor(time).toString().padStart(2, '0');
             },
         },

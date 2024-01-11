@@ -4,7 +4,7 @@ export class HistoryFilter{
         public roleId = null as number | null,
         public categoryId = null as number | null,
         public isFromToDoList = false as boolean | null,
-        public dateFrom = undefined as Date | null,
+        public dateFrom = null as Date | null,
         public dateTo = new Date() as Date | null,
         public hoursBack = 24 as number | null
       ){

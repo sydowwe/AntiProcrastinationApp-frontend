@@ -19,7 +19,7 @@
             qrCodeImage: {
                 type: String,
                 required: true,
-                default: null,
+                default: '',
             },
         },
         data() {

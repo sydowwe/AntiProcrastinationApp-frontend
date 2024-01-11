@@ -31,21 +31,24 @@
                 </VRow>
             </VForm>
         </VCol>
-        <QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImageUrl="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
+        <QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
         <ErrorDialog ref="errorDialog" :title="errodDialogTitle" :message="errorDialogMessage"></ErrorDialog>
+        <LoadingFullscreen :show="loading"></LoadingFullscreen>
     </VRow>
 </template>
 
 <script lang="ts">
     import { useUserStore } from '../plugins/stores/userStore';
-    import { VuetifyFormType, DialogType } from '../classes/RefTypeInterfaces';
+    import { VuetifyFormType, DialogType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
     import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
     import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
+    import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
     export default defineComponent({
         components: {
             QrCodeFor2FADialog,
             ErrorDialog,
+            LoadingFullscreen
         },
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -76,6 +79,8 @@
                 showPassword: false,
 
                 qrCodeImage: '',
+
+                loading: false,
 
                 errodDialogTitle: 'Dialog',
                 errorDialogMessage: '',
@@ -132,7 +137,7 @@
                 }
             },
             goToLogin() {
-                this.$router.push({ name: 'login', params: { email: this.formData.email } });
+                this.$router.push({ name: 'login' });
             },
         },
     });
@@ -144,3 +149,4 @@
         padding-left: 16px;
     }
 </style>
+../classes/types/RefTypeInterfaces

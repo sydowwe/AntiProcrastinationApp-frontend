@@ -1,21 +1,18 @@
 <template>
-    <v-container fluid>
-        <v-row justify="center">
+        <VRow justify="center">
             <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
                 <TimeDisplay :timeObject="time"></TimeDisplay>
-                <v-row justify="center" class="mt-4 mb-7">
-                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</v-btn>
-                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</v-btn>
-                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Stop</v-btn>
-                </v-row>
+                <VRow justify="center" class="mt-4 mb-7">
+                    <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</VBtn>
+                    <VBtn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</VBtn>
+                    <VBtn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Stop</VBtn>
+                </VRow>
                 <hr />
                 <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
                 <!-- <TimerTypeSelect current-type="stopwatch"></TimerTypeSelect> -->
-
                 <SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTime()"></SaveActivityDialog>
             </v-col>
-        </v-row>
-    </v-container>
+        </VRow>
 </template>
 <script lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
@@ -23,7 +20,7 @@
     import TimeDisplay from '../components/TimeDisplay.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import { TimeObject} from '../classes/TimeUtils';
-    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
     export default defineComponent({
         setup() {
@@ -78,15 +75,13 @@
                 this.showSaveDialog(`${this.time.hours != 0 ? this.time.hours + 'h' : ''} ${this.time.minutes != 0 ? this.time.minutes + 'm' : ''} ${this.time.seconds}s`);             
             },
             resetTime() {
-                this.time.hours = this.time.minutes = this.time.seconds = 0;
+                this.time = new TimeObject();
                 this.paused = false;
                 this.intervalId = undefined;
                 this.formDisabled = false;
             },
             showSaveDialog(timeSpentNice:string) {                
                 let activityName = this.activitySelectionForm.selectedActivityName;
-                console.log(activityName);
-                
                 if(activityName!==undefined){
                     this.saveDialog.open(activityName, timeSpentNice);
                 }
@@ -97,4 +92,4 @@
         },
     });
 </script>
-../classes/TimeUtils
+../classes/TimeUtils../classes/types/RefTypeInterfaces

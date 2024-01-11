@@ -17,7 +17,7 @@
 
 <script lang="ts">
     import { UrgencyEntity } from '../../classes/UrgencyEntity';
-    import { ToDoListItemRequest } from '../../classes/ToDoListItemEntity';
+    import { ToDoListItemRequest, ToDoListItemEntity } from '../../classes/ToDoListItem';
 
     export default {
         data() {
@@ -37,21 +37,21 @@
                 window.axios
                     .post(`/urgency/get-all`)
                     .then((response) => {
-                        this.urgencyOptions = response.data.map((item:object)=>UrgencyEntity.fromObject(item));
+                        this.urgencyOptions = UrgencyEntity.listFromObjects(response.data);
                         console.log(this.urgencyOptions);
-                        
-                        this.toDoListItem.urgencyId = this.urgencyOptions.find(item=>item.priority === 1)?.id ?? null;
+                        this.toDoListItem.urgencyId = this.urgencyOptions.find((item) => item.priority === 1)?.id ?? null;
                     })
                     .catch((error) => {});
             },
-            open(id: number | null, oldToDoListItem: ToDoListItemRequest | null) {
-                if (oldToDoListItem && id) {
-                    this.toDoListItem = oldToDoListItem;
-                    this.isEdit = true;
-                    this.idToEdit = id;
-                } else {
-                    this.isEdit = false;
-                }
+            openCreate() {
+                this.toDoListItem = new ToDoListItemRequest();
+                this.isEdit = false;
+                this.dialog = true;
+            },
+            openEdit(entityToEdit: ToDoListItemEntity) {
+                this.isEdit = true;
+                this.toDoListItem = ToDoListItemRequest.fromEntity(entityToEdit);
+                this.idToEdit = entityToEdit.id;
                 this.dialog = true;
             },
             close() {
@@ -69,3 +69,4 @@
         emits: ['edit', 'add'],
     };
 </script>
+../../classes/ToDoListItem

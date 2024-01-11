@@ -1,3 +1,4 @@
+//TODO prerobit bez watcherov len na get
 <template>
     <div>
         <VRow class="my-0" align="center" justify="center">

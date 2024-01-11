@@ -13,24 +13,24 @@
                 <hr class="line" />
             </div>
         </div>
-        <v-card class="elevation-2 flex-1-0">
-            <v-card-title >{{ record.activity.name }}</v-card-title>
-            <v-card-subtitle>{{ record.activity.role.name }}</v-card-subtitle>
-            <v-card-text>
-                <div>Category: {{ record.activity.category.name }}</div>
-            </v-card-text>
-        </v-card>
+        <VCard class="elevation-2 flex-1-0">
+            <VCardTitle >{{ record.activity.name }}</VCardTitle>
+            <VCardSubTitle>{{ record.activity.role.name }}</VCardSubTitle>
+            <VCardText>
+                <div>{{$t("activities.category")}}: {{ record.activity.category.name }}</div>
+            </VCardText>
+        </VCard>
     </div>
 </template>
 <script lang="ts">
     import { defineComponent } from 'vue';
-    import { ActivityRecord } from '../classes/ActivityRecord';
+    import { HistoryRecord } from '../classes/HistoryRecord';
     import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../classes/TimeUtils';
 
     export default defineComponent({
         props: {
             record: {
-                type: ActivityRecord,
+                type: HistoryRecord,
                 required: true,
             },
         },
@@ -45,13 +45,13 @@
         },
         computed: {
             formattedStartTimestamp() {
-                return (record: ActivityRecord) => this.getNiceTimestamp(record.startTimestamp);
+                return (record: HistoryRecord) => this.getNiceTimestamp(record.startTimestamp);
             },
             formattedLength() {
-                return (record: ActivityRecord) => getTimeNiceFromTimeObject(getTimeObjectFromSeconds(record.length));
+                return (record: HistoryRecord) => getTimeNiceFromTimeObject(getTimeObjectFromSeconds(record.length));
             },
             formattedEndTimestamp() {
-                return (record: ActivityRecord) => this.getNiceTimestamp(this.getEndOfActivityTime(record.startTimestamp, record.length));
+                return (record: HistoryRecord) => this.getNiceTimestamp(this.getEndOfActivityTime(record.startTimestamp, record.length));
             },
         },
         methods: {
@@ -76,4 +76,4 @@
     border-width: 2px;
     min-width: 1rem !important;
 }
-</style>
+</style>../classes/HistoryRecord

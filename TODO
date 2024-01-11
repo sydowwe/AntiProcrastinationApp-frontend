@@ -1,12 +1,15 @@
-prerobit celu databazu aj s UserId 
-
-Google Sign in
+tweak frontEnd 
+pridat loadingy na vsetky stranky
 
 spravit notifikacie poriadne
 
 ALARM dorobit
 
-pridat loadingy na vsetky stranky
+fix backend
+
+dorobit backend exception handling poriadne
+
+Google Sign in
 
 dorobit EmailService 
 

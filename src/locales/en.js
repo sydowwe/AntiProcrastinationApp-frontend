@@ -94,8 +94,8 @@ const en = {
             loadMore: `Load more`,
             empty: `No more`
         }
-    },   
-    navigation:{
+    },
+    navigation: {
         home: `Home`,
         history: `History`,
         createNewActivity: `Create new kind of activity`,
@@ -121,9 +121,9 @@ const en = {
         text: `Text`,
         continue: `Continue`,
         done: `Done`,
-
+        error: `Error`,
     },
-    dateTime:{
+    dateTime: {
         when: `When`,
         length: `Length`,
         date: `Date`,
@@ -138,8 +138,8 @@ const en = {
         howManyHoursBack: `How many hours back`,
         dateRange: `Date range`,
         hoursBack: `Hours back`,
-    },    
-    activities:{
+    },
+    activities: {
         role: `Role`,
         category: `Category`,
         activity: `Activity`,
@@ -148,19 +148,23 @@ const en = {
         placeOnToDoList: `Place on to-do list`,
         //===============================
         fromToDoList: `From to-do list`,
-        createNewActivity: `Create new activity`,
-        addActivityToHistory: `Add activity to history`,
+        createNewActivity: `Create new activity`,        
         start: `Start`,
         pause: `Pause`,
         stop: `Stop`,
         saveActivity: `Save activity`,
         //=========
         enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,
-    },   
+    },
+    history:{
+        addActivityToHistory: `Add activity to history`,
+        lengthNotSet: `Length not set`,
+    },
     authorization: {
         logOut: `Log out`,
         logIn: `Log in`,
         login: `Login`,
+        wrongEmailOrPassword: `Wrong email or password`,
         goToLogin: `Go to login page`,
         register: `Register`,
         registration: `Registration`,
@@ -188,7 +192,7 @@ const en = {
         passwordRequired: 'Password is required',
         invalidPasswordLength: 'Password must be at least 8 characters long',
         invalidPassword: 'Password must contain at least 2 lowercase letters, 2 uppercase letters, 3 numbers and 1 special character',
-        nameRequired: 'Name is required', 
+        nameRequired: 'Name is required',
         invalidName: 'Name can only contain letters or spaces',
         surnameRequired: 'Surname is required',
         invalidSurname: 'Surname can only contain letters or spaces',
@@ -203,7 +207,7 @@ const en = {
         code2FA: `Code from your authenticator application (Google Authenticator)`,
         verifyYour2FA: `Verify your two factor authentication`,
     },
-    toDoList:{
+    toDoList: {
         add: 'Add',
         toDoList: 'To-do list',
         urgency: `Urgency`,

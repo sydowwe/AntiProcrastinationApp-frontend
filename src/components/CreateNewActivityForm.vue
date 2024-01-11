@@ -2,25 +2,25 @@
         <VForm ref="form" class="mt-5">            
             <VRow justify="center" no-gutters>
                 <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-8 pa-md-8 pa-sm-6 pa-5">
-                    <v-label>Role</v-label>
+                    <VLabel>{{ $t('activities.role') }}</VLabel>
                     <VRow no-gutters>
                         <v-autocomplete v-model="formData.roleId" :items="roleOptions" item-title="label" item-value="id" :rules="roleIdRules"></v-autocomplete>
                         <VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.open()"></VBtn>
                     </VRow>
-                    <v-label>Category</v-label>
+                    <VLabel>{{ $t('activities.category') }}</VLabel>
                     <VRow no-gutters>
                         <v-autocomplete v-model="formData.categoryId" :items="categoryOptions" item-title="label" item-value="id" :rules="categoryIdRules"></v-autocomplete>
                         <VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.open()"></VBtn>
                     </VRow>
-                    <v-label>Activity</v-label>
+                    <VLabel>{{ $t('activities.activity') }}</VLabel>
                     <VRow no-gutters>
                         <v-text-field v-model="formData.activity" :rules="activityRules"></v-text-field>
                         <VBtn class="ml-2" icon="$info" color="primary"></VBtn>
                     </VRow>
-                    <v-textarea class="my-3" label="Activity description" v-model="formData.description" hide-details></v-textarea>
+                    <v-textarea class="my-3" :label="$t('activities.activityDescription')" v-model="formData.description" hide-details></v-textarea>
                     <VRow no-gutters>
-                        <v-checkbox label="Is activity unavoidable" v-model="formData.isObligatory" hide-details></v-checkbox>
-                        <v-checkbox label="Place on to-do list" v-model="formData.isOnToDoList" hide-details></v-checkbox>
+                        <v-checkbox :label="$t('activities.isActivityUnavoidable')" v-model="formData.isObligatory" hide-details></v-checkbox>
+                        <v-checkbox :label="$t('activities.placeOnToDoList')" v-model="formData.isOnToDoList" hide-details></v-checkbox>
                     </VRow>
                     <VRow justify="center" no-gutters>
                         <v-btn class="mt-3" width="200" color="success" @click="validate()">Create</v-btn>
@@ -62,11 +62,11 @@
 <script lang="ts">
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
     import ContentDialog from './dialogs/ContentDialog.vue';
-    import { VuetifyFormType, DialogType } from '../classes/RefTypeInterfaces';
+    import { VuetifyFormType, DialogType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
-    import { Role } from '../classes/DTOs/Role';
-    import { Category } from '../classes/DTOs/Category';
-import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
+    import { Role } from '../classes/Role';
+    import { Category } from '../classes/Category';
+import { IdLabelOption } from '../classes/IdLabelOption';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -199,3 +199,4 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
         border-radius: 1rem;
     }
 </style>
+../classes/Role../classes/Category../classes/IdLabelOption../classes/types/RefTypeInterfaces

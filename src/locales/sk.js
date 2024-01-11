@@ -121,6 +121,7 @@ const sk = {
         text: `Text`,
         continue: `Pokračovať`,
         done: `Hotovo`,
+        error: `Chyba`,
     },
     dateTime:{
         when: `Kedy`,
@@ -140,7 +141,7 @@ const sk = {
 
     }, 
     activities:{
-        role: `Role`,
+        role: `Roľa`,
         category: `Kategória`,
         activity: `Aktivita`,
         activityDescription: `Popis aktivity`,
@@ -149,7 +150,7 @@ const sk = {
         //===============================
         fromToDoList: `Je z to-do listu`,
         createNewActivity: `Vytvoriť novú aktivity`,
-        addActivityToHistory: `Pridať aktivitu do histórie`,
+       
         start: `Začať`,
         pause: `Pozastaviť`,
         stop: `Ukončiť`,
@@ -158,9 +159,14 @@ const sk = {
         //=========
         enableNotificationsInWindows: `V systéme Windows prejdite na Nastavenia > Systém > Oznámenia a akcie > V sekcii Získať oznámenia a akcie od týchto odosielateľov vyberte Google Chrome.`,
     },
+    history:{
+        addActivityToHistory: `Pridať aktivitu do histórie`,
+        lengthNotSet: `Nebola zadaná dĺžka`,
+    },
     authorization: {
         logOut: `Odhlásiť sa`,
         logIn: `Prihlásiť sa`,
+        wrongEmailOrPassword: `Nesprávny email alebo heslo`,
         login: `Prihlásenie`,
         goToLogin: `Prejsť na prihlásenie`,
         register: `Registrovať sa`,

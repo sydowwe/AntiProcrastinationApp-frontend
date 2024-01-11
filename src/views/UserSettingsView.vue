@@ -30,8 +30,8 @@
 <script lang="ts">
     import { defineComponent, ref } from 'vue';
     import { useUserStore } from '../plugins/stores/userStore';
-    import { VuetifyFormType, DialogType, DialogFormType } from '../classes/RefTypeInterfaces';
-    import { User, UserRequest } from '../classes/DTOs/User';
+    import { VuetifyFormType, DialogType, DialogFormType } from '../classes/types/RefTypeInterfaces';
+    import { User, UserRequest } from '../classes/User';
     import VerifyQrCodeDialog from '../components/dialogs/VerifyQrCodeDialog.vue';
     import ChangePasswordDialog from '../components/dialogs/ChangePasswordDialog.vue';
     import VerifyPasswordDialog from '../components/dialogs/VerifyPasswordDialog.vue';
@@ -213,3 +213,4 @@
         },
     });
 </script>
+../classes/User../classes/types/RefTypeInterfaces

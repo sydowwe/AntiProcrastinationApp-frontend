@@ -1,12 +1,12 @@
 <template>
-    <v-list-item :base-color="toDoListItem.urgency.color" class="align-center">
+    <VListItem :base-color="toDoListItem.urgency.color" class="align-center">
         <template v-slot:prepend="{ isActive }">
-            <v-list-item-action start>
+            <VListItemAction start>
                 <v-checkbox-btn :model-value="isActive" base-color="white" color="white"></v-checkbox-btn>
-            </v-list-item-action>
+            </VListItemAction>
         </template>
-        <v-list-item-title class="text-white">{{ toDoListItem.name }}</v-list-item-title>
-        <v-list-item-subtitle class="text-white">{{ toDoListItem.text }}</v-list-item-subtitle>
+        <VListItemTitle class="text-white">{{ toDoListItem.name }}</VListItemTitle>
+        <VListItemSubtitle class="text-white">{{ toDoListItem.text }}</VListItemSubtitle>
 
         <template v-slot:append>
             <v-menu location="start" transition="slide-y-transition">
@@ -17,24 +17,24 @@
                         </VIcon>
                     </v-btn>
                 </template>
-                <v-list>
-                    <v-list-item class="px-3" v-for="(item, i) in actions" :key="i">
+                <VList>
+                    <VListItem class="px-3" v-for="(item, i) in actions" :key="i">
                         <VBtn class="px-3" :color="item.color" width="100%" @click="item.action"
                             >{{ item.name }}
                             <VIcon class="ml-2" slot="append">
                                 <FontAwesomeIcon :icon="['fas', `${item.icon}`]"></FontAwesomeIcon>
                             </VIcon>
                         </VBtn>
-                    </v-list-item>
-                </v-list>
+                    </VListItem>
+                </VList>
             </v-menu>
         </template>
-    </v-list-item>
+    </VListItem>
 </template>
 
 <script lang="ts">
     import { defineComponent } from 'vue';
-    import { ToDoListItemEntity } from '../classes/ToDoListItemEntity';
+    import { ToDoListItemEntity } from '../classes/ToDoListItem';
 
     export default defineComponent({
         props: {

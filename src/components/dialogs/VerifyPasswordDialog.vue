@@ -28,7 +28,7 @@
 </template>
 <script lang="ts">
     import { defineComponent, ref } from 'vue';
-    import { VuetifyFormType } from '../../classes/RefTypeInterfaces';
+    import { VuetifyFormType } from '../../classes/types/RefTypeInterfaces';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -86,3 +86,4 @@
         emits: ['verified'],
     });
 </script>
+../../classes/types/RefTypeInterfaces

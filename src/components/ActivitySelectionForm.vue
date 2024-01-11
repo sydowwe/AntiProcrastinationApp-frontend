@@ -1,35 +1,35 @@
 <template>
-    <v-row class="justify-center" align="center">
-        <v-col cols="auto" class="pb-0 pb-md-4">
-            <v-checkbox label="From to-do list" v-model="isFromToDoList" :disabled="formDisabled" hide-details></v-checkbox>
-        </v-col>
-        <v-col v-show="isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-            <v-select v-model="selectedUrgencyId" :items="taskUrgencyOptions" hide-details></v-select>
-        </v-col>
-        <v-col cols="12" class="pt-1">
-            <v-row>
-                <v-col cols="12" lg="5">
-                    <v-autocomplete label="Role" v-model="selectedRoleId" :items="roleOptions" :disabled="formDisabled" hide-details></v-autocomplete>
-                </v-col>
-                <v-col cols="12" lg="7">
-                    <v-autocomplete label="Category" v-model="selectedCategoryId" :items="categoryOptions" :disabled="formDisabled" hide-details></v-autocomplete>
-                </v-col>
-                <v-col cols="12">
-                    <v-autocomplete label="Activity" v-model="selectedActivityId" :items="activityOptions" :disabled="formDisabled" hide-details></v-autocomplete>
-                </v-col>
-            </v-row>
-        </v-col>
-        <v-col cols="auto" class="py-2">
-            <v-btn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</v-btn>
-        </v-col>
-    </v-row>
+    <VRow class="justify-center" align="center" noGutters>
+        <VCol cols="auto" class="pb-0 pb-md-4">
+            <VCheckbox label="From to-do list" v-model="isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
+        </VCol>
+        <VCol v-show="isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
+            <VSelect v-model="selectedUrgencyId" :items="taskUrgencyOptions" hide-details></VSelect>
+        </VCol>
+        <VCol cols="12" class="pt-1">
+            <VRow>
+                <VCol cols="12" lg="5">
+                    <VAutocomplete label="Role" v-model="selectedRoleId" :items="roleOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                </VCol>
+                <VCol cols="12" lg="7">
+                    <VAutocomplete label="Category" v-model="selectedCategoryId" :items="categoryOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                </VCol>
+                <VCol cols="12">
+                    <VAutocomplete label="Activity" v-model="selectedActivityId" :items="activityOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                </VCol>
+            </VRow>
+        </VCol>
+        <VCol cols="auto" class="py-2">
+            <VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
+        </VCol>
+    </VRow>
 </template>
 
 <script lang="ts">
     import { defineComponent } from 'vue';
     import { TimeObject } from '../classes/TimeUtils';
     import { UrgencyEntity } from '../classes/UrgencyEntity';
-import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
+    import { IdLabelOption } from '../classes/IdLabelOption';
     export default defineComponent({
         props: {
             formDisabled: {
@@ -59,8 +59,7 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
         },
         computed: {
             selectedActivityName() {
-                let name =
-                    this.activityOptions.find((item) => item.id === this.selectedActivityId)?.label ?? undefined;
+                let name = this.activityOptions.find((item) => item.id === this.selectedActivityId)?.label ?? undefined;
                 return name;
             },
         },
@@ -137,3 +136,4 @@ import { IdLabelOption } from '../classes/DTOs/IdLabelOption';
         },
     });
 </script>
+../classes/IdLabelOption

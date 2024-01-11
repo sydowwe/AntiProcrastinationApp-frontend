@@ -14,4 +14,8 @@ export class UrgencyEntity{
         } = object;
         return new UrgencyEntity(id,priority,text,color);
       }
+      static listFromObjects(objects: any[]){
+        return objects.map((item:object)=>UrgencyEntity.fromObject(item));
+      }
+      
 }

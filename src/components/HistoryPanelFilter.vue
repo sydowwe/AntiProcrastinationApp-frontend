@@ -48,10 +48,10 @@
     import { defineComponent } from 'vue';
     import { VDatePicker } from 'vuetify/labs/VDatePicker';
     import { HistoryFilter } from '../classes/History';
-    import { Role } from '../classes/DTOs/Role';
-    import { Category } from '../classes/DTOs/Category';
-    import { Activity } from '../classes/DTOs/Activity';
-    import { ActivityRecord } from '../classes/ActivityRecord';
+    import { Role } from '../classes/Role';
+    import { Category } from '../classes/Category';
+    import { Activity } from '../classes/Activity';
+    import { HistoryRecord } from '../classes/HistoryRecord';
 
     export default defineComponent({
         components: {
@@ -154,7 +154,7 @@
                     .then((response) => {
                         this.$emit(
                             'filterApplied',
-                            response.data.map((item: ActivityRecord) => ActivityRecord.fromObject(item))
+                            HistoryRecord.listFromObjects(response.data)
                         );
                     })
                     .catch((error) => {
@@ -163,7 +163,8 @@
             },
         },
         emits: {
-            filterApplied: (records: ActivityRecord[]) => true,
+            filterApplied: (records: HistoryRecord[]) => true,
         },
     });
 </script>
+../classes/Role../classes/Category../classes/Activity../classes/HistoryRecord

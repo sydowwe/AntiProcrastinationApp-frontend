@@ -1,5 +1,5 @@
 <template>
-    <v-select label="Type of time measurment" v-model="selectedTimerType" :items="items" :clearable="false" @change="redirect()"></v-select>
+    <VSelect label="Type of time measurment" v-model="selectedTimerType" :items="items" :clearable="false" @change="redirect()"></VSelect>
 </template>
 <script lang="ts">
     import { defineComponent } from 'vue';

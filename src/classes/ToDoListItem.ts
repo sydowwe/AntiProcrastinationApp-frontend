@@ -18,6 +18,9 @@ export class ToDoListItemEntity {
       } = object;  
       return new ToDoListItemEntity(id, name, text, urgency,isDone);
     }
+    static listFromObjects(objects: any[]){
+      return objects.map((item:object)=>ToDoListItemEntity.fromObject(item));
+    }
 }
 export class ToDoListItemRequest {
  

@@ -6,8 +6,9 @@
     </VDialog>
 </template>
 
-<script>
-    export default {
+<script lang="ts">
+ import { defineComponent, ref } from 'vue';
+    export default defineComponent( {
         props:{
             show:{
                 type: Boolean,
@@ -20,5 +21,5 @@
                 return this.show;
             }
         }
-    };
+    });
 </script>

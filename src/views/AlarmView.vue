@@ -1,24 +1,22 @@
 <template>
-    <v-container fluid>
-        <v-row justify="center">
-            <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
+        <VRow justify="center">
+            <VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
                 <VRow v-if="timeInputVisible" justify="center">
                     <VCol cols="12" lg="6" md="8" sm="10">
                         <DateTimePicker ref="timePicker" @timeChange="updateTimeInitial"></DateTimePicker>
                     </VCol>
                 </VRow>                
-                <v-row justify="center" class="mt-4 mb-7">
-                    <v-btn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</v-btn>
-                    <v-btn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</v-btn>
-                    <v-btn size="large" color="error" @click="stop" :disabled="intervalId === null">Stop</v-btn>
-                </v-row>
+                <VRow justify="center" class="mt-4 mb-7">
+                    <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</VBtn>
+                    <VBtn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</VBtn>
+                    <VBtn size="large" color="error" @click="stop" :disabled="intervalId === null">Stop</VBtn>
+                </VRow>
                 <hr />
                 <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
                 <!-- <TimerTypeSelect current-type="stopwatch"></TimerTypeSelect> -->
                 <SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTime()"></SaveActivityDialog>
-            </v-col>
-        </v-row>
-    </v-container>
+            </VCol>
+        </VRow>
 </template>
 <script lang="ts">
     import TimerTypeSelect from '../components/TimerTypeSelect.vue';
@@ -26,7 +24,7 @@
     import DateTimePicker from '../components/DateTimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import { TimeObject, getTimeObjectFromSeconds, getSecondsFromTimeObject, getTimeNiceFromTimeObject } from '../classes/TimeUtils';
-    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/RefTypeInterfaces';
+    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
 
     export default defineComponent({
@@ -105,11 +103,7 @@
                 this.showSaveDialog(timeSpentNice);
             },
             resetTime() {
-                this.alarmTime = {
-                    hours: 0,
-                    minutes: 0,
-                    seconds: 0,
-                };
+                this.alarmTime = new TimeObject();
                 this.paused = false;
                 this.intervalId = undefined;
                 this.formDisabled = false;
@@ -135,3 +129,4 @@
     });
 </script>
 ../classes/TimeUtils
+../classes/types/RefTypeInterfaces

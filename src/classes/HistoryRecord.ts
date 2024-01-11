@@ -1,5 +1,5 @@
-import { Activity } from './DTOs/Activity';
-export class ActivityRecord {
+import { Activity } from './Activity';
+export class HistoryRecord {
     constructor(
       public id: number,
       public startTimestamp: Date,
@@ -13,6 +13,9 @@ export class ActivityRecord {
         length = 0,
         activity = new Activity
       } = object;
-      return new ActivityRecord(id,startTimestamp,length,activity);
+      return new HistoryRecord(id,startTimestamp,length,activity);
+    }
+    static listFromObjects(objects: any[]){
+      return objects.map((item:object)=>this.fromObject(item));
     }
 }

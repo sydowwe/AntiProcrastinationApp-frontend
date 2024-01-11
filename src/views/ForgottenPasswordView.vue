@@ -18,15 +18,15 @@
             </VCardActions>
         </VCard>
     </VDialog>
-    <LoadingDialog :show="loading"></LoadingDialog>
+    <LoadingFullscreen :show="loading"></LoadingFullscreen>
 </template>
 <script lang="ts">
     import { defineComponent } from 'vue';
-    import { FormType } from '../classes/RefTypeInterfaces';
-    import LoadingDialog from '../components/dialogs/LoadingDialog.vue';
+    import { FormType } from '../classes/types/RefTypeInterfaces';
+    import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
     export default defineComponent({
         components:{
-            LoadingDialog
+            LoadingFullscreen
         },
         data() {
             return {
@@ -73,3 +73,4 @@
         },
     });
 </script>
+../classes/types/RefTypeInterfaces

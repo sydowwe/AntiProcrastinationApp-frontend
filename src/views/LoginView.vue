@@ -38,17 +38,12 @@
                 </VRow>
             </VForm>
         </VCol>
-
+        <ErrorSnackBar ref="errorSnackBar" :message="errorMessage"></ErrorSnackBar>
         <VDialog v-model="dialog" width="small" persistent>
             <VCard>
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
                 <VCardText>
-                    <template v-if="!isError && formData.email">
-                        <LoginVerifyQrCode :email="formData.email" ref="verifyQrCode"></LoginVerifyQrCode>
-                    </template>
-                    <template v-else>
-                        {{ errorMessage }}
-                    </template>
+                    <LoginVerifyQrCode :email="formData.email" ref="verifyQrCode"></LoginVerifyQrCode>
                 </VCardText>
                 <VCardActions class="d-flex justify-end mr-2 mb-2">
                     <VBtn color="error" @click="dialog = false">{{ $t('general.close') }}</VBtn>
@@ -60,17 +55,20 @@
 <script lang="ts">
     import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
     import { useUserStore } from '../plugins/stores/userStore';
-    import { VuetifyFormType, SubmittableType } from '../classes/RefTypeInterfaces';
+    import { VuetifyFormType, SubmittableType, FeedBackType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
-    import { UserStoreItem } from '../classes/DTOs/User';
+    import { UserStoreItem } from '../classes/User';
+    import ErrorSnackBar from '../components/feedback/ErrorSnackBar.vue';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
             const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
-            return { form, verifyQrCode };
+            const errorSnackBar = ref<FeedBackType>({} as FeedBackType);
+            return { form, verifyQrCode, errorSnackBar };
         },
         components: {
             LoginVerifyQrCode,
+            ErrorSnackBar,
         },
         data() {
             return {
@@ -89,7 +87,7 @@
             };
         },
         mounted() {
-            this.formData.email = this.$route.params?.email ? this.$route.params?.email[0] : '';
+            this.formData.email = this.userStore.getEmail;
         },
         computed: {
             userStore() {
@@ -102,7 +100,7 @@
                 return emailRegex.test(value);
             },
             isRedirectedFromRegistration() {
-                if (this.formData.email.length > 0) {
+                if (this.userStore.getEmail) {
                     return true;
                 } else {
                     return false;
@@ -114,29 +112,34 @@
                     axios
                         .post('/user/auth/login', this.formData)
                         .then((response) => {
-                            if (response.data) {                                
+                            if (response.data) {
                                 const user = response.data as UserStoreItem;
                                 this.userStore.setUser(user);
-                                if (response.data.has2FA) {
+                                if (response.data.has2FA === true) {
                                     this.dialogTitle = this.$t('authorization.twoFA');
                                     this.isError = false;
                                     this.dialog = true;
-                                } else {                                    
-                                    if (user.token) {
-                                        this.$router.push('/');
-                                    } else {
-                                        console.error('No token!!!');
-                                    }
+                                } else if (user.token) {
+                                    this.$router.push('/');
+                                } else {
+                                    this.errorSnackBar.show();
+                                    console.error('No token!!!');
                                 }
                             } else {
+                                this.errorSnackBar.show();
                                 console.error('No user!!!');
                             }
                         })
                         .catch((error) => {
-                            console.log(error);
+                            if (error.response.status == 403) {
+                                this.errorSnackBar.show(this.$t('authorization.wrongEmailOrPassword'));
+                            } else {
+                                console.log(error);
+                            }
                         });
                 }
             },
         },
     });
 </script>
+../classes/User../classes/types/RefTypeInterfaces
