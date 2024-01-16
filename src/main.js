@@ -47,14 +47,15 @@ const axiosInstance = axios.create({
     responseType: 'json'
 });
 axiosInstance.interceptors.request.use((config) => {
-    if(authStore.getToken){
+    if (authStore.getToken) {
         config.headers.Authorization = `Bearer ${authStore.getToken}`;
     }
     return config;
-  });
-  axiosInstance.defaults.headers.common = {
+});
+axiosInstance.defaults.headers.common = {
     "Content-Type": "application/json"
-  }
+}
+
 window.axios = axiosInstance;
 // window.axios.defaults.headers.common['Content-Type'] = "application/json";
 
@@ -80,13 +81,21 @@ app.use(i18n);
 // VEEVALIDATE
 // import './plugins/veeValidate'
 
+//Google sign in
+import vue3GoogleLogin from 'vue3-google-login'
+app.use(vue3GoogleLogin, {
+    clientId: '579844911566-n3ch6nfdlpmjfe00u5ueomkk3vfe3g4e.apps.googleusercontent.com'
+})
+
 // FONT-AWESOME
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
 library.add(fas)
 library.add(far)
+library.add(fab)
 app.component('FontAwesomeIcon', FontAwesomeIcon);
 
 // VUETIFY
@@ -96,7 +105,6 @@ import { createVuetify } from 'vuetify'
 import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
-
 
 import { aliases, fa } from 'vuetify/lib/iconsets/fa-svg.mjs'
 

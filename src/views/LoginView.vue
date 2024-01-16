@@ -31,14 +31,9 @@
                 <div class="dividerTextCenter mb-4">
                     <span class="text-center font-weight-medium mx-3">{{ $t('general.or') }}</span>
                 </div>
-                <VRow justify="center">
-                    <VCol cols="10" sm="8" md="6" lg="6">
-                        <VBtn width="100%" color="primary">{{ $t('authorization.continueWithGoogle') }}</VBtn>
-                    </VCol>
-                </VRow>
+                <GoogleSignIn></GoogleSignIn>
             </VForm>
         </VCol>
-        <ErrorSnackBar ref="errorSnackBar" :message="errorMessage"></ErrorSnackBar>
         <VDialog v-model="dialog" width="small" persistent>
             <VCard>
                 <VCardTitle>{{ dialogTitle }}</VCardTitle>
@@ -53,22 +48,22 @@
     </VRow>
 </template>
 <script lang="ts">
+ import { RouterLink } from 'vue-router';
     import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
     import { useUserStore } from '../plugins/stores/userStore';
-    import { VuetifyFormType, SubmittableType, FeedBackType } from '../classes/types/RefTypeInterfaces';
+    import { VuetifyFormType, SubmittableType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
     import { UserStoreItem } from '../classes/User';
-    import ErrorSnackBar from '../components/feedback/ErrorSnackBar.vue';
+    import GoogleSignIn from '../components/GoogleSignIn.vue';
     export default defineComponent({
         setup() {
             const form = ref<VuetifyFormType>({} as VuetifyFormType);
             const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
-            const errorSnackBar = ref<FeedBackType>({} as FeedBackType);
-            return { form, verifyQrCode, errorSnackBar };
+            return { form, verifyQrCode };
         },
         components: {
             LoginVerifyQrCode,
-            ErrorSnackBar,
+            GoogleSignIn,
         },
         data() {
             return {
@@ -82,8 +77,6 @@
                 showPassword: false,
                 dialogTitle: 'Dialog',
                 dialog: false,
-                isError: false,
-                errorMessage: 'error',
             };
         },
         mounted() {
@@ -96,7 +89,7 @@
         },
         methods: {
             validateEmail(value: string) {
-                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                const emailRegex = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,64}/;
                 return emailRegex.test(value);
             },
             isRedirectedFromRegistration() {
@@ -117,24 +110,22 @@
                                 this.userStore.setUser(user);
                                 if (response.data.has2FA === true) {
                                     this.dialogTitle = this.$t('authorization.twoFA');
-                                    this.isError = false;
                                     this.dialog = true;
                                 } else if (user.token) {
                                     this.$router.push('/');
                                 } else {
-                                    this.errorSnackBar.show();
+                                    (this.$root as any).showErrorSnackbar('No token!!!');
                                     console.error('No token!!!');
                                 }
                             } else {
-                                this.errorSnackBar.show();
+                                (this.$root as any).showErrorSnackbar('No user!!!');
                                 console.error('No user!!!');
                             }
                         })
                         .catch((error) => {
-                            if (error.response.status == 403) {
-                                this.errorSnackBar.show(this.$t('authorization.wrongEmailOrPassword'));
-                            } else {
-                                console.log(error);
+                            console.log(error);
+                            if (error.response.status === 403 || error.response.status === 401) {
+                                 (this.$root as any).showErrorSnackbar(this.$t('authorization.wrongEmailOrPassword'));
                             }
                         });
                 }

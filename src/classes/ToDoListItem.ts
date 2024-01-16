@@ -1,6 +1,6 @@
 import { UrgencyEntity } from './UrgencyEntity';
 
-export class ToDoListItemEntity {
+export class ToDoListItemEntity{
     constructor(
       public id: number,
       public name: string,
@@ -17,10 +17,16 @@ export class ToDoListItemEntity {
         isDone = false,
       } = object;  
       return new ToDoListItemEntity(id, name, text, urgency,isDone);
-    }
+    }    
     static listFromObjects(objects: any[]){
-      return objects.map((item:object)=>ToDoListItemEntity.fromObject(item));
-    }
+      return objects.map((item:object)=>this.fromObject(item));
+  }
+  static frontEndSort(todoItems: ToDoListItemEntity[]){
+    return todoItems.sort((a, b) => {
+      const priorityComparison = a.urgency.priority - b.urgency.priority;
+      return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
+    });
+  }
 }
 export class ToDoListItemRequest {
  

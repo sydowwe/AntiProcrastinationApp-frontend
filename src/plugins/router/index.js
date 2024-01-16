@@ -92,7 +92,7 @@ const router = createRouter({
     // }
   ]
 });
-const allowedRoutes = ['login','registration','termsAndConditions','forgottenPasswordView'];
+const allowedRoutes = ['login','registration','termsAndConditions','forgottenPassword'];
 router.beforeEach((to, from, next) => {
   if (!allowedRoutes.includes(to.name) && !useUserStore().getToken) {
     next('/login');

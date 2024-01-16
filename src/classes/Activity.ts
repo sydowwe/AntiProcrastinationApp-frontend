@@ -1,9 +1,9 @@
 import { Category } from './Category';
 import { Role } from "./Role";
 
-export class Activity {
+export class Activity{
   constructor(
-    public id: number | null = null,
+    public id: number = 0,
     public name: string | null = null,
     public text: string | null = null,
     public isOnToDoList: boolean = false,
@@ -24,8 +24,8 @@ export class Activity {
     return new Activity(id, name, text, isOnToDoList,isUnavoidable,role,category );
   }
   static listFromObjects(objects: any[]){
-      return objects.map((item:object)=>Activity.fromObject(item));
-  }
+    return objects.map((item:object)=>this.fromObject(item));
+}
 }
 export class ActivityRequest {
 

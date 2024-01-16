@@ -1,11 +1,7 @@
-<script setup>
-    import { RouterLink, RouterView } from 'vue-router';
-</script>
-
 <template>
-    <v-app>
+    <VApp>
         <header>
-            <v-app-bar app>
+            <VAppBar app>
                 <div class="d-flex justify-space-between w-100">
                     <div class="d-flex align-center">
                         <VAppBarTitle class="flex-0-0 mx-3"> AntiProcrastination app </VAppBarTitle>
@@ -33,60 +29,90 @@
                         <!-- <VAppBarNavIcon></VAppBarNavIcon> -->
                     </div>
                 </div>
-            </v-app-bar>
+            </VAppBar>
         </header>
-        <v-main>
-            <v-container class="h-100" fluid>
+        <VMain>
+            <VContainer class="h-100" fluid>
                 <RouterView />
-            </v-container>
-        </v-main>
-    </v-app>
+            </VContainer>
+        </VMain>
+        <ErrorSnackBar ref="errorSnackBar" :closable="false"></ErrorSnackBar>
+    </VApp>
 </template>
-<script>
+<script lang="ts">
     import { useUserStore } from './plugins/stores/userStore';
-    import { defineComponent } from 'vue';
+    import { defineComponent, ref } from 'vue';
+    import { FeedBackType } from '../src/classes/types/RefTypeInterfaces';
+    import ErrorSnackBar from '../src/components/feedback/ErrorSnackBar.vue';
+    import { RouterLink, RouterView } from 'vue-router';
 
     export default defineComponent({
+        setup() {
+ 
+            const errorSnackBar = ref<FeedBackType>({} as FeedBackType);
+            return { errorSnackBar };
+        },
+        components: {
+            ErrorSnackBar,
+        },
         data() {
-            return {};
+            return {
+            };
         },
         computed: {
             userStore() {
                 return useUserStore();
             },
+            token() {
+                return this.userStore.getToken;
+            },
         },
         created() {
-            // this.checkTokenValid();
+            //  this.checkTokenValid();
+            axios.interceptors.response.use(
+                (response) => {
+                    // console.log(response.data);
+                    return Promise.resolve(response);
+                },
+                (error) => {
+                    if(this.$router.currentRoute.value.name !=="login" &&( error.response.status === 403 || error.response.status === 401)){
+                        this.showErrorSnackbar('Error validating your login credentials! Logging out.');
+                        this.logoutClient();
+                    }
+                    return Promise.reject(error);
+                }
+            );
+        },
+        watch: {
+            token(newValue) {
+                if (!newValue) {
+                    this.logoutClient();
+                }
+            },
         },
         methods: {
-            checkTokenValid() {
-                axios
-                    .post('/user/auth/checkTokenValidity', {})
-                    .then((response) => {})
-                    .catch((error) => {
-                        console.log(error);
-                        this.userStore.logout();
-                        this.$router.push({ name: 'login' });
-                    });
-            },
-            logout() {
-                axios
-                    .post(
-                        '/user/auth/logout',
-                        {},
-                        {
-                            headers: {
-                                Authorization: `Bearer ${this.userStore.getToken}`,
-                            },
-                        }
-                    )
-                    .then((response) => {})
-                    .catch((error) => {
-                        console.log(error);
-                    });
+            logoutClient() {
                 this.userStore.logout();
                 this.$router.push({ name: 'login' });
             },
+            checkTokenValid() {
+                axios
+                    .post('/user/auth/checkTokenValidity', {})
+                    .then((response) => {
+                        console.log(`\\\\\\\\\\\\\\\\\\\\\\\\\\`);
+                    })
+                    .catch((error) => {
+                        console.log("//////////////////////////");
+                        this.logoutClient();
+                    });
+            },
+            logout() {
+                axios.post('/user/auth/logout', {}).then((response) => {});
+                this.logoutClient();
+            },
+            showErrorSnackbar(message: string){
+                this.errorSnackBar.show(message);
+            }
         },
     });
 </script>

@@ -5,15 +5,11 @@ spravit notifikacie poriadne
 
 ALARM dorobit
 
-fix backend
+Google Sign in 
 
-dorobit backend exception handling poriadne
-
-Google Sign in
-
-dorobit EmailService 
 
 ====future plans====
+prerobit na nuxt ??
 
 pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
 
@@ -22,3 +18,7 @@ pridat planovanie ako rozvrh aby som si mohol naplanovat dennu rutinu atd
 zlepsit a skraslit historyView mozno tiez pridat moznost zobrazenia do tabulky ako rozvrh
 
 rozsirenie pre automaticke sledovanie aktivit???
+
+dorobit EmailService 
+
+dorobit backend exception handling poriadne

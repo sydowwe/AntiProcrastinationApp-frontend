@@ -14,7 +14,9 @@
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/vue-fontawesome": "^3.0.3",
     "axios": "^1.4.0",
+    "install": "^0.13.0",
     "moment": "^2.29.4",
+    "npm": "^10.3.0",
     "pinia": "^2.0.36",
     "sortable": "^2.0.0",
     "volar-service-vetur": "latest",
@@ -22,6 +24,7 @@
     "vue-draggable-next": "^2.2.0",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.2.0",
+    "vue3-google-login": "^2.0.25",
     "vuetify": "latest"
   },
   "devDependencies": {

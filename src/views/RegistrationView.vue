@@ -96,8 +96,7 @@
                 return letterRegex.test(value);
             },
             validateEmail(value: string) {
-                //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
-                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                const emailRegex = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,64}/;
                 return emailRegex.test(value);
             },
             // validateUsername(value) {

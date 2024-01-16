@@ -38,13 +38,11 @@
                     .post(`/urgency/get-all`)
                     .then((response) => {
                         this.urgencyOptions = UrgencyEntity.listFromObjects(response.data);
-                        console.log(this.urgencyOptions);
                         this.toDoListItem.urgencyId = this.urgencyOptions.find((item) => item.priority === 1)?.id ?? null;
                     })
                     .catch((error) => {});
             },
             openCreate() {
-                this.toDoListItem = new ToDoListItemRequest();
                 this.isEdit = false;
                 this.dialog = true;
             },
@@ -55,6 +53,7 @@
                 this.dialog = true;
             },
             close() {
+                this.toDoListItem = new ToDoListItemRequest(); 
                 this.dialog = false;
             },
             save() {
