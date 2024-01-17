@@ -33,3 +33,8 @@ export interface ActivitySelectionFormType extends FormType {
     addActivityToHistory(timeObject :TimeObject,startTimestamp:number): void;
     selectedActivityName: string;
 }
+
+export interface HistoryRecordItemType{
+    getEndOfActivityTime(startTimestamp: Date, length: number): Date;
+    getNiceTimestamp(timestamp: Date): string;
+}

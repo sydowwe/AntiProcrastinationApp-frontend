@@ -25,119 +25,117 @@
     <ToDoListItemDialog ref="toDoListDialog" @add="add" @edit="edit"></ToDoListItemDialog>
 </template>
 
-<script lang="ts">
-    import { defineComponent, ref } from 'vue';
-    import ToDoListItem from '../components/ToDoListItem.vue';
-    import { ToDoListItemEntity, ToDoListItemRequest } from '../classes/ToDoListItem';
-    import ToDoListItemDialog from '../components/dialogs/ToDoListItemDialog.vue';
-    import { ToDoListItemDialogType } from '../classes/types/RefTypeInterfaces';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { ToDoListItemEntity, ToDoListItemRequest } from '../classes/ToDoListItem';
+import ToDoListItem from '../components/ToDoListItem.vue';
+import ToDoListItemDialog from '../components/dialogs/ToDoListItemDialog.vue';
+import { ToDoListItemDialogType } from '../classes/types/RefTypeInterfaces';
 
-    export default defineComponent({
-        setup() {
-            const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
-            return { toDoListDialog };
-        },
-        components: {
-            ToDoListItem,
-            ToDoListItemDialog,
-        },
-        data() {
-            return {
-                items: [] as ToDoListItemEntity[],
-                selectedItemsIds: [] as number[],
-            };
-        },
-        created() {
-            this.getAllRecords();
-        },
-        methods: {
-            getAllRecords() {
-                window.axios
-                    .post(`/to-do-list/get-all`)
-                    .then((response) => {
-                        this.items = ToDoListItemEntity.listFromObjects(response.data);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            },
-            openDialog() {
-                this.toDoListDialog.openCreate();
-            },
-            add(toDoListItem: ToDoListItemRequest) {
-                window.axios
-                    .post(`/to-do-list/add`, toDoListItem)
-                    .then((response) => {
-                        this.items.push(ToDoListItemEntity.fromObject(response.data));
-                        this.items = ToDoListItemEntity.frontEndSort(this.items);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            },
-            edit(id: number, toDoListItemRequest: ToDoListItemRequest) {
-                let urgencyId = toDoListItemRequest.urgencyId;
-                window.axios
-                    .put(`/to-do-list/${id}`, toDoListItemRequest)
-                    .then((response) => {
-                        console.log(response.data);
-                        if (urgencyId === response.data.urgencyId) {
-                            this.items[this.items.findIndex((item) => item.id === id)] = ToDoListItemEntity.fromObject(response.data);
-                        } else {
-                            this.items[this.items.findIndex((item) => item.id === id)] = ToDoListItemEntity.fromObject(response.data);
-                            this.items = ToDoListItemEntity.frontEndSort(this.items);
-                        }
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            },
-            deleteItem(id: number) {
-                window.axios
-                    .delete(`/to-do-list/${id}`)
-                    .then((response) => {
-                        console.log(response.data);
-                        this.items = this.items.filter((item: ToDoListItemEntity) => item.id !== id);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            },
-            select(id: number) {
-                this.selectedItemsIds.push(id);
-                console.log(this.selectedItemsIds);
-            },
-            unSelect(id: number) {
-                this.selectedItemsIds = this.selectedItemsIds.filter((item) => item !== id);
-            },
-            handleIsDoneChanged(id: number, isDone: boolean) {
-                if (this.selectedItemsIds.length > 1) {
-                    const batchChangeDone = this.selectedItemsIds.map((item: number) => ({ id: item, isDone }));
-                    window.axios
-                        .post(`/to-do-list/batch-change-done`, batchChangeDone)
-                        .then((response) => {
-                            console.log(response);
-                            this.items.forEach((item) => {
-                                if (this.selectedItemsIds.includes(item.id)) {
-                                    item.isDone = isDone;
-                                }
-                            });
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                        });
-                } else {
-                    window.axios
-                        .post(`/to-do-list/change-done`, { id, isDone })
-                        .then((response) => {
-                            console.log(response);
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                        });
-                }
-            },
-        },
+const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
+
+const items = ref([] as ToDoListItemEntity[]);
+const selectedItemsIds = ref([] as number[]);
+
+onMounted(() => {
+  getAllRecords();
+});
+
+const getAllRecords = () => {
+  window.axios
+    .post(`/to-do-list/get-all`)
+    .then((response) => {
+      items.value = ToDoListItemEntity.listFromObjects(response.data);
+    })
+    .catch((error) => {
+      console.error(error);
     });
+};
+
+const openDialog = () => {
+  toDoListDialog.value.openCreate();
+};
+
+const add = (toDoListItem: ToDoListItemRequest) => {
+  window.axios
+    .post(`/to-do-list/add`, toDoListItem)
+    .then((response) => {
+      items.value.push(ToDoListItemEntity.fromObject(response.data));
+      items.value = ToDoListItemEntity.frontEndSort(items.value);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+};
+
+const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
+  let urgencyId = toDoListItemRequest.urgencyId;
+  window.axios
+    .put(`/to-do-list/${id}`, toDoListItemRequest)
+    .then((response) => {
+      console.log(response.data);
+      const index = items.value.findIndex((item) => item.id === id);
+      if (urgencyId === response.data.urgencyId) {
+        items.value[index] = ToDoListItemEntity.fromObject(response.data);
+      } else {
+        items.value[index] = ToDoListItemEntity.fromObject(response.data);
+        items.value = ToDoListItemEntity.frontEndSort(items.value);
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+};
+
+const deleteItem = (id: number) => {
+  window.axios
+    .delete(`/to-do-list/${id}`)
+    .then((response) => {
+      console.log(response.data);
+      items.value = items.value.filter((item: ToDoListItemEntity) => item.id !== id);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+};
+
+const select = (id: number) => {
+    if(!selectedItemsIds.value.includes(id)){
+        selectedItemsIds.value.push(id);
+    }
+  console.log(selectedItemsIds.value);
+};
+
+const unSelect = (id: number) => {
+    console.log("asdsd");
+    selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
+};
+
+const handleIsDoneChanged = (id: number, isDone: boolean) => {
+  if (selectedItemsIds.value.length > 1) {
+    const batchChangeDone = selectedItemsIds.value.map((item: number) => ({ id: item, isDone }));
+    window.axios
+      .post(`/to-do-list/batch-change-done`, batchChangeDone)
+      .then((response) => {
+        console.log(response);
+        items.value.forEach((item) => {
+          if (selectedItemsIds.value.includes(item.id)) {
+            item.isDone = isDone;
+          }
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  } else {
+    window.axios
+      .post(`/to-do-list/change-done`, { id, isDone })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+};
 </script>
-../classes/types/RefTypeInterfaces

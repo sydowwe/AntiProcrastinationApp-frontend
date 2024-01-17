@@ -21,8 +21,8 @@
                 </template>
                 <VList>
                     <VListItem class="px-3" v-for="(item, i) in actions" :key="i">
-                        <VBtn class="px-3" :color="item.color" width="100%" @click="item.action"
-                            >{{ item.name }}
+                        <VBtn class="px-3" :color="item.color" width="100%" @click="item.action">
+                            {{ actionButtonText(item.name) }}
                             <VIcon class="ml-2" slot="append">
                                 <FontAwesomeIcon :icon="['fas', `${item.icon}`]"></FontAwesomeIcon>
                             </VIcon>
@@ -34,57 +34,53 @@
     </VListItem>
 </template>
 
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import { ToDoListItemEntity } from '../classes/ToDoListItem';
 
-    export default defineComponent({
-        props: {
-            toDoListItem: {
-                type: ToDoListItemEntity,
-                required: true,
-            },
+    const props = defineProps({
+        toDoListItem: {
+            type: ToDoListItemEntity,
+            required: true,
         },
-        data() {
-            return {
-                isDone: false,
-                actions: [
-                    { name: 'select', color: 'yellow', icon: 'check-circle', action: this.select },
-                    { name: 'edit', color: 'primary', icon: 'pen-to-square', action: this.edit },
-                    { name: 'delete', color: 'error', icon: 'trash', action: this.delete },
-                ],
-                isSelected: false,
-            };
-        },
-        watch:{
-            'toDoListItem.isDone'(newValue){                
-                this.$emit('isDoneChanged', this.toDoListItem.id ,newValue);
-                this.unSelect();
-            }
-        },
-        created() {},
-        methods: {
-            edit() {
-                this.$emit('edit', this.toDoListItem);
-                this.unSelect();
-            },
-            delete() {
-                this.$emit('delete', this.toDoListItem.id);
-                this.unSelect();
-            },
-            select() {
-                this.isSelected = true;
-                this.$emit('select', this.toDoListItem.id);
-            },
-            unSelect() {
-                this.isSelected = false;
-                this.$emit('unSelect', this.toDoListItem.id);
-            },
-        },
-        emits: ['edit', 'delete', 'select', 'unSelect', 'isDoneChanged'],
     });
+    const emits = defineEmits(['edit', 'delete', 'select', 'unSelect', 'isDoneChanged']);
+
+    const isSelected = ref(false);
+
+    const actions = [
+        { name: 'select', color: 'yellow', icon: 'check-circle', action: toggleSelect },
+        { name: 'edit', color: 'primary', icon: 'pen-to-square', action: edit },
+        { name: 'delete', color: 'error', icon: 'trash', action: del },
+    ];
+
+    function actionButtonText(name: string) {
+        return isSelected.value ? (`general.un${name}`) : (`general.${name}`);
+    }
+
+    function toggleDone() {
+        props.toDoListItem.isDone = !props.toDoListItem.isDone;
+        emits('isDoneChanged', props.toDoListItem.id, props.toDoListItem.isDone);
+    }
+
+    function edit() {
+        emits('edit', props.toDoListItem);
+    }
+
+    function del() {
+        emits('delete', props.toDoListItem.id);
+    }
+    function toggleSelect() {
+        isSelected.value = !isSelected.value;
+        if(isSelected.value){
+            emits('select', props.toDoListItem.id);            
+        }else{
+            emits('unSelect', props.toDoListItem.id);
+        }
+    }
+
 </script>
-<style scoped>    
+<style scoped>
     .listItem {
         border: 2px solid black !important;
         border-radius: 5px;
