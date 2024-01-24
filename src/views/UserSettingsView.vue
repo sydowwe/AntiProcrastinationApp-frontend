@@ -27,190 +27,158 @@
         <ErrorDialog ref="errorDialog" :title="errodDialogTitle" :message="errorDialogMessage"></ErrorDialog>
     </VRow>
 </template>
-<script lang="ts">
-    import { defineComponent, ref } from 'vue';
-    import { useUserStore } from '../plugins/stores/userStore';
-    import { VuetifyFormType, DialogType, DialogFormType } from '../classes/types/RefTypeInterfaces';
-    import { User, UserRequest } from '../classes/User';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import VerifyQrCodeDialog from '../components/dialogs/VerifyQrCodeDialog.vue';
     import ChangePasswordDialog from '../components/dialogs/ChangePasswordDialog.vue';
     import VerifyPasswordDialog from '../components/dialogs/VerifyPasswordDialog.vue';
     import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
     import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
-    export default defineComponent({
-        setup() {
-            const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            const verifyPasswordDialog = ref<DialogType>({} as DialogType);
-            const verifyQrCodeDialog = ref<DialogType>({} as DialogType);
-            const changePasswordDialog = ref<DialogFormType>({} as DialogFormType);
-            const qrCode2FADialog = ref<DialogType>({} as DialogType);
-            const errorDialog = ref<DialogType>({} as DialogType);
 
-            return { form, verifyQrCodeDialog, changePasswordDialog, verifyPasswordDialog, qrCode2FADialog, errorDialog };
-        },
-        components: { VerifyQrCodeDialog, ChangePasswordDialog, VerifyPasswordDialog, QrCodeFor2FADialog, ErrorDialog },
-        data() {
-            return {
-                userData: new User(),
-                currentFunction: this.saveChanges as (...args: any[]) => any,
-                qrCodeImage: '',
+    import { VuetifyFormType, DialogType, DialogFormType } from '../classes/types/RefTypeInterfaces';
+    import { User, UserRequest } from '../classes/User';
 
-                nameRules: [(v: string) => !!v || this.$t('authorization.nameRequired'), (v: string) => this.validateName(v) || this.$t('authorization.invalidName')],
-                surnameRules: [(v: string) => !!v || this.$t('authorization.surnameRequired'), (v: string) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
-                emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
+    import importDefaults from '../compositions/Defaults';
+    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    const { router, i18n, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
+    const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
 
-                errodDialogTitle: '',
-                errorDialogMessage: '',
-            };
-        },
-        created() {
-            this.getUserData();
-        },
-        computed: {
-            userStore() {
-                return useUserStore();
-            },
-            userRequest() {
-                return UserRequest.fromUser(this.userData);
-            },
-        },
-        methods: {
-            validateName(value: string) {
-                const letterRegex = /^[a-zA-Z ]+$/;
-                return letterRegex.test(value);
-            },
-            validateSurname(value: string) {
-                const letterRegex = /^[a-zA-Z ]+$/;
-                return letterRegex.test(value);
-            },
-            validateEmail(value: string) {
-                //     const regex = /^[A-Za-z]+([ -.]?[A-Za-z]+)*$/;
-                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-                return emailRegex.test(value);
-            },
-            async validateAndSendForm() {
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    if (await this.wereSensitiveChangesMade()) {
-                        this.currentFunction = this.saveChanges;
-                        this.verifyPasswordDialog.open();
-                    } else {
-                        this.saveChanges();
-                    }
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+    const verifyPasswordDialog = ref<DialogType>({} as DialogType);
+    const verifyQrCodeDialog = ref<DialogType>({} as DialogType);
+    const changePasswordDialog = ref<DialogFormType>({} as DialogFormType);
+    const qrCode2FADialog = ref<DialogType>({} as DialogType);
+    const errorDialog = ref<DialogType>({} as DialogType);
+
+    const userData = ref(new User());
+    const currentFunction = ref(saveChanges as (...args: any[]) => any);
+    const qrCodeImage = ref('');
+
+    const errodDialogTitle = ref('Dialog');
+    const errorDialogMessage = ref('');
+
+    getUserData();
+
+    const userRequest = () => UserRequest.fromUser(userData.value);
+
+    async function validateAndSendForm() {
+        const { valid } = await form.value.validate();
+        if (valid) {
+            if (await wereSensitiveChangesMade()) {
+                currentFunction.value = saveChanges;
+                verifyPasswordDialog.value.open();
+            } else {
+                saveChanges();
+            }
+        }
+    }
+    async function wereSensitiveChangesMade(): Promise<boolean> {
+        return await axios
+            .post('/user/were-sensitive-changes-made', userRequest)
+            .then((response) => {
+                return response.data as boolean;
+            })
+            .catch((error) => {
+                console.log(error);
+                return true;
+            });
+    }
+    function saveChanges(): void {
+        axios
+            .put('/user/edit-logged-user-data', userRequest)
+            .then((response) => {
+                userData.value = User.fromObject(response.data);
+                userStore.setEmail(userData.value.email);
+                if (response.data.token) {
+                    userStore.setToken(response.data.token);
                 }
-            },
-            async wereSensitiveChangesMade(): Promise<boolean> {
-                return await axios
-                    .post('/user/were-sensitive-changes-made', this.userRequest)
-                    .then((response) => {
-                        return response.data as boolean;
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                        return true;
-                    });
-            },
-            saveChanges(): void {
+                if (response.data.qrCode) {
+                    console.log(response.data);
+                    qrCodeImage.value = response.data.qrCode;
+                    qrCode2FADialog.value.open();
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    function getUserData(): void {
+        axios
+            .post('/user/get-logged-user-data', {})
+            .then((response) => {
+                userData.value = User.fromObject(response.data);
+                userStore.setEmail(userData.value.email);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    function passwordVerified(needs2FA: boolean) {
+        if (needs2FA) {
+            verifyQrCodeDialog.value.open();
+        } else if (currentFunction) {
+            currentFunction.value();
+        }
+    }
+    function changePassword(): void {
+        currentFunction.value = changePasswordDialog.value.submit;
+        verifyPasswordDialog.value.open();
+    }
+    function deleteAccount(): void {
+        currentFunction.value = () => {
+            axios
+                .delete('/user/delete-my-account', {})
+                .then((response) => {
+                    console.log(response);
+                    userStore.logout();
+                    router.push({ name: 'registration' });
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        };
+        verifyPasswordDialog.value.open();
+    }
+    function show2FAQrCode() {
+        currentFunction.value = () => {
+            if (!qrCodeImage.value) {
                 axios
-                    .put('/user/edit-logged-user-data', this.userRequest)
+                    .post('/user/get-2fa-qr-code', {})
                     .then((response) => {
-                        this.userData = User.fromObject(response.data);
-                        this.userStore.setEmail(this.userData.email);
-                        if (response.data.token) {
-                            this.userStore.setToken(response.data.token);
-                        }
                         if (response.data.qrCode) {
-                            console.log(response.data);
-                            this.qrCodeImage = response.data.qrCode;
-                            this.qrCode2FADialog.open();
+                            qrCodeImage.value = response.data.qrCode;
+                            qrCode2FADialog.value.open();
+                        } else {
+                            console.log(response);
                         }
                     })
                     .catch((error) => {
-                        console.log(error);
+                        console.error(error);
                     });
-            },
-            getUserData(): void {
-                axios
-                    .post('/user/get-logged-user-data', {})
-                    .then((response) => {
-                        this.userData = User.fromObject(response.data);
-                        this.userStore.setEmail(this.userData.email);
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            },
-            passwordVerified(needs2FA: boolean) {
-                if (needs2FA) {
-                    this.verifyQrCodeDialog.open();
-                } else if (this.currentFunction) {
-                    this.currentFunction();
-                }
-            },
-            changePassword(): void {
-                this.currentFunction = this.changePasswordDialog.submit;
-                this.verifyPasswordDialog.open();
-            },
-            deleteAccount(): void {
-                this.currentFunction = () => {
-                    axios
-                        .delete('/user/delete-my-account', {})
-                        .then((response) => {
-                            console.log(response);
-                            this.userStore.logout();
-                            this.$router.push({ name: 'registration' });
-                        })
-                        .catch((error) => {
-                            console.log(error);
-                        });
-                };
-                this.verifyPasswordDialog.open();
-            },
-            show2FAQrCode() {
-                this.currentFunction = () => {
-                    if (!this.qrCodeImage) {
-                        axios
-                            .post('/user/get-2fa-qr-code', {})
-                            .then((response) => {
-                                if (response.data.qrCode) {
-                                    this.qrCodeImage = response.data.qrCode;
-                                    this.qrCode2FADialog.open();
-                                } else {
-                                    console.log(response);
-                                }
-                            })
-                            .catch((error) => {
-                                console.error(error);
-                            });
+            } else {
+                qrCode2FADialog.value.open();
+            }
+        };
+        verifyPasswordDialog.value.open();
+    }
+    function showScratchCode() {
+        currentFunction.value = () => {
+            axios
+                .post('/user/get-2fa-scratch-code', {})
+                .then((response) => {
+                    if (response.data.new2FAQrCode === true) {
                     } else {
-                        this.qrCode2FADialog.open();
+                        if (response.data.scratchCode) {
+                            //TODO SHOW scratch code
+                        } else {
+                            console.error(response);
+                        }
                     }
-                };
-                this.verifyPasswordDialog.open();
-            },
-            showScratchCode() {
-                this.currentFunction = () => {
-                    axios
-                        .post('/user/get-2fa-scratch-code', {})
-                        .then((response) => {
-                            if (response.data.new2FAQrCode === true) {
-                                
-                            }
-                            else{
-                                if (response.data.scratchCode) {
-                                    //TODO SHOW scratch code
-                                } else {
-                                    console.error(response);
-                                }
-                            }
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                        });
-                };
-                this.verifyPasswordDialog.open();
-            },
-        },
-    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        };
+        verifyPasswordDialog.value.open();
+    }
 </script>
-../classes/User../classes/types/RefTypeInterfaces

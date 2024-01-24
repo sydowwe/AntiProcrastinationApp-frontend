@@ -1,7 +1,6 @@
 //TODO prerobit bez watcherov len na get
 <template>
-    <div>
-        <VRow class="my-0" align="center" justify="center">
+            <VRow class="my-0" align="center" justify="center">
             <VCol cols="6">
                 <VTextField label="Date" v-model="dateNice"  :clearable="false" readonly hide-details>
                     <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
@@ -18,7 +17,6 @@
                 <VTextField label="Minutes" v-model="minutes" type="number" min="0" max="59" :clearable="false" hide-details></VTextField>
             </VCol>
         </VRow>
-    </div>
 </template>
 <script lang="ts">
     import { defineComponent } from 'vue';

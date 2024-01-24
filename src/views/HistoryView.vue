@@ -16,37 +16,23 @@
     </VRow>
 </template>
 
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/HistoryRecordItem.vue';
     import { HistoryRecord } from '../classes/HistoryRecord';
-    import { HistoryFilter } from '../classes/History';
-    export default defineComponent({
-        components: { HistoryPanelFilter, HistoryRecordItem },
-        data() {
-            return {
-                records: [] as HistoryRecord[],
-                filter: new HistoryFilter(),
-            };
-        },
-        created() {
-            this.getAllRecords();
-        },
-        methods: {
-            getAllRecords() {
-                let url = `/history/get-all`;
-                axios
-                    .post(url)
-                    .then((response) => {
-                        this.records = HistoryRecord.listFromObjects(response.data);
-                    })
-                    .catch((error) => {});
-            },
-            handleFilterApplied(records: HistoryRecord[]) {
-                this.records = records;
-            },
-        },
-    });
+    const records = ref([] as HistoryRecord[]);
+    getAllRecords();
+    function getAllRecords() {
+        let url = `/history/get-all`;
+        axios
+            .post(url)
+            .then((response) => {
+                records.value = HistoryRecord.listFromObjects(response.data);
+            })
+            .catch((error) => {});
+    }
+    function handleFilterApplied(_records: HistoryRecord[]) {
+        records.value = _records;
+    }
 </script>
-../classes/HistoryRecord

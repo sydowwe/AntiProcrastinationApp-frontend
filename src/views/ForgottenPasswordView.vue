@@ -3,8 +3,8 @@
         <VCol cols="11" sm="7" md="5" lg="4">
             <h2>{{ $t('authorization.forgotPassword') }}</h2>
             <h4 class="mb-3">{{ $t('authorization.enterEmailToResetPassword') }}</h4>
-            <VForm @submit.prevent="resetPassword" class="text-center">
-                <VTextField ref="email" class="mb-3 text-start" :label="$t('authorization.email')" v-model="email" :rules="emailRules" @input="emailNotFound = false"></VTextField>
+            <VForm @submit.prevent="resetPassword" ref="form" class="text-center">
+                <VTextField class="mb-3 text-start" :label="$t('authorization.email')" v-model="email" :rules="emailRules"></VTextField>
                 <VBtn type="submit" color="primary">{{ $t('authorization.resetPassword') }}</VBtn>
             </VForm>
         </VCol>
@@ -18,59 +18,37 @@
             </VCardActions>
         </VCard>
     </VDialog>
-    <LoadingFullscreen :show="loading"></LoadingFullscreen>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
-    import { FormType } from '../classes/types/RefTypeInterfaces';
-    import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
-    export default defineComponent({
-        components:{
-            LoadingFullscreen
-        },
-        data() {
-            return {
-                email: '',
-                emailNotFound: false,
-                emailRules: [
-                    (v: string) => !!v || this.$t('authorization.emailRequired'),
-                    (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail'),
-                    (v: string) => !this.isEmailNotFound() || this.$t('authorization.emailNotFound'),
-                ],
-                dialog: false,
-                loading: false,
-            };
-        },
-        methods: {
-            isEmailNotFound() {
-                return this.emailNotFound;
-            },
-            validateEmail(value: string) {
-                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-                return emailRegex.test(value);
-            },
-            resetPassword() {
-                this.loading = true;
-                axios
-                    .post('/user/auth/forgotten-password', { email: this.email })
-                    .then((response) => {
-                        this.dialog = true;
-                        this.loading = false;
-                    })
-                    .catch((error) => {
-                        if (error.response.status === 404) {
-                            this.emailNotFound = true;
-                            (this.$refs.email as FormType).validate();
-                            this.loading = false;
-                        } else {
-                            console.log('Error', error.message);
-                        }
-                    });
-            },
-            goToLogin() {
-                this.$router.push({ name: 'login' });
-            },
-        },
-    });
+<script setup lang="ts">
+    import { ref } from 'vue';
+    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    import { VuetifyFormType } from '../classes/types/RefTypeInterfaces';
+    const { emailRules, goToLogin } = useUserDetailsValidation();
+    import importDefaults from '../compositions/Defaults';
+    const { showErrorSnackbar,showFullScreenLoading,hideFullScreenLoading } = importDefaults();
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+    const email = ref('');
+    const dialog = ref(false);
+
+    async function resetPassword() {
+        showFullScreenLoading();
+        const { valid } = await form.value.validate();
+        if (valid) {
+            axios
+                .post('/user/auth/forgotten-password', { email: email })
+                .then((response) => {
+                    dialog.value = true;
+                })
+                .catch((error) => {
+                    if (error.response.status === 404) {
+                        showErrorSnackbar('Email not found');
+                    } else {
+                        console.log('Error', error.message);
+                    }
+                })
+                .finally(()=>{
+                    hideFullScreenLoading();
+                });
+        }
+    }
 </script>
-../classes/types/RefTypeInterfaces

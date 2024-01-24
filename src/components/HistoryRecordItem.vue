@@ -22,44 +22,26 @@
         </VCard>
     </div>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
+    import { defineProps, computed } from 'vue';
     import { HistoryRecord } from '../classes/HistoryRecord';
     import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../classes/TimeUtils';
 
-    export default defineComponent({
-        props: {
-            record: {
-                type: HistoryRecord,
-                required: true,
-            },
-        },
-        created() {
-            console.log(typeof this.record.activity);
-        },
-        data() {
-            return {
-                lastDate: null as Date | null,
-            };
-        },
-        computed: {
-            formattedStartTimestamp() {
-                return new Date(this.record?.startTimestamp).toLocaleTimeString();
-            },
-            formattedLength() {
-                return getTimeNiceFromTimeObject(getTimeObjectFromSeconds(this.record?.length));
-            },
-            formattedEndTimestamp() {
-                return this.getEndOfActivityTime(this.record?.startTimestamp, this.record?.length);
-            },
-        },
-        methods: {
-            getEndOfActivityTime(startTimestamp: Date, length: number) {
-                const endInMillis =  new Date(startTimestamp).getTime() + length * 1000;
-                return new Date(endInMillis).toLocaleTimeString();
-            },
+    const props = defineProps({
+        record: {
+            type: HistoryRecord,
+            required: true,
         },
     });
+
+    const formattedStartTimestamp = computed(() => new Date(props.record.startTimestamp).toLocaleTimeString());
+    const formattedLength = computed(() => getTimeNiceFromTimeObject(getTimeObjectFromSeconds(props.record.length)));
+    const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length));
+
+    function getEndOfActivityTime(startTimestamp: Date, length: number) {
+        const endInMillis = new Date(startTimestamp).getTime() + length * 1000;
+        return new Date(endInMillis).toLocaleTimeString();
+    }
 </script>
 <style scoped>
     .line {
@@ -67,4 +49,3 @@
         min-width: 1rem !important;
     }
 </style>
-../classes/HistoryRecord

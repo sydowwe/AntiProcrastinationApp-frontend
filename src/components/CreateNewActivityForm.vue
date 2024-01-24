@@ -60,6 +60,7 @@
         </v-snackbar>
 </template>
 <script lang="ts">
+//TODOCOMPOSITION
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
     import ContentDialog from './dialogs/ContentDialog.vue';
     import { VuetifyFormType, DialogType } from '../classes/types/RefTypeInterfaces';

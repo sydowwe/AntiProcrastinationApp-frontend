@@ -5,21 +5,7 @@
         </VCard>
     </VDialog>
 </template>
-
-<script lang="ts">
- import { defineComponent, ref } from 'vue';
-    export default defineComponent( {
-        props:{
-            show:{
-                type: Boolean,
-                required: true,
-                default: false,
-            }
-        },
-        computed:{
-            loading(){
-                return this.show;
-            }
-        }
-    });
+<script setup lang="ts">
+    import { useFullScreenLoading } from '../../compositions/FullScreenLoadingFunctions';
+    const { loading } = useFullScreenLoading();
 </script>

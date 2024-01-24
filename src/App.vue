@@ -8,6 +8,7 @@
                         <template v-if="userStore.getToken">
                             <RouterLink class="my-auto pa-2" to="/">{{ $t('navigation.home') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/history">{{ $t('navigation.history') }}</RouterLink>
+                            <RouterLink class="my-auto pa-2" to="/routine-to-do-list">{{ $t('navigation.routineToDoList') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/to-do-list">{{ $t('navigation.toDoList') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/create-new-activity">{{ $t('navigation.createNewActivity') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
@@ -36,85 +37,56 @@
                 <RouterView />
             </VContainer>
         </VMain>
-        <ErrorSnackBar ref="errorSnackBar" :closable="false"></ErrorSnackBar>
+        <ErrorSnackBar ref="errorSnackBar"></ErrorSnackBar>
+        <LoadingFullscreen></LoadingFullscreen>
     </VApp>
 </template>
-<script lang="ts">
-    import { useUserStore } from './plugins/stores/userStore';
-    import { defineComponent, ref } from 'vue';
-    import { FeedBackType } from '../src/classes/types/RefTypeInterfaces';
-    import ErrorSnackBar from '../src/components/feedback/ErrorSnackBar.vue';
-    import { RouterLink, RouterView } from 'vue-router';
+<script setup lang="ts">
+    import { ref, watchEffect, onMounted } from 'vue';
+    import ErrorSnackBar from './components/feedback/ErrorSnackBar.vue';
+    import LoadingFullscreen from './components/dialogs/LoadingFullscreen.vue';
+    import importDefaults from './compositions/Defaults';
+    const { router, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
 
-    export default defineComponent({
-        setup() {
- 
-            const errorSnackBar = ref<FeedBackType>({} as FeedBackType);
-            return { errorSnackBar };
+    axios.interceptors.response.use(
+        (response) => {
+            // console.log(response.data);
+            return Promise.resolve(response);
         },
-        components: {
-            ErrorSnackBar,
-        },
-        data() {
-            return {
-            };
-        },
-        computed: {
-            userStore() {
-                return useUserStore();
-            },
-            token() {
-                return this.userStore.getToken;
-            },
-        },
-        created() {
-            //  this.checkTokenValid();
-            axios.interceptors.response.use(
-                (response) => {
-                    // console.log(response.data);
-                    return Promise.resolve(response);
-                },
-                (error) => {
-                    if(this.$router.currentRoute.value.name !=="login" &&( error.response.status === 403 || error.response.status === 401)){
-                        this.showErrorSnackbar('Error validating your login credentials! Logging out.');
-                        this.logoutClient();
-                    }
-                    return Promise.reject(error);
-                }
-            );
-        },
-        watch: {
-            token(newValue) {
-                if (!newValue) {
-                    this.logoutClient();
-                }
-            },
-        },
-        methods: {
-            logoutClient() {
-                this.userStore.logout();
-                this.$router.push({ name: 'login' });
-            },
-            checkTokenValid() {
-                axios
-                    .post('/user/auth/checkTokenValidity', {})
-                    .then((response) => {
-                        console.log(`\\\\\\\\\\\\\\\\\\\\\\\\\\`);
-                    })
-                    .catch((error) => {
-                        console.log("//////////////////////////");
-                        this.logoutClient();
-                    });
-            },
-            logout() {
-                axios.post('/user/auth/logout', {}).then((response) => {});
-                this.logoutClient();
-            },
-            showErrorSnackbar(message: string){
-                this.errorSnackBar.show(message);
+        (error) => {
+            if (router.currentRoute.value.name !== 'login' && (error.response.status === 403 || error.response.status === 401)) {
+                showErrorSnackbar('Error validating your login credentials! Logging out.');
+                logoutClient();
             }
-        },
-    });
+            return Promise.reject(error);
+        }
+    );
+
+    const checkTokenValid = () => {
+        axios
+            .post('/user/auth/checkTokenValidity', {})
+            .then((response) => {
+                console.log(`\\\\\\\\\\\\\\\\\\\\\\\\\\`);
+            })
+            .catch((error) => {
+                console.log('//////////////////////////');
+                logoutClient();
+            });
+    };
+    const logout = () => {
+        axios.post('/user/auth/logout', {}).then((response) => {});
+        logoutClient();
+    };
+    const logoutClient = () => {
+        userStore.logout();
+        router.push({ name: 'login' });
+    };
+    // watchEffect(() => {
+    //     const token = userStore.getToken;
+    //     if (!token) {
+    //         logoutClient();
+    //     }
+    // });
 </script>
 <style scoped>
     header {
@@ -179,4 +151,3 @@
         }
     }
 </style>
-./plugins/stores/userStore

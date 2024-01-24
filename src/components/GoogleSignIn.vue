@@ -12,30 +12,23 @@
         </VCol>
     </VRow>
 </template>
-<script lang="ts">
-    import { useUserStore } from '../plugins/stores/userStore';
-    import { defineComponent, ref } from 'vue';
-    export default defineComponent({
-        data() {
-            return {
-                loading: false,
-                error: false,
-            };
-        },
-        methods: {
-            callback(response: any) {
+<script setup lang="ts">
+    import { ref } from 'vue';
+
+    const loading = ref(false);
+    const error = ref(false);
+
+    function callback(response: any) {
+        console.log(response);
+        axios
+            .post('/user/auth/oauth2-login', response)
+            .then((response) => {
                 console.log(response);
-                axios
-                    .post('/user/auth/oauth2-login', response)
-                    .then((response) => {
-                        console.log(response);
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            },
-        },
-    });
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
 </script>
 <style>
     iframe {

@@ -9,7 +9,7 @@
                 <VTextField
                     :label="$t('authorization.password')"
                     v-model="formData.password"
-                    :rules="passwordRules"
+                    :rules="passwordRulesReg"
                     :type="showPassword ? 'text' : 'password'"
                     :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
@@ -37,109 +37,65 @@
     </VRow>
 </template>
 
-<script lang="ts">
-    import { useUserStore } from '../plugins/stores/userStore';
+<script setup lang="ts">
     import { VuetifyFormType, DialogType } from '../classes/types/RefTypeInterfaces';
-    import { defineComponent, ref } from 'vue';
+    import { ref } from 'vue';
     import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
     import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
     import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
-    export default defineComponent({
-        components: {
-            QrCodeFor2FADialog,
-            ErrorDialog,
-            LoadingFullscreen
-        },
-        setup() {
-            const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            const qrCode2FADialog = ref<DialogType>({} as DialogType);
-            const errorDialog = ref<DialogType>({} as DialogType);
-            return { form, qrCode2FADialog, errorDialog };
-        },
-        data() {
-            return {
-                formData: {
-                    name: '',
-                    surname: '',
-                    email: '',
-                    password: '',
-                    use2FA: true,
-                },
-                googleAuthCode: '',
-                termsAndConditions: false,
-                nameRules: [(v: string) => !!v || this.$t('authorization.nameRequired'), (v: string) => this.validateName(v) || this.$t('authorization.invalidName')],
-                surnameRules: [(v: string) => !!v || this.$t('authorization.surnameRequired'), (v: string) => this.validateSurname(v) || this.$t('authorization.invalidSurname')],
-                emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
-                passwordRules: [
-                    (v: string) => !!v || this.$t('authorization.passwordRequired'),
-                    (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
-                    (v: string) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
-                ],
-                termsAndConditionsRules: [(v: boolean) => v !== false || this.$t('authorization.termsAndConditionsRequired')],
-                showPassword: false,
+    import importDefaults from '../compositions/Defaults';
+    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    const { i18n, showErrorSnackbar, userStore } = importDefaults();
+    const { emailRules, nameRules, surnameRules, passwordRulesReg, goToLogin } = useUserDetailsValidation();
 
-                qrCodeImage: '',
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+    const qrCode2FADialog = ref<DialogType>({} as DialogType);
+    const errorDialog = ref<DialogType>({} as DialogType);
 
-                loading: false,
-
-                errodDialogTitle: 'Dialog',
-                errorDialogMessage: '',
-            };
-        },
-        methods: {
-            validateName(value: string) {
-                const letterRegex = /^[a-zA-Z ]+$/;
-                return letterRegex.test(value);
-            },
-            validateSurname(value: string) {
-                const letterRegex = /^[a-zA-Z ]+$/;
-                return letterRegex.test(value);
-            },
-            validateEmail(value: string) {
-                const emailRegex = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,64}/;
-                return emailRegex.test(value);
-            },
-            // validateUsername(value) {
-            //     const alphanumericRegex = /^[a-zA-Z0-9_.-]+$/;
-            //     return alphanumericRegex.test(value);
-            // },
-            validatePassword(value: string) {
-                const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
-                return passwordRegex.test(value);
-            },
-            async validateAndSendForm() {
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    axios
-                        .post('/user/auth/register', this.formData)
-                        .then((response) => {
-                            const userStore = useUserStore();
-                            if (response.data?.email) {
-                                userStore.setEmail(response.data.email);
-                                if (response.data?.has2FA) {
-                                    if (response.data.qrCode) {
-                                        this.qrCodeImage = response.data.qrCode;
-                                        this.qrCode2FADialog.open();
-                                    } else {
-                                        console.error('No qrCode!!!');
-                                    }
-                                } else {
-                                    this.goToLogin();
-                                }
-                            } else {
-                                console.error('No email!!!');
-                            }
-                        })
-                        .catch((error) => {
-                            console.log(error);
-                        });
-                }
-            },
-            goToLogin() {
-                this.$router.push({ name: 'login' });
-            },
-        },
+    const formData = ref({
+        name: '',
+        surname: '',
+        email: '',
+        password: '',
+        use2FA: true,
     });
+    const termsAndConditions = ref(false);
+    const showPassword = ref(false);
+    const qrCodeImage = ref('');    
+    const termsAndConditionsRules = [(v: boolean) => v !== false || i18n.t('authorization.termsAndConditionsRequired')];
+
+    const loading = ref(false);
+    const errodDialogTitle = ref('Dialog');
+    const errorDialogMessage = ref('');
+
+    async function validateAndSendForm() {
+        const { valid } = await form.value.validate();
+        if (valid) {
+            axios
+                .post('/user/auth/register', formData.value)
+                .then((response) => {
+                    if (response.data?.email) {
+                        userStore.setEmail(response.data.email);
+                        if (response.data?.has2FA) {
+                            if (response.data.qrCode) {
+                                qrCodeImage.value = response.data.qrCode;
+                                qrCode2FADialog.value.open();
+                            } else {
+                                console.error('No qrCode!!!');
+                            }
+                        } else {
+                            goToLogin();
+                        }
+                    } else {
+                        console.error('No email!!!');
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+    }
+   
 </script>
 <style>
     .v-checkbox > .v-input__details {

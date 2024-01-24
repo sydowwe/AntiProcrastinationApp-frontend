@@ -12,6 +12,7 @@
                     <ToDoListItem
                         v-for="item in items"
                         :toDoListItem="item"
+                        :color="item.urgency.color"
                         @delete="deleteItem"
                         @edit="toDoListDialog.openEdit"
                         @select="select"

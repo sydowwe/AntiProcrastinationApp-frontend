@@ -7,7 +7,7 @@
                 <VTextField
                     :label="$t('authorization.password')"
                     v-model="formData.password"
-                    :rules="passwordRules"
+                    :rules="passwordRulesLog"
                     :type="showPassword ? 'text' : 'password'"
                     :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
@@ -47,90 +47,64 @@
         </VDialog>
     </VRow>
 </template>
-<script lang="ts">
- import { RouterLink } from 'vue-router';
-    import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
-    import { useUserStore } from '../plugins/stores/userStore';
+<script setup lang="ts">
+    import { ref, onMounted, inject } from 'vue';
     import { VuetifyFormType, SubmittableType } from '../classes/types/RefTypeInterfaces';
-    import { defineComponent, ref } from 'vue';
     import { UserStoreItem } from '../classes/User';
     import GoogleSignIn from '../components/GoogleSignIn.vue';
-    export default defineComponent({
-        setup() {
-            const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
-            return { form, verifyQrCode };
-        },
-        components: {
-            LoginVerifyQrCode,
-            GoogleSignIn,
-        },
-        data() {
-            return {
-                formData: {
-                    email: '',
-                    password: '',
-                    stayLoggedIn: false,
-                },
-                emailRules: [(v: string) => !!v || this.$t('authorization.emailRequired'), (v: string) => this.validateEmail(v) || this.$t('authorization.invalidEmail')],
-                passwordRules: [(v: string) => !!v || this.$t('authorization.passwordRequired'), (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength')],
-                showPassword: false,
-                dialogTitle: 'Dialog',
-                dialog: false,
-            };
-        },
-        mounted() {
-            this.formData.email = this.userStore.getEmail;
-        },
-        computed: {
-            userStore() {
-                return useUserStore();
-            },
-        },
-        methods: {
-            validateEmail(value: string) {
-                const emailRegex = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,64}/;
-                return emailRegex.test(value);
-            },
-            isRedirectedFromRegistration() {
-                if (this.userStore.getEmail) {
-                    return true;
-                } else {
-                    return false;
-                }
-            },
-            async validateAndSendForm() {
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    axios
-                        .post('/user/auth/login', this.formData)
-                        .then((response) => {
-                            if (response.data) {
-                                const user = response.data as UserStoreItem;
-                                this.userStore.setUser(user);
-                                if (response.data.has2FA === true) {
-                                    this.dialogTitle = this.$t('authorization.twoFA');
-                                    this.dialog = true;
-                                } else if (user.token) {
-                                    this.$router.push('/');
-                                } else {
-                                    (this.$root as any).showErrorSnackbar('No token!!!');
-                                    console.error('No token!!!');
-                                }
-                            } else {
-                                (this.$root as any).showErrorSnackbar('No user!!!');
-                                console.error('No user!!!');
-                            }
-                        })
-                        .catch((error) => {
-                            console.log(error);
-                            if (error.response.status === 403 || error.response.status === 401) {
-                                 (this.$root as any).showErrorSnackbar(this.$t('authorization.wrongEmailOrPassword'));
-                            }
-                        });
-                }
-            },
-        },
+    import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
+    import importDefaults from '../compositions/Defaults';
+    const { router, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
+    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    const { emailRules, passwordRulesLog } = useUserDetailsValidation();
+
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+    const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
+    const formData = ref({
+        email: '',
+        password: '',
+        stayLoggedIn: false,
     });
+
+    const showPassword = ref(false);
+    const dialogTitle = ref('Dialog');
+    const dialog = ref(false);
+
+    onMounted(() => {
+        formData.value.email = userStore.getEmail;
+    });
+    function isRedirectedFromRegistration() {
+        return !!userStore.getEmail;
+    }
+    async function validateAndSendForm() {
+        const { valid } = await form.value.validate();
+        if (valid) {
+            axios
+                .post('/user/auth/login', formData)
+                .then((response) => {
+                    if (response.data) {
+                        const user = response.data as UserStoreItem;
+                        userStore.setUser(user);
+                        if (response.data.has2FA === true) {
+                            dialogTitle.value = 'authorization.twoFA';
+                            dialog.value = true;
+                        } else if (user.token) {
+                            router.push('/');
+                        } else {
+                            showErrorSnackbar('No token!!!');
+                            console.error('No token!!!');
+                        }
+                    } else {
+                        showErrorSnackbar('No user!!!');
+                        console.error('No user!!!');
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                    if (error.response.status === 403 || error.response.status === 401) {
+                        showErrorSnackbar('authorization.wrongEmailOrPassword');
+                    }
+                });
+        }
+    }
 </script>
-../classes/User../classes/types/RefTypeInterfaces

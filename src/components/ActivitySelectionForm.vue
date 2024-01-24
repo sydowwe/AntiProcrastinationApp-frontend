@@ -19,13 +19,14 @@
                 </VCol>
             </VRow>
         </VCol>
-        <VCol cols="auto" class="py-2">
+        <VCol cols="auto" class="mt-4">
             <VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
         </VCol>
     </VRow>
 </template>
 
 <script lang="ts">
+//TODOCOMPOSITION
     import { defineComponent } from 'vue';
     import { TimeObject } from '../classes/TimeUtils';
     import { UrgencyEntity } from '../classes/UrgencyEntity';

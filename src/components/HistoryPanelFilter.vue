@@ -52,10 +52,12 @@
     import { Category } from '../classes/Category';
     import { Activity } from '../classes/Activity';
     import { HistoryRecord } from '../classes/HistoryRecord';
+import ErrorSnackBar from './feedback/ErrorSnackBar.vue';
 
     export default defineComponent({
         components: {
             VDatePicker,
+            ErrorSnackBar
         },
         data() {
             return {

@@ -13,6 +13,7 @@ import RegistrationView from '../../views/RegistrationView.vue'
 import ForgottenPasswordView from '../../views/ForgottenPasswordView.vue'
 import TermsAndConditionsView from '../../views/TermsAndConditionsView.vue'
 import UserSettingsView from '../../views/UserSettingsView.vue'
+import RoutineToDoListView from '../../views/RoutineToDoListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -51,6 +52,11 @@ const router = createRouter({
       path: '/history',
       name: 'history',
       component: HistoryView
+    },
+    {
+      path: '/routine-to-do-list',
+      name: 'routineToDoList',
+      component: RoutineToDoListView
     },
     {
       path: '/to-do-list',

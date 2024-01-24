@@ -1,5 +1,5 @@
 <template>
-    <VListItem :active="!toDoListItem.isDone" @click="toDoListItem.isDone = !toDoListItem.isDone" :base-color="toDoListItem.urgency.color" class="align-center listItem">
+    <VListItem :active="!toDoListItem.isDone" @click="toDoListItem.isDone = !toDoListItem.isDone" :base-color="color" class="align-center listItem">
         <template v-slot:prepend>
             <VListItemAction start>
                 <v-checkbox-btn v-model="toDoListItem.isDone" base-color="white" color="white"></v-checkbox-btn>
@@ -35,12 +35,16 @@
 </template>
 
 <script setup lang="ts">
-    import { ref } from 'vue';
-    import { ToDoListItemEntity } from '../classes/ToDoListItem';
+    import { ref, watch } from 'vue';
+    import { ToDoListItemEntity, BaseToDoListItemEntity } from '../classes/ToDoListItem';
 
     const props = defineProps({
         toDoListItem: {
-            type: ToDoListItemEntity,
+            type: BaseToDoListItemEntity,
+            required: true,
+        },
+        color: {
+            type: String,
             required: true,
         },
     });
@@ -54,13 +58,15 @@
         { name: 'delete', color: 'error', icon: 'trash', action: del },
     ];
 
-    function actionButtonText(name: string) {
-        return isSelected.value ? (`general.un${name}`) : (`general.${name}`);
-    }
+    watch(
+        () => props.toDoListItem.isDone,
+        (newValue) => {
+            emits('isDoneChanged', props.toDoListItem.id, newValue);
+        }
+    );
 
-    function toggleDone() {
-        props.toDoListItem.isDone = !props.toDoListItem.isDone;
-        emits('isDoneChanged', props.toDoListItem.id, props.toDoListItem.isDone);
+    function actionButtonText(name: string) {
+        return isSelected.value ? `general.un${name}` : `general.${name}`;
     }
 
     function edit() {
@@ -72,13 +78,12 @@
     }
     function toggleSelect() {
         isSelected.value = !isSelected.value;
-        if(isSelected.value){
-            emits('select', props.toDoListItem.id);            
-        }else{
+        if (isSelected.value) {
+            emits('select', props.toDoListItem.id);
+        } else {
             emits('unSelect', props.toDoListItem.id);
         }
     }
-
 </script>
 <style scoped>
     .listItem {

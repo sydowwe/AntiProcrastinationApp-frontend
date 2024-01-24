@@ -12,62 +12,49 @@
                     <TimePicker @timeChange="updateLengthOfActivity"></TimePicker>
                 </VCol>
                 <VCol cols="auto">
-                    <VBtn @click="saveActivity()" color="success">{{ $t("history.addActivityToHistory") }}</VBtn>
+                    <VBtn @click="saveActivity()" color="success">{{ $t('history.addActivityToHistory') }}</VBtn>
                 </VCol>
             </VRow>
         </VCol>
     </VRow>
-    <ErrorSnackBar ref="errorSnackBar"></ErrorSnackBar>
 </template>
-<script lang="ts">
+<script setup lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import TimePicker from '../components/TimePicker.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
     import { TimeObject } from '../classes/TimeUtils';
     import { ActivitySelectionFormType, FeedBackType } from '../classes/types/RefTypeInterfaces';
-    import { defineComponent, ref } from 'vue';
-import ErrorSnackBar from '../components/feedback/ErrorSnackBar.vue';
-    export default defineComponent({
-        setup() {
-            const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-            const errorSnackBar = ref<FeedBackType>({} as FeedBackType);
-            return { activitySelectionForm, errorSnackBar };
-        },
-        components: {
-            ActivitySelectionForm,
-            SaveActivityDialog,
-            TimePicker,
-            DateTimePicker,
-            ErrorSnackBar
-        },
-        data() {
-            return {
-                formDisabled: false,
-                dateTime: new Date(),
-                lengthOfActivity: new TimeObject(),
-            };
-        },
-        methods: {
-            saveActivity() {
-                if (this.dateTime.valueOf() <= Date.now()) {
-                    if (this.lengthOfActivity.isNotZero()) {
-                        this.activitySelectionForm?.addActivityToHistory(this.lengthOfActivity, this.dateTime.valueOf());
-                    } else {
-                        this.errorSnackBar.show(this.$t("history.lengthNotSet"));
-                    }
+    import { ref } from 'vue';
+    import importDefaults from '../compositions/Defaults';
+    const { i18n, showErrorSnackbar } = importDefaults();
+
+    const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+    const formDisabled = ref(false);
+    const dateTime = ref(new Date());
+    const lengthOfActivity = ref(new TimeObject());
+
+    function saveActivity() {
+        if (activitySelectionForm.value.validate()) {
+            if (dateTime.value.valueOf() <= Date.now()) {
+                if (lengthOfActivity.value.isNotZero()) {
+                    activitySelectionForm.value?.addActivityToHistory(lengthOfActivity.value, dateTime.value.valueOf());
                 } else {
-                    //TODO Really wanna add activity in future
+                    showErrorSnackbar(i18n.t('history.lengthNotSet'));
                 }
-            },
-            updateDateTime(dateTime: Date) {
-                this.dateTime = dateTime;
-            },
-            updateLengthOfActivity(formattedTime: TimeObject | undefined) {
-                this.lengthOfActivity = formattedTime ?? new TimeObject(0, 0, 0);
-            },
-        },
-    });
+            } else {
+                alert('Really wanna add activity in future');
+            }
+        } else {
+            alert('select activity');
+        }
+    }
+    function updateDateTime(dateTimeIn: Date) {
+        dateTime.value = dateTimeIn;
+    }
+    function updateLengthOfActivity(formattedTime: TimeObject | undefined) {
+        lengthOfActivity.value = formattedTime ?? new TimeObject(0, 0, 0);
+    }
 </script>
 <style scoped>
     .bordered {
@@ -82,4 +69,3 @@ import ErrorSnackBar from '../components/feedback/ErrorSnackBar.vue';
         border-radius: 0px 5px 5px 0px;
     }
 </style>
-../classes/types/RefTypeInterfaces

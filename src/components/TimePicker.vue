@@ -1,5 +1,5 @@
 <template>
-    <VRow class="my-0" align="center" justify="center" noGutters>
+    <VRow class="my-0" align="center" justify="center">
         <VCol cols="4">
             <VTextField :label="$t('dateTime.hours')" v-model="time.hours" type="number" min="0" max="24" :clearable="false" hide-details></VTextField>
         </VCol>

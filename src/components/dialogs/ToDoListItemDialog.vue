@@ -32,13 +32,24 @@
         created() {
             this.getUrgencyOptions();
         },
+        watch:{
+            dialog(newValue){
+                if(!newValue){
+                    this.toDoListItem = new ToDoListItemRequest(); 
+                    this.setDefaultUrgency();
+                }
+            }
+        },
         methods: {
+            setDefaultUrgency(){
+                this.toDoListItem.urgencyId = this.urgencyOptions.find((item) => item.priority === 1)?.id ?? null;
+            },
             getUrgencyOptions() {
                 window.axios
                     .post(`/urgency/get-all`)
                     .then((response) => {
                         this.urgencyOptions = UrgencyEntity.listFromObjects(response.data);
-                        this.toDoListItem.urgencyId = this.urgencyOptions.find((item) => item.priority === 1)?.id ?? null;
+                        this.setDefaultUrgency();
                     })
                     .catch((error) => {});
             },
@@ -53,7 +64,6 @@
                 this.dialog = true;
             },
             close() {
-                this.toDoListItem = new ToDoListItemRequest(); 
                 this.dialog = false;
             },
             save() {

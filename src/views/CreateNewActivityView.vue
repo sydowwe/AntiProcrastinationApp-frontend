@@ -3,13 +3,6 @@
         <CreateNewActivityForm></CreateNewActivityForm>
     </div>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
     import CreateNewActivityForm from '../components/CreateNewActivityForm.vue';
-    export default defineComponent({
-        components: {
-            CreateNewActivityForm,
-        },
-    });
 </script>
-<style></style>

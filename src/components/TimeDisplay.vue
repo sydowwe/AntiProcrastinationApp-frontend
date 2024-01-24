@@ -4,7 +4,7 @@
         <VCol cols="2" v-for="(value, key) in timeObject" :key="key">
             <VCard class="time-card">
                 <VCardText class="text-center">
-                    <span class="time-value">{{ formatTime(value) }}</span>
+                    <span class="time-value">{{ formatTime(value as number) }}</span>
                     <span class="time-label">{{ timeLabels[key] }}</span>
                 </VCardText>
             </VCard>
@@ -12,34 +12,25 @@
     </VRow>
 </template>
 
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
     import { TimeObject } from '../classes/TimeUtils';
-    export default defineComponent({
-        props: {
-            timeObject: {
-                type: TimeObject,
-                required: true,
-            },
-        },
-        data() {
-            return {
-                timeLabels: {
-                    hours: 'H',
-                    minutes: 'M',
-                    seconds: 'S',
-                },
-            };
-        },
-        methods: {
-            formatTime(time: number) {
-                if (isNaN(time) || time < 0) {
-                    return '00';
-                }
-                return Math.floor(time).toString().padStart(2, '0');
-            },
+    defineProps({
+        timeObject: {
+            type: TimeObject,
+            required: true,
         },
     });
+    const timeLabels = {
+        hours: 'H',
+        minutes: 'M',
+        seconds: 'S',
+    };
+    function formatTime(time: number) {
+        if (isNaN(time) || time < 0) {
+            return '00';
+        }
+        return Math.floor(time).toString().padStart(2, '0');
+    }
 </script>
 
 <style scoped>
