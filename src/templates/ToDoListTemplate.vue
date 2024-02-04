@@ -29,7 +29,7 @@
 import { ref, onMounted } from 'vue';
 import { ToDoListItemEntity, ToDoListItemRequest } from '../classes/ToDoListItem';
 import ToDoListItem from '../components/ToDoListItem.vue';
-import ToDoListItemDialog from '../components/dialogs/ToDoListItemDialog.vue';
+import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import { ToDoListItemDialogType } from '../classes/types/RefTypeInterfaces';
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);

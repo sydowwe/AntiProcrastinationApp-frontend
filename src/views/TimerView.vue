@@ -19,104 +19,88 @@
         </VCol>
     </VRow>
 </template>
-<script lang="ts">
+<script setup lang="ts">
     import TimerTypeSelect from '../components/TimerTypeSelect.vue';
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import TimePicker from '../components/TimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
     import { showNotification, checkNotificationPermission } from '../scripts/notifications';
-    import { TimeObject, getTimeObjectFromSeconds, getSecondsFromTimeObject, getTimeNiceFromTimeObject } from '../classes/TimeUtils';
+    import { TimeObject } from '../classes/TimeUtils';
     import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
-    import { defineComponent, ref } from 'vue';
-    export default defineComponent({
-        setup() {
-            const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-            const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
-            return { activitySelectionForm, saveDialog };
-        },
-        components: {
-            ActivitySelectionForm,
-            SaveActivityDialog,
-            TimerTypeSelect,
-            TimePicker,
-            TimeDisplay,
-        },
-        data() {
-            return {
-                time: new TimeObject(),
-                timeInitial: new TimeObject(),
-                timeInputVisible: true,
-                timeRemaining: 0,
-                paused: false,
-                intervalId: undefined as number | undefined,
-                startTimestamp: 0,
-                formDisabled: false,
-            };
-        },
-        created() {
-            checkNotificationPermission();
-        },
-        methods: {
-            start() {
-                if (this.paused) {
-                    this.resume();
-                } else {
-                    if (this.activitySelectionForm.validate()) {
-                        this.formDisabled = true;
-                        this.startTimestamp = Date.now();
-                        this.timeInputVisible = false;
-                        this.timeRemaining = getSecondsFromTimeObject(this.timeInitial);
-                        this.resume();
-                    } else {
-                        alert('select activity please');
-                    }
-                }
-            },
-            pause() {
-                clearInterval(this.intervalId);
-                this.paused = true;
-            },
-            resume() {
-                this.paused = false;
-                this.time = getTimeObjectFromSeconds(this.timeRemaining);
-                this.intervalId = setInterval(() => {
-                    if (this.timeRemaining == 0) {
-                        this.stop();
-                    } else {
-                        this.timeRemaining--;
-                        this.time = getTimeObjectFromSeconds(this.timeRemaining);
-                    }
-                }, 1000);
-            },
-            stop() {
-                clearInterval(this.intervalId);
-                const timeSpentNice = this.timeRemaining == 0 ? getTimeNiceFromTimeObject(this.timeInitial) : getTimeNiceFromTimeObject(getTimeObjectFromSeconds(this.getElapsedTimeInSeconds()));
+    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
+    import { ref } from 'vue';
 
-                let activityName = this.activitySelectionForm.selectedActivityName;
-                showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
-                this.saveDialog.open(activityName, timeSpentNice);
-            },
-            resetTime() {
-                this.time = new TimeObject();
-                this.paused = false;
-                this.intervalId = undefined;
-                this.formDisabled = false;
-                this.timeInputVisible = true;
-                this.timeRemaining = 0;
-                this.startTimestamp = 0;
-            },
-            saveActivity() {
-                const timeInSeconds = this.timeRemaining == 0 ? getSecondsFromTimeObject(this.timeInitial) : this.getElapsedTimeInSeconds();
-                this.activitySelectionForm.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), this.startTimestamp);
-            },
-            updateTimeInitial(timeInitial: TimeObject) {
-                this.timeInitial = timeInitial;
-            },
-            getElapsedTimeInSeconds() {
-                return getSecondsFromTimeObject(this.timeInitial) - getSecondsFromTimeObject(this.time);
-            },
-        },
-    });
+    const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+    const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
+
+    const timeInitial = ref(new TimeObject());
+    const timeInputVisible = ref(true);
+    const timeRemaining = ref(0);
+    const time = ref(new TimeObject());
+    const paused = ref(false);
+    const intervalId = ref(undefined as number | undefined);
+    const startTimestamp = ref(0);
+    const formDisabled = ref(false);
+
+    checkNotificationPermission();
+
+    function start() {
+        if (paused) {
+            resume();
+        } else {
+            if (activitySelectionForm.value.validate()) {
+                formDisabled.value= true;
+                startTimestamp.value= Date.now();
+                timeInputVisible.value= false;
+                timeRemaining.value= getSecondsFromTimeObject(timeInitial.value);
+                resume();
+            } else {
+                alert('select activity please');
+            }
+        }
+    }
+    function pause() {
+        clearInterval(intervalId.value);
+        paused.value= true;
+    }
+    function resume() {
+        paused.value= false;
+        time.value= getTimeObjectFromSeconds(timeRemaining.value);
+        intervalId.value= setInterval(() => {
+            if (timeRemaining.value== 0) {
+                stop();
+            } else {
+                timeRemaining.value--;
+                time.value = getTimeObjectFromSeconds(timeRemaining.value);
+            }
+        }, 1000);
+    }
+    function stop() {
+        clearInterval(intervalId.value);
+        const timeSpentNice = timeRemaining.value == 0 ? getTimeNiceFromTimeObject(timeInitial.value) : getTimeNiceFromTimeObject(getTimeObjectFromSeconds(getElapsedTimeInSeconds()));
+
+        let activityName = activitySelectionForm.value.selectedActivityName;
+        showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
+        saveDialog.value.open(activityName, timeSpentNice);
+    }
+    function resetTime() {
+        time.value = new TimeObject();
+        paused.value = false;
+        intervalId.value = undefined;
+        formDisabled.value = false;
+        timeInputVisible.value = true;
+        timeRemaining.value = 0;
+        startTimestamp.value = 0;
+    }
+    function saveActivity() {
+        const timeInSeconds = timeRemaining.value == 0 ? getSecondsFromTimeObject(timeInitial.value) : getElapsedTimeInSeconds();
+        activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value);
+    }
+    function updateTimeInitial(_timeInitial: TimeObject) {
+        timeInitial.value = _timeInitial;
+    }
+    function getElapsedTimeInSeconds() {
+        return getSecondsFromTimeObject(timeInitial.value) - getSecondsFromTimeObject(time.value);
+    }
 </script>
-../classes/types/RefTypeInterfaces

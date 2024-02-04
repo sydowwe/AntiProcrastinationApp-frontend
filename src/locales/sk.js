@@ -98,6 +98,7 @@ const sk = {
     navigation:{
         home: `Domov`,
         toDoList: `To-do list`,
+        routineToDoList: `Rutina`,
         createNewActivity: `Vytvoriť nový druh aktivity`,
         history: `História`,
         addActivityManually: `Pridať aktivitu do histórie`,
@@ -122,6 +123,9 @@ const sk = {
         continue: `Pokračovať`,
         done: `Hotovo`,
         error: `Chyba`,
+        select: `Vybrať`,
+        unSelect: `Zrušiť výber`,
+        delete: `Vymazať`,
     },
     dateTime:{
         when: `Kedy`,

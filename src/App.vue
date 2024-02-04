@@ -45,7 +45,7 @@
     import { ref, watchEffect, onMounted } from 'vue';
     import ErrorSnackBar from './components/feedback/ErrorSnackBar.vue';
     import LoadingFullscreen from './components/dialogs/LoadingFullscreen.vue';
-    import importDefaults from './compositions/Defaults';
+    import {importDefaults} from './compositions/Defaults';
     const { router, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
 
     axios.interceptors.response.use(

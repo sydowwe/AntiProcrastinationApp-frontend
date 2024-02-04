@@ -3,7 +3,7 @@
         <VCol cols="12" sm="10" md="8" lg="6">
             <h2 class="text-center mb-5">{{ $t('authorization.login') }}</h2>
             <VForm ref="form" @submit.prevent="validateAndSendForm()" class="d-flex flex-column">
-                <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules" :autofocus="!isRedirectedFromRegistration()"></VTextField>
+                <VTextField class="mb-3" :label="$t('authorization.email')" v-model="formData.email" :rules="emailRules" :autofocus="!isRedirectedFromRegistration"></VTextField>
                 <VTextField
                     :label="$t('authorization.password')"
                     v-model="formData.password"
@@ -11,7 +11,7 @@
                     :type="showPassword ? 'text' : 'password'"
                     :append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
                     @click:append-inner="showPassword = !showPassword"
-                    :autofocus="isRedirectedFromRegistration()"
+                    :autofocus="isRedirectedFromRegistration"
                 ></VTextField>
                 <VRow justify="center">
                     <VCol cols="12" sm="6" class="pb-0 pb-sm-3">
@@ -48,12 +48,12 @@
     </VRow>
 </template>
 <script setup lang="ts">
-    import { ref, onMounted, inject } from 'vue';
+    import { ref, onMounted, computed } from 'vue';
     import { VuetifyFormType, SubmittableType } from '../classes/types/RefTypeInterfaces';
     import { UserStoreItem } from '../classes/User';
     import GoogleSignIn from '../components/GoogleSignIn.vue';
     import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
-    import importDefaults from '../compositions/Defaults';
+    import {importDefaults} from '../compositions/Defaults';
     const { router, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
     const { emailRules, passwordRulesLog } = useUserDetailsValidation();
@@ -72,15 +72,14 @@
 
     onMounted(() => {
         formData.value.email = userStore.getEmail;
-    });
-    function isRedirectedFromRegistration() {
-        return !!userStore.getEmail;
-    }
+    });    
+    const isRedirectedFromRegistration = computed(()=>!!userStore.getEmail);
+
     async function validateAndSendForm() {
         const { valid } = await form.value.validate();
         if (valid) {
             axios
-                .post('/user/auth/login', formData)
+                .post('/user/auth/login', JSON.stringify(formData.value))
                 .then((response) => {
                     if (response.data) {
                         const user = response.data as UserStoreItem;

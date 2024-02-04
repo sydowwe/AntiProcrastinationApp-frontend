@@ -24,10 +24,9 @@ app.use(pinia);
 
 //IDK
 import moment from 'moment';
-import sortable from 'sortable';
-import { VueDraggableNext } from 'vue-draggable-next';
+// import { VueDraggableNext } from 'vue-draggable-next';
 app.use(moment);
-app.component(VueDraggableNext);
+// app.component(VueDraggableNext);
 
 // ROUTER
 import router from './plugins/router';
@@ -39,7 +38,7 @@ import { useUserStore } from './plugins/stores/userStore';
 const authStore = useUserStore();
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: 'http://localhost:8080',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

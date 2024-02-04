@@ -1,36 +1,37 @@
 import { UrgencyEntity } from './UrgencyEntity';
 
-
-export class BaseToDoListItemEntity{
+export interface BaseToDoListItemEntity{
+    id: number,
+    name: string,
+    text: string,
+    isDone: boolean,
+}
+export class BaseToDoListItemRequest{
   constructor(
-    public id: number,
     public name: string,
     public text: string,
     public isDone: boolean,
   ) {}
   static fromObject(object: any){
     const {
-      id = 0,
       name = '',
       text = '',
       isDone = false,
     } = object;  
-    return new BaseToDoListItemEntity(id, name, text, isDone);
+    return new BaseToDoListItemRequest(name, text, isDone);
   }    
   static listFromObjects(objects: any[]){
     return objects.map((item:object)=>this.fromObject(item));
+  }
 }
-
-}
-
-export class ToDoListItemEntity extends BaseToDoListItemEntity{
+export class ToDoListItemEntity implements BaseToDoListItemEntity{
     constructor(
       public id: number,
       public name: string,
       public text: string,
       public isDone: boolean,
       public urgency: UrgencyEntity,
-    ) {super(id,name,text,isDone)}
+    ) {}
     static fromObject(object: any){
       const {
         id = 0,
@@ -43,7 +44,7 @@ export class ToDoListItemEntity extends BaseToDoListItemEntity{
     }    
     static listFromObjects(objects: any[]){
       return objects.map((item:object)=>this.fromObject(item));
-  }
+    }
   static frontEndSort(todoItems: ToDoListItemEntity[]){
     return todoItems.sort((a, b) => {
       const priorityComparison = a.urgency.priority - b.urgency.priority;
@@ -51,13 +52,14 @@ export class ToDoListItemEntity extends BaseToDoListItemEntity{
     });
   }
 }
-export class ToDoListItemRequest {
- 
-  constructor(public name: string = '',
+export class ToDoListItemRequest extends BaseToDoListItemRequest{
+  constructor(
+   
+    public name: string = '',
      public text: string = '', 
      public urgencyId: number | null = null, 
      public isDone: boolean = false) {
-  
+      super(name,text,isDone);  
   }    
   static fromEntity(obj: ToDoListItemEntity): ToDoListItemRequest {
     return new ToDoListItemRequest(obj.name, obj.text, obj.urgency.id, obj.isDone);
@@ -69,14 +71,14 @@ export class ToDoListItemRequest {
 
 
 //=========================================================
-export class RoutineToDoListItemEntity extends BaseToDoListItemEntity{
+export class RoutineToDoListItemEntity implements BaseToDoListItemEntity{
   constructor(
     public id: number,
     public name: string,
     public text: string,
     public isDone: boolean,
     public timePeriod: TimePeriodEntity,
-  ) {super(id,name,text,isDone)}
+  ) {}
   static fromObject(object: any){
     const {
       id = 0,
@@ -87,14 +89,54 @@ export class RoutineToDoListItemEntity extends BaseToDoListItemEntity{
     } = object;  
     return new RoutineToDoListItemEntity(id, name, text ,isDone , timePeriod);
   }    
-  
+  static frontEndSort(todoItems: RoutineToDoListItemEntity[]){
+    return todoItems.sort((a, b) => {
+      const priorityComparison = a.timePeriod.lengthInDays - b.timePeriod.lengthInDays;
+      return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
+    });
+  }
+  static listFromObjects(objects: any[]){
+    return objects.map((item:object)=>this.fromObject(item));
+  }
 }
-
+export class RoutineToDoListItemRequest extends BaseToDoListItemRequest{ 
+  constructor(public name: string = '',
+     public text: string = '', 
+     public timePeriodId: number | null = null, 
+     public isDone: boolean = false) {  
+      super(name,text,isDone);
+  }    
+  static fromEntity(obj: RoutineToDoListItemEntity): RoutineToDoListItemRequest {
+    return new RoutineToDoListItemRequest(obj.name, obj.text, obj.timePeriod.id, obj.isDone);
+  }
+  static fromObject(obj: any): RoutineToDoListItemRequest {
+    return new RoutineToDoListItemRequest(obj.name, obj.text, obj.timePeriodId, obj.isDone);
+  }
+}
 export class TimePeriodEntity{
   constructor(
-    public id: number | null = null,
+    public id: number = 0,
     public name: string | null = null,
     public color: string | null = null,
-    public lengthInDays: number | null = null,
+    public lengthInDays: number = 0,
   ){}
+  static fromObject(object: any){
+    const {
+      id = 0,
+      name = '',
+      color = '',
+      lengthInDays = 0,
+    } = object;  
+    return new TimePeriodEntity(id, name, color, lengthInDays);
+  }   
+  static listFromObjects(objects: any[]){
+    return objects.map((item:object)=>this.fromObject(item));
+  }
 }
+
+export enum ToDoListKind{
+  ROUTINE,
+  NORMAL
+}
+
+export type AnyToDoListItemEntity = ToDoListItemEntity | RoutineToDoListItemEntity;

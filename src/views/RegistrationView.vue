@@ -43,10 +43,10 @@
     import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
     import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
     import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
-    import importDefaults from '../compositions/Defaults';
+    import {importDefaults} from '../compositions/Defaults';
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
-    const { i18n, showErrorSnackbar, userStore } = importDefaults();
-    const { emailRules, nameRules, surnameRules, passwordRulesReg, goToLogin } = useUserDetailsValidation();
+    const { i18n, showErrorSnackbar, userStore, goToLogin } = importDefaults();
+    const { emailRules, nameRules, surnameRules, passwordRulesReg } = useUserDetailsValidation();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const qrCode2FADialog = ref<DialogType>({} as DialogType);

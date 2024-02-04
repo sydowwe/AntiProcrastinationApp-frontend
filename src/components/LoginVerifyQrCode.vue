@@ -10,7 +10,7 @@
     import { ref } from 'vue';
     import { useUserStore } from '../plugins/stores/userStore';
     import { VOtpInput } from 'vuetify/lib/labs/components.mjs';
-    import importDefaults from '../compositions/Defaults';
+    import {importDefaults} from '../compositions/Defaults';
     const { router } = importDefaults();
 
     const props = defineProps({

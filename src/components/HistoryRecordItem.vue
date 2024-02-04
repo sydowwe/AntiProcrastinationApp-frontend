@@ -25,7 +25,8 @@
 <script setup lang="ts">
     import { defineProps, computed } from 'vue';
     import { HistoryRecord } from '../classes/HistoryRecord';
-    import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../classes/TimeUtils';
+    import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
+
 
     const props = defineProps({
         record: {

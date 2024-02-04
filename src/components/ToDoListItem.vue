@@ -36,11 +36,13 @@
 
 <script setup lang="ts">
     import { ref, watch } from 'vue';
-    import { ToDoListItemEntity, BaseToDoListItemEntity } from '../classes/ToDoListItem';
-
+    import { BaseToDoListItemEntity } from '../classes/ToDoListItem';
+    import {importDefaults} from '../compositions/Defaults';
+    const { i18n } = importDefaults();
+    
     const props = defineProps({
         toDoListItem: {
-            type: BaseToDoListItemEntity,
+            type: Object as () => BaseToDoListItemEntity,
             required: true,
         },
         color: {
@@ -57,22 +59,18 @@
         { name: 'edit', color: 'primary', icon: 'pen-to-square', action: edit },
         { name: 'delete', color: 'error', icon: 'trash', action: del },
     ];
-
     watch(
         () => props.toDoListItem.isDone,
         (newValue) => {
             emits('isDoneChanged', props.toDoListItem.id, newValue);
         }
     );
-
     function actionButtonText(name: string) {
-        return isSelected.value ? `general.un${name}` : `general.${name}`;
+        return i18n.t(isSelected.value ? `general.un${name}` : `general.${name}`);
     }
-
     function edit() {
         emits('edit', props.toDoListItem);
     }
-
     function del() {
         emits('delete', props.toDoListItem.id);
     }

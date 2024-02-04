@@ -23,7 +23,8 @@
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
-    import { TimeObject, getTimeObjectFromSeconds, getSecondsFromTimeObject, getTimeNiceFromTimeObject } from '../classes/TimeUtils';
+    import { TimeObject } from '../classes/TimeUtils';
+    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
     import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
     import { defineComponent, ref } from 'vue';
 

@@ -100,6 +100,7 @@ const en = {
         history: `History`,
         createNewActivity: `Create new kind of activity`,
         toDoList: `To-do list`,
+        routineToDoList: `Routine`,
         addActivityManually: `Add activity to history`,
         stopwatch: `Stopwatch`,
         timer: `Timer`,
@@ -122,6 +123,10 @@ const en = {
         continue: `Continue`,
         done: `Done`,
         error: `Error`,
+        select: `Select`,
+        unSelect: `Unselect`,
+        delete: `Delete`,
+
     },
     dateTime: {
         when: `When`,

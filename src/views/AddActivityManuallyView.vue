@@ -26,7 +26,7 @@
     import { TimeObject } from '../classes/TimeUtils';
     import { ActivitySelectionFormType, FeedBackType } from '../classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
-    import importDefaults from '../compositions/Defaults';
+    import {importDefaults} from '../compositions/Defaults';
     const { i18n, showErrorSnackbar } = importDefaults();
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);

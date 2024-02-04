@@ -38,7 +38,7 @@
     import { VuetifyFormType, DialogType, DialogFormType } from '../classes/types/RefTypeInterfaces';
     import { User, UserRequest } from '../classes/User';
 
-    import importDefaults from '../compositions/Defaults';
+    import {importDefaults} from '../compositions/Defaults';
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
     const { router, i18n, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();

@@ -23,17 +23,17 @@
     import { ref } from 'vue';
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
     import { VuetifyFormType } from '../classes/types/RefTypeInterfaces';
-    const { emailRules, goToLogin } = useUserDetailsValidation();
-    import importDefaults from '../compositions/Defaults';
-    const { showErrorSnackbar,showFullScreenLoading,hideFullScreenLoading } = importDefaults();
+    const { emailRules } = useUserDetailsValidation();
+    import {importDefaults} from '../compositions/Defaults';
+    const { showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading, goToLogin } = importDefaults();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');
     const dialog = ref(false);
 
     async function resetPassword() {
-        showFullScreenLoading();
         const { valid } = await form.value.validate();
         if (valid) {
+            showFullScreenLoading();
             axios
                 .post('/user/auth/forgotten-password', { email: email })
                 .then((response) => {
@@ -46,7 +46,7 @@
                         console.log('Error', error.message);
                     }
                 })
-                .finally(()=>{
+                .finally(() => {
                     hideFullScreenLoading();
                 });
         }
