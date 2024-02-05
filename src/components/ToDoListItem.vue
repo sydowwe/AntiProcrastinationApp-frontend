@@ -63,16 +63,19 @@
         () => props.toDoListItem.isDone,
         (newValue) => {
             emits('isDoneChanged', props.toDoListItem.id, newValue);
+            isSelected.value = false;
         }
     );
     function actionButtonText(name: string) {
-        return i18n.t(isSelected.value ? `general.un${name}` : `general.${name}`);
+        return i18n.t(isSelected.value && name === 'select' ? `general.un${name}` : `general.${name}`);
     }
     function edit() {
         emits('edit', props.toDoListItem);
+        isSelected.value = false;
     }
     function del() {
         emits('delete', props.toDoListItem.id);
+        isSelected.value = false;
     }
     function toggleSelect() {
         isSelected.value = !isSelected.value;

@@ -89,15 +89,26 @@ export class RoutineToDoListItemEntity implements BaseToDoListItemEntity{
     } = object;  
     return new RoutineToDoListItemEntity(id, name, text ,isDone , timePeriod);
   }    
-  static frontEndSort(todoItems: RoutineToDoListItemEntity[]){
-    return todoItems.sort((a, b) => {
-      const priorityComparison = a.timePeriod.lengthInDays - b.timePeriod.lengthInDays;
-      return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
-    });
-  }
   static listFromObjects(objects: any[]){
     return objects.map((item:object)=>this.fromObject(item));
   }
+}
+
+export class RoutineToDoListGroupedList {
+  constructor(
+    public timePeriod: TimePeriodEntity, 
+    public items: RoutineToDoListItemEntity[]) {}
+
+    static fromObject(object: any){
+      const {
+        timePeriod = new TimePeriodEntity(),
+        items = [] as RoutineToDoListItemEntity[],       
+      } = object;  
+      return new RoutineToDoListGroupedList(timePeriod,items);
+    } 
+    static listFromObjects(objects: any[]){
+      return objects.map((item:object)=>this.fromObject(item));
+    }
 }
 export class RoutineToDoListItemRequest extends BaseToDoListItemRequest{ 
   constructor(public name: string = '',
@@ -116,18 +127,18 @@ export class RoutineToDoListItemRequest extends BaseToDoListItemRequest{
 export class TimePeriodEntity{
   constructor(
     public id: number = 0,
-    public name: string | null = null,
-    public color: string | null = null,
+    public text: string | null = null,
+    public color: string | undefined = undefined,
     public lengthInDays: number = 0,
   ){}
   static fromObject(object: any){
     const {
       id = 0,
-      name = '',
+      text = '',
       color = '',
       lengthInDays = 0,
     } = object;  
-    return new TimePeriodEntity(id, name, color, lengthInDays);
+    return new TimePeriodEntity(id, text, color, lengthInDays);
   }   
   static listFromObjects(objects: any[]){
     return objects.map((item:object)=>this.fromObject(item));
@@ -138,5 +149,3 @@ export enum ToDoListKind{
   ROUTINE,
   NORMAL
 }
-
-export type AnyToDoListItemEntity = ToDoListItemEntity | RoutineToDoListItemEntity;

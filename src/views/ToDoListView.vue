@@ -1,7 +1,7 @@
 <template>
     <VRow justify="center" noGutters>
         <VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
-            <VCard class="mx-auto rounded-lg pa-2 d-flex flex-column" max-width="600">
+            <VCard class="mx-auto rounded-lg pa-2 d-flex flex-column px-3 px-md-4 px-lg-6" max-width="600">
                 <div class="d-flex flex-column align-center pb-1">
                     <VCardTitle>{{ $t('toDoList.toDoList') }}</VCardTitle>
                 </div>

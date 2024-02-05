@@ -124,7 +124,7 @@ const sk = {
         done: `Hotovo`,
         error: `Chyba`,
         select: `Vybrať`,
-        unSelect: `Zrušiť výber`,
+        unselect: `Zrušiť výber`,
         delete: `Vymazať`,
     },
     dateTime:{
@@ -222,6 +222,7 @@ const sk = {
         add: 'Pridať',
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
+        timePeriod: `Časový úsek`,
     },
     user: {
         userSettings: `Uživateľské nastavenia`,

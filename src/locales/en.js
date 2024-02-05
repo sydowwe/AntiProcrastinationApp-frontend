@@ -124,7 +124,7 @@ const en = {
         done: `Done`,
         error: `Error`,
         select: `Select`,
-        unSelect: `Unselect`,
+        unselect: `Unselect`,
         delete: `Delete`,
 
     },
@@ -219,6 +219,7 @@ const en = {
         add: 'Add',
         toDoList: 'To-do list',
         urgency: `Urgency`,
+        timePeriod: `Time period`,
     },
     user: {
         userSettings: `User settings`,

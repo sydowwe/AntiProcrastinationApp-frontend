@@ -32,7 +32,8 @@
         }
     });
     const emit = defineEmits(['edit', 'add']);
-    getUrgencyOptions();
+    getTimePeriodOptions();
+
     function save() {
         if (isEdit.value) {
             emit('edit', idToEdit.value, routineToDoListItem.value);
@@ -45,9 +46,9 @@
     function setDefaultTimePeriod() {
         routineToDoListItem.value.timePeriodId = timePeriodOptions.value.find((item) => item.lengthInDays === 1)?.id ?? null;
     }
-    function getUrgencyOptions() {
+    function getTimePeriodOptions() {
         window.axios
-            .post(`/urgency/get-all`)
+            .post(`/routine-to-do-list-time-period/get-all`)
             .then((response) => {
                 timePeriodOptions.value = TimePeriodEntity.listFromObjects(response.data);
                 setDefaultTimePeriod();

@@ -1,5 +1,5 @@
 <template>
-    <VList class="d-flex flex-column pa-0 ga-2 mx-3 mx-md-4 mx-lg-6 mb-4" density="compact" title="To do list" lines="three" select-strategy="classic" variant="tonal">
+    <VList class="d-flex flex-column pa-0 ga-2 mb-4" density="compact" title="To do list" lines="three" select-strategy="classic" variant="tonal">
         <ToDoListItem
             v-for="item in items"
             :toDoListItem="item"
@@ -38,25 +38,44 @@
     };
     const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'to-do-list';
     const deleteItem = (id: number) => {
-        window.axios
-            .delete(`/${url}/${id}`)
-            .then((response) => {
-                console.log(response.data);
-                emit(
-                    'itemsChanged',
-                    props.items.filter((item: BaseToDoListItemEntity) => item.id !== id)
-                );
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+        if (selectedItemsIds.value.length > 1) {
+            const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({ id: item }));
+            window.axios
+                .post(`/${url}/batch-delete`, batchDeleteIds)
+                .then((response) => {
+                    console.log(response.data);
+                    if (response.data.status === 'success') {
+                        emit(
+                            'itemsChanged',
+                            props.items.filter((item: BaseToDoListItemEntity) => !selectedItemsIds.value.includes(item.id))
+                        );
+                        selectedItemsIds.value = [];
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        } else {
+            window.axios
+                .delete(`/${url}/${id}`)
+                .then((response) => {
+                    console.log(response.data);
+                    emit(
+                        'itemsChanged',
+                        props.items.filter((item: BaseToDoListItemEntity) => item.id !== id)
+                    );
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
     };
 
     const handleIsDoneChanged = (id: number, isDone: boolean) => {
         if (selectedItemsIds.value.length > 1) {
-            const batchChangeDone = selectedItemsIds.value.map((item: number) => ({ id: item, isDone }));
+            const batchChangeDoneItems = selectedItemsIds.value.map((item: number) => ({ id: item, isDone }));
             window.axios
-                .post(`/${url}/batch-change-done`, batchChangeDone)
+                .post(`/${url}/batch-change-done`, batchChangeDoneItems)
                 .then((response) => {
                     console.log(response);
                     props.items.forEach((item) => {
@@ -64,14 +83,14 @@
                             item.isDone = isDone;
                         }
                     });
+                    selectedItemsIds.value = [];
                 })
                 .catch((error) => {
                     console.error(error);
                 });
         } else {
-            console.log({ id, isDone });
             window.axios
-                .post(`/${url}/change-done`, JSON.stringify({ id, isDone }))
+                .post(`/${url}/change-done`, { id, isDone })
                 .then((response) => {
                     console.log(response);
                 })
@@ -89,5 +108,9 @@
         console.log('asdsd');
         selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
     };
-    const emit = defineEmits(['itemsChanged', 'editItem']);
+    // const emit = defineEmits<{
+    //     (e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
+    //     (e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
+    // }>();
+    const emit = defineEmits(['itemsChanged','editItem'])
 </script>
