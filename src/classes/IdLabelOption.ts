@@ -10,4 +10,7 @@ export class IdLabelOption {
       } = object;
       return new IdLabelOption(id,label);
     }
+    static listFromObjects(objects: any[]){
+      return objects.map((item:object)=>this.fromObject(item));
+    }
     }

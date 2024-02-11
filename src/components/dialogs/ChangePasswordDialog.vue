@@ -3,12 +3,12 @@
         <VRow justify="center" class="mt-16">
             <VCol cols="12" sm="10" md="8" lg="6">
                 <VCard>
-                    <VCardTitle class="center">{{ $t('user.passwordChange') }}</VCardTitle>
+                    <VCardTitle class="center">{{ i18n.t('user.passwordChange') }}</VCardTitle>
                     <VCardText class="py-1">
                         <VForm ref="form" @submit.prevent="validateAndEmit" class="d-flex flex-column align-items-center">
                             <VTextField
                                 class="mb-3"
-                                :label="$t('user.newPassword')"
+                                :label="i18n.t('user.newPassword')"
                                 v-model="newPassword"
                                 :rules="newPasswordRules"
                                 :type="showNewPassword ? 'text' : 'password'"
@@ -16,7 +16,7 @@
                                 @click:append-inner="showNewPassword = !showNewPassword"
                             ></VTextField>
                             <VTextField
-                                :label="$t('user.confirmNewPassword')"
+                                :label="i18n.t('user.confirmNewPassword')"
                                 :rules="confirmNewPasswordRules"
                                 :type="showConfirmNewPassword ? 'text' : 'password'"
                                 :append-inner-icon="showConfirmNewPassword ? 'eye-slash' : 'eye'"
@@ -25,82 +25,72 @@
                         </VForm>
                     </VCardText>
                     <VCardActions class="d-flex justify-end mr-2 mb-2">
-                        <VBtn color="error" @click="close">{{ $t('general.cancel') }}</VBtn>
-                        <VBtn color="success" @click="validateAndEmit">{{ $t('general.save') }}</VBtn>
+                        <VBtn color="error" @click="close">{{ i18n.t('general.cancel') }}</VBtn>
+                        <VBtn color="success" @click="validateAndEmit">{{ i18n.t('general.save') }}</VBtn>
                     </VCardActions>
                 </VCard>
             </VCol>
         </VRow>
     </VDialog>
 </template>
-<script lang="ts">
-    import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import { VuetifyFormType } from '../../classes/types/RefTypeInterfaces';
-    export default defineComponent({
-        setup() {
-            const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            return { form };
-        },
-        data() {
-            return {
-                newPassword: '',
-                showNewPassword: false,
-                showConfirmNewPassword: false,
-                newPasswordRules: [
-                    (v: string) => !!v || this.$t('authorization.passwordRequired'),
-                    (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
-                    (v: string) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
-                ],
-                confirmNewPasswordRules: [
-                    (v: string) => !!v || this.$t('authorization.passwordRequired'),
-                    (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
-                    (v: string) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
-                    (v: string) => this.doPasswordsMatch(v) || this.$t('user.passwordsDontMatch'),
-                ],
-                dialog: false,
-            };
-        },
-        methods: {
-            validatePassword(value: string) {
-                const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
-                return passwordRegex.test(value);
-            },
-            doPasswordsMatch(value: string) {
-                return value === this.newPassword;
-            },
-            open() {
-                this.dialog = true;
-            },
-            close() {
-                this.dialog = false;
-                this.newPassword = '';
-            },
-            async validateAndEmit() {
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    this.$emit("change");
-                }
-            },
-            async submit() {
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    axios
-                    .post('/user/change-password', this.newPassword)
-                    .then((response) => {
-                        if (response.data) {
-                            this.$emit('changed');
-                            this.close();
-                        } else {
-                            console.error('No user!!!');
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-                }                
-            },
-        },
-        emits: ['change', 'changed'],
-    });
+    import { importDefaults } from '../../compositions/Defaults';
+    const { i18n } = importDefaults();
+    import { useDialogComposition } from '../../compositions/DialogComposition';
+    const { dialog, open } = useDialogComposition();
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+
+    const newPassword = ref('');
+    const showNewPassword = ref(false);
+    const showConfirmNewPassword = ref(false);
+    const newPasswordRules = [
+        (v: string) => !!v || i18n.t('authorization.passwordRequired'),
+        (v: string) => v.length >= 8 || i18n.t('authorization.invalidPasswordLength'),
+        (v: string) => validatePassword(v) || i18n.t('authorization.invalidPassword'),
+    ];
+    const confirmNewPasswordRules = [
+        (v: string) => !!v || i18n.t('authorization.passwordRequired'),
+        (v: string) => v.length >= 8 || i18n.t('authorization.invalidPasswordLength'),
+        (v: string) => validatePassword(v) || i18n.t('authorization.invalidPassword'),
+        (v: string) => doPasswordsMatch(v) || i18n.t('user.passwordsDontMatch'),
+    ];
+    function validatePassword(value: string) {
+        const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
+        return passwordRegex.test(value);
+    }
+    function doPasswordsMatch(value: string) {
+        return value === newPassword.value;
+    }
+    function close() {
+        dialog.value = false;
+        newPassword.value = '';
+    }
+    async function validateAndEmit() {
+        const { valid } = await form.value.validate();
+        if (valid) {
+            emit('change');
+        }
+    }
+    async function submit() {
+        const { valid } = await form.value.validate();
+        if (valid) {
+            axios
+                .post('/user/change-password', newPassword.value)
+                .then((response) => {
+                    if (response.data) {
+                        emit('changed');
+                        close();
+                    } else {
+                        console.error('No user!!!');
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+    }
+    const emit = defineEmits(['change', 'changed']);
+    defineExpose({open});
 </script>
-../../classes/types/RefTypeInterfaces

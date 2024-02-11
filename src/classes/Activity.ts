@@ -29,12 +29,12 @@ export class Activity{
 }
 export class ActivityRequest {
 
-  constructor( public name: string,
+  constructor( public name: string = '',
   public text: string | null = null,
   public isOnToDoList: boolean = false,
   public isUnavoidable: boolean = false,
-  public roleId: number,
-  public category: number) {
+  public roleId: number = 0,
+  public categoryId: number = 0) {
 
   }    
   static fromObject(object: any){

@@ -45,11 +45,11 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity{
     static listFromObjects(objects: any[]){
       return objects.map((item:object)=>this.fromObject(item));
     }
-  static frontEndSort(todoItems: ToDoListItemEntity[]){
-    return todoItems.sort((a, b) => {
+  static frontEndSortFunction(){
+    return (a: ToDoListItemEntity, b: ToDoListItemEntity) => {
       const priorityComparison = a.urgency.priority - b.urgency.priority;
       return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
-    });
+    };
   }
 }
 export class ToDoListItemRequest extends BaseToDoListItemRequest{

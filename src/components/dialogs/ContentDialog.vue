@@ -6,38 +6,29 @@
                 <slot></slot>
             </v-card-text>
             <v-card-actions class="justify-center">
-                <VBtn variant="elevated" color="red" @click="close()">{{ $t('general.cancel') }}</VBtn>
-                <VBtn variant="elevated" color="green" @click="confirmed()" >{{confirmBtnLabel}}</VBtn>
+                <VBtn variant="elevated" color="red" @click="close()">{{ i18n.t('general.cancel') }}</VBtn>
+                <VBtn variant="elevated" color="green" @click="confirmed()">{{ confirmBtnLabel }}</VBtn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
-<script lang="ts">
-    export default {
-        props: {            
-            title: String,
-            confirmBtnLabel: {
-                type: String,
-                requrired: true
-            },
+<script setup lang="ts">
+  import { importDefaults } from '../../compositions/Defaults';
+    const {i18n} = importDefaults();
+    import { useDialogComposition } from '../../compositions/DialogComposition';
+    const { dialog, open, close } = useDialogComposition();
+    defineProps({
+        title: String,
+        confirmBtnLabel: {
+            type: String,
+            requrired: true,
         },
-        data() {
-            return {
-               dialog: false
-            };
-        },       
-        methods: {
-            open() {
-                this.dialog = true;
-            },
-            close() {
-                this.dialog = false;
-            },
-            confirmed() {
-                this.$emit('confirmed');
-                this.dialog = false;
-            },
-        },
-    };
+    });
+    function confirmed() {
+        emit('confirmed');
+        close();
+    }
+    const emit = defineEmits(['confirmed']);
+    defineExpose({open});
 </script>

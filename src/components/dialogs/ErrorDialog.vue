@@ -2,47 +2,36 @@
     <VDialog v-model="dialog" width="auto" persistent>
         <VCard>
             <VCardTitle class="center">{{ title }}</VCardTitle>
-            <VCardText>                
-                    {{ message }}
+            <VCardText>
+                {{ message }}
             </VCardText>
             <VCardActions class="d-flex justify-center">
-                <VBtn color="secondary" @click="dialog = false">{{ $t('general.ok') }}</VBtn>
+                <VBtn color="secondary" @click="done">{{ i18n.t('general.ok') }}</VBtn>
             </VCardActions>
         </VCard>
     </VDialog>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
-    export default defineComponent({
-        props: {
-            title: {
-                type: String,
-                required: true,
-                default: 'Error',
-            },
-            message: {
-                type: String,
-                required: true,
-                default: null,
-            },
+<script setup lang="ts">
+  import { importDefaults } from '../../compositions/Defaults';
+    const {i18n} = importDefaults();
+    import { useDialogComposition } from '../../compositions/DialogComposition';
+    const { dialog, open, close } = useDialogComposition();
+    defineProps({
+        title: {
+            type: String,
+            required: true,
+            default: 'Error',
         },
-        data() {
-            return {
-                dialog: false,             
-            };
+        message: {
+            type: String,
+            required: true,
+            default: null,
         },
-        methods: {
-            open(){
-                this.dialog = true;
-            },
-            close(){
-                this.dialog = false;
-            },
-            done(){
-                this.dialog = false;
-                this.$emit("done");
-            }
-        },
-        emits: ["done"]
     });
+    function done() {
+        emit('done');
+        close();
+    }
+    const emit = defineEmits(['done']);
+    defineExpose({open});
 </script>

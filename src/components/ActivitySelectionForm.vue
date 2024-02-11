@@ -4,18 +4,18 @@
             <VCheckbox label="From to-do list" v-model="isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
         </VCol>
         <VCol v-show="isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-            <VSelect v-model="selectedUrgencyId" :items="taskUrgencyOptions" hide-details></VSelect>
+            <VSelect v-model="selectedUrgencyId" :items="selectOptions.taskUrgency" hide-details></VSelect>
         </VCol>
         <VCol cols="12" class="pt-1">
             <VRow>
                 <VCol cols="12" lg="5">
-                    <VAutocomplete label="Role" v-model="selectedRoleId" :items="roleOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                    <VAutocomplete label="Role" v-model="selectedRoleId" :items="selectOptions.role" :disabled="formDisabled" hide-details></VAutocomplete>
                 </VCol>
                 <VCol cols="12" lg="7">
-                    <VAutocomplete label="Category" v-model="selectedCategoryId" :items="categoryOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                    <VAutocomplete label="Category" v-model="selectedCategoryId" :items="selectOptions.category" :disabled="formDisabled" hide-details></VAutocomplete>
                 </VCol>
                 <VCol cols="12">
-                    <VAutocomplete label="Activity" v-model="selectedActivityId" :items="activityOptions" :disabled="formDisabled" hide-details></VAutocomplete>
+                    <VAutocomplete label="Activity" v-model="selectedActivityId" :items="selectOptions.activity" :disabled="formDisabled" hide-details></VAutocomplete>
                 </VCol>
             </VRow>
         </VCol>
@@ -25,116 +25,110 @@
     </VRow>
 </template>
 
-<script lang="ts">
-//TODOCOMPOSITION
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
+//populate selects composition
+
+    import { reactive, ref, computed, watch } from 'vue';
     import { TimeObject } from '../classes/TimeUtils';
-    import { UrgencyEntity } from '../classes/UrgencyEntity';
     import { IdLabelOption } from '../classes/IdLabelOption';
-    export default defineComponent({
-        props: {
-            formDisabled: {
-                type: Boolean,
-                required: true,
-                default: false,
-            },
-        },
-        data() {
-            return {
-                selectedUrgencyId: 1,
-                taskUrgencyOptions: [] as UrgencyEntity[],
-                isFromToDoList: false,
-                selectedRoleId: null as number | null,
-                roleOptions: [] as IdLabelOption[],
-                selectedCategoryId: null as number | null,
-                categoryOptions: [] as IdLabelOption[],
-                selectedActivityId: null as number | null,
-                activityOptions: [] as IdLabelOption[],
-            };
-        },
-        created() {
-            this.populateSelects('taskUrgencyOptions', '/urgency/get-all');
-            this.populateSelects('roleOptions', '/role/get-all-options');
-            this.populateSelects('categoryOptions', '/category/get-all-options');
-            this.populateSelects('activityOptions', '/activity/get-all-options');
-        },
-        computed: {
-            selectedActivityName() {
-                let name = this.activityOptions.find((item) => item.id === this.selectedActivityId)?.label ?? undefined;
-                return name;
-            },
-        },
-        watch: {
-            selectedRoleId(newValue) {
-                this.updateCategoriesAndActivities();
-            },
-            selectedCategoryId(newValue) {
-                this.updateRolesAndActivities();
-            },
-            selectedActivityId(newValue) {},
-        },
-        methods: {
-            validate() {
-                return this.selectedActivityId != null ? true : false;
-            },
-            populateSelects(dataKey: string, url: string) {
-                axios
-                    .post(url)
-                    .then((response) => {
-                        (this as any)[dataKey] = response.data;
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            },
-            updateRolesAndActivities() {
-                this.selectedActivityId = null;
-                if (this.selectedCategoryId) {
-                    this.populateSelects('roleOptions', `/role/get-options-by-category/${this.selectedCategoryId}`);
-                    this.updateActivitiesBy('category');
-                } else {
-                    this.populateSelects('roleOptions', '/role/get-all-options');
-                    this.populateSelects('activityOptions', '/activity/get-all-options');
-                }
-            },
-            updateCategoriesAndActivities() {
-                this.selectedActivityId = null;
-                if (this.selectedRoleId) {
-                    this.populateSelects('categoryOptions', `/category/get-options-by-role/${this.selectedRoleId}`);
-                    this.updateActivitiesBy('role');
-                } else {
-                    this.populateSelects('categoryOptions', '/category/get-all-options');
-                    this.populateSelects('activityOptions', '/activity/get-all-options');
-                }
-            },
-            updateActivitiesBy(byWhat: string) {
-                this.selectedActivityId = null;
-                if (this.selectedCategoryId || this.selectedRoleId) {
-                    this.populateSelects('activityOptions', `/activity/get-options-by-${byWhat === 'category' ? 'category/' + this.selectedCategoryId : 'role/' + this.selectedRoleId}`);
-                } else {
-                    this.activityOptions = [];
-                }
-            },
-            addActivityToHistory(activityLength: TimeObject, startTimestamp: string) {
-                const start = new Date(startTimestamp);
-                const newRecordRequest = {
-                    startTimestamp: start.toISOString(),
-                    length: activityLength,
-                    activityId: this.selectedActivityId,
-                };
-                axios
-                    .post('/history/add-new-record', newRecordRequest)
-                    .then((response) => {
-                        alert('Added record of activity to history');
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            },
-            createNewActivity() {
-                this.$router.push({ name: 'createNewActivity' });
-            },
+    import { importDefaults } from '../compositions/Defaults';
+    const { router, showErrorSnackbar, hideErrorSnackbar } = importDefaults();
+
+    const props = defineProps({
+        formDisabled: {
+            type: Boolean,
+            required: true,
+            default: false,
         },
     });
+
+    const selectOptions = reactive({
+        taskUrgency: [] as IdLabelOption[],
+        role: [] as IdLabelOption[],
+        category: [] as IdLabelOption[],
+        activity: [] as IdLabelOption[],
+    });
+
+    const isFromToDoList = ref(false);
+    const selectedUrgencyId = ref(1);
+    const selectedRoleId = ref(null as number | null);
+    const selectedCategoryId = ref(null as number | null);
+    const selectedActivityId = ref(null as number | null);
+
+    populateSelects('taskUrgency', '/urgency/get-all');
+    populateSelects('role', '/role/get-all-options');
+    populateSelects('category', '/category/get-all-options');
+    populateSelects('activity', '/activity/get-all-options');
+
+    const selectedActivityName = computed(() => {
+        let name = selectOptions.activity.find((item) => item.id === selectedActivityId.value)?.label ?? undefined;
+        return name;
+    });
+    watch(selectedRoleId, (newValue) => {
+        updateCategoriesAndActivities();
+    });
+    watch(selectedCategoryId, (newValue) => {
+        updateRolesAndActivities();
+    });
+    function validate() {
+        return selectedActivityId.value != null ? true : false;
+    }
+    function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
+        axios
+            .post(url)
+            .then((response) => {
+                selectOptions[dataKey] = IdLabelOption.listFromObjects(response.data);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    function updateRolesAndActivities() {
+        selectedActivityId.value = null;
+        if (selectedCategoryId.value) {
+            populateSelects('role', `/role/get-options-by-category/${selectedCategoryId.value}`);
+            updateActivitiesBy('category');
+        } else {
+            populateSelects('role', '/role/get-all-options');
+            populateSelects('activity', '/activity/get-all-options');
+        }
+    }
+    function updateCategoriesAndActivities() {
+        selectedActivityId.value = null;
+        if (selectedRoleId.value) {
+            populateSelects('category', `/category/get-options-by-role/${selectedRoleId.value}`);
+            updateActivitiesBy('role');
+        } else {
+            populateSelects('category', '/category/get-all-options');
+            populateSelects('activity', '/activity/get-all-options');
+        }
+    }
+    function updateActivitiesBy(byWhat: string) {
+        selectedActivityId.value = null;
+        if (selectedCategoryId.value || selectedRoleId.value) {
+            populateSelects('activity', `/activity/get-options-by-${byWhat === 'category' ? 'category/' + selectedCategoryId.value : 'role/' + selectedRoleId.value}`);
+        } else {
+            selectOptions.activity = [];
+        }
+    }
+    function addActivityToHistory(activityLength: TimeObject, startTimestamp: string) {
+        const start = new Date(startTimestamp);
+        const newRecordRequest = {
+            startTimestamp: start.toISOString(),
+            length: activityLength,
+            activityId: selectedActivityId.value,
+        };
+        axios
+            .post('/history/add-new-record', newRecordRequest)
+            .then((response) => {
+                alert('Added record of activity to history');
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    function createNewActivity() {
+        router.push({ name: 'createNewActivity' });
+    }
+    defineExpose({ validate, addActivityToHistory, selectedActivityName });
 </script>
-../classes/IdLabelOption

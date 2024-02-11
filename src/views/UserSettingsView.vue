@@ -28,7 +28,7 @@
     </VRow>
 </template>
 <script setup lang="ts">
-    import { ref } from 'vue';
+    import { ref, computed } from 'vue';
     import VerifyQrCodeDialog from '../components/dialogs/VerifyQrCodeDialog.vue';
     import ChangePasswordDialog from '../components/dialogs/ChangePasswordDialog.vue';
     import VerifyPasswordDialog from '../components/dialogs/VerifyPasswordDialog.vue';
@@ -59,7 +59,7 @@
 
     getUserData();
 
-    const userRequest = () => UserRequest.fromUser(userData.value);
+    const userRequest = computed(() => UserRequest.fromUser(userData.value));
 
     async function validateAndSendForm() {
         const { valid } = await form.value.validate();
@@ -74,7 +74,7 @@
     }
     async function wereSensitiveChangesMade(): Promise<boolean> {
         return await axios
-            .post('/user/were-sensitive-changes-made', userRequest)
+            .post('/user/were-sensitive-changes-made', userRequest.value)
             .then((response) => {
                 return response.data as boolean;
             })
@@ -85,7 +85,7 @@
     }
     function saveChanges(): void {
         axios
-            .put('/user/edit-logged-user-data', userRequest)
+            .put('/user/edit-logged-user-data', userRequest.value)
             .then((response) => {
                 userData.value = User.fromObject(response.data);
                 userStore.setEmail(userData.value.email);

@@ -9,14 +9,12 @@
             </VRow>
             <hr />
             <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-            <!-- <TimerTypeSelect current-type="stopwatch"></TimerTypeSelect> -->
             <SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTime()"></SaveActivityDialog>
         </v-col>
     </VRow>
 </template>
 <script setup lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-    import TimerTypeSelect from '../components/TimerTypeSelect.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
     import { TimeObject } from '../classes/TimeUtils';

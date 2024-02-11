@@ -43,3 +43,10 @@ export interface HistoryRecordItemType{
     getEndOfActivityTime(startTimestamp: Date, length: number): Date;
     getNiceTimestamp(timestamp: Date): string;
 }
+
+export interface DateTimePickerType{
+    dateTimeValue: Date;
+}
+export interface TimePickerType{
+    time: TimeObject;
+}

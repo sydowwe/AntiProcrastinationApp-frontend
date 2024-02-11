@@ -1,22 +1,16 @@
 tweak frontEnd 
 
-RUTinny todolist
+ALARM dorobit
 
-
-pridat loadingy na vsetky stranky
+RUTinny todolist - dokoncit
 
 spravit notifikacie poriadne
-
-ALARM dorobit
 
 rozdelit history podla datumov
 
 Google Sign in backend 
 
-
-
 ====future plans====
-prerobit na nuxt ??
 
 pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
 
@@ -26,6 +20,10 @@ zlepsit a skraslit historyView mozno tiez pridat moznost zobrazenia do tabulky a
 
 rozsirenie pre automaticke sledovanie aktivit???
 
+dorobit backend exception handling poriadne
+
 dorobit EmailService 
 
-dorobit backend exception handling poriadne
+pridat loadingy na vsetky stranky
+
+prerobit na nuxt ??

@@ -1,49 +1,35 @@
 <template>
     <VDialog v-model="dialog" width="auto" persistent>
         <VCard>
-            <VCardTitle class="center">{{ $t('authorization.twoFA') }}</VCardTitle>
+            <VCardTitle class="center">{{ i18n.t('authorization.twoFA') }}</VCardTitle>
             <VCardText class="d-flex flex-column align-items-center">
-                <span id="qrPrompt">{{ $t('authorization.scan2FAQrCode') }}</span>
+                <span id="qrPrompt">{{ i18n.t('authorization.scan2FAQrCode') }}</span>
                 <img :src="qrCodeImageUrl" alt="QR code for 2FA" />
             </VCardText>
             <VCardActions class="d-flex justify-end mr-2 mb-2">
-                <VBtn color="success" @click="done">{{ $t('general.done') }}</VBtn>
+                <VBtn color="success" @click="done">{{ i18n.t('general.done') }}</VBtn>
             </VCardActions>
         </VCard>
     </VDialog>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
-    export default defineComponent({
-        props: {
-            qrCodeImage: {
-                type: String,
-                required: true,
-                default: '',
-            },
+<script setup lang="ts">
+    import { computed } from 'vue';
+    import { importDefaults } from '../../compositions/Defaults';
+    const {i18n} = importDefaults();
+    import { useDialogComposition } from '../../compositions/DialogComposition';
+    const { dialog, open, close } = useDialogComposition();
+    const props = defineProps({
+        qrCodeImage: {
+            type: String,
+            required: true,
+            default: '',
         },
-        data() {
-            return {
-                dialog: false,
-            };
-        },
-        computed:{
-            qrCodeImageUrl(){
-                return `data:image/png;base64,${this.qrCodeImage}`
-            }
-        },
-        methods: {
-            open(){
-                this.dialog = true;
-            },
-            close(){
-                this.dialog = false;
-            },
-            done(){
-                this.dialog = false;
-                this.$emit("done");
-            }
-        },
-        emits: ["done"]
     });
+    const qrCodeImageUrl = computed(() => `data:image/png;base64,${props.qrCodeImage}`);
+    function done() {
+        close();
+        emit('done');
+    }
+    const emit = defineEmits(['done']);
+    defineExpose({open});
 </script>

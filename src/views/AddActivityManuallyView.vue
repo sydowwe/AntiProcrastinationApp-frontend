@@ -5,11 +5,11 @@
             <VRow class="mt-5" align="center" justify="center">
                 <VCol class="bordered bordered-left" cols="12" md="7">
                     <VLabel>{{ $t('dateTime.when') }}</VLabel>
-                    <DateTimePicker @dateTimeSet="updateDateTime"></DateTimePicker>
+                    <DateTimePicker ref="dateTimePicker"></DateTimePicker>
                 </VCol>
                 <VCol class="bordered bordered-right" cols="12" md="5">
                     <VLabel>{{ $t('dateTime.length') }}</VLabel>
-                    <TimePicker @timeChange="updateLengthOfActivity"></TimePicker>
+                    <TimePicker ref="timePicker"></TimePicker>
                 </VCol>
                 <VCol cols="auto">
                     <VBtn @click="saveActivity()" color="success">{{ $t('history.addActivityToHistory') }}</VBtn>
@@ -24,21 +24,21 @@
     import TimePicker from '../components/TimePicker.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
     import { TimeObject } from '../classes/TimeUtils';
-    import { ActivitySelectionFormType, FeedBackType } from '../classes/types/RefTypeInterfaces';
+    import { ActivitySelectionFormType, FeedBackType, DateTimePickerType, TimePickerType } from '../classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import {importDefaults} from '../compositions/Defaults';
     const { i18n, showErrorSnackbar } = importDefaults();
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+    const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
+    const timePicker = ref<TimePickerType>({} as TimePickerType);
     const formDisabled = ref(false);
-    const dateTime = ref(new Date());
-    const lengthOfActivity = ref(new TimeObject());
 
     function saveActivity() {
         if (activitySelectionForm.value.validate()) {
-            if (dateTime.value.valueOf() <= Date.now()) {
-                if (lengthOfActivity.value.isNotZero()) {
-                    activitySelectionForm.value?.addActivityToHistory(lengthOfActivity.value, dateTime.value.valueOf());
+            if (dateTimePicker.value.dateTimeValue.valueOf() <= Date.now()) {
+                if (timePicker.value.time.isNotZero()) {
+                    activitySelectionForm.value?.addActivityToHistory(timePicker.value.time, dateTimePicker.value.dateTimeValue.valueOf());
                 } else {
                     showErrorSnackbar(i18n.t('history.lengthNotSet'));
                 }
@@ -48,12 +48,6 @@
         } else {
             alert('select activity');
         }
-    }
-    function updateDateTime(dateTimeIn: Date) {
-        dateTime.value = dateTimeIn;
-    }
-    function updateLengthOfActivity(formattedTime: TimeObject | undefined) {
-        lengthOfActivity.value = formattedTime ?? new TimeObject(0, 0, 0);
     }
 </script>
 <style scoped>

@@ -5,7 +5,7 @@
             <VCard class="time-card">
                 <VCardText class="text-center">
                     <span class="time-value">{{ formatTime(value as number) }}</span>
-                    <span class="time-label">{{ timeLabels[key] }}</span>
+                    <span class="time-label">{{ timeLabels[key as keyof typeof timeLabels] }}</span>
                 </VCardText>
             </VCard>
         </VCol>

@@ -13,3 +13,10 @@ export function getTimeObjectFromSeconds(timeInSeconds: number) {
   export function getTimeNiceFromTimeObject(timeObject: TimeObject) {
     return `${timeObject.hours != 0 ? timeObject.hours + 'h' : ''}${timeObject.minutes != 0 ? timeObject.minutes + 'm' : ''}${timeObject.seconds}s`;
   }
+  export function dateNice(date: Date | null){
+      if (date) {
+        return date.toLocaleDateString();
+    } else {
+        return null;
+    }
+  }

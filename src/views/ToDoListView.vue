@@ -45,7 +45,7 @@
             .post(`${url}/add`, toDoListItem)
             .then((response) => {
                 items.value.push(ToDoListItemEntity.fromObject(response.data));
-                items.value = ToDoListItemEntity.frontEndSort(items.value);
+                items.value.sort(ToDoListItemEntity.frontEndSortFunction());
             })
             .catch((error) => {
                 console.error(error);
@@ -63,7 +63,7 @@
                     items.value[index] = ToDoListItemEntity.fromObject(response.data);
                 } else {
                     items.value[index] = ToDoListItemEntity.fromObject(response.data);
-                    items.value = ToDoListItemEntity.frontEndSort(items.value);
+                    items.value.sort(ToDoListItemEntity.frontEndSortFunction());
                 }
             })
             .catch((error) => {

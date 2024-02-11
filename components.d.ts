@@ -21,7 +21,6 @@ declare module 'vue' {
     Time: typeof import('./src/components/Time.vue')['default']
     TimeDisplay: typeof import('./src/components/TimeDisplay.vue')['default']
     Timer: typeof import('./src/components/Timer.vue')['default']
-    TimerTypeSelect: typeof import('./src/components/TimerTypeSelect.vue')['default']
     YesNoModal: typeof import('./src/components/modals/YesNoModal.vue')['default']
   }
 }

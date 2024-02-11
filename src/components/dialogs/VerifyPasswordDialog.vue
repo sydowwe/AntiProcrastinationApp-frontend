@@ -6,7 +6,7 @@
                     <VCardTitle class="center">{{ $t('user.toContinueEnterPassword') }}</VCardTitle>
                     <VCardText class="py-1">
                         <VForm ref="form" @submit.prevent="validateAndSendForm()" class="d-flex flex-column align-items-center">
-                            <VTextField                               
+                            <VTextField
                                 :label="$t('authorization.password')"
                                 v-model="password"
                                 :rules="passwordRules"
@@ -26,64 +26,51 @@
         </VRow>
     </VDialog>
 </template>
-<script lang="ts">
-    import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import { VuetifyFormType } from '../../classes/types/RefTypeInterfaces';
-    export default defineComponent({
-        setup() {
-            const form = ref<VuetifyFormType>({} as VuetifyFormType);
-            return { form };
-        },
-        data() {
-            return {
-                password: '',
-                showPassword: false,
-                passwordRules: [
-                    (v: string) => !!v || this.$t('authorization.passwordRequired'),
-                    (v: string) => v.length >= 8 || this.$t('authorization.invalidPasswordLength'),
-                    (v: string) => this.validatePassword(v) || this.$t('authorization.invalidPassword'),
-                ],
-                dialog: false,
-                loading: false,
-            };
-        },
-        methods: {
-            validatePassword(value: string) {
-                const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
-                return passwordRegex.test(value);
-            },
-            open() {
-                this.dialog = true;
-            },
-            close() {
-                this.dialog = false;
-            },
-            async validateAndSendForm() {
-                this.loading = true;
-                const { valid } = await this.form.validate();
-                if (valid) {
-                    axios
-                        .post('/user/verify-password', this.password)
-                        .then((response) => {
-                            this.loading = false;                         
-                            if (response.data) {
-                                const needs2FA = response.data.needs2FA as boolean;
-                                this.$emit('verified', needs2FA);
-                                this.close();
-                                this.password = '';
-                            } else {
-                                console.error('No data!!!');
-                                this.password = '';
-                            }
-                        })
-                        .catch((error) => {
-                            console.log(error);
-                            this.password = '';
-                        });
-                }
-            },
-        },
-        emits: ['verified'],
-    });
+    import { importDefaults } from '../../compositions/Defaults';
+    const {i18n} = importDefaults();
+    import { useDialogComposition } from '../../compositions/DialogComposition';
+    const { dialog, open, close } = useDialogComposition();
+
+    const form = ref<VuetifyFormType>({} as VuetifyFormType);
+
+    const password = ref('');
+    const showPassword = ref(false);
+    const passwordRules = [
+        (v: string) => !!v || i18n.t('authorization.passwordRequired'),
+        (v: string) => v.length >= 8 || i18n.t('authorization.invalidPasswordLength'),
+        (v: string) => validatePassword(v) || i18n.t('authorization.invalidPassword'),
+    ];
+    const loading = ref(false);
+    function validatePassword(value: string) {
+        const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
+        return passwordRegex.test(value);
+    }
+    async function validateAndSendForm() {
+        loading.value = true;
+        const { valid } = await form.value.validate();
+        if (valid) {
+            axios
+                .post('/user/verify-password', password.value)
+                .then((response) => {
+                    loading.value = false;
+                    if (response.data) {
+                        const needs2FA = response.data.needs2FA as boolean;
+                        emit('verified', needs2FA);
+                        close();
+                    } else {
+                        console.error('No data!!!');
+                    }
+                    password.value = '';
+                })
+                .catch((error) => {
+                    console.log(error);
+                    password.value = '';
+                });
+        }
+    }
+    const emit = defineEmits(['verified']);
+    defineExpose({open});
 </script>
-../../classes/types/RefTypeInterfaces

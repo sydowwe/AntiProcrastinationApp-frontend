@@ -11,28 +11,10 @@
         </VCol>
     </VRow>
 </template>
-<script lang="ts">
-    import { defineComponent } from 'vue';
+<script setup lang="ts">
+    import { ref } from 'vue';
     import { TimeObject } from '../classes/TimeUtils';
-    export default defineComponent({
-        data() {
-            return {
-                time: new TimeObject(),
-            };
-        },
-        watch: {
-            time: {
-                handler(newTime: TimeObject) {
-                    this.$emit('timeChange', newTime);
-                },
-                deep: true,
-            },
-        },
-        methods: {
-            get() {
-                return this.time;
-            },
-        },
-        emits: ['timeChange'],
-    });
+
+    const time = ref(new TimeObject());
+    defineExpose({time});
 </script>

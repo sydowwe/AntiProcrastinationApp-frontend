@@ -72,32 +72,26 @@
     };
 
     const handleIsDoneChanged = (id: number, isDone: boolean) => {
-        if (selectedItemsIds.value.length > 1) {
-            const batchChangeDoneItems = selectedItemsIds.value.map((item: number) => ({ id: item, isDone }));
-            window.axios
-                .post(`/${url}/batch-change-done`, batchChangeDoneItems)
-                .then((response) => {
-                    console.log(response);
+        const changedItems = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(id) ? 
+            selectedItemsIds.value.map((item: number) => ({ id: item })) : [{ id }];
+        console.log(changedItems);
+
+        window.axios
+            .patch(`/${url}/change-done`, changedItems)
+            .then((response) => {
+                console.log(response);
+                if(selectedItemsIds.value.includes(id)){
                     props.items.forEach((item) => {
                         if (selectedItemsIds.value.includes(item.id)) {
                             item.isDone = isDone;
                         }
                     });
-                    selectedItemsIds.value = [];
-                })
-                .catch((error) => {
-                    console.error(error);
-                });
-        } else {
-            window.axios
-                .post(`/${url}/change-done`, { id, isDone })
-                .then((response) => {
-                    console.log(response);
-                })
-                .catch((error) => {
-                    console.error(error);
-                });
-        }
+                }
+                selectedItemsIds.value = [];
+            })
+            .catch((error) => {
+                console.error(error);
+            });
     };
     const select = (id: number) => {
         if (!selectedItemsIds.value.includes(id)) {
@@ -112,5 +106,5 @@
     //     (e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
     //     (e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
     // }>();
-    const emit = defineEmits(['itemsChanged','editItem'])
+    const emit = defineEmits(['itemsChanged', 'editItem']);
 </script>
