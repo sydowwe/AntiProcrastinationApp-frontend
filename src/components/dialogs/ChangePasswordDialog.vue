@@ -1,8 +1,8 @@
 <template>
     <VDialog v-model="dialog" persistent>
-        <VRow justify="center" class="mt-16">
-            <VCol cols="12" sm="10" md="8" lg="6">
-                <VCard>
+        <VRow justify="center">
+            <VCol cols="12" sm="10" md="8" lg="4">
+                <VCard class="pa-1">
                     <VCardTitle class="center">{{ i18n.t('user.passwordChange') }}</VCardTitle>
                     <VCardText class="py-1">
                         <VForm ref="form" @submit.prevent="validateAndEmit" class="d-flex flex-column align-items-center">
@@ -24,7 +24,7 @@
                             ></VTextField>
                         </VForm>
                     </VCardText>
-                    <VCardActions class="d-flex justify-end mr-2 mb-2">
+                    <VCardActions class="d-flex justify-center mr-2 mb-2">
                         <VBtn color="error" @click="close">{{ i18n.t('general.cancel') }}</VBtn>
                         <VBtn color="success" @click="validateAndEmit">{{ i18n.t('general.save') }}</VBtn>
                     </VCardActions>
@@ -65,7 +65,7 @@
     }
     function close() {
         dialog.value = false;
-        newPassword.value = '';
+        form.value.reset();
     }
     async function validateAndEmit() {
         const { valid } = await form.value.validate();
@@ -88,6 +88,7 @@
                 })
                 .catch((error) => {
                     console.log(error);
+                    form.value.reset();
                 });
         }
     }

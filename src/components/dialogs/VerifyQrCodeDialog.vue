@@ -1,6 +1,6 @@
 <template>
     <VDialog v-model="dialog" width="small" persistent>
-        <VCard>
+        <VCard class="pa-1">
             <VCardTitle>{{ i18n.t('authorization.verifyYour2FA') }}</VCardTitle>
             <VCardText>
                 <VRow justify="center">

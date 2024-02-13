@@ -8,7 +8,7 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { useUserStore } from '../plugins/stores/userStore';
+    import { useUserStore } from '../stores/userStore';
     import { VOtpInput } from 'vuetify/lib/labs/components.mjs';
     import {importDefaults} from '../compositions/Defaults';
     const { router } = importDefaults();
@@ -54,3 +54,4 @@
             });
     }
 </script>
+../stores/userStore

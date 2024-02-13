@@ -1,9 +1,7 @@
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../plugins/stores/userStore';
-import {useErrorSnackBar} from '../compositions/ErrorSnackBarFunctions';
-import { useFullScreenLoading } from '../compositions/FullScreenLoadingFunctions';
-
+import { useUserStore } from '../stores/userStore';
+import { useSnackBarStore, useFullScreenLoadingStore } from '../stores/globalFeedbackStores'
 export interface Field {
     name: string;
     label: string;
@@ -12,20 +10,18 @@ export interface Field {
 export function importDefaults(){
     const i18n = useI18n();
     const router = useRouter();
-    const { showErrorSnackbar, hideErrorSnackbar } = useErrorSnackBar();
-    const { showFullScreenLoading, hideFullScreenLoading } = useFullScreenLoading();
     const userStore = useUserStore();
     function goToLogin() {
         router.push({ name: 'login' });
     }
+    const { showFullScreenLoading, hideFullScreenLoading} = useFullScreenLoadingStore();
+    const { showErrorSnackbar, showSnackbar, hideSnackbar} = useSnackBarStore();
     return {
         i18n,
         goToLogin,
         router,
-        showErrorSnackbar,
-        hideErrorSnackbar,
         userStore,
-        showFullScreenLoading, 
-        hideFullScreenLoading,
+        showFullScreenLoading, hideFullScreenLoading,
+        showErrorSnackbar, showSnackbar, hideSnackbar,
     }
 }

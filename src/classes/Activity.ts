@@ -33,8 +33,8 @@ export class ActivityRequest {
   public text: string | null = null,
   public isOnToDoList: boolean = false,
   public isUnavoidable: boolean = false,
-  public roleId: number = 0,
-  public categoryId: number = 0) {
+  public roleId: number | null = null,
+  public categoryId: number | null = null) {
 
   }    
   static fromObject(object: any){

@@ -25,7 +25,7 @@
     import { VuetifyFormType } from '../classes/types/RefTypeInterfaces';
     const { emailRules } = useUserDetailsValidation();
     import {importDefaults} from '../compositions/Defaults';
-    const { showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading, goToLogin } = importDefaults();
+    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar } = importDefaults();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');
     const dialog = ref(false);

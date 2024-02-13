@@ -1,5 +1,4 @@
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 
 function validateEmail(value: string) {
     const emailRegex = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,64}/;

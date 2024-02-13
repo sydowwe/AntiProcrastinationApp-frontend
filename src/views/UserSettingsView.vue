@@ -40,7 +40,7 @@
 
     import {importDefaults} from '../compositions/Defaults';
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
-    const { router, i18n, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
+    const { router, i18n, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);

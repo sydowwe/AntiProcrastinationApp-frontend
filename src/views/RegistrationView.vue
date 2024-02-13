@@ -45,7 +45,7 @@
     import LoadingFullscreen from '../components/dialogs/LoadingFullscreen.vue';
     import {importDefaults} from '../compositions/Defaults';
     import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
-    const { i18n, showErrorSnackbar, userStore, goToLogin } = importDefaults();
+    const { i18n, userStore, goToLogin, showErrorSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules, passwordRulesReg } = useUserDetailsValidation();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);

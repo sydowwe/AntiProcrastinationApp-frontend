@@ -11,10 +11,17 @@
                             <RouterLink class="my-auto pa-2" to="/routine-to-do-list">{{ $t('navigation.routineToDoList') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/to-do-list">{{ $t('navigation.toDoList') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/create-new-activity">{{ $t('navigation.createNewActivity') }}</RouterLink>
-                            <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
-                            <RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
-                            <RouterLink class="my-auto pa-2" to="/alarm">{{ $t('navigation.alarm') }}</RouterLink>
-                            <RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
+                            <VMenu offset-y>
+                                <template v-slot:activator="{ props }">
+                                    <RouterLink class="my-auto pa-2" to="" v-bind="props">{{ $t('navigation.addActivityToHistory') }}</RouterLink>
+                                </template>
+                                <VList class="d-flex flex-column">
+                                    <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
+                                    <RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
+                                    <RouterLink class="my-auto pa-2" to="/alarm">{{ $t('navigation.alarm') }}</RouterLink>
+                                    <RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
+                                </VList>
+                            </VMenu>
                         </template>
                     </div>
                     <div class="d-flex align-center">
@@ -26,7 +33,16 @@
                             <RouterLink class="ml-3 mr-1 my-auto pa-2 bg-blue-grey" to="/user-settings">{{ userStore.getEmail }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/login" @click="logout">{{ $t('authorization.logOut') }}</RouterLink>
                         </div>
-                        <VSelect class="flex-0-0 mx-2" v-model="$i18n.locale" :items="$i18n.availableLocales" density="compact" width="auto" hide-details :clearable="false"> </VSelect>
+                        <VSelect
+                            class="flex-0-0 mx-2"
+                            v-model="$i18n.locale"
+                            :items="$i18n.availableLocales"
+                            density="compact"
+                            width="auto"
+                            hide-details
+                            :clearable="false"
+                        >
+                        </VSelect>
                         <!-- <VAppBarNavIcon></VAppBarNavIcon> -->
                     </div>
                 </div>
@@ -37,26 +53,32 @@
                 <RouterView />
             </VContainer>
         </VMain>
-        <ErrorSnackBar ref="errorSnackBar"></ErrorSnackBar>
+        <Snackbar></Snackbar>
         <LoadingFullscreen></LoadingFullscreen>
     </VApp>
 </template>
 <script setup lang="ts">
     import { ref, watchEffect, onMounted } from 'vue';
-    import ErrorSnackBar from './components/feedback/ErrorSnackBar.vue';
+    import Snackbar from './components/feedback/Snackbar.vue';
     import LoadingFullscreen from './components/dialogs/LoadingFullscreen.vue';
-    import {importDefaults} from './compositions/Defaults';
-    const { router, showErrorSnackbar, hideErrorSnackbar, userStore } = importDefaults();
-
+    import { importDefaults } from './compositions/Defaults';
+    const { router, userStore, showErrorSnackbar } = importDefaults();
     axios.interceptors.response.use(
         (response) => {
-            // console.log(response.data);
             return Promise.resolve(response);
         },
         (error) => {
             if (router.currentRoute.value.name !== 'login' && (error.response.status === 403 || error.response.status === 401)) {
-                showErrorSnackbar('Error validating your login credentials! Logging out.');
+                showErrorSnackbar('Error validating your login credentials! Logging out.', { closable: false });
                 logoutClient();
+            }
+            console.log('aaaa', error);
+            switch (error.status) {
+                case 409:
+                    showErrorSnackbar('Conflict');
+                    break;
+                default:
+                    break;
             }
             return Promise.reject(error);
         }

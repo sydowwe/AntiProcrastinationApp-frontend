@@ -2,6 +2,8 @@ import { TimeObject } from '../TimeUtils';
 import { ToDoListItemRequest, ToDoListItemEntity, RoutineToDoListItemEntity } from '../ToDoListItem';
 export interface VuetifyFormType {
     validate(): Promise<{ valid: boolean }>;
+    resetValidation(): void;
+    reset():void;
 }
 export interface SubmittableType{
     submit(): void; 

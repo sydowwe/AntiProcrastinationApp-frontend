@@ -6,6 +6,7 @@
     </VDialog>
 </template>
 <script setup lang="ts">
-    import { useFullScreenLoading } from '../../compositions/FullScreenLoadingFunctions';
-    const { loading } = useFullScreenLoading();
+    import { useFullScreenLoadingStore } from '../../stores/globalFeedbackStores';
+    import { storeToRefs } from 'pinia';
+    const { loading } = storeToRefs(useFullScreenLoadingStore());
 </script>

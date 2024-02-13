@@ -34,7 +34,7 @@ app.use(router);
 
 // AXIOS
 import axios from 'axios';
-import { useUserStore } from './plugins/stores/userStore';
+import { useUserStore } from './stores/userStore';
 const authStore = useUserStore();
 
 const axiosInstance = axios.create({

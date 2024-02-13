@@ -1,10 +1,10 @@
 <template>
     <VDialog v-model="dialog" persistent>
-        <VRow justify="center" class="mt-16">
-            <VCol cols="12" sm="10" md="8" lg="6">
-                <VCard>
-                    <VCardTitle class="center">{{ $t('user.toContinueEnterPassword') }}</VCardTitle>
-                    <VCardText class="py-1">
+        <VRow justify="center">
+            <VCol cols="12" sm="10" md="8" lg="4">
+                <VCard class="pa-1">
+                    <VCardTitle>{{ $t('user.toContinueEnterPassword') }}</VCardTitle>
+                    <VCardText class="py-0 mt-1">
                         <VForm ref="form" @submit.prevent="validateAndSendForm()" class="d-flex flex-column align-items-center">
                             <VTextField
                                 :label="$t('authorization.password')"
@@ -17,7 +17,7 @@
                             ></VTextField>
                         </VForm>
                     </VCardText>
-                    <VCardActions class="d-flex justify-end mr-2 mb-2">
+                    <VCardActions class="d-flex justify-center mr-2 mb-2">
                         <VBtn color="error" @click="close">{{ $t('general.cancel') }}</VBtn>
                         <VBtn color="success" @click="validateAndSendForm">{{ $t('general.continue') }}</VBtn>
                     </VCardActions>
@@ -30,7 +30,7 @@
     import { ref } from 'vue';
     import { VuetifyFormType } from '../../classes/types/RefTypeInterfaces';
     import { importDefaults } from '../../compositions/Defaults';
-    const {i18n} = importDefaults();
+    const {i18n, showErrorSnackbar} = importDefaults();
     import { useDialogComposition } from '../../compositions/DialogComposition';
     const { dialog, open, close } = useDialogComposition();
 
@@ -41,13 +41,9 @@
     const passwordRules = [
         (v: string) => !!v || i18n.t('authorization.passwordRequired'),
         (v: string) => v.length >= 8 || i18n.t('authorization.invalidPasswordLength'),
-        (v: string) => validatePassword(v) || i18n.t('authorization.invalidPassword'),
     ];
     const loading = ref(false);
-    function validatePassword(value: string) {
-        const passwordRegex = /^(?=(?:.*[A-Z]){2})(?=(?:.*\d){3})(?=(?:.*[a-z]){2})(?=.*[ -~]).{8,}$/;
-        return passwordRegex.test(value);
-    }
+
     async function validateAndSendForm() {
         loading.value = true;
         const { valid } = await form.value.validate();
@@ -63,12 +59,16 @@
                     } else {
                         console.error('No data!!!');
                     }
-                    password.value = '';
+                    form.value.reset();
                 })
                 .catch((error) => {
                     console.log(error);
-                    password.value = '';
-                });
+                    loading.value = false;
+                    form.value.reset();
+                    showErrorSnackbar(i18n.t('authorization.wrongPassword'),{timeout:3000})
+                }); 
+        }else{
+            loading.value = false;
         }
     }
     const emit = defineEmits(['verified']);

@@ -1,12 +1,12 @@
 <template>
     <VDialog v-model="dialog" width="auto" persistent>
-        <VCard>
-            <VCardTitle class="center">{{ i18n.t('authorization.twoFA') }}</VCardTitle>
+        <VCard class="pa-1">
+            <VCardTitle>{{ i18n.t('authorization.twoFA') }}</VCardTitle>
             <VCardText class="d-flex flex-column align-items-center">
                 <span id="qrPrompt">{{ i18n.t('authorization.scan2FAQrCode') }}</span>
                 <img :src="qrCodeImageUrl" alt="QR code for 2FA" />
             </VCardText>
-            <VCardActions class="d-flex justify-end mr-2 mb-2">
+            <VCardActions class="d-flex justify-center mr-2 mb-2">
                 <VBtn color="success" @click="done">{{ i18n.t('general.done') }}</VBtn>
             </VCardActions>
         </VCard>

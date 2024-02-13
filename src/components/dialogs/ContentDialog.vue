@@ -1,16 +1,16 @@
 <template>
-    <v-dialog v-model="dialog" max-width="600">
-        <v-card>
-            <v-card-title class="headline">{{ title }}</v-card-title>
-            <v-card-text>
+    <VDialog v-model="dialog" max-width="600">
+        <VCard>
+            <VCardTitle class="headline">{{ title }}</VCardTitle>
+            <VCardText>
                 <slot></slot>
-            </v-card-text>
-            <v-card-actions class="justify-center">
+            </VCardText>
+            <VCardActions class="justify-center">
                 <VBtn variant="elevated" color="red" @click="close()">{{ i18n.t('general.cancel') }}</VBtn>
                 <VBtn variant="elevated" color="green" @click="confirmed()">{{ confirmBtnLabel }}</VBtn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+            </VCardActions>
+        </VCard>
+    </VDialog>
 </template>
 
 <script setup lang="ts">

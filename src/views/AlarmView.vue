@@ -7,9 +7,8 @@
                 </VCol>
             </VRow>
             <VRow justify="center" class="mt-4 mb-7">
-                <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Start</VBtn>
-                <VBtn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === null || paused">Pause</VBtn>
-                <VBtn size="large" color="error" @click="stop" :disabled="intervalId === null">Stop</VBtn>
+                <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Set</VBtn>
+                <VBtn size="large" color="error" @click="stop" :disabled="intervalId === null">Cancel</VBtn>
             </VRow>
             <hr />
             <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>

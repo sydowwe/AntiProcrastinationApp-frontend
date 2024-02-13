@@ -41,10 +41,7 @@
             .post(`${url}/get-all`)
             .then((response) => {
                 groupedItems.value = RoutineToDoListGroupedList.listFromObjects(response.data);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+            })            
     };
 
     const add = (toDoListItem: RoutineToDoListItemRequest) => {
@@ -58,10 +55,7 @@
                 } else {
                     console.error('not found group');
                 }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+            })           
     };
     const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
         window.axios
@@ -86,14 +80,10 @@
                 } else {
                     console.error('not found old group');
                 }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+            })           
     };
     const itemsChanged = (changedItems: RoutineToDoListItemEntity[]) => {
         console.log(changedItems);
-
         groupedItems.value = groupedItems.value.map((group) => ({
             ...group,
             items: group.items.filter((item) => changedItems.some((changedItem) => changedItem.id === item.id)),

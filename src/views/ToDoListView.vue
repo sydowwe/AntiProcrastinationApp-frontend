@@ -21,7 +21,9 @@
     import ToDoList from '../components/ToDoList.vue';
     import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
     import { ToDoListItemDialogType } from '../classes/types/RefTypeInterfaces';
-
+    import {importDefaults} from '../compositions/Defaults';
+    const { i18n, showErrorSnackbar, showSnackbar } = importDefaults();
+    
     const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
     const items = ref([] as ToDoListItemEntity[]);
     const url = '/to-do-list';
@@ -35,10 +37,7 @@
             .then((response) => {
                 console.log(response);
                 items.value = ToDoListItemEntity.listFromObjects(response.data);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+            });            
     };
     const add = (toDoListItem: ToDoListItemRequest) => {
         window.axios
@@ -46,10 +45,8 @@
             .then((response) => {
                 items.value.push(ToDoListItemEntity.fromObject(response.data));
                 items.value.sort(ToDoListItemEntity.frontEndSortFunction());
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+                showSnackbar(i18n.t('successFeedback.added'),{timeout:1500,color:'success'});
+            });          
     };
 
     const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
@@ -65,10 +62,8 @@
                     items.value[index] = ToDoListItemEntity.fromObject(response.data);
                     items.value.sort(ToDoListItemEntity.frontEndSortFunction());
                 }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+                showSnackbar(i18n.t('successFeedback.edited'),{timeout:1500,color:'success'});
+            });         
     };
     const itemsChanged = (changedItems: ToDoListItemEntity[]) => {
         items.value = changedItems;

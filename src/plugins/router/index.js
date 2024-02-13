@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '../stores/userStore';
+import { useUserStore } from '../../stores/userStore';
 import HomeView from '../../views/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
 import StopWatchView from '../../views/StopWatchView.vue'

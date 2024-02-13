@@ -15,5 +15,4 @@ export function useActivitySelection(selectOptions: any){
     return {
         populateSelects
     }
-
 }

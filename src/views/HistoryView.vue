@@ -6,10 +6,20 @@
         <VCol cols="12" class="pt-md-0 px-sm-6 px-md-8 px-lg-10">
             <VRow justify="center">
                 <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
-                    <HistoryRecordItem class="my-2 my-md-3 w-100" :record="record" v-for="record in records?.slice(0, records.length / 2 + 1)" :key="record.id"></HistoryRecordItem>
+                    <HistoryRecordItem
+                        class="my-2 my-md-3 w-100"
+                        :record="record"
+                        v-for="record in records?.slice(0, records.length / 2 + 1)"
+                        :key="record.id"
+                    ></HistoryRecordItem>
                 </VCol>
                 <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
-                    <HistoryRecordItem class="my-2 my-md-3 w-100" :record="record" v-for="record in records?.slice(records.length / 2 + 1)" :key="record.id"></HistoryRecordItem>
+                    <HistoryRecordItem
+                        class="my-2 my-md-3 w-100"
+                        :record="record"
+                        v-for="record in records?.slice(records.length / 2 + 1)"
+                        :key="record.id"
+                    ></HistoryRecordItem>
                 </VCol>
             </VRow>
         </VCol>
@@ -25,12 +35,9 @@
     getAllRecords();
     function getAllRecords() {
         let url = `/history/get-all`;
-        axios
-            .post(url)
-            .then((response) => {
-                records.value = HistoryRecord.listFromObjects(response.data);
-            })
-            .catch((error) => {});
+        axios.post(url).then((response) => {
+            records.value = HistoryRecord.listFromObjects(response.data);
+        });
     }
     function handleFilterApplied(_records: HistoryRecord[]) {
         records.value = _records;
