@@ -14,6 +14,7 @@ import ForgottenPasswordView from '../../views/ForgottenPasswordView.vue'
 import TermsAndConditionsView from '../../views/TermsAndConditionsView.vue'
 import UserSettingsView from '../../views/UserSettingsView.vue'
 import RoutineToDoListView from '../../views/RoutineToDoListView.vue'
+import PlannerView from '../../views/PlannerView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -87,6 +88,11 @@ const router = createRouter({
       path: '/add-activity-manually',
       name: 'addActivityManually',
       component: AddActivityManuallyView
+    },
+    {
+      path: '/planner',
+      name: 'plannerView',
+      component: PlannerView
     },
     // {
     //   path: '/about',

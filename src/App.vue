@@ -22,6 +22,8 @@
                                     <RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
                                 </VList>
                             </VMenu>
+                            <RouterLink class="my-auto pa-2" to="/planner">{{ $t('navigation.planner') }}</RouterLink>
+
                         </template>
                     </div>
                     <div class="d-flex align-center">
