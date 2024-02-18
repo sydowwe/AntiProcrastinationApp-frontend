@@ -1,5 +1,6 @@
-import { TimeObject } from '../TimeUtils';
-import { ToDoListItemRequest, ToDoListItemEntity, RoutineToDoListItemEntity } from '../ToDoListItem';
+import { PlannerTask } from '../PlannerTask';
+import {TimeLengthObject, TimeObject} from '../TimeUtils';
+import { ToDoListItemEntity, RoutineToDoListItemEntity } from '../ToDoListItem';
 export interface VuetifyFormType {
     validate(): Promise<{ valid: boolean }>;
     resetValidation(): void;
@@ -8,26 +9,30 @@ export interface VuetifyFormType {
 export interface SubmittableType{
     submit(): void; 
 }
-export interface DialogType{
-    open(): void; 
-    close(): void;
-}
 export interface FeedBackType{
     show(): void;
     show(message:string): void;
     hide(): void;
 }
+export interface DialogType{
+    open(): void; 
+    close(): void;
+}
+export interface EntityDialogType{
+    openCreate(): void; 
+    close(): void;
+}
 export interface ActivityDialogType{
     open(activityName:string, timeSpentNice:string): void; 
 }
-export interface ToDoListItemDialogType{
-    openCreate(): void; 
+export interface ToDoListItemDialogType extends EntityDialogType{
     openEdit(toDoListItemEntity: ToDoListItemEntity): void; 
-    close():void;
 }
-export interface RoutineToDoListItemDialogType{
-    openCreate(): void; 
+export interface RoutineToDoListItemDialogType extends EntityDialogType{
     openEdit(toDoListItemEntity: RoutineToDoListItemEntity): void; 
+}
+export interface PlannerDialogType extends EntityDialogType{
+    openEdit(plannerTask: PlannerTask): void; 
 }
 export interface DialogFormType extends DialogType, FormType{
 
@@ -37,7 +42,7 @@ export interface FormType {
     submit(): void;
 }
 export interface ActivitySelectionFormType extends FormType {
-    addActivityToHistory(timeObject :TimeObject,startTimestamp:number): void;
+    addActivityToHistory(timeObject :TimeLengthObject, startTimestamp:number): void;
     selectedActivityName: string;
 }
 
@@ -48,6 +53,9 @@ export interface HistoryRecordItemType{
 
 export interface DateTimePickerType{
     dateTimeValue: Date;
+}
+export interface TimeLengthPickerType{
+    time: TimeLengthObject;
 }
 export interface TimePickerType{
     time: TimeObject;

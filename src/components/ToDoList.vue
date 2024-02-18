@@ -14,7 +14,7 @@
 </template>
 <script setup lang="ts">
     import ToDoListItem from '../components/ToDoListItem.vue';
-    import { BaseToDoListItemEntity, ToDoListKind } from '../classes/ToDoListItem';
+    import { BaseToDoListItemEntity, ToDoListKind } from '@/classes/ToDoListItem';
     import { ref } from 'vue';
 
     const props = defineProps({
@@ -72,7 +72,7 @@
     };
 
     const handleIsDoneChanged = (id: number, isDone: boolean) => {
-        const changedItems = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(id) ? 
+        const changedItems = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(id) ?
             selectedItemsIds.value.map((item: number) => ({ id: item })) : [{ id }];
         console.log(changedItems);
 

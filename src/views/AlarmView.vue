@@ -20,16 +20,16 @@
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
-    import { TimeObject } from '../classes/TimeUtils';
-    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
-    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
+    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
+    import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
-    const alarmTime = ref(new TimeObject());
-    const timeInitial = ref(new TimeObject());
+    const alarmTime = ref(new TimeLengthObject());
+    const timeInitial = ref(new TimeLengthObject());
     const timeRemaining = ref(0);
     const paused = ref(false);
     const startTimestamp = ref(0);
@@ -88,7 +88,7 @@
         showSaveDialog(timeSpentNice);
     }
     function resetTime() {
-        alarmTime.value = new TimeObject();
+        alarmTime.value = new TimeLengthObject();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;
@@ -104,7 +104,7 @@
         const timeInSeconds = timeRemaining.value == 0 ? getSecondsFromTimeObject(timeInitial.value) : getElapsedTimeInSeconds();
         activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value);
     }
-    function updateTimeInitial(_timeInitial: TimeObject) {
+    function updateTimeInitial(_timeInitial: TimeLengthObject) {
         timeInitial.value = _timeInitial;
     }
     function getElapsedTimeInSeconds() {

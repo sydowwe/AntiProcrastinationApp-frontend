@@ -36,8 +36,8 @@
 
 <script setup lang="ts">
     import { ref, watch } from 'vue';
-    import { BaseToDoListItemEntity } from '../classes/ToDoListItem';
-    import {importDefaults} from '../compositions/Defaults';
+    import { BaseToDoListItemEntity } from '@/classes/ToDoListItem';
+    import {importDefaults} from '@/compositions/Defaults';
     const { i18n } = importDefaults();
     
     const props = defineProps({

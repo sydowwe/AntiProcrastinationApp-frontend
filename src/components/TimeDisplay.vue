@@ -13,10 +13,10 @@
 </template>
 
 <script setup lang="ts">
-    import { TimeObject } from '../classes/TimeUtils';
+    import { TimeLengthObject } from '@/classes/TimeUtils';
     defineProps({
         timeObject: {
-            type: TimeObject,
+            type: TimeLengthObject,
             required: true,
         },
     });

@@ -29,9 +29,9 @@
 //populate selects composition
 
     import { reactive, ref, computed, watch } from 'vue';
-    import { TimeObject } from '../classes/TimeUtils';
-    import { IdLabelOption } from '../classes/IdLabelOption';
-    import { importDefaults } from '../compositions/Defaults';
+    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import { IdLabelOption } from '@/classes/IdLabelOption';
+    import { importDefaults } from '@/compositions/Defaults';
     const { router,showErrorSnackbar } = importDefaults();
 
 
@@ -62,17 +62,16 @@
     populateSelects('activity', '/activity/get-all-options');
 
     const selectedActivityName = computed(() => {
-        let name = selectOptions.activity.find((item) => item.id === selectedActivityId.value)?.label ?? undefined;
-        return name;
+        return selectOptions.activity.find((item) => item.id === selectedActivityId.value)?.label;
     });
-    watch(selectedRoleId, (newValue) => {
+    watch(selectedRoleId, () => {
         updateCategoriesAndActivities();
     });
-    watch(selectedCategoryId, (newValue) => {
+    watch(selectedCategoryId, () => {
         updateRolesAndActivities();
     });
     function validate() {
-        return selectedActivityId.value != null ? true : false;
+        return selectedActivityId.value != null;
     }
     function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
         axios
@@ -112,7 +111,7 @@
             selectOptions.activity = [];
         }
     }
-    function addActivityToHistory(activityLength: TimeObject, startTimestamp: string) {
+    function addActivityToHistory(activityLength: TimeLengthObject, startTimestamp: string) {
         const start = new Date(startTimestamp);
         const newRecordRequest = {
             startTimestamp: start.toISOString(),
@@ -121,7 +120,7 @@
         };
         axios
             .post('/history/add-new-record', newRecordRequest)
-            .then((response) => {
+            .then(() => {
                 alert('Added record of activity to history');
             })
             .catch((error) => {

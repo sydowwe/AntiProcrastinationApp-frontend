@@ -17,14 +17,14 @@
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
     import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
-    import { TimeObject } from '../classes/TimeUtils';
-    import { ActivityDialogType, ActivitySelectionFormType } from '../classes/types/RefTypeInterfaces';
+    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
-    const time = ref(new TimeObject());
+    const time = ref(new TimeLengthObject());
     const paused = ref(false);
     const intervalId = ref(undefined as number | undefined);
     const startTimestamp = ref(0);
@@ -61,7 +61,7 @@
         showSaveDialog(`${time.value.hours != 0 ? time.value.hours + 'h' : ''} ${time.value.minutes != 0 ? time.value.minutes + 'm' : ''} ${time.value.seconds}s`);
     }
     function resetTime() {
-        time.value = new TimeObject();
+        time.value = new TimeLengthObject();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;

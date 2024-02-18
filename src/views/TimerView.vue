@@ -20,13 +20,13 @@
 </template>
 <script setup lang="ts">
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-    import TimePicker from '../components/TimePicker.vue';
+    import TimePicker from '../components/TimeLengthPicker.vue';
     import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
     import TimeDisplay from '../components/TimeDisplay.vue';
-    import { showNotification, checkNotificationPermission } from '../scripts/notifications';
-    import { TimeObject } from '../classes/TimeUtils';
-    import { ActivityDialogType, ActivitySelectionFormType, TimePickerType } from '../classes/types/RefTypeInterfaces';
-    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
+    import { showNotification, checkNotificationPermission } from '@/scripts/notifications';
+    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import { ActivityDialogType, ActivitySelectionFormType, TimePickerType } from '@/classes/types/RefTypeInterfaces';
+    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
     import { ref } from 'vue';
 
     const timePicker = ref<TimePickerType>({} as TimePickerType);
@@ -35,7 +35,7 @@
 
     const timeInputVisible = ref(true);
     const timeRemaining = ref(0);
-    const time = ref(new TimeObject());
+    const time = ref(new TimeLengthObject());
     const paused = ref(false);
     const intervalId = ref(undefined as number | undefined);
     const startTimestamp = ref(0);
@@ -83,7 +83,7 @@
         saveDialog.value.open(activityName, timeSpentNice);
     }
     function resetTime() {
-        time.value = new TimeObject();
+        time.value = new TimeLengthObject();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;

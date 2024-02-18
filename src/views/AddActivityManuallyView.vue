@@ -21,18 +21,16 @@
 <script setup lang="ts">
 //TODO
     import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-    import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
-    import TimePicker from '../components/TimePicker.vue';
+import TimePicker from '../components/TimeLengthPicker.vue';
     import DateTimePicker from '../components/DateTimePicker.vue';
-    import { TimeObject } from '../classes/TimeUtils';
-    import { ActivitySelectionFormType, FeedBackType, DateTimePickerType, TimePickerType } from '../classes/types/RefTypeInterfaces';
+import {ActivitySelectionFormType, DateTimePickerType, TimeLengthPickerType} from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
-    import {importDefaults} from '../compositions/Defaults';
+    import {importDefaults} from '@/compositions/Defaults';
     const { i18n, showErrorSnackbar } = importDefaults();
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
-    const timePicker = ref<TimePickerType>({} as TimePickerType);
+    const timePicker = ref<TimeLengthPickerType>({} as TimeLengthPickerType);
     const formDisabled = ref(false);
 
     function saveActivity() {
@@ -58,9 +56,9 @@
         padding: 10px 20px;
     }
     .bordered-left {
-        border-radius: 5px 0px 0px 5px;
+        border-radius: 5px 0 0 5px;
     }
     .bordered-right {
-        border-radius: 0px 5px 5px 0px;
+        border-radius: 0 5px 5px 0;
     }
 </style>
