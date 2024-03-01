@@ -106,6 +106,7 @@ const en = {
         stopwatch: `Stopwatch`,
         timer: `Timer`,
         alarm: `Alarm`,
+        taskPlanner: `Task planner`,
     },
     general: {
         or: `Or`,
@@ -127,6 +128,7 @@ const en = {
         select: `Select`,
         unselect: `Unselect`,
         delete: `Delete`,
+        clear: `Clear`,
 
     },
     dateTime: {
@@ -147,6 +149,7 @@ const en = {
         howManyHoursBack: `How many hours back`,
         dateRange: `Date range`,
         hoursBack: `Hours back`,
+        today: `Today`,
     },
     activities: {
         role: `Role`,
@@ -233,6 +236,9 @@ const en = {
         use2FA: `Use two-factor authentication`,
         toContinueEnterPassword: `To continue enter your password`,
         show2FAQrCode: `Show 2FA qr code`,
+    },
+    planner: {
+        task: `Task`,
     }
 }
 export default en

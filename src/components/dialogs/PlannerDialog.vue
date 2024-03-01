@@ -1,10 +1,11 @@
 <template>
-  <VDialog v-model="dialog" max-width="600">
+  <VDialog v-model="dialog" max-width="600" eager>
     <VCard>
       <VCardTitle class="headline">{{ i18n.t("planner.task") }}</VCardTitle>
       <VCardText class="d-flex flex-column">
         <TimePicker ref="timePicker" class="mb-4"></TimePicker>
-        <VTextField v-model="plannerTask.task"></VTextField>
+        <VTextField label="name" v-model="plannerTask.name"></VTextField>
+        <VTextField label="text" v-model="plannerTask.text"></VTextField>
         <VSelect
           class="mb-4"
           label="Length in minutes"
@@ -40,31 +41,50 @@ import { PlannerTask, PlannerTaskRequest } from "@/classes/PlannerTask";
 const { i18n } = importDefaults();
 const { dialog, open, close } = useDialogComposition();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
-const minuteIntervals = [60, 45, 30, 15, 10];
+const minuteIntervals = [10, 15, 30, 45, 60];
 
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
 
 function save() {
-  console.log(timePicker.value.time);
-  plannerTask.value.startTimestamp?.setHours(timePicker.value.time.hours);
-  plannerTask.value.startTimestamp?.setMinutes(timePicker.value.time.minutes);
-  if (idToEdit.value === 0){
-	  emit('added',plannerTask.value);
-  }else {
-	  emit('edited', idToEdit.value, plannerTask.value);
+  plannerTask.value.startTimestamp?.setHours(
+    timePicker.value.time.hours,
+    timePicker.value.time.minutes,
+    0,
+    0
+  );
+  if (idToEdit.value === 0) {
+    emit("added", plannerTask.value);
+  } else {
+    emit("edited", idToEdit.value, plannerTask.value);
   }
+}
+
+function openEdit(_plannerTask: PlannerTask) {
+	  console.log(_plannerTask);
+  timePicker.value.set(
+    _plannerTask.startTimestamp.getHours(),
+    _plannerTask.startTimestamp.getMinutes()
+  );
+  idToEdit.value = _plannerTask.id;
+  plannerTask.value = PlannerTaskRequest.fromEntity(_plannerTask);
+  open();
+}
+
+function openCreate() {
+  open();
+}
+
+function closeAndReset() {
+  timePicker.value.reset();
   idToEdit.value = 0;
   plannerTask.value = new PlannerTaskRequest();
   close();
 }
-function openEdit(_plannerTask: PlannerTask) {
-  idToEdit.value = _plannerTask.id;
-  plannerTask.value = PlannerTaskRequest.fromEntity(_plannerTask);
-}
+
 const emit = defineEmits<{
   (e: "added", plannerTask: PlannerTaskRequest): void;
   (e: "edited", idToEdit: number, plannerTask: PlannerTaskRequest): void;
 }>();
-defineExpose({ open, openEdit });
+defineExpose({ openCreate, openEdit, closeAndReset });
 </script>

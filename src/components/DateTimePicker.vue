@@ -27,7 +27,6 @@
 </template>
 <script setup lang="ts">
     import { ref, computed, watch } from 'vue';
-    import { VDatePicker } from 'vuetify/labs/VDatePicker';
 
     const dateTimeValue = ref(new Date());
     const menuValue = ref(false);

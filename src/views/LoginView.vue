@@ -49,13 +49,13 @@
 </template>
 <script setup lang="ts">
     import { ref, onMounted, computed } from 'vue';
-    import { VuetifyFormType, SubmittableType } from '../classes/types/RefTypeInterfaces';
-    import { UserStoreItem } from '../classes/User';
+    import { VuetifyFormType, SubmittableType } from '@/classes/types/RefTypeInterfaces';
+    import { UserStoreItem } from '@/classes/User';
     import GoogleSignIn from '../components/GoogleSignIn.vue';
     import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
-    import {importDefaults} from '../compositions/Defaults';
+    import {importDefaults} from '@/compositions/Defaults';
     const { router,i18n, userStore, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading } = importDefaults();
-    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
     const { emailRules, passwordRulesLog } = useUserDetailsValidation();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);

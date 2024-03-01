@@ -32,7 +32,8 @@ export interface RoutineToDoListItemDialogType extends EntityDialogType{
     openEdit(toDoListItemEntity: RoutineToDoListItemEntity): void; 
 }
 export interface PlannerDialogType extends EntityDialogType{
-    openEdit(plannerTask: PlannerTask): void; 
+    openEdit(plannerTask: PlannerTask): void;
+    closeAndReset(): void;
 }
 export interface DialogFormType extends DialogType, FormType{
 
@@ -59,4 +60,10 @@ export interface TimeLengthPickerType{
 }
 export interface TimePickerType{
     time: TimeObject;
+    set(hours: number, minutes:number):void;
+    reset():void;
+}
+export interface MyDatePickerType{
+    getDateISO: string | null;
+    setDate(newDate: Date):void;
 }

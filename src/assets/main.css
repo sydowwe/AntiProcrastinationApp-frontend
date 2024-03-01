@@ -26,3 +26,6 @@ a,
   height: 2px;
   background: #999;
 }
+.clickableIcon{
+  cursor: pointer;
+}

@@ -106,6 +106,7 @@ const sk = {
         stopwatch: `Stopky`,
         timer: `Časovač`,
         alarm: `Alarm`,
+        taskPlanner: `Plánovač aktivít`,
     },
     general: {
         or: `Alebo`,
@@ -127,6 +128,7 @@ const sk = {
         select: `Vybrať`,
         unselect: `Zrušiť výber`,
         delete: `Vymazať`,
+        clear: `Vynulovať`,
     },
     dateTime:{
         when: `Kedy`,
@@ -146,6 +148,7 @@ const sk = {
         howManyHoursBack: `Koľko hodín späť`,
         dateRange: `Rozmedzie dátumov`,
         hoursBack: `Hodín späť`,
+        today: `Dnes`,
 
     }, 
     activities:{
@@ -235,6 +238,9 @@ const sk = {
         passwordChange: `Zmena hesla`,
         use2FA: `Použiť dvojfaktorové overenie`,
         toContinueEnterPassword: `Pre pokračovanie zadajte heslo`,
+    },
+    planner: {
+        task: `Aktivita`,
     }
 }
 export default sk;

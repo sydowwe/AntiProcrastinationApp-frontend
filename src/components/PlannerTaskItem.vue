@@ -1,29 +1,33 @@
 <template>
-  <div class="w-100 d-flex" :id="plannerTask.task">
+  <div class="w-100 d-flex" :id="plannerTask.id.toString()">
     <div class="flex-shrink-1 borderWhite cell">{{ timeSpanText }}</div>
     <VSheet
-      class="flex-grow-1 cell borderWhite task"
+      class="flex-grow-1 cell borderWhite task text-center"
       @click=""
       :color="plannerTask.color"
-      >{{ plannerTask.task }}
+      :title="plannerTask.text"
+      >{{ plannerTask.name }}
     </VSheet>
     <div class="flex-shrink-1 borderWhite d-flex ga-1 pa-1">
-      <VBtn
-        class="px-0 h-100"
-        v-for="(item, i) in actions"
-        :key="i"
-        :color="item.color"
-        @click="item.action"
-      >
-        <VIcon
-          size="22"
-          :color="
-            isSelected && item.icon === 'check-circle' ? 'deep-purple' : 'white'
-          "
-          :icon="item.icon"
+        <VBtn
+          class="px-0 h-100"
+          v-for="(item, i) in actions"
+          :key="i"
+          :color="item.color"
+          @click="item.action"
+		  style="border-radius: 0;"
         >
-        </VIcon>
-      </VBtn>
+          <VIcon
+            size="22"
+            :color="
+              isSelected && item.icon === 'check-circle'
+                ? 'deep-purple'
+                : 'white'
+            "
+            :icon="item.icon"
+          >
+          </VIcon>
+        </VBtn>
     </div>
   </div>
 </template>
@@ -31,6 +35,7 @@
 import { PlannerTask } from "@/classes/PlannerTask";
 import { computed, ref } from "vue";
 import { importDefaults } from "@/compositions/Defaults";
+
 const { i18n } = importDefaults();
 
 const props = defineProps({
@@ -42,7 +47,7 @@ const props = defineProps({
 const isSelected = ref(false);
 
 const timeSpanText = computed(() => {
-  const timestamp = props.plannerTask?.startTimestamp;
+  const timestamp = new Date(props.plannerTask?.startTimestamp);
   const startString = timeNice(timestamp);
   timestamp?.setMinutes(
     timestamp.getMinutes() + props.plannerTask?.minuteLength
@@ -63,7 +68,7 @@ function timeNice(timestamp: Date) {
 const actions = [
   {
     name: "select",
-    color: "light-green",
+    color: "amber",
     icon: "check-circle",
     action: toggleSelect,
   },

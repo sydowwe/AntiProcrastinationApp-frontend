@@ -28,10 +28,9 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { VOtpInput } from 'vuetify/lib/labs/components.mjs';
-    import { importDefaults } from '../../compositions/Defaults';
+    import { importDefaults } from '@/compositions/Defaults';
     const {i18n} = importDefaults();
-    import { useDialogComposition } from '../../compositions/DialogComposition';
+    import { useDialogComposition } from '@/compositions/DialogComposition';
     const { dialog, open, close } = useDialogComposition();
 
     const code = ref('');
