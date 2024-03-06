@@ -1,23 +1,27 @@
 <template>
-<div class="d-flex align-center">
-	<VBtn
-		variant="flat"
-		icon
-		@click="quickChangeDate(-1)"
-		style="border-radius: 3px"
-		v-if="showArrows"
-	>
-		<VIcon icon="chevron-left" size="x-large" class="clickableIcon"></VIcon>
-	</VBtn>
+<div class="d-flex align-center pa-2" style="border: 1px solid white; border-radius: 5px;">
+<!--	<VBtn-->
+<!--		variant="flat"-->
+<!--		icon-->
+<!--		@click="quickChangeDate(-1)"-->
+<!--		style="border-radius: 3px"-->
+<!--		v-if="showArrows"-->
+<!--	>-->
+<!--		<VIcon icon="chevron-left" size="x-large" class="clickableIcon"></VIcon>-->
+<!--	</VBtn>-->
 	<VTextField
 		label="Date"
 		v-model="dateNice"
 		clearable
 		@click:clear="clearDate"
+		prepend-icon="chevron-left"
+		@click:prepend="quickChangeDate(-1)"
+		append-icon="chevron-right"
+		@click:append="quickChangeDate(1)"
 		persistent-clear
 		readonly
 		hide-details
-		style="max-width: 150px;"
+		style="min-width: 155px;"
 	>
 		<VMenu
 			activator="parent"
@@ -40,19 +44,19 @@
 			</VDatePicker>
 		</VMenu>
 	</VTextField>
-	<VBtn
-		variant="flat"
-		icon
-		@click="quickChangeDate(1)"
-		style="border-radius: 3px"
-		v-if="showArrows"
-	>
-		<VIcon icon="chevron-right" size="x-large" class="clickableIcon"></VIcon>
-	</VBtn>
+<!--	<VBtn-->
+<!--		variant="flat"-->
+<!--		icon-->
+<!--		@click="quickChangeDate(1)"-->
+<!--		style="border-radius: 3px"-->
+<!--		v-if="showArrows"-->
+<!--	>-->
+<!--		<VIcon icon="chevron-right" size="x-large" class="clickableIcon"></VIcon>-->
+<!--	</VBtn>-->
 </div>
 </template>
 <script setup lang="ts">
-import {ref, computed} from "vue";
+import {ref, computed, watch} from "vue";
 import {importDefaults} from '@/compositions/Defaults';
 
 const {i18n} = importDefaults();
@@ -106,21 +110,29 @@ function quickChangeDate(increment: number) {
 		increment < 0 && dateValue.value.getDate() > props.minDate.getDate()) {
 		dateValue.value = new Date(dateValue.value.setDate(dateValue.value.getDate() + increment));
 	}
-	console.log(dateValue.value);
-	console.log(dateNice.value);
 }
 
 const getDateISO = computed(() => {
 	dateValue.value?.setUTCHours(0, 0, 0, 0);
 	return dateValue.value?.toISOString();
 });
-
+const getDate = computed(() => {
+	dateValue.value?.setUTCHours(0, 0, 0, 0);
+	return dateValue.value;
+});
 function setDate(newDate: Date) {
 	dateValue.value = newDate;
 }
-
+const emit = defineEmits<{
+	(e: 'dateChanged', newDate: Date | null):void;
+}>();
+emit('dateChanged', dateValue.value)
+watch(dateValue,(newValue) => {
+	emit('dateChanged', newValue)
+});
 defineExpose({
 	getDateISO,
+	getDate,
 	setDate
 });
 </script>

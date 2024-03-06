@@ -1,57 +1,74 @@
 <template>
-    <VRow class="my-0" align="center" justify="center">
-        <VCol cols="6">
-            <VTextField label="Date" v-model="dateNice" :clearable="false" readonly hide-details>
-                <VMenu activator="parent" ref="menuRef" lazy :close-on-content-click="false" v-model="menuValue" transition="scale-transition">
-                    <VDatePicker
-                        v-model="dateTimeValue"
-                        :ok-text="$t('general.ok')"
-                        :cancel-text="$t('general.cancel')"
-                        :max="Date.now()"
-                        title=""
-                        @click:cancel="menuValue = false"
-                        @click:save="menuValue = false"
-                    >
-                        <template v-slot:header></template>
-                    </VDatePicker>
-                </VMenu>
-            </VTextField>
-        </VCol>
-        <VCol cols="3">
-            <VTextField label="Hours" v-model="hours" type="number" min="0" max="23" :clearable="false" hide-details></VTextField>
-        </VCol>
-        <VCol cols="3">
-            <VTextField label="Minutes" v-model="minutes" type="number" min="0" max="59" :clearable="false" hide-details></VTextField>
-        </VCol>
-    </VRow>
+<VRow align="center">
+	<VCol cols="11" sm="6">
+		<MyDatePicker ref="datePicker" @dateChanged="handleDate" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
+	</VCol>
+	<VCol cols="11" sm="6" class="px-0">
+		<TimePicker @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange"></TimePicker>
+	</VCol>
+</VRow>
 </template>
 <script setup lang="ts">
-    import { ref, computed, watch } from 'vue';
+import {ref, computed} from 'vue';
+import MyDatePicker from '@/components/MyDatePicker.vue';
+import TimePicker from '@/components/TimePicker.vue';
+import {MyDatePickerType} from '@/classes/types/RefTypeInterfaces';
 
-    const dateTimeValue = ref(new Date());
-    const menuValue = ref(false);
-    const hours = ref(0);
-    const minutes = ref(0);
-
-    const dateNice = computed(() => {
-        if (dateTimeValue.value) {
-            const date = new Date(dateTimeValue.value);
-            return date.toLocaleDateString();
-        } else {
-            return null;
-        }
-    });  
-
-    watch(hours, (newValue) => {
-        dateTimeValue.value.setHours(newValue);
-        dateTimeValue.value.setMinutes(minutes.value);
-    });
-    watch(minutes, (newValue) => {
-        dateTimeValue.value.setHours(hours.value);
-        dateTimeValue.value.setMinutes(newValue);
-    });
-
-    defineExpose({
-        dateTimeValue
-    }) 
+const props = defineProps({
+	dateClearable: {
+		type: Boolean,
+		default: true,
+	},
+	dateShowArrows: {
+		type: Boolean,
+		default: true,
+	},
+	maxDate: {
+		type: Date,
+		default: null,
+	},
+	minDate: {
+		type: Date,
+		default: null,
+	},
+	timeShowArrows: {
+		type: Boolean,
+		default: true,
+	},
+});
+const datePicker = ref<MyDatePickerType>({} as MyDatePickerType);
+const dateTime = props.dateClearable ? ref<Date | null>(null) : ref(new Date());
+const hours = ref(0);
+const minutes = ref(0);
+function handleDate(newDate: Date | null): void {
+	dateTime.value = newDate;
+}
+function handleHourChange(newHourValue: number): void {
+	hours.value = newHourValue;
+}
+function handleMinuteChange(newMinuteValue: number): void {
+	minutes.value = newMinuteValue;
+}
+function setTime(hours: number, minutes:number) {
+	dateTime.value?.setUTCHours(hours, minutes, 0, 0);
+}
+function setDate(newDate: Date) {
+	dateTime.value = newDate;
+}
+const getDateTimeISO = computed(() => {
+	dateTime.value?.setUTCHours(hours.value, minutes.value, 0, 0);
+	return dateTime.value?.toISOString();
+});
+const getDateTime = computed(() => {
+	dateTime.value?.setUTCHours(hours.value, minutes.value, 0, 0);
+	return dateTime.value;
+});
+defineExpose({
+	setTime,
+	setDate,
+	getDateISO: datePicker.value.getDateISO,
+	getDateTimeISO,
+	getDate: datePicker.value.getDate,
+	getDateTime
+})
 </script>

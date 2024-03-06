@@ -48,11 +48,12 @@ const idToEdit = ref(0);
 
 function save() {
   plannerTask.value.startTimestamp?.setHours(
-    timePicker.value.time.hours,
-    timePicker.value.time.minutes,
+    timePicker.value.getTimeObject.hours,
+    timePicker.value.getTimeObject.minutes,
     0,
     0
   );
+	console.log(plannerTask.value.startTimestamp);
   if (idToEdit.value === 0) {
     emit("added", plannerTask.value);
   } else {

@@ -59,11 +59,20 @@ export interface TimeLengthPickerType{
     time: TimeLengthObject;
 }
 export interface TimePickerType{
-    time: TimeObject;
+    getTimeObject: TimeObject;
     set(hours: number, minutes:number):void;
     reset():void;
 }
 export interface MyDatePickerType{
     getDateISO: string | null;
+    getDate: Date | null;
     setDate(newDate: Date):void;
+}
+export interface DateTimePickerType{
+    getDateTimeISO: string | null;
+    getDateISO: string | null;
+    getDateTime: Date | null;
+    getDate: Date | null;
+    setDate(newDate: Date):void;
+    setTime(hours: number, minutes:number):void;
 }
