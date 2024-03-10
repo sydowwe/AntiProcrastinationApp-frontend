@@ -30,15 +30,9 @@
     import { ref } from 'vue';
     import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/HistoryRecordItem.vue';
-    import { HistoryRecord } from '../classes/HistoryRecord';
+    import { HistoryRecord } from '@/classes/HistoryRecord';
     const records = ref([] as HistoryRecord[]);
-    getAllRecords();
-    function getAllRecords() {
-        let url = `/history/get-all`;
-        axios.post(url).then((response) => {
-            records.value = HistoryRecord.listFromObjects(response.data);
-        });
-    }
+
     function handleFilterApplied(_records: HistoryRecord[]) {
         records.value = _records;
     }

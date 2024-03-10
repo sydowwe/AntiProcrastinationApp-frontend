@@ -11,6 +11,12 @@ export default defineConfig({
       '@': path.resolve('src'),
     }
   },
+  vue: {
+    script: {
+      defineModel: true,
+      propsDestructure: true
+    }
+  },
   define: {
     __VUE_I18N_FULL_INSTALL__: true,
     __VUE_I18N_LEGACY_API__: false,

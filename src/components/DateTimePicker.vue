@@ -1,7 +1,7 @@
 <template>
 <VRow align="center">
 	<VCol cols="11" sm="6">
-		<MyDatePicker ref="datePicker" @dateChanged="handleDate" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
+		<MyDatePicker ref="datePicker" v-model:dateValue="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
 	<VCol cols="11" sm="6" class="px-0">
 		<TimePicker @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange"></TimePicker>
@@ -37,12 +37,11 @@ const props = defineProps({
 	},
 });
 const datePicker = ref<MyDatePickerType>({} as MyDatePickerType);
-const dateTime = props.dateClearable ? ref<Date | null>(null) : ref(new Date());
+const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
+
 const hours = ref(0);
 const minutes = ref(0);
-function handleDate(newDate: Date | null): void {
-	dateTime.value = newDate;
-}
+
 function handleHourChange(newHourValue: number): void {
 	hours.value = newHourValue;
 }

@@ -1,16 +1,7 @@
 <template>
-<div class="d-flex align-center pa-2" style="border: 1px solid white; border-radius: 5px;">
-<!--	<VBtn-->
-<!--		variant="flat"-->
-<!--		icon-->
-<!--		@click="quickChangeDate(-1)"-->
-<!--		style="border-radius: 3px"-->
-<!--		v-if="showArrows"-->
-<!--	>-->
-<!--		<VIcon icon="chevron-left" size="x-large" class="clickableIcon"></VIcon>-->
-<!--	</VBtn>-->
+<div class="d-flex align-center pa-2" >
 	<VTextField
-		label="Date"
+		:label="label ?? i18n.t('dateTime.date')"
 		v-model="dateNice"
 		clearable
 		@click:clear="clearDate"
@@ -44,23 +35,18 @@
 			</VDatePicker>
 		</VMenu>
 	</VTextField>
-<!--	<VBtn-->
-<!--		variant="flat"-->
-<!--		icon-->
-<!--		@click="quickChangeDate(1)"-->
-<!--		style="border-radius: 3px"-->
-<!--		v-if="showArrows"-->
-<!--	>-->
-<!--		<VIcon icon="chevron-right" size="x-large" class="clickableIcon"></VIcon>-->
-<!--	</VBtn>-->
 </div>
 </template>
 <script setup lang="ts">
-import {ref, computed, watch} from "vue";
+import {ref, computed, watch, defineModel} from "vue";
 import {importDefaults} from '@/compositions/Defaults';
 
 const {i18n} = importDefaults();
 const props = defineProps({
+	label:{
+		type: String,
+		default: null
+	},
 	clearable: {
 		type: Boolean,
 		default: true,
@@ -76,10 +62,11 @@ const props = defineProps({
 	minDate: {
 		type: Date,
 		default: null,
-	}
+	},
 });
-const dateValue = props.clearable ? ref<Date | null>(null) : ref(new Date());
+const dateValue = defineModel<Date | null>('dateValue');
 const showDatePicker = ref(false);
+
 const dateNice = computed(() => {
 	if (dateValue.value) {
 		return dateValue.value.toLocaleDateString();
@@ -113,23 +100,16 @@ function quickChangeDate(increment: number) {
 }
 
 const getDateISO = computed(() => {
-	dateValue.value?.setUTCHours(0, 0, 0, 0);
+	dateValue.value?.setUTCHours(0, 0, 0, 1);
 	return dateValue.value?.toISOString();
 });
 const getDate = computed(() => {
-	dateValue.value?.setUTCHours(0, 0, 0, 0);
+	dateValue.value?.setUTCHours(0, 0, 0, 1);
 	return dateValue.value;
 });
 function setDate(newDate: Date) {
 	dateValue.value = newDate;
 }
-const emit = defineEmits<{
-	(e: 'dateChanged', newDate: Date | null):void;
-}>();
-emit('dateChanged', dateValue.value)
-watch(dateValue,(newValue) => {
-	emit('dateChanged', newValue)
-});
 defineExpose({
 	getDateISO,
 	getDate,
