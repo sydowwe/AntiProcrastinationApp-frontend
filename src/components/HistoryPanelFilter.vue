@@ -41,21 +41,45 @@
 	</MyDatePicker>
 	<div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
 		<div class="d-flex flex-1-0 align-center">
+			<VBtn
+				variant="text"
+				icon
+				@click="quickChangeHoursBack(-1)"
+				style="border-radius: 3px"
+				density="comfortable"
+				@mousedown="continuousQuickChangeHoursBack(-1)"
+				@mouseup="endContinuousQuickChange"
+			>
+				<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
+			</VBtn>
 			<VTextField
 				class="flex-0-1"
 				v-model="filterData.hoursBack"
-				:min="2"
-				:max="72"
+				:min="MIN_HOURS_BACK"
+				:max="MAX_HOURS_BACK"
 				type="number"
 				:clearable="false"
+				@input="constrainHoursBack"
 				hide-details
+				hide-spin-buttons
 			></VTextField>
+			<VBtn
+				variant="text"
+				icon
+				@click="quickChangeHoursBack(1)"
+				style="border-radius: 3px"
+				density="comfortable"
+				@mousedown="continuousQuickChangeHoursBack(1)"
+				@mouseup="endContinuousQuickChange"
+			>
+				<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
+			</VBtn>
 			<VLabel class="ml-2">{{ i18n.t("dateTime.hoursBack") }}</VLabel>
 			<v-slider
 				class="flex-1-0 mx-2"
 				v-model="filterData.hoursBack"
-				:min="2"
-				:max="72"
+				:min="MIN_HOURS_BACK"
+				:max="MAX_HOURS_BACK"
 				:step="1"
 				hide-details
 			></v-slider>
@@ -87,7 +111,7 @@
 
 <script setup lang="ts">
 //populate selects composition
-import {ref, computed, watch, reactive} from "vue";
+import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter} from "@/classes/History";
 import {HistoryRecord} from "@/classes/HistoryRecord";
@@ -95,6 +119,8 @@ import {IdLabelOption} from "@/classes/IdLabelOption";
 import {importDefaults} from '@/compositions/Defaults';
 
 const {i18n} = importDefaults();
+const MIN_HOURS_BACK = 2;
+const MAX_HOURS_BACK = 72;
 
 const filterData = reactive(new HistoryFilter());
 const selectOptions = reactive({
@@ -127,6 +153,7 @@ watch(
 watch(
 	() => filterData.dateTo,
 	(newValue) => {
+		console.log(newValue)
 		if (filterData.dateFrom !== null && newValue !== null && filterData.dateFrom > newValue) {
 			filterData.dateFrom = newValue;
 		}
@@ -140,10 +167,56 @@ watch(
 		}
 	}
 );
+
 // watch(()=> filterData.activityId,(newValue)=>{
 //     console.log(newValue);
 // });
-
+let mouseDownTimeout = 0;
+function continuousQuickChangeHoursBack(value: number) {
+	mouseDownTimeout = setTimeout(() => {
+		quickChangeHoursBack(value);
+		continuousQuickChangeHoursBack(value);
+	}, 150);
+}
+function endContinuousQuickChange() {
+	clearTimeout(mouseDownTimeout);
+}
+function quickChangeHoursBack(value: number) {
+	if (filterData.hoursBack) {
+		switch (checkValidHoursBackValue(filterData.hoursBack + value)) {
+			case -1:
+				filterData.hoursBack = MAX_HOURS_BACK;
+				break;
+			case 1:
+				filterData.hoursBack = MIN_HOURS_BACK;
+				break;
+			case 0:
+				filterData.hoursBack += value;
+				break;
+		}
+	}
+}
+function constrainHoursBack() {
+	if (filterData.hoursBack) {
+		switch (checkValidHoursBackValue(filterData.hoursBack)) {
+			case -1:
+				filterData.hoursBack = MIN_HOURS_BACK;
+				break;
+			case 1:
+				filterData.hoursBack = MAX_HOURS_BACK;
+				break;
+		}
+	}
+}
+function checkValidHoursBackValue(value: number) {
+	if (value < MIN_HOURS_BACK) {
+		return -1;
+	} else if (value > MAX_HOURS_BACK) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
 
 function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
 	axios
@@ -193,11 +266,12 @@ function updateRolesAndActivities() {
 //     }
 // }
 function applyFilter() {
-	let filter = {...filterData};
-	filter.dateTo?.setHours(23,59,59,59);
+	let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
+	filter.dateTo?.setHours(23, 59, 59, 999);
 	if (dateRange.value) {
 		filter.hoursBack = null;
-		filter.dateFrom?.setHours(0,0,0,1);
+		filter.dateFrom = filter.dateFrom ? new Date(filter.dateFrom) : null;
+		filter.dateFrom?.setHours(0, 0, 0, 1);
 	} else {
 		filter.dateFrom = null;
 	}

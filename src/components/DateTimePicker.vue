@@ -1,9 +1,9 @@
 <template>
 <VRow align="center">
-	<VCol cols="11" sm="6">
+	<VCol cols="11" sm="5">
 		<MyDatePicker ref="datePicker" v-model:dateValue="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
-	<VCol cols="11" sm="6" class="px-0">
+	<VCol cols="11" sm="7" class="px-0">
 		<TimePicker @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange"></TimePicker>
 	</VCol>
 </VRow>
@@ -49,18 +49,26 @@ function handleMinuteChange(newMinuteValue: number): void {
 	minutes.value = newMinuteValue;
 }
 function setTime(hours: number, minutes:number) {
-	dateTime.value?.setUTCHours(hours, minutes, 0, 0);
+	dateTime.value?.setHours(hours, minutes, 0, 0);
 }
 function setDate(newDate: Date) {
 	dateTime.value = newDate;
 }
 const getDateTimeISO = computed(() => {
-	dateTime.value?.setUTCHours(hours.value, minutes.value, 0, 0);
-	return dateTime.value?.toISOString();
+	if(!dateTime.value){
+		return null;
+	}
+	let temp = new Date(dateTime.value);
+	temp.setHours(hours.value, minutes.value, 0, 0);
+	return temp.toISOString();
 });
 const getDateTime = computed(() => {
-	dateTime.value?.setUTCHours(hours.value, minutes.value, 0, 0);
-	return dateTime.value;
+	if(!dateTime.value){
+		return null;
+	}
+	let temp = new Date(dateTime.value);
+	temp.setHours(hours.value, minutes.value, 0, 0);
+	return temp;
 });
 defineExpose({
 	setTime,

@@ -27,14 +27,14 @@
     const time = ref(new TimeLengthObject());
     const paused = ref(false);
     const intervalId = ref(undefined as number | undefined);
-    const startTimestamp = ref(0);
+    const startTimestamp = ref(new Date());
     const formDisabled = ref(false);
 
     function start() {
         if (activitySelectionForm.value.validate()) {
             formDisabled.value = true;
             paused.value = false;
-            startTimestamp.value = Date.now();
+            startTimestamp.value = new Date();
             intervalId.value = setInterval(() => {
                 if (time.value.seconds < 59) {
                     time.value.seconds++;
@@ -67,12 +67,12 @@
         formDisabled.value = false;
     }
     function showSaveDialog(timeSpentNice: string) {
-        let activityName = activitySelectionForm.value.selectedActivityName;
+        let activityName = activitySelectionForm.value.getSelectedActivityName;
         if (activityName !== undefined) {
             saveDialog.value.open(activityName, timeSpentNice);
         }
     }
     function saveActivity() {
-        activitySelectionForm.value.addActivityToHistory(time.value, startTimestamp.value);
+        activitySelectionForm.value.addActivityToHistory(time.value, startTimestamp.value.toISOString());
     }
 </script>

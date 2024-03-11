@@ -38,9 +38,10 @@
 </div>
 </template>
 <script setup lang="ts">
-import {ref, computed, watch, defineModel} from "vue";
+import {ref, computed, defineModel} from "vue";
 import {importDefaults} from '@/compositions/Defaults';
-
+import { useDate } from 'vuetify'
+const adapter = useDate();
 const {i18n} = importDefaults();
 const props = defineProps({
 	label:{
@@ -74,7 +75,6 @@ const dateNice = computed(() => {
 		return null;
 	}
 });
-
 function clearDate() {
 	dateValue.value = props.clearable ? null : new Date();
 	showDatePicker.value = false;
@@ -99,22 +99,22 @@ function quickChangeDate(increment: number) {
 	}
 }
 
-const getDateISO = computed(() => {
-	dateValue.value?.setUTCHours(0, 0, 0, 1);
-	return dateValue.value?.toISOString();
-});
-const getDate = computed(() => {
-	dateValue.value?.setUTCHours(0, 0, 0, 1);
-	return dateValue.value;
-});
-function setDate(newDate: Date) {
-	dateValue.value = newDate;
-}
-defineExpose({
-	getDateISO,
-	getDate,
-	setDate
-});
+// const getDateISO = computed(() => {
+// 	dateValue.value?.setUTCHours(0, 0, 0, 1);
+// 	return dateValue.value?.toISOString();
+// });
+// const getDate = computed(() => {
+// 	dateValue.value?.setUTCHours(0, 0, 0, 1);
+// 	return dateValue.value;
+// });
+// function setDate(newDate: Date) {
+// 	dateValue.value = newDate;
+// }
+// defineExpose({
+// 	getDateISO,
+// 	getDate,
+// 	setDate
+// });
 </script>
 <style>
 div.v-date-picker-month__day--hide-adjacent {

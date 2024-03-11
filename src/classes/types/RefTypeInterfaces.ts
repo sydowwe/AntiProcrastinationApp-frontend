@@ -43,8 +43,8 @@ export interface FormType {
     submit(): void;
 }
 export interface ActivitySelectionFormType extends FormType {
-    addActivityToHistory(timeObject :TimeLengthObject, startTimestamp:number): void;
-    selectedActivityName: string;
+    addActivityToHistory(timeObject :TimeLengthObject, startTimestamp:string): void;
+    getSelectedActivityName: string;
 }
 
 export interface HistoryRecordItemType{
@@ -52,9 +52,6 @@ export interface HistoryRecordItemType{
     getNiceTimestamp(timestamp: Date): string;
 }
 
-export interface DateTimePickerType{
-    dateTimeValue: Date;
-}
 export interface TimeLengthPickerType{
     time: TimeLengthObject;
 }

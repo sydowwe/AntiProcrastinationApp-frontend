@@ -4,7 +4,6 @@ export class TimeLengthObject {
         public minutes = 0 as number,
         public seconds = 0 as number
       ) {}
-      
     public isNotZero(): boolean{
       return !(this.seconds === 0 && this.minutes === 0 && this.hours === 0);
     }

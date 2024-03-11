@@ -32,7 +32,7 @@
     import { TimeLengthObject } from '@/classes/TimeUtils';
     import { IdLabelOption } from '@/classes/IdLabelOption';
     import { importDefaults } from '@/compositions/Defaults';
-    const { router,showErrorSnackbar } = importDefaults();
+    const { router,showErrorSnackbar, showSnackbar } = importDefaults();
 
 
     const props = defineProps({
@@ -61,7 +61,7 @@
     populateSelects('category', '/category/get-all-options');
     populateSelects('activity', '/activity/get-all-options');
 
-    const selectedActivityName = computed(() => {
+    const getSelectedActivityName = computed(() => {
         return selectOptions.activity.find((item) => item.id === selectedActivityId.value)?.label;
     });
     watch(selectedRoleId, () => {
@@ -112,16 +112,15 @@
         }
     }
     function addActivityToHistory(activityLength: TimeLengthObject, startTimestamp: string) {
-        const start = new Date(startTimestamp);
         const newRecordRequest = {
-            startTimestamp: start.toISOString(),
+            startTimestamp,
             length: activityLength,
             activityId: selectedActivityId.value,
         };
         axios
             .post('/history/add-new-record', newRecordRequest)
             .then(() => {
-                alert('Added record of activity to history');
+	            showSnackbar('Added record of activity to history',{color:'success'});
             })
             .catch((error) => {
                 console.log(error);
@@ -130,6 +129,5 @@
     function createNewActivity() {
         router.push({ name: 'createNewActivity' });
     }
-    defineExpose({ validate, addActivityToHistory, selectedActivityName });
+    defineExpose({ validate, addActivityToHistory, getSelectedActivityName });
 </script>
-../stores/globalFeedbackStores

@@ -32,7 +32,7 @@
     const timeInitial = ref(new TimeLengthObject());
     const timeRemaining = ref(0);
     const paused = ref(false);
-    const startTimestamp = ref(0);
+    const startTimestamp = ref(new Date());
     const intervalId = ref(undefined as number | undefined);
     const timeInputVisible = ref(true);
     const formDisabled = ref(false);
@@ -40,7 +40,7 @@
     async function start() {
         if (await activitySelectionForm.value.validate()) {
             formDisabled.value = true;
-            startTimestamp.value = Date.now();
+            startTimestamp.value = new Date();
             timeInputVisible.value = false;
             timeRemaining.value = getSecondsFromTimeObject(timeInitial.value);
             resume();
@@ -94,15 +94,15 @@
         formDisabled.value = false;
         timeInputVisible.value = true;
         timeRemaining.value = 0;
-        startTimestamp.value = 0;
+        startTimestamp.value = new Date();
     }
     function showSaveDialog(timeSpentNice: string) {
-        let activityName = activitySelectionForm.value.selectedActivityName;
+        let activityName = activitySelectionForm.value.getSelectedActivityName;
         saveDialog.value.open(activityName, timeSpentNice);
     }
     function saveActivity() {
         const timeInSeconds = timeRemaining.value == 0 ? getSecondsFromTimeObject(timeInitial.value) : getElapsedTimeInSeconds();
-        activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value);
+        activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value.toISOString());
     }
     function updateTimeInitial(_timeInitial: TimeLengthObject) {
         timeInitial.value = _timeInitial;
