@@ -135,6 +135,7 @@ const en = {
         when: `When`,
         length: `Length`,
         date: `Date`,
+        time: `Time`,
         year: `Year`,
         month: `Month`,
         day: `Day`,
@@ -239,6 +240,7 @@ const en = {
     },
     planner: {
         task: `Task`,
+        quickCreatePlannerActivity: `Quick create planner activity`,
     }
 }
 export default en

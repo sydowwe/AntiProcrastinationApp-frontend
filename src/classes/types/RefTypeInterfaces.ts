@@ -45,6 +45,8 @@ export interface FormType {
 export interface ActivitySelectionFormType extends FormType {
     addActivityToHistory(timeObject :TimeLengthObject, startTimestamp:string): void;
     getSelectedActivityName: string;
+    getSelectedActivityId: number;
+    setSelectedActivityId: (activityId: number) => void;
 }
 
 export interface HistoryRecordItemType{

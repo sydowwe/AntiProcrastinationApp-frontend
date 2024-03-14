@@ -49,3 +49,26 @@ export class ActivityRequest {
   return new ActivityRequest(name, text, isOnToDoList,isUnavoidable,roleId,categoryId );
   }
 }
+
+
+
+export class ActivitySelectOption {
+  constructor(
+      public id: number,
+      public label : string,
+      public roleId: number,
+      public categoryId: number,
+  ) {}
+  static fromObject(object: any){
+    const {
+      id = 0,
+      label = '',
+      roleId = 0,
+      categoryId = 0
+    } = object;
+    return new ActivitySelectOption(id,label,roleId,categoryId);
+  }
+  static listFromObjects(objects: any[]){
+    return objects.map((item:object)=>this.fromObject(item));
+  }
+}

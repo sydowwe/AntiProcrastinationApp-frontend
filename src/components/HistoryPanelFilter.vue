@@ -115,7 +115,7 @@ import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter} from "@/classes/History";
 import {HistoryRecord} from "@/classes/HistoryRecord";
-import {IdLabelOption} from "@/classes/IdLabelOption";
+import {SelectOption} from "@/classes/SelectOption";
 import {importDefaults} from '@/compositions/Defaults';
 
 const {i18n} = importDefaults();
@@ -124,9 +124,9 @@ const MAX_HOURS_BACK = 72;
 
 const filterData = reactive(new HistoryFilter());
 const selectOptions = reactive({
-	role: [] as IdLabelOption[],
-	category: [] as IdLabelOption[],
-	activity: [] as IdLabelOption[],
+	role: [] as SelectOption[],
+	category: [] as SelectOption[],
+	activity: [] as SelectOption[],
 });
 
 const dateRange = ref(false);
@@ -222,7 +222,7 @@ function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
 	axios
 		.post(url)
 		.then((response) => {
-			selectOptions[dataKey] = IdLabelOption.listFromObjects(response.data);
+			selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
 		})
 		.catch((error) => {
 			console.log(error);

@@ -1,14 +1,21 @@
 <template>
-<div class="d-flex align-center pa-2" >
+<div class="d-flex align-center" >
+	<VBtn
+		variant="text"
+		icon
+		@click="quickChangeDate(-1)"
+		style="border-radius: 3px"
+		density="comfortable"
+		@mousedown="continuousQuickChangeDate(-1)"
+		@mouseup="endContinuousQuickChange"
+	>
+		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
+	</VBtn>
 	<VTextField
 		:label="label ?? i18n.t('dateTime.date')"
 		v-model="dateNice"
 		clearable
 		@click:clear="clearDate"
-		prepend-icon="chevron-left"
-		@click:prepend="quickChangeDate(-1)"
-		append-icon="chevron-right"
-		@click:append="quickChangeDate(1)"
 		persistent-clear
 		readonly
 		hide-details
@@ -35,6 +42,17 @@
 			</VDatePicker>
 		</VMenu>
 	</VTextField>
+	<VBtn
+		variant="text"
+		icon
+		@click="quickChangeDate(1)"
+		style="border-radius: 3px"
+		density="comfortable"
+		@mousedown="continuousQuickChangeDate(1)"
+		@mouseup="endContinuousQuickChange"
+	>
+		<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
+	</VBtn>
 </div>
 </template>
 <script setup lang="ts">
@@ -84,7 +102,16 @@ function today() {
 	dateValue.value = new Date();
 	showDatePicker.value = false;
 }
-
+let mouseDownTimeout = 0;
+function endContinuousQuickChange() {
+	clearTimeout(mouseDownTimeout);
+}
+function continuousQuickChangeDate(value: number) {
+	mouseDownTimeout = setTimeout(() => {
+		quickChangeDate(value);
+		continuousQuickChangeDate(value);
+	}, 150);
+}
 function quickChangeDate(increment: number) {
 	showDatePicker.value = false;
 	if (!dateValue.value) {

@@ -1,4 +1,4 @@
-import { IdLabelOption } from "../classes/IdLabelOption";
+import { SelectOption } from "@/classes/SelectOption";
 
 
 export function useActivitySelection(selectOptions: any){
@@ -6,7 +6,7 @@ export function useActivitySelection(selectOptions: any){
         axios
             .post(url)
             .then((response) => {
-                selectOptions[dataKey] = IdLabelOption.listFromObjects(response.data);
+                selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
             })
             .catch((error) => {
                 console.log(error);

@@ -67,14 +67,14 @@
 
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
     import ContentDialog from '../components/dialogs/ContentDialog.vue';
-    import { VuetifyFormType, DialogType } from '../classes/types/RefTypeInterfaces';
+    import { VuetifyFormType, DialogType } from '@/classes/types/RefTypeInterfaces';
     import { ref, reactive } from 'vue';
-    import { Role } from '../classes/Role';
-    import { Category } from '../classes/Category';
-    import { IdLabelOption } from '../classes/IdLabelOption';
-    import { ActivityRequest } from '../classes/Activity';
-    import { useActivitySelection } from '../compositions/ActivitySelectionComposition';
-    import { importDefaults } from '../compositions/Defaults';
+    import { Role } from '@/classes/Role';
+    import { Category } from '@/classes/Category';
+    import { SelectOption } from '@/classes/SelectOption';
+    import { ActivityRequest } from '@/classes/Activity';
+    import { useActivitySelection } from '@/compositions/ActivitySelectionComposition';
+    import { importDefaults } from '@/compositions/Defaults';
     const { i18n, showErrorSnackbar, showSnackbar } = importDefaults();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -90,8 +90,8 @@
 
     const activityRequest = ref(new ActivityRequest());
     const selectOptions = reactive({
-        role: [] as IdLabelOption[],
-        category: [] as IdLabelOption[],
+        role: [] as SelectOption[],
+        category: [] as SelectOption[],
     });
     const newEntity = reactive({
         role: new Role(),
@@ -102,7 +102,7 @@
         axios
             .post(url)
             .then((response) => {
-                selectOptions[dataKey] = IdLabelOption.listFromObjects(response.data);
+                selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
             })
             .catch((error) => {
                 console.log(error);
@@ -128,7 +128,7 @@
     }
     function createEntity(entityType: keyof typeof selectOptions) {
         axios.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
-            selectOptions[entityType].push(response.data as IdLabelOption);
+            selectOptions[entityType].push(response.data as SelectOption);
             newEntity[entityType] = entityType === 'role' ? new Role() : new Category();
             showSnackbar(entityType + ' created succesfully', { color: 'success' });
         });

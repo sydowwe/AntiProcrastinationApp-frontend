@@ -1,6 +1,6 @@
 <template>
 <VRow justify="center" class="mt-md-1">
-	<VCol cols="12" lg="4" class="mt-2 mt-md-0 d-flex align-center ga-2">
+	<VCol cols="12" lg="5" class="mt-2 mt-md-0 d-flex align-center ga-2">
 		<VBtn @click="plannerDialog?.openCreate" color="success">
 			{{ $t("general.add") }}
 		</VBtn>

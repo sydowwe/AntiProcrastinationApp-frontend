@@ -3,8 +3,8 @@
 	<VCol cols="11" sm="5">
 		<MyDatePicker ref="datePicker" v-model:dateValue="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
-	<VCol cols="11" sm="7" class="px-0">
-		<TimePicker @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange"></TimePicker>
+	<VCol cols="11" sm="7">
+		<TimePicker :label="i18n.t('dateTime.time')" @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange" class="ml-2"></TimePicker>
 	</VCol>
 </VRow>
 </template>
@@ -13,6 +13,8 @@ import {ref, computed} from 'vue';
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import TimePicker from '@/components/TimePicker.vue';
 import {MyDatePickerType} from '@/classes/types/RefTypeInterfaces';
+import {importDefaults} from "@/compositions/Defaults";
+const {i18n} = importDefaults();
 
 const props = defineProps({
 	dateClearable: {

@@ -134,6 +134,7 @@ const sk = {
         when: `Kedy`,
         length: `Dĺžka`,
         date: `Dátum`,
+        time: `Čas`,
         year: `Rok`,
         month: `Mesiac`,
         day: `Deň`,
@@ -241,6 +242,7 @@ const sk = {
     },
     planner: {
         task: `Aktivita`,
+        quickCreatePlannerActivity: `Rýchle vytvorenie aktivity v plánovači`,
     }
 }
 export default sk;

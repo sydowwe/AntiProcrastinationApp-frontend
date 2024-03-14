@@ -1,5 +1,6 @@
 <template>
-<div class="d-flex align-center pa-2" style="border: 1px solid white; border-radius: 5px;">
+<div class="d-flex align-center pa-2 pl-4" style="border: 1px solid white; border-radius: 5px;">
+	<VLabel class="pr-1">{{ label ?? i18n.t('dateTime.when')}}</VLabel>
 	<VBtn
 		variant="text"
 		icon
@@ -8,6 +9,7 @@
 		density="comfortable"
 		@mousedown="continuousQuickChangeHours(-1)"
 		@mouseup="endContinuousQuickChange"
+		v-if="showArrows"
 	>
 		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -18,6 +20,7 @@
 		min="0"
 		max="23"
 		@input="constrainHours"
+		density="compact"
 		:clearable="false"
 		hide-spin-buttons
 		hide-details
@@ -30,6 +33,7 @@
 		density="comfortable"
 		@mousedown="continuousQuickChangeHours(1)"
 		@mouseup="endContinuousQuickChange"
+		v-if="showArrows"
 	>
 		<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -42,6 +46,7 @@
 		density="comfortable"
 		@mousedown="continuousQuickChangeMinutes(-1)"
 		@mouseup="endContinuousQuickChange"
+		v-if="showArrows"
 	>
 		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -52,6 +57,7 @@
 		min="0"
 		max="59"
 		@input="constrainMinutes"
+		density="compact"
 		hide-spin-buttons
 		:clearable="false"
 		hide-details
@@ -64,6 +70,7 @@
 		density="comfortable"
 		@mousedown="continuousQuickChangeMinutes(1)"
 		@mouseup="endContinuousQuickChange"
+		v-if="showArrows"
 	>
 		<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -72,12 +79,18 @@
 <script setup lang="ts">
 import {computed, ref, watch} from "vue";
 import {TimeObject} from "@/classes/TimeUtils";
+import {importDefaults} from "@/compositions/Defaults";
+const {i18n} = importDefaults();
+
 
 const props = defineProps({
 	showArrows: {
 		type: Boolean,
 		default: true,
 	},
+	label:{
+		type: String,
+	}
 });
 const hours = ref(0);
 const minutes = ref(0);
