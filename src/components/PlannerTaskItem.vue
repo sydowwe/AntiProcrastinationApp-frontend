@@ -5,8 +5,7 @@
       class="flex-grow-1 cell borderWhite task text-center"
       @click=""
       :color="plannerTask.color"
-      :title="plannerTask.text"
-      >{{ plannerTask.name }}
+      >{{ plannerTask.activity.name }} - <i>{{plannerTask.activity.text}}</i>
     </VSheet>
     <div class="flex-shrink-1 borderWhite d-flex ga-1 pa-1">
         <VBtn

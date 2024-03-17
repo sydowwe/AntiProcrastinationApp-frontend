@@ -5,8 +5,8 @@
                 <v-checkbox-btn v-model="toDoListItem.isDone" base-color="white" color="white"></v-checkbox-btn>
             </VListItemAction>
         </template>
-        <VListItemTitle class="text-white">{{ toDoListItem.name }}</VListItemTitle>
-        <VListItemSubtitle class="text-white">{{ toDoListItem.text }}</VListItemSubtitle>
+        <VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
+        <VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
         <template v-slot:append>
             <VIcon v-if="isSelected">
                 <FontAwesomeIcon icon="fas fa-check-circle" class="text-info"></FontAwesomeIcon>

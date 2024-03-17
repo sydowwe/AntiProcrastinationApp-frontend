@@ -1,10 +1,10 @@
 <template>
-<VRow align="center">
-	<VCol cols="11" sm="5">
+<VRow align="center" no-gutters>
+	<VCol cols="11" sm="5" class="px-0 pr-2">
 		<MyDatePicker ref="datePicker" v-model:dateValue="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
-	<VCol cols="11" sm="7">
-		<TimePicker :label="i18n.t('dateTime.time')" @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange" class="ml-2"></TimePicker>
+	<VCol cols="11" sm="7" class="px-0">
+		<TimePicker :label="i18n.t('dateTime.time')" @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange" ></TimePicker>
 	</VCol>
 </VRow>
 </template>

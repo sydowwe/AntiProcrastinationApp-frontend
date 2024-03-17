@@ -171,6 +171,8 @@ function constrainHours() {
 		case 1:
 			hours.value = 23;
 			break;
+		case 0:
+			hours.value = parseInt(hours.value);
 	}
 }
 function constrainMinutes() {
@@ -181,6 +183,8 @@ function constrainMinutes() {
 		case 1:
 			minutes.value = 59;
 			break;
+		case 0:
+			minutes.value = parseInt(minutes.value);
 	}
 }
 

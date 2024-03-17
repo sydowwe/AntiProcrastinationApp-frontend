@@ -6,7 +6,7 @@
 		</VBtn>
 		<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
 	</VCol>
-	<VCol cols="12" lg="2" alignSelf="center" class="d-flex align-center ga-2">
+	<VCol cols="12" lg="2" alignSelf="center" class="d-flex align-center ga-4 pl-1">
 		<VSelect
 			label="Timespan"
 			v-model="selectedTimeSpan"
@@ -113,10 +113,6 @@ function validatePlannerTask(
 		plannerTaskRequest.minuteLength === 0
 	) {
 		showErrorSnackbar(i18n.t("taskPlanner.chooseValidLength"));
-		return false;
-	}
-	if (!plannerTaskRequest.name || plannerTaskRequest.name.trim() === "") {
-		showErrorSnackbar(i18n.t("taskPlanner.enterTask"));
 		return false;
 	}
 	if (!checkNoTimeOverlap(plannerTaskRequest, idToExclude)) {
