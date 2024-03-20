@@ -35,9 +35,7 @@ export interface PlannerDialogType extends EntityDialogType{
     openEdit(plannerTask: PlannerTask): void;
     closeAndReset(): void;
 }
-export interface DialogFormType extends DialogType, FormType{
-
-}
+export interface DialogFormType extends DialogType, FormType{}
 export interface FormType {
     validate(): boolean;
     submit(): void;

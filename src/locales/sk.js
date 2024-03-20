@@ -174,6 +174,7 @@ const sk = {
     history:{
         addActivityToHistory: `Pridať aktivitu do histórie`,
         lengthNotSet: `Nebola zadaná dĺžka`,
+        toHistory: `to history`,
     },
     authorization: {
         logOut: `Odhlásiť sa`,
@@ -229,6 +230,7 @@ const sk = {
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
         timePeriod: `Časový úsek`,
+        saveToHistory: `Zaznamenať dokončenie úlohy <span class="text-purple-accent-4 font-weight-bold">{task}</span> do histórie?`,
     },
     user: {
         userSettings: `Uživateľské nastavenia`,

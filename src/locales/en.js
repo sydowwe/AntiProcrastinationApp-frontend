@@ -129,7 +129,7 @@ const en = {
         unselect: `Unselect`,
         delete: `Delete`,
         clear: `Clear`,
-
+        task: `Task`,
     },
     dateTime: {
         when: `When`,
@@ -226,6 +226,7 @@ const en = {
         toDoList: 'To-do list',
         urgency: `Urgency`,
         timePeriod: `Time period`,
+        saveToHistory: `Record completion of the task <span class="text-purple-accent-4 font-weight-bold">{task}</span> to history?`,
     },
     user: {
         userSettings: `User settings`,
@@ -239,7 +240,7 @@ const en = {
         show2FAQrCode: `Show 2FA qr code`,
     },
     planner: {
-        task: `Task`,
+
         quickCreatePlannerActivity: `Quick create planner activity`,
     }
 }

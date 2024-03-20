@@ -48,7 +48,7 @@ import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('TaskPlanner');
+const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Planner task');
 const {i18n, showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();
 const timePicker = ref<TimePickerType>({} as TimePickerType);

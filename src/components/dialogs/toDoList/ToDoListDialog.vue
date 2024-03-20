@@ -4,6 +4,8 @@
 		<v-card-title class="pa-0">{{ isEdit ? $t('general.edit') : $t('general.add') + ' to to-do list' }}</v-card-title>
 		<v-card-text class="px-0">
 			<VForm @keyup.native.enter="save">
+				<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('toDoList.quickCreateToDoListActivity')"
+				           density="comfortable" hideDetails></VCheckbox>
 				<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
 				                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
 				                       :activityId="toDoListItem.activityId"
@@ -39,10 +41,10 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
 import {importDefaults} from '@/compositions/Defaults';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('ToDoList');
+const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('To-do list task');
 const {i18n, showErrorSnackbar} = importDefaults();
-const toDoListItem = ref(new ToDoListItemRequest());
 const dialog = ref(false);
+const toDoListItem = ref(new ToDoListItemRequest());
 const isEdit = ref(false);
 const idToEdit = ref(null as number | null);
 const urgencyOptions = ref([] as UrgencyEntity[]);

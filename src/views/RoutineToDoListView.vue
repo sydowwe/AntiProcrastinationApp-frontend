@@ -26,8 +26,8 @@
     import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
     import ToDoList from '../components/ToDoList.vue';
     import { ref, watch, onMounted } from 'vue';
-    import { RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind } from '../classes/ToDoListItem';
-    import { RoutineToDoListItemDialogType } from '../classes/types/RefTypeInterfaces';
+    import { RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind } from '@/classes/ToDoListItem';
+    import { RoutineToDoListItemDialogType } from '@/classes/types/RefTypeInterfaces';
     const groupedItems = ref([] as RoutineToDoListGroupedList[]);
     const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
     const url = '/routine-to-do-list';

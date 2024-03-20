@@ -3,6 +3,8 @@
 	<v-card class="px-6 py-4 text-center">
 		<v-card-title class="pa-0">{{ isEdit ? $t('general.edit') : $t('general.add') + ' to to-do list' }}</v-card-title>
 		<v-card-text class="px-0">
+			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('toDoList.quickCreateRoutineToDoListActivity')"
+			           density="comfortable" hideDetails></VCheckbox>
 			<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
 			                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
 			                       :activityId="routineToDoListItem.activityId"
@@ -29,7 +31,7 @@ import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposit
 import {importDefaults} from '@/compositions/Defaults';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('RoutineToDoList');
+const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
 const {i18n, showErrorSnackbar} = importDefaults();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());
 const dialog = ref(false);

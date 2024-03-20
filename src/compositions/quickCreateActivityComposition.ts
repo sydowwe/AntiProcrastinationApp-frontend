@@ -1,5 +1,6 @@
 import {Activity, ActivityRequest} from '@/classes/Activity';
 import {ref} from 'vue';
+import {Role} from '@/classes/Role';
 
 export function useQuickCreateActivity(viewName: string) {
 	const isActivityFormHidden = ref(false);
@@ -7,9 +8,8 @@ export function useQuickCreateActivity(viewName: string) {
 	const quickActivityText = ref("");
 
 	async function getQuickCreateActivityRoleIdByView() {
-		return await axios.post('/role/get-by-view/' + viewName).then((response) => {
-			console.log(response);
-			return parseInt(response.data);
+		return await axios.post('/role/get-by-name/' + viewName).then((response) => {
+			return Role.fromObject(response.data).id;
 		});
 	}
 

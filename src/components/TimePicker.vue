@@ -1,6 +1,5 @@
 <template>
-<div class="d-flex align-center pa-2 pl-4" style="border: 1px solid white; border-radius: 5px;">
-	<VLabel class="pr-1">{{ label ?? i18n.t('dateTime.when')}}</VLabel>
+<div class="d-flex align-center">
 	<VBtn
 		variant="text"
 		icon
@@ -15,13 +14,12 @@
 	</VBtn>
 	<VTextField
 		v-model="hours"
-		:label="$t('dateTime.hours')"
 		type="number"
 		min="0"
 		max="23"
 		@input="constrainHours"
-		density="compact"
 		:clearable="false"
+		suffix="H"
 		hide-spin-buttons
 		hide-details
 	></VTextField>
@@ -37,7 +35,7 @@
 	>
 		<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
-	<span class="mx-1 mb-2" style="font-size: xx-large;line-height: 0.8;">:</span>
+	<span class="mb-2" style="font-size: xx-large;line-height: 0.8;">:</span>
 	<VBtn
 		variant="text"
 		icon
@@ -51,15 +49,14 @@
 		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
 	<VTextField
-		:label="$t('dateTime.minutes')"
 		v-model="minutes"
 		type="number"
 		min="0"
 		max="59"
 		@input="constrainMinutes"
-		density="compact"
-		hide-spin-buttons
 		:clearable="false"
+		suffix="M"
+		hide-spin-buttons
 		hide-details
 	></VTextField>
 	<VBtn
@@ -88,9 +85,6 @@ const props = defineProps({
 		type: Boolean,
 		default: true,
 	},
-	label:{
-		type: String,
-	}
 });
 const hours = ref(0);
 const minutes = ref(0);
