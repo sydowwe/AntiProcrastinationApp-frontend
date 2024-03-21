@@ -9,7 +9,7 @@
 			</VCol>
 			<VCol class="bordered bordered-right" cols="12" md="5">
 				<VLabel>{{ $t('dateTime.length') }}</VLabel>
-				<TimeLengthPicker ref="timeLengthPicker"></TimeLengthPicker>
+				<TimeLengthPicker v-model="timeLength"></TimeLengthPicker>
 			</VCol>
 			<VCol cols="auto">
 				<VBtn @click="saveActivity()" color="success">{{ $t('history.addActivityToHistory') }}</VBtn>
@@ -26,20 +26,21 @@ import DateTimePicker from '../components/DateTimePicker.vue';
 import {ActivitySelectionFormType, DateTimePickerType, TimeLengthPickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
+import {TimeLengthObject} from '@/classes/TimeUtils';
 
 const {i18n, showErrorSnackbar} = importDefaults();
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
-const timeLengthPicker = ref<TimeLengthPickerType>({} as TimeLengthPickerType);
 const formDisabled = ref(false);
+const timeLength = ref(new TimeLengthObject());
 
 function saveActivity() {
 	if (activitySelectionForm.value.validate()) {
-		if (dateTimePicker.value?.getDateTimeISO) {
+		if (dateTimePicker.value?.getDateTime) {
 			// if (dateTimePicker.value?.getDateTime <= new Date()) {
-				if (timeLengthPicker.value.time.isNotZero()) {
-					activitySelectionForm.value?.addActivityToHistory(timeLengthPicker.value.time, dateTimePicker.value?.getDateTimeISO);
+				if (timeLength.value.isNotZero()) {
+					activitySelectionForm.value.saveActivityToHistory(dateTimePicker.value?.getDateTime, timeLength.value);
 				} else {
 					showErrorSnackbar(i18n.t('history.lengthNotSet'));
 				}
@@ -49,8 +50,6 @@ function saveActivity() {
 		} else {
 			showErrorSnackbar(i18n.t('date.selectDatePlease'));
 		}
-	} else {
-		showErrorSnackbar(i18n.t('history.selectActivityPlease'));
 	}
 }
 </script>

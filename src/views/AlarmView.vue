@@ -7,8 +7,8 @@
                 </VCol>
             </VRow>
             <VRow justify="center" class="mt-4 mb-7">
-                <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== null && !paused">Set</VBtn>
-                <VBtn size="large" color="error" @click="stop" :disabled="intervalId === null">Cancel</VBtn>
+                <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Set</VBtn>
+                <VBtn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Cancel</VBtn>
             </VRow>
             <hr />
             <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
@@ -24,6 +24,7 @@
     import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
+    import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
@@ -38,14 +39,12 @@
     const formDisabled = ref(false);
 
     async function start() {
-        if (await activitySelectionForm.value.validate()) {
+        if (activitySelectionForm.value.validate()) {
             formDisabled.value = true;
             startTimestamp.value = new Date();
             timeInputVisible.value = false;
             timeRemaining.value = getSecondsFromTimeObject(timeInitial.value);
             resume();
-        } else {
-            alert('select activity please');
         }
         const currentTime = new Date();
         const hoursDiff = alarmTime.value.hours - currentTime.getHours();
@@ -83,9 +82,7 @@
     }
     function stop() {
         clearInterval(intervalId.value);
-        const timeSpentNice =
-            timeRemaining.value == 0 ? getTimeNiceFromTimeObject(timeInitial.value) : getTimeNiceFromTimeObject(getTimeObjectFromSeconds(getElapsedTimeInSeconds()));
-        showSaveDialog(timeSpentNice);
+	    saveDialog.value.open(activitySelectionForm.value.getSelectedActivityName as string, getTimeNiceFromTimeObject(timePassed()));
     }
     function resetTime() {
         alarmTime.value = new TimeLengthObject();
@@ -96,18 +93,13 @@
         timeRemaining.value = 0;
         startTimestamp.value = new Date();
     }
-    function showSaveDialog(timeSpentNice: string) {
-        let activityName = activitySelectionForm.value.getSelectedActivityName;
-        saveDialog.value.open(activityName, timeSpentNice);
-    }
     function saveActivity() {
-        const timeInSeconds = timeRemaining.value == 0 ? getSecondsFromTimeObject(timeInitial.value) : getElapsedTimeInSeconds();
-        activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value.toISOString());
+	    addActivityToHistory(startTimestamp.value, timePassed(),activitySelectionForm.value.getSelectedActivityId);
     }
     function updateTimeInitial(_timeInitial: TimeLengthObject) {
         timeInitial.value = _timeInitial;
     }
-    function getElapsedTimeInSeconds() {
-        return getSecondsFromTimeObject(timeInitial.value) - getSecondsFromTimeObject(alarmTime.value);
+    function timePassed(){
+	    return timeRemaining.value == 0 ? timeInitial.value : timeInitial.value.subtract(alarmTime.value);
     }
 </script>

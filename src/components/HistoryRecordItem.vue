@@ -24,17 +24,17 @@
 </template>
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { HistoryRecord } from '../classes/HistoryRecord';
-    import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '../compositions/DateTimeFunctions';
+    import { History } from '@/classes/History';
+    import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
     const props = defineProps({
         record: {
-            type: HistoryRecord,
+            type: History,
             required: true,
         },
     });
     const formattedStartTimestamp = computed(() => new Date(props.record.startTimestamp).toLocaleTimeString());
-    const formattedLength = computed(() => getTimeNiceFromTimeObject(getTimeObjectFromSeconds(props.record.length)));
-    const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length));
+    const formattedLength = computed(() => getTimeNiceFromTimeObject(props.record.length));
+    const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length.getInSeconds));
 
     function getEndOfActivityTime(startTimestamp: Date, length: number) {
         const endInMillis = new Date(startTimestamp).getTime() + length * 1000;

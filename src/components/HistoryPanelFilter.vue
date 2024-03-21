@@ -37,7 +37,7 @@
 	              class="mt-3 flex-1-0"
 	              :label="i18n.t('dateTime.dateFrom')"
 	              :clearable="true"
-	              v-model:dateValue="filterData.dateFrom">
+	              v-model="filterData.dateFrom">
 	</MyDatePicker>
 	<div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
 		<div class="d-flex flex-1-0 align-center">
@@ -96,7 +96,7 @@
 		<MyDatePicker
 			class="flex-1-0"
 			:label="i18n.t('dateTime.dateTo')"
-			v-model:dateValue="filterData.dateTo"
+			v-model="filterData.dateTo"
 			:clearable="dateRange"
 			:maxDate="new Date()">
 		</MyDatePicker>
@@ -114,7 +114,7 @@
 import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter} from "@/classes/History";
-import {HistoryRecord} from "@/classes/HistoryRecord";
+import {History} from "@/classes/History";
 import {SelectOption} from "@/classes/SelectOption";
 import {importDefaults} from '@/compositions/Defaults';
 
@@ -279,7 +279,7 @@ function applyFilter() {
 	axios
 		.post(`/history/filter`, filter)
 		.then((response) => {
-			emit("filterApplied", HistoryRecord.listFromObjects(response.data));
+			emit("filterApplied", History.listFromObjects(response.data));
 		})
 		.catch((error) => {
 			console.log(error);
@@ -287,6 +287,6 @@ function applyFilter() {
 }
 
 const emit = defineEmits<{
-	filterApplied: [records: HistoryRecord[]];
+	filterApplied: [records: History[]];
 }>();
 </script>

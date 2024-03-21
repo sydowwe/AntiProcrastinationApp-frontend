@@ -36,6 +36,7 @@ import {TimeLengthObject} from '@/classes/TimeUtils';
 import {SelectOption} from '@/classes/SelectOption';
 import {importDefaults} from '@/compositions/Defaults';
 import {ActivitySelectOption} from '@/classes/Activity';
+import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
 const {router, showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -97,7 +98,13 @@ watch(() => props.activityId, (newValue) => {
 });
 
 function validate() {
-	return selectedActivityId.value != null;
+	if(selectedActivityId.value != null){
+		return true;
+	}
+	else {
+		showErrorSnackbar(`Please select an activity`);
+		return false;
+	}
 }
 
 function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
@@ -142,20 +149,19 @@ function updateActivitiesBy(byWhat: string) {
 	}
 }
 
-function addActivityToHistory(activityLength: TimeLengthObject, startTimestamp: string) {
-	const newRecordRequest = {
-		startTimestamp,
-		length: activityLength,
-		activityId: selectedActivityId.value,
-	};
-	axios
-		.post('/history/add-new-record', newRecordRequest)
-		.then(() => {
-			showSnackbar('Added record of activity to history', {color: 'success'});
+function saveActivityToHistory(startTimestamp: Date,activityLength: TimeLengthObject) {
+	if(!selectedActivityId.value){
+		showErrorSnackbar(`Please select an activity`);
+	}
+	else {
+		addActivityToHistory(startTimestamp,activityLength,selectedActivityId.value).then(isSuccess=>{
+			if (isSuccess) {
+				showSnackbar(`Added record of activity ${getSelectedActivityName} to history`,{color:'success'});
+			}else{
+				showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName} to history`);
+			}
 		})
-		.catch((error) => {
-			console.log(error);
-		});
+	}
 }
 
 function createNewActivity() {
@@ -168,7 +174,7 @@ const getSelectedActivityId = computed(() => {
 	return selectedActivityId.value;
 });
 
-defineExpose({validate, addActivityToHistory, getSelectedActivityName, getSelectedActivityId});
+defineExpose({validate, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
 const emit = defineEmits<{
 	(e: "activityIdChanged", activityId: number | null): void;
 }>()

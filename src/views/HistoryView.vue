@@ -30,10 +30,10 @@
     import { ref } from 'vue';
     import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/HistoryRecordItem.vue';
-    import { HistoryRecord } from '@/classes/HistoryRecord';
-    const records = ref([] as HistoryRecord[]);
+    import { History } from '@/classes/History';
+    const records = ref([] as History[]);
 
-    function handleFilterApplied(_records: HistoryRecord[]) {
+    function handleFilterApplied(_records: History[]) {
         records.value = _records;
     }
 </script>

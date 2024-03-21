@@ -1,7 +1,7 @@
 <template>
 <VRow align="center" no-gutters>
 	<VCol cols="11" sm="5" class="px-0 pr-2">
-		<MyDatePicker ref="datePicker" v-model:dateValue="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
+		<MyDatePicker ref="datePicker" v-model="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
 	<VCol cols="11" sm="7" class="px-0">
 		<TimePicker :label="i18n.t('dateTime.time')" @hoursChanged="handleHourChange" @minutesChanged="handleMinuteChange" ></TimePicker>

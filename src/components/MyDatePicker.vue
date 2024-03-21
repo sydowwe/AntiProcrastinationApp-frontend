@@ -83,7 +83,7 @@ const props = defineProps({
 		default: null,
 	},
 });
-const dateValue = defineModel<Date | null>('dateValue');
+const dateValue = defineModel<Date | null>();
 const showDatePicker = ref(false);
 
 const dateNice = computed(() => {
@@ -125,23 +125,6 @@ function quickChangeDate(increment: number) {
 		dateValue.value = new Date(dateValue.value.setDate(dateValue.value.getDate() + increment));
 	}
 }
-
-// const getDateISO = computed(() => {
-// 	dateValue.value?.setUTCHours(0, 0, 0, 1);
-// 	return dateValue.value?.toISOString();
-// });
-// const getDate = computed(() => {
-// 	dateValue.value?.setUTCHours(0, 0, 0, 1);
-// 	return dateValue.value;
-// });
-// function setDate(newDate: Date) {
-// 	dateValue.value = newDate;
-// }
-// defineExpose({
-// 	getDateISO,
-// 	getDate,
-// 	setDate
-// });
 </script>
 <style>
 div.v-date-picker-month__day--hide-adjacent {

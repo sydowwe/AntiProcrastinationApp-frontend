@@ -9,7 +9,7 @@
             </VRow>
             <hr />
             <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-            <SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTime()"></SaveActivityDialog>
+            <SaveActivityDialog ref="saveDialog" @saved="saveActivity" @resetTime="resetTime"></SaveActivityDialog>
         </v-col>
     </VRow>
 </template>
@@ -47,8 +47,6 @@
                     time.value.hours++;
                 }
             }, 1000);
-        } else {
-            alert('select activity please');
         }
     }
     function pause() {
@@ -68,11 +66,11 @@
     }
     function showSaveDialog(timeSpentNice: string) {
         let activityName = activitySelectionForm.value.getSelectedActivityName;
-        if (activityName !== undefined) {
+        if (activityName !== null) {
             saveDialog.value.open(activityName, timeSpentNice);
         }
     }
     function saveActivity() {
-        activitySelectionForm.value.addActivityToHistory(time.value, startTimestamp.value.toISOString());
+        activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, time.value);
     }
 </script>

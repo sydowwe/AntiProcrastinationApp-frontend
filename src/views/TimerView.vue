@@ -3,7 +3,7 @@
 	<VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
 		<VRow v-if="timeInputVisible" justify="center" noGutters>
 			<VCol cols="12" lg="6" md="8" sm="10">
-				<TimeLengthPicker ref="timeLengthPicker"></TimeLengthPicker>
+				<TimeLengthPicker v-model="timeLength"></TimeLengthPicker>
 			</VCol>
 		</VRow>
 		<TimeDisplay v-else :timeObject="time"></TimeDisplay>
@@ -28,12 +28,10 @@ import {TimeLengthObject} from '@/classes/TimeUtils';
 import {
 	ActivityDialogType,
 	ActivitySelectionFormType,
-	TimeLengthPickerType,
 } from '@/classes/types/RefTypeInterfaces';
 import {getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds} from '@/compositions/DateTimeFunctions';
 import {ref} from 'vue';
 
-const timeLengthPicker = ref<TimeLengthPickerType>({} as TimeLengthPickerType);
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
@@ -44,22 +42,19 @@ const paused = ref(false);
 const intervalId = ref(undefined as number | undefined);
 const startTimestamp = ref(new Date());
 const formDisabled = ref(false);
+const timeLength = ref(new TimeLengthObject());
 
 checkNotificationPermission();
 
 function start() {
 	if (paused) {
 		resume();
-	} else {
-		if (activitySelectionForm.value.validate()) {
-			formDisabled.value = true;
-			startTimestamp.value = new Date();
-			timeInputVisible.value = false;
-			timeRemaining.value = getSecondsFromTimeObject(timeLengthPicker.value.time);
-			resume();
-		} else {
-			alert('select activity please');
-		}
+	} else if (activitySelectionForm.value.validate()) {
+		formDisabled.value = true;
+		startTimestamp.value = new Date();
+		timeInputVisible.value = false;
+		timeRemaining.value = getSecondsFromTimeObject(timeLength.value);
+		resume();
 	}
 }
 
@@ -83,9 +78,8 @@ function resume() {
 
 function stop() {
 	clearInterval(intervalId.value);
-	const timeSpentNice = timeRemaining.value == 0 ? getTimeNiceFromTimeObject(timeLengthPicker.value.time) : getTimeNiceFromTimeObject(getTimeObjectFromSeconds(getElapsedTimeInSeconds()));
-
-	let activityName = activitySelectionForm.value.getSelectedActivityName;
+	const timeSpentNice = getTimeNiceFromTimeObject(timePassed());
+	let activityName = activitySelectionForm.value.getSelectedActivityName as string;
 	showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
 	saveDialog.value.open(activityName, timeSpentNice);
 }
@@ -100,11 +94,9 @@ function resetTime() {
 }
 
 function saveActivity() {
-	const timeInSeconds = timeRemaining.value == 0 ? getSecondsFromTimeObject(timeLengthPicker.value.time) : getElapsedTimeInSeconds();
-	activitySelectionForm.value.addActivityToHistory(getTimeObjectFromSeconds(timeInSeconds), startTimestamp.value.toISOString());
+	activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, timePassed());
 }
-
-function getElapsedTimeInSeconds() {
-	return getSecondsFromTimeObject(timeLengthPicker.value.time) - getSecondsFromTimeObject(time.value);
+function timePassed(){
+	return timeRemaining.value == 0 ? timeLength.value : timeLength.value.subtract(time.value);
 }
 </script>

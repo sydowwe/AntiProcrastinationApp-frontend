@@ -12,14 +12,13 @@
 		@isDoneChanged="handleIsDoneChanged"
 	></ToDoListItem>
 </VList>
-<ToDoListItemDoneDialog ref="toDoListItemDoneDialog" :taskName="clickedTask" :parentViewName="kind === ToDoListKind.NORMAL ? 'ToDoList' : 'RoutineToDoList'"></ToDoListItemDoneDialog>
+<ToDoListItemDoneDialog v-model="itemDoneDialogShown" :toDoListItem="currentDoneItem" :isRecursive="isDialogRecursive" @openNext="recursiveDialogsToSaveToHistory"></ToDoListItemDoneDialog>
 </template>
 <script setup lang="ts">
 import ToDoListItem from '../components/ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
 import {BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
 import {ref} from 'vue';
-import {DialogType} from '@/classes/types/RefTypeInterfaces';
 
 const props = defineProps({
 	kind: {
@@ -36,12 +35,58 @@ const props = defineProps({
 	},
 });
 const selectedItemsIds = ref([] as number[]);
-const toDoListItemDoneDialog = ref<DialogType>({} as DialogType);
-const clickedTask = ref('');
 const editItem = (entityToEdit: BaseToDoListItemEntity) => {
 	emit('editItem', entityToEdit);
 };
 const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'to-do-list';
+
+const itemDoneDialogShown = ref(false);
+const isDialogRecursive = ref(false);
+const changedItems = ref([] as BaseToDoListItemEntity[]);
+const currentDoneItem = ref({} as BaseToDoListItemEntity);
+function recursiveDialogsToSaveToHistory(){
+	if(changedItems.value.length > 0){
+		console.log(changedItems.value);
+		isDialogRecursive.value = true;
+		currentDoneItem.value = changedItems.value[0];
+		itemDoneDialogShown.value = true;
+		changedItems.value.splice(0,1);
+	}
+}
+
+const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
+	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
+	if(toDoListItem.isDone){
+		if (isBatchAction) {
+			changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
+			console.log(changedItems.value);
+
+			recursiveDialogsToSaveToHistory();
+		}else{
+			currentDoneItem.value = toDoListItem;
+			isDialogRecursive.value = false;
+			itemDoneDialogShown.value = true;
+		}
+	}
+	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
+	window.axios
+		.patch(`/${url}/change-done`, changedItemsIds)
+		.then((response) => {
+			console.log(response);
+			if (isBatchAction) {
+				// osetrit aby ked na frontended ostatne zmenim aby sa znovu neposlal request na zmenu
+				props.items.forEach((item) => {
+					if (selectedItemsIds.value.includes(item.id)) {
+						item.isDone = toDoListItem.isDone;
+					}
+				});
+			}
+			selectedItemsIds.value = [];
+		})
+		.catch((error) => {
+			console.error(error);
+		});
+};
 const deleteItem = (id: number) => {
 	if (selectedItemsIds.value.length > 1) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({id: item}));
@@ -75,30 +120,6 @@ const deleteItem = (id: number) => {
 			});
 	}
 };
-
-const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
-	// const changedItems = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id) ?
-	// 	selectedItemsIds.value.map((item: number) => ({id: item})) : [toDoListItem.id];
-	// console.log(changedItems);
-	clickedTask.value = toDoListItem.activity.name as string;
-	toDoListItemDoneDialog.value.open();
-	window.axios
-		.patch(`/${url}/change-done`, toDoListItem.id)
-		.then((response) => {
-			console.log(response);
-			// if (selectedItemsIds.value.includes(id)) {
-			// 	props.items.forEach((item) => {
-			// 		if (selectedItemsIds.value.includes(item.id)) {
-			// 			item.isDone = isDone;
-			// 		}
-			// 	});
-			// }
-			selectedItemsIds.value = [];
-		})
-		.catch((error) => {
-			console.error(error);
-		});
-};
 const select = (id: number) => {
 	if (!selectedItemsIds.value.includes(id)) {
 		selectedItemsIds.value.push(id);
@@ -108,9 +129,8 @@ const unSelect = (id: number) => {
 	console.log('asdsd');
 	selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
 };
-// const emit = defineEmits<{
-//     (e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
-//     (e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
-// }>();
-const emit = defineEmits(['itemsChanged', 'editItem']);
+const emit = defineEmits<{
+    (e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
+    (e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
+}>();
 </script>
