@@ -129,6 +129,8 @@ const sk = {
         unselect: `Zrušiť výber`,
         delete: `Vymazať`,
         clear: `Vynulovať`,
+        task: `Úloha`,
+        hide: `Skryť`,
     },
     dateTime:{
         when: `Kedy`,
@@ -174,7 +176,7 @@ const sk = {
     history:{
         addActivityToHistory: `Pridať aktivitu do histórie`,
         lengthNotSet: `Nebola zadaná dĺžka`,
-        toHistory: `to history`,
+        toHistory: `Do histórie`,
     },
     authorization: {
         logOut: `Odhlásiť sa`,
@@ -230,7 +232,8 @@ const sk = {
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
         timePeriod: `Časový úsek`,
-        saveToHistory: `Zaznamenať dokončenie úlohy <span class="text-purple-accent-4 font-weight-bold">{task}</span> do histórie?`,
+        quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s kategóriou to-do list`,
+        saveTask: `Zaznamenať dokončenie úlohy`,
     },
     user: {
         userSettings: `Uživateľské nastavenia`,

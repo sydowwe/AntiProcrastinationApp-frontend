@@ -12,7 +12,8 @@
 		@isDoneChanged="handleIsDoneChanged"
 	></ToDoListItem>
 </VList>
-<ToDoListItemDoneDialog v-model="itemDoneDialogShown" :toDoListItem="currentDoneItem" :isRecursive="isDialogRecursive" @openNext="recursiveDialogsToSaveToHistory"></ToDoListItemDoneDialog>
+<ToDoListItemDoneDialog v-model="itemDoneDialogShown" :toDoListItem="currentDoneItem" :isRecursive="isDialogRecursive"
+                        @openNext="recursiveDialogsToSaveToHistory"></ToDoListItemDoneDialog>
 </template>
 <script setup lang="ts">
 import ToDoListItem from '../components/ToDoListItem.vue';
@@ -44,48 +45,48 @@ const itemDoneDialogShown = ref(false);
 const isDialogRecursive = ref(false);
 const changedItems = ref([] as BaseToDoListItemEntity[]);
 const currentDoneItem = ref({} as BaseToDoListItemEntity);
-function recursiveDialogsToSaveToHistory(){
-	if(changedItems.value.length > 0){
+
+function recursiveDialogsToSaveToHistory() {
+	if (changedItems.value.length > 0) {
 		console.log(changedItems.value);
 		isDialogRecursive.value = true;
 		currentDoneItem.value = changedItems.value[0];
 		itemDoneDialogShown.value = true;
-		changedItems.value.splice(0,1);
+		console.log(itemDoneDialogShown.value);
+		changedItems.value.splice(0, 1);
 	}
 }
 
 const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
-	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
-	if(toDoListItem.isDone){
-		if (isBatchAction) {
-			changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
-			console.log(changedItems.value);
-
-			recursiveDialogsToSaveToHistory();
-		}else{
-			currentDoneItem.value = toDoListItem;
-			isDialogRecursive.value = false;
-			itemDoneDialogShown.value = true;
-		}
-	}
-	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
-	window.axios
-		.patch(`/${url}/change-done`, changedItemsIds)
-		.then((response) => {
-			console.log(response);
+		const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
+		if (toDoListItem.isDone) {
 			if (isBatchAction) {
-				// osetrit aby ked na frontended ostatne zmenim aby sa znovu neposlal request na zmenu
-				props.items.forEach((item) => {
-					if (selectedItemsIds.value.includes(item.id)) {
-						item.isDone = toDoListItem.isDone;
-					}
-				});
+				changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
+				recursiveDialogsToSaveToHistory();
+			} else {
+				console.log('bbbb')
+				currentDoneItem.value = toDoListItem;
+				isDialogRecursive.value = false;
+				itemDoneDialogShown.value = true;
 			}
-			selectedItemsIds.value = [];
-		})
-		.catch((error) => {
-			console.error(error);
-		});
+		}
+		const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
+		window.axios
+			.patch(`/${url}/change-done`, changedItemsIds)
+			.then((response) => {
+				console.log(response);
+				if (isBatchAction) {
+					props.items.forEach((item) => {
+						if (selectedItemsIds.value.includes(item.id)) {
+							item.isDone = toDoListItem.isDone;
+						}
+					});
+				}
+				selectedItemsIds.value = [];
+			})
+			.catch((error) => {
+				console.error(error);
+			});
 };
 const deleteItem = (id: number) => {
 	if (selectedItemsIds.value.length > 1) {
@@ -130,7 +131,7 @@ const unSelect = (id: number) => {
 	selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
 };
 const emit = defineEmits<{
-    (e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
-    (e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
+	(e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
+	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
 }>();
 </script>

@@ -9,11 +9,11 @@ export class History {
   ) {}
   static fromObject(object: any){
     const {
-      id = 0,
-      startTimestamp = new Date(),
-      length = new TimeLengthObject(),
-      activity = new Activity
+      id = 0
     } = object;
+    const startTimestamp = new Date(object.startTimestamp);
+    const length = TimeLengthObject.fromObject(object.length);
+    const activity = Activity.fromObject(object.activity);
     return new History(id,startTimestamp,length,activity);
   }
   static listFromObjects(objects: any[]){

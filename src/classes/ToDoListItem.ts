@@ -143,6 +143,7 @@ export class TimePeriodEntity {
 		public text: string | null = null,
 		public color: string | undefined = undefined,
 		public lengthInDays: number = 0,
+		public isHiddenInView: boolean = false,
 	) {
 	}
 
@@ -152,8 +153,9 @@ export class TimePeriodEntity {
 			text = '',
 			color = '',
 			lengthInDays = 0,
+			isHiddenInView = false,
 		} = object;
-		return new TimePeriodEntity(id, text, color, lengthInDays);
+		return new TimePeriodEntity(id, text, color, lengthInDays, isHiddenInView);
 	}
 
 	static listFromObjects(objects: any[]) {

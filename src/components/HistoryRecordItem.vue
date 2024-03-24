@@ -37,7 +37,8 @@
     const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length.getInSeconds));
 
     function getEndOfActivityTime(startTimestamp: Date, length: number) {
-        const endInMillis = new Date(startTimestamp).getTime() + length * 1000;
+        const endInMillis = startTimestamp.valueOf() + length * 1000;
+	    console.log(endInMillis)
         return new Date(endInMillis).toLocaleTimeString();
     }
 </script>

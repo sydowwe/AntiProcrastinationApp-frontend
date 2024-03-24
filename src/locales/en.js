@@ -130,6 +130,7 @@ const en = {
         delete: `Delete`,
         clear: `Clear`,
         task: `Task`,
+        hide: `Hide`,
     },
     dateTime: {
         when: `When`,
@@ -172,6 +173,7 @@ const en = {
     history:{
         addActivityToHistory: `Add activity to history`,
         lengthNotSet: `Length not set`,
+        toHistory: `To history`
     },
     authorization: {
         logOut: `Log out`,
@@ -226,7 +228,8 @@ const en = {
         toDoList: 'To-do list',
         urgency: `Urgency`,
         timePeriod: `Time period`,
-        saveToHistory: `Record completion of the task <span class="text-purple-accent-4 font-weight-bold">{task}</span> to history?`,
+        quickCreateToDoListActivity: `Quick create activity with to-do list category`,
+        saveTask: `Record completion of the task`,
     },
     user: {
         userSettings: `User settings`,

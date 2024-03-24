@@ -1,8 +1,12 @@
 <template>
-<v-dialog v-model="dialogShown" max-width="600" eager persistent>
-	<v-card class="px-6 py-4 text-center">
-		<v-card-title class="pa-0 text-wrap" v-html="i18n.t('toDoList.saveToHistory',{task: toDoListItem?.activity?.name})"></v-card-title>
-		<v-card-text class="px-0 pb-0">
+<VDialog v-model="dialogShown" max-width="600" eager persistent>
+	<VCard class="px-6 py-4 text-center">
+		<VCardTitle class="pa-0 text-wrap">
+			{{ i18n.t('toDoList.saveTask') }}
+			<span class="text-purple-accent-4 font-weight-bold">{{ toDoListItem?.activity?.name }}</span>
+			{{ i18n.t('history.toHistory').toLowerCase() }}?
+		</VCardTitle>
+		<VCardText class="px-0 pb-0">
 			<VForm @keyup.native.enter="save">
 				<div class="d-flex flex-column flex-sm-row mb-4">
 					<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
@@ -18,13 +22,13 @@
 					<TimeLengthPicker v-model="length" class="ml-2 flex-grow-1"></TimeLengthPicker>
 				</div>
 			</VForm>
-		</v-card-text>
-		<v-card-actions class="justify-end px-0">
-			<v-btn color="red" @click="close">{{ i18n.t('general.cancel') }}</v-btn>
-			<v-btn color="green" @click="save">{{ i18n.t('general.save') }}</v-btn>
-		</v-card-actions>
-	</v-card>
-</v-dialog>
+		</VCardText>
+		<VCardActions class="justify-end px-0">
+			<VBtn color="red" @click="close">{{ i18n.t('general.cancel') }}</VBtn>
+			<VBtn color="green" @click="save">{{ i18n.t('general.save') }}</VBtn>
+		</VCardActions>
+	</VCard>
+</VDialog>
 </template>
 <script setup lang="ts">
 import {ref, watch, defineProps, onMounted} from 'vue';
@@ -37,7 +41,7 @@ import {TimeLengthObject} from '@/classes/TimeUtils';
 import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
-const {i18n, showErrorSnackbar,showSnackbar} = importDefaults();
+const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	toDoListItem: {
@@ -60,27 +64,23 @@ onMounted(() => {
 function handleHoursChanged(hour: number) {
 	dateTime.value.setHours(hour);
 }
-
 function handleMinutesChanged(minute: number) {
 	dateTime.value.setMinutes(minute);
 }
 
 function save() {
-	addActivityToHistory(dateTime.value, length.value, props.toDoListItem?.activity.id).then(isSuccess=>{
+	addActivityToHistory(dateTime.value, length.value, props.toDoListItem?.activity.id).then(isSuccess => {
 		if (isSuccess) {
-			showSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`,{color:'success'});
+			showSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`, {color: 'success'});
 			close();
-		}else{
+		} else {
 			showErrorSnackbar(`Error saving to-do list task ${props.toDoListItem?.activity.name} to history`);
 		}
 	});
 }
-
 function close() {
-	console.log(props.isRecursive)
-	if(props.isRecursive){
-
-		emit('openNext');
+	if (props.isRecursive) {
+		setTimeout(()=>emit('openNext'),200);
 	}
 	dialogShown.value = false;
 }
@@ -89,7 +89,5 @@ const emit = defineEmits<{
 	openNext: []
 }>();
 </script>
-
 <style scoped>
-
 </style>

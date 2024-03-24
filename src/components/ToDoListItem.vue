@@ -69,12 +69,12 @@ const actions = [
 
 function itemClicked() {
 	props.toDoListItem.isDone = !props.toDoListItem.isDone;
+	emits('isDoneChanged', props.toDoListItem);
 }
 
 watch(
 	() => props.toDoListItem.isDone,
 	(newValue) => {
-		emits('isDoneChanged', props.toDoListItem);
 		isSelected.value = false;
 	}
 );
