@@ -1,21 +1,21 @@
 <template>
     <VRow justify="center" class="mt-16">
         <VCol cols="12" sm="10" md="8" lg="6">
-            <h2 class="text-center mb-5">{{ $t('user.userSettings') }}</h2>
+            <h2 class="text-center mb-5">{{ i18n.t('user.userSettings') }}</h2>
             <VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
-                <VTextField class="mb-3" :label="$t('authorization.name')" v-model="userData.name" :rules="nameRules" autofocus></VTextField>
-                <VTextField class="mb-3" :label="$t('authorization.surname')" v-model="userData.surname" :rules="surnameRules"></VTextField>
-                <VTextField class="mb-0" :label="$t('authorization.email')" v-model="userData.email" :rules="emailRules"></VTextField>
+                <VTextField class="mb-3" :label="i18n.t('authorization.name')" v-model="userData.name" :rules="nameRules" autofocus></VTextField>
+                <VTextField class="mb-3" :label="i18n.t('authorization.surname')" v-model="userData.surname" :rules="surnameRules"></VTextField>
+                <VTextField class="mb-0" :label="i18n.t('authorization.email')" v-model="userData.email" :rules="emailRules"></VTextField>
                 <div class="d-flex flex-column-reverse flex-sm-row mb-4 mt-0">
-                    <VCheckbox :label="$t('user.use2FA')" v-model="userData.has2FA" hide-details density="compact"></VCheckbox>
-                    <VBtn v-if="userData.has2FA" class="mb-1 mb-sm-0 mx-auto" color="info" @click="show2FAQrCode" style="width: fit-content !important">{{ $t('user.show2FAQrCode') }}</VBtn>
-                    <VBtn v-if="userData.has2FA" class="mb-1 mb-sm-0 mx-auto" color="danger" @click="showScratchCode" style="width: fit-content !important">{{ $t('user.showScratchCode') }}</VBtn>
+                    <VCheckbox :label="i18n.t('user.use2FA')" v-model="userData.has2FA" hide-details density="compact"></VCheckbox>
+                    <VBtn v-if="userData.has2FA" class="mb-1 mb-sm-0 mx-auto" color="info" @click="show2FAQrCode" style="width: fit-content !important">{{ i18n.t('user.show2FAQrCode') }}</VBtn>
+                    <VBtn v-if="userData.has2FA" class="mb-1 mb-sm-0 mx-auto" color="danger" @click="showScratchCode" style="width: fit-content !important">{{ i18n.t('user.showScratchCode') }}</VBtn>
                 </div>
                 <VRow justify="center">
                     <VCol cols="10" sm="8" md="6" lg="6">
-                        <VBtn class="mb-2" type="submit" width="100%" color="success">{{ $t('general.save') }}</VBtn>
-                        <VBtn class="mb-2" width="100%" color="warning" @click="changePasswordDialog.open">{{ $t('user.changePassword') }}</VBtn>
-                        <VBtn class="mb-2" width="100%" color="error" @click="deleteAccount">{{ $t('user.deleteAccount') }}</VBtn>
+                        <VBtn class="mb-2" type="submit" width="100%" color="success">{{ i18n.t('general.save') }}</VBtn>
+                        <VBtn class="mb-2" width="100%" color="warning" @click="changePasswordDialog.open">{{ i18n.t('user.changePassword') }}</VBtn>
+                        <VBtn class="mb-2" width="100%" color="error" @click="deleteAccount">{{ i18n.t('user.deleteAccount') }}</VBtn>
                     </VCol>
                 </VRow>
             </VForm>
@@ -24,7 +24,7 @@
         <VerifyQrCodeDialog ref="verifyQrCodeDialog" @verified="currentFunction"></VerifyQrCodeDialog>
         <ChangePasswordDialog ref="changePasswordDialog" @change="changePassword"></ChangePasswordDialog>
         <QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done=""></QrCodeFor2FADialog>
-        <ErrorDialog ref="errorDialog" :title="errodDialogTitle" :message="errorDialogMessage"></ErrorDialog>
+        <ErrorDialog ref="errorDialog" :title="errorDialogTitle" :message="errorDialogMessage"></ErrorDialog>
     </VRow>
 </template>
 <script setup lang="ts">
@@ -34,12 +34,10 @@
     import VerifyPasswordDialog from '../components/dialogs/VerifyPasswordDialog.vue';
     import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
     import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
-
-    import { VuetifyFormType, DialogType, DialogFormType } from '../classes/types/RefTypeInterfaces';
-    import { User, UserRequest } from '../classes/User';
-
-    import {importDefaults} from '../compositions/Defaults';
-    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
+    import { VuetifyFormType, DialogType, DialogFormType } from '@/classes/types/RefTypeInterfaces';
+    import { User, UserRequest } from '@/classes/User';
+    import {importDefaults} from '@/compositions/Defaults';
+    import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
     const { router, i18n, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
 
@@ -54,7 +52,7 @@
     const currentFunction = ref(saveChanges as (...args: any[]) => any);
     const qrCodeImage = ref('');
 
-    const errodDialogTitle = ref('Dialog');
+    const errorDialogTitle = ref('Dialog');
     const errorDialogMessage = ref('');
 
     getUserData();

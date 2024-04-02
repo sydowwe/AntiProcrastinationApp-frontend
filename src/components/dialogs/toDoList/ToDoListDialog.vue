@@ -1,19 +1,19 @@
 <template>
-<v-dialog v-model="dialog" max-width="600">
+<v-dialog v-model="dialog" max-width="600" eager>
 	<v-card class="px-6 py-4 text-center">
 		<v-card-title class="pa-0">{{ isEdit ? $t('general.edit') : $t('general.add') + ' to to-do list' }}</v-card-title>
-		<v-card-text class="px-0">
+		<v-card-text class="px-0 pt-0">
 			<VForm @keyup.native.enter="save">
-				<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('toDoList.quickCreateToDoListActivity')"
+				<VCheckbox class="mx-auto mb-3" v-model="isActivityFormHidden" :label="isEdit ? i18n.t('toDoList.quickEditToDoListActivity') : i18n.t('toDoList.quickCreateToDoListActivity')"
 				           density="comfortable" hideDetails></VCheckbox>
-				<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
+				<ActivitySelectionForm v-show="!isActivityFormHidden" class="mb-4"
 				                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
 				                       :activityId="toDoListItem.activityId"
 				                       @activityIdChanged="activityId => toDoListItem.activityId = activityId"></ActivitySelectionForm>
-				<template v-else>
+				<div v-show="isActivityFormHidden">
 					<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
 					<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
-				</template>
+				</div>
 				<VSelect
 					:label="$t('toDoList.urgency')"
 					v-model="toDoListItem.urgencyId"
@@ -26,7 +26,7 @@
 			</VForm>
 		</v-card-text>
 		<v-card-actions class="justify-end px-0">
-			<v-btn color="red" @click="close">{{ $t('general.cancel') }}</v-btn>
+			<v-btn color="red" @click="closeAndReset">{{ $t('general.cancel') }}</v-btn>
 			<v-btn color="green" @click="save">{{ isEdit ? $t('general.edit') : $t('general.add') }}</v-btn>
 		</v-card-actions>
 	</v-card>
@@ -51,8 +51,7 @@ const urgencyOptions = ref([] as UrgencyEntity[]);
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
-		toDoListItem.value = new ToDoListItemRequest();
-		setDefaultUrgency();
+		closeAndReset();
 	}
 });
 const emit = defineEmits(['edit', 'add']);
@@ -93,18 +92,22 @@ function getUrgencyOptions() {
 		});
 }
 
-const close = () => {
+const closeAndReset = () => {
+	toDoListItem.value = new ToDoListItemRequest();
+	setDefaultUrgency();
 	dialog.value = false;
 };
 const openCreate = () => {
 	isEdit.value = false;
-	console.log(isEdit.value);
-
+	isActivityFormHidden.value = false;
 	dialog.value = true;
 };
 const openEdit = (entityToEdit: ToDoListItemEntity) => {
+	isActivityFormHidden.value = true;
 	isEdit.value = true;
 	idToEdit.value = entityToEdit.id;
+	quickActivityName.value = entityToEdit.activity.name;
+	quickActivityText.value = entityToEdit.activity.text;
 	toDoListItem.value = ToDoListItemRequest.fromEntity(entityToEdit);
 	dialog.value = true;
 };

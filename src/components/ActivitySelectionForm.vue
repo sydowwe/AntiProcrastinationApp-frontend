@@ -9,11 +9,11 @@
 	<VCol cols="12" class="pt-1">
 		<VRow>
 			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VAutocomplete label="Role" v-model="selectedRoleId" :items="selectOptions.role" :disabled="formDisabled"
+				<VAutocomplete label="Role" v-model="selectedRoleId" :items="selectOptions.role" :disabled="formDisabled" @update:modelValue="updateCategoriesAndActivities"
 				               hide-details></VAutocomplete>
 			</VCol>
 			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VAutocomplete label="Category" v-model="selectedCategoryId" :items="selectOptions.category" :disabled="formDisabled"
+				<VAutocomplete label="Category" v-model="selectedCategoryId" :items="selectOptions.category" :disabled="formDisabled" @update:modelValue="updateRolesAndActivities"
 				               hide-details></VAutocomplete>
 			</VCol>
 			<VCol cols="12">
@@ -68,27 +68,19 @@ const selectOptions = reactive({
 
 const isFromToDoList = ref(false);
 const selectedUrgencyId = ref(1);
-const selectedRoleId = ref(null as number | null);
-const selectedCategoryId = ref(null as number | null);
-const selectedActivityId = ref(null as number | null);
+const selectedRoleId = ref<number | null>(null);
+const selectedCategoryId = ref<number | null>(null);
+const selectedActivityId = ref<number | null>(null);
 
 populateSelects('taskUrgency', '/urgency/get-all');
 populateSelects('role', '/role/get-all-options');
 populateSelects('category', '/category/get-all-options');
 populateSelects('activity', '/activity/get-all-options');
 
-
-watch(selectedRoleId, () => {
-	updateCategoriesAndActivities();
-});
-watch(selectedCategoryId, () => {
-	updateRolesAndActivities();
-});
 watch(selectedActivityId, (newValue) => {
 	emit('activityIdChanged',newValue);
 	if (newValue) {
 		const activity = selectOptions.activity.find((item) => item.id === newValue);
-		console.log(activity)
 		selectedRoleId.value = activity?.roleId ?? null;
 		selectedCategoryId.value = activity?.categoryId ?? null;
 	}
@@ -119,7 +111,6 @@ function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
 }
 
 function updateRolesAndActivities() {
-	selectedActivityId.value = null;
 	if (selectedCategoryId.value) {
 		populateSelects('role', `/role/get-options-by-category/${selectedCategoryId.value}`);
 		updateActivitiesBy('category');
@@ -130,7 +121,6 @@ function updateRolesAndActivities() {
 }
 
 function updateCategoriesAndActivities() {
-	selectedActivityId.value = null;
 	if (selectedRoleId.value) {
 		populateSelects('category', `/category/get-options-by-role/${selectedRoleId.value}`);
 		updateActivitiesBy('role');
@@ -141,7 +131,6 @@ function updateCategoriesAndActivities() {
 }
 
 function updateActivitiesBy(byWhat: string) {
-	selectedActivityId.value = null;
 	if (selectedCategoryId.value || selectedRoleId.value) {
 		populateSelects('activity', `/activity/get-options-by-${byWhat === 'category' ? 'category/' + selectedCategoryId.value : 'role/' + selectedRoleId.value}`);
 	} else {
@@ -173,8 +162,11 @@ const getSelectedActivityName = computed(() => {
 const getSelectedActivityId = computed(() => {
 	return selectedActivityId.value;
 });
-
-defineExpose({validate, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
+function setSelectedActivityId(activityId:number){
+	console.log(activityId)
+	selectedActivityId.value = activityId;
+}
+defineExpose({validate, setSelectedActivityId, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
 const emit = defineEmits<{
 	(e: "activityIdChanged", activityId: number | null): void;
 }>()

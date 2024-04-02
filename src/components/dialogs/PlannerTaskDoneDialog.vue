@@ -1,9 +1,9 @@
 <template>
-<VDialog v-model="dialogShown" max-width="600" eager persistent>
+<VDialog v-model="dialogShown" max-width="600" eager>
 	<VCard class="px-6 py-4 text-center">
 		<VCardTitle class="pa-0 text-wrap">
 			{{ i18n.t('toDoList.saveTask') }}
-			<span class="text-purple-accent-4 font-weight-bold">{{ toDoListItem?.activity?.name }}</span>
+			<span class="text-purple-accent-4 font-weight-bold">{{ plannerTask?.activity?.name }}</span>
 			{{ i18n.t('history.toHistory').toLowerCase() }}?
 		</VCardTitle>
 		<VCardText class="px-0 pb-0">
@@ -31,21 +31,21 @@
 </VDialog>
 </template>
 <script setup lang="ts">
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, watch} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import TimePicker from '@/components/TimePicker.vue';
 import TimeLengthPicker from '@/components/TimeLengthPicker.vue';
 import {TimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
+import {PlannerTask} from '@/classes/PlannerTask';
 
 const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
-	toDoListItem: {
-		type: Object as () => BaseToDoListItemEntity,
+	plannerTask: {
+		type: Object as () => PlannerTask,
 		required: true,
 	},
 	isRecursive: {
@@ -60,14 +60,20 @@ const length = ref(new TimeLengthObject());
 onMounted(() => {
 	timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 })
-
+watch(dialogShown, (isShown) => {
+		if(isShown){
+			length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength/60)  ,props.plannerTask?.minuteLength % 60,0);
+		}else{
+			close();
+		}
+})
 function save() {
-	addActivityToHistory(dateTime.value, length.value, props.toDoListItem?.activity.id).then(isSuccess => {
+	addActivityToHistory(dateTime.value, length.value, props.plannerTask?.activity.id).then(isSuccess => {
 		if (isSuccess) {
-			showSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`, {color: 'success'});
+			showSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`, {color: 'success'});
 			close();
 		} else {
-			showErrorSnackbar(`Error saving to-do list task ${props.toDoListItem?.activity.name} to history`);
+			showErrorSnackbar(`Error saving planner task ${props.plannerTask?.activity.name} to history`);
 		}
 	});
 }

@@ -131,6 +131,8 @@ const en = {
         clear: `Clear`,
         task: `Task`,
         hide: `Hide`,
+        show: `Show`,
+
     },
     dateTime: {
         when: `When`,
@@ -230,6 +232,7 @@ const en = {
         timePeriod: `Time period`,
         quickCreateToDoListActivity: `Quick create activity with to-do list category`,
         saveTask: `Record completion of the task`,
+        quickEditToDoListActivity: `Quick edit to-do list activity`,
     },
     user: {
         userSettings: `User settings`,
@@ -243,8 +246,10 @@ const en = {
         show2FAQrCode: `Show 2FA qr code`,
     },
     planner: {
-
+        task: `Activity`,
         quickCreatePlannerActivity: `Quick create planner activity`,
+        quickEditPlannerActivity: `Quick edit activity`,
+
     }
 }
 export default en

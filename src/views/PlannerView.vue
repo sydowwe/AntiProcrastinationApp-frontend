@@ -2,7 +2,7 @@
 <VRow justify="center" class="mt-md-1">
 	<VCol cols="12" lg="5" class="mt-2 mt-md-0 d-flex align-center ga-2">
 		<VBtn @click="plannerDialog?.openCreate" color="success">
-			{{ $t("general.add") }}
+			{{ i18n.t("general.add") }}
 		</VBtn>
 		<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
 	</VCol>
@@ -17,7 +17,7 @@
 			style="max-width: 100px!important;"
 		></VSelect>
 		<VBtn @click="applyFilter" color="info">
-			{{ $t("general.filter") }}
+			{{ i18n.t("general.filter") }}
 		</VBtn>
 	</VCol>
 </VRow>
@@ -32,6 +32,7 @@
 		@select="select"
 		@unSelect="unSelect"
 		v-for="plannerTask in plannerTasks"
+		@isDoneChanged="handleIsDoneChanged"
 	></PlannerTaskItemVue>
 </div>
 <PlannerDialog
@@ -39,6 +40,8 @@
 	@added="add"
 	@edited="edit"
 ></PlannerDialog>
+<PlannerTaskDoneDialog :isRecursive="isDialogRecursive" :plannerTask="currentDoneItem"
+                       v-model="itemDoneDialogShown"></PlannerTaskDoneDialog>
 </template>
 
 <script setup lang="ts">
@@ -49,6 +52,7 @@ import {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInte
 import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
 import {importDefaults} from "@/compositions/Defaults";
 import DateTimePicker from '@/components/DateTimePicker.vue';
+import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
 
 const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -64,12 +68,61 @@ onMounted(() => {
 	applyFilter();
 })
 
+const itemDoneDialogShown = ref(false);
+const isDialogRecursive = ref(false);
+const changedItems = ref([] as PlannerTask[]);
+const currentDoneItem = ref({} as PlannerTask);
+
+function recursiveDialogsToSaveToHistory() {
+	if (changedItems.value.length > 0) {
+		console.log(changedItems.value);
+		isDialogRecursive.value = true;
+		currentDoneItem.value = changedItems.value[0];
+		itemDoneDialogShown.value = true;
+		console.log(itemDoneDialogShown.value);
+		changedItems.value.splice(0, 1);
+	}
+}
+
+const handleIsDoneChanged = (plannerTask: PlannerTask) => {
+	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(plannerTask.id);
+	if (plannerTask.isDone) {
+		if (isBatchAction) {
+			changedItems.value = plannerTasks.value.filter((item: PlannerTask) => selectedItemsIds.value.includes(item.id));
+			recursiveDialogsToSaveToHistory();
+		} else {
+			currentDoneItem.value = plannerTask;
+			isDialogRecursive.value = false;
+			itemDoneDialogShown.value = true;
+		}
+	}
+	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: plannerTask.id}];
+	console.log(isBatchAction);
+	console.log(changedItemsIds);
+	window.axios
+		.patch(`/${url}/change-done`, changedItemsIds)
+		.then((response) => {
+			console.log(response);
+			if (isBatchAction) {
+				plannerTasks.value.forEach((item) => {
+					if (selectedItemsIds.value.includes(item.id) && item.id !== plannerTask.id) {
+						item.isDone = !item.isDone;
+					}
+				});
+				selectedItemsIds.value = [];
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+		});
+};
+
 function applyFilter() {
 	console.log(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value);
 	window.axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value))
 		.then((response) => {
 			plannerTasks.value = PlannerTask.listFromObjects(response.data);
-		}).catch(error=>{
+		}).catch(error => {
 		console.log(error)
 	});
 }

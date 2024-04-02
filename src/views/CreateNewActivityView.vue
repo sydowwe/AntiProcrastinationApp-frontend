@@ -2,12 +2,12 @@
     <VForm ref="form" class="mt-5">
         <VRow justify="center" no-gutters>
             <VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-8 pa-md-8 pa-sm-6 pa-5">
-                <VLabel>{{ $t('activities.role') }}</VLabel>
+                <VLabel>{{ i18n.t('activities.role') }}</VLabel>
                 <VRow no-gutters>
                     <VAutocomplete v-model="activityRequest.roleId" :items="selectOptions.role" item-title="label" item-value="id" :rules="roleIdRules"></VAutocomplete>
                     <VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.open()"></VBtn>
                 </VRow>
-                <VLabel>{{ $t('activities.category') }}</VLabel>
+                <VLabel>{{ i18n.t('activities.category') }}</VLabel>
                 <VRow no-gutters>
                     <VAutocomplete
                         v-model="activityRequest.categoryId"
@@ -18,15 +18,15 @@
                     ></VAutocomplete>
                     <VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.open()"></VBtn>
                 </VRow>
-                <VLabel>{{ $t('activities.activity') }}</VLabel>
+                <VLabel>{{ i18n.t('activities.activity') }}</VLabel>
                 <VRow no-gutters>
                     <VTextField v-model="activityRequest.name" :rules="activityRules"></VTextField>
                     <VBtn class="ml-2" icon="$info" color="primary"></VBtn>
                 </VRow>
-                <VTextarea class="my-3" :label="$t('activities.activityDescription')" v-model="activityRequest.text" hide-details></VTextarea>
+                <VTextarea class="my-3" :label="i18n.t('activities.activityDescription')" v-model="activityRequest.text" hide-details></VTextarea>
                 <VRow no-gutters>
-                    <VCheckbox :label="$t('activities.isActivityUnavoidable')" v-model="activityRequest.isUnavoidable" hide-details></VCheckbox>
-                    <VCheckbox :label="$t('activities.placeOnToDoList')" v-model="activityRequest.isOnToDoList" hide-details></VCheckbox>
+                    <VCheckbox :label="i18n.t('activities.isActivityUnavoidable')" v-model="activityRequest.isUnavoidable" hide-details></VCheckbox>
+                    <VCheckbox :label="i18n.t('activities.placeOnToDoList')" v-model="activityRequest.isOnToDoList" hide-details></VCheckbox>
                 </VRow>
                 <VRow justify="center" no-gutters>
                     <VBtn class="mt-3" width="200" color="success" @click="validate()">Create</VBtn>
@@ -65,7 +65,6 @@
 <script setup lang="ts">
     //populate selects composition
 
-    import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
     import ContentDialog from '../components/dialogs/ContentDialog.vue';
     import { VuetifyFormType, DialogType } from '@/classes/types/RefTypeInterfaces';
     import { ref, reactive } from 'vue';
@@ -73,7 +72,6 @@
     import { Category } from '@/classes/Category';
     import { SelectOption } from '@/classes/SelectOption';
     import { ActivityRequest } from '@/classes/Activity';
-    import { useActivitySelection } from '@/compositions/ActivitySelectionComposition';
     import { importDefaults } from '@/compositions/Defaults';
     const { i18n, showErrorSnackbar, showSnackbar } = importDefaults();
 

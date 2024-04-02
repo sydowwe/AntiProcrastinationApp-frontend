@@ -67,7 +67,7 @@
     });
   
     const showPassword = ref(false);
-    const dialogTitle = ref('Dialog');
+    const dialogTitle = ref('');
     const dialog = ref(false);
 
     onMounted(() => {

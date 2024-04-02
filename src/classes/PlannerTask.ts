@@ -6,6 +6,7 @@ export class PlannerTask {
 		public startTimestamp: Date,
 		public minuteLength: number,
 		public color: string,
+		public isDone: boolean,
 		public activity: Activity
 	) {
 	}
@@ -16,6 +17,7 @@ export class PlannerTask {
 			startTimestamp = "",
 			minuteLength = 0,
 			color = "",
+			isDone = false,
 			activity = new Activity(),
 		} = object;
 		return new PlannerTask(
@@ -23,6 +25,7 @@ export class PlannerTask {
 			new Date(startTimestamp),
 			minuteLength,
 			color,
+			isDone,
 			activity
 		);
 	}
@@ -51,6 +54,7 @@ export class PlannerTaskRequest {
 		public startTimestamp: Date = new Date(),
 		public minuteLength: number | null = null,
 		public color: string = "#999",
+		public isDone: boolean = false,
 		public activityId: number | null = null,
 	) {	}
 	static fromEntity(plannerTask: PlannerTask) {
@@ -58,6 +62,7 @@ export class PlannerTaskRequest {
 			plannerTask.startTimestamp,
 			plannerTask.minuteLength,
 			plannerTask.color,
+			plannerTask.isDone,
 			plannerTask.activity.id
 		);
 	}

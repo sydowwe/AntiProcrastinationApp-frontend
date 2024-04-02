@@ -63,10 +63,9 @@ export interface FormType {
 
 export interface ActivitySelectionFormType extends FormType {
 	saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject): void;
-
 	getSelectedActivityName: string | null;
 	getSelectedActivityId: number;
-	setSelectedActivityId: (activityId: number) => void;
+	setSelectedActivityId(activityId: number):void;
 }
 
 export interface HistoryRecordItemType {

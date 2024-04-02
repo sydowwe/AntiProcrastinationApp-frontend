@@ -4,15 +4,15 @@
 		<ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
 		<VRow class="mt-5" align="center" justify="center">
 			<VCol class="bordered bordered-left" cols="12" md="7">
-				<VLabel>{{ $t('dateTime.when') }}</VLabel>
+				<VLabel>{{ i18n.t('dateTime.when') }}</VLabel>
 				<DateTimePicker ref="dateTimePicker"></DateTimePicker>
 			</VCol>
 			<VCol class="bordered bordered-right" cols="12" md="5">
-				<VLabel>{{ $t('dateTime.length') }}</VLabel>
+				<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
 				<TimeLengthPicker v-model="timeLength"></TimeLengthPicker>
 			</VCol>
 			<VCol cols="auto">
-				<VBtn @click="saveActivity()" color="success">{{ $t('history.addActivityToHistory') }}</VBtn>
+				<VBtn @click="saveActivity()" color="success">{{ i18n.t('history.addActivityToHistory') }}</VBtn>
 			</VCol>
 		</VRow>
 	</VCol>
@@ -23,7 +23,7 @@
 import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
 import TimeLengthPicker from '../components/TimeLengthPicker.vue';
 import DateTimePicker from '../components/DateTimePicker.vue';
-import {ActivitySelectionFormType, DateTimePickerType, TimeLengthPickerType} from '@/classes/types/RefTypeInterfaces';
+import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';

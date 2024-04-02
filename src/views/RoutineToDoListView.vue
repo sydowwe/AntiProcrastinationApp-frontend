@@ -1,40 +1,58 @@
 <template>
-<VRow justify="center" class="mt-lg-5 mt-md-3">
-	<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center">
-		<VBtn width="100%" color="green" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
-	</VCol>
-</VRow>
-<VRow justify="center">
-	<VCol cols="12" sm="10" md="4" lg="3" class="px-2" v-for="group in groupedItems">
-		<VCard v-if="!group.timePeriod.isHiddenInView" class="mx-auto rounded-lg px-3 d-flex flex-column" max-width="600">
-			<VRow class="py-1" noGutters>
-				<VCol class="d-flex"></VCol>
-				<VCol class="d-flex">
-					<VCardTitle class="mx-auto">{{ group.timePeriod.text }}</VCardTitle>
-				</VCol>
-				<VCol class="d-flex">
-					<VBtn color="blue" density="comfortable" class="my-auto ml-auto" append-icon="eye-slash"
-					      @click="hideTimePeriod(group.timePeriod.id as number)">{{ $t('general.hide') }}
+<div class="h-100 d-flex flex-column">
+	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
+		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center">
+			<VBtn width="100%" color="green" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
+		</VCol>
+	</VRow>
+	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
+		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : null" :lg="shownGroups.length > 2 ? 4 : null"
+		      v-for="group in shownGroups">
+			<VCard class="mx-auto rounded-lg px-3 d-flex flex-column" min-width="350">
+				<VRow class="py-1" noGutters>
+					<VCol class="d-flex"></VCol>
+					<VCol class="d-flex">
+						<VCardTitle class="mx-auto">{{ group.timePeriod.text }}</VCardTitle>
+					</VCol>
+					<VCol class="d-flex">
+						<VBtn color="blue" density="comfortable" class="my-auto ml-auto" append-icon="eye-slash"
+						      @click="toggleHideTimePeriod(group.timePeriod.id as number)">{{ $t('general.hide') }}
+						</VBtn>
+					</VCol>
+				</VRow>
+				<ToDoList
+					v-if="group.items.length > 0"
+					:kind="ToDoListKind.ROUTINE"
+					:items="group.items"
+					:color="group.timePeriod.color"
+					@itemsChanged="itemsChanged"
+					@editItem="toDoListDialog.openEdit"
+				></ToDoList>
+			</VCard>
+		</VCol>
+	</VRow>
+	<VRow justify="center" class="mt-lg-5 mt-md-3">
+		<VCol class="d-flex justify-center">
+			<VCard class="d-flex align-center pa-2 ga-2" color="blue-grey-lighten-1">
+				<h2>Hidden items</h2>
+				<VCard class="d-flex pa-2" v-for="group in groupedItems.filter(item=>item.timePeriod.isHiddenInView===true)">
+					<h3 class="pr-2">
+						{{ group.timePeriod.text }}
+					</h3>
+					<VBtn color="secondary" density="comfortable" class="my-auto ml-auto" append-icon="eye"
+					      @click="toggleHideTimePeriod(group.timePeriod.id as number)">{{ $t('general.show') }}
 					</VBtn>
-				</VCol>
-			</VRow>
-			<ToDoList
-				v-if="group.items.length > 0"
-				:kind="ToDoListKind.ROUTINE"
-				:items="group.items"
-				:color="group.timePeriod.color"
-				@itemsChanged="itemsChanged"
-				@editItem="toDoListDialog.openEdit"
-			></ToDoList>
-		</VCard>
-	</VCol>
-</VRow>
+				</VCard>
+			</VCard>
+		</VCol>
+	</VRow>
+</div>
 <RoutineToDoListDialog ref="toDoListDialog" @add="add" @edit="edit"></RoutineToDoListDialog>
 </template>
 <script setup lang="ts">
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
 import ToDoList from '../components/ToDoList.vue';
-import {ref, watch, onMounted} from 'vue';
+import {ref, onMounted, computed} from 'vue';
 import {RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 
@@ -45,8 +63,11 @@ const url = '/routine-to-do-list';
 onMounted(() => {
 	getAllRecords();
 });
+const shownGroups = computed(() =>
+	groupedItems.value.filter(item => item.timePeriod.isHiddenInView === false)
+)
 
-function hideTimePeriod(id: number) {
+function toggleHideTimePeriod(id: number) {
 	const group = groupedItems.value.find(item => item.timePeriod.id === id);
 	if (group) {
 		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;

@@ -1,31 +1,31 @@
 <template>
     <VRow justify="center" align="center" class="h-100">
         <VCol cols="11" sm="7" md="5" lg="4">
-            <h2>{{ $t('authorization.forgotPassword') }}</h2>
-            <h4 class="mb-3">{{ $t('authorization.enterEmailToResetPassword') }}</h4>
+            <h2>{{ i18n.t('authorization.forgotPassword') }}</h2>
+            <h4 class="mb-3">{{ i18n.t('authorization.enterEmailToResetPassword') }}</h4>
             <VForm @submit.prevent="resetPassword" ref="form" class="text-center">
-                <VTextField class="mb-3 text-start" :label="$t('authorization.email')" v-model="email" :rules="emailRules"></VTextField>
-                <VBtn type="submit" color="primary">{{ $t('authorization.resetPassword') }}</VBtn>
+                <VTextField class="mb-3 text-start" :label="i18n.t('authorization.email')" v-model="email" :rules="emailRules"></VTextField>
+                <VBtn type="submit" color="primary">{{ i18n.t('authorization.resetPassword') }}</VBtn>
             </VForm>
         </VCol>
     </VRow>
     <VDialog v-model="dialog" width="auto" persistent>
         <VCard>
-            <VCardTitle class="center">{{ $t('authorization.passwordReset') }}</VCardTitle>
-            <VCardText>{{ $t('authorization.temporarryPasswordSent') }}</VCardText>
+            <VCardTitle class="center">{{ i18n.t('authorization.passwordReset') }}</VCardTitle>
+            <VCardText>{{ i18n.t('authorization.temporarryPasswordSent') }}</VCardText>
             <VCardActions class="d-flex justify-end mr-2 mb-2">
-                <VBtn color="success" @click="goToLogin">{{ $t('authorization.goToLogin') }}</VBtn>
+                <VBtn color="success" @click="goToLogin">{{ i18n.t('authorization.goToLogin') }}</VBtn>
             </VCardActions>
         </VCard>
     </VDialog>
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { useUserDetailsValidation } from '../compositions/UserAutorizationComposition';
-    import { VuetifyFormType } from '../classes/types/RefTypeInterfaces';
+    import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
+    import { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
     const { emailRules } = useUserDetailsValidation();
-    import {importDefaults} from '../compositions/Defaults';
-    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar } = importDefaults();
+    import {importDefaults} from '@/compositions/Defaults';
+    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar,i18n } = importDefaults();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');
     const dialog = ref(false);
@@ -36,7 +36,7 @@
             showFullScreenLoading();
             axios
                 .post('/user/auth/forgotten-password', { email: email })
-                .then((response) => {
+                .then(() => {
                     dialog.value = true;
                 })
                 .catch((error) => {

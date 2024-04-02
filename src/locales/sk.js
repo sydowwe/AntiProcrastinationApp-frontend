@@ -131,6 +131,7 @@ const sk = {
         clear: `Vynulovať`,
         task: `Úloha`,
         hide: `Skryť`,
+        show: `Zobraziť`,
     },
     dateTime:{
         when: `Kedy`,
@@ -232,8 +233,9 @@ const sk = {
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
         timePeriod: `Časový úsek`,
-        quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s kategóriou to-do list`,
         saveTask: `Zaznamenať dokončenie úlohy`,
+        quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s kategóriou to-do list`,
+        quickEditToDoListActivity: `Rýchla úprava aktivity`,
     },
     user: {
         userSettings: `Uživateľské nastavenia`,
@@ -248,6 +250,7 @@ const sk = {
     planner: {
         task: `Aktivita`,
         quickCreatePlannerActivity: `Rýchle vytvorenie aktivity v plánovači`,
+        quickEditPlannerActivity: `Rýchla úprava aktivity`,
     }
 }
 export default sk;

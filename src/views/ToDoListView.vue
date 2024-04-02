@@ -6,9 +6,9 @@
                     <VCardTitle>{{ $t('toDoList.toDoList') }}</VCardTitle>
                 </div>
                 <div class="d-flex justify-center mb-4">
-                    <VBtn width="50%" color="green" @click="toDoListDialog.openCreate">{{ $t('toDoList.add') }}</VBtn>
+                    <VBtn width="50%" color="green" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
                 </div>
-                <ToDoList :kind="ToDoListKind.NORMAL" :items="items" @itemsChanged="itemsChanged" @editItem="toDoListDialog.openEdit"></ToDoList>
+                <ToDoList :kind="ToDoListKind.NORMAL" :items="items" @itemsChanged="itemsChanged" @editItem="toDoListDialog?.openEdit"></ToDoList>
             </VCard>
         </VCol>
     </VRow>

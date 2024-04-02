@@ -4,8 +4,8 @@
 		<VCardTitle class="headline pt-4">{{ i18n.t("planner.task") }}</VCardTitle>
 		<VCardText class="d-flex flex-column">
 			<TimePicker ref="timePicker"></TimePicker>
-			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('planner.quickCreatePlannerActivity')"
-			           density="comfortable" hideDetails></VCheckbox>
+			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="isEdit ? i18n.t('planner.quickEditPlannerActivity')
+				: i18n.t('planner.quickCreatePlannerActivity')" density="comfortable" hideDetails></VCheckbox>
 			<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
 			                       :formDisabled="false" :isInDialog="true"
 			                       :activityId="plannerTask.activityId"
@@ -28,7 +28,7 @@
 			></VColorPicker>
 		</VCardText>
 		<VCardActions class="justify-center pb-4">
-			<VBtn variant="elevated" color="red" @click="close"
+			<VBtn variant="elevated" color="red" @click="closeAndReset"
 			>{{ i18n.t("general.cancel") }}
 			</VBtn>
 			<VBtn variant="elevated" color="green" @click="save"
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import TimePicker from "@/components/TimePicker.vue";
 import {ActivitySelectionFormType, TimePickerType} from "@/classes/types/RefTypeInterfaces";
-import {ref} from "vue";
+import { ref, watch} from "vue";
 import {importDefaults} from "@/compositions/Defaults";
 import {useDialogComposition} from "@/compositions/DialogComposition";
 import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
@@ -57,8 +57,13 @@ const minuteIntervals = [10, 15, 30, 45, 60];
 
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
+const isEdit = ref(false);
 
-
+watch(dialog, (newValue) => {
+	if (!newValue) {
+		closeAndReset();
+	}
+});
 async function save() {
 	if (isActivityFormHidden.value) {
 		if (quickActivityName.value) {
@@ -85,28 +90,31 @@ async function save() {
 	}
 }
 
-
 function openEdit(plannerTaskEntity: PlannerTask) {
 	console.log(plannerTaskEntity);
-	activitySelectionForm.value.setSelectedActivityId(plannerTaskEntity.activity.id);
+	isEdit.value = true;
+	isActivityFormHidden.value = true;
 	timePicker.value.set(
 		plannerTaskEntity.startTimestamp.getHours(),
 		plannerTaskEntity.startTimestamp.getMinutes()
 	);
+	quickActivityName.value = plannerTaskEntity.activity.name;
+	quickActivityText.value = plannerTaskEntity.activity.text;
 	idToEdit.value = plannerTaskEntity.id;
 	plannerTask.value = PlannerTaskRequest.fromEntity(plannerTaskEntity);
 	open();
 }
 
 function openCreate() {
+	isEdit.value = false;
+	isActivityFormHidden.value = false;
 	open();
 }
 
 function closeAndReset() {
-	timePicker.value.reset();
-	idToEdit.value = 0;
-	plannerTask.value = new PlannerTaskRequest();
 	close();
+	timePicker.value.reset();
+	plannerTask.value = new PlannerTaskRequest();
 }
 
 const emit = defineEmits<{
