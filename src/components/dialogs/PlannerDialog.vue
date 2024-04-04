@@ -6,14 +6,14 @@
 			<TimePicker ref="timePicker"></TimePicker>
 			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="isEdit ? i18n.t('planner.quickEditPlannerActivity')
 				: i18n.t('planner.quickCreatePlannerActivity')" density="comfortable" hideDetails></VCheckbox>
-			<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
+			<ActivitySelectionForm ref="activitySelectionForm" v-show="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
 			                       :formDisabled="false" :isInDialog="true"
 			                       :activityId="plannerTask.activityId"
 			                       @activityIdChanged="activityId => plannerTask.activityId = activityId"></ActivitySelectionForm>
-			<template v-else>
+			<div v-show="isActivityFormHidden">
 				<VTextField label="name" v-model="quickActivityName"></VTextField>
 				<VTextField label="text" v-model="quickActivityText"></VTextField>
-			</template>
+			</div>
 			<VSelect
 				class="mb-4"
 				label="Length in minutes"
@@ -41,19 +41,26 @@
 <script setup lang="ts">
 import TimePicker from "@/components/TimePicker.vue";
 import {ActivitySelectionFormType, TimePickerType} from "@/classes/types/RefTypeInterfaces";
-import { ref, watch} from "vue";
+import {ref, watch} from "vue";
 import {importDefaults} from "@/compositions/Defaults";
 import {useDialogComposition} from "@/compositions/DialogComposition";
 import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Planner task');
+const {
+	isActivityFormHidden,
+	quickActivityName,
+	quickActivityText,
+	quickCreateActivity,
+	quickEditActivity
+} = useQuickCreateActivity('Planner task');
 const {i18n, showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const minuteIntervals = [10, 15, 30, 45, 60];
+
 
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
@@ -64,10 +71,17 @@ watch(dialog, (newValue) => {
 		closeAndReset();
 	}
 });
+
 async function save() {
 	if (isActivityFormHidden.value) {
 		if (quickActivityName.value) {
-			plannerTask.value.activityId = await quickCreateActivity();
+			if (isEdit.value && plannerTask.value.activityId) {
+				if (await quickEditActivity(plannerTask.value.activityId)) {
+					emit('quickEditedActivity', idToEdit.value, quickActivityName.value, quickActivityText.value);
+				}
+			} else {
+				plannerTask.value.activityId = await quickCreateActivity();
+			}
 		} else {
 			showErrorSnackbar(i18n.t("planner.pleaseEnterActivityName"));
 			return;
@@ -82,12 +96,12 @@ async function save() {
 		0,
 		1
 	);
-	console.log(plannerTask.value);
 	if (idToEdit.value === 0) {
 		emit("added", plannerTask.value);
 	} else {
 		emit("edited", idToEdit.value, plannerTask.value);
 	}
+	close();
 }
 
 function openEdit(plannerTaskEntity: PlannerTask) {
@@ -118,8 +132,9 @@ function closeAndReset() {
 }
 
 const emit = defineEmits<{
-	(e: "added", plannerTask: PlannerTaskRequest): void;
-	(e: "edited", idToEdit: number, plannerTask: PlannerTaskRequest): void;
+	'added': [plannerTask: PlannerTaskRequest];
+	'edited': [idToEdit: number, plannerTask: PlannerTaskRequest];
+	'quickEditedActivity': [id: number,name: string, text: string | null]
 }>();
 defineExpose({openCreate, openEdit, closeAndReset});
 </script>

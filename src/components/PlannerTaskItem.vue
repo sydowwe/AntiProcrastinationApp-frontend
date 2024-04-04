@@ -66,7 +66,6 @@ function timeNice(timestamp: Date) {
 }
 
 watch(() => props.plannerTask?.isDone, () => {
-	emits('isDoneChanged', props.plannerTask);
 	isSelected.value = false;
 })
 
@@ -80,13 +79,6 @@ const actions = [
 	{name: "edit", color: "blue", icon: "pen-to-square", action: edit},
 	{name: "delete", color: "error", icon: "trash", action: del},
 ];
-// function actionButtonText(name: string) {
-//   return i18n.t(
-//     isSelected.value && name === "select"
-//       ? `general.un${name}`
-//       : `general.${name}`
-//   );
-// }
 function edit() {
 	emits("edit", props.plannerTask);
 	isSelected.value = false;
@@ -95,7 +87,6 @@ function edit() {
 function isDoneChanged() {
 	props.plannerTask.isDone = !props.plannerTask.isDone;
 	emits('isDoneChanged', props.plannerTask);
-	isSelected.value = false;
 }
 
 function del() {

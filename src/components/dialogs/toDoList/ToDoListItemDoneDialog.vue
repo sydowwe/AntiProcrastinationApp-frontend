@@ -1,5 +1,5 @@
 <template>
-<VDialog v-model="dialogShown" max-width="600" eager persistent>
+<VDialog v-model="dialogShown" max-width="600" eager>
 	<VCard class="px-6 py-4 text-center">
 		<VCardTitle class="pa-0 text-wrap">
 			{{ i18n.t('toDoList.saveTask') }}
@@ -24,14 +24,14 @@
 			</VForm>
 		</VCardText>
 		<VCardActions class="justify-end px-0">
-			<VBtn color="red" @click="close">{{ i18n.t('general.cancel') }}</VBtn>
+			<VBtn color="red" @click="dialogShown = false">{{ i18n.t('general.cancel') }}</VBtn>
 			<VBtn color="green" @click="save">{{ i18n.t('general.save') }}</VBtn>
 		</VCardActions>
 	</VCard>
 </VDialog>
 </template>
 <script setup lang="ts">
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, watch} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import TimePicker from '@/components/TimePicker.vue';
@@ -60,24 +60,29 @@ const length = ref(new TimeLengthObject());
 onMounted(() => {
 	timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 })
-
+watch(dialogShown, (isShown) => {
+	if(isShown){
+		if (!props.isRecursive) {
+			dateTime.value = new Date();
+			timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+		}
+	}else{
+		if (props.isRecursive) {
+			setTimeout(()=>emit('openNext'),200);
+		}
+		length.value = new TimeLengthObject();
+	}
+})
 function save() {
 	addActivityToHistory(dateTime.value, length.value, props.toDoListItem?.activity.id).then(isSuccess => {
 		if (isSuccess) {
 			showSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`, {color: 'success'});
-			close();
+			dialogShown.value = false;
 		} else {
 			showErrorSnackbar(`Error saving to-do list task ${props.toDoListItem?.activity.name} to history`);
 		}
 	});
 }
-function close() {
-	if (props.isRecursive) {
-		setTimeout(()=>emit('openNext'),200);
-	}
-	dialogShown.value = false;
-}
-
 const emit = defineEmits<{
 	openNext: []
 }>();

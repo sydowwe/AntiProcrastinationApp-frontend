@@ -24,7 +24,7 @@
 			</VForm>
 		</VCardText>
 		<VCardActions class="justify-end px-0">
-			<VBtn color="red" @click="close">{{ i18n.t('general.cancel') }}</VBtn>
+			<VBtn color="red" @click="dialogShown = false">{{ i18n.t('general.cancel') }}</VBtn>
 			<VBtn color="green" @click="save">{{ i18n.t('general.save') }}</VBtn>
 		</VCardActions>
 	</VCard>
@@ -61,27 +61,29 @@ onMounted(() => {
 	timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 })
 watch(dialogShown, (isShown) => {
-		if(isShown){
-			length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength/60)  ,props.plannerTask?.minuteLength % 60,0);
-		}else{
-			close();
+	if (isShown) {
+		if (!props.isRecursive) {
+			dateTime.value = new Date();
+			timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 		}
+		length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60, 0);
+	} else {
+		if (props.isRecursive) {
+			console.log('hhh')
+			setTimeout(() => emit('openNext'), 200);
+		}
+	}
 })
+
 function save() {
 	addActivityToHistory(dateTime.value, length.value, props.plannerTask?.activity.id).then(isSuccess => {
 		if (isSuccess) {
 			showSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`, {color: 'success'});
-			close();
+			dialogShown.value = false;
 		} else {
 			showErrorSnackbar(`Error saving planner task ${props.plannerTask?.activity.name} to history`);
 		}
 	});
-}
-function close() {
-	if (props.isRecursive) {
-		setTimeout(()=>emit('openNext'),200);
-	}
-	dialogShown.value = false;
 }
 
 const emit = defineEmits<{

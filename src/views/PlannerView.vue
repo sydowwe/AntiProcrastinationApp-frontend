@@ -1,6 +1,6 @@
 <template>
 <VRow justify="center" class="mt-md-1">
-	<VCol cols="12" lg="5" class="mt-2 mt-md-0 d-flex align-center ga-2">
+	<VCol cols="12" lg="6" class="mt-2 mt-md-0 d-flex align-center ga-2">
 		<VBtn @click="plannerDialog?.openCreate" color="success">
 			{{ i18n.t("general.add") }}
 		</VBtn>
@@ -39,8 +39,9 @@
 	ref="plannerDialog"
 	@added="add"
 	@edited="edit"
+	@quickEditedActivity="quickEditedActivity"
 ></PlannerDialog>
-<PlannerTaskDoneDialog :isRecursive="isDialogRecursive" :plannerTask="currentDoneItem"
+<PlannerTaskDoneDialog :isRecursive="isDialogRecursive" :plannerTask="currentDoneItem" @openNext="recursiveDialogsToSaveToHistory"
                        v-model="itemDoneDialogShown"></PlannerTaskDoneDialog>
 </template>
 
@@ -53,6 +54,7 @@ import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/Plan
 import {importDefaults} from "@/compositions/Defaults";
 import DateTimePicker from '@/components/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
+import {tr} from 'vuetify/locale';
 
 const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -85,6 +87,7 @@ function recursiveDialogsToSaveToHistory() {
 }
 
 const handleIsDoneChanged = (plannerTask: PlannerTask) => {
+	console.log(selectedItemsIds.value, plannerTask);
 	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(plannerTask.id);
 	if (plannerTask.isDone) {
 		if (isBatchAction) {
@@ -141,8 +144,20 @@ const add = (plannerTask: PlannerTaskRequest) => {
 	}
 };
 
+function quickEditedActivity(id: number, name: string, text: string) {
+	const editedActivity = plannerTasks.value[plannerTasks.value.findIndex(item => item.id === id)];
+	if (editedActivity) {
+		editedActivity.activity.name = name;
+		editedActivity.activity.text = text;
+	}
+}
+
 const edit = (id: number, plannerTask: PlannerTaskRequest) => {
-	if (validatePlannerTask(plannerTask, id)) {
+	const beforeEditEntity = plannerTasks.value.find(item => item.id === id);
+	if (beforeEditEntity
+		&& (beforeEditEntity.activity.id !== plannerTask.activityId ||beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
+		&& validatePlannerTask(plannerTask, id)
+	) {
 		window.axios.put(`${url}/${id}`, plannerTask).then((response) => {
 			plannerTasks.value[
 				plannerTasks.value.findIndex((item) => item.id === id)
@@ -160,7 +175,6 @@ function validatePlannerTask(
 	plannerTaskRequest: PlannerTaskRequest,
 	idToExclude: number | null = null
 ): boolean {
-	console.log(plannerTaskRequest.minuteLength);
 	if (
 		!plannerTaskRequest.minuteLength ||
 		plannerTaskRequest.minuteLength === 0
@@ -180,8 +194,10 @@ function checkNoTimeOverlap(
 	idToExclude: number | null = null
 ): boolean {
 	const filteredArray = idToExclude
-		? plannerTasks.value.filter((item) => item.id === idToExclude)
+		? plannerTasks.value.filter((item) => item.id !== idToExclude)
 		: plannerTasks.value;
+	console.log(idToExclude)
+	console.log(filteredArray);
 	return filteredArray.every((plannerTask: PlannerTask) => {
 		const existingTaskEndTimestamp = new Date(plannerTask.startTimestamp);
 		existingTaskEndTimestamp.setMinutes(

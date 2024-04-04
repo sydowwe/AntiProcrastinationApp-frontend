@@ -101,30 +101,43 @@ const add = (toDoListItem: RoutineToDoListItemRequest) => {
 			}
 		})
 };
+
+function quickEditedActivity(id: number, name: string, text: string) {
+	let index = -1;
+	const editedActivity = groupedItems.value[groupedItems.value.findIndex(group => (index = group.items.findIndex(item => item.id === id)) >= 0)];
+	if (editedActivity) {
+		editedActivity.items[index].activity.name = name;
+		editedActivity.items[index].activity.text = text;
+	}
+}
+
 const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
-	window.axios
-		.put(`${url}/${id}`, toDoListItemRequest)
-		.then((response) => {
-			const updatedItem = RoutineToDoListItemEntity.fromObject(response.data);
-			const oldGroup = groupedItems.value.find((group) => {
-				return group.items.some((item) => item.id === id);
-			});
-			const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
-			if (oldGroup) {
-				if (updatedList) {
-					if (updatedItem.timePeriod.id === oldGroup?.timePeriod.id) {
-						updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
+	const beforeEditEntity = groupedItems.value[groupedItems.value.findIndex(group => group.items.findIndex(item => item.id === id) >= 0)];
+	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
+		window.axios
+			.put(`${url}/${id}`, toDoListItemRequest)
+			.then((response) => {
+				const updatedItem = RoutineToDoListItemEntity.fromObject(response.data);
+				const oldGroup = groupedItems.value.find((group) => {
+					return group.items.some((item) => item.id === id);
+				});
+				const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
+				if (oldGroup) {
+					if (updatedList) {
+						if (updatedItem.timePeriod.id === oldGroup?.timePeriod.id) {
+							updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
+						} else {
+							oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
+							updatedList.push(updatedItem);
+						}
 					} else {
-						oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
-						updatedList.push(updatedItem);
+						console.error('not found updated group list');
 					}
 				} else {
-					console.error('not found updated group list');
+					console.error('not found old group');
 				}
-			} else {
-				console.error('not found old group');
-			}
-		})
+			})
+	}
 };
 const itemsChanged = (changedItems: RoutineToDoListItemEntity[]) => {
 	console.log(changedItems);

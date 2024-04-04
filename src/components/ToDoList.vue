@@ -48,11 +48,9 @@ const currentDoneItem = ref({} as BaseToDoListItemEntity);
 
 function recursiveDialogsToSaveToHistory() {
 	if (changedItems.value.length > 0) {
-		console.log(changedItems.value);
 		isDialogRecursive.value = true;
 		currentDoneItem.value = changedItems.value[0];
 		itemDoneDialogShown.value = true;
-		console.log(itemDoneDialogShown.value);
 		changedItems.value.splice(0, 1);
 	}
 }
@@ -64,7 +62,6 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 				changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
 				recursiveDialogsToSaveToHistory();
 			} else {
-				console.log('bbbb')
 				currentDoneItem.value = toDoListItem;
 				isDialogRecursive.value = false;
 				itemDoneDialogShown.value = true;
@@ -81,8 +78,8 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 							item.isDone = toDoListItem.isDone;
 						}
 					});
+					selectedItemsIds.value = [];
 				}
-				selectedItemsIds.value = [];
 			})
 			.catch((error) => {
 				console.error(error);
