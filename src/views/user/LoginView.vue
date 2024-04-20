@@ -51,8 +51,8 @@
     import { ref, onMounted, computed } from 'vue';
     import { VuetifyFormType, SubmittableType } from '@/classes/types/RefTypeInterfaces';
     import { UserStoreItem } from '@/classes/User';
-    import GoogleSignIn from '../components/GoogleSignIn.vue';
-    import LoginVerifyQrCode from '../components/LoginVerifyQrCode.vue';
+    import GoogleSignIn from '../../components/GoogleSignIn.vue';
+    import LoginVerifyQrCode from '../../components/LoginVerifyQrCode.vue';
     import {importDefaults} from '@/compositions/Defaults';
     const { router,i18n, userStore, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading } = importDefaults();
     import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';

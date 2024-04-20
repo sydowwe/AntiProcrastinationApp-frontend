@@ -29,11 +29,11 @@
 </template>
 <script setup lang="ts">
     import { ref, computed } from 'vue';
-    import VerifyQrCodeDialog from '../components/dialogs/VerifyQrCodeDialog.vue';
-    import ChangePasswordDialog from '../components/dialogs/ChangePasswordDialog.vue';
-    import VerifyPasswordDialog from '../components/dialogs/VerifyPasswordDialog.vue';
-    import QrCodeFor2FADialog from '../components/dialogs/QrCodeFor2FADialog.vue';
-    import ErrorDialog from '../components/dialogs/ErrorDialog.vue';
+    import VerifyQrCodeDialog from '../../components/dialogs/VerifyQrCodeDialog.vue';
+    import ChangePasswordDialog from '../../components/dialogs/ChangePasswordDialog.vue';
+    import VerifyPasswordDialog from '../../components/dialogs/VerifyPasswordDialog.vue';
+    import QrCodeFor2FADialog from '../../components/dialogs/QrCodeFor2FADialog.vue';
+    import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
     import { VuetifyFormType, DialogType, DialogFormType } from '@/classes/types/RefTypeInterfaces';
     import { User, UserRequest } from '@/classes/User';
     import {importDefaults} from '@/compositions/Defaults';
@@ -159,6 +159,7 @@
         };
         verifyPasswordDialog.value.open();
     }
+
     function showScratchCode() {
         currentFunction.value = () => {
             axios

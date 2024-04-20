@@ -20,9 +20,9 @@
 </template>
 <script setup lang="ts">
 //TODO
-import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-import TimeLengthPicker from '../components/TimeLengthPicker.vue';
-import DateTimePicker from '../components/DateTimePicker.vue';
+import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
+import TimeLengthPicker from '../../components/TimeLengthPicker.vue';
+import DateTimePicker from '../../components/DateTimePicker.vue';
 import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';

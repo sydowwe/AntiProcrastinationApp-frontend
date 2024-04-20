@@ -14,9 +14,9 @@
     </VRow>
 </template>
 <script setup lang="ts">
-    import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-    import TimeDisplay from '../components/TimeDisplay.vue';
-    import SaveActivityDialog from '../components/dialogs/SaveActivityDialog.vue';
+    import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
+    import TimeDisplay from '../../components/TimeDisplay.vue';
+    import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
     import { TimeLengthObject } from '@/classes/TimeUtils';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';

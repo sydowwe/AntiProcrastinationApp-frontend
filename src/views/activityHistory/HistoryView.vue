@@ -28,8 +28,8 @@
 
 <script setup lang="ts">
     import { ref } from 'vue';
-    import HistoryPanelFilter from '../components/HistoryPanelFilter.vue';
-    import HistoryRecordItem from '../components/HistoryRecordItem.vue';
+    import HistoryPanelFilter from '../../components/HistoryPanelFilter.vue';
+    import HistoryRecordItem from '../../components/HistoryRecordItem.vue';
     import { History } from '@/classes/History';
     const records = ref([] as History[]);
 

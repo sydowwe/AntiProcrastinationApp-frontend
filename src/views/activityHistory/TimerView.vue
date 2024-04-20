@@ -19,10 +19,10 @@
 </VRow>
 </template>
 <script setup lang="ts">
-import ActivitySelectionForm from '../components/ActivitySelectionForm.vue';
-import TimeLengthPicker from '../components/TimeLengthPicker.vue';
-import SaveActivityDialog from '../components/./dialogs/SaveActivityDialog.vue';
-import TimeDisplay from '../components/TimeDisplay.vue';
+import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
+import TimeLengthPicker from '../../components/TimeLengthPicker.vue';
+import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
+import TimeDisplay from '../../components/TimeDisplay.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {

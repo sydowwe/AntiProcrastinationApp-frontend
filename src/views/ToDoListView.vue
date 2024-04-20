@@ -51,7 +51,7 @@ const add = (toDoListItem: ToDoListItemRequest) => {
 		});
 };
 
-function quickEditedActivity(id: number, name: string, text: string) {
+function quickEditedActivity(id: number, name: string, text: string):void {
 	const editedActivity = items.value[items.value.findIndex(item => item.id === id)];
 	if (editedActivity) {
 		editedActivity.activity.name = name;
