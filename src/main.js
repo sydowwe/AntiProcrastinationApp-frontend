@@ -38,7 +38,7 @@ import { useUserStore } from './stores/userStore';
 const authStore = useUserStore();
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: import.meta.env.BASE_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

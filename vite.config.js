@@ -2,6 +2,9 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
+import dotenv from "dotenv";
+import process from "eslint-plugin-vue/lib/configs/base";
+dotenv.config();
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,6 +21,7 @@ export default defineConfig({
     }
   },
   define: {
+    'dockerEnv': process.env,
     __VUE_I18N_FULL_INSTALL__: true,
     __VUE_I18N_LEGACY_API__: false,
     __INTLIFY_PROD_DEVTOOLS__: false,
