@@ -38,7 +38,7 @@ import { useUserStore } from './stores/userStore';
 const authStore = useUserStore();
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.BASE_URL,
+    baseURL: process.env.VITE_API_URL ?? 'http://srv544364.hstgr.cloud:8080',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
