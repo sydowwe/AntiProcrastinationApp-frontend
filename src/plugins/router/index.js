@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '../../stores/userStore';
+import { useUserStore } from '@/stores/userStore';
 import HomeView from '../../views/activityHistory/StopWatchView.vue'
 import CreateNewActivityView from '../../views/CreateNewActivityView.vue'
 import StopWatchView from '../../views/activityHistory/StopWatchView.vue'
@@ -17,7 +17,7 @@ import RoutineToDoListView from '../../views/RoutineToDoListView.vue'
 import PlannerView from '../../views/PlannerView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_BASE_URL),
+  history: createWebHistory('/'),
   routes: [
     {
       path: '/',
