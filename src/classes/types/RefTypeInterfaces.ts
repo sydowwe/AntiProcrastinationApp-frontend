@@ -1,6 +1,7 @@
 import {PlannerTask} from '../PlannerTask';
 import {TimeLengthObject, TimeObject} from '../TimeUtils';
 import {ToDoListItemEntity, RoutineToDoListItemEntity} from '../ToDoListItem';
+import {Alarm} from '@/classes/Alarm';
 
 export interface VuetifyFormType {
 	validate(): Promise<{ valid: boolean }>;
@@ -32,6 +33,7 @@ export interface EntityDialogType {
 	openCreate(): void;
 
 	close(): void;
+	closeAndReset(): void;
 }
 
 export interface ActivityDialogType {
@@ -48,8 +50,9 @@ export interface RoutineToDoListItemDialogType extends EntityDialogType {
 
 export interface PlannerDialogType extends EntityDialogType {
 	openEdit(plannerTask: PlannerTask): void;
-
-	closeAndReset(): void;
+}
+export interface AlarmDialogType extends EntityDialogType {
+	openEdit(alarm: Alarm): void;
 }
 
 export interface DialogFormType extends DialogType, FormType {

@@ -1,4 +1,4 @@
-const sk = {
+const SK = {
     $vuetify: {
         badge: `Odznak`,
         open: `Open`,
@@ -253,4 +253,4 @@ const sk = {
         quickEditPlannerActivity: `Rýchla úprava aktivity`,
     }
 }
-export default sk;
+export default SK;

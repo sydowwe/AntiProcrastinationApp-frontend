@@ -23,8 +23,10 @@ import ToDoList from '../components/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {importDefaults} from '@/compositions/Defaults';
+import {useI18n} from 'vue-i18n';
 
-const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
+const i18n = useI18n();
+const {showErrorSnackbar, showSnackbar} = importDefaults();
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
 const items = ref([] as ToDoListItemEntity[]);

@@ -42,7 +42,9 @@ import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposit
 import {importDefaults} from '@/compositions/Defaults';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity,quickEditActivity} = useQuickCreateActivity('To-do list task');
-const {i18n, showErrorSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar} = importDefaults();
 const dialog = ref(false);
 const toDoListItem = ref(new ToDoListItemRequest());
 const isEdit = ref(false);

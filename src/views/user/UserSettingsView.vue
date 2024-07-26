@@ -38,6 +38,7 @@
     import { User, UserRequest } from '@/classes/User';
     import {importDefaults} from '@/compositions/Defaults';
     import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
+    import {useLoadingStore} from '@/stores/globalFeedbackStores';
     const { router, i18n, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
 
@@ -124,7 +125,8 @@
     }
     function deleteAccount(): void {
         currentFunction.value = () => {
-            axios
+	        useLoadingStore().axiosSuccessLoadingHide = false;
+	        axios
                 .delete('/user/delete-my-account', {})
                 .then((response) => {
                     console.log(response);

@@ -73,7 +73,9 @@
     import { SelectOption } from '@/classes/SelectOption';
     import { ActivityRequest } from '@/classes/Activity';
     import { importDefaults } from '@/compositions/Defaults';
-    const { i18n, showErrorSnackbar, showSnackbar } = importDefaults();
+    import {useI18n} from 'vue-i18n';
+    const { showErrorSnackbar, showSnackbar } = importDefaults();
+	const i18n = useI18n();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const addCategoryDialog = ref<DialogType>({} as DialogType);
@@ -118,7 +120,7 @@
         }
     }
     function createNewActivity() {
-        axios.post('/activity/create', activityRequest.value).then((response) => {
+        axios.post('/activity/create', activityRequest.value).then(() => {
             form.value.reset();
             dialog.value = false;
             showSnackbar('Activity created succesfully', { color: 'success' });
@@ -126,9 +128,12 @@
     }
     function createEntity(entityType: keyof typeof selectOptions) {
         axios.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
-            selectOptions[entityType].push(response.data as SelectOption);
+			const newOpt = response.data as SelectOption;
+            selectOptions[entityType].push(newOpt);
             newEntity[entityType] = entityType === 'role' ? new Role() : new Category();
             showSnackbar(entityType + ' created succesfully', { color: 'success' });
+	        const key : keyof typeof activityRequest.value = (entityType === "role" ? "roleId" : "categoryId");
+	        activityRequest.value[key] = newOpt.id;
         });
     }
 </script>

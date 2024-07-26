@@ -76,8 +76,9 @@
 <script setup lang="ts">
 import {computed, ref, watch} from "vue";
 import {TimeObject} from "@/classes/TimeUtils";
-import {importDefaults} from "@/compositions/Defaults";
-const {i18n} = importDefaults();
+import {useI18n} from 'vue-i18n';
+
+const i18n = useI18n();
 
 
 const props = defineProps({

@@ -55,7 +55,9 @@ const {
 	quickCreateActivity,
 	quickEditActivity
 } = useQuickCreateActivity('Planner task');
-const {i18n, showErrorSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
@@ -101,7 +103,6 @@ async function save() {
 	} else {
 		emit("edited", idToEdit.value, plannerTask.value);
 	}
-	close();
 }
 
 function openEdit(plannerTaskEntity: PlannerTask) {

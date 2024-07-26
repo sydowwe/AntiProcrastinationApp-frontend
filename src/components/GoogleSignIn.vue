@@ -30,7 +30,7 @@
             });
     }
 </script>
-<style>
+<style scoped>
     iframe {
         width: 224px !important;
         height: 40px !important;

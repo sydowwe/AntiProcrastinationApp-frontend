@@ -13,8 +13,8 @@ import {ref, computed} from 'vue';
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import TimePicker from '@/components/TimePicker.vue';
 import {MyDatePickerType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from "@/compositions/Defaults";
-const {i18n} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
 
 const props = defineProps({
 	dateClearable: {

@@ -47,13 +47,14 @@ const timeLength = ref(new TimeLengthObject());
 checkNotificationPermission();
 
 function start() {
-	if (paused) {
+	if (paused.value) {
 		resume();
 	} else if (activitySelectionForm.value.validate()) {
 		formDisabled.value = true;
 		startTimestamp.value = new Date();
 		timeInputVisible.value = false;
 		timeRemaining.value = getSecondsFromTimeObject(timeLength.value);
+		console.log(timeRemaining.value);
 		resume();
 	}
 }
@@ -64,6 +65,7 @@ function pause() {
 }
 
 function resume() {
+	console.log(timeRemaining.value);
 	paused.value = false;
 	time.value = getTimeObjectFromSeconds(timeRemaining.value);
 	intervalId.value = setInterval(() => {

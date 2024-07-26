@@ -41,7 +41,9 @@ import {TimeLengthObject} from '@/classes/TimeUtils';
 import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
-const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar, showSnackbar} = importDefaults();
 const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	toDoListItem: {

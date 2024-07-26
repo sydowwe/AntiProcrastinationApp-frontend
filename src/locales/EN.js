@@ -1,4 +1,4 @@
-const en = {
+const EN = {
     $vuetify: {
         badge: `Badge`,
         open: `Open`,
@@ -252,4 +252,4 @@ const en = {
 
     }
 }
-export default en
+export default EN

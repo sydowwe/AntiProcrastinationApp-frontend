@@ -28,7 +28,9 @@ import {ref} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 
-const {i18n, showErrorSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar} = importDefaults();
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);

@@ -41,5 +41,39 @@ export class UserStoreItem{
     public id: number = 0,    
     public email: string = '',
     public token: string = '',
+    public currentLocale: AvailableLocales = AvailableLocales.SK
   ) {}  
+}
+
+export class EmailRequest {
+  constructor(
+    public email: string = '') {
+  }
+}
+export class LoginRequest extends EmailRequest {
+  constructor(
+      email: string = '',
+      public password: string = '',
+      public stayLoggedIn: boolean = false,
+      public recaptchaToken: string = '',
+      public timezone: string | null = null
+  ) {
+    super(email);
+  }
+}
+export class RegistrationRequest extends UserRequest {
+  constructor(
+      name: string = '',
+      surname: string = '',
+      email: string = '',
+      has2FA: boolean = false,
+      public password: string = '',
+      public recaptchaToken: string = '',
+      public currentLocale: AvailableLocales = AvailableLocales.SK,
+  ) {
+    super(name, surname, email, has2FA);
+  }
+}
+export enum AvailableLocales{
+  SK='SK',EN='EN',CZ='CZ'
 }

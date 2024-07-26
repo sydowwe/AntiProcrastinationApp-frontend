@@ -18,8 +18,9 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { importDefaults } from '../../compositions/Defaults';
-    const {i18n} = importDefaults();
+    import {useI18n} from 'vue-i18n';
+
+    const i18n = useI18n();
     const activity = ref('sitting around');
     const timeSpent = ref('0s');
     const dialog = ref(false);

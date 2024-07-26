@@ -54,9 +54,10 @@ import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/Plan
 import {importDefaults} from "@/compositions/Defaults";
 import DateTimePicker from '@/components/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
-import {tr} from 'vuetify/locale';
 
-const {i18n, showErrorSnackbar, showSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar, showSnackbar} = importDefaults();
 
 const plannerDialog = ref<PlannerDialogType>({} as PlannerDialogType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
@@ -132,6 +133,7 @@ function applyFilter() {
 
 const add = (plannerTask: PlannerTaskRequest) => {
 	if (validatePlannerTask(plannerTask)) {
+		console.log('8888');
 		window.axios.post(`${url}/add`, plannerTask).then((response) => {
 			plannerTasks.value.push(PlannerTask.fromObject(response.data));
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
@@ -155,7 +157,7 @@ function quickEditedActivity(id: number, name: string, text: string) {
 const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 	const beforeEditEntity = plannerTasks.value.find(item => item.id === id);
 	if (beforeEditEntity
-		&& (beforeEditEntity.activity.id !== plannerTask.activityId ||beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
+		&& (beforeEditEntity.activity.id !== plannerTask.activityId || beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
 		&& validatePlannerTask(plannerTask, id)
 	) {
 		window.axios.put(`${url}/${id}`, plannerTask).then((response) => {
@@ -167,10 +169,11 @@ const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 				timeout: 1500,
 				color: "success",
 			});
+			plannerDialog.value.closeAndReset();
 		});
 	}
 };
-
+//TODO presunut do dialogu
 function validatePlannerTask(
 	plannerTaskRequest: PlannerTaskRequest,
 	idToExclude: number | null = null
@@ -270,8 +273,10 @@ function unSelect(id: number) {
 .table {
 	border-collapse: collapse;
 	user-select: none;
-	border: 1px solid white; //border-radius: 5px;
+	border: 1px solid white;
+	border-radius: 5px;
 }
+
 
 @media (min-width: 992px) {
 	.table {

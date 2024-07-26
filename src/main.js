@@ -1,10 +1,12 @@
 import './assets/main.css'
-import { createApp } from 'vue';
+import {createApp} from 'vue';
 import App from './App.vue';
+
 const app = createApp(App);
 
 // PINIA
-import { createPinia } from 'pinia';
+import {createPinia} from 'pinia';
+
 const pinia = createPinia();
 pinia.use((context) => {
     const storeId = context.store.$id;
@@ -21,58 +23,90 @@ pinia.use((context) => {
 app.use(pinia);
 
 
-
 //IDK
-import moment from 'moment';
+
+
 // import { VueDraggableNext } from 'vue-draggable-next';
-app.use(moment);
 // app.component(VueDraggableNext);
 
 // ROUTER
 import router from './plugins/router';
+
 app.use(router);
 
 // AXIOS
 import axios from 'axios';
-import { useUserStore } from './stores/userStore';
+import {useUserStore} from './stores/userStore';
+
 const authStore = useUserStore();
 
 const axiosInstance = axios.create({
-    baseURL: '/api',
+    baseURL: import.meta.env.VITE_API_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    responseType: 'json'
+    responseType: 'json',
 });
 axiosInstance.interceptors.request.use((config) => {
+    //useLoadingStore().showFullScreenLoading();
     if (authStore.getToken) {
         config.headers.Authorization = `Bearer ${authStore.getToken}`;
     }
     return config;
 });
+import {importDefaults} from "@/compositions/Defaults";
+const { userStore, showErrorSnackbar } = importDefaults();
+const logoutClient = () => {
+    userStore.logout();
+    router.push({ name: 'login' });
+};
+axiosInstance.interceptors.response.use(
+    (response) => {
+        // if (useLoadingStore().axiosSuccessLoadingHide) {
+        //     console.log('hideeeer')
+        //     useLoadingStore().hideFullScreenLoading();
+        // }
+        return Promise.resolve(response);
+    },
+    (error) => {
+        if (router.currentRoute.value.name !== 'login' && (error.response.status === 403 || error.response.status === 401)) {
+            showErrorSnackbar('Error validating your login credentials! Logging out.', { closable: false });
+            logoutClient();
+        }
+        console.log('error: ', error);
+        switch (error.status) {
+            case 409:
+                showErrorSnackbar('Conflict');
+                break;
+            default:
+                break;
+        }
+        return Promise.reject(error);
+    }
+);
 axiosInstance.defaults.headers.common = {
     "Content-Type": "application/json"
 }
+axiosInstance.defaults.withCredentials = true;
 
 window.axios = axiosInstance;
-// window.axios.defaults.headers.common['Content-Type'] = "application/json";
 
 
 // I18N INTERNATIONALIZATION
-import { createI18n, useI18n } from 'vue-i18n'
-import en from './locales/en';
-import sk from './locales/sk';
-import cz from './locales/cz';
+import {createI18n, useI18n} from 'vue-i18n'
+import EN from './locales/EN';
+import SK from './locales/SK';
+import CZ from './locales/CZ';
 
 const i18n = createI18n({
     legacy: false,
-    locale: 'sk',
-    fallbackLocale: 'en',
+    locale: 'SK',
+    fallbackLocale: 'EN',
     messages: {
-        en,
-        sk,
-        cz,
+        EN,
+        SK,
+        CZ,
     },
 });
 app.use(i18n);
@@ -82,16 +116,18 @@ app.use(i18n);
 
 //Google sign in
 import vue3GoogleLogin from 'vue3-google-login'
+
 app.use(vue3GoogleLogin, {
     clientId: '579844911566-n3ch6nfdlpmjfe00u5ueomkk3vfe3g4e.apps.googleusercontent.com'
 })
 
 // FONT-AWESOME
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { fas } from '@fortawesome/free-solid-svg-icons'
-import { far } from '@fortawesome/free-regular-svg-icons'
-import { fab } from '@fortawesome/free-brands-svg-icons'
+import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
+import {library} from '@fortawesome/fontawesome-svg-core'
+import {fas} from '@fortawesome/free-solid-svg-icons'
+import {far} from '@fortawesome/free-regular-svg-icons'
+import {fab} from '@fortawesome/free-brands-svg-icons'
+
 library.add(fas)
 library.add(far)
 library.add(fab)
@@ -100,16 +136,16 @@ app.component('FontAwesomeIcon', FontAwesomeIcon);
 // VUETIFY
 import '../node_modules/vuetify/dist/vuetify.css'
 import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
-import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
+import {createVuetify} from 'vuetify'
+import {createVueI18nAdapter} from 'vuetify/locale/adapters/vue-i18n'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
-import { aliases, fa } from 'vuetify/lib/iconsets/fa-svg.mjs'
+import {aliases, fa} from 'vuetify/lib/iconsets/fa-svg.mjs'
 
 export const vuetify = createVuetify({
     locale: {
-        adapter: createVueI18nAdapter({ i18n, useI18n }),
+        adapter: createVueI18nAdapter({i18n, useI18n}),
     },
     components,
     directives,
@@ -120,18 +156,17 @@ export const vuetify = createVuetify({
             fa,
         },
     },
-    aliases: {
-    },
+    aliases: {},
     defaults: {
         VCardActions: {
-            VBtn: { variant: 'elevated' },
+            VBtn: {variant: 'elevated'},
         },
-        VBtn: { variant: 'elevated' },
-        VTextField: { variant: 'outlined', clearable: true, density: 'comfortable' },
-        VAutocomplete: { variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'label' },
-        VSelect: { variant: 'outlined', clearable: true, density: 'comfortable' },
-        VTextarea: { variant: 'outlined', clearable: true, density: 'comfortable' },
-        VCheckbox: { density: 'comfortable' },
+        VBtn: {variant: 'elevated'},
+        VTextField: {variant: 'outlined', clearable: true, density: 'comfortable'},
+        VAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'label'},
+        VSelect: {variant: 'outlined', clearable: true, density: 'comfortable'},
+        VTextarea: {variant: 'outlined', clearable: true, density: 'comfortable'},
+        VCheckbox: {density: 'comfortable'},
 
     },
     theme: {
@@ -151,5 +186,12 @@ export const vuetify = createVuetify({
     }
 })
 app.use(vuetify);
+
+
+import {VueRecaptchaPlugin} from 'vue-recaptcha/head'
+app.use(VueRecaptchaPlugin, {
+    v2SiteKey: '6Lfl3L8pAAAAAM25iDjXyjOOSISv5kqozSWPKwrN',
+    v3SiteKey: '6LcoxRQqAAAAANQStle4t7x0RxaxiDQI2FBQRVnw',
+})
 
 app.mount('#app');
