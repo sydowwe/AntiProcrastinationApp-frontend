@@ -6,20 +6,15 @@
         <VCol cols="12" class="pt-md-0 px-sm-6 px-md-8 px-lg-10">
             <VRow justify="center">
                 <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
-                    <HistoryRecordItem
-                        class="my-2 my-md-3 w-100"
-                        :record="record"
-                        v-for="record in records?.slice(0, records.length / 2 + 1)"
-                        :key="record.id"
-                    ></HistoryRecordItem>
-                </VCol>
-                <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column align-center align-lg-end">
-                    <HistoryRecordItem
-                        class="my-2 my-md-3 w-100"
-                        :record="record"
-                        v-for="record in records?.slice(records.length / 2 + 1)"
-                        :key="record.id"
-                    ></HistoryRecordItem>
+	                <div v-for="groupedRecord in groupedRecords">
+		                <div>{{formatLocalized(groupedRecord.date,'L')}}</div>
+		                <HistoryRecordItem
+			                class="my-2 my-md-3 w-100"
+			                :record="record"
+			                v-for="record in groupedRecord.historyList?.slice(0, groupedRecord.historyList.length / 2 + 1)"
+			                :key="record.id"
+		                ></HistoryRecordItem>
+	                </div>
                 </VCol>
             </VRow>
         </VCol>
@@ -30,10 +25,12 @@
     import { ref } from 'vue';
     import HistoryPanelFilter from '../../components/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../../components/HistoryRecordItem.vue';
-    import { History } from '@/classes/History';
-    const records = ref([] as History[]);
+    import {History, HistoryGroupedByDate} from '@/classes/History';
+    import {useMoment} from '@/compositions/MomentHelper';
+    const groupedRecords = ref([] as HistoryGroupedByDate[]);
+    const {formatLocalized} = useMoment();
 
-    function handleFilterApplied(_records: History[]) {
-        records.value = _records;
+    function handleFilterApplied(_records: HistoryGroupedByDate[]) {
+	    groupedRecords.value = _records;
     }
 </script>

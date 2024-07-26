@@ -34,9 +34,9 @@
 <script setup lang="ts">
 import {PlannerTask} from "@/classes/PlannerTask";
 import {computed, ref, watch} from "vue";
-import {importDefaults} from "@/compositions/Defaults";
+import {useI18n} from 'vue-i18n';
 
-const {i18n} = importDefaults();
+const i18n = useI18n();
 
 const props = defineProps({
 	plannerTask: {

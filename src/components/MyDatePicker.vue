@@ -60,7 +60,8 @@ import {ref, computed, defineModel} from "vue";
 import {importDefaults} from '@/compositions/Defaults';
 import { useDate } from 'vuetify'
 const adapter = useDate();
-const {i18n} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
 const props = defineProps({
 	label:{
 		type: String,
@@ -120,8 +121,8 @@ function quickChangeDate(increment: number) {
 	}
 	if (increment > 0 && !props.maxDate ||
 		increment < 0 && !props.minDate ||
-		increment > 0 && dateValue.value.getDate() + increment < props.maxDate.getDate() ||
-		increment < 0 && dateValue.value.getDate() > props.minDate.getDate()) {
+		increment > 0 && dateValue.value.getDate() + increment <= props.maxDate.getDate() ||
+		increment < 0 && dateValue.value.getDate() >= props.minDate.getDate()) {
 		dateValue.value = new Date(dateValue.value.setDate(dateValue.value.getDate() + increment));
 	}
 }

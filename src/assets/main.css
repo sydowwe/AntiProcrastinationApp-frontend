@@ -29,3 +29,8 @@ a,
 .clickableIcon{
   cursor: pointer;
 }
+
+.v-list-item--three-line .v-list-item__append, .v-list-item--three-line .v-list-item__prepend {
+  align-self: center !important;
+  padding: 0 !important;
+}

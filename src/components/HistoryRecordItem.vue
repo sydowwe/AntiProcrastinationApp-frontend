@@ -26,20 +26,22 @@
     import { computed } from 'vue';
     import { History } from '@/classes/History';
     import { getTimeNiceFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
+	import { useMoment } from '@/compositions/MomentHelper'
+	const { formatToTime, formatLocalized } = useMoment();
+
     const props = defineProps({
         record: {
             type: History,
             required: true,
         },
     });
-    const formattedStartTimestamp = computed(() => new Date(props.record.startTimestamp).toLocaleTimeString());
+    const formattedStartTimestamp = computed(() => formatLocalized(props.record.startTimestamp,'LTS'));
     const formattedLength = computed(() => getTimeNiceFromTimeObject(props.record.length));
     const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length.getInSeconds));
 
     function getEndOfActivityTime(startTimestamp: Date, length: number) {
         const endInMillis = startTimestamp.valueOf() + length * 1000;
-	    console.log(endInMillis)
-        return new Date(endInMillis).toLocaleTimeString();
+        return formatLocalized(new Date(endInMillis),'LTS');
     }
 </script>
 <style scoped>

@@ -55,3 +55,19 @@ export class HistoryFilter{
         this.dateFrom = tmp;
       }
 }
+export class HistoryGroupedByDate{
+  constructor(
+      public date: Date,
+      public historyList: History[],
+  ) {}
+  static fromObject(object: any){
+    const {
+    } = object;
+    const startTimestamp = new Date(object.date);
+    const historyList = History.listFromObjects(object.historyResponseList);
+    return new HistoryGroupedByDate(startTimestamp,historyList);
+  }
+  static listFromObjects(objects: any[]){
+    return objects.map((item:object)=>this.fromObject(item));
+  }
+}

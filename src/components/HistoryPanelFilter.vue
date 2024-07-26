@@ -113,12 +113,12 @@
 //populate selects composition
 import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
-import {HistoryFilter} from "@/classes/History";
+import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
 import {History} from "@/classes/History";
 import {SelectOption} from "@/classes/SelectOption";
-import {importDefaults} from '@/compositions/Defaults';
+import {useI18n} from 'vue-i18n';
 
-const {i18n} = importDefaults();
+const i18n = useI18n();
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
 
@@ -172,15 +172,18 @@ watch(
 //     console.log(newValue);
 // });
 let mouseDownTimeout = 0;
+
 function continuousQuickChangeHoursBack(value: number) {
 	mouseDownTimeout = setTimeout(() => {
 		quickChangeHoursBack(value);
 		continuousQuickChangeHoursBack(value);
 	}, 150);
 }
+
 function endContinuousQuickChange() {
 	clearTimeout(mouseDownTimeout);
 }
+
 function quickChangeHoursBack(value: number) {
 	if (filterData.hoursBack) {
 		switch (checkValidHoursBackValue(filterData.hoursBack + value)) {
@@ -196,6 +199,7 @@ function quickChangeHoursBack(value: number) {
 		}
 	}
 }
+
 function constrainHoursBack() {
 	if (filterData.hoursBack) {
 		switch (checkValidHoursBackValue(filterData.hoursBack)) {
@@ -208,6 +212,7 @@ function constrainHoursBack() {
 		}
 	}
 }
+
 function checkValidHoursBackValue(value: number) {
 	if (value < MIN_HOURS_BACK) {
 		return -1;
@@ -279,7 +284,8 @@ function applyFilter() {
 	axios
 		.post(`/history/filter`, filter)
 		.then((response) => {
-			emit("filterApplied", History.listFromObjects(response.data));
+			console.log(response.data)
+			emit("filterApplied", HistoryGroupedByDate.listFromObjects(response.data));
 		})
 		.catch((error) => {
 			console.log(error);
@@ -287,6 +293,6 @@ function applyFilter() {
 }
 
 const emit = defineEmits<{
-	filterApplied: [records: History[]];
+	filterApplied: [records: HistoryGroupedByDate[]];
 }>();
 </script>

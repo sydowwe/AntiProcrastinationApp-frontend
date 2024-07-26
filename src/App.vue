@@ -18,7 +18,7 @@
                                 <VList class="d-flex flex-column">
                                     <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
                                     <RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
-                                    <RouterLink class="my-auto pa-2" to="/alarm">{{ $t('navigation.alarm') }}</RouterLink>
+                                    <RouterLink class="my-auto pa-2" to="/alarm-list">{{ $t('navigation.alarm') }}</RouterLink>
                                     <RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
                                 </VList>
                             </VMenu>
@@ -37,12 +37,13 @@
                         </div>
                         <VSelect
                             class="flex-0-0 mx-2"
-                            v-model="$i18n.locale"
-                            :items="$i18n.availableLocales"
+                            v-model="i18n.locale.value"
+                            :items="i18n.availableLocales"
                             density="compact"
                             width="auto"
                             hide-details
                             :clearable="false"
+                            @update:modelValue="sendChangeLocale"
                         >
                         </VSelect>
                         <!-- <VAppBarNavIcon></VAppBarNavIcon> -->
@@ -60,60 +61,36 @@
     </VApp>
 </template>
 <script setup lang="ts">
-    import { ref, watchEffect, onMounted } from 'vue';
-    import Snackbar from './components/feedback/Snackbar.vue';
+	import Snackbar from './components/feedback/Snackbar.vue';
     import LoadingFullscreen from './components/dialogs/LoadingFullscreen.vue';
+	import { useRecaptchaProvider } from 'vue-recaptcha'
+	useRecaptchaProvider();
     import { importDefaults } from './compositions/Defaults';
-    const { router, userStore, showErrorSnackbar } = importDefaults();
-    axios.interceptors.response.use(
-        (response) => {
-            return Promise.resolve(response);
-        },
-        (error) => {
-            if (router.currentRoute.value.name !== 'login' && (error.response.status === 403 || error.response.status === 401)) {
-                showErrorSnackbar('Error validating your login credentials! Logging out.', { closable: false });
-                logoutClient();
-            }
-            console.log('aaaa', error);
-            switch (error.status) {
-                case 409:
-                    showErrorSnackbar('Conflict');
-                    break;
-                default:
-                    break;
-            }
-            return Promise.reject(error);
-        }
-    );
+	import {AvailableLocales} from '@/classes/User';
+	import {useI18n} from 'vue-i18n';
+	const { router, userStore, showErrorSnackbar } = importDefaults();
+	const i18n = useI18n();
 
-    const checkTokenValid = () => {
-        axios
-            .post('/user/auth/checkTokenValidity', {})
-            .then((response) => {
-                console.log(`\\\\\\\\\\\\\\\\\\\\\\\\\\`);
-            })
-            .catch((error) => {
-                console.log('//////////////////////////');
-                logoutClient();
-            });
-    };
+	const logoutClient = () => {
+		userStore.logout();
+		router.push({ name: 'login' });
+	};
     const logout = () => {
         axios.post('/user/auth/logout', {}).then((response) => {});
         logoutClient();
     };
-    const logoutClient = () => {
-        userStore.logout();
-        router.push({ name: 'login' });
-    };
+	function sendChangeLocale(){
+		axios.put('/user/change-locale', {locale: i18n.locale.value}).then((response) => {
+			console.log(response)
+		});
+	}
+
     // watchEffect(() => {
     //     const token = userStore.getToken;
     //     if (!token) {
     //         logoutClient();
     //     }
     // });
-
-    console.log(process.env.VITE_API_URL);
-    console.log(import.meta.env.VITE_API_URL);
 </script>
 <style scoped>
     header {

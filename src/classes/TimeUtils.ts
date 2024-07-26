@@ -1,5 +1,4 @@
 import {getSecondsFromTimeObject, getTimeObjectFromSeconds} from '@/compositions/DateTimeFunctions';
-import {Activity} from '@/classes/Activity';
 
 export class TimeLengthObject {
 	constructor(
@@ -21,7 +20,6 @@ export class TimeLengthObject {
 	}
 
 	public get getInSeconds() {
-		console.log(this.hours, this.minutes, this.seconds);
 		return this.hours * 3600 + this.minutes * 60 + this.seconds;
 	}
 	public subtract(objectToSubtract: TimeLengthObject) {

@@ -32,7 +32,9 @@ import {importDefaults} from '@/compositions/Defaults';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
-const {i18n, showErrorSnackbar} = importDefaults();
+import {useI18n} from 'vue-i18n';
+const i18n = useI18n();
+const {showErrorSnackbar} = importDefaults();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());
 const dialog = ref(false);
 const isEdit = ref(false);

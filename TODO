@@ -1,22 +1,18 @@
 pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky
 
-zovseobecnit riesenie pridavania do historie pre todolist,routinetodolist a planner
+rozdelit history podla datumov
 
-
+prerobit JWT na hhtpOnly cookie storage
+nastavit CRSF v backende a nginx
 
 tweak frontEnd
 
 ALARM dorobit
-
-RUTinny todolist - dokoncit
-
-spravit notifikacie poriadne
-
-rozdelit history podla datumov
+RUTinny todolist - dokoncit group funckionality
 
 Google Sign in backend
 
-
+pridat moznost reminderu do plannertask a routiny a todolist
 ====future plans====
 
 pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
@@ -25,12 +21,13 @@ pridat planovanie ako rozvrh aby som si mohol naplanovat dennu rutinu atd
 
 zlepsit a skraslit historyView mozno tiez pridat moznost zobrazenia do tabulky ako rozvrh
 
-rozsirenie pre automaticke sledovanie aktivit???
 
 dorobit backend exception handling poriadne
 
-dorobit EmailService 
+dorobit EmailService
 
 pridat loadingy na vsetky stranky
 
-prerobit na nuxt ??
+rozsirenie pre automaticke sledovanie aktivit???
+
+

@@ -13,6 +13,7 @@
     "@fortawesome/free-regular-svg-icons": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/vue-fontawesome": "^3.0.3",
+    "@unhead/vue": "^1.9.16",
     "axios": "^1.4.0",
     "install": "^0.13.0",
     "moment": "^2.29.4",
@@ -23,9 +24,9 @@
     "vue": "^3.4.21",
     "vue-draggable-next": "^2.2.0",
     "vue-i18n": "^9.2.2",
+    "vue-recaptcha": "^3.0.0-alpha.6",
     "vue-router": "^4.2.0",
     "vue3-google-login": "^2.0.25",
-    "vue3-recaptcha2": "^1.8.0",
     "vuetify": "^3.5.6"
   },
   "devDependencies": {
