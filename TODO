@@ -4,6 +4,10 @@ rozdelit history podla datumov
 
 prerobit JWT na hhtpOnly cookie storage
 nastavit CRSF v backende a nginx
+backend osetrit prekryvanie aktivit + length
+history aj taskplanner pouzit column end_time
+
+POMODORO timer
 
 tweak frontEnd
 
