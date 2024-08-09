@@ -39,9 +39,10 @@
     import {importDefaults} from '@/compositions/Defaults';
     import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
     import {useLoadingStore} from '@/stores/globalFeedbackStores';
-    const { router, i18n, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
+    import {useI18n} from 'vue-i18n';
+    const { router, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
-
+    const i18n = useI18n();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const verifyPasswordDialog = ref<DialogType>({} as DialogType);
     const verifyQrCodeDialog = ref<DialogType>({} as DialogType);

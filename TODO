@@ -1,11 +1,16 @@
 pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky
 
-rozdelit history podla datumov
+rozdelit history podla datumov - visualne uz len
 
 prerobit JWT na hhtpOnly cookie storage
 nastavit CRSF v backende a nginx
 backend osetrit prekryvanie aktivit + length
 history aj taskplanner pouzit column end_time
+
+pridat zoznamy aktivit,roli, a categorii kde ich budem moct upravovat mazat, pridavat atd
+takisto to pridat pre historie aj s upravou, mozno toto mat na 2 views s rovnakym filtrom jedno pre upravu(asi klasika tabulka) jedno pre pekne timelinove zobrazenie, ale pridat do filtra aj zobrazit vsetko a obratit filter (tj vyhovujuce filtru nezobrazovat)
+
+
 
 POMODORO timer
 

@@ -9,6 +9,7 @@
 			<ActivitySelectionForm ref="activitySelectionForm" v-show="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
 			                       :formDisabled="false" :isInDialog="true"
 			                       :activityId="plannerTask.activityId"
+			                       :selectOptionsSource="ActivityOptionsSource.ALL"
 			                       @activityIdChanged="activityId => plannerTask.activityId = activityId"></ActivitySelectionForm>
 			<div v-show="isActivityFormHidden">
 				<VTextField label="name" v-model="quickActivityName"></VTextField>
@@ -56,6 +57,7 @@ const {
 	quickEditActivity
 } = useQuickCreateActivity('Planner task');
 import {useI18n} from 'vue-i18n';
+import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();

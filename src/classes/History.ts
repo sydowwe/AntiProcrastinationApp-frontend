@@ -1,5 +1,6 @@
-import { Activity } from './Activity';
+import {Activity, ActivityFormRequest} from './Activity';
 import {TimeLengthObject} from '@/classes/TimeUtils';
+import {SelectOption} from '@/classes/SelectOption';
 export class History {
   constructor(
       public id: number,
@@ -40,20 +41,29 @@ export class HistoryRequest {
   }
 }
 
-export class HistoryFilter{
-    constructor(
-      public activityId = null as number | null,
-        public roleId = null as number | null,
-        public categoryId = null as number | null,
-        public isFromToDoList = false as boolean | null,
-        public dateFrom = null as Date | null,
-        public dateTo = new Date() as Date | null,
-        public hoursBack = 24 as number | null
-      ){
-        const tmp = new Date();
-        tmp.setDate(new Date().getDate()-3);
-        this.dateFrom = tmp;
-      }
+
+export class HistoryFilter extends ActivityFormRequest {
+  public dateFrom: Date | null;
+  public dateTo: Date | null;
+  public hoursBack: number | null;
+
+  constructor(
+      activityId: number | null = null,
+      roleId: number | null = null,
+      categoryId: number | null = null,
+      isFromToDoList: boolean | null = false,
+      isUnavoidable: boolean | null = false,
+      dateFrom: Date | null = null,
+      dateTo: Date | null = new Date(),
+      hoursBack: number | null = 24
+  ) {
+    super(activityId, roleId, categoryId, isFromToDoList, isUnavoidable);
+    const tmp = new Date();
+    tmp.setDate(new Date().getDate() - 3);
+    this.dateFrom = dateFrom ?? tmp;
+    this.dateTo = dateTo;
+    this.hoursBack = hoursBack;
+  }
 }
 export class HistoryGroupedByDate{
   constructor(

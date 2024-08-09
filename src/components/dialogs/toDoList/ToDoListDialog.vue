@@ -9,6 +9,7 @@
 				<ActivitySelectionForm v-show="!isActivityFormHidden" class="mb-4"
 				                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
 				                       :activityId="toDoListItem.activityId"
+				                       :selectOptionsSource="ActivityOptionsSource.TO_DO_LIST"
 				                       @activityIdChanged="activityId => toDoListItem.activityId = activityId"></ActivitySelectionForm>
 				<div v-show="isActivityFormHidden">
 					<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
@@ -43,6 +44,7 @@ import {importDefaults} from '@/compositions/Defaults';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity,quickEditActivity} = useQuickCreateActivity('To-do list task');
 import {useI18n} from 'vue-i18n';
+import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const dialog = ref(false);

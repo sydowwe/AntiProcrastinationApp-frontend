@@ -25,7 +25,9 @@
     import { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
     const { emailRules } = useUserDetailsValidation();
     import {importDefaults} from '@/compositions/Defaults';
-    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar,i18n } = importDefaults();
+    import {useI18n} from 'vue-i18n';
+    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar } = importDefaults();
+	const i18n = useI18n();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');
     const dialog = ref(false);

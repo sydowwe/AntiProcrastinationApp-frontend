@@ -29,6 +29,7 @@ import {importDefaults} from '@/compositions/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 
 import {useI18n} from 'vue-i18n';
+import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 

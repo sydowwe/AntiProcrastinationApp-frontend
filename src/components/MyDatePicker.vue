@@ -57,9 +57,8 @@
 </template>
 <script setup lang="ts">
 import {ref, computed, defineModel} from "vue";
-import {importDefaults} from '@/compositions/Defaults';
-import { useDate } from 'vuetify'
-const adapter = useDate();
+import {useMoment} from '@/compositions/MomentHelper'
+const { formatToDate } = useMoment();
 import {useI18n} from 'vue-i18n';
 const i18n = useI18n();
 const props = defineProps({
@@ -89,7 +88,7 @@ const showDatePicker = ref(false);
 
 const dateNice = computed(() => {
 	if (dateValue.value) {
-		return dateValue.value.toLocaleDateString();
+		return formatToDate(dateValue.value);
 	} else {
 		return null;
 	}
