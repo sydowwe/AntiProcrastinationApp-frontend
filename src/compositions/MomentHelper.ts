@@ -6,18 +6,18 @@ import {LongDateFormatKey} from 'moment/moment';
 
 export function useMoment(){
 	const i18n = useI18n();
-	function formatDateLocalized(date: Date) {
+	function formatToDate(date: Date) {
 		return moment(date).locale(i18n.locale.value).format('L');
 	}
 	function formatToTime(date: Date) {
 		return moment(date).locale(i18n.locale.value).format('LT');
 	}
 	function formatToTimeWithSec(date: Date) {
-		return moment(date).locale(i18n.locale.value).format('LT');
+		return moment(date).locale(i18n.locale.value).format('LTS');
 	}
 	function formatLocalized(date: Date, format: moment.LongDateFormatKey) {
 		return moment(date).locale(i18n.locale.value).format(format);
 	}
-	return {formatDateLocalized,formatToTime,formatToTimeWithSec,formatLocalized};
+	return {formatToDate,formatToTime,formatToTimeWithSec,formatLocalized};
 }
 

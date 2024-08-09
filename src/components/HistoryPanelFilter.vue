@@ -110,44 +110,68 @@
 </template>
 
 <script setup lang="ts">
-//populate selects composition
 import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
-import {History} from "@/classes/History";
-import {SelectOption} from "@/classes/SelectOption";
+import {ActivityFormSelects, ActivityFormRequest} from '@/classes/Activity';
 import {useI18n} from 'vue-i18n';
+import {SelectOption} from '@/classes/SelectOption';
 
 const i18n = useI18n();
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
 
 const filterData = reactive(new HistoryFilter());
-const selectOptions = reactive({
-	role: [] as SelectOption[],
-	category: [] as SelectOption[],
-	activity: [] as SelectOption[],
-});
-
+const selectOptions = ref(new ActivityFormSelects());
 const dateRange = ref(false);
 
-populateSelects("role", "/role/get-all-options");
-populateSelects("category", "/category/get-all-options");
-populateSelects("activity", "/activity/get-all-options");
 applyFilter();
 
+updateFilterSelects();
+
+function updateFilterSelects() {
+	axios
+		.post('/history/update-filter-selects', ActivityFormRequest.fromFilter(filterData))
+		.then((response) => {
+			console.log(response.data);
+			selectOptions.value = ActivityFormSelects.fromObject(response.data);
+		})
+		.catch((error) => {
+			console.log(error);
+		});
+}
+
+
+function applyFilter() {
+	let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
+	filter.dateTo?.setHours(23, 59, 59, 999);
+	if (dateRange.value) {
+		filter.hoursBack = null;
+		filter.dateFrom?.setHours(0, 0, 1, 0);
+	} else {
+		filter.dateFrom = null;
+	}
+	axios
+		.post(`/history/filter`, filter)
+		.then((response) => {
+			emit("filterApplied", HistoryGroupedByDate.listFromObjects(response.data));
+		})
+		.catch((error) => {
+			console.log(error);
+		});
+}
+
+watch(() => filterData.activityId, () => {
+	updateFilterSelects();
+});
 watch(
-	() => filterData.roleId,
-	(newValue) => {
-		console.log(newValue);
-		updateCategoriesAndActivities();
+	() => filterData.roleId,	() => {
+		updateFilterSelects();
 	}
 );
 watch(
-	() => filterData.categoryId,
-	(newValue) => {
-		console.log(newValue);
-		updateRolesAndActivities();
+	() => filterData.categoryId,	() => {
+		updateFilterSelects();
 	}
 );
 watch(
@@ -168,9 +192,8 @@ watch(
 	}
 );
 
-// watch(()=> filterData.activityId,(newValue)=>{
-//     console.log(newValue);
-// });
+
+
 let mouseDownTimeout = 0;
 
 function continuousQuickChangeHoursBack(value: number) {
@@ -221,75 +244,6 @@ function checkValidHoursBackValue(value: number) {
 	} else {
 		return 0;
 	}
-}
-
-function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
-	axios
-		.post(url)
-		.then((response) => {
-			selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
-		})
-		.catch((error) => {
-			console.log(error);
-		});
-}
-
-function updateCategoriesAndActivities() {
-	filterData.categoryId = null;
-	filterData.activityId = null;
-	if (filterData.roleId) {
-		populateSelects(
-			"category",
-			`/category/get-options-by-role/${filterData.roleId}`
-		);
-	} else {
-		selectOptions.category = [];
-		selectOptions.activity = [];
-	}
-}
-
-function updateRolesAndActivities() {
-	filterData.roleId = null;
-	filterData.activityId = null;
-	if (filterData.categoryId) {
-		populateSelects(
-			"role",
-			`/role/get-options-by-category/${filterData.categoryId}`
-		);
-	} else {
-		selectOptions.role = [];
-		selectOptions.activity = [];
-	}
-}
-
-// function updateActivities() {
-//     filterData.activityId = null;
-//     if (filterData.categoryId) {
-//         populateSelects('activity', `/activity/get-options-by-category/${filterData.categoryId}`);
-//     } else {
-//         selectOptions.activity = [];
-//     }
-// }
-function applyFilter() {
-	let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
-	filter.dateTo?.setHours(23, 59, 59, 999);
-	if (dateRange.value) {
-		filter.hoursBack = null;
-		filter.dateFrom = filter.dateFrom ? new Date(filter.dateFrom) : null;
-		filter.dateFrom?.setHours(0, 0, 0, 1);
-	} else {
-		filter.dateFrom = null;
-	}
-	console.log(filter);
-	axios
-		.post(`/history/filter`, filter)
-		.then((response) => {
-			console.log(response.data)
-			emit("filterApplied", HistoryGroupedByDate.listFromObjects(response.data));
-		})
-		.catch((error) => {
-			console.log(error);
-		});
 }
 
 const emit = defineEmits<{

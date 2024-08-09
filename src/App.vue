@@ -52,7 +52,7 @@
             </VAppBar>
         </header>
         <VMain>
-            <VContainer class="h-100" fluid>
+            <VContainer class="h-100" :fluid="true">
                 <RouterView />
             </VContainer>
         </VMain>

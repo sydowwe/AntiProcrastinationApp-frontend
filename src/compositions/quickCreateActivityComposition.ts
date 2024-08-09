@@ -28,6 +28,7 @@ export function useQuickCreateActivity(viewName: string) {
 		}
 	}
 
+	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach
 	async function quickEditActivity(activityId:number) {
 		if (quickActivityName.value) {
 			return await axios.post(

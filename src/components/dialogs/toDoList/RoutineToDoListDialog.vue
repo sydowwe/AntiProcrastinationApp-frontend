@@ -8,6 +8,7 @@
 			<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
 			                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
 			                       :activityId="routineToDoListItem.activityId"
+			                       :selectOptionsSource="ActivityOptionsSource.ALL"
 			                       @activityIdChanged="activityId => routineToDoListItem.activityId = activityId"></ActivitySelectionForm>
 			<template v-else>
 				<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
@@ -33,6 +34,7 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
 import {useI18n} from 'vue-i18n';
+import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());

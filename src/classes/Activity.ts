@@ -1,5 +1,7 @@
 import {Category} from './Category';
 import {Role} from "./Role";
+import {HistoryFilter} from '@/classes/History';
+import {SelectOption} from '@/classes/SelectOption';
 
 export class Activity {
 	constructor(
@@ -90,5 +92,33 @@ export class ActivitySelectOption {
 
 	static listFromObjects(objects: any[]) {
 		return objects.map((item: object) => this.fromObject(item));
+	}
+}
+
+export class ActivityFormRequest {
+	constructor(
+		public activityId: number | null = null,
+		public roleId: number | null = null,
+		public categoryId: number | null = null,
+		public isFromToDoList: boolean | null = false,
+		public isUnavoidable: boolean | null = false
+	) {}
+	static fromFilter(filterData: HistoryFilter){
+		return new ActivityFormRequest(filterData.activityId,filterData.roleId,filterData.categoryId,filterData.isFromToDoList,filterData.isUnavoidable);
+	}
+}
+export class ActivityFormSelects {
+	constructor(
+		public activity: SelectOption[] | undefined = undefined,
+		public role: SelectOption[] | undefined = undefined,
+		public category: SelectOption[] | undefined = undefined,
+	) {}
+	static fromObject(object: any){
+		const {
+			activity = object.activityOptions ? SelectOption.listFromObjects(object.activityOptions) : null,
+			role = object.roleOptions ? SelectOption.listFromObjects(object.roleOptions) : null,
+			category = object.categoryOptions ? SelectOption.listFromObjects(object.categoryOptions) : null
+		} = object;
+		return new ActivityFormSelects(activity,role, category);
 	}
 }
