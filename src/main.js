@@ -48,13 +48,6 @@ const axiosInstance = axios.create({
     },
     responseType: 'json',
 });
-axiosInstance.interceptors.request.use((config) => {
-    //useLoadingStore().showFullScreenLoading();
-    if (authStore.getToken) {
-        config.headers.Authorization = `Bearer ${authStore.getToken}`;
-    }
-    return config;
-});
 import {importDefaults} from "@/compositions/Defaults";
 const { userStore, showErrorSnackbar } = importDefaults();
 const logoutClient = () => {

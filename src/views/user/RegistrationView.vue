@@ -16,7 +16,7 @@
 				:append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
 				@click:append-inner="showPassword = !showPassword"
 			></VTextField>
-			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.has2FA" hide-details></VCheckbox>
+			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.TwoFactorEnabled" hide-details></VCheckbox>
 			<VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
 				<template v-slot:label>
 					{{ i18n.t('general.iAgreeTo') }}&nbsp;
