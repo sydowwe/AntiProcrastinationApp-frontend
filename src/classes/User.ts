@@ -3,8 +3,8 @@ export class User {
       public id: number = 0,
       public name: string = '',
       public surname: string = '',
-      public email: string = '',
-      public has2FA: boolean = false,
+      public Email: string = '',
+      public TwoFactorEnabled: boolean = false,
       public scratchCodes: null | number[] = null
     ) {}    
     static fromObject(object: any){
@@ -13,25 +13,25 @@ export class User {
         name = '',
         surname = '',
         email = '',
-        has2FA = false,
+        twoFactorEnabled = false,
         scratchCodes = null
       } = object;  
-      return new User(id, name, surname, email, has2FA, scratchCodes);
+      return new User(id, name, surname, email, twoFactorEnabled, scratchCodes);
     }
 }
 export class UserRequest {
   constructor(
     public name: string = '',
     public surname: string = '',
-    public email: string = '',
-    public has2FA: boolean = false,
+    public Email: string = '',
+    public TwoFactorEnabled: boolean = false,
   ) {}    
   static fromUser(user: User): UserRequest {
     return new UserRequest(
       user.name,
       user.surname,
-      user.email,
-      user.has2FA
+      user.Email,
+      user.TwoFactorEnabled
     );
   }
 }
@@ -65,13 +65,13 @@ export class RegistrationRequest extends UserRequest {
   constructor(
       name: string = '',
       surname: string = '',
-      email: string = '',
-      has2FA: boolean = false,
+      Email: string = '',
+      TwoFactorEnabled: boolean = false,
       public password: string = '',
       public recaptchaToken: string = '',
       public currentLocale: AvailableLocales = AvailableLocales.SK,
   ) {
-    super(name, surname, email, has2FA);
+    super(name, surname, Email, TwoFactorEnabled);
   }
 }
 export enum AvailableLocales{
