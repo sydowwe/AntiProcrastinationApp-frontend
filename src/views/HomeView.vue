@@ -1,9 +1,7 @@
 <template>
-    <CreateNewActivityForm>
-
-    </CreateNewActivityForm>
+    <ToDoListView></ToDoListView>
 </template>
 <script setup lang="ts">
-    import CreateNewActivityForm from '../components/CreateNewActivityForm.vue';
+    import ToDoListView from '@/views/ToDoListView.vue';
   
 </script>

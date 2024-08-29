@@ -35,10 +35,9 @@ import router from './plugins/router';
 app.use(router);
 
 // AXIOS
-import axios from 'axios';
+import axios, {HttpStatusCode} from 'axios';
 import {useUserStore} from './stores/userStore';
 
-const authStore = useUserStore();
 
 const axiosInstance = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -49,23 +48,25 @@ const axiosInstance = axios.create({
     responseType: 'json',
 });
 import {importDefaults} from "@/compositions/Defaults";
-const { userStore, showErrorSnackbar } = importDefaults();
+const { userStore, showErrorSnackbar, hideFullScreenLoading, axiosSuccessLoadingHide } = importDefaults();
 const logoutClient = () => {
     userStore.logout();
     router.push({ name: 'login' });
 };
 axiosInstance.interceptors.response.use(
     (response) => {
-        // if (useLoadingStore().axiosSuccessLoadingHide) {
-        //     console.log('hideeeer')
-        //     useLoadingStore().hideFullScreenLoading();
-        // }
+        if (axiosSuccessLoadingHide) {
+            console.log('hideeeer')
+            hideFullScreenLoading();
+        }
         return Promise.resolve(response);
     },
     (error) => {
-        if (router.currentRoute.value.name !== 'login' && (error.response.status === 403 || error.response.status === 401)) {
-            showErrorSnackbar('Error validating your login credentials! Logging out.', { closable: false });
+        if (router.currentRoute.value.name !== 'login' && (error.response.status === HttpStatusCode.Unauthorized)) {
+            showErrorSnackbar('Please log in before accessing the page', { closable: false });
             logoutClient();
+        }else if((error.response.status === HttpStatusCode.Forbidden)){
+            showErrorSnackbar('You dont have permission for that action', { closable: false });
         }
         console.log('error: ', error);
         switch (error.status) {

@@ -7,7 +7,8 @@
 			            autofocus></VTextField>
 			<VTextField class="mb-3" :label="i18n.t('authorization.surname')" v-model="registrationRequest.surname"
 			            :rules="surnameRules"></VTextField>
-			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="registrationRequest.email" :rules="emailRules"></VTextField>
+			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="registrationRequest.email"
+			            :rules="emailRules"></VTextField>
 			<VTextField
 				:label="i18n.t('authorization.password')"
 				v-model="registrationRequest.password"
@@ -16,7 +17,8 @@
 				:append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
 				@click:append-inner="showPassword = !showPassword"
 			></VTextField>
-			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.TwoFactorEnabled" hide-details></VCheckbox>
+			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.twoFactorEnabled"
+			           hide-details></VCheckbox>
 			<VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
 				<template v-slot:label>
 					{{ i18n.t('general.iAgreeTo') }}&nbsp;
@@ -34,7 +36,6 @@
 	</VCol>
 	<QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
 	<ErrorDialog ref="errorDialog" :title="errorDialogTitle" :message="errorDialogMessage"></ErrorDialog>
-	<LoadingFullscreen :show="loading"></LoadingFullscreen>
 </VRow>
 </template>
 
@@ -43,13 +44,13 @@ import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import QrCodeFor2FADialog from '../../components/dialogs/QrCodeFor2FADialog.vue';
 import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
-import LoadingFullscreen from '../../components/dialogs/LoadingFullscreen.vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
 
 import {useI18n} from 'vue-i18n';
+
 const i18n = useI18n();
-const {userStore, goToLogin, showErrorSnackbar} = importDefaults();
+const {userStore, goToLogin, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading} = importDefaults();
 const {emailRules, nameRules, surnameRules, passwordRulesReg} = useUserDetailsValidation();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -62,7 +63,6 @@ const showPassword = ref(false);
 const qrCodeImage = ref('');
 const termsAndConditionsRules = [(v: boolean) => v || i18n.t('authorization.termsAndConditionsRequired')];
 
-const loading = ref(false);
 const errorDialogTitle = ref('Dialog');
 const errorDialogMessage = ref('');
 
@@ -76,32 +76,35 @@ async function validateAndSendForm() {
 	const recaptchaToken = await execute();
 	const {valid} = await form.value.validate();
 	if (valid) {
+		showFullScreenLoading();
 		if (recaptchaToken != null && recaptchaToken != '') {
 			registrationRequest.value.recaptchaToken = recaptchaToken;
 			registrationRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
+			registrationRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			console.log(registrationRequest.value);
-
 			axios
 				.post('/user/auth/register', registrationRequest.value)
 				.then((response) => {
-					if (response.data?.email) {
-						userStore.setEmail(response.data.email);
-						if (response.data?.has2FA) {
-							if (response.data.qrCode) {
-								qrCodeImage.value = response.data.qrCode;
+					hideFullScreenLoading();
+					console.log(response);
+					userStore.setEmail(registrationRequest.value.email);
+					if (response.data?.TwoFactorEnabled) {
+						if (response.data.QrCode) {
+							if (response.data.RecoveryCodes) {
+								qrCodeImage.value = response.data.QrCode;
 								qrCode2FADialog.value.open();
 							} else {
-								console.error('No qrCode!!!');
+								console.error('No recoveryCodes!!!');
 							}
 						} else {
-							goToLogin();
+							console.error('No QrCode!!!');
 						}
 					} else {
-						console.error('No email!!!');
+						goToLogin();
 					}
 				})
 				.catch((error) => {
-					console.log(error);
+					console.error(error);
 				});
 		}
 	}

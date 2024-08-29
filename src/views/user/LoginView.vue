@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import {ref, onMounted, computed} from 'vue';
 import {VuetifyFormType, SubmittableType} from '@/classes/types/RefTypeInterfaces';
-import {LoginRequest, UserStoreItem} from '@/classes/User';
+import {AvailableLocales, LoginRequest} from '@/classes/User';
 import GoogleSignIn from '../../components/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/LoginVerifyQrCode.vue';
 import {importDefaults} from '@/compositions/Defaults';
@@ -62,7 +62,7 @@ import {useChallengeV3} from 'vue-recaptcha'
 import {useLoadingStore} from '@/stores/globalFeedbackStores';
 
 const i18n = useI18n();
-const {router, userStore, showErrorSnackbar} = importDefaults();
+const {router,userStore,showErrorSnackbar} = importDefaults();
 const {emailRules, passwordRulesLog} = useUserDetailsValidation();
 
 
@@ -80,7 +80,6 @@ onMounted(() => {
 const isRedirectedFromRegistration = computed(() => !!userStore.getEmail);
 
 const {execute} = useChallengeV3('login');
-console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
 async function validateAndSendForm() {
 	const {valid} = await form.value.validate();
@@ -89,23 +88,20 @@ async function validateAndSendForm() {
 		if (recaptchaToken != null && recaptchaToken != '') {
 			loginRequest.value.recaptchaToken = recaptchaToken;
 			loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			loginRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
 			useLoadingStore().axiosSuccessLoadingHide = false;
 			axios
 				.post('/user/auth/login', JSON.stringify(loginRequest.value))
 				.then((response) => {
 					if (response.data) {
-						const user = response.data as UserStoreItem;
-						userStore.setUser(user);
-						i18n.locale.value = user.currentLocale;
-						if (response.data.has2FA === true) {
+						console.log(response);
+						userStore.authenticated();
+						i18n.locale.value = response.data.currentLocale;
+						if (response.data.requiresTwoFactor === true) {
 							dialogTitle.value = 'authorization.twoFA';
 							dialog.value = true;
-						} else if (user.token) {
-							router.push('/');
-						} else {
-							showErrorSnackbar('No token!!!');
-							console.error('No token!!!');
 						}
+						router.push('/');
 					} else {
 						showErrorSnackbar('No user!!!');
 						console.error('No user!!!');

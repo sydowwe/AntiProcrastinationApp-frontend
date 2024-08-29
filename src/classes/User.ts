@@ -3,10 +3,9 @@ export class User {
       public id: number = 0,
       public name: string = '',
       public surname: string = '',
-      public Email: string = '',
-      public TwoFactorEnabled: boolean = false,
-      public scratchCodes: null | number[] = null
-    ) {}    
+      public email: string = '',
+      public twoFactorEnabled: boolean = false,
+    ) {}
     static fromObject(object: any){
       const {
         id = 0,
@@ -14,24 +13,23 @@ export class User {
         surname = '',
         email = '',
         twoFactorEnabled = false,
-        scratchCodes = null
-      } = object;  
-      return new User(id, name, surname, email, twoFactorEnabled, scratchCodes);
+      } = object;
+      return new User(id, name, surname, email, twoFactorEnabled);
     }
 }
 export class UserRequest {
   constructor(
     public name: string = '',
     public surname: string = '',
-    public Email: string = '',
-    public TwoFactorEnabled: boolean = false,
-  ) {}    
+    public email: string = '',
+    public twoFactorEnabled: boolean = false,
+  ) {}
   static fromUser(user: User): UserRequest {
     return new UserRequest(
       user.name,
       user.surname,
-      user.Email,
-      user.TwoFactorEnabled
+      user.email,
+      user.twoFactorEnabled,
     );
   }
 }
@@ -40,9 +38,8 @@ export class UserStoreItem{
   constructor(
     public id: number = 0,    
     public email: string = '',
-    public token: string = '',
-    public currentLocale: AvailableLocales = AvailableLocales.SK
-  ) {}  
+    public isAuthenticated: boolean = false,
+  ) {}
 }
 
 export class EmailRequest {
@@ -56,7 +53,8 @@ export class LoginRequest extends EmailRequest {
       public password: string = '',
       public stayLoggedIn: boolean = false,
       public recaptchaToken: string = '',
-      public timezone: string | null = null
+      public timezone: string = '',
+      public currentLocale: AvailableLocales = AvailableLocales.SK,
   ) {
     super(email);
   }
@@ -70,6 +68,7 @@ export class RegistrationRequest extends UserRequest {
       public password: string = '',
       public recaptchaToken: string = '',
       public currentLocale: AvailableLocales = AvailableLocales.SK,
+      public timezone: string = '',
   ) {
     super(name, surname, Email, TwoFactorEnabled);
   }
