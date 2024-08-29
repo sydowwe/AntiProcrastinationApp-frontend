@@ -14,6 +14,7 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
+	import {GoogleLogin} from 'vue3-google-login';
 
     const loading = ref(false);
     const error = ref(false);
@@ -21,7 +22,7 @@
     function callback(response: any) {
         console.log(response);
         axios
-            .post('/user/auth/oauth2-login', response)
+            .post('/user/oauth2-login', response)
             .then((response) => {
                 console.log(response);
             })
@@ -34,7 +35,7 @@
     iframe {
         width: 224px !important;
         height: 40px !important;
-        margin: 0px !important;
+        margin: 0 !important;
     }
     .haAclf {
         padding: 0 !important;

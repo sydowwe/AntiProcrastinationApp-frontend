@@ -83,7 +83,7 @@ async function validateAndSendForm() {
 			registrationRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			console.log(registrationRequest.value);
 			axios
-				.post('/user/auth/register', registrationRequest.value)
+				.post('/user/register', registrationRequest.value)
 				.then((response) => {
 					hideFullScreenLoading();
 					console.log(response);

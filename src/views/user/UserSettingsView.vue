@@ -89,9 +89,6 @@
             .then((response) => {
                 userData.value = User.fromObject(response.data);
                 userStore.setEmail(userData.value.email);
-                if (response.data.token) {
-                    userStore.setToken(response.data.token);
-                }
                 if (response.data.qrCode) {
                     console.log(response.data);
                     qrCodeImage.value = response.data.qrCode;

@@ -35,12 +35,12 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { VuetifyFormType } from '../../classes/types/RefTypeInterfaces';
-    import { importDefaults } from '../../compositions/Defaults';
-    const { i18n } = importDefaults();
-    import { useDialogComposition } from '../../compositions/DialogComposition';
+    import { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
+    import { useDialogComposition } from '@/compositions/DialogComposition';
+    import {useI18n} from 'vue-i18n';
     const { dialog, open } = useDialogComposition();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
+	const i18n = useI18n();
 
     const newPassword = ref('');
     const showNewPassword = ref(false);

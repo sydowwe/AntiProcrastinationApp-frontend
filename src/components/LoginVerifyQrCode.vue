@@ -9,7 +9,6 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {useUserStore} from '@/stores/userStore';
 import {importDefaults} from '@/compositions/Defaults';
 import {useLoadingStore} from '@/stores/globalFeedbackStores';
 
@@ -33,16 +32,10 @@ function submit() {
 	loading.value = true;
 	useLoadingStore().axiosSuccessLoadingHide = false;
 	axios
-		.post('/user/auth/validate2FA', googleAuthRequest)
+		.post('/user/validate2FA', googleAuthRequest)
 		.then((response) => {
 			if (response.data?.authorized) {
-				if (response.data?.token) {
-					useUserStore().setToken(response.data?.token);
-					router.push('/');
-				} else {
-					error.value = true;
-					console.error('No token!!!');
-				}
+				router.push('/');
 			} else {
 				error.value = true;
 				code.value = '';

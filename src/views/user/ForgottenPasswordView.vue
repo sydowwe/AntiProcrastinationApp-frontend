@@ -37,7 +37,7 @@
         if (valid) {
             showFullScreenLoading();
             axios
-                .post('/user/auth/forgotten-password', { email: email.value })
+                .post('/user/forgotten-password', { email: email.value })
                 .then(() => {
                     dialog.value = true;
                 })
