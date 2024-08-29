@@ -73,7 +73,7 @@ function toggleHideTimePeriod(id: number) {
 		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;
 	}
 	window.axios
-		.post(`/routine-to-do-list-time-period/change-is-hidden/` + id)
+		.post(`/routine-time-period/change-is-hidden/` + id)
 		.then((response) => {
 			console.log(response.data);
 		})

@@ -78,7 +78,7 @@ function setDefaultTimePeriod() {
 
 function getTimePeriodOptions() {
 	window.axios
-		.post(`/routine-to-do-list-time-period/get-all`)
+		.post(`/routine-time-period/get-all`)
 		.then((response) => {
 			timePeriodOptions.value = TimePeriodEntity.listFromObjects(response.data);
 			setDefaultTimePeriod();

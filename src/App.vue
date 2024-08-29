@@ -75,7 +75,7 @@
 		router.push({ name: 'login' });
 	};
     const logout = () => {
-        axios.post('/user/auth/logout', {}).then((response) => {});
+        axios.post('/user/logout', {}).then((response) => {});
         logoutClient();
     };
 	function sendChangeLocale(){
@@ -84,12 +84,6 @@
 		});
 	}
 
-    // watchEffect(() => {
-    //     const token = userStore.getToken;
-    //     if (!token) {
-    //         logoutClient();
-    //     }
-    // });
 </script>
 <style scoped>
     header {

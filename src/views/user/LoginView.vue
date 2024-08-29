@@ -91,7 +91,7 @@ async function validateAndSendForm() {
 			loginRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
 			useLoadingStore().axiosSuccessLoadingHide = false;
 			axios
-				.post('/user/auth/login', JSON.stringify(loginRequest.value))
+				.post('/user/login', JSON.stringify(loginRequest.value))
 				.then((response) => {
 					if (response.data) {
 						console.log(response);
