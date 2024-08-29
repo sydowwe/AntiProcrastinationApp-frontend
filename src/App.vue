@@ -5,7 +5,7 @@
                 <div class="d-flex justify-space-between w-100">
                     <div class="d-flex align-center">
                         <VAppBarTitle class="flex-0-0 mx-3"> AntiProcrastination app </VAppBarTitle>
-                        <template v-if="userStore.getToken">
+                        <template v-if="userStore.isAuthenticated">
                             <RouterLink class="my-auto pa-2" to="/">{{ $t('navigation.home') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/history">{{ $t('navigation.history') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/routine-to-do-list">{{ $t('navigation.routineToDoList') }}</RouterLink>
@@ -27,7 +27,7 @@
                         </template>
                     </div>
                     <div class="d-flex align-center">
-                        <div v-if="!userStore.getToken">
+                        <div v-if="!userStore.isAuthenticated">
                             <RouterLink class="my-auto pa-2" to="/registration">{{ $t('authorization.registration') }}</RouterLink>
                             <RouterLink class="my-auto pa-2" to="/login">{{ $t('authorization.login') }}</RouterLink>
                         </div>
@@ -66,7 +66,6 @@
 	import { useRecaptchaProvider } from 'vue-recaptcha'
 	useRecaptchaProvider();
     import { importDefaults } from './compositions/Defaults';
-	import {AvailableLocales} from '@/classes/User';
 	import {useI18n} from 'vue-i18n';
 	const { router, userStore, showErrorSnackbar } = importDefaults();
 	const i18n = useI18n();

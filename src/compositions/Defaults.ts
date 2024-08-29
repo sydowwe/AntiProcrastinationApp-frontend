@@ -12,13 +12,13 @@ export function importDefaults(){
     function goToLogin() {
         router.push({ name: 'login' });
     }
-    const { showFullScreenLoading, hideFullScreenLoading} = useLoadingStore();
+    const { showFullScreenLoading, hideFullScreenLoading, axiosSuccessLoadingHide} = useLoadingStore();
     const { showErrorSnackbar, showSnackbar, hideSnackbar} = useSnackBarStore();
     return {
         goToLogin,
         router,
         userStore,
-        showFullScreenLoading, hideFullScreenLoading,
+        showFullScreenLoading, hideFullScreenLoading, axiosSuccessLoadingHide,
         showErrorSnackbar, showSnackbar, hideSnackbar,
     }
 }

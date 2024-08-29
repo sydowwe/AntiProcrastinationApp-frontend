@@ -74,7 +74,7 @@ import {ref, reactive} from 'vue';
 import {Role} from '@/classes/Role';
 import {Category} from '@/classes/Category';
 import {SelectOption} from '@/classes/SelectOption';
-import {ActivityFormSelects, ActivityRequest} from '@/classes/Activity';
+import {ActivityRequest} from '@/classes/Activity';
 import {importDefaults} from '@/compositions/Defaults';
 import {useI18n} from 'vue-i18n';
 
@@ -101,24 +101,36 @@ const newEntity = reactive({
 	role: new Role(),
 	category: new Category(),
 });
-updateFilterSelects();
 
-function updateFilterSelects() {
+// updateFilterSelects();
+// function updateFilterSelects() {
+// 	axios
+// 		.post('/activity/update-filter-selects-new')
+// 		.then((response) => {
+// 			let data = ActivityFormSelects.fromObject(response.data);
+// 			console.log(data);
+// 			if (data) {
+// 				selectOptions.role = data?.role ?? [];
+// 				selectOptions.category = data?.category ?? [];
+// 			}
+// 		})
+// 		.catch((error) => {
+// 			console.log(error);
+// 		});
+// }
+function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
 	axios
-		.post('/activity/update-filter-selects-new')
+		.post(url)
 		.then((response) => {
-			let data = ActivityFormSelects.fromObject(response.data);
-			console.log(data);
-			if (data) {
-				selectOptions.role = data?.role ?? [];
-				selectOptions.category = data?.category ?? [];
-			}
+			console.log(response.data);
+			selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
 		})
 		.catch((error) => {
 			console.log(error);
 		});
 }
-
+populateSelects('role', '/role/get-all-options');
+populateSelects('category', '/category/get-all-options');
 
 async function validate() {
 	const {valid} = await form.value.validate();
@@ -139,7 +151,7 @@ function createNewActivity() {
 
 function createEntity(entityType: keyof typeof selectOptions) {
 	axios.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
-		const newOpt = response.data as SelectOption;
+		const newOpt =  SelectOption.fromIdName(response.data);
 		selectOptions[entityType].push(newOpt);
 		newEntity[entityType] = entityType === 'role' ? new Role() : new Category();
 		showSnackbar(entityType + ' created succesfully', {color: 'success'});

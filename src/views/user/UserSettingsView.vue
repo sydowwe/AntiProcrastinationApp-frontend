@@ -7,9 +7,9 @@
                 <VTextField class="mb-3" :label="i18n.t('authorization.surname')" v-model="userData.surname" :rules="surnameRules"></VTextField>
                 <VTextField class="mb-0" :label="i18n.t('authorization.email')" v-model="userData.email" :rules="emailRules"></VTextField>
                 <div class="d-flex flex-column-reverse flex-sm-row mb-4 mt-0">
-                    <VCheckbox :label="i18n.t('user.use2FA')" v-model="userData.TwoFactorEnabled" hide-details density="compact"></VCheckbox>
-                    <VBtn v-if="userData.TwoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="info" @click="show2FAQrCode" style="width: fit-content !important">{{ i18n.t('user.show2FAQrCode') }}</VBtn>
-                    <VBtn v-if="userData.TwoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="danger" @click="showScratchCode" style="width: fit-content !important">{{ i18n.t('user.showScratchCode') }}</VBtn>
+                    <VCheckbox :label="i18n.t('user.use2FA')" v-model="userData.twoFactorEnabled" hide-details density="compact"></VCheckbox>
+                    <VBtn v-if="userData.twoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="info" @click="show2FAQrCode" style="width: fit-content !important">{{ i18n.t('user.show2FAQrCode') }}</VBtn>
+                    <VBtn v-if="userData.twoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="danger" @click="showScratchCode" style="width: fit-content !important">{{ i18n.t('user.showScratchCode') }}</VBtn>
                 </div>
                 <VRow justify="center">
                     <VCol cols="10" sm="8" md="6" lg="6">
@@ -104,9 +104,11 @@
     }
     function getUserData(): void {
         axios
-            .post('/user/get-logged-user-data', {})
+            .post('/user/data', {})
             .then((response) => {
                 userData.value = User.fromObject(response.data);
+	            console.log(userData.value);
+
                 userStore.setEmail(userData.value.email);
             })
             .catch((error) => {

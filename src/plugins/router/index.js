@@ -1,6 +1,5 @@
 import {createRouter, createWebHistory} from 'vue-router'
-import {useUserStore} from '@/stores/userStore';
-import HomeView from '@/views/activityHistory/StopWatchView.vue'
+import HomeView from '@/views/HomeView.vue'
 import CreateNewActivityView from '@/views/CreateNewActivityView.vue'
 import StopWatchView from '@/views/activityHistory/StopWatchView.vue'
 import TimerView from '@/views/activityHistory/TimerView.vue'
@@ -107,14 +106,14 @@ const router = createRouter({
     ]
 });
 const allowedRoutes = ['login', 'registration', 'termsAndConditions', 'forgottenPassword'];
-router.beforeEach((to, from, next) => {
-    //useLoadingStore().showFullScreenLoading();
-    if (!allowedRoutes.includes(to.name) && !useUserStore().getToken) {
-        next('/login');
-    } else {
-        next();
-    }
-});
+// router.beforeEach((to, from, next) => {
+//     //useLoadingStore().showFullScreenLoading();
+//     if (!allowedRoutes.includes(to.name) && !useUserStore().isAuthenticated) {
+//         next('/login');
+//     } else {
+//         next();
+//     }
+// });
 router.afterEach(() => {
     console.log('route')
     useLoadingStore().hideFullScreenLoading();
