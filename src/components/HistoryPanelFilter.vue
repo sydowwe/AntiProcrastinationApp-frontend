@@ -113,7 +113,7 @@
 import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
-import {ActivityFormSelects, ActivityFormRequest} from '@/classes/Activity';
+import {ActivityFormRequest} from '@/classes/Activity';
 import {useI18n} from 'vue-i18n';
 import {SelectOption} from '@/classes/SelectOption';
 

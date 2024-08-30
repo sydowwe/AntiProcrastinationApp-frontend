@@ -58,7 +58,7 @@ export const useLoadingStore = defineStore({
 			}
 		},
 		hideFullScreenLoading() {
-			console.log('hide');
+			// console.log('hide');
 			this.fullScreenLoading = false;
 			this.axiosSuccessLoadingHide = true;
 		},

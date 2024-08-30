@@ -1,43 +1,50 @@
 <template>
-<VRow class="justify-center" align="center" noGutters>
-	<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
-		<VCheckbox label="From to-do list" v-model="formData.isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
-	</VCol>
-	<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-		<!--		<VSelect v-model="selectedUrgencyId" :items="selectOptions.taskUrgency" hide-details></VSelect>-->
-	</VCol>
-	<VCol cols="12" class="pt-1">
-		<VRow>
-			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VAutocomplete label="Role" v-model="formData.roleId" :items="selectOptions.role" :disabled="formDisabled"
-				               hide-details></VAutocomplete>
-			</VCol>
-			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VAutocomplete label="Category" v-model="formData.categoryId" :items="selectOptions.category" :disabled="formDisabled"
-				               hide-details></VAutocomplete>
-			</VCol>
-			<VCol cols="12">
-				<VAutocomplete label="Activity" v-model="formData.activityId" :items="selectOptions.activity" :disabled="formDisabled"
-				               hide-details></VAutocomplete>
-			</VCol>
-		</VRow>
-		<TriStateCheckbox v-model="tristate" label="test"></TriStateCheckbox>
-	</VCol>
-	<VCol cols="auto" class="mt-4">
-		<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
-	</VCol>
-</VRow>
+<Suspense>
+	<VRow class="justify-center" align="center" noGutters>
+		<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
+			<VCheckbox label="From to-do list" v-model="formData.isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
+		</VCol>
+		<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
+			<!--		<VSelect v-model="selectedUrgencyId" :items="selectOptions.taskUrgency" hide-details></VSelect>-->
+		</VCol>
+		<VCol cols="12" class="pt-1">
+			<VRow>
+				<VCol cols="12" :lg="isInDialog ? 12 : 6">
+					<VAutocomplete label="Role" v-model="formData.roleId" :items="roleOptions" :disabled="formDisabled"
+					               hide-details></VAutocomplete>
+				</VCol>
+				<VCol cols="12" :lg="isInDialog ? 12 : 6">
+					<VAutocomplete label="Category" v-model="formData.categoryId" :items="categoryOptions"
+					               :disabled="formDisabled"
+					               hide-details></VAutocomplete>
+				</VCol>
+				<VCol cols="12">
+					<VAutocomplete label="Activity" v-model="formData.activityId" :items="activityOptions"
+					               :disabled="formDisabled"
+					               hide-details></VAutocomplete>
+				</VCol>
+			</VRow>
+			<TriStateCheckbox v-model="tristate" label="test"></TriStateCheckbox>
+		</VCol>
+		<VCol cols="auto" class="mt-4">
+			<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
+		</VCol>
+	</VRow>
+</Suspense>
 </template>
 
 <script setup lang="ts">
 
-import {reactive, ref, computed, watch} from 'vue';
+import {ref, computed, watch, nextTick, onMounted} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {importDefaults} from '@/compositions/Defaults';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
-import {ActivityFormSelects, ActivityFormRequest} from '@/classes/Activity';
+import {ActivityFormRequest} from '@/classes/Activity';
 import TriStateCheckbox from '@/components/TriStateCheckbox.vue';
+import {useActivitySelectOptions, useAllActivitySelectOptionsFiltered} from '@/compositions/ActivitySelectsComposition';
+import {ca} from 'vuetify/locale';
+import {SelectOption} from '@/classes/SelectOption';
 
 const {router, showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -66,48 +73,35 @@ const props = defineProps({
 	}
 });
 
-
-const selectOptions = ref(new ActivityFormSelects());
-const formData = reactive(new ActivityFormRequest());
-
-updateFilterSelects();
-
-function updateFilterSelects() {
-	let url = 'activity';
-	switch (props.selectOptionsSource) {
-		case ActivityOptionsSource.HISTORY:
-			url = 'history';
-			break;
-		default:
-			break;
-	}
-	axios
-		.post(url + '/update-filter-selects', formData)
-		.then((response) => {
-			console.log(response.data);
-			selectOptions.value = ActivityFormSelects.fromObject(response.data);
-		})
-		.catch((error) => {
-			console.log(error);
-		});
-}
-
-watch(() => formData.roleId, () => {
-	updateFilterSelects();
+let roleOptions = ref([] as SelectOption[]);
+let categoryOptions = ref([] as SelectOption[] );
+let activityOptions = ref([] as SelectOption[]);
+const formData = ref(new ActivityFormRequest());
+onMounted(async () => {
+	const {filteredRoleOptions, filteredCategoryOptions, filteredActivityOptions} = await useAllActivitySelectOptionsFiltered(formData);
+	roleOptions = filteredRoleOptions;
+	categoryOptions = filteredCategoryOptions;
+	activityOptions = filteredActivityOptions;
 });
-watch(() => formData.categoryId, () => {
-	updateFilterSelects();
-});
-watch(() => formData.activityId, (newValue) => {
+
+
+
+// watch(() => formData.roleId, () => {
+//
+// });
+// watch(() => formData.categoryId, () => {
+//
+// });
+watch(() => formData.value.activityId, (newValue) => {
 	emit('activityIdChanged', newValue);
-	updateFilterSelects();
+
 });
 watch(() => props.activityId, (newValue) => {
-	formData.activityId = newValue;
+	formData.value.activityId = newValue;
 });
 
 function validate() {
-	if (formData.activityId != null) {
+	if (formData.value.activityId != null) {
 		return true;
 	} else {
 		showErrorSnackbar(`Please select an activity`);
@@ -116,10 +110,10 @@ function validate() {
 }
 
 function saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject) {
-	if (!formData.activityId) {
+	if (!formData.value.activityId) {
 		showErrorSnackbar(`Please select an activity`);
 	} else {
-		addActivityToHistory(startTimestamp, activityLength, formData.activityId).then(isSuccess => {
+		addActivityToHistory(startTimestamp, activityLength, formData.value.activityId).then(isSuccess => {
 			if (isSuccess) {
 				showSnackbar(`Added record of activity ${getSelectedActivityName} to history`, {color: 'success'});
 			} else {
@@ -134,15 +128,15 @@ function createNewActivity() {
 }
 
 const getSelectedActivityName = computed(() => {
-	return selectOptions.value.activity?.find((item) => item.id === formData.activityId)?.label;
+	return filteredActivityOptions.value?.find((item) => item.id === formData.value.activityId)?.label;
 });
 const getSelectedActivityId = computed(() => {
-	return formData.activityId;
+	return formData.value.activityId;
 });
 
 function setSelectedActivityId(activityId: number) {
 	console.log(activityId)
-	formData.activityId = activityId;
+	formData.value.activityId = activityId;
 }
 
 defineExpose({validate, setSelectedActivityId, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});

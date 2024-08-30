@@ -71,13 +71,14 @@ export class QuickEditActivityRequest {
 	}
 }
 
-export class ActivitySelectOption {
+export class ActivitySelectOption extends SelectOption {
 	constructor(
 		public id: number,
 		public label: string,
 		public roleId: number,
 		public categoryId: number,
 	) {
+		super(id,label)
 	}
 
 	static fromObject(object: any) {
@@ -105,20 +106,5 @@ export class ActivityFormRequest {
 	) {}
 	static fromFilter(filterData: HistoryFilter){
 		return new ActivityFormRequest(filterData.activityId,filterData.roleId,filterData.categoryId,filterData.isFromToDoList,filterData.isUnavoidable);
-	}
-}
-export class ActivityFormSelects {
-	constructor(
-		public activity: SelectOption[] | undefined = undefined,
-		public role: SelectOption[] | undefined = undefined,
-		public category: SelectOption[] | undefined = undefined,
-	) {}
-	static fromObject(object: any){
-		const {
-			activity = object.activityOptions ? SelectOption.listFromObjects(object.activityOptions) : null,
-			role = object.roleOptions ? SelectOption.listFromObjects(object.roleOptions) : null,
-			category = object.categoryOptions ? SelectOption.listFromObjects(object.categoryOptions) : null
-		} = object;
-		return new ActivityFormSelects(activity,role, category);
 	}
 }

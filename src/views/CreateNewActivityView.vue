@@ -4,7 +4,7 @@
 		<VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-8 pa-md-8 pa-sm-6 pa-5">
 			<VLabel>{{ i18n.t('activities.role') }}</VLabel>
 			<VRow no-gutters>
-				<VAutocomplete v-model="activityRequest.roleId" :items="selectOptions.role" item-title="label" item-value="id"
+				<VAutocomplete v-model="activityRequest.roleId" :items="roleOptions" item-title="label" item-value="id"
 				               :rules="roleIdRules"></VAutocomplete>
 				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.open()"></VBtn>
 			</VRow>
@@ -12,7 +12,7 @@
 			<VRow no-gutters>
 				<VAutocomplete
 					v-model="activityRequest.categoryId"
-					:items="selectOptions.category"
+					:items="categoryOptions"
 					item-title="label"
 					item-value="id"
 					:rules="categoryIdRules"
@@ -77,6 +77,8 @@ import {SelectOption} from '@/classes/SelectOption';
 import {ActivityRequest} from '@/classes/Activity';
 import {importDefaults} from '@/compositions/Defaults';
 import {useI18n} from 'vue-i18n';
+import {useActivitySelectOptions} from '@/compositions/ActivitySelectsComposition'
+
 
 const {showErrorSnackbar, showSnackbar} = importDefaults();
 const i18n = useI18n();
@@ -93,44 +95,13 @@ const customCategoryRules = [(v: string) => !!v || 'Custom category is required'
 const activityRules = [(v: string) => !!v || 'Activity is required'];
 
 const activityRequest = ref(new ActivityRequest());
-const selectOptions = reactive({
-	role: [] as SelectOption[],
-	category: [] as SelectOption[],
-});
+
 const newEntity = reactive({
 	role: new Role(),
 	category: new Category(),
 });
+const { roleOptions, categoryOptions } = useActivitySelectOptions(false);
 
-// updateFilterSelects();
-// function updateFilterSelects() {
-// 	axios
-// 		.post('/activity/update-filter-selects-new')
-// 		.then((response) => {
-// 			let data = ActivityFormSelects.fromObject(response.data);
-// 			console.log(data);
-// 			if (data) {
-// 				selectOptions.role = data?.role ?? [];
-// 				selectOptions.category = data?.category ?? [];
-// 			}
-// 		})
-// 		.catch((error) => {
-// 			console.log(error);
-// 		});
-// }
-function populateSelects(dataKey: keyof typeof selectOptions, url: string) {
-	axios
-		.post(url)
-		.then((response) => {
-			console.log(response.data);
-			selectOptions[dataKey] = SelectOption.listFromObjects(response.data);
-		})
-		.catch((error) => {
-			console.log(error);
-		});
-}
-populateSelects('role', '/role/get-all-options');
-populateSelects('category', '/category/get-all-options');
 
 async function validate() {
 	const {valid} = await form.value.validate();
@@ -149,10 +120,10 @@ function createNewActivity() {
 	});
 }
 
-function createEntity(entityType: keyof typeof selectOptions) {
+function createEntity(entityType: keyof typeof newEntity) {
 	axios.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
 		const newOpt =  SelectOption.fromIdName(response.data);
-		selectOptions[entityType].push(newOpt);
+		entityType === "role" ? roleOptions.value.push(newOpt) : categoryOptions.value.push(newOpt);
 		newEntity[entityType] = entityType === 'role' ? new Role() : new Category();
 		showSnackbar(entityType + ' created succesfully', {color: 'success'});
 		const key: keyof typeof activityRequest.value = (entityType === "role" ? "roleId" : "categoryId");
