@@ -125,6 +125,7 @@ function applyFilter() {
 	console.log(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value);
 	window.axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value))
 		.then((response) => {
+			console.log(response.data);
 			plannerTasks.value = PlannerTask.listFromObjects(response.data);
 		}).catch(error => {
 		console.log(error)
@@ -133,8 +134,8 @@ function applyFilter() {
 
 const add = (plannerTask: PlannerTaskRequest) => {
 	if (validatePlannerTask(plannerTask)) {
-		console.log('8888');
-		window.axios.post(`${url}/add`, plannerTask).then((response) => {
+		window.axios.post(`${url}/create`, plannerTask).then((response) => {
+			console.log(response)
 			plannerTasks.value.push(PlannerTask.fromObject(response.data));
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
 			showSnackbar(i18n.t("successFeedback.added"), {
