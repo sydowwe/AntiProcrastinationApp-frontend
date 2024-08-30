@@ -3,7 +3,7 @@ import {HistoryRequest} from '@/classes/History';
 
 export async function addActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject, activityId: number) {
 	return await axios
-		.post('/history/add-new-record',
+		.post('/history/create',
 			new HistoryRequest(startTimestamp, activityLength, activityId))
 		.then(() => {
 			return true;

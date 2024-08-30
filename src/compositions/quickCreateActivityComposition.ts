@@ -9,6 +9,7 @@ export function useQuickCreateActivity(viewName: string) {
 
 	async function getQuickCreateActivityRoleIdByView() {
 		return await axios.post('/role/get-by-name/' + viewName).then((response) => {
+			console.log(response.data)
 			return Role.fromObject(response.data).id;
 		});
 	}
