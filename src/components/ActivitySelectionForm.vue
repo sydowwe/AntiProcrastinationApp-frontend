@@ -1,5 +1,4 @@
 <template>
-<Suspense>
 	<VRow class="justify-center" align="center" noGutters>
 		<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
 			<VCheckbox label="From to-do list" v-model="formData.isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
@@ -10,16 +9,16 @@
 		<VCol cols="12" class="pt-1">
 			<VRow>
 				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Role" v-model="formData.roleId" :items="roleOptions" :disabled="formDisabled"
+					<VAutocomplete label="Role" v-model="formData.roleId" :items="activityFormOptions.roleOptions" :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
 				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Category" v-model="formData.categoryId" :items="categoryOptions"
+					<VAutocomplete label="Category" v-model="formData.categoryId" :items="activityFormOptions.categoryOptions"
 					               :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
 				<VCol cols="12">
-					<VAutocomplete label="Activity" v-model="formData.activityId" :items="activityOptions"
+					<VAutocomplete label="Activity" v-model="formData.activityId" :items="activityFormOptions.activityOptions"
 					               :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
@@ -30,19 +29,17 @@
 			<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
 		</VCol>
 	</VRow>
-</Suspense>
 </template>
 
 <script setup lang="ts">
 
-import {ref, computed, watch, nextTick, onMounted} from 'vue';
+import {ref, computed, watch, nextTick, onMounted, reactive} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {importDefaults} from '@/compositions/Defaults';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
-import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
-import {ActivityFormRequest} from '@/classes/Activity';
+import {ActivityFormRequest, ActivityFormSelectOptions, ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import TriStateCheckbox from '@/components/TriStateCheckbox.vue';
-import {useActivitySelectOptions, useAllActivitySelectOptionsFiltered} from '@/compositions/ActivitySelectsComposition';
+import {useActivitySelectOptions, useActivitySelectOptionsFiltered} from '@/compositions/ActivitySelectsComposition';
 import {ca} from 'vuetify/locale';
 import {SelectOption} from '@/classes/SelectOption';
 
@@ -68,20 +65,24 @@ const props = defineProps({
 		default: false,
 	},
 	selectOptionsSource: {
-		type: Number,
+		type: String,
 		default: ActivityOptionsSource.ALL
 	}
 });
 
-let roleOptions = ref([] as SelectOption[]);
-let categoryOptions = ref([] as SelectOption[] );
-let activityOptions = ref([] as SelectOption[]);
+const activityFormOptions = ref(new ActivityFormSelectOptions([],[],[]));
+
+
+
 const formData = ref(new ActivityFormRequest());
 onMounted(async () => {
-	const {filteredRoleOptions, filteredCategoryOptions, filteredActivityOptions} = await useAllActivitySelectOptionsFiltered(formData);
-	roleOptions = filteredRoleOptions;
-	categoryOptions = filteredCategoryOptions;
-	activityOptions = filteredActivityOptions;
+	const { allOptions } = await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource);
+	console.log(allOptions)
+	activityFormOptions.value = allOptions;
+	// const {filteredRoleOptions, filteredCategoryOptions, filteredActivityOptions} = await useAllActivitySelectOptionsFiltered(formData);
+	// roleOptions = filteredRoleOptions;
+	// categoryOptions = filteredCategoryOptions;
+	// activityOptions = filteredActivityOptions;
 });
 
 

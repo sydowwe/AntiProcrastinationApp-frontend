@@ -1,6 +1,7 @@
-import {Activity, ActivityFormRequest} from './Activity';
+import {Activity} from './Activity';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {SelectOption} from '@/classes/SelectOption';
+import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 export class History {
   constructor(
       public id: number,
