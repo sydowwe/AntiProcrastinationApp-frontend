@@ -113,9 +113,9 @@
 import {ref, watch, reactive} from "vue";
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
-import {ActivityFormRequest} from '@/classes/Activity';
 import {useI18n} from 'vue-i18n';
 import {SelectOption} from '@/classes/SelectOption';
+import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 
 const i18n = useI18n();
 const MIN_HOURS_BACK = 2;

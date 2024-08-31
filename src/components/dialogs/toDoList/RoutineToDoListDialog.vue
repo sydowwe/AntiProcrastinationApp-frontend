@@ -34,7 +34,7 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
 import {useI18n} from 'vue-i18n';
-import {ActivityOptionsSource} from '@/classes/AcitivityOptionsSource';
+import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());
