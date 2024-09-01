@@ -9,16 +9,16 @@
 		<VCol cols="12" class="pt-1">
 			<VRow>
 				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Role" v-model="formData.roleId" :items="activityFormOptions.roleOptions" :disabled="formDisabled"
+					<VAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
 				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Category" v-model="formData.categoryId" :items="activityFormOptions.categoryOptions"
+					<VAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
 					               :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
 				<VCol cols="12">
-					<VAutocomplete label="Activity" v-model="formData.activityId" :items="activityFormOptions.activityOptions"
+					<VAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
 					               :disabled="formDisabled"
 					               hide-details></VAutocomplete>
 				</VCol>
@@ -33,15 +33,13 @@
 
 <script setup lang="ts">
 
-import {ref, computed, watch, nextTick, onMounted, reactive} from 'vue';
+import {ref, computed, watch, onMounted} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {importDefaults} from '@/compositions/Defaults';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 import {ActivityFormRequest, ActivityFormSelectOptions, ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import TriStateCheckbox from '@/components/TriStateCheckbox.vue';
 import {useActivitySelectOptions, useActivitySelectOptionsFiltered} from '@/compositions/ActivitySelectsComposition';
-import {ca} from 'vuetify/locale';
-import {SelectOption} from '@/classes/SelectOption';
 
 const {router, showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -70,19 +68,15 @@ const props = defineProps({
 	}
 });
 
-const activityFormOptions = ref(new ActivityFormSelectOptions([],[],[]));
-
-
+const allOptions = ref(new ActivityFormSelectOptions([],[],[]));
+let filteredOptions = ref(new ActivityFormSelectOptions([],[],[]));
 
 const formData = ref(new ActivityFormRequest());
 onMounted(async () => {
-	const { allOptions } = await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource);
-	console.log(allOptions)
-	activityFormOptions.value = allOptions;
-	// const {filteredRoleOptions, filteredCategoryOptions, filteredActivityOptions} = await useAllActivitySelectOptionsFiltered(formData);
-	// roleOptions = filteredRoleOptions;
-	// categoryOptions = filteredCategoryOptions;
-	// activityOptions = filteredActivityOptions;
+	allOptions.value = await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource);
+	console.log(await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource));
+
+	filteredOptions = useActivitySelectOptionsFiltered(allOptions,formData);
 });
 
 
@@ -129,7 +123,7 @@ function createNewActivity() {
 }
 
 const getSelectedActivityName = computed(() => {
-	return filteredActivityOptions.value?.find((item) => item.id === formData.value.activityId)?.label;
+	return filteredOptions.value?.activityOptions.find((item) => item.id === formData.value.activityId)?.label;
 });
 const getSelectedActivityId = computed(() => {
 	return formData.value.activityId;

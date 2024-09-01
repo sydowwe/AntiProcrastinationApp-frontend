@@ -1,6 +1,6 @@
 // useSelectOptions.ts
 import {SelectOption} from '@/classes/SelectOption';
-import {reactive, Ref, ref, toRefs, watch} from 'vue';
+import {reactive, Ref, ref, toRefs, UnwrapRef, watch} from 'vue';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
@@ -24,13 +24,14 @@ export async function useRoleCategorySelectOptions() {
 				console.error('Error fetching options:', error);
 			});
 	}
+
 	await populateSelects('roleOptions', '/role/get-all-options');
 	await populateSelects('categoryOptions', '/category/get-all-options');
-	return { selectOptions };
+	return {selectOptions};
 }
 
 export async function useActivitySelectOptions(activitySource: ActivityOptionsSource) {
-	const allOptions = new ActivityFormSelectOptions([],[],[])
+	const allOptions = new ActivityFormSelectOptions([], [], [])
 	let url = `${activitySource}/get-all-activity-form-select-options`;
 	axios
 		.post(url)
@@ -41,44 +42,41 @@ export async function useActivitySelectOptions(activitySource: ActivityOptionsSo
 		.catch((error) => {
 			console.error('Error fetching options:', error);
 		});
-	return {allOptions};
+	return allOptions;
 }
 
-
-export interface ActivitySelectOptionFilteringParams {
-	activityOptions: Ref<ActivitySelectOptionCombination[]>,
-	roleOptions: Ref<SelectOption[]>,
-	categoryOptions: Ref<SelectOption[]>,
-	formData: Ref<ActivityFormRequest>
-}
-
-export function useActivitySelectOptionsFiltered(params: ActivitySelectOptionFilteringParams) {
-	const filteredActivityOptions = ref([] as ActivitySelectOptionCombination[]);
-	const filteredRoleOptions = ref([] as SelectOption[]);
-	const filteredCategoryOptions = ref([] as SelectOption[]);
+export function useActivitySelectOptionsFiltered(activityOptions: Ref<ActivityFormSelectOptions>,
+                                                 formData: Ref<ActivityFormRequest>) {
+	const filteredOptions = ref(new ActivityFormSelectOptions([], [], []))
 
 	function updateFilteredOptions(formData: ActivityFormRequest) {
 		const {roleId, categoryId} = formData;
-		console.log(params.activityOptions.value);
-		filteredActivityOptions.value = params.activityOptions.value.filter(activity =>
+		console.log(activityOptions);
+		filteredOptions.value.activityOptions = filteredOptions.value.activityOptions.filter(activity =>
 			(roleId === null || activity.roleOption.id === roleId) &&
 			(categoryId === null || activity.categoryOption.id === categoryId)
 		);
-		console.log(filteredActivityOptions.value);
-		const { roleOptions, categoryOptions } = parseOptionsListFromCombinations(filteredActivityOptions.value);
-		filteredRoleOptions.value = roleOptions;
-		filteredCategoryOptions.value = categoryOptions;
+		console.log(filteredOptions.value.activityOptions);
+		const {roleOptions, categoryOptions} = parseOptionsListFromCombinations(filteredOptions.value.activityOptions);
+		filteredOptions.value.roleOptions = roleOptions;
+		filteredOptions.value.categoryOptions = categoryOptions;
 	}
 
-	watch(() => params.formData.value, newValue => {
+	watch(() => formData.value, newValue => {
+		console.log(newValue);
+		updateFilteredOptions(newValue);
+	}, {deep: true});
+	watch(() => formData.value, newValue => {
 		console.log(newValue);
 		updateFilteredOptions(newValue);
 	}, {deep: true});
 
-	updateFilteredOptions(params.formData.value);
+	updateFilteredOptions(formData.value);
 
-	return {filteredActivityOptions, filteredRoleOptions, filteredCategoryOptions};
+	return filteredOptions;
 }
+
+
 
 function parseOptionsListFromCombinations(combinations: ActivitySelectOptionCombination[]) {
 	const roleOptions = combinations
@@ -86,13 +84,10 @@ function parseOptionsListFromCombinations(combinations: ActivitySelectOptionComb
 		.filter((option, index, self) =>
 			index === self.findIndex((o) => o.id === option.id)
 		);
-
 	const categoryOptions = combinations
 		.map(c => c.categoryOption)
 		.filter((option, index, self) =>
 			option !== null && index === self.findIndex((o) => o.id === option.id)
 		);
-
-	return { roleOptions, categoryOptions };
 	return {roleOptions, categoryOptions};
 }

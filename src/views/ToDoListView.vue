@@ -39,7 +39,6 @@ const getAllRecords = () => {
 	window.axios
 		.post(`${url}/get-all`)
 		.then((response) => {
-			console.log(response);
 			items.value = ToDoListItemEntity.listFromObjects(response.data);
 		});
 };

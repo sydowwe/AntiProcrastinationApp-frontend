@@ -15,8 +15,9 @@ export const useUserStore = defineStore('user', {
     setId(id: number): void {
       this.user.id = id;
     },
-    authenticated(){
+    authenticated(email: string){
       this.user.isAuthenticated = true;
+      this.setEmail(email);
     },
     setEmail(email: string): void {
       this.user.email = email;
