@@ -93,7 +93,7 @@ function setDefaultUrgency() {
 
 function getUrgencyOptions() {
 	window.axios
-		.post(`/urgency/get-all`)
+		.post(`/task-urgency/get-all`)
 		.then((response) => {
 			urgencyOptions.value = UrgencyEntity.listFromObjects(response.data);
 			setDefaultUrgency();

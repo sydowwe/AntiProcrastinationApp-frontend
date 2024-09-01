@@ -79,9 +79,11 @@
         logoutClient();
     };
 	function sendChangeLocale(){
-		axios.put('/user/change-locale', {locale: i18n.locale.value}).then((response) => {
-			console.log(response)
-		});
+		if(userStore.isAuthenticated){
+			axios.put('/user/change-locale', {locale: i18n.locale.value}).then((response) => {
+				console.log(response)
+			});
+		}
 	}
 
 </script>
