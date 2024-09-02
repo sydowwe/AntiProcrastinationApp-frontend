@@ -1,6 +1,6 @@
 // useSelectOptions.ts
 import {SelectOption} from '@/classes/SelectOption';
-import {reactive, Ref, ref, toRefs, UnwrapRef, watch} from 'vue';
+import {computed, reactive, Ref, watch} from 'vue';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
@@ -33,47 +33,47 @@ export async function useRoleCategorySelectOptions() {
 export async function useActivitySelectOptions(activitySource: ActivityOptionsSource) {
 	const allOptions = new ActivityFormSelectOptions([], [], [])
 	let url = `${activitySource}/get-all-activity-form-select-options`;
-	axios
+	return axios
 		.post(url)
 		.then((response) => {
 			allOptions.activityOptions = ActivitySelectOptionCombination.listFromObjects(response.data);
 			Object.assign(allOptions, parseOptionsListFromCombinations(allOptions.activityOptions));
+			return allOptions;
 		})
 		.catch((error) => {
 			console.error('Error fetching options:', error);
+			return allOptions;
 		});
-	return allOptions;
 }
 
-export function useActivitySelectOptionsFiltered(activityOptions: Ref<ActivityFormSelectOptions>,
+export function useActivitySelectOptionsFiltered(allOptions: Ref<ActivityFormSelectOptions>,
                                                  formData: Ref<ActivityFormRequest>) {
-	const filteredOptions = ref(new ActivityFormSelectOptions([], [], []))
+	watch(()=> formData.value.roleId, (newVal,oldVal) => {
+		console.log((newVal !== oldVal && newVal));
+		console.log(newVal);
+		console.log(oldVal);
+		if (newVal !== oldVal && newVal) {
+			formData.value.activityId = null;
+		}
+	})
+	watch(()=> formData.value.categoryId, (newVal,oldVal) => {
+		if (newVal !== oldVal && newVal) {
+			formData.value.activityId = null;
+		}
+	})
 
-	function updateFilteredOptions(formData: ActivityFormRequest) {
-		const {roleId, categoryId} = formData;
-		console.log(activityOptions);
-		filteredOptions.value.activityOptions = filteredOptions.value.activityOptions.filter(activity =>
+	return computed(() => {
+		const {roleId, categoryId} = formData.value;
+		const filteredOptions = new ActivityFormSelectOptions();
+		filteredOptions.activityOptions = allOptions.value.activityOptions.filter(activity =>
 			(roleId === null || activity.roleOption.id === roleId) &&
-			(categoryId === null || activity.categoryOption.id === categoryId)
+			(categoryId === null || activity.categoryOption?.id === categoryId)
 		);
-		console.log(filteredOptions.value.activityOptions);
-		const {roleOptions, categoryOptions} = parseOptionsListFromCombinations(filteredOptions.value.activityOptions);
-		filteredOptions.value.roleOptions = roleOptions;
-		filteredOptions.value.categoryOptions = categoryOptions;
-	}
-
-	watch(() => formData.value, newValue => {
-		console.log(newValue);
-		updateFilteredOptions(newValue);
-	}, {deep: true});
-	watch(() => formData.value, newValue => {
-		console.log(newValue);
-		updateFilteredOptions(newValue);
-	}, {deep: true});
-
-	updateFilteredOptions(formData.value);
-
-	return filteredOptions;
+		const {roleOptions, categoryOptions} = parseOptionsListFromCombinations(filteredOptions.activityOptions);
+		filteredOptions.roleOptions = roleId && !categoryId ? allOptions.value.roleOptions : roleOptions;
+		filteredOptions.categoryOptions = categoryId && !roleId ? allOptions.value.categoryOptions : categoryOptions;
+		return filteredOptions;
+	});
 }
 
 

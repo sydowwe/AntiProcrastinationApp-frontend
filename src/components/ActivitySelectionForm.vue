@@ -1,34 +1,34 @@
 <template>
-	<VRow class="justify-center" align="center" noGutters>
-		<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
-			<VCheckbox label="From to-do list" v-model="formData.isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
-		</VCol>
-		<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-			<!--		<VSelect v-model="selectedUrgencyId" :items="selectOptions.taskUrgency" hide-details></VSelect>-->
-		</VCol>
-		<VCol cols="12" class="pt-1">
-			<VRow>
-				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
-					               hide-details></VAutocomplete>
-				</VCol>
-				<VCol cols="12" :lg="isInDialog ? 12 : 6">
-					<VAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
-					               :disabled="formDisabled"
-					               hide-details></VAutocomplete>
-				</VCol>
-				<VCol cols="12">
-					<VAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
-					               :disabled="formDisabled"
-					               hide-details></VAutocomplete>
-				</VCol>
-			</VRow>
-			<TriStateCheckbox v-model="tristate" label="test"></TriStateCheckbox>
-		</VCol>
-		<VCol cols="auto" class="mt-4">
-			<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
-		</VCol>
-	</VRow>
+<VRow class="justify-center" align="center" noGutters>
+	<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
+		<VCheckbox label="From to-do list" v-model="formData.isFromToDoList" :disabled="formDisabled" hide-details></VCheckbox>
+	</VCol>
+	<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
+		<!--		<VSelect v-model="selectedUrgencyId" :items="selectOptions.taskUrgency" hide-details></VSelect>-->
+	</VCol>
+	<VCol cols="12" class="pt-1">
+		<VRow>
+			<VCol cols="12" :lg="isInDialog ? 12 : 6">
+				<VAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
+				               hide-details></VAutocomplete>
+			</VCol>
+			<VCol cols="12" :lg="isInDialog ? 12 : 6">
+				<VAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
+				               :disabled="formDisabled"
+				               hide-details></VAutocomplete>
+			</VCol>
+			<VCol cols="12">
+				<VAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
+				               :disabled="formDisabled"
+				               hide-details></VAutocomplete>
+			</VCol>
+		</VRow>
+		<TriStateCheckbox v-model="tristate" label="test"></TriStateCheckbox>
+	</VCol>
+	<VCol cols="auto" class="mt-4">
+		<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
+	</VCol>
+</VRow>
 </template>
 
 <script setup lang="ts">
@@ -68,25 +68,16 @@ const props = defineProps({
 	}
 });
 
-const allOptions = ref(new ActivityFormSelectOptions([],[],[]));
-let filteredOptions = ref(new ActivityFormSelectOptions([],[],[]));
-
+const allOptions = ref(new ActivityFormSelectOptions([], [], []));
 const formData = ref(new ActivityFormRequest());
 onMounted(async () => {
 	allOptions.value = await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource);
-	console.log(await useActivitySelectOptions(props.selectOptionsSource as ActivityOptionsSource));
-
-	filteredOptions = useActivitySelectOptionsFiltered(allOptions,formData);
 });
+const filteredOptions = useActivitySelectOptionsFiltered(allOptions, formData);
 
 
 
-// watch(() => formData.roleId, () => {
-//
-// });
-// watch(() => formData.categoryId, () => {
-//
-// });
+
 watch(() => formData.value.activityId, (newValue) => {
 	emit('activityIdChanged', newValue);
 

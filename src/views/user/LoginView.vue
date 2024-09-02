@@ -80,16 +80,18 @@ onMounted(() => {
 const isRedirectedFromRegistration = computed(() => !!userStore.getEmail);
 
 const {execute} = useChallengeV3('login');
+const loadingStore = useLoadingStore();
 
 async function validateAndSendForm() {
 	const {valid} = await form.value.validate();
 	if (valid) {
+		loadingStore.showFullScreenLoading();
 		const recaptchaToken = await execute();
 		if (recaptchaToken != null && recaptchaToken != '') {
 			loginRequest.value.recaptchaToken = recaptchaToken;
 			loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			loginRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
-			useLoadingStore().axiosSuccessLoadingHide = false;
+			loadingStore.axiosSuccessLoadingHide = false;
 			axios
 				.post('/user/login', JSON.stringify(loginRequest.value))
 				.then((response) => {
