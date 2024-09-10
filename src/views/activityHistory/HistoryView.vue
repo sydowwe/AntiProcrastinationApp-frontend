@@ -18,7 +18,7 @@
                 </VCol>
 	            <VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column">
 		            <div class="w-100" v-for="groupedRecord in groupedRecords?.slice(midpoint,groupedRecords.length)">
-			            <div class="w-100 bg-blue-grey rounded text-center">{{formatLocalized(groupedRecord.date,'L')}}</div>
+			            <div class="w-100 bg-blue-grey rounded text-center">{{groupedRecord.date}}</div>
 			            <HistoryRecordItem
 				            class="my-2 my-md-3 w-100"
 				            :record="record"

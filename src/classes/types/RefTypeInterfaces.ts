@@ -2,6 +2,8 @@ import {PlannerTask} from '../PlannerTask';
 import {TimeLengthObject, TimeObject} from '../TimeUtils';
 import {ToDoListItemEntity, RoutineToDoListItemEntity} from '../ToDoListItem';
 import {Alarm} from '@/classes/Alarm';
+import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
+import {Ref, UnwrapRef} from 'vue';
 
 export interface VuetifyFormType {
 	validate(): Promise<{ valid: boolean }>;
@@ -69,6 +71,7 @@ export interface ActivitySelectionFormType extends FormType {
 	getSelectedActivityName: string | null;
 	getSelectedActivityId: number;
 	setSelectedActivityId(activityId: number):void;
+	formData: Ref<UnwrapRef<ActivityFormRequest>>;
 }
 
 export interface HistoryRecordItemType {

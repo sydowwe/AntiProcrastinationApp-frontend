@@ -48,7 +48,7 @@ const tristate = ref('');
 const props = defineProps({
 	formDisabled: {
 		type: Boolean,
-		required: true,
+		default: false,
 	},
 	activityId: {
 		type: Number,
@@ -125,7 +125,7 @@ function setSelectedActivityId(activityId: number) {
 	formData.value.activityId = activityId;
 }
 
-defineExpose({validate, setSelectedActivityId, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
+defineExpose({validate, setSelectedActivityId, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory, formData });
 const emit = defineEmits<{
 	(e: "activityIdChanged", activityId: number | null): void;
 }>()
