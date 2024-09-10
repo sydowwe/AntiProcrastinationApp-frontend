@@ -90,8 +90,9 @@ const getAllRecords = () => {
 
 const add = (toDoListItem: RoutineToDoListItemRequest) => {
 	window.axios
-		.post(`${url}/add`, toDoListItem)
+		.post(`${url}/create`, toDoListItem)
 		.then((response) => {
+			console.log(response.data)
 			const updatedList = groupedItems.value.find((group) => group.timePeriod.id === toDoListItem.timePeriodId)?.items;
 			if (updatedList) {
 				updatedList.push(RoutineToDoListItemEntity.fromObject(response.data));

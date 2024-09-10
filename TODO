@@ -1,5 +1,8 @@
 pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky
 
+pridat do pridavania aktivity do historie manuelane moznost vybrat bud dlzku aktivity alebo novu funkciu rozmedzie casove ktore  sa po prekliknuti z dlzky da na datum ktory je zaciatocny
+
+
 rozdelit history podla datumov - visualne uz len
 
 prerobit JWT na hhtpOnly cookie storage
