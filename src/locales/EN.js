@@ -103,6 +103,7 @@ const EN = {
         routineToDoList: `Routine`,
         addActivityToHistory: `Add activity to history`,
         addActivityManually: `Manually`,
+        pomodoroTimer: `Pomodoro timer`,
         stopwatch: `Stopwatch`,
         timer: `Timer`,
         alarm: `Alarm`,
@@ -154,6 +155,12 @@ const EN = {
         dateRange: `Date range`,
         hoursBack: `Hours back`,
         today: `Today`,
+    },
+    controls:{
+        start: `Start`,
+        pause: `Pause`,
+        stop: `Stop`,
+        reset: `Reset`,
     },
     activities: {
         role: `Role`,

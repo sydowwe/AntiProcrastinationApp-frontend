@@ -5,11 +5,11 @@
 		<VRow class="mt-5" align="center" justify="center">
 			<VCol class="bordered bordered-left" cols="12" md="7">
 				<VLabel>{{ i18n.t('dateTime.when') }}</VLabel>
-				<DateTimePicker ref="dateTimePicker"></DateTimePicker>
+				<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
 			</VCol>
 			<VCol class="bordered bordered-right" cols="12" md="5">
 				<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
-				<TimeLengthPicker v-model="timeLength"></TimeLengthPicker>
+				<TimePicker v-model="timeLength"></TimePicker>
 			</VCol>
 			<VCol cols="auto">
 				<VBtn @click="saveActivity()" color="success">{{ i18n.t('history.addActivityToHistory') }}</VBtn>
@@ -21,7 +21,6 @@
 <script setup lang="ts">
 //TODO
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
-import TimeLengthPicker from '../../components/TimeLengthPicker.vue';
 import DateTimePicker from '../../components/DateTimePicker.vue';
 import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
@@ -30,6 +29,7 @@ import {TimeLengthObject} from '@/classes/TimeUtils';
 
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import TimePicker from '@/components/TimePicker.vue';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 

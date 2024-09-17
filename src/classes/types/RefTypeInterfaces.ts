@@ -1,5 +1,5 @@
 import {PlannerTask} from '../PlannerTask';
-import {TimeLengthObject, TimeObject} from '../TimeUtils';
+import {TimeLengthObject} from '../TimeUtils';
 import {ToDoListItemEntity, RoutineToDoListItemEntity} from '../ToDoListItem';
 import {Alarm} from '@/classes/Alarm';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
@@ -85,10 +85,8 @@ export interface TimeLengthPickerType {
 }
 
 export interface TimePickerType {
-	getTimeObject: TimeObject;
-
 	set(hours: number, minutes: number): void;
-
+	set(hours: number, minutes: number, seconds: number): void;
 	reset(): void;
 }
 

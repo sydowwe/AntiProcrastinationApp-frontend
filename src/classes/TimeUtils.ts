@@ -7,6 +7,9 @@ export class TimeLengthObject {
 		public seconds: number = 0
 	) {
 	}
+	public static fromSeconds(seconds: number): TimeLengthObject {
+		return new TimeLengthObject( Math.floor(seconds/3600),Math.floor(seconds % 3600 / 60),seconds % 60);
+	}
 	static fromObject(object: any){
 		const {
 			hours = 0,
@@ -24,13 +27,5 @@ export class TimeLengthObject {
 	}
 	public subtract(objectToSubtract: TimeLengthObject) {
 		return getTimeObjectFromSeconds(getSecondsFromTimeObject(this) - getSecondsFromTimeObject(objectToSubtract))
-	}
-}
-
-export class TimeObject {
-	constructor(
-		public hours = 0 as number,
-		public minutes = 0 as number
-	) {
 	}
 }

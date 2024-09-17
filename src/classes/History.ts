@@ -22,7 +22,6 @@ export class History {
     return objects.map((item:object)=>this.fromObject(item));
   }
 }
-
 export class HistoryRequest {
   constructor(
       public startTimestamp: Date,

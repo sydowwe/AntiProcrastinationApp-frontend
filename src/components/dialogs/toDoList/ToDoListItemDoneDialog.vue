@@ -14,12 +14,12 @@
 				</div>
 				<div class="d-flex flex-column flex-sm-row mb-4">
 					<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-					<TimePicker ref="timePicker" class="ml-2 flex-grow-1" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
+					<TimePicker ref="timePicker" class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
 					            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>
 				</div>
 				<div class="d-flex flex-column flex-sm-row mb-4">
 					<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
-					<TimeLengthPicker v-model="length" class="ml-2 flex-grow-1"></TimeLengthPicker>
+					<TimePicker v-model="length" class="ml-2 flex-grow-1"></TimePicker>
 				</div>
 			</VForm>
 		</VCardText>
@@ -35,7 +35,6 @@ import {ref, onMounted, watch} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import MyDatePicker from '@/components/MyDatePicker.vue';
 import TimePicker from '@/components/TimePicker.vue';
-import TimeLengthPicker from '@/components/TimeLengthPicker.vue';
 import {TimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';

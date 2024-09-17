@@ -16,6 +16,7 @@
                                     <RouterLink class="my-auto pa-2" to="" v-bind="props">{{ $t('navigation.addActivityToHistory') }}</RouterLink>
                                 </template>
                                 <VList class="d-flex flex-column">
+	                                <RouterLink class="my-auto pa-2" to="/pomodoro-timer">{{ $t('navigation.pomodoroTimer') }}</RouterLink>
                                     <RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
                                     <RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
                                     <RouterLink class="my-auto pa-2" to="/alarm-list">{{ $t('navigation.alarm') }}</RouterLink>
