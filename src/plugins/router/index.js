@@ -1,6 +1,7 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import CreateNewActivityView from '@/views/CreateNewActivityView.vue'
+import PomodoroTimerView from "@/views/activityHistory/PomodoroTimerView.vue";
 import StopWatchView from '@/views/activityHistory/StopWatchView.vue'
 import TimerView from '@/views/activityHistory/TimerView.vue'
 import AlarmListView from '@/views/activityHistory/AlarmListView.vue'
@@ -69,6 +70,11 @@ const router = createRouter({
             path: '/create-new-activity',
             name: 'createNewActivity',
             component: CreateNewActivityView
+        },
+        {
+            path: '/pomodoro-timer',
+            name: 'pomodoroTimer',
+            component: PomodoroTimerView
         },
         {
             path: '/stopwatch',

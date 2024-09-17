@@ -103,6 +103,7 @@ const SK = {
         history: `História`,
         addActivityToHistory: `Pridať aktivitu do histórie`,
         addActivityManually: `Manuálne`,
+        pomodoroTimer: `Pomodoro časovač`,
         stopwatch: `Stopky`,
         timer: `Časovač`,
         alarm: `Alarm`,
@@ -154,7 +155,13 @@ const SK = {
         hoursBack: `Hodín späť`,
         today: `Dnes`,
 
-    }, 
+    },
+    controls:{
+        start: `Štart`,
+        pause: `Pauza`,
+        stop: `Stop`,
+        reset: `Reset`,
+    },
     activities:{
         role: `Roľa`,
         category: `Kategória`,
