@@ -176,8 +176,18 @@ const EN = {
         pause: `Pause`,
         stop: `Stop`,
         saveActivity: `Save activity`,
+
+
         //=========
         enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,
+    },
+    pomodoroTimer: {
+        hint:``,
+        focusTime:`Focus time`,
+        shortRestTime:`Short rest time`,
+        longRestTime:`Long rest time`,
+        numberOfCycles:`Number of cycles`,
+        numberOfFocusIntervalsInCycle:`Number of focus interval in cycle`,
     },
     history:{
         addActivityToHistory: `Add activity to history`,

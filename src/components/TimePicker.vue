@@ -116,7 +116,7 @@
 </div>
 </template>
 <script setup lang="ts">
-import {computed, defineModel, ref, watch} from "vue";
+import {defineModel, watch} from "vue";
 import {TimeLengthObject} from "@/classes/TimeUtils";
 import {useI18n} from 'vue-i18n';
 
@@ -134,7 +134,6 @@ const props = defineProps({
 	}
 });
 const timeValue = defineModel<TimeLengthObject>({default: new TimeLengthObject()});
-
 let mouseDownTimeout = 0;
 
 function endContinuousQuickChange() {
