@@ -117,7 +117,7 @@ const emits = defineEmits<{
 }
 
 .borderWhite {
-	border: 1px solid white;
+	border: 1px solid white !important;
 }
 
 .task {

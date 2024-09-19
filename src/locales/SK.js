@@ -181,6 +181,14 @@ const SK = {
         //=========
         enableNotificationsInWindows: `V systéme Windows prejdite na Nastavenia > Systém > Oznámenia a akcie > V sekcii Získať oznámenia a akcie od týchto odosielateľov vyberte Google Chrome.`,
     },
+    pomodoroTimer: {
+        hint:``,
+        focusTime:`Čas pre sústredenie`,
+        shortRestTime:`Čas pre krátky oddych`,
+        longRestTime:`Čas pre dlhý oddych`,
+        numberOfCycles:`Počet cyklov`,
+        numberOfFocusIntervalsInCycle:`Počet intervalov sústredenia v cykle`,
+    },
     history:{
         addActivityToHistory: `Pridať aktivitu do histórie`,
         lengthNotSet: `Nebola zadaná dĺžka`,

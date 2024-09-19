@@ -34,3 +34,7 @@ a,
   align-self: center !important;
   padding: 0 !important;
 }
+
+.borderWhite {
+  border: 1px solid white !important;
+}

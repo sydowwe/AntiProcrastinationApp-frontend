@@ -2,8 +2,8 @@
 <VProgressCircular :model-value="timerProgress"
                    size="400"
                    width="30"
-                   color="primary"
-                   class="mx-auto mb-4 custom-circular-progress"
+                   :color="color"
+                   class="mx-auto mb-4"
 >
 	<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
 </VProgressCircular>
@@ -14,6 +14,10 @@ import {computed} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 
 const props = defineProps({
+	color: {
+		type: String,
+		default: 'primary',
+	},
 	timeInitialObject: {
 		type: TimeLengthObject,
 		required: true,
