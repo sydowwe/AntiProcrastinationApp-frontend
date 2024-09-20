@@ -163,6 +163,8 @@ const EN = {
         reset: `Reset`,
         resetToDefaults: `Reset to defaults`,
         presets: `Presets`,
+        settings: `Settings`,
+
     },
     activities: {
         role: `Role`,

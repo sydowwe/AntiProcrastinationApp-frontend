@@ -6,8 +6,9 @@
 			<v-card-subtitle class="text-h6 text-center mb-5">Stay focused, stay productive!</v-card-subtitle>
 			<div v-if="timeInputVisible">
 				<div class="d-flex justify-center ga-2 mb-3">
-					<VBtn color="warning" @click="resetPickersToDefault">{{ i18n.t('controls.resetToDefaults') }}</VBtn>
+					<VBtn color="warning" style="color: white!important;" @click="resetPickersToDefault">{{ i18n.t('controls.resetToDefaults') }}</VBtn>
 					<VBtn color="primary" @click="openPresets">{{ i18n.t('controls.presets') }}</VBtn>
+					<VBtn color="blue-grey-lighten-1" @click="openSettings">{{ i18n.t('controls.settings') }}</VBtn>
 				</div>
 				<div class="d-flex justify-center ga-3">
 					<VCard variant="tonal" class="pa-4 borderGrey">
@@ -37,7 +38,7 @@
 					</div>
 				</VCard>
 			</div>
-			<div v-else class="d-flex">
+			<div v-else class="d-flex align-center">
 				<TimeDisplayWithProgress :timeRemainingObject="timeDisplayObject.timeRemainingObject"
 				                         :timeInitialObject="timeDisplayObject.timeInitialObject"
 				                         :color="timeDisplayObject.color" :title="timeDisplayObject.title"></TimeDisplayWithProgress>
@@ -45,14 +46,14 @@
 			<TimerControls class="mt-4 mb-5" :paused="paused" :intervalId="intervalId" @start="start" @pause="pause"
 			               @stop="stop"></TimerControls>
 			<hr/>
-			<VRow>
-				<VCol cols="6">
+<!--			<VRow>-->
+<!--				<VCol cols="6">-->
 					<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-				</VCol>
-				<VCol cols="6">
-					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-				</VCol>
-			</VRow>
+<!--				</VCol>-->
+<!--				<VCol cols="6">-->
+<!--					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>-->
+<!--				</VCol>-->
+<!--			</VRow>-->
 			<SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTimer"></SaveActivityDialog>
 		</v-card>
 	</VCol>
@@ -96,24 +97,37 @@ const currentFocusPeriod = ref(1);
 const isFocus = ref(true);
 const isEndOfCycle = computed(() => currentFocusPeriod.value === numberOfFocusPeriodsInCycle.value);
 
+const currentTimerType = computed(()=>{
+	if (isFocus.value) {
+		return 'focus';
+	} else if (isEndOfCycle.value) {
+		return 'longBreak';
+	} else {
+		return 'shortBreak';
+	}
+})
 const timeDisplayObject = computed(() => {
-	let timeRemainingObject = TimeLengthObject.fromSeconds(timeRemaining.value);
 	let timeInitialObject: TimeLengthObject;
 	let color: string;
 	let title: string;
-	if (isFocus.value) {
-		timeInitialObject = focusInitialTime.value;
-		color = 'blue';
-		title = i18n.t('pomodoroTimer.focus');
-	} else if (isEndOfCycle.value) {
-		timeInitialObject = longRestInitialTime.value;
-		color = 'deep-purple-lighten-1';
-		title = i18n.t('pomodoroTimer.longRest');
-	} else {
-		timeInitialObject = shortRestInitialTime.value;
-		color = 'yellow-lighten-2';
-		title = i18n.t('pomodoroTimer.shortRest');
+	switch (currentTimerType.value){
+		case "focus":
+			timeInitialObject = focusInitialTime.value;
+			color = 'blue';
+			title = i18n.t('pomodoroTimer.focus');
+			break;
+		case "shortBreak":
+			timeInitialObject = shortRestInitialTime.value;
+			color = 'yellow-lighten-2';
+			title = i18n.t('pomodoroTimer.shortRest');
+			break;
+		case "longBreak":
+			timeInitialObject = longRestInitialTime.value;
+			color = 'deep-purple-lighten-1';
+			title = i18n.t('pomodoroTimer.longRest');
+			break;
 	}
+	const timeRemainingObject = TimeLengthObject.fromSeconds(timeRemaining.value);
 	return {timeRemainingObject, timeInitialObject, color, title};
 });
 const timeRemaining = ref(0);
@@ -147,6 +161,17 @@ function resume() {
 	paused.value = false;
 	intervalId.value = setInterval(() => {
 		if (timeRemaining.value == 0) {
+			switch (currentTimerType.value){
+				case 'focus':
+					showNotification('Focus period ended', `You focused for ${focusInitialTime.value.getNice} time for short break`);
+					break;
+				case 'shortBreak':
+					showNotification('Short break ended', `You rested for ${shortRestInitialTime.value.getNice} time to focus`);
+					break;
+				case 'longBreak':
+					showNotification('Long break ended', `You rested for ${longRestInitialTime.value.getNice} time to focus`);
+					break;
+			}
 			isFocus.value = !isFocus.value;
 			if (currentCycle.value === numberOfCycles.value && isEndOfCycle.value && !isFocus.value) {
 				stop(true);

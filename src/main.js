@@ -171,15 +171,17 @@ export const vuetify = createVuetify({
                 colors:{
                     primary: '#5b42fc',
                     secondary: '#424242',
+
                     accent: '#82B1FF',
                     error: '#FF5252',
                     info: '#3c9eec',
                     success: '#4CAF50',
                     warning: '#FFC400',
+
                 }
             },
+        }
         },
-    }
 })
 app.use(vuetify);
 
