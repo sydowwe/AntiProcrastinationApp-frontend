@@ -21,7 +21,6 @@
     import DateTimePicker from './DateTimePicker.vue';
     import SaveActivityDialog from './dialogs/SaveActivityDialog.vue';
     import { TimeLengthObject } from '@/classes/TimeUtils';
-    import { getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds } from '@/compositions/DateTimeFunctions';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
@@ -43,7 +42,7 @@
             formDisabled.value = true;
             startTimestamp.value = new Date();
             timeInputVisible.value = false;
-            timeRemaining.value = getSecondsFromTimeObject(timeInitial.value);
+            timeRemaining.value = timeInitial.value.getInSeconds;
             resume();
         }
         const currentTime = new Date();
@@ -70,19 +69,19 @@
     }
     function resume() {
         paused.value = false;
-        alarmTime.value = getTimeObjectFromSeconds(timeRemaining.value);
+        alarmTime.value = TimeLengthObject.fromSeconds(timeRemaining.value);
         intervalId.value = setInterval(() => {
             if (timeRemaining.value == 0) {
                 stop();
             } else {
                 timeRemaining.value--;
-                alarmTime.value = getTimeObjectFromSeconds(timeRemaining.value);
+                alarmTime.value = TimeLengthObject.fromSeconds(timeRemaining.value);
             }
         }, 1000);
     }
     function stop() {
         clearInterval(intervalId.value);
-	    saveDialog.value.open(activitySelectionForm.value.getSelectedActivityName as string, getTimeNiceFromTimeObject(timePassed()));
+	    saveDialog.value.open(activitySelectionForm.value.getSelectedActivityName as string, timePassed().getNice);
     }
     function resetTime() {
         alarmTime.value = new TimeLengthObject();

@@ -1,5 +1,3 @@
-import {getSecondsFromTimeObject, getTimeObjectFromSeconds} from '@/compositions/DateTimeFunctions';
-
 export class TimeLengthObject {
 	constructor(
 		public hours: number = 0,
@@ -25,7 +23,10 @@ export class TimeLengthObject {
 	public get getInSeconds() {
 		return this.hours * 3600 + this.minutes * 60 + this.seconds;
 	}
+	public get getNice(){
+		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}${this.seconds}s`;
+	}
 	public subtract(objectToSubtract: TimeLengthObject) {
-		return getTimeObjectFromSeconds(getSecondsFromTimeObject(this) - getSecondsFromTimeObject(objectToSubtract))
+		return TimeLengthObject.fromSeconds(this.getInSeconds - objectToSubtract.getInSeconds)
 	}
 }
