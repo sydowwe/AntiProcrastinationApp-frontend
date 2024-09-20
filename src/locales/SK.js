@@ -163,6 +163,7 @@ const SK = {
         reset: `Reset`,
         resetToDefaults: `Reset na pôvodné`,
         presets: `Presets`,
+        settings: `Nastavenia`,
 
     },
     activities:{
