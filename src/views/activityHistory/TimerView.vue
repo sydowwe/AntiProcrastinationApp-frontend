@@ -18,7 +18,6 @@ import TimePicker from '@/components/TimePicker.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {ActivityDialogType,	ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
-import {getTimeNiceFromTimeObject, getSecondsFromTimeObject, getTimeObjectFromSeconds} from '@/compositions/DateTimeFunctions';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/TimerControls.vue';
 import TimeDisplayWithProgress from '@/components/TimeDisplayWithProgress.vue';
@@ -70,7 +69,7 @@ function resume() {
 
 function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
-	const timeSpentNice = getTimeNiceFromTimeObject(timePassed());
+	const timeSpentNice = timePassed().getNice;
 	let activityName = activitySelectionForm.value.getSelectedActivityName as string;
 	saveDialog.value.open(activityName, timeSpentNice);
 	if(automatic){

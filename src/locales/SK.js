@@ -161,6 +161,9 @@ const SK = {
         pause: `Pauza`,
         stop: `Stop`,
         reset: `Reset`,
+        resetToDefaults: `Reset na pôvodné`,
+        presets: `Presets`,
+
     },
     activities:{
         role: `Roľa`,
@@ -188,6 +191,9 @@ const SK = {
         longRestTime:`Čas pre dlhý oddych`,
         numberOfCycles:`Počet cyklov`,
         numberOfFocusIntervalsInCycle:`Počet intervalov sústredenia v cykle`,
+        focus:`Koncentrácia`,
+        shortRest:`Krátky oddych`,
+        longRest:`Dlhý oddych`,
     },
     history:{
         addActivityToHistory: `Pridať aktivitu do histórie`,

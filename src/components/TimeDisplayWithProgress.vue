@@ -5,7 +5,10 @@
                    :color="color"
                    class="mx-auto mb-4"
 >
-	<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
+	<div class="d-flex flex-column">
+		<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
+		<h1 class="text-deep-purple-accent-1 font-weight-bold text-center" v-if="title" style="line-height: 2.7rem">{{title}}</h1>
+	</div>
 </VProgressCircular>
 </template>
 <script setup lang="ts">
@@ -17,6 +20,9 @@ const props = defineProps({
 	color: {
 		type: String,
 		default: 'primary',
+	},
+	title: {
+		type: String,
 	},
 	timeInitialObject: {
 		type: TimeLengthObject,

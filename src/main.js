@@ -36,7 +36,6 @@ app.use(router);
 
 // AXIOS
 import axios, {HttpStatusCode} from 'axios';
-import {useUserStore} from './stores/userStore';
 
 
 const axiosInstance = axios.create({
@@ -168,13 +167,16 @@ export const vuetify = createVuetify({
         theme: 'dark',
         themes: {
             dark: {
-                primary: '#5b42fc',
-                secondary: '#424242',
-                accent: '#82B1FF',
-                error: '#FF5252',
-                info: '#2196F3',
-                success: '#4CAF50',
-                warning: '#ffe554',
+                dark: true,
+                colors:{
+                    primary: '#5b42fc',
+                    secondary: '#424242',
+                    accent: '#82B1FF',
+                    error: '#FF5252',
+                    info: '#3c9eec',
+                    success: '#4CAF50',
+                    warning: '#FFC400',
+                }
             },
         },
     }

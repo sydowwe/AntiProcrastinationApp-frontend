@@ -161,6 +161,8 @@ const EN = {
         pause: `Pause`,
         stop: `Stop`,
         reset: `Reset`,
+        resetToDefaults: `Reset to defaults`,
+        presets: `Presets`,
     },
     activities: {
         role: `Role`,
@@ -188,6 +190,9 @@ const EN = {
         longRestTime:`Long rest time`,
         numberOfCycles:`Number of cycles`,
         numberOfFocusIntervalsInCycle:`Number of focus interval in cycle`,
+        focus:`Focus`,
+        shortRest:`Short rest`,
+        longRest:`Long rest`,
     },
     history:{
         addActivityToHistory: `Add activity to history`,
