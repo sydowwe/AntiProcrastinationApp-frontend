@@ -97,7 +97,7 @@ async function validateAndSendForm() {
 				.then((response) => {
 					if (response.data) {
 						console.log(response);
-						userStore.authenticated();
+						userStore.authenticated(response.data.email);
 						i18n.locale.value = response.data.currentLocale.toUpperCase();
 						if (response.data.requiresTwoFactor === true) {
 							dialogTitle.value = 'authorization.twoFA';
