@@ -74,7 +74,7 @@
     }
     async function wereSensitiveChangesMade(): Promise<boolean> {
         return await axios
-            .post('/user/were-sensitive-changes-made', userRequest.value)
+            .post('/user/sensitive-changes', userRequest.value)
             .then((response) => {
                 return response.data as boolean;
             })
@@ -85,7 +85,7 @@
     }
     function saveChanges(): void {
         axios
-            .put('/user/edit-logged-user-data', userRequest.value)
+            .put('/user/edit', userRequest.value)
             .then((response) => {
                 userData.value = User.fromObject(response.data);
                 userStore.setEmail(userData.value.email);
@@ -115,12 +115,14 @@
     function passwordVerified(needs2FA: boolean) {
         if (needs2FA) {
             verifyQrCodeDialog.value.open();
-        } else if (currentFunction) {
+        } else if (currentFunction.value) {
+	        console.log(currentFunction.value)
             currentFunction.value();
         }
     }
     function changePassword(): void {
         currentFunction.value = changePasswordDialog.value.submit;
+	    console.log(currentFunction.value)
         verifyPasswordDialog.value.open();
     }
     function deleteAccount(): void {

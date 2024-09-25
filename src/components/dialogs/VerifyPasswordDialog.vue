@@ -33,7 +33,7 @@
     import {useI18n} from 'vue-i18n';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
-    import { useDialogComposition } from '../../compositions/DialogComposition';
+    import { useDialogComposition } from '@/compositions/DialogComposition';
     const { dialog, open, close } = useDialogComposition();
 
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -51,11 +51,12 @@ const {showErrorSnackbar} = importDefaults();
         const { valid } = await form.value.validate();
         if (valid) {
             axios
-                .post('/user/verify-password', password.value)
+                .post('/user/validate-password', password.value)
                 .then((response) => {
+	                console.log(response)
                     loading.value = false;
-                    if (response.data) {
-                        const needs2FA = response.data.needs2FA as boolean;
+                    if (typeof response.data == 'boolean') {
+                        const needs2FA = response.data as boolean;
                         emit('verified', needs2FA);
                         close();
                     } else {

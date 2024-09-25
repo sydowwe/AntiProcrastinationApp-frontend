@@ -93,5 +93,5 @@
         }
     }
     const emit = defineEmits(['change', 'changed']);
-    defineExpose({open});
+    defineExpose({open,submit});
 </script>

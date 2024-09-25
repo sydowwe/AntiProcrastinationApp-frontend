@@ -94,7 +94,7 @@ import CZ from './locales/CZ';
 
 const i18n = createI18n({
     legacy: false,
-    locale: 'SK',
+    locale: 'EN',
     fallbackLocale: 'EN',
     messages: {
         EN,
