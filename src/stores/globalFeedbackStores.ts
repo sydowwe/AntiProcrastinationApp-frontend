@@ -11,11 +11,11 @@ export interface SnackBarConfig extends ErrorSnackBarConfig {
 }
 
 export const useSnackBarStore = defineStore({
-	id: 'errorSnackBar',
+	id: 'snackBar',
 	state: () => ({
 		snackbar: false,
-		color: 'green',
-		message: 'ERROR',
+		color: 'primary',
+		message: 'Done',
 		timeout: 5000,
 		closable: false,
 	}),
@@ -29,6 +29,17 @@ export const useSnackBarStore = defineStore({
 			this.timeout = config?.timeout || this.timeout;
 			this.closable = config?.closable || false;
 			this.color = 'error';
+			this.snackbar = true;
+		},
+		showSuccessSnackbar(customMessage: string, config?: ErrorSnackBarConfig) {
+			if (!config?.dontHideFullScreenLoading) {
+				useLoadingStore().hideFullScreenLoading();
+			}
+			this.snackbar = false;
+			this.message = customMessage || 'Success';
+			this.timeout = config?.timeout || this.timeout;
+			this.closable = config?.closable || true;
+			this.color = 'success';
 			this.snackbar = true;
 		},
 		showSnackbar(customMessage?: string, config?: SnackBarConfig) {

@@ -268,6 +268,7 @@ const SK = {
         passwordChange: `Zmena hesla`,
         use2FA: `Použiť dvojfaktorové overenie`,
         toContinueEnterPassword: `Pre pokračovanie zadajte heslo`,
+        passwordChangedSuccessfully:`FILLL`,
     },
     planner: {
         task: `Aktivita`,

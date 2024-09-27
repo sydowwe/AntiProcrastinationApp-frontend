@@ -5,15 +5,10 @@
 		<VForm ref="form" @submit.prevent="validateAndSendForm()" validateOn="submit" class="d-flex flex-column">
 			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="loginRequest.email" :rules="emailRules"
 			            :autofocus="!isRedirectedFromRegistration"></VTextField>
-			<VTextField
-				:label="i18n.t('authorization.password')"
+			<MyVerifyPasswordInput
 				v-model="loginRequest.password"
-				:rules="passwordRulesLog"
-				:type="showPassword ? 'text' : 'password'"
-				:append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
-				@click:append-inner="showPassword = !showPassword"
 				:autofocus="isRedirectedFromRegistration"
-			></VTextField>
+			></MyVerifyPasswordInput>
 			<VRow justify="center">
 				<VCol cols="12" sm="6" class="pb-0 pb-sm-3">
 					<VCheckbox :label="i18n.t('authorization.stayLoggedIn')" v-model="loginRequest.stayLoggedIn"
@@ -60,17 +55,18 @@ import {useUserDetailsValidation} from '@/compositions/UserAutorizationCompositi
 import {useI18n} from 'vue-i18n';
 import {useChallengeV3} from 'vue-recaptcha'
 import {useLoadingStore} from '@/stores/globalFeedbackStores';
+import MyVerifyPasswordInput from '@/components/MyVerifyPasswordInput.vue';
 
 const i18n = useI18n();
 const {router,userStore,showErrorSnackbar} = importDefaults();
-const {emailRules, passwordRulesLog} = useUserDetailsValidation();
+const {emailRules} = useUserDetailsValidation();
 
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const verifyQrCode = ref<SubmittableType>({} as SubmittableType);
 const loginRequest = ref(new LoginRequest());
 
-const showPassword = ref(false);
+
 const dialogTitle = ref('');
 const dialog = ref(false);
 

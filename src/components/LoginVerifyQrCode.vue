@@ -23,7 +23,7 @@ const props = defineProps({
 const code = ref('');
 const loading = ref(false);
 const error = ref(false);
-
+//TODO opravit na novy 2fa sign in
 function submit() {
 	const googleAuthRequest = {
 		email: props.email,

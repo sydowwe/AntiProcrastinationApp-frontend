@@ -9,14 +9,7 @@
 			            :rules="surnameRules"></VTextField>
 			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="registrationRequest.email"
 			            :rules="emailRules"></VTextField>
-			<VTextField
-				:label="i18n.t('authorization.password')"
-				v-model="registrationRequest.password"
-				:rules="passwordRulesReg"
-				:type="showPassword ? 'text' : 'password'"
-				:append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
-				@click:append-inner="showPassword = !showPassword"
-			></VTextField>
+			<MyNewPasswordInput v-model="registrationRequest.password"></MyNewPasswordInput>
 			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.twoFactorEnabled"
 			           hide-details></VCheckbox>
 			<VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
@@ -44,6 +37,7 @@ import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import QrCodeFor2FADialog from '../../components/dialogs/QrCodeFor2FADialog.vue';
 import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
+import MyNewPasswordInput from '@/components/MyNewPasswordInput.vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
 
@@ -51,7 +45,7 @@ import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();
 const {userStore, goToLogin, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading} = importDefaults();
-const {emailRules, nameRules, surnameRules, passwordRulesReg} = useUserDetailsValidation();
+const {emailRules, nameRules, surnameRules} = useUserDetailsValidation();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const qrCode2FADialog = ref<DialogType>({} as DialogType);
@@ -59,7 +53,6 @@ const errorDialog = ref<DialogType>({} as DialogType);
 
 const registrationRequest = ref(new RegistrationRequest());
 const termsAndConditions = ref(false);
-const showPassword = ref(false);
 const qrCodeImage = ref('');
 const termsAndConditionsRules = [(v: boolean) => v || i18n.t('authorization.termsAndConditionsRequired')];
 

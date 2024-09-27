@@ -84,6 +84,10 @@ export interface TimeLengthPickerType {
 	time: TimeLengthObject;
 }
 
+export interface MyTwoFactorAuthInputType {
+	triggerVisibilityCheck(): Promise<boolean>;
+}
+
 export interface TimePickerType {
 	set(hours: number, minutes: number): void;
 	set(hours: number, minutes: number, seconds: number): void;
