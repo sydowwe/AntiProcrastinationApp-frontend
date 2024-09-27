@@ -7,7 +7,7 @@
                 <VTextField class="mb-3" :label="i18n.t('authorization.surname')" v-model="userData.surname" :rules="surnameRules"></VTextField>
                 <VTextField class="mb-0" :label="i18n.t('authorization.email')" v-model="userData.email" :rules="emailRules"></VTextField>
                 <div class="d-flex flex-column-reverse flex-sm-row mb-4 mt-0">
-                    <VCheckbox :label="i18n.t('user.use2FA')" v-model="userData.twoFactorEnabled" hide-details density="compact"></VCheckbox>
+                    <VSwitch :label="i18n.t('user.use2FA')" v-model="userData.twoFactorEnabled" hide-details density="compact"></VSwitch>
                     <VBtn v-if="userData.twoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="info" @click="show2FAQrCode" style="width: fit-content !important">{{ i18n.t('user.show2FAQrCode') }}</VBtn>
                     <VBtn v-if="userData.twoFactorEnabled" class="mb-1 mb-sm-0 mx-auto" color="danger" @click="showScratchCode" style="width: fit-content !important">{{ i18n.t('user.showScratchCode') }}</VBtn>
                 </div>
@@ -20,19 +20,16 @@
                 </VRow>
             </VForm>
         </VCol>
-        <VerifyPasswordDialog ref="verifyPasswordDialog" @verified="passwordVerified"></VerifyPasswordDialog>
-        <VerifyQrCodeDialog ref="verifyQrCodeDialog" @verified="currentFunction"></VerifyQrCodeDialog>
-        <ChangePasswordDialog ref="changePasswordDialog" @change="changePassword"></ChangePasswordDialog>
-        <QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done=""></QrCodeFor2FADialog>
+        <ChangePasswordDialog ref="changePasswordDialog"></ChangePasswordDialog>
+	    <VerifyUserDialog ref="verifyUserDialog" @verified="onUserVerified"></VerifyUserDialog>
         <ErrorDialog ref="errorDialog" :title="errorDialogTitle" :message="errorDialogMessage"></ErrorDialog>
     </VRow>
 </template>
 <script setup lang="ts">
     import { ref, computed } from 'vue';
-    import VerifyQrCodeDialog from '../../components/dialogs/VerifyQrCodeDialog.vue';
     import ChangePasswordDialog from '../../components/dialogs/ChangePasswordDialog.vue';
-    import VerifyPasswordDialog from '../../components/dialogs/VerifyPasswordDialog.vue';
-    import QrCodeFor2FADialog from '../../components/dialogs/QrCodeFor2FADialog.vue';
+    import VerifyUserDialog from '@/components/dialogs/VerifyUserDialog.vue';
+
     import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
     import { VuetifyFormType, DialogType, DialogFormType } from '@/classes/types/RefTypeInterfaces';
     import { User, UserRequest } from '@/classes/User';
@@ -40,18 +37,19 @@
     import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
     import {useLoadingStore} from '@/stores/globalFeedbackStores';
     import {useI18n} from 'vue-i18n';
-    const { router, userStore, showErrorSnackbar, showSnackbar, hideSnackbar } = importDefaults();
+    const { router, userStore, showErrorSnackbar, showSuccessSnackbar, hideSnackbar } = importDefaults();
     const { emailRules, nameRules, surnameRules } = useUserDetailsValidation();
     const i18n = useI18n();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
-    const verifyPasswordDialog = ref<DialogType>({} as DialogType);
-    const verifyQrCodeDialog = ref<DialogType>({} as DialogType);
+
     const changePasswordDialog = ref<DialogFormType>({} as DialogFormType);
+    const verifyUserDialog = ref<DialogType>({} as DialogType);
     const qrCode2FADialog = ref<DialogType>({} as DialogType);
     const errorDialog = ref<DialogType>({} as DialogType);
 
     const userData = ref(new User());
-    const currentFunction = ref(saveChanges as (...args: any[]) => any);
+    const onUserVerified = ref(saveChanges as (...args: any[]) => any);
+
     const qrCodeImage = ref('');
 
     const errorDialogTitle = ref('Dialog');
@@ -71,17 +69,6 @@
                 saveChanges();
             }
         }
-    }
-    async function wereSensitiveChangesMade(): Promise<boolean> {
-        return await axios
-            .post('/user/sensitive-changes', userRequest.value)
-            .then((response) => {
-                return response.data as boolean;
-            })
-            .catch((error) => {
-                console.log(error);
-                return true;
-            });
     }
     function saveChanges(): void {
         axios
@@ -112,21 +99,10 @@
                 console.log(error);
             });
     }
-    function passwordVerified(needs2FA: boolean) {
-        if (needs2FA) {
-            verifyQrCodeDialog.value.open();
-        } else if (currentFunction.value) {
-	        console.log(currentFunction.value)
-            currentFunction.value();
-        }
-    }
-    function changePassword(): void {
-        currentFunction.value = changePasswordDialog.value.submit;
-	    console.log(currentFunction.value)
-        verifyPasswordDialog.value.open();
-    }
+
+
     function deleteAccount(): void {
-        currentFunction.value = () => {
+        onUserVerified.value = () => {
 	        useLoadingStore().axiosSuccessLoadingHide = false;
 	        axios
                 .delete('/user/delete-my-account', {})
@@ -139,10 +115,17 @@
                     console.log(error);
                 });
         };
-        verifyPasswordDialog.value.open();
+        verifyUserDialog.value.open();
     }
+
+
+
+
+
+
+
     function show2FAQrCode() {
-        currentFunction.value = () => {
+        onUserVerified.value = () => {
             if (!qrCodeImage.value) {
                 axios
                     .post('/user/get-2fa-qr-code', {})
@@ -165,7 +148,7 @@
     }
 
     function showScratchCode() {
-        currentFunction.value = () => {
+        onUserVerified.value = () => {
             axios
                 .post('/user/get-2fa-scratch-code', {})
                 .then((response) => {

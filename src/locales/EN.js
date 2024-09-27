@@ -268,6 +268,8 @@ const EN = {
         use2FA: `Use two-factor authentication`,
         toContinueEnterPassword: `To continue enter your password`,
         show2FAQrCode: `Show 2FA qr code`,
+        passwordChangedSuccessfully:`FILLL`,
+
     },
     planner: {
         task: `Activity`,
