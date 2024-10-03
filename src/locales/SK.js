@@ -133,6 +133,7 @@ const SK = {
         task: `Úloha`,
         hide: `Skryť`,
         show: `Zobraziť`,
+        confirm: `Potvrdiť`,
     },
     dateTime:{
         when: `Kedy`,
@@ -164,7 +165,7 @@ const SK = {
         resetToDefaults: `Reset na pôvodné`,
         presets: `Presets`,
         settings: `Nastavenia`,
-
+        edit: `Upraviť`,
     },
     activities:{
         role: `Roľa`,
@@ -205,6 +206,7 @@ const SK = {
         logOut: `Odhlásiť sa`,
         logIn: `Prihlásiť sa`,
         wrongEmailOrPassword: `Nesprávny email alebo heslo`,
+        userDoesntExist: `Používateľ s emailom: '{email}' neexistuje`,
         wrongPassword: `Nesprávne heslo`,
         login: `Prihlásenie`,
         goToLogin: `Prejsť na prihlásenie`,
@@ -262,13 +264,22 @@ const SK = {
     user: {
         userSettings: `Uživateľské nastavenia`,
         changePassword: `Zmeniť heslo`,
+        passwordChange: `Zmena hesla`,
+
+        emailChange: `Zmena emailu`,
         deleteAccount: `Vymazať účet`,
         newPassword: `Nové heslo`,
         confirmNewPassword: `Potvrďte nové heslo`,
-        passwordChange: `Zmena hesla`,
         use2FA: `Použiť dvojfaktorové overenie`,
         toContinueEnterPassword: `Pre pokračovanie zadajte heslo`,
-        passwordChangedSuccessfully:`FILLL`,
+        show2FAQrCode: `Zobraziť 2FA QR kód`,
+        newScratchCodes: `Vygenerovať nové záložné kódy`,
+        passwordChangedSuccessfully: `Heslo bolo úspešne zmenené`,
+        identityVerification: `Overenie identity`,
+        emailCantBeSame:`Emaily sa nemôžu zhodovať`,
+        emailChangedSuccessfully: `Email bol úspešne zmenený`,
+        signOutWarning: `Upozornenie: {subject} vás odhlási zo všetkých zariadení z bezpečnostných dôvodov`,
+        enablingTwoFactorAuth: `Zapnutie 2FA`,
     },
     planner: {
         task: `Aktivita`,

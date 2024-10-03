@@ -6,7 +6,7 @@
 			<VRow no-gutters>
 				<VAutocomplete v-model="activityRequest.roleId" :items="roleOptions" item-title="label" item-value="id"
 				               :rules="roleIdRules"></VAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.open()"></VBtn>
+				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog = true"></VBtn>
 			</VRow>
 			<VLabel>{{ i18n.t('activities.category') }}</VLabel>
 			<VRow no-gutters>
@@ -17,7 +17,7 @@
 					item-value="id"
 					:rules="categoryIdRules"
 				></VAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.open()"></VBtn>
+				<VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog = true"></VBtn>
 			</VRow>
 			<VLabel>{{ i18n.t('activities.activity') }}</VLabel>
 			<VRow no-gutters>
@@ -38,18 +38,18 @@
 		</VCol>
 	</VRow>
 </VForm>
-<ContentDialog ref="addRoleDialog" title="Add new role" confirmBtnLabel="Create" @confirmed="createEntity('role')">
+<MyDialog v-model="addRoleDialog" title="Add new role" :confirmBtnLabel="i18n('general.create')" @confirmed="createEntity('role')">
 	<v-text-field label="Name" v-model="newEntity.role.name" :rules="customRoleRules"></v-text-field>
 	<VTextarea label="Text" v-model="newEntity.role.text" :rules="customRoleRules"></VTextarea>
 	<VLabel>Color</VLabel>
 	<VColorPicker label="Color" v-model="newEntity.role.color" hide-inputs></VColorPicker>
-</ContentDialog>
-<ContentDialog ref="addCategoryDialog" title="Add newEntity. category" confirmBtnLabel="Create" @confirmed="createEntity('category')">
+</MyDialog>
+<MyDialog v-model="addCategoryDialog" title="Add new category" :confirmBtnLabel="i18n('general.create')" @confirmed="createEntity('category')">
 	<v-text-field label="Name" v-model="newEntity.category.name" :rules="customCategoryRules"></v-text-field>
 	<VTextarea label="Text" v-model="newEntity.category.text" :rules="customCategoryRules"></VTextarea>
 	<VLabel>Color</VLabel>
 	<VColorPicker v-model="newEntity.category.color" hide-inputs></VColorPicker>
-</ContentDialog>
+</MyDialog>
 <VRow justify="center">
 	<v-dialog v-model="dialog" persistent max-width="512">
 		<v-card>
@@ -68,8 +68,7 @@
 </template>
 <script setup lang="ts">
 
-import ContentDialog from '../components/dialogs/ContentDialog.vue';
-import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
+import {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {ref, reactive} from 'vue';
 import {Role} from '@/classes/Role';
 import {Category} from '@/classes/Category';
@@ -78,14 +77,15 @@ import {ActivityRequest} from '@/classes/Activity';
 import {importDefaults} from '@/compositions/Defaults';
 import {useI18n} from 'vue-i18n';
 import {useActivitySelectOptions} from '@/compositions/ActivitySelectsComposition'
+import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 
 const {showErrorSnackbar, showSnackbar} = importDefaults();
 const i18n = useI18n();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const addCategoryDialog = ref<DialogType>({} as DialogType);
-const addRoleDialog = ref<DialogType>({} as DialogType);
+const addCategoryDialog = ref(false);
+const addRoleDialog = ref(false);
 
 const dialog = ref(false);
 const roleIdRules = [(v: number | null) => !!v || 'Role is required'];

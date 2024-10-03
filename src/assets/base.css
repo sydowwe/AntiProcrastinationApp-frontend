@@ -76,3 +76,7 @@ body {
     font-size: 14px !important; /* Mobile base */
   }
 }
+
+.bg-info, .bg-warning {
+  color: #FFFFFF !important;
+}

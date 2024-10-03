@@ -44,7 +44,7 @@ const getAllRecords = () => {
 };
 const add = (toDoListItem: ToDoListItemRequest) => {
 	window.axios
-		.post(`${url}/add`, toDoListItem)
+		.post(`${url}/create`, toDoListItem)
 		.then((response) => {
 			items.value.push(ToDoListItemEntity.fromObject(response.data));
 			items.value.sort(ToDoListItemEntity.frontEndSortFunction());

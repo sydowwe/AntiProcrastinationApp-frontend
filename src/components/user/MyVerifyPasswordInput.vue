@@ -2,7 +2,7 @@
 <MyPasswordInput v-model="password" :rules="passwordRulesLog"></MyPasswordInput>
 </template>
 <script setup lang="ts">
-import MyPasswordInput from '@/components/MyPasswordInput.vue';
+import MyPasswordInput from '@/components/user/MyPasswordInput.vue';
 import {useI18n} from 'vue-i18n';
 const i18n = useI18n();
 const passwordRulesLog = [

@@ -1,15 +1,38 @@
 <template>
-<VDialog v-model="dialog" :persistent="persistent">
-	<VCard>
-		<VCardTitle class="headline">{{ title }}</VCardTitle>
-		<VCardText>
-			<slot>{{ text }}</slot>
-		</VCardText>
-		<VCardActions class="d-flex justify-end mr-2 mb-2">
-			<VBtn v-if="closable" color="error" @click="close">{{ closeButtonText ?? i18n.t('general.close') }}</VBtn>
-			<slot name="secondButton"></slot>
-		</VCardActions>
-	</VCard>
+<VDialog v-model="dialog" :persistent="persistent" :eager="eager">
+	<VRow justify="center">
+		<VCol cols="12" sm="10" md="8" lg="4">
+			<VCard class="pa-1">
+				<VCardTitle class="headline" v-if="hasHeader">
+					<slot name="header">
+						{{ title }}
+					</slot>
+				</VCardTitle>
+				<VCardText class="py-0">
+					<slot>
+						<span class="text-center">
+							{{ text }}
+						</span>
+					</slot>
+				</VCardText>
+				<VCardActions v-if="hasFooter" class="d-flex justify-center mx-2 mb-2">
+					<slot name="footer">
+						<slot name="leftButton">
+							<VBtn v-if="hasCloseBtn" color="error" @click="onCloseBtnClick">
+								{{ closeBtnText ?? i18n.t('general.cancel') }}
+							</VBtn>
+						</slot>
+						<slot name="centerButton"></slot>
+						<slot name="rightButton">
+							<VBtn v-if="hasConfirmBtn" color="success" @click="emit('confirmed')">
+								{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
+							</VBtn>
+						</slot>
+					</slot>
+				</VCardActions>
+			</VCard>
+		</VCol>
+	</VRow>
 </VDialog>
 </template>
 
@@ -17,29 +40,46 @@
 import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();
-import {useDialogComposition} from '@/compositions/DialogComposition';
 
-const {dialog, open, close} = useDialogComposition();
 defineProps({
 	title: {
 		type: String,
-		requrired: true,
+		required: true,
 	},
 	text: String,
 	persistent: {
 		type: Boolean,
+		default: true,
+	},
+	eager: {
+		type: Boolean,
 		default: false,
 	},
-	closable: {
+	hasHeader: {
 		type: Boolean,
 		default: true,
 	},
-	closeButtonText: {
-		type: String,
+	hasFooter: {
+		type: Boolean,
+		default: true,
 	},
-	confirmBtnLabel: {
-		type: String,
-		requrired: true,
+	hasCloseBtn: {
+		type: Boolean,
+		default: true
 	},
+	closeBtnText: String,
+	hasConfirmBtn: {
+		type: Boolean,
+		default: true
+	},
+	confirmBtnLabel: String,
 });
+
+const dialog = defineModel<boolean>({required: true})
+const emit = defineEmits(['closed', 'confirmed'])
+
+const onCloseBtnClick = () => {
+	dialog.value = false;
+	emit('closed');
+}
 </script>

@@ -1,28 +1,22 @@
 <template>
-<v-dialog v-model="dialog" max-width="600">
-	<v-card class="px-6 py-4 text-center">
-		<v-card-title class="pa-0">{{ isEdit ? $t('general.edit') : $t('general.add') + ' to to-do list' }}</v-card-title>
-		<v-card-text class="px-0">
-			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('toDoList.quickCreateRoutineToDoListActivity')"
-			           density="comfortable" hideDetails></VCheckbox>
-			<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
-			                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
-			                       :activityId="routineToDoListItem.activityId"
-			                       :selectOptionsSource="ActivityOptionsSource.ALL"
-			                       @activityIdChanged="activityId => routineToDoListItem.activityId = activityId"></ActivitySelectionForm>
-			<template v-else>
-				<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
-				<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
-			</template>
-			<VSelect :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false" hide-details
-			         item-title="text" item-value="id" :items="timePeriodOptions"></VSelect>
-		</v-card-text>
-		<v-card-actions class="justify-end px-0">
-			<v-btn color="red" @click="close">{{ $t('general.cancel') }}</v-btn>
-			<v-btn color="green" @click="save">{{ isEdit ? $t('general.edit') : $t('general.add') }}</v-btn>
-		</v-card-actions>
-	</v-card>
-</v-dialog>
+<MyDialog v-model="dialog" :title="isEdit ? $t('general.edit') : $t('general.add') + ' to routine to-do list'"
+          :confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')"
+          @confirmed="save" :eager="true"
+>
+	<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('toDoList.quickCreateRoutineToDoListActivity')"
+	           density="comfortable" hideDetails></VCheckbox>
+	<ActivitySelectionForm ref="activitySelectionForm" v-if="!isActivityFormHidden" class="mb-4"
+	                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
+	                       :activityId="routineToDoListItem.activityId"
+	                       :selectOptionsSource="ActivityOptionsSource.ALL"
+	                       @activityIdChanged="activityId => routineToDoListItem.activityId = activityId"></ActivitySelectionForm>
+	<template v-else>
+		<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
+		<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
+	</template>
+	<VSelect :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false" hide-details
+	         item-title="text" item-value="id" :items="timePeriodOptions"></VSelect>
+</MyDialog>
 </template>
 
 <script setup lang="ts">
@@ -31,10 +25,12 @@ import {RoutineToDoListItemRequest, RoutineToDoListItemEntity, TimePeriodEntity}
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
 import {importDefaults} from '@/compositions/Defaults';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import MyDialog from '@/components/dialogs/MyDialog.vue';
+
+const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
+
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());

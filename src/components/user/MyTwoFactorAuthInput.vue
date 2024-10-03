@@ -45,5 +45,5 @@ async function triggerVisibilityCheck() {
 			return true;
 		});
 }
-defineExpose({triggerVisibilityCheck});
+defineExpose({ triggerVisibilityCheck });
 </script>
