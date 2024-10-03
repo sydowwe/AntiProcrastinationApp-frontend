@@ -12,7 +12,7 @@
 </VProgressCircular>
 </template>
 <script setup lang="ts">
-import TimeDisplay from '@/components/TimeDisplay.vue';
+import TimeDisplay from '@/components/dateTime/TimeDisplay.vue';
 import {computed} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 

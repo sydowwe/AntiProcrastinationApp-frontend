@@ -71,9 +71,9 @@ import {
 } from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/TimerControls.vue';
-import TimePicker from '@/components/TimePicker.vue';
+import TimePicker from '@/components/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
-import TimeDisplayWithProgress from '@/components/TimeDisplayWithProgress.vue';
+import TimeDisplayWithProgress from '@/components/dateTime/TimeDisplayWithProgress.vue';
 
 const i18n = useI18n();
 

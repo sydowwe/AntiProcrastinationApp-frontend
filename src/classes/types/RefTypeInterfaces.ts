@@ -31,6 +31,17 @@ export interface DialogType {
 	close(): void;
 }
 
+export interface FormDialogType extends DialogType {
+	reset(): void;
+	closeAndReset(): void;
+}
+
+export interface FormType {
+	validate(): boolean;
+
+	submit(): void;
+}
+
 export interface EntityDialogType {
 	openCreate(): void;
 
@@ -57,14 +68,7 @@ export interface AlarmDialogType extends EntityDialogType {
 	openEdit(alarm: Alarm): void;
 }
 
-export interface DialogFormType extends DialogType, FormType {
-}
 
-export interface FormType {
-	validate(): boolean;
-
-	submit(): void;
-}
 
 export interface ActivitySelectionFormType extends FormType {
 	saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject): void;

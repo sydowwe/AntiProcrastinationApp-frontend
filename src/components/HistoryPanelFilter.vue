@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import {ref, watch, reactive} from "vue";
-import MyDatePicker from '@/components/MyDatePicker.vue';
+import MyDatePicker from '@/components/dateTime/MyDatePicker.vue';
 import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';

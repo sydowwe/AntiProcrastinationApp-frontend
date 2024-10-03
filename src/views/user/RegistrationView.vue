@@ -3,10 +3,6 @@
 	<VCol cols="12" sm="10" md="8" lg="6">
 		<h2 class="text-center mb-5">{{ $t('authorization.registration') }}</h2>
 		<VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
-			<VTextField class="mb-3" :label="i18n.t('authorization.name')" v-model="registrationRequest.name" :rules="nameRules"
-			            autofocus></VTextField>
-			<VTextField class="mb-3" :label="i18n.t('authorization.surname')" v-model="registrationRequest.surname"
-			            :rules="surnameRules"></VTextField>
 			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="registrationRequest.email"
 			            :rules="emailRules"></VTextField>
 			<MyNewPasswordInput v-model="registrationRequest.password"></MyNewPasswordInput>
@@ -35,9 +31,9 @@
 <script setup lang="ts">
 import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
-import QrCodeFor2FADialog from '../../components/dialogs/QrCodeFor2FADialog.vue';
+import QrCodeFor2FADialog from '../../components/user/dialogs/QrCodeFor2FADialog.vue';
 import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
-import MyNewPasswordInput from '@/components/MyNewPasswordInput.vue';
+import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
 
@@ -45,7 +41,7 @@ import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();
 const {userStore, goToLogin, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading} = importDefaults();
-const {emailRules, nameRules, surnameRules} = useUserDetailsValidation();
+const {emailRules} = useUserDetailsValidation();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const qrCode2FADialog = ref<DialogType>({} as DialogType);
@@ -81,10 +77,10 @@ async function validateAndSendForm() {
 					hideFullScreenLoading();
 					console.log(response);
 					userStore.setEmail(registrationRequest.value.email);
-					if (response.data?.TwoFactorEnabled) {
-						if (response.data.QrCode) {
-							if (response.data.RecoveryCodes) {
-								qrCodeImage.value = response.data.QrCode;
+					if (response.data?.twoFactorEnabled) {
+						if (response.data.qrCode) {
+							if (response.data.recoveryCodes) {
+								qrCodeImage.value = response.data.qrCode;
 								qrCode2FADialog.value.open();
 							} else {
 								console.error('No recoveryCodes!!!');

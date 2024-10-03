@@ -1,37 +1,17 @@
 export class User {
     constructor(
       public id: number = 0,
-      public name: string = '',
-      public surname: string = '',
       public email: string = '',
       public twoFactorEnabled: boolean = false,
     ) {}
     static fromObject(object: any){
       const {
         id = 0,
-        name = '',
-        surname = '',
         email = '',
         twoFactorEnabled = false,
       } = object;
-      return new User(id, name, surname, email, twoFactorEnabled);
+      return new User(id, email, twoFactorEnabled);
     }
-}
-export class UserRequest {
-  constructor(
-    public name: string = '',
-    public surname: string = '',
-    public email: string = '',
-    public twoFactorEnabled: boolean = false,
-  ) {}
-  static fromUser(user: User): UserRequest {
-    return new UserRequest(
-      user.name,
-      user.surname,
-      user.email,
-      user.twoFactorEnabled,
-    );
-  }
 }
 
 export class UserStoreItem{
@@ -59,18 +39,17 @@ export class LoginRequest extends EmailRequest {
     super(email);
   }
 }
-export class RegistrationRequest extends UserRequest {
+export class RegistrationRequest extends EmailRequest {
   constructor(
-      name: string = '',
-      surname: string = '',
-      Email: string = '',
-      TwoFactorEnabled: boolean = false,
+
+      email: string = '',
+      public twoFactorEnabled: boolean = false,
       public password: string = '',
       public recaptchaToken: string = '',
       public currentLocale: AvailableLocales = AvailableLocales.SK,
       public timezone: string = '',
   ) {
-    super(name, surname, Email, TwoFactorEnabled);
+    super(email);
   }
 }
 export enum AvailableLocales{

@@ -47,10 +47,11 @@ const axiosInstance = axios.create({
     responseType: 'json',
 });
 import {importDefaults} from "@/compositions/Defaults";
-const { userStore, showErrorSnackbar, hideFullScreenLoading, axiosSuccessLoadingHide } = importDefaults();
+
+const {userStore, showErrorSnackbar, hideFullScreenLoading, axiosSuccessLoadingHide} = importDefaults();
 const logoutClient = () => {
     userStore.logout();
-    router.push({ name: 'login' });
+    router.push({name: 'login'});
 };
 axiosInstance.interceptors.response.use(
     (response) => {
@@ -62,10 +63,10 @@ axiosInstance.interceptors.response.use(
     },
     (error) => {
         if (router.currentRoute.value.name !== 'login' && (error.response.status === HttpStatusCode.Unauthorized)) {
-            showErrorSnackbar('Please log in before accessing the page', { closable: false });
+            showErrorSnackbar('Please log in before accessing the page', {closable: false});
             logoutClient();
-        }else if((error.response.status === HttpStatusCode.Forbidden)){
-            showErrorSnackbar('You dont have permission for that action', { closable: false });
+        } else if ((error.response.status === HttpStatusCode.Forbidden)) {
+            showErrorSnackbar('You dont have permission for that action', {closable: false});
         }
         console.log('error: ', error);
         switch (error.status) {
@@ -168,25 +169,30 @@ export const vuetify = createVuetify({
         themes: {
             dark: {
                 dark: true,
-                colors:{
+                variables: {
+                    'theme-on-info': '#FFFFFF',    // Text on info background
+                    'theme-on-warning': '#FFFFFF', // Text on warning background
+                },
+                colors: {
                     primary: '#5b42fc',
                     secondary: '#424242',
 
-                    accent: '#82B1FF',
+                    info: '#82B1FF',
                     error: '#FF5252',
-                    info: '#3c9eec',
+                    main: '#3c9eec',
                     success: '#4CAF50',
-                    warning: '#FFC400',
-
-                }
+                    warning: '#E6AC00',
+                },
             },
         }
-        },
+    },
+
 })
 app.use(vuetify);
 
 
 import {VueRecaptchaPlugin} from 'vue-recaptcha/head'
+
 app.use(VueRecaptchaPlugin, {
     v2SiteKey: '6Lfl3L8pAAAAAM25iDjXyjOOSISv5kqozSWPKwrN',
     v3SiteKey: '6LcoxRQqAAAAANQStle4t7x0RxaxiDQI2FBQRVnw',

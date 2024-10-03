@@ -1,46 +1,26 @@
 <template>
-<VDialog v-model="dialog" max-width="600" eager>
-	<VCard>
-		<VCardTitle class="headline pt-4">{{ i18n.t("planner.task") }}</VCardTitle>
-		<VCardText class="d-flex flex-column">
-			<TimePicker ref="timePicker"></TimePicker>
-			<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="isEdit ? i18n.t('planner.quickEditPlannerActivity')
-				: i18n.t('planner.quickCreatePlannerActivity')" density="comfortable" hideDetails></VCheckbox>
-			<ActivitySelectionForm ref="activitySelectionForm" v-show="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
-			                       :formDisabled="false" :isInDialog="true"
-			                       :activityId="plannerTask.activityId"
-			                       :selectOptionsSource="ActivityOptionsSource.ALL"
-			                       @activityIdChanged="activityId => plannerTask.activityId = activityId"></ActivitySelectionForm>
-			<div v-show="isActivityFormHidden">
-				<VTextField label="name" v-model="quickActivityName"></VTextField>
-				<VTextField label="text" v-model="quickActivityText"></VTextField>
-			</div>
-			<VSelect
-				class="mb-4"
-				label="Length in minutes"
-				v-model="plannerTask.minuteLength"
-				:items="minuteIntervals"
-				hideDetails
-			></VSelect>
-			<VColorPicker
-				v-model="plannerTask.color"
-				class="mx-auto"
-				hideInputs
-			></VColorPicker>
-		</VCardText>
-		<VCardActions class="justify-center pb-4">
-			<VBtn variant="elevated" color="red" @click="closeAndReset"
-			>{{ i18n.t("general.cancel") }}
-			</VBtn>
-			<VBtn variant="elevated" color="green" @click="save"
-			>{{ i18n.t("general.save") }}
-			</VBtn>
-		</VCardActions>
-	</VCard>
-</VDialog>
+<MyDialog v-model="dialog" :title="i18n.t('planner.task')" @closed="closeAndReset" @confirmed="save" :eager="true">
+	<div class="d-flex flex-column">
+		<TimePicker ref="timePicker"></TimePicker>
+		<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden"
+		           :label="isEdit ? i18n.t('planner.quickEditPlannerActivity'): i18n.t('planner.quickCreatePlannerActivity')"
+		           density="comfortable" hideDetails></VCheckbox>
+		<ActivitySelectionForm ref="activitySelectionForm" v-show="!isActivityFormHidden" class="mb-4" :showFromToDoListField="false"
+		                       :formDisabled="false" :isInDialog="true" :activityId="plannerTask.activityId"
+		                       :selectOptionsSource="ActivityOptionsSource.ALL"
+		                       @activityIdChanged="activityId => plannerTask.activityId = activityId"></ActivitySelectionForm>
+		<div v-show="isActivityFormHidden">
+			<VTextField label="name" v-model="quickActivityName"></VTextField>
+			<VTextField label="text" v-model="quickActivityText"></VTextField>
+		</div>
+		<VSelect class="mb-4" label="Length in minutes" v-model="plannerTask.minuteLength" :items="minuteIntervals"
+		         hideDetails></VSelect>
+		<VColorPicker v-model="plannerTask.color" class="mx-auto" hideInputs></VColorPicker>
+	</div>
+</MyDialog>
 </template>
 <script setup lang="ts">
-import TimePicker from "@/components/TimePicker.vue";
+import TimePicker from "@/components/dateTime/TimePicker.vue";
 import {ActivitySelectionFormType, TimePickerType} from "@/classes/types/RefTypeInterfaces";
 import {ref, watch} from "vue";
 import {importDefaults} from "@/compositions/Defaults";
@@ -48,6 +28,8 @@ import {useDialogComposition} from "@/compositions/DialogComposition";
 import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
+import MyDialog from '@/components/dialogs/MyDialog.vue';
+
 
 const {
 	isActivityFormHidden,
@@ -58,6 +40,8 @@ const {
 } = useQuickCreateActivity('Planner task');
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+
+
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();
@@ -137,7 +121,7 @@ function closeAndReset() {
 const emit = defineEmits<{
 	'added': [plannerTask: PlannerTaskRequest];
 	'edited': [idToEdit: number, plannerTask: PlannerTaskRequest];
-	'quickEditedActivity': [id: number,name: string, text: string | null]
+	'quickEditedActivity': [id: number, name: string, text: string | null]
 }>();
 defineExpose({openCreate, openEdit, closeAndReset});
 </script>

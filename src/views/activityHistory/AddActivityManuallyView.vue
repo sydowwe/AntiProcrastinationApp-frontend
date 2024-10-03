@@ -21,15 +21,14 @@
 <script setup lang="ts">
 //TODO
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
-import DateTimePicker from '../../components/DateTimePicker.vue';
+import DateTimePicker from '../../components/dateTime/DateTimePicker.vue';
 import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 
 import {useI18n} from 'vue-i18n';
-import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
-import TimePicker from '@/components/TimePicker.vue';
+import TimePicker from '@/components/dateTime/TimePicker.vue';
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 

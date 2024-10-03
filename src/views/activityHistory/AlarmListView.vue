@@ -67,7 +67,7 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 
 
 const add = (alarm: AlarmRequest) => {
-	window.axios.post(`${url}/add`, Alarm).then((response) => {
+	window.axios.post(`${url}/create`, alarm).then((response) => {
 		alarmList.value.push(Alarm.fromObject(response.data));
 		alarmList.value.sort(Alarm.frontEndSortFunction());
 		showSnackbar(i18n.t("successFeedback.added"), {

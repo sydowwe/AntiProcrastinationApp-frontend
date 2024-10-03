@@ -27,4 +27,5 @@ defineProps({
 	}
 })
 const showPassword = ref(false);
+const error = ref(false);
 </script>

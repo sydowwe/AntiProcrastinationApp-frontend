@@ -133,6 +133,7 @@ const EN = {
         task: `Task`,
         hide: `Hide`,
         show: `Show`,
+        confirm: `Confirm`,
 
     },
     dateTime: {
@@ -164,6 +165,7 @@ const EN = {
         resetToDefaults: `Reset to defaults`,
         presets: `Presets`,
         settings: `Settings`,
+        edit: `Edit`,
 
     },
     activities: {
@@ -206,6 +208,7 @@ const EN = {
         logIn: `Log in`,
         login: `Login`,
         wrongEmailOrPassword: `Wrong email or password`,
+        userDoesntExist: `User with email: '{email}' doesn't exist`,
         wrongPassword: `Wrong password`,
         goToLogin: `Go to login page`,
         register: `Register`,
@@ -244,7 +247,7 @@ const EN = {
         termsAndConditionsRequired: `Must accept before proceeding`,
         use2FASetup: 'Do you want to use google 2 factor authentication?',
         scan2FAQrCode: `Scan the QR code in your authentication app (Google Authenticator)`,
-        twoFA: `Two factor authentication`,
+        twoFA: `Two-factor authentication`,
         code: `Code`,
         code2FA: `Code from your authenticator application (Google Authenticator)`,
         verifyYour2FA: `Verify your two factor authentication`,
@@ -261,14 +264,21 @@ const EN = {
     user: {
         userSettings: `User settings`,
         changePassword: `Change password`,
+        passwordChange: `Password change`,
+        emailChange: `Email change`,
         deleteAccount: `Delete account`,
         newPassword: `New password`,
         confirmNewPassword: `Confirm new password`,
-        passwordChange: `Password change`,
         use2FA: `Use two-factor authentication`,
         toContinueEnterPassword: `To continue enter your password`,
         show2FAQrCode: `Show 2FA qr code`,
-        passwordChangedSuccessfully:`FILLL`,
+        newScratchCodes: `Generate new scratch codes`,
+        passwordChangedSuccessfully:`Password changed successfully`,
+        identityVerification: `Identity verification`,
+        emailCantBeSame:`Emails can't be same`,
+        emailChangedSuccessfully: `Email changed successfully`,
+        signOutWarning: `Warning: {subject} will log you out of all your devices for security reasons`,
+        enablingTwoFactorAuth: `Enabling 2FA`,
 
     },
     planner: {
