@@ -208,17 +208,25 @@ const EN = {
         logIn: `Log in`,
         login: `Login`,
         wrongEmailOrPassword: `Wrong email or password`,
+        emailConfirmationNeeded: `You must first confirm your email address to proceed`,
+
+        emailConfirmed: `Email successfully confirmed, u can now proceed`,
+        errorConfirmingEmail: `There was an error confirming your email, please try again`,
+        resendConfirmationEmail:`Resend confirmation email`,
+        confirmationEmailResent:`A confirmation email has been sent again to your email address. Please check your inbox and click the link in the email to confirm your address.\n You can close this tab now.`,
+
         userDoesntExist: `User with email: '{email}' doesn't exist`,
         wrongPassword: `Wrong password`,
         goToLogin: `Go to login page`,
         register: `Register`,
         registration: `Registration`,
         password: `Password`,
+
         forgotPassword: `Forgot password?`,
-        enterEmailToResetPassword: `Enter your email to which a temporary password will be sent`,
+        enterEmailToResetPassword: `Please enter your email address, and we will send you a link to change your password`,
         resetPassword: `Reset password`,
-        temporarryPasswordSent: `To your email, we've sent a temporary password which you can use to log in and then change to your desired one`,
-        passwordReset: `Password reset`,
+        passwordResetEmailSent: "Password reset email has been sent.",
+        passwordResetEmailSentInstructions: "Please check your inbox and follow the instructions in the email. You can close this page now.",
 
         email: `Email`,
         // username: `Username`,

@@ -15,7 +15,9 @@ import TermsAndConditionsView from '@/views/user/TermsAndConditionsView.vue'
 import UserSettingsView from '@/views/user/UserSettingsView.vue'
 import RoutineToDoListView from '@/views/RoutineToDoListView.vue'
 import PlannerView from '@/views/PlannerView.vue'
+import ConfirmEmailView from "@/views/user/ConfirmEmailView.vue";
 import {useLoadingStore} from '@/stores/globalFeedbackStores'
+import {useUserStore} from "@/stores/userStore";
 
 
 const router = createRouter({
@@ -30,6 +32,11 @@ const router = createRouter({
             path: '/terms-and-conditions',
             name: 'termsAndConditions',
             component: TermsAndConditionsView
+        },
+        {
+            path: '/confirm-email',
+            name: 'confirmEmail',
+            component: ConfirmEmailView
         },
         {
             path: '/login',
@@ -111,15 +118,15 @@ const router = createRouter({
         // }
     ]
 });
-const allowedRoutes = ['login', 'registration', 'termsAndConditions', 'forgottenPassword'];
-// router.beforeEach((to, from, next) => {
-//     //useLoadingStore().showFullScreenLoading();
-//     if (!allowedRoutes.includes(to.name) && !useUserStore().isAuthenticated) {
-//         next('/login');
-//     } else {
-//         next();
-//     }
-// });
+const allowedRoutes = ['login', 'registration', 'termsAndConditions', 'confirmEmail','forgottenPassword'];
+router.beforeEach((to, from, next) => {
+    //useLoadingStore().showFullScreenLoading();
+    if (!allowedRoutes.includes(to.name) && !useUserStore().isAuthenticated) {
+        next('/login');
+    } else {
+        next();
+    }
+});
 router.afterEach(() => {
     console.log('route')
     useLoadingStore().hideFullScreenLoading();

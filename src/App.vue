@@ -53,7 +53,7 @@
             </VAppBar>
         </header>
         <VMain>
-            <VContainer class="h-100" :fluid="true">
+            <VContainer class="h-100 d-flex" :fluid="true">
                 <RouterView />
             </VContainer>
         </VMain>

@@ -9,15 +9,7 @@
             </VForm>
         </VCol>
     </VRow>
-    <VDialog v-model="dialog" width="auto" persistent>
-        <VCard>
-            <VCardTitle class="center">{{ i18n.t('authorization.passwordReset') }}</VCardTitle>
-            <VCardText>{{ i18n.t('authorization.temporarryPasswordSent') }}</VCardText>
-            <VCardActions class="d-flex justify-end mr-2 mb-2">
-                <VBtn color="success" @click="goToLogin">{{ i18n.t('authorization.goToLogin') }}</VBtn>
-            </VCardActions>
-        </VCard>
-    </VDialog>
+	<MyDialog :title="i18n.t('authorization.passwordResetEmailSent')" :model-value="dialog" :text="i18n.t('authorization.passwordResetEmailSentInstructions')" :has-close-btn="false" :has-confirm-btn="false"></MyDialog>
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
@@ -26,7 +18,8 @@
     const { emailRules } = useUserDetailsValidation();
     import {importDefaults} from '@/compositions/Defaults';
     import {useI18n} from 'vue-i18n';
-    const { showFullScreenLoading, hideFullScreenLoading, goToLogin, showErrorSnackbar } = importDefaults();
+	import MyDialog from "@/components/dialogs/MyDialog.vue";
+    const { showFullScreenLoading, hideFullScreenLoading, showErrorSnackbar } = importDefaults();
 	const i18n = useI18n();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');
