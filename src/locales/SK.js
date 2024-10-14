@@ -206,17 +206,25 @@ const SK = {
         logOut: `Odhlásiť sa`,
         logIn: `Prihlásiť sa`,
         wrongEmailOrPassword: `Nesprávny email alebo heslo`,
+        emailConfirmationNeeded: `Pred pokračovaním musíte potvrdiť e-mailovú adresu`,
+
+        emailConfirmed: `Váš email bol úspešne potvrdený, môžete pokračovať`,
+        errorConfirmingEmail: `Chyba pri potvrdení e-mailu, skúste to prosím znova`,
+        resendConfirmationEmail:`Opätovne odoslať potvrdzovací email`,
+        confirmationEmailResent:`Potvrdzovací email bol opätovne odoslaný na vašu emailovú adresu. Skontrolujte svoju schránku a kliknite na odkaz v emaile, aby ste potvrdili svoju adresu. Toto okno môžete zavrieť.`,
+
         userDoesntExist: `Používateľ s emailom: '{email}' neexistuje`,
         wrongPassword: `Nesprávne heslo`,
         login: `Prihlásenie`,
         goToLogin: `Prejsť na prihlásenie`,
         register: `Registrovať sa`,
         registration: `Registrácia`,
+
         forgotPassword: `Zabudli ste heslo?`,
-        enterEmailToResetPassword: `Zadajte svoj email na ktorý vám bude zaslané dočasné heslo`,
+        enterEmailToResetPassword: `Zadajte svoj email, na ktorý vám bude zaslaný odkaz pre zmenu hesla`,
         resetPassword: `Obnoviť heslo`,
-        temporarryPasswordSent: `Na váš e-mail sme poslali dočasné heslo, ktoré môžete použiť na prihlásenie a neskôr si ho zmeniť na žiadané heslo`,
-        passwordReset: `Password reset`,
+        passwordResetEmailSentInstructions: "Skontrolujte svoju emailovú schránku a postupujte podľa pokynov v emaile. Túto stránku môžete teraz zavrieť",
+        passwordResetEmailSent: "Email pre obnovenu hesla bol odoslaný",
 
         password: `Heslo`,
         email: `Email`,

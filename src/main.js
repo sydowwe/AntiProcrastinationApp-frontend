@@ -194,8 +194,7 @@ app.use(vuetify);
 import {VueRecaptchaPlugin} from 'vue-recaptcha/head'
 
 app.use(VueRecaptchaPlugin, {
-    v2SiteKey: '6Lfl3L8pAAAAAM25iDjXyjOOSISv5kqozSWPKwrN',
-    v3SiteKey: '6LcoxRQqAAAAANQStle4t7x0RxaxiDQI2FBQRVnw',
+    v3SiteKey: '6Lc3gGAqAAAAADLW781ijxUKApckEpT7bLmRlCRk',
 })
 
 app.mount('#app');
