@@ -12,9 +12,9 @@
 </VProgressCircular>
 </template>
 <script setup lang="ts">
-import TimeDisplay from '@/components/dateTime/TimeDisplay.vue';
+import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
 import {computed} from 'vue';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeLengthKeys, TimeLengthObject} from '@/classes/TimeUtils';
 
 const props = defineProps({
 	color: {
@@ -39,7 +39,7 @@ const props = defineProps({
 });
 
 const timerProgress = computed(() => {
-	return Math.floor(props.timeRemainingObject?.getInSeconds / props.timeInitialObject?.getInSeconds * 100);
+	return props.timeRemainingObject?.getInSeconds / props.timeInitialObject?.getInSeconds * 100;
 })
 </script>
 <style scoped>

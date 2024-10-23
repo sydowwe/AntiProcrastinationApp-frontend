@@ -15,15 +15,13 @@
 			<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
 			<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
 		</div>
-		<VSelect
+		<VIdSelect
 			:label="$t('toDoList.urgency')"
 			v-model="toDoListItem.urgencyId"
 			:clearable="false"
 			hide-details
-			item-title="text"
-			item-value="id"
 			:items="urgencyOptions"
-		></VSelect>
+		></VIdSelect>
 	</VForm>
 </MyDialog>
 </template>
@@ -38,6 +36,7 @@ import {importDefaults} from '@/compositions/Defaults';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import {SelectOption} from '@/classes/SelectOption';
 
 
 const {

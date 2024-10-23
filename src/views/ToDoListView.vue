@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
 import {ToDoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
-import ToDoList from '../components/ToDoList.vue';
+import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {importDefaults} from '@/compositions/Defaults';

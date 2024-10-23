@@ -20,7 +20,7 @@
 </MyDialog>
 </template>
 <script setup lang="ts">
-import TimePicker from "@/components/dateTime/TimePicker.vue";
+import TimePicker from "@/components/general/dateTime/TimePicker.vue";
 import {ActivitySelectionFormType, TimePickerType} from "@/classes/types/RefTypeInterfaces";
 import {ref, watch} from "vue";
 import {importDefaults} from "@/compositions/Defaults";

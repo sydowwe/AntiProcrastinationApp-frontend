@@ -62,7 +62,7 @@
     </VApp>
 </template>
 <script setup lang="ts">
-	import Snackbar from './components/feedback/Snackbar.vue';
+	import Snackbar from '@/components/general/feedback/Snackbar.vue';
     import LoadingFullscreen from './components/dialogs/LoadingFullscreen.vue';
 	import { useRecaptchaProvider } from 'vue-recaptcha'
 	useRecaptchaProvider();

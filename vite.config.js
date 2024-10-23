@@ -26,8 +26,8 @@ export default defineConfig({
   },
   server: {
     https: {
-      key: './myapp-privateKey.key',
-      cert: './myapp.crt',
+      key: './localhost-key.pem',
+      cert: './localhost.pem',
     }
   },
 })

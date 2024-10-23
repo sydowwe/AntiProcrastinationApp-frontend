@@ -19,7 +19,7 @@ declare module 'vue' {
     SaveModal: typeof import('./src/components/modals/SaveModal.vue')['default']
     Stopwatch: typeof import('./src/components/Stopwatch.vue')['default']
     Time: typeof import('./src/components/Time.vue')['default']
-    TimeDisplay: typeof import('./src/components/dateTime/TimeDisplay.vue')['default']
+    TimeDisplay: typeof import('./src/components/general/dateTime/TimeDisplay.vue')['default']
     Timer: typeof import('./src/components/Timer.vue')['default']
     YesNoModal: typeof import('./src/components/modals/YesNoModal.vue')['default']
   }

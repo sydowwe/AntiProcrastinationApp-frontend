@@ -39,7 +39,7 @@ import axios, {HttpStatusCode} from 'axios';
 
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: import.meta.env.VITE_API_URL + '/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -134,6 +134,7 @@ import {createVuetify} from 'vuetify'
 import {createVueI18nAdapter} from 'vuetify/locale/adapters/vue-i18n'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import {VAutocomplete, VSelect,VBtn} from "vuetify/components";
 
 import {aliases, fa} from 'vuetify/lib/iconsets/fa-svg.mjs'
 
@@ -150,18 +151,25 @@ export const vuetify = createVuetify({
             fa,
         },
     },
-    aliases: {},
+    aliases: {
+        VIdSelect: VSelect,
+        VIdAutocomplete: VAutocomplete,
+        VIconBtn: VBtn,
+    },
     defaults: {
         VCardActions: {
             VBtn: {variant: 'elevated'},
         },
         VBtn: {variant: 'elevated'},
         VTextField: {variant: 'outlined', clearable: true, density: 'comfortable'},
-        VAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'label'},
-        VSelect: {variant: 'outlined', clearable: true, density: 'comfortable'},
+        VIdAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
+        VAutocomplete: {variant: 'outlined', density: 'comfortable'},
+
+        VIdSelect: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
+        VSelect: {variant: 'outlined', density: 'comfortable'},
         VTextarea: {variant: 'outlined', clearable: true, density: 'comfortable'},
         VCheckbox: {density: 'comfortable'},
-
+        VIconBtn: {rounded: '', density: 'comfortable'}
     },
     theme: {
         defaultTheme: 'dark',

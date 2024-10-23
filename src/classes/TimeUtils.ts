@@ -30,3 +30,5 @@ export class TimeLengthObject {
 		return TimeLengthObject.fromSeconds(this.getInSeconds - objectToSubtract.getInSeconds)
 	}
 }
+
+export type TimeLengthKeys = 'hours' | 'minutes' | 'seconds';

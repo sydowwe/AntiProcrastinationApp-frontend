@@ -52,7 +52,7 @@ import {onMounted, ref} from "vue";
 import {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces";
 import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
 import {importDefaults} from "@/compositions/Defaults";
-import DateTimePicker from '@/components/dateTime/DateTimePicker.vue';
+import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
 
 import {useI18n} from 'vue-i18n';

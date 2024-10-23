@@ -6,6 +6,7 @@ export function useQuickCreateActivity(viewName: string) {
 	const isActivityFormHidden = ref(false);
 	const quickActivityName = ref<string | null>(null);
 	const quickActivityText = ref<string | null>(null);
+	const quickActivityCategoryId = ref<number | null>(null);
 
 	async function getQuickCreateActivityRoleIdByView() {
 		return await axios.post('/role/get-by-name/' + viewName).then((response) => {
@@ -17,7 +18,7 @@ export function useQuickCreateActivity(viewName: string) {
 	async function quickCreateActivity() {
 		if (quickActivityName.value) {
 			const roleId = await getQuickCreateActivityRoleIdByView();
-			const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, false, false, roleId, null);
+			const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, roleId, quickActivityCategoryId.value,false,false, null);
 			return await axios.post('/activity/create', activityRequest).then((response) => {
 				console.log(response);
 				const activityResponse = Activity.fromObject(response.data);
@@ -50,6 +51,7 @@ export function useQuickCreateActivity(viewName: string) {
 		isActivityFormHidden,
 		quickActivityName,
 		quickActivityText,
+		quickActivityCategoryId,
 		quickCreateActivity,
 		quickEditActivity
 	}
