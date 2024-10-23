@@ -10,8 +10,8 @@
 </template>
 <script setup lang="ts">
 import {ref, computed} from 'vue';
-import MyDatePicker from '@/components/dateTime/MyDatePicker.vue';
-import TimePicker from '@/components/dateTime/TimePicker.vue';
+import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {MyDatePickerType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 const i18n = useI18n();

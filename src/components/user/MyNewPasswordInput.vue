@@ -4,6 +4,7 @@
 	:label="i18n.t('user.newPassword')"
 	v-model="newPassword"
 	:rules="newPasswordRules"
+	class="mb-2"
 ></MyPasswordInput>
 <MyPasswordInput
 	:label="i18n.t('user.confirmNewPassword')"

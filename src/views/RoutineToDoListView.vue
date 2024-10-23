@@ -51,7 +51,7 @@
 </template>
 <script setup lang="ts">
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
-import ToDoList from '../components/ToDoList.vue';
+import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
 import {RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
@@ -81,7 +81,7 @@ function toggleHideTimePeriod(id: number) {
 
 const getAllRecords = () => {
 	window.axios
-		.post(`${url}/get-all`)
+		.post(`${url}/get-all-grouped`)
 		.then((response) => {
 			groupedItems.value = RoutineToDoListGroupedList.listFromObjects(response.data);
 			console.log(groupedItems.value);

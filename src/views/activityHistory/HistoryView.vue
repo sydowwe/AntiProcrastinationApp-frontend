@@ -34,8 +34,8 @@
 
 <script setup lang="ts">
     import { ref } from 'vue';
-    import HistoryPanelFilter from '../../components/HistoryPanelFilter.vue';
-    import HistoryRecordItem from '../../components/HistoryRecordItem.vue';
+    import HistoryPanelFilter from '../../components/history/HistoryPanelFilter.vue';
+    import HistoryRecordItem from '../../components/history/HistoryRecordItem.vue';
     import {History, HistoryGroupedByDate} from '@/classes/History';
     import {useMoment} from '@/compositions/MomentHelper';
     const groupedRecords = ref([] as HistoryGroupedByDate[]);

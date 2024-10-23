@@ -8,7 +8,7 @@
 </template>
 <script setup lang="ts">
     import { storeToRefs } from 'pinia';
-    import { useSnackBarStore } from '../../stores/globalFeedbackStores';
+    import { useSnackBarStore } from '../../../stores/globalFeedbackStores';
     const store = useSnackBarStore();
     const { snackbar, color, message, timeout, closable } = storeToRefs(store);
     const { hideSnackbar } = store;

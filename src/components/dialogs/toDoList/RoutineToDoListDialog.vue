@@ -11,16 +11,18 @@
 	                       :selectOptionsSource="ActivityOptionsSource.ALL"
 	                       @activityIdChanged="activityId => routineToDoListItem.activityId = activityId"></ActivitySelectionForm>
 	<template v-else>
-		<VTextField :label="$t('general.name')" v-model="quickActivityName"></VTextField>
+		<VTextField :label="$t('general.name')+'*'" v-model="quickActivityName"></VTextField>
 		<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
+		<VIdSelect :label="$t('activity.category')" v-model="quickActivityCategoryId" :items="categoryOptions"></VIdSelect>
 	</template>
-	<VSelect :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false" hide-details
-	         item-title="text" item-value="id" :items="timePeriodOptions"></VSelect>
+	<VSelect :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false" hide-details item-value="id"
+	         item-title="text"
+	         :items="timePeriodOptions"></VSelect>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
-import {ref, watch} from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import {RoutineToDoListItemRequest, RoutineToDoListItemEntity, TimePeriodEntity} from '@/classes/ToDoListItem';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
 import {importDefaults} from '@/compositions/Defaults';
@@ -28,8 +30,10 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import {SelectOption} from '@/classes/SelectOption';
+import {EntityWithSelectOptions, getAllCategoryOptions, getAllEntityOptions} from '@/compositions/ActivitySelectsComposition';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickCreateActivity} = useQuickCreateActivity('Routine task');
+const {isActivityFormHidden, quickActivityName, quickActivityText, quickActivityCategoryId, quickCreateActivity} = useQuickCreateActivity('Routine task');
 
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
@@ -37,7 +41,10 @@ const routineToDoListItem = ref(new RoutineToDoListItemRequest());
 const dialog = ref(false);
 const isEdit = ref(false);
 const idToEdit = ref(null as number | null);
-const timePeriodOptions = ref([] as TimePeriodEntity[]);
+const categoryOptions = ref<SelectOption[]>([]);
+const timePeriodOptions = ref<SelectOption[]>([]);
+
+const emit = defineEmits(['edit', 'add']);
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -45,8 +52,15 @@ watch(dialog, (newValue) => {
 		setDefaultTimePeriod();
 	}
 });
-const emit = defineEmits(['edit', 'add']);
-getTimePeriodOptions();
+onMounted( async () => {
+	categoryOptions.value = await getAllEntityOptions(EntityWithSelectOptions.Category);
+	timePeriodOptions.value = await getAllEntityOptions(EntityWithSelectOptions.TimePeriod);
+	setDefaultTimePeriod();
+});
+
+const setDefaultTimePeriod = () => {
+	routineToDoListItem.value.timePeriodId = timePeriodOptions.value[0].id;
+};
 
 async function save() {
 	if (isActivityFormHidden.value) {
@@ -66,19 +80,6 @@ async function save() {
 		emit('add', routineToDoListItem.value);
 	}
 	dialog.value = false;
-}
-
-function setDefaultTimePeriod() {
-	routineToDoListItem.value.timePeriodId = timePeriodOptions.value.find((item) => item.lengthInDays === 1)?.id ?? null;
-}
-
-function getTimePeriodOptions() {
-	window.axios
-		.post(`/routine-time-period/get-all`)
-		.then((response) => {
-			timePeriodOptions.value = TimePeriodEntity.listFromObjects(response.data);
-			setDefaultTimePeriod();
-		})
 }
 
 const close = () => {

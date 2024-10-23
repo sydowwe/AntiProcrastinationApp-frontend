@@ -117,11 +117,11 @@
 </template>
 <script setup lang="ts">
 import {defineModel, watch} from "vue";
-import {TimeLengthObject} from "@/classes/TimeUtils";
+import {TimeLengthKeys, TimeLengthObject} from "@/classes/TimeUtils";
 import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();
-type TimeLengthKeys = 'hours' | 'minutes' | 'seconds';
+
 
 const props = defineProps({
 	showArrows: {

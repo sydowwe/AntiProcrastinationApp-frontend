@@ -1,6 +1,6 @@
 <template>
     <VRow align="center" justify="center" noGutters>
-        <VCol cols="4"  v-for="field in whatToShow" :key="key">
+        <VCol :cols="12 / whatToShow.length"  v-for="field in whatToShow" :key="field">
             <VSheet class="time-card pa-3 text-center">
 	                <div class="time-label">{{ timeLabels[field as keyof typeof timeLabels] }}</div>
                     <div class="time-value">{{ formatTime(timeObject[field] as number) }}</div>
@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-    import { TimeLengthObject } from '@/classes/TimeUtils';
+import {TimeLengthKeys, TimeLengthObject} from '@/classes/TimeUtils';
     const props = defineProps({
         timeObject: {
             type: TimeLengthObject,

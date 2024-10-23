@@ -40,7 +40,7 @@
 			</div>
 			<div v-else class="d-flex align-center">
 				<TimeDisplayWithProgress :timeRemainingObject="timeDisplayObject.timeRemainingObject"
-				                         :timeInitialObject="timeDisplayObject.timeInitialObject"
+				                         :timeInitialObject="timeDisplayObject.timeInitialObject" :what-to-show="['minutes','seconds']"
 				                         :color="timeDisplayObject.color" :title="timeDisplayObject.title"></TimeDisplayWithProgress>
 			</div>
 			<TimerControls class="mt-4 mb-5" :paused="paused" :intervalId="intervalId" @start="start" @pause="pause"
@@ -71,9 +71,9 @@ import {
 } from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/TimerControls.vue';
-import TimePicker from '@/components/dateTime/TimePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
-import TimeDisplayWithProgress from '@/components/dateTime/TimeDisplayWithProgress.vue';
+import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 
 const i18n = useI18n();
 

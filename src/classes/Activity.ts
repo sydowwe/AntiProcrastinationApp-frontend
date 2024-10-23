@@ -35,10 +35,12 @@ export class ActivityRequest {
 
 	constructor(public name: string = '',
 	            public text: string | null = null,
-	            public isOnToDoList: boolean = false,
-	            public isUnavoidable: boolean = false,
 	            public roleId: number | null = null,
-	            public categoryId: number | null = null) {
+	            public categoryId: number | null = null,
+	            public isUnavoidable: boolean = false,
+	            public isOnToDoList: boolean = false,
+	            public toDoListUrgencyId: number | null = null
+	) {
 
 	}
 
@@ -58,7 +60,8 @@ export class ActivityRequest {
 export class QuickEditActivityRequest {
 	constructor(public name: string = '',
 	            public text: string | null = null
-	) {	}
+	) {
+	}
 
 	static fromObject(object: any) {
 		const {

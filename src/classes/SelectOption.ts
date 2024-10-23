@@ -1,14 +1,14 @@
 export class SelectOption {
     constructor(
       public id: number,
-      public label : string,    
+      public text : string,
     ) {}
     static fromObject(object: any){
       const {
         id = 0,
-        label = '',
+        text = '',
       } = object;
-      return new SelectOption(id,label);
+      return new SelectOption(id,text);
     }
     static listFromObjects(objects: any[]){
       return objects.map((item:object)=>this.fromObject(item));

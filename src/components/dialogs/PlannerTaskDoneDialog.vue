@@ -27,8 +27,8 @@
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
 import {importDefaults} from '@/compositions/Defaults';
-import MyDatePicker from '@/components/dateTime/MyDatePicker.vue';
-import TimePicker from '@/components/dateTime/TimePicker.vue';
+import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {TimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';

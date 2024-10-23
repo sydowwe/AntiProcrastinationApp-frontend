@@ -16,7 +16,7 @@
                         @openNext="recursiveDialogsToSaveToHistory"></ToDoListItemDoneDialog>
 </template>
 <script setup lang="ts">
-import ToDoListItem from '../components/ToDoListItem.vue';
+import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
 import {BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
 import {ref} from 'vue';
