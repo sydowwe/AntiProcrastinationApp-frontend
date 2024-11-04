@@ -34,7 +34,7 @@
 					<div class="dividerTextCenter mb-4">
 						<span class="text-center font-weight-medium mx-3">{{ i18n.t('general.or') }}</span>
 					</div>
-					<GoogleSignIn></GoogleSignIn>
+					<GoogleSignIn :isStayLoggedIn="loginRequest.stayLoggedIn"></GoogleSignIn>
 				</VForm>
 			</VCol>
 		</VRow>
@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import {ref, onMounted, computed} from 'vue';
 import {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
-import {AvailableLocales, LoginRequest} from '@/classes/User';
+import {AvailableLocales, PasswordRequest} from '@/classes/User';
 import GoogleSignIn from '../../components/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue';
 import {importDefaults} from '@/compositions/Defaults';
@@ -58,9 +58,10 @@ import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
 const i18n = useI18n();
 const {router, userStore, showErrorSnackbar} = importDefaults();
 const {emailRules} = useUserDetailsValidation();
+const {execute} = useChallengeV3('login');
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const loginRequest = ref(new LoginRequest());
+const loginRequest = ref(new PasswordRequest());
 
 const twoFactorAuthDialog = ref(false);
 
@@ -69,7 +70,6 @@ onMounted(() => {
 });
 const isRedirectedFromRegistration = computed(() => !!userStore.getEmail);
 
-const {execute} = useChallengeV3('login');
 const loadingStore = useLoadingStore();
 
 async function validateAndSendForm() {
@@ -80,7 +80,6 @@ async function validateAndSendForm() {
 		if (recaptchaToken != null && recaptchaToken != '') {
 			loginRequest.value.recaptchaToken = recaptchaToken;
 			loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			loginRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
 			loadingStore.axiosSuccessLoadingHide = false;
 			axios
 				.post('/user/login', JSON.stringify(loginRequest.value))
