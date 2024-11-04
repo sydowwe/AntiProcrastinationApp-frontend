@@ -109,10 +109,10 @@ app.use(i18n);
 // import './plugins/veeValidate'
 
 //Google sign in
-import vue3GoogleLogin from 'vue3-google-login'
+import GoogleSignInPlugin from "vue3-google-signin"
 
-app.use(vue3GoogleLogin, {
-    clientId: '579844911566-n3ch6nfdlpmjfe00u5ueomkk3vfe3g4e.apps.googleusercontent.com'
+app.use(GoogleSignInPlugin, {
+    clientId: import.meta.env.VITE_GOOGLE_SIGN_IN_CLIENT_ID
 })
 
 // FONT-AWESOME
@@ -194,7 +194,7 @@ app.use(vuetify);
 import {VueRecaptchaPlugin} from 'vue-recaptcha/head'
 
 app.use(VueRecaptchaPlugin, {
-    v3SiteKey: '6Lc3gGAqAAAAADLW781ijxUKApckEpT7bLmRlCRk',
+    v3SiteKey: import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY,
 })
 
 app.mount('#app');

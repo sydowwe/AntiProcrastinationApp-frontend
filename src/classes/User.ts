@@ -27,16 +27,32 @@ export class EmailRequest {
     public email: string = '') {
   }
 }
-export class LoginRequest extends EmailRequest {
+export class LoginRequest {
   constructor(
-      email: string = '',
-      public password: string = '',
       public stayLoggedIn: boolean = false,
       public recaptchaToken: string = '',
       public timezone: string = '',
-      public currentLocale: AvailableLocales = AvailableLocales.SK,
+  ) {}
+}
+export class PasswordRequest extends LoginRequest {
+  constructor(
+      stayLoggedIn: boolean = false,
+      recaptchaToken: string = '',
+      timezone: string = '',
+      public email: string = '',
+      public password: string = '',
   ) {
-    super(email);
+    super(stayLoggedIn, recaptchaToken, timezone);
+  }
+}
+export class GoogleSignInRequest extends LoginRequest {
+  constructor(
+      stayLoggedIn: boolean = false,
+      recaptchaToken: string = '',
+      timezone: string = '',
+      public code: string | null = null,
+  ) {
+    super(stayLoggedIn, recaptchaToken, timezone);
   }
 }
 export class RegistrationRequest extends EmailRequest {
