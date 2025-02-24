@@ -61,15 +61,15 @@ function quickEditedActivity(id: number, name: string, text: string):void {
 }
 
 const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
-	let urgencyId = toDoListItemRequest.urgencyId;
+	let taskUrgencyId = toDoListItemRequest.taskUrgencyId;
 	const beforeEditEntity = items.value.find(item => item.id === id);
-	if (beforeEditEntity && (beforeEditEntity.urgency.id !== toDoListItemRequest.urgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
+	if (beforeEditEntity && (beforeEditEntity.taskUrgency.id !== toDoListItemRequest.taskUrgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
 		window.axios
 			.put(`${url}/${id}`, toDoListItemRequest)
 			.then((response) => {
 				console.log(response.data);
 				const index = items.value.findIndex((item) => item.id === id);
-				if (urgencyId === response.data.urgencyId) {
+				if (taskUrgencyId === response.data.taskUrgencyId) {
 					items.value[index] = ToDoListItemEntity.fromObject(response.data);
 				} else {
 					items.value[index] = ToDoListItemEntity.fromObject(response.data);

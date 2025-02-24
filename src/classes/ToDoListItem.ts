@@ -1,4 +1,4 @@
-import {UrgencyEntity} from './UrgencyEntity';
+import {TaskUrgencyEntity} from './TaskUrgencyEntity';
 import {Activity} from '@/classes/Activity';
 
 export interface BaseToDoListItemEntity {
@@ -32,7 +32,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 		public id: number,
 		public activity: Activity,
 		public isDone: boolean,
-		public urgency: UrgencyEntity,
+		public taskUrgency: TaskUrgencyEntity,
 	) {
 	}
 
@@ -41,9 +41,9 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 			id = 0,
 			activity = new Activity(),
 			isDone = false,
-			urgency = new UrgencyEntity(),
+			taskUrgency = new TaskUrgencyEntity(),
 		} = object;
-		return new ToDoListItemEntity(id, activity, isDone, urgency);
+		return new ToDoListItemEntity(id, activity, isDone, taskUrgency);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -52,7 +52,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 
 	static frontEndSortFunction() {
 		return (a: ToDoListItemEntity, b: ToDoListItemEntity) => {
-			const priorityComparison = a.urgency.priority - b.urgency.priority;
+			const priorityComparison = a.taskUrgency.priority - b.taskUrgency.priority;
 			return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
 		};
 	}
@@ -61,17 +61,17 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 export class ToDoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
 		public activityId: number | null = null,
-		public urgencyId: number | null = null,
+		public taskUrgencyId: number | null = null,
 		public isDone: boolean = false) {
 		super(activityId, isDone);
 	}
 
 	static fromEntity(obj: ToDoListItemEntity): ToDoListItemRequest {
-		return new ToDoListItemRequest(obj.activity.id, obj.urgency.id, obj.isDone);
+		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgency.id, obj.isDone);
 	}
 
 	static fromObject(obj: any): ToDoListItemRequest {
-		return new ToDoListItemRequest(obj.activity.id, obj.urgencyId, obj.isDone);
+		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgencyId, obj.isDone);
 	}
 }
 

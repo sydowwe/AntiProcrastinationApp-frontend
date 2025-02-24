@@ -33,7 +33,7 @@ export async function getAllEntityOptions(entityType: EntityWithSelectOptions) {
 }
 
 export async function getAllActivityFormSelectOptionsCombinations(activitySource: ActivityOptionsSource) {
-	let url = `${activitySource}/get-all-form-selects-options`;
+	let url = `${activitySource}/get-all-activity-form-selects-options`;
 	return await axios
 		.post(url)
 		.then((response) => {

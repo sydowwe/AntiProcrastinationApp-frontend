@@ -1,7 +1,7 @@
 <template>
 <MyDialog v-model="dialog" :title="i18n.t('planner.task')" @closed="closeAndReset" @confirmed="save" :eager="true">
 	<div class="d-flex flex-column">
-		<TimePicker ref="timePicker"></TimePicker>
+		<TimePicker label="Kedy" v-model="time"></TimePicker>
 		<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden"
 		           :label="isEdit ? i18n.t('planner.quickEditPlannerActivity'): i18n.t('planner.quickCreatePlannerActivity')"
 		           density="comfortable" hideDetails></VCheckbox>
@@ -40,19 +40,19 @@ const {
 } = useQuickCreateActivity('Planner task');
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import {TimeLengthObject} from '@/classes/TimeUtils';
 
 
 const i18n = useI18n();
 const {showErrorSnackbar} = importDefaults();
 const {dialog, open, close} = useDialogComposition();
-const timePicker = ref<TimePickerType>({} as TimePickerType);
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const minuteIntervals = [10, 15, 30, 45, 60];
-
 
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
 const isEdit = ref(false);
+const time = ref(new TimeLengthObject())
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -79,8 +79,8 @@ async function save() {
 		return;
 	}
 	plannerTask.value.startTimestamp?.setHours(
-		timePicker.value.getTimeObject.hours,
-		timePicker.value.getTimeObject.minutes,
+		time.value.hours,
+		time.value.minutes,
 		0,
 		1
 	);
@@ -95,10 +95,9 @@ function openEdit(plannerTaskEntity: PlannerTask) {
 	console.log(plannerTaskEntity);
 	isEdit.value = true;
 	isActivityFormHidden.value = true;
-	timePicker.value.set(
-		plannerTaskEntity.startTimestamp.getHours(),
-		plannerTaskEntity.startTimestamp.getMinutes()
-	);
+	time.value.hours = plannerTaskEntity.startTimestamp.getHours();
+	time.value.minutes = plannerTaskEntity.startTimestamp.getMinutes();
+
 	quickActivityName.value = plannerTaskEntity.activity.name;
 	quickActivityText.value = plannerTaskEntity.activity.text;
 	idToEdit.value = plannerTaskEntity.id;
@@ -114,7 +113,7 @@ function openCreate() {
 
 function closeAndReset() {
 	close();
-	timePicker.value.reset();
+	time.value = new TimeLengthObject();
 	plannerTask.value = new PlannerTaskRequest();
 }
 

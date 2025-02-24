@@ -12,7 +12,7 @@
 		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
 	<VTextField
-		:label="label ?? i18n.t('dateTime.date')"
+		:label="label ?? $t('dateTime.date')"
 		v-model="dateNice"
 		clearable
 		@click:clear="clearDate"
@@ -36,8 +36,8 @@
 				<template v-slot:title style="padding: 0 !important">
 				</template>
 				<template v-slot:actions>
-					<VBtn @click="today" color="primary" variant="elevated">{{ i18n.t('dateTime.today') }}</VBtn>
-					<VBtn v-if="clearable" @click="clearDate" color="error" variant="elevated">{{ i18n.t('general.clear') }}</VBtn>
+					<VBtn @click="today" color="primary" variant="elevated">{{ $t('dateTime.today') }}</VBtn>
+					<VBtn v-if="clearable" @click="clearDate" color="error" variant="elevated">{{ $t('general.clear') }}</VBtn>
 				</template>
 			</VDatePicker>
 		</VMenu>
@@ -59,8 +59,6 @@
 import {ref, computed, defineModel} from "vue";
 import {useMoment} from '@/compositions/MomentHelper'
 const { formatToDate } = useMoment();
-import {useI18n} from 'vue-i18n';
-const i18n = useI18n();
 const props = defineProps({
 	label:{
 		type: String,
@@ -83,7 +81,7 @@ const props = defineProps({
 		default: null,
 	},
 });
-const dateValue = defineModel<Date | null>();
+const dateValue = defineModel<Date | null>({required: true});
 const showDatePicker = ref(false);
 
 const dateNice = computed(() => {

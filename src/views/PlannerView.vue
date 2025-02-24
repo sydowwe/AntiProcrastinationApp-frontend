@@ -1,39 +1,44 @@
 <template>
-<VRow justify="center" class="mt-md-1">
-	<VCol cols="12" lg="6" class="mt-2 mt-md-0 d-flex align-center ga-2">
-		<VBtn @click="plannerDialog?.openCreate" color="success">
-			{{ i18n.t("general.add") }}
-		</VBtn>
-		<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
-	</VCol>
-	<VCol cols="12" lg="2" alignSelf="center" class="d-flex align-center ga-4 pl-1">
-		<VSelect
-			label="Timespan"
-			v-model="selectedTimeSpan"
-			:items="nOHours"
-			suffix="H"
-			:clearable="false"
-			hideDetails
-			style="max-width: 100px!important;"
-		></VSelect>
-		<VBtn @click="applyFilter" color="info">
-			{{ i18n.t("general.filter") }}
-		</VBtn>
-	</VCol>
-</VRow>
-<div
-	v-if="plannerTasks.length > 0"
-	class="d-flex flex-column mt-5 mt-md-7 table"
->
-	<PlannerTaskItemVue
-		:plannerTask="plannerTask"
-		@delete="deleteTask"
-		@edit="plannerDialog?.openEdit"
-		@select="select"
-		@unSelect="unSelect"
-		v-for="plannerTask in plannerTasks"
-		@isDoneChanged="handleIsDoneChanged"
-	></PlannerTaskItemVue>
+<div class="d-flex flex-column w-100">
+	<VRow justify="center" class="mt-md-1">
+		<VCol cols="12" lg="6" class="mt-2 mt-md-0 d-flex align-center ga-2">
+			<VBtn @click="plannerDialog?.openCreate" color="success">
+				{{ i18n.t("general.add") }}
+			</VBtn>
+			<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
+		</VCol>
+		<VCol cols="12" lg="2" alignSelf="center" class="d-flex align-center ga-4 pl-1">
+			<VSelect
+				label="Timespan"
+				v-model="selectedTimeSpan"
+				:items="nOHours"
+				suffix="H"
+				:clearable="false"
+				hideDetails
+				style="max-width: 100px!important;"
+			></VSelect>
+			<VBtn @click="applyFilter" color="info">
+				{{ i18n.t("general.filter") }}
+			</VBtn>
+		</VCol>
+		<VCol cols="12">
+			<div
+				v-if="plannerTasks.length > 0"
+				class="d-flex flex-column mt-5 mt-md-7 table"
+			>
+				<PlannerTaskItemVue
+					:plannerTask="plannerTask"
+					@delete="deleteTask"
+					@edit="plannerDialog?.openEdit"
+					@select="select"
+					@unSelect="unSelect"
+					v-for="plannerTask in plannerTasks"
+					@isDoneChanged="handleIsDoneChanged"
+				></PlannerTaskItemVue>
+			</div>
+		</VCol>
+	</VRow>
+
 </div>
 <PlannerDialog
 	ref="plannerDialog"
@@ -56,6 +61,8 @@ import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
 
 import {useI18n} from 'vue-i18n';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
+
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = importDefaults();
 
@@ -122,8 +129,8 @@ const handleIsDoneChanged = (plannerTask: PlannerTask) => {
 };
 
 function applyFilter() {
-	console.log(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value);
-	window.axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTimeISO, selectedTimeSpan.value))
+	console.log(dateTimePicker.value.getDateTime?.toISOString(), selectedTimeSpan.value);
+	window.axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTime?.toISOString() ?? null, selectedTimeSpan.value))
 		.then((response) => {
 			console.log(response.data);
 			plannerTasks.value = PlannerTask.listFromObjects(response.data);
@@ -174,6 +181,7 @@ const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 		});
 	}
 };
+
 //TODO presunut do dialogu
 function validatePlannerTask(
 	plannerTaskRequest: PlannerTaskRequest,
