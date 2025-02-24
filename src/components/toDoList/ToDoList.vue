@@ -4,7 +4,7 @@
 	<ToDoListItem
 		v-for="item in items"
 		:toDoListItem="item"
-		:color="color ?? item.urgency.color"
+		:color="color ?? item.taskUrgency.color"
 		@delete="deleteItem"
 		@edit="editItem"
 		@select="select"

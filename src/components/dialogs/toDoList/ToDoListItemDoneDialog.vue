@@ -8,14 +8,18 @@
 		</div>
 	</template>
 	<VForm @keyup.native.enter="save">
-		<div class="d-flex flex-column flex-sm-row mb-4">
+		<!--		<div class="d-flex flex-column flex-sm-row mb-4">-->
+		<!--			<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>-->
+		<!--			<MyDatePicker v-model="dateTime" class="ml-2 flex-grow-1" :clearable="false"></MyDatePicker>-->
+		<!--		</div>-->
+		<!--		<div class="d-flex flex-column flex-sm-row mb-4">-->
+		<!--			<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>-->
+		<!--			<TimePicker ref="timePicker" class="ml-2 flex-grow-1" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"-->
+		<!--			            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>-->
+		<!--		</div>-->
+		<div class="d-flex flex-column flex-sm-row mb-4">-->
 			<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
-			<MyDatePicker v-model="dateTime" class="ml-2 flex-grow-1" :clearable="false"></MyDatePicker>
-		</div>
-		<div class="d-flex flex-column flex-sm-row mb-4">
-			<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-			<TimePicker ref="timePicker" class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
-			            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>
+			<DateTimePicker v-model="dateTime" class="ml-2 flex-grow-1" :date-clearable="false"></DateTimePicker>
 		</div>
 		<div class="d-flex flex-column flex-sm-row mb-4">
 			<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
@@ -36,9 +40,11 @@ import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
+
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = importDefaults();
-const timePicker = ref<TimePickerType>({} as TimePickerType);
+// const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	toDoListItem: {
 		type: Object as () => BaseToDoListItemEntity,
@@ -54,21 +60,22 @@ const dateTime = ref(new Date());
 const length = ref(new TimeLengthObject());
 
 onMounted(() => {
-	timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+	// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 })
 watch(dialogShown, (isShown) => {
-	if(isShown){
+	if (isShown) {
 		if (!props.isRecursive) {
 			dateTime.value = new Date();
-			timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+			// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
 		}
-	}else{
+	} else {
 		if (props.isRecursive) {
-			setTimeout(()=>emit('openNext'),200);
+			setTimeout(() => emit('openNext'), 200);
 		}
 		length.value = new TimeLengthObject();
 	}
 })
+
 function save() {
 	addActivityToHistory(dateTime.value, length.value, props.toDoListItem?.activity.id).then(isSuccess => {
 		if (isSuccess) {
@@ -79,6 +86,7 @@ function save() {
 		}
 	});
 }
+
 const emit = defineEmits<{
 	openNext: []
 }>();

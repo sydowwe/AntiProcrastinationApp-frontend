@@ -82,7 +82,7 @@
 	//TODO fix locale return to default after refresh
 	function sendChangeLocale(){
 		if(userStore.isAuthenticated){
-			axios.put('/user/change-locale/'+i18n.locale.value).then((response) => {
+			axios.put('/user/change-current-locale/'+i18n.locale.value).then((response) => {
 				console.log(response)
 			});
 		}

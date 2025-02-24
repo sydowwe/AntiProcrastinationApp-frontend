@@ -21,13 +21,13 @@
     "pinia": "^2.0.36",
     "sortable": "^2.0.0",
     "volar-service-vetur": "latest",
-    "vue": "^3.4.21",
+    "vue": "^3.5.13",
     "vue-draggable-next": "^2.2.0",
     "vue-i18n": "^9.2.2",
     "vue-recaptcha": "^3.0.0-alpha.6",
     "vue-router": "^4.2.0",
     "vue3-google-login": "^2.0.25",
-    "vuetify": "^3.5.6"
+    "vuetify": "^3.7.13"
   },
   "devDependencies": {
     "@eslint/js": "^8.57.0",

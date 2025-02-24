@@ -1,7 +1,7 @@
 <template>
 <VDialog v-model="dialog" :persistent="persistent" :eager="eager">
 	<VRow justify="center">
-		<VCol cols="12" sm="10" md="8" lg="4">
+		<VCol cols="12" sm="10" md="8" lg="6">
 			<VCard class="pa-1">
 				<VCardTitle class="headline" v-if="hasHeader">
 					<slot name="header">

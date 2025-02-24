@@ -1,4 +1,4 @@
-export class UrgencyEntity{
+export class TaskUrgencyEntity{
     constructor(
         public id: number = 0,
         public priority: number = 0,
@@ -12,10 +12,10 @@ export class UrgencyEntity{
           text = '',
           color = '',
         } = object;
-        return new UrgencyEntity(id,priority,text,color);
+        return new TaskUrgencyEntity(id,priority,text,color);
       }
       static listFromObjects(objects: any[]){
-        return objects.map((item:object)=>UrgencyEntity.fromObject(item));
+        return objects.map((item:object)=>TaskUrgencyEntity.fromObject(item));
       }
       
 }

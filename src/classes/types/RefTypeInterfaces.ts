@@ -106,7 +106,6 @@ export interface MyDatePickerType {
 }
 
 export interface DateTimePickerType {
-	getDateTimeISO: string | null;
 	getDateISO: string | null;
 	getDateTime: Date | null;
 	getDate: Date | null;

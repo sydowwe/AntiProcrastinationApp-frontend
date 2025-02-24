@@ -37,7 +37,8 @@
 			<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
 		</VBtn>
 	</div>
-	<span v-if="whatToShow.includes('hours') && whatToShow.includes('minutes')" class="mb-2" style="font-size: xx-large;line-height: 0.8;">:</span>
+	<span v-if="whatToShow.includes('hours') && whatToShow.includes('minutes')" class="mb-2"
+	      style="font-size: xx-large;line-height: 0.8;">:</span>
 	<div v-if="whatToShow.includes('minutes')" class="d-flex align-center">
 		<VBtn
 			variant="text"
@@ -116,11 +117,9 @@
 </div>
 </template>
 <script setup lang="ts">
-import {defineModel, watch} from "vue";
+import {defineModel, reactive, watch} from "vue";
 import {TimeLengthKeys, TimeLengthObject} from "@/classes/TimeUtils";
 import {useI18n} from 'vue-i18n';
-
-const i18n = useI18n();
 
 
 const props = defineProps({
@@ -128,12 +127,12 @@ const props = defineProps({
 		type: Boolean,
 		default: true,
 	},
-	whatToShow:{
+	whatToShow: {
 		type: Array as () => TimeLengthKeys[],
-		default: () => ['hours', 'minutes', 'seconds'],
+		default: () => ['hours', 'minutes'],
 	}
 });
-const timeValue = defineModel<TimeLengthObject>({default: new TimeLengthObject()});
+const timeValue = defineModel<TimeLengthObject>({default: () => reactive(new TimeLengthObject())});
 let mouseDownTimeout = 0;
 
 function endContinuousQuickChange() {
@@ -153,6 +152,7 @@ function continuousQuickChangeMinutes(value: number) {
 		continuousQuickChangeMinutes(value);
 	}, 150);
 }
+
 function continuousQuickChangeSeconds(value: number) {
 	mouseDownTimeout = setTimeout(() => {
 		quickChangeSeconds(value);
@@ -187,6 +187,7 @@ function quickChangeMinutes(value: number) {
 			break;
 	}
 }
+
 function quickChangeSeconds(value: number) {
 	switch (checkValidMinutesOrSeconds(timeValue.value.minutes + value)) {
 		case -1:
@@ -220,7 +221,9 @@ function checkValidMinutesOrSeconds(value: number) {
 		return 0;
 	}
 }
+
 function constrainHours() {
+	console.log(timeValue.value.hours);
 	switch (checkValidHours(timeValue.value.hours)) {
 		case -1:
 			timeValue.value.hours = 0;
@@ -230,8 +233,10 @@ function constrainHours() {
 			break;
 		case 0:
 			timeValue.value.hours = parseInt(timeValue.value.hours);
+			break;
 	}
 }
+
 function constrainMinutes() {
 	switch (checkValidMinutesOrSeconds(timeValue.value.minutes)) {
 		case -1:
@@ -244,6 +249,7 @@ function constrainMinutes() {
 			timeValue.value.minutes = parseInt(timeValue.value.minutes);
 	}
 }
+
 function constrainSeconds() {
 	switch (checkValidMinutesOrSeconds(timeValue.value.seconds)) {
 		case -1:
@@ -257,22 +263,13 @@ function constrainSeconds() {
 	}
 }
 
-function set(hours: number, minutes: number) {
-	timeValue.value.hours = hours;
-	timeValue.value.minutes = minutes;
-}
-
-function reset() {
-	timeValue.value = new TimeLengthObject();
-}
-
-watch(()=>timeValue.value.hours, (newValue) => {
+watch(() => timeValue.value.hours, (newValue) => {
 	emit('hoursChanged', newValue);
 });
-watch(()=>timeValue.value.minutes, (newValue) => {
+watch(() => timeValue.value.minutes, (newValue) => {
 	emit('minutesChanged', newValue);
 })
-watch(()=>timeValue.value.seconds, (newValue) => {
+watch(() => timeValue.value.seconds, (newValue) => {
 	emit('secondsChanged', newValue);
 })
 const emit = defineEmits<{
@@ -280,5 +277,4 @@ const emit = defineEmits<{
 	(e: 'minutesChanged', minutes: number): void
 	(e: 'secondsChanged', minutes: number): void
 }>();
-defineExpose({set, reset});
 </script>

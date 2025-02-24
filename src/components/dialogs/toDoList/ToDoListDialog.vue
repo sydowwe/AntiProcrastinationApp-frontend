@@ -17,7 +17,7 @@
 		</div>
 		<VIdSelect
 			:label="$t('toDoList.urgency')"
-			v-model="toDoListItem.urgencyId"
+			v-model="toDoListItem.taskUrgencyId"
 			:clearable="false"
 			hide-details
 			:items="urgencyOptions"
@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import {ref, watch} from 'vue';
-import {UrgencyEntity} from '@/classes/UrgencyEntity';
+import {TaskUrgencyEntity} from '@/classes/TaskUrgencyEntity';
 import {ToDoListItemRequest, ToDoListItemEntity} from '@/classes/ToDoListItem';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
@@ -53,7 +53,7 @@ const dialog = ref(false);
 const toDoListItem = ref(new ToDoListItemRequest());
 const isEdit = ref(false);
 const idToEdit = ref(0);
-const urgencyOptions = ref([] as UrgencyEntity[]);
+const urgencyOptions = ref([] as TaskUrgencyEntity[]);
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -90,14 +90,14 @@ async function save() {
 }
 
 function setDefaultUrgency() {
-	toDoListItem.value.urgencyId = urgencyOptions.value.find((item) => item.priority === 1)?.id ?? null;
+	toDoListItem.value.taskUrgencyId = urgencyOptions.value.find((item) => item.priority === 1)?.id ?? null;
 }
 
 function getUrgencyOptions() {
 	window.axios
 		.post(`/task-urgency/get-all`)
 		.then((response) => {
-			urgencyOptions.value = UrgencyEntity.listFromObjects(response.data);
+			urgencyOptions.value = TaskUrgencyEntity.listFromObjects(response.data);
 			setDefaultUrgency();
 		})
 		.catch(() => {

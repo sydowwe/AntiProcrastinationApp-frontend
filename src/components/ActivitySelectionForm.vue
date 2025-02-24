@@ -5,14 +5,14 @@
 		                       :disabled="formDisabled"></NullFalseTrueCheckbox>
 	</VCol>
 	<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-		<VSelect v-model="formData.taskUrgencyId" :items="filteredOptions.taskUrgencyOptions" hide-details></VSelect>
+		<VIdSelect v-model="formData.taskUrgencyId" :items="filteredOptions.taskUrgencyOptions" hide-details></VIdSelect>
 	</VCol>
 	<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
 		<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData.isFromRoutineToDoList"
 		                       :disabled="formDisabled"></NullFalseTrueCheckbox>
 	</VCol>
 	<VCol v-if="showFromToDoListField" v-show="formData.isFromRoutineToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-		<VSelect v-model="formData.routineTimePeriodId" :items="filteredOptions.routineTimePeriodOptions" hide-details></VSelect>
+		<VIdSelect v-model="formData.routineTimePeriodId" :items="filteredOptions.routineTimePeriodOptions" hide-details></VIdSelect>
 	</VCol>
 	<VCol cols="12" class="pt-1">
 		<VRow>
@@ -67,7 +67,7 @@ const props = defineProps({
 		default: false,
 	},
 	activityId: {
-		type: Number,
+		type: Number as PropType<number | null>,
 		default: null,
 	},
 	showFromToDoListField: {

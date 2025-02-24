@@ -14,7 +14,7 @@
 			</div>
 			<div class="d-flex flex-column flex-sm-row mb-4">
 				<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-				<TimePicker ref="timePicker" class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
+				<TimePicker class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
 				            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>
 			</div>
 			<div class="d-flex flex-column flex-sm-row mb-4">
@@ -38,7 +38,6 @@ import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = importDefaults();
-const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	plannerTask: {
 		type: Object as () => PlannerTask,
@@ -51,16 +50,19 @@ const props = defineProps({
 });
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
+const time = ref(new TimeLengthObject());
 const length = ref(new TimeLengthObject());
 
 onMounted(() => {
-	timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+	time.value.hours = dateTime.value.getHours();
+	time.value.minutes = dateTime.value.getMinutes();
 })
 watch(dialogShown, (isShown) => {
 	if (isShown) {
 		if (!props.isRecursive) {
 			dateTime.value = new Date();
-			timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+			time.value.hours = dateTime.value.getHours();
+			time.value.minutes = dateTime.value.getMinutes();
 		}
 		length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60, 0);
 	} else {
