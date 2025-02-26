@@ -72,16 +72,14 @@ function toggleHideTimePeriod(id: number) {
 	if (group) {
 		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;
 	}
-	window.axios
-		.post(`/routine-time-period/change-is-hidden/` + id)
+	axios.post(`/routine-time-period/change-is-hidden/` + id)
 		.then((response) => {
 			console.log(response.data);
 		})
 }
 
 const getAllRecords = () => {
-	window.axios
-		.post(`${url}/get-all-grouped`)
+	axios.post(`${url}/get-all-grouped`)
 		.then((response) => {
 			groupedItems.value = RoutineToDoListGroupedList.listFromObjects(response.data);
 			console.log(groupedItems.value);
@@ -89,8 +87,7 @@ const getAllRecords = () => {
 };
 
 const add = (toDoListItem: RoutineToDoListItemRequest) => {
-	window.axios
-		.post(`${url}/create`, toDoListItem)
+	axios.post(`${url}/create`, toDoListItem)
 		.then((response) => {
 			console.log(response.data)
 			const updatedList = groupedItems.value.find((group) => group.timePeriod.id === toDoListItem.timePeriodId)?.items;
@@ -115,8 +112,7 @@ function quickEditedActivity(id: number, name: string, text: string) {
 const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
 	const beforeEditEntity = groupedItems.value[groupedItems.value.findIndex(group => group.items.findIndex(item => item.id === id) >= 0)];
 	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		window.axios
-			.put(`${url}/${id}`, toDoListItemRequest)
+		axios.put(`${url}/update/${id}`, toDoListItemRequest)
 			.then((response) => {
 				const updatedItem = RoutineToDoListItemEntity.fromObject(response.data);
 				const oldGroup = groupedItems.value.find((group) => {

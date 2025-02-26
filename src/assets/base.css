@@ -71,6 +71,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+html{
+  overflow-y: hidden!important;
+}
 @media (max-width: 768px) {
   html {
     font-size: 14px !important; /* Mobile base */

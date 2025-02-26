@@ -35,7 +35,7 @@ onMounted(() => {
 	getAll();
 })
 function getAll() {
-	window.axios.post(`/${url}/get-all`)
+	axios.post(`/${url}/get-all`)
 		.then((response) => {
 			alarmList.value = Alarm.listFromObjects(response.data);
 		}).catch(error => {
@@ -47,8 +47,7 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 	console.log(selectedItemsIds.value, Alarm);
 	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(Alarm.id);
 	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: Alarm.id}];
-	window.axios
-		.patch(`/${url}/change-active`, changedItemsIds)
+	axios.patch(`/${url}/change-active`, changedItemsIds)
 		.then((response) => {
 			console.log(response);
 			if (isBatchAction) {
@@ -67,7 +66,7 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 
 
 const add = (alarm: AlarmRequest) => {
-	window.axios.post(`${url}/create`, alarm).then((response) => {
+	axios.post(`${url}/create`, alarm).then((response) => {
 		alarmList.value.push(Alarm.fromObject(response.data));
 		alarmList.value.sort(Alarm.frontEndSortFunction());
 		showSnackbar(i18n.t("successFeedback.added"), {
@@ -86,7 +85,7 @@ const add = (alarm: AlarmRequest) => {
 // }
 
 const edit = (id: number, alarm: AlarmRequest) => {
-	window.axios.put(`${url}/${id}`, alarm).then((response) => {
+	axios.put(`${url}/update/${id}`, alarm).then((response) => {
 		alarmList.value[
 			alarmList.value.findIndex((item) => item.id === id)
 			] = Alarm.fromObject(response.data);
@@ -105,7 +104,7 @@ function deleteAlarm(id: number) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({
 			id: item,
 		}));
-		window.axios
+		axios
 			.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
@@ -120,8 +119,7 @@ function deleteAlarm(id: number) {
 				console.error(error);
 			});
 	} else {
-		window.axios
-			.delete(`/${url}/${id}`)
+		axios.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				alarmList.value = alarmList.value.filter(
