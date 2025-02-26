@@ -1,13 +1,13 @@
 <template>
 <div class="d-flex flex-column w-100">
-	<VRow justify="center" class="mt-md-1">
+	<VRow justify="center" class="flex-grow-0 mt-md-1">
 		<VCol cols="12" lg="6" class="mt-2 mt-md-0 d-flex align-center ga-2">
 			<VBtn @click="plannerDialog?.openCreate" color="success">
 				{{ i18n.t("general.add") }}
 			</VBtn>
 			<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
 		</VCol>
-		<VCol cols="12" lg="2" alignSelf="center" class="d-flex align-center ga-4 pl-1">
+		<VCol cols="12" lg="2" class="d-flex align-center ga-4 pl-1">
 			<VSelect
 				label="Timespan"
 				v-model="selectedTimeSpan"
@@ -21,24 +21,22 @@
 				{{ i18n.t("general.filter") }}
 			</VBtn>
 		</VCol>
-		<VCol cols="12">
-			<div
-				v-if="plannerTasks.length > 0"
-				class="d-flex flex-column mt-5 mt-md-7 table"
-			>
-				<PlannerTaskItemVue
-					:plannerTask="plannerTask"
-					@delete="deleteTask"
-					@edit="plannerDialog?.openEdit"
-					@select="select"
-					@unSelect="unSelect"
-					v-for="plannerTask in plannerTasks"
-					@isDoneChanged="handleIsDoneChanged"
-				></PlannerTaskItemVue>
-			</div>
-		</VCol>
 	</VRow>
-
+	<div v-if="plannerTasks.length > 0" class="flex-fill mt-5 mt-md-7 overflow-y-scroll">
+		<div
+			class="d-flex flex-column table"
+		>
+			<PlannerTaskItemVue
+				:plannerTask="plannerTask"
+				@delete="deleteTask"
+				@edit="plannerDialog?.openEdit"
+				@select="select"
+				@unSelect="unSelect"
+				v-for="plannerTask in plannerTasks"
+				@isDoneChanged="handleIsDoneChanged"
+			></PlannerTaskItemVue>
+		</div>
+	</div>
 </div>
 <PlannerDialog
 	ref="plannerDialog"
@@ -110,8 +108,7 @@ const handleIsDoneChanged = (plannerTask: PlannerTask) => {
 	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: plannerTask.id}];
 	console.log(isBatchAction);
 	console.log(changedItemsIds);
-	window.axios
-		.patch(`/${url}/change-done`, changedItemsIds)
+	axios.patch(`/${url}/change-done`, changedItemsIds)
 		.then((response) => {
 			console.log(response);
 			if (isBatchAction) {
@@ -130,7 +127,7 @@ const handleIsDoneChanged = (plannerTask: PlannerTask) => {
 
 function applyFilter() {
 	console.log(dateTimePicker.value.getDateTime?.toISOString(), selectedTimeSpan.value);
-	window.axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTime?.toISOString() ?? null, selectedTimeSpan.value))
+	axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTime?.toISOString() ?? null, selectedTimeSpan.value))
 		.then((response) => {
 			console.log(response.data);
 			plannerTasks.value = PlannerTask.listFromObjects(response.data);
@@ -141,7 +138,7 @@ function applyFilter() {
 
 const add = (plannerTask: PlannerTaskRequest) => {
 	if (validatePlannerTask(plannerTask)) {
-		window.axios.post(`${url}/create`, plannerTask).then((response) => {
+		axios.post(`${url}/create`, plannerTask).then((response) => {
 			console.log(response)
 			plannerTasks.value.push(PlannerTask.fromObject(response.data));
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
@@ -168,7 +165,7 @@ const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 		&& (beforeEditEntity.activity.id !== plannerTask.activityId || beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
 		&& validatePlannerTask(plannerTask, id)
 	) {
-		window.axios.put(`${url}/${id}`, plannerTask).then((response) => {
+		axios.put(`${url}/update/${id}`, plannerTask).then((response) => {
 			plannerTasks.value[
 				plannerTasks.value.findIndex((item) => item.id === id)
 				] = PlannerTask.fromObject(response.data);
@@ -236,8 +233,7 @@ function deleteTask(id: number) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({
 			id: item,
 		}));
-		window.axios
-			.post(`/${url}/batch-delete`, batchDeleteIds)
+		axios.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
 				if (response.data.status === "success") {
@@ -251,8 +247,7 @@ function deleteTask(id: number) {
 				console.error(error);
 			});
 	} else {
-		window.axios
-			.delete(`/${url}/${id}`)
+		axios.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				plannerTasks.value = plannerTasks.value.filter(
@@ -285,7 +280,6 @@ function unSelect(id: number) {
 	border: 1px solid white;
 	border-radius: 5px;
 }
-
 
 @media (min-width: 992px) {
 	.table {

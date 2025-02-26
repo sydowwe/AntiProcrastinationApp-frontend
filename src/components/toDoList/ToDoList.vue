@@ -68,8 +68,7 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 			}
 		}
 		const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
-		window.axios
-			.patch(`/${url}/change-done`, changedItemsIds)
+		axios.patch(`/${url}/change-done`, changedItemsIds)
 			.then((response) => {
 				console.log(response);
 				if (isBatchAction) {
@@ -88,8 +87,7 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 const deleteItem = (id: number) => {
 	if (selectedItemsIds.value.length > 1) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({id: item}));
-		window.axios
-			.post(`/${url}/batch-delete`, batchDeleteIds)
+		axios.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
 				if (response.data.status === 'success') {
@@ -104,8 +102,7 @@ const deleteItem = (id: number) => {
 				console.error(error);
 			});
 	} else {
-		window.axios
-			.delete(`/${url}/${id}`)
+		axios.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				emit(

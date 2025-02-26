@@ -1,6 +1,6 @@
 <template>
 <div class="w-100 d-flex" :id="plannerTask.id.toString()">
-	<div class="flex-shrink-1 borderWhite cell">{{ timeSpanText }}</div>
+	<div class="flex-shrink-1 borderWhite bg-secondary cell">{{ timeSpanText }}</div>
 	<VSheet
 		class="flex-grow-1 cell borderWhite task text-center"
 		@click="isDoneChanged"
@@ -8,7 +8,7 @@
 	>{{ plannerTask.isDone }} {{ plannerTask.activity.name }} - <i>{{ plannerTask.activity.text }}</i><span v-if="plannerTask.isDone"
 	                                                                                                        class="text-green-accent-4 fa-pull-right position-sticky">done</span>
 	</VSheet>
-	<div class="flex-shrink-1 borderWhite d-flex ga-1 pa-1">
+	<div class="flex-shrink-1 borderWhite bg-secondary d-flex ga-1 pa-1">
 		<VBtn
 			class="px-0 h-100"
 			v-for="(item, i) in actions"

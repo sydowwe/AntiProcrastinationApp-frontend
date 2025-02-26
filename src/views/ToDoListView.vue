@@ -36,15 +36,13 @@ onMounted(() => {
 	getAllRecords();
 });
 const getAllRecords = () => {
-	window.axios
-		.post(`${url}/get-all`)
+	axios.post(`${url}/get-all`)
 		.then((response) => {
 			items.value = ToDoListItemEntity.listFromObjects(response.data);
 		});
 };
 const add = (toDoListItem: ToDoListItemRequest) => {
-	window.axios
-		.post(`${url}/create`, toDoListItem)
+	axios.post(`${url}/create`, toDoListItem)
 		.then((response) => {
 			items.value.push(ToDoListItemEntity.fromObject(response.data));
 			items.value.sort(ToDoListItemEntity.frontEndSortFunction());
@@ -64,8 +62,7 @@ const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
 	let taskUrgencyId = toDoListItemRequest.taskUrgencyId;
 	const beforeEditEntity = items.value.find(item => item.id === id);
 	if (beforeEditEntity && (beforeEditEntity.taskUrgency.id !== toDoListItemRequest.taskUrgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		window.axios
-			.put(`${url}/${id}`, toDoListItemRequest)
+		axios.put(`${url}/update/${id}`, toDoListItemRequest)
 			.then((response) => {
 				console.log(response.data);
 				const index = items.value.findIndex((item) => item.id === id);

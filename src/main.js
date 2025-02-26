@@ -56,7 +56,7 @@ const logoutClient = () => {
 axiosInstance.interceptors.response.use(
     (response) => {
         if (axiosSuccessLoadingHide) {
-            console.log('hideeeer')
+            console.log('axios instance')
             hideFullScreenLoading();
         }
         return Promise.resolve(response);

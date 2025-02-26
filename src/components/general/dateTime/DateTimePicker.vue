@@ -1,5 +1,5 @@
 <template>
-<VRow align="center" no-gutters>
+<VRow>
 	<VCol cols="11" sm="5" class="px-0 pr-2">
 		<MyDatePicker v-model="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
