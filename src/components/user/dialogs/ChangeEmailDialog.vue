@@ -10,7 +10,7 @@ import {useUserDetailsValidation} from '@/compositions/UserAutorizationCompositi
 import {ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {FormDialogType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 const {showErrorSnackbar, showSuccessSnackbar} = importDefaults();
 const i18n = useI18n();
 const {emailRules} = useUserDetailsValidation();

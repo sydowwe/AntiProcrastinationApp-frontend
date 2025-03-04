@@ -1,4 +1,4 @@
-import { importDefaults } from './Defaults';
+import { importDefaults } from './general/Defaults';
 const { showErrorSnackbar } = importDefaults();
 export function handleHttpCodes(statusCode: number){
     switch (statusCode) {

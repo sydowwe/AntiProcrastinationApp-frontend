@@ -22,7 +22,7 @@ import {ToDoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/T
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();

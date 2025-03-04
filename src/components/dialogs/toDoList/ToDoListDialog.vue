@@ -32,7 +32,7 @@ import {TaskUrgencyEntity} from '@/classes/TaskUrgencyEntity';
 import {ToDoListItemRequest, ToDoListItemEntity} from '@/classes/ToDoListItem';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';

@@ -9,8 +9,8 @@ export interface Field {
 export function importDefaults(){
     const router = useRouter();
     const userStore = useUserStore();
-    function goToLogin() {
-        router.push({ name: 'login' });
+    async function goToLogin() {
+        await router.push({ name: 'login' });
     }
     const { showFullScreenLoading, hideFullScreenLoading, axiosSuccessLoadingHide} = useLoadingStore();
     const { showErrorSnackbar, showSuccessSnackbar, showSnackbar, hideSnackbar} = useSnackBarStore();

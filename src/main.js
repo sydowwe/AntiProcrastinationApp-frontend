@@ -46,7 +46,7 @@ const axiosInstance = axios.create({
     },
     responseType: 'json',
 });
-import {importDefaults} from "@/compositions/Defaults";
+import {importDefaults} from "@/compositions/general/Defaults";
 
 const {userStore, showErrorSnackbar, hideFullScreenLoading, axiosSuccessLoadingHide} = importDefaults();
 const logoutClient = () => {
@@ -109,10 +109,10 @@ app.use(i18n);
 // import './plugins/veeValidate'
 
 //Google sign in
-import vue3GoogleLogin from 'vue3-google-login'
+import vue3GoogleSignIn from 'vue3-google-signin'
 
-app.use(vue3GoogleLogin, {
-    clientId: '579844911566-n3ch6nfdlpmjfe00u5ueomkk3vfe3g4e.apps.googleusercontent.com'
+app.use(vue3GoogleSignIn, {
+    clientId: '579844911566-f19mdo9mvm9nj2v4f6nnrq9j3r3ccr6t.apps.googleusercontent.com'
 })
 
 // FONT-AWESOME
@@ -202,7 +202,7 @@ app.use(vuetify);
 import {VueRecaptchaPlugin} from 'vue-recaptcha/head'
 
 app.use(VueRecaptchaPlugin, {
-    v3SiteKey: '6Lc3gGAqAAAAADLW781ijxUKApckEpT7bLmRlCRk',
+    v3SiteKey: '6Lc3gGAqAAAAADLW781ijxUKApckEpT7bLmRlCRk'
 })
 
 app.mount('#app');

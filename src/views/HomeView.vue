@@ -9,7 +9,7 @@
 <script setup lang="ts">
     import MyDialog from '@/components/dialogs/MyDialog.vue';
     import {ref, watch} from 'vue';
-    import NullFalseTrueCheckbox from '@/components/NullFalseTrueCheckbox.vue';
+    import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';
 
 
     const dialog = ref(false)

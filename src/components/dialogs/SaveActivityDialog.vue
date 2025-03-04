@@ -1,7 +1,8 @@
 <template>
-<MyDialog v-model="dialog" title="Record new activity" @closed="close" @confirmed="saveActivity"
-          text="Confirm saving activity - <i>{{ activity }}</i> done for {{ timeSpent }} ?"
->
+<MyDialog v-model="dialog" title="Record new activity" @closed="close" @confirmed="saveActivity">
+	<span class="text-center">
+		Confirm saving activity - <i>{{ activity }}</i> done for {{ timeSpent }} ?
+	</span>
 </MyDialog>
 </template>
 <script setup lang="ts">

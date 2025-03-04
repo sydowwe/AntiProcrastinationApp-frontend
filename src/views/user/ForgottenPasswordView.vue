@@ -16,7 +16,7 @@
     import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
     import { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
     const { emailRules } = useUserDetailsValidation();
-    import {importDefaults} from '@/compositions/Defaults';
+    import {importDefaults} from '@/compositions/general/Defaults';
     import {useI18n} from 'vue-i18n';
 	import MyDialog from "@/components/dialogs/MyDialog.vue";
     const { showFullScreenLoading, hideFullScreenLoading, showErrorSnackbar } = importDefaults();

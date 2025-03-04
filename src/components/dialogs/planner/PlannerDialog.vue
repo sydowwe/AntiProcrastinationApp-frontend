@@ -21,10 +21,10 @@
 </template>
 <script setup lang="ts">
 import TimePicker from "@/components/general/dateTime/TimePicker.vue";
-import {ActivitySelectionFormType, TimePickerType} from "@/classes/types/RefTypeInterfaces";
+import {ActivitySelectionFormType} from "@/classes/types/RefTypeInterfaces";
 import {ref, watch} from "vue";
-import {importDefaults} from "@/compositions/Defaults";
-import {useDialogComposition} from "@/compositions/DialogComposition";
+import {importDefaults} from "@/compositions/general/Defaults";
+import {useDialogComposition} from "@/compositions/general/DialogComposition";
 import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
@@ -40,7 +40,7 @@ const {
 } = useQuickCreateActivity('Planner task');
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeObject} from '@/classes/TimeUtils';
 
 
 const i18n = useI18n();
@@ -52,7 +52,7 @@ const minuteIntervals = [10, 15, 30, 45, 60];
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
 const isEdit = ref(false);
-const time = ref(new TimeLengthObject())
+const time = ref(new TimeObject())
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -60,6 +60,7 @@ watch(dialog, (newValue) => {
 	}
 });
 
+//TODO osetrit ak sa nezmeni meno alebo text aby sa nerobil quickedit activity ale len casu
 async function save() {
 	if (isActivityFormHidden.value) {
 		if (quickActivityName.value) {
@@ -92,7 +93,6 @@ async function save() {
 }
 
 function openEdit(plannerTaskEntity: PlannerTask) {
-	console.log(plannerTaskEntity);
 	isEdit.value = true;
 	isActivityFormHidden.value = true;
 	time.value.hours = plannerTaskEntity.startTimestamp.getHours();
@@ -113,7 +113,7 @@ function openCreate() {
 
 function closeAndReset() {
 	close();
-	time.value = new TimeLengthObject();
+	time.value = new TimeObject();
 	plannerTask.value = new PlannerTaskRequest();
 }
 

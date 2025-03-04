@@ -16,13 +16,13 @@
 </div>
 </template>
 <script setup lang="ts">
-import AlarmItem from '@/components/AlarmItem.vue';
+import AlarmItem from '@/components/addActivityToHistory/AlarmItem.vue';
 
 const alarmDialog = ref<AlarmDialogType>({} as AlarmDialogType);
 
 import {onMounted, ref} from "vue";
 import {Alarm, AlarmRequest} from "@/classes/Alarm";
-import {importDefaults} from "@/compositions/Defaults";
+import {importDefaults} from "@/compositions/general/Defaults";
 import {AlarmDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 

@@ -9,7 +9,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 

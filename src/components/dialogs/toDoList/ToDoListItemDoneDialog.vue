@@ -30,11 +30,9 @@
 </template>
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
-import {importDefaults} from '@/compositions/Defaults';
-import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
+import {importDefaults} from '@/compositions/general/Defaults';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimePickerType} from '@/classes/types/RefTypeInterfaces';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeObject} from '@/classes/TimeUtils';
 import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 
@@ -57,7 +55,7 @@ const props = defineProps({
 });
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
-const length = ref(new TimeLengthObject());
+const length = ref(new TimeObject());
 
 onMounted(() => {
 	// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
@@ -72,7 +70,7 @@ watch(dialogShown, (isShown) => {
 		if (props.isRecursive) {
 			setTimeout(() => emit('openNext'), 200);
 		}
-		length.value = new TimeLengthObject();
+		length.value = new TimeObject();
 	}
 })
 

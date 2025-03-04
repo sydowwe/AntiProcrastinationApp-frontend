@@ -39,7 +39,7 @@
 import {computed, ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {Alarm} from '@/classes/Alarm';
-import { useMoment } from '@/compositions/MomentHelper';
+import { useMoment } from '@/compositions/general/MomentHelper';
 const { formatDateLocalized, formatToTime } = useMoment();
 
 const i18n = useI18n();

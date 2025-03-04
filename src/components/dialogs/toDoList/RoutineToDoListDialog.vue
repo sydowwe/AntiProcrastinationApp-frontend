@@ -23,9 +23,9 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {RoutineToDoListItemRequest, RoutineToDoListItemEntity, TimePeriodEntity} from '@/classes/ToDoListItem';
+import {RoutineToDoListItemRequest, RoutineToDoListItemEntity} from '@/classes/ToDoListItem';
 import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';

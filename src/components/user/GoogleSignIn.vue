@@ -12,51 +12,48 @@
 				<FontAwesomeIcon icon="fa-brands fa-google"/>
 			</VIcon>
 		</VBtn>
-		<div v-if="error" class="error-message">Error logging in. Please try again.</div> <!-- Show error message -->
+		<div v-if="error" class="error-message">Error logging in. Please try again.</div>
 	</VCol>
 </VRow>
 </template>
 
 <script setup lang="ts">
 import {ref} from 'vue';
+import {useChallengeV3} from 'vue-recaptcha';
+import {GoogleSignInRequest} from '@/classes/User';
 import {
 	useCodeClient,
 	type ImplicitFlowSuccessResponse,
 	type ImplicitFlowErrorResponse,
 } from "vue3-google-signin";
-import {useChallengeV3} from 'vue-recaptcha';
-import {GoogleSignInRequest} from '@/classes/User';
-import {useI18n} from 'vue-i18n';
 
-const i18n = useI18n();
 const props = defineProps({
-	isStayLoggedIn:{
+	isStayLoggedIn: {
 		required: true,
-		type: Boolean
-	}
-})
-const {execute} = useChallengeV3('login');
+		type: Boolean,
+	},
+});
+const {execute} = useChallengeV3('google_sign_in');
+const googleSignInRequest = ref(new GoogleSignInRequest());
 const loading = ref(false);
 const error = ref(false);
-const googleSignInRequest = ref(new GoogleSignInRequest());
 
 const handleOnSuccess = async (response: ImplicitFlowSuccessResponse) => {
 	loading.value = true;
 	error.value = false;
 	const recaptchaToken = await execute();
-	if (recaptchaToken != null && recaptchaToken != '') {
+	if (recaptchaToken) {
 		googleSignInRequest.value.stayLoggedIn = props.isStayLoggedIn;
 		googleSignInRequest.value.recaptchaToken = recaptchaToken;
 		googleSignInRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 		googleSignInRequest.value.code = response.code;
-		console.log(response);
 		axios
 			.post('/user/google-sign-in', googleSignInRequest.value)
 			.then((response) => {
-				console.log(response);
+				emit('logged-in', response.data.email, response.data.currentLocale);
 			})
-			.catch((error) => {
-				console.log(error);
+			.catch((err) => {
+				console.log(err);
 				error.value = true;
 			})
 			.finally(() => {
@@ -69,11 +66,15 @@ const handleOnError = (errorResponse: ImplicitFlowErrorResponse) => {
 	console.log("Error: ", errorResponse);
 };
 
-const {isReady, login} = useCodeClient({
+const { isReady, login } = useCodeClient({
 	onSuccess: handleOnSuccess,
 	onError: handleOnError,
-	scope: ['email', 'openid'],
+	scope: "email openid",
+	redirect_uri: "https://localhost:3000"
+	// other options
 });
+
+const emit = defineEmits(["logged-in"]);
 </script>
 
 <style scoped>
@@ -88,7 +89,7 @@ iframe {
 }
 
 .error-message {
-	color: red; /* Style your error message as needed */
+	color: red;
 	margin-top: 10px;
 }
 </style>

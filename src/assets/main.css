@@ -38,3 +38,7 @@ a,
 .borderWhite {
   border: 1px solid white !important;
 }
+.borderWhite2 {
+  border: 2px solid white !important;
+  border-collapse: collapse;
+}
