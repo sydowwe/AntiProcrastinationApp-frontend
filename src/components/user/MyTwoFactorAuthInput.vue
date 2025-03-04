@@ -1,7 +1,7 @@
 <template>
 <VOtpInput
 	v-if="isTwoFactorAuthRequired"
-	:label="i18n.t('authorization.code')"
+	:label="$t('authorization.code')"
 	v-model="token"
 	hide-details
 	autofocus

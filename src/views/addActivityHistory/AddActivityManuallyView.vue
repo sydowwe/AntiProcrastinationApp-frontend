@@ -24,7 +24,7 @@ import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 
 import {useI18n} from 'vue-i18n';

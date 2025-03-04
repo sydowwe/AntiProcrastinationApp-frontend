@@ -42,7 +42,7 @@
 
 import {ref, computed, watch, onMounted, PropType} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 import {
 	ActivityFormRequest,
@@ -50,7 +50,7 @@ import {
 	ActivityOptionsSource,
 	ActivitySelectOptionCombination
 } from '@/classes/ActivityFormHelper';
-import NullFalseTrueCheckbox from '@/components/NullFalseTrueCheckbox.vue';
+import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';
 import {
 	filterActivityFormSelectOptions,
 	// getAllActivityFormSelectOptions,

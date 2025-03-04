@@ -1,10 +1,10 @@
 <template>
 <VRow>
-	<VCol cols="11" sm="5" class="px-0 pr-2">
+	<VCol cols="11" sm="6">
 		<MyDatePicker v-model="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
 	</VCol>
-	<VCol cols="11" sm="7" class="px-0">
-		<TimePicker :label="i18n.t('dateTime.time')" v-model="time"></TimePicker>
+	<VCol cols="11" sm="6" class="px-0">
+		<TimePicker :label="$t('dateTime.time')" v-model="time"></TimePicker>
 	</VCol>
 </VRow>
 </template>
@@ -12,10 +12,7 @@
 import {ref, computed} from 'vue';
 import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {MyDatePickerType} from '@/classes/types/RefTypeInterfaces';
-import {useI18n} from 'vue-i18n';
-import {TimeLengthObject} from '@/classes/TimeUtils';
-const i18n = useI18n();
+import {TimeObject} from '@/classes/TimeUtils';
 
 const props = defineProps({
 	dateClearable: {
@@ -40,8 +37,7 @@ const props = defineProps({
 	},
 });
 const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
-
-const time = ref<TimeLengthObject>(new TimeLengthObject());
+const time = ref<TimeObject>(new TimeObject());
 
 function setTime(hours: number, minutes:number) {
 	dateTime.value?.setHours(hours, minutes, 0, 0);

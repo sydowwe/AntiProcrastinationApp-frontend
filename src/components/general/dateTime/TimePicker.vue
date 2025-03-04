@@ -8,7 +8,6 @@
 			style="border-radius: 3px"
 			density="comfortable"
 			@mousedown="continuousQuickChangeHours(-1)"
-			@mouseup="endContinuousQuickChange"
 			v-if="showArrows"
 		>
 			<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
@@ -19,6 +18,7 @@
 			min="0"
 			max="23"
 			@input="constrainHours"
+			@keydown="preventE"
 			:clearable="false"
 			suffix="H"
 			hide-spin-buttons
@@ -31,7 +31,6 @@
 			style="border-radius: 3px"
 			density="comfortable"
 			@mousedown="continuousQuickChangeHours(1)"
-			@mouseup="endContinuousQuickChange"
 			v-if="showArrows"
 		>
 			<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
@@ -47,7 +46,6 @@
 			style="border-radius: 3px"
 			density="comfortable"
 			@mousedown="continuousQuickChangeMinutes(-1)"
-			@mouseup="endContinuousQuickChange"
 			v-if="showArrows"
 		>
 			<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
@@ -58,6 +56,7 @@
 			min="0"
 			max="59"
 			@input="constrainMinutes"
+			@keydown="preventE"
 			:clearable="false"
 			suffix="M"
 			hide-spin-buttons
@@ -70,45 +69,6 @@
 			style="border-radius: 3px"
 			density="comfortable"
 			@mousedown="continuousQuickChangeMinutes(1)"
-			@mouseup="endContinuousQuickChange"
-			v-if="showArrows"
-		>
-			<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
-		</VBtn>
-	</div>
-	<span v-if="whatToShow.includes('seconds')" class="mb-2" style="font-size: xx-large;line-height: 0.8;">:</span>
-	<div v-if="whatToShow.includes('seconds')" class="d-flex align-center">
-		<VBtn
-			variant="text"
-			icon
-			@click="quickChangeSeconds(-1)"
-			style="border-radius: 3px"
-			density="comfortable"
-			@mousedown="continuousQuickChangeSeconds(-1)"
-			@mouseup="endContinuousQuickChange"
-			v-if="showArrows"
-		>
-			<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
-		</VBtn>
-		<VTextField
-			v-model="timeValue.seconds"
-			type="number"
-			min="0"
-			max="59"
-			@input="constrainSeconds"
-			:clearable="false"
-			suffix="S"
-			hide-spin-buttons
-			hide-details
-		></VTextField>
-		<VBtn
-			variant="text"
-			icon
-			@click="quickChangeSeconds(1)"
-			style="border-radius: 3px"
-			density="comfortable"
-			@mousedown="continuousQuickChangeSeconds(1)"
-			@mouseup="endContinuousQuickChange"
 			v-if="showArrows"
 		>
 			<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
@@ -118,9 +78,11 @@
 </template>
 <script setup lang="ts">
 import {defineModel, reactive, watch} from "vue";
-import {TimeLengthKeys, TimeLengthObject} from "@/classes/TimeUtils";
-import {useI18n} from 'vue-i18n';
+import {TimeKeys, TimeObject} from "@/classes/TimeUtils";
+import {useContinuousQuickChangeComposition, preventE} from '@/compositions/general/continuousQuickChangeComposition'
 
+const continuousQuickChangeHours = useContinuousQuickChangeComposition(quickChangeHours);
+const continuousQuickChangeMinutes = useContinuousQuickChangeComposition(quickChangeMinutes);
 
 const props = defineProps({
 	showArrows: {
@@ -128,37 +90,12 @@ const props = defineProps({
 		default: true,
 	},
 	whatToShow: {
-		type: Array as () => TimeLengthKeys[],
+		type: Array as () => TimeKeys[],
 		default: () => ['hours', 'minutes'],
 	}
 });
-const timeValue = defineModel<TimeLengthObject>({default: () => reactive(new TimeLengthObject())});
-let mouseDownTimeout = 0;
+const timeValue = defineModel<TimeObject>({default: () => reactive(new TimeObject())});
 
-function endContinuousQuickChange() {
-	clearTimeout(mouseDownTimeout);
-}
-
-function continuousQuickChangeHours(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeHours(value);
-		continuousQuickChangeHours(value);
-	}, 150);
-}
-
-function continuousQuickChangeMinutes(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeMinutes(value);
-		continuousQuickChangeMinutes(value);
-	}, 150);
-}
-
-function continuousQuickChangeSeconds(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeSeconds(value);
-		continuousQuickChangeSeconds(value);
-	}, 150);
-}
 
 function quickChangeHours(value: number) {
 	switch (checkValidHours(timeValue.value.hours + value)) {
@@ -175,7 +112,7 @@ function quickChangeHours(value: number) {
 }
 
 function quickChangeMinutes(value: number) {
-	switch (checkValidMinutesOrSeconds(timeValue.value.minutes + value)) {
+	switch (checkValidMinutes(timeValue.value.minutes + value)) {
 		case -1:
 			timeValue.value.minutes = 59;
 			break;
@@ -188,19 +125,6 @@ function quickChangeMinutes(value: number) {
 	}
 }
 
-function quickChangeSeconds(value: number) {
-	switch (checkValidMinutesOrSeconds(timeValue.value.minutes + value)) {
-		case -1:
-			timeValue.value.seconds = 59;
-			break;
-		case 1:
-			timeValue.value.seconds = 0;
-			break;
-		case 0:
-			timeValue.value.seconds += value;
-			break;
-	}
-}
 
 function checkValidHours(value: number) {
 	if (value < 0) {
@@ -212,7 +136,7 @@ function checkValidHours(value: number) {
 	}
 }
 
-function checkValidMinutesOrSeconds(value: number) {
+function checkValidMinutes(value: number) {
 	if (value < 0) {
 		return -1;
 	} else if (value > 59) {
@@ -223,7 +147,6 @@ function checkValidMinutesOrSeconds(value: number) {
 }
 
 function constrainHours() {
-	console.log(timeValue.value.hours);
 	switch (checkValidHours(timeValue.value.hours)) {
 		case -1:
 			timeValue.value.hours = 0;
@@ -231,37 +154,21 @@ function constrainHours() {
 		case 1:
 			timeValue.value.hours = 23;
 			break;
-		case 0:
-			timeValue.value.hours = parseInt(timeValue.value.hours);
-			break;
 	}
 }
 
 function constrainMinutes() {
-	switch (checkValidMinutesOrSeconds(timeValue.value.minutes)) {
+	switch (checkValidMinutes(timeValue.value.minutes)) {
 		case -1:
 			timeValue.value.minutes = 0;
 			break;
 		case 1:
 			timeValue.value.minutes = 59;
 			break;
-		case 0:
-			timeValue.value.minutes = parseInt(timeValue.value.minutes);
 	}
 }
 
-function constrainSeconds() {
-	switch (checkValidMinutesOrSeconds(timeValue.value.seconds)) {
-		case -1:
-			timeValue.value.seconds = 0;
-			break;
-		case 1:
-			timeValue.value.seconds = 59;
-			break;
-		case 0:
-			timeValue.value.seconds = parseInt(timeValue.value.seconds);
-	}
-}
+
 
 watch(() => timeValue.value.hours, (newValue) => {
 	emit('hoursChanged', newValue);
@@ -269,12 +176,9 @@ watch(() => timeValue.value.hours, (newValue) => {
 watch(() => timeValue.value.minutes, (newValue) => {
 	emit('minutesChanged', newValue);
 })
-watch(() => timeValue.value.seconds, (newValue) => {
-	emit('secondsChanged', newValue);
-})
+
 const emit = defineEmits<{
 	(e: 'hoursChanged', hours: number): void
 	(e: 'minutesChanged', minutes: number): void
-	(e: 'secondsChanged', minutes: number): void
 }>();
 </script>

@@ -70,7 +70,7 @@ import {
 	ActivitySelectionFormType,
 } from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
-import TimerControls from '@/components/TimerControls.vue';
+import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';

@@ -26,11 +26,10 @@
 </template>
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimePickerType} from '@/classes/types/RefTypeInterfaces';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeObject} from '@/classes/TimeUtils';
 import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
 import {PlannerTask} from '@/classes/PlannerTask';
 
@@ -50,8 +49,8 @@ const props = defineProps({
 });
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
-const time = ref(new TimeLengthObject());
-const length = ref(new TimeLengthObject());
+const time = ref(new TimeObject());
+const length = ref(new TimeObject());
 
 onMounted(() => {
 	time.value.hours = dateTime.value.getHours();
@@ -64,10 +63,9 @@ watch(dialogShown, (isShown) => {
 			time.value.hours = dateTime.value.getHours();
 			time.value.minutes = dateTime.value.getMinutes();
 		}
-		length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60, 0);
+		length.value = new TimeObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60);
 	} else {
 		if (props.isRecursive) {
-			console.log('hhh')
 			setTimeout(() => emit('openNext'), 200);
 		}
 	}

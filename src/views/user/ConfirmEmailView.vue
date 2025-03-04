@@ -13,7 +13,7 @@
 </template>
 <script setup lang="ts">
 import {useI18n} from "vue-i18n";
-import {importDefaults} from "@/compositions/Defaults";
+import {importDefaults} from "@/compositions/general/Defaults";
 import {onMounted, ref} from "vue";
 
 const i18n = useI18n();

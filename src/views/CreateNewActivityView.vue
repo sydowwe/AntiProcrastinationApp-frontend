@@ -68,7 +68,7 @@ import {Role, RoleRequest} from '@/classes/Role';
 import {Category, CategoryRequest} from '@/classes/Category';
 import {SelectOption} from '@/classes/SelectOption';
 import {ActivityRequest} from '@/classes/Activity';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {

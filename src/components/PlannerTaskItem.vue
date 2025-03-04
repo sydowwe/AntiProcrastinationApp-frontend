@@ -1,21 +1,22 @@
 <template>
 <div class="w-100 d-flex" :id="plannerTask.id.toString()">
-	<div class="flex-shrink-1 borderWhite bg-secondary cell">{{ timeSpanText }}</div>
+	<div class="flex-shrink-1 bg-secondary borderWhite2 cell timeCell">{{ timeSpanText }}</div>
 	<VSheet
-		class="flex-grow-1 cell borderWhite task text-center"
+		class="flex-grow-1 cell borderWhite2 task text-center"
 		@click="isDoneChanged"
 		:color="plannerTask.color"
 	>{{ plannerTask.isDone }} {{ plannerTask.activity.name }} - <i>{{ plannerTask.activity.text }}</i><span v-if="plannerTask.isDone"
 	                                                                                                        class="text-green-accent-4 fa-pull-right position-sticky">done</span>
 	</VSheet>
-	<div class="flex-shrink-1 borderWhite bg-secondary d-flex ga-1 pa-1">
+	<div class="flex-shrink-1 borderWhite2 bg-secondary d-flex">
 		<VBtn
-			class="px-0 h-100"
+			class="h-100"
 			v-for="(item, i) in actions"
 			:key="i"
 			:color="item.color"
 			@click="item.action"
-			style="border-radius: 0;"
+			rounded="0"
+			variant="flat"
 		>
 			<VIcon
 				size="22"
@@ -34,10 +35,9 @@
 <script setup lang="ts">
 import {PlannerTask} from "@/classes/PlannerTask";
 import {computed, ref, watch} from "vue";
-import {useI18n} from 'vue-i18n';
+import {useMoment} from '@/compositions/general/MomentHelper';
 
-const i18n = useI18n();
-
+const {formatToTime24H} = useMoment();
 const props = defineProps({
 	plannerTask: {
 		type: PlannerTask,
@@ -48,22 +48,12 @@ const isSelected = ref(false);
 
 const timeSpanText = computed(() => {
 	const timestamp = new Date(props.plannerTask?.startTimestamp);
-	const startString = timeNice(timestamp);
+	const startString = formatToTime24H(timestamp);
 	timestamp?.setMinutes(
 		timestamp.getMinutes() + props.plannerTask?.minuteLength
 	);
-	return `${startString}-${timeNice(timestamp)}`;
+	return `${startString} - ${formatToTime24H(timestamp)}`;
 });
-
-function timePartNice(timePart: number) {
-	return timePart.toString().padStart(2, "00");
-}
-
-function timeNice(timestamp: Date) {
-	return `${timePartNice(timestamp.getHours())}:${timePartNice(
-		timestamp.getMinutes()
-	)}`;
-}
 
 watch(() => props.plannerTask?.isDone, () => {
 	isSelected.value = false;
@@ -115,9 +105,9 @@ const emits = defineEmits<{
 .cell {
 	padding: 2px 6px;
 }
-
-.borderWhite {
-	border: 1px solid white !important;
+.timeCell{
+	width: 7em;
+	text-align: center;
 }
 
 .task {

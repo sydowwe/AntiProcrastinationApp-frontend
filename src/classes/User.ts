@@ -27,18 +27,7 @@ export class EmailRequest {
     public email: string = '') {
   }
 }
-export class LoginRequest extends EmailRequest {
-  constructor(
-      email: string = '',
-      public password: string = '',
-      public stayLoggedIn: boolean = false,
-      public recaptchaToken: string = '',
-      public timezone: string = '',
-      public currentLocale: AvailableLocales = AvailableLocales.SK,
-  ) {
-    super(email);
-  }
-}
+
 export class RegistrationRequest extends EmailRequest {
   constructor(
 
@@ -50,6 +39,34 @@ export class RegistrationRequest extends EmailRequest {
       public timezone: string = '',
   ) {
     super(email);
+  }
+}
+export class LoginRequest {
+  constructor(
+      public stayLoggedIn: boolean = false,
+      public recaptchaToken: string = '',
+      public timezone: string = '',
+  ) {}
+}
+export class PasswordSignInRequest extends LoginRequest {
+  constructor(
+      stayLoggedIn: boolean = false,
+      recaptchaToken: string = '',
+      timezone: string = '',
+      public email: string = '',
+      public password: string = '',
+  ) {
+    super(stayLoggedIn, recaptchaToken, timezone);
+  }
+}
+export class GoogleSignInRequest extends PasswordSignInRequest {
+  constructor(
+      stayLoggedIn: boolean = false,
+      recaptchaToken: string = '',
+      timezone: string = '',
+      public code: string | null = null,
+  ) {
+    super(stayLoggedIn, recaptchaToken, timezone);
   }
 }
 export enum AvailableLocales{

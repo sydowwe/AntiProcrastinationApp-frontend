@@ -44,7 +44,7 @@ import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
 
 import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {User} from '@/classes/User';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {useI18n} from 'vue-i18n';
 import ChangeEmailDialog from '@/components/user/dialogs/ChangeEmailDialog.vue';
 

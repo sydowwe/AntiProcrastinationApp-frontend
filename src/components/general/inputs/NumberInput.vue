@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {computed} from 'vue';
+import {useContinuousQuickChangeComposition, preventE} from '@/compositions/general/continuousQuickChangeComposition'
 
 const props = defineProps({
 	label: String,
@@ -16,18 +17,8 @@ const props = defineProps({
 });
 const value = defineModel<number | null>({required: true});
 const currentValue = computed(()=>value.value ?? 0)
-let mouseDownTimeout = 0;
 
-function endContinuousQuickChange() {
-	clearTimeout(mouseDownTimeout);
-}
-
-function continuousQuickChangeValue(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeValue(value);
-		continuousQuickChangeValue(value);
-	}, 150);
-}
+const continuousQuickChangeValue = useContinuousQuickChangeComposition(quickChangeValue);
 
 function quickChangeValue(added: number) {
 	switch (checkValidValue(currentValue.value + added)) {
@@ -45,7 +36,6 @@ function quickChangeValue(added: number) {
 }
 
 function constrainValue() {
-	console.log(value.value)
 	switch (checkValidValue(currentValue.value)) {
 		case -1:
 			value.value = props.min ?? 0;
@@ -53,7 +43,6 @@ function constrainValue() {
 		case 1:
 			value.value = props.max ?? 0;
 			break;
-
 	}
 	emit('change',value.value);
 }
@@ -80,7 +69,6 @@ const emit = defineEmits<{
 		@click="quickChangeValue(-step)"
 		style="border-radius: 0"
 		@mousedown="continuousQuickChangeValue(-step)"
-		@mouseup="endContinuousQuickChange"
 		v-if="!hideControls"
 	>
 		<VIcon :icon="useArrows ? 'chevron-left' : 'minus'" size="default" class="clickableIcon"></VIcon>
@@ -93,7 +81,8 @@ const emit = defineEmits<{
 		:max="max"
 		:step="step"
 		tile
-		@change="constrainValue"
+		@input="constrainValue"
+		@keydown="preventE"
 		:class="!center || 'centered-input'"
 		class="flex-0-1-auto"
 		:clearable="clearable"
@@ -108,7 +97,6 @@ const emit = defineEmits<{
 		@click="quickChangeValue(step)"
 		style="border-radius: 0"
 		@mousedown="continuousQuickChangeValue(step)"
-		@mouseup="endContinuousQuickChange"
 		v-if="!hideControls"
 	>
 		<VIcon :icon="useArrows ? 'chevron-right' : 'plus'" size="default" class="clickableIcon"></VIcon>

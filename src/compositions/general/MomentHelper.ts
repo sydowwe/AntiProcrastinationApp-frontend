@@ -2,7 +2,6 @@ import {useI18n} from 'vue-i18n';
 import 'moment/dist/locale/sk';
 import 'moment/dist/locale/cs';
 import moment from 'moment';
-import {LongDateFormatKey} from 'moment/moment';
 
 export function useMoment(){
 	const i18n = useI18n();
@@ -18,6 +17,10 @@ export function useMoment(){
 	function formatLocalized(date: Date, format: moment.LongDateFormatKey) {
 		return moment(date).locale(i18n.locale.value).format(format);
 	}
-	return {formatToDate,formatToTime,formatToTimeWithSec,formatLocalized};
+	function formatToTime24H(date: Date) {
+		return moment(date).locale(i18n.locale.value).format('H:mm');
+	}
+	return {formatToDate,formatToTime,formatToTimeWithSec,formatToTime24H,formatLocalized};
 }
+
 

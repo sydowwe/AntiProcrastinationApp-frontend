@@ -12,7 +12,7 @@
 import {ref} from 'vue';
 import {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
 import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';

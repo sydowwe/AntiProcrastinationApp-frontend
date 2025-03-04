@@ -1,52 +1,25 @@
 <template>
 <div>
-	<ActivitySelectionForm ref="activitySelectionForm" :select-options-source="ActivityOptionsSource.ACTIVITY_HISTORY"></ActivitySelectionForm>
+	<ActivitySelectionForm ref="activitySelectionForm"
+	                       :select-options-source="ActivityOptionsSource.ACTIVITY_HISTORY"></ActivitySelectionForm>
 	<div class="d-flex flex-column flex-md-row mb-3">
-		<MyDatePicker v-if="dateRange"
+		<MyDatePicker v-if="isDateRange"
 		              class="mt-3 flex-1-0"
-		              :label="i18n.t('dateTime.dateFrom')"
+		              :label="$t('dateTime.dateFrom')"
 		              :clearable="true"
 
 		              v-model="filterData.dateFrom">
 		</MyDatePicker>
 		<div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
-			<div class="d-flex flex-1-0 align-center">
-				<VBtn
-					variant="text"
-					icon
-					@click="quickChangeHoursBack(-1)"
-					style="border-radius: 3px"
-					density="comfortable"
-					@mousedown="continuousQuickChangeHoursBack(-1)"
-					@mouseup="endContinuousQuickChange"
-				>
-					<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
-				</VBtn>
-				<VTextField
-					class="flex-0-1"
-					v-model="filterData.hoursBack"
-					:min="MIN_HOURS_BACK"
-					:max="MAX_HOURS_BACK"
-					type="number"
-					:clearable="false"
-					@input="constrainHoursBack"
-					hide-details
-					hide-spin-buttons
-				></VTextField>
-				<VBtn
-					variant="text"
-					icon
-					@click="quickChangeHoursBack(1)"
-					style="border-radius: 3px"
-					density="comfortable"
-					@mousedown="continuousQuickChangeHoursBack(1)"
-					@mouseup="endContinuousQuickChange"
-				>
-					<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
-				</VBtn>
-				<VLabel class="ml-2">{{ i18n.t("dateTime.hoursBack") }}</VLabel>
+			<div class="d-flex flex-1-0 ga-1 align-center">
+				<NumberInput v-model="filterData.hoursBack"
+				             :min="MIN_HOURS_BACK"
+				             :max="MAX_HOURS_BACK"
+				             :clearable="false"
+				></NumberInput>
+				<VLabel class="ml-2">{{ $t("dateTime.hoursBack") }}</VLabel>
 				<v-slider
-					class="flex-1-0 mx-2"
+					class="flex-1-0 ml-4 mr-3"
 					v-model="filterData.hoursBack"
 					:min="MIN_HOURS_BACK"
 					:max="MAX_HOURS_BACK"
@@ -58,16 +31,16 @@
 		<div class="flex-1-0 d-flex align-center mb-3 mb-md-0 mt-md-3">
 			<VCheckbox
 				class="flex-0-1 mx-2 mx-md-3"
-				v-model="dateRange"
-				:label="i18n.t('dateTime.dateRange')"
+				v-model="isDateRange"
+				:label="$t('dateTime.dateRange')"
 				hide-details
 				density="compact"
 			></VCheckbox>
 			<MyDatePicker
 				class="flex-1-0"
-				:label="i18n.t('dateTime.dateTo')"
+				:label="$t('dateTime.dateTo')"
 				v-model="filterData.dateTo"
-				:clearable="dateRange"
+				:clearable="isDateRange"
 				:maxDate="new Date()">
 			</MyDatePicker>
 		</div>
@@ -81,45 +54,28 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch, reactive} from "vue";
+import {ref, watch, reactive, onMounted} from "vue";
 import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
-import {HistoryFilter, HistoryGroupedByDate} from "@/classes/History";
-import {useI18n} from 'vue-i18n';
+import {HistoryFilter} from "@/classes/History";
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
+import NumberInput from '@/components/general/inputs/NumberInput.vue';
 
-const i18n = useI18n();
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const filterData = reactive(new HistoryFilter());
-const dateRange = ref(false);
+const isDateRange = ref(false);
 
-
-applyFilter();
+onMounted(() => {
+	applyFilter();
+});
 
 function applyFilter() {
-	console.log(activitySelectionForm.value.formData)
 	Object.assign(filterData, activitySelectionForm.value.formData);
-	console.log(filterData)
-	let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
-	filter.dateTo?.setHours(23, 59, 59, 999);
-	if (dateRange.value) {
-		filter.hoursBack = null;
-		filter.dateFrom?.setHours(0, 0, 1, 0);
-	} else {
-		filter.dateFrom = null;
-	}
-	axios
-		.post(`/activity-history/filter`, filter)
-		.then((response) => {
-			emit("filterApplied", HistoryGroupedByDate.listFromObjects(response.data));
-		})
-		.catch((error) => {
-			console.log(error);
-		});
+	emit("filterApplied", filterData, isDateRange.value);
 }
 
 watch(
@@ -140,60 +96,7 @@ watch(
 	}
 );
 
-
-let mouseDownTimeout = 0;
-
-function continuousQuickChangeHoursBack(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeHoursBack(value);
-		continuousQuickChangeHoursBack(value);
-	}, 150);
-}
-
-function endContinuousQuickChange() {
-	clearTimeout(mouseDownTimeout);
-}
-
-function quickChangeHoursBack(value: number) {
-	if (filterData.hoursBack) {
-		switch (checkValidHoursBackValue(filterData.hoursBack + value)) {
-			case -1:
-				filterData.hoursBack = MAX_HOURS_BACK;
-				break;
-			case 1:
-				filterData.hoursBack = MIN_HOURS_BACK;
-				break;
-			case 0:
-				filterData.hoursBack += value;
-				break;
-		}
-	}
-}
-
-function constrainHoursBack() {
-	if (filterData.hoursBack) {
-		switch (checkValidHoursBackValue(filterData.hoursBack)) {
-			case -1:
-				filterData.hoursBack = MIN_HOURS_BACK;
-				break;
-			case 1:
-				filterData.hoursBack = MAX_HOURS_BACK;
-				break;
-		}
-	}
-}
-
-function checkValidHoursBackValue(value: number) {
-	if (value < MIN_HOURS_BACK) {
-		return -1;
-	} else if (value > MAX_HOURS_BACK) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
 const emit = defineEmits<{
-	filterApplied: [records: HistoryGroupedByDate[]];
+	filterApplied: [filterData: HistoryFilter, isDateRange: boolean];
 }>();
 </script>

@@ -14,14 +14,11 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {ActivityDialogType,	ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
-import TimerControls from '@/components/TimerControls.vue';
-import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
-import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({});
 const saveDialog = ref<ActivityDialogType>({});

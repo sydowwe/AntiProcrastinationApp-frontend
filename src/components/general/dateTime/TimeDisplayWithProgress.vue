@@ -7,7 +7,7 @@
 >
 	<div class="d-flex flex-column">
 		<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
-		<h1 class="text-white font-weight-bold text-center" v-if="title" style="line-height: 2.7rem">{{title}}</h1>
+		<h1 class="text-white font-weight-bold text-center" v-if="title" style="line-height: 2.7rem">{{ title }}</h1>
 	</div>
 </VProgressCircular>
 </template>
@@ -32,7 +32,7 @@ const props = defineProps({
 		type: TimeLengthObject,
 		required: true,
 	},
-	whatToShow:{
+	whatToShow: {
 		type: Array as () => TimeLengthKeys[],
 		default: () => ['hours', 'minutes', 'seconds'],
 	}

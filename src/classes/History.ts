@@ -1,5 +1,5 @@
 import {Activity} from './Activity';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 
 export class History {
@@ -29,7 +29,7 @@ export class History {
 export class HistoryRequest {
 	constructor(
 		public startTimestamp: Date,
-		public length: TimeLengthObject,
+		public length: TimeObject,
 		public activityId: number,
 	) {
 	}
@@ -37,7 +37,7 @@ export class HistoryRequest {
 	static fromObject(object: any) {
 		const {
 			startTimestamp = new Date(),
-			length = new TimeLengthObject(),
+			length = new TimeObject(),
 			activityId = 0
 		} = object;
 		return new HistoryRequest(startTimestamp, length, activityId);

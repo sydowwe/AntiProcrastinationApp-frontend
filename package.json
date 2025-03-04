@@ -27,6 +27,7 @@
     "vue-recaptcha": "^3.0.0-alpha.6",
     "vue-router": "^4.2.0",
     "vue3-google-login": "^2.0.25",
+    "vue3-google-signin": "^2.1.1",
     "vuetify": "^3.7.13"
   },
   "devDependencies": {

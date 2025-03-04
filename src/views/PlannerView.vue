@@ -49,17 +49,16 @@
 </template>
 
 <script setup lang="ts">
-import PlannerDialog from "../components/dialogs/PlannerDialog.vue";
+import PlannerDialog from "../components/dialogs/planner/PlannerDialog.vue";
 import PlannerTaskItemVue from "../components/PlannerTaskItem.vue";
 import {onMounted, ref} from "vue";
 import {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces";
 import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
-import {importDefaults} from "@/compositions/Defaults";
+import {importDefaults} from "@/compositions/general/Defaults";
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import PlannerTaskDoneDialog from '@/components/dialogs/PlannerTaskDoneDialog.vue';
+import PlannerTaskDoneDialog from '@/components/dialogs/planner/PlannerTaskDoneDialog.vue';
 
 import {useI18n} from 'vue-i18n';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = importDefaults();
@@ -151,7 +150,7 @@ const add = (plannerTask: PlannerTaskRequest) => {
 	}
 };
 
-function quickEditedActivity(id: number, name: string, text: string) {
+function quickEditedActivity(id: number, name: string, text: string | null) {
 	const editedActivity = plannerTasks.value[plannerTasks.value.findIndex(item => item.id === id)];
 	if (editedActivity) {
 		editedActivity.activity.name = name;

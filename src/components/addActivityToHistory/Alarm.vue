@@ -17,9 +17,9 @@
     </VRow>
 </template>
 <script setup lang="ts">
-    import ActivitySelectionForm from './ActivitySelectionForm.vue';
+    import ActivitySelectionForm from '../ActivitySelectionForm.vue';
     import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-    import SaveActivityDialog from './dialogs/SaveActivityDialog.vue';
+    import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
     import { TimeLengthObject } from '@/classes/TimeUtils';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';

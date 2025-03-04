@@ -1,5 +1,5 @@
 <template>
-<div class="d-flex align-center" >
+<div class="d-flex align-center">
 	<VBtn
 		variant="text"
 		icon
@@ -7,7 +7,6 @@
 		style="border-radius: 3px"
 		density="comfortable"
 		@mousedown="continuousQuickChangeDate(-1)"
-		@mouseup="endContinuousQuickChange"
 	>
 		<VIcon icon="chevron-left" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -49,7 +48,6 @@
 		style="border-radius: 3px"
 		density="comfortable"
 		@mousedown="continuousQuickChangeDate(1)"
-		@mouseup="endContinuousQuickChange"
 	>
 		<VIcon icon="chevron-right" size="large" class="clickableIcon"></VIcon>
 	</VBtn>
@@ -57,8 +55,12 @@
 </template>
 <script setup lang="ts">
 import {ref, computed, defineModel} from "vue";
-import {useMoment} from '@/compositions/MomentHelper'
+import {useMoment} from '@/compositions/general/MomentHelper'
+import {useContinuousQuickChangeComposition} from '@/compositions/general/continuousQuickChangeComposition'
+
 const { formatToDate } = useMoment();
+const continuousQuickChangeDate = useContinuousQuickChangeComposition(quickChangeDate);
+
 const props = defineProps({
 	label:{
 		type: String,
@@ -100,16 +102,7 @@ function today() {
 	dateValue.value = new Date();
 	showDatePicker.value = false;
 }
-let mouseDownTimeout = 0;
-function endContinuousQuickChange() {
-	clearTimeout(mouseDownTimeout);
-}
-function continuousQuickChangeDate(value: number) {
-	mouseDownTimeout = setTimeout(() => {
-		quickChangeDate(value);
-		continuousQuickChangeDate(value);
-	}, 150);
-}
+
 function quickChangeDate(increment: number) {
 	showDatePicker.value = false;
 	if (!dateValue.value) {

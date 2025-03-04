@@ -32,9 +32,9 @@
 import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import QrCodeFor2FADialog from '../../components/user/dialogs/QrCodeFor2FADialog.vue';
-import ErrorDialog from '../../components/dialogs/ErrorDialog.vue';
+import ErrorDialog from '../../components/dialogs/general/ErrorDialog.vue';
 import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';
-import {importDefaults} from '@/compositions/Defaults';
+import {importDefaults} from '@/compositions/general/Defaults';
 import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
 
 import {useI18n} from 'vue-i18n';

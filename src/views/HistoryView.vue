@@ -34,16 +34,30 @@
 
 <script setup lang="ts">
     import { ref } from 'vue';
-    import HistoryPanelFilter from '../../components/history/HistoryPanelFilter.vue';
-    import HistoryRecordItem from '../../components/history/HistoryRecordItem.vue';
-    import {History, HistoryGroupedByDate} from '@/classes/History';
-    import {useMoment} from '@/compositions/MomentHelper';
+    import HistoryPanelFilter from '../components/history/HistoryPanelFilter.vue';
+    import HistoryRecordItem from '../components/history/HistoryRecordItem.vue';
+    import {History, HistoryFilter, HistoryGroupedByDate} from '@/classes/History';
+    import {useMoment} from '@/compositions/general/MomentHelper';
     const groupedRecords = ref([] as HistoryGroupedByDate[]);
     const {formatLocalized} = useMoment();
 	const midpoint = ref(Math.ceil(groupedRecords.value.length / 2 + 2));
 
-    function handleFilterApplied(_records: HistoryGroupedByDate[]) {
-	    groupedRecords.value = _records;
-	   // console.log(groupedRecords.value?.slice(midpoint.value));
+    function handleFilterApplied(filterData: HistoryFilter, isDateRange: boolean) {
+	    let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
+	    filter.dateTo?.setHours(23, 59, 59, 999);
+	    if (isDateRange) {
+		    filter.hoursBack = null;
+		    filter.dateFrom?.setHours(0, 0, 1, 0);
+	    } else {
+		    filter.dateFrom = null;
+	    }
+	    axios
+		    .post(`/activity-history/filter`, filter)
+		    .then((response) => {
+			    groupedRecords.value = HistoryGroupedByDate.listFromObjects(response.data)
+		    })
+		    .catch((error) => {
+			    console.log(error);
+		    });
     }
 </script>
