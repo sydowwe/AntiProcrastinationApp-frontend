@@ -1,3 +1,5 @@
+import type {ICreateRequest, IUpdateRequest} from '@/classes/Generic.ts';
+
 export class TaskUrgencyEntity{
     constructor(
         public id: number = 0,
@@ -18,4 +20,16 @@ export class TaskUrgencyEntity{
         return objects.map((item:object)=>TaskUrgencyEntity.fromJson(item));
       }
       
+}
+
+export class TaskUrgencyRequest implements ICreateRequest, IUpdateRequest{
+  constructor(
+      public priority: number = 0,
+      public text: string = '',
+      public color: string = '',
+  ) {}
+
+  static fromResponse(response: TaskUrgencyEntity){
+    return new TaskUrgencyRequest(response.priority,response.text,response.color);
+  }
 }

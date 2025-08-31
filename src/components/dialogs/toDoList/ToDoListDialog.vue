@@ -27,9 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch} from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import {TaskUrgencyEntity} from '@/classes/TaskUrgencyEntity';
-import {ToDoListItemRequest, ToDoListItemEntity} from '@/classes/ToDoListItem';
+import {ToDoListItemRequest, TodoListItemEntity} from '@/classes/ToDoListItem';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
 
@@ -39,8 +39,9 @@ import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import {SelectOption} from '@/classes/SelectOption';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
+import {useTaskUrgencyCrud} from '@/composables/general/ConcretesCrudComposable.ts';
 
-
+const {fetchAll} = useTaskUrgencyCrud()
 const {
 	isActivityFormHidden,
 	quickActivityName,
@@ -63,7 +64,9 @@ watch(dialog, (newValue) => {
 	}
 });
 
-getUrgencyOptions();
+onMounted(async ()=>{
+	urgencyOptions.value = await fetchAll();
+})
 
 async function save() {
 	if (isActivityFormHidden.value) {
@@ -95,16 +98,6 @@ function setDefaultUrgency() {
 	toDoListItem.value.taskUrgencyId = urgencyOptions.value.find((item) => item.priority === 1)?.id ?? null;
 }
 
-function getUrgencyOptions() {
-	API.get(`/task-urgency`)
-		.then((response) => {
-			urgencyOptions.value = TaskUrgencyEntity.listFromObjects(response.data);
-			setDefaultUrgency();
-		})
-		.catch(() => {
-		});
-}
-
 const closeAndReset = () => {
 	toDoListItem.value = new ToDoListItemRequest();
 	setDefaultUrgency();
@@ -115,7 +108,7 @@ const openCreate = () => {
 	isActivityFormHidden.value = false;
 	dialog.value = true;
 };
-const openEdit = (entityToEdit: ToDoListItemEntity) => {
+const openEdit = (entityToEdit: TodoListItemEntity) => {
 	isActivityFormHidden.value = true;
 	isEdit.value = true;
 	idToEdit.value = entityToEdit.id;

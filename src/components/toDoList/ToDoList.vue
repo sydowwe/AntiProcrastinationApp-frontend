@@ -4,7 +4,7 @@
 	<ToDoListItem
 		v-for="item in items"
 		:toDoListItem="item"
-		:color="color ?? item.taskUrgency.color"
+		:color="color ?? item.taskUrgency?.color"
 		@delete="deleteItem"
 		@edit="editItem"
 		@select="select"
@@ -57,63 +57,40 @@ function recursiveDialogsToSaveToHistory() {
 }
 
 const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
-		const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
-		if (toDoListItem.isDone) {
-			if (isBatchAction) {
-				changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
-				recursiveDialogsToSaveToHistory();
-			} else {
-				currentDoneItem.value = toDoListItem;
-				isDialogRecursive.value = false;
-				itemDoneDialogShown.value = true;
-			}
+	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
+	if (toDoListItem.isDone) {
+		if (isBatchAction) {
+			changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
+			recursiveDialogsToSaveToHistory();
+		} else {
+			currentDoneItem.value = toDoListItem;
+			isDialogRecursive.value = false;
+			itemDoneDialogShown.value = true;
 		}
-		const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
-		API.patch(`/${url}/change-done`, changedItemsIds)
-			.then((response) => {
-				console.log(response);
-				if (isBatchAction) {
-					props.items.forEach((item) => {
-						if (selectedItemsIds.value.includes(item.id)) {
-							item.isDone = toDoListItem.isDone;
-						}
-					});
-					selectedItemsIds.value = [];
-				}
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+	}
+	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
+	API.patch(`/${url}/change-done`, changedItemsIds)
+		.then((response) => {
+			console.log(response);
+			if (isBatchAction) {
+				props.items.forEach((item) => {
+					if (selectedItemsIds.value.includes(item.id)) {
+						item.isDone = toDoListItem.isDone;
+					}
+				});
+				selectedItemsIds.value = [];
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+		});
 };
 const deleteItem = (id: number) => {
 	if (selectedItemsIds.value.length > 1) {
-		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({id: item}));
-		API.post(`/${url}/batch-delete`, batchDeleteIds)
-			.then((response) => {
-				console.log(response.data);
-				if (response.data.status === 'success') {
-					emit(
-						'itemsChanged',
-						props.items.filter((item: BaseToDoListItemEntity) => !selectedItemsIds.value.includes(item.id))
-					);
-					selectedItemsIds.value = [];
-				}
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+		const batchDeleteIds = selectedItemsIds.value.map((id: number) => id)
+		emit('batchDeletedItems', batchDeleteIds);
 	} else {
-		API.delete(`/${url}/delete/${id}`)
-			.then((response) => {
-				console.log(response.data);
-				emit(
-					'itemsChanged',
-					props.items.filter((item: BaseToDoListItemEntity) => item.id !== id)
-				);
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+		emit('deletedItem', id)
 	}
 };
 const select = (id: number) => {
@@ -128,5 +105,7 @@ const unSelect = (id: number) => {
 const emit = defineEmits<{
 	(e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
 	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
+	(e: 'deletedItem', id: number): void;
+	(e: 'batchDeletedItems', ids: number[]): void;
 }>();
 </script>

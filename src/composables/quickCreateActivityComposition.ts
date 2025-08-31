@@ -1,6 +1,8 @@
 import {Activity, ActivityRequest, QuickEditActivityRequest} from '@/classes/Activity';
 import {ref} from 'vue';
 import {Role} from '@/classes/Role';
+import {API} from '@/plugins/axiosConfig.ts';
+import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
 
 export function useQuickCreateActivity(viewName: string) {
 	const isActivityFormHidden = ref(false);
@@ -8,8 +10,9 @@ export function useQuickCreateActivity(viewName: string) {
 	const quickActivityText = ref<string | null>(null);
 	const quickActivityCategoryId = ref<number | null>(null);
 
+
 	async function getQuickCreateActivityRoleIdByView() {
-		return await API.post('/role/get-by-name/' + viewName).then((response) => {
+		return await API.post('/activity-role/by-name/' + viewName).then((response) => {
 			console.log(response.data)
 			return Role.fromJson(response.data).id;
 		});

@@ -53,11 +53,19 @@
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
-import {RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
+import {RoutineTodoListItemEntity, RoutineTodoListGroupedList, RoutineTodoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import type {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {API} from '@/plugins/axiosConfig.ts';
+import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
 
-const groupedItems = ref([] as RoutineToDoListGroupedList[]);
+const {createWithResponse} = useEntityCommand<RoutineTodoListItemEntity, RoutineTodoListItemRequest, RoutineTodoListItemRequest>({
+	responseClass: RoutineTodoListItemEntity,
+	createRequestClass: RoutineTodoListItemRequest,
+	updateRequestClass: RoutineTodoListItemRequest,
+	entityName: 'routine-todo-list'
+})
+
+const groupedItems = ref([] as RoutineTodoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
 const url = '/routine-todo-list';
 
@@ -80,25 +88,23 @@ function toggleHideTimePeriod(id: number) {
 }
 
 const getAllRecords = () => {
-	API.post(`${url}/get-all-grouped`)
+	API.get(`${url}/grouped-by-time-period`)
 		.then((response) => {
-			groupedItems.value = RoutineToDoListGroupedList.listFromObjects(response.data);
+			groupedItems.value = RoutineTodoListGroupedList.listFromObjects(response.data);
 			console.log(groupedItems.value);
 		})
 };
 
-const add = (toDoListItem: RoutineToDoListItemRequest) => {
-	API.post(`${url}/create`, toDoListItem)
-		.then((response) => {
-			console.log(response.data)
-			const updatedList = groupedItems.value.find((group) => group.timePeriod.id === toDoListItem.timePeriodId)?.items;
-			if (updatedList) {
-				updatedList.push(RoutineToDoListItemEntity.fromJson(response.data));
-				updatedList.sort((a, b) => a.id - b.id);
-			} else {
-				console.error('not found group');
-			}
-		})
+async function add(request: RoutineTodoListItemRequest){
+	const response = await createWithResponse(request);
+
+	const updatedList = groupedItems.value.find((group) => group.timePeriod.id === response.timePeriod.id)?.items;
+	if (updatedList) {
+		updatedList.push(response);
+		updatedList.sort((a, b) => a.id - b.id);
+	} else {
+		console.error('not found group');
+	}
 };
 
 function quickEditedActivity(id: number, name: string, text: string) {
@@ -110,13 +116,13 @@ function quickEditedActivity(id: number, name: string, text: string) {
 	}
 }
 
-const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
+const edit = (id: number, toDoListItemRequest: RoutineTodoListItemRequest) => {
 	const beforeEditEntity = groupedItems.value.find(group => group.items.findIndex(item => item.id === id) > 0);
 	const activity = beforeEditEntity?.items.find(item => item.id === id)
 	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || activity?.id !== toDoListItemRequest.activityId)) {
 		API.put(`${url}/update/${id}`, toDoListItemRequest)
 			.then((response) => {
-				const updatedItem = RoutineToDoListItemEntity.fromJson(response.data);
+				const updatedItem = RoutineTodoListItemEntity.fromJson(response.data);
 				const oldGroup = groupedItems.value.find((group) => {
 					return group.items.some((item) => item.id === id);
 				});
@@ -138,7 +144,7 @@ const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
 			})
 	}
 };
-const itemsChanged = (changedItems: RoutineToDoListItemEntity[]) => {
+const itemsChanged = (changedItems: RoutineTodoListItemEntity[]) => {
 	console.log(changedItems);
 	groupedItems.value = groupedItems.value.map((group) => ({
 		...group,

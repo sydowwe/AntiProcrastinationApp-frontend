@@ -29,18 +29,7 @@ export class CategoryRequest {
       public color: string | null = null,
       // public icon: string | null = null,
   ) {}
-  static fromJson(object: any){
-    const {
-      name = '',
-      text = '',
-      color = '',
-      // icon = '',
-    } = object;
-    return new Category(name, text, color,
-        // icon,
-    );
-  }
-  static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Category.fromJson(item));
+  static fromResponse(response: Category){
+    return new CategoryRequest(response.name, response.text, response.color,)
   }
 }

@@ -1,6 +1,6 @@
 import {PlannerTask} from '../PlannerTask';
 import {TimeLengthObject} from '../TimeUtils';
-import {ToDoListItemEntity, RoutineToDoListItemEntity} from '../ToDoListItem';
+import {TodoListItemEntity, RoutineTodoListItemEntity} from '../ToDoListItem';
 import {Alarm} from '@/classes/Alarm';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 import type {Ref, UnwrapRef} from 'vue';
@@ -54,11 +54,11 @@ export interface ActivityDialogType {
 }
 
 export interface ToDoListItemDialogType extends EntityDialogType {
-	openEdit(toDoListItemEntity: ToDoListItemEntity): void;
+	openEdit(toDoListItemEntity: TodoListItemEntity): void;
 }
 
 export interface RoutineToDoListItemDialogType extends EntityDialogType {
-	openEdit(toDoListItemEntity: RoutineToDoListItemEntity): void;
+	openEdit(toDoListItemEntity: RoutineTodoListItemEntity): void;
 }
 
 export interface PlannerDialogType extends EntityDialogType {

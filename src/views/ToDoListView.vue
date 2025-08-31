@@ -9,7 +9,7 @@
 				<VBtn width="50%" color="green" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
 			</div>
 			<ToDoList :kind="ToDoListKind.NORMAL" :items="items" @itemsChanged="itemsChanged"
-			          @editItem="toDoListDialog?.openEdit"></ToDoList>
+			          @editItem="toDoListDialog?.openEdit" @deletedItem="deleteItem"></ToDoList>
 		</VCard>
 	</VCol>
 </VRow>
@@ -18,38 +18,35 @@
 
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
-import {ToDoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
+import {RoutineTodoListItemEntity, RoutineTodoListItemRequest, TodoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
+import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
+import {useTodoListItemCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+
+const {createWithResponse, update, deleteEntity, fetchAll } = useTodoListItemCrud()
 
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
-const items = ref([] as ToDoListItemEntity[]);
+const items = ref([] as TodoListItemEntity[]);
 const url = '/todo-list';
 
-onMounted(() => {
-	getAllRecords();
+onMounted(async () => {
+	items.value = await fetchAll();
 });
-const getAllRecords = () => {
-	API.get(`${url}`)
-		.then((response) => {
-			items.value = ToDoListItemEntity.listFromObjects(response.data);
-		});
-};
-const add = (toDoListItem: ToDoListItemRequest) => {
-	API.post(`${url}/create`, toDoListItem)
-		.then((response) => {
-			items.value.push(ToDoListItemEntity.fromJson(response.data));
-			items.value.sort(ToDoListItemEntity.frontEndSortFunction());
-			showSnackbar(i18n.t('successFeedback.added'), {timeout: 1500, color: 'success'});
-		});
-};
+
+async function add(toDoListItem: ToDoListItemRequest){
+	const response = await createWithResponse(toDoListItem);
+	items.value.push(response);
+	items.value.sort(TodoListItemEntity.frontEndSortFunction());
+	showSnackbar(i18n.t('successFeedback.added'), {timeout: 1500, color: 'success'});
+}
 
 function quickEditedActivity(id: number, name: string, text: string | null) {
 	const editedActivity = items.value[items.value.findIndex(item => item.id === id)];
@@ -59,25 +56,31 @@ function quickEditedActivity(id: number, name: string, text: string | null) {
 	}
 }
 
-const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
+async function edit(id: number, toDoListItemRequest: ToDoListItemRequest){
 	let taskUrgencyId = toDoListItemRequest.taskUrgencyId;
 	const beforeEditEntity = items.value.find(item => item.id === id);
 	if (beforeEditEntity && (beforeEditEntity.taskUrgency.id !== toDoListItemRequest.taskUrgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		API.put(`${url}/update/${id}`, toDoListItemRequest)
-			.then((response) => {
-				console.log(response.data);
-				const index = items.value.findIndex((item) => item.id === id);
-				if (taskUrgencyId === response.data.taskUrgencyId) {
-					items.value[index] = ToDoListItemEntity.fromJson(response.data);
-				} else {
-					items.value[index] = ToDoListItemEntity.fromJson(response.data);
-					items.value.sort(ToDoListItemEntity.frontEndSortFunction());
-				}
-				showSnackbar(i18n.t('successFeedback.edited'), {timeout: 1500, color: 'success'});
-			});
+		const response = await update(id, toDoListItemRequest);
+		const index = items.value.findIndex((item) => item.id === id);
+		if (taskUrgencyId === response.taskUrgency.id) {
+			items.value[index] = response;
+		} else {
+			items.value[index] = response;
+			items.value.sort(TodoListItemEntity.frontEndSortFunction());
+		}
+		showSnackbar(i18n.t('successFeedback.edited'), {timeout: 1500, color: 'success'});
 	}
-};
-const itemsChanged = (changedItems: ToDoListItemEntity[]) => {
+}
+
+async function deleteItem(id: number) {
+	await deleteEntity(id);
+	const index = items.value.findIndex((item) => item.id === id);
+	if (index !== -1) {
+		items.value.splice(index, 1);
+	}
+}
+
+const itemsChanged = (changedItems: TodoListItemEntity[]) => {
 	items.value = changedItems;
 };
 </script>

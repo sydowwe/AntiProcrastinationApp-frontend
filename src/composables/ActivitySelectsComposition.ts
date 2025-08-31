@@ -21,9 +21,10 @@ export function uniqueOptions(options: SelectOption[]) {
 
 
 export async function getAllActivityFormSelectOptionsCombinations(activitySource: ActivityOptionsSource) {
-	let url = `${activitySource}/get-all-activity-form-selects-options`;
-	return await API.post(url)
+	let url = `${activitySource}/form-select-options`;
+	return await API.get(url)
 		.then((response) => {
+			console.log(response);
 			return ActivitySelectOptionCombination.listFromJsonList(response.data);
 		})
 		.catch((error) => {

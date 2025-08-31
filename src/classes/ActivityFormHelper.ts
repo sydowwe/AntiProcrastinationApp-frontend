@@ -2,7 +2,7 @@ import {SelectOption} from '@/classes/SelectOption';
 import type {HistoryFilter} from '@/classes/History.ts';
 
 export enum ActivityOptionsSource {
-	NONE = "none", ALL = "activity", ACTIVITY_HISTORY = "activity-history", TASK_PLANNER = "task-planner"
+	ALL = "activity", ACTIVITY_HISTORY = "activity-history", TASK_PLANNER = "task-planner"
 }
 
 export class ActivityFormSelectOptions {

@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {RoutineToDoListItemRequest, RoutineToDoListItemEntity} from '@/classes/ToDoListItem';
+import {RoutineTodoListItemRequest, RoutineTodoListItemEntity} from '@/classes/ToDoListItem';
 import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
 
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
@@ -38,7 +38,7 @@ const {isActivityFormHidden, quickActivityName, quickActivityText, quickActivity
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
-const routineToDoListItem = ref(new RoutineToDoListItemRequest());
+const routineToDoListItem = ref(new RoutineTodoListItemRequest());
 const dialog = ref(false);
 const isEdit = ref(false);
 const idToEdit = ref(null as number | null);
@@ -49,7 +49,7 @@ const emit = defineEmits(['edit', 'add']);
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
-		routineToDoListItem.value = new RoutineToDoListItemRequest();
+		routineToDoListItem.value = new RoutineTodoListItemRequest();
 		setDefaultTimePeriod();
 	}
 });
@@ -90,10 +90,10 @@ const openCreate = () => {
 	isEdit.value = false;
 	dialog.value = true;
 };
-const openEdit = (entityToEdit: RoutineToDoListItemEntity) => {
+const openEdit = (entityToEdit: RoutineTodoListItemEntity) => {
 	isEdit.value = true;
 	idToEdit.value = entityToEdit.id;
-	routineToDoListItem.value = RoutineToDoListItemRequest.fromEntity(entityToEdit);
+	routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit);
 	dialog.value = true;
 };
 

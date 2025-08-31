@@ -30,18 +30,7 @@ export class RoleRequest {
       public color: string | null = null,
       // public icon: string | null = null,
   ) {}
-  static fromJson(object: any){
-    const {
-      name = '',
-      text = '',
-      color = '',
-      // icon = '',
-    } = object;
-    return new Role(name, text, color,
-        // icon,
-    );
-  }
-  static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Role.fromJson(item));
+  static fromResponse(response: Role){
+    return new RoleRequest(response.name, response.text, response.color,)
   }
 }
