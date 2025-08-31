@@ -34,6 +34,21 @@ export function useEntityQuery<TResponse>(
 		}
 	}
 
+	async function fetchAll(): Promise<TResponse[]> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.get(`/${config.entityName}`)
+			return response.data.map((item: any) => config.responseClass.fromJson(item))
+		} catch (e: any) {
+			error.value = e.message || `Failed to fetch all ${config.entityName}`
+			console.error(`Error fetching all ${config.entityName}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
 	async function fetchSelectOptions(): Promise<SelectOption[]> {
 		loading.value = true
 		error.value = null
@@ -53,6 +68,7 @@ export function useEntityQuery<TResponse>(
 		loading,
 		error,
 		fetchById,
+		fetchAll,
 		fetchSelectOptions
 	}
 }
@@ -71,12 +87,33 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 	const loading = ref(false)
 	const error = ref<string | null>(null)
 
-	async function create(entityData: TCreateRequest): Promise<TResponse> {
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery(config);
+
+	async function create(entityData: TCreateRequest): Promise<number> {
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.post(`/${config.entityName}`, entityData)
-			return config.responseClass.fromJson(response.data)
+			const createResponse = await API.post(`/${config.entityName}`, entityData)
+
+			return createResponse.data
+		} catch (e: any) {
+			error.value = e.message || `Failed to create ${config.entityName}`
+			console.error(`Error creating ${config.entityName}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
+	async function createWithResponse(entityData: TCreateRequest): Promise<TResponse> {
+		loading.value = true
+		error.value = null
+		try {
+			const createResponse = await API.post(`/${config.entityName}`, entityData)
+
+			const response = await fetchById(createResponse.data)
+
+			return response
 		} catch (e: any) {
 			error.value = e.message || `Failed to create ${config.entityName}`
 			console.error(`Error creating ${config.entityName}:`, e)
@@ -120,8 +157,12 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading,
 		error,
 		create,
+		createWithResponse,
 		update,
 		deleteEntity,
+		fetchById,
+		fetchAll,
+		fetchSelectOptions
 	}
 }
 

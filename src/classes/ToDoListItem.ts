@@ -1,11 +1,8 @@
 import {TaskUrgencyEntity} from './TaskUrgencyEntity';
 import {Activity} from '@/classes/Activity';
+import {type ICreateRequest, IdResponse, type IUpdateRequest} from '@/classes/Generic.ts';
 
-export interface BaseToDoListItemEntity {
-	id: number,
-	activity: Activity,
-	isDone: boolean,
-}
+export type BaseToDoListItemEntity = TodoListItemEntity | RoutineTodoListItemEntity;
 
 export class BaseToDoListItemRequest {
 	constructor(
@@ -27,7 +24,7 @@ export class BaseToDoListItemRequest {
 	}
 }
 
-export class ToDoListItemEntity implements BaseToDoListItemEntity {
+export class TodoListItemEntity {
 	constructor(
 		public id: number,
 		public activity: Activity,
@@ -43,7 +40,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 			isDone = false,
 			taskUrgency = new TaskUrgencyEntity(),
 		} = object;
-		return new ToDoListItemEntity(id, activity, isDone, taskUrgency);
+		return new TodoListItemEntity(id, activity, isDone, taskUrgency);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -51,7 +48,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 	}
 
 	static frontEndSortFunction() {
-		return (a: ToDoListItemEntity, b: ToDoListItemEntity) => {
+		return (a: TodoListItemEntity, b: TodoListItemEntity) => {
 			const priorityComparison = a.taskUrgency.priority - b.taskUrgency.priority;
 			return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
 		};
@@ -66,7 +63,7 @@ export class ToDoListItemRequest extends BaseToDoListItemRequest {
 		super(activityId, isDone);
 	}
 
-	static fromEntity(obj: ToDoListItemEntity): ToDoListItemRequest {
+	static fromEntity(obj: TodoListItemEntity): ToDoListItemRequest {
 		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgency.id, obj.isDone);
 	}
 
@@ -77,13 +74,14 @@ export class ToDoListItemRequest extends BaseToDoListItemRequest {
 
 
 //=========================================================
-export class RoutineToDoListItemEntity implements BaseToDoListItemEntity {
+export class RoutineTodoListItemEntity extends IdResponse {
 	constructor(
 		public id: number,
 		public activity: Activity,
 		public isDone: boolean,
 		public timePeriod: TimePeriodEntity,
 	) {
+		super(id);
 	}
 
 	static fromJson(object: any) {
@@ -93,26 +91,27 @@ export class RoutineToDoListItemEntity implements BaseToDoListItemEntity {
 			isDone = false,
 			timePeriod = new TimePeriodEntity(),
 		} = object;
-		return new RoutineToDoListItemEntity(id, activity, isDone, timePeriod);
+		return new RoutineTodoListItemEntity(id, activity, isDone, timePeriod);
 	}
 
 	static listFromObjects(objects: any[]) {
 		return objects.map((item: object) => this.fromJson(item));
 	}
+
 }
 
-export class RoutineToDoListGroupedList {
+export class RoutineTodoListGroupedList {
 	constructor(
 		public timePeriod: TimePeriodEntity,
-		public items: RoutineToDoListItemEntity[]) {
+		public items: RoutineTodoListItemEntity[]) {
 	}
 
 	static fromJson(object: any) {
 		const {
 			timePeriod = new TimePeriodEntity(),
-			items = [] as RoutineToDoListItemEntity[],
+			items = [] as RoutineTodoListItemEntity[],
 		} = object;
-		return new RoutineToDoListGroupedList(timePeriod, items);
+		return new RoutineTodoListGroupedList(timePeriod, items);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -120,7 +119,7 @@ export class RoutineToDoListGroupedList {
 	}
 }
 
-export class RoutineToDoListItemRequest extends BaseToDoListItemRequest {
+export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
 		public activityId: number | null = null,
 		public timePeriodId: number | null = null,
@@ -128,12 +127,12 @@ export class RoutineToDoListItemRequest extends BaseToDoListItemRequest {
 		super(activityId, isDone);
 	}
 
-	static fromEntity(obj: RoutineToDoListItemEntity): RoutineToDoListItemRequest {
-		return new RoutineToDoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.isDone);
+	static fromEntity(obj: RoutineTodoListItemEntity): RoutineTodoListItemRequest {
+		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.isDone);
 	}
 
-	static fromJson(obj: any): RoutineToDoListItemRequest {
-		return new RoutineToDoListItemRequest(obj.activity.id, obj.timePeriodId, obj.isDone);
+	static fromJson(obj: any): RoutineTodoListItemRequest {
+		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriodId, obj.isDone);
 	}
 }
 
@@ -162,6 +161,19 @@ export class TimePeriodEntity {
 		return objects.map((item: object) => this.fromJson(item));
 	}
 }
+
+export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
+	constructor(
+		public text: string | null = null,
+		public color: string | undefined = undefined,
+		public lengthInDays: number = 0,
+		public isHiddenInView: boolean = false,
+	) {
+	}
+
+
+}
+
 
 export enum ToDoListKind {
 	ROUTINE,

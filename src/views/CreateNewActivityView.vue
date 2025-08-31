@@ -5,21 +5,21 @@
 			<VLabel>{{ i18n.t('activities.role') }}</VLabel>
 			<VRow no-gutters>
 				<VIdAutocomplete v-model="activityRequest.roleId" :items="roleOptions"
-				                 :rules="roleIdRules"></VIdAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog = true"></VBtn>
+				                 :rules="[requiredRule]"></VIdAutocomplete>
+				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.openAddDialog()"></VBtn>
 			</VRow>
 			<VLabel>{{ i18n.t('activities.category') }}</VLabel>
 			<VRow no-gutters>
 				<VIdAutocomplete
 					v-model="activityRequest.categoryId"
 					:items="categoryOptions"
-					:rules="categoryIdRules"
+					:rules="[requiredRule]"
 				></VIdAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog = true"></VBtn>
+				<VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.openAddDialog()"></VBtn>
 			</VRow>
 			<VLabel>{{ i18n.t('activities.activity') }}</VLabel>
 			<VRow no-gutters>
-				<VTextField v-model="activityRequest.name" :rules="activityRules"></VTextField>
+				<VTextField v-model="activityRequest.name" :rules="[requiredRule]"></VTextField>
 				<VBtn class="ml-2" icon="$info" color="primary"></VBtn>
 			</VRow>
 			<VTextarea class="my-3" :label="i18n.t('activities.activityDescription')" v-model="activityRequest.text"
@@ -45,20 +45,9 @@
 		</VForm>
 	</VCol>
 </VRow>
-<MyDialog v-model="addRoleDialog" title="Add new role" :confirmBtnLabel="$t('general.create')" @confirmed="createEntity('role')">
-	<v-text-field label="Name" v-model="newEntity.role.name" :rules="customRoleRules"></v-text-field>
-	<VTextarea label="Text" v-model="newEntity.role.text" :rules="customRoleRules"></VTextarea>
-	<VLabel>Color</VLabel>
-	<VColorPicker label="Color" v-model="newEntity.role.color" hide-inputs></VColorPicker>
-</MyDialog>
-<MyDialog v-model="addCategoryDialog" title="Add new category" :confirmBtnLabel="$t('general.create')"
-          @confirmed="createEntity('category')">
-	<v-text-field label="Name" v-model="newEntity.category.name" :rules="customCategoryRules"></v-text-field>
-	<VTextarea label="Text" v-model="newEntity.category.text" :rules="customCategoryRules"></VTextarea>
-	<VLabel>Color</VLabel>
-	<VColorPicker v-model="newEntity.category.color" hide-inputs></VColorPicker>
-</MyDialog>
 
+<ActivityRoleDialog ref="addRoleDialog" @created="onRoleCreated"></ActivityRoleDialog>
+<ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"></ActivityCategoryDialog>
 </template>
 <script setup lang="ts">
 
@@ -74,68 +63,56 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {activitySelectOptions} from '@/composables/ActivitySelectOptions.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
+import {useActivityCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
+import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
+import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 
+const {create} = useActivityCrud()
 const {fetchRoleSelectOptions, fetchCategorySelectOptions} = activitySelectOptions()
-const {fetchTaskUrgencySelectOptions } = useTaskPlanningSelectOptions()
+const {fetchTaskUrgencySelectOptions} = useTaskPlanningSelectOptions()
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const i18n = useI18n();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const addCategoryDialog = ref(false);
-const addRoleDialog = ref(false);
+const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>({} as InstanceType<typeof ActivityRoleDialog>);
+const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>({} as InstanceType<typeof ActivityCategoryDialog>);
 
-const dialog = ref(false);
-const roleIdRules = [(v: number | null) => !!v || 'Role is required'];
-const customRoleRules = [(v: string) => !!v || 'Custom role is required'];
-const categoryIdRules = [(v: number | null) => !!v || 'Category is required'];
-const customCategoryRules = [(v: string) => !!v || 'Custom category is required'];
-const activityRules = [(v: string) => !!v || 'Activity is required'];
+const {requiredRule} = useGeneralRules()
 
 const activityRequest = ref(new ActivityRequest());
 const roleOptions = ref<SelectOption[]>([]);
 const categoryOptions = ref<SelectOption[]>([]);
 const urgencyOptions = ref<SelectOption[]>([]);
 
-const newEntity = reactive({
-	role: new RoleRequest(),
-	category: new CategoryRequest(),
-});
 
 onMounted(async () => {
 	roleOptions.value = await fetchRoleSelectOptions();
 	categoryOptions.value = await fetchCategorySelectOptions();
 	urgencyOptions.value = await fetchTaskUrgencySelectOptions();
-	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0].id;
+	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0]?.id;
 })
 
 
 async function validateAndSendForm() {
 	const {valid} = await form.value.validate();
 	if (valid) {
-		createNewActivity()
+		await create(activityRequest.value);
+		form.value.reset();
+		showSnackbar('Activity created succesfully', {color: 'success'});
 	} else {
 		showErrorSnackbar('Please fix the form errors');
 	}
 }
 
-function createNewActivity() {
-	API.post('/activity/create', activityRequest.value).then(() => {
-		form.value.reset();
-		dialog.value = false;
-		showSnackbar('Activity created succesfully', {color: 'success'});
-	});
+function onRoleCreated(request: RoleRequest, createdId: number) {
+	roleOptions.value.push(new SelectOption(createdId, request.name))
+	activityRequest.value.roleId = createdId;
 }
 
-function createEntity(entityType: keyof typeof newEntity) {
-	API.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
-		const newOpt = SelectOption.fromIdName(response.data);
-		entityType === "role" ? roleOptions.value.push(newOpt) : categoryOptions.value.push(newOpt);
-		newEntity[entityType] = entityType === 'role' ? new Role() : new Category();
-		showSnackbar(entityType + ' created succesfully', {color: 'success'});
-		const key: keyof typeof activityRequest.value = (entityType === "role" ? "roleId" : "categoryId");
-		activityRequest.value[key] = newOpt.id;
-		addRoleDialog.value = addCategoryDialog.value = false;
-	});
+function onCategoryCreated(request: CategoryRequest, createdId: number) {
+	categoryOptions.value.push(new SelectOption(createdId, request.name))
+	activityRequest.value.categoryId = createdId;
 }
 </script>
 <style scoped>
