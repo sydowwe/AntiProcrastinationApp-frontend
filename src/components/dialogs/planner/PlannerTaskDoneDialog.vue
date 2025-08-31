@@ -10,7 +10,7 @@
 		<VForm @keyup.native.enter="save">
 			<div class="d-flex flex-column flex-sm-row mb-4">
 				<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
-				<MyDatePicker v-model="dateTime" class="ml-2 flex-grow-1" :clearable="false"></MyDatePicker>
+				<VDateInput v-model="dateTime" class="ml-2 flex-grow-1" :display-format="formatToDate" :clearable="false"></VDateInput>
 			</div>
 			<div class="d-flex flex-column flex-sm-row mb-4">
 				<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
@@ -26,17 +26,19 @@
 </template>
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
-import {importDefaults} from '@/compositions/general/Defaults';
-import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {TimeObject} from '@/classes/TimeUtils';
-import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
+import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 import {PlannerTask} from '@/classes/PlannerTask';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useMoment} from '@/scripts/momentHelper.ts';
+
+const {formatToDate} = useMoment()
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const props = defineProps({
 	plannerTask: {
 		type: Object as () => PlannerTask,

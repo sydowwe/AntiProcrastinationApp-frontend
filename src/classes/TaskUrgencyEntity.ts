@@ -5,7 +5,7 @@ export class TaskUrgencyEntity{
         public text: string = '',
         public color: string = '',
       ) {}
-      static fromObject(object: any){
+      static fromJson(object: any){
         const {
           id = 0,
           priority = 0,
@@ -15,7 +15,7 @@ export class TaskUrgencyEntity{
         return new TaskUrgencyEntity(id,priority,text,color);
       }
       static listFromObjects(objects: any[]){
-        return objects.map((item:object)=>TaskUrgencyEntity.fromObject(item));
+        return objects.map((item:object)=>TaskUrgencyEntity.fromJson(item));
       }
       
 }

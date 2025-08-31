@@ -40,10 +40,9 @@
 
 <script setup lang="ts">
 
-import {ref, computed, watch, onMounted, PropType} from 'vue';
+import {ref, computed, watch, onMounted, type PropType} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-import {importDefaults} from '@/compositions/general/Defaults';
-import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
+import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
@@ -56,9 +55,11 @@ import {
 	// getAllActivityFormSelectOptions,
 	getAllActivityFormSelectOptionsCombinations,
 	// useActivitySelectOptionsFiltered
-} from '@/compositions/ActivitySelectsComposition';
+} from '@/composables/ActivitySelectsComposition';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import router from '@/plugins/router.ts';
 
-const {router, showErrorSnackbar, showSnackbar} = importDefaults();
+const { showErrorSnackbar, showSnackbar} = useSnackbar();
 
 
 const props = defineProps({

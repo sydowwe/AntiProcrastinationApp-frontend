@@ -10,7 +10,7 @@ export class TimeLengthObject {
 		return new TimeLengthObject(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60), seconds % 60);
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			hours = 0,
 			minutes = 0,
@@ -49,7 +49,7 @@ export class TimeObject {
 		return new TimeLengthObject(Math.floor(minutes / 60), Math.floor(minutes % 60));
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			hours = 0,
 			minutes = 0,

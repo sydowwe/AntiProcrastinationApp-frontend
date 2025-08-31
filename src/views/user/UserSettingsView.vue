@@ -42,14 +42,18 @@ import {ref, computed} from 'vue';
 import ChangePasswordDialog from '../../components/user/dialogs/ChangePasswordDialog.vue';
 import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
 
-import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
+import type {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {User} from '@/classes/User';
-import {importDefaults} from '@/compositions/general/Defaults';
+
 import {useI18n} from 'vue-i18n';
 import ChangeEmailDialog from '@/components/user/dialogs/ChangeEmailDialog.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useUserStore} from '@/stores/userStore.ts';
+import router from '@/plugins/router.ts';
 
-const {router, userStore, showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = importDefaults();
+const {showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = useSnackbar();
 const i18n = useI18n();
+const userStore = useUserStore();
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
 
 const changeEmailDialog = ref<DialogType>({} as DialogType);
@@ -96,12 +100,10 @@ function deleteAccount(){
 }
 
 function getUserData(): void {
-	axios.post('/user/data', {})
+	API.post('/user/data', {})
 		.then((response) => {
-			userData.value = User.fromObject(response.data);
+			userData.value = User.fromJson(response.data);
 			console.log(userData.value);
-
-			userStore.setEmail(userData.value.email);
 		})
 		.catch((error) => {
 			console.log(error);
@@ -125,8 +127,7 @@ const onDeleted = () => {
 function show2FAQrCode() {
 	onUserVerified.value = () => {
 		if (!qrCodeImage.value) {
-			axios
-				.post('/user/get-2fa-qr-code', {})
+			API.post('/user/get-2fa-qr-code', {})
 				.then((response) => {
 					if (response.data.qrCode) {
 						qrCodeImage.value = response.data.qrCode;

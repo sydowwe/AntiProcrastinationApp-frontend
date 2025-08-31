@@ -11,18 +11,18 @@ export class History {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0
 		} = object;
 		const startTimestamp = new Date(object.startTimestamp);
-		const length = TimeLengthObject.fromObject(object.length);
-		const activity = Activity.fromObject(object.activity);
+		const length = TimeLengthObject.fromJson(object.length);
+		const activity = Activity.fromJson(object.activity);
 		return new History(id, startTimestamp, length, activity);
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -34,7 +34,7 @@ export class HistoryRequest {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			startTimestamp = new Date(),
 			length = new TimeObject(),
@@ -44,7 +44,7 @@ export class HistoryRequest {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -83,7 +83,7 @@ export class HistoryGroupedByDate {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {} = object;
 		const startTimestamp = new Date(object.date);
 		const historyList = History.listFromObjects(object.historyResponseList);
@@ -91,6 +91,6 @@ export class HistoryGroupedByDate {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }

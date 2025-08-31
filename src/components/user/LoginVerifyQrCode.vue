@@ -9,12 +9,15 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {importDefaults} from '@/compositions/general/Defaults';
+
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
+import {API} from '@/plugins/axiosConfig.ts';
+import router from '@/plugins/router.ts';
+import {useUserStore} from '@/stores/userStore.ts';
 
-const {router, userStore} = importDefaults();
 const i18n = useI18n();
+const userStore = useUserStore();
 
 const props = defineProps({
 	stayLoggedIn: {
@@ -30,19 +33,18 @@ const error = ref(false);
 
 function submit() {
 	loading.value = true;
-	axios
-		.post('/user/login-2fa', {
+	API.post('/user/login-2fa', {
 			stayLoggedIn: props.stayLoggedIn,
 			token: token.value,
 		})
 		.then((response) => {
-			userStore.authenticated(response.data.email);
+			userStore.login(response.data.userName);
 			router.push('/');
 		})
 		.catch((_error) => {
 			console.log(_error);
 			error.value = true;
-			code.value = '';
+			token.value = '';
 		});
 }
 </script>

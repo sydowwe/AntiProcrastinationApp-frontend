@@ -8,15 +8,6 @@
 		</div>
 	</template>
 	<VForm @keyup.native.enter="save">
-		<!--		<div class="d-flex flex-column flex-sm-row mb-4">-->
-		<!--			<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>-->
-		<!--			<MyDatePicker v-model="dateTime" class="ml-2 flex-grow-1" :clearable="false"></MyDatePicker>-->
-		<!--		</div>-->
-		<!--		<div class="d-flex flex-column flex-sm-row mb-4">-->
-		<!--			<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>-->
-		<!--			<TimePicker ref="timePicker" class="ml-2 flex-grow-1" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"-->
-		<!--			            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>-->
-		<!--		</div>-->
 		<div class="d-flex flex-column flex-sm-row mb-4">-->
 			<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
 			<DateTimePicker v-model="dateTime" class="ml-2 flex-grow-1" :date-clearable="false"></DateTimePicker>
@@ -30,18 +21,18 @@
 </template>
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
-import {importDefaults} from '@/compositions/general/Defaults';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {TimeObject} from '@/classes/TimeUtils';
-import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
-import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
+import type {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
+import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 // const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	toDoListItem: {

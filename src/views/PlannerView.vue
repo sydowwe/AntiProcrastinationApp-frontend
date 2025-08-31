@@ -26,7 +26,7 @@
 		<div
 			class="d-flex flex-column table"
 		>
-			<PlannerTaskItemVue
+			<PlannerTaskItem
 				:plannerTask="plannerTask"
 				@delete="deleteTask"
 				@edit="plannerDialog?.openEdit"
@@ -34,7 +34,7 @@
 				@unSelect="unSelect"
 				v-for="plannerTask in plannerTasks"
 				@isDoneChanged="handleIsDoneChanged"
-			></PlannerTaskItemVue>
+			></PlannerTaskItem>
 		</div>
 	</div>
 </div>
@@ -50,18 +50,18 @@
 
 <script setup lang="ts">
 import PlannerDialog from "../components/dialogs/planner/PlannerDialog.vue";
-import PlannerTaskItemVue from "../components/PlannerTaskItem.vue";
 import {onMounted, ref} from "vue";
-import {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces";
+import type {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces";
 import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
-import {importDefaults} from "@/compositions/general/Defaults";
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/planner/PlannerTaskDoneDialog.vue';
 
 import {useI18n} from 'vue-i18n';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 
 const plannerDialog = ref<PlannerDialogType>({} as PlannerDialogType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
@@ -107,7 +107,7 @@ const handleIsDoneChanged = (plannerTask: PlannerTask) => {
 	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: plannerTask.id}];
 	console.log(isBatchAction);
 	console.log(changedItemsIds);
-	axios.patch(`/${url}/change-done`, changedItemsIds)
+	API.patch(`/${url}/change-done`, changedItemsIds)
 		.then((response) => {
 			console.log(response);
 			if (isBatchAction) {
@@ -126,7 +126,7 @@ const handleIsDoneChanged = (plannerTask: PlannerTask) => {
 
 function applyFilter() {
 	console.log(dateTimePicker.value.getDateTime?.toISOString(), selectedTimeSpan.value);
-	axios.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTime?.toISOString() ?? null, selectedTimeSpan.value))
+	API.post(`/${url}/apply-filter`, new PlannerTaskFilter(dateTimePicker.value.getDateTime?.toISOString() ?? null, selectedTimeSpan.value))
 		.then((response) => {
 			console.log(response.data);
 			plannerTasks.value = PlannerTask.listFromObjects(response.data);
@@ -137,9 +137,9 @@ function applyFilter() {
 
 const add = (plannerTask: PlannerTaskRequest) => {
 	if (validatePlannerTask(plannerTask)) {
-		axios.post(`${url}/create`, plannerTask).then((response) => {
+		API.post(`${url}/create`, plannerTask).then((response) => {
 			console.log(response)
-			plannerTasks.value.push(PlannerTask.fromObject(response.data));
+			plannerTasks.value.push(PlannerTask.fromJson(response.data));
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
 			showSnackbar(i18n.t("successFeedback.added"), {
 				timeout: 1500,
@@ -164,10 +164,10 @@ const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 		&& (beforeEditEntity.activity.id !== plannerTask.activityId || beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
 		&& validatePlannerTask(plannerTask, id)
 	) {
-		axios.put(`${url}/update/${id}`, plannerTask).then((response) => {
+		API.put(`${url}/update/${id}`, plannerTask).then((response) => {
 			plannerTasks.value[
 				plannerTasks.value.findIndex((item) => item.id === id)
-				] = PlannerTask.fromObject(response.data);
+				] = PlannerTask.fromJson(response.data);
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
 			showSnackbar(i18n.t("successFeedback.edited"), {
 				timeout: 1500,
@@ -232,7 +232,7 @@ function deleteTask(id: number) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({
 			id: item,
 		}));
-		axios.post(`/${url}/batch-delete`, batchDeleteIds)
+		API.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
 				if (response.data.status === "success") {
@@ -246,7 +246,7 @@ function deleteTask(id: number) {
 				console.error(error);
 			});
 	} else {
-		axios.delete(`/${url}/delete/${id}`)
+		API.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				plannerTasks.value = plannerTasks.value.filter(

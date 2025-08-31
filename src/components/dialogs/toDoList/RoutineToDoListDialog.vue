@@ -24,19 +24,20 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
 import {RoutineToDoListItemRequest, RoutineToDoListItemEntity} from '@/classes/ToDoListItem';
-import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
-import {importDefaults} from '@/compositions/general/Defaults';
+import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
+
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {SelectOption} from '@/classes/SelectOption';
-import {EntityWithSelectOptions, getAllCategoryOptions, getAllEntityOptions} from '@/compositions/ActivitySelectsComposition';
+import {EntityWithSelectOptions} from '@/composables/ActivitySelectsComposition';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
 const {isActivityFormHidden, quickActivityName, quickActivityText, quickActivityCategoryId, quickCreateActivity} = useQuickCreateActivity('Routine task');
 
 const i18n = useI18n();
-const {showErrorSnackbar} = importDefaults();
+const {showErrorSnackbar} = useSnackbar();
 const routineToDoListItem = ref(new RoutineToDoListItemRequest());
 const dialog = ref(false);
 const isEdit = ref(false);

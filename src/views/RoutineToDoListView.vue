@@ -6,7 +6,7 @@
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
-		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : null" :lg="shownGroups.length > 2 ? 4 : null"
+		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : undefined" :lg="shownGroups.length > 2 ? 4 : undefined"
 		      v-for="group in shownGroups">
 			<VCard class="mx-auto rounded-lg px-3 d-flex flex-column" min-width="350">
 				<VRow class="py-1" noGutters>
@@ -54,11 +54,12 @@ import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoLis
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
 import {RoutineToDoListItemEntity, RoutineToDoListGroupedList, RoutineToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
-import {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
+import type {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const groupedItems = ref([] as RoutineToDoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
-const url = '/routine-to-do-list';
+const url = '/routine-todo-list';
 
 onMounted(() => {
 	getAllRecords();
@@ -72,14 +73,14 @@ function toggleHideTimePeriod(id: number) {
 	if (group) {
 		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;
 	}
-	axios.post(`/routine-time-period/change-is-hidden/` + id)
+	API.post(`/routine-time-period/change-is-hidden/` + id)
 		.then((response) => {
 			console.log(response.data);
 		})
 }
 
 const getAllRecords = () => {
-	axios.post(`${url}/get-all-grouped`)
+	API.post(`${url}/get-all-grouped`)
 		.then((response) => {
 			groupedItems.value = RoutineToDoListGroupedList.listFromObjects(response.data);
 			console.log(groupedItems.value);
@@ -87,12 +88,12 @@ const getAllRecords = () => {
 };
 
 const add = (toDoListItem: RoutineToDoListItemRequest) => {
-	axios.post(`${url}/create`, toDoListItem)
+	API.post(`${url}/create`, toDoListItem)
 		.then((response) => {
 			console.log(response.data)
 			const updatedList = groupedItems.value.find((group) => group.timePeriod.id === toDoListItem.timePeriodId)?.items;
 			if (updatedList) {
-				updatedList.push(RoutineToDoListItemEntity.fromObject(response.data));
+				updatedList.push(RoutineToDoListItemEntity.fromJson(response.data));
 				updatedList.sort((a, b) => a.id - b.id);
 			} else {
 				console.error('not found group');
@@ -110,11 +111,12 @@ function quickEditedActivity(id: number, name: string, text: string) {
 }
 
 const edit = (id: number, toDoListItemRequest: RoutineToDoListItemRequest) => {
-	const beforeEditEntity = groupedItems.value[groupedItems.value.findIndex(group => group.items.findIndex(item => item.id === id) >= 0)];
-	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		axios.put(`${url}/update/${id}`, toDoListItemRequest)
+	const beforeEditEntity = groupedItems.value.find(group => group.items.findIndex(item => item.id === id) > 0);
+	const activity = beforeEditEntity?.items.find(item => item.id === id)
+	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || activity?.id !== toDoListItemRequest.activityId)) {
+		API.put(`${url}/update/${id}`, toDoListItemRequest)
 			.then((response) => {
-				const updatedItem = RoutineToDoListItemEntity.fromObject(response.data);
+				const updatedItem = RoutineToDoListItemEntity.fromJson(response.data);
 				const oldGroup = groupedItems.value.find((group) => {
 					return group.items.some((item) => item.id === id);
 				});

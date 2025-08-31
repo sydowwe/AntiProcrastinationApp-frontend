@@ -3,7 +3,7 @@ import {TimeLengthObject} from '../TimeUtils';
 import {ToDoListItemEntity, RoutineToDoListItemEntity} from '../ToDoListItem';
 import {Alarm} from '@/classes/Alarm';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
-import {Ref, UnwrapRef} from 'vue';
+import type {Ref, UnwrapRef} from 'vue';
 
 export interface VuetifyFormType {
 	validate(): Promise<{ valid: boolean }>;
@@ -96,13 +96,6 @@ export interface TimePickerType {
 	set(hours: number, minutes: number): void;
 	set(hours: number, minutes: number, seconds: number): void;
 	reset(): void;
-}
-
-export interface MyDatePickerType {
-	getDateISO: string | null;
-	getDate: Date | null;
-
-	setDate(newDate: Date): void;
 }
 
 export interface DateTimePickerType {

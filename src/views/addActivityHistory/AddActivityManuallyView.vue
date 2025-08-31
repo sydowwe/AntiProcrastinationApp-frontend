@@ -22,15 +22,16 @@
 //TODO
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
+import type {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
-import {importDefaults} from '@/compositions/general/Defaults';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-
 import {useI18n} from 'vue-i18n';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+
+
+const {showErrorSnackbar} = useSnackbar();
 const i18n = useI18n();
-const {showErrorSnackbar} = importDefaults();
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);

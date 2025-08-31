@@ -11,7 +11,7 @@ export class PlannerTask {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			startTimestamp = "",
@@ -32,7 +32,7 @@ export class PlannerTask {
 
 	static listFromObjects(objects: any[]) {
 		return objects.map((item: object) => {
-			return this.fromObject(item);
+			return this.fromJson(item);
 		});
 	}
 

@@ -37,7 +37,8 @@
     import HistoryPanelFilter from '../components/history/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/history/HistoryRecordItem.vue';
     import {History, HistoryFilter, HistoryGroupedByDate} from '@/classes/History';
-    import {useMoment} from '@/compositions/general/MomentHelper';
+    import {useMoment} from '@/scripts/momentHelper.ts';
+    import {API} from '@/plugins/axiosConfig.ts';
     const groupedRecords = ref([] as HistoryGroupedByDate[]);
     const {formatLocalized} = useMoment();
 	const midpoint = ref(Math.ceil(groupedRecords.value.length / 2 + 2));
@@ -51,8 +52,7 @@
 	    } else {
 		    filter.dateFrom = null;
 	    }
-	    axios
-		    .post(`/activity-history/filter`, filter)
+	    API.post(`/activity-history/filter`, filter)
 		    .then((response) => {
 			    groupedRecords.value = HistoryGroupedByDate.listFromObjects(response.data)
 		    })

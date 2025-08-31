@@ -13,11 +13,14 @@
 </template>
 <script setup lang="ts">
 import {useI18n} from "vue-i18n";
-import {importDefaults} from "@/compositions/general/Defaults";
 import {onMounted, ref} from "vue";
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useLoading} from '@/composables/general/LoadingComposable.ts';
+import router from '@/plugins/router.ts';
 
 const i18n = useI18n();
-const {router, userStore, showFullScreenLoading, showErrorSnackbar} = importDefaults();
+const {showErrorSnackbar} = useSnackbar()
+const {showFullScreenLoading} = useLoading()
 
 let emailConfirmed = ref(false);
 let emailConfirmationError = ref(false);
@@ -26,8 +29,7 @@ onMounted(() => {
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	axios
-		.get('/user' + router.currentRoute.value.fullPath)
+	API.get('/user' + router.currentRoute.value.fullPath)
 		.then(() => {
 			emailConfirmed.value = true;
 		})
@@ -41,8 +43,7 @@ const resendConfirmationEmail = ()=>{
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	axios
-		.get(`/user/resend-confirmation-email?userId=${router.currentRoute.value.query['userId']}`)
+	API.get(`/user/resend-confirmation-email?userId=${router.currentRoute.value.query['userId']}`)
 		.then(() => {
 			confirmationEmailResent.value = true;
 		})

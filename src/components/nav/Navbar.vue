@@ -1,132 +1,301 @@
 <template>
 <header v-cloak>
-	<VAppBar app>
-		<div class="d-flex align-center justify-space-between w-100 pr-3">
-			<div class="d-flex align-center">
-				<VAppBarTitle class="flex-0-0 mx-3"> AntiProcrastination app </VAppBarTitle>
+	<nav>
+		<VAppBar v-if="!mdAndDown" app sticky color="secondary-accent" class="w-100 px-3" justify-end>
+			<div class="d-flex align-center flex-fill ga-1">
+				<VSheet class="d-flex px-2 py-1 mr-1" color="primary-container" style="border-radius: 7px; border: 2px black solid">
+					<VAppBarTitle class="flex-0-0">Adhd time organizer</VAppBarTitle>
+				</VSheet>
 				<template v-if="userStore.isAuthenticated">
-					<RouterLink class="my-auto pa-2" to="/">{{ $t('navigation.home') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/history">{{ $t('navigation.history') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/routine-to-do-list">{{ $t('navigation.routineToDoList') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/to-do-list">{{ $t('navigation.toDoList') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/create-new-activity">{{ $t('navigation.createNewActivity') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="">
-						{{ $t('navigation.addActivityToHistory') }}
-						<VMenu offset-y :open-on-focus="false" activator="parent" open-on-hover>
-							<VSheet class="d-flex flex-column ga-1" color="bg">
-								<RouterLink class="my-auto pa-2" to="/pomodoro-timer">{{ $t('navigation.pomodoroTimer') }}</RouterLink>
-								<RouterLink class="my-auto pa-2" to="/stopwatch">{{ $t('navigation.stopwatch') }}</RouterLink>
-								<RouterLink class="my-auto pa-2" to="/timer">{{ $t('navigation.timer') }}</RouterLink>
-								<RouterLink class="my-auto pa-2" to="/alarm-list">{{ $t('navigation.alarm') }}</RouterLink>
-								<RouterLink class="my-auto pa-2" to="/add-activity-manually">{{ $t('navigation.addActivityManually') }}</RouterLink>
-							</VSheet>
-						</VMenu>
-					</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/planner">{{ $t('navigation.taskPlanner') }}</RouterLink>
+					<template v-for="item in filteredItems" :key="item.title">
+						<!-- Regular menu item without children -->
+						<VBtn
+							v-if="!item.children"
+							:to="item.to"
+							:prepend-icon="item.icon"
+							variant="text"
+							class="pr-2"
+						>
+							{{ $t(`navigation.${item.title}`) }}
+						</VBtn>
 
+						<!-- Menu item with dropdown children -->
+						<VMenu
+							v-else
+							:close-on-content-click="false"
+							location="bottom"
+						>
+							<template v-slot:activator="{ props, isActive }">
+								<VBtn
+									v-bind="props"
+									:to="item.to || ''"
+									:prepend-icon="item.icon"
+									:append-icon="isActive ? 'chevron-up' : 'chevron-down'"
+									variant="text"
+									class="pr-2"
+								>
+									{{ $t(`navigation.${item.title}`) }}
+								</VBtn>
+							</template>
+							<VCard class="mt-1" elevation="8" min-width="200">
+								<VList class="pa-0" density="compact">
+									<VListItem
+										v-for="child in item.children"
+										:key="child.title"
+										:to="child.to"
+										:prepend-icon="child.icon"
+										:title="$t(`navigation.${child.title}`)"
+										class="px-4 py-2"
+										rounded="0"
+									/>
+								</VList>
+							</VCard>
+						</VMenu>
+					</template>
 				</template>
 			</div>
-
-			<div class="d-flex align-center ga-3">
-				<div v-if="!userStore.isAuthenticated">
-					<RouterLink class="my-auto pa-2" to="/registration">{{ $t('authorization.registration') }}</RouterLink>
-					<RouterLink class="my-auto pa-2" to="/login">{{ $t('authorization.login') }}</RouterLink>
-				</div>
-				<div v-else>
-					<NavUserDropdown></NavUserDropdown>
-				</div>
-				<VSelect
-					class="flex-0-0 mx-2"
-					v-model="i18n.locale.value"
-					:items="i18n.availableLocales"
-					density="compact"
-					width="auto"
-					hide-details
-					:clearable="false"
-					@update:modelValue="sendChangeLocale"
-				></VSelect>
-				<!-- <VAppBarNavIcon></VAppBarNavIcon> -->
+			<div class="d-flex align-center ps-13">
+				<VMenu
+					v-if="userStore.isAuthenticated"
+					:close-on-content-click="false"
+					location="bottom"
+				>
+					<template v-slot:activator="{ props, isActive }">
+						<VBtn
+							v-bind="props"
+							color="primary-container"
+							class="ml-3 px-3 py-2"
+							prepend-icon="user"
+							:append-icon="isActive ? 'chevron-up' : 'chevron-down'"
+							variant="flat"
+						>
+							{{ userStore.userName }}
+						</VBtn>
+					</template>
+					<VCard class="mt-1" elevation="8" min-width="180">
+						<VList class="pa-0" density="compact">
+							<VListItem
+								to="/user-settings"
+								prepend-icon="user-gear"
+								title="Nastavenia"
+								class="px-4 py-2"
+							/>
+							<VListItem
+								@click="logout"
+								prepend-icon="arrow-right-from-bracket"
+								title="Odhlásiť sa"
+								class="px-4 py-2"
+							/>
+						</VList>
+					</VCard>
+				</VMenu>
+				<VIconBtn
+					class="ml-2"
+					@click="toggleTheme"
+					:icon="theme.global.current.value.dark ? 'sun' : 'moon'"
+					variant="elevated"
+					:color="theme.global.current.value.dark ? 'white' : 'black'"
+					:title="theme.global.current.value.dark ? 'Svetlý režim' : 'Tmavý režim'"
+				/>
 			</div>
-		</div>
-	</VAppBar>
+		</VAppBar>
+
+		<!-- Mobile Navigation Drawer -->
+		<template v-else>
+			<VNavigationDrawer
+				v-model="drawer"
+				color="primary"
+				location="end"
+				temporary
+			>
+				<VListItem
+					prepend-icon="user"
+					class="py-2"
+					:title="userStore.userName"
+				>
+					<template v-slot:append>
+						<VIconBtn icon="arrow-right-from-bracket" style="border-radius: 7px" color="#AAA" @click="logout" size="45"
+						          variant="flat"></VIconBtn>
+					</template>
+				</VListItem>
+
+				<VDivider></VDivider>
+
+				<VList density="compact" nav>
+					<template v-for="item in filteredItems" :key="item.title">
+						<!-- Mobile menu item without children -->
+						<VListItem
+							v-if="!item.children"
+							:value="item.title"
+							:to="item.to"
+							:prepend-icon="item.icon"
+							:title="$t(`navigation.${item.title}`)"
+							@click="drawer = false"
+						/>
+
+						<!-- Mobile menu group with children -->
+						<VListGroup v-else :value="item.title">
+							<template v-slot:activator="{ props }">
+								<VListItem
+									v-bind="props"
+									:prepend-icon="item.icon"
+									:title="$t(`navigation.${item.title}`)"
+								/>
+							</template>
+							<VListItem
+								v-for="child in item.children"
+								:key="child.title"
+								:value="child.title"
+								:to="child.to"
+								:prepend-icon="child.icon"
+								:title="$t(`navigation.${child.title}`)"
+								class="pl-8"
+								@click="drawer = false"
+							/>
+						</VListGroup>
+					</template>
+				</VList>
+			</VNavigationDrawer>
+
+			<!-- Mobile App Bar -->
+			<VAppBar app color="primary">
+				<div class="pl-2 w-100 d-flex ga-3 align-center">
+					<VSheet class="d-flex px-2 py-1" color="primaryBg" style="border-radius: 7px; border: 3px black double">
+						<VAppBarTitle>Moja digitálna firma</VAppBarTitle>
+					</VSheet>
+					<div v-if="userStore.isAuthenticated">
+						<VIcon icon="thumbtack" size="15" class="mr-1 mb-1"></VIcon>
+						<span class="opacity-60">{{ currentSite ? $t(`navigation.${currentSite.title}`) : '' }}</span>
+					</div>
+					<div class="ml-auto">
+						<VAppBarNavIcon v-if="userStore.isAuthenticated" class="mr-2" @click.stop="drawer = !drawer"/>
+					</div>
+				</div>
+			</VAppBar>
+		</template>
+	</nav>
 </header>
 </template>
+
 <script setup lang="ts">
-import {useI18n} from 'vue-i18n';
-import {importDefaults} from '@/compositions/general/Defaults';
-import NavUserDropdown from '@/components/nav/NavUserDropdown.vue';
+import {useDisplay, useTheme} from 'vuetify/framework';
+import {computed, onMounted, ref} from 'vue';
+import {useUserStore} from '@/stores/userStore.ts';
+import router from '@/plugins/router.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
-const {router, userStore, showErrorSnackbar} = importDefaults();
-const i18n = useI18n();
+const {mdAndDown} = useDisplay()
+const drawer = ref(false)
 
-//TODO fix locale return to default after refresh
-function sendChangeLocale(){
-	if(userStore.isAuthenticated){
-		axios.put('/user/change-current-locale/'+i18n.locale.value).then((response) => {
-			console.log(response)
-		});
-	}
+const theme = useTheme()
+
+const toggleTheme = () => {
+	const newTheme = theme.global.current.value.dark ? 'light' : 'dark'
+	theme.change(newTheme)
+	localStorage.setItem('theme', newTheme)
 }
+
+// Restore theme preference on component mount
+onMounted(() => {
+	const savedTheme = localStorage.getItem('theme')
+	if (savedTheme) {
+		theme.change(savedTheme)
+	}
+})
+
+interface MenuItem {
+	title: string;
+	icon: string;
+	to?: string;
+	needsAdmin: boolean;
+	children?: MenuItem[];
+}
+
+const items: MenuItem[] = [
+	{title: 'home', icon: 'home', to: '/', needsAdmin: false},
+	{title: 'history', icon: 'clock-rotate-left', to: '/history', needsAdmin: false},
+	{title: 'createNewActivity', icon: 'plus', to: '/create-new-activity', needsAdmin: false},
+	{
+		title: 'toDoList',
+		icon: 'list-check',
+		needsAdmin: false,
+		children: [
+			{title: 'toDoList', icon: 'list-check', to: '/todo-list', needsAdmin: false},
+			{title: 'routineToDoList', icon: 'rotate', to: '/routine-todo-list', needsAdmin: false},
+		]
+	},
+	{
+		title: 'addActivityToHistory',
+		icon: 'plus-circle',
+		needsAdmin: false,
+		children: [
+			{title: 'addActivityManually', icon: 'pen', to: '/add-activity-manually', needsAdmin: false},
+			{title: 'pomodoroTimer', icon: 'tomato', to: '/pomodoro-timer', needsAdmin: false},
+			{title: 'stopwatch', icon: 'stopwatch', to: '/stopwatch', needsAdmin: false},
+			{title: 'timer', icon: 'clock', to: '/timer', needsAdmin: false},
+			{title: 'alarm', icon: 'alarm-clock', to: '/alarm-list', needsAdmin: false},
+		]
+	},
+	{title: 'taskPlanner', icon: 'calendar-days', to: '/planner', needsAdmin: false},
+]
+
+// Filter items based on user permissions
+const filteredItems = computed(() => {
+	const filterMenuItem = (item: MenuItem): MenuItem | null => {
+		// If user is not admin and item requires admin, hide it
+
+		// If item has children, filter them recursively
+		if (item.children) {
+			const filteredChildren = item.children
+				.map(child => filterMenuItem(child))
+				.filter(child => child !== null) as MenuItem[];
+
+			// If no children remain after filtering, hide the parent item
+			if (filteredChildren.length === 0) {
+				return null;
+			}
+
+			return {
+				...item,
+				children: filteredChildren
+			};
+		}
+
+		return item;
+	};
+
+	return items
+		.map(item => filterMenuItem(item))
+		.filter(item => item !== null) as MenuItem[];
+});
+
+// Helper function to get all menu items (including children) for current site detection
+const getAllMenuItems = (items: MenuItem[]): MenuItem[] => {
+	const result: MenuItem[] = [];
+	for (const item of items) {
+		if (item.to) {
+			result.push(item);
+		}
+		if (item.children) {
+			result.push(...getAllMenuItems(item.children));
+		}
+	}
+	return result;
+};
+
+const currentSite = computed(() => {
+	const allItems = getAllMenuItems(filteredItems.value);
+	return [...allItems].reverse().find(site => site.to && router.currentRoute.value.path.startsWith(site.to));
+});
+
+const userStore = useUserStore();
+const logout = () => {
+	API.post('/user/logout', {}).then(() => {
+		userStore.logout();
+		router.push({name: 'login'});
+	});
+};
 </script>
+
 <style scoped>
-header {
-	line-height: 1.5;
-}
-
-.logo {
-	display: block;
-	margin: 0 auto 2rem;
-}
-
-nav {
-	width: 100%;
-	font-size: 12px;
-	text-align: center;
-	margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-	color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-	background-color: transparent;
-}
-
-nav a {
-	display: inline-block;
-	padding: 0 1rem;
-	border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-	border: 0;
-}
-
-@media (min-width: 1024px) {
-	header {
-		display: flex;
-		place-items: center;
-		padding-right: calc(var(--section-gap) / 2);
-	}
-
-	.logo {
-		margin: 0 2rem 0 0;
-	}
-
-	header .wrapper {
-		display: flex;
-		place-items: flex-start;
-		flex-wrap: wrap;
-	}
-
-	nav {
-		text-align: left;
-		margin-left: -1rem;
-		font-size: 1rem;
-
-		padding: 1rem 0;
-		margin-top: 1rem;
-	}
-}
 </style>

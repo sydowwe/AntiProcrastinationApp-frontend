@@ -23,46 +23,50 @@
 			</VRow>
 		</VForm>
 	</VCol>
-	<QrCodeFor2FADialog ref="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
-	<ErrorDialog ref="errorDialog" :title="errorDialogTitle" :message="errorDialogMessage"></ErrorDialog>
+	<QrCodeFor2FADialog v-model="qrCode2FADialog" :qrCodeImage="qrCodeImage" @done="goToLogin"></QrCodeFor2FADialog>
 </VRow>
 </template>
 
 <script setup lang="ts">
-import {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
+import type {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import QrCodeFor2FADialog from '../../components/user/dialogs/QrCodeFor2FADialog.vue';
-import ErrorDialog from '../../components/dialogs/general/ErrorDialog.vue';
 import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';
-import {importDefaults} from '@/compositions/general/Defaults';
-import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
+import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
 
 import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();
-const {userStore, goToLogin, showErrorSnackbar, showFullScreenLoading, hideFullScreenLoading} = importDefaults();
+const {showFullScreenLoading, hideFullScreenLoading} = useLoading();
+const {showErrorSnackbar} = useSnackbar();
+const userStore = useUserStore();
 const {emailRules} = useUserDetailsValidation();
 
+async function goToLogin() {
+	await router.push({ name: 'login' });
+}
+
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const qrCode2FADialog = ref<DialogType>({} as DialogType);
-const errorDialog = ref<DialogType>({} as DialogType);
 
 const registrationRequest = ref(new RegistrationRequest());
 const termsAndConditions = ref(false);
-const qrCodeImage = ref('');
 const termsAndConditionsRules = [(v: boolean) => v || i18n.t('authorization.termsAndConditionsRequired')];
 
-const errorDialogTitle = ref('Dialog');
-const errorDialogMessage = ref('');
+const qrCode2FADialog = ref(false);
+const qrCodeImage = ref('');
 
-import {useChallengeV3} from 'vue-recaptcha'
 import {AvailableLocales, RegistrationRequest} from '@/classes/User';
+import {useLoading} from '@/composables/general/LoadingComposable.ts';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import router from '@/plugins/router.ts';
+import {useUserStore} from '@/stores/userStore.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
 
-const {execute} = useChallengeV3('register');
-
+const {executeRecaptcha} = useRecaptcha();
 
 async function validateAndSendForm() {
-	const recaptchaToken = await execute();
+	const recaptchaToken = await executeRecaptcha('register');
 	const {valid} = await form.value.validate();
 	if (valid) {
 		showFullScreenLoading();
@@ -71,17 +75,16 @@ async function validateAndSendForm() {
 			registrationRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
 			registrationRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			console.log(registrationRequest.value);
-			axios
-				.post('/user/register', registrationRequest.value)
+			API.post('/user/register', registrationRequest.value)
 				.then((response) => {
 					hideFullScreenLoading();
 					console.log(response);
-					userStore.setEmail(registrationRequest.value.email);
+					userStore.userName = registrationRequest.value.email;
 					if (response.data?.twoFactorEnabled) {
 						if (response.data.qrCode) {
 							if (response.data.recoveryCodes) {
 								qrCodeImage.value = response.data.qrCode;
-								qrCode2FADialog.value.open();
+								qrCode2FADialog.value = true;
 							} else {
 								console.error('No recoveryCodes!!!');
 							}

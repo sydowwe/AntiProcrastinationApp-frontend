@@ -21,36 +21,37 @@ import {ref, onMounted} from 'vue';
 import {ToDoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
-import {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from '@/compositions/general/Defaults';
+import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
 const items = ref([] as ToDoListItemEntity[]);
-const url = '/to-do-list';
+const url = '/todo-list';
 
 onMounted(() => {
 	getAllRecords();
 });
 const getAllRecords = () => {
-	axios.post(`${url}/get-all`)
+	API.get(`${url}`)
 		.then((response) => {
 			items.value = ToDoListItemEntity.listFromObjects(response.data);
 		});
 };
 const add = (toDoListItem: ToDoListItemRequest) => {
-	axios.post(`${url}/create`, toDoListItem)
+	API.post(`${url}/create`, toDoListItem)
 		.then((response) => {
-			items.value.push(ToDoListItemEntity.fromObject(response.data));
+			items.value.push(ToDoListItemEntity.fromJson(response.data));
 			items.value.sort(ToDoListItemEntity.frontEndSortFunction());
 			showSnackbar(i18n.t('successFeedback.added'), {timeout: 1500, color: 'success'});
 		});
 };
 
-function quickEditedActivity(id: number, name: string, text: string):void {
+function quickEditedActivity(id: number, name: string, text: string | null) {
 	const editedActivity = items.value[items.value.findIndex(item => item.id === id)];
 	if (editedActivity) {
 		editedActivity.activity.name = name;
@@ -62,14 +63,14 @@ const edit = (id: number, toDoListItemRequest: ToDoListItemRequest) => {
 	let taskUrgencyId = toDoListItemRequest.taskUrgencyId;
 	const beforeEditEntity = items.value.find(item => item.id === id);
 	if (beforeEditEntity && (beforeEditEntity.taskUrgency.id !== toDoListItemRequest.taskUrgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		axios.put(`${url}/update/${id}`, toDoListItemRequest)
+		API.put(`${url}/update/${id}`, toDoListItemRequest)
 			.then((response) => {
 				console.log(response.data);
 				const index = items.value.findIndex((item) => item.id === id);
 				if (taskUrgencyId === response.data.taskUrgencyId) {
-					items.value[index] = ToDoListItemEntity.fromObject(response.data);
+					items.value[index] = ToDoListItemEntity.fromJson(response.data);
 				} else {
-					items.value[index] = ToDoListItemEntity.fromObject(response.data);
+					items.value[index] = ToDoListItemEntity.fromJson(response.data);
 					items.value.sort(ToDoListItemEntity.frontEndSortFunction());
 				}
 				showSnackbar(i18n.t('successFeedback.edited'), {timeout: 1500, color: 'success'});

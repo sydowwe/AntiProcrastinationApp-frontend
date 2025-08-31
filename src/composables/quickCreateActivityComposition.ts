@@ -9,9 +9,9 @@ export function useQuickCreateActivity(viewName: string) {
 	const quickActivityCategoryId = ref<number | null>(null);
 
 	async function getQuickCreateActivityRoleIdByView() {
-		return await axios.post('/role/get-by-name/' + viewName).then((response) => {
+		return await API.post('/role/get-by-name/' + viewName).then((response) => {
 			console.log(response.data)
-			return Role.fromObject(response.data).id;
+			return Role.fromJson(response.data).id;
 		});
 	}
 
@@ -19,9 +19,9 @@ export function useQuickCreateActivity(viewName: string) {
 		if (quickActivityName.value) {
 			const roleId = await getQuickCreateActivityRoleIdByView();
 			const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, roleId, quickActivityCategoryId.value,false,false, null);
-			return await axios.post('/activity/create', activityRequest).then((response) => {
+			return await API.post('/activity/create', activityRequest).then((response) => {
 				console.log(response);
-				const activityResponse = Activity.fromObject(response.data);
+				const activityResponse = Activity.fromJson(response.data);
 				return activityResponse.id;
 			});
 		} else {
@@ -33,7 +33,7 @@ export function useQuickCreateActivity(viewName: string) {
 	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach
 	async function quickEditActivity(activityId:number) {
 		if (quickActivityName.value) {
-			return await axios.post(
+			return await API.post(
 				'/activity/quick-edit/'+activityId,
 				new QuickEditActivityRequest(quickActivityName.value, quickActivityText.value)
 			)

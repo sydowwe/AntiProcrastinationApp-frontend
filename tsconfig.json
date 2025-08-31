@@ -1,29 +1,11 @@
 {
-    "compilerOptions": {
-      "target": "esnext",
-      "module": "esnext",
-      "moduleResolution": "node",
-      "baseUrl": ".",
-      "paths": {
-        "@/*": ["src/*"]
-      },
-      "strict": true,
-      "jsx": "preserve",
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "noImplicitThis": true,
-      "allowJs": true,
-      "types": [ "vue","vuetify","axios","vue-i18n"]
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
     },
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.d.ts",
-      "src/**/*.tsx",
-      "src/**/*.vue",
-      "src/**/**/*.vue"
-    ],
-    "exclude": [
-      "node_modules"
-    ]
-  }
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}

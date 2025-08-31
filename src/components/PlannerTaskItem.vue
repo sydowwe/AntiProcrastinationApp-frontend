@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import {PlannerTask} from "@/classes/PlannerTask";
 import {computed, ref, watch} from "vue";
-import {useMoment} from '@/compositions/general/MomentHelper';
+import {useMoment} from '@/scripts/momentHelper.ts';
 
 const {formatToTime24H} = useMoment();
 const props = defineProps({

@@ -11,15 +11,17 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from '@/compositions/general/Defaults';
+import type {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
+
 import {useI18n} from 'vue-i18n';
 import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const i18n = useI18n();
-const {showErrorSnackbar} = importDefaults();
+const {showErrorSnackbar} = useSnackbar();
 
 const props = defineProps({
 	title: String,
@@ -34,13 +36,13 @@ const props = defineProps({
 })
 const dialog = ref(false);
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
+const twoFactorAuthInput = ref<MyTwoFactorAuthInputType>({} as MyTwoFactorAuthInputType);
 
 const password = ref<string | null>(null);
 const loading = ref(false);
 
 const twoFactorAuthToken = ref<string | null>(null);
 const isTwoFactorAuthError = ref(false);
-const twoFactorAuthInput = ref<MyTwoFactorAuthInputType>({});
 
 async function open() {
 	console.log('aaaa')
@@ -60,21 +62,22 @@ function reset(){
 	form.value.reset();
 }
 
-const defaultSubmit = () => axios
-	.post(props.url, {
+async function defaultSubmit(){
+	API.post(props.url, {
 		password: password.value,
 		twoFactorAuthToken: twoFactorAuthToken.value
 	})
-	.then((response) => {
-		console.log(response)
-		emit('verified', response.data);
-		close();
-	})
-	.catch((error) => {
-		console.log(error);
-		form.value.reset();
-		showErrorSnackbar(i18n.t('authorization.wrongPassword'), {timeout: 3000})
-	});
+		.then((response) => {
+			console.log(response)
+			emit('verified', response.data);
+			close();
+		})
+		.catch((error) => {
+			console.log(error);
+			form.value.reset();
+			showErrorSnackbar(i18n.t('authorization.wrongPassword'), {timeout: 3000})
+		});
+}
 
 async function validateAndSendForm() {
 	loading.value = true;

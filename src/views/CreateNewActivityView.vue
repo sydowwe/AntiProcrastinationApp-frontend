@@ -62,22 +62,22 @@
 </template>
 <script setup lang="ts">
 
-import {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
+import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {onMounted, reactive, ref} from 'vue';
 import {Role, RoleRequest} from '@/classes/Role';
 import {Category, CategoryRequest} from '@/classes/Category';
 import {SelectOption} from '@/classes/SelectOption';
 import {ActivityRequest} from '@/classes/Activity';
-import {importDefaults} from '@/compositions/general/Defaults';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
-import {
-	EntityWithSelectOptions,
-	getAllEntityOptions,
-} from '@/compositions/ActivitySelectsComposition';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import {activitySelectOptions} from '@/composables/ActivitySelectOptions.ts';
+import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
 
-
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {fetchRoleSelectOptions, fetchCategorySelectOptions} = activitySelectOptions()
+const {fetchTaskUrgencySelectOptions } = useTaskPlanningSelectOptions()
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const i18n = useI18n();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
@@ -102,9 +102,9 @@ const newEntity = reactive({
 });
 
 onMounted(async () => {
-	roleOptions.value = await getAllEntityOptions(EntityWithSelectOptions.Role);
-	categoryOptions.value = await getAllEntityOptions(EntityWithSelectOptions.Category);
-	urgencyOptions.value = await getAllEntityOptions(EntityWithSelectOptions.TaskUrgency);
+	roleOptions.value = await fetchRoleSelectOptions();
+	categoryOptions.value = await fetchCategorySelectOptions();
+	urgencyOptions.value = await fetchTaskUrgencySelectOptions();
 	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0].id;
 })
 
@@ -119,7 +119,7 @@ async function validateAndSendForm() {
 }
 
 function createNewActivity() {
-	axios.post('/activity/create', activityRequest.value).then(() => {
+	API.post('/activity/create', activityRequest.value).then(() => {
 		form.value.reset();
 		dialog.value = false;
 		showSnackbar('Activity created succesfully', {color: 'success'});
@@ -127,7 +127,7 @@ function createNewActivity() {
 }
 
 function createEntity(entityType: keyof typeof newEntity) {
-	axios.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
+	API.post(`/${entityType}/create`, entityType === 'role' ? newEntity.role : newEntity.category).then((response) => {
 		const newOpt = SelectOption.fromIdName(response.data);
 		entityType === "role" ? roleOptions.value.push(newOpt) : categoryOptions.value.push(newOpt);
 		newEntity[entityType] = entityType === 'role' ? new Role() : new Category();

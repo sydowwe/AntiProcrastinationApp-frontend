@@ -25,8 +25,7 @@ defineProps({
 const isTwoFactorAuthRequired = ref(false);
 
 async function triggerVisibilityCheck() {
-	return await  axios
-		.post('/user/get-2fa-status', {})
+	return await  API.post('/user/get-2fa-status', {})
 		.then((response) => {
 			let isError = false;
 			if (response.data === true) {

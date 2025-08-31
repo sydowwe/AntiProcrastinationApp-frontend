@@ -1,12 +1,12 @@
 // useSelectOptions.ts
 import {SelectOption} from '@/classes/SelectOption';
-import {computed, Ref, watch} from 'vue';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
 	ActivityOptionsSource,
 	ActivitySelectOptionCombination
 } from '@/classes/ActivityFormHelper';
+import {API} from '@/plugins/axiosConfig.ts';
 
 export enum EntityWithSelectOptions {
 	Role = 'role',
@@ -19,25 +19,12 @@ export function uniqueOptions(options: SelectOption[]) {
 	return Array.from(new Map(options.map(option => [option.id, option])).values())
 }
 
-export async function getAllEntityOptions(entityType: EntityWithSelectOptions) {
-	const url = `/${entityType}/get-all-options`;
-	return await axios
-		.post(url)
-		.then((response) => {
-			return SelectOption.listFromObjects(response.data);
-		})
-		.catch((error) => {
-			console.error(`Error fetching ${entityType} options:`, error);
-			return [];
-		});
-}
 
 export async function getAllActivityFormSelectOptionsCombinations(activitySource: ActivityOptionsSource) {
 	let url = `${activitySource}/get-all-activity-form-selects-options`;
-	return await axios
-		.post(url)
+	return await API.post(url)
 		.then((response) => {
-			return ActivitySelectOptionCombination.listFromObjects(response.data);
+			return ActivitySelectOptionCombination.listFromJsonList(response.data);
 		})
 		.catch((error) => {
 			console.error('Error fetching options:', error);
