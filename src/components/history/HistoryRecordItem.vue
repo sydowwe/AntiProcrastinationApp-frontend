@@ -25,7 +25,7 @@
 <script setup lang="ts">
     import { computed } from 'vue';
     import { History } from '@/classes/History';
-	import { useMoment } from '@/compositions/general/MomentHelper'
+	import { useMoment } from '@/scripts/momentHelper.ts'
 	const { formatToTime } = useMoment();
 
     const props = defineProps({

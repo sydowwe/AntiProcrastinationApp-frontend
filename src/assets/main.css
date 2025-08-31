@@ -1,24 +1,11 @@
 @import './base.css';
 
 
-
-a,
-.link {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
 .dividerTextCenter {
   display: flex;
   align-items: center;
 }
+
 .dividerTextCenter:after,
 .dividerTextCenter:before {
   content: '';
@@ -26,7 +13,8 @@ a,
   height: 2px;
   background: #999;
 }
-.clickableIcon{
+
+.clickableIcon {
   cursor: pointer;
 }
 
@@ -38,7 +26,12 @@ a,
 .borderWhite {
   border: 1px solid white !important;
 }
+
 .borderWhite2 {
-  border: 2px solid white !important;
+  border: 1px solid white !important;
   border-collapse: collapse;
+}
+
+.v-table--fixed-header > .v-table__wrapper > table > thead > tr > th {
+  border-bottom: 1px solid #BBB !important;
 }

@@ -3,20 +3,19 @@
 	<ActivitySelectionForm ref="activitySelectionForm"
 	                       :select-options-source="ActivityOptionsSource.ACTIVITY_HISTORY"></ActivitySelectionForm>
 	<div class="d-flex flex-column flex-md-row mb-3">
-		<MyDatePicker v-if="isDateRange"
+		<VDateInput v-if="isDateRange"
 		              class="mt-3 flex-1-0"
 		              :label="$t('dateTime.dateFrom')"
-		              :clearable="true"
-
+		              :clearable="true" :display-format="formatToDate"
 		              v-model="filterData.dateFrom">
-		</MyDatePicker>
+		</VDateInput>
 		<div v-else class="flex-1-0 d-flex flex-column flex-md-row mt-3">
 			<div class="d-flex flex-1-0 ga-1 align-center">
-				<NumberInput v-model="filterData.hoursBack"
+				<VNumberInput v-model="filterData.hoursBack"
 				             :min="MIN_HOURS_BACK"
 				             :max="MAX_HOURS_BACK"
 				             :clearable="false"
-				></NumberInput>
+				></VNumberInput>
 				<VLabel class="ml-2">{{ $t("dateTime.hoursBack") }}</VLabel>
 				<v-slider
 					class="flex-1-0 ml-4 mr-3"
@@ -36,13 +35,14 @@
 				hide-details
 				density="compact"
 			></VCheckbox>
-			<MyDatePicker
+			<VDateInput
 				class="flex-1-0"
 				:label="$t('dateTime.dateTo')"
 				v-model="filterData.dateTo"
 				:clearable="isDateRange"
+				:display-format="formatToDate"
 				:maxDate="new Date()">
-			</MyDatePicker>
+			</VDateInput>
 		</div>
 	</div>
 	<VRow class="justify-center my-0">
@@ -55,17 +55,20 @@
 
 <script setup lang="ts">
 import {ref, watch, reactive, onMounted} from "vue";
-import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
 import {HistoryFilter} from "@/classes/History";
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
-import NumberInput from '@/components/general/inputs/NumberInput.vue';
+import {type ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
+import {VDateInput} from 'vuetify/labs/components';
+import {useMoment} from '@/scripts/momentHelper.ts';
+
+const {formatToDate} = useMoment()
+const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+
 
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
 
-const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const filterData = reactive(new HistoryFilter());
 const isDateRange = ref(false);
 

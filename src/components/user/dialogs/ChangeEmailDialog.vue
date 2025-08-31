@@ -6,12 +6,12 @@
 </template>
 <script setup lang="ts">
 import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
-import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
+import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
 import {ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {FormDialogType} from '@/classes/types/RefTypeInterfaces';
-import {importDefaults} from '@/compositions/general/Defaults';
-const {showErrorSnackbar, showSuccessSnackbar} = importDefaults();
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const i18n = useI18n();
 const {emailRules} = useUserDetailsValidation();
 
@@ -31,7 +31,7 @@ watch(()=> props.email, (newValue) => {
 })
 
 function onSubmit(password: string, twoFactorAuthToken: string) {
-	axios.post('/user/change-email', {
+	API.post('/user/change-email', {
 		newEmail: email.value,
 		password: password,
 		twoFactorAuthToken: twoFactorAuthToken

@@ -13,13 +13,16 @@
 </template>
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { useUserDetailsValidation } from '@/compositions/UserAutorizationComposition';
-    import { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
-    const { emailRules } = useUserDetailsValidation();
-    import {importDefaults} from '@/compositions/general/Defaults';
+    import { useUserDetailsValidation } from '@/composables/UserAutorizationComposition';
+    import type { VuetifyFormType } from '@/classes/types/RefTypeInterfaces';
     import {useI18n} from 'vue-i18n';
 	import MyDialog from "@/components/dialogs/MyDialog.vue";
-    const { showFullScreenLoading, hideFullScreenLoading, showErrorSnackbar } = importDefaults();
+    import {useLoading} from '@/composables/general/LoadingComposable.ts';
+    import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+
+    const { emailRules } = useUserDetailsValidation();
+	const {showFullScreenLoading, hideFullScreenLoading} = useLoading()
+    const { showErrorSnackbar } = useSnackbar();
 	const i18n = useI18n();
     const form = ref<VuetifyFormType>({} as VuetifyFormType);
     const email = ref('');

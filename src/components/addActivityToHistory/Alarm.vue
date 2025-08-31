@@ -23,7 +23,7 @@
     import { TimeLengthObject } from '@/classes/TimeUtils';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
-    import {addActivityToHistory} from '@/compositions/SaveToHistoryComposition';
+    import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);

@@ -21,13 +21,11 @@
 </template>
 <script setup lang="ts">
 import TimePicker from "@/components/general/dateTime/TimePicker.vue";
-import {ActivitySelectionFormType} from "@/classes/types/RefTypeInterfaces";
+import type {ActivitySelectionFormType} from "@/classes/types/RefTypeInterfaces";
 import {ref, watch} from "vue";
-import {importDefaults} from "@/compositions/general/Defaults";
-import {useDialogComposition} from "@/compositions/general/DialogComposition";
 import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
+import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 
@@ -41,14 +39,16 @@ const {
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import {TimeObject} from '@/classes/TimeUtils';
+import {useDefaults} from 'vuetify/framework';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
 
 const i18n = useI18n();
-const {showErrorSnackbar} = importDefaults();
-const {dialog, open, close} = useDialogComposition();
+const {showErrorSnackbar} = useSnackbar();
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const minuteIntervals = [10, 15, 30, 45, 60];
 
+const dialog = ref(false);
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
 const isEdit = ref(false);

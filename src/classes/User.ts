@@ -4,7 +4,7 @@ export class User {
       public email: string = '',
       public twoFactorEnabled: boolean = false,
     ) {}
-    static fromObject(object: any){
+    static fromJson(object: any){
       const {
         id = 0,
         email = '',
@@ -12,14 +12,6 @@ export class User {
       } = object;
       return new User(id, email, twoFactorEnabled);
     }
-}
-
-export class UserStoreItem{
-  constructor(
-    public id: number = 0,    
-    public email: string = '',
-    public isAuthenticated: boolean = false,
-  ) {}
 }
 
 export class EmailRequest {

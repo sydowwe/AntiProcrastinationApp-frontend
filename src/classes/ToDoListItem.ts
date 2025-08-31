@@ -14,7 +14,7 @@ export class BaseToDoListItemRequest {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			activityId = 0,
 			isDone = false,
@@ -23,7 +23,7 @@ export class BaseToDoListItemRequest {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -36,7 +36,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			activity = new Activity(),
@@ -47,7 +47,7 @@ export class ToDoListItemEntity implements BaseToDoListItemEntity {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 
 	static frontEndSortFunction() {
@@ -70,7 +70,7 @@ export class ToDoListItemRequest extends BaseToDoListItemRequest {
 		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgency.id, obj.isDone);
 	}
 
-	static fromObject(obj: any): ToDoListItemRequest {
+	static fromJson(obj: any): ToDoListItemRequest {
 		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgencyId, obj.isDone);
 	}
 }
@@ -86,7 +86,7 @@ export class RoutineToDoListItemEntity implements BaseToDoListItemEntity {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			activity = new Activity(),
@@ -97,7 +97,7 @@ export class RoutineToDoListItemEntity implements BaseToDoListItemEntity {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -107,7 +107,7 @@ export class RoutineToDoListGroupedList {
 		public items: RoutineToDoListItemEntity[]) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			timePeriod = new TimePeriodEntity(),
 			items = [] as RoutineToDoListItemEntity[],
@@ -116,7 +116,7 @@ export class RoutineToDoListGroupedList {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -132,7 +132,7 @@ export class RoutineToDoListItemRequest extends BaseToDoListItemRequest {
 		return new RoutineToDoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.isDone);
 	}
 
-	static fromObject(obj: any): RoutineToDoListItemRequest {
+	static fromJson(obj: any): RoutineToDoListItemRequest {
 		return new RoutineToDoListItemRequest(obj.activity.id, obj.timePeriodId, obj.isDone);
 	}
 }
@@ -147,7 +147,7 @@ export class TimePeriodEntity {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			text = '',
@@ -159,7 +159,7 @@ export class TimePeriodEntity {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 

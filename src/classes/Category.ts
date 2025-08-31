@@ -6,7 +6,7 @@ export class Category {
     public color: string | null = null,
     public icon: string | null = null,
   ) {}
-  static fromObject(object: any){
+  static fromJson(object: any){
     const {
       id = 0,
       name = '',
@@ -19,7 +19,7 @@ export class Category {
      );
   }
   static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Category.fromObject(item));
+    return objects.map((item:object)=>Category.fromJson(item));
   }
 }
 export class CategoryRequest {
@@ -29,7 +29,7 @@ export class CategoryRequest {
       public color: string | null = null,
       // public icon: string | null = null,
   ) {}
-  static fromObject(object: any){
+  static fromJson(object: any){
     const {
       name = '',
       text = '',
@@ -41,6 +41,6 @@ export class CategoryRequest {
     );
   }
   static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Category.fromObject(item));
+    return objects.map((item:object)=>Category.fromJson(item));
   }
 }

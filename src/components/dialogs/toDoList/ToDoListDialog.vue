@@ -31,12 +31,14 @@ import {ref, watch} from 'vue';
 import {TaskUrgencyEntity} from '@/classes/TaskUrgencyEntity';
 import {ToDoListItemRequest, ToDoListItemEntity} from '@/classes/ToDoListItem';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {useQuickCreateActivity} from '@/compositions/quickCreateActivityComposition';
-import {importDefaults} from '@/compositions/general/Defaults';
+import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
+
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import {SelectOption} from '@/classes/SelectOption';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 
 const {
@@ -48,7 +50,7 @@ const {
 } = useQuickCreateActivity('To-do list task');
 
 const i18n = useI18n();
-const {showErrorSnackbar} = importDefaults();
+const {showErrorSnackbar} = useSnackbar();
 const dialog = ref(false);
 const toDoListItem = ref(new ToDoListItemRequest());
 const isEdit = ref(false);
@@ -94,7 +96,7 @@ function setDefaultUrgency() {
 }
 
 function getUrgencyOptions() {
-	axios.post(`/task-urgency/get-all`)
+	API.get(`/task-urgency`)
 		.then((response) => {
 			urgencyOptions.value = TaskUrgencyEntity.listFromObjects(response.data);
 			setDefaultUrgency();
@@ -123,9 +125,9 @@ const openEdit = (entityToEdit: ToDoListItemEntity) => {
 	dialog.value = true;
 };
 const emit = defineEmits<{
-	'add': [toDoList: ToDoListItemRequest];
-	'edit': [idToEdit: number, plannerTask: ToDoListItemRequest];
-	'quickEditedActivity': [id: number, name: string, text: string | null]
+	(e: 'add', toDoList: ToDoListItemRequest): void
+	(e: 'edit', idToEdit: number, plannerTask: ToDoListItemRequest): void
+	(e: 'quickEditedActivity', id: number, name: string, text: string | null): void
 }>();
 defineExpose({
 	openCreate,

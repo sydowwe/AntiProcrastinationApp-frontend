@@ -22,12 +22,13 @@ const alarmDialog = ref<AlarmDialogType>({} as AlarmDialogType);
 
 import {onMounted, ref} from "vue";
 import {Alarm, AlarmRequest} from "@/classes/Alarm";
-import {importDefaults} from "@/compositions/general/Defaults";
-import {AlarmDialogType} from '@/classes/types/RefTypeInterfaces';
+import type {AlarmDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = importDefaults();
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const alarmList = ref([] as Alarm[]);
 
 const url = "alarm";
@@ -35,7 +36,7 @@ onMounted(() => {
 	getAll();
 })
 function getAll() {
-	axios.post(`/${url}/get-all`)
+	API.post(`/${url}/get-all`)
 		.then((response) => {
 			alarmList.value = Alarm.listFromObjects(response.data);
 		}).catch(error => {
@@ -47,7 +48,7 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 	console.log(selectedItemsIds.value, Alarm);
 	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(Alarm.id);
 	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: Alarm.id}];
-	axios.patch(`/${url}/change-active`, changedItemsIds)
+	API.patch(`/${url}/change-active`, changedItemsIds)
 		.then((response) => {
 			console.log(response);
 			if (isBatchAction) {
@@ -66,8 +67,8 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 
 
 const add = (alarm: AlarmRequest) => {
-	axios.post(`${url}/create`, alarm).then((response) => {
-		alarmList.value.push(Alarm.fromObject(response.data));
+	API.post(`${url}/create`, alarm).then((response) => {
+		alarmList.value.push(Alarm.fromJson(response.data));
 		alarmList.value.sort(Alarm.frontEndSortFunction());
 		showSnackbar(i18n.t("successFeedback.added"), {
 			timeout: 1500,
@@ -85,10 +86,10 @@ const add = (alarm: AlarmRequest) => {
 // }
 
 const edit = (id: number, alarm: AlarmRequest) => {
-	axios.put(`${url}/update/${id}`, alarm).then((response) => {
+	API.put(`${url}/update/${id}`, alarm).then((response) => {
 		alarmList.value[
 			alarmList.value.findIndex((item) => item.id === id)
-			] = Alarm.fromObject(response.data);
+			] = Alarm.fromJson(response.data);
 		alarmList.value.sort(Alarm.frontEndSortFunction());
 		showSnackbar(i18n.t("successFeedback.edited"), {
 			timeout: 1500,
@@ -104,8 +105,7 @@ function deleteAlarm(id: number) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({
 			id: item,
 		}));
-		axios
-			.post(`/${url}/batch-delete`, batchDeleteIds)
+		API.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
 				if (response.data.status === "success") {
@@ -119,7 +119,7 @@ function deleteAlarm(id: number) {
 				console.error(error);
 			});
 	} else {
-		axios.delete(`/${url}/delete/${id}`)
+		API.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				alarmList.value = alarmList.value.filter(

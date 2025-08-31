@@ -10,16 +10,18 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
+import type {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
-import {importDefaults} from '@/compositions/general/Defaults';
+
 import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
 import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
-const {showSuccessSnackbar} = importDefaults();
-const form = ref<VuetifyFormType>({});
+const {showSuccessSnackbar} = useSnackbar();
+const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const i18n = useI18n();
 
 const dialog = ref(false);
@@ -41,8 +43,7 @@ async function open() {
 async function submit() {
 	const {valid} = await form.value.validate();
 	if (valid) {
-		axios
-			.post('/user/change-password', {
+		API.post('/user/change-password', {
 				currentPassword: password.value,
 				newPassword: newPassword.value,
 				twoFactorAuthToken: twoFactorAuthToken.value

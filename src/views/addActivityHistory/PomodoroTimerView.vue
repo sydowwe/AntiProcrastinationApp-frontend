@@ -65,7 +65,7 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-import {
+import type {
 	ActivityDialogType,
 	ActivitySelectionFormType,
 } from '@/classes/types/RefTypeInterfaces';

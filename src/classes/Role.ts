@@ -6,7 +6,7 @@ export class Role {
     public color: string | null = null,
     public icon: string | null = null,
   ) {}
-  static fromObject(object: any){
+  static fromJson(object: any){
     const {
       id = 0,
       name = '',
@@ -19,7 +19,7 @@ export class Role {
      );
   }
   static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Role.fromObject(item));
+    return objects.map((item:object)=>Role.fromJson(item));
   }
   }
 
@@ -30,7 +30,7 @@ export class RoleRequest {
       public color: string | null = null,
       // public icon: string | null = null,
   ) {}
-  static fromObject(object: any){
+  static fromJson(object: any){
     const {
       name = '',
       text = '',
@@ -42,6 +42,6 @@ export class RoleRequest {
     );
   }
   static listFromObjects(objects: any[]){
-    return objects.map((item:object)=>Role.fromObject(item));
+    return objects.map((item:object)=>Role.fromJson(item));
   }
 }

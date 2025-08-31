@@ -1,29 +1,24 @@
-import { defineStore } from 'pinia';
-import { UserStoreItem } from '@/classes/User';
+import {defineStore} from 'pinia';
+import {ref, computed, readonly} from 'vue';
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    user: new UserStoreItem(),
-  }),
-  getters: {
-    getId: (state): number => state.user.id,
-    getEmail: (state): string => state.user.email,
-    isAuthenticated: (state): boolean => state.user.isAuthenticated,
-    getUser: (state): UserStoreItem => state.user,
-  },
-  actions: {
-    setId(id: number): void {
-      this.user.id = id;
-    },
-    authenticated(email: string){
-      this.user.isAuthenticated = true;
-      this.setEmail(email);
-    },
-    setEmail(email: string): void {
-      this.user.email = email;
-    },
-    logout(): void {
-      this.$reset();      
-    },
-  },
-});
+
+export const useUserStore = defineStore('user', () => {
+	const userName = ref<string>('');
+	const isAuthenticated = ref(false);
+	const login = (name: string): void => {
+		userName.value = name;
+		isAuthenticated.value = true;
+	};
+
+	const logout = (): void => {
+		userName.value = '';
+		isAuthenticated.value = false;
+	};
+
+	return {
+		userName,
+		isAuthenticated,
+		login,
+		logout,
+	};
+})

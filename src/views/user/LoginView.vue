@@ -44,78 +44,82 @@
 </template>
 <script setup lang="ts">
 import {ref, onMounted, computed} from 'vue';
-import {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
+import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {AvailableLocales, PasswordSignInRequest} from '@/classes/User';
 import GoogleSignIn from '@/components/user/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue';
-import {importDefaults} from '@/compositions/general/Defaults';
-import {useUserDetailsValidation} from '@/compositions/UserAutorizationComposition';
+
+import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
 import {useI18n} from 'vue-i18n';
-import {useChallengeV3} from 'vue-recaptcha'
-import {useLoadingStore} from '@/stores/globalFeedbackStores';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useUserStore} from '@/stores/userStore.ts';
+import {useLoading} from '@/composables/general/LoadingComposable.ts';
+import router from '@/plugins/router.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
 
 const i18n = useI18n();
-const {router, userStore, showErrorSnackbar} = importDefaults();
+const {showErrorSnackbar} = useSnackbar();
+const {showFullScreenLoading, hideFullScreenLoading, axiosSuccessLoadingHide} = useLoading();
+const userStore = useUserStore();
 const {emailRules} = useUserDetailsValidation();
+const {executeRecaptcha} = useRecaptcha();
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const loginRequest = ref(new PasswordSignInRequest());
 
 const twoFactorAuthDialog = ref(false);
 
-onMounted(() => {
-	loginRequest.value.email = userStore.getEmail;
+onMounted(async () => {
+	loginRequest.value.email = userStore.userName;
 });
-const isRedirectedFromRegistration = computed(() => !!userStore.getEmail);
 
-const {execute} = useChallengeV3('login');
-const loadingStore = useLoadingStore();
+const isRedirectedFromRegistration = computed(() => !!userStore.userName);
 
 async function validateAndSendForm() {
 	const {valid} = await form.value.validate();
+	console.log(valid)
 	if (valid) {
-		loadingStore.showFullScreenLoading();
-		const recaptchaToken = await execute();
-		if (recaptchaToken != null && recaptchaToken != '') {
-			loginRequest.value.recaptchaToken = recaptchaToken;
-			loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			loadingStore.axiosSuccessLoadingHide = false;
-			axios
-				.post('/user/login', JSON.stringify(loginRequest.value))
-				.then((response) => {
-					if (response.data) {
-						i18n.locale.value = response.data.currentLocale.toUpperCase();
-						if (response.data.requiresTwoFactor === true) {
-							twoFactorAuthDialog.value = true;
-						} else {
-							userStore.authenticated(response.data.email);
-							router.push('/');
-						}
+		// showFullScreenLoading();
+		const recaptchaToken = await executeRecaptcha('login');
+
+		loginRequest.value.recaptchaToken = recaptchaToken;
+		loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		axiosSuccessLoadingHide.value = false;
+		API.post('/user/login', JSON.stringify(loginRequest.value))
+			.then((response) => {
+				if (response.data) {
+					// i18n.locale.value = response.data.currentLocale.toUpperCase();
+					if (response.data.requiresTwoFactor === true) {
+						twoFactorAuthDialog.value = true;
 					} else {
-						showErrorSnackbar('No user!!!');
-						console.error('No user!!!');
+						userStore.login(response.data.email);
+						router.push('/');
 					}
-				})
-				.catch((error) => {
-					console.log(error);
-					if (error.response.status === 403 || error.response.status === 401) {
-						showErrorSnackbar(i18n.t('authorization.wrongEmailOrPassword'));
-					}
-					if (error.response.status === 412) {
-						showErrorSnackbar(i18n.t('authorization.emailConfirmationNeeded', {email: error.response.data.split(`'`)[1]}));
-					}
-					if (error.response.status === 404) {
-						showErrorSnackbar(i18n.t('authorization.userDoesntExist', {email: error.response.data.split(`'`)[1]}));
-					}
-				});
-		}
+				} else {
+					showErrorSnackbar('No user!!!');
+					console.error('No user!!!');
+				}
+			})
+			.catch((error) => {
+				console.log(error);
+				if (error.response.status === 403 || error.response.status === 401) {
+					showErrorSnackbar(i18n.t('authorization.wrongEmailOrPassword'));
+				}
+				if (error.response.status === 412) {
+					showErrorSnackbar(i18n.t('authorization.emailConfirmationNeeded', {email: error.response.data.split(`'`)[1]}));
+				}
+				if (error.response.status === 404) {
+					showErrorSnackbar(i18n.t('authorization.userDoesntExist', {email: error.response.data.split(`'`)[1]}));
+				}
+			});
 	}
 }
 
 function handleGoogleLogin(email: string, currentLocale: string) {
 	i18n.locale.value = currentLocale.toUpperCase();
-	userStore.authenticated(email);
+	userStore.login(email);
 	router.push('/');
 }
 </script>

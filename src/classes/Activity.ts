@@ -13,7 +13,7 @@ export class Activity {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			name = '',
@@ -27,7 +27,7 @@ export class Activity {
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -44,7 +44,7 @@ export class ActivityRequest {
 
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			name = '',
 			text = '',
@@ -63,7 +63,7 @@ export class QuickEditActivityRequest {
 	) {
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			name = '',
 			text = '',

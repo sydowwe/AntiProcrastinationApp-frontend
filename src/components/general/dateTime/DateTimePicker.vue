@@ -1,19 +1,21 @@
 <template>
 <VRow>
 	<VCol cols="11" sm="6">
-		<MyDatePicker v-model="dateTime" :clearable="dateClearable" :showArrows="dateShowArrows" :max-date="maxDate" :min-date="minDate"></MyDatePicker>
+		<VDateInput v-model="dateTime"  :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
 	</VCol>
 	<VCol cols="11" sm="6" class="px-0">
-		<TimePicker :label="$t('dateTime.time')" v-model="time"></TimePicker>
+		<TimePicker label="Čas" v-model="time"></TimePicker>
 	</VCol>
 </VRow>
 </template>
 <script setup lang="ts">
-import {ref, computed} from 'vue';
-import MyDatePicker from '@/components/general/dateTime/MyDatePicker.vue';
+import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {TimeObject} from '@/classes/TimeUtils';
+import {VDateInput} from 'vuetify/labs/components';
+import {useMoment} from '@/scripts/momentHelper.ts';
 
+const {formatToDate } = useMoment()
 const props = defineProps({
 	dateClearable: {
 		type: Boolean,
@@ -39,14 +41,16 @@ const props = defineProps({
 const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
 const time = ref<TimeObject>(new TimeObject());
 
-function setTime(hours: number, minutes:number) {
+function setTime(hours: number, minutes: number) {
 	dateTime.value?.setHours(hours, minutes, 0, 0);
 }
+
 function setDate(newDate: Date) {
 	dateTime.value = newDate;
 }
+
 const getDateTime = computed(() => {
-	if(!dateTime.value){
+	if (!dateTime.value) {
 		return null;
 	}
 	let temp = new Date(dateTime.value);

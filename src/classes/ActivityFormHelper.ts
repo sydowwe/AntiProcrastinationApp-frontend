@@ -1,5 +1,5 @@
 import {SelectOption} from '@/classes/SelectOption';
-import {HistoryFilter} from '@/classes/History';
+import type {HistoryFilter} from '@/classes/History.ts';
 
 export enum ActivityOptionsSource {
 	NONE = "none", ALL = "activity", ACTIVITY_HISTORY = "activity-history", TASK_PLANNER = "task-planner"
@@ -28,20 +28,20 @@ export class ActivitySelectOptionCombination extends SelectOption {
 		super(id, text)
 	}
 
-	static fromObject(object: any) {
+	static fromJson(object: any) {
 		const {
 			id = 0,
 			text = '',
-			roleOption = SelectOption.fromObject(object.roleOption),
-			categoryOption = SelectOption.fromObject(object.categoryOption),
-			taskUrgencyOption = SelectOption.fromObject(object.taskUrgencyOption),
-			routineTimePeriodOption = SelectOption.fromObject(object.routineTimePeriodOption)
+			roleOption = SelectOption.fromJson(object.roleOption),
+			categoryOption = SelectOption.fromJson(object.categoryOption),
+			taskUrgencyOption = SelectOption.fromJson(object.taskUrgencyOption),
+			routineTimePeriodOption = SelectOption.fromJson(object.routineTimePeriodOption)
 		} = object;
 		return new ActivitySelectOptionCombination(id, text, roleOption, categoryOption,taskUrgencyOption, routineTimePeriodOption);
 	}
 
-	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromObject(item));
+	static listFromJsonList(objects: any[]) {
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -57,8 +57,8 @@ export class ActivityFormRequest {
 		public isUnavoidable: boolean | null = null
 	) {
 	}
-
 	static fromFilter(filterData: HistoryFilter) {
 		return new ActivityFormRequest(filterData.activityId, filterData.roleId, filterData.categoryId, filterData.isFromToDoList, filterData.taskUrgencyId, filterData.isFromRoutineToDoList, filterData.routineTimePeriodId, filterData.isUnavoidable);
 	}
+
 }

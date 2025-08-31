@@ -18,8 +18,9 @@
 <script setup lang="ts">
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
-import {BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
+import {type BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
 import {ref} from 'vue';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const props = defineProps({
 	kind: {
@@ -39,7 +40,7 @@ const selectedItemsIds = ref([] as number[]);
 const editItem = (entityToEdit: BaseToDoListItemEntity) => {
 	emit('editItem', entityToEdit);
 };
-const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'to-do-list';
+const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'todo-list';
 
 const itemDoneDialogShown = ref(false);
 const isDialogRecursive = ref(false);
@@ -68,7 +69,7 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 			}
 		}
 		const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
-		axios.patch(`/${url}/change-done`, changedItemsIds)
+		API.patch(`/${url}/change-done`, changedItemsIds)
 			.then((response) => {
 				console.log(response);
 				if (isBatchAction) {
@@ -87,7 +88,7 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 const deleteItem = (id: number) => {
 	if (selectedItemsIds.value.length > 1) {
 		const batchDeleteIds = selectedItemsIds.value.map((item: number) => ({id: item}));
-		axios.post(`/${url}/batch-delete`, batchDeleteIds)
+		API.post(`/${url}/batch-delete`, batchDeleteIds)
 			.then((response) => {
 				console.log(response.data);
 				if (response.data.status === 'success') {
@@ -102,7 +103,7 @@ const deleteItem = (id: number) => {
 				console.error(error);
 			});
 	} else {
-		axios.delete(`/${url}/delete/${id}`)
+		API.delete(`/${url}/delete/${id}`)
 			.then((response) => {
 				console.log(response.data);
 				emit(

@@ -1,47 +1,48 @@
 <template>
-<VDialog v-model="dialog" :persistent="persistent" :eager="eager">
-	<VRow justify="center">
-		<VCol cols="12" sm="10" md="8" lg="6">
-			<VCard class="pa-1">
-				<VCardTitle class="headline" v-if="hasHeader">
-					<slot name="header">
-						{{ title }}
-					</slot>
-				</VCardTitle>
-				<VCardText class="py-0">
-					<slot>
+<VDialog v-model="dialog" :persistent="persistent" :eager="eager" scrollable :maxWidth>
+	<VCard class="pa-2" color="surface">
+		<VCardTitle v-if="hasHeader">
+			<slot name="header">
+				<div class="text-h5 text-center mt-3 mb-1">
+					{{ title }}
+				</div>
+			</slot>
+		</VCardTitle>
+		<VCardText class="py-2">
+			<slot>
 						<span class="text-center">
 							{{ text }}
 						</span>
-					</slot>
-				</VCardText>
-				<VCardActions v-if="hasFooter" class="d-flex justify-center mx-2 mb-2">
-					<slot name="footer">
-						<slot name="leftButton">
-							<VBtn v-if="hasCloseBtn" color="error" @click="onCloseBtnClick">
-								{{ closeBtnText ?? i18n.t('general.cancel') }}
-							</VBtn>
-						</slot>
-						<slot name="centerButton"></slot>
-						<slot name="rightButton">
-							<VBtn v-if="hasConfirmBtn" color="success" @click="emit('confirmed')">
-								{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
-							</VBtn>
-						</slot>
-					</slot>
-				</VCardActions>
-			</VCard>
-		</VCol>
-	</VRow>
+			</slot>
+		</VCardText>
+		<VCardActions v-if="hasFooter" class="d-flex ga-4 justify-end ma-2">
+			<slot name="footer">
+				<slot name="leftButton">
+					<VBtn v-if="hasCloseBtn" color="secondaryOutline" @click="onCloseBtnClick" variant="outlined" type="button">
+						{{ closeBtnText ?? i18n.t('general.cancel') }}
+					</VBtn>
+				</slot>
+				<slot name="centerButton"></slot>
+				<slot name="rightButton">
+					<VBtn v-if="hasConfirmBtn" color="primary" @click="emit('confirmed')" type="button">
+						{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
+					</VBtn>
+				</slot>
+			</slot>
+		</VCardActions>
+	</VCard>
 </VDialog>
 </template>
 
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n';
+import {computed} from 'vue';
+import {useDisplay} from 'vuetify/framework';
 
+const {smAndDown, mdAndDown, lgAndDown, xlAndDown} = useDisplay()
 const i18n = useI18n();
 
-defineProps({
+const props = defineProps({
 	title: {
 		type: String,
 		required: true,
@@ -73,13 +74,38 @@ defineProps({
 		default: true
 	},
 	confirmBtnLabel: String,
+	isSmall: {
+		type: Boolean,
+		default: true
+	},
 });
 
 const dialog = defineModel<boolean>({required: true})
 const emit = defineEmits(['closed', 'confirmed'])
 
+
 const onCloseBtnClick = () => {
 	dialog.value = false;
 	emit('closed');
 }
+
+function open() {
+	dialog.value = true;
+}
+
+const maxWidth = computed(() => {
+	if (smAndDown.value) {
+		return '90%'
+	} else if (mdAndDown.value) {
+		return '70%'
+	} else if (lgAndDown.value) {
+		return props.isSmall ? '35%' : '60%'
+	} else {
+		return props.isSmall ? '25%' : '50%'
+	}
+})
+
+defineExpose({
+	open
+})
 </script>
