@@ -3,47 +3,40 @@ import {ref} from 'vue';
 import {Role} from '@/classes/Role';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
+import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 export function useQuickCreateActivity(viewName: string) {
+	const {create} = useActivityCrud()
+
 	const isActivityFormHidden = ref(false);
-	const quickActivityName = ref<string | null>(null);
+	const quickActivityName = ref<string>();
 	const quickActivityText = ref<string | null>(null);
 	const quickActivityCategoryId = ref<number | null>(null);
 
 
 	async function getQuickCreateActivityRoleIdByView() {
-		return await API.post('/activity-role/by-name/' + viewName).then((response) => {
+		return await API.get('/activity-role/by-name/' + viewName).then((response) => {
 			console.log(response.data)
 			return Role.fromJson(response.data).id;
 		});
 	}
 
 	async function quickCreateActivity() {
-		if (quickActivityName.value) {
-			const roleId = await getQuickCreateActivityRoleIdByView();
-			const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, roleId, quickActivityCategoryId.value,false,false, null);
-			return await API.post('/activity/create', activityRequest).then((response) => {
-				console.log(response);
-				const activityResponse = Activity.fromJson(response.data);
-				return activityResponse.id;
-			});
-		} else {
-
-			return null;
-		}
+		const roleId = await getQuickCreateActivityRoleIdByView();
+		const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, roleId, quickActivityCategoryId.value, false, false, null);
+		const id = await create(activityRequest);
+		return id;
 	}
 
 	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach
-	async function quickEditActivity(activityId:number) {
+	async function quickEditActivity(activityId: number) {
 		if (quickActivityName.value) {
-			return await API.post(
-				'/activity/quick-edit/'+activityId,
-				new QuickEditActivityRequest(quickActivityName.value, quickActivityText.value)
+			return await API.patch(
+				'/activity/' + activityId,
+				new QuickEditActivityRequest(quickActivityName.value, quickActivityText.value, quickActivityCategoryId.value)
 			)
 				.then((response) => {
-					if (response.data.status === 'success') {
-						return true;
-					}
+					return response.status === 204;
 				});
 		} else {
 			return false;

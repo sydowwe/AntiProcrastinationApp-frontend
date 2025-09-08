@@ -36,14 +36,17 @@
     import { ref } from 'vue';
     import HistoryPanelFilter from '../components/history/HistoryPanelFilter.vue';
     import HistoryRecordItem from '../components/history/HistoryRecordItem.vue';
-    import {History, HistoryFilter, HistoryGroupedByDate} from '@/classes/History';
+    import {ActivityHistory, ActivityHistoryFilter, HistoryGroupedByDate} from '@/classes/ActivityHistory.ts';
     import {useMoment} from '@/scripts/momentHelper.ts';
+    import {useFilteredTable} from '@/composables/general/CrudComposition.ts';
     import {API} from '@/plugins/axiosConfig.ts';
     const groupedRecords = ref([] as HistoryGroupedByDate[]);
     const {formatLocalized} = useMoment();
 	const midpoint = ref(Math.ceil(groupedRecords.value.length / 2 + 2));
 
-    function handleFilterApplied(filterData: HistoryFilter, isDateRange: boolean) {
+	const {fetchFilteredTable} = useFilteredTable<ActivityHistory, ActivityHistoryFilter>(ActivityHistory, 'activity-history')
+
+    function handleFilterApplied(filterData: ActivityHistoryFilter, isDateRange: boolean) {
 	    let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
 	    filter.dateTo?.setHours(23, 59, 59, 999);
 	    if (isDateRange) {

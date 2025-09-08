@@ -6,21 +6,11 @@ export type BaseToDoListItemEntity = TodoListItemEntity | RoutineTodoListItemEnt
 
 export class BaseToDoListItemRequest {
 	constructor(
-		public activityId: number | null,
 		public isDone: boolean,
+		public activityId?: number,
+		public doneCount: number | null = null,
+		public totalCount: number | null = null,
 	) {
-	}
-
-	static fromJson(object: any) {
-		const {
-			activityId = 0,
-			isDone = false,
-		} = object;
-		return new BaseToDoListItemRequest(activityId, isDone);
-	}
-
-	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
 	}
 }
 
@@ -29,18 +19,25 @@ export class TodoListItemEntity {
 		public id: number,
 		public activity: Activity,
 		public isDone: boolean,
+		public doneCount: number | null,
+		public totalCount: number | null,
 		public taskUrgency: TaskUrgencyEntity,
 	) {
 	}
 
-	static fromJson(object: any) {
-		const {
-			id = 0,
-			activity = new Activity(),
-			isDone = false,
-			taskUrgency = new TaskUrgencyEntity(),
-		} = object;
-		return new TodoListItemEntity(id, activity, isDone, taskUrgency);
+	get isMultipleCount() {
+		return this.totalCount && this.totalCount !== 1;
+	}
+
+	static fromJson(json: any) {
+		return new TodoListItemEntity(
+			json.id,
+			Activity.fromJson(json.activity),
+			json.isDone,
+			json.doneCount,
+			json.totalCount,
+			TaskUrgencyEntity.fromJson(json.taskUrgency)
+		);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -57,14 +54,16 @@ export class TodoListItemEntity {
 
 export class ToDoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
-		public activityId: number | null = null,
-		public taskUrgencyId: number | null = null,
+		public activityId?: number,
+		public taskUrgencyId?: number,
+		public doneCount: number | null = null,
+		public totalCount: number | null = null,
 		public isDone: boolean = false) {
-		super(activityId, isDone);
+		super(isDone, activityId);
 	}
 
 	static fromEntity(obj: TodoListItemEntity): ToDoListItemRequest {
-		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgency.id, obj.isDone);
+		return new ToDoListItemRequest(obj.activity.id, obj.taskUrgency.id,obj.doneCount, obj.totalCount, obj.isDone);
 	}
 
 	static fromJson(obj: any): ToDoListItemRequest {
@@ -79,19 +78,26 @@ export class RoutineTodoListItemEntity extends IdResponse {
 		public id: number,
 		public activity: Activity,
 		public isDone: boolean,
+		public doneCount: number | null,
+		public totalCount: number | null,
 		public timePeriod: TimePeriodEntity,
 	) {
 		super(id);
 	}
 
-	static fromJson(object: any) {
-		const {
-			id = 0,
-			activity = new Activity(),
-			isDone = false,
-			timePeriod = new TimePeriodEntity(),
-		} = object;
-		return new RoutineTodoListItemEntity(id, activity, isDone, timePeriod);
+	get isMultipleCount() {
+		return !this.totalCount && this.totalCount !== 1;
+	}
+
+	static fromJson(json: any) {
+		return new RoutineTodoListItemEntity(
+			json.id,
+			Activity.fromJson(json.activity),
+			json.isDone,
+			json.doneCount ?? 1,
+			json.totalCount ?? 3,
+			TimePeriodEntity.fromJson(json.routineTimePeriod)
+		);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -106,12 +112,8 @@ export class RoutineTodoListGroupedList {
 		public items: RoutineTodoListItemEntity[]) {
 	}
 
-	static fromJson(object: any) {
-		const {
-			timePeriod = new TimePeriodEntity(),
-			items = [] as RoutineTodoListItemEntity[],
-		} = object;
-		return new RoutineTodoListGroupedList(timePeriod, items);
+	static fromJson(json: any) {
+		return new RoutineTodoListGroupedList(json.routineTimePeriod, RoutineTodoListItemEntity.listFromObjects(json.items));
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -121,18 +123,16 @@ export class RoutineTodoListGroupedList {
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
-		public activityId: number | null = null,
-		public timePeriodId: number | null = null,
+		public activityId?: number,
+		public timePeriodId?: number,
+		public doneCount: number | null = null,
+		public totalCount: number | null = null,
 		public isDone: boolean = false) {
-		super(activityId, isDone);
+		super(isDone, activityId);
 	}
 
 	static fromEntity(obj: RoutineTodoListItemEntity): RoutineTodoListItemRequest {
-		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.isDone);
-	}
-
-	static fromJson(obj: any): RoutineTodoListItemRequest {
-		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriodId, obj.isDone);
+		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.doneCount, obj.totalCount, obj.isDone);
 	}
 }
 

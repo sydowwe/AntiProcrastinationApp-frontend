@@ -1,28 +1,24 @@
 <template>
 <VRow justify="center" no-gutters>
 	<VCol :cols="12" :sm="10" :md="8" :lg="5" class="border btn pa-lg-8 pa-md-8 pa-sm-6 pa-5">
-		<VForm ref="form" class="mt-5">
-			<VLabel>{{ i18n.t('activities.role') }}</VLabel>
-			<VRow no-gutters>
-				<VIdAutocomplete v-model="activityRequest.roleId" :items="roleOptions"
+		<VForm ref="form" class="mt-5 d-flex flex-column ga-3">
+			<InputWithButton icon="plus" color="success" @create="addRoleDialog.openAddDialog">
+				<VIdAutocomplete :label="i18n.t('activities.role')" v-model="activityRequest.roleId" :items="roleOptions" required
 				                 :rules="[requiredRule]"></VIdAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addRoleDialog.openAddDialog()"></VBtn>
-			</VRow>
-			<VLabel>{{ i18n.t('activities.category') }}</VLabel>
-			<VRow no-gutters>
+			</InputWithButton>
+			<InputWithButton icon="plus" color="success" @create="addCategoryDialog.openAddDialog">
 				<VIdAutocomplete
+					:label="i18n.t('activities.category')"
 					v-model="activityRequest.categoryId"
 					:items="categoryOptions"
+					required
 					:rules="[requiredRule]"
 				></VIdAutocomplete>
-				<VBtn class="ml-2" icon="$plus" color="success" @click="addCategoryDialog.openAddDialog()"></VBtn>
-			</VRow>
-			<VLabel>{{ i18n.t('activities.activity') }}</VLabel>
-			<VRow no-gutters>
-				<VTextField v-model="activityRequest.name" :rules="[requiredRule]"></VTextField>
-				<VBtn class="ml-2" icon="$info" color="primary"></VBtn>
-			</VRow>
-			<VTextarea class="my-3" :label="i18n.t('activities.activityDescription')" v-model="activityRequest.text"
+			</InputWithButton>
+			<InputWithButton icon="info" color="secondaryOutline">
+				<VTextField :label="i18n.t('activities.activity')" v-model="activityRequest.name" :rules="[requiredRule]" required></VTextField>
+			</InputWithButton>
+			<VTextarea :label="i18n.t('activities.activityDescription')" v-model="activityRequest.text"
 			           hide-details></VTextarea>
 			<VRow no-gutters>
 				<VCheckbox :label="i18n.t('activities.isActivityUnavoidable')" v-model="activityRequest.isUnavoidable"
@@ -40,7 +36,7 @@
 				></VIdSelect>
 			</VRow>
 			<VRow justify="center" no-gutters>
-				<VBtn class="mt-3" width="200" color="success" @click="validateAndSendForm()">Create</VBtn>
+				<VBtn class="mt-3" width="200" color="primary" @click="validateAndSendForm()">Create</VBtn>
 			</VRow>
 		</VForm>
 	</VCol>
@@ -50,7 +46,6 @@
 <ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"></ActivityCategoryDialog>
 </template>
 <script setup lang="ts">
-
 import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {onMounted, reactive, ref} from 'vue';
 import {Role, RoleRequest} from '@/classes/Role';
@@ -60,16 +55,16 @@ import {ActivityRequest} from '@/classes/Activity';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {API} from '@/plugins/axiosConfig.ts';
-import {activitySelectOptions} from '@/composables/ActivitySelectOptions.ts';
+import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
-import {useActivityCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
 import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
 import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import InputWithButton from '@/components/general/InputWithButton.vue';
 
 const {create} = useActivityCrud()
-const {fetchRoleSelectOptions, fetchCategorySelectOptions} = activitySelectOptions()
+const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOptions()
 const {fetchTaskUrgencySelectOptions} = useTaskPlanningSelectOptions()
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const i18n = useI18n();

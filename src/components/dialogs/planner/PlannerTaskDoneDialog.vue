@@ -27,15 +27,16 @@
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimeObject} from '@/classes/TimeUtils';
-import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
+import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 import {PlannerTask} from '@/classes/PlannerTask';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
+import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 
+const {create} = useActivityHistoryCrud()
 const {formatToDate} = useMoment()
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
@@ -52,7 +53,7 @@ const props = defineProps({
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
 const time = ref(new TimeObject());
-const length = ref(new TimeObject());
+const length = ref(new TimeLengthObject());
 
 onMounted(() => {
 	time.value.hours = dateTime.value.getHours();
@@ -65,7 +66,7 @@ watch(dialogShown, (isShown) => {
 			time.value.hours = dateTime.value.getHours();
 			time.value.minutes = dateTime.value.getMinutes();
 		}
-		length.value = new TimeObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60);
+		length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60);
 	} else {
 		if (props.isRecursive) {
 			setTimeout(() => emit('openNext'), 200);
@@ -73,15 +74,14 @@ watch(dialogShown, (isShown) => {
 	}
 })
 
-function save() {
-	addActivityToHistory(dateTime.value, length.value, props.plannerTask?.activity.id).then(isSuccess => {
-		if (isSuccess) {
-			showSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`, {color: 'success'});
-			dialogShown.value = false;
-		} else {
-			showErrorSnackbar(`Error saving planner task ${props.plannerTask?.activity.name} to history`);
-		}
-	});
+async function save() {
+	const request = await create(dateTime.value, length.value, props.toDoListItem?.activity.id)
+	if (request) {
+		showSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`, {color: 'success'});
+		dialogShown.value = false;
+	} else {
+		showErrorSnackbar(`Error saving planner task ${props.plannerTask?.activity.name} to history`);
+	}
 }
 
 const emit = defineEmits<{

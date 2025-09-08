@@ -20,7 +20,7 @@ export function useEntityQuery<TResponse>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.get(`/${config.entityName}/${id}`)
+			const response = await API.get(`${config.entityName}/${id}`)
 			console.log(response.data)
 			const entity = config.responseClass.fromJson(response.data)
 			console.log(entity)
@@ -38,7 +38,7 @@ export function useEntityQuery<TResponse>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.get(`/${config.entityName}`)
+			const response = await API.get(`${config.entityName}`)
 			return response.data.map((item: any) => config.responseClass.fromJson(item))
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch all ${config.entityName}`
@@ -53,7 +53,7 @@ export function useEntityQuery<TResponse>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.get(`/${config.entityName}/all-options`)
+			const response = await API.get(`${config.entityName}/all-options`)
 			return SelectOption.listFromJsonList(response.data)
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch ${config.entityName} select options`
@@ -93,7 +93,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const createResponse = await API.post(`/${config.entityName}`, entityData)
+			const createResponse = await API.post(`${config.entityName}`, entityData)
 
 			return createResponse.data
 		} catch (e: any) {
@@ -109,7 +109,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const createResponse = await API.post(`/${config.entityName}`, entityData)
+			const createResponse = await API.post(`${config.entityName}`, entityData)
 
 			const response = await fetchById(createResponse.data)
 
@@ -123,13 +123,29 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		}
 	}
 
-	async function update(id: number, entityData: TUpdateRequest): Promise<TResponse> {
+	async function update(id: number, entityData: TUpdateRequest): Promise<void> {
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.put(`/${config.entityName}/${id}`, entityData)
-			const updatedEntity = config.responseClass.fromJson(response.data)
-			return updatedEntity
+			const response = await API.put(`${config.entityName}/${id}`, entityData)
+
+			return Promise.resolve()
+		} catch (e: any) {
+			error.value = e.message || `Failed to update ${config.entityName} with ID ${id}`
+			console.error(`Error updating ${config.entityName} with ID ${id}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+	async function updateWithResponse(id: number, entityData: TUpdateRequest): Promise<TResponse> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.put(`${config.entityName}/${id}`, entityData)
+			const updatedItem = await fetchById(id)
+
+			return updatedItem;
 		} catch (e: any) {
 			error.value = e.message || `Failed to update ${config.entityName} with ID ${id}`
 			console.error(`Error updating ${config.entityName} with ID ${id}:`, e)
@@ -143,7 +159,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			await API.delete(`/${config.entityName}/${id}`)
+			await API.delete(`${config.entityName}/${id}`)
 		} catch (e: any) {
 			error.value = e.message || `Failed to delete ${config.entityName} with ID ${id}`
 			console.error(`Error deleting ${config.entityName} with ID ${id}:`, e)
@@ -159,6 +175,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		create,
 		createWithResponse,
 		update,
+		updateWithResponse,
 		deleteEntity,
 		fetchById,
 		fetchAll,
@@ -199,8 +216,8 @@ export function useAttachmentUpload(entityName: string) {
 
 // Separate composable for filtered table functionality
 export function useFilteredTable<TTableResponse extends IMyResponse, TFilter extends IFilterRequest>(
+	tableResponseClass: IMyResponse & { fromJson(json: any): TTableResponse },
 	entityName: string,
-	tableResponseClass: IMyResponse & { fromJson(json: any): TTableResponse }
 ) {
 	const loading = ref(false)
 	const error = ref<string | null>(null)

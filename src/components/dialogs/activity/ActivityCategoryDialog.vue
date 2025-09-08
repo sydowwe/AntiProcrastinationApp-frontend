@@ -13,7 +13,7 @@ import {ref} from 'vue';
 import {Category, CategoryRequest} from '@/classes/Category.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {RoleRequest} from '@/classes/Role.ts';
-import {useActivityCategoryCrud, useActivityRoleCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+import {useActivityCategoryCrud, useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 const {create, update} = useActivityCategoryCrud()
 const {lettersWithDiacriticsAndSpecialCharsRule, requiredRule} = useGeneralRules()

@@ -15,7 +15,7 @@
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 import type {ActivityDialogType,	ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
@@ -30,10 +30,10 @@ const timeInputVisible = ref(true);
 const initialTime = ref(new TimeLengthObject());
 const timeRemaining = ref(0);
 const timeRemainingObject = computed(() => {
-	return TimeLengthObject.fromSeconds(timeRemaining.value)
+	return TimeObject.fromSeconds(timeRemaining.value)
 });
 const paused = ref(false);
-const intervalId = ref<number | null>(null);
+const intervalId = ref<number | undefined>(undefined);
 const startTimestamp = ref(new Date());
 const formDisabled = ref(false);
 
@@ -70,9 +70,8 @@ function resume() {
 
 function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
-	const timeSpentNice = timePassed().getNice;
 	let activityName = activitySelectionForm.value.getSelectedActivityName as string;
-	saveDialog.value.open(activityName, timeSpentNice);
+	saveDialog.value.open(activityName, );
 	if(automatic){
 		showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
 	}
@@ -80,7 +79,7 @@ function stop(automatic: boolean) {
 
 function resetTimer() {
 	paused.value = false;
-	intervalId.value = null;
+	intervalId.value = undefined;
 	formDisabled.value = false;
 	timeInputVisible.value = true;
 	timeRemaining.value = 0;

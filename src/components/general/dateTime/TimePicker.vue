@@ -4,8 +4,6 @@
 		v-if="showHours"
 		v-model="timeValue.hours"
 		:label
-		:min="0"
-		:max="23"
 		:disabled
 		suffix="h"
 		control-variant="split"
@@ -19,8 +17,6 @@
 		v-if="showMinutes"
 		v-model="timeValue.minutes"
 		:label="!showHours ? label : ''"
-		:min="0"
-		:max="59"
 		:disabled
 		suffix="m"
 		control-variant="split"
@@ -33,7 +29,7 @@
 
 <script setup lang="ts">
 import {watch} from "vue";
-import {TimeObject} from "@/classes/TimeUtils";
+import {TimeLengthObject} from "@/classes/TimeUtils";
 
 const positiveRule = (v: number) => (v > 0 || timeValue.value.hours > 0) || 'Musí byť viac ako 0'
 
@@ -51,13 +47,28 @@ const props = defineProps({
 	label: String,
 });
 
-const timeValue = defineModel<TimeObject>({default: new TimeObject()});
+const timeValue = defineModel<TimeLengthObject>({default: new TimeLengthObject()});
 
 watch(() => timeValue.value.hours, (newValue) => {
-	emit('hoursChanged', newValue);
+	// Handle wrap-around for hours
+	if (newValue > 23) {
+		timeValue.value.hours = 0;
+	} else if (newValue < 0) {
+		timeValue.value.hours = 23;
+	} else {
+		emit('hoursChanged', newValue);
+	}
 });
+
 watch(() => timeValue.value.minutes, (newValue) => {
-	emit('minutesChanged', newValue);
+	// Handle wrap-around for minutes
+	if (newValue > 59) {
+		timeValue.value.minutes = 0;
+	} else if (newValue < 0) {
+		timeValue.value.minutes = 59;
+	} else {
+		emit('minutesChanged', newValue);
+	}
 })
 
 const emit = defineEmits<{

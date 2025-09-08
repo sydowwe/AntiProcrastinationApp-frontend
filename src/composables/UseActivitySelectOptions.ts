@@ -3,7 +3,7 @@ import {Role} from '@/classes/Role.ts';
 import {Category} from '@/classes/Category.ts';
 import {Activity} from '@/classes/Activity.ts';
 
-export function activitySelectOptions() {
+export function useActivitySelectOptions() {
 	const {fetchSelectOptions: fetchRoleSelectOptions} = useEntityQuery<Role>({responseClass: Role, entityName: 'activity-role'})
 	const {fetchSelectOptions: fetchCategorySelectOptions} = useEntityQuery<Category>({responseClass: Category, entityName: 'activity-category'})
 	const {fetchSelectOptions: fetchActivitySelectOptions} = useEntityQuery<Activity>({responseClass: Activity, entityName: 'activity'})

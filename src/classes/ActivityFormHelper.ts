@@ -1,5 +1,5 @@
 import {SelectOption} from '@/classes/SelectOption';
-import type {HistoryFilter} from '@/classes/History.ts';
+import type {ActivityHistoryFilter} from '@/classes/ActivityHistory.ts';
 
 export enum ActivityOptionsSource {
 	ALL = "activity", ACTIVITY_HISTORY = "activity-history", TASK_PLANNER = "task-planner"
@@ -47,18 +47,19 @@ export class ActivitySelectOptionCombination extends SelectOption {
 
 export class ActivityFormRequest {
 	constructor(
-		public activityId: number | null = null,
-		public roleId: number | null = null,
-		public categoryId: number | null = null,
+		public activityId?: number,
+		public roleId?: number,
+		public categoryId?: number,
+		public isUnavoidable?: boolean,
+
 		public isFromToDoList: boolean | null = null,
 		public taskUrgencyId: number | null = null,
 		public isFromRoutineToDoList: boolean | null = null,
 		public routineTimePeriodId: number | null = null,
-		public isUnavoidable: boolean | null = null
 	) {
 	}
-	static fromFilter(filterData: HistoryFilter) {
-		return new ActivityFormRequest(filterData.activityId, filterData.roleId, filterData.categoryId, filterData.isFromToDoList, filterData.taskUrgencyId, filterData.isFromRoutineToDoList, filterData.routineTimePeriodId, filterData.isUnavoidable);
+	static fromFilter(filterData: ActivityHistoryFilter) {
+		return new ActivityFormRequest(filterData.activityId, filterData.roleId, filterData.categoryId,filterData.isUnavoidable, filterData.isFromToDoList, filterData.taskUrgencyId, filterData.isFromRoutineToDoList, filterData.routineTimePeriodId);
 	}
 
 }

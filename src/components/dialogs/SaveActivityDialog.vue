@@ -1,7 +1,7 @@
 <template>
 <MyDialog v-model="dialog" title="Record new activity" @closed="close" @confirmed="saveActivity">
 	<span class="text-center">
-		Confirm saving activity - <i>{{ activity }}</i> done for {{ timeSpent }} ?
+		Confirm saving activity - <i>{{ activity }}</i> done for {{ timeSpent?.getNice }} ?
 	</span>
 </MyDialog>
 </template>
@@ -9,14 +9,15 @@
 import {ref} from 'vue';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import type {TimeLengthObject} from '@/classes/TimeUtils.ts';
 
 //TODO preklad
 const i18n = useI18n();
 const activity = ref('sitting around');
-const timeSpent = ref('0s');
+const timeSpent = ref<TimeLengthObject>();
 const dialog = ref(false);
 
-function open(_activity: string, _timeSpent: string) {
+function open(_activity: string, _timeSpent: TimeLengthObject) {
 	activity.value = _activity ?? activity.value;
 	timeSpent.value = _timeSpent;
 	dialog.value = true;
@@ -28,10 +29,13 @@ function close() {
 }
 
 function saveActivity() {
-	emit('saved');
+	emit('saved', timeSpent.value!);
 	close();
 }
 
-const emit = defineEmits(['saved', 'resetTime']);
+const emit = defineEmits<{
+	(e: 'saved', length: TimeLengthObject): void;
+	(e: 'resetTime'): void;
+}>();
 defineExpose({open});
 </script>

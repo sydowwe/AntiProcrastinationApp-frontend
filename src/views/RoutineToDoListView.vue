@@ -1,12 +1,12 @@
 <template>
-<div class="h-100 d-flex flex-column">
+<div class="h-100 w-100 d-flex flex-column">
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center">
 			<VBtn width="100%" color="green" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
-		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : undefined" :lg="shownGroups.length > 2 ? 4 : undefined"
+		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : undefined" :lg="shownGroups.length > 2 ? 3 : undefined"
 		      v-for="group in shownGroups">
 			<VCard class="mx-auto rounded-lg px-3 d-flex flex-column" min-width="350">
 				<VRow class="py-1" noGutters>
@@ -26,7 +26,8 @@
 					:items="group.items"
 					:color="group.timePeriod.color"
 					@itemsChanged="itemsChanged"
-					@editItem="toDoListDialog.openEdit"
+					@editItem="toDoListDialog?.openEdit"
+					@deletedItem="onDelete"
 				></ToDoList>
 			</VCard>
 		</VCol>
@@ -47,55 +48,42 @@
 		</VCol>
 	</VRow>
 </div>
-<RoutineToDoListDialog ref="toDoListDialog" @add="add" @edit="edit"></RoutineToDoListDialog>
+<RoutineToDoListDialog ref="toDoListDialog" @add="add" @edit="edit" @quickEditedActivity="quickEditedActivity"></RoutineToDoListDialog>
 </template>
 <script setup lang="ts">
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
-import {RoutineTodoListItemEntity, RoutineTodoListGroupedList, RoutineTodoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
+import {RoutineTodoListItemEntity, RoutineTodoListGroupedList, RoutineTodoListItemRequest, ToDoListKind, ToDoListItemRequest} from '@/classes/ToDoListItem';
 import type {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
-import {API} from '@/plugins/axiosConfig.ts';
-import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
+import {useActivityCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
 
-const {createWithResponse} = useEntityCommand<RoutineTodoListItemEntity, RoutineTodoListItemRequest, RoutineTodoListItemRequest>({
-	responseClass: RoutineTodoListItemEntity,
-	createRequestClass: RoutineTodoListItemRequest,
-	updateRequestClass: RoutineTodoListItemRequest,
-	entityName: 'routine-todo-list'
-})
+const {fetchById: fetchActivityById} = useActivityCrud()
+const {fetchById, createWithResponse, updateWithResponse, deleteEntity, changeTimePeriodVisibility, getAllGrouped} = useRoutineTodoListItemCrud()
 
 const groupedItems = ref([] as RoutineTodoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
-const url = '/routine-todo-list';
 
 onMounted(() => {
 	getAllRecords();
 });
-const shownGroups = computed(() =>
-	groupedItems.value.filter(item => item.timePeriod.isHiddenInView === false)
-)
+const shownGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHiddenInView === false))
 
-function toggleHideTimePeriod(id: number) {
+function getAllRecords() {
+	getAllGrouped().then((response) => {
+		groupedItems.value = response;
+	});
+}
+
+async function toggleHideTimePeriod(id: number) {
 	const group = groupedItems.value.find(item => item.timePeriod.id === id);
 	if (group) {
 		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;
 	}
-	API.post(`/routine-time-period/change-is-hidden/` + id)
-		.then((response) => {
-			console.log(response.data);
-		})
+	await changeTimePeriodVisibility(id)
 }
 
-const getAllRecords = () => {
-	API.get(`${url}/grouped-by-time-period`)
-		.then((response) => {
-			groupedItems.value = RoutineTodoListGroupedList.listFromObjects(response.data);
-			console.log(groupedItems.value);
-		})
-};
-
-async function add(request: RoutineTodoListItemRequest){
+async function add(request: RoutineTodoListItemRequest) {
 	const response = await createWithResponse(request);
 
 	const updatedList = groupedItems.value.find((group) => group.timePeriod.id === response.timePeriod.id)?.items;
@@ -105,45 +93,51 @@ async function add(request: RoutineTodoListItemRequest){
 	} else {
 		console.error('not found group');
 	}
-};
+}
 
-function quickEditedActivity(id: number, name: string, text: string) {
-	let index = -1;
-	const editedActivity = groupedItems.value[groupedItems.value.findIndex(group => (index = group.items.findIndex(item => item.id === id)) >= 0)];
-	if (editedActivity) {
-		editedActivity.items[index].activity.name = name;
-		editedActivity.items[index].activity.text = text;
+async function quickEditedActivity(id: number) {
+	for (const group of groupedItems.value) {
+		const item = group.items.find(item => item.activity.id === id);
+		if (item) {
+			item.activity = await fetchActivityById(id);
+		}
 	}
 }
 
-const edit = (id: number, toDoListItemRequest: RoutineTodoListItemRequest) => {
-	const beforeEditEntity = groupedItems.value.find(group => group.items.findIndex(item => item.id === id) > 0);
-	const activity = beforeEditEntity?.items.find(item => item.id === id)
-	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || activity?.id !== toDoListItemRequest.activityId)) {
-		API.put(`${url}/update/${id}`, toDoListItemRequest)
-			.then((response) => {
-				const updatedItem = RoutineTodoListItemEntity.fromJson(response.data);
-				const oldGroup = groupedItems.value.find((group) => {
-					return group.items.some((item) => item.id === id);
-				});
-				const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
-				if (oldGroup) {
-					if (updatedList) {
-						if (updatedItem.timePeriod.id === oldGroup?.timePeriod.id) {
-							updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
-						} else {
-							oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
-							updatedList.push(updatedItem);
-						}
-					} else {
-						console.error('not found updated group list');
-					}
+async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
+	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || beforeEditEntity.activity?.id !== toDoListItemRequest.activityId)) {
+		const updatedItem = await updateWithResponse(beforeEditEntity.id, toDoListItemRequest)
+
+		const oldGroup = groupedItems.value.find((group) => {
+			return group.items.some((item) => item.id === beforeEditEntity.id);
+		});
+		const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
+		if (oldGroup) {
+			if (updatedList) {
+				if (updatedItem.timePeriod.id === oldGroup?.timePeriod.id) {
+					updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
 				} else {
-					console.error('not found old group');
+					oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
+					updatedList.push(updatedItem);
 				}
-			})
+			} else {
+				console.error('not found updated group list');
+			}
+		} else {
+			console.error('not found old group');
+		}
 	}
 };
+
+function onDelete(id: number) {
+	deleteEntity(id).then((deletedItem) => {
+		const group = groupedItems.value.find((group) => group.items.some((item) => item.id === id));
+		if (group) {
+			group.items = group.items.filter((item) => item.id !== id);
+		}
+	})
+}
+
 const itemsChanged = (changedItems: RoutineTodoListItemEntity[]) => {
 	console.log(changedItems);
 	groupedItems.value = groupedItems.value.map((group) => ({

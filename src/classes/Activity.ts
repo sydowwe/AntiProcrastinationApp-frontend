@@ -4,12 +4,11 @@ import {Role} from "./Role";
 export class Activity {
 	constructor(
 		public id: number = 0,
-		public name: string | null = null,
-		public text: string | null = null,
-		public isOnToDoList: boolean = false,
-		public isUnavoidable: boolean = false,
-		public role: Role | null = null,
-		public category: Category | null = null
+		public name: string,
+		public text: string | null,
+		public isUnavoidable: boolean,
+		public role: Role,
+		public category: Category
 	) {
 	}
 
@@ -18,12 +17,11 @@ export class Activity {
 			id = 0,
 			name = '',
 			text = '',
-			isOnToDoList = false,
 			isUnavoidable = false,
 			role = new Role(),
 			category = new Category()
 		} = object;
-		return new Activity(id, name, text, isOnToDoList, isUnavoidable, role, category);
+		return new Activity(id, name, text, isUnavoidable, role, category);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -59,7 +57,8 @@ export class ActivityRequest {
 
 export class QuickEditActivityRequest {
 	constructor(public name: string = '',
-	            public text: string | null = null
+	            public text: string | null = null,
+	            public categoryId: number | null = null,
 	) {
 	}
 
