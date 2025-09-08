@@ -50,7 +50,7 @@ export interface EntityDialogType {
 }
 
 export interface ActivityDialogType {
-	open(activityName: string, timeSpentNice: string): void;
+	open(activityName: string, timeSpent: TimeLengthObject): void;
 }
 
 export interface ToDoListItemDialogType extends EntityDialogType {
@@ -67,7 +67,6 @@ export interface PlannerDialogType extends EntityDialogType {
 export interface AlarmDialogType extends EntityDialogType {
 	openEdit(alarm: Alarm): void;
 }
-
 
 
 export interface ActivitySelectionFormType extends FormType {

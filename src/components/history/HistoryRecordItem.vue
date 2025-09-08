@@ -24,13 +24,13 @@
 </template>
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { History } from '@/classes/History';
+    import { ActivityHistory } from '@/classes/ActivityHistory.ts';
 	import { useMoment } from '@/scripts/momentHelper.ts'
 	const { formatToTime } = useMoment();
 
     const props = defineProps({
         record: {
-            type: History,
+            type: ActivityHistory,
             required: true,
         },
     });

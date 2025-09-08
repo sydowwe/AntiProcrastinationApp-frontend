@@ -107,7 +107,7 @@ export const vuetify = createVuetify({
 		VTextarea: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VMaskInput: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VCheckbox: {density: 'comfortable'},
-		VIconBtn: {rounded: '', density: 'comfortable'}
+		VIconBtn: {rounded: ''}
 	},
 	theme: {
 		defaultTheme: 'dark',
@@ -128,8 +128,8 @@ export const vuetify = createVuetify({
 					secondaryOutline: '#A78BFA',
 
 					// functional
-					errorDark: '#DC2626', // red-600
-					successDark: '#059669', // emerald-600
+					errorDark: '#DC2626', // red-650
+					successDark: '#047857', // emerald-700
 					warningDark: '#CA8A04', // yellow-600
 					//info: '#0369A1', // sky-700
 					// infoOutline: '#38BDF8',

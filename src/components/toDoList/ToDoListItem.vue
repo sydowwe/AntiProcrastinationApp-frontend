@@ -2,7 +2,29 @@
 <VListItem :active="!toDoListItem.isDone" @click="itemClicked" :base-color="color" class="align-center listItem">
 	<template v-slot:prepend>
 		<VListItemAction start>
-			<v-checkbox-btn v-model="toDoListItem.isDone" base-color="white" color="white"></v-checkbox-btn>
+			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="white"></v-checkbox-btn>
+			<div v-else class="d-flex flex-column ga-1 align-center justify-center">
+				<VHover>
+					<template v-slot:default="{ isHovering, props }">
+						<VIconBtn v-bind="props" v-if="isHovering" icon="minus" color="white" variant="tonal" width="40" height="35" @click.stop="">
+							<VIcon size="22"></VIcon>
+						</VIconBtn>
+						<span v-else
+						      v-bind="props" style="width: 40px" @click.stop="">
+							<VProgressLinear
+								color="neutral-400"
+								:model-value="(toDoListItem.doneCount ?? 1) / (toDoListItem.totalCount ?? 1) * 100"
+								height="35"
+								bgOpacity="0.3"
+								style="border: 1px solid #777; border-radius: 4px"
+							>
+							<span class="text-white">{{ toDoListItem.doneCount }}/{{ toDoListItem.totalCount }}</span>
+						</VProgressLinear>
+						</span>
+
+					</template>
+				</VHover>
+			</div>
 		</VListItemAction>
 	</template>
 	<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
@@ -36,7 +58,7 @@
 
 <script setup lang="ts">
 import {ref, watch} from 'vue';
-import {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
+import {type BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {useI18n} from 'vue-i18n';
 
 const i18n = useI18n();

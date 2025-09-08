@@ -1,9 +1,9 @@
 <template>
 <VRow>
-	<VCol cols="11" sm="6">
-		<VDateInput v-model="dateTime"  :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
+	<VCol cols="11" sm="5">
+		<VDateInput :label v-model="dateTime"  :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
 	</VCol>
-	<VCol cols="11" sm="6" class="px-0">
+	<VCol cols="11" sm="7" class="px-0">
 		<TimePicker label="Čas" v-model="time"></TimePicker>
 	</VCol>
 </VRow>
@@ -37,6 +37,7 @@ const props = defineProps({
 		type: Boolean,
 		default: true,
 	},
+	label: String,
 });
 const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
 const time = ref<TimeObject>(new TimeObject());

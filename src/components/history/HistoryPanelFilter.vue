@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import {ref, watch, reactive, onMounted} from "vue";
-import {HistoryFilter} from "@/classes/History";
+import {ActivityHistoryFilter} from "@/classes/ActivityHistory.ts";
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {type ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
@@ -69,7 +69,7 @@ const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelec
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
 
-const filterData = reactive(new HistoryFilter());
+const filterData = reactive(new ActivityHistoryFilter());
 const isDateRange = ref(false);
 
 onMounted(() => {
@@ -100,6 +100,6 @@ watch(
 );
 
 const emit = defineEmits<{
-	filterApplied: [filterData: HistoryFilter, isDateRange: boolean];
+	filterApplied: [filterData: ActivityHistoryFilter, isDateRange: boolean];
 }>();
 </script>

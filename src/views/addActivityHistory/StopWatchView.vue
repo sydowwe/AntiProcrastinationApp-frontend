@@ -17,14 +17,14 @@
     import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
     import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
     import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
     import  type { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
-    const time = ref(new TimeLengthObject());
+    const time = ref(new TimeObject());
     const paused = ref(false);
     const intervalId = ref(undefined as number | undefined);
     const startTimestamp = ref(new Date());
@@ -56,21 +56,21 @@
     }
     function stop() {
         clearInterval(intervalId.value);
-        showSaveDialog(`${time.value.hours != 0 ? time.value.hours + 'h' : ''} ${time.value.minutes != 0 ? time.value.minutes + 'm' : ''} ${time.value.seconds}s`);
+        showSaveDialog();
     }
     function resetTime() {
-        time.value = new TimeLengthObject();
+        time.value = new TimeObject();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;
     }
-    function showSaveDialog(timeSpentNice: string) {
+    function showSaveDialog() {
         let activityName = activitySelectionForm.value.getSelectedActivityName;
         if (activityName !== null) {
-            saveDialog.value.open(activityName, timeSpentNice);
+            saveDialog.value.open(activityName, time.value.toTimeLength);
         }
     }
-    function saveActivity() {
-        activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, time.value);
+    function saveActivity(length: TimeLengthObject) {
+        activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, length);
     }
 </script>

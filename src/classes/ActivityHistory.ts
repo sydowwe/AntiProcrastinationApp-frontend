@@ -2,7 +2,7 @@ import {Activity} from './Activity';
 import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 
-export class History {
+export class ActivityHistory {
 	constructor(
 		public id: number,
 		public startTimestamp: Date,
@@ -18,7 +18,7 @@ export class History {
 		const startTimestamp = new Date(object.startTimestamp);
 		const length = TimeLengthObject.fromJson(object.length);
 		const activity = Activity.fromJson(object.activity);
-		return new History(id, startTimestamp, length, activity);
+		return new ActivityHistory(id, startTimestamp, length, activity);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -26,10 +26,10 @@ export class History {
 	}
 }
 
-export class HistoryRequest {
+export class ActivityHistoryRequest {
 	constructor(
 		public startTimestamp: Date,
-		public length: TimeObject,
+		public length: TimeLengthObject,
 		public activityId: number,
 	) {
 	}
@@ -40,7 +40,7 @@ export class HistoryRequest {
 			length = new TimeObject(),
 			activityId = 0
 		} = object;
-		return new HistoryRequest(startTimestamp, length, activityId);
+		return new ActivityHistoryRequest(startTimestamp, length, activityId);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -49,7 +49,7 @@ export class HistoryRequest {
 }
 
 
-export class HistoryFilter extends ActivityFormRequest {
+export class ActivityHistoryFilter extends ActivityFormRequest {
 	public dateFrom: Date | null;
 	public dateTo: Date | null;
 	public hoursBack: number | null;
@@ -79,14 +79,14 @@ export class HistoryFilter extends ActivityFormRequest {
 export class HistoryGroupedByDate {
 	constructor(
 		public date: Date,
-		public historyList: History[],
+		public historyList: ActivityHistory[],
 	) {
 	}
 
 	static fromJson(object: any) {
 		const {} = object;
 		const startTimestamp = new Date(object.date);
-		const historyList = History.listFromObjects(object.historyResponseList);
+		const historyList = ActivityHistory.listFromObjects(object.historyResponseList);
 		return new HistoryGroupedByDate(startTimestamp, historyList);
 	}
 

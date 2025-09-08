@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
 import {computed} from 'vue';
-import {TimeLengthKeys, TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeKeys, TimeLengthObject} from '@/classes/TimeUtils';
 
 const props = defineProps({
 	color: {
@@ -33,7 +33,7 @@ const props = defineProps({
 		required: true,
 	},
 	whatToShow: {
-		type: Array as () => TimeLengthKeys[],
+		type: Array as () => TimeKeys[],
 		default: () => ['hours', 'minutes', 'seconds'],
 	}
 });

@@ -3,6 +3,7 @@
        variant="tonal">
 	<ToDoListItem
 		v-for="item in items"
+		:key="item.id"
 		:toDoListItem="item"
 		:color="color ?? item.taskUrgency?.color"
 		@delete="deleteItem"
@@ -68,8 +69,8 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 			itemDoneDialogShown.value = true;
 		}
 	}
-	const changedItemsIds = isBatchAction ? selectedItemsIds.value.map((item: number) => ({id: item})) : [{id: toDoListItem.id}];
-	API.patch(`/${url}/change-done`, changedItemsIds)
+	const request = {idList: isBatchAction ? selectedItemsIds : [toDoListItem.id]};
+	API.patch(`/${url}/toggle-is-done`, request)
 		.then((response) => {
 			console.log(response);
 			if (isBatchAction) {

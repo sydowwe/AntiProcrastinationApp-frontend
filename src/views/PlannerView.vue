@@ -55,14 +55,17 @@ import type {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTyp
 import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/planner/PlannerTaskDoneDialog.vue';
-
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useTaskPlannerCrud, useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
+import PlannerTaskItem from '@/components/PlannerTaskItem.vue';
+
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 
+const {createWithResponse, update, deleteEntity} = useTaskPlannerCrud()
 const plannerDialog = ref<PlannerDialogType>({} as PlannerDialogType);
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
 const nOHours = [24, 12, 6];
@@ -137,16 +140,12 @@ function applyFilter() {
 
 const add = (plannerTask: PlannerTaskRequest) => {
 	if (validatePlannerTask(plannerTask)) {
-		API.post(`${url}/create`, plannerTask).then((response) => {
-			console.log(response)
-			plannerTasks.value.push(PlannerTask.fromJson(response.data));
+		createWithResponse(plannerTask).then((response) => {
+			plannerTasks.value.push(response);
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
-			showSnackbar(i18n.t("successFeedback.added"), {
-				timeout: 1500,
-				color: "success",
-			});
+			showSuccessSnackbar(i18n.t("successFeedback.added"));
 			plannerDialog.value.closeAndReset();
-		});
+		})
 	}
 };
 
@@ -164,17 +163,12 @@ const edit = (id: number, plannerTask: PlannerTaskRequest) => {
 		&& (beforeEditEntity.activity.id !== plannerTask.activityId || beforeEditEntity.startTimestamp !== plannerTask.startTimestamp || beforeEditEntity.minuteLength !== plannerTask.minuteLength || beforeEditEntity.color !== plannerTask.color)
 		&& validatePlannerTask(plannerTask, id)
 	) {
-		API.put(`${url}/update/${id}`, plannerTask).then((response) => {
-			plannerTasks.value[
-				plannerTasks.value.findIndex((item) => item.id === id)
-				] = PlannerTask.fromJson(response.data);
+		update(id, plannerTask).then((response) => {
+			plannerTasks.value[plannerTasks.value.findIndex((item) => item.id === id)] = response;
 			plannerTasks.value.sort(PlannerTask.frontEndSortFunction());
-			showSnackbar(i18n.t("successFeedback.edited"), {
-				timeout: 1500,
-				color: "success",
-			});
+			showSuccessSnackbar(i18n.t("successFeedback.edited"))
 			plannerDialog.value.closeAndReset();
-		});
+		})
 	}
 };
 
@@ -246,16 +240,11 @@ function deleteTask(id: number) {
 				console.error(error);
 			});
 	} else {
-		API.delete(`/${url}/delete/${id}`)
-			.then((response) => {
-				console.log(response.data);
-				plannerTasks.value = plannerTasks.value.filter(
-					(item: PlannerTask) => item.id !== id
-				);
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+		deleteEntity(id).then((response) => {
+			plannerTasks.value = plannerTasks.value.filter(
+				(item: PlannerTask) => item.id !== id
+			);
+		})
 	}
 }
 

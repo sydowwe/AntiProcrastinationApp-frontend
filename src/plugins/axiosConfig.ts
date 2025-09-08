@@ -30,7 +30,9 @@ API.interceptors.response.use(
 			router.push({name: 'login'});
 		};
 
-		if (router.currentRoute.value.name !== 'login' && (error.response.status === HttpStatusCode.Unauthorized)) {
+		console.log('test')
+		if (router.currentRoute.value.name !== 'login' && (error.response?.status === HttpStatusCode.Unauthorized)) {
+			console.log('unauthorizedeeeeeeeee')
 			showErrorSnackbar('Please log in before accessing the page', {closable: false});
 			logoutClient();
 		} else if ((error.response.status === HttpStatusCode.Forbidden)) {

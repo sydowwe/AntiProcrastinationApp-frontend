@@ -24,7 +24,6 @@ export async function getAllActivityFormSelectOptionsCombinations(activitySource
 	let url = `${activitySource}/form-select-options`;
 	return await API.get(url)
 		.then((response) => {
-			console.log(response);
 			return ActivitySelectOptionCombination.listFromJsonList(response.data);
 		})
 		.catch((error) => {

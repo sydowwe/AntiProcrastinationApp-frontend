@@ -101,7 +101,7 @@ const maxWidth = computed(() => {
 	} else if (lgAndDown.value) {
 		return props.isSmall ? '35%' : '60%'
 	} else {
-		return props.isSmall ? '25%' : '50%'
+		return props.isSmall ? '30%' : '50%'
 	}
 })
 

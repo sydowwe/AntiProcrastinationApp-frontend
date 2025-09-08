@@ -6,14 +6,14 @@
 				<VCardTitle>{{ $t('toDoList.toDoList') }}</VCardTitle>
 			</div>
 			<div class="d-flex justify-center mb-4">
-				<VBtn width="50%" color="green" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
+				<VBtn width="50%" color="successDark" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
 			</div>
 			<ToDoList :kind="ToDoListKind.NORMAL" :items="items" @itemsChanged="itemsChanged"
 			          @editItem="toDoListDialog?.openEdit" @deletedItem="deleteItem"></ToDoList>
 		</VCard>
 	</VCol>
 </VRow>
-<ToDoListItemDialog ref="toDoListDialog" @add="add" @edit="edit" @quickEditedActivity="quickEditedActivity"></ToDoListItemDialog>
+<ToDoListItemDialog ref="toDoListDialog" @add="add" @edit="edit" @quickEditedActivity="quickEditedActivity" @changedUrgency="onChangedUrgency"></ToDoListItemDialog>
 </template>
 
 <script setup lang="ts">
@@ -24,18 +24,17 @@ import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vu
 import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {API} from '@/plugins/axiosConfig.ts';
-import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
-import {useTodoListItemCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+import {useActivityCrud, useTaskUrgencyCrud, useTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
 
-const {createWithResponse, update, deleteEntity, fetchAll } = useTodoListItemCrud()
+const {fetchById: fetchByIdActivity} = useActivityCrud()
+const {createWithResponse, update, deleteEntity, fetchAll, changeUrgency } = useTodoListItemCrud()
+const {fetchById: fetchByIdTaskUrgency} = useTaskUrgencyCrud()
 
 const i18n = useI18n();
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
 const items = ref([] as TodoListItemEntity[]);
-const url = '/todo-list';
 
 onMounted(async () => {
 	items.value = await fetchAll();
@@ -48,12 +47,8 @@ async function add(toDoListItem: ToDoListItemRequest){
 	showSnackbar(i18n.t('successFeedback.added'), {timeout: 1500, color: 'success'});
 }
 
-function quickEditedActivity(id: number, name: string, text: string | null) {
-	const editedActivity = items.value[items.value.findIndex(item => item.id === id)];
-	if (editedActivity) {
-		editedActivity.activity.name = name;
-		editedActivity.activity.text = text;
-	}
+async function quickEditedActivity(id: number) {
+	items.value[items.value.findIndex(item => item.id === id)].activity = await fetchByIdActivity(id);
 }
 
 async function edit(id: number, toDoListItemRequest: ToDoListItemRequest){
@@ -71,7 +66,19 @@ async function edit(id: number, toDoListItemRequest: ToDoListItemRequest){
 		showSnackbar(i18n.t('successFeedback.edited'), {timeout: 1500, color: 'success'});
 	}
 }
+async function onChangedUrgency(id: number, taskUrgencyId?: number) {
+	if (!taskUrgencyId) {
+		showErrorSnackbar(i18n.t('errorFeedback.noUrgencySelected'));
+		return;
+	}
+	changeUrgency(id, taskUrgencyId).then(async ()=>{
+		const item = items.value.find(i=>i.id === id);
+		if (item) {
+			item.taskUrgency = await fetchByIdTaskUrgency(taskUrgencyId);
+		}
+	});
 
+}
 async function deleteItem(id: number) {
 	await deleteEntity(id);
 	const index = items.value.findIndex((item) => item.id === id);

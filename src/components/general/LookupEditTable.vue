@@ -1,50 +1,31 @@
 <template>
-<MyTable v-model="items" v-model:page="page" v-model:items-per-page="itemsPerPage" v-model:sort-by="sortBy"
-         :columns :itemsLength :loading @on-load-items="loadItems"
-         @onAdd="$refs.dialog.openAddDialog()"
-         @onEdit="item=> $refs.dialog.openEditDialog(item.text)" @onDelete="deleteLoanScale">
-	<template v-slot:filter>
-		<VTextField
-			v-model="filter.text"
-			max-width="350"
-			density="compact"
-			label="Text"
-		>
-		</VTextField>
-	</template>
-</MyTable>
+<div class="d-flex flex-column ga-2">
+	<VTextField
+		v-model="filter.text"
+		max-width="350"
+		density="compact"
+		label="Text"
+	>
+	</VTextField>
+	<BasicTable v-model="items" v-model:page="page" v-model:items-per-page="itemsPerPage" v-model:sort-by="sortBy"
+	            :columns :itemsLength :loading @on-load-items="loadItems"
+	            @onAdd="$refs.dialog.openAddDialog()"
+	            @onEdit="item=> $refs.dialog.openEditDialog(item.text)" @onDelete="deleteLoanScale">
+	</BasicTable>
+</div>
 <LookupDialog ref="dialog" :entityName @created="onCreated"></LookupDialog>
 </template>
 
 <script setup lang="ts">
 import {computed, onMounted, ref} from 'vue';
 import {FilteredTableRequest, SortByRequest, TableColumn, VSortItem} from '@/classes/Generic.ts';
-import MyTable from '@/components/general/tableGrid/MyTable.vue';
 import LookupDialog from '@/components/dialogs/general/LookupDialog.vue';
 import {LookupFilterRequest, LookupResponse} from '@/classes/SelectOption.ts';
-import {useScaleModelStore} from '@/stores/scaleModelStore.ts';
-import {useProductTypeStore} from '@/stores/productTypeStore.ts';
-import {useSparePartStore} from '@/stores/sparePartStore.ts';
-
-const scaleModelStore = useScaleModelStore();
-const productTypeStore = useProductTypeStore();
-const sparePartStore = useSparePartStore();
+import BasicTable from '@/components/general/dataTable/BasicTable.vue';
 
 const props = defineProps<{
 	entityName: string
 }>()
-const store = computed(() => {
-	switch (props.entityName) {
-		case 'scale-model':
-			return scaleModelStore;
-		case 'product-type':
-			return productTypeStore;
-		case 'spare-part':
-			return sparePartStore;
-		default:
-			throw new Error('Unknown entity name');
-	}
-})
 
 const loading = ref(false);
 

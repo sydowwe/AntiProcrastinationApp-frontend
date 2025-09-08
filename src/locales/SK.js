@@ -343,7 +343,15 @@ const SK = {
         urgency: `Naliehavosť`,
         timePeriod: `Časový úsek`,
         saveTask: `Zaznamenať dokončenie úlohy`,
-        quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s kategóriou to-do list`,
+        quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s roľou to-do úloha`,
+        quickEditToDoListActivity: `Rýchla úprava aktivity`,
+    },
+    routineTodoList:{
+        routineTodoList: 'Routine to-do list',
+        urgency: `Naliehavosť`,
+        timePeriod: `Časový úsek`,
+        saveTask: `Zaznamenať dokončenie úlohy`,
+        quickCreateRoutineToDoListActivity: `Rýchle vytvorenie aktivity s roľou rutinná úloha`,
         quickEditToDoListActivity: `Rýchla úprava aktivity`,
     },
     user: {

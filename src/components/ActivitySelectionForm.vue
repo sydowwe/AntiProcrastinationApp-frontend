@@ -26,23 +26,21 @@
 				                 hide-details></VIdAutocomplete>
 			</VCol>
 			<VCol cols="12">
-				<VIdAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
-				                 :disabled="formDisabled"
-				                 hide-details></VIdAutocomplete>
+				<InputWithButton icon="plus" color="success" @create="createNewActivity">
+					<VIdAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
+					                 :disabled="formDisabled"
+					                 required
+					                 :rules="[requiredRule]"></VIdAutocomplete>
+				</InputWithButton>
 			</VCol>
 		</VRow>
-	</VCol>
-	<VCol cols="auto" class="mt-4">
-		<VBtn @click="createNewActivity()" color="primary">Vytvoriť novú aktivitu</VBtn>
 	</VCol>
 </VRow>
 </template>
 
 <script setup lang="ts">
-
 import {ref, computed, watch, onMounted, type PropType} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
-import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
@@ -58,18 +56,28 @@ import {
 } from '@/composables/ActivitySelectsComposition';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
+import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import InputWithButton from '@/components/general/InputWithButton.vue';
+import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
+import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
 
-const { showErrorSnackbar, showSnackbar} = useSnackbar();
 
+const {requiredRule} = useGeneralRules()
 
+const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {create} = useActivityHistoryCrud()
+
+const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>();
+const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>();
 const props = defineProps({
 	formDisabled: {
 		type: Boolean,
 		default: false,
 	},
 	activityId: {
-		type: Number as PropType<number | null>,
-		default: null,
+		type: Number as PropType<number | undefined>,
+		default: undefined,
 	},
 	showFromToDoListField: {
 		type: Boolean,
@@ -89,7 +97,8 @@ const allOptions = ref(new ActivityFormSelectOptions());
 const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([]);
 const filteredOptions = ref(new ActivityFormSelectOptions());
 
-const formData = ref(new ActivityFormRequest());
+const formData = defineModel<ActivityFormRequest>({required: true});
+
 onMounted(async () => {
 	// allOptions.value = await getAllActivityFormSelectOptions(props.selectOptionsSource);
 	allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(props.selectOptionsSource);
@@ -97,9 +106,7 @@ onMounted(async () => {
 });
 // const filteredOptions = useActivitySelectOptionsFiltered(allOptions, formData);
 
-watch(()=> formData.value,  async (newVal,oldVal) => {
-	console.log(newVal)
-	console.log(oldVal);
+watch(() => formData.value, async (newVal, oldVal) => {
 	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, newVal);
 }, {deep: true})
 
@@ -131,22 +138,24 @@ function validate() {
 	}
 }
 
-function saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject) {
+async function saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject) {
 	if (!formData.value.activityId) {
 		showErrorSnackbar(`Please select an activity`);
 	} else {
-		addActivityToHistory(startTimestamp, activityLength, formData.value.activityId).then(isSuccess => {
-			if (isSuccess) {
-				showSnackbar(`Added record of activity ${getSelectedActivityName} to history`, {color: 'success'});
-			} else {
-				showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName} to history`);
-			}
-		})
+		const newId = await create(startTimestamp, activityLength, formData.value.activityId);
+
+		if (newId) {
+			showSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`, {color: 'success'});
+			return newId;
+		} else {
+			showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName.value} to history`);
+			return null;
+		}
 	}
 }
 
 function createNewActivity() {
-	router.push({name: 'createNewActivity'});
+	router.push('/create-new-activity');
 }
 
 const getSelectedActivityName = computed(() => {
@@ -156,13 +165,8 @@ const getSelectedActivityId = computed(() => {
 	return formData.value.activityId;
 });
 
-function setSelectedActivityId(activityId: number) {
-	console.log(activityId)
-	formData.value.activityId = activityId;
-}
-
-defineExpose({validate, setSelectedActivityId, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory, formData});
+defineExpose({validate, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
 const emit = defineEmits<{
-	(e: "activityIdChanged", activityId: number | null): void;
+	(e: "activityIdChanged", activityId?: number): void;
 }>()
 </script>

@@ -17,24 +17,26 @@
 </template>
 <script setup lang="ts">
 import AlarmItem from '@/components/addActivityToHistory/AlarmItem.vue';
-
-const alarmDialog = ref<AlarmDialogType>({} as AlarmDialogType);
-
 import {onMounted, ref} from "vue";
 import {Alarm, AlarmRequest} from "@/classes/Alarm";
 import type {AlarmDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
+import {useAlarmCrud} from '@/composables/ConcretesCrudComposable.ts';
 
+const alarmDialog = ref<AlarmDialogType>({} as AlarmDialogType);
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const alarmList = ref([] as Alarm[]);
+
+const {createWithResponse, update, deleteEntity} = useAlarmCrud()
 
 const url = "alarm";
 onMounted(() => {
 	getAll();
 })
+
 function getAll() {
 	API.post(`/${url}/get-all`)
 		.then((response) => {
@@ -67,34 +69,19 @@ const handleIsActiveChanged = (Alarm: Alarm) => {
 
 
 const add = (alarm: AlarmRequest) => {
-	API.post(`${url}/create`, alarm).then((response) => {
-		alarmList.value.push(Alarm.fromJson(response.data));
+	createWithResponse(alarm).then((response) => {
+		alarmList.value.push(response);
 		alarmList.value.sort(Alarm.frontEndSortFunction());
-		showSnackbar(i18n.t("successFeedback.added"), {
-			timeout: 1500,
-			color: "success",
-		});
+		showSuccessSnackbar(i18n.t("successFeedback.added"))
 	});
 };
 
-// function quickEditedActivity(id: number, name: string, text: string) {
-// 	const editedActivity = alarmList.value[alarmList.value.findIndex(item => item.id === id)];
-// 	if (editedActivity) {
-// 		editedActivity.activity.name = name;
-// 		editedActivity.activity.text = text;
-// 	}
-// }
 
 const edit = (id: number, alarm: AlarmRequest) => {
-	API.put(`${url}/update/${id}`, alarm).then((response) => {
-		alarmList.value[
-			alarmList.value.findIndex((item) => item.id === id)
-			] = Alarm.fromJson(response.data);
+	update(id, alarm).then((response) => {
+		alarmList.value[alarmList.value.findIndex((item) => item.id === id)] = response;
 		alarmList.value.sort(Alarm.frontEndSortFunction());
-		showSnackbar(i18n.t("successFeedback.edited"), {
-			timeout: 1500,
-			color: "success",
-		});
+		showSuccessSnackbar(i18n.t("successFeedback.edited"))
 	});
 
 };
@@ -119,16 +106,12 @@ function deleteAlarm(id: number) {
 				console.error(error);
 			});
 	} else {
-		API.delete(`/${url}/delete/${id}`)
+		deleteEntity(id)
 			.then((response) => {
-				console.log(response.data);
 				alarmList.value = alarmList.value.filter(
 					(item: Alarm) => item.id !== id
 				);
 			})
-			.catch((error) => {
-				console.error(error);
-			});
 	}
 }
 

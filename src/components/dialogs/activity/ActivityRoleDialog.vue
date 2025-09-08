@@ -12,7 +12,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {ref} from 'vue';
 import {Role, RoleRequest} from '@/classes/Role.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityCrud, useActivityRoleCrud} from '@/composables/general/ConcretesCrudComposable.ts';
+import {useActivityCrud, useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 const {useApi} = defineProps({
 	useApi: {
