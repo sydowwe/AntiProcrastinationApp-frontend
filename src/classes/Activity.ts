@@ -8,7 +8,7 @@ export class Activity {
 		public text: string | null,
 		public isUnavoidable: boolean,
 		public role: Role,
-		public category: Category
+		public category: Category | null,
 	) {
 	}
 
@@ -71,3 +71,15 @@ export class QuickEditActivityRequest {
 	}
 }
 
+export class QuickActivityToolsDto {
+	constructor(
+		public id: number,
+		public name: string,
+		public text: string | null,
+		public categoryId: number | null
+	) {
+	}
+	static get createEmpty() {
+		return new QuickActivityToolsDto(0, '', null, null);
+	}
+}

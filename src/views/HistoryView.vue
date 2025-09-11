@@ -55,7 +55,7 @@
 	    } else {
 		    filter.dateFrom = null;
 	    }
-	    API.post(`/activity-history/filter`, filter)
+	    API.post(`/activity-history/filtered-table`, filter)
 		    .then((response) => {
 			    groupedRecords.value = HistoryGroupedByDate.listFromObjects(response.data)
 		    })

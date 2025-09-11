@@ -54,6 +54,10 @@ export class TimeLengthObject {
 		return new TimeLengthObject(Math.floor(minutes / 60), Math.floor(minutes % 60));
 	}
 
+	public static fromSeconds(seconds: number): TimeLengthObject {
+		return new TimeLengthObject(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60));
+	}
+
 	static fromJson(object: any) {
 		const {
 			hours = 0,
@@ -76,10 +80,6 @@ export class TimeLengthObject {
 
 	public get getNice() {
 		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}`;
-	}
-
-	public subtract(objectToSubtract: TimeLengthObject) {
-		return TimeLengthObject.fromMinutes(this.getInMinutes - objectToSubtract.getInMinutes)
 	}
 
 	public subtract(objectToSubtract: TimeLengthObject) {

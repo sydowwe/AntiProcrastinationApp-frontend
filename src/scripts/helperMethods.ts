@@ -18,3 +18,7 @@ export function openInNewTab(url: string): void {
 	link.click();
 	document.body.removeChild(link);
 }
+
+export function hasObjectChanged<T>(original: T, modified: T): boolean {
+	return JSON.stringify(original) !== JSON.stringify(modified);
+}

@@ -1,27 +1,17 @@
 <template>
 <MyDialog v-model="dialog" :title="isEdit ? $t('general.edit') : $t('general.add') + ' to routine to-do list'"
           :confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')"
-          @confirmed="save" :eager="true"
+          @confirmed="save" :eager="true" @closed="close"
 >
-	<VCheckbox class="mx-auto mt-3 mb-2" v-model="isActivityFormHidden" :label="i18n.t('routineTodoList.quickCreateRoutineToDoListActivity')"
-	           density="comfortable" hideDetails></VCheckbox>
-	<ActivitySelectionForm v-model="activityFormDto" v-if="!isActivityFormHidden" class="mb-4"
-	                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
-	                       :activityId="routineToDoListItem.activityId"
-	                       :selectOptionsSource="ActivityOptionsSource.ALL"
-	                       @activityIdChanged="activityId => routineToDoListItem.activityId = activityId"></ActivitySelectionForm>
-	<template v-else>
-		<VTextField :label="$t('general.name')+'*'" v-model="quickActivityName"></VTextField>
-		<VTextField :label="$t('general.text')" v-model="quickActivityText"></VTextField>
-		<VIdSelect :label="$t('activity.category')" v-model="quickActivityCategoryId" :items="categoryOptions"></VIdSelect>
-	</template>
-	<div class="mb-4 w-100 d-flex flex-column flex-md-row ga-4 align-center">
-		<VSwitch v-model="isRepeated" label="More than once" color="primary" hide-details></VSwitch>
-		<VNumberInput v-if="isRepeated && isEdit" label="Done count" v-model="routineToDoListItem.doneCount" :min="0" :max="routineToDoListItem.totalCount ?? 1" :width="180" max-width="190" control-variant="split" hide-details></VNumberInput>
-		<VNumberInput v-if="isRepeated" label="Total count" v-model="routineToDoListItem.totalCount" :min="2" :width="180" max-width="190" control-variant="split" hide-details></VNumberInput>
-	</div>
-	<VIdSelect class="py-2" :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false" hide-details
-	         :items="timePeriodOptions"></VIdSelect>
+	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
+		<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Routine task" :isEdit :old-activity-id="entityBeforeEdit?.activity.id"
+		                                    :old-activity-name="entityBeforeEdit?.activity.name" :old-activity-text="entityBeforeEdit?.activity.name"
+		 :old-activity-category-id="entityBeforeEdit?.activity.category?.id"></ActivitySelectOrQuickEditFormField>
+
+		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="routineToDoListItem.doneCount" v-model:total-count="routineToDoListItem.totalCount" :isEdit></TodoListRepeatCountFormField>
+		<VIdSelect class="pt-2 pb-3" :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false"
+		           :items="timePeriodOptions" hide-details></VIdSelect>
+	</VForm>
 </MyDialog>
 </template>
 
@@ -38,17 +28,17 @@ import {EntityWithSelectOptions} from '@/composables/ActivitySelectsComposition'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
+import {VForm} from 'vuetify/components';
+import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
+import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue';
 
-const {isActivityFormHidden, quickActivityName, quickActivityText, quickActivityCategoryId, quickCreateActivity, quickEditActivity} = useQuickCreateActivity('Routine task');
-const {fetchCategorySelectOptions} = useActivitySelectOptions()
+
 const {fetchTimePeriodEntitySelectOptions} = useTaskPlanningSelectOptions()
 
-const i18n = useI18n();
-const {showErrorSnackbar} = useSnackbar();
+const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
+const form = ref<InstanceType<typeof VForm>>();
 
-const categoryOptions = ref<SelectOption[]>([]);
-
-const activityFormDto = ref(new ActivityFormRequest())
 const routineToDoListItem = ref(new RoutineTodoListItemRequest());
 
 const dialog = ref(false);
@@ -58,7 +48,7 @@ const entityBeforeEdit = ref<RoutineTodoListItemEntity | null>(null);
 const isRepeated = ref(false);
 const timePeriodOptions = ref<SelectOption[]>([]);
 
-const emit = defineEmits(['edit', 'add','quickEditedActivity']);
+const emit = defineEmits(['edit', 'add', 'quickEditedActivity']);
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -67,8 +57,7 @@ watch(dialog, (newValue) => {
 	}
 });
 
-onMounted( async () => {
-	categoryOptions.value = await fetchCategorySelectOptions();
+onMounted(async () => {
 	timePeriodOptions.value = await fetchTimePeriodEntitySelectOptions();
 	setDefaultTimePeriod();
 });
@@ -78,26 +67,18 @@ const setDefaultTimePeriod = () => {
 };
 
 async function save() {
-	if (isActivityFormHidden.value) {
-		if (isEdit.value && routineToDoListItem.value.activityId) {
-			if (entityBeforeEdit.value?.activity.name !== quickActivityName.value || entityBeforeEdit.value.activity.text !== quickActivityText.value) {
-				if (await quickEditActivity(routineToDoListItem.value.activityId)) {
-					emit('quickEditedActivity', entityBeforeEdit.value?.id ?? 0);
-				}
-			}
-		} else {
-			routineToDoListItem.value.activityId = await quickCreateActivity();
-		}
-	} else if (!routineToDoListItem.value.activityId) {
-		showErrorSnackbar(i18n.t("planner.pleaseSelectActivity"));
+	const isValid = await form.value?.validate()
+	if (!isValid) {
 		return;
-	}else{
-		routineToDoListItem.value.activityId = activityFormDto.value.activityId;
 	}
 
+	const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus();
+	if (activityFormFieldResult){
+		routineToDoListItem.value.activityId = activityFormFieldResult.activityId
+	}
 	if (!isRepeated.value) {
 		routineToDoListItem.value.totalCount = null;
-		if (isEdit.value){
+		if (isEdit.value) {
 			routineToDoListItem.value.doneCount = null;
 		}
 	}
@@ -106,21 +87,29 @@ async function save() {
 	} else {
 		emit('add', routineToDoListItem.value);
 	}
-	dialog.value = false;
+	close();
 }
 
 const close = () => {
 	dialog.value = false;
+
+	activityFormField.value?.reset();
+	routineToDoListItem.value = new RoutineTodoListItemRequest();
+	setDefaultTimePeriod();
+	entityBeforeEdit.value = null;
 };
+
 const openCreate = () => {
 	isEdit.value = false;
 	dialog.value = true;
 };
+
 const openEdit = (entityToEdit: RoutineTodoListItemEntity) => {
 	isEdit.value = true;
 	entityBeforeEdit.value = entityToEdit;
+
+	activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity);
 	routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit);
-	console.log(routineToDoListItem.value)
 	dialog.value = true;
 };
 

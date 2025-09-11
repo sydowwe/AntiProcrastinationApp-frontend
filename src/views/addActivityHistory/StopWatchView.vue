@@ -3,9 +3,7 @@
         <v-col cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
             <TimeDisplay :timeObject="time"></TimeDisplay>
             <VRow justify="center" class="mt-4 mb-7">
-                <VBtn size="large" class="mr-4" color="success" @click="start" :disabled="intervalId !== undefined && !paused">Start</VBtn>
-                <VBtn size="large" class="mr-4" color="primary" @click="pause" :disabled="intervalId === undefined || paused">Pause</VBtn>
-                <VBtn size="large" color="error" @click="stop" :disabled="intervalId === undefined">Stop</VBtn>
+	            <TimerControls :intervalId :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
             </VRow>
             <hr />
             <ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
@@ -20,6 +18,7 @@
     import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
     import  type { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
+    import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);

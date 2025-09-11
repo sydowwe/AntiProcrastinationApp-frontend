@@ -5,6 +5,7 @@
 	@click="toggleState"
 	indeterminate-icon="square-xmark"
 	:label="label"
+	:hideDetails
 >
 	<template #label>
 		<span>{{ label }}</span>
@@ -21,6 +22,10 @@ const props = defineProps({
 	label: {
 		type: String,
 		default: '',
+	},
+	hideDetails: {
+		type: Boolean,
+		default: false,
 	},
 });
 

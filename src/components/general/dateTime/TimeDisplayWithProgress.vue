@@ -14,12 +14,12 @@
 <script setup lang="ts">
 import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
 import {computed} from 'vue';
-import {TimeKeys, TimeLengthObject} from '@/classes/TimeUtils';
+import {type TimeKeys, TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 
 const props = defineProps({
 	color: {
 		type: String,
-		default: 'primary',
+		default: 'primary-accent',
 	},
 	title: {
 		type: String,
@@ -29,7 +29,7 @@ const props = defineProps({
 		required: true,
 	},
 	timeRemainingObject: {
-		type: TimeLengthObject,
+		type: TimeObject,
 		required: true,
 	},
 	whatToShow: {

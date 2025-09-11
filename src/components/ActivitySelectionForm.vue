@@ -1,41 +1,37 @@
 <template>
-<VRow class="justify-center" align="center" noGutters>
-	<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
-		<NullFalseTrueCheckbox label="From to-do list" v-model="formData.isFromToDoList"
-		                       :disabled="formDisabled"></NullFalseTrueCheckbox>
-	</VCol>
-	<VCol v-if="showFromToDoListField" v-show="formData.isFromToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-		<VIdSelect v-model="formData.taskUrgencyId" :items="filteredOptions.taskUrgencyOptions" hide-details></VIdSelect>
-	</VCol>
-	<VCol v-if="showFromToDoListField" cols="auto" class="pb-0 pb-md-4">
-		<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData.isFromRoutineToDoList"
-		                       :disabled="formDisabled"></NullFalseTrueCheckbox>
-	</VCol>
-	<VCol v-if="showFromToDoListField" v-show="formData.isFromRoutineToDoList" cols="12" md="5" lg="3" class="pt-1 pb-5 pb-md-4">
-		<VIdSelect v-model="formData.routineTimePeriodId" :items="filteredOptions.routineTimePeriodOptions" hide-details></VIdSelect>
-	</VCol>
-	<VCol cols="12" class="pt-1">
-		<VRow>
-			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VIdAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
-				                 hide-details></VIdAutocomplete>
-			</VCol>
-			<VCol cols="12" :lg="isInDialog ? 12 : 6">
-				<VIdAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
+<div class="d-flex flex-column">
+	<div class="d-flex flex-column flex-md-row ga-3">
+		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
+			<NullFalseTrueCheckbox label="From to-do list" v-model="formData.isFromToDoList"
+			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
+			<VIdSelect v-if="formData.isFromToDoList" class="flex-1-1" v-model="formData.taskUrgencyId"  :items="filteredOptions.taskUrgencyOptions" hide-details></VIdSelect>
+
+		</div>
+		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
+			<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData.isFromRoutineToDoList"
+			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
+			<VIdSelect v-if="formData.isFromRoutineToDoList" class="flex-1-1" v-model="formData.routineTimePeriodId" :items="filteredOptions.routineTimePeriodOptions" hide-details></VIdSelect>
+		</div>
+	</div>
+	<VRow class="my-0">
+		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
+			<VIdAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
+			                 hide-details class="pb-1"></VIdAutocomplete>
+		</VCol>
+		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
+			<VIdAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
+			                 :disabled="formDisabled"
+			                 hide-details class="pb-1"></VIdAutocomplete>
+		</VCol>
+		<VCol cols="12" class="py-4">
+			<InputWithButton icon="plus" color="success" @create="createNewActivity">
+				<VIdAutocomplete label="*Activity" v-model="selectedActivityId" :items="filteredOptions.activityOptions"
 				                 :disabled="formDisabled"
-				                 hide-details></VIdAutocomplete>
-			</VCol>
-			<VCol cols="12">
-				<InputWithButton icon="plus" color="success" @create="createNewActivity">
-					<VIdAutocomplete label="Activity" v-model="formData.activityId" :items="filteredOptions.activityOptions"
-					                 :disabled="formDisabled"
-					                 required
-					                 :rules="[requiredRule]"></VIdAutocomplete>
-				</InputWithButton>
-			</VCol>
-		</VRow>
-	</VCol>
-</VRow>
+				                 required :rules="[requiredRule]" class="pb-1"></VIdAutocomplete>
+			</InputWithButton>
+		</VCol>
+	</VRow>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -59,8 +55,6 @@ import router from '@/plugins/router.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
-import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
-import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
 
 
 const {requiredRule} = useGeneralRules()
@@ -68,16 +62,10 @@ const {requiredRule} = useGeneralRules()
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const {create} = useActivityHistoryCrud()
 
-const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>();
-const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>();
 const props = defineProps({
 	formDisabled: {
 		type: Boolean,
 		default: false,
-	},
-	activityId: {
-		type: Number as PropType<number | undefined>,
-		default: undefined,
 	},
 	showFromToDoListField: {
 		type: Boolean,
@@ -93,29 +81,26 @@ const props = defineProps({
 	}
 });
 
-const allOptions = ref(new ActivityFormSelectOptions());
 const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([]);
 const filteredOptions = ref(new ActivityFormSelectOptions());
 
-const formData = defineModel<ActivityFormRequest>({required: true});
+const formData = ref(new ActivityFormRequest());
+const selectedActivityId = defineModel<number | undefined>({required: false, default: undefined});
 
 onMounted(async () => {
-	// allOptions.value = await getAllActivityFormSelectOptions(props.selectOptionsSource);
 	allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(props.selectOptionsSource);
+	formData.value.activityId = selectedActivityId.value ?? undefined;
 	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value);
 });
-// const filteredOptions = useActivitySelectOptionsFiltered(allOptions, formData);
 
-watch(() => formData.value, async (newVal, oldVal) => {
+watch(() => formData.value, async (newVal) => {
+	newVal.activityId = selectedActivityId.value ?? undefined;
 	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, newVal);
 }, {deep: true})
 
-watch(() => formData.value.activityId, (newValue) => {
+watch(() => selectedActivityId.value, (newValue) => {
 	emit('activityIdChanged', newValue);
 
-});
-watch(() => props.activityId, (newValue) => {
-	formData.value.activityId = newValue;
 });
 
 watch(() => formData.value.isFromToDoList, (newValue) => {
@@ -130,7 +115,7 @@ watch(() => formData.value.isFromRoutineToDoList, (newValue) => {
 });
 
 function validate() {
-	if (formData.value.activityId != null) {
+	if (selectedActivityId.value != null) {
 		return true;
 	} else {
 		showErrorSnackbar(`Please select an activity`);
@@ -139,10 +124,10 @@ function validate() {
 }
 
 async function saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject) {
-	if (!formData.value.activityId) {
+	if (!selectedActivityId.value) {
 		showErrorSnackbar(`Please select an activity`);
 	} else {
-		const newId = await create(startTimestamp, activityLength, formData.value.activityId);
+		const newId = await create(startTimestamp, activityLength, selectedActivityId.value);
 
 		if (newId) {
 			showSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`, {color: 'success'});
@@ -159,14 +144,14 @@ function createNewActivity() {
 }
 
 const getSelectedActivityName = computed(() => {
-	return filteredOptions.value?.activityOptions.find((item) => item.id === formData.value.activityId)?.text;
+	return filteredOptions.value?.activityOptions.find((item) => item.id === selectedActivityId.value)?.text;
 });
 const getSelectedActivityId = computed(() => {
-	return formData.value.activityId;
+	return selectedActivityId.value;
 });
 
 defineExpose({validate, getSelectedActivityName, getSelectedActivityId, saveActivityToHistory});
 const emit = defineEmits<{
-	(e: "activityIdChanged", activityId?: number): void;
+	(e: "activityIdChanged", activityId: number | undefined): void;
 }>()
 </script>

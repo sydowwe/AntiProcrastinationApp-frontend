@@ -1,17 +1,20 @@
-import {Activity, ActivityRequest, QuickEditActivityRequest} from '@/classes/Activity';
+import {Activity, ActivityRequest, QuickActivityToolsDto, QuickEditActivityRequest} from '@/classes/Activity';
 import {ref} from 'vue';
 import {Role} from '@/classes/Role';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
 import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
 
+export type QuickCreateActivityRoleName = 'Routine task' | 'To-do list task' | 'Planner task'
+
+export type ActivityFormFieldResultStatus = 'edit' | 'create' | 'noChange' | 'fromExisting';
+
 export function useQuickCreateActivity(viewName: string) {
 	const {create} = useActivityCrud()
 
 	const isActivityFormHidden = ref(false);
-	const quickActivityName = ref<string>();
-	const quickActivityText = ref<string | null>(null);
-	const quickActivityCategoryId = ref<number | null>(null);
+
+	const dto = ref(QuickActivityToolsDto.createEmpty)
 
 
 	async function getQuickCreateActivityRoleIdByView() {
@@ -23,31 +26,21 @@ export function useQuickCreateActivity(viewName: string) {
 
 	async function quickCreateActivity() {
 		const roleId = await getQuickCreateActivityRoleIdByView();
-		const activityRequest = new ActivityRequest(quickActivityName.value, quickActivityText.value, roleId, quickActivityCategoryId.value, false, false, null);
+		const activityRequest = new ActivityRequest(dto.value.name, dto.value.text, roleId, dto.value.categoryId, false, false, null);
 		const id = await create(activityRequest);
 		return id;
 	}
 
 	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach
-	async function quickEditActivity(activityId: number) {
-		if (quickActivityName.value) {
-			return await API.patch(
-				'/activity/' + activityId,
-				new QuickEditActivityRequest(quickActivityName.value, quickActivityText.value, quickActivityCategoryId.value)
-			)
-				.then((response) => {
-					return response.status === 204;
-				});
-		} else {
-			return false;
-		}
+	async function quickEditActivity(activityId: number, quickEditMode: 'Overwrite' | 'Clone') {
+		const response = await API.patch(`/activity/${activityId}/${quickEditMode}`,
+			new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId))
+		return response.data ? parseInt(response.data) : null;
 	}
 
 	return {
+		activityFormFieldData: dto,
 		isActivityFormHidden,
-		quickActivityName,
-		quickActivityText,
-		quickActivityCategoryId,
 		quickCreateActivity,
 		quickEditActivity
 	}
