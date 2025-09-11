@@ -1,11 +1,11 @@
 <template>
-<VList class="d-flex flex-column pa-0 ga-2 mb-4" density="compact" title="To do list" lines="three" select-strategy="classic"
+<VList class="d-flex flex-column pa-0 ga-2" density="compact" title="To do list" lines="three" select-strategy="classic"
        variant="tonal">
 	<ToDoListItem
 		v-for="item in items"
 		:key="item.id"
 		:toDoListItem="item"
-		:color="color ?? item.taskUrgency?.color"
+		:color="item.taskUrgency?.color ?? 'primary'"
 		@delete="deleteItem"
 		@edit="editItem"
 		@select="select"
@@ -16,7 +16,7 @@
 <ToDoListItemDoneDialog v-model="itemDoneDialogShown" :toDoListItem="currentDoneItem" :isRecursive="isDialogRecursive"
                         @openNext="recursiveDialogsToSaveToHistory"></ToDoListItemDoneDialog>
 </template>
-<script setup lang="ts">
+<script setup lang="ts" generic="TEntity extends BaseToDoListItemEntity">
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
 import {type BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
@@ -29,24 +29,20 @@ const props = defineProps({
 		default: ToDoListKind.NORMAL,
 	},
 	items: {
-		type: Array as () => BaseToDoListItemEntity[],
+		type: Array as () => TEntity[],
 		required: true,
-	},
-	color: {
-		type: String,
-		required: false,
 	},
 });
 const selectedItemsIds = ref([] as number[]);
-const editItem = (entityToEdit: BaseToDoListItemEntity) => {
+const editItem = (entityToEdit: TEntity) => {
 	emit('editItem', entityToEdit);
 };
 const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'todo-list';
 
 const itemDoneDialogShown = ref(false);
 const isDialogRecursive = ref(false);
-const changedItems = ref([] as BaseToDoListItemEntity[]);
-const currentDoneItem = ref({} as BaseToDoListItemEntity);
+const changedItems = ref([] as TEntity[]);
+const currentDoneItem = ref({} as TEntity);
 
 function recursiveDialogsToSaveToHistory() {
 	if (changedItems.value.length > 0) {
@@ -72,14 +68,11 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 	const request = {idList: isBatchAction ? selectedItemsIds : [toDoListItem.id]};
 	API.patch(`/${url}/toggle-is-done`, request)
 		.then((response) => {
-			console.log(response);
 			if (isBatchAction) {
-				props.items.forEach((item) => {
-					if (selectedItemsIds.value.includes(item.id)) {
-						item.isDone = toDoListItem.isDone;
-					}
-				});
+				emit('itemsChanged', selectedItemsIds.value);
 				selectedItemsIds.value = [];
+			}else{
+				emit('itemsChanged', [toDoListItem.id]);
 			}
 		})
 		.catch((error) => {
@@ -104,7 +97,7 @@ const unSelect = (id: number) => {
 	selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
 };
 const emit = defineEmits<{
-	(e: 'itemsChanged', changedItems: BaseToDoListItemEntity[]): void;
+	(e: 'itemsChanged', changedItems: number[]): void;
 	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
 	(e: 'deletedItem', id: number): void;
 	(e: 'batchDeletedItems', ids: number[]): void;

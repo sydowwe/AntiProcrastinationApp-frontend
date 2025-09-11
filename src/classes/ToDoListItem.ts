@@ -86,7 +86,7 @@ export class RoutineTodoListItemEntity extends IdResponse {
 	}
 
 	get isMultipleCount() {
-		return !this.totalCount && this.totalCount !== 1;
+		return this.totalCount && this.totalCount !== 1;
 	}
 
 	static fromJson(json: any) {
@@ -94,8 +94,8 @@ export class RoutineTodoListItemEntity extends IdResponse {
 			json.id,
 			Activity.fromJson(json.activity),
 			json.isDone,
-			json.doneCount ?? 1,
-			json.totalCount ?? 3,
+			json.doneCount,
+			json.totalCount,
 			TimePeriodEntity.fromJson(json.routineTimePeriod)
 		);
 	}
@@ -142,7 +142,7 @@ export class TimePeriodEntity {
 		public text: string | null = null,
 		public color: string | undefined = undefined,
 		public lengthInDays: number = 0,
-		public isHiddenInView: boolean = false,
+		public isHidden: boolean = false,
 	) {
 	}
 
@@ -152,9 +152,9 @@ export class TimePeriodEntity {
 			text = '',
 			color = '',
 			lengthInDays = 0,
-			isHiddenInView = false,
+			isHidden = false,
 		} = object;
-		return new TimePeriodEntity(id, text, color, lengthInDays, isHiddenInView);
+		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden);
 	}
 
 	static listFromObjects(objects: any[]) {
@@ -167,7 +167,7 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 		public text: string | null = null,
 		public color: string | undefined = undefined,
 		public lengthInDays: number = 0,
-		public isHiddenInView: boolean = false,
+		public isHidden: boolean = false,
 	) {
 	}
 

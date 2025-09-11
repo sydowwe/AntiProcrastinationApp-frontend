@@ -1,22 +1,22 @@
 <template>
 <VRow justify="center" noGutters>
-	<VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3 d-flex flex-column">
-		<TimePicker v-if="timeInputVisible" v-model="initialTime"></TimePicker>
+	<VCol cols="12" sm="11" md="10" lg="7" class="mt-lg-5 mt-md-3 d-flex flex-column ga-6">
+		<TimePicker class="w-md-50 w-lg-50 mx-auto" v-if="timeInputVisible" v-model="initialTime"></TimePicker>
 		<TimeDisplayWithProgress v-else :timeInitialObject="initialTime" :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
-		<TimerControls :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"
-		               @reset="resetToDefault"></TimerControls>
+
+		<TimerControls :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
 		<hr/>
 		<ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-		<SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTimer()"></SaveActivityDialog>
 	</VCol>
 </VRow>
+<SaveActivityDialog ref="saveDialog" @saved="saveActivity" @resetTime="resetTimer"></SaveActivityDialog>
 </template>
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
 import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
-import type {ActivityDialogType,	ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
+import type {ActivityDialogType, ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
@@ -71,9 +71,13 @@ function resume() {
 function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
 	let activityName = activitySelectionForm.value.getSelectedActivityName as string;
-	saveDialog.value.open(activityName, );
-	if(automatic){
-		showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timeSpentNice}`);
+	if (automatic) {
+		showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timePassed().getNice}`);
+	}
+	if (timePassed().getInMinutes > 0) {
+		saveDialog.value.open(activityName, timePassed());
+	}else{
+		resetTimer();
 	}
 }
 
@@ -94,6 +98,6 @@ function saveActivity() {
 }
 
 function timePassed() {
-	return timeRemaining.value == 0 ? initialTime.value : initialTime.value.subtract(timeRemainingObject.value);
+	return timeRemaining.value == 0 ? initialTime.value : initialTime.value.subtract(timeRemainingObject.value.toTimeLength);
 }
 </script>

@@ -2,29 +2,24 @@
 <div class="h-100 w-100 d-flex flex-column">
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center">
-			<VBtn width="100%" color="green" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
+			<VBtn width="100%" color="primary" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
 		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : undefined" :lg="shownGroups.length > 2 ? 3 : undefined"
-		      v-for="group in shownGroups">
-			<VCard class="mx-auto rounded-lg px-3 d-flex flex-column" min-width="350">
-				<VRow class="py-1" noGutters>
-					<VCol class="d-flex"></VCol>
-					<VCol class="d-flex">
-						<VCardTitle class="mx-auto">{{ group.timePeriod.text }}</VCardTitle>
-					</VCol>
-					<VCol class="d-flex">
-						<VBtn color="blue" density="comfortable" class="my-auto ml-auto" append-icon="eye-slash"
-						      @click="toggleHideTimePeriod(group.timePeriod.id as number)">{{ $t('general.hide') }}
-						</VBtn>
-					</VCol>
-				</VRow>
+		      v-for="group in shownGroups" :key="group.timePeriod.id">
+			<VCard class="mx-auto rounded-lg px-3 py-5 d-flex flex-column ga-4" min-width="350">
+				<VSheet class="mx-auto px-3 d-flex align-center ga-3" rounded color="neutral-300">
+					<VCardTitle class="px-0">{{ group.timePeriod.text }}</VCardTitle>
+					<VIconBtn color="white" variant="tonal" density="comfortable" class="ml-auto" icon="eye-slash"
+					          @click="toggleHideTimePeriod(group.timePeriod.id as number)" :title="$t('general.hide')">
+						<VIcon size="small"></VIcon>
+					</VIconBtn>
+				</VSheet>
 				<ToDoList
 					v-if="group.items.length > 0"
 					:kind="ToDoListKind.ROUTINE"
 					:items="group.items"
-					:color="group.timePeriod.color"
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="onDelete"
@@ -32,23 +27,19 @@
 			</VCard>
 		</VCol>
 	</VRow>
-	<VRow justify="center" class="mt-lg-5 mt-md-3">
-		<VCol class="d-flex justify-center">
-			<VCard class="d-flex align-center pa-2 ga-2" color="blue-grey-lighten-1">
-				<h2>Hidden items</h2>
-				<VCard class="d-flex pa-2" v-for="group in groupedItems.filter(item=>item.timePeriod.isHiddenInView===true)">
-					<h3 class="pr-2">
-						{{ group.timePeriod.text }}
-					</h3>
-					<VBtn color="secondary" density="comfortable" class="my-auto ml-auto" append-icon="eye"
-					      @click="toggleHideTimePeriod(group.timePeriod.id as number)">{{ $t('general.show') }}
-					</VBtn>
-				</VCard>
-			</VCard>
-		</VCol>
-	</VRow>
+	<VCard class="mx-auto d-flex align-center pa-2 ga-2" color="neutral-300" v-if="hiddenGroups.length > 0">
+		<h2>Hidden list</h2>
+		<VCard class="d-flex ga-2 pl-4 pa-2" v-for="group in hiddenGroups">
+			<h3>
+				{{ group.timePeriod.text }}
+			</h3>
+			<VBtn color="secondaryOutline" variant="tonal" density="comfortable" class="pl-2" append-icon="eye"
+			      @click="toggleHideTimePeriod(group.timePeriod.id as number)">{{ $t('general.show') }}
+			</VBtn>
+		</VCard>
+	</VCard>
 </div>
-<RoutineToDoListDialog ref="toDoListDialog" @add="add" @edit="edit" @quickEditedActivity="quickEditedActivity"></RoutineToDoListDialog>
+<RoutineToDoListDialog ref="toDoListDialog" @add="add" @edit="edit"></RoutineToDoListDialog>
 </template>
 <script setup lang="ts">
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
@@ -56,10 +47,11 @@ import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
 import {RoutineTodoListItemEntity, RoutineTodoListGroupedList, RoutineTodoListItemRequest, ToDoListKind, ToDoListItemRequest} from '@/classes/ToDoListItem';
 import type {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
-import {useActivityCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud, useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
-const {fetchById: fetchActivityById} = useActivityCrud()
-const {fetchById, createWithResponse, updateWithResponse, deleteEntity, changeTimePeriodVisibility, getAllGrouped} = useRoutineTodoListItemCrud()
+const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
+const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped} = useRoutineTodoListItemCrud()
 
 const groupedItems = ref([] as RoutineTodoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
@@ -67,7 +59,8 @@ const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListI
 onMounted(() => {
 	getAllRecords();
 });
-const shownGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHiddenInView === false))
+const shownGroups = computed(() => groupedItems.value.filter(item => !item.timePeriod.isHidden))
+const hiddenGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHidden))
 
 function getAllRecords() {
 	getAllGrouped().then((response) => {
@@ -78,7 +71,7 @@ function getAllRecords() {
 async function toggleHideTimePeriod(id: number) {
 	const group = groupedItems.value.find(item => item.timePeriod.id === id);
 	if (group) {
-		group.timePeriod.isHiddenInView = !group.timePeriod.isHiddenInView;
+		group.timePeriod.isHidden = !group.timePeriod.isHidden;
 	}
 	await changeTimePeriodVisibility(id)
 }
@@ -95,39 +88,27 @@ async function add(request: RoutineTodoListItemRequest) {
 	}
 }
 
-async function quickEditedActivity(id: number) {
-	for (const group of groupedItems.value) {
-		const item = group.items.find(item => item.activity.id === id);
-		if (item) {
-			item.activity = await fetchActivityById(id);
+async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
+	if (hasObjectChanged(RoutineTodoListItemRequest.fromEntity(beforeEditEntity), toDoListItemRequest)) {
+		await update(beforeEditEntity.id, toDoListItemRequest)
+	}
+
+	const updatedItem = await fetchById(beforeEditEntity.id);
+	const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
+	if (updatedList) {
+		if (updatedItem.timePeriod.id === beforeEditEntity.timePeriod.id) {
+			updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
+		} else {
+			const oldGroup = groupedItems.value.find((group) => group.timePeriod.id === beforeEditEntity.timePeriod.id);
+			if (oldGroup) {
+				oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
+			}
+			updatedList.push(updatedItem);
 		}
+	} else {
+		console.error('not found updated group list');
 	}
 }
-
-async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
-	if (beforeEditEntity && (beforeEditEntity.timePeriod.id !== toDoListItemRequest.timePeriodId || beforeEditEntity.activity?.id !== toDoListItemRequest.activityId)) {
-		const updatedItem = await updateWithResponse(beforeEditEntity.id, toDoListItemRequest)
-
-		const oldGroup = groupedItems.value.find((group) => {
-			return group.items.some((item) => item.id === beforeEditEntity.id);
-		});
-		const updatedList = groupedItems.value.find((group) => group.timePeriod.id === updatedItem.timePeriod.id)?.items;
-		if (oldGroup) {
-			if (updatedList) {
-				if (updatedItem.timePeriod.id === oldGroup?.timePeriod.id) {
-					updatedList[updatedList.findIndex((item) => item.id === updatedItem.id)] = updatedItem;
-				} else {
-					oldGroup.items = oldGroup?.items.filter((item) => item.id !== updatedItem.id);
-					updatedList.push(updatedItem);
-				}
-			} else {
-				console.error('not found updated group list');
-			}
-		} else {
-			console.error('not found old group');
-		}
-	}
-};
 
 function onDelete(id: number) {
 	deleteEntity(id).then((deletedItem) => {

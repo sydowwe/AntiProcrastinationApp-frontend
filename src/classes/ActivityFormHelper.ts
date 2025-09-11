@@ -48,9 +48,9 @@ export class ActivitySelectOptionCombination extends SelectOption {
 export class ActivityFormRequest {
 	constructor(
 		public activityId?: number,
-		public roleId?: number,
-		public categoryId?: number,
-		public isUnavoidable?: boolean,
+		public roleId: number | null = null,
+		public categoryId: number | null = null,
+		public isUnavoidable: boolean | null = null,
 
 		public isFromToDoList: boolean | null = null,
 		public taskUrgencyId: number | null = null,

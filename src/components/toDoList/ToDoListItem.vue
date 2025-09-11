@@ -2,7 +2,7 @@
 <VListItem :active="!toDoListItem.isDone" @click="itemClicked" :base-color="color" class="align-center listItem">
 	<template v-slot:prepend>
 		<VListItemAction start>
-			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="white"></v-checkbox-btn>
+			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success"></v-checkbox-btn>
 			<div v-else class="d-flex flex-column ga-1 align-center justify-center">
 				<VHover>
 					<template v-slot:default="{ isHovering, props }">
@@ -16,9 +16,13 @@
 								:model-value="(toDoListItem.doneCount ?? 1) / (toDoListItem.totalCount ?? 1) * 100"
 								height="35"
 								bgOpacity="0.3"
-								style="border: 1px solid #777; border-radius: 4px"
+								style="border: 1px solid #777; border-radius: 4px;"
 							>
-							<span class="text-white">{{ toDoListItem.doneCount }}/{{ toDoListItem.totalCount }}</span>
+								<div class="d-flex align-center">
+									<span v-if="!toDoListItem.isDone && toDoListItem.doneCount !== null" class="text-white">{{ toDoListItem.doneCount }}</span>
+									<VIcon v-if="toDoListItem.isDone" size="17" icon="check" color="success"></VIcon>
+									<span class="text-white">/{{ toDoListItem.totalCount}}</span>
+								</div>
 						</VProgressLinear>
 						</span>
 
@@ -30,24 +34,16 @@
 	<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
 	<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
 	<template v-slot:append>
-		<VIcon v-if="isSelected">
-			<FontAwesomeIcon icon="fas fa-check-circle" class="text-info"></FontAwesomeIcon>
+		<VIcon v-if="isSelected" icon="check-circle" color="#fff">
 		</VIcon>
 		<v-menu location="start" transition="slide-y-transition">
 			<template v-slot:activator="{ props }">
-				<v-btn icon v-bind="props" color="white" variant="text">
-					<VIcon>
-						<FontAwesomeIcon icon="fas fa-ellipsis-vertical"></FontAwesomeIcon>
-					</VIcon>
-				</v-btn>
+				<v-btn icon="ellipsis-vertical" v-bind="props" color="white" variant="text"></v-btn>
 			</template>
 			<VList>
 				<VListItem class="px-3" v-for="(item, i) in actions" :key="i">
-					<VBtn class="px-3" :color="item.color" width="100%" @click="item.action">
+					<VBtn class="px-3" :color="item.color" :variant="item.variant" :append-icon="item.icon" width="100%" @click="item.action">
 						{{ actionButtonText(item.name) }}
-						<VIcon class="ml-2" slot="append">
-							<FontAwesomeIcon :icon="['fas', `${item.icon}`]"></FontAwesomeIcon>
-						</VIcon>
 					</VBtn>
 				</VListItem>
 			</VList>
@@ -84,9 +80,9 @@ const emits = defineEmits<{
 const isSelected = ref(false);
 
 const actions = [
-	{name: 'select', color: 'yellow', icon: 'check-circle', action: toggleSelect},
-	{name: 'edit', color: 'primary', icon: 'pen-to-square', action: edit},
-	{name: 'delete', color: 'error', icon: 'trash', action: del},
+	{name: 'select', variant: 'tonal', color: 'primaryOutline', icon: 'check-circle', action: toggleSelect},
+	{name: 'edit', variant: 'outlined', color: 'primaryOutline', icon: 'pen-to-square', action: edit},
+	{name: 'delete', variant: 'outlined', color: 'secondaryOutline', icon: 'trash', action: del},
 ];
 
 function itemClicked() {

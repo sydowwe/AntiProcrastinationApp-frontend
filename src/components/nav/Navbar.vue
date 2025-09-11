@@ -1,7 +1,7 @@
 <template>
 <header v-cloak>
 	<nav>
-		<VAppBar v-if="!mdAndDown" app sticky color="secondary-accent" class="w-100 px-3" justify-end>
+		<VAppBar v-if="!mdAndDown" app sticky color="primary-accent" class="w-100 px-3" justify-end>
 			<div class="d-flex align-center flex-fill ga-1">
 				<VSheet class="d-flex px-2 py-1 mr-1" color="primary-container" style="border-radius: 7px; border: 2px black solid">
 					<VAppBarTitle class="flex-0-0">Adhd time organizer</VAppBarTitle>
@@ -28,7 +28,6 @@
 							<template v-slot:activator="{ props, isActive }">
 								<VBtn
 									v-bind="props"
-									:to="item.to || ''"
 									:prepend-icon="item.icon"
 									:append-icon="isActive ? 'chevron-up' : 'chevron-down'"
 									variant="text"
@@ -104,7 +103,7 @@
 		<template v-else>
 			<VNavigationDrawer
 				v-model="drawer"
-				color="primary"
+				color="primary-accent"
 				location="end"
 				temporary
 			>
@@ -134,7 +133,7 @@
 						/>
 
 						<!-- Mobile menu group with children -->
-						<VListGroup v-else :value="item.title">
+						<VListGroup v-else :value="item.title + '-group'">
 							<template v-slot:activator="{ props }">
 								<VListItem
 									v-bind="props"
@@ -158,9 +157,9 @@
 			</VNavigationDrawer>
 
 			<!-- Mobile App Bar -->
-			<VAppBar app color="primary">
+			<VAppBar app color="primary-accent">
 				<div class="pl-2 w-100 d-flex ga-3 align-center">
-					<VSheet class="d-flex px-2 py-1" color="primaryBg" style="border-radius: 7px; border: 3px black double">
+					<VSheet class="d-flex px-2 py-1" color="primary-container" style="border-radius: 7px; border: 3px black double">
 						<VAppBarTitle>Moja digitálna firma</VAppBarTitle>
 					</VSheet>
 					<div v-if="userStore.isAuthenticated">
@@ -230,7 +229,7 @@ const items: MenuItem[] = [
 		needsAdmin: false,
 		children: [
 			{title: 'addActivityManually', icon: 'pen', to: '/add-activity-manually', needsAdmin: false},
-			{title: 'pomodoroTimer', icon: 'tomato', to: '/pomodoro-timer', needsAdmin: false},
+			{title: 'pomodoroTimer', icon: 'hourglass-end', to: '/pomodoro-timer', needsAdmin: false},
 			{title: 'stopwatch', icon: 'stopwatch', to: '/stopwatch', needsAdmin: false},
 			{title: 'timer', icon: 'clock', to: '/timer', needsAdmin: false},
 			{title: 'alarm', icon: 'alarm-clock', to: '/alarm-list', needsAdmin: false},

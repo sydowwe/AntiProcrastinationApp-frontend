@@ -15,7 +15,6 @@ import UserSettingsView from '@/views/user/UserSettingsView.vue'
 import RoutineToDoListView from '@/views/RoutineToDoListView.vue'
 import PlannerView from '@/views/PlannerView.vue'
 import ConfirmEmailView from "@/views/user/ConfirmEmailView.vue";
-import TermsAndConditionsView from "@/views/user/TermsAndConditionsView.vue";
 import {useUserStore} from "@/stores/userStore";
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
 
@@ -27,11 +26,6 @@ const router = createRouter({
 			path: '/',
 			name: 'home',
 			component: HomeView
-		},
-		{
-			path: '/terms-and-conditions',
-			name: 'termsAndConditions',
-			component: TermsAndConditionsView
 		},
 		{
 			path: '/confirm-email',

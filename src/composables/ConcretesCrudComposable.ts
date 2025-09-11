@@ -97,7 +97,8 @@ export function useTaskUrgencyCrud() {
 }
 
 export function useRoutineTimePeriodCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TimePeriodEntity>({responseClass: TimePeriodEntity, entityName: 'routine-time-period'})
+	const url = 'routine-time-period';
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TimePeriodEntity>({responseClass: TimePeriodEntity, entityName: url})
 	const {
 		createWithResponse,
 		create,
@@ -107,10 +108,18 @@ export function useRoutineTimePeriodCrud() {
 		responseClass: TimePeriodEntity,
 		createRequestClass: TimePeriodRequest,
 		updateRequestClass: TimePeriodRequest,
-		entityName: 'routine-time-period'
+		entityName: url
 	})
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+
+	async function changeTimePeriodVisibility(id: number) {
+		try {
+			await API.patch(url + `/toggle-is-hidden`, {idList: [id]})
+		} catch (e: any) {
+			console.error(e)
+		}
+	}
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity, changeTimePeriodVisibility}
 }
 
 export function useTodoListItemCrud() {
@@ -164,14 +173,6 @@ export function useRoutineTodoListItemCrud() {
 		entityName: url
 	})
 
-	async function changeTimePeriodVisibility(id: number) {
-		try {
-			await API.post(url + `/change-is-hidden/` + id)
-		} catch (e: any) {
-			console.error(e)
-		}
-	}
-
 	async function getAllGrouped() {
 		try {
 			const response = await API.get(url + `/grouped-by-time-period`);
@@ -183,7 +184,7 @@ export function useRoutineTodoListItemCrud() {
 		}
 	}
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, changeTimePeriodVisibility, getAllGrouped}
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, getAllGrouped}
 }
 
 export function useTaskPlannerCrud() {

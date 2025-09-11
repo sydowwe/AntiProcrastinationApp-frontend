@@ -64,7 +64,7 @@
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 import type {
 	ActivityDialogType,
 	ActivitySelectionFormType,
@@ -77,16 +77,16 @@ import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWi
 
 const i18n = useI18n();
 
-const mainActivitySelectionForm = ref<ActivitySelectionFormType>({});
-const restActivitySelectionForm = ref<ActivitySelectionFormType>({});
-const saveDialog = ref<ActivityDialogType>({});
+const mainActivitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+const restActivitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
 // const focusInitialTime = ref(new TimeLengthObject(0, 25, 0));
 // const shortRestInitialTime = ref(new TimeLengthObject(0, 5, 0));
 // const longRestInitialTime = ref(new TimeLengthObject(0, 15, 0));
-const focusInitialTime = ref(new TimeLengthObject(0, 0, 10));
-const shortRestInitialTime = ref(new TimeLengthObject(0, 0, 5));
-const longRestInitialTime = ref(new TimeLengthObject(0, 0, 8));
+const focusInitialTime = ref(new TimeLengthObject(0, 0.5));
+const shortRestInitialTime = ref(new TimeLengthObject(0, 0.25));
+const longRestInitialTime = ref(new TimeLengthObject(0, 1));
 const focusTimeElapsed = ref(0);
 const restTimeElapsed = ref(0);
 
@@ -127,7 +127,7 @@ const timeDisplayObject = computed(() => {
 			title = i18n.t('pomodoroTimer.longRest');
 			break;
 	}
-	const timeRemainingObject = TimeLengthObject.fromSeconds(timeRemaining.value);
+	const timeRemainingObject = TimeObject.fromSeconds(timeRemaining.value);
 	return {timeRemainingObject, timeInitialObject, color, title};
 });
 const timeRemaining = ref(0);
@@ -135,7 +135,7 @@ const startTimestamp = ref(new Date());
 
 const timeInputVisible = ref(true);
 const paused = ref(false);
-const intervalId = ref<number | null>(null);
+const intervalId = ref<number | undefined>(undefined);
 const formDisabled = ref(false);
 
 checkNotificationPermission();
@@ -205,18 +205,18 @@ function resume() {
 
 function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
-	const timeSpentNice = TimeLengthObject.fromSeconds(focusTimeElapsed.value).getNice;
+	const timeSpent = TimeLengthObject.fromSeconds(focusTimeElapsed.value);
 	const restNice = TimeLengthObject.fromSeconds(restTimeElapsed.value).getNice;
 	let activityName = mainActivitySelectionForm.value.getSelectedActivityName as string;
-	saveDialog.value.open(activityName, timeSpentNice);
+	saveDialog.value.open(activityName, timeSpent);
 	if (automatic) {
-		showNotification('Timer ended', `Your focused on ${activityName} for ${timeSpentNice} and rested for ${restNice}`);
+		showNotification('Timer ended', `Your focused on ${activityName} for ${timeSpent.getNice} and rested for ${restNice}`);
 	}
 }
 
 function resetTimer() {
 	paused.value = false;
-	intervalId.value = null;
+	intervalId.value = undefined;
 	formDisabled.value = false;
 	timeInputVisible.value = true;
 	focusTimeElapsed.value = 0;
@@ -229,9 +229,9 @@ function resetTimer() {
 }
 
 function resetPickersToDefault() {
-	focusInitialTime.value = (new TimeLengthObject(0, 25, 0));
-	shortRestInitialTime.value = (new TimeLengthObject(0, 5, 0));
-	longRestInitialTime.value = (new TimeLengthObject(0, 10, 0));
+	focusInitialTime.value = (new TimeLengthObject(0, 25));
+	shortRestInitialTime.value = (new TimeLengthObject(0, 5));
+	longRestInitialTime.value = (new TimeLengthObject(0, 10));
 }
 
 function saveActivity() {

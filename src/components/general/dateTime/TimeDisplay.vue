@@ -1,7 +1,7 @@
 <template>
     <VRow align="center" justify="center" noGutters>
         <VCol :cols="12 / whatToShow.length"  v-for="field in whatToShow" :key="field">
-            <VSheet class="time-card pa-3 text-center">
+            <VSheet color="secondary-container" class="time-card pa-3 text-center">
 	                <div class="time-label">{{ timeLabels[field as keyof typeof timeLabels] }}</div>
                     <div class="time-value">{{ formatTime(timeObject[field] as number) }}</div>
             </VSheet>
@@ -37,7 +37,6 @@ import {type TimeKeys, TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
 
 <style scoped>
     .time-card {
-        background-color: #4f0183;
         color: white;
         border-radius: 8px;
         margin: 0.4rem;

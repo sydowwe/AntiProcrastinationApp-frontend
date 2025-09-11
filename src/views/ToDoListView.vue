@@ -1,12 +1,12 @@
 <template>
 <VRow justify="center" noGutters>
-	<VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
-		<VCard class="mx-auto rounded-lg pa-2 d-flex flex-column px-3 px-md-4 px-lg-6" max-width="600">
+	<VCol cols="12" sm="10" md="8" lg="4" class="mt-lg-5 mt-md-3">
+		<div class="d-flex justify-center mb-4">
+			<VBtn class="w-50" color="primary" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
+		</div>
+		<VCard class="mx-auto rounded-lg pa-2 d-flex flex-column px-3 px-md-4 px-lg-6" >
 			<div class="d-flex flex-column align-center pb-1">
 				<VCardTitle>{{ $t('toDoList.toDoList') }}</VCardTitle>
-			</div>
-			<div class="d-flex justify-center mb-4">
-				<VBtn width="50%" color="successDark" @click="toDoListDialog?.openCreate">{{ $t('toDoList.add') }}</VBtn>
 			</div>
 			<ToDoList :kind="ToDoListKind.NORMAL" :items="items" @itemsChanged="itemsChanged"
 			          @editItem="toDoListDialog?.openEdit" @deletedItem="deleteItem"></ToDoList>
@@ -25,13 +25,14 @@ import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityCrud, useTaskUrgencyCrud, useTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
-const {createWithResponse, update, deleteEntity, fetchAll, changeUrgency } = useTodoListItemCrud()
+const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency } = useTodoListItemCrud()
 const {fetchById: fetchByIdTaskUrgency} = useTaskUrgencyCrud()
 
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 
 const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
 const items = ref([] as TodoListItemEntity[]);
@@ -44,7 +45,7 @@ async function add(toDoListItem: ToDoListItemRequest){
 	const response = await createWithResponse(toDoListItem);
 	items.value.push(response);
 	items.value.sort(TodoListItemEntity.frontEndSortFunction());
-	showSnackbar(i18n.t('successFeedback.added'), {timeout: 1500, color: 'success'});
+	showSuccessSnackbar(i18n.t('successFeedback.added'));
 }
 
 async function quickEditedActivity(id: number) {
@@ -52,18 +53,11 @@ async function quickEditedActivity(id: number) {
 }
 
 async function edit(id: number, toDoListItemRequest: ToDoListItemRequest){
-	let taskUrgencyId = toDoListItemRequest.taskUrgencyId;
 	const beforeEditEntity = items.value.find(item => item.id === id);
-	if (beforeEditEntity && (beforeEditEntity.taskUrgency.id !== toDoListItemRequest.taskUrgencyId || beforeEditEntity.activity.id !== toDoListItemRequest.activityId)) {
-		const response = await update(id, toDoListItemRequest);
-		const index = items.value.findIndex((item) => item.id === id);
-		if (taskUrgencyId === response.taskUrgency.id) {
-			items.value[index] = response;
-		} else {
-			items.value[index] = response;
-			items.value.sort(TodoListItemEntity.frontEndSortFunction());
-		}
-		showSnackbar(i18n.t('successFeedback.edited'), {timeout: 1500, color: 'success'});
+	if (beforeEditEntity && hasObjectChanged(ToDoListItemRequest.fromEntity(beforeEditEntity), toDoListItemRequest)) {
+		await update(id, toDoListItemRequest);
+		await updateAfterEdit(id, beforeEditEntity.taskUrgency.id);
+		showSuccessSnackbar(i18n.t('successFeedback.edited'));
 	}
 }
 async function onChangedUrgency(id: number, taskUrgencyId?: number) {
@@ -87,7 +81,22 @@ async function deleteItem(id: number) {
 	}
 }
 
-const itemsChanged = (changedItems: TodoListItemEntity[]) => {
-	items.value = changedItems;
-};
+async function updateAfterEdit(id: number, oldTaskUrgencyId?: number) {
+	const updatedItem = await fetchById(id)
+	const index = items.value.findIndex((item) => item.id === id);
+	if (oldTaskUrgencyId === updatedItem.taskUrgency.id) {
+		items.value[index] = updatedItem;
+	} else {
+		items.value[index] = updatedItem;
+		items.value.sort(TodoListItemEntity.frontEndSortFunction());
+	}
+
+}
+async function itemsChanged(changedItems: number[]){
+	if (changedItems.length === 1) {
+		await updateAfterEdit(changedItems[0]);
+	}else{
+		items.value = await fetchAll();
+	}
+}
 </script>
