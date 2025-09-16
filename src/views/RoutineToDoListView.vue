@@ -1,8 +1,14 @@
 <template>
 <div class="h-100 w-100 d-flex flex-column">
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
-		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center">
-			<VBtn width="100%" color="primary" @click="toDoListDialog.openCreate()">{{ $t('toDoList.add') }}</VBtn>
+		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center ga-2">
+			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
+			<VIconBtn
+				:color="isInChangeOrderMode ? 'success' : 'secondary'" 
+				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
+				@click="toggleChangeOrderMode"
+				:icon="isInChangeOrderMode ? 'check' : 'drag-horizontal'"
+			></VIconBtn>
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
@@ -10,9 +16,9 @@
 		      v-for="group in shownGroups" :key="group.timePeriod.id">
 			<VCard class="mx-auto rounded-lg px-3 py-5 d-flex flex-column ga-4" min-width="350">
 				<VSheet class="mx-auto px-3 d-flex align-center ga-3" rounded color="neutral-300">
-					<VCardTitle class="px-0">{{ group.timePeriod.text }}</VCardTitle>
+					<VCardTitle class="px-0">{{ isInChangeOrderMode ? $t('toDoList.changeOrder') : group.timePeriod.text }}</VCardTitle>
 					<VIconBtn color="white" variant="tonal" density="comfortable" class="ml-auto" icon="eye-slash"
-					          @click="toggleHideTimePeriod(group.timePeriod.id as number)" :title="$t('general.hide')">
+					          @click="toggleHideTimePeriod(group.timePeriod.id as number)" :title="$t('general.hide')" :disabled="isInChangeOrderMode">
 						<VIcon size="small"></VIcon>
 					</VIconBtn>
 				</VSheet>
@@ -20,9 +26,11 @@
 					v-if="group.items.length > 0"
 					:kind="ToDoListKind.ROUTINE"
 					:items="group.items"
+					:isInChangeOrderMode="isInChangeOrderMode"
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="onDelete"
+					@orderChanged="(newOrder) => handleOrderChange(newOrder, group.timePeriod.id as number)"
 				></ToDoList>
 			</VCard>
 		</VCol>
@@ -55,10 +63,27 @@ const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped} = use
 
 const groupedItems = ref([] as RoutineTodoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
+const isInChangeOrderMode = ref(false);
 
 onMounted(() => {
 	getAllRecords();
 });
+
+function toggleChangeOrderMode() {
+	isInChangeOrderMode.value = !isInChangeOrderMode.value;
+}
+
+async function handleOrderChange(newOrder: number[], timePeriodId: number) {
+	const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId);
+	if (group) {
+		// Reorder the items array based on the new order
+		const reorderedItems = newOrder.map(id => group.items.find(item => item.id === id)).filter(Boolean) as RoutineTodoListItemEntity[];
+		group.items = reorderedItems;
+
+		// Here you can add API call to save the new order to the backend if needed
+		// Example: await saveGroupOrder(timePeriodId, newOrder);
+	}
+}
 const shownGroups = computed(() => groupedItems.value.filter(item => !item.timePeriod.isHidden))
 const hiddenGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHidden))
 

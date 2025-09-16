@@ -1,5 +1,10 @@
 @import './base.css';
 
+:root {
+  --v-theme-primary: #1D4ED8;
+  --v-theme-surface: #191920;
+}
+
 
 .dividerTextCenter {
   display: flex;
@@ -35,3 +40,4 @@
 .v-table--fixed-header > .v-table__wrapper > table > thead > tr > th {
   border-bottom: 1px solid #BBB !important;
 }
+
