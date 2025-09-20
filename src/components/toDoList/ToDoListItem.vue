@@ -11,17 +11,6 @@
     }"
 >
 	<template v-slot:prepend>
-		<!-- Drag handle for change order mode -->
-		<VListItemAction v-if="isInChangeOrderMode" start>
-			<VBtn
-				icon="drag-vertical"
-				variant="text"
-				color="white"
-				class="drag-handle"
-				size="small"
-				:ripple="false"
-			/>
-		</VListItemAction>
 
 		<VListItemAction start>
 			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success" @click.stop="checkboxClicked"></v-checkbox-btn>
@@ -57,9 +46,11 @@
 	<template v-slot:append>
 		<VIcon v-if="isSelected" icon="check-circle" color="#fff">
 		</VIcon>
-		<v-menu location="start" transition="slide-y-transition">
+
+		<VIcon v-if="isInChangeOrderMode" class="drag-handle my-1" icon="bars" color="white" size="small" style="height: 40px"></VIcon>
+		<v-menu v-else location="start" transition="slide-y-transition">
 			<template v-slot:activator="{ props }">
-				<v-btn icon="dots-vertical" v-bind="props" color="white" variant="text" @click.stop=""></v-btn>
+				<VIconBtn icon="ellipsis-vertical" v-bind="props" class="my-1" color="white" variant="text" size="40" @click.stop=""></VIconBtn>
 			</template>
 			<VList>
 				<VListItem class="px-3" v-for="(item, i) in actions" :key="i">
@@ -69,6 +60,7 @@
 				</VListItem>
 			</VList>
 		</v-menu>
+
 	</template>
 </VListItem>
 
@@ -334,7 +326,7 @@ function toggleSelect() {
 
 .drag-handle {
 	cursor: grab;
-	opacity: 0.7;
+	opacity: 0;
 	transition: all 0.2s ease;
 }
 
@@ -349,6 +341,7 @@ function toggleSelect() {
 
 .listItem:hover .drag-handle {
 	opacity: 1;
+	transform: scale(1.1);
 }
 
 .drag-preview-template {

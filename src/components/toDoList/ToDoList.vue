@@ -11,21 +11,26 @@
 	>
 		<!-- Drop zone above item (invisible overlay) - only when dragging -->
 		<div
-			v-if="isInChangeOrderMode && isDragging"
+			v-if="isInChangeOrderMode && isDragging && index === 0"
 			:ref="el => setDropZoneRef(el as HTMLElement, index, 'top')"
 			class="drop-zone-overlay drop-zone-overlay--top"
 		/>
 
-		<!-- Drop indicator above item (visual feedback) - only when active -->
-		<div
-			v-if="isInChangeOrderMode && dropIndicators[`${index}-top`]"
-			class="drop-indicator drop-indicator-top drop-indicator--active"
+		<!-- Empty placeholder for top drop zone (first item only) -->
+		<VListItem
+			v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0"
+			class="empty-item-placeholder empty-item-placeholder-top"
+			variant="outlined"
 		>
-			<div class="drop-indicator-content">
-				<VIcon icon="plus" size="16" color="primary" />
-				<span class="drop-indicator-text">Drop here</span>
-			</div>
-		</div>
+			<template v-slot:prepend>
+				<VListItemAction start>
+					<VIcon icon="plus" size="20" color="primary"/>
+				</VListItemAction>
+			</template>
+			<VListItemTitle class="text-primary font-weight-medium">
+				Drop here to add item
+			</VListItemTitle>
+		</VListItem>
 
 		<ToDoListItem
 			:ref="el => setItemRef(el, index)"
@@ -45,19 +50,25 @@
 		<div
 			v-if="isInChangeOrderMode && isDragging"
 			:ref="el => setDropZoneRef(el as HTMLElement, index, 'bottom')"
-			class="drop-zone-overlay drop-zone-overlay--bottom"
+			class="drop-zone-overlay"
+			:class="{ 'drop-zone-overlay--bottom': index === items.length -1 }"
 		/>
 
-		<!-- Drop indicator below last item (visual feedback) - only when active -->
-		<div
-			v-if="isInChangeOrderMode && index === items.length - 1 && dropIndicators[`${index}-bottom`]"
-			class="drop-indicator drop-indicator-bottom drop-indicator--active"
+		<!-- Empty placeholder for bottom drop zone (all items) -->
+		<VListItem
+			v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"
+			class="empty-item-placeholder"
+			variant="outlined"
 		>
-			<div class="drop-indicator-content">
-				<VIcon icon="plus" size="16" color="primary" />
-				<span class="drop-indicator-text">Drop here</span>
-			</div>
-		</div>
+			<template v-slot:prepend>
+				<VListItemAction start>
+					<VIcon icon="plus" size="20" color="primary"/>
+				</VListItemAction>
+			</template>
+			<VListItemTitle class="text-primary font-weight-medium">
+				Drop here to add item
+			</VListItemTitle>
+		</VListItem>
 	</div>
 
 	<!-- Empty state drop zone when list is empty -->
@@ -70,7 +81,7 @@
 		color="primary"
 	>
 		<VCardText class="text-center">
-			<VIcon icon="plus-circle-outline" size="48" color="primary" class="mb-2" />
+			<VIcon icon="plus-circle-outline" size="48" color="primary" class="mb-2"/>
 			<div class="text-primary font-weight-medium">Drop items here</div>
 		</VCardText>
 	</VCard>
@@ -91,7 +102,7 @@ import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDo
 import {type BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
 import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
-import { dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 
 // ... existing props ...
 const props = defineProps({
@@ -120,6 +131,7 @@ const itemRefs = ref<(HTMLElement | null)[]>([]);
 const dropZoneRefs = ref<{ [key: string]: HTMLElement }>({});
 
 const isDragging = computed(() => dragState.draggedIndex !== null);
+// const isDragging = true;
 
 const dragState = reactive({
 	draggedIndex: null as number | null,
@@ -215,7 +227,7 @@ const setupDragAndDrop = () => {
 
 	// Monitor drag operations globally
 	const monitorCleanup = monitorForElements({
-		onDragStart: ({ source }: { source: any }) => {
+		onDragStart: ({source}: { source: any }) => {
 			console.log('Drag start:', source.data);
 			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
 				const index = props.items.findIndex(item => item.id === source.data.itemId);
@@ -223,7 +235,7 @@ const setupDragAndDrop = () => {
 				console.log('Set dragged index:', index);
 			}
 		},
-		onDrop: ({ source, location }: { source: any; location: any }) => {
+		onDrop: ({source, location}: { source: any; location: any }) => {
 			console.log('Drop:', source.data, location.current.dropTargets);
 			dragState.draggedIndex = null;
 			dragState.isEmptyZoneDraggedOver = false;
@@ -298,7 +310,7 @@ const setupDropZones = () => {
 
 			const cleanup = dropTargetForElements({
 				element,
-				canDrop: ({ source }) => {
+				canDrop: ({source}) => {
 					const sourceIndex = props.items.findIndex(item => item.id === source.data.itemId);
 
 					// Allow dropping anywhere, including above/below current position
@@ -333,7 +345,7 @@ const setupEmptyZone = () => {
 
 	const cleanup = dropTargetForElements({
 		element: emptyDropZoneRef.value,
-		canDrop: ({ source }) => source.data.type === 'todo-item',
+		canDrop: ({source}) => source.data.type === 'todo-item',
 		getData: () => ({
 			type: 'empty-zone',
 			listId: props.listId,
@@ -416,6 +428,88 @@ const unSelect = (id: number) => {
 	selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
 };
 
+const updateDropZonePositions = () => {
+	if (!isDragging.value) return;
+
+	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
+		const [indexStr, position] = key.split('-');
+		const index = parseInt(indexStr ?? '');
+
+		if (!element) return;
+
+		const container = element.closest('.todo-item-container');
+		const item = container?.querySelector('.v-list-item:not(.empty-item-placeholder)');
+
+		if (!item || !container) return;
+
+		const itemRect = item.getBoundingClientRect();
+		const containerRect = container.getBoundingClientRect();
+
+		// Calculate positions relative to the container
+		const itemHeight = itemRect.height;
+		const itemTop = itemRect.top - containerRect.top;
+
+		if (position === 'top') {
+			// First item: from list start to middle of item
+			if (index === 0) {
+				element.style.top = '-24px';
+				element.style.height = `${itemTop + itemHeight / 2 + 24}px`;
+			}
+		} else {
+			// Last drop zone
+			if (index === props.items.length - 1) {
+				// Last item: from middle of item to list end
+				const isAimingAtLast = !!dropIndicators.value[`${index}-bottom`];
+				const heightExtension = isAimingAtLast ? 50 : 0; // Add height for placeholder
+
+				element.style.top = `${itemHeight / 2}px`;
+				element.style.height = `${54 + heightExtension}px`; // gap + padding + placeholder height
+			}
+			// Other items: from middle of current to middle of next
+			else {
+				const nextContainer = container.nextElementSibling;
+				const nextItem = nextContainer?.querySelector('.v-list-item:not(.empty-item-placeholder)');
+
+				if (nextItem) {
+					const nextRect = nextItem.getBoundingClientRect();
+					const nextHeight = nextRect.height;
+					const gapAndPlaceholder = nextRect.top - itemRect.bottom;
+
+					const isAimingAtFirst = !!dropIndicators.value[`0-top`];
+					const needsToPushDown2Dropzone = isAimingAtFirst && index === 0;
+					const topOffset = needsToPushDown2Dropzone ? 60 : 0;
+
+					element.style.top = `${topOffset + itemHeight / 2}px`;
+					element.style.height = `${itemHeight / 2 + gapAndPlaceholder + nextHeight / 2}px`;
+				}
+			}
+		}
+	});
+};
+
+// Watch for drop indicator changes and update positions
+watch(() => dropIndicators.value, () => {
+	nextTick(() => {
+		updateDropZonePositions();
+	});
+}, {deep: true});
+
+// Also update when dragging starts
+watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
+	if (newValue !== null && oldValue === null) {
+		// Drag started - setup drop zones
+		await nextTick();
+		setupDropZones();
+		updateDropZonePositions();
+	} else if (newValue === null && oldValue !== null) {
+		// Drag ended - cleanup drop zones
+		Object.keys(dropIndicators.value).forEach(key => {
+			dropIndicators.value[key] = false;
+		});
+	}
+});
+
+
 const emit = defineEmits<{
 	(e: 'itemsChanged', changedItems: number[]): void;
 	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
@@ -430,7 +524,7 @@ const emit = defineEmits<{
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	padding: 16px 0;
+	padding: 24px 0;
 	min-height: 200px;
 	position: relative;
 }
@@ -439,7 +533,7 @@ const emit = defineEmits<{
 	position: relative;
 }
 
-/* Invisible drop zone overlays that cover sections of the entire todo-list */
+/* Invisible drop zone overlays - now positioned dynamically via JavaScript */
 .drop-zone-overlay {
 	position: absolute;
 	left: 0;
@@ -447,68 +541,30 @@ const emit = defineEmits<{
 	z-index: 1000;
 	background: transparent;
 	pointer-events: auto;
+	/* Remove static positioning - will be set by JavaScript */
 }
 
-/* Top drop zone covers from todo-list top to middle of current item */
-.drop-zone-overlay--top {
-	top: calc(-16px - (var(--item-index, 0) * (100% + 8px)) - 50%);
-	bottom: 50%;
-}
-
-/* Bottom drop zone covers from middle of current item to middle of next item (or end) */
-.drop-zone-overlay--bottom {
-	top: 50%;
-	bottom: calc(-16px - 8px - 50%); /* To middle of next item or end of todo-list */
-}
-
-/* For the first item's top drop zone - covers from very top of todo-list */
-.todo-item-container:first-child .drop-zone-overlay--top {
-	top: -16px; /* Start from todo-list padding top */
-	bottom: 50%; /* To middle of first item */
-}
-
-/* For the last item's bottom drop zone - covers to very bottom of todo-list */
-.todo-item-container:last-child .drop-zone-overlay--bottom {
-	top: 50%; /* From middle of last item */
-	bottom: -16px; /* To todo-list padding bottom */
-}
-
-/* Visual drop indicators (the blue rectangles from your illustration) */
-.drop-indicator {
-	border-radius: 3px;
+.empty-item-placeholder {
+	margin-top: 10px;
+	margin-bottom: -10px;
+	border: 2px dashed rgba(var(--v-theme-primary), 0.5) !important;
+	border-radius: 8px !important;
+	background: rgba(var(--v-theme-primary), 0.05) !important;
+	backdrop-filter: blur(4px);
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 999;
-	margin: 0 16px;
-	background: rgba(var(--v-theme-primary), 0.12);
-	border: 2px solid rgba(var(--v-theme-primary), 0.6);
-	box-shadow:
-		0 0 12px rgba(var(--v-theme-primary), 0.3),
-		inset 0 0 16px rgba(var(--v-theme-primary), 0.1);
+	min-height: 50px;
 }
 
-.drop-indicator.drop-indicator-top{
-	transform: translateY(-10px);
-}
-.drop-indicator.drop-indicator-bottom{
-	transform: translateY(10px);
+.empty-item-placeholder.empty-item-placeholder-top {
+	margin-top: 0;
+	margin-bottom: 10px;
 }
 
-.drop-indicator-content {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-
-.drop-indicator-text {
-	color: rgb(var(--v-theme-primary));
-	font-size: 0.875rem;
-	font-weight: 500;
-	white-space: nowrap;
+.empty-item-placeholder:hover {
+	background: rgba(var(--v-theme-primary), 0.08) !important;
+	border-color: rgb(var(--v-theme-primary)) !important;
+	transform: scale(1.02);
+	box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
 }
 
 .empty-drop-zone {
@@ -522,8 +578,18 @@ const emit = defineEmits<{
 	background: rgba(var(--v-theme-primary), 0.08) !important;
 	border-color: rgb(var(--v-theme-primary)) !important;
 	transform: scale(1.01);
-	box-shadow:
-		0 4px 16px rgba(var(--v-theme-primary), 0.2),
-		inset 0 0 24px rgba(var(--v-theme-primary), 0.1);
+	box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.2),
+	inset 0 0 24px rgba(var(--v-theme-primary), 0.1);
+}
+
+@keyframes fadeInScale {
+	0% {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
 </style>
