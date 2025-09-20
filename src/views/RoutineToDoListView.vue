@@ -7,7 +7,7 @@
 				:color="isInChangeOrderMode ? 'success' : 'secondary'" 
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				:icon="isInChangeOrderMode ? 'check' : 'drag-horizontal'"
+				icon="check"
 			></VIconBtn>
 		</VCol>
 	</VRow>

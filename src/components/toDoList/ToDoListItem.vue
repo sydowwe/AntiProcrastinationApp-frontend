@@ -13,7 +13,8 @@
 	<template v-slot:prepend>
 
 		<VListItemAction start>
-			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success" @click.stop="checkboxClicked"></v-checkbox-btn>
+			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success"
+			                @click.stop="checkboxClicked"></v-checkbox-btn>
 			<div v-else class="d-flex flex-column ga-1 align-center justify-center">
 				<VHover>
 					<template v-slot:default="{ isHovering, props }">
@@ -32,7 +33,7 @@
                                 <div class="d-flex align-center">
                                     <span v-if="!toDoListItem.isDone && toDoListItem.doneCount !== null" class="text-white">{{ toDoListItem.doneCount }}</span>
                                     <VIcon v-if="toDoListItem.isDone" size="17" icon="check" color="success"></VIcon>
-                                    <span class="text-white">/{{ toDoListItem.totalCount}}</span>
+                                    <span class="text-white">/{{ toDoListItem.totalCount }}</span>
                                 </div>
                         </VProgressLinear>
                         </span>
@@ -74,10 +75,6 @@
 	>
 		<template v-slot:prepend>
 			<VListItemAction start>
-				<VIcon icon="drag-vertical" color="white" size="small" />
-			</VListItemAction>
-
-			<VListItemAction start>
 				<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success" disabled></v-checkbox-btn>
 				<div v-else class="d-flex flex-column ga-1 align-center justify-center">
 					<VProgressLinear
@@ -90,7 +87,7 @@
 						<div class="d-flex align-center">
 							<span v-if="!toDoListItem.isDone && toDoListItem.doneCount !== null" class="text-white">{{ toDoListItem.doneCount }}</span>
 							<VIcon v-if="toDoListItem.isDone" size="17" icon="check" color="success"></VIcon>
-							<span class="text-white">/{{ toDoListItem.totalCount}}</span>
+							<span class="text-white">/{{ toDoListItem.totalCount }}</span>
 						</div>
 					</VProgressLinear>
 				</div>
@@ -106,9 +103,9 @@
 import {ref, watch, onMounted, onBeforeUnmount} from 'vue';
 import {type BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 import {useI18n} from 'vue-i18n';
-import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
+import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
+import {pointerOutsideOfPreview} from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
 
 const i18n = useI18n();
 
@@ -185,7 +182,7 @@ const setupDraggable = () => {
 			itemId: props.toDoListItem.id,
 			listId: props.listId,
 		}),
-		onGenerateDragPreview: ({ nativeSetDragImage }) => {
+		onGenerateDragPreview: ({nativeSetDragImage}) => {
 			const previewElement = dragPreviewRef.value;
 			if (previewElement) {
 				setCustomNativeDragPreview({
@@ -194,7 +191,7 @@ const setupDraggable = () => {
 						x: '16px',
 						y: '8px',
 					}),
-					render: ({ container }) => {
+					render: ({container}) => {
 						// Clone the preview element
 						const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
 						clonedPreview.style.display = 'block';

@@ -16,21 +16,7 @@
 			class="drop-zone-overlay drop-zone-overlay--top"
 		/>
 
-		<!-- Empty placeholder for top drop zone (first item only) -->
-		<VListItem
-			v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0"
-			class="empty-item-placeholder empty-item-placeholder-top"
-			variant="outlined"
-		>
-			<template v-slot:prepend>
-				<VListItemAction start>
-					<VIcon icon="plus" size="20" color="primary"/>
-				</VListItemAction>
-			</template>
-			<VListItemTitle class="text-primary font-weight-medium">
-				Drop here to add item
-			</VListItemTitle>
-		</VListItem>
+		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0" is-first></TodoListItemDragAndDropPlaceholder>
 
 		<ToDoListItem
 			:ref="el => setItemRef(el, index)"
@@ -54,21 +40,7 @@
 			:class="{ 'drop-zone-overlay--bottom': index === items.length -1 }"
 		/>
 
-		<!-- Empty placeholder for bottom drop zone (all items) -->
-		<VListItem
-			v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"
-			class="empty-item-placeholder"
-			variant="outlined"
-		>
-			<template v-slot:prepend>
-				<VListItemAction start>
-					<VIcon icon="plus" size="20" color="primary"/>
-				</VListItemAction>
-			</template>
-			<VListItemTitle class="text-primary font-weight-medium">
-				Drop here to add item
-			</VListItemTitle>
-		</VListItem>
+		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"></TodoListItemDragAndDropPlaceholder>
 	</div>
 
 	<!-- Empty state drop zone when list is empty -->
@@ -103,6 +75,7 @@ import {type BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem'
 import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
 import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/TodoListItemDragAndDropPlaceholder.vue';
 
 // ... existing props ...
 const props = defineProps({
@@ -189,31 +162,10 @@ watch(() => props.isInChangeOrderMode, async (newValue) => {
 	});
 });
 
-// Watch for items changes to re-setup drop zones
-watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
-	if (newValue !== null && oldValue === null) {
-		// Drag started - setup drop zones
-		await nextTick();
-		setupDropZones();
-	} else if (newValue === null && oldValue !== null) {
-		// Drag ended - cleanup drop zones (they'll be removed from DOM anyway)
-		Object.keys(dropIndicators.value).forEach(key => {
-			dropIndicators.value[key] = false;
-		});
-	}
-});
-
 watch(() => props.items.length, async () => {
 	if (props.isInChangeOrderMode) {
-		// Clean up existing drop zone setups
-		const monitorCleanups = cleanupFunctions.filter(cleanup =>
-			cleanup.toString().includes('monitor') || cleanup.toString().includes('Monitor')
-		);
-		cleanupFunctions = monitorCleanups;
-
 		await nextTick();
 		setupDropZones();
-
 		if (props.items.length === 0) {
 			setupEmptyZone();
 		}
@@ -299,38 +251,22 @@ const setupDragAndDrop = () => {
 };
 
 const setupDropZones = () => {
-	console.log('Setting up drop zones...', Object.keys(dropZoneRefs.value));
-
 	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
 		const [indexStr, position] = key.split('-');
 		const index = parseInt(indexStr);
 
 		if (element) {
-			console.log(`Setting up drop zone: ${key}`, element);
-
 			const cleanup = dropTargetForElements({
 				element,
 				canDrop: ({source}) => {
 					const sourceIndex = props.items.findIndex(item => item.id === source.data.itemId);
-
-					// Allow dropping anywhere, including above/below current position
-					if (position === 'top') {
-						return sourceIndex !== index; // Can drop above any item except same position
-					} else {
-						return sourceIndex !== index + 1; // Can drop below any item except same position
-					}
+					return position === 'top' ? sourceIndex !== index : sourceIndex !== index + 1;
 				},
-				getData: () => ({
-					type: 'drop-zone',
-					index,
-					position,
-				}),
+				getData: () => ({type: 'drop-zone', index, position}),
 				onDragEnter: () => {
-					console.log(`Drag enter on drop zone: ${key}`);
 					dropIndicators.value[key] = true;
 				},
 				onDragLeave: () => {
-					console.log(`Drag leave on drop zone: ${key}`);
 					dropIndicators.value[key] = false;
 				},
 			});
@@ -339,6 +275,65 @@ const setupDropZones = () => {
 		}
 	});
 };
+
+const updateDropZonePositions = () => {
+	if (!isDragging.value) return;
+
+	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
+			const [indexStr, position] = key.split('-');
+			const index = parseInt(indexStr);
+
+			if (!element) return;
+
+			const container = element.closest('.todo-item-container');
+			const item = container?.querySelector('.v-list-item:not(.empty-item-placeholder)');
+			if (!item || !container) return;
+
+			const itemRect = item.getBoundingClientRect();
+			const itemHeight = itemRect.height;
+			const heightExtension = dropIndicators.value[key] ? 50 : 0;
+
+			const isFirst = index === 0;
+			const isLast = index === props.items.length - 1;
+			const isTop = position === 'top';
+
+			const isEdgeZone = (isFirst && isTop) || isLast;
+			const gapHeight = 20 + (isEdgeZone ? 4 : 0);
+
+			const height = (isEdgeZone ? itemHeight / 2 : itemHeight) + gapHeight + heightExtension;
+			element.style.height = `${height}px`;
+
+			if (isFirst && isTop) {
+				element.style.top = `-${gapHeight}px`;
+			} else if (isFirst) {
+				element.style.bottom = `-${itemHeight / 2 + gapHeight}px`;
+			} else {
+				element.style.top = `${itemHeight / 2}px`;
+			}
+		}
+	)
+
+}
+
+// Watch for drop indicator changes and update positions
+watch(() => dropIndicators.value, () => {
+	nextTick(() => {
+		updateDropZonePositions();
+	});
+}, {deep: true});
+
+// Handle drag state changes
+watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
+	if (newValue !== null && oldValue === null) {
+		await nextTick();
+		setupDropZones();
+		updateDropZonePositions();
+	} else if (newValue === null && oldValue !== null) {
+		Object.keys(dropIndicators.value).forEach(key => {
+			dropIndicators.value[key] = false;
+		});
+	}
+});
 
 const setupEmptyZone = () => {
 	if (!emptyDropZoneRef.value) return;
@@ -361,7 +356,7 @@ const setupEmptyZone = () => {
 	cleanupFunctions.push(cleanup);
 };
 
-// ... existing functionality code remains the same ...
+// Other methods not drag and drop
 const selectedItemsIds = ref([] as number[]);
 const editItem = (entityToEdit: TEntity) => {
 	emit('editItem', entityToEdit);
@@ -428,87 +423,6 @@ const unSelect = (id: number) => {
 	selectedItemsIds.value = selectedItemsIds.value.filter((item) => item != id);
 };
 
-const updateDropZonePositions = () => {
-	if (!isDragging.value) return;
-
-	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
-		const [indexStr, position] = key.split('-');
-		const index = parseInt(indexStr ?? '');
-
-		if (!element) return;
-
-		const container = element.closest('.todo-item-container');
-		const item = container?.querySelector('.v-list-item:not(.empty-item-placeholder)');
-
-		if (!item || !container) return;
-
-		const itemRect = item.getBoundingClientRect();
-		const containerRect = container.getBoundingClientRect();
-
-		// Calculate positions relative to the container
-		const itemHeight = itemRect.height;
-		const itemTop = itemRect.top - containerRect.top;
-
-		if (position === 'top') {
-			// First item: from list start to middle of item
-			if (index === 0) {
-				element.style.top = '-24px';
-				element.style.height = `${itemTop + itemHeight / 2 + 24}px`;
-			}
-		} else {
-			// Last drop zone
-			if (index === props.items.length - 1) {
-				// Last item: from middle of item to list end
-				const isAimingAtLast = !!dropIndicators.value[`${index}-bottom`];
-				const heightExtension = isAimingAtLast ? 50 : 0; // Add height for placeholder
-
-				element.style.top = `${itemHeight / 2}px`;
-				element.style.height = `${54 + heightExtension}px`; // gap + padding + placeholder height
-			}
-			// Other items: from middle of current to middle of next
-			else {
-				const nextContainer = container.nextElementSibling;
-				const nextItem = nextContainer?.querySelector('.v-list-item:not(.empty-item-placeholder)');
-
-				if (nextItem) {
-					const nextRect = nextItem.getBoundingClientRect();
-					const nextHeight = nextRect.height;
-					const gapAndPlaceholder = nextRect.top - itemRect.bottom;
-
-					const isAimingAtFirst = !!dropIndicators.value[`0-top`];
-					const needsToPushDown2Dropzone = isAimingAtFirst && index === 0;
-					const topOffset = needsToPushDown2Dropzone ? 60 : 0;
-
-					element.style.top = `${topOffset + itemHeight / 2}px`;
-					element.style.height = `${itemHeight / 2 + gapAndPlaceholder + nextHeight / 2}px`;
-				}
-			}
-		}
-	});
-};
-
-// Watch for drop indicator changes and update positions
-watch(() => dropIndicators.value, () => {
-	nextTick(() => {
-		updateDropZonePositions();
-	});
-}, {deep: true});
-
-// Also update when dragging starts
-watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
-	if (newValue !== null && oldValue === null) {
-		// Drag started - setup drop zones
-		await nextTick();
-		setupDropZones();
-		updateDropZonePositions();
-	} else if (newValue === null && oldValue !== null) {
-		// Drag ended - cleanup drop zones
-		Object.keys(dropIndicators.value).forEach(key => {
-			dropIndicators.value[key] = false;
-		});
-	}
-});
-
 
 const emit = defineEmits<{
 	(e: 'itemsChanged', changedItems: number[]): void;
@@ -527,6 +441,7 @@ const emit = defineEmits<{
 	padding: 24px 0;
 	min-height: 200px;
 	position: relative;
+	border: 1px solid mediumpurple;
 }
 
 .todo-item-container {
@@ -541,30 +456,8 @@ const emit = defineEmits<{
 	z-index: 1000;
 	background: transparent;
 	pointer-events: auto;
+	border: 1px solid white;
 	/* Remove static positioning - will be set by JavaScript */
-}
-
-.empty-item-placeholder {
-	margin-top: 10px;
-	margin-bottom: -10px;
-	border: 2px dashed rgba(var(--v-theme-primary), 0.5) !important;
-	border-radius: 8px !important;
-	background: rgba(var(--v-theme-primary), 0.05) !important;
-	backdrop-filter: blur(4px);
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	min-height: 50px;
-}
-
-.empty-item-placeholder.empty-item-placeholder-top {
-	margin-top: 0;
-	margin-bottom: 10px;
-}
-
-.empty-item-placeholder:hover {
-	background: rgba(var(--v-theme-primary), 0.08) !important;
-	border-color: rgb(var(--v-theme-primary)) !important;
-	transform: scale(1.02);
-	box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
 }
 
 .empty-drop-zone {

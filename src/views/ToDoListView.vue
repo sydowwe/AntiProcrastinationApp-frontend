@@ -7,7 +7,7 @@
 				:color="isInChangeOrderMode ? 'success' : 'secondary'"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				:icon="isInChangeOrderMode ? 'check' : 'drag-horizontal'"
+				icon="check"
 			></VIconBtn>
 		</div>
 		<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-6 px-md-4 px-lg-6">
