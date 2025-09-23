@@ -4,10 +4,11 @@
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center ga-2">
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
 			<VIconBtn
-				:color="isInChangeOrderMode ? 'success' : 'secondary'" 
+				color="secondary"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				icon="check"
+				density="comfortable"
+				icon="arrows-up-down"
 			></VIconBtn>
 		</VCol>
 	</VRow>
@@ -23,14 +24,15 @@
 					</VIconBtn>
 				</VSheet>
 				<ToDoList
-					v-if="group.items.length > 0"
 					:kind="ToDoListKind.ROUTINE"
 					:items="group.items"
 					:isInChangeOrderMode="isInChangeOrderMode"
+					:listId="group.timePeriod.id as number"
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="onDelete"
-					@orderChanged="(newOrder) => handleOrderChange(newOrder, group.timePeriod.id as number)"
+					@itemsReordered="(oldIndex, newIndex, request) => handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)"
+					@crossListDrop="handleCrossListDrop"
 				></ToDoList>
 			</VCard>
 		</VCol>
@@ -53,13 +55,20 @@
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import {ref, onMounted, computed} from 'vue';
-import {RoutineTodoListItemEntity, RoutineTodoListGroupedList, RoutineTodoListItemRequest, ToDoListKind, ToDoListItemRequest} from '@/classes/ToDoListItem';
+import {
+	RoutineTodoListItemEntity,
+	RoutineTodoListGroupedList,
+	RoutineTodoListItemRequest,
+	ToDoListKind,
+	ToDoListItemRequest,
+	ChangeDisplayOrderRequest
+} from '@/classes/ToDoListItem';
 import type {RoutineToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
 import {useActivityCrud, useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
 const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
-const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped} = useRoutineTodoListItemCrud()
+const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder} = useRoutineTodoListItemCrud()
 
 const groupedItems = ref([] as RoutineTodoListGroupedList[]);
 const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
@@ -73,23 +82,81 @@ function toggleChangeOrderMode() {
 	isInChangeOrderMode.value = !isInChangeOrderMode.value;
 }
 
-async function handleOrderChange(newOrder: number[], timePeriodId: number) {
+async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest, timePeriodId: number) {
 	const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId);
 	if (group) {
-		// Reorder the items array based on the new order
-		const reorderedItems = newOrder.map(id => group.items.find(item => item.id === id)).filter(Boolean) as RoutineTodoListItemEntity[];
-		group.items = reorderedItems;
+		// Perform the reorder immediately for UI responsiveness
+		const [movedItem] = group.items.splice(oldIndex, 1);
+		if (movedItem) {
+			group.items.splice(newIndex, 0, movedItem);
+		}
 
-		// Here you can add API call to save the new order to the backend if needed
-		// Example: await saveGroupOrder(timePeriodId, newOrder);
+		console.log('Items reordered in group:', timePeriodId, {oldIndex, newIndex, newOrder: group.items.map(item => item.id)});
+
+		// Call the API to persist the change
+		await changeDisplayOrder(request);
 	}
 }
+
+async function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
+	console.log('Cross-group drop:', {sourceListId, targetListId, itemId});
+
+	const sourceGroup = groupedItems.value.find(g => g.timePeriod.id === sourceListId);
+	const targetGroup = groupedItems.value.find(g => g.timePeriod.id === targetListId);
+
+	if (!sourceGroup || !targetGroup) return;
+
+	const sourceIndex = sourceGroup.items.findIndex(item => item.id === itemId);
+	const movedItem = sourceGroup.items[sourceIndex];
+
+	if (!movedItem) return;
+
+	// Remove from source
+	sourceGroup.items.splice(sourceIndex, 1);
+
+	// Calculate target position
+	let targetIndex = 0;
+	if (dropTarget.data.type === 'drop-zone') {
+		targetIndex = dropTarget.data.index;
+		if (dropTarget.data.position === 'bottom') {
+			targetIndex += 1;
+		}
+	}
+
+	// Insert into target
+	targetGroup.items.splice(targetIndex, 0, movedItem);
+
+	// Update item's time period
+	const updateRequest = new RoutineTodoListItemRequest(
+		movedItem.activity.id,
+		targetListId,
+		movedItem.doneCount,
+		movedItem.totalCount,
+		movedItem.isDone
+	);
+
+	await update(itemId, updateRequest);
+
+	// Handle ordering
+	const precedingItem = targetIndex > 0 ? targetGroup.items[targetIndex - 1] : null;
+	const followingItem = targetIndex < targetGroup.items.length - 1 ? targetGroup.items[targetIndex + 1] : null;
+
+	const orderRequest = new ChangeDisplayOrderRequest(
+		itemId,
+		precedingItem?.id ?? null,
+		followingItem?.id ?? null
+	);
+
+	await changeDisplayOrder(orderRequest);
+}
+
 const shownGroups = computed(() => groupedItems.value.filter(item => !item.timePeriod.isHidden))
 const hiddenGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHidden))
 
 function getAllRecords() {
 	getAllGrouped().then((response) => {
 		groupedItems.value = response;
+		console.log(groupedItems.value);
 	});
 }
 
