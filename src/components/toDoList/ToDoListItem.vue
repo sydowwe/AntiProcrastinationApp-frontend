@@ -7,7 +7,6 @@
 	class="align-center listItem"
 	:class="{
         'is-dragging': isDragging,
-        'drag-preview': isDragPreview,
     }"
 >
 	<template v-slot:prepend>
@@ -66,37 +65,7 @@
 </VListItem>
 
 <!-- Hidden drag preview template -->
-<div ref="dragPreviewRef" class="drag-preview-template" v-show="false">
-	<VListItem
-		:active="!toDoListItem.isDone"
-		:base-color="color"
-		class="align-center listItem drag-preview-item"
-		style="width: 400px;"
-	>
-		<template v-slot:prepend>
-			<VListItemAction start>
-				<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success" disabled></v-checkbox-btn>
-				<div v-else class="d-flex flex-column ga-1 align-center justify-center">
-					<VProgressLinear
-						color="neutral-400"
-						:model-value="(toDoListItem.doneCount ?? 1) / (toDoListItem.totalCount ?? 1) * 100"
-						height="35"
-						bgOpacity="0.3"
-						style="border: 1px solid #777; border-radius: 4px; width: 40px;"
-					>
-						<div class="d-flex align-center">
-							<span v-if="!toDoListItem.isDone && toDoListItem.doneCount !== null" class="text-white">{{ toDoListItem.doneCount }}</span>
-							<VIcon v-if="toDoListItem.isDone" size="17" icon="check" color="success"></VIcon>
-							<span class="text-white">/{{ toDoListItem.totalCount }}</span>
-						</div>
-					</VProgressLinear>
-				</div>
-			</VListItemAction>
-		</template>
-		<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
-		<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
-	</VListItem>
-</div>
+<DraggedItemPreview ref="dragPreviewRef" :toDoListItem :color/>
 </template>
 
 <script setup lang="ts">
@@ -106,6 +75,7 @@ import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import {pointerOutsideOfPreview} from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
+import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue';
 
 const i18n = useI18n();
 
@@ -142,8 +112,7 @@ const emits = defineEmits<{
 
 const isSelected = ref(false);
 const itemRef = ref<any>(null);
-const dragPreviewRef = ref<HTMLElement | null>(null);
-const isDragPreview = ref(false);
+const dragPreviewRef = ref<InstanceType<typeof DraggedItemPreview> | null>(null);
 
 let cleanup: (() => void) | null = null;
 
@@ -183,7 +152,7 @@ const setupDraggable = () => {
 			listId: props.listId,
 		}),
 		onGenerateDragPreview: ({nativeSetDragImage}) => {
-			const previewElement = dragPreviewRef.value;
+			const previewElement = dragPreviewRef.value?.$el;
 			if (previewElement) {
 				setCustomNativeDragPreview({
 					nativeSetDragImage,
@@ -195,12 +164,7 @@ const setupDraggable = () => {
 						// Clone the preview element
 						const clonedPreview = previewElement.cloneNode(true) as HTMLElement;
 						clonedPreview.style.display = 'block';
-						clonedPreview.style.transform = 'rotate(8deg)';
-						clonedPreview.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.4)';
-						clonedPreview.style.border = '2px solid rgb(var(--v-theme-primary))';
-						clonedPreview.style.borderRadius = '8px';
-						clonedPreview.style.backgroundColor = 'rgba(var(--v-theme-surface), 0.95)';
-						clonedPreview.style.backdropFilter = 'blur(8px)';
+
 
 						container.appendChild(clonedPreview);
 
@@ -341,18 +305,5 @@ function toggleSelect() {
 	transform: scale(1.1);
 }
 
-.drag-preview-template {
-	position: absolute;
-	top: -9999px;
-	left: -9999px;
-	pointer-events: none;
-}
 
-.drag-preview-item {
-	background: rgba(var(--v-theme-surface), 0.95) !important;
-	backdrop-filter: blur(12px);
-	border: 2px solid rgb(var(--v-theme-primary)) !important;
-	border-radius: 8px;
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
 </style>

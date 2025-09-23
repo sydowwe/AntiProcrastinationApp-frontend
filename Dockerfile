@@ -1,4 +1,4 @@
-FROM node:current-alpine3.18 AS build
+FROM node:22.19-slim AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
