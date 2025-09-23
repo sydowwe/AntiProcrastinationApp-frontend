@@ -2,6 +2,7 @@ import {Role, RoleRequest} from '@/classes/Role.ts';
 import {useEntityCommand, useEntityQuery} from '@/composables/general/CrudComposition.ts';
 import {Activity, ActivityRequest} from '@/classes/Activity.ts';
 import {
+	ChangeDisplayOrderRequest,
 	RoutineTodoListGroupedList,
 	RoutineTodoListItemEntity,
 	RoutineTodoListItemRequest,
@@ -148,7 +149,18 @@ export function useTodoListItemCrud() {
 		}
 	}
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, changeUrgency}
+
+	async function changeDisplayOrder(request: ChangeDisplayOrderRequest) {
+		try {
+			await API.patch(url + `/change-display-order`, request)
+			return Promise.resolve();
+		} catch (e: any) {
+			console.error(`Error changing urgency of to-do list item ${request.movedItemId} between ${request.precedingItemId} and ${request.followingItemId}`, e)
+			return Promise.reject(e)
+		}
+	}
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, changeUrgency, changeDisplayOrder}
 }
 
 export function useRoutineTodoListItemCrud() {
@@ -184,7 +196,17 @@ export function useRoutineTodoListItemCrud() {
 		}
 	}
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, getAllGrouped}
+	async function changeDisplayOrder(request: ChangeDisplayOrderRequest) {
+		try {
+			await API.patch(url + `/change-display-order`, request)
+			return Promise.resolve();
+		} catch (e: any) {
+			console.error(`Error changing urgency of to-do list item ${request.movedItemId} between ${request.precedingItemId} and ${request.followingItemId}`, e)
+			return Promise.reject(e)
+		}
+	}
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity, getAllGrouped, changeDisplayOrder}
 }
 
 export function useTaskPlannerCrud() {

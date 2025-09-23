@@ -71,13 +71,15 @@
 // ... existing imports ...
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
-import {type BaseToDoListItemEntity, ToDoListKind} from '@/classes/ToDoListItem';
+import {type BaseToDoListItemEntity, ChangeDisplayOrderRequest, ToDoListKind} from '@/classes/ToDoListItem';
 import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
 import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/TodoListItemDragAndDropPlaceholder.vue';
+import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
+import {useDragAndDropMonitor} from '@/composables/UseDragAndDropMonitor.ts';
 
 // ... existing props ...
+
 const props = defineProps({
 	kind: {
 		type: Number,
@@ -103,8 +105,13 @@ const emptyDropZoneRef = ref<HTMLElement | null>(null);
 const itemRefs = ref<(HTMLElement | null)[]>([]);
 const dropZoneRefs = ref<{ [key: string]: HTMLElement }>({});
 
-const isDragging = computed(() => dragState.draggedIndex !== null);
+
+const { setupGlobalMonitor, globalIsDragging } = useDragAndDropMonitor();
+
+// Update isDragging to use global state
+const isDragging = computed(() => globalIsDragging.value);
 // const isDragging = true;
+
 
 const dragState = reactive({
 	draggedIndex: null as number | null,
@@ -175,21 +182,47 @@ watch(() => props.items.length, async () => {
 const setupDragAndDrop = () => {
 	if (!props.isInChangeOrderMode) return;
 
-	console.log('Setting up drag and drop...');
+	console.log('Setting up drag and drop for list:', props.listId);
 
-	// Monitor drag operations globally
+	// Setup global monitor for cross-list drops
+	setupGlobalMonitor((sourceListId, targetListId, itemId, dropTarget) => {
+		emit('crossListDrop', sourceListId, targetListId, itemId, dropTarget);
+	});
+
+	// Setup drop zones immediately when in change order mode
+	setupDropZones();
+
+	// Setup empty zone if needed
+	if (props.items.length === 0) {
+		setupEmptyZone();
+	}
+
+	// Monitor drag operations for this specific list
 	const monitorCleanup = monitorForElements({
 		onDragStart: ({source}: { source: any }) => {
-			console.log('Drag start:', source.data);
 			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
 				const index = props.items.findIndex(item => item.id === source.data.itemId);
 				dragState.draggedIndex = index;
-				console.log('Set dragged index:', index);
+				console.log('Set dragged index for list', props.listId, ':', index);
 			}
 		},
 		onDrop: ({source, location}: { source: any; location: any }) => {
-			console.log('Drop:', source.data, location.current.dropTargets);
-			dragState.draggedIndex = null;
+			// Only handle same-list drops here
+			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
+				const dropTarget = location.current.dropTargets.find((target: any) =>
+					target.data.listId === props.listId &&
+					(target.data.type === 'drop-zone' || target.data.type === 'empty-zone')
+				);
+
+				if (dropTarget) {
+					handleSameListDrop(source, dropTarget);
+				}
+			}
+
+			// Reset drag state for this list
+			if (source.data.listId === props.listId) {
+				dragState.draggedIndex = null;
+			}
 			dragState.isEmptyZoneDraggedOver = false;
 
 			// Clear all drop indicators with animation delay
@@ -198,71 +231,75 @@ const setupDragAndDrop = () => {
 					dropIndicators.value[key] = false;
 				});
 			}, 150);
-
-			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
-				const itemId = source.data.itemId as number;
-				const sourceIndex = props.items.findIndex(item => item.id === itemId);
-
-				// Handle drop on drop zone
-				const dropTarget = location.current.dropTargets.find((target: any) =>
-					target.data.type === 'drop-zone'
-				);
-
-				if (dropTarget) {
-					const targetIndex = dropTarget.data.index as number;
-					const position = dropTarget.data.position as 'top' | 'bottom';
-
-					let finalIndex = targetIndex;
-
-					if (position === 'bottom') {
-						finalIndex = targetIndex + 1;
-					}
-
-					// Adjust for moving within the same list
-					if (sourceIndex < finalIndex) {
-						finalIndex -= 1;
-					}
-
-					// Ensure we can move to any position, including above/below current position
-					if (sourceIndex !== finalIndex && sourceIndex >= 0 && finalIndex >= 0 && finalIndex <= props.items.length) {
-						console.log('Reordering:', sourceIndex, '->', finalIndex);
-						emit('itemsReordered', sourceIndex, finalIndex);
-					}
-				}
-
-				// Handle drop on empty zone
-				const emptyZoneTarget = location.current.dropTargets.find((target: any) =>
-					target.data.type === 'empty-zone'
-				);
-
-				if (emptyZoneTarget && sourceIndex >= 0) {
-					emit('itemsReordered', sourceIndex, 0);
-				}
-			}
 		},
 	});
 
 	cleanupFunctions.push(monitorCleanup);
+};
 
-	// Setup empty zone if needed
-	if (props.items.length === 0) {
-		setupEmptyZone();
+
+const handleSameListDrop = (source: any, dropTarget: any) => {
+	const itemId = source.data.itemId as number;
+	const sourceIndex = props.items.findIndex(item => item.id === itemId);
+
+	if (dropTarget.data.type === 'drop-zone') {
+		const targetIndex = dropTarget.data.index as number;
+		const position = dropTarget.data.position as 'top' | 'bottom';
+
+		let finalIndex = targetIndex;
+
+		if (position === 'bottom') {
+			finalIndex = targetIndex + 1;
+		}
+
+		// Adjust for moving within the same list
+		if (sourceIndex < finalIndex) {
+			finalIndex -= 1;
+		}
+
+		if (sourceIndex !== finalIndex && sourceIndex >= 0 && finalIndex >= 0 && finalIndex <= props.items.length) {
+			const precedingItem = finalIndex > 0 ? props.items[finalIndex] : null;
+			const followingItem = finalIndex < props.items.length ? props.items[finalIndex + 1] : null;
+
+			const request = new ChangeDisplayOrderRequest(
+				itemId,
+				precedingItem?.id ?? null,
+				followingItem?.id ?? null
+			);
+
+			emit('itemsReordered', sourceIndex, finalIndex, request);
+		}
+	} else if (dropTarget.data.type === 'empty-zone') {
+		const followingItem = props.items.length > 1 ? props.items[0] : null;
+
+		const request = new ChangeDisplayOrderRequest(
+			itemId,
+			null,
+			followingItem?.id ?? null
+		);
+
+		emit('itemsReordered', sourceIndex, 0, request);
 	}
 };
 
 const setupDropZones = () => {
 	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
 		const [indexStr, position] = key.split('-');
-		const index = parseInt(indexStr);
+		const index = parseInt(indexStr ?? '');
 
 		if (element) {
 			const cleanup = dropTargetForElements({
 				element,
 				canDrop: ({source}) => {
-					const sourceIndex = props.items.findIndex(item => item.id === source.data.itemId);
-					return position === 'top' ? sourceIndex !== index : sourceIndex !== index + 1;
+					// Allow drops from any list when in change order mode
+					return source.data.type === 'todo-item';
 				},
-				getData: () => ({type: 'drop-zone', index, position}),
+				getData: () => ({
+					type: 'drop-zone',
+					index,
+					position,
+					listId: props.listId
+				}),
 				onDragEnter: () => {
 					dropIndicators.value[key] = true;
 				},
@@ -281,7 +318,7 @@ const updateDropZonePositions = () => {
 
 	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
 			const [indexStr, position] = key.split('-');
-			const index = parseInt(indexStr);
+			const index = parseInt(indexStr ?? '');
 
 			if (!element) return;
 
@@ -312,8 +349,15 @@ const updateDropZonePositions = () => {
 			}
 		}
 	)
-
 }
+
+watch(() => globalIsDragging.value, async (newValue) => {
+	if (newValue && props.isInChangeOrderMode) {
+		await nextTick();
+		setupDropZones();
+		updateDropZonePositions();
+	}
+});
 
 // Watch for drop indicator changes and update positions
 watch(() => dropIndicators.value, () => {
@@ -429,7 +473,8 @@ const emit = defineEmits<{
 	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
 	(e: 'deletedItem', id: number): void;
 	(e: 'batchDeletedItems', ids: number[]): void;
-	(e: 'itemsReordered', oldIndex: number, newIndex: number): void;
+	(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void;
+	(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void;
 }>();
 </script>
 

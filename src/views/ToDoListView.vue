@@ -4,10 +4,11 @@
 		<div class="d-flex justify-center mb-4 ga-2">
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
 			<VIconBtn
-				:color="isInChangeOrderMode ? 'success' : 'secondary'"
+				color="secondary"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				icon="check"
+				density="comfortable"
+				icon="arrows-up-down"
 			></VIconBtn>
 		</div>
 		<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-6 px-md-4 px-lg-6">
@@ -16,8 +17,8 @@
 			</div>
 			<ToDoList
 				:kind="ToDoListKind.NORMAL"
-				:items="items"
-				:isInChangeOrderMode="isInChangeOrderMode"
+				:items
+				:isInChangeOrderMode
 				:listId="1"
 				@itemsChanged="itemsChanged"
 				@editItem="toDoListDialog?.openEdit"
@@ -32,7 +33,14 @@
 
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
-import {RoutineTodoListItemEntity, RoutineTodoListItemRequest, TodoListItemEntity, ToDoListItemRequest, ToDoListKind} from '@/classes/ToDoListItem';
+import {
+	ChangeDisplayOrderRequest,
+	RoutineTodoListItemEntity,
+	RoutineTodoListItemRequest,
+	TodoListItemEntity,
+	ToDoListItemRequest,
+	ToDoListKind
+} from '@/classes/ToDoListItem';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
@@ -43,7 +51,7 @@ import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
-const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency} = useTodoListItemCrud()
+const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency, changeDisplayOrder} = useTodoListItemCrud()
 const {fetchById: fetchByIdTaskUrgency} = useTaskUrgencyCrud()
 
 const i18n = useI18n();
@@ -65,15 +73,16 @@ function toggleChangeOrderMode() {
 	isInChangeOrderMode.value = !isInChangeOrderMode.value;
 }
 
-async function handleOrderChange(oldIndex: number, newIndex: number) {
+async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
 	// Perform the reorder immediately for UI responsiveness
 	const [movedItem] = items.value.splice(oldIndex, 1);
-	items.value.splice(newIndex, 0, movedItem);
+	if (movedItem) {
+		items.value.splice(newIndex, 0, movedItem);
+	}
 
 	console.log('Items reordered:', {oldIndex, newIndex, newOrder: items.value.map(item => item.id)});
 
-	// Here you would typically call your API to persist the order change
-	// API.patch('/todo-list/reorder', { oldIndex, newIndex, items: items.value.map(item => item.id) });
+	await changeDisplayOrder(request)
 }
 
 // ... existing code for other methods ...
