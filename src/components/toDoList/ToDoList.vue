@@ -1,6 +1,5 @@
 <template>
 <div
-	ref="listRef"
 	class="todo-list"
 >
 	<div
@@ -19,7 +18,6 @@
 		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0" is-first></TodoListItemDragAndDropPlaceholder>
 
 		<ToDoListItem
-			:ref="el => setItemRef(el, index)"
 			:toDoListItem="item"
 			:color="(item as any).taskUrgency?.color ?? 'primary'"
 			:isInChangeOrderMode="isInChangeOrderMode"
@@ -47,13 +45,13 @@
 	<VCard
 		v-if="items.length === 0 && isInChangeOrderMode"
 		ref="emptyDropZoneRef"
-		class="empty-drop-zone"
+		class="empty-drop-zone d-flex align-center justify-center"
 		:class="{ 'is-drag-over': dragState.isEmptyZoneDraggedOver }"
 		variant="outlined"
 		color="primary"
 	>
 		<VCardText class="text-center">
-			<VIcon icon="plus-circle-outline" size="48" color="primary" class="mb-2"/>
+			<VIcon icon="plus-circle" size="25" color="primary" class="mb-1"/>
 			<div class="text-primary font-weight-medium">Drop items here</div>
 		</VCardText>
 	</VCard>
@@ -68,17 +66,15 @@
 </template>
 
 <script setup lang="ts" generic="TEntity extends BaseToDoListItemEntity">
-// ... existing imports ...
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
 import {type BaseToDoListItemEntity, ChangeDisplayOrderRequest, ToDoListKind} from '@/classes/ToDoListItem';
-import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed} from 'vue';
+import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed, useTemplateRef} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
 import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
 import {useDragAndDropMonitor} from '@/composables/UseDragAndDropMonitor.ts';
 
-// ... existing props ...
 
 const props = defineProps({
 	kind: {
@@ -100,18 +96,13 @@ const props = defineProps({
 });
 
 // Drag and drop state
-const listRef = ref<HTMLElement | null>(null);
-const emptyDropZoneRef = ref<HTMLElement | null>(null);
-const itemRefs = ref<(HTMLElement | null)[]>([]);
+const emptyDropZoneRef = useTemplateRef('emptyDropZoneRef');
 const dropZoneRefs = ref<{ [key: string]: HTMLElement }>({});
 
 
-const { setupGlobalMonitor, globalIsDragging } = useDragAndDropMonitor();
+const {setupGlobalMonitor, globalIsDragging} = useDragAndDropMonitor();
 
-// Update isDragging to use global state
 const isDragging = computed(() => globalIsDragging.value);
-// const isDragging = true;
-
 
 const dragState = reactive({
 	draggedIndex: null as number | null,
@@ -122,14 +113,6 @@ const dragState = reactive({
 const dropIndicators = ref<{ [key: string]: boolean }>({});
 
 let cleanupFunctions: (() => void)[] = [];
-
-const setItemRef = (el: any, index: number) => {
-	if (el && el.$el) {
-		itemRefs.value[index] = el.$el as HTMLElement;
-	} else if (el) {
-		itemRefs.value[index] = el as HTMLElement;
-	}
-};
 
 const setDropZoneRef = (el: HTMLElement | null, index: number, position: 'top' | 'bottom') => {
 	if (el) {
@@ -226,11 +209,9 @@ const setupDragAndDrop = () => {
 			dragState.isEmptyZoneDraggedOver = false;
 
 			// Clear all drop indicators with animation delay
-			setTimeout(() => {
-				Object.keys(dropIndicators.value).forEach(key => {
-					dropIndicators.value[key] = false;
-				});
-			}, 150);
+			Object.keys(dropIndicators.value).forEach(key => {
+				dropIndicators.value[key] = false;
+			});
 		},
 	});
 
@@ -355,7 +336,11 @@ watch(() => globalIsDragging.value, async (newValue) => {
 	if (newValue && props.isInChangeOrderMode) {
 		await nextTick();
 		setupDropZones();
-		updateDropZonePositions();
+		if (props.items.length === 0) {
+			setupEmptyZone();
+		} else {
+			updateDropZonePositions();
+		}
 	}
 });
 
@@ -380,10 +365,9 @@ watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
 });
 
 const setupEmptyZone = () => {
-	if (!emptyDropZoneRef.value) return;
-
+	if (!emptyDropZoneRef.value?.$el) return;
 	const cleanup = dropTargetForElements({
-		element: emptyDropZoneRef.value,
+		element: emptyDropZoneRef.value?.$el,
 		canDrop: ({source}) => source.data.type === 'todo-item',
 		getData: () => ({
 			type: 'empty-zone',
@@ -486,14 +470,12 @@ const emit = defineEmits<{
 	padding: 24px 0;
 	min-height: 200px;
 	position: relative;
-	border: 1px solid mediumpurple;
 }
 
 .todo-item-container {
 	position: relative;
 }
 
-/* Invisible drop zone overlays - now positioned dynamically via JavaScript */
 .drop-zone-overlay {
 	position: absolute;
 	left: 0;
@@ -501,12 +483,12 @@ const emit = defineEmits<{
 	z-index: 1000;
 	background: transparent;
 	pointer-events: auto;
-	border: 1px solid white;
-	/* Remove static positioning - will be set by JavaScript */
 }
 
 .empty-drop-zone {
+	margin: 0 10px;
 	min-height: 120px;
+	pointer-events: auto;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	border: 2px dashed rgba(var(--v-theme-primary), 0.3) !important;
 	background: rgba(var(--v-theme-primary), 0.02);

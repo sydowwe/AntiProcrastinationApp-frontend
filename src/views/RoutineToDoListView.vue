@@ -17,7 +17,7 @@
 		      v-for="group in shownGroups" :key="group.timePeriod.id">
 			<VCard class="mx-auto rounded-lg px-3 py-5 d-flex flex-column ga-4" min-width="350">
 				<VSheet class="mx-auto px-3 d-flex align-center ga-3" rounded color="neutral-300">
-					<VCardTitle class="px-0">{{ isInChangeOrderMode ? $t('toDoList.changeOrder') : group.timePeriod.text }}</VCardTitle>
+					<VCardTitle class="px-0">{{ group.timePeriod.text }}</VCardTitle>
 					<VIconBtn color="white" variant="tonal" density="comfortable" class="ml-auto" icon="eye-slash"
 					          @click="toggleHideTimePeriod(group.timePeriod.id as number)" :title="$t('general.hide')" :disabled="isInChangeOrderMode">
 						<VIcon size="small"></VIcon>

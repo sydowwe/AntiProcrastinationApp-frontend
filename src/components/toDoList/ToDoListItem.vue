@@ -3,7 +3,9 @@
 	ref="itemRef"
 	:active="!toDoListItem.isDone"
 	@click="itemClicked"
-	:base-color="color"
+	:color="color"
+	variant="tonal"
+	rounded
 	class="align-center listItem"
 	:class="{
         'is-dragging': isDragging,
@@ -13,7 +15,7 @@
 
 		<VListItemAction start>
 			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success"
-			                @click.stop="checkboxClicked"></v-checkbox-btn>
+			                @click.stop="checkboxClicked" :disabled="isInChangeOrderMode" :style="isInChangeOrderMode ? 'color:white !important' : ''"></v-checkbox-btn>
 			<div v-else class="d-flex flex-column ga-1 align-center justify-center">
 				<VHover>
 					<template v-slot:default="{ isHovering, props }">
@@ -260,7 +262,7 @@ function toggleSelect() {
 	border: 2px solid black !important;
 	border-radius: 8px;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	cursor: default;
+	cursor: pointer;
 	backdrop-filter: blur(4px);
 	background: rgba(var(--v-theme-surface), 0.8);
 }
