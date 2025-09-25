@@ -168,6 +168,8 @@ const setupDraggable = () => {
 						clonedPreview.style.display = 'block';
 
 
+						console.log(clonedPreview.style)
+						console.log(container.style)
 						container.appendChild(clonedPreview);
 
 						return () => {
@@ -260,7 +262,7 @@ function toggleSelect() {
 <style scoped>
 .listItem {
 	border: 2px solid black !important;
-	border-radius: 8px;
+	border-radius: 5px;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
 	backdrop-filter: blur(4px);

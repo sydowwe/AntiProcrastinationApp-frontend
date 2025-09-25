@@ -1,10 +1,11 @@
 <template>
-<div class="drag-preview-template" v-show="false" >
+<div class="drag-preview-template" v-show="false">
 	<VListItem
 		:active="!toDoListItem.isDone"
-		:base-color="color"
+		:color="color"
 		class="align-center listItem drag-preview-item"
 		style="width: 400px;"
+		rounded
 	>
 		<template v-slot:prepend>
 			<VListItemAction start>
@@ -53,23 +54,18 @@ defineProps({
 	border-radius: 8px;
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: default;
-	backdrop-filter: blur(4px);
 	background: rgba(var(--v-theme-surface), 0.8);
 }
 
 .drag-preview-template {
-	position: absolute;
-	top: -9999px;
-	left: -9999px;
+	position: static;
 	pointer-events: none;
 }
 
 .drag-preview-item {
-	background: rgba(var(--v-theme-surface), 0.95) !important;
-	backdrop-filter: blur(12px);
 	border: 2px solid rgb(var(--v-theme-primary)) !important;
-	border-radius: 8px;
+	border-radius: 5px;
 	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-	transform: rotate(8deg);
+	transform: rotate(7deg);
 }
 </style>
