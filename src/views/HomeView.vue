@@ -1,61 +1,24 @@
 <template>
-<div class="app-container">
-	<div class="columns-container">
-		<div class="column">
-			<h2>Done</h2>
-			<VueDraggableNext
-				v-model="items"
-				class="draggable-list"
-				v-bind="{ group: 'test', sort: false }"
-			>
-				<div
-					v-for="item in items"
-					:key="item.id"
-					class="task-item"
-				>
-					<h3>{{ item.name }}</h3>
-				</div>
-			</VueDraggableNext>
-		</div>
-	</div>
+<div class="d-flex ga-9">
+	<VList ref="todoList" class="kanban-column">
+		<VListItem v-for="todo in todos" :key="todo" class="kanban-item">
+			{{ todo }}
+		</VListItem>
+	</VList>
+	<VList ref="doneList" class="kanban-column">
+		<VListItem v-for="done in dones" :key="done" class="kanban-item">
+			{{ done }}
+		</VListItem>
+	</VList>
 </div>
 </template>
-<script setup>
-import { ref } from 'vue'
-import { VueDraggableNext } from 'vue-draggable-next'
 
-const isShown = ref(true)
-const items = ref([])
+<script setup lang="ts">
+import { useDragAndDrop } from "@formkit/drag-and-drop/vue";
 
-setTimeout(() => {
-	isShown.value = false;
-	items.value = Array.from({ length: 15 }, (_, i) => ({
-		id: i + 1,
-		name: `Task ${i + 1}`
-	}));
-}, 10)
+const todoItems = ["Schedule perm", "Rewind VHS tapes", "Make change for the arcade", "Get disposable camera developed", "Learn C++", "Return Nintendo Power Glove"];
+const doneItems = ["Pickup new mix-tape from Beth"];
 
-setTimeout(() => {
-	isShown.value = true;
-}, 15)
+const [todoList, todos] = useDragAndDrop(todoItems, { group: "todoList" });
+const [doneList, dones] = useDragAndDrop(doneItems, { group: "todoList" });
 </script>
-
-<style scoped>
-.drag-container {
-	min-height: 200px;
-	padding: 20px;
-}
-
-.drag-item {
-	padding: 10px;
-	margin: 5px 0;
-	background: #f0f0f0;
-	border-radius: 4px;
-	cursor: move;
-	transition: background 0.2s;
-}
-
-.drag-item:hover {
-	background: #e0e0e0;
-}
-</style>

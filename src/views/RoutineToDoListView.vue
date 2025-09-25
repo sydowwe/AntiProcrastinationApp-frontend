@@ -3,13 +3,13 @@
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center ga-2">
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
-			<VIconBtn
-				color="secondary"
+			<VBtn
+				text="drag & drop"
+				:color="isInChangeOrderMode ? 'secondary' : 'secondaryOutline'"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				density="comfortable"
-				icon="arrows-up-down"
-			></VIconBtn>
+				append-icon="arrows-up-down"
+			></VBtn>
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
@@ -122,7 +122,6 @@ async function handleCrossListDrop(sourceListId: number, targetListId: number, i
 			targetIndex += 1;
 		}
 	}
-
 	// Insert into target
 	targetGroup.items.splice(targetIndex, 0, movedItem);
 

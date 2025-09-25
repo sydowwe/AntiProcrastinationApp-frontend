@@ -210,4 +210,10 @@ app.use(vue3GoogleLogin, {
 	clientId: import.meta.env.VITE_GOOGLE_LOGIN_CLIENT_ID
 })
 
+import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+
+
+app.use(autoAnimatePlugin)
+
+
 app.mount('#app');

@@ -1,10 +1,10 @@
 <template>
 <div
-	class="todo-list"
+	class="todo-list" ref="autoParent"
 >
 	<div
 		v-for="(item, index) in items"
-		:key="`${item.id}-${index}`"
+		:key="`${item.id}`"
 		class="todo-item-container"
 		:data-index="index"
 	>
@@ -74,7 +74,12 @@ import {API} from '@/plugins/axiosConfig.ts';
 import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
 import {useDragAndDropMonitor} from '@/composables/UseDragAndDropMonitor.ts';
+import {useAutoAnimate} from '@formkit/auto-animate/vue';
 
+const crossListAnimatingIds = ref<Set<number>>(new Set());
+
+// Auto-animate controller
+const [autoParent] = useAutoAnimate({ duration: 300, easing: 'ease-in-out' });
 
 const props = defineProps({
 	kind: {

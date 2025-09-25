@@ -15,6 +15,9 @@ export default defineConfig({
 		}),
 		vueDevTools(),
 	],
+	optimizeDeps: {
+		include: ['@formkit/drag-and-drop/vue'],
+	},
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url))
