@@ -19,16 +19,14 @@
 </VRow>
 </template>
 <script setup lang="ts">
-//TODO
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import type {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
-import {ref} from 'vue';
+import {onMounted, ref} from 'vue';
 import {TimeLengthObject} from '@/classes/TimeUtils';
 import {useI18n} from 'vue-i18n';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-
 
 const {showErrorSnackbar} = useSnackbar();
 const i18n = useI18n();
@@ -38,6 +36,11 @@ const formDisabled = ref(false);
 
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
 const timeLength = ref(new TimeLengthObject());
+
+onMounted(()=>{
+	const now = new Date();
+	dateTimePicker.value.setTime(now.getHours(), now.getMinutes())
+})
 
 function saveActivity() {
 	if (activitySelectionForm.value.validate()) {

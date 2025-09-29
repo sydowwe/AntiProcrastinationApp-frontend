@@ -44,6 +44,8 @@ const time = ref<TimeObject>(new TimeObject());
 
 function setTime(hours: number, minutes: number) {
 	dateTime.value?.setHours(hours, minutes, 0, 0);
+	time.value.hours = hours;
+	time.value.minutes = minutes;
 }
 
 function setDate(newDate: Date) {
