@@ -49,7 +49,8 @@ export class ActivityHistoryRequest {
 }
 
 
-export class ActivityHistoryFilter extends ActivityFormRequest {
+export class ActivityHistoryFilter {
+	public activityFilter: ActivityFormRequest = ActivityFormRequest.createEmpty;
 	public dateFrom: Date | null;
 	public dateTo: Date | null;
 	public hoursBack: number | null;
@@ -67,7 +68,7 @@ export class ActivityHistoryFilter extends ActivityFormRequest {
 		dateTo: Date | null = new Date(),
 		hoursBack: number | null = 24
 	) {
-		super(activityId, roleId, categoryId, isFromToDoList, taskUrgencyId, isFromRoutineToDoList, routineTimePeriodId, isUnavoidable);
+		this.activityFilter = new ActivityFormRequest(activityId, roleId, categoryId, isUnavoidable, isFromToDoList, taskUrgencyId, isFromRoutineToDoList, routineTimePeriodId);
 		const tmp = new Date();
 		tmp.setDate(new Date().getDate() - 3);
 		this.dateFrom = dateFrom ?? tmp;

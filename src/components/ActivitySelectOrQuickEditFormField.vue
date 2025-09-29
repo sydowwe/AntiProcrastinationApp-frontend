@@ -6,9 +6,9 @@
 
 	<VSelect v-if="isActivityFormHidden && isEdit" max-width="150" label="Quick edit mode" v-model="quickEditMode" :items="['Overwrite', 'Clone']"></VSelect>
 </div>
-<ActivitySelectionForm v-model="selectedActivityId" v-if="!isActivityFormHidden" class="mb-5"
-                       :showFromToDoListField="false" :formDisabled="false" :isInDialog="true"
-                       :activity-id="activityBeforeEdit?.id" :selectOptionsSource="ActivityOptionsSource.ALL"></ActivitySelectionForm>
+<ActivitySelectionForm v-model:activityId="selectedActivityId" v-if="!isActivityFormHidden" class="mb-5"
+                       :showFromToDoListField="false" :formDisabled="false" isInDialog
+                       :selectOptionsSource="ActivityOptionsSource.ALL"></ActivitySelectionForm>
 <template v-else>
 	<VTextField class="py-2" :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
 	<VTextarea class="py-2" :label="$t('general.text')" v-model="activityFormFieldData.text" rows="2"></VTextarea>

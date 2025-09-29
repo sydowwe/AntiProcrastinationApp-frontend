@@ -71,6 +71,7 @@ export interface AlarmDialogType extends EntityDialogType {
 
 export interface ActivitySelectionFormType extends FormType {
 	saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject): void;
+	getSelectedName(type: 'role' | 'category' | 'taskUrgency' | 'routineTimePeriod'): string;
 	getSelectedActivityName: string | null;
 	getSelectedActivityId: number;
 	setSelectedActivityId(activityId: number):void;

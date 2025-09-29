@@ -47,7 +47,7 @@ export class ActivitySelectOptionCombination extends SelectOption {
 
 export class ActivityFormRequest {
 	constructor(
-		public activityId?: number,
+		public activityId: number | null = null,
 		public roleId: number | null = null,
 		public categoryId: number | null = null,
 		public isUnavoidable: boolean | null = null,
@@ -58,8 +58,7 @@ export class ActivityFormRequest {
 		public routineTimePeriodId: number | null = null,
 	) {
 	}
-	static fromFilter(filterData: ActivityHistoryFilter) {
-		return new ActivityFormRequest(filterData.activityId, filterData.roleId, filterData.categoryId,filterData.isUnavoidable, filterData.isFromToDoList, filterData.taskUrgencyId, filterData.isFromRoutineToDoList, filterData.routineTimePeriodId);
+	static get createEmpty(){
+		return new ActivityFormRequest();
 	}
-
 }
