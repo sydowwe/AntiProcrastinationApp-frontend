@@ -7,12 +7,16 @@
 	:append-inner-icon="showPassword ? 'eye-slash' : 'eye'"
 	@click:append-inner="showPassword = !showPassword"
 	:autofocus="autofocus"
+	:autocomplete="isNew ? 'new-password' : 'current-password'"
 ></VTextField>
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
 const password = defineModel<string | null>({required: true});
 defineProps({
+	isNew: {
+		type: Boolean, default: false
+	},
 	rules: {
 		type: Array,
 		required: true

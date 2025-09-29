@@ -24,7 +24,7 @@
 						</RouterLink>
 					</VCol>
 					<VCol cols="10" sm="8" md="6" lg="6">
-						<VBtn type="submit" width="100%" color="success">{{ i18n.t('authorization.logIn') }}</VBtn>
+						<VBtn type="submit" width="100%" color="successDark">{{ i18n.t('authorization.logIn') }}</VBtn>
 						<div class="mt-3 mb-2 text-center">
 							{{ i18n.t('authorization.dontHaveAccountYet') }}
 							<RouterLink to="/registration">{{ i18n.t('authorization.register') }}</RouterLink>
