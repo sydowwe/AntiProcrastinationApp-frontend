@@ -17,6 +17,7 @@ import {onMounted, ref} from "vue";
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
 import router from '@/plugins/router.ts';
+import {API} from '@/plugins/axiosConfig.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar()
@@ -29,7 +30,7 @@ onMounted(() => {
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	API.get('/user' + router.currentRoute.value.fullPath)
+	API.post('/user' + router.currentRoute.value.fullPath)
 		.then(() => {
 			emailConfirmed.value = true;
 		})
@@ -43,7 +44,7 @@ const resendConfirmationEmail = ()=>{
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	API.get(`/user/resend-confirmation-email?userId=${router.currentRoute.value.query['userId']}`)
+	API.post(`/user/resend-confirmation-email/${router.currentRoute.value.query['userId']}`)
 		.then(() => {
 			confirmationEmailResent.value = true;
 		})

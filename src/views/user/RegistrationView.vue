@@ -4,8 +4,8 @@
 		<h2 class="text-center mb-5">{{ $t('authorization.registration') }}</h2>
 		<VForm ref="form" @submit.prevent="validateAndSendForm" class="d-flex flex-column">
 			<VTextField class="mb-3" :label="i18n.t('authorization.email')" v-model="registrationRequest.email"
-			            :rules="emailRules"></VTextField>
-			<MyNewPasswordInput v-model="registrationRequest.password"></MyNewPasswordInput>
+			            :rules="emailRules" autocomplete="new-email"></VTextField>
+			<MyNewPasswordInput v-model="registrationRequest.password" isNew></MyNewPasswordInput>
 			<VCheckbox :label="i18n.t('authorization.use2FASetup')" v-model="registrationRequest.twoFactorEnabled"
 			           hide-details></VCheckbox>
 			<VCheckbox class="mb-3" v-model="termsAndConditions" :rules="termsAndConditionsRules">
@@ -18,7 +18,7 @@
 			</VCheckbox>
 			<VRow justify="center">
 				<VCol cols="10" sm="8" md="6" lg="6">
-					<VBtn type="submit" width="100%" color="success">{{ i18n.t('authorization.register') }}</VBtn>
+					<VBtn type="submit" width="100%" color="successDark">{{ i18n.t('authorization.register') }}</VBtn>
 				</VCol>
 			</VRow>
 		</VForm>

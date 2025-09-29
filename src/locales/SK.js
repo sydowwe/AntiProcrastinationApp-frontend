@@ -359,6 +359,10 @@ const SK = {
         changePassword: `Zmeniť heslo`,
         passwordChange: `Zmena hesla`,
 
+        password: `Heslo`,
+        confirmPassword: `Potvrďte heslo`,
+
+
         emailChange: `Zmena emailu`,
         deleteAccount: `Vymazať účet`,
         newPassword: `Nové heslo`,
