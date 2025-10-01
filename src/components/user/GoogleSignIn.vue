@@ -1,21 +1,17 @@
 <template>
-<VRow justify="center" no>
-	<VCol cols="10" sm="8" md="6" lg="6">
-		<GoogleLogin :callback="callback">
-			<VBtn
-				width="100%"
-				color="primary"
-				:disabled="loading"
-			>
-				{{ $t('authorization.continueWithGoogle') }}
-				<VIcon class="ml-1">
-					<FontAwesomeIcon icon="fa-brands fa-google"/>
-				</VIcon>
-			</VBtn>
-		</GoogleLogin>
-		<div v-if="error" class="error-message">Error logging in. Please try again.</div>
-	</VCol>
-</VRow>
+<GoogleLogin :callback="callback">
+	<VBtn
+		width="100%"
+		color="primary"
+		:disabled="loading"
+	>
+		{{ $t('authorization.continueWithGoogle') }}
+		<VIcon class="ml-1">
+			<FontAwesomeIcon icon="fa-brands fa-google"/>
+		</VIcon>
+	</VBtn>
+</GoogleLogin>
+<div v-if="error" class="error-message">Error logging in. Please try again.</div>
 </template>
 
 <script setup lang="ts">
