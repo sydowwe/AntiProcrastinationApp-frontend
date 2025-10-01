@@ -31,10 +31,12 @@
 						</div>
 					</VCol>
 				</VRow>
-				<div class="dividerTextCenter mb-4">
-					<span class="text-center font-weight-medium mx-3">{{ i18n.t('general.or') }}</span>
+				<div class="d-flex flex-column align-center">
+					<div class="dividerTextCenter mb-4" style="width: 66%">
+						<span class="text-center font-weight-medium mx-3">{{ i18n.t('general.or') }}</span>
+					</div>
+					<GoogleSignIn :is-stay-logged-in="loginRequest.stayLoggedIn" @loggedIn="handleGoogleLogin"></GoogleSignIn>
 				</div>
-				<GoogleSignIn :is-stay-logged-in="loginRequest.stayLoggedIn" @loggedIn="handleGoogleLogin"></GoogleSignIn>
 			</VForm>
 		</VCol>
 	</VRow>
@@ -48,7 +50,6 @@ import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
 import {AvailableLocales, PasswordSignInRequest} from '@/classes/User';
 import GoogleSignIn from '@/components/user/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue';
-
 import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
 import {useI18n} from 'vue-i18n';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
@@ -81,7 +82,7 @@ async function validateAndSendForm() {
 	const {valid} = await form.value.validate();
 	console.log(valid)
 	if (valid) {
-		// showFullScreenLoading();
+		showFullScreenLoading();
 		const recaptchaToken = await executeRecaptcha('login');
 
 		loginRequest.value.recaptchaToken = recaptchaToken;
@@ -103,17 +104,25 @@ async function validateAndSendForm() {
 				}
 			})
 			.catch((error) => {
-				console.log(error);
-				if (error.response.status === 403 || error.response.status === 401) {
-					showErrorSnackbar(i18n.t('authorization.wrongEmailOrPassword'));
+					if (error.response.status === 401) {
+						let tooManyAttemptsErrorMessage = error.response.data.errors.generalErrors.find((e: string) => e.includes('Too many failed login attempts'))
+						if (tooManyAttemptsErrorMessage) {
+							showErrorSnackbar(tooManyAttemptsErrorMessage)
+						} else if (error.response.data.errors.generalErrors.includes('Invalid email or password')) {
+							showErrorSnackbar(i18n.t('authorization.wrongEmailOrPassword'));
+						}
+					}
+					if (error.response.status === 403) {
+						if (error.response.data.errors.generalErrors.includes('User locked out for')) {
+							showErrorSnackbar(error.response.data.errors.generalErrors[0]);
+						} else if (error.response.data.errors.generalErrors.includes('Email not confirmed')) {
+							showErrorSnackbar(i18n.t('authorization.emailConfirmationNeeded'));
+						}
+					}
 				}
-				if (error.response.status === 412) {
-					showErrorSnackbar(i18n.t('authorization.emailConfirmationNeeded', {email: error.response.data.split(`'`)[1]}));
-				}
-				if (error.response.status === 404) {
-					showErrorSnackbar(i18n.t('authorization.userDoesntExist', {email: error.response.data.split(`'`)[1]}));
-				}
-			});
+			).finally(() => {
+			hideFullScreenLoading();
+		})
 	}
 }
 
