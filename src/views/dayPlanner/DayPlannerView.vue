@@ -120,19 +120,23 @@
 				</div>
 
 				<!-- Event Blocks -->
+				<!-- Event Blocks -->
 				<div v-for="event in visibleEvents"
 				     :key="event.id"
-				     :ref="(el) => setEventRef(event.id, el)"
-				     :style="getEventStyle(event)"
+				     :style="{
+				       gridRow: `${event.gridRowStart} / span ${(event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1}`
+				     }"
 				     :class="[
 					       'event-block',
 					       `category-${event.category || 'default'}`,
 					       {
-					         'dragging': draggingEventId === event.id,
-					         'past-event': isEventPast(event),
-					         'focused': focusedEventId === event.id,
-					         'conflict': dragConflict && draggingEventId === event.id
-					       }
+							    'dragging': draggingEventId === event.id,
+							    'resizing': event.id === draggingEventId,
+							    'past-event': isEventPast(event),
+							    'focused': focusedEventId === event.id,
+							    'conflict': dragConflict && draggingEventId === event.id,
+							    'no-hover': isAnyEventBeingManipulated
+						  }
 					     ]"
 				     :data-event-id="event.id"
 				     :tabindex="0"
@@ -141,6 +145,13 @@
 				     @focus="focusedEventId = event.id"
 				     @blur="focusedEventId = null">
 
+					<div
+						class="resize-handle resize-handle-top"
+						:data-event-id="event.id"
+						@click.stop
+					>
+<!--						<v-icon size="x-small" color="white" opacity="0.5">arrows-up-down</v-icon>-->
+					</div>
 					<!-- Tooltip for event details -->
 					<v-tooltip
 						:text="`${event.title}\n${formatEventTime(event)}`"
@@ -164,12 +175,11 @@
 
 					<!-- Resize Handle -->
 					<div
-						:ref="(el) => setResizeRef(event.id, el)"
-						class="resize-handle"
+						class="resize-handle resize-handle-bottom"
 						:data-event-id="event.id"
 						@click.stop
 					>
-						<v-icon size="x-small" color="white">bars</v-icon>
+<!--						<v-icon size="x-small" color="white" opacity="0.5">arrows-up-down</v-icon>-->
 					</div>
 				</div>
 			</div>
@@ -296,7 +306,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted, onUnmounted, nextTick} from 'vue'
+import {ref, computed, onMounted, onUnmounted, nextTick, watch} from 'vue'
 import {
 	draggable,
 	dropTargetForElements,
@@ -306,17 +316,16 @@ import type {CleanupFn} from '@atlaskit/pragmatic-drag-and-drop/types';
 import type {Category, CreationPreview, DayEvent, EditingEvent, PrefillTimes, TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
 
 
-
 // Constants
 const currentDate = new Date()
 
 // Time range state
-const startTimeString = ref('1:00')
+const startTimeString = ref('7:00')
 const startTime = computed(() => {
 	const [hours, minutes] = startTimeString.value.split(':').map(Number)
 	return {hours: hours ?? 0, minutes: minutes ?? 0}
 })
-const allowedStep = (m:number) => m % 10 === 0
+const allowedStep = (m: number) => m % 10 === 0
 const spanHours = ref(24)
 
 const calendarEndHour = computed(() => startTime.value.hours + spanHours.value)
@@ -336,6 +345,10 @@ const midnightSlotIndex = computed(() => {
 	return Math.floor(minutesUntilMidnight / 10)
 })
 
+const isAnyEventBeingManipulated = computed(() => {
+	return draggingEventId.value !== null || resizingEventId.value !== null
+})
+
 // Categories for events
 const categories: Category[] = [
 	{label: 'Work', value: 'work', color: 'blue'},
@@ -345,7 +358,8 @@ const categories: Category[] = [
 	{label: 'Break', value: 'break', color: 'orange'}
 ]
 
-const test_today = new Date().toISOString().split('T')[0];
+const test_today = currentDate.toLocaleDateString('en-CA');
+// Sample events data with categories
 // Sample events data with categories
 const events = ref([
 	{
@@ -353,49 +367,59 @@ const events = ref([
 		title: 'Team Sync',
 		start: test_today + 'T09:10:00',
 		end: test_today + 'T09:50:00',
-		category: 'meeting'
+		category: 'meeting',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	},
 	{
 		id: 2,
 		title: 'Design Review',
 		start: test_today + 'T10:30:00',
 		end: test_today + 'T11:20:00',
-		category: 'work'
+		category: 'work',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	},
 	{
 		id: 3,
 		title: 'Lunch Break',
 		start: test_today + 'T12:00:00',
 		end: test_today + 'T13:00:00',
-		category: 'break'
+		category: 'break',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	},
 	{
 		id: 4,
 		title: 'Client Call',
 		start: test_today + 'T14:20:00',
 		end: test_today + 'T15:00:00',
-		category: 'urgent'
+		category: 'urgent',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	},
 	{
 		id: 5,
 		title: 'Code Review',
 		start: test_today + 'T15:30:00',
 		end: test_today + 'T16:10:00',
-		category: 'work'
+		category: 'work',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	},
 	{
 		id: 6,
 		title: 'TEST next day',
 		start: test_today + 'T23:30:00',
 		end: '2025-10-03T01:10:00',
-		category: 'work'
+		category: 'work',
+		gridRowStart: 0,
+		gridRowEnd: 0
 	}
 ] as DayEvent[])
 
 // Refs
 const eventsColumnRef = ref<HTMLElement | null>(null)
-const eventRefs = ref<Record<number, HTMLElement | null>>({})
-const resizeRefs = ref<Record<number, HTMLElement | null>>({})
 
 // Current time state
 const currentTime = ref(new Date())
@@ -431,18 +455,6 @@ const conflictSnackbar = ref(false)
 // Cleanup functions for drag and drop
 const cleanupFunctions = ref<CleanupFn[]>([])
 
-// Template ref setters
-const setEventRef = (id: number, el: any) => {
-	if (el) {
-		eventRefs.value[id] = el as HTMLElement
-	}
-}
-
-const setResizeRef = (id: number, el: any) => {
-	if (el) {
-		resizeRefs.value[id] = el as HTMLElement
-	}
-}
 
 // Computed properties
 const currentDateFormatted = computed(() => {
@@ -488,7 +500,6 @@ const currentTimeIndicatorStyle = computed(() => {
 	// Calculate the view start time
 	const viewStartDate = new Date(currentDate)
 	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
-	console.log(viewStartDate)
 
 	// Calculate minutes from view start to current time
 	const minutesFromViewStart = Math.round((currentTime.value.getTime() - viewStartDate.getTime()) / 60000)
@@ -602,25 +613,46 @@ const isEventPast = (event: DayEvent): boolean => {
 	return endDate < currentTime.value
 }
 
-const getEventStyle = (event: DayEvent) => {
-	const startDate = new Date(event.start)
-	const endDate = new Date(event.end)
+// const getEventStyle = (event: DayEvent) => {
+// 	const startDate = new Date(event.start)
+// 	const endDate = new Date(event.end)
+//
+// 	// Calculate the view start time
+// 	const viewStartDate = new Date(currentDate)
+// 	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
+//
+// 	// Calculate minutes from view start to event start
+// 	const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
+// 	const startRow = Math.floor(minutesFromViewStart / 10) + 1
+//
+// 	// Calculate event duration in minutes
+// 	const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
+// 	const span = Math.ceil(durationMinutes / 10)
+//
+// 	return {
+// 		gridRow: `${startRow} / span ${span}`,
+// 	}
+// }
 
-	// Calculate the view start time
-	const viewStartDate = new Date(currentDate)
-	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
 
-	// Calculate minutes from view start to event start
-	const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
-	const startRow = Math.floor(minutesFromViewStart / 10) + 1
+const initializeEventGridPositions = () => {
+	events.value.forEach(event => {
+		const startDate = new Date(event.start)
+		const endDate = new Date(event.end)
 
-	// Calculate event duration in minutes
-	const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
-	const span = Math.ceil(durationMinutes / 10)
+		const viewStartDate = new Date(currentDate)
+		viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
 
-	return {
-		gridRow: `${startRow} / span ${span}`,
-	}
+		const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
+		const startRow = Math.floor(minutesFromViewStart / 10) + 1
+
+		const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
+		const span = Math.ceil(durationMinutes / 10)
+		const endRow = startRow + span - 1
+
+		event.gridRowStart = startRow
+		event.gridRowEnd = endRow
+	})
 }
 
 // Check for event conflicts
@@ -663,9 +695,9 @@ const calculateTimeFromSlotIndex = (slotIndex: number): string => {
 	const totalMinutes = slotIndex * 10
 	const hours = Math.floor(totalMinutes / 60) + startTime.value.hours
 	const minutes = totalMinutes % 60
-	const today = '2025-09-22'
 
-	return `${today}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
+
+	return `${test_today}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
 }
 
 // Validate end time
@@ -714,7 +746,7 @@ const saveEvent = (): void => {
 	if (dialogMode.value === 'create') {
 		// Create new event
 		const newId = events.value.length > 0 ? Math.max(...events.value.map(e => e.id)) + 1 : 1
-		const today = '2025-09-22'
+		const today = test_today
 
 		const newEvent: DayEvent = {
 			id: newId,
@@ -755,10 +787,53 @@ const deleteEvent = (): void => {
 	dialog.value = false
 }
 
+// Resize state
+const resizingEventId = ref<number | null>(null)
+const resizeStartSlot = ref<number | null>(null)
+const resizePreview = ref<CreationPreview | null>(null)
+const resizeDirection = ref<'top' | 'bottom' | null>(null)
+
 // Click and drag to create new events
 const handleColumnMouseDown = (e: MouseEvent): void => {
-	// Only start creating if clicking on empty space (not on an event)
 	const target = e.target as HTMLElement
+
+	// Check if clicking on a resize handle
+	const resizeHandle = target.closest('.resize-handle') as HTMLElement
+	if (resizeHandle) {
+		const eventId = parseInt(resizeHandle.dataset.eventId || '0')
+		const event = events.value.find(ev => ev.id === eventId)
+		if (!event) return
+
+		// Start resizing
+		resizingEventId.value = eventId
+
+		// Determine resize direction
+		resizeDirection.value = resizeHandle.classList.contains('resize-handle-top') ? 'top' : 'bottom'
+
+		// Calculate the current start and end rows for the event
+		const startDate = new Date(event.start)
+		const viewStartDate = new Date(currentDate)
+		viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
+
+		const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
+		const startRow = Math.floor(minutesFromViewStart / 10) + 1
+
+		const endDate = new Date(event.end)
+		const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
+		const endRow = startRow + Math.ceil(durationMinutes / 10) - 1
+
+		resizeStartSlot.value = startRow - 1
+		resizePreview.value = {
+			startRow,
+			endRow
+		}
+
+		e.preventDefault()
+		e.stopPropagation()
+		return
+	}
+
+	// Only start creating if clicking on empty space (not on an event)
 	if (target.closest('.event-block')) return
 	if (target.closest('.current-time-indicator')) return
 
@@ -776,6 +851,64 @@ const handleColumnMouseDown = (e: MouseEvent): void => {
 }
 
 const handleColumnMouseMove = (e: MouseEvent): void => {
+	// Handle resizing
+	if (resizingEventId.value !== null && resizeStartSlot.value !== null && resizePreview.value && resizeDirection.value) {
+		const slotIndex = getSlotIndexFromPosition(e.clientY)
+		const event = events.value.find(ev => ev.id === resizingEventId.value)
+		if (!event) return
+
+		if (resizeDirection.value === 'bottom') {
+			// Resizing from bottom (changing end time)
+			const newEndRow = slotIndex + 1
+			const startRow = resizePreview.value.startRow
+
+			// Ensure minimum height of 1 slot (endRow must be >= startRow)
+			if (newEndRow >= startRow) {
+				resizePreview.value = {
+					startRow,
+					endRow: newEndRow
+				}
+
+				// Update the event's grid position
+				const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
+				const nextEvent = events.value[eventIndex + 1]
+				if (newEndRow >= nextEvent?.gridRowStart) {
+					return
+				}
+
+				event.gridRowEnd = newEndRow
+				// Update the end time
+				event.end = calculateTimeFromSlotIndex(newEndRow)
+			}
+		} else if (resizeDirection.value === 'top') {
+			// Resizing from top (changing start time)
+			const newStartRow = slotIndex + 1
+			const endRow = resizePreview.value.endRow
+
+			// Ensure minimum height of 1 slot (startRow must be <= endRow)
+			if (newStartRow <= endRow) {
+				resizePreview.value = {
+					startRow: newStartRow,
+					endRow
+				}
+
+				// Check for conflicts with previous event
+				const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
+				const prevEvent = events.value[eventIndex - 1]
+				if (prevEvent && newStartRow <= prevEvent.gridRowEnd) {
+					return
+				}
+
+				event.gridRowStart = newStartRow
+				// Update the start time
+				event.start = calculateTimeFromSlotIndex(newStartRow - 1)
+			}
+		}
+
+		return
+	}
+
+	// Handle creation
 	if (!isCreating.value || creationStart.value === null) return
 
 	const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -790,7 +923,18 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 	}
 }
 
+
 const handleColumnMouseUp = (_e: MouseEvent): void => {
+	// Handle resize end
+	if (resizingEventId.value !== null) {
+		resizingEventId.value = null
+		resizeStartSlot.value = null
+		resizePreview.value = null
+		resizeDirection.value = null
+		return
+	}
+
+	// Handle creation end
 	if (!isCreating.value || creationStart.value === null || creationEnd.value === null) return
 
 	const startSlot = Math.min(creationStart.value, creationEnd.value)
@@ -813,6 +957,14 @@ const handleColumnMouseUp = (_e: MouseEvent): void => {
 }
 
 const handleColumnMouseLeave = (): void => {
+	// Cancel resizing if mouse leaves
+	if (resizingEventId.value !== null) {
+		resizingEventId.value = null
+		resizeStartSlot.value = null
+		resizePreview.value = null
+		resizeDirection.value = null
+	}
+
 	if (isCreating.value) {
 		// Cancel creation if mouse leaves the column
 		isCreating.value = false
@@ -821,15 +973,14 @@ const handleColumnMouseLeave = (): void => {
 		creationPreview.value = null
 	}
 }
-
-// Update current time every minute
 const updateCurrentTime = () => {
 	currentTime.value = new Date()
 }
 
 // Lifecycle hooks
 onMounted(() => {
-
+	// Initialize grid positions for all events
+	initializeEventGridPositions()
 
 	// Update current time every minute
 	updateCurrentTime()
@@ -873,6 +1024,7 @@ onUnmounted(() => {
 	background: #f5f5f5;
 	position: relative;
 }
+
 .time-slot:not(:nth-of-type(3n+1)) {
 	margin-right: 2px;
 }
@@ -1009,6 +1161,7 @@ onUnmounted(() => {
 	top: 2px;
 	left: 2px;
 	right: 2px;
+	bottom: 1px;
 	cursor: move;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
@@ -1047,8 +1200,8 @@ onUnmounted(() => {
 	}
 }
 
-.event-block:hover {
-	transform: scaleY(1.06) scaleX(1.005);
+.event-block:not(.resizing):not(.dragging):not(.no-hover):hover {
+	transform: scaleY(1.06);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	z-index: 11;
 }
