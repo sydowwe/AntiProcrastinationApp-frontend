@@ -17,7 +17,7 @@ import PlannerView from '@/views/PlannerView.vue'
 import ConfirmEmailView from "@/views/user/ConfirmEmailView.vue";
 import {useUserStore} from "@/stores/userStore";
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
-import DayPlannerView from '@/views/DayPlannerView.vue';
+import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 
 
 const router = createRouter({
