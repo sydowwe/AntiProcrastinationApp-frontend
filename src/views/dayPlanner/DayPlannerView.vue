@@ -1,76 +1,130 @@
 <template>
-	<v-card class="w-100 d-flex flex-column">
-		<v-card-title class="d-flex justify-space-between align-center">
-			<span>Daily Schedule - {{ currentDateFormatted }}</span>
-			<div class="d-flex gap-2">
-				<v-chip size="small" variant="flat" color="primary">
-					{{ currentTimeFormatted }}
-				</v-chip>
-				<v-btn
-					color="primary"
-					@click="openCreateDialog()"
-					prepend-icon="mdi-plus"
-				>
-					Add New Event
-				</v-btn>
-			</div>
-		</v-card-title>
+<v-card class="w-100 d-flex flex-column">
+	<v-card-title class="d-flex justify-space-between align-center flex-wrap ga-2">
+		<span>Daily Schedule - {{ currentDateFormatted }}</span>
+		<div class="d-flex gap-2 align-center">
+			<v-menu :close-on-content-click="false">
+				<template v-slot:activator="{ props }">
+					<v-btn
+						v-bind="props"
+						variant="outlined"
+						prepend-icon="clock"
+					>
+						Start: {{ startTimeString.toString().padStart(2, '0') }}
+					</v-btn>
+				</template>
+				<template v-slot:default>
+					<v-time-picker
+						v-model="startTimeString"
+						format="24hr"
+						:allowed-minutes="allowedStep"
+						scrollable
+					></v-time-picker>
+				</template>
+			</v-menu>
 
-		<v-card-text class="flex-fill d-flex flex-column gap-4">
-			<div class="calendar-grid flex-fill">
-				<!-- Time Column -->
-				<div class="time-column">
+			<VNumberInput
+				v-model.number="spanHours"
+				label="Span (hours)"
+				control-variant="split"
+				:min="1"
+				:max="24"
+				style="width: 150px"
+				hideDetails
+			></VNumberInput>
+		</div>
+		<div class="d-flex gap-2 align-center flex-wrap">
+			<v-chip size="small" variant="flat" color="primary">
+				{{ currentTimeFormatted }}
+			</v-chip>
+			<v-btn
+				color="primary"
+				@click="openCreateDialog()"
+				prepend-icon="plus"
+			>
+				Add New Event
+			</v-btn>
+		</div>
+	</v-card-title>
+
+	<v-card-text class="flex-fill d-flex flex-column gap-4">
+		<div class="calendar-grid flex-fill">
+			<!-- Time Column -->
+			<div class="time-column" :style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }">
+				<div v-for="(slot, index) in timeSlots" :key="index"
+				     :class="['time-slot', { 'half-hour': isHalfHour(slot), 'full-hour': isFullHour(slot) }]">
+				</div>
+				<!-- Midnight divider -->
+				<div
+					v-if="midnightSlotIndex !== null"
+					class="midnight-divider"
+					:style="{ top: `${midnightSlotIndex * 22}px` }"
+				>
+					<span class="midnight-label">MIDNIGHT</span>
+				</div>
+				<!-- Time labels overlay -->
+				<div class="time-labels-overlay">
 					<div v-for="(slot, index) in timeSlots" :key="index"
-					     :class="['time-slot', { 'half-hour': isHalfHour(slot), 'full-hour': isFullHour(slot) }]">
-						<span v-if="isHalfHour(slot)" class="time-label">{{ formatTime(slot) }}</span>
+					     :class="['time-label-positioned', { 'half-hour-label': isHalfHour(slot) }]"
+					     :style="{ top: `${index * 22}px` }">
+						{{ formatTime(slot) }}
 					</div>
 				</div>
+			</div>
 
-				<!-- Events Column -->
-				<div
-					ref="eventsColumnRef"
-					class="events-column"
-					@mousedown="handleColumnMouseDown"
-					@mousemove="handleColumnMouseMove"
-					@mouseup="handleColumnMouseUp"
-					@mouseleave="handleColumnMouseLeave"
-				>
-					<!-- Time Slots with hover effect -->
-					<div v-for="(slot, index) in timeSlots" :key="index"
-					     :class="['event-slot', {
+			<!-- Events Column -->
+			<div
+				ref="eventsColumnRef"
+				class="events-column"
+				:style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }"
+				@mousedown="handleColumnMouseDown"
+				@mousemove="handleColumnMouseMove"
+				@mouseup="handleColumnMouseUp"
+				@mouseleave="handleColumnMouseLeave"
+			>
+				<!-- Time Slots with hover effect -->
+				<div v-for="(slot, index) in timeSlots" :key="index"
+				     :class="['event-slot', {
 					       'half-hour': isHalfHour(slot),
 					       'full-hour': isFullHour(slot),
 					       'hoverable': !isCreating && !draggingEventId
 					     }]"
-					     :data-slot-index="index">
-					</div>
+				     :data-slot-index="index">
+				</div>
 
-					<!-- Current Time Indicator -->
-					<div
-						v-if="showCurrentTimeIndicator"
-						class="current-time-indicator"
-						:style="currentTimeIndicatorStyle"
-					>
-						<div class="time-dot"></div>
-						<div class="time-line"></div>
-						<div class="time-label-current">{{ currentTimeFormatted }}</div>
-					</div>
+				<!-- Midnight divider -->
+				<div
+					v-if="midnightSlotIndex !== null"
+					class="midnight-divider-events"
+					:style="{ top: `${midnightSlotIndex * 22}px` }"
+				></div>
 
-					<!-- Creation Preview -->
-					<div
-						v-if="isCreating && creationPreview"
-						class="creation-preview"
-						:style="creationPreviewStyle"
-					>
-						<span class="preview-time">{{ creationPreviewTime }}</span>
-					</div>
+				<!-- Current Time Indicator -->
+				<div
+					v-if="showCurrentTimeIndicator"
+					class="current-time-indicator"
+					:style="currentTimeIndicatorStyle"
+				>
+					<div class="time-dot"></div>
+					<div class="time-line"></div>
+					<div class="time-label-current">{{ currentTimeFormatted }}</div>
+				</div>
 
-					<!-- Event Blocks -->
-					<div v-for="event in events"
-					     :key="event.id"
-					     :ref="(el) => setEventRef(event.id, el)"
-					     :style="getEventStyle(event)"
-					     :class="[
+				<!-- Creation Preview -->
+				<div
+					v-if="isCreating && creationPreview"
+					class="creation-preview"
+					:style="creationPreviewStyle"
+				>
+					<span class="preview-time">{{ creationPreviewTime }}</span>
+				</div>
+
+				<!-- Event Blocks -->
+				<div v-for="event in visibleEvents"
+				     :key="event.id"
+				     :ref="(el) => setEventRef(event.id, el)"
+				     :style="getEventStyle(event)"
+				     :class="[
 					       'event-block',
 					       `category-${event.category || 'default'}`,
 					       {
@@ -80,165 +134,165 @@
 					         'conflict': dragConflict && draggingEventId === event.id
 					       }
 					     ]"
-					     :data-event-id="event.id"
-					     :tabindex="0"
-					     @click="openEditDialog(event)"
-					     @keydown.enter="openEditDialog(event)"
-					     @focus="focusedEventId = event.id"
-					     @blur="focusedEventId = null">
+				     :data-event-id="event.id"
+				     :tabindex="0"
+				     @click="openEditDialog(event)"
+				     @keydown.enter="openEditDialog(event)"
+				     @focus="focusedEventId = event.id"
+				     @blur="focusedEventId = null">
 
-						<!-- Tooltip for event details -->
-						<v-tooltip
-							:text="`${event.title}\n${formatEventTime(event)}`"
-							location="top"
-						>
-							<template v-slot:activator="{ props }">
-								<div class="event-content" v-bind="props">
-									<div class="event-title">{{ event.title }}</div>
-									<div class="event-time">{{ formatEventTime(event) }}</div>
-									<v-chip
-										v-if="event.category"
-										size="x-small"
-										variant="flat"
-										class="event-category-chip"
-									>
-										{{ event.category }}
-									</v-chip>
-								</div>
-							</template>
-						</v-tooltip>
+					<!-- Tooltip for event details -->
+					<v-tooltip
+						:text="`${event.title}\n${formatEventTime(event)}`"
+						location="top"
+					>
+						<template v-slot:activator="{ props }">
+							<div class="event-content" v-bind="props">
+								<div class="event-title">{{ event.title }}</div>
+								<div class="event-time">{{ formatEventTime(event) }}</div>
+								<v-chip
+									v-if="event.category"
+									size="x-small"
+									variant="flat"
+									class="event-category-chip"
+								>
+									{{ event.category }}
+								</v-chip>
+							</div>
+						</template>
+					</v-tooltip>
 
-						<!-- Resize Handle -->
-						<div
-							:ref="(el) => setResizeRef(event.id, el)"
-							class="resize-handle"
-							:data-event-id="event.id"
-							@click.stop
-						>
-							<v-icon size="x-small" color="white">mdi-dots-horizontal</v-icon>
-						</div>
+					<!-- Resize Handle -->
+					<div
+						:ref="(el) => setResizeRef(event.id, el)"
+						class="resize-handle"
+						:data-event-id="event.id"
+						@click.stop
+					>
+						<v-icon size="x-small" color="white">bars</v-icon>
 					</div>
 				</div>
 			</div>
+		</div>
 
-			<!-- Legend -->
-			<div class="calendar-legend mt-4">
-				<v-chip
-					v-for="category in categories"
-					:key="category.value"
-					size="small"
-					:color="category.color"
-					variant="flat"
-					class="mr-2"
-				>
-					{{ category.label }}
-				</v-chip>
-			</div>
+		<!-- Legend -->
+		<div class="calendar-legend mt-4">
+			<v-chip
+				v-for="category in categories"
+				:key="category.value"
+				size="small"
+				:color="category.color"
+				variant="flat"
+				class="mr-2"
+			>
+				{{ category.label }}
+			</v-chip>
+		</div>
+	</v-card-text>
+</v-card>
+
+<!-- Event Dialog -->
+<v-dialog v-model="dialog" max-width="500px">
+	<v-card>
+		<v-card-title>
+			{{ dialogMode === 'create' ? 'Add New Event' : 'Edit Event' }}
+		</v-card-title>
+
+		<v-card-text>
+			<v-container>
+				<v-row>
+					<v-col cols="12">
+						<v-text-field
+							v-model="editingEvent.title"
+							label="Event Title"
+							variant="outlined"
+							density="comfortable"
+							:rules="[v => !!v || 'Title is required']"
+						></v-text-field>
+					</v-col>
+
+					<v-col cols="12">
+						<v-select
+							v-model="editingEvent.category"
+							label="Category"
+							:items="categories"
+							item-title="label"
+							item-value="value"
+							variant="outlined"
+							density="comfortable"
+						></v-select>
+					</v-col>
+
+					<v-col cols="12" sm="6">
+						<v-text-field
+							v-model="editingEvent.startTime"
+							label="Start Time"
+							type="time"
+							variant="outlined"
+							density="comfortable"
+							:readonly="dialogMode === 'edit'"
+						></v-text-field>
+					</v-col>
+
+					<v-col cols="12" sm="6">
+						<v-text-field
+							v-model="editingEvent.endTime"
+							label="End Time"
+							type="time"
+							variant="outlined"
+							density="comfortable"
+							:readonly="dialogMode === 'edit'"
+							:rules="[validateEndTime]"
+						></v-text-field>
+					</v-col>
+				</v-row>
+			</v-container>
 		</v-card-text>
-	</v-card>
 
-	<!-- Event Dialog -->
-	<v-dialog v-model="dialog" max-width="500px">
-		<v-card>
-			<v-card-title>
-				{{ dialogMode === 'create' ? 'Add New Event' : 'Edit Event' }}
-			</v-card-title>
-
-			<v-card-text>
-				<v-container>
-					<v-row>
-						<v-col cols="12">
-							<v-text-field
-								v-model="editingEvent.title"
-								label="Event Title"
-								variant="outlined"
-								density="comfortable"
-								:rules="[v => !!v || 'Title is required']"
-							></v-text-field>
-						</v-col>
-
-						<v-col cols="12">
-							<v-select
-								v-model="editingEvent.category"
-								label="Category"
-								:items="categories"
-								item-title="label"
-								item-value="value"
-								variant="outlined"
-								density="comfortable"
-							></v-select>
-						</v-col>
-
-						<v-col cols="12" sm="6">
-							<v-text-field
-								v-model="editingEvent.startTime"
-								label="Start Time"
-								type="time"
-								variant="outlined"
-								density="comfortable"
-								:readonly="dialogMode === 'edit'"
-							></v-text-field>
-						</v-col>
-
-						<v-col cols="12" sm="6">
-							<v-text-field
-								v-model="editingEvent.endTime"
-								label="End Time"
-								type="time"
-								variant="outlined"
-								density="comfortable"
-								:readonly="dialogMode === 'edit'"
-								:rules="[validateEndTime]"
-							></v-text-field>
-						</v-col>
-					</v-row>
-				</v-container>
-			</v-card-text>
-
-			<v-card-actions>
-				<v-btn
-					v-if="dialogMode === 'edit'"
-					color="error"
-					variant="text"
-					@click="deleteEvent"
-				>
-					Delete
-				</v-btn>
-				<v-spacer></v-spacer>
-				<v-btn
-					variant="text"
-					@click="dialog = false"
-				>
-					Cancel
-				</v-btn>
-				<v-btn
-					color="primary"
-					variant="flat"
-					@click="saveEvent"
-					:disabled="!isFormValid"
-				>
-					Save
-				</v-btn>
-			</v-card-actions>
-		</v-card>
-	</v-dialog>
-
-	<!-- Conflict Snackbar -->
-	<v-snackbar
-		v-model="conflictSnackbar"
-		color="error"
-		:timeout="3000"
-	>
-		Event conflicts with existing schedule!
-		<template v-slot:actions>
+		<v-card-actions>
+			<v-btn
+				v-if="dialogMode === 'edit'"
+				color="error"
+				variant="text"
+				@click="deleteEvent"
+			>
+				Delete
+			</v-btn>
+			<v-spacer></v-spacer>
 			<v-btn
 				variant="text"
-				@click="conflictSnackbar = false"
+				@click="dialog = false"
 			>
-				Close
+				Cancel
 			</v-btn>
-		</template>
-	</v-snackbar>
+			<v-btn
+				color="primary"
+				variant="flat"
+				@click="saveEvent"
+				:disabled="!isFormValid"
+			>
+				Save
+			</v-btn>
+		</v-card-actions>
+	</v-card>
+</v-dialog>
+
+<!-- Conflict Snackbar -->
+<v-snackbar
+	v-model="conflictSnackbar"
+	color="error"
+	:timeout="3000"
+>
+	Event conflicts with existing schedule!
+	<template v-slot:actions>
+		<v-btn
+			variant="text"
+			@click="conflictSnackbar = false"
+		>
+			Close
+		</v-btn>
+	</template>
+</v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -249,49 +303,38 @@ import {
 	monitorForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import type {CleanupFn} from '@atlaskit/pragmatic-drag-and-drop/types';
+import type {Category, CreationPreview, DayEvent, EditingEvent, PrefillTimes, TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
 
-// Type definitions
-interface TimeSlot {
-	hour: number
-	minute: number
-}
 
-interface Category {
-	label: string
-	value: string
-	color: string
-}
-
-interface Event {
-	id: number
-	title: string
-	start: string
-	end: string
-	category?: string
-}
-
-interface EditingEvent {
-	id: number | null
-	title: string
-	startTime: string
-	endTime: string
-	category: string
-}
-
-interface CreationPreview {
-	startRow: number
-	endRow: number
-}
-
-interface PrefillTimes {
-	startTime: string
-	endTime: string
-}
 
 // Constants
-const calendarStartHour = 8
-const calendarEndHour = 18
-const currentDate = new Date('2025-09-22')
+const currentDate = new Date()
+
+// Time range state
+const startTimeString = ref('1:00')
+const startTime = computed(() => {
+	const [hours, minutes] = startTimeString.value.split(':').map(Number)
+	return {hours: hours ?? 0, minutes: minutes ?? 0}
+})
+const allowedStep = (m:number) => m % 10 === 0
+const spanHours = ref(24)
+
+const calendarEndHour = computed(() => startTime.value.hours + spanHours.value)
+
+// Calculate total number of grid rows (slots)
+const totalGridRows = computed(() => spanHours.value * 6) // 6 slots per hour (10 min each)
+
+// Detect which slot index represents midnight (00:00)
+const midnightSlotIndex = computed(() => {
+	if (startTime.value.hours === 0) return null // Already starts at midnight
+
+	const hoursUntilMidnight = 24 - startTime.value.hours
+	if (hoursUntilMidnight >= spanHours.value) return null // Doesn't reach midnight
+
+	// Calculate slot index for midnight
+	const minutesUntilMidnight = hoursUntilMidnight * 60 - startTime.value.minutes
+	return Math.floor(minutesUntilMidnight / 10)
+})
 
 // Categories for events
 const categories: Category[] = [
@@ -302,44 +345,52 @@ const categories: Category[] = [
 	{label: 'Break', value: 'break', color: 'orange'}
 ]
 
+const test_today = new Date().toISOString().split('T')[0];
 // Sample events data with categories
 const events = ref([
 	{
 		id: 1,
 		title: 'Team Sync',
-		start: '2025-09-22T09:10:00',
-		end: '2025-09-22T09:50:00',
+		start: test_today + 'T09:10:00',
+		end: test_today + 'T09:50:00',
 		category: 'meeting'
 	},
 	{
 		id: 2,
 		title: 'Design Review',
-		start: '2025-09-22T10:30:00',
-		end: '2025-09-22T11:20:00',
+		start: test_today + 'T10:30:00',
+		end: test_today + 'T11:20:00',
 		category: 'work'
 	},
 	{
 		id: 3,
 		title: 'Lunch Break',
-		start: '2025-09-22T12:00:00',
-		end: '2025-09-22T13:00:00',
+		start: test_today + 'T12:00:00',
+		end: test_today + 'T13:00:00',
 		category: 'break'
 	},
 	{
 		id: 4,
 		title: 'Client Call',
-		start: '2025-09-22T14:20:00',
-		end: '2025-09-22T15:00:00',
+		start: test_today + 'T14:20:00',
+		end: test_today + 'T15:00:00',
 		category: 'urgent'
 	},
 	{
 		id: 5,
 		title: 'Code Review',
-		start: '2025-09-22T15:30:00',
-		end: '2025-09-22T16:10:00',
+		start: test_today + 'T15:30:00',
+		end: test_today + 'T16:10:00',
+		category: 'work'
+	},
+	{
+		id: 6,
+		title: 'TEST next day',
+		start: test_today + 'T23:30:00',
+		end: '2025-10-03T01:10:00',
 		category: 'work'
 	}
-])
+] as DayEvent[])
 
 // Refs
 const eventsColumnRef = ref<HTMLElement | null>(null)
@@ -365,7 +416,7 @@ const editingEvent = ref<EditingEvent>({
 const draggingEventId = ref<number | null>(null)
 const isResizing = ref(false)
 const dragConflict = ref(false)
-const originalEventState = ref<Event | null>(null)
+const originalEventState = ref<DayEvent | null>(null)
 const focusedEventId = ref<number | null>(null)
 
 // Creation state
@@ -412,18 +463,36 @@ const currentTimeFormatted = computed(() => {
 })
 
 const showCurrentTimeIndicator = computed(() => {
-	const hours = currentTime.value.getHours()
-	return hours >= calendarStartHour && hours < calendarEndHour
+	// Calculate the view start and end times
+	const viewStartDate = new Date(currentDate)
+	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
+
+	const viewEndDate = new Date(currentDate)
+	const endHour = calendarEndHour.value
+
+	// If end hour is >= 24, it spans to the next day
+	if (endHour >= 24) {
+		viewEndDate.setDate(viewEndDate.getDate() + Math.floor(endHour / 24))
+		viewEndDate.setHours(endHour % 24, startTime.value.minutes, 0, 0)
+	} else {
+		viewEndDate.setHours(endHour, startTime.value.minutes, 0, 0)
+	}
+
+	// Check if current time is within the visible range
+	return currentTime.value >= viewStartDate && currentTime.value < viewEndDate
 })
 
 const currentTimeIndicatorStyle = computed(() => {
-	const hours = currentTime.value.getHours()
-	const minutes = currentTime.value.getMinutes()
-
 	if (!showCurrentTimeIndicator.value) return {}
 
-	const totalMinutes = (hours - calendarStartHour) * 60 + minutes
-	const slotIndex = totalMinutes / 10
+	// Calculate the view start time
+	const viewStartDate = new Date(currentDate)
+	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
+	console.log(viewStartDate)
+
+	// Calculate minutes from view start to current time
+	const minutesFromViewStart = Math.round((currentTime.value.getTime() - viewStartDate.getTime()) / 60000)
+	const slotIndex = Math.round(minutesFromViewStart / 10)
 	const gridRow = slotIndex + 1
 
 	return {
@@ -434,9 +503,9 @@ const currentTimeIndicatorStyle = computed(() => {
 // Generate time slots for the calendar
 const timeSlots = computed<TimeSlot[]>(() => {
 	const slots: TimeSlot[] = []
-	for (let hour = calendarStartHour; hour < calendarEndHour; hour++) {
+	for (let hour = startTime.value.hours; hour < calendarEndHour.value; hour++) {
 		for (let minute = 0; minute < 60; minute += 10) {
-			slots.push({hour, minute})
+			slots.push({hour: hour % 24, minute})
 		}
 	}
 	return slots
@@ -465,6 +534,32 @@ const creationPreviewTime = computed(() => {
 	return `${startTime} - ${endTime}`
 })
 
+// Filter events that fall within the visible time range
+const visibleEvents = computed(() => {
+	return events.value.filter(event => {
+		const eventStart = new Date(event.start)
+		const eventEnd = new Date(event.end)
+
+		// Calculate the absolute start and end times of the visible range
+		const viewStartDate = new Date(currentDate)
+		viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
+
+		const viewEndDate = new Date(currentDate)
+		const endHour = calendarEndHour.value
+
+		// If end hour is >= 24, it spans to the next day
+		if (endHour >= 24) {
+			viewEndDate.setDate(viewEndDate.getDate() + Math.floor(endHour / 24))
+			viewEndDate.setHours(endHour % 24, startTime.value.minutes, 0, 0)
+		} else {
+			viewEndDate.setHours(endHour, startTime.value.minutes, 0, 0)
+		}
+
+		// Check if event overlaps with visible range
+		return eventStart < viewEndDate && eventEnd > viewStartDate
+	})
+})
+
 // Form validation
 const isFormValid = computed(() => {
 	return editingEvent.value.title &&
@@ -488,7 +583,7 @@ const formatTime = (slot: TimeSlot): string => {
 	return `${hour}:${minute}`
 }
 
-const formatEventTime = (event: Event): string => {
+const formatEventTime = (event: DayEvent): string => {
 	const startTime = new Date(event.start).toLocaleTimeString('en-US', {
 		hour: '2-digit',
 		minute: '2-digit',
@@ -502,35 +597,29 @@ const formatEventTime = (event: Event): string => {
 	return `${startTime} - ${endTime}`
 }
 
-const isEventPast = (event: Event): boolean => {
+const isEventPast = (event: DayEvent): boolean => {
 	const endDate = new Date(event.end)
-	// For demo purposes, using a fixed "current" time
-	const demoCurrentTime = new Date('2025-09-22T14:00:00')
-	return endDate < demoCurrentTime
+	return endDate < currentTime.value
 }
 
-const getEventStyle = (event: Event) => {
+const getEventStyle = (event: DayEvent) => {
 	const startDate = new Date(event.start)
 	const endDate = new Date(event.end)
 
-	const startHour = startDate.getHours()
-	const startMinute = startDate.getMinutes()
-	const endHour = endDate.getHours()
-	const endMinute = endDate.getMinutes()
+	// Calculate the view start time
+	const viewStartDate = new Date(currentDate)
+	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
 
-	// Calculate start row (grid line)
-	const startTotalMinutes = (startHour - calendarStartHour) * 60 + startMinute
-	const startRow = Math.floor(startTotalMinutes / 10) + 1
+	// Calculate minutes from view start to event start
+	const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
+	const startRow = Math.floor(minutesFromViewStart / 10) + 1
 
-	// Calculate end row (grid line)
-	const endTotalMinutes = (endHour - calendarStartHour) * 60 + endMinute
-	const endRow = Math.ceil(endTotalMinutes / 10) + 1
-
-	// Calculate span
-	const span = endRow - startRow
+	// Calculate event duration in minutes
+	const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
+	const span = Math.ceil(durationMinutes / 10)
 
 	return {
-		gridRow: `${startRow} / span ${span}`
+		gridRow: `${startRow} / span ${span}`,
 	}
 }
 
@@ -552,7 +641,7 @@ const checkEventConflict = (eventId: number, newStart: string, newEnd: string): 
 // Convert slot index to time string
 const slotIndexToTime = (index: number): string => {
 	const totalMinutes = index * 10
-	const hours = Math.floor(totalMinutes / 60) + calendarStartHour
+	const hours = Math.floor(totalMinutes / 60) + startTime.value.hours
 	const minutes = totalMinutes % 60
 
 	return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
@@ -572,7 +661,7 @@ const getSlotIndexFromPosition = (y: number): number => {
 // Calculate new time based on slot index
 const calculateTimeFromSlotIndex = (slotIndex: number): string => {
 	const totalMinutes = slotIndex * 10
-	const hours = Math.floor(totalMinutes / 60) + calendarStartHour
+	const hours = Math.floor(totalMinutes / 60) + startTime.value.hours
 	const minutes = totalMinutes % 60
 	const today = '2025-09-22'
 
@@ -601,7 +690,7 @@ const openCreateDialog = (prefillTimes: PrefillTimes | null = null): void => {
 	dialog.value = true
 }
 
-const openEditDialog = (event: Event): void => {
+const openEditDialog = (event: DayEvent): void => {
 	// Don't open dialog if dragging
 	if (draggingEventId.value) return
 
@@ -627,7 +716,7 @@ const saveEvent = (): void => {
 		const newId = events.value.length > 0 ? Math.max(...events.value.map(e => e.id)) + 1 : 1
 		const today = '2025-09-22'
 
-		const newEvent: Event = {
+		const newEvent: DayEvent = {
 			id: newId,
 			title: editingEvent.value.title || 'New Event',
 			start: `${today}T${editingEvent.value.startTime}:00`,
@@ -643,10 +732,7 @@ const saveEvent = (): void => {
 
 		events.value.push(newEvent)
 
-		// Register drag and drop for the new event after DOM update
-		nextTick(() => {
-			setupDragAndDropForEvent(newId)
-		})
+
 	} else {
 		// Edit existing event
 		const eventIndex = events.value.findIndex(e => e.id === editingEvent.value.id)
@@ -736,208 +822,6 @@ const handleColumnMouseLeave = (): void => {
 	}
 }
 
-// Setup drag and drop for a specific event
-const setupDragAndDropForEvent = (eventId: number): void => {
-	const eventEl = eventRefs.value[eventId]
-	const resizeEl = resizeRefs.value[eventId]
-
-	if (!eventEl) return
-
-	// Make event block draggable for rescheduling
-	const eventCleanup = draggable({
-		element: eventEl,
-		getInitialData: () => {
-			const event = events.value.find(e => e.id === eventId)
-			if (!event) return {}
-
-			// Store original state for rollback
-			originalEventState.value = {...event}
-
-			const duration = (new Date(event.end).getTime() - new Date(event.start).getTime()) / (1000 * 60) // duration in minutes
-
-			return {
-				type: 'event-move',
-				eventId: eventId,
-				duration: duration
-			}
-		},
-		onDragStart: () => {
-			draggingEventId.value = eventId
-			dragConflict.value = false
-		},
-		onDrop: () => {
-			// If there's a conflict, rollback
-			if (dragConflict.value && originalEventState.value) {
-				const event = events.value.find(e => e.id === eventId)
-				if (event) {
-					event.start = originalEventState.value.start
-					event.end = originalEventState.value.end
-					conflictSnackbar.value = true
-				}
-			}
-
-			draggingEventId.value = null
-			dragConflict.value = false
-			originalEventState.value = null
-		}
-	})
-
-	// Make resize handle draggable for resizing
-	if (resizeEl) {
-		const resizeCleanup = draggable({
-			element: resizeEl,
-			getInitialData: () => {
-				const event = events.value.find(e => e.id === eventId)
-				if (!event) return {}
-
-				// Store original state for rollback
-				originalEventState.value = {...event}
-
-				return {
-					type: 'event-resize',
-					eventId: eventId,
-					startTime: event.start
-				}
-			},
-			onDragStart: () => {
-				isResizing.value = true
-				draggingEventId.value = eventId
-				dragConflict.value = false
-			},
-			onDrop: () => {
-				// If there's a conflict, rollback
-				if (dragConflict.value && originalEventState.value) {
-					const event = events.value.find(e => e.id === eventId)
-					if (event) {
-						event.end = originalEventState.value.end
-						conflictSnackbar.value = true
-					}
-				}
-
-				isResizing.value = false
-				draggingEventId.value = null
-				dragConflict.value = false
-				originalEventState.value = null
-			}
-		})
-
-		cleanupFunctions.value.push(resizeCleanup)
-	}
-
-	cleanupFunctions.value.push(eventCleanup)
-}
-
-// Setup drag and drop
-const setupDragAndDrop = (): void => {
-	if (!eventsColumnRef.value) return
-
-	// Register events column as drop target
-	const dropCleanup = dropTargetForElements({
-		element: eventsColumnRef.value,
-		getData: ({input, element}) => {
-			const slotIndex = getSlotIndexFromPosition(input.clientY)
-
-			return {
-				slotIndex
-			}
-		},
-		canDrop: ({source}) => {
-			const sourceData = source.data as any
-			return sourceData.type === 'event-move' || sourceData.type === 'event-resize'
-		},
-		onDrag: ({source, location}) => {
-			const sourceData = source.data as any
-			const dropTarget = location.current.dropTargets[0]
-			if (!dropTarget) return
-
-			const dropData = dropTarget.data as any
-			const slotIndex = dropData.slotIndex
-			const eventId = sourceData.eventId as number
-			const event = events.value.find(e => e.id === eventId)
-
-			if (!event) return
-
-			let newStart: string, newEnd: string
-
-			if (sourceData.type === 'event-move') {
-				const duration = sourceData.duration as number
-				newStart = calculateTimeFromSlotIndex(slotIndex)
-				const newStartDate = new Date(newStart)
-				const newEndDate = new Date(newStartDate.getTime() + duration * 60 * 1000)
-				newEnd = newEndDate.toISOString().replace('.000Z', '').replace('Z', '')
-			} else if (sourceData.type === 'event-resize') {
-				const startDate = new Date(event.start)
-				const startSlotIndex = ((startDate.getHours() - calendarStartHour) * 60 + startDate.getMinutes()) / 10
-				const endSlotIndex = Math.max(startSlotIndex + 1, slotIndex + 1)
-				newStart = event.start
-				newEnd = calculateTimeFromSlotIndex(endSlotIndex)
-			} else {
-				return
-			}
-
-			// Check for conflicts
-			dragConflict.value = checkEventConflict(eventId, newStart, newEnd)
-		}
-	})
-
-	// Monitor for drop events
-	const monitorCleanup = monitorForElements({
-		onDrop: ({source, location}) => {
-			const sourceData = source.data as any
-			const dropTarget = location.current.dropTargets[0]
-			if (!dropTarget) return
-
-			const dropData = dropTarget.data as any
-			const slotIndex = dropData.slotIndex
-
-			if (sourceData.type === 'event-move') {
-				// Handle event rescheduling
-				const eventId = sourceData.eventId as number
-				const duration = sourceData.duration as number
-				const event = events.value.find(e => e.id === eventId)
-
-				if (event) {
-					const newStart = calculateTimeFromSlotIndex(slotIndex)
-					const newStartDate = new Date(newStart)
-					const newEndDate = new Date(newStartDate.getTime() + duration * 60 * 1000)
-					const newEnd = newEndDate.toISOString().replace('.000Z', '').replace('Z', '')
-
-					// Only update if no conflict
-					if (!checkEventConflict(eventId, newStart, newEnd)) {
-						event.start = newStart
-						event.end = newEnd
-					}
-				}
-			} else if (sourceData.type === 'event-resize') {
-				// Handle event resizing
-				const eventId = source.data.eventId
-				const event = events.value.find(e => e.id === eventId)
-
-				if (event) {
-					const startDate = new Date(event.start)
-					const startSlotIndex = ((startDate.getHours() - calendarStartHour) * 60 + startDate.getMinutes()) / 10
-
-					// Calculate new end time based on drop position
-					const endSlotIndex = Math.max(startSlotIndex + 1, slotIndex + 1)
-					const newEnd = calculateTimeFromSlotIndex(endSlotIndex)
-
-					// Only update if no conflict
-					if (!checkEventConflict(eventId, event.start, newEnd)) {
-						event.end = newEnd
-					}
-				}
-			}
-		}
-	})
-
-	cleanupFunctions.value.push(dropCleanup, monitorCleanup)
-
-	// Setup drag and drop for all existing events
-	events.value.forEach(event => {
-		setupDragAndDropForEvent(event.id)
-	})
-}
-
 // Update current time every minute
 const updateCurrentTime = () => {
 	currentTime.value = new Date()
@@ -945,10 +829,7 @@ const updateCurrentTime = () => {
 
 // Lifecycle hooks
 onMounted(() => {
-	// Setup drag and drop
-	nextTick(() => {
-		setupDragAndDrop()
-	})
+
 
 	// Update current time every minute
 	updateCurrentTime()
@@ -968,71 +849,118 @@ onUnmounted(() => {
 
 <style scoped>
 .calendar-grid {
+	padding: 10px 0;
+	background-color: #f5f5f5;
 	display: grid;
 	grid-template-columns: 80px 1fr;
 	gap: 0;
 	height: 600px;
 	overflow-y: auto;
 	border: 1px solid #e0e0e0;
-	background: white;
-	position: relative;
 }
 
-.time-column {
-	display: grid;
-	grid-template-rows: repeat(60, 20px);
-	background: #f5f5f5;
-	border-right: 1px solid #e0e0e0;
-}
 
 .events-column {
 	display: grid;
-	grid-template-rows: repeat(60, 20px);
 	position: relative;
 	background: white;
 	user-select: none;
 	cursor: crosshair;
 }
 
-.time-slot {
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	padding-right: 8px;
-	font-size: 12px;
-	color: #666;
+.time-column {
+	display: grid;
+	background: #f5f5f5;
 	position: relative;
 }
-
-.time-slot.half-hour {
-	border-top: 1px solid #e0e0e0;
+.time-slot:not(:nth-of-type(3n+1)) {
+	margin-right: 2px;
 }
 
-.time-slot.full-hour {
-	border-top: 1px solid #d0d0d0;
+.time-labels-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	pointer-events: none;
+}
+
+.time-label-positioned {
+	position: absolute;
+	right: 20px;
+	transform: translateY(-50%);
+	color: #333;
+	font-weight: 400;
+	background: #f5f5f5;
+	padding: 0 1px;
+	font-size: 13px;
+}
+
+.time-label-positioned.half-hour-label {
+	color: #333;
+	font-weight: 500;
+	font-size: 15px;
+}
+
+.midnight-divider {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2px 8px rgba(156, 39, 176, 0.4);
+}
+
+.midnight-label {
+	position: absolute;
+	top: -10px;
+	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	color: white;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.midnight-divider-events {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	z-index: 20;
+	pointer-events: none;
+	box-shadow: 0 2px 8px rgba(156, 39, 176, 0.4);
+}
+
+.time-slot {
+	border-top: 2px dotted rgba(51, 51, 51, 0.5);
+}
+
+.time-slot:nth-of-type(3n+1) {
+	border-top-style: solid;
 }
 
 .event-slot {
-	border-top: 1px dotted #f0f0f0;
-	position: relative;
+	border-top: 2px dotted rgba(51, 51, 51, 0.5);
 	transition: background-color 0.2s ease;
 }
 
-.event-slot.half-hour {
-	border-top: 1px solid #e0e0e0;
+.event-slot:nth-of-type(3n+1) {
+	border-top-style: solid;
 }
 
-.event-slot.full-hour {
-	border-top: 1px solid #d0d0d0;
-}
 
 .event-slot.hoverable:hover {
 	background-color: rgba(0, 0, 0, 0.02);
 	cursor: cell;
-}
-
-.time-label {
-	font-weight: 500;
 }
 
 /* Current Time Indicator */
@@ -1078,10 +1006,9 @@ onUnmounted(() => {
 /* Event Block Styles */
 .event-block {
 	position: absolute;
-	left: 4px;
-	right: 4px;
-	color: white;
-	border-radius: 6px;
+	top: 2px;
+	left: 2px;
+	right: 2px;
 	cursor: move;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
@@ -1090,8 +1017,6 @@ onUnmounted(() => {
 	overflow: hidden;
 	z-index: 10;
 	user-select: none;
-	min-height: 20px;
-	border: 2px solid transparent;
 }
 
 .event-block:focus {
@@ -1123,7 +1048,7 @@ onUnmounted(() => {
 }
 
 .event-block:hover {
-	transform: translateY(-1px);
+	transform: scaleY(1.06) scaleX(1.005);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	z-index: 11;
 }
@@ -1187,8 +1112,10 @@ onUnmounted(() => {
 
 .creation-preview {
 	position: absolute;
-	left: 4px;
-	right: 4px;
+	top: 2px;
+	bottom: 1px;
+	left: 2px;
+	right: 2px;
 	background: rgba(66, 153, 225, 0.2);
 	border: 2px dashed #4299e1;
 	border-radius: 6px;
@@ -1197,7 +1124,6 @@ onUnmounted(() => {
 	justify-content: center;
 	z-index: 5;
 	pointer-events: none;
-	min-height: 20px;
 }
 
 .preview-time {
