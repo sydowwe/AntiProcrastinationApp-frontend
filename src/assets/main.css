@@ -1,9 +1,6 @@
 @import './base.css';
 
-:root {
-  --v-theme-primary: #1D4ED8;
-  --v-theme-surface: #191920;
-}
+
 
 
 .dividerTextCenter {
