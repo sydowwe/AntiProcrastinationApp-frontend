@@ -37,13 +37,13 @@
 			<v-chip size="small" variant="flat" color="primary">
 				{{ currentTimeFormatted }}
 			</v-chip>
-			<v-btn
-				color="primary"
-				@click="openCreateDialog()"
-				prepend-icon="plus"
-			>
-				Add New Event
-			</v-btn>
+<!--			<v-btn-->
+<!--				color="primary"-->
+<!--				@click="openCreateDialogEmpty"-->
+<!--				prepend-icon="plus"-->
+<!--			>-->
+<!--				Add New Event-->
+<!--			</v-btn>-->
 		</div>
 	</v-card-title>
 
@@ -62,6 +62,15 @@
 				>
 					<span class="midnight-label">MIDNIGHT</span>
 				</div>
+
+				<div
+					v-if="showCurrentTimeIndicator"
+					class="current-time-divider"
+					:style="{ top: `${(parseInt(currentTimeIndicatorStyle.gridRow?.toString().split(' ')[0] ?? '1') - 1) * 22}px` }"
+				>
+					<span class="current-time-label">{{ currentTimeFormatted }}</span>
+				</div>
+
 				<!-- Time labels overlay -->
 				<div class="time-labels-overlay">
 					<div v-for="(slot, index) in timeSlots" :key="index"
@@ -99,16 +108,11 @@
 					:style="{ top: `${midnightSlotIndex * 22}px` }"
 				></div>
 
-				<!-- Current Time Indicator -->
 				<div
 					v-if="showCurrentTimeIndicator"
 					class="current-time-indicator"
 					:style="currentTimeIndicatorStyle"
-				>
-					<div class="time-dot"></div>
-					<div class="time-line"></div>
-					<div class="time-label-current">{{ currentTimeFormatted }}</div>
-				</div>
+				></div>
 
 				<!-- Creation Preview -->
 				<div
@@ -119,7 +123,6 @@
 					<span class="preview-time">{{ creationPreviewTime }}</span>
 				</div>
 
-				<!-- Event Blocks -->
 				<!-- Event Blocks -->
 				<div v-for="event in visibleEvents"
 				     :key="event.id"
@@ -235,7 +238,7 @@
 
 					<v-col cols="12" sm="6">
 						<v-text-field
-							v-model="editingEvent.startTime"
+							v-model="editingEvent.start"
 							label="Start Time"
 							type="time"
 							variant="outlined"
@@ -246,7 +249,7 @@
 
 					<v-col cols="12" sm="6">
 						<v-text-field
-							v-model="editingEvent.endTime"
+							v-model="editingEvent.end"
 							label="End Time"
 							type="time"
 							variant="outlined"
@@ -306,14 +309,9 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted, onUnmounted, nextTick, watch} from 'vue'
-import {
-	draggable,
-	dropTargetForElements,
-	monitorForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import {ref, computed, onMounted, onUnmounted} from 'vue'
 import type {CleanupFn} from '@atlaskit/pragmatic-drag-and-drop/types';
-import type {Category, CreationPreview, DayEvent, EditingEvent, PrefillTimes, TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
+import {type Category, type CreationPreview, EditedMyEvent, type MyEvent, type PrefillDialog, type TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
 
 
 // Constants
@@ -416,7 +414,7 @@ const events = ref([
 		gridRowStart: 0,
 		gridRowEnd: 0
 	}
-] as DayEvent[])
+] as MyEvent[])
 
 // Refs
 const eventsColumnRef = ref<HTMLElement | null>(null)
@@ -428,19 +426,12 @@ const currentTimeInterval = ref<ReturnType<typeof setInterval> | null>(null)
 // Dialog state
 const dialog = ref(false)
 const dialogMode = ref<'create' | 'edit'>('create')
-const editingEvent = ref<EditingEvent>({
-	id: null,
-	title: '',
-	startTime: '',
-	endTime: '',
-	category: 'work'
-})
+const editingEvent = ref<EditedMyEvent>(new EditedMyEvent())
 
 // Drag state
 const draggingEventId = ref<number | null>(null)
-const isResizing = ref(false)
 const dragConflict = ref(false)
-const originalEventState = ref<DayEvent | null>(null)
+const originalEventState = ref<MyEvent | null>(null)
 const focusedEventId = ref<number | null>(null)
 
 // Creation state
@@ -574,9 +565,9 @@ const visibleEvents = computed(() => {
 // Form validation
 const isFormValid = computed(() => {
 	return editingEvent.value.title &&
-		editingEvent.value.startTime &&
-		editingEvent.value.endTime &&
-		editingEvent.value.startTime < editingEvent.value.endTime
+		editingEvent.value.start &&
+		editingEvent.value.end &&
+		editingEvent.value.start < editingEvent.value.end
 })
 
 // Helper functions
@@ -594,7 +585,7 @@ const formatTime = (slot: TimeSlot): string => {
 	return `${hour}:${minute}`
 }
 
-const formatEventTime = (event: DayEvent): string => {
+const formatEventTime = (event: MyEvent): string => {
 	const startTime = new Date(event.start).toLocaleTimeString('en-US', {
 		hour: '2-digit',
 		minute: '2-digit',
@@ -608,32 +599,10 @@ const formatEventTime = (event: DayEvent): string => {
 	return `${startTime} - ${endTime}`
 }
 
-const isEventPast = (event: DayEvent): boolean => {
+const isEventPast = (event: MyEvent): boolean => {
 	const endDate = new Date(event.end)
 	return endDate < currentTime.value
 }
-
-// const getEventStyle = (event: DayEvent) => {
-// 	const startDate = new Date(event.start)
-// 	const endDate = new Date(event.end)
-//
-// 	// Calculate the view start time
-// 	const viewStartDate = new Date(currentDate)
-// 	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
-//
-// 	// Calculate minutes from view start to event start
-// 	const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
-// 	const startRow = Math.floor(minutesFromViewStart / 10) + 1
-//
-// 	// Calculate event duration in minutes
-// 	const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
-// 	const span = Math.ceil(durationMinutes / 10)
-//
-// 	return {
-// 		gridRow: `${startRow} / span ${span}`,
-// 	}
-// }
-
 
 const initializeEventGridPositions = () => {
 	events.value.forEach(event => {
@@ -703,26 +672,34 @@ const calculateTimeFromSlotIndex = (slotIndex: number): string => {
 // Validate end time
 const validateEndTime = (value: string): string | boolean => {
 	if (!value) return 'End time is required'
-	if (editingEvent.value.startTime && value <= editingEvent.value.startTime) {
+	if (editingEvent.value.start && value <= editingEvent.value.start) {
 		return 'End time must be after start time'
 	}
 	return true
 }
 
-// Dialog functions
-const openCreateDialog = (prefillTimes: PrefillTimes | null = null): void => {
+const openCreateDialogEmpty = (): void => {
 	dialogMode.value = 'create'
-	editingEvent.value = {
-		id: null,
-		title: '',
-		startTime: prefillTimes?.startTime || '',
-		endTime: prefillTimes?.endTime || '',
-		category: 'work'
-	}
+	editingEvent.value = new EditedMyEvent();
 	dialog.value = true
 }
 
-const openEditDialog = (event: DayEvent): void => {
+// Dialog functions
+const openCreateDialog = (prefillTimes: PrefillDialog): void => {
+	dialogMode.value = 'create'
+	editingEvent.value = new EditedMyEvent(
+		undefined,
+		undefined,
+		prefillTimes.startTime,
+		prefillTimes.endTime,
+		'work',
+		prefillTimes.gridRowStart,
+		prefillTimes.gridRowEnd,
+	)
+	dialog.value = true
+}
+
+const openEditDialog = (event: MyEvent): void => {
 	// Don't open dialog if dragging
 	if (draggingEventId.value) return
 
@@ -733,9 +710,11 @@ const openEditDialog = (event: DayEvent): void => {
 	editingEvent.value = {
 		id: event.id,
 		title: event.title,
-		startTime: startDate.toTimeString().slice(0, 5),
-		endTime: endDate.toTimeString().slice(0, 5),
-		category: event.category || 'work'
+		start: startDate.toTimeString().slice(0, 5),
+		end: endDate.toTimeString().slice(0, 5),
+		category: event.category || 'work',
+		gridRowStart: event.gridRowStart,
+		gridRowEnd: event.gridRowEnd
 	}
 	dialog.value = true
 }
@@ -743,19 +722,20 @@ const openEditDialog = (event: DayEvent): void => {
 const saveEvent = (): void => {
 	if (!isFormValid.value) return
 
+
 	if (dialogMode.value === 'create') {
 		// Create new event
 		const newId = events.value.length > 0 ? Math.max(...events.value.map(e => e.id)) + 1 : 1
 		const today = test_today
 
-		const newEvent: DayEvent = {
+		const newEvent: MyEvent = {
+			...editingEvent.value,
 			id: newId,
-			title: editingEvent.value.title || 'New Event',
-			start: `${today}T${editingEvent.value.startTime}:00`,
-			end: `${today}T${editingEvent.value.endTime}:00`,
-			category: editingEvent.value.category
+			start: `${today}T${editingEvent.value.start}:00`,
+			end: `${today}T${editingEvent.value.end}:00`,
 		}
 
+		console.log(newEvent)
 		// Check for conflicts before adding
 		if (checkEventConflict(newId, newEvent.start, newEvent.end)) {
 			conflictSnackbar.value = true
@@ -763,14 +743,12 @@ const saveEvent = (): void => {
 		}
 
 		events.value.push(newEvent)
-
-
 	} else {
 		// Edit existing event
 		const eventIndex = events.value.findIndex(e => e.id === editingEvent.value.id)
 		if (eventIndex !== -1) {
-			events.value[eventIndex].title = editingEvent.value.title
-			events.value[eventIndex].category = editingEvent.value.category
+			events.value[eventIndex]!.title = editingEvent.value.title ?? '';
+			events.value[eventIndex]!.category = editingEvent.value.category
 		}
 	}
 
@@ -872,7 +850,7 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 				// Update the event's grid position
 				const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
 				const nextEvent = events.value[eventIndex + 1]
-				if (newEndRow >= nextEvent?.gridRowStart) {
+				if (nextEvent && newEndRow >= nextEvent.gridRowStart) {
 					return
 				}
 
@@ -911,8 +889,7 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 	// Handle creation
 	if (!isCreating.value || creationStart.value === null) return
 
-	const slotIndex = getSlotIndexFromPosition(e.clientY)
-	creationEnd.value = slotIndex
+	creationEnd.value = getSlotIndexFromPosition(e.clientY)
 
 	const startRow = Math.min(creationStart.value, creationEnd.value) + 1
 	const endRow = Math.max(creationStart.value, creationEnd.value) + 1
@@ -937,16 +914,15 @@ const handleColumnMouseUp = (_e: MouseEvent): void => {
 	// Handle creation end
 	if (!isCreating.value || creationStart.value === null || creationEnd.value === null) return
 
-	const startSlot = Math.min(creationStart.value, creationEnd.value)
-	const endSlot = Math.max(creationStart.value, creationEnd.value)
-
 	// Open dialog with pre-filled times
-	const startTime = slotIndexToTime(startSlot)
-	const endTime = slotIndexToTime(endSlot + 1)
+	const startTime = slotIndexToTime(creationPreview.value!.startRow - 1)
+	const endTime = slotIndexToTime(creationPreview.value!.endRow)
 
 	openCreateDialog({
 		startTime,
-		endTime
+		endTime,
+		gridRowStart: creationPreview.value!.startRow,
+		gridRowEnd: creationPreview.value!.endRow
 	})
 
 	// Reset creation state
@@ -1009,8 +985,6 @@ onUnmounted(() => {
 	overflow-y: auto;
 	border: 1px solid #e0e0e0;
 }
-
-
 .events-column {
 	display: grid;
 	position: relative;
@@ -1115,44 +1089,42 @@ onUnmounted(() => {
 	cursor: cell;
 }
 
+.current-time-divider {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4);
+}
+
+.current-time-label {
+	position: absolute;
+	top: -10px;
+	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	color: white;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 /* Current Time Indicator */
 .current-time-indicator {
 	position: absolute;
 	left: 0;
 	right: 0;
-	display: flex;
-	align-items: center;
+	height: 3px;
+	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	z-index: 20;
 	pointer-events: none;
-	z-index: 15;
-}
-
-.time-dot {
-	width: 12px;
-	height: 12px;
-	background-color: #f44336;
-	border-radius: 50%;
-	position: absolute;
-	left: -6px;
-	box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
-}
-
-.time-line {
-	height: 2px;
-	background-color: #f44336;
-	flex: 1;
-	margin-left: 6px;
-	box-shadow: 0 1px 2px rgba(244, 67, 54, 0.2);
-}
-
-.time-label-current {
-	position: absolute;
-	right: 8px;
-	background: #f44336;
-	color: white;
-	padding: 2px 6px;
-	border-radius: 3px;
-	font-size: 10px;
-	font-weight: 600;
+	box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4);
 }
 
 /* Event Block Styles */
@@ -1217,12 +1189,16 @@ onUnmounted(() => {
 
 .event-content {
 	flex: 1;
-	padding: 6px 8px;
+	padding: 7px 15px;
 	cursor: pointer;
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	justify-content: center;
+	align-content: start;
+	flex-wrap: wrap;
+	row-gap: 3px;
+	column-gap: 20px;
 }
 
 .event-title {
@@ -1249,14 +1225,19 @@ onUnmounted(() => {
 }
 
 .resize-handle {
-	height: 16px;
-	background: rgba(0, 0, 0, 0.2);
+	position: absolute;
+	width: 100%;
+	height: 10px;
+	background: rgba(0, 0, 0, 0.1);
 	cursor: ns-resize;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	transition: background 0.2s ease;
 	flex-shrink: 0;
+}
+.resize-handle-bottom {
+	bottom: 0;
 }
 
 .resize-handle:hover {

@@ -10,28 +10,38 @@ export interface Category {
 	color: string
 }
 
-export interface DayEvent {
+export class EditedMyEvent {
+	public constructor(
+		public id?: number,
+		public title?: string,
+		public start?: string,
+		public end?: string,
+		public category?: string,
+		public gridRowStart?: number,
+		public gridRowEnd?: number,
+	) {
+	}
+}
+
+export interface MyEvent {
 	id: number
 	title: string
 	start: string
 	end: string
-	category?: string
+	category?: string,
+	gridRowStart: number,
+	gridRowEnd: number,
 }
 
-export interface EditingEvent {
-	id: number | null
-	title: string
-	startTime: string
-	endTime: string
-	category: string
-}
 
 export interface CreationPreview {
 	startRow: number
 	endRow: number
 }
 
-export interface PrefillTimes {
+export interface PrefillDialog {
 	startTime: string
-	endTime: string
+	endTime: string,
+	gridRowStart: number,
+	gridRowEnd: number,
 }
