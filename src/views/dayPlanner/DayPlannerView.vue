@@ -86,7 +86,9 @@
 			<!-- Events Column -->
 			<div
 				ref="eventsColumnRef"
-				class="events-column"
+				:class="['events-column', {
+					'no-touch-scroll': isCreating || draggingEventId !== null || resizingEventId !== null
+				}]"
 				:style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }"
 				@pointerdown="handleColumnPointerDown"
 				@pointermove="handleColumnPointerMove"
@@ -1187,6 +1189,10 @@ onUnmounted(() => {
 	background: rgb(var(--v-theme-neutral-200));
 	user-select: none;
 	cursor: crosshair;
+}
+
+.events-column.no-touch-scroll {
+	touch-action: none;
 }
 
 .time-column {
