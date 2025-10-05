@@ -419,12 +419,6 @@ const dialog = ref(false)
 const dialogMode = ref<'create' | 'edit'>('create')
 const editingEvent = ref<EditedMyEvent>(new EditedMyEvent())
 
-// Drag state
-const draggingEventId = ref<number | null>(null)
-const dragConflict = ref(false)
-const originalEventState = ref<MyEvent | null>(null)
-const focusedEventId = ref<number | null>(null)
-
 // Creation state
 const isCreating = ref(false)
 const creationStart = ref<number | null>(null)
@@ -681,7 +675,7 @@ const updateOverlapsBackgroundFlags = (bgStart: string, bgEnd: string): void => 
 
 // Convert slot index to time string
 const slotIndexToTime = (index: number): string => {
-	const totalMinutes = index * 10
+	const totalMinutes = index * 10 + startTime.value.minutes
 	const hours = Math.floor(totalMinutes / 60) + startTime.value.hours
 	const minutes = totalMinutes % 60
 
@@ -832,6 +826,68 @@ const resizeStartSlot = ref<number | null>(null)
 const resizePreview = ref<CreationPreview | null>(null)
 const resizeDirection = ref<'top' | 'bottom' | null>(null)
 
+const draggingEventId = ref<number | null>(null)
+const dragConflict = ref(false)
+const originalEventState = ref<MyEvent | null>(null)
+const focusedEventId = ref<number | null>(null)
+const dragStartSlot = ref<number | null>(null)
+const dragOffset = ref<number>(0)
+
+// Auto-scroll state
+const autoScrollInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const autoScrollSpeed = ref<number>(0)
+const SCROLL_THRESHOLD = 30 // pixels from edge to trigger scroll
+const MAX_SCROLL_SPEED = 15 // pixels per frame
+
+// Auto-scroll functionality
+const handleAutoScroll = (clientY: number): void => {
+	if (!eventsColumnRef.value) return
+
+	const calendarGrid = eventsColumnRef.value.closest('.calendar-grid') as HTMLElement
+	if (!calendarGrid) return
+
+	const rect = calendarGrid.getBoundingClientRect()
+	const distanceFromTop = clientY - rect.top
+	const distanceFromBottom = rect.bottom - clientY
+
+	// Clear existing interval
+	if (autoScrollInterval.value) {
+		clearInterval(autoScrollInterval.value)
+		autoScrollInterval.value = null
+	}
+
+	// Check if near top edge
+	if (distanceFromTop < SCROLL_THRESHOLD && distanceFromTop > 0) {
+		const intensity = 1 - (distanceFromTop / SCROLL_THRESHOLD)
+		autoScrollSpeed.value = -intensity * MAX_SCROLL_SPEED
+
+		autoScrollInterval.value = setInterval(() => {
+			if (calendarGrid) {
+				calendarGrid.scrollTop += autoScrollSpeed.value
+			}
+		}, 16) // ~60fps
+	}
+	// Check if near bottom edge
+	else if (distanceFromBottom < SCROLL_THRESHOLD && distanceFromBottom > 0) {
+		const intensity = 1 - (distanceFromBottom / SCROLL_THRESHOLD)
+		autoScrollSpeed.value = intensity * MAX_SCROLL_SPEED
+
+		autoScrollInterval.value = setInterval(() => {
+			if (calendarGrid) {
+				calendarGrid.scrollTop += autoScrollSpeed.value
+			}
+		}, 16) // ~60fps
+	}
+}
+
+const stopAutoScroll = (): void => {
+	if (autoScrollInterval.value) {
+		clearInterval(autoScrollInterval.value)
+		autoScrollInterval.value = null
+	}
+	autoScrollSpeed.value = 0
+}
+
 // Click and drag to create new events
 const handleColumnPointerDown = (e: PointerEvent): void => {
 	const target = e.target as HTMLElement
@@ -872,6 +928,27 @@ const handleColumnPointerDown = (e: PointerEvent): void => {
 		return
 	}
 
+	// Check if clicking on an event to drag it
+	const eventBlock = target.closest('.event-block') as HTMLElement
+	if (eventBlock && !eventBlock.classList.contains('background-event-block')) {
+		const eventId = parseInt(eventBlock.dataset.eventId || '0')
+		const event = events.value.find(ev => ev.id === eventId)
+		if (!event || event.isBackground) return
+
+		// Start dragging
+		draggingEventId.value = eventId
+		originalEventState.value = { ...event }
+
+		// Calculate where within the event block the pointer is
+		const slotIndex = getSlotIndexFromPosition(e.clientY)
+		dragStartSlot.value = slotIndex
+		dragOffset.value = slotIndex - (event.gridRowStart - 1)
+
+		e.preventDefault()
+		e.stopPropagation()
+		return
+	}
+
 	// Only start creating if clicking on empty space (not on an event)
 	if (target.closest('.event-block')) return
 	if (target.closest('.current-time-indicator')) return
@@ -890,6 +967,45 @@ const handleColumnPointerDown = (e: PointerEvent): void => {
 }
 
 const handleColumnPointerMove = (e: PointerEvent): void => {
+	// Handle dragging
+	if (draggingEventId.value !== null && dragStartSlot.value !== null && originalEventState.value) {
+		// Trigger auto-scroll if near edges
+		handleAutoScroll(e.clientY)
+
+		const currentSlot = getSlotIndexFromPosition(e.clientY)
+		const event = events.value.find(ev => ev.id === draggingEventId.value)
+		if (!event) return
+
+		// Calculate new position
+		const eventDuration = originalEventState.value.gridRowEnd - originalEventState.value.gridRowStart
+		const newStartRow = currentSlot - dragOffset.value + 1
+		const newEndRow = newStartRow + eventDuration
+
+		// Check if the new position fits within the view
+		const fitsInView = newStartRow >= 1 && newEndRow <= totalGridRows.value
+
+		// Check for conflicts with other events
+		const hasConflict = events.value.some(ev => {
+			if (ev.id === draggingEventId.value || ev.isBackground) return false
+			// Check if the new position overlaps with any event
+			return !(newEndRow < ev.gridRowStart || newStartRow > ev.gridRowEnd)
+		})
+
+		// Update conflict state
+		dragConflict.value = hasConflict || !fitsInView
+
+		// Update the event's grid position regardless of conflict
+		event.gridRowStart = newStartRow
+		event.gridRowEnd = newEndRow
+
+		// Update the event's actual times
+		event.start = calculateDateTimeFromSlotIndex(newStartRow - 1)
+		event.end = calculateDateTimeFromSlotIndex(newEndRow)
+
+		event.isDuringBackgroundEvent = checkOverlapsBackground(event.start, event.end)
+		return
+	}
+
 	// Handle resizing
 	if (resizingEventId.value !== null && resizeStartSlot.value !== null && resizePreview.value && resizeDirection.value) {
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -910,7 +1026,7 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 				}
 				// Update the event's grid position
 				const nextEvent = events.value[eventIndex + 1]
-				if (nextEvent && newEndRow >= nextEvent.gridRowStart) {
+				if (nextEvent && nextEvent.gridRowStart <= newEndRow && newEndRow >= event.gridRowEnd) {
 					return
 				}
 				event.gridRowEnd = newEndRow
@@ -929,7 +1045,9 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 				}
 				// Check for conflicts with previous event
 				const prevEvent = events.value[eventIndex - 1]
-				if (prevEvent && newStartRow <= prevEvent.gridRowEnd) {
+				console.log(prevEvent.gridRowStart, prevEvent.gridRowEnd)
+				console.log(newStartRow)
+				if (prevEvent && prevEvent.gridRowStart <= newStartRow && newStartRow <= prevEvent.gridRowEnd) {
 					return
 				}
 
@@ -937,7 +1055,7 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 				event.start = calculateDateTimeFromSlotIndex(newStartRow - 1)
 			}
 		}
-
+		event.isDuringBackgroundEvent = checkOverlapsBackground(event.start, event.end)
 		return
 	}
 
@@ -967,6 +1085,28 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 
 
 const handleColumnPointerUp = (_e: PointerEvent): void => {
+	// Stop auto-scrolling
+	stopAutoScroll()
+
+	// Handle drag end
+	if (draggingEventId.value !== null && originalEventState.value) {
+		const event = events.value.find(ev => ev.id === draggingEventId.value)
+
+		if (event && (dragConflict.value || event.gridRowStart < 1 || event.gridRowEnd > totalGridRows.value)) {
+			// Revert to original position if there's a conflict or out of bounds
+			Object.assign(event, originalEventState.value)
+			conflictSnackbar.value = true
+		}
+
+		// Reset drag state
+		draggingEventId.value = null
+		dragStartSlot.value = null
+		dragOffset.value = 0
+		dragConflict.value = false
+		originalEventState.value = null
+		return
+	}
+
 	// Handle resize end
 	if (resizingEventId.value !== null) {
 		resizingEventId.value = null
@@ -1020,10 +1160,12 @@ onUnmounted(() => {
 	// Cleanup all drag and drop listeners
 	cleanupFunctions.value.forEach(cleanup => cleanup())
 
-	// Clear interval
+	// Clear intervals
 	if (currentTimeInterval.value) {
 		clearInterval(currentTimeInterval.value)
 	}
+
+	stopAutoScroll()
 })
 </script>
 
@@ -1207,10 +1349,12 @@ onUnmounted(() => {
 
 .event-block.dragging {
 	z-index: 100;
-	filter: brightness(0.7);
+	filter: brightness(0.9);
+	cursor: grabbing !important;
 }
 
 .event-block.conflict {
+	opacity: 0.7 !important;
 	background: rgba(244, 67, 54, 0.7) !important;
 	animation: pulse 0.5s ease-in-out infinite;
 }
@@ -1229,6 +1373,7 @@ onUnmounted(() => {
 	right: 0.75%;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	z-index: 11;
+	cursor: grab;
 }
 
 .event-block.past-event {
