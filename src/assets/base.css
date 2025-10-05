@@ -32,3 +32,8 @@ html {
 .bg-info, .bg-warning {
   color: #FFFFFF !important;
 }
+
+.is-hidden {
+  visibility: hidden;
+  opacity: 0; /* Often paired with visibility for smooth transitions */
+}

@@ -14,23 +14,32 @@ export class EditedMyEvent {
 	public constructor(
 		public id?: number,
 		public title?: string,
+		public color?: string,
 		public start?: string,
 		public end?: string,
 		public category?: string,
 		public gridRowStart?: number,
 		public gridRowEnd?: number,
+		public isBackground: boolean = false,
+		public isDuringBackgroundEvent: boolean = false
 	) {
 	}
 }
 
-export interface MyEvent {
-	id: number
-	title: string
-	start: string
-	end: string
-	category?: string,
-	gridRowStart: number,
-	gridRowEnd: number,
+export class MyEvent {
+	constructor(
+		public id: number,
+		public title: string,
+		public color: string,
+		public start: string,
+		public end: string,
+		public category: string = "",
+		public gridRowStart: number,
+		public gridRowEnd: number,
+		public isBackground: boolean = false,
+		public isDuringBackgroundEvent: boolean = false
+	) {
+	}
 }
 
 
