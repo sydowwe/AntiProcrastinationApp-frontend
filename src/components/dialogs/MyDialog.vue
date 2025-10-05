@@ -24,7 +24,7 @@
 				</slot>
 				<slot name="centerButton"></slot>
 				<slot name="rightButton">
-					<VBtn v-if="hasConfirmBtn" color="primary" @click="emit('confirmed')" type="button">
+					<VBtn v-if="hasConfirmBtn" :color="confirmBtnColor ?? 'primary'" @click="emit('confirmed')" :disabled="confirmBtnDisabled" type="button">
 						{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
 					</VBtn>
 				</slot>
@@ -74,6 +74,8 @@ const props = defineProps({
 		default: true
 	},
 	confirmBtnLabel: String,
+	confirmBtnColor: String,
+	confirmBtnDisabled: Boolean,
 	isSmall: {
 		type: Boolean,
 		default: true

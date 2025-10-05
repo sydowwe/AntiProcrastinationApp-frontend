@@ -117,7 +117,7 @@ export const vuetify = createVuetify({
 				colors: {
 					// Surface
 					background: '#121212',
-					surface: '#191920',
+					surface: '#202020',
 					'on-background': '#E5E7EB',
 					'on-surface': '#FFF',
 
@@ -141,7 +141,7 @@ export const vuetify = createVuetify({
 					// use deeper tones (800–900) or transparent tints over surface
 					'primary-accent': '#1E40AF', // blue-800
 					'secondary-accent': '#4C1D95', // purple-800
-					'primary-container': '#1B2A44', // subtle blue-tinted surface
+					'primary-container': '#1d3257', // subtle blue-tinted surface
 					'secondary-container': '#2A1F46', // subtle purple-tinted surface
 
 

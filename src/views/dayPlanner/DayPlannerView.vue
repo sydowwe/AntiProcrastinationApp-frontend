@@ -1,8 +1,8 @@
 <template>
-<v-card class="w-100 d-flex flex-column">
+<v-card class="mx-auto w-100 w-lg-66 d-flex flex-column">
 	<v-card-title class="d-flex justify-space-between align-center flex-wrap ga-2">
 		<span>Daily Schedule - {{ currentDateFormatted }}</span>
-		<div class="d-flex gap-2 align-center">
+		<div class="d-flex ga-4 align-center">
 			<v-menu :close-on-content-click="false">
 				<template v-slot:activator="{ props }">
 					<v-btn
@@ -25,34 +25,36 @@
 
 			<VNumberInput
 				v-model.number="spanHours"
-				label="Span (hours)"
+				label="Time frame (hours)"
 				control-variant="split"
+				density="compact"
 				:min="1"
 				:max="24"
 				style="width: 150px"
 				hideDetails
 			></VNumberInput>
 		</div>
-		<div class="d-flex gap-2 align-center flex-wrap">
-			<v-chip size="small" variant="flat" color="primary">
-				{{ currentTimeFormatted }}
-			</v-chip>
-<!--			<v-btn-->
-<!--				color="primary"-->
-<!--				@click="openCreateDialogEmpty"-->
-<!--				prepend-icon="plus"-->
-<!--			>-->
-<!--				Add New Event-->
-<!--			</v-btn>-->
+		<div class="d-flex ga-2 align-center flex-wrap">
+			<VBtn color="secondary" @pointerdown.prevent="openEditDialog" :class="{ 'is-hidden': !focusedEventId }">Edit</VBtn>
+			<VBtn color="secondaryOutline" variant="outlined"
+			      @pointerdown.prevent="toDeleteIndex = events.findIndex(e => e.id === focusedEventId);deleteDialog = true"
+			      :class="{ 'is-hidden': !focusedEventId }">Delete
+			</VBtn>
+			<v-btn
+				color="primary"
+				@click="openCreateDialogEmpty"
+				prepend-icon="plus"
+			>
+				Add New Event
+			</v-btn>
 		</div>
 	</v-card-title>
 
-	<v-card-text class="flex-fill d-flex flex-column gap-4">
+	<v-card-text class="flex-fill d-flex flex-column ga-4">
 		<div class="calendar-grid flex-fill">
 			<!-- Time Column -->
 			<div class="time-column" :style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }">
-				<div v-for="(slot, index) in timeSlots" :key="index"
-				     :class="['time-slot', { 'half-hour': isHalfHour(slot), 'full-hour': isFullHour(slot) }]">
+				<div v-for="(slot, index) in timeSlots" :key="index" class="time-slot">
 				</div>
 				<!-- Midnight divider -->
 				<div
@@ -74,7 +76,7 @@
 				<!-- Time labels overlay -->
 				<div class="time-labels-overlay">
 					<div v-for="(slot, index) in timeSlots" :key="index"
-					     :class="['time-label-positioned', { 'half-hour-label': isHalfHour(slot) }]"
+					     class="time-label-positioned"
 					     :style="{ top: `${index * 22}px` }">
 						{{ formatTime(slot) }}
 					</div>
@@ -86,16 +88,13 @@
 				ref="eventsColumnRef"
 				class="events-column"
 				:style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }"
-				@mousedown="handleColumnMouseDown"
-				@mousemove="handleColumnMouseMove"
-				@mouseup="handleColumnMouseUp"
-				@mouseleave="handleColumnMouseLeave"
+				@pointerdown="handleColumnPointerDown"
+				@pointermove="handleColumnPointerMove"
+				@pointerup="handleColumnPointerUp"
 			>
 				<!-- Time Slots with hover effect -->
 				<div v-for="(slot, index) in timeSlots" :key="index"
 				     :class="['event-slot', {
-					       'half-hour': isHalfHour(slot),
-					       'full-hour': isFullHour(slot),
 					       'hoverable': !isCreating && !draggingEventId
 					     }]"
 				     :data-slot-index="index">
@@ -124,171 +123,193 @@
 				</div>
 
 				<!-- Event Blocks -->
-				<div v-for="event in visibleEvents"
-				     :key="event.id"
-				     :style="{
-				       gridRow: `${event.gridRowStart} / span ${(event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1}`
-				     }"
-				     :class="[
-					       'event-block',
-					       `category-${event.category || 'default'}`,
-					       {
-							    'dragging': draggingEventId === event.id,
-							    'resizing': event.id === draggingEventId,
-							    'past-event': isEventPast(event),
-							    'focused': focusedEventId === event.id,
-							    'conflict': dragConflict && draggingEventId === event.id,
-							    'no-hover': isAnyEventBeingManipulated
-						  }
-					     ]"
-				     :data-event-id="event.id"
-				     :tabindex="0"
-				     @click="openEditDialog(event)"
-				     @keydown.enter="openEditDialog(event)"
-				     @focus="focusedEventId = event.id"
-				     @blur="focusedEventId = null">
+				<template v-for="event in visibleEvents" :key="event.id">
+					<VSheet v-if="event.isBackground" :color="event.color"
+					        :style="eventBlockGridRowStyle(event)" :data-event-id="event.id"
+					        :class="[
+								'background-event-block',
+								{'past-event': isEventPast(event)}
+							]">
+						<VSheet class="background-event-label" :color="event.color">
+							{{ event.title }}
+						</VSheet>
+					</VSheet>
+					<VSheet v-else
+					        :color="`${event.color}E0`"
+					        :style="[
+								eventBlockGridRowStyle(event),
+						     {	marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px`}
+						    ]"
+					        :class="[
+						       'event-block',
+						        eventBlockClasses(event),
+					        ]"
+					        :data-event-id="event.id"
+					        :tabindex="0"
+					        @keydown.enter="openEditDialog"
+					        @keydown.esc="(e) => { (e.target as HTMLElement).blur(); focusedEventId = null; }"
+					        @focus="focusedEventId = event.id"
+					        @blur="focusedEventId = null"
+					>
 
-					<div
-						class="resize-handle resize-handle-top"
-						:data-event-id="event.id"
-						@click.stop
-					>
-<!--						<v-icon size="x-small" color="white" opacity="0.5">arrows-up-down</v-icon>-->
-					</div>
-					<!-- Tooltip for event details -->
-					<v-tooltip
-						:text="`${event.title}\n${formatEventTime(event)}`"
-						location="top"
-					>
-						<template v-slot:activator="{ props }">
-							<div class="event-content" v-bind="props">
-								<div class="event-title">{{ event.title }}</div>
-								<div class="event-time">{{ formatEventTime(event) }}</div>
-								<v-chip
-									v-if="event.category"
-									size="x-small"
-									variant="flat"
-									class="event-category-chip"
-								>
-									{{ event.category }}
-								</v-chip>
-							</div>
-						</template>
-					</v-tooltip>
+						<div
+							class="resize-handle resize-handle-top"
+							:data-event-id="event.id"
+							@click.stop
+						>
+							<!--						<v-icon size="x-small" color="white" opacity="0.5">arrows-up-down</v-icon>-->
+						</div>
 
-					<!-- Resize Handle -->
-					<div
-						class="resize-handle resize-handle-bottom"
-						:data-event-id="event.id"
-						@click.stop
-					>
-<!--						<v-icon size="x-small" color="white" opacity="0.5">arrows-up-down</v-icon>-->
-					</div>
-				</div>
+						<div class="event-content">
+							<div class="event-title">{{ event.title }}</div>
+							<div class="event-time">{{ formatEventTime(event) }}</div>
+							<v-chip
+								v-if="event.category"
+								size="x-small"
+								variant="flat"
+								:color="event.color"
+								class="event-category-chip"
+							>
+								{{ event.category }}
+							</v-chip>
+						</div>
+
+						<!-- Resize Handle -->
+						<div
+							class="resize-handle resize-handle-bottom"
+							:data-event-id="event.id"
+							@click.stop
+						>
+						</div>
+					</VSheet>
+				</template>
 			</div>
 		</div>
 
 		<!-- Legend -->
-		<div class="calendar-legend mt-4">
-			<v-chip
-				v-for="category in categories"
-				:key="category.value"
-				size="small"
-				:color="category.color"
-				variant="flat"
-				class="mr-2"
-			>
-				{{ category.label }}
-			</v-chip>
+		<div class="calendar-legend">
+			<!--			<v-chip-->
+			<!--				v-for="category in categories"-->
+			<!--				:key="category.value"-->
+			<!--				size="small"-->
+			<!--				:color="category.color"-->
+			<!--				variant="flat"-->
+			<!--				class="mr-2"-->
+			<!--			>-->
+			<!--				{{ category.label }}-->
+			<!--			</v-chip>-->
 		</div>
 	</v-card-text>
 </v-card>
 
+<MyDialog title="Delete confirmation" :text="`Are you sure you want to delete event ${toDeleteEvent?.title}?`" v-model="deleteDialog" @confirmed="deleteEvent"
+          confirmBtnColor="error"></MyDialog>
+
 <!-- Event Dialog -->
-<v-dialog v-model="dialog" max-width="500px">
-	<v-card>
-		<v-card-title>
-			{{ dialogMode === 'create' ? 'Add New Event' : 'Edit Event' }}
-		</v-card-title>
+<MyDialog :title="dialogMode === 'create' ? 'Add New Event' : 'Edit Event'" v-model="dialog" :confirmBtnDisabled="!isFormValid" @confirmed="saveEvent"
+          max-width="500px">
+	<v-container>
+		<v-row>
+			<v-col cols="12">
+				<v-text-field
+					v-model="editingEvent.title"
+					label="Event Title"
+					variant="outlined"
+					density="comfortable"
+					:rules="[v => !!v || 'Title is required']"
+				></v-text-field>
+			</v-col>
 
-		<v-card-text>
-			<v-container>
-				<v-row>
-					<v-col cols="12">
+			<v-col cols="12">
+				<v-select
+					v-model="editingEvent.category"
+					label="Category"
+					:items="categories"
+					item-title="label"
+					item-value="value"
+					variant="outlined"
+					density="comfortable"
+				></v-select>
+			</v-col>
+
+			<v-col cols="12" sm="6">
+				<v-menu :close-on-content-click="false">
+					<template v-slot:activator="{ props }">
 						<v-text-field
-							v-model="editingEvent.title"
-							label="Event Title"
-							variant="outlined"
-							density="comfortable"
-							:rules="[v => !!v || 'Title is required']"
-						></v-text-field>
-					</v-col>
-
-					<v-col cols="12">
-						<v-select
-							v-model="editingEvent.category"
-							label="Category"
-							:items="categories"
-							item-title="label"
-							item-value="value"
-							variant="outlined"
-							density="comfortable"
-						></v-select>
-					</v-col>
-
-					<v-col cols="12" sm="6">
-						<v-text-field
-							v-model="editingEvent.start"
 							label="Start Time"
-							type="time"
+							:model-value="editingEvent.start"
+							v-bind="props"
 							variant="outlined"
-							density="comfortable"
-							:readonly="dialogMode === 'edit'"
-						></v-text-field>
-					</v-col>
-
-					<v-col cols="12" sm="6">
-						<v-text-field
-							v-model="editingEvent.end"
-							label="End Time"
-							type="time"
-							variant="outlined"
-							density="comfortable"
-							:readonly="dialogMode === 'edit'"
+							prepend-icon="clock"
+							readonly
+						>
+						</v-text-field>
+					</template>
+					<template v-slot:default>
+						<v-time-picker
+							v-model="editingEvent.start"
+							format="24hr"
+							:allowed-minutes="allowedStep"
+							scrollable
 							:rules="[validateEndTime]"
-						></v-text-field>
-					</v-col>
-				</v-row>
-			</v-container>
-		</v-card-text>
+						></v-time-picker>
+					</template>
+				</v-menu>
+			</v-col>
 
-		<v-card-actions>
-			<v-btn
-				v-if="dialogMode === 'edit'"
-				color="error"
-				variant="text"
-				@click="deleteEvent"
-			>
-				Delete
-			</v-btn>
-			<v-spacer></v-spacer>
-			<v-btn
-				variant="text"
-				@click="dialog = false"
-			>
-				Cancel
-			</v-btn>
-			<v-btn
-				color="primary"
-				variant="flat"
-				@click="saveEvent"
-				:disabled="!isFormValid"
-			>
-				Save
-			</v-btn>
-		</v-card-actions>
-	</v-card>
-</v-dialog>
+			<v-col cols="12" sm="6">
+				<v-menu :close-on-content-click="false">
+					<template v-slot:activator="{ props }">
+						<v-text-field
+							label="End Time"
+							:model-value="editingEvent.end"
+							v-bind="props"
+							variant="outlined"
+							prepend-icon="clock"
+							readonly
+						>
+						</v-text-field>
+					</template>
+					<template v-slot:default>
+						<v-time-picker
+							v-model="editingEvent.end"
+							format="24hr"
+							:allowed-minutes="allowedStep"
+							scrollable
+							:rules="[validateEndTime]"
+						></v-time-picker>
+					</template>
+				</v-menu>
+			</v-col>
+			<VCol cols="12">
+				<v-menu :close-on-content-click="false">
+					<template v-slot:activator="{ props }">
+						<v-btn
+							class="pr-3"
+							v-bind="props"
+							variant="outlined"
+							color="secondaryOutline"
+							prepend-icon="palette"
+							:readonly="dialogMode === 'edit'"
+						>
+							Color
+							<VSheet :color="editingEvent.color" class="ml-2" rounded="xl" width="20" height="20"></VSheet>
+						</v-btn>
+					</template>
+					<template v-slot:default>
+						<v-color-picker
+							v-model="editingEvent.color"
+						></v-color-picker>
+					</template>
+				</v-menu>
+			</VCol>
+
+			<v-col cols="12" sm="6">
+				<VSwitch label="Is background" color="primary" v-model="editingEvent.isBackground"></VSwitch>
+			</v-col>
+		</v-row>
+	</v-container>
+</MyDialog>
 
 <!-- Conflict Snackbar -->
 <v-snackbar
@@ -309,37 +330,54 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted, onUnmounted} from 'vue'
+import {ref, computed, onMounted, onUnmounted, watch, type Ref} from 'vue'
 import type {CleanupFn} from '@atlaskit/pragmatic-drag-and-drop/types';
-import {type Category, type CreationPreview, EditedMyEvent, type MyEvent, type PrefillDialog, type TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
+import {type Category, type CreationPreview, EditedMyEvent, MyEvent, type PrefillDialog, type TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
+import {VColorInput} from 'vuetify/labs/components';
+import MyDialog from '@/components/dialogs/MyDialog.vue';
 
-
+const deleteDialog = ref(false)
 // Constants
 const currentDate = new Date()
 
 // Time range state
-const startTimeString = ref('7:00')
+const startTimeString = ref('9:30')
 const startTime = computed(() => {
 	const [hours, minutes] = startTimeString.value.split(':').map(Number)
 	return {hours: hours ?? 0, minutes: minutes ?? 0}
 })
 const allowedStep = (m: number) => m % 10 === 0
-const spanHours = ref(24)
+const spanHours = ref(16)
 
-const calendarEndHour = computed(() => startTime.value.hours + spanHours.value)
+const viewedTimeFrame = computed(() => {
+	const totalMinutes = startTime.value.hours * 60 + startTime.value.minutes + spanHours.value * 60
+	return {
+		hours: Math.floor(totalMinutes / 60),
+		minutes: totalMinutes % 60
+	}
+})
 
 // Calculate total number of grid rows (slots)
-const totalGridRows = computed(() => spanHours.value * 6) // 6 slots per hour (10 min each)
+// We need to account for the starting minutes and add one more slot to include the end time
+const totalGridRows = computed(() => {
+	const totalMinutes = spanHours.value * 60
+	// Round up to include partial slots at the start, and add 1 for the final slot
+	return Math.ceil(totalMinutes / 10)
+})
 
 // Detect which slot index represents midnight (00:00)
 const midnightSlotIndex = computed(() => {
-	if (startTime.value.hours === 0) return null // Already starts at midnight
+	if (startTime.value.hours === 0 && startTime.value.minutes === 0) return null // Already starts at midnight
 
 	const hoursUntilMidnight = 24 - startTime.value.hours
-	if (hoursUntilMidnight >= spanHours.value) return null // Doesn't reach midnight
+	const minutesUntilMidnight = hoursUntilMidnight * 60 - startTime.value.minutes
+
+	// Check if midnight is beyond our viewed timeframe
+	const viewEndMinutes = viewedTimeFrame.value.hours * 60 + viewedTimeFrame.value.minutes
+	const midnightMinutes = 24 * 60
+	if (midnightMinutes >= viewEndMinutes) return null // Doesn't reach midnight
 
 	// Calculate slot index for midnight
-	const minutesUntilMidnight = hoursUntilMidnight * 60 - startTime.value.minutes
 	return Math.floor(minutesUntilMidnight / 10)
 })
 
@@ -360,60 +398,13 @@ const test_today = currentDate.toLocaleDateString('en-CA');
 // Sample events data with categories
 // Sample events data with categories
 const events = ref([
-	{
-		id: 1,
-		title: 'Team Sync',
-		start: test_today + 'T09:10:00',
-		end: test_today + 'T09:50:00',
-		category: 'meeting',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	},
-	{
-		id: 2,
-		title: 'Design Review',
-		start: test_today + 'T10:30:00',
-		end: test_today + 'T11:20:00',
-		category: 'work',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	},
-	{
-		id: 3,
-		title: 'Lunch Break',
-		start: test_today + 'T12:00:00',
-		end: test_today + 'T13:00:00',
-		category: 'break',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	},
-	{
-		id: 4,
-		title: 'Client Call',
-		start: test_today + 'T14:20:00',
-		end: test_today + 'T15:00:00',
-		category: 'urgent',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	},
-	{
-		id: 5,
-		title: 'Code Review',
-		start: test_today + 'T15:30:00',
-		end: test_today + 'T16:10:00',
-		category: 'work',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	},
-	{
-		id: 6,
-		title: 'TEST next day',
-		start: test_today + 'T23:30:00',
-		end: '2025-10-03T01:10:00',
-		category: 'work',
-		gridRowStart: 0,
-		gridRowEnd: 0
-	}
+	new MyEvent(7, 'Work', '#4287f5', test_today + 'T07:00:00', test_today + 'T15:00:00', 'work', 0, 0, true, false),
+	new MyEvent(1, 'Team Sync', '#9b4dca', test_today + 'T09:10:00', test_today + 'T09:50:00', 'meeting', 0, 0, false, true),
+	new MyEvent(2, 'Design Review', '#4287f5', test_today + 'T10:30:00', test_today + 'T11:20:00', 'work', 0, 0, false, true),
+	new MyEvent(3, 'Lunch Break', '#ff9f1a', test_today + 'T12:00:00', test_today + 'T13:00:00', 'break', 0, 0, false, true),
+	new MyEvent(4, 'Client Call', '#e74c3c', test_today + 'T14:20:00', test_today + 'T15:00:00', 'urgent', 0, 0, false, true),
+	new MyEvent(5, 'Code Review', '#4287f5', test_today + 'T15:30:00', test_today + 'T16:10:00', 'work', 0, 0, false, false),
+	new MyEvent(6, 'TEST next day', '#4287f5', test_today + 'T23:30:00', '2025-10-06T01:10:00', 'work', 0, 0, false, false)
 ] as MyEvent[])
 
 // Refs
@@ -471,14 +462,15 @@ const showCurrentTimeIndicator = computed(() => {
 	viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
 
 	const viewEndDate = new Date(currentDate)
-	const endHour = calendarEndHour.value
+	const endHour = viewedTimeFrame.value.hours
+	const endMinute = viewedTimeFrame.value.minutes
 
 	// If end hour is >= 24, it spans to the next day
 	if (endHour >= 24) {
 		viewEndDate.setDate(viewEndDate.getDate() + Math.floor(endHour / 24))
-		viewEndDate.setHours(endHour % 24, startTime.value.minutes, 0, 0)
+		viewEndDate.setHours(endHour % 24, endMinute, 0, 0)
 	} else {
-		viewEndDate.setHours(endHour, startTime.value.minutes, 0, 0)
+		viewEndDate.setHours(endHour, endMinute, 0, 0)
 	}
 
 	// Check if current time is within the visible range
@@ -505,11 +497,16 @@ const currentTimeIndicatorStyle = computed(() => {
 // Generate time slots for the calendar
 const timeSlots = computed<TimeSlot[]>(() => {
 	const slots: TimeSlot[] = []
-	for (let hour = startTime.value.hours; hour < calendarEndHour.value; hour++) {
-		for (let minute = 0; minute < 60; minute += 10) {
-			slots.push({hour: hour % 24, minute})
-		}
+	const startMinutes = startTime.value.hours * 60 + startTime.value.minutes
+	const endMinutes = viewedTimeFrame.value.hours * 60 + viewedTimeFrame.value.minutes
+
+	// Generate slots from start to end (including the end slot)
+	for (let totalMins = startMinutes; totalMins <= endMinutes; totalMins += 10) {
+		const hour = Math.floor(totalMins / 60) % 24
+		const minute = totalMins % 60
+		slots.push({hour, minute})
 	}
+
 	return slots
 })
 
@@ -536,37 +533,21 @@ const creationPreviewTime = computed(() => {
 	return `${startTime} - ${endTime}`
 })
 
-// Filter events that fall within the visible time range
+// Filter events that have at least one slot visible in the frame after clamping
 const visibleEvents = computed(() => {
 	return events.value.filter(event => {
-		const eventStart = new Date(event.start)
-		const eventEnd = new Date(event.end)
-
-		// Calculate the absolute start and end times of the visible range
-		const viewStartDate = new Date(currentDate)
-		viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
-
-		const viewEndDate = new Date(currentDate)
-		const endHour = calendarEndHour.value
-
-		// If end hour is >= 24, it spans to the next day
-		if (endHour >= 24) {
-			viewEndDate.setDate(viewEndDate.getDate() + Math.floor(endHour / 24))
-			viewEndDate.setHours(endHour % 24, startTime.value.minutes, 0, 0)
-		} else {
-			viewEndDate.setHours(endHour, startTime.value.minutes, 0, 0)
-		}
-
-		// Check if event overlaps with visible range
-		return eventStart < viewEndDate && eventEnd > viewStartDate
+		// Check if the clamped grid positions result in at least one visible slot
+		return event.gridRowStart >= 1 &&
+			event.gridRowEnd <= totalGridRows.value &&
+			event.gridRowStart <= event.gridRowEnd
 	})
 })
 
 // Form validation
 const isFormValid = computed(() => {
-	return editingEvent.value.title &&
-		editingEvent.value.start &&
-		editingEvent.value.end &&
+	return !!editingEvent.value.title &&
+		!!editingEvent.value.start &&
+		!!editingEvent.value.end &&
 		editingEvent.value.start < editingEvent.value.end
 })
 
@@ -599,6 +580,19 @@ const formatEventTime = (event: MyEvent): string => {
 	return `${startTime} - ${endTime}`
 }
 
+const eventBlockGridRowStyle = computed(() => (event: MyEvent) => ({
+	gridRow: `${event.gridRowStart} / span ${(event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1}`,
+}))
+
+const eventBlockClasses = computed(() => (event: MyEvent) => ({
+	'dragging': draggingEventId.value === event.id,
+	'resizing': event.id === draggingEventId.value,
+	'past-event': isEventPast(event),
+	'focused': focusedEventId.value === event.id,
+	'conflict': dragConflict.value && draggingEventId.value === event.id,
+	'no-hover': isAnyEventBeingManipulated.value,
+}))
+
 const isEventPast = (event: MyEvent): boolean => {
 	const endDate = new Date(event.end)
 	return endDate < currentTime.value
@@ -612,15 +606,27 @@ const initializeEventGridPositions = () => {
 		const viewStartDate = new Date(currentDate)
 		viewStartDate.setHours(startTime.value.hours, startTime.value.minutes, 0, 0)
 
+		const viewEndDate = new Date(currentDate)
+		const endHour = viewedTimeFrame.value.hours
+		const endMinute = viewedTimeFrame.value.minutes
+
+		// If end hour is >= 24, it spans to the next day
+		if (endHour >= 24) {
+			viewEndDate.setDate(viewEndDate.getDate() + Math.floor(endHour / 24))
+			viewEndDate.setHours(endHour % 24, endMinute, 0, 0)
+		} else {
+			viewEndDate.setHours(endHour, endMinute, 0, 0)
+		}
+
 		const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
 		const startRow = Math.floor(minutesFromViewStart / 10) + 1
 
-		const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000)
-		const span = Math.ceil(durationMinutes / 10)
-		const endRow = startRow + span - 1
+		const minutesFromViewStartToEnd = Math.floor((endDate.getTime() - viewStartDate.getTime()) / 60000)
+		const endRow = Math.floor(minutesFromViewStartToEnd / 10)
 
-		event.gridRowStart = startRow
-		event.gridRowEnd = endRow
+		// Clamp to visible frame: gridRowStart min is 1, gridRowEnd max is totalGridRows
+		event.gridRowStart = Math.max(1, startRow)
+		event.gridRowEnd = Math.min(totalGridRows.value, endRow)
 	})
 }
 
@@ -628,6 +634,8 @@ const initializeEventGridPositions = () => {
 const checkEventConflict = (eventId: number, newStart: string, newEnd: string): boolean => {
 	return events.value.some(event => {
 		if (event.id === eventId) return false
+		// Background events don't conflict
+		if (event.isBackground) return false
 
 		const existingStart = new Date(event.start)
 		const existingEnd = new Date(event.end)
@@ -639,6 +647,38 @@ const checkEventConflict = (eventId: number, newStart: string, newEnd: string): 
 	})
 }
 
+// Check if event overlaps with any background event
+const checkOverlapsBackground = (start: string, end: string): boolean => {
+	return events.value.some(event => {
+		if (!event.isBackground) return false
+
+		const bgStart = new Date(event.start)
+		const bgEnd = new Date(event.end)
+		const checkStart = new Date(start)
+		const checkEnd = new Date(end)
+
+		// Check if there's any overlap
+		return (checkStart < bgEnd && checkEnd > bgStart)
+	})
+}
+
+// Update overlapsBackground flag for all normal events based on a background event
+const updateOverlapsBackgroundFlags = (bgStart: string, bgEnd: string): void => {
+	events.value.forEach(event => {
+		if (event.isBackground) return
+
+		const eventStart = new Date(event.start)
+		const eventEnd = new Date(event.end)
+		const bgStartDate = new Date(bgStart)
+		const bgEndDate = new Date(bgEnd)
+
+		// Check if there's any overlap
+		if (eventStart < bgEndDate && eventEnd > bgStartDate) {
+			event.isDuringBackgroundEvent = true
+		}
+	})
+}
+
 // Convert slot index to time string
 const slotIndexToTime = (index: number): string => {
 	const totalMinutes = index * 10
@@ -646,6 +686,17 @@ const slotIndexToTime = (index: number): string => {
 	const minutes = totalMinutes % 60
 
 	return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+}
+
+const timeToSlotIndex = (time: string): number => {
+	const [hours, minutes] = time.split(':').map(Number)
+	const totalMinutes = (hours - startTime.value.hours) * 60 + (minutes - startTime.value.minutes)
+	return Math.floor(totalMinutes / 10)
+}
+
+// Calculate new time based on slot index
+const calculateDateTimeFromSlotIndex = (slotIndex: number): string => {
+	return `${test_today}T${slotIndexToTime(slotIndex)}:00`
 }
 
 // Convert position to slot index
@@ -659,15 +710,6 @@ const getSlotIndexFromPosition = (y: number): number => {
 	return Math.max(0, Math.min(timeSlots.value.length - 1, Math.floor(relativeY / slotHeight)))
 }
 
-// Calculate new time based on slot index
-const calculateTimeFromSlotIndex = (slotIndex: number): string => {
-	const totalMinutes = slotIndex * 10
-	const hours = Math.floor(totalMinutes / 60) + startTime.value.hours
-	const minutes = totalMinutes % 60
-
-
-	return `${test_today}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`
-}
 
 // Validate end time
 const validateEndTime = (value: string): string | boolean => {
@@ -690,6 +732,7 @@ const openCreateDialog = (prefillTimes: PrefillDialog): void => {
 	editingEvent.value = new EditedMyEvent(
 		undefined,
 		undefined,
+		undefined,
 		prefillTimes.startTime,
 		prefillTimes.endTime,
 		'work',
@@ -699,23 +742,27 @@ const openCreateDialog = (prefillTimes: PrefillDialog): void => {
 	dialog.value = true
 }
 
-const openEditDialog = (event: MyEvent): void => {
-	// Don't open dialog if dragging
+const openEditDialog = (): void => {
+
 	if (draggingEventId.value) return
+
+	const event = events.value.find(e => e.id === focusedEventId.value)
+	if (!event) return
 
 	dialogMode.value = 'edit'
 	const startDate = new Date(event.start)
 	const endDate = new Date(event.end)
 
-	editingEvent.value = {
-		id: event.id,
-		title: event.title,
-		start: startDate.toTimeString().slice(0, 5),
-		end: endDate.toTimeString().slice(0, 5),
-		category: event.category || 'work',
-		gridRowStart: event.gridRowStart,
-		gridRowEnd: event.gridRowEnd
-	}
+	editingEvent.value = new EditedMyEvent(
+		event.id,
+		event.title,
+		event.color,
+		startDate.toTimeString().slice(0, 5),
+		endDate.toTimeString().slice(0, 5),
+		event.category || 'work',
+		event.gridRowStart,
+		event.gridRowEnd
+	)
 	dialog.value = true
 }
 
@@ -723,23 +770,30 @@ const saveEvent = (): void => {
 	if (!isFormValid.value) return
 
 
+	const today = test_today
 	if (dialogMode.value === 'create') {
 		// Create new event
 		const newId = events.value.length > 0 ? Math.max(...events.value.map(e => e.id)) + 1 : 1
-		const today = test_today
 
 		const newEvent: MyEvent = {
 			...editingEvent.value,
 			id: newId,
 			start: `${today}T${editingEvent.value.start}:00`,
 			end: `${today}T${editingEvent.value.end}:00`,
+			gridRowStart: editingEvent.value.gridRowStart ?? timeToSlotIndex(editingEvent.value.start) + 1,
+			gridRowEnd: editingEvent.value.gridRowEnd ?? timeToSlotIndex(editingEvent.value.end)
 		}
 
-		console.log(newEvent)
-		// Check for conflicts before adding
-		if (checkEventConflict(newId, newEvent.start, newEvent.end)) {
-			conflictSnackbar.value = true
-			return
+		// If creating a background event, update overlapsBackground flags for all normal events
+		if (newEvent.isBackground) {
+			updateOverlapsBackgroundFlags(newEvent.start, newEvent.end)
+		} else {
+			if (checkEventConflict(newId, newEvent.start, newEvent.end)) {
+				conflictSnackbar.value = true
+				return
+			}
+			// If creating a normal event, check if it overlaps with any background event
+			newEvent.isDuringBackgroundEvent = checkOverlapsBackground(newEvent.start, newEvent.end)
 		}
 
 		events.value.push(newEvent)
@@ -747,22 +801,29 @@ const saveEvent = (): void => {
 		// Edit existing event
 		const eventIndex = events.value.findIndex(e => e.id === editingEvent.value.id)
 		if (eventIndex !== -1) {
-			events.value[eventIndex]!.title = editingEvent.value.title ?? '';
-			events.value[eventIndex]!.category = editingEvent.value.category
+			console.log(editingEvent.value)
+			console.log(timeToSlotIndex(editingEvent.value.start ?? ''));
+			events.value[eventIndex] = {
+				...editingEvent.value,
+				start: `${today}T${editingEvent.value.start}:00`,
+				end: `${today}T${editingEvent.value.end}:00`,
+				gridRowStart: timeToSlotIndex(editingEvent.value.start) + 1,
+				gridRowEnd: timeToSlotIndex(editingEvent.value.end)
+			}
 		}
 	}
 
 	dialog.value = false
 }
 
+const toDeleteIndex = ref<number | null>(null);
+const toDeleteEvent = computed(() => toDeleteIndex.value ? events.value[toDeleteIndex.value] : null);
+
 const deleteEvent = (): void => {
-	if (editingEvent.value.id) {
-		const index = events.value.findIndex(e => e.id === editingEvent.value.id)
-		if (index !== -1) {
-			events.value.splice(index, 1)
-		}
+	if (toDeleteIndex.value) {
+		events.value.splice(toDeleteIndex.value, 1)
 	}
-	dialog.value = false
+	deleteDialog.value = false
 }
 
 // Resize state
@@ -772,7 +833,7 @@ const resizePreview = ref<CreationPreview | null>(null)
 const resizeDirection = ref<'top' | 'bottom' | null>(null)
 
 // Click and drag to create new events
-const handleColumnMouseDown = (e: MouseEvent): void => {
+const handleColumnPointerDown = (e: PointerEvent): void => {
 	const target = e.target as HTMLElement
 
 	// Check if clicking on a resize handle
@@ -828,11 +889,12 @@ const handleColumnMouseDown = (e: MouseEvent): void => {
 	e.preventDefault()
 }
 
-const handleColumnMouseMove = (e: MouseEvent): void => {
+const handleColumnPointerMove = (e: PointerEvent): void => {
 	// Handle resizing
 	if (resizingEventId.value !== null && resizeStartSlot.value !== null && resizePreview.value && resizeDirection.value) {
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
-		const event = events.value.find(ev => ev.id === resizingEventId.value)
+		const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
+		const event = events.value[eventIndex]
 		if (!event) return
 
 		if (resizeDirection.value === 'bottom') {
@@ -846,17 +908,13 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 					startRow,
 					endRow: newEndRow
 				}
-
 				// Update the event's grid position
-				const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
 				const nextEvent = events.value[eventIndex + 1]
 				if (nextEvent && newEndRow >= nextEvent.gridRowStart) {
 					return
 				}
-
 				event.gridRowEnd = newEndRow
-				// Update the end time
-				event.end = calculateTimeFromSlotIndex(newEndRow)
+				event.end = calculateDateTimeFromSlotIndex(newEndRow)
 			}
 		} else if (resizeDirection.value === 'top') {
 			// Resizing from top (changing start time)
@@ -869,17 +927,14 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 					startRow: newStartRow,
 					endRow
 				}
-
 				// Check for conflicts with previous event
-				const eventIndex = events.value.findIndex(ev => ev.id === resizingEventId.value)
 				const prevEvent = events.value[eventIndex - 1]
 				if (prevEvent && newStartRow <= prevEvent.gridRowEnd) {
 					return
 				}
 
 				event.gridRowStart = newStartRow
-				// Update the start time
-				event.start = calculateTimeFromSlotIndex(newStartRow - 1)
+				event.start = calculateDateTimeFromSlotIndex(newStartRow - 1)
 			}
 		}
 
@@ -894,6 +949,16 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 	const startRow = Math.min(creationStart.value, creationEnd.value) + 1
 	const endRow = Math.max(creationStart.value, creationEnd.value) + 1
 
+	const hasConflict = events.value.some(ev => {
+		if (ev.isBackground) return false
+		// Check if the creation preview overlaps with any event
+		return !(endRow + 1 <= ev.gridRowStart || startRow - 1 >= ev.gridRowEnd)
+	})
+
+	if (hasConflict) {
+		return
+	}
+
 	creationPreview.value = {
 		startRow,
 		endRow
@@ -901,7 +966,7 @@ const handleColumnMouseMove = (e: MouseEvent): void => {
 }
 
 
-const handleColumnMouseUp = (_e: MouseEvent): void => {
+const handleColumnPointerUp = (_e: PointerEvent): void => {
 	// Handle resize end
 	if (resizingEventId.value !== null) {
 		resizingEventId.value = null
@@ -932,26 +997,14 @@ const handleColumnMouseUp = (_e: MouseEvent): void => {
 	creationPreview.value = null
 }
 
-const handleColumnMouseLeave = (): void => {
-	// Cancel resizing if mouse leaves
-	if (resizingEventId.value !== null) {
-		resizingEventId.value = null
-		resizeStartSlot.value = null
-		resizePreview.value = null
-		resizeDirection.value = null
-	}
-
-	if (isCreating.value) {
-		// Cancel creation if mouse leaves the column
-		isCreating.value = false
-		creationStart.value = null
-		creationEnd.value = null
-		creationPreview.value = null
-	}
-}
 const updateCurrentTime = () => {
 	currentTime.value = new Date()
 }
+
+// Watch for time range changes
+watch([startTime, spanHours], () => {
+	initializeEventGridPositions()
+}, {deep: true})
 
 // Lifecycle hooks
 onMounted(() => {
@@ -976,26 +1029,27 @@ onUnmounted(() => {
 
 <style scoped>
 .calendar-grid {
-	padding: 10px 0;
-	background-color: #f5f5f5;
+	background: rgb(var(--v-theme-neutral-100));
 	display: grid;
 	grid-template-columns: 80px 1fr;
 	gap: 0;
 	height: 600px;
 	overflow-y: auto;
-	border: 1px solid #e0e0e0;
+	border: 2px solid #444;
+	padding: 10px 0;
 }
+
 .events-column {
 	display: grid;
 	position: relative;
-	background: white;
+	background: rgb(var(--v-theme-neutral-200));
 	user-select: none;
 	cursor: crosshair;
 }
 
 .time-column {
 	display: grid;
-	background: #f5f5f5;
+	background: rgb(var(--v-theme-neutral-100));
 	position: relative;
 }
 
@@ -1005,10 +1059,8 @@ onUnmounted(() => {
 
 .time-labels-overlay {
 	position: absolute;
-	top: 0;
 	left: 0;
 	right: 0;
-	bottom: 0;
 	pointer-events: none;
 }
 
@@ -1016,15 +1068,14 @@ onUnmounted(() => {
 	position: absolute;
 	right: 20px;
 	transform: translateY(-50%);
-	color: #333;
+	color: #FFF;
 	font-weight: 400;
-	background: #f5f5f5;
+	background: rgb(var(--v-theme-neutral-100));
 	padding: 0 1px;
 	font-size: 13px;
 }
 
-.time-label-positioned.half-hour-label {
-	color: #333;
+.time-label-positioned:nth-of-type(3n+1) {
 	font-weight: 500;
 	font-size: 15px;
 }
@@ -1034,7 +1085,7 @@ onUnmounted(() => {
 	left: 0;
 	right: 0;
 	height: 3px;
-	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	background: rgb(15, 39, 124);
 	z-index: 20;
 	display: flex;
 	align-items: center;
@@ -1044,14 +1095,13 @@ onUnmounted(() => {
 
 .midnight-label {
 	position: absolute;
-	top: -10px;
-	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	top: -8px;
+	background: rgb(15, 39, 124);
 	color: white;
-	padding: 2px 8px;
+	padding: 2px 5px;
 	border-radius: 4px;
 	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
+	font-weight: 500;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -1060,14 +1110,13 @@ onUnmounted(() => {
 	left: 0;
 	right: 0;
 	height: 3px;
-	background: linear-gradient(90deg, #9C27B0 0%, #E91E63 100%);
+	background: rgb(15, 39, 124);
 	z-index: 20;
 	pointer-events: none;
-	box-shadow: 0 2px 8px rgba(156, 39, 176, 0.4);
 }
 
 .time-slot {
-	border-top: 2px dotted rgba(51, 51, 51, 0.5);
+	border-top: 2px dotted #999;
 }
 
 .time-slot:nth-of-type(3n+1) {
@@ -1075,7 +1124,7 @@ onUnmounted(() => {
 }
 
 .event-slot {
-	border-top: 2px dotted rgba(51, 51, 51, 0.5);
+	border-top: 2px dotted #999;
 	transition: background-color 0.2s ease;
 }
 
@@ -1094,18 +1143,18 @@ onUnmounted(() => {
 	left: 0;
 	right: 0;
 	height: 3px;
-	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	background: rgb(var(--v-theme-secondary));
 	z-index: 20;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4);
+	box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.4);
 }
 
 .current-time-label {
 	position: absolute;
-	top: -10px;
-	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	top: -8px;
+	background: rgb(var(--v-theme-secondary));
 	color: white;
 	padding: 2px 8px;
 	border-radius: 4px;
@@ -1121,19 +1170,19 @@ onUnmounted(() => {
 	left: 0;
 	right: 0;
 	height: 3px;
-	background: linear-gradient(90deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+	background: linear-gradient(90deg, rgb(var(--v-theme-secondary)) 0%, rgb(var(--v-theme-primary)) 100%);
 	z-index: 20;
 	pointer-events: none;
-	box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.4);
+	box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.5);
 }
 
 /* Event Block Styles */
 .event-block {
 	position: absolute;
 	top: 2px;
-	left: 2px;
-	right: 2px;
-	bottom: 1px;
+	left: 0;
+	right: 0;
+	bottom: 0;
 	cursor: move;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
@@ -1149,17 +1198,20 @@ onUnmounted(() => {
 }
 
 .event-block.focused {
-	border: 2px solid #1976d2;
+	transform: scalex(1.015);
+	right: 0.75%;
+	z-index: 11;
+	border: 3px solid #ffffff;
 	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 .event-block.dragging {
-	opacity: 0.5;
 	z-index: 100;
+	filter: brightness(0.7);
 }
 
 .event-block.conflict {
-	background: #f44336 !important;
+	background: rgba(244, 67, 54, 0.7) !important;
 	animation: pulse 0.5s ease-in-out infinite;
 }
 
@@ -1172,19 +1224,19 @@ onUnmounted(() => {
 	}
 }
 
-.event-block:not(.resizing):not(.dragging):not(.no-hover):hover {
-	transform: scaleY(1.06);
+.event-block:not(.background-event):not(.no-hover):hover {
+	transform: scalex(1.015);
+	right: 0.75%;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	z-index: 11;
 }
 
 .event-block.past-event {
-	opacity: 0.6;
-	filter: grayscale(30%);
+	filter: grayscale(30%) brightness(0.9);
 }
 
 .event-block.past-event:hover {
-	opacity: 0.8;
+	filter: grayscale(20%) brightness(0.95);
 }
 
 .event-content {
@@ -1208,11 +1260,12 @@ onUnmounted(() => {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	line-height: 1.2;
+	opacity: 1;
 }
 
 .event-time {
 	font-size: 11px;
-	opacity: 0.9;
+	opacity: 1;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1220,8 +1273,6 @@ onUnmounted(() => {
 
 .event-category-chip {
 	margin-top: 2px;
-	background: rgba(255, 255, 255, 0.2) !important;
-	color: white !important;
 }
 
 .resize-handle {
@@ -1236,6 +1287,7 @@ onUnmounted(() => {
 	transition: background 0.2s ease;
 	flex-shrink: 0;
 }
+
 .resize-handle-bottom {
 	bottom: 0;
 }
@@ -1267,31 +1319,6 @@ onUnmounted(() => {
 	background: white;
 	padding: 2px 8px;
 	border-radius: 4px;
-}
-
-/* Category-based colors */
-.category-default {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.category-work {
-	background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-}
-
-.category-personal {
-	background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
-}
-
-.category-urgent {
-	background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
-}
-
-.category-meeting {
-	background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
-}
-
-.category-break {
-	background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
 }
 
 /* Calendar Legend */
@@ -1342,17 +1369,6 @@ onUnmounted(() => {
 	}
 }
 
-/* Accessibility improvements */
-.event-block:focus-visible {
-	outline: 3px solid #1976d2;
-	outline-offset: 2px;
-}
-
-/* Tooltip styling override */
-:deep(.v-tooltip > .v-overlay__content) {
-	white-space: pre-line;
-}
-
 /* Animation for new events */
 @keyframes slideIn {
 	from {
@@ -1369,8 +1385,45 @@ onUnmounted(() => {
 	animation: slideIn 0.3s ease-out;
 }
 
-/* Gap hint for better UX */
-.gap-2 {
-	gap: 8px;
+.background-event-block {
+	position: absolute;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s ease;
+	right: 0;
+	top: 2px;
+	bottom: 0;
+	z-index: 5;
+}
+
+.background-event-block::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: repeating-linear-gradient(
+		135deg,
+		transparent 10px,
+		transparent 10px,
+		rgba(255, 255, 255, 0.5) 20px,
+		rgba(255, 255, 255, 0.5) 20px
+	);
+	pointer-events: none;
+	z-index: 1;
+	opacity: 0.9;
+
+}
+
+.background-event-label {
+	color: white;
+	position: sticky;
+	z-index: 20;
+	opacity: 100%;
+	top: 46%;
+	padding: 7px 7px;
+	writing-mode: sideways-lr;
+	font-size: 15px;
+	font-weight: 600;
 }
 </style>
