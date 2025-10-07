@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+import {Time, TimePrecise} from '@/classes/TimeUtils';
 import type {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
 
 import {useI18n} from 'vue-i18n';
@@ -42,7 +42,7 @@ const props = defineProps({
 });
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
-const length = ref(new TimeLengthObject());
+const length = ref(new Time());
 
 onMounted(() => {
 	// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
@@ -57,7 +57,7 @@ watch(dialogShown, (isShown) => {
 		if (props.isRecursive) {
 			setTimeout(() => emit('openNext'), 200);
 		}
-		length.value = new TimeLengthObject();
+		length.value = new Time();
 	}
 })
 

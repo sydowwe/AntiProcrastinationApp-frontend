@@ -15,7 +15,7 @@
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+import {Time, TimePrecise} from '@/classes/TimeUtils';
 import type {ActivityDialogType, ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
@@ -27,10 +27,10 @@ const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
 
 const timeInputVisible = ref(true);
-const initialTime = ref(new TimeLengthObject());
+const initialTime = ref(new Time());
 const timeRemaining = ref(0);
 const timeRemainingObject = computed(() => {
-	return TimeObject.fromSeconds(timeRemaining.value)
+	return TimePrecise.fromSeconds(timeRemaining.value)
 });
 const paused = ref(false);
 const intervalId = ref<number | undefined>(undefined);
@@ -90,7 +90,7 @@ function resetTimer() {
 }
 
 function resetToDefault() {
-	initialTime.value = new TimeLengthObject();
+	initialTime.value = new Time();
 }
 
 function saveActivity() {

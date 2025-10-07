@@ -186,6 +186,7 @@ const EN = {
         timer: `Timer`,
         alarm: `Alarm`,
         taskPlanner: `Task planner`,
+        dayPlanner: `Day planner`,
     },
     general: {
         or: `Or`,

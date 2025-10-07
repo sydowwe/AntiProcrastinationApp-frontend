@@ -20,7 +20,7 @@
     import ActivitySelectionForm from '../ActivitySelectionForm.vue';
     import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
     import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
-    import { TimeLengthObject } from '@/classes/TimeUtils';
+    import { Time } from '@/classes/TimeUtils';
     import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
@@ -28,8 +28,8 @@
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
-    const alarmTime = ref(new TimeLengthObject());
-    const timeInitial = ref(new TimeLengthObject());
+    const alarmTime = ref(new Time());
+    const timeInitial = ref(new Time());
     const timeRemaining = ref(0);
     const paused = ref(false);
     const startTimestamp = ref(new Date());
@@ -69,13 +69,13 @@
     }
     function resume() {
         paused.value = false;
-        alarmTime.value = TimeLengthObject.fromSeconds(timeRemaining.value);
+        alarmTime.value = Time.fromSeconds(timeRemaining.value);
         intervalId.value = setInterval(() => {
             if (timeRemaining.value == 0) {
                 stop();
             } else {
                 timeRemaining.value--;
-                alarmTime.value = TimeLengthObject.fromSeconds(timeRemaining.value);
+                alarmTime.value = Time.fromSeconds(timeRemaining.value);
             }
         }, 1000);
     }
@@ -84,7 +84,7 @@
 	    saveDialog.value.open(activitySelectionForm.value.getSelectedActivityName as string, timePassed().getNice);
     }
     function resetTime() {
-        alarmTime.value = new TimeLengthObject();
+        alarmTime.value = new Time();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;
@@ -95,7 +95,7 @@
     function saveActivity() {
 	    addActivityToHistory(startTimestamp.value, timePassed(),activitySelectionForm.value.getSelectedActivityId);
     }
-    function updateTimeInitial(_timeInitial: TimeLengthObject) {
+    function updateTimeInitial(_timeInitial: Time) {
         timeInitial.value = _timeInitial;
     }
     function timePassed(){

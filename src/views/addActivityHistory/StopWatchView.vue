@@ -15,7 +15,7 @@
     import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
     import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
     import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-    import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+    import {Time, TimePrecise} from '@/classes/TimeUtils';
     import  type { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
@@ -23,7 +23,7 @@
     const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
     const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
-    const time = ref(new TimeObject());
+    const time = ref(new TimePrecise());
     const paused = ref(false);
     const intervalId = ref(undefined as number | undefined);
     const startTimestamp = ref(new Date());
@@ -58,7 +58,7 @@
         showSaveDialog();
     }
     function resetTime() {
-        time.value = new TimeObject();
+        time.value = new TimePrecise();
         paused.value = false;
         intervalId.value = undefined;
         formDisabled.value = false;
@@ -69,7 +69,7 @@
             saveDialog.value.open(activityName, time.value.toTimeLength);
         }
     }
-    function saveActivity(length: TimeLengthObject) {
+    function saveActivity(length: Time) {
         activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, length);
     }
 </script>

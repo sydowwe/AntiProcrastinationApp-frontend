@@ -86,9 +86,7 @@
 			<!-- Events Column -->
 			<div
 				ref="eventsColumnRef"
-				:class="['events-column', {
-					'no-touch-scroll': isCreating || draggingEventId !== null || resizingEventId !== null
-				}]"
+				class="events-column"
 				:style="{ gridTemplateRows: `repeat(${totalGridRows}, 22px)` }"
 				@pointerdown="handleColumnPointerDown"
 				@pointermove="handleColumnPointerMove"
@@ -334,7 +332,7 @@
 <script setup lang="ts">
 import {ref, computed, onMounted, onUnmounted, watch, type Ref} from 'vue'
 import type {CleanupFn} from '@atlaskit/pragmatic-drag-and-drop/types';
-import {type Category, type CreationPreview, EditedMyEvent, MyEvent, type PrefillDialog, type TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
+import {type Category, type CreationPreviewType, EditedMyEvent, MyEvent, type PrefillDialog, type TimeSlot} from '@/classes/types/DayPlannerTypes.ts';
 import {VColorInput} from 'vuetify/labs/components';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 
@@ -425,7 +423,7 @@ const editingEvent = ref<EditedMyEvent>(new EditedMyEvent())
 const isCreating = ref(false)
 const creationStart = ref<number | null>(null)
 const creationEnd = ref<number | null>(null)
-const creationPreview = ref<CreationPreview | null>(null)
+const creationPreview = ref<CreationPreviewType | null>(null)
 
 // Snackbar state
 const conflictSnackbar = ref(false)
@@ -825,7 +823,7 @@ const deleteEvent = (): void => {
 // Resize state
 const resizingEventId = ref<number | null>(null)
 const resizeStartSlot = ref<number | null>(null)
-const resizePreview = ref<CreationPreview | null>(null)
+const resizePreview = ref<CreationPreviewType | null>(null)
 const resizeDirection = ref<'top' | 'bottom' | null>(null)
 
 const draggingEventId = ref<number | null>(null)
@@ -939,7 +937,7 @@ const handleColumnPointerDown = (e: PointerEvent): void => {
 
 		// Start dragging
 		draggingEventId.value = eventId
-		originalEventState.value = { ...event }
+		originalEventState.value = {...event}
 
 		// Calculate where within the event block the pointer is
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -1015,7 +1013,30 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 		const event = events.value[eventIndex]
 		if (!event) return
 
-		if (resizeDirection.value === 'bottom') {
+		if (resizeDirection.value === 'top') {
+			// Resizing from top (changing start time)
+			const newStartRow = slotIndex + 1
+			const endRow = resizePreview.value.endRow
+
+			// Ensure minimum height of 1 slot (startRow must be <= endRow)
+			if (newStartRow <= endRow) {
+				resizePreview.value = {
+					startRow: newStartRow,
+					endRow
+				}
+				// Check for conflicts with previous event
+				const prevEvent = events.value[eventIndex - 1]
+				console.log(prevEvent.gridRowStart, prevEvent.gridRowEnd)
+				console.log(newStartRow)
+				console.log(prevEvent && prevEvent.gridRowStart <= newStartRow && newStartRow <= prevEvent.gridRowEnd)
+				if (prevEvent && prevEvent.gridRowStart <= newStartRow && newStartRow <= prevEvent.gridRowEnd) {
+					return
+				}
+
+				event.gridRowStart = newStartRow
+				event.start = calculateDateTimeFromSlotIndex(newStartRow - 1)
+			}
+		} else if (resizeDirection.value === 'bottom') {
 			// Resizing from bottom (changing end time)
 			const newEndRow = slotIndex + 1
 			const startRow = resizePreview.value.startRow
@@ -1033,28 +1054,6 @@ const handleColumnPointerMove = (e: PointerEvent): void => {
 				}
 				event.gridRowEnd = newEndRow
 				event.end = calculateDateTimeFromSlotIndex(newEndRow)
-			}
-		} else if (resizeDirection.value === 'top') {
-			// Resizing from top (changing start time)
-			const newStartRow = slotIndex + 1
-			const endRow = resizePreview.value.endRow
-
-			// Ensure minimum height of 1 slot (startRow must be <= endRow)
-			if (newStartRow <= endRow) {
-				resizePreview.value = {
-					startRow: newStartRow,
-					endRow
-				}
-				// Check for conflicts with previous event
-				const prevEvent = events.value[eventIndex - 1]
-				console.log(prevEvent.gridRowStart, prevEvent.gridRowEnd)
-				console.log(newStartRow)
-				if (prevEvent && prevEvent.gridRowStart <= newStartRow && newStartRow <= prevEvent.gridRowEnd) {
-					return
-				}
-
-				event.gridRowStart = newStartRow
-				event.start = calculateDateTimeFromSlotIndex(newStartRow - 1)
 			}
 		}
 		event.isDuringBackgroundEvent = checkOverlapsBackground(event.start, event.end)
@@ -1189,9 +1188,6 @@ onUnmounted(() => {
 	background: rgb(var(--v-theme-neutral-200));
 	user-select: none;
 	cursor: crosshair;
-}
-
-.events-column.no-touch-scroll {
 	touch-action: none;
 }
 
@@ -1279,7 +1275,6 @@ onUnmounted(() => {
 .event-slot:nth-of-type(3n+1) {
 	border-top-style: solid;
 }
-
 
 .event-slot.hoverable:hover {
 	background-color: rgba(0, 0, 0, 0.02);

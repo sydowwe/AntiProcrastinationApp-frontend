@@ -17,7 +17,8 @@ import PlannerView from '@/views/PlannerView.vue'
 import ConfirmEmailView from "@/views/user/ConfirmEmailView.vue";
 import {useUserStore} from "@/stores/userStore";
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
-import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
+// import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
+import NewDayPlannerView from '@/views/NewDayPlannerView.vue';
 
 
 const router = createRouter({
@@ -106,7 +107,7 @@ const router = createRouter({
 		{
 			path: '/day-planner',
 			name: 'dayPlanner',
-			component: DayPlannerView
+			component: NewDayPlannerView
 		},
 		// {
 		//   path: '/about',

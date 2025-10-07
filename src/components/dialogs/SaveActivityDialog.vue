@@ -9,15 +9,15 @@
 import {ref} from 'vue';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
-import type {TimeLengthObject} from '@/classes/TimeUtils.ts';
+import type {Time} from '@/classes/TimeUtils.ts';
 
 //TODO preklad
 const i18n = useI18n();
 const activity = ref('sitting around');
-const timeSpent = ref<TimeLengthObject>();
+const timeSpent = ref<Time>();
 const dialog = ref(false);
 
-function open(_activity: string, _timeSpent: TimeLengthObject) {
+function open(_activity: string, _timeSpent: Time) {
 	activity.value = _activity ?? activity.value;
 	timeSpent.value = _timeSpent;
 	dialog.value = true;
@@ -34,7 +34,7 @@ function saveActivity() {
 }
 
 const emit = defineEmits<{
-	(e: 'saved', length: TimeLengthObject): void;
+	(e: 'saved', length: Time): void;
 	(e: 'resetTime'): void;
 }>();
 defineExpose({open});

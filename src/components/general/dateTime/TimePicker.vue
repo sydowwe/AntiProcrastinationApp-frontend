@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import {watch} from "vue";
-import {TimeLengthObject} from "@/classes/TimeUtils";
+import {Time} from "@/classes/TimeUtils";
 
 const positiveRule = (v: number) => (v > 0 || timeValue.value.hours > 0) || 'Musí byť viac ako 0'
 
@@ -47,7 +47,7 @@ const props = defineProps({
 	label: String,
 });
 
-const timeValue = defineModel<TimeLengthObject>({default: new TimeLengthObject()});
+const timeValue = defineModel<Time>({default: new Time()});
 
 watch(() => timeValue.value.hours, (newValue) => {
 	// Handle wrap-around for hours

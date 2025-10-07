@@ -1,5 +1,5 @@
 import {PlannerTask} from '../PlannerTask';
-import {TimeLengthObject} from '../TimeUtils';
+import {Time} from '../TimeUtils';
 import {TodoListItemEntity, RoutineTodoListItemEntity} from '../ToDoListItem';
 import {Alarm} from '@/classes/Alarm';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
@@ -50,7 +50,7 @@ export interface EntityDialogType {
 }
 
 export interface ActivityDialogType {
-	open(activityName: string, timeSpent: TimeLengthObject): void;
+	open(activityName: string, timeSpent: Time): void;
 }
 
 export interface ToDoListItemDialogType extends EntityDialogType {
@@ -70,7 +70,7 @@ export interface AlarmDialogType extends EntityDialogType {
 
 
 export interface ActivitySelectionFormType extends FormType {
-	saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject): void;
+	saveActivityToHistory(startTimestamp: Date, activityLength: Time): void;
 	getSelectedName(type: 'role' | 'category' | 'taskUrgency' | 'routineTimePeriod'): string;
 	getSelectedActivityName: string | null;
 	getSelectedActivityId: number;
@@ -85,7 +85,7 @@ export interface HistoryRecordItemType {
 }
 
 export interface TimeLengthPickerType {
-	time: TimeLengthObject;
+	time: Time;
 }
 
 export interface MyTwoFactorAuthInputType {

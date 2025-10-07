@@ -15,7 +15,7 @@ import {Category, CategoryRequest} from '@/classes/Category.ts';
 import {TaskUrgencyEntity, TaskUrgencyRequest} from '@/classes/TaskUrgencyEntity.ts';
 import {ActivityHistory, ActivityHistoryRequest} from '@/classes/ActivityHistory.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {TimeLengthObject} from '@/classes/TimeUtils.ts';
+import {Time} from '@/classes/TimeUtils.ts';
 import {PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {Alarm, AlarmRequest} from '@/classes/Alarm.ts';
@@ -36,8 +36,8 @@ export function useActivityHistoryCrud() {
 	})
 
 
-	async function create(startTimestamp: Date, length?: TimeLengthObject, activityId?: number) {
-		const request = new ActivityHistoryRequest(startTimestamp, length ?? TimeLengthObject.fromMinutes(0), activityId ?? -1);
+	async function create(startTimestamp: Date, length?: Time, activityId?: number) {
+		const request = new ActivityHistoryRequest(startTimestamp, length ?? Time.fromMinutes(0), activityId ?? -1);
 		return baseCreate(request)
 	}
 

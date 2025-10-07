@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import {ref, computed, watch, onMounted, type PropType} from 'vue';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {Time} from '@/classes/TimeUtils';
 import {
 	ActivityFormRequest,
 	ActivityFormSelectOptions,
@@ -145,7 +145,7 @@ function validate() {
 	}
 }
 
-async function saveActivityToHistory(startTimestamp: Date, activityLength: TimeLengthObject) {
+async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
 	if (!activityIdModel.value) {
 		showErrorSnackbar(`Please select an activity`);
 	} else {

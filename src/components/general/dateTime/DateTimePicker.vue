@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimeObject} from '@/classes/TimeUtils';
+import {TimePrecise} from '@/classes/TimeUtils';
 import {VDateInput} from 'vuetify/labs/components';
 import {useMoment} from '@/scripts/momentHelper.ts';
 
@@ -40,7 +40,7 @@ const props = defineProps({
 	label: String,
 });
 const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
-const time = ref<TimeObject>(new TimeObject());
+const time = ref<TimePrecise>(new TimePrecise());
 
 function setTime(hours: number, minutes: number) {
 	dateTime.value?.setHours(hours, minutes, 0, 0);
