@@ -23,7 +23,7 @@ import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import type {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
 import {onMounted, ref} from 'vue';
-import {TimeLengthObject} from '@/classes/TimeUtils';
+import {Time} from '@/classes/TimeUtils';
 import {useI18n} from 'vue-i18n';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -35,7 +35,7 @@ const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelec
 const formDisabled = ref(false);
 
 const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
-const timeLength = ref(new TimeLengthObject());
+const timeLength = ref(new Time());
 
 onMounted(()=>{
 	const now = new Date();

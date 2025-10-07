@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+import {Time, TimePrecise} from '@/classes/TimeUtils';
 import {PlannerTask} from '@/classes/PlannerTask';
 
 import {useI18n} from 'vue-i18n';
@@ -52,8 +52,8 @@ const props = defineProps({
 });
 const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
-const time = ref(new TimeObject());
-const length = ref(new TimeLengthObject());
+const time = ref(new TimePrecise());
+const length = ref(new Time());
 
 onMounted(() => {
 	time.value.hours = dateTime.value.getHours();
@@ -66,7 +66,7 @@ watch(dialogShown, (isShown) => {
 			time.value.hours = dateTime.value.getHours();
 			time.value.minutes = dateTime.value.getMinutes();
 		}
-		length.value = new TimeLengthObject(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60);
+		length.value = new Time(Math.floor(props.plannerTask?.minuteLength / 60), props.plannerTask?.minuteLength % 60);
 	} else {
 		if (props.isRecursive) {
 			setTimeout(() => emit('openNext'), 200);

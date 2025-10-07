@@ -10,14 +10,14 @@
 </template>
 
 <script setup lang="ts">
-import {type TimeKeys, TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+import {type TimePreciseKeys, Time, TimePrecise} from '@/classes/TimeUtils';
     const props = defineProps({
         timeObject: {
-            type: TimeObject,
+            type: TimePrecise,
             required: true,
         },
 	    whatToShow:{
-		    type: Array as () => TimeKeys[],
+		    type: Array as () => TimePreciseKeys[],
 		    default: () => ['hours', 'minutes', 'seconds'],
 	    }
     });

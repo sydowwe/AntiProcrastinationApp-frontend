@@ -54,7 +54,7 @@ export function useMoment() {
 	}
 
 	function formatToTime24H(date: Date) {
-		return moment(date).locale('sk').format('H:mm');
+		return moment(date).locale('sk').format('HH:mm');
 	}
 
 	function equalsOnlyDate(date1: Date, date2: Date) {

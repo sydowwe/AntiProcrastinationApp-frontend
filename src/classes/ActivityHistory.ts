@@ -1,12 +1,12 @@
 import {Activity} from './Activity';
-import {TimeLengthObject, TimeObject} from '@/classes/TimeUtils';
+import {Time, TimePrecise} from '@/classes/TimeUtils';
 import {ActivityFormRequest} from '@/classes/ActivityFormHelper';
 
 export class ActivityHistory {
 	constructor(
 		public id: number,
 		public startTimestamp: Date,
-		public length: TimeLengthObject,
+		public length: Time,
 		public activity: Activity,
 	) {
 	}
@@ -16,7 +16,7 @@ export class ActivityHistory {
 			id = 0
 		} = object;
 		const startTimestamp = new Date(object.startTimestamp);
-		const length = TimeLengthObject.fromJson(object.length);
+		const length = Time.fromJson(object.length);
 		const activity = Activity.fromJson(object.activity);
 		return new ActivityHistory(id, startTimestamp, length, activity);
 	}
@@ -29,7 +29,7 @@ export class ActivityHistory {
 export class ActivityHistoryRequest {
 	constructor(
 		public startTimestamp: Date,
-		public length: TimeLengthObject,
+		public length: Time,
 		public activityId: number,
 	) {
 	}
@@ -37,7 +37,7 @@ export class ActivityHistoryRequest {
 	static fromJson(object: any) {
 		const {
 			startTimestamp = new Date(),
-			length = new TimeObject(),
+			length = new TimePrecise(),
 			activityId = 0
 		} = object;
 		return new ActivityHistoryRequest(startTimestamp, length, activityId);

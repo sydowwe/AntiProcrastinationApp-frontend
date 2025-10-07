@@ -185,6 +185,7 @@ const SK = {
         timer: `Časovač`,
         alarm: `Alarm`,
         taskPlanner: `Plánovač aktivít`,
+        dayPlanner: `Plánovač dňa`
     },
     general: {
         or: `Alebo`,

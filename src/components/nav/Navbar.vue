@@ -160,7 +160,7 @@
 			<VAppBar app color="primary-accent">
 				<div class="pl-2 w-100 d-flex ga-3 align-center">
 					<VSheet class="d-flex px-2 py-1" color="primary-container" style="border-radius: 7px; border: 3px black double">
-						<VAppBarTitle>Moja digitálna firma</VAppBarTitle>
+						<VAppBarTitle>Adhd time organizer</VAppBarTitle>
 					</VSheet>
 					<div v-if="userStore.isAuthenticated">
 						<VIcon icon="thumbtack" size="15" class="mr-1 mb-1"></VIcon>

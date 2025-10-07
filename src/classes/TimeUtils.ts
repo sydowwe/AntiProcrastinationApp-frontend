@@ -1,4 +1,4 @@
-export class TimeObject {
+export class TimePrecise {
 	constructor(
 		public hours: number = 0,
 		public minutes: number = 0,
@@ -8,11 +8,11 @@ export class TimeObject {
 
 	public get toTimeLength() {
 		console.log(this)
-		return new TimeLengthObject(this.hours, this.minutes + Math.round(this.seconds / 60));
+		return new Time(this.hours, this.minutes + Math.round(this.seconds / 60));
 	}
 
-	public static fromSeconds(seconds: number): TimeObject {
-		return new TimeObject(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60), seconds % 60);
+	public static fromSeconds(seconds: number): TimePrecise {
+		return new TimePrecise(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60), seconds % 60);
 	}
 
 	static fromJson(object: any) {
@@ -21,7 +21,7 @@ export class TimeObject {
 			minutes = 0,
 			seconds = 0
 		} = object;
-		return new TimeObject(hours, minutes, seconds);
+		return new TimePrecise(hours, minutes, seconds);
 	}
 
 	public isNotZero(): boolean {
@@ -36,26 +36,26 @@ export class TimeObject {
 		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}${this.seconds}s`;
 	}
 
-	public subtract(objectToSubtract: TimeObject) {
-		return TimeObject.fromSeconds(this.getInSeconds - objectToSubtract.getInSeconds)
+	public subtract(objectToSubtract: TimePrecise) {
+		return TimePrecise.fromSeconds(this.getInSeconds - objectToSubtract.getInSeconds)
 	}
 }
 
-export type TimeKeys = 'hours' | 'minutes' | 'seconds';
+export type TimePreciseKeys = 'hours' | 'minutes' | 'seconds';
 
-export class TimeLengthObject {
+export class Time {
 	constructor(
 		public hours: number = 0,
 		public minutes: number = 0,
 	) {
 	}
 
-	public static fromMinutes(minutes: number): TimeLengthObject {
-		return new TimeLengthObject(Math.floor(minutes / 60), Math.floor(minutes % 60));
+	public static fromMinutes(minutes: number): Time {
+		return new Time(Math.floor(minutes / 60), Math.floor(minutes % 60));
 	}
 
-	public static fromSeconds(seconds: number): TimeLengthObject {
-		return new TimeLengthObject(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60));
+	public static fromSeconds(seconds: number): Time {
+		return new Time(Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60));
 	}
 
 	static fromJson(object: any) {
@@ -63,7 +63,7 @@ export class TimeLengthObject {
 			hours = 0,
 			minutes = 0,
 		} = object;
-		return new TimeLengthObject(hours, minutes);
+		return new Time(hours, minutes);
 	}
 
 	public isNotZero(): boolean {
@@ -82,7 +82,21 @@ export class TimeLengthObject {
 		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}`;
 	}
 
-	public subtract(objectToSubtract: TimeLengthObject) {
-		return TimeLengthObject.fromMinutes(this.getInMinutes - objectToSubtract.getInMinutes)
+	public subtract(objectToSubtract: Time) {
+		return Time.fromMinutes(this.getInMinutes - objectToSubtract.getInMinutes)
+	}
+
+	public get toString() {
+		return `${this.hours.toString().padStart(2, '0')}:${this.minutes.toString().padStart(2, '0')}`;
+	}
+
+	public static fromString(string: string) {
+		const [h, m] = string.split(':');
+		const hours = parseInt(h ?? '0')
+		const minutes = parseInt(m ?? '0')
+		if (hours < 0 || minutes < 0) {
+			return new Time(0, 0);
+		}
+		return new Time(hours, minutes );
 	}
 }

@@ -38,7 +38,7 @@ const {
 } = useQuickCreateActivity('Planner task');
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
-import {TimeObject} from '@/classes/TimeUtils';
+import {TimePrecise} from '@/classes/TimeUtils';
 import {useDefaults} from 'vuetify/framework';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
@@ -52,7 +52,7 @@ const dialog = ref(false);
 const plannerTask = ref(new PlannerTaskRequest());
 const idToEdit = ref(0);
 const isEdit = ref(false);
-const time = ref(new TimeObject())
+const time = ref(new TimePrecise())
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
@@ -113,7 +113,7 @@ function openCreate() {
 
 function closeAndReset() {
 	close();
-	time.value = new TimeObject();
+	time.value = new TimePrecise();
 	plannerTask.value = new PlannerTaskRequest();
 }
 
