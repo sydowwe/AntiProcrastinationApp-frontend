@@ -1,22 +1,22 @@
 // composables/useCurrentTimeIndicator.ts
 import {computed} from 'vue'
 import {useCurrentTime} from '@/composables/general/useCurrentTime'
-import {useDayPlanner} from './useDayPlanner.ts'
+import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts'
 import {useMoment} from '@/scripts/momentHelper.ts';
 
 export function useCurrentTimeIndicator() {
 	const {formatToTime24H} = useMoment()
 	const {currentTime} = useCurrentTime()
-	const {viewStartDate, viewEndDate, timeToSlotIndex} = useDayPlanner()
+	const store = useDayPlannerStore()
 
 	const isVisible = computed(() => {
-		return currentTime.value >= viewStartDate.value && currentTime.value < viewEndDate.value
+		return currentTime.value >= store.viewStartDate && currentTime.value < store.viewEndDate
 	})
 
 	const gridRowStyle = computed(() => {
 		if (!isVisible.value) return {}
 
-		const slotIndex = timeToSlotIndex.value(formatToTime24H(currentTime.value))
+		const slotIndex = store.timeToSlotIndex(formatToTime24H(currentTime.value))
 
 		const gridRow = slotIndex + 1
 		return {

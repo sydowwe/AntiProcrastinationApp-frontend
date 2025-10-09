@@ -6,8 +6,8 @@
 
 	<VSelect v-if="isActivityFormHidden && isEdit" max-width="150" label="Quick edit mode" v-model="quickEditMode" :items="['Overwrite', 'Clone']"></VSelect>
 </div>
-<ActivitySelectionForm v-model:activityId="selectedActivityId" v-if="!isActivityFormHidden" class="mb-5"
-                       :showFromToDoListField="false" :formDisabled="false" isInDialog
+<ActivitySelectionForm ref="activityForm" v-model:activityId="selectedActivityId" v-if="!isActivityFormHidden" class="mb-5"
+                       :showFromToDoListField="false" :formDisabled="false" :isFilter="false" isInDialog
                        :selectOptionsSource="ActivityOptionsSource.ALL"></ActivitySelectionForm>
 <template v-else>
 	<VTextField class="py-2" :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
@@ -33,6 +33,8 @@ const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
 const {requiredRule} = useGeneralRules()
 const {fetchCategorySelectOptions} = useActivitySelectOptions()
+
+const activityForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 
 const {viewName} = defineProps<{
 	viewName: QuickCreateActivityRoleName,
@@ -63,19 +65,23 @@ async function execAndReturnStatus() {
 				if (activityBeforeEdit.value.name === activityFormFieldData.value.name) {
 					activityFormFieldData.value.name += ' - copy';
 				}
-				const cloneId = await quickEditActivity(activityBeforeEdit.value?.id, quickEditMode.value)
+				const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
 				if (cloneId && quickEditMode.value === 'Clone') {
 					return {activityId: cloneId, status: 'edit'};
 				}
-				return {activityId:  activityBeforeEdit.value?.id, status: 'edit'};
+				return {activityId:  activityBeforeEdit.value.id, status: 'edit'};
 			}
-			return {activityId: activityBeforeEdit.value?.id, status: 'noChange'};
+			return {activityId: activityBeforeEdit.value.id, status: 'noChange'};
 		} else {
 			const newId = await quickCreateActivity()
 			return {activityId: newId, status: 'create'};
 		}
 	}
-	return {activityId: selectedActivityId.value, status: 'fromExisting'};
+	if (!await activityForm.value?.validate()) {
+		showErrorSnackbar(`Please select an activity`);
+		return ;
+	}
+	return {activityId: selectedActivityId.value!, status: 'fromExisting'};
 }
 
 function onOpenEdit(oldActivity: Activity) {

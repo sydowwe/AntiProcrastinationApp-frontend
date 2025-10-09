@@ -49,10 +49,10 @@
 </template>
 
 <script setup lang="ts">
-import PlannerDialog from "../components/dialogs/planner/PlannerDialog.vue";
+import PlannerDialog from "../../components/dialogs/planner/PlannerDialog.vue";
 import {onMounted, ref} from "vue";
-import type {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces";
-import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask";
+import type {DateTimePickerType, PlannerDialogType} from "@/classes/types/RefTypeInterfaces.ts";
+import {PlannerTask, PlannerTaskRequest, PlannerTaskFilter} from "@/classes/PlannerTask.ts";
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import PlannerTaskDoneDialog from '@/components/dialogs/planner/PlannerTaskDoneDialog.vue';
 import {useI18n} from 'vue-i18n';

@@ -2,45 +2,46 @@
 <VSheet
 	v-if="event.isBackground"
 	:color="event.color"
-	:style="gridRowStyle"
+	:style="style"
 	:data-event-id="event.id"
 	:class="['background-event-block', { 'past-event': isPast }]"
 >
 	<VSheet class="background-event-label" :color="event.color">
-		{{ event.title }}
+		{{ event.activity.name }}
 	</VSheet>
 </VSheet>
 
 <VSheet
 	v-else
 	:color="`${event.color}E0`"
-	:style="[gridRowStyle, { marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px` }]"
+	:style
 	:class="['event-block', ...blockClasses]"
 	:data-event-id="event.id"
 	:tabindex="0"
-	@keydown.enter="$emit('edit')"
-	@keydown.esc="handleEscape"
-	@focus="$emit('focus', event.id)"
-	@blur="$emit('blur')"
+	@keydown.enter="store.openEditDialog"
+	@keydown.esc="e=>e.target.blur()"
+	@focus="store.handleFocusEvent(event.id)"
+	@blur="store.handleFocusEvent(null)"
 >
 	<div
 		class="resize-handle resize-handle-top"
 		:data-event-id="event.id"
 		@click.stop
-		@pointerdown="$emit('resizeStart', { eventId: event.id, direction: 'top', $event })"
+		@pointerdown="emit('resizeStart', { eventId: event.id, direction: 'top', $event })"
 	/>
 
 	<div class="event-content">
-		<div class="event-title">{{ event.title }}</div>
+		<div class="event-title">{{ event.activity.name }}</div>
 		<div class="event-time">{{ formattedTime }}</div>
 		<VChip
-			v-if="event.title"
+			v-if="event.activity.category"
 			size="x-small"
 			variant="flat"
-			:color="event.color"
+			:prependIcon="event.activity.category.icon ?? undefined"
+			:color="event.activity.category.color ?? 'white'"
 			class="event-category-chip"
 		>
-			{{ event.title }}
+			{{ event.activity.category.name }}
 		</VChip>
 	</div>
 
@@ -54,58 +55,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { MyEvent } from '@/classes/types/DayPlannerTypes'
+import {computed} from 'vue'
 import {useMoment} from '@/scripts/momentHelper.ts';
+import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
+import type {PlannerTask} from '@/classes/PlannerTask.ts';
 
 const {formatToTime24H} = useMoment()
+const {currentTime} = useCurrentTime()
+const store = useDayPlannerStore()
 
-interface Props {
-	event: MyEvent
-	isFocused: boolean
-	isDragging: boolean
-	isResizing: boolean
-	isConflict: boolean
-	isPast: boolean
-	isAnyEventBeingManipulated: boolean
-}
+const {event} = defineProps<{
+	event: PlannerTask
+}>()
 
-interface Emits {
-	(e: 'focus', eventId: number): void
-	(e: 'blur'): void
-	(e: 'edit'): void
-	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-}
+// Computed states based on store
+const isFocused = computed(() => store.focusedEventId === event.id)
+const isDragging = computed(() => store.draggingEventId === event.id)
+const isResizing = computed(() => store.resizingEventId === event.id)
+const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
+const isPast = computed(() => event.end < currentTime.value)
+const isAnyEventBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const gridRowStyle = computed(() => {
-	const span = Math.max(1, (props.event.gridRowEnd || 1) - (props.event.gridRowStart || 1) + 1)
+const style = computed(() => {
+	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1)
 	return {
-		gridRow: `${props.event.gridRowStart} / span ${span}`
+		marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
+		gridRow: `${event.gridRowStart} / span ${span}`
 	}
 })
 
 const formattedTime = computed(() => {
-	return `${formatToTime24H(props.event.start)} - ${formatToTime24H(props.event.end)}`
+	return `${formatToTime24H(event.start)} - ${formatToTime24H(event.end)}`
 })
 
 const blockClasses = computed(() => [
 	{
-		'dragging': props.isDragging,
-		'resizing': props.isResizing,
-		'past-event': props.isPast,
-		'focused': props.isFocused,
-		'conflict': props.isConflict,
-		'no-hover': props.isAnyEventBeingManipulated
+		'dragging': isDragging.value,
+		'resizing': isResizing.value,
+		'past-event': isPast.value,
+		'focused': isFocused.value,
+		'conflict': isConflict.value,
+		'no-hover': isAnyEventBeingManipulated.value
 	}
 ])
 
-const handleEscape = (e: KeyboardEvent) => {
-	(e.target as HTMLElement).blur()
-	emit('blur')
-}
+const emit = defineEmits<{
+	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+}>()
 </script>
 
 <style scoped>
@@ -178,6 +175,7 @@ const handleEscape = (e: KeyboardEvent) => {
 .event-content {
 	flex: 1;
 	padding: 7px 15px;
+	pointer-events: none;
 	cursor: pointer;
 	min-height: 0;
 	display: flex;
