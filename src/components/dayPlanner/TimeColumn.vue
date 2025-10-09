@@ -2,11 +2,11 @@
 <template>
 <div
 	class="time-column"
-	:style="{ gridTemplateRows: `repeat(${totalGridRows}, ${SLOT_HEIGHT}px)` }"
+	:style="{ gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)` }"
 >
 	<!-- Empty slots for structure -->
 	<div
-		v-for="(slot, index) in timeSlots"
+		v-for="(slot, index) in store.timeSlots"
 		:key="index"
 		class="time-slot"
 	/>
@@ -14,7 +14,7 @@
 	<!-- Midnight divider -->
 	<div
 		class="midnight-divider"
-		:style="{ top: `${timeToSlotIndex('00:00') * SLOT_HEIGHT}px` }"
+		:style="{ top: `${store.timeToSlotIndex('00:00') * SLOT_HEIGHT}px` }"
 	>
 		<span class="midnight-label">MIDNIGHT</span>
 	</div>
@@ -31,7 +31,7 @@
 	<!-- Time labels overlay -->
 	<div class="time-labels-overlay">
 		<div
-			v-for="(slot, index) in timeSlots"
+			v-for="(slot, index) in store.timeSlots"
 			:key="index"
 			class="time-label-positioned"
 			:style="{ top: `${index * SLOT_HEIGHT}px` }"
@@ -43,12 +43,12 @@
 </template>
 
 <script setup lang="ts">
-import {SLOT_HEIGHT, type TimeSlot} from '@/classes/types/DayPlannerTypes'
-import {useDayPlanner} from '@/components/dayPlanner/useDayPlanner.ts';
+import {SLOT_HEIGHT} from '@/classes/types/DayPlannerTypes'
+import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
 import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
 
-const {totalGridRows, timeSlots, timeToSlotIndex} = useDayPlanner()
-const { isVisible, formattedTime, gridRowStyle } = useCurrentTimeIndicator()
+const store = useDayPlannerStore()
+const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator()
 </script>
 
 <style scoped>

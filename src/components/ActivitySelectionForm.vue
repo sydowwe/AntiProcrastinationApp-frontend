@@ -27,7 +27,7 @@
 		</VCol>
 		<VCol cols="12" class="py-4">
 			<InputWithButton icon="plus" color="success" @create="createNewActivity">
-				<VIdAutocomplete label="*Activity" v-model="activityIdModel" :items="filteredOptions.activityOptions"
+				<VIdAutocomplete ref="activityField" :label="(isFilter ? '' : '*') + 'Activity'" v-model="activityIdModel" :items="filteredOptions.activityOptions"
 				                 :disabled="formDisabled"
 				                 :required="!isFilter" :rules="!isFilter ? [requiredRule] : []" class="pb-1"></VIdAutocomplete>
 			</InputWithButton>
@@ -57,12 +57,14 @@ import router from '@/plugins/router.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
+import type {VAutocomplete} from 'vuetify/components';
 
 
 const {requiredRule} = useGeneralRules()
 
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const {create} = useActivityHistoryCrud()
+const activityField = ref<InstanceType<typeof VAutocomplete>>()
 
 const props = defineProps({
 	isFilter: {
@@ -136,13 +138,8 @@ watch(() => formData.value.isFromRoutineToDoList, (newValue) => {
 	}
 });
 
-function validate() {
-	if (activityIdModel.value != null) {
-		return true;
-	} else {
-		showErrorSnackbar(`Please select an activity`);
-		return false;
-	}
+async function validate() {
+	return await activityField.value?.validate()
 }
 
 async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {

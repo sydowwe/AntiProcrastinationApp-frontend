@@ -1,97 +1,33 @@
 <template>
 <MyDialog
-	:title="dialogMode === 'create' ? 'Add New Event' : 'Edit Event'"
-	:modelValue="modelValue"
-	:confirmBtnDisabled="!isFormValid"
-	@update:modelValue="$emit('update:modelValue', $event)"
-	@confirmed="handleSave"
+	:title="!isEdit ? 'Add New Event' : 'Edit Event'"
+	v-model="store.dialog"
+	@confirmed="save"
 	maxWidth="500px"
 >
-	<VContainer>
+	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
 		<VRow>
 			<VCol cols="12">
-				<VTextField
-					v-model="localEvent.title"
-					label="Event Title"
-					variant="outlined"
-					density="comfortable"
-					:rules="[v => !!v || 'Title is required']"
-				/>
+				<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Planner task" :isEdit></ActivitySelectOrQuickEditFormField>
 			</VCol>
 
 			<VCol cols="12">
-				<VSelect
-					v-model="localEvent.category"
-					label="Category"
-					:items="categories"
-					itemTitle="label"
-					itemValue="value"
-					variant="outlined"
-					density="comfortable"
-				/>
+				<TimeRangePicker v-model:start="start" v-model:end="end"></TimeRangePicker>
 			</VCol>
 
-			<VCol cols="12" sm="6">
-				<VMenu :closeOnContentClick="false">
-					<template v-slot:activator="{ props }">
-						<VTextField
-							label="Start Time"
-							:modelValue="localEvent.start"
-							v-bind="props"
-							variant="outlined"
-							prependIcon="clock"
-							readonly
-						/>
-					</template>
-					<template v-slot:default>
-						<VTimePicker
-							v-model="localEvent.start"
-							format="24hr"
-							:allowedMinutes="allowedStep"
-							scrollable
-						/>
-					</template>
-				</VMenu>
-			</VCol>
-
-			<VCol cols="12" sm="6">
-				<VMenu :closeOnContentClick="false">
-					<template v-slot:activator="{ props }">
-						<VTextField
-							label="End Time"
-							:modelValue="localEvent.end"
-							v-bind="props"
-							variant="outlined"
-							prependIcon="clock"
-							readonly
-						/>
-					</template>
-					<template v-slot:default>
-						<VTimePicker
-							v-model="localEvent.end"
-							format="24hr"
-							:allowedMinutes="allowedStep"
-							scrollable
-							:rules="[validateEndTime]"
-						/>
-					</template>
-				</VMenu>
-			</VCol>
-
-			<VCol cols="12">
+			<VCol cols="12" sm="6" class="d-flex align-center">
 				<VMenu :closeOnContentClick="false">
 					<template v-slot:activator="{ props }">
 						<VBtn
 							class="pr-3"
 							v-bind="props"
 							variant="outlined"
-							color="secondaryOutline"
 							prependIcon="palette"
-							:readonly="dialogMode === 'edit'"
+							:readonly="isEdit"
 						>
 							Color
 							<VSheet
-								:color="localEvent.color"
+								:color="store.editingEvent.color"
 								class="ml-2"
 								rounded="xl"
 								width="20"
@@ -100,7 +36,7 @@
 						</VBtn>
 					</template>
 					<template v-slot:default>
-						<VColorPicker v-model="localEvent.color" />
+						<VColorPicker v-model="store.editingEvent.color"/>
 					</template>
 				</VMenu>
 			</VCol>
@@ -109,68 +45,86 @@
 				<VSwitch
 					label="Is background"
 					color="primary"
-					v-model="localEvent.isBackground"
+					v-model="store.editingEvent.isBackground"
+					hideDetails
 				/>
 			</VCol>
 		</VRow>
-	</VContainer>
+	</VForm>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
-import type { MyEvent } from '@/classes/types/DayPlannerTypes'
+import {computed, watch, ref} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
+import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
+import {type PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
+import type {VForm} from 'vuetify/components';
+import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
+import {Time} from '@/classes/TimeUtils.ts';
+import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
 
-interface Props {
-	modelValue: boolean
-	dialogMode: 'create' | 'edit'
-	event: Partial<MyEvent> // Now uses Partial<MyEvent>
-}
+const form = ref<InstanceType<typeof VForm>>();
+const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
-interface Emits {
-	(e: 'update:modelValue', value: boolean): void
-	(e: 'save', event: Partial<MyEvent>): void // Returns partial
-}
+const store = useDayPlannerStore()
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const start = ref<Time>(new Time(0, 0))
+const end = ref<Time>(new Time(0, 0))
 
-// Local copy with proper defaults
-const localEvent = ref<Partial<MyEvent>>({
-	title: '',
-	color: '#4287f5',
-	isBackground: false,
-	...props.event
-})
-
-watch(() => props.event, (newEvent) => {
-	localEvent.value = {
-		title: '',
-		color: '#4287f5',
-		isBackground: false,
-		...newEvent
-	}
-}, { deep: true })
-
+const isEdit = computed(() => store.editedId !== undefined)
 const allowedStep = (m: number) => m % 10 === 0
 
-const isFormValid = computed(() => {
-	return !!localEvent.value.title &&
-		!!localEvent.value.start &&
-		!!localEvent.value.end &&
-		localEvent.value.start < localEvent.value.end
+watch(() => store.dialog, (value) => {
+	if (value) {
+		// Initialize start and end Time objects from the store's editing event
+		if (store.editingEvent.start) {
+			start.value = new Time(store.editingEvent.start.getHours(), store.editingEvent.start.getMinutes())
+		} else {
+			start.value = new Time(0, 0)
+		}
+
+		if (store.editingEvent.end) {
+			end.value = new Time(store.editingEvent.end.getHours(), store.editingEvent.end.getMinutes())
+		} else {
+			end.value = new Time(0, 0)
+		}
+	}
 })
 
-const validateEndTime = (value: string): string | boolean => {
-	if (!value) return 'End time is required'
-	if (localEvent.value.start && value <= localEvent.value.start) {
-		return 'End time must be after start time'
+async function save() {
+	const isValid = await form.value?.validate()
+	if (!isValid) {
+		return;
 	}
-	return true
+
+	const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus();
+	if (!activityFormFieldResult) {
+		return;
+	}
+
+	store.editingEvent.activityId = activityFormFieldResult.activityId
+	const startTimestamp = new Date(store.viewedDate)
+	startTimestamp.setHours(start.value.hours, start.value.minutes, 0, 0)
+	const endTimestamp = new Date(store.viewedDate)
+	if (end.value.getInMinutes - start.value.getInMinutes < 0) {
+		endTimestamp.setDate(endTimestamp.getDate() + 1)
+	}
+	endTimestamp.setHours(end.value.hours, end.value.minutes, 0, 0)
+
+	store.editingEvent.start = startTimestamp
+	store.editingEvent.end = endTimestamp
+	if (store.editedId) {
+		emit('edit', store.editedId, store.editingEvent)
+	} else {
+		emit('create', store.editingEvent)
+	}
+
+	store.dialog = false
 }
 
-const handleSave = () => {
-	emit('save', localEvent.value)
-}
+const emit = defineEmits<{
+	(e: 'edit', id: number, event: PlannerTaskRequest): void
+	(e: 'create', event: PlannerTaskRequest): void
+}>()
 </script>

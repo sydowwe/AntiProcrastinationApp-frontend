@@ -1,7 +1,6 @@
 <!-- CreationPreview.vue -->
 <template>
 <div
-	v-if="preview"
 	class="creation-preview"
 	:style="previewStyle"
 >
@@ -11,32 +10,30 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
-import type {CreationPreviewType} from '@/classes/types/DayPlannerTypes'
-import {useDayPlanner} from '@/components/dayPlanner/useDayPlanner.ts';
+import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import type {CreationPreviewType} from '@/classes/types/DayPlannerTypes.ts';
 
-const {slotIndexToTime} = useDayPlanner()
+const store = useDayPlannerStore()
 
-const props = defineProps<{
-	preview: CreationPreviewType | null
+const {preview} = defineProps<{
+	preview?: CreationPreviewType,
 }>()
 
 const previewStyle = computed(() => {
-	if (!props.preview) return {}
-
-	const startRow = props.preview.startRow
-	const endRow = props.preview.endRow
-	const span = Math.max(1, endRow - startRow + 1)
+	if (!preview)
+		return;
+	const span = Math.max(1, preview.endRow - preview.startRow + 1)
 
 	return {
-		gridRow: `${startRow} / span ${span}`
+		gridRow: `${preview.startRow} / span ${span}`
 	}
 })
 
 const formattedTimeRange = computed(() => {
-	if (!props.preview) return ''
-
-	const startTime = slotIndexToTime.value(props.preview.startRow - 1)
-	const endTime = slotIndexToTime.value(props.preview.endRow)
+	if (!preview)
+		return;
+	const startTime = store.slotIndexToTime(preview.startRow - 1)
+	const endTime = store.slotIndexToTime(preview.endRow)
 
 	return `${startTime} - ${endTime}`
 })

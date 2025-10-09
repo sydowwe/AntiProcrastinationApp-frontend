@@ -2,31 +2,43 @@
 <template>
 <div class="d-flex ga-4 align-center flex-wrap">
 	<!-- Start Time Picker -->
-	<VMenu :closeOnContentClick="false">
-		<template v-slot:activator="{ props }">
-			<VBtn
-				v-bind="props"
-				variant="outlined"
-				prependIcon="clock"
-			>
-				{{ mode === 'length' ? 'Start' : 'From' }}: {{ formattedStartTime }}
-			</VBtn>
-		</template>
-		<template v-slot:default>
-			<VTimePicker
-				v-model="startTime"
-				format="24hr"
-				:allowedMinutes
-				scrollable
-			/>
-		</template>
-	</VMenu>
+	<div class="d-flex ga-4 align-center">
+		<VMenu :closeOnContentClick="false">
+			<template v-slot:activator="{ props }">
+				<VBtn
+					v-bind="props"
+					variant="outlined"
+					prependIcon="clock"
+					height="40"
+				>
+					{{ mode === 'length' ? 'Start' : 'From' }}: {{ formattedStartTime }}
+				</VBtn>
+			</template>
+			<template v-slot:default>
+				<VTimePicker
+					v-model="startTime"
+					format="24hr"
+					:allowedMinutes
+					scrollable
+				/>
+			</template>
+		</VMenu>
+		<!-- Mode Toggle Button -->
+		<VIconBtn
+			variant="tonal"
+			color="secondaryOutline"
+			:icon="mode === 'length' ? 'right-left' : 'clock'"
+			size="small"
+			@click="toggleMode"
+			:title="mode === 'length' ? 'Switch to time r ange' : 'Switch to duration'"
+		/>
+	</div>
 
 	<!-- Length Mode: Span Hours -->
 	<VNumberInput
 		v-if="mode === 'length'"
 		v-model="span"
-		label="Time frame (hours)"
+		label="Time span (hours)"
 		controlVariant="split"
 		density="compact"
 		:min="1"
@@ -42,6 +54,7 @@
 				v-bind="props"
 				variant="outlined"
 				prependIcon="clock"
+				height="40"
 			>
 				To: {{ formattedEndTime }}
 			</VBtn>
@@ -56,22 +69,14 @@
 		</template>
 	</VMenu>
 
-	<!-- Mode Toggle Button -->
-	<VBtn
-		variant="text"
-		:icon="mode === 'length' ? 'right-left' : 'clock'"
-		size="small"
-		@click="toggleMode"
-		:title="mode === 'length' ? 'Switch to time r ange' : 'Switch to duration'"
-	/>
 </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, type PropType } from 'vue'
+import {computed, ref, watch, type PropType} from 'vue'
 import {Time} from '@/classes/TimeUtils.ts';
 
-const props =  defineProps({
+const props = defineProps({
 	allowedMinutesSelected: {
 		type: String as PropType<'5' | '10' | '15' | '20' | '30' | '45' | '60'>,
 		default: '10',
@@ -80,8 +85,8 @@ const props =  defineProps({
 
 const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
 
-const start = defineModel<Time>('start', { required: true })
-const end = defineModel<Time>('end', { required: true })
+const start = defineModel<Time>('start', {required: true})
+const end = defineModel<Time>('end', {required: true})
 
 type Mode = 'length' | 'range'
 const mode = ref<Mode>(

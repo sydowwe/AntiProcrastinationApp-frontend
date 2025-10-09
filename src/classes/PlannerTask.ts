@@ -3,30 +3,30 @@ import {Activity} from "@/classes/Activity";
 export class PlannerTask {
 	constructor(
 		public id: number,
-		public startTimestamp: Date,
-		public minuteLength: number,
+		public activity: Activity,
 		public color: string,
+		public start: Date,
+		public end: Date,
 		public isDone: boolean,
-		public activity: Activity
+		public isBackground: boolean = false,
+
+		public isDuringBackgroundEvent: boolean = false,
+		public gridRowStart: number,
+		public gridRowEnd: number,
 	) {
 	}
-
-	static fromJson(object: any) {
-		const {
-			id = 0,
-			startTimestamp = "",
-			minuteLength = 0,
-			color = "",
-			isDone = false,
-			activity = new Activity(),
-		} = object;
+	static fromJson(json: any) {
 		return new PlannerTask(
-			id,
-			new Date(startTimestamp),
-			minuteLength,
-			color,
-			isDone,
-			activity
+			json.id,
+			Activity.fromJson(json.activity),
+			json.color,
+			new Date(json.start),
+			new Date(json.end),
+			json.isDone,
+			json.isBackground,
+			false,
+			0,
+			0
 		);
 	}
 
@@ -38,33 +38,36 @@ export class PlannerTask {
 
 	static frontEndSortFunction() {
 		return (a: PlannerTask, b: PlannerTask) => {
-			const bEndTimestamp = new Date(b.startTimestamp);
-			bEndTimestamp.setUTCMinutes(
-				bEndTimestamp.getUTCMinutes() + b.minuteLength,
-				0,
-				0
-			);
-			return a.startTimestamp.valueOf() - bEndTimestamp.valueOf();
+			return a.start.valueOf() - b.end.valueOf();
 		};
 	}
+
 }
 
 export class PlannerTaskRequest {
 	constructor(
-		public startTimestamp: Date = new Date(),
-		public minuteLength: number | null = null,
+		public activityId: number | null = null,
+		public start: Date = new Date(),
+		public end: Date = new Date(),
 		public color: string = "#999",
 		public isDone: boolean = false,
-		public activityId: number | null = null,
+		public isBackground: boolean = false,
 	) {	}
 	static fromEntity(plannerTask: PlannerTask) {
 		return new PlannerTaskRequest(
-			plannerTask.startTimestamp,
-			plannerTask.minuteLength,
+			plannerTask.activity.id,
+			plannerTask.start,
+			plannerTask.end,
 			plannerTask.color,
 			plannerTask.isDone,
-			plannerTask.activity.id
+			plannerTask.isBackground,
 		);
+	}
+	static fromSpan(start: Date, end: Date) {
+		const task = new PlannerTaskRequest();
+		task.start = start;
+		task.end = end;
+		return task;
 	}
 }
 
