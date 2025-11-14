@@ -12,7 +12,7 @@ import {
 	ToDoListItemRequest
 } from '@/classes/ToDoListItem.ts';
 import {Category, CategoryRequest} from '@/classes/Category.ts';
-import {TaskUrgencyEntity, TaskUrgencyRequest} from '@/classes/TaskUrgencyEntity.ts';
+import {TaskPriority, TaskUrgencyRequest} from '@/classes/TaskPriority.ts';
 import {ActivityHistory, ActivityHistoryRequest} from '@/classes/ActivityHistory.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {Time} from '@/classes/TimeUtils.ts';
@@ -81,14 +81,14 @@ export function useActivityCategoryCrud() {
 }
 
 export function useTaskUrgencyCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskUrgencyEntity>({responseClass: TaskUrgencyEntity, entityName: 'task-urgency'})
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-urgency'})
 	const {
 		createWithResponse,
 		create,
 		update,
 		deleteEntity
-	} = useEntityCommand<TaskUrgencyEntity, TaskUrgencyRequest, TaskUrgencyRequest>({
-		responseClass: TaskUrgencyEntity,
+	} = useEntityCommand<TaskPriority, TaskUrgencyRequest, TaskUrgencyRequest>({
+		responseClass: TaskPriority,
 		createRequestClass: TaskUrgencyRequest,
 		updateRequestClass: TaskUrgencyRequest,
 		entityName: 'task-urgency'
@@ -120,6 +120,7 @@ export function useRoutineTimePeriodCrud() {
 			console.error(e)
 		}
 	}
+
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity, changeTimePeriodVisibility}
 }
 

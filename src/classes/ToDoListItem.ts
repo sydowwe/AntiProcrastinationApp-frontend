@@ -1,4 +1,4 @@
-import {TaskUrgencyEntity} from './TaskUrgencyEntity';
+import {TaskPriority} from './TaskPriority.ts';
 import {Activity} from '@/classes/Activity';
 import {type ICreateRequest, IdResponse, type IUpdateRequest} from '@/classes/Generic.ts';
 
@@ -21,7 +21,7 @@ export class TodoListItemEntity {
 		public isDone: boolean,
 		public doneCount: number | null,
 		public totalCount: number | null,
-		public taskUrgency: TaskUrgencyEntity,
+		public taskUrgency: TaskPriority,
 	) {
 	}
 
@@ -36,7 +36,7 @@ export class TodoListItemEntity {
 			json.isDone,
 			json.doneCount,
 			json.totalCount,
-			TaskUrgencyEntity.fromJson(json.taskUrgency)
+			TaskPriority.fromJson(json.taskUrgency)
 		);
 	}
 

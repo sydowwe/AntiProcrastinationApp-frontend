@@ -4,12 +4,13 @@
           :confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')">
 	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
 		<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="To-do list task" :isEdit></ActivitySelectOrQuickEditFormField>
-		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="toDoListItem.doneCount" v-model:total-count="toDoListItem.totalCount" :isEdit></TodoListRepeatCountFormField>
+		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="toDoListItem.doneCount" v-model:total-count="toDoListItem.totalCount"
+		                              :isEdit></TodoListRepeatCountFormField>
 		<VIdSelect
-			:label="$t('toDoList.urgency')"
+			:label="$t('toDoList.priority')"
 			v-model="toDoListItem.taskUrgencyId"
 			:clearable="false"
-			:items="urgencyOptions"
+			:items="priorityOptions"
 			required
 			:rules="[requiredRule]"
 		></VIdSelect>
@@ -19,8 +20,8 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {TaskUrgencyEntity} from '@/classes/TaskUrgencyEntity';
-import {ToDoListItemRequest, TodoListItemEntity} from '@/classes/ToDoListItem';
+import {TaskPriority} from '@/classes/TaskPriority.ts';
+import {TodoListItemEntity, ToDoListItemRequest} from '@/classes/ToDoListItem';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -28,7 +29,6 @@ import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
-import {ActivityFormRequest} from '@/classes/ActivityFormHelper.ts';
 import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue';
 
 const {requiredRule} = useGeneralRules()
@@ -39,7 +39,7 @@ const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormF
 
 const {fetchAll} = useTaskUrgencyCrud()
 
-const urgencyOptions = ref([] as TaskUrgencyEntity[]);
+const priorityOptions = ref([] as TaskPriority[]);
 
 const dialog = ref(false);
 const isEdit = ref(false);
@@ -56,7 +56,7 @@ watch(dialog, (newValue) => {
 });
 
 onMounted(async () => {
-	urgencyOptions.value = await fetchAll();
+	priorityOptions.value = await fetchAll();
 	setDefaultUrgency();
 })
 
@@ -87,7 +87,7 @@ async function save() {
 }
 
 function setDefaultUrgency() {
-	toDoListItem.value.taskUrgencyId = urgencyOptions.value.find((item) => item.priority === 1)?.id;
+	toDoListItem.value.taskUrgencyId = priorityOptions.value.find((item) => item.priority === 1)?.id;
 }
 
 const close = () => {

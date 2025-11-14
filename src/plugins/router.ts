@@ -19,6 +19,7 @@ import {useUserStore} from "@/stores/userStore";
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
 // import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
+import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue';
 
 
 const router = createRouter({
@@ -108,6 +109,11 @@ const router = createRouter({
 			path: '/day-planner',
 			name: 'dayPlanner',
 			component: DayPlannerView
+		},
+		{
+			path: '/template-day-planner',
+			name: 'templateDayPlanner',
+			component: TemplateDayPlannerView
 		},
 		// {
 		//   path: '/about',
