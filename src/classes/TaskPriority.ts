@@ -1,6 +1,6 @@
 import type {ICreateRequest, IUpdateRequest} from '@/classes/Generic.ts';
 
-export class TaskUrgencyEntity{
+export class TaskPriority {
     constructor(
         public id: number = 0,
         public priority: number = 0,
@@ -14,10 +14,10 @@ export class TaskUrgencyEntity{
           text = '',
           color = '',
         } = object;
-        return new TaskUrgencyEntity(id,priority,text,color);
+        return new TaskPriority(id,priority,text,color);
       }
       static listFromObjects(objects: any[]){
-        return objects.map((item:object)=>TaskUrgencyEntity.fromJson(item));
+        return objects.map((item:object)=>TaskPriority.fromJson(item));
       }
       
 }
@@ -29,7 +29,7 @@ export class TaskUrgencyRequest implements ICreateRequest, IUpdateRequest{
       public color: string = '',
   ) {}
 
-  static fromResponse(response: TaskUrgencyEntity){
+  static fromResponse(response: TaskPriority){
     return new TaskUrgencyRequest(response.priority,response.text,response.color);
   }
 }
