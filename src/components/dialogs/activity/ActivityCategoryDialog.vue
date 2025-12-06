@@ -10,10 +10,10 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {ref} from 'vue';
-import {Category, CategoryRequest} from '@/classes/Category.ts';
+import {Category} from '@/dtos/response/Category.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {RoleRequest} from '@/classes/Role.ts';
-import {useActivityCategoryCrud, useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCategoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
 
 const {create, update} = useActivityCategoryCrud()
 const {lettersWithDiacriticsAndSpecialCharsRule, requiredRule} = useGeneralRules()
@@ -30,13 +30,13 @@ const request = ref(new CategoryRequest());
 const idToEdit = ref<number | null>(null);
 const isEdit = ref(false);
 
-function openAddDialog(){
+function openAddDialog() {
 	request.value = new CategoryRequest();
 	dialog.value = true;
 	isEdit.value = false;
 }
 
-function openEditDialog(oldCategory: Category){
+function openEditDialog(oldCategory: Category) {
 	request.value = CategoryRequest.fromResponse(oldCategory);
 	dialog.value = true;
 	isEdit.value = true;
@@ -44,12 +44,12 @@ function openEditDialog(oldCategory: Category){
 
 async function onConfirmed() {
 	if (isEdit.value) {
-		if (useApi){
+		if (useApi) {
 			await update(idToEdit.value!, request.value);
 		}
 		emit('updated', idToEdit.value!, request.value);
-	}else{
-		if (useApi){
+	} else {
+		if (useApi) {
 			const createdId = await create(request.value);
 			emit('created', request.value, createdId);
 		}

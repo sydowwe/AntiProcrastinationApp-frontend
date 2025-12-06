@@ -55,14 +55,14 @@
 </template>
 
 <script setup lang="ts">
-import {computed, watch, ref} from 'vue'
+import {computed, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
-import {type PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {Time} from '@/classes/TimeUtils.ts';
+import {Time} from '@/utils/TimeUtils.ts';
 import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();

@@ -6,9 +6,10 @@
 	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
 		<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Routine task" :isEdit :old-activity-id="entityBeforeEdit?.activity.id"
 		                                    :old-activity-name="entityBeforeEdit?.activity.name" :old-activity-text="entityBeforeEdit?.activity.name"
-		 :old-activity-category-id="entityBeforeEdit?.activity.category?.id"></ActivitySelectOrQuickEditFormField>
+		                                    :old-activity-category-id="entityBeforeEdit?.activity.category?.id"></ActivitySelectOrQuickEditFormField>
 
-		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="routineToDoListItem.doneCount" v-model:total-count="routineToDoListItem.totalCount" :isEdit></TodoListRepeatCountFormField>
+		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="routineToDoListItem.doneCount"
+		                              v-model:total-count="routineToDoListItem.totalCount" :isEdit></TodoListRepeatCountFormField>
 		<VIdSelect class="pt-2 pb-3" :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false"
 		           :items="timePeriodOptions" hide-details></VIdSelect>
 	</VForm>
@@ -17,19 +18,12 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {RoutineTodoListItemRequest, RoutineTodoListItemEntity} from '@/classes/ToDoListItem';
-import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
-import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {useI18n} from 'vue-i18n';
-import {ActivityFormRequest, ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequest.ts';
+import {RoutineTodoListItemEntity} from '@/dtos/response/RoutineTodoListItemEntity.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
-import {SelectOption} from '@/classes/SelectOption';
-import {EntityWithSelectOptions} from '@/composables/ActivitySelectsComposition';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
+import {SelectOption} from '@/dtos/response/SelectOption.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
 import {VForm} from 'vuetify/components';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue';
 
@@ -63,7 +57,7 @@ onMounted(async () => {
 });
 
 const setDefaultTimePeriod = () => {
-	routineToDoListItem.value.timePeriodId = timePeriodOptions.value[0].id;
+	routineToDoListItem.value.timePeriodId = timePeriodOptions.value[0]?.id;
 };
 
 async function save() {
@@ -73,7 +67,7 @@ async function save() {
 	}
 
 	const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus();
-	if (activityFormFieldResult){
+	if (activityFormFieldResult) {
 		routineToDoListItem.value.activityId = activityFormFieldResult.activityId
 	}
 	if (!isRepeated.value) {

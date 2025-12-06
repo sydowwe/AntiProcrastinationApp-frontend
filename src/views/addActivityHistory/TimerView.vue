@@ -15,8 +15,8 @@
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {Time, TimePrecise} from '@/classes/TimeUtils';
-import type {ActivityDialogType, ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
+import {Time, TimePrecise} from '@/utils/TimeUtils';
+import type {ActivityDialogType, ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';

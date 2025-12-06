@@ -1,5 +1,6 @@
-import {ref, watch, nextTick, Ref, EmitsOptions} from "vue";
-import {EditableTableCell} from "@/classes/Generic";
+import {nextTick, ref, watch} from "vue";
+import {EditableTableCell} from "@/dtos/dto/EditableTableCell";
+
 export type EditableCellEmits = 'editCell' | 'updatedCell' | 'editCellCanceled';
 
 export function useEditableCell(

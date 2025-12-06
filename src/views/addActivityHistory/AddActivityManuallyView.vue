@@ -21,9 +21,9 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import type {ActivitySelectionFormType, DateTimePickerType} from '@/classes/types/RefTypeInterfaces';
+import type {ActivitySelectionFormType, DateTimePickerType} from '@/types/RefTypeInterfaces';
 import {onMounted, ref} from 'vue';
-import {Time} from '@/classes/TimeUtils';
+import {Time} from '@/utils/TimeUtils';
 import {useI18n} from 'vue-i18n';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';

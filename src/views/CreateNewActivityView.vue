@@ -46,14 +46,12 @@
 <ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"></ActivityCategoryDialog>
 </template>
 <script setup lang="ts">
-import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
-import {onMounted, reactive, ref} from 'vue';
-import {Role, RoleRequest} from '@/classes/Role';
-import {Category, CategoryRequest} from '@/classes/Category';
-import {SelectOption} from '@/classes/SelectOption';
-import {ActivityRequest} from '@/classes/Activity';
+import type {VuetifyFormType} from '@/types/RefTypeInterfaces';
+import {onMounted, ref} from 'vue';
+import {RoleRequest} from '@/dtos/request/RoleRequest';
+import {SelectOption} from '@/dtos/response/SelectOption';
+import {ActivityRequest} from '@/dtos/request/ActivityRequest';
 import {useI18n} from 'vue-i18n';
-import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
@@ -62,6 +60,7 @@ import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog
 import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
+import type {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
 
 const {create} = useActivityCrud()
 const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOptions()
@@ -85,7 +84,7 @@ onMounted(async () => {
 	roleOptions.value = await fetchRoleSelectOptions();
 	categoryOptions.value = await fetchCategorySelectOptions();
 	urgencyOptions.value = await fetchTaskUrgencySelectOptions();
-	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0]?.id;
+	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0]?.id ?? null;
 })
 
 

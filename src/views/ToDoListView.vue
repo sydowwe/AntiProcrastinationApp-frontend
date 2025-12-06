@@ -32,23 +32,18 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from 'vue';
-import {
-	ChangeDisplayOrderRequest,
-	RoutineTodoListItemEntity,
-	RoutineTodoListItemRequest,
-	TodoListItemEntity,
-	ToDoListItemRequest,
-	ToDoListKind
-} from '@/classes/ToDoListItem';
+import {onMounted, ref} from 'vue';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest';
+import {TodoListItemEntity} from '@/dtos/response/TodoListItemEntity';
+import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest';
+import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
-import type {ToDoListItemDialogType} from '@/classes/types/RefTypeInterfaces';
+import type {ToDoListItemDialogType} from '@/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityCrud, useTaskUrgencyCrud, useTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
-import {API} from '@/plugins/axiosConfig.ts';
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
 const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency, changeDisplayOrder} = useTodoListItemCrud()
@@ -101,20 +96,20 @@ async function edit(id: number, toDoListItemRequest: ToDoListItemRequest) {
 	const beforeEditEntity = items.value.find(item => item.id === id);
 	if (beforeEditEntity && hasObjectChanged(ToDoListItemRequest.fromEntity(beforeEditEntity), toDoListItemRequest)) {
 		await update(id, toDoListItemRequest);
-		await updateAfterEdit(id, beforeEditEntity.taskUrgency.id);
+		await updateAfterEdit(id, beforeEditEntity.taskPriority.id);
 		showSuccessSnackbar(i18n.t('successFeedback.edited'));
 	}
 }
 
-async function onChangedUrgency(id: number, taskUrgencyId?: number) {
-	if (!taskUrgencyId) {
+async function onChangedUrgency(id: number, taskPriorityId?: number) {
+	if (!taskPriorityId) {
 		showErrorSnackbar(i18n.t('errorFeedback.noUrgencySelected'));
 		return;
 	}
-	changeUrgency(id, taskUrgencyId).then(async () => {
+	changeUrgency(id, taskPriorityId).then(async () => {
 		const item = items.value.find(i => i.id === id);
 		if (item) {
-			item.taskUrgency = await fetchByIdTaskUrgency(taskUrgencyId);
+			item.taskPriority = await fetchByIdTaskUrgency(taskPriorityId);
 		}
 	});
 }
@@ -130,7 +125,7 @@ async function deleteItem(id: number) {
 async function updateAfterEdit(id: number, oldTaskUrgencyId?: number) {
 	const updatedItem = await fetchById(id)
 	const index = items.value.findIndex((item) => item.id === id);
-	if (oldTaskUrgencyId === updatedItem.taskUrgency.id) {
+	if (oldTaskUrgencyId === updatedItem.taskPriority.id) {
 		items.value[index] = updatedItem;
 	} else {
 		items.value[index] = updatedItem;

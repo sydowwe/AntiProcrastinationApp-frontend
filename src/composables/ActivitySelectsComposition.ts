@@ -1,17 +1,15 @@
 // useSelectOptions.ts
-import {SelectOption} from '@/classes/SelectOption';
-import {
-	ActivityFormRequest,
-	ActivityFormSelectOptions,
-	ActivityOptionsSource,
-	ActivitySelectOptionCombination
-} from '@/classes/ActivityFormHelper';
+import {SelectOption} from '@/dtos/response/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
+import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
+import {ActivitySelectOptionCombination} from '@/dtos/response/ActivitySelectOptionCombination.ts';
+import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
+import {ActivityFormSelectOptions} from '@/dtos/response/ActivityFormSelectOptions.ts';
 
 export enum EntityWithSelectOptions {
 	Role = 'role',
 	Category = 'category',
-	TaskUrgency = 'task-urgency',
+	TaskUrgency = 'task-priority',
 	TimePeriod = 'routine-time-period'
 }
 
@@ -38,12 +36,9 @@ export function filterActivityFormSelectOptions(allOptionsCombinations: Activity
 		(!formData.activityId || combination.id === formData.activityId) &&
 		(!formData.roleId || combination.roleOption.id === formData.roleId) &&
 		(!formData.categoryId || combination.categoryOption?.id === formData.categoryId) &&
-		(!formData.taskUrgencyId || combination.taskUrgencyOption?.id === formData.taskUrgencyId) &&
+		(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
 		(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId)
 	);
-	filteredCombinations.forEach(combination => {
-
-	});
 
 	const filteredOptions = new ActivityFormSelectOptions();
 	filteredOptions.activityOptions = uniqueOptions(
@@ -55,9 +50,9 @@ export function filterActivityFormSelectOptions(allOptionsCombinations: Activity
 	filteredOptions.categoryOptions = uniqueOptions(
 		(formData.activityId || formData.categoryId ? allOptionsCombinations : filteredCombinations)
 			.map(combination => combination.categoryOption).filter(option => option !== null));
-	filteredOptions.taskUrgencyOptions = uniqueOptions(
-		(formData.activityId || formData.taskUrgencyId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => combination.taskUrgencyOption).filter(option => option !== null));
+	filteredOptions.taskPriorityOptions = uniqueOptions(
+		(formData.activityId || formData.taskPriorityId ? allOptionsCombinations : filteredCombinations)
+			.map(combination => combination.taskPriorityOption).filter(option => option !== null));
 	filteredOptions.routineTimePeriodOptions = uniqueOptions(
 		(formData.activityId || formData.routineTimePeriodId ? allOptionsCombinations : filteredCombinations)
 			.map(combination => combination.routineTimePeriodOption).filter(option => option !== null));

@@ -14,17 +14,16 @@
 </MyDialog>
 </template>
 <script setup lang="ts">
-import {ref, onMounted, watch} from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time, TimePrecise} from '@/classes/TimeUtils';
-import type {BaseToDoListItemEntity} from '@/classes/ToDoListItem';
+import {Time} from '@/utils/TimeUtils';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
-import {ActivityHistoryRequest} from '@/classes/ActivityHistory.ts';
+import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
 
 const {create} = useActivityHistoryCrud()
 const i18n = useI18n();
@@ -32,7 +31,7 @@ const {showErrorSnackbar, showSnackbar} = useSnackbar();
 // const timePicker = ref<TimePickerType>({} as TimePickerType);
 const props = defineProps({
 	toDoListItem: {
-		type: Object as () => BaseToDoListItemEntity,
+		type: Object as () => IBaseToDoListItem,
 		required: true,
 	},
 	isRecursive: {

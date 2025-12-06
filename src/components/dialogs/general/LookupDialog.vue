@@ -14,9 +14,11 @@
 
 <script setup lang="ts">
 import {computed, ref} from 'vue';
-import {LookupRequest, LookupResponse} from '@/classes/SelectOption.ts';
-import {useGeneralRules} from '@/composable/RulesComposition.ts';
+import {LookupRequest} from '@/dtos/request/LookupRequest.ts';
+import {LookupResponse} from '@/dtos/response/LookupResponse.ts';
 import {useI18n} from 'vue-i18n';
+import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 const i18n = useI18n();
 const {requiredRule, lettersWithDiacriticsAndSpecialCharsRule} = useGeneralRules();
@@ -52,7 +54,7 @@ function openAddDialog() {
 	dialog.value = true;
 }
 
-function openEditDialog(oldText: string, id: number){
+function openEditDialog(oldText: string, id: number) {
 	isEdit.value = true;
 	text.value = oldText;
 	editedId.value = id;

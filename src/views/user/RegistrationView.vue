@@ -28,13 +28,21 @@
 </template>
 
 <script setup lang="ts">
-import type {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import QrCodeFor2FADialog from '../../components/user/dialogs/QrCodeFor2FADialog.vue';
 import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue';
 import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
-
+import {useLoading} from '@/composables/general/LoadingComposable.ts';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import router from '@/plugins/router.ts';
+import {useUserStore} from '@/stores/userStore.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
+import type {VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
 import {useI18n} from 'vue-i18n';
+import {RegistrationRequest} from '@/dtos/request/RegistrationRequest.ts';
+import {AvailableLocales} from '@/dtos/enum/AvailableLocales.ts';
+
 
 const i18n = useI18n();
 const {showFullScreenLoading, hideFullScreenLoading} = useLoading();
@@ -43,25 +51,18 @@ const userStore = useUserStore();
 const {emailRules} = useUserDetailsValidation();
 
 async function goToLogin() {
-	await router.push({ name: 'login' });
+	await router.push({name: 'login'});
 }
 
 const form = ref<VuetifyFormType>({} as VuetifyFormType);
-
 const registrationRequest = ref(new RegistrationRequest());
+
 const termsAndConditions = ref(false);
 const termsAndConditionsRules = [(v: boolean) => v || i18n.t('authorization.termsAndConditionsRequired')];
 
 const qrCode2FADialog = ref(false);
 const qrCodeImage = ref('');
 
-import {AvailableLocales, RegistrationRequest} from '@/classes/User';
-import {useLoading} from '@/composables/general/LoadingComposable.ts';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import router from '@/plugins/router.ts';
-import {useUserStore} from '@/stores/userStore.ts';
-import {API} from '@/plugins/axiosConfig.ts';
-import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
 
 const {executeRecaptcha} = useRecaptcha();
 

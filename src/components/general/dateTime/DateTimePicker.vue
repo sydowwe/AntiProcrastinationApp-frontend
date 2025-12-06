@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimePrecise} from '@/classes/TimeUtils';
+import {TimePrecise} from '@/utils/TimeUtils';
 import {VDateInput} from 'vuetify/labs/components';
 import {useMoment} from '@/scripts/momentHelper.ts';
 

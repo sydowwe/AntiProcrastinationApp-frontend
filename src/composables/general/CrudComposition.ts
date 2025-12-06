@@ -1,7 +1,6 @@
 import {ref} from 'vue'
-import {FilteredTableRequest, type IFilterRequest, type IMyResponse} from '@/classes/Generic.ts';
-import {SelectOption} from '@/classes/SelectOption.ts';
-import {TableResponse} from '@/classes/Table';
+import {FilteredTableRequest, type IFilterRequest, type IMyResponse} from '@/dtos/request/base/FilteredTableRequest.ts';
+import {SelectOption} from '@/dtos/response/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 
 // Query composable for read operations
@@ -222,12 +221,12 @@ export function useFilteredTable<TTableResponse extends IMyResponse, TFilter ext
 	const loading = ref(false)
 	const error = ref<string | null>(null)
 
-	async function fetchFilteredTable(request: FilteredTableRequest<TFilter>): Promise<TableResponse<TTableResponse>> {
+	async function fetchFilteredTable(request: FilteredTableRequest<TFilter>): Promise<{items: TTableResponse[], itemsCount: number}> {
 		loading.value = true
 		error.value = null
 		try {
 			const response = await API.post(`/${entityName}/filtered-table`, request)
-			return new TableResponse(response.data.items.map((r: any) => tableResponseClass.fromJson(r)), response.data.itemsCount)
+			return {items: response.data.items.map((r: any) => tableResponseClass.fromJson(r)), itemsCount: response.data.itemsCount}
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch filtered ${entityName} table`
 			console.error(`Error fetching filtered ${entityName} table:`, e)

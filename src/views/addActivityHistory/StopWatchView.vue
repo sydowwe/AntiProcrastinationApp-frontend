@@ -15,8 +15,8 @@
     import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
     import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
     import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-    import {Time, TimePrecise} from '@/classes/TimeUtils';
-    import  type { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
+    import {Time, TimePrecise} from '@/utils/TimeUtils';
+    import  type { ActivityDialogType, ActivitySelectionFormType } from '@/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 

@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import type {MyTwoFactorAuthInputType, VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
+import type {MyTwoFactorAuthInputType, VuetifyFormType} from '@/types/RefTypeInterfaces';
 
 import {useI18n} from 'vue-i18n';
 import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue';

@@ -73,8 +73,8 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch, type PropType} from 'vue'
-import {Time} from '@/classes/TimeUtils.ts';
+import {computed, type PropType, ref} from 'vue'
+import {Time} from '@/utils/TimeUtils.ts';
 
 const props = defineProps({
 	allowedMinutesSelected: {

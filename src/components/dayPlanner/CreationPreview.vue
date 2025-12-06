@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
-import type {CreationPreviewType} from '@/classes/types/DayPlannerTypes.ts';
+import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
 
 const store = useDayPlannerStore()
 

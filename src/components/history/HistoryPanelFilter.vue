@@ -1,6 +1,7 @@
 <template>
 <div>
-	<HistoryCurrentFilterInfo class="mb-5" v-model="filterData" v-model:isFilterExpanded="isFilterExpanded" v-model:isDateRange="isDateRange"></HistoryCurrentFilterInfo>
+	<HistoryCurrentFilterInfo class="mb-5" v-model="filterData" v-model:isFilterExpanded="isFilterExpanded"
+	                          v-model:isDateRange="isDateRange"></HistoryCurrentFilterInfo>
 	<VExpandTransition>
 		<div v-show="isFilterExpanded">
 			<ActivitySelectionForm ref="activitySelectionForm" v-model="filterData.activityFilter"
@@ -63,11 +64,10 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch, reactive, onMounted, provide} from "vue";
-import {ActivityHistoryFilter} from "@/classes/ActivityHistory.ts";
-import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
+import {onMounted, provide, ref, watch} from "vue";
+import {ActivityHistoryFilter} from "@/dtos/dto/ActivityHistoryFilter.ts";
+import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {type ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces';
 import {VDateInput} from 'vuetify/labs/components';
 import {useMoment} from '@/scripts/momentHelper.ts';
 import HistoryCurrentFilterInfo from '@/components/history/HistoryCurrentFilterInfo.vue';

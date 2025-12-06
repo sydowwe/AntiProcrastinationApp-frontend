@@ -64,11 +64,11 @@
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
 import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {Time, TimePrecise} from '@/classes/TimeUtils';
+import {Time, TimePrecise} from '@/utils/TimeUtils';
 import type {
 	ActivityDialogType,
 	ActivitySelectionFormType,
-} from '@/classes/types/RefTypeInterfaces';
+} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';

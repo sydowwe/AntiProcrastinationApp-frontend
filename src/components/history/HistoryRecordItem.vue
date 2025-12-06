@@ -24,7 +24,7 @@
 </template>
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { ActivityHistory } from '@/classes/ActivityHistory.ts';
+    import { ActivityHistory } from '@/dtos/response/ActivityHistory.ts';
 	import { useMoment } from '@/scripts/momentHelper.ts'
 	const { formatToTime } = useMoment();
 

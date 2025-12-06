@@ -10,8 +10,8 @@
 		                       :selectOptionsSource="ActivityOptionsSource.ALL"
 		                       @activityIdChanged="activityId => plannerTask.activityId = activityId"></ActivitySelectionForm>
 		<div v-show="isActivityFormHidden">
-			<VTextField label="name" v-model="quickActivityName"></VTextField>
-			<VTextField label="text" v-model="quickActivityText"></VTextField>
+			<VTextField label="name" v-model="activityFormFieldData.name"></VTextField>
+			<VTextField label="text" v-model="activityFormFieldData.text"></VTextField>
 		</div>
 		<VSelect class="mb-4" label="Length in minutes" v-model="plannerTask.minuteLength" :items="minuteIntervals"
 		         hideDetails></VSelect>
@@ -21,26 +21,25 @@
 </template>
 <script setup lang="ts">
 import TimePicker from "@/components/general/dateTime/TimePicker.vue";
-import type {ActivitySelectionFormType} from "@/classes/types/RefTypeInterfaces";
+import type {ActivitySelectionFormType} from "@/types/RefTypeInterfaces";
 import {ref, watch} from "vue";
-import {PlannerTask, PlannerTaskRequest} from "@/classes/PlannerTask";
+import {PlannerTask} from "@/dtos/response/activityPlanning/PlannerTask.ts";
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {useQuickCreateActivity} from '@/composables/quickCreateActivityComposition';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import {useI18n} from 'vue-i18n';
+import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
+import {TimePrecise} from '@/utils/TimeUtils';
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
 
 const {
 	isActivityFormHidden,
-	quickActivityName,
-	quickActivityText,
+	activityFormFieldData,
 	quickCreateActivity,
 	quickEditActivity
 } = useQuickCreateActivity('Planner task');
-import {useI18n} from 'vue-i18n';
-import {ActivityOptionsSource} from '@/classes/ActivityFormHelper';
-import {TimePrecise} from '@/classes/TimeUtils';
-import {useDefaults} from 'vuetify/framework';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
 
 const i18n = useI18n();
@@ -63,10 +62,10 @@ watch(dialog, (newValue) => {
 //TODO osetrit ak sa nezmeni meno alebo text aby sa nerobil quickedit activity ale len casu
 async function save() {
 	if (isActivityFormHidden.value) {
-		if (quickActivityName.value) {
+		if (activityFormFieldData.value.name) {
 			if (isEdit.value && plannerTask.value.activityId) {
-				if (await quickEditActivity(plannerTask.value.activityId)) {
-					emit('quickEditedActivity', idToEdit.value, quickActivityName.value, quickActivityText.value);
+				if (await quickEditActivity(plannerTask.value.activityId, 'Clone')) {
+					emit('quickEditedActivity', idToEdit.value, activityFormFieldData.value.name, activityFormFieldData.value.text);
 				}
 			} else {
 				plannerTask.value.activityId = await quickCreateActivity();
@@ -79,7 +78,7 @@ async function save() {
 		showErrorSnackbar(i18n.t("planner.pleaseSelectActivity"));
 		return;
 	}
-	plannerTask.value.startTimestamp?.setHours(
+	plannerTask.value.startTime?.setHours(
 		time.value.hours,
 		time.value.minutes,
 		0,

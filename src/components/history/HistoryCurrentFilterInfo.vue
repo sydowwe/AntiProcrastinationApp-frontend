@@ -53,7 +53,7 @@
 		color="info"
 		variant="outlined"
 	>
-		From To-Do List{{ filterData.activityFilter.taskUrgencyId ? ': ' + activitySelectionForm?.getSelectedTaskUrgencyName : '' }}
+		From To-Do List{{ filterData.activityFilter.taskPriorityId ? ': ' + activitySelectionForm?.getSelectedTaskUrgencyName : '' }}
 	</VChip>
 
 	<VChip
@@ -98,9 +98,8 @@
 </div>
 </template>
 <script setup lang="ts">
-import {computed, inject, type Ref, ref, watch} from 'vue';
-import type {ActivitySelectionFormType} from '@/classes/types/RefTypeInterfaces.ts';
-import {ActivityHistoryFilter} from '@/classes/ActivityHistory.ts';
+import {computed, inject, type Ref, watch} from 'vue';
+import {ActivityHistoryFilter} from '@/dtos/dto/ActivityHistoryFilter.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
 import type ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
@@ -112,7 +111,7 @@ const filterData = defineModel<ActivityHistoryFilter>({required: true});
 const isDateRange = defineModel<boolean>('isDateRange', {required: true});
 const isFilterExpanded = defineModel<boolean>('isFilterExpanded', {required: true});
 
-watch(filterData, (newVal, oldVal) => {
+watch(filterData, (newVal) => {
 	console.log(newVal);
 }, {deep: true})
 
@@ -159,7 +158,7 @@ function clearCategoryFilter() {
 
 function clearFromToDoListFilter() {
 	filterData.value.activityFilter.isFromToDoList = null;
-	filterData.value.activityFilter.taskUrgencyId = null;
+	filterData.value.activityFilter.taskPriorityId = null;
 	applyFilter();
 }
 

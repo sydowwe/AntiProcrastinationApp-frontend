@@ -74,7 +74,10 @@
 </template>
 <script setup lang="ts" generic="TItem extends IIdResponse">
 import {computed, watch} from 'vue';
-import {type IIdResponse, TableAction, TableColumn, VSortItem} from '@/classes/Generic';
+import {type IIdResponse} from '@/dtos/response/interface/IIdResponse.ts';
+import {TableAction} from '@/dtos/dto/TableAction.ts';
+import {TableColumn} from '@/dtos/dto/TableColumn.ts';
+import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {useDisplay} from 'vuetify/framework';
 import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue';
 import {getNestedValue} from '@/composable/table/TableHeaderComposable.ts';

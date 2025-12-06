@@ -8,7 +8,7 @@
 		                              :isEdit></TodoListRepeatCountFormField>
 		<VIdSelect
 			:label="$t('toDoList.priority')"
-			v-model="toDoListItem.taskUrgencyId"
+			v-model="toDoListItem.taskPriorityId"
 			:clearable="false"
 			:items="priorityOptions"
 			required
@@ -20,8 +20,9 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {TaskPriority} from '@/classes/TaskPriority.ts';
-import {TodoListItemEntity, ToDoListItemRequest} from '@/classes/ToDoListItem';
+import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
+import {TodoListItemEntity} from '@/dtos/response/TodoListItemEntity.ts';
+import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -87,7 +88,7 @@ async function save() {
 }
 
 function setDefaultUrgency() {
-	toDoListItem.value.taskUrgencyId = priorityOptions.value.find((item) => item.priority === 1)?.id;
+	toDoListItem.value.taskPriorityId = priorityOptions.value.find((item) => item.priority === 1)?.id;
 }
 
 const close = () => {
@@ -117,7 +118,7 @@ const emit = defineEmits<{
 	(e: 'add', toDoList: ToDoListItemRequest): void
 	(e: 'edit', idToEdit: number, toDoListItem: ToDoListItemRequest): void
 	(e: 'quickEditedActivity', id: number): void
-	(e: 'changedUrgency', id: number, taskUrgencyId?: number): void
+	(e: 'changedUrgency', id: number, taskPriorityId?: number): void
 }>();
 defineExpose({
 	openCreate,

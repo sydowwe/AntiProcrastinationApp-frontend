@@ -42,7 +42,11 @@
 			/>
 
 			<!-- Events Column -->
-			<EventsColumn @updatedTaskSpan="handleUpdateTaskSpan"/>
+			<EventsColumn
+				:plannerStore="store"
+				:slotIndexToTimeValue="store.dateTimeFromSlotIndex"
+				@updatedTaskSpan="handleUpdateTaskSpan"
+			/>
 		</div>
 
 		<!-- Legend (placeholder for future) -->
@@ -86,21 +90,20 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, onMounted, watch} from 'vue'
+import {computed, onMounted, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import EventDialog from '@/components/dayPlanner/EventDialog.vue'
 import TimeColumn from '@/components/dayPlanner/TimeColumn.vue'
 import EventsColumn from '@/components/dayPlanner/EventsColumn.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {useMoment} from '@/scripts/momentHelper.ts';
-import {PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
-import {Activity} from '@/classes/Activity.ts';
-import {Role} from '@/classes/Role.ts';
-import {Category} from '@/classes/Category.ts';
+import {Role} from '@/dtos/response/Role';
+import {Category} from '@/dtos/response/Category';
 import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
 import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 
-const { createWithResponse, update, fetchById } = useTaskPlannerCrud()
+const {createWithResponse, update, fetchById} = useTaskPlannerCrud()
 const {formatToDateWithDay, formatLocalized} = useMoment()
 const store = useDayPlannerStore()
 const test_today = formatLocalized(store.viewedDate, 'YYYY-MM-DD')
@@ -108,16 +111,6 @@ const test_today = formatLocalized(store.viewedDate, 'YYYY-MM-DD')
 const role = new Role(1, "Work", "praca - homeoffice alebo office", "#4c45ec", 'briefcase');
 const codingCategory = new Category(1, "Coding", "coding", "#4287f5", 'code');
 
-// Sample events data - initialize store
-store.events = [
-	new PlannerTask(7, new Activity(1, 'Work', null, true, role, null), '#4287f5', new Date(test_today + 'T07:00:00'), new Date(test_today + 'T15:00:00'), false, true, false, 0, 0),
-	new PlannerTask(1, new Activity(2, 'Team Sync', null, false, role, null), '#9b4dca', new Date(test_today + 'T09:10:00'), new Date(test_today + 'T09:50:00'), false, false, true, 0, 0),
-	new PlannerTask(2, new Activity(3, 'Design Review', null, false, role, codingCategory), '#4287f5', new Date(test_today + 'T10:30:00'), new Date(test_today + 'T11:20:00'), false, false, true, 0, 0),
-	new PlannerTask(3, new Activity(4, 'Lunch Break', null, false, role, null), '#ff9f1a', new Date(test_today + 'T12:00:00'), new Date(test_today + 'T13:00:00'), false, false, true, 0, 0),
-	new PlannerTask(4, new Activity(5, 'Client Call', null, false, role, null), '#e74c3c', new Date(test_today + 'T14:20:00'), new Date(test_today + 'T15:00:00'), false, false, true, 0, 0),
-	new PlannerTask(5, new Activity(6, 'Code Review', null, false, role, codingCategory), '#4287f5', new Date(test_today + 'T15:30:00'), new Date(test_today + 'T16:10:00'), false, false, false, 0, 0),
-	new PlannerTask(6, new Activity(7, 'TEST next day', null, false, new Role(), null), '#4287f5', new Date(test_today + 'T23:30:00'), new Date('2025-10-06T01:10:00'), false, false, false, 0, 0)
-] as PlannerTask[]
 
 // Computed properties
 const currentDateFormatted = computed(() => {

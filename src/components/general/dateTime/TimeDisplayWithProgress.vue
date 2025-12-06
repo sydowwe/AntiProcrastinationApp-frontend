@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
 import {computed} from 'vue';
-import {type TimePreciseKeys, Time, TimePrecise} from '@/classes/TimeUtils';
+import {type TimePreciseKeys, Time, TimePrecise} from '@/utils/TimeUtils';
 
 const props = defineProps({
 	color: {

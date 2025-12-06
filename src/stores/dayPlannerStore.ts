@@ -1,13 +1,12 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { PlannerTask, PlannerTaskRequest } from '@/classes/PlannerTask.ts'
-import { useTaskPlannerCrud } from '@/composables/ConcretesCrudComposable.ts'
-import type { TaskSpanData } from '@/classes/types/DayPlannerTypes.ts'
-import { Time } from '@/classes/TimeUtils.ts'
-import { useMoment } from '@/scripts/momentHelper.ts'
+import {defineStore} from 'pinia'
+import {computed, ref} from 'vue'
+import {useMoment} from '@/scripts/momentHelper.ts'
+import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import {Time} from '@/utils/TimeUtils.ts';
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
-	const { formatToTime24H } = useMoment()
+	const {formatToTime24H} = useMoment()
 
 	// Time/Grid configuration state
 	const timeSlotDuration = ref(10)
@@ -118,9 +117,9 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const isResizingAny = computed(() => resizingEventId.value !== null)
 	const visibleEvents = computed(() => {
 		return events.value.filter(event => {
-			return event.gridRowStart >= 1 &&
-				event.gridRowEnd <= totalGridRows.value &&
-				event.gridRowStart <= event.gridRowEnd
+			return (event.gridRowStart ?? 0) >= 1 &&
+				(event.gridRowEnd ?? 0) <= totalGridRows.value &&
+				(event.gridRowStart ?? 0) <= (event.gridRowEnd ?? 0)
 		})
 	})
 
@@ -129,17 +128,15 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	)
 
 
-
 	// Event handlers
 	function handleFocusEvent(eventId: number | null): void {
 		focusedEventId.value = eventId
 	}
 
 
-
-	function openCreateDialogPrefilled(start: Date, end: Date): void {
+	function openCreateDialogPrefilled(startTime: string, endTime: string): void {
 		editedId.value = undefined
-		editingEvent.value = PlannerTaskRequest.fromSpan(start, end)
+		editingEvent.value = PlannerTaskRequest.fromSpan(startTime, endTime)
 		dialog.value = true
 	}
 
@@ -157,7 +154,6 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		editingEvent.value = PlannerTaskRequest.fromEntity(event)
 		dialog.value = true
 	}
-
 
 
 	function openDeleteDialog(): void {
