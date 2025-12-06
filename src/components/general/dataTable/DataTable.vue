@@ -25,8 +25,10 @@
 </VDataTableServer>
 </template>
 <script setup lang="ts" generic="TItem extends IBaseResponse">
-import {TableAction, TableColumn, VSortItem} from '@/classes/Generic';
-import {type IBaseResponse} from '@/classes/Table';
+import {TableAction} from '@/dtos/dto/TableAction.ts';
+import {TableColumn} from '@/dtos/dto/TableColumn.ts';
+import {VSortItem} from '@/dtos/dto/VSortItem.ts';
+import {type IBaseResponse} from '@/dtos/response/interface/IMyResponse';
 import {computed} from 'vue';
 import {VDataTableServer} from 'vuetify/components';
 import {useTableHeader} from '@/composable/table/TableHeaderComposable.ts';

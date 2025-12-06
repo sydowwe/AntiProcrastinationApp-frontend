@@ -19,15 +19,16 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {type QuickCreateActivityRoleName, useQuickCreateActivity} from '@/composables/quickCreateActivityComposition.ts';
-import {ActivityOptionsSource} from '@/classes/ActivityFormHelper.ts';
+import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {onMounted, ref} from 'vue';
 import {useI18n} from 'vue-i18n';
-import type {SelectOption} from '@/classes/SelectOption.ts';
+import type {SelectOption} from '@/dtos/response/SelectOption.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {type Activity, QuickActivityToolsDto} from '@/classes/Activity.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
+import {QuickActivityToolsDto} from '@/dtos/response/QuickActivityToolsDto.ts';
+import type {Activity} from '@/dtos/response/Activity.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
@@ -69,7 +70,7 @@ async function execAndReturnStatus() {
 				if (cloneId && quickEditMode.value === 'Clone') {
 					return {activityId: cloneId, status: 'edit'};
 				}
-				return {activityId:  activityBeforeEdit.value.id, status: 'edit'};
+				return {activityId: activityBeforeEdit.value.id, status: 'edit'};
 			}
 			return {activityId: activityBeforeEdit.value.id, status: 'noChange'};
 		} else {
@@ -79,7 +80,7 @@ async function execAndReturnStatus() {
 	}
 	if (!await activityForm.value?.validate()) {
 		showErrorSnackbar(`Please select an activity`);
-		return ;
+		return;
 	}
 	return {activityId: selectedActivityId.value!, status: 'fromExisting'};
 }

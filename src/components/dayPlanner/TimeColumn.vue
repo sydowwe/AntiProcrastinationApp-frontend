@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import {SLOT_HEIGHT} from '@/classes/types/DayPlannerTypes'
+import {SLOT_HEIGHT} from '@/types/DayPlannerTypes'
 import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
 import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
 

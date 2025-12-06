@@ -17,11 +17,15 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue';
-import {FilteredTableRequest, SortByRequest, TableColumn, VSortItem} from '@/classes/Generic.ts';
+import {onMounted, ref} from 'vue';
+import {TableColumn} from '@/dtos/dto/TableColumn.ts';
+import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import LookupDialog from '@/components/dialogs/general/LookupDialog.vue';
-import {LookupFilterRequest, LookupResponse} from '@/classes/SelectOption.ts';
+import {LookupFilterRequest} from '@/dtos/request/LookupFilterRequest.ts';
+import {LookupResponse} from '@/dtos/response/LookupResponse.ts';
 import BasicTable from '@/components/general/dataTable/BasicTable.vue';
+import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
+import {SortByRequest} from '@/dtos/request/base/SortByRequest.ts';
 
 const props = defineProps<{
 	entityName: string

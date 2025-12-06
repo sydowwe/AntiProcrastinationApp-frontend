@@ -36,11 +36,12 @@
 import {computed, ref} from 'vue';
 import HistoryPanelFilter from '../components/history/HistoryPanelFilter.vue';
 import HistoryRecordItem from '../components/history/HistoryRecordItem.vue';
-import {ActivityHistory, ActivityHistoryFilter, HistoryGroupedByDate} from '@/classes/ActivityHistory.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
-import {useFilteredTable} from '@/composables/general/CrudComposition.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {FilteredTableRequest, SortByRequest} from '@/classes/Generic.ts';
+import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
+import type {ActivityHistoryFilter} from '@/dtos/dto/ActivityHistoryFilter.ts';
+import {HistoryGroupedByDate} from '@/dtos/response/HistoryGroupedByDate.ts';
+import {SortByRequest} from '@/dtos/request/base/SortByRequest.ts';
 
 const groupedRecords = ref([] as HistoryGroupedByDate[]);
 const {formatLocalized} = useMoment();

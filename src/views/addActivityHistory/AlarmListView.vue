@@ -18,8 +18,9 @@
 <script setup lang="ts">
 import AlarmItem from '@/components/addActivityToHistory/AlarmItem.vue';
 import {onMounted, ref} from "vue";
-import {Alarm, AlarmRequest} from "@/classes/Alarm";
-import type {AlarmDialogType} from '@/classes/types/RefTypeInterfaces';
+import {Alarm} from "@/dtos/response/Alarm";
+import {AlarmRequest} from "@/dtos/request/AlarmRequest";
+import type {AlarmDialogType} from '@/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';

@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import {ref, watch, onMounted, onBeforeUnmount} from 'vue';
-import {type BaseToDoListItemEntity} from '@/classes/ToDoListItem';
+import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';

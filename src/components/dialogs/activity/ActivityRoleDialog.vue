@@ -10,9 +10,10 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {ref} from 'vue';
-import {Role, RoleRequest} from '@/classes/Role.ts';
+import {Role} from '@/dtos/response/Role.ts';
+import {RoleRequest} from '@/dtos/request/RoleRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityCrud, useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 const {useApi} = defineProps({
 	useApi: {
@@ -43,12 +44,12 @@ function openEditDialog(oldRole: Role) {
 
 async function onConfirmed() {
 	if (isEdit.value) {
-		if (useApi){
+		if (useApi) {
 			await update(idToEdit.value!, request.value);
 		}
 		emit('updated', idToEdit.value!, request.value);
-	}else{
-		if (useApi){
+	} else {
+		if (useApi) {
 			const createdId = await create(request.value);
 			emit('created', request.value, createdId);
 		}

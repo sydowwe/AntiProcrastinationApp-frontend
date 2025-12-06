@@ -9,7 +9,7 @@ import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
 import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
 import {ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {FormDialogType} from '@/classes/types/RefTypeInterfaces';
+import {FormDialogType} from '@/types/RefTypeInterfaces';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const i18n = useI18n();

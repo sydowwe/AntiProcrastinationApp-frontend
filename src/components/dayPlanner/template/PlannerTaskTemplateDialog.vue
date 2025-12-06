@@ -55,11 +55,11 @@
 import {onMounted, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
-import {TemplatePlannerTaskRequest} from '@/classes/activityPlanning/request/TemplatePlannerTaskRequest.ts';
+import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {Time} from '@/classes/TimeUtils.ts';
-import {TaskPriority} from '@/classes/TaskPriority.ts';
+import {Time} from '@/utils/TimeUtils.ts';
+import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
 

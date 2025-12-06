@@ -4,7 +4,7 @@
 		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
 			<NullFalseTrueCheckbox label="From to-do list" v-model="formData.isFromToDoList"
 			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
-			<VIdSelect v-if="formData.isFromToDoList" class="flex-1-1" v-model="formData.taskUrgencyId" :items="filteredOptions.taskUrgencyOptions"
+			<VIdSelect v-if="formData.isFromToDoList" class="flex-1-1" v-model="formData.taskPriorityId" :items="filteredOptions.taskPriorityOptions"
 			           hide-details></VIdSelect>
 
 		</div>
@@ -37,27 +37,20 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, watch, onMounted, type PropType} from 'vue';
-import {Time} from '@/classes/TimeUtils';
-import {
-	ActivityFormRequest,
-	ActivityFormSelectOptions,
-	ActivityOptionsSource,
-	ActivitySelectOptionCombination
-} from '@/classes/ActivityFormHelper';
+import {computed, onMounted, type PropType, ref, watch} from 'vue';
+import {Time} from '@/utils/TimeUtils';
+import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
+import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';
-import {
-	filterActivityFormSelectOptions,
-	// getAllActivityFormSelectOptions,
-	getAllActivityFormSelectOptionsCombinations,
-	// useActivitySelectOptionsFiltered
-} from '@/composables/ActivitySelectsComposition';
+import {filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations,} from '@/composables/ActivitySelectsComposition';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
 import type {VAutocomplete} from 'vuetify/components';
+import {ActivityFormSelectOptions} from '@/dtos/response/ActivityFormSelectOptions.ts';
+import type {ActivitySelectOptionCombination} from '@/dtos/response/ActivitySelectOptionCombination.ts';
 
 
 const {requiredRule} = useGeneralRules()
@@ -93,7 +86,7 @@ const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([]);
 const filteredOptions = ref(new ActivityFormSelectOptions());
 
 const formData = defineModel<ActivityFormRequest>({default: new ActivityFormRequest()});
-const selectedActivityId = defineModel<number | null>('activityId',{default: null});
+const selectedActivityId = defineModel<number | null>('activityId', {default: null});
 
 const activityIdModel = computed({
 	get: () => {
@@ -129,7 +122,7 @@ watch(() => activityIdModel.value, (newValue) => {
 
 watch(() => formData.value.isFromToDoList, (newValue) => {
 	if (!newValue) {
-		formData.value.taskUrgencyId = null;
+		formData.value.taskPriorityId = null;
 	}
 });
 watch(() => formData.value.isFromRoutineToDoList, (newValue) => {
@@ -174,8 +167,8 @@ const getSelectedCategoryName = computed((): string => {
 });
 
 const getSelectedTaskUrgencyName = computed((): string => {
-	const options = filteredOptions.value.taskUrgencyOptions || [];
-	return options.find(item => item.id === formData.value.taskUrgencyId)?.text || '';
+	const options = filteredOptions.value.taskPriorityOptions || [];
+	return options.find(item => item.id === formData.value.taskPriorityId)?.text || '';
 });
 
 const getSelectedRoutineTimePeriodName = computed((): string => {

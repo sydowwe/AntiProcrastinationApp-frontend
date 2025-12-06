@@ -1,5 +1,5 @@
 import {computed, type ComputedRef, type Ref} from 'vue';
-import type {TableColumn} from '@/classes/Generic.ts';
+import type {TableColumn} from '@/dtos/dto/TableColumn.ts';
 
 export function useTableHeader<TColumn extends TableColumn>(columns: Ref<TColumn[]> | ComputedRef<TColumn[]>, hasActions: boolean, showExpand: boolean) {
 	return computed(() => {

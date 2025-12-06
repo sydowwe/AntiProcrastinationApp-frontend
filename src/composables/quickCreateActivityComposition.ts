@@ -1,9 +1,10 @@
-import {Activity, ActivityRequest, QuickActivityToolsDto, QuickEditActivityRequest} from '@/classes/Activity';
 import {ref} from 'vue';
-import {Role} from '@/classes/Role';
+import {Role} from '@/dtos/response/Role.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
 import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {QuickActivityToolsDto} from '@/dtos/response/QuickActivityToolsDto.ts';
+import {ActivityRequest} from '@/dtos/request/ActivityRequest.ts';
+import {QuickEditActivityRequest} from '@/dtos/request/QuickEditActivityRequest.ts';
 
 export type QuickCreateActivityRoleName = 'Routine task' | 'To-do list task' | 'Planner task'
 
@@ -27,8 +28,7 @@ export function useQuickCreateActivity(viewName: string) {
 	async function quickCreateActivity() {
 		const roleId = await getQuickCreateActivityRoleIdByView();
 		const activityRequest = new ActivityRequest(dto.value.name, dto.value.text, roleId, dto.value.categoryId, false, false, null);
-		const id = await create(activityRequest);
-		return id;
+		return await create(activityRequest);
 	}
 
 	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach

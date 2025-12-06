@@ -9,7 +9,7 @@
 import {ref} from 'vue';
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
-import type {Time} from '@/classes/TimeUtils.ts';
+import type {Time} from '@/utils/TimeUtils.ts';
 
 //TODO preklad
 const i18n = useI18n();

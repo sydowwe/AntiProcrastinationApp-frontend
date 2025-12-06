@@ -1,8 +1,8 @@
-<!-- DayPlannerView.vue -->
+<!-- TemplateDayPlannerView.vue -->
 <template>
 <VCard class="mx-auto w-100 w-lg-66 d-flex flex-column">
 	<VCardTitle class="d-flex justify-space-between align-center flex-wrap ga-2">
-		<span>{{ currentDateFormatted }}</span>
+		<span>{{ store.templateName || 'Day Template' }}</span>
 
 		<TimeRangePicker
 			v-model:start="store.viewStartTime"
@@ -29,7 +29,7 @@
 				@click="store.openCreateDialogEmpty"
 				prependIcon="plus"
 			>
-				Add New Event
+				Add New Task
 			</VBtn>
 		</div>
 	</VCardTitle>
@@ -38,12 +38,20 @@
 		<div class="calendar-grid flex-fill">
 
 			<!-- Time Column -->
-			<TimeColumn
-			/>
+			<TimeColumn/>
 
-			<!-- Events Column -->
-			<EventsColumn @updatedTaskSpan="handleUpdateTaskSpan">
-
+			<!-- Events Column with template event blocks -->
+			<EventsColumn
+				:plannerStore="store"
+				:slotIndexToTimeValue="store.timeStringFromSlotIndex"
+				@updatedTaskSpan="handleUpdateTaskSpan"
+			>
+				<template #event-block="{ event, onResizeStart }">
+					<TemplateEventBlock
+						:event="event"
+						@resizeStart="onResizeStart"
+					/>
+				</template>
 			</EventsColumn>
 		</div>
 
@@ -57,14 +65,19 @@
 <!-- Delete Confirmation Dialog -->
 <MyDialog
 	title="Delete confirmation"
-	:text="`Are you sure you want to delete event ${store.toDeleteEvent?.activity.name}?`"
+	:text="`Are you sure you want to delete task ${store.toDeleteEvent?.activity.name}?`"
 	v-model="store.deleteDialog"
 	@confirmed="del"
 	confirmBtnColor="error"
 />
 
-<!-- Event Dialog -->
-<EventDialog
+<!-- Template Event Dialog -->
+<PlannerTaskTemplateDialog
+	:dialog="store.dialog"
+	v-model:dialog="store.dialog"
+	:editingTask="store.editingEvent"
+	:isEdit="isEdit"
+	:editedId="store.editedId"
 	@create="create"
 	@edit="edit"
 />
@@ -75,7 +88,7 @@
 	color="error"
 	:timeout="3000"
 >
-	Event conflicts with existing schedule!
+	Task conflicts with existing schedule!
 	<template v-slot:actions>
 		<VBtn
 			variant="text"
@@ -90,53 +103,43 @@
 <script setup lang="ts">
 import {computed, onMounted, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
-import EventDialog from '@/components/dayPlanner/EventDialog.vue'
+import PlannerTaskTemplateDialog from '@/components/dayPlanner/template/PlannerTaskTemplateDialog.vue'
 import TimeColumn from '@/components/dayPlanner/TimeColumn.vue'
 import EventsColumn from '@/components/dayPlanner/EventsColumn.vue'
-import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {useMoment} from '@/scripts/momentHelper.ts';
-import {PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
-import {Activity} from '@/classes/Activity.ts';
-import {Role} from '@/classes/Role.ts';
-import {Category} from '@/classes/Category.ts';
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
-import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
+import TemplateEventBlock from '@/components/dayPlanner/template/TemplateEventBlock.vue'
+import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+import {useTemplateDayPlannerStore} from '@/stores/templateDayPlannerStore.ts'
+import {useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
+import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask'
+import type {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
+import {Time} from '@/utils/TimeUtils'
 
-const {createWithResponse, update, fetchById} = useTaskPlannerCrud()
-const {formatToDateWithDay, formatLocalized} = useMoment()
-const store = useDayPlannerStore()
-const test_today = formatLocalized(store.viewedDate, 'YYYY-MM-DD')
+const {createWithResponse, update, fetchById, deleteEntity} = useTemplatePlannerTaskCrud()
+const store = useTemplateDayPlannerStore()
 
-const role = new Role(1, "Work", "praca - homeoffice alebo office", "#4c45ec", 'briefcase');
-const codingCategory = new Category(1, "Coding", "coding", "#4287f5", 'code');
+const isEdit = computed(() => store.editedId !== undefined)
 
-// Sample events data - initialize store
-store.events = [
-	new PlannerTask(7, new Activity(1, 'Work', null, true, role, null), '#4287f5', new Date(test_today + 'T07:00:00'), new Date(test_today + 'T15:00:00'), false, true, false, 0, 0),
-	new PlannerTask(1, new Activity(2, 'Team Sync', null, false, role, null), '#9b4dca', new Date(test_today + 'T09:10:00'), new Date(test_today + 'T09:50:00'), false, false, true, 0, 0),
-	new PlannerTask(2, new Activity(3, 'Design Review', null, false, role, codingCategory), '#4287f5', new Date(test_today + 'T10:30:00'), new Date(test_today + 'T11:20:00'), false, false, true, 0, 0),
-	new PlannerTask(3, new Activity(4, 'Lunch Break', null, false, role, null), '#ff9f1a', new Date(test_today + 'T12:00:00'), new Date(test_today + 'T13:00:00'), false, false, true, 0, 0),
-	new PlannerTask(4, new Activity(5, 'Client Call', null, false, role, null), '#e74c3c', new Date(test_today + 'T14:20:00'), new Date(test_today + 'T15:00:00'), false, false, true, 0, 0),
-	new PlannerTask(5, new Activity(6, 'Code Review', null, false, role, codingCategory), '#4287f5', new Date(test_today + 'T15:30:00'), new Date(test_today + 'T16:10:00'), false, false, false, 0, 0),
-	new PlannerTask(6, new Activity(7, 'TEST next day', null, false, new Role(), null), '#4287f5', new Date(test_today + 'T23:30:00'), new Date('2025-10-06T01:10:00'), false, false, false, 0, 0)
-] as PlannerTask[]
+// Helper function to convert time string to slot index for grid positioning
+function setGridPositionFromTimeSpan(event: TemplatePlannerTask & { gridRowStart?: number; gridRowEnd?: number }): void {
+	const startTime = Time.fromString(event.startTime)
+	const endTime = Time.fromString(event.endTime)
 
-// Computed properties
-const currentDateFormatted = computed(() => {
-	return formatToDateWithDay(store.viewedDate)
-})
+	const viewStartMinutes = store.viewStartTime.getInMinutes
+	let startMinutes = startTime.getInMinutes
+	let endMinutes = endTime.getInMinutes
 
-function setGridPositionFromSpan(event: PlannerTask) {
-	const startDate = event.start
-	const endDate = event.end
+	// Handle overnight spans
+	if (startMinutes < viewStartMinutes) {
+		startMinutes += 24 * 60
+	}
+	if (endMinutes < startMinutes) {
+		endMinutes += 24 * 60
+	}
 
-	const viewStartDate = new Date(store.viewedDate)
-	viewStartDate.setHours(store.viewStartTime.hours, store.viewStartTime.minutes, 0, 0)
-
-	const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
+	const minutesFromViewStart = startMinutes - viewStartMinutes
 	const startRow = Math.floor(minutesFromViewStart / 10) + 1
 
-	const minutesFromViewStartToEnd = Math.floor((endDate.getTime() - viewStartDate.getTime()) / 60000)
+	const minutesFromViewStartToEnd = endMinutes - viewStartMinutes
 	const endRow = Math.floor(minutesFromViewStartToEnd / 10)
 
 	event.gridRowStart = Math.max(1, startRow)
@@ -144,8 +147,8 @@ function setGridPositionFromSpan(event: PlannerTask) {
 }
 
 function handleUpdateTaskSpan(
-	eventId: number,
-	updates: Partial<PlannerTask>
+	eventId: string,
+	updates: Partial<TemplatePlannerTask & { gridRowStart?: number; gridRowEnd?: number }>
 ): void {
 	const eventIndex = store.events.findIndex(e => e.id === eventId)
 	if (eventIndex === -1) return
@@ -158,83 +161,122 @@ function handleUpdateTaskSpan(
 		...updates
 	}
 
-	if (updates.start || updates.end) {
+	if (updates.startTime || updates.endTime) {
 		const event = store.events[eventIndex]
-		event.isDuringBackgroundEvent = checkOverlapsBackground(event.start, event.end)
+		event.isDuringBackgroundEvent = checkOverlapsBackground(event.startTime, event.endTime)
 	}
 }
 
-function checkOverlapsBackground(start: Date | string, end: Date | string): boolean {
+function checkOverlapsBackground(startTime: string, endTime: string): boolean {
+	const start = Time.fromString(startTime)
+	const end = Time.fromString(endTime)
+
 	return store.events.some(event => {
 		if (!event.isBackground) return false
 
-		const bgStart = event.start
-		const bgEnd = event.end
-		const checkStart = start instanceof Date ? start : new Date(start)
-		const checkEnd = end instanceof Date ? end : new Date(end)
+		const bgStart = Time.fromString(event.startTime)
+		const bgEnd = Time.fromString(event.endTime)
 
-		return (checkStart < bgEnd && checkEnd > bgStart)
+		// Simple time overlap check (handles overnight)
+		let startMins = start.getInMinutes
+		let endMins = end.getInMinutes
+		let bgStartMins = bgStart.getInMinutes
+		let bgEndMins = bgEnd.getInMinutes
+
+		// Normalize for overnight
+		if (endMins < startMins) endMins += 24 * 60
+		if (bgEndMins < bgStartMins) bgEndMins += 24 * 60
+
+		return (startMins < bgEndMins && endMins > bgStartMins)
 	})
 }
 
-function checkConflict(newStart: Date, newEnd: Date, currentEventId?: number): boolean {
+function checkConflict(startTime: string, endTime: string, currentEventId?: string): boolean {
+	const start = Time.fromString(startTime)
+	const end = Time.fromString(endTime)
+
 	return store.events.some(event => {
 		if (event.id === currentEventId || event.isBackground)
 			return false
 
-		return (newStart < event.end && newEnd > event.start)
+		const eventStart = Time.fromString(event.startTime)
+		const eventEnd = Time.fromString(event.endTime)
+
+		let startMins = start.getInMinutes
+		let endMins = end.getInMinutes
+		let eventStartMins = eventStart.getInMinutes
+		let eventEndMins = eventEnd.getInMinutes
+
+		// Normalize for overnight
+		if (endMins < startMins) endMins += 24 * 60
+		if (eventEndMins < eventStartMins) eventEndMins += 24 * 60
+
+		return (startMins < eventEndMins && endMins > eventStartMins)
 	})
 }
 
-function updateOverlapsBackgroundFlags(bgStart: Date | string, bgEnd: Date | string): void {
+function updateOverlapsBackgroundFlags(bgStartTime: string, bgEndTime: string): void {
+	const bgStart = Time.fromString(bgStartTime)
+	const bgEnd = Time.fromString(bgEndTime)
+
+	let bgStartMins = bgStart.getInMinutes
+	let bgEndMins = bgEnd.getInMinutes
+	if (bgEndMins < bgStartMins) bgEndMins += 24 * 60
+
 	store.events.forEach(event => {
 		if (event.isBackground) return
 
-		const eventStart = event.start
-		const eventEnd = event.end
-		const bgStartDate = bgStart instanceof Date ? bgStart : new Date(bgStart)
-		const bgEndDate = bgEnd instanceof Date ? bgEnd : new Date(bgEnd)
+		const eventStart = Time.fromString(event.startTime)
+		const eventEnd = Time.fromString(event.endTime)
 
-		if (eventStart < bgEndDate && eventEnd > bgStartDate) {
+		let eventStartMins = eventStart.getInMinutes
+		let eventEndMins = eventEnd.getInMinutes
+		if (eventEndMins < eventStartMins) eventEndMins += 24 * 60
+
+		if (eventStartMins < bgEndMins && eventEndMins > bgStartMins) {
 			event.isDuringBackgroundEvent = true
 		}
 	})
 }
 
-function initializeEventGridPositions() {
+function initializeEventGridPositions(): void {
 	store.events.forEach(event => {
-		setGridPositionFromSpan(event)
+		setGridPositionFromTimeSpan(event)
 	})
 }
 
-async function create(request: PlannerTaskRequest) {
-	if (!request.isBackground) {
-		if (checkConflict(request.start, request.end)) {
+async function create(request: TemplatePlannerTaskRequest): Promise<void> {
+	if (!request.isBackground && request.startTime && request.endTime) {
+		if (checkConflict(request.startTime, request.endTime)) {
 			store.conflictSnackbar = true
 			return
 		}
 	}
+
 	const response = await createWithResponse(request)
 
 	if (response.isBackground) {
-		updateOverlapsBackgroundFlags(response.start, response.end)
+		updateOverlapsBackgroundFlags(response.startTime, response.endTime)
 	} else {
 		response.isDuringBackgroundEvent = checkOverlapsBackground(
-			response.start,
-			response.end
+			response.startTime,
+			response.endTime
 		)
 	}
-	setGridPositionFromSpan(response)
-	store.events.push(response)
+
+	const eventWithGrid = response as TemplatePlannerTask & { gridRowStart?: number; gridRowEnd?: number; isDuringBackgroundEvent?: boolean }
+	setGridPositionFromTimeSpan(eventWithGrid)
+	store.events.push(eventWithGrid)
 }
 
-async function edit(id: number, request: PlannerTaskRequest) {
-	if (!request.isBackground) {
-		if (checkConflict(request.start, request.end, id)) {
+async function edit(id: string, request: TemplatePlannerTaskRequest): Promise<void> {
+	if (!request.isBackground && request.startTime && request.endTime) {
+		if (checkConflict(request.startTime, request.endTime, id)) {
 			store.conflictSnackbar = true
 			return
 		}
 	}
+
 	const index = store.events.findIndex(e => e.id === id)
 	let updatedItem = store.events[index]
 	if (!updatedItem)
@@ -243,24 +285,28 @@ async function edit(id: number, request: PlannerTaskRequest) {
 	await update(id, request)
 
 	if (request.isBackground !== updatedItem.isBackground) {
-		updateOverlapsBackgroundFlags(request.start, request.end)
+		if (request.startTime && request.endTime) {
+			updateOverlapsBackgroundFlags(request.startTime, request.endTime)
+		}
 	}
 
-	updatedItem = await fetchById(id)
+	const fetchedItem = await fetchById(id)
+	const eventWithGrid = fetchedItem as TemplatePlannerTask & { gridRowStart?: number; gridRowEnd?: number; isDuringBackgroundEvent?: boolean }
 
-	if (request.isBackground) {
-		updatedItem.isDuringBackgroundEvent = checkOverlapsBackground(
-			updatedItem.start,
-			updatedItem.end
+	if (!request.isBackground) {
+		eventWithGrid.isDuringBackgroundEvent = checkOverlapsBackground(
+			eventWithGrid.startTime,
+			eventWithGrid.endTime
 		)
 	}
-	setGridPositionFromSpan(updatedItem)
+	setGridPositionFromTimeSpan(eventWithGrid)
 
-	store.events[index] = updatedItem
+	store.events[index] = eventWithGrid
 }
 
-function del(): void {
-	if (store.toDeleteIndex !== null) {
+async function del(): Promise<void> {
+	if (store.toDeleteIndex !== null && store.toDeleteEvent) {
+		await deleteEntity(store.toDeleteEvent.id)
 		store.events.splice(store.toDeleteIndex, 1)
 		store.focusedEventId = null
 	}
@@ -275,6 +321,8 @@ watch([() => store.viewStartTime, () => store.viewEndTime], () => {
 
 // Lifecycle hooks
 onMounted(() => {
+	// Initialize with sample data or load from API
+	// TODO: Load template tasks from API
 	initializeEventGridPositions()
 })
 

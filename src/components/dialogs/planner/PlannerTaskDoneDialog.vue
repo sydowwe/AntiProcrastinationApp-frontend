@@ -27,8 +27,8 @@
 <script setup lang="ts">
 import {ref, onMounted, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time, TimePrecise} from '@/classes/TimeUtils';
-import {PlannerTask} from '@/classes/PlannerTask';
+import {Time, TimePrecise} from '@/utils/TimeUtils';
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';

@@ -19,7 +19,7 @@
 
 		<ToDoListItem
 			:toDoListItem="item"
-			:color="(item as any).taskUrgency?.color ?? 'primary'"
+			:color="(item as any).taskPriority?.color ?? 'primary'"
 			:isInChangeOrderMode="isInChangeOrderMode"
 			:listId="listId"
 			:isDragging="dragState.draggedIndex === index"
@@ -68,8 +68,10 @@
 <script setup lang="ts" generic="TEntity extends BaseToDoListItemEntity">
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
-import {type BaseToDoListItemEntity, ChangeDisplayOrderRequest, ToDoListKind} from '@/classes/ToDoListItem';
-import {ref, onMounted, onBeforeUnmount, watch, reactive, nextTick, computed, useTemplateRef} from 'vue';
+import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest.ts';
+import {ToDoListKind} from '@/dtos/enum/ToDoListKind.ts';
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef, watch} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
 import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
@@ -79,7 +81,7 @@ import {useAutoAnimate} from '@formkit/auto-animate/vue';
 const crossListAnimatingIds = ref<Set<number>>(new Set());
 
 // Auto-animate controller
-const [autoParent] = useAutoAnimate({ duration: 300, easing: 'ease-in-out' });
+const [autoParent] = useAutoAnimate({duration: 300, easing: 'ease-in-out'});
 
 const props = defineProps({
 	kind: {

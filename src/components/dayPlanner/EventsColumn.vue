@@ -1,24 +1,24 @@
-<!-- EventsColumn.vue -->
+<!-- EventsColumn.vue - Generic, works with any store -->
 <template>
 <div
 	ref="eventsColumnRef"
 	class="events-column"
-	:style="{ gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)` }"
+	:style="{ gridTemplateRows: `repeat(${plannerStore.totalGridRows}, ${SLOT_HEIGHT}px)` }"
 	@pointerdown="handlePointerDown"
 	@pointermove="handlePointerMove"
 >
 	<!-- Time Slots with hover effect -->
 	<div
-		v-for="(slot, index) in store.timeSlots"
+		v-for="(slot, index) in plannerStore.timeSlots"
 		:key="index"
-		:class="['event-slot', { 'hoverable': !creationPreview && !store.isDraggingAny }]"
+		:class="['event-slot', { 'hoverable': !creationPreview && !plannerStore.isDraggingAny }]"
 		:data-slot-index="index"
 	/>
 
 	<!-- Midnight divider -->
 	<div
 		class="midnight-divider-events"
-		:style="{ top: `${store.timeToSlotIndex('00:00') * SLOT_HEIGHT}px` }"
+		:style="{ top: `${plannerStore.timeToSlotIndex('00:00') * SLOT_HEIGHT}px` }"
 	/>
 
 	<div
@@ -33,37 +33,42 @@
 		:preview="creationPreview"
 	/>
 
-	<!-- Event Blocks -->
-	<EventBlock
-		v-for="event in store.visibleEvents"
-		:key="event.id"
-		:event="event"
-		@resizeStart="handleResizeStart"
-	/>
+	<!-- Event Blocks - use slot for flexibility -->
+	<slot name="event-block" v-for="event in plannerStore.visibleEvents" :key="event.id" :event="event" :onResizeStart="handleResizeStart">
+		<!-- Default: use EventBlock for regular planner -->
+		<EventBlock
+			:event="event"
+			@resizeStart="handleResizeStart"
+		/>
+	</slot>
 </div>
 </template>
 
-<script setup lang="ts">
-import {ref, computed, onUnmounted, onMounted} from 'vue'
-import {CreationPreviewType, SLOT_HEIGHT, TaskSpanData} from '@/classes/types/DayPlannerTypes'
+<script setup lang="ts"
+        generic="TEvent extends { id: string | number; gridRowStart?: number; gridRowEnd?: number; isBackground?: boolean }, TStore extends Record<string, any>">
+import {computed, onMounted, ref} from 'vue'
+import {CreationPreviewType, SLOT_HEIGHT} from '@/types/DayPlannerTypes'
 import EventBlock from './EventBlock.vue'
 import CreationPreview from './CreationPreview.vue'
 import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
-import type {PlannerTask} from '@/classes/PlannerTask.ts';
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
+
+// Props - store and time conversion functions
+const props = defineProps<{
+	plannerStore: TStore
+	slotIndexToTimeValue: (index: number) => Date | string
+}>()
 
 const eventsColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => eventsColumnRef.value?.parentElement as HTMLElement)
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
 const {isVisible, gridRowStyle} = useCurrentTimeIndicator()
-const store = useDayPlannerStore()
 
 // Creation state
 const creationPreview = ref<CreationPreviewType | undefined>(undefined)
 
 // Drag state (local to EventsColumn - not needed in EventBlock)
-const originalEventState = ref<PlannerTask | null>(null)
+const originalEventState = ref<TEvent | null>(null)
 const dragStartSlot = ref<number | null>(null)
 const dragOffset = ref<number>(0)
 
@@ -77,23 +82,23 @@ function getSlotIndexFromPosition(y: number): number {
 
 	const rect = eventsColumnRef.value.getBoundingClientRect()
 	const relativeY = y - rect.top
-	const slotHeight = rect.height / store.totalGridRows
+	const slotHeight = rect.height / props.plannerStore.totalGridRows
 
-	return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / slotHeight)))
+	return Math.max(0, Math.min(props.plannerStore.totalGridRows - 1, Math.floor(relativeY / slotHeight)))
 }
 
-function checkEventConflictByRow(newStartRow: number, newEndRow: number, eventId?: number): boolean {
-	return store.events.some(event => {
+function checkEventConflictByRow(newStartRow: number, newEndRow: number, eventId?: string | number): boolean {
+	return props.plannerStore.events.some((event: TEvent) => {
 		if (event.id === eventId || event.isBackground) return false
-		return !(newEndRow < event.gridRowStart || newStartRow > event.gridRowEnd)
+		return !(newEndRow < (event.gridRowStart || 0) || newStartRow > (event.gridRowEnd || 0))
 	})
 }
 
-function handleResizeStart(payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void {
-	const event = store.events.find(ev => ev.id === payload.eventId)
-	if (!event) return
+function handleResizeStart(payload: { eventId: string | number; direction: 'top' | 'bottom'; $event: PointerEvent }): void {
+	const event = props.plannerStore.events.find((ev: TEvent) => ev.id === payload.eventId)
+	if (!event || !event.gridRowStart) return
 
-	store.resizingEventId = payload.eventId
+	props.plannerStore.resizingEventId = payload.eventId
 	resizeDirection.value = payload.direction
 	resizeStartSlot.value = event.gridRowStart - 1
 
@@ -110,12 +115,15 @@ function handlePointerDown(e: PointerEvent): void {
 	// Check if clicking on an event to drag it
 	const eventBlock = target.closest('.event-block') as HTMLElement
 	if (eventBlock && !eventBlock.classList.contains('background-event-block')) {
-		const eventId = parseInt(eventBlock.dataset.eventId || '0')
-		const event = store.events.find(ev => ev.id === eventId)
-		if (!event || event.isBackground) return
+		const eventIdStr = eventBlock.dataset.eventId
+		if (!eventIdStr) return
 
+		// Try to parse as number, otherwise use as string
+		const eventId: string | number = isNaN(Number(eventIdStr)) ? eventIdStr : Number(eventIdStr)
+		const event = props.plannerStore.events.find((ev: TEvent) => ev.id === eventId)
+		if (!event || event.isBackground || !event.gridRowStart) return
 
-		store.draggingEventId = eventId
+		props.plannerStore.draggingEventId = eventId
 		originalEventState.value = {...event}
 
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -137,55 +145,76 @@ function handlePointerDown(e: PointerEvent): void {
 
 function handlePointerMove(e: PointerEvent): void {
 	// Handle dragging
-	if (store.draggingEventId !== null && dragStartSlot.value !== null && originalEventState.value) {
+	if (props.plannerStore.draggingEventId !== null && dragStartSlot.value !== null && originalEventState.value) {
 		handleAutoScroll(e.clientY)
 
 		const currentSlot = getSlotIndexFromPosition(e.clientY)
-		const event = store.events.find(ev => ev.id === store.draggingEventId)
-		if (!event) return
+		const event = props.plannerStore.events.find((ev: TEvent) => ev.id === props.plannerStore.draggingEventId)
+		if (!event || !originalEventState.value.gridRowStart || !originalEventState.value.gridRowEnd) return
 
 		const eventDuration = originalEventState.value.gridRowEnd - originalEventState.value.gridRowStart
 		const newStartRow = currentSlot - dragOffset.value + 1
 		const newEndRow = newStartRow + eventDuration
 
-		const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows
-		const hasConflict = checkEventConflictByRow(newStartRow, newEndRow, store.draggingEventId)
+		const fitsInView = newStartRow >= 1 && newEndRow <= props.plannerStore.totalGridRows
+		const hasConflict = checkEventConflictByRow(newStartRow, newEndRow, props.plannerStore.draggingEventId)
 
-		store.dragConflict = hasConflict || !fitsInView
+		props.plannerStore.dragConflict = hasConflict || !fitsInView
 
-		emit('updatedTaskSpan',store.draggingEventId,
-			{
-				start: store.dateTimeFromSlotIndex(newStartRow - 1),
-				end: store.dateTimeFromSlotIndex(newEndRow),
-				gridRowStart: newStartRow,
-				gridRowEnd: newEndRow
-			}
-		)
+		const timeValue: any = {
+			gridRowStart: newStartRow,
+			gridRowEnd: newEndRow
+		}
+
+		// Add time values using the conversion function
+		const startTime = props.slotIndexToTimeValue(newStartRow - 1)
+		const endTime = props.slotIndexToTimeValue(newEndRow)
+
+		if (startTime instanceof Date) {
+			timeValue.start = startTime
+			timeValue.end = endTime
+		} else {
+			timeValue.startTime = startTime
+			timeValue.endTime = endTime
+		}
+
+		emit('updatedTaskSpan', props.plannerStore.draggingEventId, timeValue)
 		return
 	}
 
 	// Handle resizing
-	if (store.resizingEventId !== null && resizeDirection.value) {
+	if (props.plannerStore.resizingEventId !== null && resizeDirection.value) {
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
-		const event = store.events.find(ev => ev.id === store.resizingEventId)
-		if (!event) return
+		const event = props.plannerStore.events.find((ev: TEvent) => ev.id === props.plannerStore.resizingEventId)
+		if (!event || !event.gridRowStart || !event.gridRowEnd) return
 
 		if (resizeDirection.value === 'top') {
 			const newStartRow = slotIndex + 1
-			if (newStartRow <= event.gridRowEnd && !checkEventConflictByRow(newStartRow, event.gridRowEnd, store.resizingEventId)) {
-				emit('updatedTaskSpan',store.resizingEventId, {
-					gridRowStart: newStartRow,
-					start: store.dateTimeFromSlotIndex(newStartRow - 1)
-				})
+			if (newStartRow <= event.gridRowEnd && !checkEventConflictByRow(newStartRow, event.gridRowEnd, props.plannerStore.resizingEventId)) {
+				const timeValue: any = {
+					gridRowStart: newStartRow
+				}
+				const startTime = props.slotIndexToTimeValue(newStartRow - 1)
+				if (startTime instanceof Date) {
+					timeValue.start = startTime
+				} else {
+					timeValue.startTime = startTime
+				}
+				emit('updatedTaskSpan', props.plannerStore.resizingEventId, timeValue)
 			}
 		} else if (resizeDirection.value === 'bottom') {
 			const newEndRow = slotIndex + 1
-			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, store.resizingEventId)) {
-				emit('updatedTaskSpan',store.resizingEventId,
-					{
-						gridRowEnd: newEndRow,
-						end: store.dateTimeFromSlotIndex(newEndRow)
-					})
+			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, props.plannerStore.resizingEventId)) {
+				const timeValue: any = {
+					gridRowEnd: newEndRow
+				}
+				const endTime = props.slotIndexToTimeValue(newEndRow)
+				if (endTime instanceof Date) {
+					timeValue.end = endTime
+				} else {
+					timeValue.endTime = endTime
+				}
+				emit('updatedTaskSpan', props.plannerStore.resizingEventId, timeValue)
 			}
 		}
 		return
@@ -215,33 +244,34 @@ function handlePointerUp(): void {
 	stopAutoScroll()
 
 	// Handle drag end
-	if (store.draggingEventId !== null && originalEventState.value) {
-		const event = store.events.find(ev => ev.id === store.draggingEventId)
+	if (props.plannerStore.draggingEventId !== null && originalEventState.value) {
+		const event = props.plannerStore.events.find((ev: TEvent) => ev.id === props.plannerStore.draggingEventId)
 
-		if (event && (store.dragConflict || event.gridRowStart < 1 || event.gridRowEnd > store.totalGridRows)) {
+		if (event && (props.plannerStore.dragConflict || !event.gridRowStart || !event.gridRowEnd || event.gridRowStart < 1 || event.gridRowEnd > props.plannerStore.totalGridRows)) {
 			// Revert to original position
-			emit('updatedTaskSpan',store.draggingEventId, originalEventState.value)
-			store.conflictSnackbar = true
+			emit('updatedTaskSpan', props.plannerStore.draggingEventId, originalEventState.value)
+			props.plannerStore.conflictSnackbar = true
 		}
 
 		// Only remove focus if the event actually moved
-		const didMove = event && (event.gridRowStart !== originalEventState.value.gridRowStart || event.gridRowEnd !== originalEventState.value.gridRowEnd)
+		const didMove = event && originalEventState.value.gridRowStart && originalEventState.value.gridRowEnd &&
+			(event.gridRowStart !== originalEventState.value.gridRowStart || event.gridRowEnd !== originalEventState.value.gridRowEnd)
 		if (didMove) {
-			store.handleFocusEvent(null);
+			props.plannerStore.handleFocusEvent(null);
 			(document.activeElement as HTMLElement).blur()
 		}
 
-		store.draggingEventId = null
+		props.plannerStore.draggingEventId = null
 		dragStartSlot.value = null
 		dragOffset.value = 0
-		store.dragConflict = false
+		props.plannerStore.dragConflict = false
 		originalEventState.value = null
 		return
 	}
 
 	// Handle resize end
-	if (store.resizingEventId !== null) {
-		store.resizingEventId = null
+	if (props.plannerStore.resizingEventId !== null) {
+		props.plannerStore.resizingEventId = null
 		resizeStartSlot.value = null
 		resizeDirection.value = null
 		return
@@ -250,20 +280,20 @@ function handlePointerUp(): void {
 	// Handle creation end
 	if (!creationPreview.value) return
 
-	const startTime = store.dateTimeFromSlotIndex(creationPreview.value.startRow - 1)
-	const endTime = store.dateTimeFromSlotIndex(creationPreview.value.endRow)
+	const startTime = props.slotIndexToTimeValue(creationPreview.value.startRow - 1)
+	const endTime = props.slotIndexToTimeValue(creationPreview.value.endRow)
 
-	store.openCreateDialogPrefilled(startTime, endTime)
+	props.plannerStore.openCreateDialogPrefilled(startTime, endTime)
 
-	creationPreview.value = undefined;
+	creationPreview.value = undefined
 }
 
-onMounted(()=>{
+onMounted(() => {
 	document.addEventListener('pointerup', handlePointerUp)
 })
 
 const emit = defineEmits<{
-	(e: 'updatedTaskSpan', editedId: number, payload:Partial<PlannerTask>): void
+	(e: 'updatedTaskSpan', editedId: string | number, payload: Partial<TEvent>): void
 }>()
 </script>
 

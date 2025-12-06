@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import {type BaseToDoListItemEntity} from '@/classes/ToDoListItem';
+import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
 
 defineProps({
 	toDoListItem: {

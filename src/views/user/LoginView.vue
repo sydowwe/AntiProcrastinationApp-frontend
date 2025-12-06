@@ -45,9 +45,7 @@
 </div>
 </template>
 <script setup lang="ts">
-import {ref, onMounted, computed} from 'vue';
-import type {VuetifyFormType} from '@/classes/types/RefTypeInterfaces';
-import {AvailableLocales, PasswordSignInRequest} from '@/classes/User';
+import {computed, onMounted, ref} from 'vue';
 import GoogleSignIn from '@/components/user/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue';
 import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
@@ -59,6 +57,8 @@ import {useLoading} from '@/composables/general/LoadingComposable.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
+import type {VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
+import {PasswordSignInRequest} from '@/dtos/request/PasswordSignInRequest.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
@@ -83,9 +83,7 @@ async function validateAndSendForm() {
 	console.log(valid)
 	if (valid) {
 		showFullScreenLoading();
-		const recaptchaToken = await executeRecaptcha('login');
-
-		loginRequest.value.recaptchaToken = recaptchaToken;
+		loginRequest.value.recaptchaToken = await executeRecaptcha('login');
 		loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 		axiosSuccessLoadingHide.value = false;
 		API.post('/user/login', JSON.stringify(loginRequest.value))

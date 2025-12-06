@@ -20,8 +20,8 @@
     import ActivitySelectionForm from '../ActivitySelectionForm.vue';
     import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
     import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
-    import { Time } from '@/classes/TimeUtils';
-    import { ActivityDialogType, ActivitySelectionFormType } from '@/classes/types/RefTypeInterfaces';
+    import { Time } from '@/utils/TimeUtils';
+    import { ActivityDialogType, ActivitySelectionFormType } from '@/types/RefTypeInterfaces';
     import { ref } from 'vue';
     import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 

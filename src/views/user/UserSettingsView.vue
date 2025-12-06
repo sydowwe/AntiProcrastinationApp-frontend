@@ -38,18 +38,18 @@
 </VRow>
 </template>
 <script setup lang="ts">
-import {ref, computed} from 'vue';
+import {computed, ref} from 'vue';
 import ChangePasswordDialog from '../../components/user/dialogs/ChangePasswordDialog.vue';
 import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
-
-import type {VuetifyFormType, DialogType} from '@/classes/types/RefTypeInterfaces';
-import {User} from '@/classes/User';
 
 import {useI18n} from 'vue-i18n';
 import ChangeEmailDialog from '@/components/user/dialogs/ChangeEmailDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useUserStore} from '@/stores/userStore.ts';
 import router from '@/plugins/router.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import type {DialogType, VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
+import {User} from '@/dtos/response/User.ts';
 
 const {showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = useSnackbar();
 const i18n = useI18n();
@@ -94,7 +94,8 @@ function toggleTwoFactorAuth(event: Event) {
 	currentAction.value = 'toggleTwoFactorAuth'
 	verifyUserDialog.value.open();
 }
-function deleteAccount(){
+
+function deleteAccount() {
 	currentAction.value = 'deleteAccount'
 	verifyUserDialog.value.open();
 }
@@ -148,7 +149,7 @@ function show2FAQrCode() {
 
 function showScratchCode() {
 	onUserVerified.value = () => {
-		axios
+		API
 			.post('/user/get-2fa-scratch-code', {})
 			.then((response) => {
 				if (response.data.new2FAQrCode === true) {

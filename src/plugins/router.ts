@@ -13,7 +13,6 @@ import RegistrationView from '@/views/user/RegistrationView.vue'
 import ForgottenPasswordView from '@/views/user/ForgottenPasswordView.vue'
 import UserSettingsView from '@/views/user/UserSettingsView.vue'
 import RoutineToDoListView from '@/views/RoutineToDoListView.vue'
-import PlannerView from '@/views/dayPlanner/PlannerView.vue'
 import ConfirmEmailView from "@/views/user/ConfirmEmailView.vue";
 import {useUserStore} from "@/stores/userStore";
 import {useLoading} from '@/composables/general/LoadingComposable.ts';
@@ -99,11 +98,6 @@ const router = createRouter({
 			path: '/add-activity-manually',
 			name: 'addActivityManually',
 			component: AddActivityManuallyView
-		},
-		{
-			path: '/planner',
-			name: 'planner',
-			component: PlannerView
 		},
 		{
 			path: '/day-planner',

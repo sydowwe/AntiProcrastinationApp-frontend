@@ -4,7 +4,7 @@
 		<VListItemAction @click="alarm.isActive = isActive" class="py-2 pl-5 pr-2">
 			<VSwitch :model-value="isActive" color="info" hide-details></VSwitch>
 		</VListItemAction>
-		<div class="text-white">{{timeLabel}}</div>
+		<div class="text-white">{{ timeLabel }}</div>
 	</template>
 	<VListItemTitle class="text-white">{{ alarm.activity.name }}</VListItemTitle>
 	<VListItemSubtitle class="text-white">{{ alarm.activity.text }}</VListItemSubtitle>
@@ -12,7 +12,7 @@
 		<VIcon v-if="isSelected">
 			<FontAwesomeIcon icon="fas fa-check-circle" class="text-info"></FontAwesomeIcon>
 		</VIcon>
-		<v-menu location="start" transition="slide-y-transition" >
+		<v-menu location="start" transition="slide-y-transition">
 			<template v-slot:activator="{ props }">
 				<v-btn icon v-bind="props" color="white" variant="text" class="py-2 px-4">
 					<VIcon>
@@ -38,9 +38,10 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
-import {Alarm} from '@/classes/Alarm';
-import { useMoment } from '@/scripts/momentHelper.ts';
-const { formatDateLocalized, formatToTime } = useMoment();
+import {Alarm} from '@/dtos/response/Alarm.ts';
+import {useMoment} from '@/scripts/momentHelper.ts';
+
+const {formatDateLocalized, formatToTime} = useMoment();
 
 const i18n = useI18n();
 
@@ -70,13 +71,13 @@ function itemClicked() {
 	emits('itemClicked', props.alarm);
 }
 
-const timeLabel = computed(()=>{
+const timeLabel = computed(() => {
 	return `${props.alarm?.startTimestamp === new Date() ? '' : formatDateLocalized(props.alarm?.startTimestamp)} - ${formatToTime(props.alarm?.startTimestamp)}`;
 })
 
 watch(
 	() => props.alarm.isActive,
-	(newValue) => {
+	() => {
 		isSelected.value = false;
 	}
 );

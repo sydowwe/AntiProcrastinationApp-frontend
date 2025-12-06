@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import {ref} from 'vue';
-import {GoogleSignInRequest} from '@/classes/User';
+import {GoogleSignInRequest} from '@/dtos/request/GoogleSignInRequest.ts';
 import {type CallbackTypes, GoogleLogin} from "vue3-google-login";
 import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';

@@ -33,7 +33,7 @@
 </div>
 </template>
 <script setup lang="ts">
-import {PlannerTask} from "@/classes/PlannerTask";
+import {PlannerTask} from "@/dtos/response/activityPlanning/PlannerTask.ts";
 import {computed, ref, watch} from "vue";
 import {useMoment} from '@/scripts/momentHelper.ts';
 

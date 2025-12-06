@@ -1,27 +1,30 @@
-import {Role, RoleRequest} from '@/classes/Role.ts';
 import {useEntityCommand, useEntityQuery} from '@/composables/general/CrudComposition.ts';
-import {Activity, ActivityRequest} from '@/classes/Activity.ts';
-import {
-	ChangeDisplayOrderRequest,
-	RoutineTodoListGroupedList,
-	RoutineTodoListItemEntity,
-	RoutineTodoListItemRequest,
-	TimePeriodEntity,
-	TimePeriodRequest,
-	TodoListItemEntity,
-	ToDoListItemRequest
-} from '@/classes/ToDoListItem.ts';
-import {Category, CategoryRequest} from '@/classes/Category.ts';
-import {TaskPriority, TaskUrgencyRequest} from '@/classes/TaskPriority.ts';
-import {ActivityHistory, ActivityHistoryRequest} from '@/classes/ActivityHistory.ts';
+import {Category} from '@/dtos/response/Category.ts';
+import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {Time} from '@/classes/TimeUtils.ts';
-import {PlannerTask, PlannerTaskRequest} from '@/classes/PlannerTask.ts';
+import {Time} from '@/utils/TimeUtils.ts';
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {Alarm, AlarmRequest} from '@/classes/Alarm.ts';
+import {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
+import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
+import {Activity} from '@/dtos/response/Activity.ts';
+import {ActivityRequest} from '@/dtos/request/ActivityRequest.ts';
+import {Role} from '@/dtos/response/Role.ts';
+import {RoleRequest} from '@/dtos/request/RoleRequest.ts';
+import {AlarmRequest} from '@/dtos/request/AlarmRequest.ts';
+import {Alarm} from '@/dtos/response/Alarm.ts';
+import {TimePeriodEntity} from '@/dtos/response/TimePeriodEntity.ts';
+import {TimePeriodRequest} from '@/dtos/request/TimePeriodRequest.ts';
+import {TodoListItemEntity} from '@/dtos/response/TodoListItemEntity.ts';
+import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest.ts';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest.ts';
+import {RoutineTodoListItemEntity} from '@/dtos/response/RoutineTodoListItemEntity.ts';
+import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequest.ts';
+import {RoutineTodoListGroupedList} from '@/dtos/response/RoutineTodoListGroupedList.ts';
+import {ActivityHistoryRequest} from '@/dtos/request/ActivityHistoryRequest.ts';
+import {ActivityHistory} from '@/dtos/response/ActivityHistory.ts';
 
 export function useActivityHistoryCrud() {
-	const {showSnackbar, showErrorSnackbar} = useSnackbar();
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
 	const {
 		createWithResponse,
@@ -34,7 +37,6 @@ export function useActivityHistoryCrud() {
 		updateRequestClass: ActivityHistoryRequest,
 		entityName: 'activity-history'
 	})
-
 
 	async function create(startTimestamp: Date, length?: Time, activityId?: number) {
 		const request = new ActivityHistoryRequest(startTimestamp, length ?? Time.fromMinutes(0), activityId ?? -1);
@@ -70,10 +72,8 @@ export function useActivityRoleCrud() {
 
 export function useActivityCategoryCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Category>({responseClass: Category, entityName: 'activity-category'})
-	const {createWithResponse, create, update, deleteEntity} = useEntityCommand<Category, CategoryRequest, CategoryRequest>({
+	const {createWithResponse, create, update, deleteEntity} = useEntityCommand<Category, any, any>({
 		responseClass: Category,
-		createRequestClass: CategoryRequest,
-		updateRequestClass: CategoryRequest,
 		entityName: 'activity-category'
 	})
 
@@ -81,17 +81,15 @@ export function useActivityCategoryCrud() {
 }
 
 export function useTaskUrgencyCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-urgency'})
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-priority'})
 	const {
 		createWithResponse,
 		create,
 		update,
 		deleteEntity
-	} = useEntityCommand<TaskPriority, TaskUrgencyRequest, TaskUrgencyRequest>({
+	} = useEntityCommand<TaskPriority, any, any>({
 		responseClass: TaskPriority,
-		createRequestClass: TaskUrgencyRequest,
-		updateRequestClass: TaskUrgencyRequest,
-		entityName: 'task-urgency'
+		entityName: 'task-priority'
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
@@ -217,16 +215,34 @@ export function useTaskPlannerCrud() {
 		create,
 		update,
 		deleteEntity
-	} = useEntityCommand<PlannerTask, PlannerTaskRequest, PlannerTaskRequest>({
+	} = useEntityCommand<PlannerTask, any, any>({
 		responseClass: PlannerTask,
-		createRequestClass: PlannerTaskRequest,
-		updateRequestClass: PlannerTaskRequest,
 		entityName: 'task-planner'
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
+
+export function useTemplatePlannerTaskCrud() {
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TemplatePlannerTask>({
+		responseClass: TemplatePlannerTask,
+		entityName: 'template-planner-task'
+	})
+	const {
+		createWithResponse,
+		create,
+		update,
+		deleteEntity
+	} = useEntityCommand<TemplatePlannerTask, TemplatePlannerTaskRequest, TemplatePlannerTaskRequest>({
+		responseClass: TemplatePlannerTask,
+		createRequestClass: TemplatePlannerTaskRequest,
+		updateRequestClass: TemplatePlannerTaskRequest,
+		entityName: 'template-planner-task'
+	})
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+}
 
 export function useAlarmCrud() {
 	const url = 'alarm';
