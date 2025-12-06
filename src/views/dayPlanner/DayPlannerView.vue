@@ -1,107 +1,43 @@
 <!-- DayPlannerView.vue -->
 <template>
-<VCard class="mx-auto w-100 w-lg-66 d-flex flex-column">
-	<VCardTitle class="d-flex justify-space-between align-center flex-wrap ga-2">
-		<span>{{ currentDateFormatted }}</span>
-
-		<TimeRangePicker
-			v-model:start="store.viewStartTime"
-			v-model:end="store.viewEndTime"
-		/>
-		<div class="d-flex ga-2 align-center flex-wrap">
-			<VBtn
-				color="secondary"
-				@pointerdown.prevent="store.openEditDialog"
-				:class="{ 'is-hidden': !store.focusedEventId }"
-			>
-				Edit
-			</VBtn>
-			<VBtn
-				color="secondaryOutline"
-				variant="outlined"
-				@pointerdown.prevent="store.openDeleteDialog"
-				:class="{ 'is-hidden': !store.focusedEventId }"
-			>
-				Delete
-			</VBtn>
-			<VBtn
-				color="primary"
-				@click="store.openCreateDialogEmpty"
-				prependIcon="plus"
-			>
-				Add New Event
-			</VBtn>
-		</div>
-	</VCardTitle>
-
-	<VCardText class="flex-fill d-flex flex-column ga-4">
-		<div class="calendar-grid flex-fill">
-
-			<!-- Time Column -->
-			<TimeColumn
-			/>
-
-			<!-- Events Column -->
-			<EventsColumn
-				:plannerStore="store"
-				:slotIndexToTimeValue="store.dateTimeFromSlotIndex"
-				@updatedTaskSpan="handleUpdateTaskSpan"
-			/>
-		</div>
-
-		<!-- Legend (placeholder for future) -->
-		<div class="calendar-legend">
-			<!-- Add category legend here if needed -->
-		</div>
-	</VCardText>
-</VCard>
-
-<!-- Delete Confirmation Dialog -->
-<MyDialog
-	title="Delete confirmation"
-	:text="`Are you sure you want to delete event ${store.toDeleteEvent?.activity.name}?`"
-	v-model="store.deleteDialog"
-	@confirmed="del"
-	confirmBtnColor="error"
-/>
-
-<!-- Event Dialog -->
-<EventDialog
-	@create="create"
-	@edit="edit"
-/>
-
-<!-- Conflict Snackbar -->
-<VSnackbar
-	v-model="store.conflictSnackbar"
-	color="error"
-	:timeout="3000"
+<DayPlanner
+	:plannerStore="store"
+	:slotIndexToTimeValue="store.dateTimeFromSlotIndex"
+	:title="currentDateFormatted"
+	addButtonText="Add New Event"
+	@updatedTaskSpan="handleUpdateTaskSpan"
+	@delete="del"
 >
-	Event conflicts with existing schedule!
-	<template v-slot:actions>
-		<VBtn
-			variant="text"
-			@click="store.conflictSnackbar = false"
-		>
-			Close
-		</VBtn>
+	<!-- Custom event block for normal planner -->
+	<template #event-block="{ event, onResizeStart }">
+		<EventBlock
+			:event="event"
+			@resizeStart="onResizeStart"
+		/>
 	</template>
-</VSnackbar>
+
+	<!-- Custom dialog for normal planner -->
+	<template #dialog>
+		<EventDialog
+			@create="create"
+			@edit="edit"
+		/>
+	</template>
+</DayPlanner>
 </template>
 
 <script setup lang="ts">
 import {computed, onMounted, watch} from 'vue'
-import MyDialog from '@/components/dialogs/MyDialog.vue'
+import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import EventDialog from '@/components/dayPlanner/EventDialog.vue'
-import TimeColumn from '@/components/dayPlanner/TimeColumn.vue'
-import EventsColumn from '@/components/dayPlanner/EventsColumn.vue'
-import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
+import EventBlock from '@/components/dayPlanner/EventBlock.vue'
 import {useMoment} from '@/scripts/momentHelper.ts';
 import {Role} from '@/dtos/response/Role';
 import {Category} from '@/dtos/response/Category';
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
 const {createWithResponse, update, fetchById} = useTaskPlannerCrud()
 const {formatToDateWithDay, formatLocalized} = useMoment()
@@ -134,10 +70,8 @@ function setGridPositionFromSpan(event: PlannerTask) {
 	event.gridRowEnd = Math.min(store.totalGridRows, endRow)
 }
 
-function handleUpdateTaskSpan(
-	eventId: number,
-	updates: Partial<PlannerTask>
-): void {
+function handleUpdateTaskSpan(payload: { eventId: number; updates: Partial<PlannerTask> }): void {
+	const {eventId, updates} = payload
 	const eventIndex = store.events.findIndex(e => e.id === eventId)
 	if (eventIndex === -1) return
 
@@ -250,7 +184,7 @@ async function edit(id: number, request: PlannerTaskRequest) {
 	store.events[index] = updatedItem
 }
 
-function del(): void {
+async function del(): Promise<void> {
 	if (store.toDeleteIndex !== null) {
 		store.events.splice(store.toDeleteIndex, 1)
 		store.focusedEventId = null
@@ -272,49 +206,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.calendar-grid {
-	background: rgb(var(--v-theme-neutral-100));
-	display: grid;
-	grid-template-columns: 80px 1fr;
-	gap: 0;
-	height: 600px;
-	overflow-y: auto;
-	border: 2px solid #444;
-	padding: 10px 0;
-}
-
-.calendar-legend {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	padding: 8px;
-	background: #f5f5f5;
-	border-radius: 4px;
-}
-
-/* Scrollbar styling */
-.calendar-grid::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
-}
-
-.calendar-grid::-webkit-scrollbar-track {
-	background: #f1f1f1;
-}
-
-.calendar-grid::-webkit-scrollbar-thumb {
-	background: #888;
-	border-radius: 4px;
-}
-
-.calendar-grid::-webkit-scrollbar-thumb:hover {
-	background: #555;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-	.calendar-grid {
-		height: 500px;
-	}
-}
+/* View-specific styles if needed */
 </style>

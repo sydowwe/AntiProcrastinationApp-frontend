@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import {useTemplateDayPlannerStore} from '@/stores/templateDayPlannerStore.ts';
+import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import BaseEventBlock from '@/components/dayPlanner/BaseEventBlock.vue';

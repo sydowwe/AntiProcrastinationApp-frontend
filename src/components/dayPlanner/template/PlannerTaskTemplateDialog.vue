@@ -142,7 +142,7 @@ async function save() {
 }
 
 const emit = defineEmits<{
-	(e: 'edit', id: string, task: TemplatePlannerTaskRequest): void
+	(e: 'edit', id: number, task: TemplatePlannerTaskRequest): void
 	(e: 'create', task: TemplatePlannerTaskRequest): void
 }>()
 </script>

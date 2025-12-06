@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {useMoment} from '@/scripts/momentHelper.ts';
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import BaseEventBlock from './BaseEventBlock.vue';

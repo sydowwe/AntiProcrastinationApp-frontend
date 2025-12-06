@@ -12,7 +12,27 @@ export class TemplatePlannerTask implements IBasePlannerTask {
 		public activity: Activity,
 		public location?: string,
 		public notes?: string,
-		public priority?: TaskPriority
+		public priority?: TaskPriority,
+		public gridRowStart?: number,
+		public gridRowEnd?: number,
+		public isDuringBackgroundEvent?: boolean,
 	) {
+	}
+
+	static fromJson(json: any) {
+		return new TemplatePlannerTask(
+			json.id,
+			json.startTime,
+			json.endTime,
+			json.isBackground,
+			json.isOptional,
+			json.activity,
+			json.location,
+			json.notes,
+			json.priority,
+			json.gridRowStart,
+			json.gridRowEnd,
+			json.isDuringBackgroundEvent,
+		)
 	}
 }

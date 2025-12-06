@@ -61,7 +61,7 @@ import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQui
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {Time} from '@/utils/TimeUtils.ts';
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
 const form = ref<InstanceType<typeof VForm>>();
