@@ -1,7 +1,7 @@
 // composables/useCurrentTimeIndicator.ts
 import {computed} from 'vue'
 import {useCurrentTime} from '@/composables/general/useCurrentTime'
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts'
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useMoment} from '@/scripts/momentHelper.ts';
 
 export function useCurrentTimeIndicator() {

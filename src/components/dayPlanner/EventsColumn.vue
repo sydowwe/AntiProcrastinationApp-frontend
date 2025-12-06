@@ -45,13 +45,14 @@
 </template>
 
 <script setup lang="ts"
-        generic="TEvent extends { id: string | number; gridRowStart?: number; gridRowEnd?: number; isBackground?: boolean }, TStore extends Record<string, any>">
+        generic="TEvent extends IBasePlannerTask, TStore extends Record<string, any>">
 import {computed, onMounted, ref} from 'vue'
 import {CreationPreviewType, SLOT_HEIGHT} from '@/types/DayPlannerTypes'
 import EventBlock from './EventBlock.vue'
 import CreationPreview from './CreationPreview.vue'
 import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 
 // Props - store and time conversion functions
 const props = defineProps<{
@@ -178,7 +179,7 @@ function handlePointerMove(e: PointerEvent): void {
 			timeValue.endTime = endTime
 		}
 
-		emit('updatedTaskSpan', props.plannerStore.draggingEventId, timeValue)
+		emit('updatedTaskSpan', {eventId: props.plannerStore.draggingEventId, updates: timeValue})
 		return
 	}
 
@@ -200,7 +201,7 @@ function handlePointerMove(e: PointerEvent): void {
 				} else {
 					timeValue.startTime = startTime
 				}
-				emit('updatedTaskSpan', props.plannerStore.resizingEventId, timeValue)
+				emit('updatedTaskSpan', {eventId: props.plannerStore.resizingEventId, updates: timeValue})
 			}
 		} else if (resizeDirection.value === 'bottom') {
 			const newEndRow = slotIndex + 1
@@ -214,7 +215,7 @@ function handlePointerMove(e: PointerEvent): void {
 				} else {
 					timeValue.endTime = endTime
 				}
-				emit('updatedTaskSpan', props.plannerStore.resizingEventId, timeValue)
+				emit('updatedTaskSpan', {eventId: props.plannerStore.resizingEventId, updates: timeValue})
 			}
 		}
 		return
@@ -249,7 +250,7 @@ function handlePointerUp(): void {
 
 		if (event && (props.plannerStore.dragConflict || !event.gridRowStart || !event.gridRowEnd || event.gridRowStart < 1 || event.gridRowEnd > props.plannerStore.totalGridRows)) {
 			// Revert to original position
-			emit('updatedTaskSpan', props.plannerStore.draggingEventId, originalEventState.value)
+			emit('updatedTaskSpan', {eventId: props.plannerStore.draggingEventId, updates: originalEventState.value})
 			props.plannerStore.conflictSnackbar = true
 		}
 
@@ -293,7 +294,7 @@ onMounted(() => {
 })
 
 const emit = defineEmits<{
-	(e: 'updatedTaskSpan', editedId: string | number, payload: Partial<TEvent>): void
+	(e: 'updatedTaskSpan', payload: { eventId: number, updates: Partial<TEvent> }): void
 }>()
 </script>
 

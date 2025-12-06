@@ -14,9 +14,6 @@ export class PlannerTask implements IBasePlannerTask {
 		public location?: string,
 		public notes?: string,
 		public priority?: TaskPriority,
-		public gridRowStart?: number,
-		public gridRowEnd?: number,
-		public isDuringBackgroundEvent?: boolean,
 		public isDone?: boolean,
 		public status?: TaskStatus,
 		public actualStartTime: string | null = null,
@@ -28,6 +25,9 @@ export class PlannerTask implements IBasePlannerTask {
 		public todolistId: number | null = null,
 		public color?: string,
 		public estimatedMinuteLength?: number,
+		public gridRowStart?: number,
+		public gridRowEnd?: number,
+		public isDuringBackgroundEvent?: boolean,
 	) {
 	}
 
@@ -42,9 +42,6 @@ export class PlannerTask implements IBasePlannerTask {
 			json.location,
 			json.notes,
 			json.priority ? TaskPriority.fromJson(json.priority) : undefined,
-			0,
-			0,
-			false,
 			json.isDone,
 			json.status,
 			json.actualStartTime ?? null,
@@ -56,6 +53,10 @@ export class PlannerTask implements IBasePlannerTask {
 			json.todolistId ?? null,
 			json.color,
 			json.estimatedMinuteLength,
+
+			0,
+			0,
+			false,
 		);
 	}
 }

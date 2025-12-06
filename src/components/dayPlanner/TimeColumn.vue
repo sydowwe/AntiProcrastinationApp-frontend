@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import {SLOT_HEIGHT} from '@/types/DayPlannerTypes'
-import {useDayPlannerStore} from '@/stores/dayPlannerStore.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
 
 const store = useDayPlannerStore()
