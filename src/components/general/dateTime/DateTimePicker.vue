@@ -1,7 +1,7 @@
 <template>
 <VRow>
 	<VCol cols="11" sm="5">
-		<VDateInput :label v-model="dateTime"  :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
+		<VDateInput :label v-model="dateTime" :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
 	</VCol>
 	<VCol cols="11" sm="7" class="px-0">
 		<TimePicker label="Čas" v-model="time"></TimePicker>
@@ -11,11 +11,11 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {TimePrecise} from '@/utils/TimeUtils';
 import {VDateInput} from 'vuetify/labs/components';
 import {useMoment} from '@/scripts/momentHelper.ts';
+import {TimePrecise} from '@/utils/TimePrecise.ts';
 
-const {formatToDate } = useMoment()
+const {formatToDate} = useMoment()
 const props = defineProps({
 	dateClearable: {
 		type: Boolean,

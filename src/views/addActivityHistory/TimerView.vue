@@ -14,13 +14,14 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {Time, TimePrecise} from '@/utils/TimeUtils';
+import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
+import {Time} from '@/utils/Time.ts';
 import type {ActivityDialogType, ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
+import {TimePrecise} from '@/utils/TimePrecise.ts';
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
@@ -76,7 +77,7 @@ function stop(automatic: boolean) {
 	}
 	if (timePassed().getInMinutes > 0) {
 		saveDialog.value.open(activityName, timePassed());
-	}else{
+	} else {
 		resetTimer();
 	}
 }

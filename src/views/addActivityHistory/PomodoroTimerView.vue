@@ -46,14 +46,14 @@
 			<TimerControls class="mt-4 mb-5" :paused="paused" :intervalId="intervalId" @start="start" @pause="pause"
 			               @stop="stop"></TimerControls>
 			<hr/>
-<!--			<VRow>-->
-<!--				<VCol cols="6">-->
-					<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-<!--				</VCol>-->
-<!--				<VCol cols="6">-->
-<!--					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>-->
-<!--				</VCol>-->
-<!--			</VRow>-->
+			<!--			<VRow>-->
+			<!--				<VCol cols="6">-->
+			<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
+			<!--				</VCol>-->
+			<!--				<VCol cols="6">-->
+			<!--					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>-->
+			<!--				</VCol>-->
+			<!--			</VRow>-->
 			<SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTimer"></SaveActivityDialog>
 		</v-card>
 	</VCol>
@@ -63,17 +63,15 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
-import {showNotification, checkNotificationPermission} from '@/scripts/notifications';
-import {Time, TimePrecise} from '@/utils/TimeUtils';
-import type {
-	ActivityDialogType,
-	ActivitySelectionFormType,
-} from '@/types/RefTypeInterfaces';
+import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
+import {Time} from '@/utils/Time.ts';
+import type {ActivityDialogType, ActivitySelectionFormType,} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
+import {TimePrecise} from '@/utils/TimePrecise.ts';
 
 const i18n = useI18n();
 
@@ -97,7 +95,7 @@ const currentFocusPeriod = ref(1);
 const isFocus = ref(true);
 const isEndOfCycle = computed(() => currentFocusPeriod.value === numberOfFocusPeriodsInCycle.value);
 
-const currentTimerType = computed(()=>{
+const currentTimerType = computed(() => {
 	if (isFocus.value) {
 		return 'focus';
 	} else if (isEndOfCycle.value) {
@@ -110,7 +108,7 @@ const timeDisplayObject = computed(() => {
 	let timeInitialObject: Time;
 	let color: string;
 	let title: string;
-	switch (currentTimerType.value){
+	switch (currentTimerType.value) {
 		case "focus":
 			timeInitialObject = focusInitialTime.value;
 			color = 'blue';
@@ -161,7 +159,7 @@ function resume() {
 	paused.value = false;
 	intervalId.value = setInterval(() => {
 		if (timeRemaining.value == 0) {
-			switch (currentTimerType.value){
+			switch (currentTimerType.value) {
 				case 'focus':
 					showNotification('Focus period ended', `You focused for ${focusInitialTime.value.getNice} time for short break`);
 					break;

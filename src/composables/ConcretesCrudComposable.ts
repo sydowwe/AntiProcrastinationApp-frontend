@@ -2,7 +2,7 @@ import {useEntityCommand, useEntityQuery} from '@/composables/general/CrudCompos
 import {Category} from '@/dtos/response/Category.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {Time} from '@/utils/TimeUtils.ts';
+import {Time} from '@/utils/Time.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';

@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import {computed, onMounted, type PropType, ref, watch} from 'vue';
-import {Time} from '@/utils/TimeUtils';
+import {Time} from '@/utils/Time.ts';
 import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';

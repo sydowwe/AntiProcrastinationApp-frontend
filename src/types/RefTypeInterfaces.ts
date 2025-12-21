@@ -1,5 +1,5 @@
 import {PlannerTask} from '@/dtos/response/PlannerTask';
-import {Time} from '@/utils/TimeUtils';
+import {Time} from '@/utils/Time.ts';
 import {RoutineTodoListItemEntity, TodoListItemEntity} from '@/dtos/response/ToDoListItem';
 import {Alarm} from '@/dtos/response/Alarm';
 import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest';

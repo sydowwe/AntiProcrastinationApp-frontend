@@ -1,4 +1,5 @@
-import {Time, TimePrecise} from '@/utils/TimeUtils';
+import {Time} from '@/utils/Time.ts';
+import {TimePrecise} from '@/utils/TimePrecise.ts';
 
 export class ActivityHistoryRequest {
 	constructor(
