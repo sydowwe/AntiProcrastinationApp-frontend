@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import {watch} from "vue";
-import {Time} from "@/utils/TimeUtils";
+import {Time} from "@/utils/Time.ts";
 
 const positiveRule = (v: number) => (v > 0 || timeValue.value.hours > 0) || 'Musí byť viac ako 0'
 

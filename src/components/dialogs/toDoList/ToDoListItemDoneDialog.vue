@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time} from '@/utils/TimeUtils';
+import {Time} from '@/utils/Time.ts';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';

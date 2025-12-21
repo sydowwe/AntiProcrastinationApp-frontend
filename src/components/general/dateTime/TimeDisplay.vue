@@ -10,7 +10,8 @@
 </template>
 
 <script setup lang="ts">
-import {TimePrecise, type TimePreciseKeys} from '@/utils/TimeUtils';
+
+import {TimePrecise, type TimePreciseKeys} from '@/utils/TimePrecise.ts';
 
 const props = defineProps({
 	timeObject: {

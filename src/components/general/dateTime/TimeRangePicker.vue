@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import {computed, type PropType, ref} from 'vue'
-import {Time} from '@/utils/TimeUtils.ts';
+import {Time} from '@/utils/Time.ts';
 
 const props = defineProps({
 	allowedMinutesSelected: {
