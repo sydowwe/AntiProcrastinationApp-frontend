@@ -1,12 +1,7 @@
 <template>
 <BaseEventBlock
-	:event="eventWithTimeStrings"
-	:focusedEventId="store.focusedEventId"
-	:draggingEventId="store.draggingEventId"
-	:resizingEventId="store.resizingEventId"
-	:dragConflict="store.dragConflict"
-	:isDraggingAny="store.isDraggingAny"
-	:isResizingAny="store.isResizingAny"
+	:event
+	:store
 	:backgroundColor="event.color"
 	:isPast="isPast"
 	@resizeStart="emit('resizeStart', $event)"
@@ -28,8 +23,7 @@ import {useMoment} from '@/scripts/momentHelper.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
-import BaseEventBlock from './BaseEventBlock.vue';
-import type {BasePlannerTaskResponse} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import BaseEventBlock from '../BaseEventBlock.vue';
 
 const {formatToTime24H} = useMoment()
 const {currentTime} = useCurrentTime()
@@ -39,26 +33,16 @@ const {event} = defineProps<{
 	event: PlannerTask
 }>()
 
-const isPast = computed(() => event.end < currentTime.value)
+const isPast = computed(() => {
+	const dateTime = new Date();
+	dateTime.setHours(event.endTime.hours, event.endTime.minutes);
+	return dateTime < currentTime.value
+})
 
 const formattedTime = computed(() => {
-	return `${formatToTime24H(event.start)} - ${formatToTime24H(event.end)}`
+	return `${event.startTime.toString} - ${event.endTime.toString}`
 })
 
-// Convert PlannerTask to BasePlannerTaskResponse format for BaseEventBlock
-const eventWithTimeStrings = computed((): BasePlannerTaskResponse => {
-	return {
-		id: event.id.toString(),
-		startTime: formatToTime24H(event.start),
-		endTime: formatToTime24H(event.end),
-		isBackground: event.isBackground,
-		isOptional: false, // PlannerTask doesn't have this field
-		activity: event.activity,
-		gridRowStart: event.gridRowStart,
-		gridRowEnd: event.gridRowEnd,
-		isDuringBackgroundEvent: event.isDuringBackgroundEvent
-	} as BasePlannerTaskResponse
-})
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void

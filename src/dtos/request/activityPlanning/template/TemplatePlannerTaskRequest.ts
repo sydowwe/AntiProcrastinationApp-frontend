@@ -1,9 +1,10 @@
-import {BasePlannerTaskRequest} from '@/dtos/request/activityPlanning/BasePlannerTaskRequest.ts';
+import type {Time} from '@/utils/Time.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
-export class TemplatePlannerTaskRequest extends BasePlannerTaskRequest {
+export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
-		public startTime?: string,
-		public endTime?: string,
+		public startTime?: Time,
+		public endTime?: Time,
 		public isBackground?: boolean,
 		public isOptional?: boolean,
 		public location: string | null = null,
@@ -12,6 +13,5 @@ export class TemplatePlannerTaskRequest extends BasePlannerTaskRequest {
 		public priorityId: number | null = null,
 		public templateId?: number
 	) {
-		super(startTime, endTime, isBackground, isOptional, location, notes, activityId, priorityId);
 	}
 }

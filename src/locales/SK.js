@@ -172,7 +172,7 @@ const SK = {
             }
         }
     },
-    navigation:{
+    navigation: {
         home: `Domov`,
         toDoList: `To-do list`,
         routineToDoList: `Rutina`,
@@ -184,8 +184,9 @@ const SK = {
         stopwatch: `Stopky`,
         timer: `Časovač`,
         alarm: `Alarm`,
-        taskPlanner: `Plánovač aktivít`,
-        dayPlanner: `Plánovač dňa`
+        taskPlanner: `Plánovač`,
+        dayPlanner: `Plánovač dňa`,
+        templateDayPlanner: `Plánovač dňa - template`
     },
     general: {
         or: `Alebo`,
@@ -213,7 +214,7 @@ const SK = {
         show: `Zobraziť`,
         confirm: `Potvrdiť`,
     },
-    dateTime:{
+    dateTime: {
         when: `Kedy`,
         length: `Dĺžka`,
         date: `Dátum`,
@@ -235,7 +236,7 @@ const SK = {
         today: `Dnes`,
 
     },
-    controls:{
+    controls: {
         start: `Štart`,
         pause: `Pauza`,
         stop: `Stop`,
@@ -245,7 +246,7 @@ const SK = {
         settings: `Nastavenia`,
         edit: `Upraviť`,
     },
-    activities:{
+    activities: {
         role: `Roľa`,
         category: `Kategória`,
         activity: `Aktivita`,
@@ -255,7 +256,7 @@ const SK = {
         //===============================
         fromToDoList: `Je z to-do listu`,
         createNewActivity: `Vytvoriť novú aktivity`,
-       
+
         start: `Začať`,
         pause: `Pozastaviť`,
         stop: `Ukončiť`,
@@ -265,17 +266,17 @@ const SK = {
         enableNotificationsInWindows: `V systéme Windows prejdite na Nastavenia > Systém > Oznámenia a akcie > V sekcii Získať oznámenia a akcie od týchto odosielateľov vyberte Google Chrome.`,
     },
     pomodoroTimer: {
-        hint:``,
-        focusTime:`Čas pre sústredenie`,
-        shortRestTime:`Čas pre krátky oddych`,
-        longRestTime:`Čas pre dlhý oddych`,
-        numberOfCycles:`Počet cyklov`,
-        numberOfFocusIntervalsInCycle:`Počet intervalov sústredenia v cykle`,
-        focus:`Koncentrácia`,
-        shortRest:`Krátky oddych`,
-        longRest:`Dlhý oddych`,
+        hint: ``,
+        focusTime: `Čas pre sústredenie`,
+        shortRestTime: `Čas pre krátky oddych`,
+        longRestTime: `Čas pre dlhý oddych`,
+        numberOfCycles: `Počet cyklov`,
+        numberOfFocusIntervalsInCycle: `Počet intervalov sústredenia v cykle`,
+        focus: `Koncentrácia`,
+        shortRest: `Krátky oddych`,
+        longRest: `Dlhý oddych`,
     },
-    history:{
+    history: {
         addActivityToHistory: `Pridať aktivitu do histórie`,
         lengthNotSet: `Nebola zadaná dĺžka`,
         toHistory: `Do histórie`,
@@ -288,8 +289,8 @@ const SK = {
 
         emailConfirmed: `Váš email bol úspešne potvrdený, môžete pokračovať`,
         errorConfirmingEmail: `Chyba pri potvrdení e-mailu, skúste to prosím znova`,
-        resendConfirmationEmail:`Opätovne odoslať potvrdzovací email`,
-        confirmationEmailResent:`Potvrdzovací email bol opätovne odoslaný na vašu emailovú adresu. Skontrolujte svoju schránku a kliknite na odkaz v emaile, aby ste potvrdili svoju adresu. Toto okno môžete zavrieť.`,
+        resendConfirmationEmail: `Opätovne odoslať potvrdzovací email`,
+        confirmationEmailResent: `Potvrdzovací email bol opätovne odoslaný na vašu emailovú adresu. Skontrolujte svoju schránku a kliknite na odkaz v emaile, aby ste potvrdili svoju adresu. Toto okno môžete zavrieť.`,
 
         userDoesntExist: `Používateľ s emailom: '{email}' neexistuje`,
         wrongPassword: `Nesprávne heslo`,
@@ -321,7 +322,7 @@ const SK = {
         // invalidUsername: 'Používateľské meno môže obsahovať len písmená, čísla, podtržník(_), bodku(.) alebo pomlčku(-)',
         passwordRequired: 'Heslo je povinné',
         invalidPasswordLength: 'Heslo musí obsahovať aspoň 8 znakov',
-        invalidPassword: 'Heslo musí obsahovať aspoň 2 malé písmená, 2 veľké písmená, 3 číslice a 1 špeciálny znak', 
+        invalidPassword: 'Heslo musí obsahovať aspoň 2 malé písmená, 2 veľké písmená, 3 číslice a 1 špeciálny znak',
         nameRequired: 'Meno je povinné',
         invalidName: 'Meno môže obsahovať len písmená alebo medzery',
         surnameRequired: 'Priezvisko je povinné',
@@ -338,7 +339,7 @@ const SK = {
         verifyYour2FA: `Potvrďte svoje dvojfaktorové overenie`,
 
     },
-    toDoList:{
+    toDoList: {
         add: 'Pridať',
         toDoList: 'To-do list',
         urgency: `Naliehavosť`,
@@ -347,7 +348,7 @@ const SK = {
         quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s roľou to-do úloha`,
         quickEditToDoListActivity: `Rýchla úprava aktivity`,
     },
-    routineTodoList:{
+    routineTodoList: {
         routineTodoList: 'Routine to-do list',
         urgency: `Naliehavosť`,
         timePeriod: `Časový úsek`,
@@ -374,7 +375,7 @@ const SK = {
         newScratchCodes: `Vygenerovať nové záložné kódy`,
         passwordChangedSuccessfully: `Heslo bolo úspešne zmenené`,
         identityVerification: `Overenie identity`,
-        emailCantBeSame:`Emaily sa nemôžu zhodovať`,
+        emailCantBeSame: `Emaily sa nemôžu zhodovať`,
         emailChangedSuccessfully: `Email bol úspešne zmenený`,
         signOutWarning: `Upozornenie: {subject} vás odhlási zo všetkých zariadení z bezpečnostných dôvodov`,
         enablingTwoFactorAuth: `Zapnutie 2FA`,

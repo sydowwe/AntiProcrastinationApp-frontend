@@ -14,7 +14,7 @@
 	<!-- Midnight divider -->
 	<div
 		class="midnight-divider"
-		:style="{ top: `${store.timeToSlotIndex('00:00') * SLOT_HEIGHT}px` }"
+		:style="{ top: `${store.timeToSlotIndex(new Time(0,0)) * SLOT_HEIGHT}px` }"
 	>
 		<span class="midnight-label">MIDNIGHT</span>
 	</div>
@@ -43,9 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import {SLOT_HEIGHT} from '@/types/DayPlannerTypes'
+import {SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
-import {useCurrentTimeIndicator} from '@/components/dayPlanner/useCurrentTimeIndicator.ts';
+import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
+import {Time} from '@/utils/Time.ts';
 
 const store = useDayPlannerStore()
 const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator()

@@ -1,33 +1,33 @@
 <template>
-	<MyDialog v-model="dialogShown" :title="i18n.t('user.passwordChange')" @confirmed="save" :confirmButtonLabel="i18n.t('general.save')" :eager="true">
-		<template v-slot:header>
-			<div class="text-wrap">
-				{{ i18n.t('toDoList.saveTask') }}
-				<span class="text-purple-accent-4 font-weight-bold">{{ plannerTask?.activity?.name }}</span>
-				{{ i18n.t('history.toHistory').toLowerCase() }}?
-			</div>
-		</template>
-		<VForm @keyup.native.enter="save">
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
-				<VDateInput v-model="dateTime" class="ml-2 flex-grow-1" :display-format="formatToDate" :clearable="false"></VDateInput>
-			</div>
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-				<TimePicker class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
-				            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>
-			</div>
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
-				<TimePicker v-model="length" class="ml-2 flex-grow-1"></TimePicker>
-			</div>
-		</VForm>
-	</MyDialog>
+<MyDialog v-model="dialogShown" :title="i18n.t('user.passwordChange')" @confirmed="save" :confirmButtonLabel="i18n.t('general.save')" :eager="true">
+	<template v-slot:header>
+		<div class="text-wrap">
+			{{ i18n.t('toDoList.saveTask') }}
+			<span class="text-purple-accent-4 font-weight-bold">{{ plannerTask?.activity?.name }}</span>
+			{{ i18n.t('history.toHistory').toLowerCase() }}?
+		</div>
+	</template>
+	<VForm @keyup.native.enter="save">
+		<div class="d-flex flex-column flex-sm-row mb-4">
+			<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
+			<VDateInput v-model="dateTime" class="ml-2 flex-grow-1" :display-format="formatToDate" :clearable="false"></VDateInput>
+		</div>
+		<div class="d-flex flex-column flex-sm-row mb-4">
+			<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
+			<TimePicker class="ml-2 flex-grow-1" :whatToShow="['hours','minutes']" @hoursChanged="(hour:number)=>dateTime.setHours(hour)"
+			            @minutesChanged="(minute:number)=>dateTime.setMinutes(minute)"></TimePicker>
+		</div>
+		<div class="d-flex flex-column flex-sm-row mb-4">
+			<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
+			<TimePicker v-model="length" class="ml-2 flex-grow-1"></TimePicker>
+		</div>
+	</VForm>
+</MyDialog>
 </template>
 <script setup lang="ts">
-import {ref, onMounted, watch} from 'vue';
+import {onMounted, ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time, TimePrecise} from '@/utils/TimeUtils';
+import {Time} from '@/utils/Time.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 
 import {useI18n} from 'vue-i18n';
@@ -35,6 +35,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {TimePrecise} from '@/utils/TimePrecise.ts';
 
 const {create} = useActivityHistoryCrud()
 const {formatToDate} = useMoment()

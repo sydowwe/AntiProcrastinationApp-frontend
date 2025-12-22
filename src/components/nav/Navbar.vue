@@ -235,9 +235,12 @@ const items: MenuItem[] = [
 			{title: 'alarm', icon: 'alarm-clock', to: '/alarm-list', needsAdmin: false},
 		]
 	},
-	{title: 'taskPlanner', icon: 'calendar-days', to: '/planner', needsAdmin: false},
-	{title: 'dayPlanner', icon: 'calendar-days', to: '/day-planner', needsAdmin: false},
-	{title: 'templateDayPlanner', icon: 'calendar-day', to: '/template-day-planner', needsAdmin: false},
+	{
+		title: 'taskPlanner', icon: 'calendar-days', needsAdmin: false, children: [
+			{title: 'dayPlanner', icon: 'calendar-days', to: '/day-planner', needsAdmin: false},
+			{title: 'templateDayPlanner', icon: 'calendar-day', to: '/template-day-planner', needsAdmin: false}
+		]
+	},
 ]
 
 // Filter items based on user permissions
