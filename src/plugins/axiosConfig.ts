@@ -30,15 +30,15 @@ API.interceptors.response.use(
 			router.push({name: 'login'});
 		};
 
-		console.log('test')
+		console.log(error)
 		if (router.currentRoute.value.name !== 'login' && (error.response?.status === HttpStatusCode.Unauthorized)) {
-			console.log('unauthorizedeeeeeeeee')
+			console.error('unauthorizedeeeeeeeee')
 			showErrorSnackbar('Please log in before accessing the page', {closable: false});
 			logoutClient();
-		} else if ((error.response.status === HttpStatusCode.Forbidden)) {
+		} else if ((error?.response?.status === HttpStatusCode.Forbidden)) {
 			showErrorSnackbar('You dont have permission for that action', {closable: false});
 		}
-		console.log('error: ', error);
+		console.error('ERROR: ', error);
 		switch (error.status) {
 			case 409:
 				showErrorSnackbar('Conflict');

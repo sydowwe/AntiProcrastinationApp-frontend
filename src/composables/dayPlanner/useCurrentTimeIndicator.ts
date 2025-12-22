@@ -1,8 +1,9 @@
 // composables/useCurrentTimeIndicator.ts
 import {computed} from 'vue'
-import {useCurrentTime} from '@/composables/general/useCurrentTime'
-import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
+import {useCurrentTime} from '@/composables/general/useCurrentTime.ts'
 import {useMoment} from '@/scripts/momentHelper.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
+import {Time} from '@/utils/Time.ts';
 
 export function useCurrentTimeIndicator() {
 	const {formatToTime24H} = useMoment()
@@ -16,7 +17,7 @@ export function useCurrentTimeIndicator() {
 	const gridRowStyle = computed(() => {
 		if (!isVisible.value) return {}
 
-		const slotIndex = store.timeToSlotIndex(formatToTime24H(currentTime.value))
+		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
 
 		const gridRow = slotIndex + 1
 		return {

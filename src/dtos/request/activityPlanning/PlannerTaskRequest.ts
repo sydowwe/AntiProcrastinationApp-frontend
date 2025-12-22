@@ -1,10 +1,11 @@
-import {BasePlannerTaskRequest} from '@/dtos/request/activityPlanning/BasePlannerTaskRequest.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import type {Time} from '@/utils/Time.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
-export class PlannerTaskRequest extends BasePlannerTaskRequest {
+export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
-		public startTime?: string,
-		public endTime?: string,
+		public startTime?: Time,
+		public endTime?: Time,
 		public isBackground?: boolean,
 		public isOptional?: boolean,
 		public location: string | null = null,
@@ -12,13 +13,12 @@ export class PlannerTaskRequest extends BasePlannerTaskRequest {
 		public activityId?: number,
 		public priorityId: number | null = null,
 		public isDone?: boolean,
-		public calendarId?: number,
+		public date: Date = new Date(),
 		public todolistId: number | null = null,
 	) {
-		super(startTime, endTime, isBackground, isOptional, location, notes, activityId, priorityId);
 	}
 
-	static fromSpan(startTime: string, endTime: string): PlannerTaskRequest {
+	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {
 		return new PlannerTaskRequest(startTime, endTime);
 	}
 
@@ -33,7 +33,7 @@ export class PlannerTaskRequest extends BasePlannerTaskRequest {
 			entity.activity.id,
 			entity.priority?.id ?? null,
 			entity.isDone,
-			entity.calendarId,
+			entity.date,
 			entity.todolistId ?? null,
 		)
 	}

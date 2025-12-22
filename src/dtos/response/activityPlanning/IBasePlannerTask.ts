@@ -1,18 +1,19 @@
 import type {Activity} from '@/dtos/response/Activity.ts';
 import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
+import type {Time} from '@/utils/Time.ts';
 
 export interface IBasePlannerTask {
 	id: number;
-	startTime: string;
-	endTime: string;
+	startTime: Time;
+	endTime: Time;
 	isBackground: boolean;
 	isOptional: boolean;
 	activity: Activity;
-	location?: string;
-	notes?: string;
-	priority?: TaskPriority;
+	location: string | null;
+	notes: string | null;
+	priority: TaskPriority | null;
 	// Grid positioning (added for UI)
-	gridRowStart?: number;
-	gridRowEnd?: number;
-	isDuringBackgroundEvent?: boolean;
+	gridRowStart: number;
+	gridRowEnd: number;
+	isDuringBackgroundEvent: boolean;
 }

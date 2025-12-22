@@ -29,7 +29,6 @@ import {useQuickCreateActivity} from '@/composables/quickCreateActivityCompositi
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
-import {TimePrecise} from '@/utils/TimeUtils';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 

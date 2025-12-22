@@ -42,25 +42,20 @@
 			<div class="calendar-grid flex-fill">
 
 				<!-- Time Column -->
-				<TimeColumn/>
+				<PlannerTimeColumn/>
 
 				<!-- Events Column with event block slot -->
-				<EventsColumn
-					:plannerStore="plannerStore"
-					:slotIndexToTimeValue="slotIndexToTimeValue"
-					@updatedTaskSpan="(payload) => emit('updatedTaskSpan', payload)"
+				<PlannerTasksColumn
+					:store="plannerStore"
+					@updatedTaskSpan="(payload) => emit('updatedTaskSpan', payload.eventId, payload.updates as Partial<TTask>)"
 				>
 					<template #event-block="{ event, onResizeStart }">
 						<!-- Default slot for event blocks - each view provides its own EventBlock component -->
 						<slot name="event-block" :event="event" :onResizeStart="onResizeStart">
-							<!-- Fallback if no event-block slot provided -->
-							<EventBlock
-								:event="event"
-								@resizeStart="onResizeStart"
-							/>
+
 						</slot>
 					</template>
-				</EventsColumn>
+				</PlannerTasksColumn>
 			</div>
 
 			<!-- Legend slot - optional for future use -->
@@ -103,26 +98,24 @@
 </div>
 </template>
 
-<script setup lang="ts" generic="TStore extends Record<string, any>">
+<script setup lang="ts"
+        generic="TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
-import TimeColumn from '@/components/dayPlanner/TimeColumn.vue'
-import EventsColumn from '@/components/dayPlanner/EventsColumn.vue'
-import EventBlock from '@/components/dayPlanner/EventBlock.vue'
+import PlannerTimeColumn from '@/components/dayPlanner/PlannerTimeColumn.vue'
+import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
+import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
 	plannerStore: TStore
-	slotIndexToTimeValue: (index: number) => Date | string
-	title?: string
+	title: string
 	addButtonText?: string
 	conflictMessage?: string
-}>(), {
-	title: 'Day Planner',
-	addButtonText: 'Add New Event',
-	conflictMessage: 'Event conflicts with existing schedule!'
-})
+}>()
+
 
 const deleteConfirmationText = computed(() => {
 	const eventName = props.plannerStore.toDeleteEvent?.activity?.name ?? 'this event'
@@ -130,8 +123,8 @@ const deleteConfirmationText = computed(() => {
 })
 
 const emit = defineEmits<{
-	(e: 'updatedTaskSpan', payload: { eventId: number; updates: Partial<TemplatePlannerTask> }): void
-	(e: 'delete'): void
+	updatedTaskSpan: [eventId: number, updates: Partial<TTask>],
+	delete: []
 }>()
 </script>
 

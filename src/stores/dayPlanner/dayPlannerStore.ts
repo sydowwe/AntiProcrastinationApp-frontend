@@ -1,72 +1,39 @@
-import {defineStore} from 'pinia'
+import {defineStore, type StoreGeneric} from 'pinia'
 import {computed, ref} from 'vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
-import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
-import {Time} from '@/utils/TimeUtils.ts';
-import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
+import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import {Time} from '@/utils/Time.ts';
+
+export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
+	viewedDate: Date
+	viewStartDate: Date
+	viewEndDate: Date
+	dateTimeFromSlotIndex: (slotIndex: number) => Date
+	datetimeToSlotIndex: (time?: Date) => number
+}
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const {formatToTime24H} = useMoment()
+	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>(() => new PlannerTaskRequest())
 
-	// Time/Grid configuration state
-	const timeSlotDuration = ref(10)
+	// Day-specific state
 	const viewedDate = ref(new Date())
-	const viewStartTime = ref(new Time(7, 30))
-	const viewEndTime = ref(new Time(1, 30))
 
-	// Events state
-	const events = ref<PlannerTask[]>([])
-
-	// Focus state
-	const focusedEventId = ref<number | null>(null)
-
-	// Dialog state
-	const dialog = ref(false)
-	const editedId = ref<number | undefined>()
-	const editingEvent = ref<PlannerTaskRequest>(new PlannerTaskRequest())
-	const deleteDialog = ref(false)
-	const toDeleteIndex = ref<number | null>(null)
-
-	// Snackbar state
-	const conflictSnackbar = ref(false)
-
-	// Drag/Resize state (for EventBlock styling)
-	const draggingEventId = ref<number | null>(null)
-	const resizingEventId = ref<number | null>(null)
-	const dragConflict = ref(false)
-
-	// Time slots computed
-	const timeSlots = computed<Time[]>(() => {
-		const slots: Time[] = []
-		const startMinutes = viewStartTime.value.getInMinutes
-
-		let endMinutes = viewEndTime.value.getInMinutes
-		if (endMinutes < startMinutes) {
-			endMinutes += 24 * 60
-		}
-
-		for (let totalMins = startMinutes; totalMins <= endMinutes; totalMins += timeSlotDuration.value) {
-			const hour = Math.floor(totalMins / 60) % 24
-			const minute = totalMins % 60
-			slots.push(new Time(hour, minute))
-		}
-
-		return slots
-	})
-
-	const totalGridRows = computed(() => timeSlots.value.length - 1)
-
+	// Day-specific computed
 	const viewStartDate = computed(() => {
 		const date = new Date(viewedDate.value)
-		date.setHours(viewStartTime.value.hours, viewStartTime.value.minutes, 0, 0)
+		date.setHours(core.viewStartTime.value.hours, core.viewStartTime.value.minutes, 0, 0)
 		return date
 	})
 
 	const viewEndDate = computed(() => {
 		const date = new Date(viewedDate.value)
 
-		const endHour = viewEndTime.value.hours
-		const endMinute = viewEndTime.value.minutes
+		const endHour = core.viewEndTime.value.hours
+		const endMinute = core.viewEndTime.value.minutes
 
 		if (endHour >= 24) {
 			date.setDate(date.getDate() + Math.floor(endHour / 24))
@@ -77,18 +44,8 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		return date
 	})
 
-	const slotIndexToTime = computed(() => (index: number): string => {
-		const totalMinutes = index * timeSlotDuration.value + viewStartTime.value.minutes
-		const hours = Math.floor(totalMinutes / 60) + viewStartTime.value.hours
-		const minutes = totalMinutes % 60
-
-		return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-	})
-
 	const dateTimeFromSlotIndex = computed(() => (slotIndex: number): Date => {
-		const totalMinutes = slotIndex * timeSlotDuration.value + viewStartTime.value.minutes
-		const hours = Math.floor(totalMinutes / 60) + viewStartTime.value.hours
-		const minutes = totalMinutes % 60
+		const {hours, minutes} = core.slotIndexToTime.value(slotIndex)
 
 		const date = new Date(viewedDate.value)
 
@@ -102,107 +59,19 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		return date
 	})
 
-	const datetimeToSlotIndex = computed(() => (time?: Date): number => {
-		return timeToSlotIndex.value(formatToTime24H(time ?? new Date()))
+	const datetimeToSlotIndex = computed(() => (dateTime?: Date): number => {
+		const time = new Time(dateTime?.getHours(), dateTime?.getMinutes())
+		return core.timeToSlotIndex.value(time)
 	})
-
-	const timeToSlotIndex = computed(() => (time: string): number => {
-		const obj = Time.fromString(time)
-		const totalMinutes = (obj.hours - viewStartTime.value.hours) * 60 + (obj.minutes - viewStartTime.value.minutes)
-		return Math.floor(totalMinutes / 10)
-	})
-
-	// Computed
-	const isDraggingAny = computed(() => draggingEventId.value !== null)
-	const isResizingAny = computed(() => resizingEventId.value !== null)
-	const visibleEvents = computed(() => {
-		return events.value.filter(event => {
-			return (event.gridRowStart ?? 0) >= 1 &&
-				(event.gridRowEnd ?? 0) <= totalGridRows.value &&
-				(event.gridRowStart ?? 0) <= (event.gridRowEnd ?? 0)
-		})
-	})
-
-	const toDeleteEvent = computed(() =>
-		toDeleteIndex.value !== null ? events.value[toDeleteIndex.value] : null
-	)
-
-
-	// Event handlers
-	function handleFocusEvent(eventId: number | null): void {
-		focusedEventId.value = eventId
-	}
-
-
-	function openCreateDialogPrefilled(startTime: string, endTime: string): void {
-		editedId.value = undefined
-		editingEvent.value = PlannerTaskRequest.fromSpan(startTime, endTime)
-		dialog.value = true
-	}
-
-	function openCreateDialogEmpty(): void {
-		editedId.value = undefined
-		editingEvent.value = new PlannerTaskRequest()
-		dialog.value = true
-	}
-
-	function openEditDialog(): void {
-		const event = events.value.find(e => e.id === focusedEventId.value)
-		if (!event) return
-
-		editedId.value = event.id
-		editingEvent.value = PlannerTaskRequest.fromEntity(event)
-		dialog.value = true
-	}
-
-
-	function openDeleteDialog(): void {
-		toDeleteIndex.value = events.value.findIndex(e => e.id === focusedEventId.value)
-		deleteDialog.value = true
-	}
-
 
 	return {
-		// Time/Grid configuration
-		timeSlotDuration,
-		viewedDate,
-		viewStartTime,
-		viewEndTime,
+		...core,
 
-		// Time/Grid computed
-		timeSlots,
-		totalGridRows,
+		// Day-specific
+		viewedDate,
 		viewStartDate,
 		viewEndDate,
-		slotIndexToTime,
 		dateTimeFromSlotIndex,
 		datetimeToSlotIndex,
-		timeToSlotIndex,
-
-		// State
-		events,
-		focusedEventId,
-		dialog,
-		editedId,
-		editingEvent,
-		deleteDialog,
-		toDeleteIndex,
-		conflictSnackbar,
-		draggingEventId,
-		resizingEventId,
-		dragConflict,
-
-		// Computed
-		visibleEvents,
-		toDeleteEvent,
-		isDraggingAny,
-		isResizingAny,
-
-		// Actions
-		handleFocusEvent,
-		openCreateDialogPrefilled,
-		openCreateDialogEmpty,
-		openEditDialog,
-		openDeleteDialog,
 	}
-})
+}) satisfies () => IDayPlannerStore & StoreGeneric

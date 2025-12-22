@@ -1,25 +1,25 @@
 <template>
 <VSheet
 	v-if="event.isBackground"
-	:color="backgroundColor"
+	:color="backgroundColorComp"
 	:style="style"
 	:data-event-id="event.id"
 	:class="['background-event-block', { 'past-event': isPast }]"
 >
-	<VSheet class="background-event-label" :color="backgroundColor">
+	<VSheet class="background-event-label" :color="backgroundColorComp">
 		{{ event.activity.name }}
 	</VSheet>
 </VSheet>
 
 <VSheet
 	v-else
-	:color="`${backgroundColor}E0`"
+	:color="`${backgroundColorComp}E0`"
 	:style
 	:class="['event-block', ...blockClasses]"
 	:data-event-id="event.id"
 	:tabindex="0"
 	@keydown.enter="emit('openEditDialog')"
-	@keydown.esc="e=>e.target.blur()"
+	@keydown.esc="(e: KeyboardEvent)=>(e.target as HTMLElement).blur()"
 	@focus="emit('focusEvent', event.id)"
 	@blur="emit('focusEvent', null)"
 >
@@ -63,62 +63,59 @@
 </VSheet>
 </template>
 
-<script setup lang="ts" generic="T extends BasePlannerTaskResponse">
+<script setup lang="ts"
+        generic="TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed} from 'vue'
-import type {BasePlannerTaskResponse} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 
-const props = defineProps<{
-	event: T
-	focusedEventId: string | number | null
-	draggingEventId: string | number | null
-	resizingEventId: string | number | null
-	dragConflict: boolean
-	isDraggingAny: boolean
-	isResizingAny: boolean
+const {event, store, backgroundColor, isPast} = defineProps<{
+	event: TTask
+	store: TStore
 	backgroundColor?: string
 	isPast?: boolean
 }>()
 
 // Computed states
-const isFocused = computed(() => props.focusedEventId === props.event.id)
-const isDragging = computed(() => props.draggingEventId === props.event.id)
-const isResizing = computed(() => props.resizingEventId === props.event.id)
-const isConflict = computed(() => props.dragConflict && props.draggingEventId === props.event.id)
-const isPast = computed(() => props.isPast ?? false)
-const isAnyEventBeingManipulated = computed(() => props.isDraggingAny || props.isResizingAny)
+const isFocused = computed(() => store.focusedEventId === event.id)
+const isDragging = computed(() => store.draggingEventId === event.id)
+const isResizing = computed(() => store.resizingEventId === event.id)
+const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
+const isAnyEventBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
-const backgroundColor = computed(() => {
-	return props.backgroundColor || props.event.activity.role?.color || '#4287f5'
+const backgroundColorComp = computed(() => {
+	return backgroundColor || event.activity.role?.color || '#4287f5'
 })
 
 const style = computed(() => {
-	const span = Math.max(1, (props.event.gridRowEnd || 1) - (props.event.gridRowStart || 1) + 1)
+	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1)
 	return {
-		marginRight: `${props.event.isDuringBackgroundEvent ? 35 : 0}px`,
-		gridRow: `${props.event.gridRowStart} / span ${span}`
+		marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
+		gridRow: `${event.gridRowStart} / span ${span}`
 	}
 })
 
 const formattedTime = computed(() => {
 	// Default time formatting (can be overridden via slot)
-	return `${props.event.startTime} - ${props.event.endTime}`
+	return `${event.startTime} - ${event.endTime}`
 })
 
 const blockClasses = computed(() => [
 	{
 		'dragging': isDragging.value,
 		'resizing': isResizing.value,
-		'past-event': isPast.value,
+		'past-event': isPast,
 		'focused': isFocused.value,
 		'conflict': isConflict.value,
 		'no-hover': isAnyEventBeingManipulated.value,
-		'optional-task': props.event.isOptional
+		'optional-task': event.isOptional
 	}
 ])
 
 const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: string | number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-	(e: 'focusEvent', id: string | number | null): void
+	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+	(e: 'focusEvent', id: number | null): void
 	(e: 'openEditDialog'): void
 }>()
 </script>

@@ -1,98 +1,100 @@
-import type {Time} from '@/utils/TimeUtils.ts'
+import type {Time} from '@/utils/Time.ts'
+import type {Ref} from 'vue'
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 
 /**
- * Shared logic for day planner views (both regular and template)
- * Handles grid positioning, time calculations, and common utilities
+ * Base event type for grid positioning with Date-based spans
  */
-export function useDayPlannerCommon(
-	viewedDate: Date,
-	viewStartTime: Time,
-	viewEndTime: Time,
-	totalGridRows: number
+
+/**
+ * Shared logic for day planner
+ * Handles grid positioning, time calculations, and conflict detection for Date-based events
+ */
+export function useDayPlannerCommon<T extends IBasePlannerTask>(
+	viewStartTime: Ref<Time>,
+	totalGridRows: Ref<number>,
+	events: Ref<T[]>
 ) {
-	/**
-	 * Calculate grid position from time span
-	 */
-	function setGridPositionFromSpan<T extends { start: Date | string; end: Date | string; gridRowStart?: number; gridRowEnd?: number }>(
-		event: T
-	): void {
-		const startDate = typeof event.start === 'string' ? new Date(event.start) : event.start
-		const endDate = typeof event.end === 'string' ? new Date(event.end) : event.end
+	// --- Helpers: Time-based calculations (day-agnostic with midnight wrap support) ---
+	const MINUTES_IN_DAY = 1440
 
-		const viewStartDate = new Date(viewedDate)
-		viewStartDate.setHours(viewStartTime.hours, viewStartTime.minutes, 0, 0)
-
-		const minutesFromViewStart = Math.floor((startDate.getTime() - viewStartDate.getTime()) / 60000)
-		const startRow = Math.floor(minutesFromViewStart / 10) + 1
-
-		const minutesFromViewStartToEnd = Math.floor((endDate.getTime() - viewStartDate.getTime()) / 60000)
-		const endRow = Math.floor(minutesFromViewStartToEnd / 10)
-
-		event.gridRowStart = Math.max(1, startRow)
-		event.gridRowEnd = Math.min(totalGridRows, endRow)
+	function isTime(obj: any): obj is Time {
+		return obj && typeof obj === 'object' && 'hours' in obj && 'minutes' in obj
 	}
 
+	function minutesFromViewStart(t: Time): number {
+		// Normalize into [0, 1440)
+		const start = viewStartTime.value.getInMinutes
+		const m = t.getInMinutes
+		const diff = (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
+		return diff
+	}
+
+	function segmentizeRange(startM: number, endM: number): Array<{ s: number, e: number }> {
+		// Returns one or two segments within [0, 1440) representing the range.
+		// If end < start => wraps over midnight, split into two segments.
+		if (endM >= startM) return [{s: startM, e: endM}]
+		return [
+			{s: 0, e: endM},
+			{s: startM, e: MINUTES_IN_DAY}
+		]
+	}
+
+	function rangesOverlapTime(aStart: Time, aEnd: Time, bStart: Time, bEnd: Time): boolean {
+		const aSegs = segmentizeRange(aStart.getInMinutes, aEnd.getInMinutes)
+		const bSegs = segmentizeRange(bStart.getInMinutes, bEnd.getInMinutes)
+
+		// Check any segment overlap
+		return aSegs.some(a => bSegs.some(b => (a.s < b.e && a.e > b.s)))
+	}
+
+
 	/**
-	 * Check if time ranges overlap (for background events)
+	 * Check if date ranges overlap with background events
 	 */
-	function checkOverlapsBackground<T extends { start: Date | string; end: Date | string; isBackground: boolean }>(
-		checkStart: Date | string,
-		checkEnd: Date | string,
-		events: T[]
-	): boolean {
-		return events.some(event => {
+	function checkOverlapsBackground(start: Time, end: Time): boolean
+	function checkOverlapsBackground(start: Date, end: Date): boolean
+	function checkOverlapsBackground(start: any, end: any): boolean {
+		const usingTime = isTime(start) && isTime(end)
+
+		return events.value.some(event => {
 			if (!event.isBackground) return false
 
-			const bgStart = typeof event.start === 'string' ? new Date(event.start) : event.start
-			const bgEnd = typeof event.end === 'string' ? new Date(event.end) : event.end
-			const start = typeof checkStart === 'string' ? new Date(checkStart) : checkStart
-			const end = typeof checkEnd === 'string' ? new Date(checkEnd) : checkEnd
-
-			return (start < bgEnd && end > bgStart)
+			if (usingTime && event.startTime && event.endTime) {
+				return rangesOverlapTime(start as Time, end as Time, event.startTime, event.endTime)
+			}
 		})
 	}
 
 	/**
-	 * Check for event conflicts
+	 * Check for event conflicts (non-background events)
 	 */
-	function checkConflict<T extends { id: number | string; start: Date | string; end: Date | string; isBackground: boolean }>(
-		newStart: Date | string,
-		newEnd: Date | string,
-		events: T[],
-		currentEventId?: number | string
-	): boolean {
-		const start = typeof newStart === 'string' ? new Date(newStart) : newStart
-		const end = typeof newEnd === 'string' ? new Date(newEnd) : newEnd
+	function checkConflict(newStart: Time, newEnd: Time, currentEventId?: number): boolean {
+		const usingTime = isTime(newStart) && isTime(newEnd)
 
-		return events.some(event => {
-			if (event.id === currentEventId || event.isBackground)
-				return false
+		return events.value.some(event => {
+			if (event.id === currentEventId || event.isBackground) return false
 
-			const eventStart = typeof event.start === 'string' ? new Date(event.start) : event.start
-			const eventEnd = typeof event.end === 'string' ? new Date(event.end) : event.end
-
-			return (start < eventEnd && end > eventStart)
+			if (usingTime && event.startTime && event.endTime) {
+				return rangesOverlapTime(newStart as Time, newEnd as Time, event.startTime, event.endTime)
+			}
 		})
 	}
 
 	/**
 	 * Update overlapping background flags for all events
 	 */
-	function updateOverlapsBackgroundFlags<T extends { start: Date | string; end: Date | string; isBackground: boolean; isDuringBackgroundEvent?: boolean }>(
-		bgStart: Date | string,
-		bgEnd: Date | string,
-		events: T[]
-	): void {
-		events.forEach(event => {
+	function updateOverlapsBackgroundFlags(bgStart: Time, bgEnd: Time): void {
+		const usingTime = isTime(bgStart) && isTime(bgEnd)
+
+		events.value.forEach(event => {
 			if (event.isBackground) return
 
-			const eventStart = typeof event.start === 'string' ? new Date(event.start) : event.start
-			const eventEnd = typeof event.end === 'string' ? new Date(event.end) : event.end
-			const bgStartDate = typeof bgStart === 'string' ? new Date(bgStart) : bgStart
-			const bgEndDate = typeof bgEnd === 'string' ? new Date(bgEnd) : bgEnd
-
-			if (eventStart < bgEndDate && eventEnd > bgStartDate) {
-				event.isDuringBackgroundEvent = true
+			if (usingTime && event.startTime && event.endTime) {
+				if (rangesOverlapTime(event.startTime, event.endTime, bgStart as Time, bgEnd as Time)) {
+					event.isDuringBackgroundEvent = true
+				}
+				return
 			}
 		})
 	}
@@ -100,19 +102,75 @@ export function useDayPlannerCommon(
 	/**
 	 * Initialize grid positions for all events
 	 */
-	function initializeEventGridPositions<T extends { start: Date | string; end: Date | string; gridRowStart?: number; gridRowEnd?: number }>(
-		events: T[]
-	): void {
-		events.forEach(event => {
+	function initializeEventGridPositions(): void {
+		console.log(events.value)
+		events.value.forEach(event => {
 			setGridPositionFromSpan(event)
 		})
 	}
 
+	/**
+	 * Calculate grid position from date span
+	 */
+	function setGridPositionFromSpan(event: T): void {
+		// Prefer Time-based positioning if available; fallback to Date for compatibility
+		if (event.startTime && event.endTime && isTime(event.startTime) && isTime(event.endTime)) {
+			const startOffset = minutesFromViewStart(event.startTime) // [0, 1440)
+			let endOffset = minutesFromViewStart(event.endTime) // [0, 1440)
+
+			// If wraps over midnight, extend end by a full day to keep duration positive
+			if (event.endTime.getInMinutes < event.startTime.getInMinutes) {
+				endOffset += MINUTES_IN_DAY
+			}
+
+			const startRow = Math.floor(startOffset / 10) + 1
+			const endRow = Math.floor(endOffset / 10)
+
+			event.gridRowStart = Math.max(1, startRow)
+			event.gridRowEnd = Math.min(totalGridRows.value, endRow)
+			return
+		}
+	}
+
+	/**
+	 * Handle task span updates
+	 */
+	function handleUpdateTaskSpan(eventId: number, updates: Partial<T>): void {
+		const eventIndex = events.value.findIndex(e => e.id === eventId)
+		if (eventIndex === -1) return
+
+		if (!events.value[eventIndex]) {
+			return
+		}
+		events.value[eventIndex] = {
+			...events.value[eventIndex],
+			...updates
+		}
+
+		const event = events.value[eventIndex]
+		if (updates.startTime || updates.endTime) {
+			if (event.startTime && event.endTime) {
+				event.isDuringBackgroundEvent = checkOverlapsBackground(event.startTime, event.endTime)
+			}
+		} else if ((updates as any).start || (updates as any).end) {
+			// Legacy Date-based update
+			// @ts-ignore
+			const s = (event as any).start
+			// @ts-ignore
+			const e = (event as any).end
+			if (s instanceof Date && e instanceof Date) {
+				// @ts-ignore
+				event.isDuringBackgroundEvent = checkOverlapsBackground(s, e)
+			}
+		}
+	}
+
 	return {
-		setGridPositionFromSpan,
 		checkOverlapsBackground,
 		checkConflict,
 		updateOverlapsBackgroundFlags,
-		initializeEventGridPositions
+		initializeEventGridPositions,
+		setGridPositionFromSpan,
+		handleUpdateTaskSpan
 	}
 }

@@ -60,7 +60,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {Time} from '@/utils/TimeUtils.ts';
+import {Time} from '@/utils/Time.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
@@ -112,7 +112,7 @@ async function save() {
 	}
 	endTimestamp.setHours(end.value.hours, end.value.minutes, 0, 0)
 
-	store.editingEvent.start = startTimestamp
+	store.editingEvent.startTime = startTimestamp
 	store.editingEvent.end = endTimestamp
 	if (store.editedId) {
 		emit('edit', store.editedId, store.editingEvent)

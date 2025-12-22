@@ -1,14 +1,9 @@
 <template>
 <BaseEventBlock
-	:event="event"
-	:focusedEventId="store.focusedEventId"
-	:draggingEventId="store.draggingEventId"
-	:resizingEventId="store.resizingEventId"
-	:dragConflict="store.dragConflict"
-	:isDraggingAny="store.isDraggingAny"
-	:isResizingAny="store.isResizingAny"
+	:event
+	:store
 	@resizeStart="emit('resizeStart', $event)"
-	@focusEvent="store.handleFocusEvent($event as string)"
+	@focusEvent="store.handleFocusEvent($event)"
 	@openEditDialog="store.openEditDialog"
 >
 	<!-- Use default time slot (already displays time strings correctly) -->
@@ -22,7 +17,7 @@
 			:color="getPriorityColor(event.priority)"
 			class="event-chip"
 		>
-			{{ event.priority.name }}
+			{{ event.priority.text }}
 		</VChip>
 
 		<VChip
@@ -78,10 +73,10 @@ function getPriorityColor(priority: TaskPriority): string {
 		'Medium': '#ff9f1a',
 		'Low': '#4287f5'
 	}
-	return priorityColors[priority.name] || '#999'
+	return priorityColors[priority.text] || '#999'
 }
 
 const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: string; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
 }>()
 </script>
