@@ -23,6 +23,8 @@ import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequ
 import {RoutineTodoListGroupedList} from '@/dtos/response/RoutineTodoListGroupedList.ts';
 import {ActivityHistoryRequest} from '@/dtos/request/ActivityHistoryRequest.ts';
 import {ActivityHistory} from '@/dtos/response/ActivityHistory.ts';
+import {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
+import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
 
 export function useActivityHistoryCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
@@ -242,6 +244,30 @@ export function useTemplatePlannerTaskCrud() {
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+}
+
+export function useTaskPlannerDayTemplateTaskCrud() {
+	const {fetchById, fetchByField, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPlannerDayTemplate>({
+		responseClass: TaskPlannerDayTemplate,
+		entityName: 'task-planner-day-template'
+	})
+	const {
+		createWithResponse,
+		create,
+		update,
+		deleteEntity
+	} = useEntityCommand<TaskPlannerDayTemplate, TaskPlannerDayTemplateRequest, TaskPlannerDayTemplateRequest>({
+		responseClass: TaskPlannerDayTemplate,
+		createRequestClass: TaskPlannerDayTemplateRequest,
+		updateRequestClass: TaskPlannerDayTemplateRequest,
+		entityName: 'task-planner-day-template'
+	})
+
+	async function fetchByName(name: string): Promise<TaskPlannerDayTemplate> {
+		return await fetchByField('name', name)
+	}
+
+	return {fetchById, fetchByName, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
 export function useAlarmCrud() {

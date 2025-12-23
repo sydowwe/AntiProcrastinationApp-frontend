@@ -1,78 +1,69 @@
+<!-- TimePicker.vue -->
 <template>
-<div class="d-flex justify-center align-center ga-1">
-	<VNumberInput
-		v-if="showHours"
-		v-model="timeValue.hours"
-		:label
-		:disabled
-		suffix="h"
-		control-variant="split"
-		:hide-details="!required"
-		:rules="required && !showMinutes ? [positiveRule] : []"
-		:required
-	></VNumberInput>
-	<span v-if="showHours && showMinutes" :class="required ? 'mb-7' : 'mb-2'"
-	      style="font-size: xx-large;line-height: 0.8;">:</span>
-	<VNumberInput
-		v-if="showMinutes"
-		v-model="timeValue.minutes"
-		:label="!showHours ? label : ''"
-		:disabled
-		suffix="m"
-		control-variant="split"
-		:hide-details="!required"
-		:rules="required ? [positiveRule] : []"
-		:required
-	></VNumberInput>
-</div>
+<VMenu :closeOnContentClick="false">
+	<template v-slot:activator="{ props: menuProps }">
+		<VBtn
+			v-bind="menuProps"
+			variant="outlined"
+			prependIcon="clock"
+			:height="height"
+			:disabled
+		>
+			{{ label }}: {{ formattedTime }}
+		</VBtn>
+	</template>
+	<template v-slot:default>
+		<VTimePicker
+			v-model="timeString"
+			format="24hr"
+			:allowedMinutes
+			scrollable
+		/>
+	</template>
+</VMenu>
 </template>
 
 <script setup lang="ts">
-import {watch} from "vue";
-import {Time} from "@/utils/Time.ts";
-
-const positiveRule = (v: number) => (v > 0 || timeValue.value.hours > 0) || 'Musí byť viac ako 0'
+import {computed, type PropType} from 'vue'
+import {Time} from '@/utils/Time.ts'
 
 const props = defineProps({
-	showHours: {
-		type: Boolean,
-		default: true,
+	label: {
+		type: String,
+		default: 'Time'
 	},
-	showMinutes: {
-		type: Boolean,
-		default: true,
+	allowedMinutesSelected: {
+		type: String as PropType<'5' | '10' | '15' | '20' | '30' | '45' | '60'>,
+		default: '10'
 	},
-	disabled: Boolean,
-	required: Boolean,
-	label: String,
-});
-
-const timeValue = defineModel<Time>({default: new Time()});
-
-watch(() => timeValue.value.hours, (newValue) => {
-	// Handle wrap-around for hours
-	if (newValue > 23) {
-		timeValue.value.hours = 0;
-	} else if (newValue < 0) {
-		timeValue.value.hours = 23;
-	} else {
-		emit('hoursChanged', newValue);
-	}
-});
-
-watch(() => timeValue.value.minutes, (newValue) => {
-	// Handle wrap-around for minutes
-	if (newValue > 59) {
-		timeValue.value.minutes = 0;
-	} else if (newValue < 0) {
-		timeValue.value.minutes = 59;
-	} else {
-		emit('minutesChanged', newValue);
+	height: {
+		type: [String, Number],
+		default: 40
+	},
+	disabled: {
+		type: Boolean,
+		default: false
 	}
 })
 
-const emit = defineEmits<{
-	(e: 'hoursChanged', hours: number): void
-	(e: 'minutesChanged', minutes: number): void
-}>();
+const time = defineModel<Time>({required: true})
+
+const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
+
+const timeString = computed({
+	get() {
+		return time.value.toString
+	},
+	set(newTime: string) {
+		time.value = Time.fromString(newTime)
+	}
+})
+
+const formattedTime = computed(() => {
+	return timeString.value.toString().padStart(2, '0')
+})
 </script>
+
+<style scoped>
+/* Add any specific styles if needed */
+</style>

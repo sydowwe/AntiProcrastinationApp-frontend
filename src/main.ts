@@ -27,6 +27,7 @@ import {createVueI18nAdapter} from "vuetify/locale/adapters/vue-i18n";
 import {aliases, fa} from 'vuetify/lib/iconsets/fa-svg'
 import './assets/main.css'
 import vue3GoogleLogin from 'vue3-google-login'
+import {autoAnimatePlugin} from '@formkit/auto-animate/vue'
 
 const app = createApp(App);
 
@@ -98,6 +99,7 @@ export const vuetify = createVuetify({
 		VTextField: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VIdAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
 		VAutocomplete: {variant: 'outlined', density: 'comfortable'},
+		VCombobox: {variant: 'outlined', density: 'comfortable'},
 		VNumberInput: {variant: 'outlined', density: 'comfortable'},
 		VDateInput: {variant: 'outlined', density: 'comfortable', prependIcon: "", prependInnerIcon: "calendar"},
 
@@ -209,8 +211,6 @@ app.use(vuetify);
 app.use(vue3GoogleLogin, {
 	clientId: import.meta.env.VITE_GOOGLE_LOGIN_CLIENT_ID
 })
-
-import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 
 
 app.use(autoAnimatePlugin)
