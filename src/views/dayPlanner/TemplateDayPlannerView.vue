@@ -1,33 +1,43 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
-<DayPlanner
-	:plannerStore="store"
-	:title="store.templateName || 'Day Template'"
-	addButtonText="Add New Task"
-	conflictMessage="Task conflicts with existing schedule!"
-	@updatedTaskSpan="handleUpdateTaskSpan"
-	@delete="del"
->
-	<!-- Custom event block for template planner -->
-	<template #event-block="{ event, onResizeStart }">
-		<TemplateEventBlock
-			:event="event"
-			@resizeStart="onResizeStart"
-		/>
-	</template>
+<VContainer fluid class="pa-0">
+	<VRow noGutters>
+		<VCol cols="12" lg="4" xl="3" class="pa-4">
+			<TaskPlannerDayTemplateDetailsForm @savedTemplate="saveTemplate"></TaskPlannerDayTemplateDetailsForm>
+		</VCol>
 
-	<!-- Custom dialog for template planner -->
-	<template #dialog>
-		<PlannerTaskTemplateDialog
-			v-model:dialog="store.dialog"
-			:editingTask="store.editingEvent"
-			:isEdit="isEdit"
-			:editedId="store.editedId"
-			@create="create"
-			@edit="edit"
-		/>
-	</template>
-</DayPlanner>
+		<VCol cols="12" lg="8" xl="9" class="pa-4">
+			<DayPlanner
+				:plannerStore="store"
+				:title="store.templateName || 'Day Template'"
+				addButtonText="Add New Task"
+				conflictMessage="Task conflicts with existing schedule!"
+				@updatedTaskSpan="handleUpdateTaskSpan"
+				@delete="del"
+			>
+				<!-- Custom event block for template planner -->
+				<template #event-block="{ event, onResizeStart }">
+					<TemplateEventBlock
+						:event="event"
+						@resizeStart="onResizeStart"
+					/>
+				</template>
+
+				<!-- Custom dialog for template planner -->
+				<template #dialog>
+					<PlannerTaskTemplateDialog
+						v-model:dialog="store.dialog"
+						:editingTask="store.editingEvent"
+						:isEdit="isEdit"
+						:editedId="store.editedId"
+						@create="createTask"
+						@edit="edit"
+					/>
+				</template>
+			</DayPlanner>
+		</VCol>
+	</VRow>
+</VContainer>
 </template>
 
 <script setup lang="ts">
@@ -36,15 +46,20 @@ import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import PlannerTaskTemplateDialog from '@/components/dayPlanner/template/PlannerTaskTemplateDialog.vue'
 import TemplateEventBlock from '@/components/dayPlanner/template/TemplateEventBlock.vue'
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
-import {useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
+import {useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import {storeToRefs} from 'pinia';
+import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue';
+import type {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
 
-const {createWithResponse, update, fetchById, deleteEntity} = useTemplatePlannerTaskCrud()
+const {createWithResponse: createTaskWithResponse, update: updateTask, fetchById: fetchByIdTask, deleteEntity: deleteTask} = useTemplatePlannerTaskCrud()
+
+const {createWithResponse, update, fetchById, deleteEntity} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
 const {viewStartTime, totalGridRows, visibleEvents} = storeToRefs(store)
+
 
 // Use shared composable for all common time-based logic
 const {
@@ -63,8 +78,14 @@ const {
 // View-specific computed properties
 const isEdit = computed(() => store.editedId !== undefined)
 
+
+async function saveTemplate(request: TaskPlannerDayTemplateRequest): Promise<void> {
+
+}
+
+
 // CRUD operations
-async function create(request: TemplatePlannerTaskRequest): Promise<void> {
+async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
 	if (!request.isBackground && request.startTime && request.endTime) {
 		if (checkConflict(request.startTime, request.endTime)) {
 			store.conflictSnackbar = true
@@ -72,7 +93,7 @@ async function create(request: TemplatePlannerTaskRequest): Promise<void> {
 		}
 	}
 
-	const newTask = await createWithResponse(request)
+	const newTask = await createTaskWithResponse(request)
 
 	if (newTask.isBackground) {
 		updateOverlapsBackgroundFlags(newTask.startTime, newTask.endTime)
@@ -100,7 +121,7 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 	if (!updatedItem)
 		return
 
-	await update(id, request)
+	await updateTask(id, request)
 
 	if (request.isBackground !== updatedItem.isBackground) {
 		if (request.startTime && request.endTime) {
@@ -108,7 +129,7 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 		}
 	}
 
-	const fetchedItem = await fetchById(id)
+	const fetchedItem = await fetchByIdTask(id)
 
 	if (!request.isBackground) {
 		fetchedItem.isDuringBackgroundEvent = checkOverlapsBackground(
@@ -123,7 +144,7 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 
 async function del(): Promise<void> {
 	if (store.toDeleteId !== null) {
-		await deleteEntity(store.toDeleteId);
+		await deleteTask(store.toDeleteId);
 		store.events.splice(store.events.findIndex(e => e.id === store.toDeleteId), 1)
 		store.focusedEventId = null
 	}

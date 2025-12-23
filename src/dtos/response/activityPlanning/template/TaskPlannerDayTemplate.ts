@@ -1,6 +1,6 @@
 import type {DayType} from '@/dtos/enum/DayType.ts';
 
-export class TaskPlannerDayTemplateResponse {
+export class TaskPlannerDayTemplate {
 	constructor(
 		public id: string,
 		public name: string,
@@ -16,8 +16,8 @@ export class TaskPlannerDayTemplateResponse {
 	) {
 	}
 
-	static fromJson(json: any): TaskPlannerDayTemplateResponse {
-		return new TaskPlannerDayTemplateResponse(
+	static fromJson(json: any): TaskPlannerDayTemplate {
+		return new TaskPlannerDayTemplate(
 			json.id,
 			json.name,
 			json.isActive,
