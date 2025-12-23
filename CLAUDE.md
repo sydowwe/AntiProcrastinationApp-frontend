@@ -1,28 +1,35 @@
+# AntiProcrastinationApp Frontend Rules
+
 ## Tech Stack
 
-- Vue 3 (Composition API with <script setup>)
-- Vuetify 3 (UI Framework)
-- TypeScript (Strict Mode)
-- Vite (Build Tool)
+- **Framework**: Vue 3.5+ (Composition API with `<script setup lang="ts">`)
+- **UI**: Vuetify 3
+- **State**: Pinia (Composition API / Setup Stores)
+- **Routing**: Vue Router
+- **HTTP**: Axios (Custom instance at `@/plugins/axiosConfig.ts`)
 
-## Component Standards
+## Coding Standards
 
-- **Naming**: Use PascalCase for component filenames and definitions (e.g., `UserCard.vue`).
-- **APIs**: Always use the Composition API with `<script setup lang="ts">`.
+- **Function Syntax**: Use `function name() {}` declarations instead of `const name = () => {}` for component logic to leverage hoisting and improve readability.
+- **Component Naming**: Use PascalCase for filenames and template tags (e.g., `<VBtn>`, `<MyCustomComponent>`).
+- use ref mostly only use reactive when its really needed or conventional
 - **Props**:
-    - Define props using `defineProps<{ ... }>()`.
-    - Use **camelCase** for prop keys (e.g., `showDetail: boolean`).
-    - In templates, pass props using **kebab-case** (e.g., `:show-detail="true"`) as per Vue conventions.
-- **Components in Templates**: Always use **PascalCase** for Vuetify and custom components (e.g., `<VBtn>` instead of `<v-btn>`).
+    - Define using: `const props = defineProps<{ foo: string, bar?: number }>()`.
+    - Use **camelCase** in BOTH TS and Templates (e.g., `hideDetails` not `hide-details`).
+    - use props just as the shorthand :prop instead of :prop="prop" when there is ref with same name
+- **Emits**:
+    - Define using: `const emit = defineEmits<{ change: [id: number], update: [value: string] }>()`.
+- **API Calls**:
+    - **Always** import the custom instance: `import { API } from '@/plugins/axiosConfig.ts';`.
+    - Do not use global `axios` or create new instances.
 
-## MCP & Documentation
+## MCP Usage
 
-- **Vuetify MCP**: Always use the `vuetify` MCP server to verify props, slots, and events before generating or refactoring UI code.
-- **Reference**: If unsure about a Vuetify 3 pattern, call `vuetify.get_component_api`.
+- **Vuetify MCP**: Before writing Vuetify components, use the `vuetify` MCP to verify the exact API of the component.
+- **Rules**: If a Vuetify prop is suggested in kebab-case, convert it to camelCase.
 
 ## Commands
 
 - **Dev**: `npm run dev`
-- **Build**: `npm run build`
+- **Typecheck**: `npx vue-tsc --noEmit`
 - **Lint**: `npm run lint`
-- **Type Check**: `npx vue-tsc --noEmit`

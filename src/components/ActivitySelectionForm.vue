@@ -2,26 +2,26 @@
 <div class="d-flex flex-column">
 	<div class="d-flex flex-column flex-md-row ga-3">
 		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
-			<NullFalseTrueCheckbox label="From to-do list" v-model="formData.isFromToDoList"
+			<NullFalseTrueCheckbox label="From to-do list" v-model="formData!.isFromToDoList"
 			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
-			<VIdSelect v-if="formData.isFromToDoList" class="flex-1-1" v-model="formData.taskPriorityId" :items="filteredOptions.taskPriorityOptions"
+			<VIdSelect v-if="formData?.isFromToDoList" class="flex-1-1" v-model="formData!.taskPriorityId" :items="filteredOptions.taskPriorityOptions"
 			           hide-details></VIdSelect>
 
 		</div>
 		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
-			<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData.isFromRoutineToDoList"
+			<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData!.isFromRoutineToDoList"
 			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
-			<VIdSelect v-if="formData.isFromRoutineToDoList" class="flex-1-1" v-model="formData.routineTimePeriodId"
+			<VIdSelect v-if="formData!.isFromRoutineToDoList" class="flex-1-1" v-model="formData!.routineTimePeriodId"
 			           :items="filteredOptions.routineTimePeriodOptions" hide-details></VIdSelect>
 		</div>
 	</div>
 	<VRow class="my-0">
 		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
-			<VIdAutocomplete label="Role" v-model="formData.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
+			<VIdAutocomplete label="Role" v-model="formData!.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
 			                 hide-details class="pb-1"></VIdAutocomplete>
 		</VCol>
 		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
-			<VIdAutocomplete label="Category" v-model="formData.categoryId" :items="filteredOptions.categoryOptions"
+			<VIdAutocomplete label="Category" v-model="formData!.categoryId" :items="filteredOptions.categoryOptions"
 			                 :disabled="formDisabled"
 			                 hide-details class="pb-1"></VIdAutocomplete>
 		</VCol>
@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, type PropType, ref, watch} from 'vue';
+import {computed, onMounted, type PropType, reactive, ref, watch} from 'vue';
 import {Time} from '@/utils/Time.ts';
 import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
@@ -85,20 +85,20 @@ const props = defineProps({
 const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([]);
 const filteredOptions = ref(new ActivityFormSelectOptions());
 
-const formData = defineModel<ActivityFormRequest>({default: new ActivityFormRequest()});
+const formData = defineModel<ActivityFormRequest>({required: false, default: () => reactive(new ActivityFormRequest())});
 const selectedActivityId = defineModel<number | null>('activityId', {default: null});
 
 const activityIdModel = computed({
 	get: () => {
 		if (props.isFilter) {
-			return formData.value.activityId;
+			return formData.value!.activityId;
 		} else {
 			return selectedActivityId.value;
 		}
 	},
 	set: (value: number | null) => {
 		if (props.isFilter) {
-			formData.value.activityId = value;
+			formData.value!.activityId = value;
 		} else {
 			selectedActivityId.value = value;
 		}
@@ -107,27 +107,26 @@ const activityIdModel = computed({
 
 onMounted(async () => {
 	allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(props.selectOptionsSource);
-	formData.value.activityId = formData.value.activityId ?? null;
-	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value);
+	formData.value!.activityId = formData.value!.activityId ?? null;
+	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!);
 });
 
-watch(() => formData.value, async (newVal) => {
-	newVal.activityId = activityIdModel.value;
-	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, newVal);
+watch(formData, () => {
+	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!);
 }, {deep: true})
 
-watch(() => activityIdModel.value, (newValue) => {
+watch(activityIdModel, (newValue) => {
 	emit('activityIdChanged', newValue);
 });
 
-watch(() => formData.value.isFromToDoList, (newValue) => {
+watch(() => formData.value!.isFromToDoList, (newValue) => {
 	if (!newValue) {
-		formData.value.taskPriorityId = null;
+		formData.value!.taskPriorityId = null;
 	}
 });
-watch(() => formData.value.isFromRoutineToDoList, (newValue) => {
+watch(() => formData.value!.isFromRoutineToDoList, (newValue) => {
 	if (!newValue) {
-		formData.value.routineTimePeriodId = null;
+		formData.value!.routineTimePeriodId = null;
 	}
 });
 
@@ -158,22 +157,22 @@ function createNewActivity() {
 
 const getSelectedRoleName = computed((): string => {
 	const options = filteredOptions.value.roleOptions || [];
-	return options.find(item => item.id === formData.value.roleId)?.text || '';
+	return options.find(item => item.id === formData.value!.roleId)?.text || '';
 });
 
 const getSelectedCategoryName = computed((): string => {
 	const options = filteredOptions.value.categoryOptions || [];
-	return options.find(item => item.id === formData.value.categoryId)?.text || '';
+	return options.find(item => item.id === formData.value!.categoryId)?.text || '';
 });
 
 const getSelectedTaskUrgencyName = computed((): string => {
 	const options = filteredOptions.value.taskPriorityOptions || [];
-	return options.find(item => item.id === formData.value.taskPriorityId)?.text || '';
+	return options.find(item => item.id === formData.value!.taskPriorityId)?.text || '';
 });
 
 const getSelectedRoutineTimePeriodName = computed((): string => {
 	const options = filteredOptions.value.routineTimePeriodOptions || [];
-	return options.find(item => item.id === formData.value.routineTimePeriodId)?.text || '';
+	return options.find(item => item.id === formData.value!.routineTimePeriodId)?.text || '';
 });
 
 const getSelectedActivityName = computed((): string => {
@@ -181,7 +180,7 @@ const getSelectedActivityName = computed((): string => {
 });
 
 const getSelectedActivityId = computed(() => {
-	return formData.value.activityId;
+	return formData.value!.activityId;
 });
 
 defineExpose({

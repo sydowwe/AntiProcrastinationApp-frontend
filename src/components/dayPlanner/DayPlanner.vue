@@ -1,101 +1,99 @@
 <!-- DayPlanner.vue - Unified day planner component for both regular and template views -->
 <template>
-<div>
-	<VCard class="mx-auto w-100 w-lg-66 d-flex flex-column">
-		<!-- Header slot - each view provides its own header -->
-		<slot name="header" :store="plannerStore">
-			<VCardTitle class="d-flex justify-space-between align-center flex-wrap ga-2">
-				<span>{{ title }}</span>
+<VCard class="w-100 d-flex flex-column">
+	<!-- Header slot - each view provides its own header -->
+	<slot name="header" :store="plannerStore">
+		<VCardTitle class="d-flex justify-space-between align-center flex-wrap ga-2">
+			<span>{{ title }}</span>
 
-				<TimeRangePicker
-					v-model:start="plannerStore.viewStartTime"
-					v-model:end="plannerStore.viewEndTime"
-				/>
-				<div class="d-flex ga-2 align-center flex-wrap">
-					<VBtn
-						color="secondary"
-						@pointerdown.prevent="plannerStore.openEditDialog"
-						:class="{ 'is-hidden': !plannerStore.focusedEventId }"
-					>
-						Edit
-					</VBtn>
-					<VBtn
-						color="secondaryOutline"
-						variant="outlined"
-						@pointerdown.prevent="plannerStore.openDeleteDialog"
-						:class="{ 'is-hidden': !plannerStore.focusedEventId }"
-					>
-						Delete
-					</VBtn>
-					<VBtn
-						color="primary"
-						@click="plannerStore.openCreateDialogEmpty"
-						prependIcon="plus"
-					>
-						{{ addButtonText }}
-					</VBtn>
-				</div>
-			</VCardTitle>
-		</slot>
-
-		<VCardText class="flex-fill d-flex flex-column ga-4">
-			<div class="calendar-grid flex-fill">
-
-				<!-- Time Column -->
-				<PlannerTimeColumn/>
-
-				<!-- Events Column with event block slot -->
-				<PlannerTasksColumn
-					:store="plannerStore"
-					@updatedTaskSpan="(payload) => emit('updatedTaskSpan', payload.eventId, payload.updates as Partial<TTask>)"
+			<TimeRangePicker
+				v-model:start="plannerStore.viewStartTime"
+				v-model:end="plannerStore.viewEndTime"
+			/>
+			<div class="d-flex ga-2 align-center flex-wrap">
+				<VBtn
+					color="secondary"
+					@pointerdown.prevent="plannerStore.openEditDialog"
+					:class="{ 'is-hidden': !plannerStore.focusedEventId }"
 				>
-					<template #event-block="{ event, onResizeStart }">
-						<!-- Default slot for event blocks - each view provides its own EventBlock component -->
-						<slot name="event-block" :event="event" :onResizeStart="onResizeStart">
-
-						</slot>
-					</template>
-				</PlannerTasksColumn>
+					Edit
+				</VBtn>
+				<VBtn
+					color="secondaryOutline"
+					variant="outlined"
+					@pointerdown.prevent="plannerStore.openDeleteDialog"
+					:class="{ 'is-hidden': !plannerStore.focusedEventId }"
+				>
+					Delete
+				</VBtn>
+				<VBtn
+					color="primary"
+					@click="plannerStore.openCreateDialogEmpty"
+					prependIcon="plus"
+				>
+					{{ addButtonText }}
+				</VBtn>
 			</div>
+		</VCardTitle>
+	</slot>
 
-			<!-- Legend slot - optional for future use -->
-			<slot name="legend">
-				<div class="calendar-legend">
-					<!-- Add category legend here if needed -->
-				</div>
-			</slot>
-		</VCardText>
-	</VCard>
+	<VCardText class="flex-fill d-flex flex-column ga-4">
+		<div class="calendar-grid flex-fill">
 
-	<!-- Delete Confirmation Dialog -->
-	<MyDialog
-		title="Delete confirmation"
-		:text="deleteConfirmationText"
-		v-model="plannerStore.deleteDialog"
-		@confirmed="emit('delete')"
-		confirmBtnColor="error"
-	/>
+			<!-- Time Column -->
+			<PlannerTimeColumn/>
 
-	<!-- Dialog slot - each view provides its own dialog (EventDialog vs PlannerTaskTemplateDialog) -->
-	<slot name="dialog" :store="plannerStore"/>
-
-	<!-- Conflict Snackbar -->
-	<VSnackbar
-		v-model="plannerStore.conflictSnackbar"
-		color="error"
-		:timeout="3000"
-	>
-		{{ conflictMessage }}
-		<template v-slot:actions>
-			<VBtn
-				variant="text"
-				@click="plannerStore.conflictSnackbar = false"
+			<!-- Events Column with event block slot -->
+			<PlannerTasksColumn
+				:store="plannerStore"
+				@updatedTaskSpan="(payload) => emit('updatedTaskSpan', payload.eventId, payload.updates as Partial<TTask>)"
 			>
-				Close
-			</VBtn>
-		</template>
-	</VSnackbar>
-</div>
+				<template #event-block="{ event, onResizeStart }">
+					<!-- Default slot for event blocks - each view provides its own EventBlock component -->
+					<slot name="event-block" :event="event" :onResizeStart="onResizeStart">
+
+					</slot>
+				</template>
+			</PlannerTasksColumn>
+		</div>
+
+		<!-- Legend slot - optional for future use -->
+		<slot name="legend">
+			<div class="calendar-legend">
+				<!-- Add category legend here if needed -->
+			</div>
+		</slot>
+	</VCardText>
+</VCard>
+
+<!-- Delete Confirmation Dialog -->
+<MyDialog
+	title="Delete confirmation"
+	:text="deleteConfirmationText"
+	v-model="plannerStore.deleteDialog"
+	@confirmed="emit('delete')"
+	confirmBtnColor="error"
+/>
+
+<!-- Dialog slot - each view provides its own dialog (EventDialog vs PlannerTaskTemplateDialog) -->
+<slot name="dialog" :store="plannerStore"/>
+
+<!-- Conflict Snackbar -->
+<VSnackbar
+	v-model="plannerStore.conflictSnackbar"
+	color="error"
+	:timeout="3000"
+>
+	{{ conflictMessage }}
+	<template v-slot:actions>
+		<VBtn
+			variant="text"
+			@click="plannerStore.conflictSnackbar = false"
+		>
+			Close
+		</VBtn>
+	</template>
+</VSnackbar>
 </template>
 
 <script setup lang="ts"

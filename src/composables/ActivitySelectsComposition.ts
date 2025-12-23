@@ -32,8 +32,22 @@ export async function getAllActivityFormSelectOptionsCombinations(activitySource
 
 export function filterActivityFormSelectOptions(allOptionsCombinations: ActivitySelectOptionCombination[],
                                                 formData: ActivityFormRequest) {
-	const filteredCombinations = allOptionsCombinations.filter(combination =>
+	// Filter combinations excluding each field to get options for that field
+	const combinationsForRole = allOptionsCombinations.filter(combination =>
 		(!formData.activityId || combination.id === formData.activityId) &&
+		(!formData.categoryId || combination.categoryOption?.id === formData.categoryId) &&
+		(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
+		(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId)
+	);
+
+	const combinationsForCategory = allOptionsCombinations.filter(combination =>
+		(!formData.activityId || combination.id === formData.activityId) &&
+		(!formData.roleId || combination.roleOption.id === formData.roleId) &&
+		(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
+		(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId)
+	);
+
+	const combinationsForActivity = allOptionsCombinations.filter(combination =>
 		(!formData.roleId || combination.roleOption.id === formData.roleId) &&
 		(!formData.categoryId || combination.categoryOption?.id === formData.categoryId) &&
 		(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
@@ -42,20 +56,15 @@ export function filterActivityFormSelectOptions(allOptionsCombinations: Activity
 
 	const filteredOptions = new ActivityFormSelectOptions();
 	filteredOptions.activityOptions = uniqueOptions(
-		(formData.activityId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => new SelectOption(combination.id, combination.text)));
+		combinationsForActivity.map(combination => new SelectOption(combination.id, combination.text)));
 	filteredOptions.roleOptions = uniqueOptions(
-		(formData.activityId || formData.roleId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => combination.roleOption));
+		combinationsForRole.map(combination => combination.roleOption));
 	filteredOptions.categoryOptions = uniqueOptions(
-		(formData.activityId || formData.categoryId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => combination.categoryOption).filter(option => option !== null));
+		combinationsForCategory.map(combination => combination.categoryOption).filter(option => option !== null));
 	filteredOptions.taskPriorityOptions = uniqueOptions(
-		(formData.activityId || formData.taskPriorityId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => combination.taskPriorityOption).filter(option => option !== null));
+		allOptionsCombinations.map(combination => combination.taskPriorityOption).filter(option => option !== null));
 	filteredOptions.routineTimePeriodOptions = uniqueOptions(
-		(formData.activityId || formData.routineTimePeriodId ? allOptionsCombinations : filteredCombinations)
-			.map(combination => combination.routineTimePeriodOption).filter(option => option !== null));
+		allOptionsCombinations.map(combination => combination.routineTimePeriodOption).filter(option => option !== null));
 	return filteredOptions;
 }
 

@@ -3,26 +3,11 @@
 <div class="d-flex ga-4 align-center flex-wrap">
 	<!-- Start Time Picker -->
 	<div class="d-flex ga-4 align-center">
-		<VMenu :closeOnContentClick="false">
-			<template v-slot:activator="{ props }">
-				<VBtn
-					v-bind="props"
-					variant="outlined"
-					prependIcon="clock"
-					height="40"
-				>
-					{{ mode === 'length' ? 'Start' : 'From' }}: {{ formattedStartTime }}
-				</VBtn>
-			</template>
-			<template v-slot:default>
-				<VTimePicker
-					v-model="startTime"
-					format="24hr"
-					:allowedMinutes
-					scrollable
-				/>
-			</template>
-		</VMenu>
+		<TimePicker
+			v-model="start"
+			:label="mode === 'length' ? 'Start' : 'From'"
+			:allowedMinutesSelected
+		/>
 		<!-- Mode Toggle Button -->
 		<VIconBtn
 			variant="tonal"
@@ -30,7 +15,7 @@
 			:icon="mode === 'length' ? 'right-left' : 'clock'"
 			size="small"
 			@click="toggleMode"
-			:title="mode === 'length' ? 'Switch to time r ange' : 'Switch to duration'"
+			:title="mode === 'length' ? 'Switch to time range' : 'Switch to duration'"
 		/>
 	</div>
 
@@ -48,33 +33,20 @@
 	/>
 
 	<!-- Range Mode: End Time -->
-	<VMenu v-else :closeOnContentClick="false">
-		<template v-slot:activator="{ props }">
-			<VBtn
-				v-bind="props"
-				variant="outlined"
-				prependIcon="clock"
-				height="40"
-			>
-				To: {{ formattedEndTime }}
-			</VBtn>
-		</template>
-		<template v-slot:default>
-			<VTimePicker
-				v-model="endTime"
-				format="24hr"
-				:allowedMinutes
-				scrollable
-			/>
-		</template>
-	</VMenu>
+	<TimePicker
+		v-else
+		v-model="end"
+		label="To"
+		:allowedMinutesSelected
+	/>
 
 </div>
 </template>
 
 <script setup lang="ts">
 import {computed, type PropType, ref} from 'vue'
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/utils/Time.ts'
+import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
 const props = defineProps({
 	allowedMinutesSelected: {
@@ -82,8 +54,6 @@ const props = defineProps({
 		default: '10',
 	}
 })
-
-const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
 
 const start = defineModel<Time>('start', {required: true})
 const end = defineModel<Time>('end', {required: true})
@@ -93,48 +63,23 @@ const mode = ref<Mode>(
 	(localStorage.getItem('timeRangePickerMode') as Mode) || 'length'
 )
 
-const startTime = computed({
-	get() {
-		return start.value.toString;
-	},
-	set(time: string) {
-		start.value = Time.fromString(time);
-	}
-});
-const endTime = computed({
-	get() {
-		return end.value.toString;
-	},
-	set(time: string) {
-		end.value = Time.fromString(time);
-	}
-});
 const span = computed({
 	get() {
 		let diff = end.value?.getInMinutes - start.value?.getInMinutes
 
 		if (diff < 0) {
-			diff += 24 * 60;
+			diff += 24 * 60
 		}
-		const newSpan = diff / 60;
+		const newSpan = diff / 60
 		emit('spanChanged', newSpan)
-		return newSpan;
+		return newSpan
 	},
 	set(newSpan: number) {
-		end.value = Time.fromMinutes((start.value.getInMinutes + newSpan * 60) % (24 * 60));
+		end.value = Time.fromMinutes((start.value.getInMinutes + newSpan * 60) % (24 * 60))
 	}
-});
-
-const formattedStartTime = computed(() => {
-	return startTime.value.toString().padStart(2, '0')
 })
 
-const formattedEndTime = computed(() => {
-	return endTime.value.toString().padStart(2, '0')
-})
-
-
-const toggleMode = () => {
+function toggleMode() {
 	if (mode.value === 'length') {
 		mode.value = 'range'
 	} else {

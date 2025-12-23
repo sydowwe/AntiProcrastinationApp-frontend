@@ -5,11 +5,11 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
 		public startTime?: Time,
 		public endTime?: Time,
-		public isBackground?: boolean,
-		public isOptional?: boolean,
+		public activityId?: number,
+		public isBackground: boolean = false,
+		public isOptional: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
-		public activityId?: number,
 		public priorityId: number | null = null,
 		public templateId?: number
 	) {
