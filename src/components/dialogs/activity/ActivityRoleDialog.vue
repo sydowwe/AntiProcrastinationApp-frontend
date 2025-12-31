@@ -37,7 +37,7 @@ function openAddDialog() {
 
 function openEditDialog(oldRole: Role) {
 	idToEdit.value = oldRole.id;
-	request.value = RoleRequest.fromResponse(oldRole);
+	request.value = RoleRequest.fromEntity(oldRole);
 	dialog.value = true;
 	isEdit.value = true;
 }

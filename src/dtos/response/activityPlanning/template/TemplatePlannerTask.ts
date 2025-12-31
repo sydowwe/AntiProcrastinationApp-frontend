@@ -2,10 +2,12 @@ import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlann
 import {Activity} from '@/dtos/response/Activity.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {Time} from '@/utils/Time.ts';
+import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
 
-export class TemplatePlannerTask implements IBasePlannerTask {
+export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTaskRequest> {
 	constructor(
 		public id: number,
+		public templateId: number,
 		public startTime: Time,
 		public endTime: Time,
 		public isBackground: boolean,
@@ -20,9 +22,18 @@ export class TemplatePlannerTask implements IBasePlannerTask {
 	) {
 	}
 
+	toRequest(): TemplatePlannerTaskRequest {
+		return TemplatePlannerTaskRequest.fromEntity(this)
+	}
+
+	toSpan(): { startTime: Time; endTime: Time } {
+		return {startTime: this.startTime, endTime: this.endTime};
+	}
+
 	static fromJson(json: any) {
 		return new TemplatePlannerTask(
 			json.id,
+			json.templateId,
 			Time.fromJson(json.startTime),
 			Time.fromJson(json.endTime),
 			json.isBackground,

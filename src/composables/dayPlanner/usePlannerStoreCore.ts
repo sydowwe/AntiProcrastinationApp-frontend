@@ -3,8 +3,8 @@ import {Time} from '@/utils/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 
-export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventRequest extends IBasePlannerTaskRequest>(
-	createEmptyRequest: () => TEventRequest
+export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
+	createEmptyRequest: () => TTaskRequest
 ) {
 	// Time/Grid configuration state
 	const timeSlotDuration = ref(10)
@@ -12,7 +12,7 @@ export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventReque
 	const viewEndTime = ref(new Time(1, 30))
 
 	// Events state
-	const events = ref<TEvent[]>([])
+	const events = ref<TTask[]>([])
 
 	// Focus state
 	const focusedEventId = ref<number | null>(null)
@@ -20,7 +20,7 @@ export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventReque
 	// Dialog state
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()
-	const editingEvent = ref<TEventRequest>({} as TEventRequest)
+	const editingEvent = ref<TTaskRequest>({} as TTaskRequest)
 	const deleteDialog = ref(false)
 	const toDeleteId = ref<number | null>(null)
 
@@ -73,14 +73,6 @@ export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventReque
 	// Computed
 	const isDraggingAny = computed(() => draggingEventId.value !== null)
 	const isResizingAny = computed(() => resizingEventId.value !== null)
-	const visibleEvents = computed(() => {
-		return events.value.filter(event => {
-			return event.gridRowStart && event.gridRowEnd &&
-				event.gridRowStart >= 1 &&
-				event.gridRowEnd <= totalGridRows.value &&
-				event.gridRowStart <= event.gridRowEnd
-		})
-	})
 
 	const toDeleteEvent = computed(() =>
 		events.value.find(e => e.id === toDeleteId.value) ?? null
@@ -124,7 +116,7 @@ export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventReque
 			location: event.location,
 			notes: event.notes,
 			priorityId: event.priority?.id
-		} as TEventRequest
+		} as TTaskRequest
 		dialog.value = true
 	}
 
@@ -154,7 +146,6 @@ export function usePlannerStoreCore<TEvent extends IBasePlannerTask, TEventReque
 		dragConflict,
 
 		// Computed
-		visibleEvents,
 		toDeleteEvent,
 		isDraggingAny,
 		isResizingAny,

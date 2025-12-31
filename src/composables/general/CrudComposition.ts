@@ -4,6 +4,7 @@ import {SelectOption} from '@/dtos/response/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
 import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
+import type {FilterSortRequest} from '@/dtos/request/base/FilterSortRequest.ts';
 
 // Query composable for read operations
 export interface QueryConfig<TResponse> {
@@ -176,6 +177,39 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		}
 	}
 
+	async function patch(id: number, entityData: Partial<TUpdateRequest>): Promise<void> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.patch(`${config.entityName}/${id}`, entityData)
+
+			return Promise.resolve()
+		} catch (e: any) {
+			error.value = e.message || `Failed to patch ${config.entityName} with ID ${id}`
+			console.error(`Error patching ${config.entityName} with ID ${id}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
+	async function patchWithResponse(id: number, entityData: Partial<TUpdateRequest>): Promise<TResponse> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.patch(`${config.entityName}/${id}`, entityData)
+			const updatedItem = await fetchById(id)
+
+			return updatedItem;
+		} catch (e: any) {
+			error.value = e.message || `Failed to patch ${config.entityName} with ID ${id}`
+			console.error(`Error patching ${config.entityName} with ID ${id}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
 	async function deleteEntity(id: number): Promise<void> {
 		loading.value = true
 		error.value = null
@@ -197,6 +231,8 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		createWithResponse,
 		update,
 		updateWithResponse,
+		patch,
+		patchWithResponse,
 		deleteEntity,
 	}
 }
@@ -233,7 +269,7 @@ export function useAttachmentUpload(entityName: string) {
 }
 
 // Separate composable for filtered table functionality
-export function useFilteredTable<TTableResponse extends IMyResponse, TFilter extends IFilterRequest>(
+export function useFetchFilteredTable<TTableResponse extends IMyResponse, TFilter extends IFilterRequest>(
 	tableResponseClass: IMyResponse & { fromJson(json: any): TTableResponse },
 	entityName: string,
 ) {
@@ -259,5 +295,63 @@ export function useFilteredTable<TTableResponse extends IMyResponse, TFilter ext
 		loading,
 		error,
 		fetchFilteredTable
+	}
+}
+
+export function useFetchFilteredSorted<TResponse extends IMyResponse, TFilter extends IFilterRequest>(
+	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },
+	entityName: string,
+) {
+	const loading = ref(false)
+	const error = ref<string | null>(null)
+
+	async function fetchFilteredSorted(request: FilterSortRequest<TFilter>): Promise<TResponse[]> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.post(`/${entityName}/filter-sort`, request)
+			return response.data.map((r: any) => tableResponseClass.fromJson(r))
+		} catch (e: any) {
+			error.value = e.message || `Failed to fetch filtered ${entityName} table`
+			console.error(`Error fetching filtered ${entityName} table:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
+	return {
+		loading,
+		error,
+		fetchFilteredSorted
+	}
+}
+
+export function useFetchFiltered<TResponse extends IMyResponse, TFilter extends IFilterRequest>(
+	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },
+	entityName: string,
+) {
+	const loading = ref(false)
+	const error = ref<string | null>(null)
+
+	async function fetchFiltered(filter: TFilter): Promise<TResponse[]> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.post(`/${entityName}/filter`, filter)
+			return response.data.map((r: any) => tableResponseClass.fromJson(r))
+		} catch (e: any) {
+			error.value = e.message || `Failed to fetch filtered ${entityName} table`
+			console.error(`Error fetching filtered ${entityName} table:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
+	return {
+		loading,
+		error,
+		fetchFiltered
 	}
 }

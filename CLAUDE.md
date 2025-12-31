@@ -4,6 +4,7 @@
 
 - **Framework**: Vue 3.5+ (Composition API with `<script setup lang="ts">`)
 - **UI**: Vuetify 3
+- **ICONS** FontAwesome 7
 - **State**: Pinia (Composition API / Setup Stores)
 - **Routing**: Vue Router
 - **HTTP**: Axios (Custom instance at `@/plugins/axiosConfig.ts`)
@@ -19,9 +20,20 @@
     - use props just as the shorthand :prop instead of :prop="prop" when there is ref with same name
 - **Emits**:
     - Define using: `const emit = defineEmits<{ change: [id: number], update: [value: string] }>()`.
+- **Two-Way Binding (v-model)**:
+    - **Always** use `defineModel()` instead of `defineProps({ modelValue })` + `defineEmits(['update:modelValue'])`.
+    - Example: `const model = defineModel<string>()` or `const model = defineModel<string>({ default: 'initial' })`.
+    - For multiple models: `const value = defineModel<string>('value')` and `const checked = defineModel<boolean>('checked')`.
 - **API Calls**:
     - **Always** import the custom instance: `import { API } from '@/plugins/axiosConfig.ts';`.
     - Do not use global `axios` or create new instances.
+
+## Vuetify Components
+
+- **Number Inputs**: **Always** use `VNumberInput` instead of `VTextField` with `type="number"`.
+    - VNumberInput provides built-in increment/decrement buttons and better number handling.
+    - No need for `.number` modifier on v-model.
+    - Example: `<VNumberInput v-model="quantity" :min="1" :max="100" />`.
 
 ## MCP Usage
 

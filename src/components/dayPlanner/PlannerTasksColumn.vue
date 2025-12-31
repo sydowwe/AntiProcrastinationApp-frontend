@@ -33,20 +33,20 @@
 		:preview="creationPreview"
 	/>
 
-	<slot name="event-block" v-for="event in store.visibleEvents" :key="event.id" :event="event" :onResizeStart="handleResizeStart">
+	<slot name="event-block" v-for="event in store.events" :key="event.id" :event="event" :onResizeStart="handleResizeStart">
 
 	</slot>
 </div>
 </template>
 
 <script setup lang="ts"
-        generic="TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
+        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed, onMounted, ref} from 'vue'
 import CreationPreview from './CreationPreview.vue'
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
 import {CreationPreviewType, SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts';
-import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
@@ -58,7 +58,7 @@ const {store} = defineProps<{
 const eventsColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => eventsColumnRef.value?.parentElement as HTMLElement)
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
-const {isVisible, gridRowStyle} = useCurrentTimeIndicator()
+const {isVisible, gridRowStyle} = useCurrentTimeIndicator(store)
 
 // Creation state
 const creationPreview = ref<CreationPreviewType | undefined>(undefined)
@@ -154,7 +154,7 @@ function handlePointerMove(e: PointerEvent): void {
 
 		store.dragConflict = hasConflict || !fitsInView
 
-		emit('updatedTaskSpan', {
+		emit('redrawTask', {
 			eventId: store.draggingEventId,
 			updates: {
 				startTime: store.slotIndexToTime(newStartRow - 1),
@@ -175,7 +175,7 @@ function handlePointerMove(e: PointerEvent): void {
 		if (resizeDirection.value === 'top') {
 			const newStartRow = slotIndex + 1
 			if (newStartRow <= event.gridRowEnd && !checkEventConflictByRow(newStartRow, event.gridRowEnd, store.resizingEventId)) {
-				emit('updatedTaskSpan', {
+				emit('redrawTask', {
 					eventId: store.resizingEventId,
 					updates: {
 						gridRowStart: newStartRow,
@@ -186,7 +186,7 @@ function handlePointerMove(e: PointerEvent): void {
 		} else if (resizeDirection.value === 'bottom') {
 			const newEndRow = slotIndex + 1
 			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, store.resizingEventId)) {
-				emit('updatedTaskSpan', {
+				emit('redrawTask', {
 					eventId: store.resizingEventId,
 					updates: {
 						gridRowEnd: newEndRow,
@@ -228,15 +228,20 @@ function handlePointerUp(): void {
 
 		if (event && (store.dragConflict || event.gridRowStart < 1 || event.gridRowEnd > store.totalGridRows)) {
 			// Revert to original position
-			emit('updatedTaskSpan', {eventId: store.draggingEventId, updates: originalEventState.value})
+			emit('redrawTask', {eventId: store.draggingEventId, updates: originalEventState.value})
 			store.conflictSnackbar = true
 		}
-
+		console.log(event)
 		// Only remove focus if the event actually moved
 		const didMove = event && (event.gridRowStart !== originalEventState.value.gridRowStart || event.gridRowEnd !== originalEventState.value.gridRowEnd)
 		if (didMove) {
-			store.handleFocusEvent(null);
-			(document.activeElement as HTMLElement).blur()
+			store.updateTaskSpan(event.id, TaskSpan.fromTask(event))
+				.catch((error) => {
+					emit('redrawTask', {eventId: store.draggingEventId!, updates: originalEventState.value})
+				}).finally(() => {
+				store.handleFocusEvent(null);
+				(document.activeElement as HTMLElement).blur()
+			})
 		}
 
 		store.draggingEventId = null
@@ -249,9 +254,16 @@ function handlePointerUp(): void {
 
 	// Handle resize end
 	if (store.resizingEventId !== null) {
-		store.resizingEventId = null
-		resizeStartSlot.value = null
-		resizeDirection.value = null
+		const event = store.events.find(ev => ev.id === store.resizingEventId)
+
+		store.updateTaskSpan(store.resizingEventId, TaskSpan.fromTask(event!))
+			.catch((error) => {
+				emit('redrawTask', {eventId: store.draggingEventId!, updates: originalEventState.value})
+			}).finally(() => {
+			store.resizingEventId = null
+			resizeStartSlot.value = null
+			resizeDirection.value = null
+		})
 		return
 	}
 
@@ -266,12 +278,13 @@ function handlePointerUp(): void {
 	creationPreview.value = undefined;
 }
 
+
 onMounted(() => {
 	document.addEventListener('pointerup', handlePointerUp)
 })
 
 const emit = defineEmits<{
-	updatedTaskSpan: [payload: { eventId: number; updates: Partial<TTask> }]
+	redrawTask: [payload: { eventId: number; updates: Partial<TTask> }],
 }>()
 </script>
 

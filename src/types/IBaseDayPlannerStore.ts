@@ -1,8 +1,8 @@
 import type {Time} from '@/utils/Time.ts';
-import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
-export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest> {
+export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest> {
 	// Time/Grid configuration
 	timeSlotDuration: number
 	viewStartTime: Time
@@ -28,7 +28,6 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask, TTaskReque
 	dragConflict: boolean
 
 	// Computed
-	visibleEvents: TTask[]
 	toDeleteEvent: TTask | null
 	isDraggingAny: boolean
 	isResizingAny: boolean
@@ -39,4 +38,6 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask, TTaskReque
 	openCreateDialogPrefilled: (startTime: Time, endTime: Time) => void
 	openCreateDialogEmpty: () => void
 	openEditDialog: () => void
+
+	updateTaskSpan: (eventId: number, span: TaskSpan) => Promise<void>
 }

@@ -151,7 +151,7 @@ async function saveActivityToHistory(startTimestamp: Date, activityLength: Time)
 }
 
 function createNewActivity() {
-	router.push('/create-new-activity');
+	router.push('/activities/new');
 }
 
 

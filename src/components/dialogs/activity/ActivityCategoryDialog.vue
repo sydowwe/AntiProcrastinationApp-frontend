@@ -37,7 +37,7 @@ function openAddDialog() {
 }
 
 function openEditDialog(oldCategory: Category) {
-	request.value = CategoryRequest.fromResponse(oldCategory);
+	request.value = CategoryRequest.fromEntity(oldCategory);
 	dialog.value = true;
 	isEdit.value = true;
 }

@@ -64,11 +64,12 @@
 </template>
 
 <script setup lang="ts"
-        generic="TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
+        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed} from 'vue'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import {Time} from '@/utils/Time.ts';
 
 const {event, store, backgroundColor, isPast} = defineProps<{
 	event: TTask
@@ -85,7 +86,7 @@ const isConflict = computed(() => store.dragConflict && store.draggingEventId ==
 const isAnyEventBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
 const backgroundColorComp = computed(() => {
-	return backgroundColor || event.activity.role?.color || '#4287f5'
+	return backgroundColor || event.activity?.role?.color || '#4287f5'
 })
 
 const style = computed(() => {
@@ -98,7 +99,10 @@ const style = computed(() => {
 
 const formattedTime = computed(() => {
 	// Default time formatting (can be overridden via slot)
-	return `${event.startTime} - ${event.endTime}`
+	console.log(event.startTime)
+	console.log(event.startTime.getString())
+	new Time()
+	return `${event.startTime.getString()} - ${event.endTime.getString()}`
 })
 
 const blockClasses = computed(() => [

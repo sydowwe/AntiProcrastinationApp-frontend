@@ -40,7 +40,7 @@ const isPast = computed(() => {
 })
 
 const formattedTime = computed(() => {
-	return `${event.startTime.toString} - ${event.endTime.toString}`
+	return `${event.startTime.getString()} - ${event.endTime.getString()}`
 })
 
 

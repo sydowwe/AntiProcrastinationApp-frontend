@@ -5,11 +5,11 @@
 		<VBtn
 			v-bind="menuProps"
 			variant="outlined"
-			prependIcon="clock"
+			:prependIcon="icon"
 			:height="height"
 			:disabled
 		>
-			{{ label }}: {{ formattedTime }}
+			{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
 		</VBtn>
 	</template>
 	<template v-slot:default>
@@ -24,43 +24,37 @@
 </template>
 
 <script setup lang="ts">
-import {computed, type PropType} from 'vue'
+import {computed} from 'vue'
 import {Time} from '@/utils/Time.ts'
 
-const props = defineProps({
-	label: {
-		type: String,
-		default: 'Time'
-	},
-	allowedMinutesSelected: {
-		type: String as PropType<'5' | '10' | '15' | '20' | '30' | '45' | '60'>,
-		default: '10'
-	},
-	height: {
-		type: [String, Number],
-		default: 40
-	},
-	disabled: {
-		type: Boolean,
-		default: false
-	}
-})
+const props = defineProps<{
+	label?: string
+	icon?: string
+	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
+	height?: string | number
+	disabled?: boolean
+}>()
+
+const {
+	label = 'Time',
+	icon = 'clock',
+	allowedMinutesSelected = '10',
+	height = 40,
+	disabled = false
+} = props
 
 const time = defineModel<Time>({required: true})
 
-const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
+const allowedMinutes = computed(() => (m: number) => m % parseInt(allowedMinutesSelected) === 0)
 
 const timeString = computed({
 	get() {
-		return time.value.toString
+		const fixedTime = Time.fromJson(time.value)
+		return fixedTime.getString()
 	},
 	set(newTime: string) {
 		time.value = Time.fromString(newTime)
 	}
-})
-
-const formattedTime = computed(() => {
-	return timeString.value.toString().padStart(2, '0')
 })
 </script>
 

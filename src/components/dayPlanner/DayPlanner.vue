@@ -41,12 +41,12 @@
 		<div class="calendar-grid flex-fill">
 
 			<!-- Time Column -->
-			<PlannerTimeColumn/>
+			<PlannerTimeColumn :store="plannerStore"/>
 
 			<!-- Events Column with event block slot -->
 			<PlannerTasksColumn
 				:store="plannerStore"
-				@updatedTaskSpan="(payload) => emit('updatedTaskSpan', payload.eventId, payload.updates as Partial<TTask>)"
+				@redrawTask="emit('redrawTask', $event.eventId, $event.updates as Partial<TTask>)"
 			>
 				<template #event-block="{ event, onResizeStart }">
 					<!-- Default slot for event blocks - each view provides its own EventBlock component -->
@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts"
-        generic="TTask extends IBasePlannerTask, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
+        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import PlannerTimeColumn from '@/components/dayPlanner/PlannerTimeColumn.vue'
@@ -121,7 +121,7 @@ const deleteConfirmationText = computed(() => {
 })
 
 const emit = defineEmits<{
-	updatedTaskSpan: [eventId: number, updates: Partial<TTask>],
+	redrawTask: [eventId: number, updates: Partial<TTask>],
 	delete: []
 }>()
 </script>

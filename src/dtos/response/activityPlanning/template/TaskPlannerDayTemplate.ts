@@ -1,17 +1,18 @@
 import type {DayType} from '@/dtos/enum/DayType.ts';
+import type {Time} from '@/utils/Time.ts';
 
 export class TaskPlannerDayTemplate {
 	constructor(
-		public id: string,
+		public id: number,
 		public name: string,
 		public isActive: boolean,
 		public usageCount: number,
 		public suggestedForDayType: DayType,
 		public tags: string[],
-		public description?: string,
-		public icon?: string,
-		public defaultWakeUpTime?: string,
-		public defaultBedTime?: string,
+		public description: string | null,
+		public icon: string | null,
+		public defaultWakeUpTime: Time,
+		public defaultBedTime: Time,
 		public lastUsedAt?: string
 	) {
 	}

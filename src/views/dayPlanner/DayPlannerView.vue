@@ -4,7 +4,7 @@
 	:plannerStore="store"
 	:title="currentDateFormatted"
 	addButtonText="Add New Event"
-	@updatedTaskSpan="handleUpdateTaskSpan"
+	@redrawTask="handleUpdateTaskSpan"
 	@delete="del"
 >
 	<!-- Custom event block for normal planner -->
@@ -42,7 +42,7 @@ const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity} = useTaskPlannerCrud()
 const {formatToDateWithDay} = useMoment()
 const store = useDayPlannerStore()
-const {viewStartTime, totalGridRows, visibleEvents} = storeToRefs(useDayPlannerStore())
+const {viewStartTime, totalGridRows, events} = storeToRefs(useDayPlannerStore())
 // Use shared composable for all common logic
 const {
 	setGridPositionFromSpan,
@@ -54,7 +54,7 @@ const {
 } = useDayPlannerCommon(
 	viewStartTime,
 	totalGridRows,
-	visibleEvents
+	events
 )
 
 // View-specific computed properties

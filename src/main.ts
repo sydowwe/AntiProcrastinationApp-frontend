@@ -2,6 +2,7 @@ import {createApp} from 'vue';
 import App from './App.vue';
 // PINIA
 import {createPinia} from 'pinia';
+import {createPersistedState} from 'pinia-plugin-persistedstate';
 // ROUTER
 import router from './plugins/router.js';
 // AXIOS
@@ -33,26 +34,30 @@ const app = createApp(App);
 
 
 const pinia = createPinia();
-pinia.use((context) => {
-	const storeId = context.store.$id;
-	console.log(storeId)
-	const fromStorage = storeId === 'user' ? JSON.parse(window.localStorage.getItem(storeId) ?? '{}')
-		: JSON.parse(window.sessionStorage.getItem(storeId) ?? '{}');
-
-	if (fromStorage) {
-		context.store.$patch(fromStorage);
+pinia.use(context => {
+	// Check if persist was explicitly set to false
+	if (context.options.persist === false) {
+		return
 	}
 
-	context.store.$subscribe((mutation, state) => {
-		storeId === 'user' ? window.localStorage.setItem(storeId, JSON.stringify(state))
-			: window.sessionStorage.setItem(storeId, JSON.stringify(state));
-	});
-});
-pinia.use(async context => {
-	if (context.store.ensureLoaded) {
-		await context.store.ensureLoaded();
+	// If persist is not defined or is true, apply default persistence
+	const persistedState = createPersistedState({
+		storage: localStorage,
+		// Add any other global defaults here
+	})
+
+	if (!context.options.persist) {
+		// Auto-enable if not explicitly configured
+		context.options.persist = true
 	}
-});
+
+	persistedState(context)
+})
+// pinia.use(async context => {
+// 	if (context.store.ensureLoaded) {
+// 		await context.store.ensureLoaded();
+// 	}
+// });
 app.use(pinia);
 
 

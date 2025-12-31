@@ -3,8 +3,9 @@ import type {TaskStatus} from '@/dtos/enum/TaskStatus.ts';
 import {Activity} from '@/dtos/response/Activity.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {Time} from '@/utils/Time.ts';
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 
-export class PlannerTask implements IBasePlannerTask {
+export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
 		public id: number,
 		public startTime: Time,
@@ -30,6 +31,14 @@ export class PlannerTask implements IBasePlannerTask {
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundEvent: boolean = false,
 	) {
+	}
+
+	toRequest(): PlannerTaskRequest {
+		return PlannerTaskRequest.fromEntity(this)
+	}
+
+	toSpan(): { startTime: Time; endTime: Time } {
+		return {startTime: this.startTime, endTime: this.endTime};
 	}
 
 	static fromJson(json: any): PlannerTask {
