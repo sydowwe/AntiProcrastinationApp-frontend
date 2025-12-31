@@ -9,7 +9,7 @@ export class RoleRequest {
 	) {
 	}
 
-	static fromResponse(response: Role) {
-		return new RoleRequest(response.name, response.text, response.color,)
+	static fromEntity(entity: Role) {
+		return new RoleRequest(entity.name, entity.text, entity.color,)
 	}
 }

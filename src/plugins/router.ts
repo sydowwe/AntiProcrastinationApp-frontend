@@ -19,6 +19,8 @@ import {useLoading} from '@/composables/general/LoadingComposable.ts';
 // import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue';
+import TemplateListView from '@/views/dayPlanner/TemplateListView.vue';
+import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue';
 
 
 const router = createRouter({
@@ -50,13 +52,13 @@ const router = createRouter({
 			component: ForgottenPasswordView
 		},
 		{
-			path: '/user-settings',
+			path: '/user/settings',
 			name: 'userSettings',
 			component: UserSettingsView
 		},
 		{
-			path: '/history',
-			name: 'history',
+			path: '/activity-history',
+			name: 'activityHistory',
 			component: HistoryView
 		},
 		{
@@ -70,44 +72,56 @@ const router = createRouter({
 			component: ToDoListView
 		},
 		{
-			path: '/create-new-activity',
-			name: 'createNewActivity',
+			path: '/activities/new',
+			name: 'newActivity',
 			component: CreateNewActivityView
 		},
 		{
-			path: '/pomodoro-timer',
+			path: '/activity-history/pomodoro',
 			name: 'pomodoroTimer',
 			component: PomodoroTimerView
 		},
 		{
-			path: '/stopwatch',
+			path: '/activity-history/stopwatch',
 			name: 'stopwatch',
 			component: StopWatchView
 		},
 		{
-			path: '/timer',
+			path: '/activity-history/timer',
 			name: 'timer',
 			component: TimerView
 		},
 		{
-			path: '/alarm-list',
-			name: 'alarmList',
+			path: '/activity-history/alarms',
+			name: 'activityHistoryAlarms',
 			component: AlarmListView
 		},
 		{
-			path: '/add-activity-manually',
-			name: 'addActivityManually',
+			path: '/activity-history/manual',
+			name: 'activityHistoryManual',
 			component: AddActivityManuallyView
 		},
 		{
 			path: '/day-planner',
-			name: 'dayPlanner',
-			component: DayPlannerView
+			name: 'plannerCalendar',
+			component: PlannerCalendarView
 		},
 		{
-			path: '/template-day-planner',
-			name: 'templateDayPlanner',
-			component: TemplateDayPlannerView
+			path: '/day-planner/:calendarId',
+			name: 'dayPlanner',
+			component: DayPlannerView,
+			props: true
+		},
+		{
+			path: '/day-planner/templates',
+			name: 'dayPlannerTemplateList',
+			component: TemplateListView
+		},
+		{
+			path: '/day-planner/templates/:templateId',
+			name: 'dayPlannerTemplate',
+			component: TemplateDayPlannerView,
+			props: true
 		},
 		// {
 		//   path: '/about',
@@ -132,7 +146,8 @@ router.beforeEach((to, from, next) => {
 	hideFullScreenLoading();
 });
 router.afterEach(() => {
-	console.log('route')
+
+
 });
 
 // const originalPush = router.push;

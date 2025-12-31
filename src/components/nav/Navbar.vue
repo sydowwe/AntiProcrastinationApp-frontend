@@ -74,7 +74,7 @@
 					<VCard class="mt-1" elevation="8" min-width="180">
 						<VList class="pa-0" density="compact">
 							<VListItem
-								to="/user-settings"
+								to="/user/settings"
 								prepend-icon="user-gear"
 								title="Nastavenia"
 								class="px-4 py-2"
@@ -212,8 +212,8 @@ interface MenuItem {
 
 const items: MenuItem[] = [
 	{title: 'home', icon: 'home', to: '/', needsAdmin: false},
-	{title: 'history', icon: 'clock-rotate-left', to: '/history', needsAdmin: false},
-	{title: 'createNewActivity', icon: 'plus', to: '/create-new-activity', needsAdmin: false},
+	{title: 'history', icon: 'clock-rotate-left', to: '/activity-history', needsAdmin: false},
+	{title: 'createNewActivity', icon: 'plus', to: '/activities/new', needsAdmin: false},
 	{
 		title: 'toDoList',
 		icon: 'list-check',
@@ -228,17 +228,17 @@ const items: MenuItem[] = [
 		icon: 'plus-circle',
 		needsAdmin: false,
 		children: [
-			{title: 'addActivityManually', icon: 'pen', to: '/add-activity-manually', needsAdmin: false},
-			{title: 'pomodoroTimer', icon: 'hourglass-end', to: '/pomodoro-timer', needsAdmin: false},
-			{title: 'stopwatch', icon: 'stopwatch', to: '/stopwatch', needsAdmin: false},
-			{title: 'timer', icon: 'clock', to: '/timer', needsAdmin: false},
-			{title: 'alarm', icon: 'alarm-clock', to: '/alarm-list', needsAdmin: false},
+			{title: 'addActivityManually', icon: 'pen', to: '/activity-history/manual', needsAdmin: false},
+			{title: 'pomodoroTimer', icon: 'hourglass-end', to: '/activity-history/pomodoro', needsAdmin: false},
+			{title: 'stopwatch', icon: 'stopwatch', to: '/activity-history/stopwatch', needsAdmin: false},
+			{title: 'timer', icon: 'clock', to: '/activity-history/timer', needsAdmin: false},
+			{title: 'alarm', icon: 'alarm-clock', to: '/activity-history/alarms', needsAdmin: false},
 		]
 	},
 	{
 		title: 'taskPlanner', icon: 'calendar-days', needsAdmin: false, children: [
 			{title: 'dayPlanner', icon: 'calendar-days', to: '/day-planner', needsAdmin: false},
-			{title: 'templateDayPlanner', icon: 'calendar-day', to: '/template-day-planner', needsAdmin: false}
+			{title: 'templateDayPlanner', icon: 'calendar-day', to: '/day-planner/templates', needsAdmin: false}
 		]
 	},
 ]

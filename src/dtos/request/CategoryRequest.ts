@@ -9,7 +9,7 @@ export class CategoryRequest {
 	) {
 	}
 
-	static fromResponse(response: Category) {
-		return new CategoryRequest(response.name, response.text, response.color,)
+	static fromEntity(entity: Category) {
+		return new CategoryRequest(entity.name, entity.text, entity.color,)
 	}
 }

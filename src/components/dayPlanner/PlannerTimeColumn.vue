@@ -36,20 +36,26 @@
 			class="time-label-positioned"
 			:style="{ top: `${index * SLOT_HEIGHT}px` }"
 		>
-			{{ slot.toString }}
+			{{ slot.getString() }}
 		</div>
 	</div>
 </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts"
+        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts'
-import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
 import {Time} from '@/utils/Time.ts';
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 
-const store = useDayPlannerStore()
-const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator()
+const {store} = defineProps<{
+	store: TStore
+}>()
+
+const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator(store)
 </script>
 
 <style scoped>

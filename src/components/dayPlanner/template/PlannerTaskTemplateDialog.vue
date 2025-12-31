@@ -12,7 +12,7 @@
 			</VCol>
 
 			<VCol cols="12">
-				<TimeRangePicker v-model:start="start" v-model:end="end"></TimeRangePicker>
+				<TimeRangePicker v-model:start="data.startTime" v-model:end="data.endTime"></TimeRangePicker>
 			</VCol>
 
 			<VCol cols="12">
@@ -58,7 +58,6 @@ import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQui
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {Time} from '@/utils/Time.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
@@ -80,8 +79,6 @@ const priorityOptions = ref([] as TaskPriority[]);
 const dialog = defineModel<boolean>('dialog', {required: true})
 
 const data = ref<TemplatePlannerTaskRequest>(new TemplatePlannerTaskRequest())
-const start = ref<Time>(new Time(0, 0))
-const end = ref<Time>(new Time(0, 0))
 
 onMounted(async () => {
 	priorityOptions.value = await fetchAll();
@@ -94,23 +91,12 @@ function setDefaultUrgency() {
 
 watch(() => props.dialog, (value) => {
 	if (value) {
-		if (props.isEdit && props.editingTask) {
-			// Edit mode: populate from props
+		if (props.editingTask) {
 			data.value = {...props.editingTask}
-
-			if (props.editingTask.startTime) {
-				start.value = props.editingTask.startTime
-			}
-
-			if (props.editingTask.endTime) {
-				end.value = props.editingTask.endTime
-			}
 		} else {
 			// New mode: reset to defaults
 			data.value = new TemplatePlannerTaskRequest()
 			setDefaultUrgency()
-			start.value = new Time(0, 0)
-			end.value = new Time(0, 0)
 		}
 	}
 })
@@ -127,8 +113,6 @@ async function save() {
 	}
 
 	data.value.activityId = activityFormFieldResult.activityId
-	data.value.startTime = start.value
-	data.value.endTime = end.value
 
 	if (props.editedId) {
 		emit('edit', props.editedId, data.value)

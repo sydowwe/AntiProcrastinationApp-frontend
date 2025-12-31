@@ -65,8 +65,9 @@ const mode = ref<Mode>(
 
 const span = computed({
 	get() {
-		let diff = end.value?.getInMinutes - start.value?.getInMinutes
+		let diff = Time.fromJson(end.value)?.getInMinutes - Time.fromJson(start.value)?.getInMinutes
 
+		console.log(Time.fromJson(end.value)?.getInMinutes)
 		if (diff < 0) {
 			diff += 24 * 60
 		}
@@ -75,7 +76,7 @@ const span = computed({
 		return newSpan
 	},
 	set(newSpan: number) {
-		end.value = Time.fromMinutes((start.value.getInMinutes + newSpan * 60) % (24 * 60))
+		end.value = Time.fromMinutes((Time.fromJson(start.value).getInMinutes + newSpan * 60) % (24 * 60))
 	}
 })
 

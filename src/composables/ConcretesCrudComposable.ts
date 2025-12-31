@@ -1,4 +1,4 @@
-import {useEntityCommand, useEntityQuery} from '@/composables/general/CrudComposition.ts';
+import {useEntityCommand, useEntityQuery, useFetchFiltered} from '@/composables/general/CrudComposition.ts';
 import {Category} from '@/dtos/response/Category.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -25,6 +25,9 @@ import {ActivityHistoryRequest} from '@/dtos/request/ActivityHistoryRequest.ts';
 import {ActivityHistory} from '@/dtos/response/ActivityHistory.ts';
 import {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
+import type {TemplatePlannerTaskFilter} from '@/dtos/response/activityPlanning/template/TemplatePlannerTaskFilter.ts';
+import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
+import type {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts';
 
 export function useActivityHistoryCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
@@ -235,6 +238,7 @@ export function useTemplatePlannerTaskCrud() {
 		createWithResponse,
 		create,
 		update,
+		patch,
 		deleteEntity
 	} = useEntityCommand<TemplatePlannerTask, TemplatePlannerTaskRequest, TemplatePlannerTaskRequest>({
 		responseClass: TemplatePlannerTask,
@@ -243,7 +247,12 @@ export function useTemplatePlannerTaskCrud() {
 		entityName: 'template-planner-task'
 	})
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+	const {fetchFiltered} = useFetchFiltered<TemplatePlannerTask, TemplatePlannerTaskFilter>(
+		TemplatePlannerTask,
+		'template-planner-task'
+	)
+
+	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity}
 }
 
 export function useTaskPlannerDayTemplateTaskCrud() {
@@ -268,6 +277,18 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 	}
 
 	return {fetchById, fetchByName, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+}
+
+export function useCalendarQuery() {
+	const url = 'calendar';
+	const {fetchById, fetchAll} = useEntityQuery<Calendar>({responseClass: Calendar, entityName: url})
+
+	const {fetchFiltered} = useFetchFiltered<Calendar, CalendarFilter>(
+		Calendar,
+		url
+	)
+
+	return {fetchFiltered, fetchById, fetchAll}
 }
 
 export function useAlarmCrud() {

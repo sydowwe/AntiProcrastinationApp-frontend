@@ -1,3 +1,6 @@
+import {Serializable} from '@/scripts/classDeserializationHelper.ts';
+
+@Serializable
 export class Time {
 	constructor(
 		public hours: number = 0,
@@ -41,7 +44,7 @@ export class Time {
 		return Time.fromMinutes(this.getInMinutes - objectToSubtract.getInMinutes)
 	}
 
-	public get toString() {
+	public getString() {
 		return `${this.hours.toString().padStart(2, '0')}:${this.minutes.toString().padStart(2, '0')}`;
 	}
 
@@ -53,5 +56,9 @@ export class Time {
 			return new Time(0, 0);
 		}
 		return new Time(hours, minutes);
+	}
+
+	public static fromDate(date: Date) {
+		return Time.fromMinutes(date.getHours() * 60 + date.getMinutes());
 	}
 }

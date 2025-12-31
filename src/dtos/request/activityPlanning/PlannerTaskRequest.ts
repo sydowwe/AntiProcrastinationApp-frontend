@@ -6,13 +6,13 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
 		public startTime?: Time,
 		public endTime?: Time,
-		public isBackground?: boolean,
-		public isOptional?: boolean,
+		public isBackground: boolean = false,
+		public isOptional: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
 		public activityId?: number,
 		public priorityId: number | null = null,
-		public isDone?: boolean,
+		public isDone: boolean = false,
 		public date: Date = new Date(),
 		public todolistId: number | null = null,
 	) {

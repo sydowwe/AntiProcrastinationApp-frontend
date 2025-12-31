@@ -1,38 +1,49 @@
-export class CalendarResponseDto {
+import {DayType} from '@/dtos/enum/DayType.ts';
+import {convertToEnum} from '@/composables/general/EnumComposable.ts';
+
+export class Calendar {
 	constructor(
 		public readonly id: number,
 		public readonly date: string,                 // DateOnly -> ISO date string
-		public readonly dayType: string,              // DayType enum name
+		public readonly dayType: DayType,              // DayType enum name
 		public readonly label: string | null,
 		public readonly wakeUpTime: string | null,    // TimeOnly -> "HH:mm:ss"
 		public readonly bedTime: string | null,       // TimeOnly -> "HH:mm:ss"
-		public readonly isPlanned: boolean,
 		public readonly appliedTemplateId: number | null,
 		public readonly appliedTemplateName: string | null,
 		public readonly weather: string | null,
 		public readonly notes: string | null,
 		public readonly totalTasks: number,
 		public readonly completedTasks: number,
-		public readonly completionRate: number
+		public readonly completionRate: number,
 	) {
 	}
 
-	static fromJson(json: any): CalendarResponseDto {
-		return new CalendarResponseDto(
+	get isToday() {
+		return this.date === new Date().toISOString().slice(0, 10);
+	}
+
+	get isWeekend() {
+		const dayOfWeek = new Date(this.date).getDay();
+		return dayOfWeek === 6 || dayOfWeek === 7;
+	}
+
+	static fromJson(json: any): Calendar {
+		return new Calendar(
 			json.id,
 			json.date,
-			json.dayType,
+			convertToEnum(DayType, json.dayType),
 			json.label ?? null,
 			json.wakeUpTime ?? null,
 			json.bedTime ?? null,
-			json.isPlanned,
 			json.appliedTemplateId ?? null,
 			json.appliedTemplateName ?? null,
 			json.weather ?? null,
 			json.notes ?? null,
+
 			json.totalTasks,
 			json.completedTasks,
-			json.completionRate
+			json.completionRate,
 		);
 	}
 }
