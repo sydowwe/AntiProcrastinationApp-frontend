@@ -6,6 +6,7 @@ export class Calendar {
 		public readonly id: number,
 		public readonly date: string,                 // DateOnly -> ISO date string
 		public readonly dayType: DayType,              // DayType enum name
+		public readonly dayIndex: number,
 		public readonly label: string | null,
 		public readonly wakeUpTime: string | null,    // TimeOnly -> "HH:mm:ss"
 		public readonly bedTime: string | null,       // TimeOnly -> "HH:mm:ss"
@@ -24,8 +25,7 @@ export class Calendar {
 	}
 
 	get isWeekend() {
-		const dayOfWeek = new Date(this.date).getDay();
-		return dayOfWeek === 6 || dayOfWeek === 7;
+		return this.dayIndex === 6 || this.dayIndex === 7;
 	}
 
 	static fromJson(json: any): Calendar {
@@ -33,6 +33,7 @@ export class Calendar {
 			json.id,
 			json.date,
 			convertToEnum(DayType, json.dayType),
+			json.dayIndex,
 			json.label ?? null,
 			json.wakeUpTime ?? null,
 			json.bedTime ?? null,
