@@ -67,7 +67,11 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	})
 
 	const timeToSlotIndex = computed(() => (time: Time): number => {
-		return Math.floor(time.getInMinutes / timeSlotDuration.value)
+		const start = viewStartTime.value.getInMinutes
+		const m = time.getInMinutes
+		const MINUTES_IN_DAY = 1440
+		const diff = (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
+		return Math.floor(diff / timeSlotDuration.value)
 	})
 
 	// Computed

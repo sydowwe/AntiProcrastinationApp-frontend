@@ -15,6 +15,17 @@
 				<TimeRangePicker v-model:start="start" v-model:end="end"></TimeRangePicker>
 			</VCol>
 
+			<VCol cols="12">
+				<VIdSelect
+					:label="$t('toDoList.urgency')"
+					v-model="store.editingEvent.priorityId"
+					:clearable="false"
+					:items="priorityOptions"
+					required
+					:rules="[requiredRule]"
+				></VIdSelect>
+			</VCol>
+
 			<VCol cols="12" sm="6" class="d-flex align-center">
 				<VMenu :closeOnContentClick="false">
 					<template v-slot:activator="{ props }">
@@ -49,13 +60,35 @@
 					hideDetails
 				/>
 			</VCol>
+
+			<VCol cols="12" sm="6">
+				<VSwitch
+					label="Is optional"
+					color="primary"
+					v-model="store.editingEvent.isOptional"
+					hideDetails
+				/>
+			</VCol>
+
+			<VCol cols="12" sm="6">
+				<VTextField
+					v-model="store.editingEvent.location"
+					label="Location"
+					prependIcon="map-marker"
+					clearable
+				/>
+			</VCol>
+
+			<VCol cols="12">
+				<VTextarea v-model="store.editingEvent.notes" label="Notes" rows="3" autoGrow></VTextarea>
+			</VCol>
 		</VRow>
 	</VForm>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import type {VForm} from 'vuetify/components';
@@ -63,7 +96,12 @@ import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {Time} from '@/utils/Time.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
+import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
 
+const {fetchAll} = useTaskUrgencyCrud()
+const {requiredRule} = useGeneralRules()
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
@@ -71,23 +109,40 @@ const store = useDayPlannerStore()
 
 const start = ref<Time>(new Time(0, 0))
 const end = ref<Time>(new Time(0, 0))
+const priorityOptions = ref([] as TaskPriority[]);
 
 const isEdit = computed(() => store.editedId !== undefined)
 const allowedStep = (m: number) => m % 10 === 0
 
+onMounted(async function() {
+	priorityOptions.value = await fetchAll();
+	setDefaultUrgency();
+})
+
+function setDefaultUrgency() {
+	if (!store.editingEvent.priorityId) {
+		store.editingEvent.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
+	}
+}
+
 watch(() => store.dialog, (value) => {
 	if (value) {
 		// Initialize start and end Time objects from the store's editing event
-		if (store.editingEvent.start) {
-			start.value = new Time(store.editingEvent.start.getHours(), store.editingEvent.start.getMinutes())
+		if (store.editingEvent.startTime) {
+			start.value = new Time(store.editingEvent.startTime.hours, store.editingEvent.startTime.minutes)
 		} else {
 			start.value = new Time(0, 0)
 		}
 
-		if (store.editingEvent.end) {
-			end.value = new Time(store.editingEvent.end.getHours(), store.editingEvent.end.getMinutes())
+		if (store.editingEvent.endTime) {
+			end.value = new Time(store.editingEvent.endTime.hours, store.editingEvent.endTime.minutes)
 		} else {
 			end.value = new Time(0, 0)
+		}
+
+		// Set default priority if not editing
+		if (!isEdit.value) {
+			setDefaultUrgency()
 		}
 	}
 })
@@ -104,16 +159,15 @@ async function save() {
 	}
 
 	store.editingEvent.activityId = activityFormFieldResult.activityId
-	const startTimestamp = new Date(store.viewedDate)
-	startTimestamp.setHours(start.value.hours, start.value.minutes, 0, 0)
-	const endTimestamp = new Date(store.viewedDate)
-	if (end.value.getInMinutes - start.value.getInMinutes < 0) {
-		endTimestamp.setDate(endTimestamp.getDate() + 1)
-	}
-	endTimestamp.setHours(end.value.hours, end.value.minutes, 0, 0)
 
-	store.editingEvent.startTime = startTimestamp
-	store.editingEvent.end = endTimestamp
+	// Set the Time objects
+	store.editingEvent.startTime = start.value
+	store.editingEvent.endTime = end.value
+
+	// Set the date (handle date change if time wraps past midnight)
+	const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
+	store.editingEvent.date = new Date(viewedDate)
+
 	if (store.editedId) {
 		emit('edit', store.editedId, store.editingEvent)
 	} else {

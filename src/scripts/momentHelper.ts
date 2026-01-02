@@ -25,6 +25,15 @@ export function useMoment() {
 		return toUTCDate(moment(str, 'DD.MM.YYYY').toDate());
 	}
 
+	function urlStringToUTCDate(str: string) {
+		return toUTCDate(moment(str, 'DD-MM-YYYY').toDate());
+	}
+
+	function usStringToUrlString(str: string) {
+		const parts = str.split('-');
+		return `${parts[2]}-${parts[1]}-${parts[0]}`;
+	}
+
 	function formatToDateWithDay(date: Date | null) {
 		return moment(date).locale('sk').format('dd DD.MM.');
 	}
@@ -65,6 +74,8 @@ export function useMoment() {
 		timeNiceFromMinutes,
 		toUTCDate,
 		stringToUTCDate,
+		urlStringToUTCDate,
+		usStringToUrlString,
 		formatToDateWithDay,
 		formatToDateWithDayAfter,
 		formatToDateWithoutYear,

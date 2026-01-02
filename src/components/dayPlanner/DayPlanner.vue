@@ -121,7 +121,7 @@ const deleteConfirmationText = computed(() => {
 })
 
 const emit = defineEmits<{
-	redrawTask: [eventId: number, updates: Partial<TTask>],
+	redrawTask: [eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>],
 	delete: []
 }>()
 </script>

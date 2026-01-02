@@ -107,7 +107,7 @@ const router = createRouter({
 			component: PlannerCalendarView
 		},
 		{
-			path: '/day-planner/:calendarId',
+			path: '/day-planner/:date',
 			name: 'dayPlanner',
 			component: DayPlannerView,
 			props: true

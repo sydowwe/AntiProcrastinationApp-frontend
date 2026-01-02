@@ -8,12 +8,49 @@
 	@focusEvent="store.handleFocusEvent($event as number)"
 	@openEditDialog="store.openEditDialog"
 >
-	<!-- Override time slot to format Date objects -->
-	<template #time="{ event: e }">
-		<div class="event-time">{{ formattedTime }}</div>
-	</template>
+	<!-- Override badges slot to show priority, optional, location, and category -->
+	<template #badges="{ event: e }">
+		<VChip
+			v-if="event.priority"
+			size="x-small"
+			variant="flat"
+			:color="getPriorityColor(event.priority)"
+			class="event-chip"
+		>
+			{{ event.priority.text }}
+		</VChip>
 
-	<!-- Keep default badges slot (shows category) -->
+		<VChip
+			v-if="event.isOptional"
+			size="x-small"
+			variant="outlined"
+			class="event-chip"
+		>
+			Optional
+		</VChip>
+
+		<VChip
+			v-if="event.location"
+			size="x-small"
+			variant="flat"
+			prependIcon="map-marker"
+			class="event-chip"
+		>
+			{{ event.location }}
+		</VChip>
+
+		<!-- Also show category if exists -->
+		<VChip
+			v-if="event.activity.category"
+			size="x-small"
+			variant="flat"
+			:prependIcon="event.activity.category.icon ?? undefined"
+			:color="event.activity.category.color ?? 'white'"
+			class="event-chip"
+		>
+			{{ event.activity.category.name }}
+		</VChip>
+	</template>
 </BaseEventBlock>
 </template>
 
@@ -23,6 +60,7 @@ import {useMoment} from '@/scripts/momentHelper.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import BaseEventBlock from '../BaseEventBlock.vue';
 
 const {formatToTime24H} = useMoment()
@@ -39,10 +77,15 @@ const isPast = computed(() => {
 	return dateTime < currentTime.value
 })
 
-const formattedTime = computed(() => {
-	return `${event.startTime.getString()} - ${event.endTime.getString()}`
-})
-
+function getPriorityColor(priority: TaskPriority): string {
+	// You can customize priority colors based on your TaskPriority model
+	const priorityColors: Record<string, string> = {
+		'High': '#e74c3c',
+		'Medium': '#ff9f1a',
+		'Low': '#4287f5'
+	}
+	return priorityColors[priority.text] || '#999'
+}
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void

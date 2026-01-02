@@ -231,7 +231,7 @@ function handlePointerUp(): void {
 			emit('redrawTask', {eventId: store.draggingEventId, updates: originalEventState.value})
 			store.conflictSnackbar = true
 		}
-		console.log(event)
+
 		// Only remove focus if the event actually moved
 		const didMove = event && (event.gridRowStart !== originalEventState.value.gridRowStart || event.gridRowEnd !== originalEventState.value.gridRowEnd)
 		if (didMove) {

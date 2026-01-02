@@ -6,6 +6,8 @@ import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskReq
 import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
+import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -18,6 +20,7 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const {formatToTime24H} = useMoment()
 	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>(() => new PlannerTaskRequest())
+	const {patch, fetchById} = useTaskPlannerCrud()
 
 	// Day-specific state
 	const viewedDate = ref(new Date())
@@ -64,9 +67,13 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		return core.timeToSlotIndex.value(time)
 	})
 
+	async function updateTaskSpan(eventId: number, span: TaskSpan) {
+		await patch(eventId, span)
+	}
+
 	return {
 		...core,
-
+		updateTaskSpan,
 		// Day-specific
 		viewedDate,
 		viewStartDate,

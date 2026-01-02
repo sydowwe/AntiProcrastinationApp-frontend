@@ -1,11 +1,12 @@
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
-import type {Time} from '@/utils/Time.ts';
+import {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
-		public startTime?: Time,
-		public endTime?: Time,
+		public startTime: Time = new Time(7, 0),
+		public endTime: Time = new Time(23, 0),
+		public calendarId?: number,
 		public isBackground: boolean = false,
 		public isOptional: boolean = false,
 		public location: string | null = null,
@@ -15,6 +16,7 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public isDone: boolean = false,
 		public date: Date = new Date(),
 		public todolistId: number | null = null,
+		public color: string = '#4287f5',
 	) {
 	}
 
@@ -26,6 +28,7 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		return new PlannerTaskRequest(
 			entity.startTime,
 			entity.endTime,
+			entity.calendarId,
 			entity.isBackground,
 			entity.isOptional,
 			entity.location ?? null,
@@ -35,6 +38,7 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.isDone,
 			entity.date,
 			entity.todolistId ?? null,
+			entity.color ?? '#4287f5',
 		)
 	}
 }

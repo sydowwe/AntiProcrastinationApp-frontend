@@ -1,7 +1,10 @@
+import type {Time} from '@/utils/Time.ts';
+
 export class PlannerTaskFilter {
 	constructor(
-		public filterDate: string | null,
-		public hourSpan: number,
+		public calendarId: number,
+		public from: Time,
+		public until: Time
 	) {
 	}
 }

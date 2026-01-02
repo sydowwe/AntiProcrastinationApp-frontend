@@ -48,6 +48,10 @@ export class Time {
 		return `${this.hours.toString().padStart(2, '0')}:${this.minutes.toString().padStart(2, '0')}`;
 	}
 
+	public static getString(time: Time) {
+		return `${time.hours.toString().padStart(2, '0')}:${time.minutes.toString().padStart(2, '0')}`;
+	}
+
 	public static fromString(string: string) {
 		const [h, m] = string.split(':');
 		const hours = parseInt(h ?? '0')

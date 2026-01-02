@@ -4,13 +4,13 @@
 	:plannerStore="store"
 	:title="currentDateFormatted"
 	addButtonText="Add New Event"
-	@redrawTask="handleUpdateTaskSpan"
+	@redrawTask="redrawTask"
 	@delete="del"
 >
 	<!-- Custom event block for normal planner -->
 	<template #event-block="{ event, onResizeStart }">
 		<EventBlock
-			:event="event"
+			:event="event as PlannerTask"
 			@resizeStart="onResizeStart"
 		/>
 	</template>
@@ -26,21 +26,25 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, watch} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import EventDialog from '@/components/dayPlanner/normal/EventDialog.vue'
 import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
-import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts'
+import {useCalendarQuery, useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts'
 import {storeToRefs} from 'pinia';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import router from '@/plugins/router.ts';
+import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
 
 const {showErrorSnackbar} = useSnackbar()
-const {createWithResponse, update, fetchById, deleteEntity} = useTaskPlannerCrud()
-const {formatToDateWithDay} = useMoment()
+const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
+const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
+const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
 const store = useDayPlannerStore()
 const {viewStartTime, totalGridRows, events} = storeToRefs(useDayPlannerStore())
 // Use shared composable for all common logic
@@ -50,17 +54,33 @@ const {
 	checkConflict,
 	updateOverlapsBackgroundFlags,
 	initializeEventGridPositions,
-	handleUpdateTaskSpan
+	redrawTask
 } = useDayPlannerCommon(
 	viewStartTime,
 	totalGridRows,
 	events
 )
 
+const calendarId = ref<number>(-1)
+// Lifecycle hooks
+onMounted(async () => {
+	store.viewedDate = urlStringToUTCDate(router.currentRoute.value.params.date as string)
+	const stateCalendarId = history.state.calendarId as number | undefined
+	calendarId.value = stateCalendarId ?? (await fetchCalendarByDate(router.currentRoute.value.params.date as string)).id
+	await loadTasks()
+})
+
 // View-specific computed properties
 const currentDateFormatted = computed(() => {
 	return formatToDateWithDay(store.viewedDate)
 })
+
+// Load tasks for the current date
+async function loadTasks() {
+
+	store.events = await fetchFiltered(new PlannerTaskFilter(calendarId.value, store.viewStartTime, store.viewEndTime));
+	initializeEventGridPositions()
+}
 
 // CRUD operations
 async function create(request: PlannerTaskRequest) {
@@ -73,6 +93,7 @@ async function create(request: PlannerTaskRequest) {
 			return
 		}
 	}
+	request.calendarId = calendarId.value;
 	const response = await createWithResponse(request)
 
 	if (response.isBackground) {
@@ -137,11 +158,10 @@ watch([() => store.viewStartTime, () => store.viewEndTime], () => {
 	initializeEventGridPositions()
 }, {deep: true})
 
-// Lifecycle hooks
-onMounted(() => {
-	initializeEventGridPositions()
-})
-
+// Watch for date changes to reload tasks
+watch(() => store.viewedDate, () => {
+	loadTasks()
+}, {deep: true})
 </script>
 
 <style scoped>

@@ -98,7 +98,6 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	 * Initialize grid positions for all events
 	 */
 	function initializeEventGridPositions(): void {
-		console.log(events.value)
 		events.value.forEach(event => {
 			setGridPositionFromSpan(event)
 		})
@@ -109,11 +108,9 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	 */
 	function setGridPositionFromSpan(event: T): void {
 		// Prefer Time-based positioning if available; fallback to Date for compatibility
-		console.log(event.startTime, event.endTime)
 		if (event.startTime && event.endTime) {
 			const startOffset = minutesFromViewStart(event.startTime) // [0, 1440)
 			let endOffset = minutesFromViewStart(event.endTime) // [0, 1440)
-			console.log(event.startTime, event.endTime, startOffset, endOffset)
 
 			// If wraps over midnight, extend end by a full day to keep duration positive
 			if (event.endTime.getInMinutes < event.startTime.getInMinutes) {
@@ -121,7 +118,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 			}
 
 			const startRow = Math.floor(startOffset / 10) + 1
-			const endRow = Math.floor(endOffset / 10)
+			const endRow = Math.floor(endOffset / 10) + 1
 
 			event.gridRowStart = Math.max(1, startRow)
 			event.gridRowEnd = Math.min(totalGridRows.value, endRow)
@@ -132,7 +129,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	/**
 	 * Handle task span updates
 	 */
-	function redrawTask(eventId: number, updates: Partial<T>): void {
+	function redrawTask(eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>): void {
 		const eventIndex = events.value.findIndex(e => e.id === eventId)
 		if (eventIndex === -1) return
 
@@ -141,7 +138,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		}
 		events.value[eventIndex] = {
 			...events.value[eventIndex],
-			...updates
+			...updates as Partial<T>
 		}
 
 		const event = events.value[eventIndex]
