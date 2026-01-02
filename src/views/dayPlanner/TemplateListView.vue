@@ -202,7 +202,6 @@ async function handleSaveTemplate(request: TaskPlannerDayTemplateRequest) {
 		await loadTemplates()
 		closeDialog()
 	} else {
-		// Create new template
 		const id = await create(request)
 		closeDialog()
 		// Navigate to the template day planner with the new template ID

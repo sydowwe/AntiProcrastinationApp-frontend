@@ -139,10 +139,13 @@ import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 import {useCalendarQuery} from '@/composables/ConcretesCrudComposable.ts'
 import router from '@/plugins/router.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
+import {useMoment} from '@/scripts/momentHelper.ts';
 
-// Calendar query
+const {usStringToUrlString} = useMoment()
 const {fetchFiltered} = useCalendarQuery()
 
+const store = useDayPlannerStore();
 // Calendar data from backend
 const calendarData = ref<Calendar[]>([])
 const loading = ref(false)
@@ -239,7 +242,16 @@ const calendarWeeks = computed(() => {
 	const weekMap = new Map<string, Map<number, Calendar>>()
 
 	calendarData.value.forEach(cal => {
-		const [year, month, day] = cal.date.split('-').map(Number)
+		const parts = cal.date.split('-').map(Number)
+		const year = parts[0]
+		const month = parts[1]
+		const day = parts[2]
+
+		if (!year || !month || !day) {
+			console.warn(`Invalid date format: ${cal.date}`)
+			return
+		}
+
 		const date = new Date(year, month - 1, day)
 
 		// Find the Monday of this date's week
@@ -305,8 +317,8 @@ function formatTime(timeString: string | null): string {
 
 // Handle day click
 function handleDayClick(dayData: Calendar | null) {
-	if (!dayData?.date) return
-	router.push({name: 'dayPlanner', params: {calendarId: dayData.id}})
+	if (!dayData) return
+	router.push({name: 'dayPlanner', params: {date: usStringToUrlString(dayData.date)}, state: {calendarId: dayData.id}})
 }
 
 // Get color for day type (WCAG compliant colors)

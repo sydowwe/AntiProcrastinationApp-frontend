@@ -65,7 +65,7 @@ import {storeToRefs} from 'pinia';
 import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue';
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
-import {TemplatePlannerTaskFilter} from '@/dtos/response/activityPlanning/template/TemplatePlannerTaskFilter.ts';
+import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 
 const route = useRoute()
 const templateId = computed(() => route.params.templateId ? parseInt(route.params.templateId as string) : null)
@@ -126,7 +126,6 @@ async function loadTemplateDetails() {
 async function loadTasks() {
 	store.events = await fetchFilteredTasks(new TemplatePlannerTaskFilter(templateId.value!, store.viewStartTime, store.viewEndTime));
 	initializeEventGridPositions()
-	console.log(store.events)
 }
 
 async function saveTemplate(request: TaskPlannerDayTemplateRequest): Promise<void> {

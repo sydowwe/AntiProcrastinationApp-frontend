@@ -90,7 +90,7 @@ const backgroundColorComp = computed(() => {
 })
 
 const style = computed(() => {
-	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1) + 1)
+	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1))
 	return {
 		marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
 		gridRow: `${event.gridRowStart} / span ${span}`
@@ -99,10 +99,7 @@ const style = computed(() => {
 
 const formattedTime = computed(() => {
 	// Default time formatting (can be overridden via slot)
-	console.log(event.startTime)
-	console.log(event.startTime.getString())
-	new Time()
-	return `${event.startTime.getString()} - ${event.endTime.getString()}`
+	return `${Time.getString(event.startTime)} - ${Time.getString(event.endTime)}`
 })
 
 const blockClasses = computed(() => [

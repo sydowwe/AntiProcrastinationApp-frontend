@@ -25,9 +25,10 @@ import {ActivityHistoryRequest} from '@/dtos/request/ActivityHistoryRequest.ts';
 import {ActivityHistory} from '@/dtos/response/ActivityHistory.ts';
 import {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
-import type {TemplatePlannerTaskFilter} from '@/dtos/response/activityPlanning/template/TemplatePlannerTaskFilter.ts';
+import type {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import type {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts';
+import type {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
 
 export function useActivityHistoryCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
@@ -219,13 +220,18 @@ export function useTaskPlannerCrud() {
 		createWithResponse,
 		create,
 		update,
+		patch,
 		deleteEntity
 	} = useEntityCommand<PlannerTask, any, any>({
 		responseClass: PlannerTask,
-		entityName: 'task-planner'
+		entityName: 'planner-task'
 	})
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+	const {fetchFiltered} = useFetchFiltered<PlannerTask, PlannerTaskFilter>(
+		PlannerTask,
+		'planner-task'
+	)
+	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity}
 }
 
 
@@ -281,14 +287,19 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 
 export function useCalendarQuery() {
 	const url = 'calendar';
-	const {fetchById, fetchAll} = useEntityQuery<Calendar>({responseClass: Calendar, entityName: url})
+	const {fetchById, fetchByField} = useEntityQuery<Calendar>({responseClass: Calendar, entityName: url})
 
 	const {fetchFiltered} = useFetchFiltered<Calendar, CalendarFilter>(
 		Calendar,
 		url
 	)
 
-	return {fetchFiltered, fetchById, fetchAll}
+	//Format 'dd.MM.yyyy'
+	function fetchByDate(date: string): Promise<Calendar> {
+		return fetchByField('date', date)
+	}
+
+	return {fetchFiltered, fetchById, fetchByDate}
 }
 
 export function useAlarmCrud() {
