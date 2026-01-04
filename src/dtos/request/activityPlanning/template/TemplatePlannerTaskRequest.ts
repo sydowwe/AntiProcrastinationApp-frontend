@@ -9,6 +9,7 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public activityId?: number,
 		public isBackground: boolean = false,
 		public isOptional: boolean = false,
+		public isDone: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
 		public priorityId: number | null = null,
@@ -23,9 +24,10 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.activity.id,
 			entity.isBackground,
 			entity.isOptional,
+			entity.isDone ?? false,
 			entity.location,
 			entity.notes,
-			entity.priority?.id,
+			entity.priority?.id ?? null,
 			entity.templateId
 		);
 	}

@@ -125,6 +125,9 @@ function handlePointerDown(e: PointerEvent): void {
 		return
 	}
 
+	// Clear selection when clicking on empty area
+	store.clearSelection()
+
 	// Start creating if clicking on empty space
 	if (target.closest('.event-block')) return
 	if (target.closest('.current-time-indicator')) return

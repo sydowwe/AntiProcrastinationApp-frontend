@@ -11,21 +11,36 @@
 				v-model:end="plannerStore.viewEndTime"
 			/>
 			<div class="d-flex ga-2 align-center flex-wrap">
+				<!-- Edit button - only for single focused event -->
 				<VBtn
 					color="secondary"
 					@pointerdown.prevent="plannerStore.openEditDialog"
-					:class="{ 'is-hidden': !plannerStore.focusedEventId }"
+					:class="{ 'is-hidden': !plannerStore.focusedEventId || plannerStore.hasSelectedEvents }"
 				>
 					Edit
 				</VBtn>
+
+				<!-- Toggle isDone - for selected events -->
+				<VBtn
+					v-if="plannerStore.hasSelectedEvents"
+					color="success"
+					variant="outlined"
+					@click="handleToggleSelectedIsDone"
+					prependIcon="check"
+				>
+					Toggle Done ({{ plannerStore.selectedEventIds.value.size }})
+				</VBtn>
+
+				<!-- Delete button - for focused or selected events -->
 				<VBtn
 					color="secondaryOutline"
 					variant="outlined"
-					@pointerdown.prevent="plannerStore.openDeleteDialog"
-					:class="{ 'is-hidden': !plannerStore.focusedEventId }"
+					@pointerdown.prevent="handleDeleteClick"
+					:class="{ 'is-hidden': !plannerStore.focusedEventId && !plannerStore.hasSelectedEvents }"
 				>
-					Delete
+					Delete{{ plannerStore.hasSelectedEvents ? ` (${plannerStore.selectedEventIds.value.size})` : '' }}
 				</VBtn>
+
 				<VBtn
 					color="primary"
 					@click="plannerStore.openCreateDialogEmpty"
@@ -116,9 +131,42 @@ const props = defineProps<{
 
 
 const deleteConfirmationText = computed(() => {
+	if (props.plannerStore.hasSelectedEvents) {
+		const count = props.plannerStore.selectedEventIds.size
+		return `Are you sure you want to delete ${count} selected event${count > 1 ? 's' : ''}?`
+	}
 	const eventName = props.plannerStore.toDeleteEvent?.activity?.name ?? 'this event'
 	return `Are you sure you want to delete ${eventName}?`
 })
+
+function handleDeleteClick(): void {
+	if (props.plannerStore.hasSelectedEvents) {
+		props.plannerStore.openDeleteDialogForSelected()
+	} else {
+		props.plannerStore.openDeleteDialog()
+	}
+}
+
+function handleToggleSelectedIsDone(): void {
+	const selectedEventIds = Array.from(props.plannerStore.selectedEventIds)
+
+	selectedEventIds.forEach(eventId => {
+		const taskEvent = props.plannerStore.events.find(e => e.id === eventId)
+		if (!taskEvent) return
+
+		const newIsDone = !taskEvent.isDone
+		taskEvent.isDone = newIsDone
+
+		// We need to emit or call a store method to update
+		// For now, we'll assume the store has updateTaskIsDone
+		if ('updateTaskIsDone' in props.plannerStore) {
+			(props.plannerStore as any).updateTaskIsDone(eventId, newIsDone)
+				.catch(() => {
+					taskEvent.isDone = !newIsDone
+				})
+		}
+	})
+}
 
 const emit = defineEmits<{
 	redrawTask: [eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>],

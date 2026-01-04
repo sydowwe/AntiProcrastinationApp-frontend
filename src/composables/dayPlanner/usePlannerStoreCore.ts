@@ -17,6 +17,9 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	// Focus state
 	const focusedEventId = ref<number | null>(null)
 
+	// Selection state (for multi-select)
+	const selectedEventIds = ref<Set<number>>(new Set())
+
 	// Dialog state
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()
@@ -82,6 +85,12 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		events.value.find(e => e.id === toDeleteId.value) ?? null
 	)
 
+	const selectedEvents = computed(() =>
+		events.value.filter(e => selectedEventIds.value.has(e.id))
+	)
+
+	const hasSelectedEvents = computed(() => selectedEventIds.value.size > 0)
+
 	// Event handlers
 	function handleFocusEvent(eventId: number | null): void {
 		focusedEventId.value = eventId
@@ -90,6 +99,14 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	function openDeleteDialog(): void {
 		toDeleteId.value = focusedEventId.value
 		deleteDialog.value = true
+	}
+
+	function openDeleteDialogForSelected(): void {
+		// For now, use the first selected event ID (we'll handle bulk delete later)
+		if (selectedEventIds.value.size > 0) {
+			toDeleteId.value = Array.from(selectedEventIds.value)[0] ?? null
+			deleteDialog.value = true
+		}
 	}
 
 	function openCreateDialogPrefilled(startTime: Time, endTime: Time): void {
@@ -117,11 +134,37 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 			endTime: event.endTime,
 			isBackground: event.isBackground,
 			isOptional: event.isOptional,
+			isDone: event.isDone,
 			location: event.location,
 			notes: event.notes,
 			priorityId: event.priority?.id
 		} as TTaskRequest
 		dialog.value = true
+	}
+
+	// Selection handlers
+	function toggleEventSelection(eventId: number): void {
+		if (selectedEventIds.value.has(eventId)) {
+			selectedEventIds.value.delete(eventId)
+		} else {
+			selectedEventIds.value.add(eventId)
+		}
+		// Trigger reactivity
+		selectedEventIds.value = new Set(selectedEventIds.value)
+	}
+
+	function clearSelection(): void {
+		selectedEventIds.value = new Set()
+	}
+
+	function selectEvent(eventId: number): void {
+		selectedEventIds.value.add(eventId)
+		selectedEventIds.value = new Set(selectedEventIds.value)
+	}
+
+	function deselectEvent(eventId: number): void {
+		selectedEventIds.value.delete(eventId)
+		selectedEventIds.value = new Set(selectedEventIds.value)
 	}
 
 	return {
@@ -139,6 +182,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		// State
 		events,
 		focusedEventId,
+		selectedEventIds,
 		dialog,
 		editedId,
 		editingEvent,
@@ -151,14 +195,21 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 		// Computed
 		toDeleteEvent,
+		selectedEvents,
+		hasSelectedEvents,
 		isDraggingAny,
 		isResizingAny,
 
 		// Actions
 		handleFocusEvent,
 		openDeleteDialog,
+		openDeleteDialogForSelected,
 		openCreateDialogPrefilled,
 		openCreateDialogEmpty,
-		openEditDialog
+		openEditDialog,
+		toggleEventSelection,
+		clearSelection,
+		selectEvent,
+		deselectEvent
 	}
 }

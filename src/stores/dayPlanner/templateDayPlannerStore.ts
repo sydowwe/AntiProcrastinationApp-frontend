@@ -21,10 +21,15 @@ export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', () =
 		await patch(eventId, span)
 	}
 
+	async function updateTaskIsDone(eventId: number, isDone: boolean) {
+		await patch(eventId, { isDone })
+	}
+
 	return {
 		...core,
 		// Template metadata
 		updateTaskSpan,
+		updateTaskIsDone,
 		currentTemplateId,
 		templateName,
 	}
