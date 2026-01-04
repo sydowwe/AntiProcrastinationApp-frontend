@@ -18,8 +18,13 @@
 	:class="['event-block', ...blockClasses]"
 	:data-event-id="event.id"
 	:tabindex="0"
-	@keydown.enter="emit('openEditDialog')"
-	@keydown.esc="(e: KeyboardEvent)=>(e.target as HTMLElement).blur()"
+	@click="handleClick"
+	@keydown.enter="handleEnterKey"
+	@keydown.e="handleEKey"
+	@keydown.delete="handleDeleteKey"
+	@keydown.backspace="handleDeleteKey"
+	@keydown.space="handleSpaceKey"
+	@keydown.esc="handleEscapeKey"
 	@focus="emit('focusEvent', event.id)"
 	@blur="emit('focusEvent', null)"
 >
@@ -28,6 +33,14 @@
 		:data-event-id="event.id"
 		@click.stop
 		@pointerdown="emit('resizeStart', { eventId: event.id, direction: 'top', $event })"
+	/>
+
+	<VCheckbox
+		v-model="isDoneModel"
+		class="event-checkbox"
+		density="compact"
+		hideDetails
+		@click.stop
 	/>
 
 	<div class="event-content">
@@ -65,7 +78,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed} from 'vue'
+import {computed, ref} from 'vue'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
@@ -80,6 +93,7 @@ const {event, store, backgroundColor, isPast} = defineProps<{
 
 // Computed states
 const isFocused = computed(() => store.focusedEventId === event.id)
+const isSelected = computed(() => store.selectedEventIds.has(event.id))
 const isDragging = computed(() => store.draggingEventId === event.id)
 const isResizing = computed(() => store.resizingEventId === event.id)
 const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
@@ -108,9 +122,11 @@ const blockClasses = computed(() => [
 		'resizing': isResizing.value,
 		'past-event': isPast,
 		'focused': isFocused.value,
+		'selected': isSelected.value,
 		'conflict': isConflict.value,
 		'no-hover': isAnyEventBeingManipulated.value,
-		'optional-task': event.isOptional
+		'optional-task': event.isOptional,
+		'done-task': event.isDone
 	}
 ])
 
@@ -118,7 +134,80 @@ const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
 	(e: 'focusEvent', id: number | null): void
 	(e: 'openEditDialog'): void
+	(e: 'toggleSelection', id: number): void
+	(e: 'toggleIsDone', id: number): void
+	(e: 'deleteSelected'): void
+	(e: 'toggleIsDoneSelected'): void
 }>()
+
+// isDone model with emit on change
+const isDoneModel = computed({
+	get: () => event.isDone,
+	set: (value: boolean) => {
+		emit('toggleIsDone', event.id)
+	}
+})
+
+// Click handling with double-click detection
+const clickTimer = ref<number | null>(null)
+const DOUBLE_CLICK_DELAY = 250 // ms
+
+function handleClick(e: MouseEvent): void {
+	// Don't handle clicks if we're currently dragging or resizing
+	if (store.isDraggingAny || store.isResizingAny) return
+
+	// Don't handle clicks on resize handles (they're handled separately)
+	if ((e.target as HTMLElement).classList.contains('resize-handle')) return
+
+	if (clickTimer.value === null) {
+		// First click - start timer for double-click detection
+		clickTimer.value = window.setTimeout(() => {
+			// Single click confirmed - toggle selection
+			emit('toggleSelection', event.id)
+			clickTimer.value = null
+		}, DOUBLE_CLICK_DELAY)
+	} else {
+		// Second click within delay - it's a double click
+		clearTimeout(clickTimer.value)
+		clickTimer.value = null
+		emit('openEditDialog')
+	}
+}
+
+// Keyboard handlers
+function handleEnterKey(e: KeyboardEvent): void {
+	e.preventDefault()
+	// Only open edit if single event is selected (this event is focused/selected)
+	if (isSelected.value && store.selectedEventIds.size === 1) {
+		emit('openEditDialog')
+	}
+}
+
+function handleEKey(e: KeyboardEvent): void {
+	e.preventDefault()
+	// Only open edit if single event is selected
+	if (isSelected.value && store.selectedEventIds.size === 1) {
+		emit('openEditDialog')
+	}
+}
+
+function handleDeleteKey(e: KeyboardEvent): void {
+	e.preventDefault()
+	// Emit delete event for all selected events
+	emit('deleteSelected')
+}
+
+function handleSpaceKey(e: KeyboardEvent): void {
+	e.preventDefault()
+	// Emit toggle isDone for all selected events
+	emit('toggleIsDoneSelected')
+}
+
+function handleEscapeKey(e: KeyboardEvent): void {
+	e.preventDefault()
+	store.clearSelection()
+	;(e.target as HTMLElement).blur()
+}
 </script>
 
 <style scoped>
@@ -133,10 +222,21 @@ const emit = defineEmits<{
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	overflow: hidden;
 	z-index: 10;
 	user-select: none;
+}
+
+.event-checkbox {
+	position: absolute;
+	left: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 15;
+	background: rgba(255, 255, 255, 0.9);
+	border-radius: 4px;
+	padding: 2px;
 }
 
 .event-block:focus {
@@ -149,6 +249,12 @@ const emit = defineEmits<{
 	z-index: 11;
 	border: 3px solid #ffffff;
 	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
+}
+
+.event-block.selected {
+	border: 3px solid rgb(var(--v-theme-primary));
+	box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.3);
+	z-index: 11;
 }
 
 .event-block.dragging {
@@ -192,9 +298,23 @@ const emit = defineEmits<{
 	border: 2px dashed rgba(255, 255, 255, 0.5);
 }
 
+.event-block.done-task {
+	opacity: 0.65;
+	filter: saturate(0.5);
+}
+
+.event-block.done-task .event-title {
+	text-decoration: line-through;
+	opacity: 0.7;
+}
+
+.event-block.done-task .event-time {
+	opacity: 0.6;
+}
+
 .event-content {
 	flex: 1;
-	padding: 7px 15px;
+	padding: 7px 15px 7px 40px;
 	pointer-events: none;
 	cursor: pointer;
 	min-height: 0;

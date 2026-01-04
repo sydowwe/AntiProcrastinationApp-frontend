@@ -9,6 +9,7 @@ export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	endTime: Time;
 	isBackground: boolean;
 	isOptional: boolean;
+	isDone: boolean;
 	activity: Activity;
 	location: string | null;
 	notes: string | null;

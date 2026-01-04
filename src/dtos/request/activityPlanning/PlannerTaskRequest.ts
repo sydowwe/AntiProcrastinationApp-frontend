@@ -35,8 +35,8 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.notes ?? null,
 			entity.activity.id,
 			entity.priority?.id ?? null,
-			entity.isDone,
-			entity.date,
+			entity.isDone ?? false,
+			new Date(),
 			entity.todolistId ?? null,
 			entity.color ?? '#4287f5',
 		)

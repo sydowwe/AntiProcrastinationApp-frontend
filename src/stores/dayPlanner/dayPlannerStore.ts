@@ -71,9 +71,14 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		await patch(eventId, span)
 	}
 
+	async function updateTaskIsDone(eventId: number, isDone: boolean) {
+		await patch(eventId, { isDone })
+	}
+
 	return {
 		...core,
 		updateTaskSpan,
+		updateTaskIsDone,
 		// Day-specific
 		viewedDate,
 		viewStartDate,
