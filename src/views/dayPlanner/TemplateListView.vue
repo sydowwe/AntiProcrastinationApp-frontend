@@ -109,7 +109,7 @@
 		<TaskPlannerDayTemplateDetailsForm
 			ref="templateForm"
 			:template="editingTemplate"
-			@savedTemplate="handleSaveTemplate"
+			@updateDetails="handleSaveTemplate"
 		/>
 		<VCardActions class="pa-4">
 			<VSpacer/>

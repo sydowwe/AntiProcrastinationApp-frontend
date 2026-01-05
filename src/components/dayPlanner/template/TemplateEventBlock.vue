@@ -1,7 +1,6 @@
 <template>
 <BaseEventBlock
 	:event
-	:store
 	@resizeStart="emit('resizeStart', $event)"
 	@focusEvent="store.handleFocusEvent($event)"
 	@openEditDialog="store.openEditDialog"
@@ -59,12 +58,14 @@
 </template>
 
 <script setup lang="ts">
+import {inject} from 'vue'
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import BaseEventBlock from '@/components/dayPlanner/BaseEventBlock.vue';
 
-const store = useTemplateDayPlannerStore()
+// Inject the store from parent DayPlanner component
+const store = inject<ReturnType<typeof useTemplateDayPlannerStore>>('plannerStore')!
 
 const {event} = defineProps<{
 	event: TemplatePlannerTask

@@ -3,14 +3,20 @@
 <VCard class="w-100 d-flex flex-column">
 	<!-- Header slot - each view provides its own header -->
 	<slot name="header" :store="plannerStore">
-		<VCardTitle class="d-flex justify-space-between align-center flex-wrap ga-2">
-			<span>{{ title }}</span>
+		<VCardTitle class="px-5 d-flex justify-space-between align-center flex-wrap ga-2">
+			<div class="d-flex align-center ga-3">
+				<span class="text-h5">{{ title }}</span>
+
+				<slot name="headerPrepend"></slot>
+			</div>
 
 			<TimeRangePicker
 				v-model:start="plannerStore.viewStartTime"
 				v-model:end="plannerStore.viewEndTime"
 			/>
+
 			<div class="d-flex ga-2 align-center flex-wrap">
+				<slot name="headerAppend"></slot>
 				<!-- Edit button - only for single focused event -->
 				<VBtn
 					color="secondary"
@@ -20,17 +26,6 @@
 					Edit
 				</VBtn>
 
-				<!-- Toggle isDone - for selected events -->
-				<VBtn
-					v-if="plannerStore.hasSelectedEvents"
-					color="success"
-					variant="outlined"
-					@click="handleToggleSelectedIsDone"
-					prependIcon="check"
-				>
-					Toggle Done ({{ plannerStore.selectedEventIds.value.size }})
-				</VBtn>
-
 				<!-- Delete button - for focused or selected events -->
 				<VBtn
 					color="secondaryOutline"
@@ -38,7 +33,7 @@
 					@pointerdown.prevent="handleDeleteClick"
 					:class="{ 'is-hidden': !plannerStore.focusedEventId && !plannerStore.hasSelectedEvents }"
 				>
-					Delete{{ plannerStore.hasSelectedEvents ? ` (${plannerStore.selectedEventIds.value.size})` : '' }}
+					Delete{{ plannerStore.hasSelectedEvents ? ` (${plannerStore.selectedEventIds.size})` : '' }}
 				</VBtn>
 
 				<VBtn
@@ -60,7 +55,6 @@
 
 			<!-- Events Column with event block slot -->
 			<PlannerTasksColumn
-				:store="plannerStore"
 				@redrawTask="emit('redrawTask', $event.eventId, $event.updates as Partial<TTask>)"
 			>
 				<template #event-block="{ event, onResizeStart }">
@@ -113,7 +107,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed} from 'vue'
+import {computed, provide} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import PlannerTimeColumn from '@/components/dayPlanner/PlannerTimeColumn.vue'
 import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
@@ -128,6 +122,9 @@ const props = defineProps<{
 	addButtonText?: string
 	conflictMessage?: string
 }>()
+
+// Provide the store to all descendant components
+provide('plannerStore', props.plannerStore)
 
 
 const deleteConfirmationText = computed(() => {
@@ -147,26 +144,6 @@ function handleDeleteClick(): void {
 	}
 }
 
-function handleToggleSelectedIsDone(): void {
-	const selectedEventIds = Array.from(props.plannerStore.selectedEventIds)
-
-	selectedEventIds.forEach(eventId => {
-		const taskEvent = props.plannerStore.events.find(e => e.id === eventId)
-		if (!taskEvent) return
-
-		const newIsDone = !taskEvent.isDone
-		taskEvent.isDone = newIsDone
-
-		// We need to emit or call a store method to update
-		// For now, we'll assume the store has updateTaskIsDone
-		if ('updateTaskIsDone' in props.plannerStore) {
-			(props.plannerStore as any).updateTaskIsDone(eventId, newIsDone)
-				.catch(() => {
-					taskEvent.isDone = !newIsDone
-				})
-		}
-	})
-}
 
 const emit = defineEmits<{
 	redrawTask: [eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>],
@@ -207,7 +184,6 @@ const emit = defineEmits<{
 
 .calendar-grid::-webkit-scrollbar-thumb {
 	background: #888;
-	border-radius: 4px;
 }
 
 .calendar-grid::-webkit-scrollbar-thumb:hover {

@@ -28,19 +28,12 @@
 	@focus="emit('focusEvent', event.id)"
 	@blur="emit('focusEvent', null)"
 >
+	<slot name="checkbox"></slot>
 	<div
 		class="resize-handle resize-handle-top"
 		:data-event-id="event.id"
 		@click.stop
 		@pointerdown="emit('resizeStart', { eventId: event.id, direction: 'top', $event })"
-	/>
-
-	<VCheckbox
-		v-model="isDoneModel"
-		class="event-checkbox"
-		density="compact"
-		hideDetails
-		@click.stop
 	/>
 
 	<div class="event-content">
@@ -78,22 +71,24 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, ref} from 'vue'
+import {computed, inject, ref} from 'vue'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 
-const {event, store, backgroundColor, isPast} = defineProps<{
+const {event, backgroundColor, isPast} = defineProps<{
 	event: TTask
-	store: TStore
 	backgroundColor?: string
 	isPast?: boolean
 }>()
 
+// Inject the store from parent DayPlanner component
+const store = inject<TStore>('plannerStore')!
+
 // Computed states
-const isFocused = computed(() => store.focusedEventId === event.id)
 const isSelected = computed(() => store.selectedEventIds.has(event.id))
+const isFocused = computed(() => store.focusedEventId === event.id)
 const isDragging = computed(() => store.draggingEventId === event.id)
 const isResizing = computed(() => store.resizingEventId === event.id)
 const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
@@ -126,7 +121,6 @@ const blockClasses = computed(() => [
 		'conflict': isConflict.value,
 		'no-hover': isAnyEventBeingManipulated.value,
 		'optional-task': event.isOptional,
-		'done-task': event.isDone
 	}
 ])
 
@@ -139,14 +133,6 @@ const emit = defineEmits<{
 	(e: 'deleteSelected'): void
 	(e: 'toggleIsDoneSelected'): void
 }>()
-
-// isDone model with emit on change
-const isDoneModel = computed({
-	get: () => event.isDone,
-	set: (value: boolean) => {
-		emit('toggleIsDone', event.id)
-	}
-})
 
 // Click handling with double-click detection
 const clickTimer = ref<number | null>(null)
@@ -228,16 +214,6 @@ function handleEscapeKey(e: KeyboardEvent): void {
 	user-select: none;
 }
 
-.event-checkbox {
-	position: absolute;
-	left: 2px;
-	top: 50%;
-	transform: translateY(-50%);
-	z-index: 15;
-	background: rgba(255, 255, 255, 0.9);
-	border-radius: 4px;
-	padding: 2px;
-}
 
 .event-block:focus {
 	outline: none;
@@ -298,23 +274,9 @@ function handleEscapeKey(e: KeyboardEvent): void {
 	border: 2px dashed rgba(255, 255, 255, 0.5);
 }
 
-.event-block.done-task {
-	opacity: 0.65;
-	filter: saturate(0.5);
-}
-
-.event-block.done-task .event-title {
-	text-decoration: line-through;
-	opacity: 0.7;
-}
-
-.event-block.done-task .event-time {
-	opacity: 0.6;
-}
-
 .event-content {
 	flex: 1;
-	padding: 7px 15px 7px 40px;
+	padding: 8px 12px;
 	pointer-events: none;
 	cursor: pointer;
 	min-height: 0;
@@ -352,7 +314,7 @@ function handleEscapeKey(e: KeyboardEvent): void {
 .resize-handle {
 	position: absolute;
 	width: 100%;
-	height: 10px;
+	height: 8px;
 	background: rgba(0, 0, 0, 0.1);
 	cursor: ns-resize;
 	display: flex;

@@ -1,57 +1,53 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
-<VContainer fluid class="pa-0">
-	<VRow class="h-100" noGutters>
-		<VCol class="d-flex pa-3" cols="12" lg="4" xl="3">
-			<TaskPlannerDayTemplateDetailsForm
-				:template="currentTemplate"
-				@savedTemplate="saveTemplate"
+<div class="d-flex flex-column flex-md-row ga-4 w-100 h-100">
+	<TaskPlannerDayTemplateDetailsForm
+		v-model="detailsHidden"
+		:template="currentTemplate"
+		@updateDetails="updateDetails"
+	/>
+
+	<DayPlanner
+		class="flex-fill"
+		:plannerStore="store"
+		:title="store.templateName || 'Day Template'"
+		@redrawTask="redrawTask"
+		addButtonText="Add New Task"
+		conflictMessage="Task conflicts with existing schedule!"
+		@delete="del"
+	>
+		<template #headerPrepend>
+			<div>
+				<VBtn v-if="detailsHidden" color="secondaryOutline" prependIcon="eye" variant="outlined" @click="detailsHidden = !detailsHidden">
+					Edit details
+				</VBtn>
+			</div>
+		</template>
+		<!-- Custom event block for template planner -->
+		<template #event-block="{ event, onResizeStart }">
+			<TemplateEventBlock
+				:event="event as TemplatePlannerTask"
+				@resizeStart="onResizeStart"
 			/>
-		</VCol>
+		</template>
 
-		<VCol class="d-flex pa-3" cols="12" lg="8" xl="9">
-			<DayPlanner
-				:plannerStore="store"
-				:title="store.templateName || 'Day Template'"
-				@redrawTask="redrawTask"
-				addButtonText="Add New Task"
-				conflictMessage="Task conflicts with existing schedule!"
-				@delete="del"
-			>
-				<!-- Custom event block for template planner -->
-				<template #event-block="{ event, onResizeStart }">
-					<TemplateEventBlock
-						:event="event as TemplatePlannerTask"
-						@resizeStart="onResizeStart"
-					/>
-				</template>
-
-				<!-- Custom dialog for template planner -->
-				<template #dialog>
-					<PlannerTaskTemplateDialog
-						v-model:dialog="store.dialog"
-						:editingTask="store.editingEvent"
-						:isEdit="isEdit"
-						:editedId="store.editedId"
-						@create="createTask"
-						@edit="edit"
-					/>
-				</template>
-			</DayPlanner>
-		</VCol>
-		<VCol class="px-3 py-2" cols="12">
-			<VCard class="pa-3 d-flex justify-center ga-3">
-				<VBtn color="secondaryOutline" variant="flat">Edit details</VBtn>
-				<VBtn color="secondaryOutline" variant="flat">Edit details</VBtn>
-				<VBtn color="primary">Save</VBtn>
-			</VCard>
-		</VCol>
-	</VRow>
-</VContainer>
+		<!-- Custom dialog for template planner -->
+		<template #dialog>
+			<PlannerTaskTemplateDialog
+				v-model:dialog="store.dialog"
+				:editingTask="store.editingEvent"
+				:isEdit="isEdit"
+				:editedId="store.editedId"
+				@create="createTask"
+				@edit="edit"
+			/>
+		</template>
+	</DayPlanner>
+</div>
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, provide, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import PlannerTaskTemplateDialog from '@/components/dayPlanner/template/PlannerTaskTemplateDialog.vue'
@@ -82,8 +78,11 @@ const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
 const {viewStartTime, totalGridRows, events} = storeToRefs(store)
 
-const currentTemplate = ref<TaskPlannerDayTemplate | null>(null)
+// Provide the store for slot content (TemplateEventBlock components)
+provide('plannerStore', store)
 
+const currentTemplate = ref<TaskPlannerDayTemplate | null>(null)
+const detailsHidden = ref(false)
 
 // Use shared composable for all common time-based logic
 const {
@@ -128,13 +127,12 @@ async function loadTasks() {
 	initializeEventGridPositions()
 }
 
-async function saveTemplate(request: TaskPlannerDayTemplateRequest): Promise<void> {
+async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<void> {
 	if (templateId.value) {
 		await update(templateId.value, request)
 		await loadTemplateDetails()
 	}
 }
-
 
 // CRUD operations
 async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
@@ -202,8 +200,6 @@ async function del(): Promise<void> {
 watch([() => store.viewStartTime, () => store.viewEndTime], () => {
 	loadTasks()
 }, {deep: true})
-
-
 </script>
 
 <style scoped>

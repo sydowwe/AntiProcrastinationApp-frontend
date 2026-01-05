@@ -7,6 +7,17 @@
 	@redrawTask="redrawTask"
 	@delete="del"
 >
+	<template #headerAppend>
+		<VBtn
+			v-if="store.hasSelectedEvents"
+			color="success"
+			variant="outlined"
+			@click="handleToggleSelectedIsDone"
+			prependIcon="check"
+		>
+			Toggle Done ({{ store.selectedEventIds.size }})
+		</VBtn>
+	</template>
 	<!-- Custom event block for normal planner -->
 	<template #event-block="{ event, onResizeStart }">
 		<EventBlock
@@ -26,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, provide, ref, watch} from 'vue'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import EventDialog from '@/components/dayPlanner/normal/EventDialog.vue'
 import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
@@ -47,6 +58,9 @@ const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
 const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
 const store = useDayPlannerStore()
 const {viewStartTime, totalGridRows, events} = storeToRefs(useDayPlannerStore())
+
+// Provide the store for slot content (EventBlock components)
+provide('plannerStore', store)
 // Use shared composable for all common logic
 const {
 	setGridPositionFromSpan,
@@ -151,6 +165,27 @@ async function del(): Promise<void> {
 	}
 	store.deleteDialog = false
 	store.toDeleteId = null
+}
+
+function handleToggleSelectedIsDone(): void {
+	const selectedEventIds = Array.from(store.selectedEventIds)
+
+	selectedEventIds.forEach(eventId => {
+		const taskEvent = store.events.find(e => e.id === eventId)
+		if (!taskEvent) return
+
+		const newIsDone = !taskEvent.isDone
+		taskEvent.isDone = newIsDone
+
+		// We need to emit or call a store method to update
+		// For now, we'll assume the store has updateTaskIsDone
+		if ('updateTaskIsDone' in store) {
+			(store as any).updateTaskIsDone(eventId, newIsDone)
+				.catch(() => {
+					taskEvent.isDone = !newIsDone
+				})
+		}
+	})
 }
 
 // Watch for time range changes

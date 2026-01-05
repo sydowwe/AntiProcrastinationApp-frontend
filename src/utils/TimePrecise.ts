@@ -9,7 +9,6 @@ export class TimePrecise {
 	}
 
 	public get toTimeLength() {
-		console.log(this)
 		return new Time(this.hours, this.minutes + Math.round(this.seconds / 60));
 	}
 

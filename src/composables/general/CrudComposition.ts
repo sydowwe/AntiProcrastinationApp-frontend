@@ -23,9 +23,7 @@ export function useEntityQuery<TResponse>(
 		error.value = null
 		try {
 			const response = await API.get(`${config.entityName}/${id}`)
-			console.log(response.data)
 			const entity = config.responseClass.fromJson(response.data)
-			console.log(entity)
 			return entity
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch ${config.entityName} with ID ${id}`
@@ -41,9 +39,7 @@ export function useEntityQuery<TResponse>(
 		error.value = null
 		try {
 			const response = await API.get(`${config.entityName}/by-${fieldTitle}/${fieldValue}`)
-			console.log(response.data)
 			const entity = config.responseClass.fromJson(response.data)
-			console.log(entity)
 			return entity
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch ${config.entityName} by ${fieldTitle}: ${fieldValue}`
