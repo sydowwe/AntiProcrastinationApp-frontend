@@ -1,4 +1,4 @@
-import {computed, ref} from 'vue'
+import {computed, reactive, ref} from 'vue'
 import {Time} from '@/utils/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
@@ -18,7 +18,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const focusedEventId = ref<number | null>(null)
 
 	// Selection state (for multi-select)
-	const selectedEventIds = ref<Set<number>>(new Set())
+	const selectedEventIds = reactive<Set<number>>(new Set())
 
 	// Dialog state
 	const dialog = ref(false)
@@ -86,10 +86,10 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	)
 
 	const selectedEvents = computed(() =>
-		events.value.filter(e => selectedEventIds.value.has(e.id))
+		events.value.filter(e => selectedEventIds.has(e.id))
 	)
 
-	const hasSelectedEvents = computed(() => selectedEventIds.value.size > 0)
+	const hasSelectedEvents = computed(() => selectedEventIds.size > 0)
 
 	// Event handlers
 	function handleFocusEvent(eventId: number | null): void {
@@ -103,8 +103,8 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 	function openDeleteDialogForSelected(): void {
 		// For now, use the first selected event ID (we'll handle bulk delete later)
-		if (selectedEventIds.value.size > 0) {
-			toDeleteId.value = Array.from(selectedEventIds.value)[0] ?? null
+		if (selectedEventIds.size > 0) {
+			toDeleteId.value = Array.from(selectedEventIds)[0] ?? null
 			deleteDialog.value = true
 		}
 	}
@@ -144,27 +144,23 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 	// Selection handlers
 	function toggleEventSelection(eventId: number): void {
-		if (selectedEventIds.value.has(eventId)) {
-			selectedEventIds.value.delete(eventId)
+		if (selectedEventIds.has(eventId)) {
+			selectedEventIds.delete(eventId)
 		} else {
-			selectedEventIds.value.add(eventId)
+			selectedEventIds.add(eventId)
 		}
-		// Trigger reactivity
-		selectedEventIds.value = new Set(selectedEventIds.value)
 	}
 
 	function clearSelection(): void {
-		selectedEventIds.value = new Set()
+		selectedEventIds.clear()
 	}
 
 	function selectEvent(eventId: number): void {
-		selectedEventIds.value.add(eventId)
-		selectedEventIds.value = new Set(selectedEventIds.value)
+		selectedEventIds.add(eventId)
 	}
 
 	function deselectEvent(eventId: number): void {
-		selectedEventIds.value.delete(eventId)
-		selectedEventIds.value = new Set(selectedEventIds.value)
+		selectedEventIds.delete(eventId)
 	}
 
 	return {

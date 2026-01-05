@@ -1,7 +1,6 @@
 <template>
 <BaseEventBlock
 	:event
-	:store
 	:backgroundColor="event.color"
 	:isPast="isPast"
 	@resizeStart="emit('resizeStart', $event)"
@@ -12,6 +11,14 @@
 	@deleteSelected="handleDeleteSelected"
 	@toggleIsDoneSelected="handleToggleIsDoneSelected"
 >
+	<template #checkbox>
+		<VCheckbox
+			v-model="event.isDone"
+			class="event-checkbox"
+			hideDetails
+			@click.stop
+		/>
+	</template>
 	<!-- Override badges slot to show priority, optional, location, and category -->
 	<template #badges="{ event: e }">
 		<VChip
@@ -59,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, inject} from 'vue'
 import {useMoment} from '@/scripts/momentHelper.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
@@ -69,7 +76,9 @@ import BaseEventBlock from '../BaseEventBlock.vue';
 
 const {formatToTime24H} = useMoment()
 const {currentTime} = useCurrentTime()
-const store = useDayPlannerStore()
+
+// Inject the store from parent DayPlanner component
+const store = inject<ReturnType<typeof useDayPlannerStore>>('plannerStore')!
 
 const {event} = defineProps<{
 	event: PlannerTask
@@ -133,3 +142,23 @@ const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
 }>()
 </script>
+<style>
+.event-checkbox {
+	z-index: 15;
+	padding: 10px 5px;
+}
+
+.event-block.done-task {
+	opacity: 0.65;
+	filter: saturate(0.5);
+}
+
+.event-block.done-task .event-title {
+	text-decoration: line-through;
+	opacity: 0.7;
+}
+
+.event-block.done-task .event-time {
+	opacity: 0.6;
+}
+</style>

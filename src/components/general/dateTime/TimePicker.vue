@@ -8,6 +8,7 @@
 			:prependIcon="icon"
 			:height="height"
 			:disabled
+			class="pr-2"
 		>
 			{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
 		</VBtn>

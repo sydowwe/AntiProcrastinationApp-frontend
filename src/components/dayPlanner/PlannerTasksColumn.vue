@@ -41,7 +41,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, onMounted, ref} from 'vue'
+import {computed, inject, onMounted, ref} from 'vue'
 import CreationPreview from './CreationPreview.vue'
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
@@ -51,9 +51,8 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 
-const {store} = defineProps<{
-	store: TStore
-}>()
+// Inject the store from parent DayPlanner component
+const store = inject<TStore>('plannerStore')!
 
 const eventsColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => eventsColumnRef.value?.parentElement as HTMLElement)
