@@ -11,7 +11,6 @@
 		class="flex-fill"
 		:plannerStore="store"
 		:title="store.templateName || 'Day Template'"
-		@redrawTask="redrawTask"
 		addButtonText="Add New Task"
 		conflictMessage="Task conflicts with existing schedule!"
 		@delete="del"
@@ -57,7 +56,6 @@ import {useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/c
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
-import {storeToRefs} from 'pinia';
 import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue';
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
@@ -76,7 +74,6 @@ const {
 
 const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
-const {viewStartTime, totalGridRows, events} = storeToRefs(store)
 
 // Provide the store for slot content (TemplateEventBlock components)
 provide('plannerStore', store)
@@ -91,12 +88,7 @@ const {
 	updateOverlapsBackgroundFlags,
 	initializeEventGridPositions,
 	setGridPositionFromSpan,
-	redrawTask
-} = useDayPlannerCommon(
-	viewStartTime,
-	totalGridRows,
-	events
-)
+} = useDayPlannerCommon(store)
 
 // View-specific computed properties
 const isEdit = computed(() => store.editedId !== undefined)

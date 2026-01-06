@@ -48,7 +48,6 @@ import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useCalendarQuery, useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts'
-import {storeToRefs} from 'pinia';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
@@ -59,7 +58,6 @@ const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = use
 const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
 const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
 const store = useDayPlannerStore()
-const {viewStartTime, totalGridRows, events} = storeToRefs(useDayPlannerStore())
 
 // Provide the store for slot content (EventBlock components)
 provide('plannerStore', store)
@@ -71,11 +69,7 @@ const {
 	updateOverlapsBackgroundFlags,
 	initializeEventGridPositions,
 	redrawTask
-} = useDayPlannerCommon(
-	viewStartTime,
-	totalGridRows,
-	events
-)
+} = useDayPlannerCommon(store)
 
 const calendarId = ref<number>(-1)
 // Lifecycle hooks

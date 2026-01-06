@@ -2,11 +2,8 @@
 <BaseEventBlock
 	:event
 	@resizeStart="emit('resizeStart', $event)"
-	@openEditDialog="store.openEditDialog"
 	@toggleSelection="store.toggleEventSelection($event)"
-	@toggleIsDone="handleToggleIsDone($event)"
 	@deleteSelected="handleDeleteSelected"
-	@toggleIsDoneSelected="handleToggleIsDoneSelected"
 >
 	<!-- Use default time slot (already displays time strings correctly) -->
 
@@ -80,42 +77,9 @@ function getPriorityColor(priority: TaskPriority): string {
 	return priorityColors[priority.text] || '#999'
 }
 
-function handleToggleIsDone(eventId: number): void {
-	const taskEvent = store.events.find(e => e.id === eventId)
-	if (!taskEvent) return
-
-	// Toggle isDone locally first for immediate feedback
-	taskEvent.isDone = !taskEvent.isDone
-
-	// Call API to update
-	store.updateTaskIsDone(eventId, taskEvent.isDone)
-		.catch((error) => {
-			// Revert on error
-			taskEvent.isDone = !taskEvent.isDone
-		})
-}
-
 function handleDeleteSelected(): void {
 	// Open delete dialog for selected events
 	store.openDeleteDialog()
-}
-
-function handleToggleIsDoneSelected(): void {
-	// Toggle isDone for all selected events
-	const selectedEventIds = Array.from(store.selectedEventIds)
-
-	selectedEventIds.forEach(eventId => {
-		const taskEvent = store.events.find(e => e.id === eventId)
-		if (!taskEvent) return
-
-		const newIsDone = !taskEvent.isDone
-		taskEvent.isDone = newIsDone
-
-		store.updateTaskIsDone(eventId, newIsDone)
-			.catch((error) => {
-				taskEvent.isDone = !newIsDone
-			})
-	})
 }
 
 const emit = defineEmits<{
