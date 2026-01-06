@@ -1,9 +1,9 @@
 import type {Time} from '@/utils/Time.ts';
 import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {Ref} from 'vue';
+import type {StoreGeneric} from 'pinia';
 
-export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest> {
+export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest> extends StoreGeneric {
 	// Time/Grid configuration
 	timeSlotDuration: number
 	viewStartTime: Time

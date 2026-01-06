@@ -50,10 +50,12 @@ import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
+import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 
 // Inject the store from parent DayPlanner component
 const store = inject<TStore>('plannerStore')!
 
+const {redrawTask} = useDayPlannerCommon(store)
 const eventsColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => eventsColumnRef.value?.parentElement as HTMLElement)
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
@@ -70,6 +72,16 @@ const dragOffset = ref<number>(0)
 // Resize state (local to EventsColumn - not needed in EventBlock)
 const resizeStartSlot = ref<number | null>(null)
 const resizeDirection = ref<'top' | 'bottom' | null>(null)
+
+// Movement tracking to distinguish clicks from drags
+const MOVEMENT_THRESHOLD = 5 // pixels
+const pointerStartPos = ref<{ x: number; y: number } | null>(null)
+const hasMovedBeyondThreshold = ref(false)
+
+// Double-click detection
+const DOUBLE_CLICK_DELAY = 300 // ms
+const clickTimer = ref<number | null>(null)
+const lastClickedEventId = ref<number | null>(null)
 
 // Helper functions
 function getSlotIndexFromPosition(y: number): number {
@@ -97,6 +109,11 @@ function handleResizeStart(payload: { eventId: number; direction: 'top' | 'botto
 	resizeDirection.value = payload.direction
 	resizeStartSlot.value = event.gridRowStart - 1
 
+	// Track starting position for movement threshold
+	pointerStartPos.value = {x: payload.$event.clientX, y: payload.$event.clientY}
+	hasMovedBeyondThreshold.value = false
+	originalEventState.value = {...event}
+
 	payload.$event.preventDefault()
 	payload.$event.stopPropagation()
 }
@@ -107,14 +124,18 @@ function handlePointerDown(e: PointerEvent): void {
 	// Check if clicking on a resize handle (handled by EventBlock)
 	if (target.closest('.resize-handle')) return
 
-	// Check if clicking on an event to drag it
+	// Check if clicking on an event to potentially drag it
 	const eventBlock = target.closest('.event-block') as HTMLElement
 	if (eventBlock && !eventBlock.classList.contains('background-event-block')) {
 		const eventId = parseInt(eventBlock.dataset.eventId || '0')
 		const event = store.events.find(ev => ev.id === eventId)
 		if (!event || event.isBackground) return
 
+		// Track starting position but don't start dragging yet
+		pointerStartPos.value = {x: e.clientX, y: e.clientY}
+		hasMovedBeyondThreshold.value = false
 
+		// Prepare for potential drag
 		store.draggingEventId = eventId
 		originalEventState.value = {...event}
 
@@ -139,8 +160,22 @@ function handlePointerDown(e: PointerEvent): void {
 }
 
 function handlePointerMove(e: PointerEvent): void {
-	// Handle dragging
+	// Check if we've moved beyond threshold
+	if (pointerStartPos.value && !hasMovedBeyondThreshold.value) {
+		const dx = e.clientX - pointerStartPos.value.x
+		const dy = e.clientY - pointerStartPos.value.y
+		const distance = Math.sqrt(dx * dx + dy * dy)
+
+		if (distance > MOVEMENT_THRESHOLD) {
+			hasMovedBeyondThreshold.value = true
+		}
+	}
+
+	// Handle dragging (only if moved beyond threshold)
 	if (store.draggingEventId !== null && dragStartSlot.value !== null && originalEventState.value) {
+		// Only actually drag if we've moved beyond threshold
+		if (!hasMovedBeyondThreshold.value) return
+
 		handleAutoScroll(e.clientY)
 
 		const currentSlot = getSlotIndexFromPosition(e.clientY)
@@ -156,20 +191,22 @@ function handlePointerMove(e: PointerEvent): void {
 
 		store.dragConflict = hasConflict || !fitsInView
 
-		emit('redrawTask', {
-			eventId: store.draggingEventId,
-			updates: {
+		redrawTask(store.draggingEventId,
+			{
 				startTime: store.slotIndexToTime(newStartRow - 1),
-				endTime: store.slotIndexToTime(newEndRow),
+				endTime: store.slotIndexToTime(newEndRow - 1),
 				gridRowStart: newStartRow,
 				gridRowEnd: newEndRow
 			} as Partial<TTask>
-		})
+		)
 		return
 	}
 
-	// Handle resizing
+	// Handle resizing (only if moved beyond threshold)
 	if (store.resizingEventId !== null && resizeDirection.value) {
+		// Only actually resize if we've moved beyond threshold
+		if (!hasMovedBeyondThreshold.value) return
+
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
 		const event = store.events.find(ev => ev.id === store.resizingEventId)
 		if (!event) return
@@ -177,25 +214,24 @@ function handlePointerMove(e: PointerEvent): void {
 		if (resizeDirection.value === 'top') {
 			const newStartRow = slotIndex + 1
 			if (newStartRow <= event.gridRowEnd && !checkEventConflictByRow(newStartRow, event.gridRowEnd, store.resizingEventId)) {
-				emit('redrawTask', {
-					eventId: store.resizingEventId,
-					updates: {
+				redrawTask(
+					store.resizingEventId,
+					{
 						gridRowStart: newStartRow,
 						startTime: store.slotIndexToTime(newStartRow - 1)
 					} as Partial<TTask>
-				})
+				)
 			}
 		} else if (resizeDirection.value === 'bottom') {
 			const newEndRow = slotIndex + 1
 			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, store.resizingEventId)) {
-				emit('redrawTask', {
-					eventId: store.resizingEventId,
-					updates: {
+				redrawTask(
+					store.resizingEventId,
+					{
 						gridRowEnd: newEndRow,
-						endTime:
-							store.slotIndexToTime(newEndRow)
+						endTime: store.slotIndexToTime(newEndRow - 1)
 					} as Partial<TTask>
-				})
+				)
 			}
 		}
 		return
@@ -228,28 +264,78 @@ function handlePointerUp(): void {
 	if (store.draggingEventId !== null && originalEventState.value) {
 		const event = store.events.find(ev => ev.id === store.draggingEventId)
 
-		if (event && (store.dragConflict || event.gridRowStart < 1 || event.gridRowEnd > store.totalGridRows)) {
-			// Revert to original position
-			emit('redrawTask', {eventId: store.draggingEventId, updates: originalEventState.value})
-			store.conflictSnackbar = true
-		}
+		// Check if actual movement occurred
+		const didMove = hasMovedBeyondThreshold.value && event &&
+			(event.gridRowStart !== originalEventState.value.gridRowStart ||
+				event.gridRowEnd !== originalEventState.value.gridRowEnd)
 
-		// Only remove focus if the event actually moved
-		const didMove = event && (event.gridRowStart !== originalEventState.value.gridRowStart || event.gridRowEnd !== originalEventState.value.gridRowEnd)
 		if (didMove) {
-			store.updateTaskSpan(event.id, TaskSpan.fromTask(event))
-				.catch((error) => {
-					emit('redrawTask', {eventId: store.draggingEventId!, updates: originalEventState.value})
-				}).finally(() => {
-				(document.activeElement as HTMLElement).blur()
-			})
+			// Handle actual drag - update task position
+			if (event && (store.dragConflict || event.gridRowStart < 1 || event.gridRowEnd > store.totalGridRows)) {
+				// Revert to original position
+				redrawTask(store.draggingEventId, originalEventState.value)
+				store.conflictSnackbar = true
+			} else {
+				// Update the task span
+				store.updateTaskSpan(event.id, TaskSpan.fromTask(event))
+					.catch((error) => {
+						redrawTask(store.draggingEventId!, originalEventState.value)
+					}).finally(() => {
+					(document.activeElement as HTMLElement).blur()
+				})
+			}
+		} else {
+			// No movement - it was just a click
+			const clickedEventId = store.draggingEventId
+
+			// Check if this is a double-click (click on same event within delay)
+			if (clickTimer.value !== null && lastClickedEventId.value === clickedEventId) {
+				// Double-click detected - cancel the pending selection toggle
+				clearTimeout(clickTimer.value)
+				clickTimer.value = null
+				lastClickedEventId.value = null
+
+				// Open edit dialog for the clicked event without changing selection
+				const event = store.events.find(e => e.id === clickedEventId)
+				if (event) {
+					store.editedId = event.id
+					store.editingEvent = {
+						activityId: event.activity.id,
+						startTime: event.startTime,
+						endTime: event.endTime,
+						isBackground: event.isBackground,
+						isOptional: event.isOptional,
+						location: event.location,
+						notes: event.notes,
+						priorityId: event.priority?.id
+					} as TTaskRequest
+					store.dialog = true
+				}
+			} else {
+				// Potential first click - delay selection toggle to detect double-click
+				if (clickTimer.value !== null) {
+					clearTimeout(clickTimer.value)
+				}
+
+				lastClickedEventId.value = clickedEventId
+
+				// Set timer to toggle selection after delay (if no second click comes)
+				clickTimer.value = window.setTimeout(() => {
+					store.toggleEventSelection(clickedEventId)
+					clickTimer.value = null
+					lastClickedEventId.value = null
+				}, DOUBLE_CLICK_DELAY)
+			}
 		}
 
+		// Reset drag state
 		store.draggingEventId = null
 		dragStartSlot.value = null
 		dragOffset.value = 0
 		store.dragConflict = false
 		originalEventState.value = null
+		pointerStartPos.value = null
+		hasMovedBeyondThreshold.value = false
 		return
 	}
 
@@ -257,14 +343,27 @@ function handlePointerUp(): void {
 	if (store.resizingEventId !== null) {
 		const event = store.events.find(ev => ev.id === store.resizingEventId)
 
-		store.updateTaskSpan(store.resizingEventId, TaskSpan.fromTask(event!))
-			.catch((error) => {
-				emit('redrawTask', {eventId: store.draggingEventId!, updates: originalEventState.value})
-			}).finally(() => {
-			store.resizingEventId = null
-			resizeStartSlot.value = null
-			resizeDirection.value = null
-		})
+		// Check if actual movement occurred
+		const didMove = hasMovedBeyondThreshold.value && event && originalEventState.value &&
+			(event.gridRowStart !== originalEventState.value.gridRowStart ||
+				event.gridRowEnd !== originalEventState.value.gridRowEnd)
+
+		if (didMove) {
+			// Handle actual resize - update task span
+			store.updateTaskSpan(store.resizingEventId, TaskSpan.fromTask(event!))
+				.catch((error) => {
+					redrawTask(store.resizingEventId!, originalEventState.value)
+				})
+		}
+		// Note: Don't toggle selection on resize handle click
+
+		// Reset resize state
+		store.resizingEventId = null
+		resizeStartSlot.value = null
+		resizeDirection.value = null
+		originalEventState.value = null
+		pointerStartPos.value = null
+		hasMovedBeyondThreshold.value = false
 		return
 	}
 
@@ -284,9 +383,6 @@ onMounted(() => {
 	document.addEventListener('pointerup', handlePointerUp)
 })
 
-const emit = defineEmits<{
-	redrawTask: [payload: { eventId: number; updates: Partial<TTask> }],
-}>()
 </script>
 
 <style scoped>

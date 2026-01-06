@@ -36,9 +36,7 @@
 			<PlannerTimeColumn/>
 
 			<!-- Events Column with event block slot -->
-			<PlannerTasksColumn
-				@redrawTask="emit('redrawTask', $event.eventId, $event.updates as Partial<TTask>)"
-			>
+			<PlannerTasksColumn>
 				<template #event-block="{ event, onResizeStart }">
 					<!-- Default slot for event blocks - each view provides its own EventBlock component -->
 					<slot name="event-block" :event="event" :onResizeStart="onResizeStart">

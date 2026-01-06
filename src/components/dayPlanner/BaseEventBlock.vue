@@ -18,7 +18,6 @@
 	:class="['event-block', ...blockClasses]"
 	:data-event-id="event.id"
 	:tabindex="0"
-	@click="handleClick"
 	@keydown.enter="handleEnterKey"
 	@keydown.e="handleEKey"
 	@keydown.delete="handleDeleteKey"
@@ -69,7 +68,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, inject, ref} from 'vue'
+import {computed, inject} from 'vue'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
@@ -122,45 +121,18 @@ const blockClasses = computed(() => [
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-	(e: 'openEditDialog'): void
 	(e: 'toggleSelection', id: number): void
 	(e: 'toggleIsDone', id: number): void
 	(e: 'deleteSelected'): void
 	(e: 'toggleIsDoneSelected'): void
 }>()
 
-// Click handling with double-click detection
-const clickTimer = ref<number | null>(null)
-const DOUBLE_CLICK_DELAY = 250 // ms
-
-function handleClick(e: MouseEvent): void {
-	// Don't handle clicks if we're currently dragging or resizing
-	if (store.isDraggingAny || store.isResizingAny) return
-
-	// Don't handle clicks on resize handles (they're handled separately)
-	if ((e.target as HTMLElement).classList.contains('resize-handle')) return
-
-	if (clickTimer.value === null) {
-		// First click - start timer for double-click detection
-		clickTimer.value = window.setTimeout(() => {
-			// Single click confirmed - toggle selection
-			emit('toggleSelection', event.id)
-			clickTimer.value = null
-		}, DOUBLE_CLICK_DELAY)
-	} else {
-		// Second click within delay - it's a double click
-		clearTimeout(clickTimer.value)
-		clickTimer.value = null
-		emit('openEditDialog')
-	}
-}
-
 // Keyboard handlers
 function handleEnterKey(e: KeyboardEvent): void {
 	e.preventDefault()
 	// Only open edit if single event is selected (this event is focused/selected)
 	if (isSelected.value && store.selectedEventIds.size === 1) {
-		emit('openEditDialog')
+		store.openEditDialog()
 	}
 }
 
@@ -168,7 +140,7 @@ function handleEKey(e: KeyboardEvent): void {
 	e.preventDefault()
 	// Only open edit if single event is selected
 	if (isSelected.value && store.selectedEventIds.size === 1) {
-		emit('openEditDialog')
+		store.openEditDialog()
 	}
 }
 
@@ -215,8 +187,6 @@ function handleEscapeKey(e: KeyboardEvent): void {
 }
 
 .event-block.selected {
-	transform: scalex(1.015);
-	right: 0.75%;
 	z-index: 11;
 	border: 2px solid #EEE;
 	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);

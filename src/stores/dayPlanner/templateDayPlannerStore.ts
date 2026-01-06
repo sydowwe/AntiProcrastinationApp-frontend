@@ -1,4 +1,4 @@
-import {defineStore, type StoreGeneric} from 'pinia'
+import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
@@ -21,18 +21,13 @@ export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', () =
 		await patch(eventId, span)
 	}
 
-	async function updateTaskIsDone(eventId: number, isDone: boolean) {
-		await patch(eventId, { isDone })
-	}
-
 	return {
 		...core,
 		// Template metadata
 		updateTaskSpan,
-		updateTaskIsDone,
 		currentTemplateId,
 		templateName,
 	}
 }, {
 	persist: {omit: ["events"]}
-}) satisfies () => ITemplateDayPlannerStore & StoreGeneric
+}) satisfies () => ITemplateDayPlannerStore

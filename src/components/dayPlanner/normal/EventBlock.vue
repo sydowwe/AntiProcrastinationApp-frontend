@@ -4,7 +4,6 @@
 	:backgroundColor="event.color"
 	:isPast="isPast"
 	@resizeStart="emit('resizeStart', $event)"
-	@openEditDialog="store.openEditDialog"
 	@toggleSelection="store.toggleEventSelection($event)"
 	@toggleIsDone="handleToggleIsDone($event)"
 	@deleteSelected="handleDeleteSelected"
