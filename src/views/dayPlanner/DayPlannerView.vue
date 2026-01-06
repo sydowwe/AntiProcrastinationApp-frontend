@@ -7,23 +7,25 @@
 	@redrawTask="redrawTask"
 	@delete="del"
 >
-	<template #headerAppend>
-		<VBtn
-			v-if="store.hasSelectedEvents"
-			color="success"
-			variant="outlined"
-			@click="handleToggleSelectedIsDone"
-			prependIcon="check"
-		>
-			Toggle Done ({{ store.selectedEventIds.size }})
-		</VBtn>
-	</template>
 	<!-- Custom event block for normal planner -->
 	<template #event-block="{ event, onResizeStart }">
 		<EventBlock
 			:event="event as PlannerTask"
 			@resizeStart="onResizeStart"
 		/>
+	</template>
+
+	<!-- Toggle Done button for selection action bar -->
+	<template #selection-actions="{ store }">
+		<VBtn
+			v-if="store.selectedEventIds.size > 1"
+			size="small"
+			variant="tonal"
+			color="primaryOutline"
+			@click="handleToggleSelectedIsDone"
+		>
+			Toggle Done
+		</VBtn>
 	</template>
 
 	<!-- Custom dialog for normal planner -->
@@ -161,7 +163,6 @@ async function del(): Promise<void> {
 	if (store.toDeleteId !== null) {
 		await deleteEntity(store.toDeleteId);
 		store.events.splice(store.events.findIndex(e => e.id === store.toDeleteId), 1)
-		store.focusedEventId = null
 	}
 	store.deleteDialog = false
 	store.toDeleteId = null

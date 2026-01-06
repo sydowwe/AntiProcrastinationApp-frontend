@@ -128,6 +128,8 @@ export const vuetify = createVuetify({
 					'on-background': '#E5E7EB',
 					'on-surface': '#FFF',
 
+					textMuted: '#a0a6b1',
+
 					// brand
 					primary: '#1D4ED8', // blue-700
 					secondary: '#6D28D9', // purple-700

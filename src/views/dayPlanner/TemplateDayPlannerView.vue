@@ -190,7 +190,6 @@ async function del(): Promise<void> {
 	if (store.toDeleteId !== null) {
 		await deleteTask(store.toDeleteId);
 		store.events.splice(store.events.findIndex(e => e.id === store.toDeleteId), 1)
-		store.focusedEventId = null
 	}
 	store.deleteDialog = false
 	store.toDeleteId = null
