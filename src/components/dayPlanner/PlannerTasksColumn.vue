@@ -241,7 +241,6 @@ function handlePointerUp(): void {
 				.catch((error) => {
 					emit('redrawTask', {eventId: store.draggingEventId!, updates: originalEventState.value})
 				}).finally(() => {
-				store.handleFocusEvent(null);
 				(document.activeElement as HTMLElement).blur()
 			})
 		}
@@ -294,7 +293,7 @@ const emit = defineEmits<{
 .events-column {
 	display: grid;
 	position: relative;
-	background: rgb(var(--v-theme-neutral-200));
+	background: rgb(var(--v-theme-neutral-100));
 	user-select: none;
 	cursor: crosshair;
 	touch-action: none;

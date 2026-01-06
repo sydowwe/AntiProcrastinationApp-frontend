@@ -1,9 +1,9 @@
 <!-- DayPlanner.vue - Unified day planner component for both regular and template views -->
 <template>
-<VCard class="w-100 d-flex flex-column">
+<VCard class="w-100 h-100 d-flex flex-column">
 	<!-- Header slot - each view provides its own header -->
 	<slot name="header" :store="plannerStore">
-		<VCardTitle class="px-5 d-flex justify-space-between align-center flex-wrap ga-2">
+		<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
 			<div class="d-flex align-center ga-3">
 				<span class="text-h5">{{ title }}</span>
 
@@ -17,24 +17,6 @@
 
 			<div class="d-flex ga-2 align-center flex-wrap">
 				<slot name="headerAppend"></slot>
-				<!-- Edit button - only for single focused event -->
-				<VBtn
-					color="secondary"
-					@pointerdown.prevent="plannerStore.openEditDialog"
-					:class="{ 'is-hidden': !plannerStore.focusedEventId || plannerStore.hasSelectedEvents }"
-				>
-					Edit
-				</VBtn>
-
-				<!-- Delete button - for focused or selected events -->
-				<VBtn
-					color="secondaryOutline"
-					variant="outlined"
-					@pointerdown.prevent="handleDeleteClick"
-					:class="{ 'is-hidden': !plannerStore.focusedEventId && !plannerStore.hasSelectedEvents }"
-				>
-					Delete{{ plannerStore.hasSelectedEvents ? ` (${plannerStore.selectedEventIds.size})` : '' }}
-				</VBtn>
 
 				<VBtn
 					color="primary"
@@ -47,11 +29,11 @@
 		</VCardTitle>
 	</slot>
 
-	<VCardText class="flex-fill d-flex flex-column ga-4">
+	<VCardText class="pa-3 pa-md-4 flex-fill d-flex flex-column ga-4">
 		<div class="calendar-grid flex-fill">
 
 			<!-- Time Column -->
-			<PlannerTimeColumn :store="plannerStore"/>
+			<PlannerTimeColumn/>
 
 			<!-- Events Column with event block slot -->
 			<PlannerTasksColumn
@@ -64,14 +46,18 @@
 					</slot>
 				</template>
 			</PlannerTasksColumn>
+
+			<!-- Floating Selection Action Bar -->
+			<SelectionActionBar>
+				<slot name="selection-actions" :store="plannerStore"></slot>
+			</SelectionActionBar>
 		</div>
 
 		<!-- Legend slot - optional for future use -->
-		<slot name="legend">
-			<div class="calendar-legend">
-				<!-- Add category legend here if needed -->
-			</div>
-		</slot>
+		<!--		<slot name="legend">-->
+		<!--			<div class="calendar-legend">-->
+		<!--			</div>-->
+		<!--		</slot>-->
 	</VCardText>
 </VCard>
 
@@ -111,6 +97,7 @@ import {computed, provide} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import PlannerTimeColumn from '@/components/dayPlanner/PlannerTimeColumn.vue'
 import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
+import SelectionActionBar from '@/components/dayPlanner/SelectionActionBar.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
@@ -136,15 +123,6 @@ const deleteConfirmationText = computed(() => {
 	return `Are you sure you want to delete ${eventName}?`
 })
 
-function handleDeleteClick(): void {
-	if (props.plannerStore.hasSelectedEvents) {
-		props.plannerStore.openDeleteDialogForSelected()
-	} else {
-		props.plannerStore.openDeleteDialog()
-	}
-}
-
-
 const emit = defineEmits<{
 	redrawTask: [eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>],
 	delete: []
@@ -153,14 +131,15 @@ const emit = defineEmits<{
 
 <style scoped>
 .calendar-grid {
-	background: rgb(var(--v-theme-neutral-100));
+	background: rgb(var(--v-theme-neutral-50));
 	display: grid;
 	grid-template-columns: 80px 1fr;
 	gap: 0;
 	height: 600px;
 	overflow-y: auto;
 	border: 2px solid #444;
-	padding: 10px 0;
+	padding: 10px 0 0 0;
+	position: relative;
 }
 
 .calendar-legend {
@@ -179,7 +158,7 @@ const emit = defineEmits<{
 }
 
 .calendar-grid::-webkit-scrollbar-track {
-	background: #f1f1f1;
+	background: rgb(var(--v-theme-neutral-50));
 }
 
 .calendar-grid::-webkit-scrollbar-thumb {

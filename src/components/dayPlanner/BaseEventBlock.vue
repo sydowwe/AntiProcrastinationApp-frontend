@@ -25,8 +25,6 @@
 	@keydown.backspace="handleDeleteKey"
 	@keydown.space="handleSpaceKey"
 	@keydown.esc="handleEscapeKey"
-	@focus="emit('focusEvent', event.id)"
-	@blur="emit('focusEvent', null)"
 >
 	<slot name="checkbox"></slot>
 	<div
@@ -88,7 +86,6 @@ const store = inject<TStore>('plannerStore')!
 
 // Computed states
 const isSelected = computed(() => store.selectedEventIds.has(event.id))
-const isFocused = computed(() => store.focusedEventId === event.id)
 const isDragging = computed(() => store.draggingEventId === event.id)
 const isResizing = computed(() => store.resizingEventId === event.id)
 const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
@@ -116,7 +113,6 @@ const blockClasses = computed(() => [
 		'dragging': isDragging.value,
 		'resizing': isResizing.value,
 		'past-event': isPast,
-		'focused': isFocused.value,
 		'selected': isSelected.value,
 		'conflict': isConflict.value,
 		'no-hover': isAnyEventBeingManipulated.value,
@@ -126,7 +122,6 @@ const blockClasses = computed(() => [
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-	(e: 'focusEvent', id: number | null): void
 	(e: 'openEditDialog'): void
 	(e: 'toggleSelection', id: number): void
 	(e: 'toggleIsDone', id: number): void
@@ -219,18 +214,12 @@ function handleEscapeKey(e: KeyboardEvent): void {
 	outline: none;
 }
 
-.event-block.focused {
+.event-block.selected {
 	transform: scalex(1.015);
 	right: 0.75%;
 	z-index: 11;
-	border: 3px solid #ffffff;
+	border: 2px solid #EEE;
 	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
-}
-
-.event-block.selected {
-	border: 3px solid rgb(var(--v-theme-primary));
-	box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.3);
-	z-index: 11;
 }
 
 .event-block.dragging {

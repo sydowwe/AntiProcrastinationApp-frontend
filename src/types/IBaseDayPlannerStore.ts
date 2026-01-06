@@ -17,7 +17,6 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 
 	// State
 	events: TTask[]
-	focusedEventId: number | null
 	selectedEventIds: Set<number>
 	dialog: boolean
 	editedId: number | undefined
@@ -37,9 +36,7 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	isResizingAny: boolean
 
 	// Actions
-	handleFocusEvent: (eventId: number | null) => void
 	openDeleteDialog: () => void
-	openDeleteDialogForSelected: () => void
 	openCreateDialogPrefilled: (startTime: Time, endTime: Time) => void
 	openCreateDialogEmpty: () => void
 	openEditDialog: () => void

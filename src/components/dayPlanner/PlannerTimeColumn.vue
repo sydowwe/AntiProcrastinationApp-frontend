@@ -50,10 +50,9 @@ import {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import {inject} from 'vue';
 
-const {store} = defineProps<{
-	store: TStore
-}>()
+const store = inject<TStore>('plannerStore')!
 
 const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator(store)
 </script>
@@ -61,7 +60,7 @@ const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator(store)
 <style scoped>
 .time-column {
 	display: grid;
-	background: rgb(var(--v-theme-neutral-100));
+	background: rgb(var(--v-theme-neutral-50));
 	position: relative;
 }
 
@@ -90,7 +89,7 @@ const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator(store)
 	transform: translateY(-50%);
 	color: #FFF;
 	font-weight: 400;
-	background: rgb(var(--v-theme-neutral-100));
+	background: rgb(var(--v-theme-neutral-50));
 	padding: 0 1px;
 	font-size: 13px;
 }

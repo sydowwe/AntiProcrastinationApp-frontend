@@ -14,9 +14,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	// Events state
 	const events = ref<TTask[]>([])
 
-	// Focus state
-	const focusedEventId = ref<number | null>(null)
-
 	// Selection state (for multi-select)
 	const selectedEventIds = reactive<Set<number>>(new Set())
 
@@ -92,17 +89,8 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const hasSelectedEvents = computed(() => selectedEventIds.size > 0)
 
 	// Event handlers
-	function handleFocusEvent(eventId: number | null): void {
-		focusedEventId.value = eventId
-	}
-
 	function openDeleteDialog(): void {
-		toDeleteId.value = focusedEventId.value
-		deleteDialog.value = true
-	}
-
-	function openDeleteDialogForSelected(): void {
-		// For now, use the first selected event ID (we'll handle bulk delete later)
+		// Use the first selected event ID if any are selected
 		if (selectedEventIds.size > 0) {
 			toDeleteId.value = Array.from(selectedEventIds)[0] ?? null
 			deleteDialog.value = true
@@ -124,7 +112,11 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	}
 
 	function openEditDialog(): void {
-		const event = events.value.find(e => e.id === focusedEventId.value)
+		// Only open edit dialog if exactly one event is selected
+		if (selectedEventIds.size !== 1) return
+
+		const selectedId = Array.from(selectedEventIds)[0]
+		const event = events.value.find(e => e.id === selectedId)
 		if (!event) return
 
 		editedId.value = event.id
@@ -134,7 +126,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 			endTime: event.endTime,
 			isBackground: event.isBackground,
 			isOptional: event.isOptional,
-			isDone: event.isDone,
 			location: event.location,
 			notes: event.notes,
 			priorityId: event.priority?.id
@@ -177,7 +168,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 		// State
 		events,
-		focusedEventId,
 		selectedEventIds,
 		dialog,
 		editedId,
@@ -197,9 +187,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		isResizingAny,
 
 		// Actions
-		handleFocusEvent,
 		openDeleteDialog,
-		openDeleteDialogForSelected,
 		openCreateDialogPrefilled,
 		openCreateDialogEmpty,
 		openEditDialog,

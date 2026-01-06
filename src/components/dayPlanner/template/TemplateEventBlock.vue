@@ -2,7 +2,6 @@
 <BaseEventBlock
 	:event
 	@resizeStart="emit('resizeStart', $event)"
-	@focusEvent="store.handleFocusEvent($event)"
 	@openEditDialog="store.openEditDialog"
 	@toggleSelection="store.toggleEventSelection($event)"
 	@toggleIsDone="handleToggleIsDone($event)"
@@ -98,7 +97,7 @@ function handleToggleIsDone(eventId: number): void {
 
 function handleDeleteSelected(): void {
 	// Open delete dialog for selected events
-	store.openDeleteDialogForSelected()
+	store.openDeleteDialog()
 }
 
 function handleToggleIsDoneSelected(): void {
