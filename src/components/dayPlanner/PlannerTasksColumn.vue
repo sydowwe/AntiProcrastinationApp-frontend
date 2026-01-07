@@ -299,7 +299,7 @@ function handlePointerUp(): void {
 				const event = store.events.find(e => e.id === clickedEventId)
 				if (event) {
 					store.editedId = event.id
-					store.editingEvent = {
+					store.editingTask = {
 						activityId: event.activity.id,
 						startTime: event.startTime,
 						endTime: event.endTime,

@@ -3,11 +3,11 @@ import {Role} from "./Role";
 
 export class Activity {
 	constructor(
-		public id?: number,
-		public name?: string,
+		public id: number,
+		public name: string,
 		public text: string | null = null,
-		public isUnavoidable?: boolean,
-		public role?: Role,
+		public isUnavoidable: boolean,
+		public role: Role,
 		public category: Category | null = null,
 	) {
 	}

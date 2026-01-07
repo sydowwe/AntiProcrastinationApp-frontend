@@ -98,6 +98,11 @@ function onOpenEdit(oldActivity: Activity) {
 	selectedActivityId.value = oldActivity.id;
 }
 
+function setDefaultActivityId(activityId: number | undefined) {
+	console.log(activityId)
+	selectedActivityId.value = activityId;
+}
+
 function reset() {
 	isActivityFormHidden.value = false;
 	activityFormFieldData.value = QuickActivityToolsDto.createEmpty;
@@ -106,6 +111,6 @@ function reset() {
 }
 
 defineExpose({
-	execAndReturnStatus, reset, onOpenEdit
+	execAndReturnStatus, setDefaultActivityId, reset, onOpenEdit
 })
 </script>

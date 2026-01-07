@@ -1,7 +1,7 @@
 <template>
 <MyDialog
 	:title="!isEdit ? 'Add New Event' : 'Edit Event'"
-	v-model="store.dialog"
+	v-model="dialog"
 	@confirmed="save"
 	maxWidth="500px"
 >
@@ -18,7 +18,7 @@
 			<VCol cols="12">
 				<VIdSelect
 					:label="$t('toDoList.urgency')"
-					v-model="store.editingEvent.priorityId"
+					v-model="store.editingTask.priorityId"
 					:clearable="false"
 					:items="priorityOptions"
 					required
@@ -27,36 +27,36 @@
 			</VCol>
 
 			<VCol cols="12" sm="6" class="d-flex align-center">
-				<VMenu :closeOnContentClick="false">
-					<template v-slot:activator="{ props }">
-						<VBtn
-							class="pr-3"
-							v-bind="props"
-							variant="outlined"
-							prependIcon="palette"
-							:readonly="isEdit"
-						>
-							Color
-							<VSheet
-								:color="store.editingEvent.color"
-								class="ml-2"
-								rounded="xl"
-								width="20"
-								height="20"
-							/>
-						</VBtn>
-					</template>
-					<template v-slot:default>
-						<VColorPicker v-model="store.editingEvent.color"/>
-					</template>
-				</VMenu>
+				<!--				<VMenu :closeOnContentClick="false">-->
+				<!--					<template v-slot:activator="{ store }">-->
+				<!--						<VBtn-->
+				<!--							class="pr-3"-->
+				<!--							v-bind="store"-->
+				<!--							variant="outlined"-->
+				<!--							prependIcon="palette"-->
+				<!--							:readonly="isEdit"-->
+				<!--						>-->
+				<!--							Color-->
+				<!--							<VSheet-->
+				<!--								:color="store.editingTask.color"-->
+				<!--								class="ml-2"-->
+				<!--								rounded="xl"-->
+				<!--								width="20"-->
+				<!--								height="20"-->
+				<!--							/>-->
+				<!--						</VBtn>-->
+				<!--					</template>-->
+				<!--					<template v-slot:default>-->
+				<!--						<VColorPicker v-model="store.editingTask"/>-->
+				<!--					</template>-->
+				<!--				</VMenu>-->
 			</VCol>
 
 			<VCol cols="12" sm="6">
 				<VSwitch
 					label="Is background"
 					color="primary"
-					v-model="store.editingEvent.isBackground"
+					v-model="store.editingTask.isBackground"
 					hideDetails
 				/>
 			</VCol>
@@ -65,14 +65,14 @@
 				<VSwitch
 					label="Is optional"
 					color="primary"
-					v-model="store.editingEvent.isOptional"
+					v-model="store.editingTask.isOptional"
 					hideDetails
 				/>
 			</VCol>
 
 			<VCol cols="12" sm="6">
 				<VTextField
-					v-model="store.editingEvent.location"
+					v-model="store.editingTask.location"
 					label="Location"
 					prependIcon="map-marker"
 					clearable
@@ -80,7 +80,7 @@
 			</VCol>
 
 			<VCol cols="12">
-				<VTextarea v-model="store.editingEvent.notes" label="Notes" rows="3" autoGrow></VTextarea>
+				<VTextarea v-model="store.editingTask.notes" label="Notes" rows="3" autoGrow></VTextarea>
 			</VCol>
 		</VRow>
 	</VForm>
@@ -88,17 +88,18 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, nextTick, onMounted, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {Time} from '@/utils/Time.ts';
-import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
-import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
+import {storeToRefs} from 'pinia';
 
 const {fetchAll} = useTaskUrgencyCrud()
 const {requiredRule} = useGeneralRules()
@@ -106,6 +107,7 @@ const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
 const store = useDayPlannerStore()
+const {dialog} = storeToRefs(store)
 
 const start = ref<Time>(new Time(0, 0))
 const end = ref<Time>(new Time(0, 0))
@@ -114,34 +116,28 @@ const priorityOptions = ref([] as TaskPriority[]);
 const isEdit = computed(() => store.editedId !== undefined)
 const allowedStep = (m: number) => m % 10 === 0
 
-onMounted(async function() {
+const data = ref<PlannerTaskRequest>(new PlannerTaskRequest())
+
+onMounted(async function () {
 	priorityOptions.value = await fetchAll();
 	setDefaultUrgency();
 })
 
 function setDefaultUrgency() {
-	if (!store.editingEvent.priorityId) {
-		store.editingEvent.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
+	if (!store.editingTask.priorityId) {
+		store.editingTask.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
 	}
 }
 
-watch(() => store.dialog, (value) => {
+watch(dialog, async (value) => {
 	if (value) {
-		// Initialize start and end Time objects from the store's editing event
-		if (store.editingEvent.startTime) {
-			start.value = new Time(store.editingEvent.startTime.hours, store.editingEvent.startTime.minutes)
+		await nextTick()
+		if (store.editingTask) {
+			data.value = {...store.editingTask}
+			activityFormField.value?.setDefaultActivityId(store.editingTask.activityId)
 		} else {
-			start.value = new Time(0, 0)
-		}
-
-		if (store.editingEvent.endTime) {
-			end.value = new Time(store.editingEvent.endTime.hours, store.editingEvent.endTime.minutes)
-		} else {
-			end.value = new Time(0, 0)
-		}
-
-		// Set default priority if not editing
-		if (!isEdit.value) {
+			// New mode: reset to defaults
+			data.value = new PlannerTaskRequest()
 			setDefaultUrgency()
 		}
 	}
@@ -158,23 +154,23 @@ async function save() {
 		return;
 	}
 
-	store.editingEvent.activityId = activityFormFieldResult.activityId
+	store.editingTask.activityId = activityFormFieldResult.activityId
 
 	// Set the Time objects
-	store.editingEvent.startTime = start.value
-	store.editingEvent.endTime = end.value
+	store.editingTask.startTime = start.value
+	store.editingTask.endTime = end.value
 
 	// Set the date (handle date change if time wraps past midnight)
 	const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
-	store.editingEvent.date = new Date(viewedDate)
+	store.editingTask.date = new Date(viewedDate)
 
 	if (store.editedId) {
-		emit('edit', store.editedId, store.editingEvent)
+		emit('edit', store.editedId, store.editingTask)
 	} else {
-		emit('create', store.editingEvent)
+		emit('create', store.editingTask)
 	}
 
-	store.dialog = false
+	dialog.value = false
 }
 
 const emit = defineEmits<{

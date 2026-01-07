@@ -33,10 +33,6 @@
 		<!-- Custom dialog for template planner -->
 		<template #dialog>
 			<PlannerTaskTemplateDialog
-				v-model:dialog="store.dialog"
-				:editingTask="store.editingEvent"
-				:isEdit="isEdit"
-				:editedId="store.editedId"
 				@create="createTask"
 				@edit="edit"
 			/>
@@ -89,9 +85,6 @@ const {
 	initializeEventGridPositions,
 	setGridPositionFromSpan,
 } = useDayPlannerCommon(store)
-
-// View-specific computed properties
-const isEdit = computed(() => store.editedId !== undefined)
 
 // Lifecycle hooks
 onMounted(async () => {

@@ -20,7 +20,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	// Dialog state
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()
-	const editingEvent = ref<TTaskRequest>({} as TTaskRequest)
+	const editingTask = ref<TTaskRequest>({} as TTaskRequest)
 	const deleteDialog = ref(false)
 	const toDeleteId = ref<number | null>(null)
 
@@ -99,15 +99,15 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 	function openCreateDialogPrefilled(startTime: Time, endTime: Time): void {
 		editedId.value = undefined
-		editingEvent.value = createEmptyRequest()
-		editingEvent.value.startTime = startTime
-		editingEvent.value.endTime = endTime
+		editingTask.value = createEmptyRequest()
+		editingTask.value.startTime = startTime
+		editingTask.value.endTime = endTime
 		dialog.value = true
 	}
 
 	function openCreateDialogEmpty(): void {
 		editedId.value = undefined
-		editingEvent.value = createEmptyRequest()
+		editingTask.value = createEmptyRequest()
 		dialog.value = true
 	}
 
@@ -120,7 +120,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		if (!event) return
 
 		editedId.value = event.id
-		editingEvent.value = {
+		editingTask.value = {
 			activityId: event.activity.id,
 			startTime: event.startTime,
 			endTime: event.endTime,
@@ -171,7 +171,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		selectedEventIds,
 		dialog,
 		editedId,
-		editingEvent,
+		editingTask,
 		deleteDialog,
 		toDeleteId,
 		conflictSnackbar,

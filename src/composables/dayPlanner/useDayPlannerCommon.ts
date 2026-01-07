@@ -78,12 +78,13 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	 * Update overlapping background flags for all events
 	 */
 	function updateOverlapsBackgroundFlags(bgStart: Time, bgEnd: Time): void {
-
 		store.events.forEach(event => {
 			if (event.isBackground) return
 
 			if (event.startTime && event.endTime) {
-				if (rangesOverlapTime(event.startTime, event.endTime, bgStart as Time, bgEnd as Time)) {
+				if (rangesOverlapTime(event.startTime, event.endTime, bgStart, bgEnd)) {
+					console.log('aa')
+
 					event.isDuringBackgroundEvent = true
 				}
 				return
@@ -97,6 +98,9 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	function initializeEventGridPositions(): void {
 		store.events.forEach(event => {
 			setGridPositionFromSpan(event)
+			if (event.isBackground) {
+				updateOverlapsBackgroundFlags(event.startTime, event.endTime)
+			}
 		})
 	}
 
