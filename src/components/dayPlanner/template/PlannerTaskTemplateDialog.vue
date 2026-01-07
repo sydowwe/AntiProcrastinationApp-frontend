@@ -1,14 +1,14 @@
 <template>
 <MyDialog
 	:title="!isEdit ? 'Add New Template Task' : 'Edit Template Task'"
-	v-model="dialog"
+	v-model="store.dialog"
 	@confirmed="save"
 	maxWidth="500px"
 >
 	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
 		<VRow>
 			<VCol cols="12">
-				<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Planner task" :isEdit></ActivitySelectOrQuickEditFormField>
+				<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Planner task"></ActivitySelectOrQuickEditFormField>
 			</VCol>
 
 			<VCol cols="12">
@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref, watch} from 'vue'
+import {computed, nextTick, onMounted, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
@@ -61,22 +61,17 @@ import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
 
 const {fetchAll} = useTaskUrgencyCrud()
 const {requiredRule} = useGeneralRules()
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
-const props = defineProps<{
-	editingTask: TemplatePlannerTaskRequest
-	dialog: boolean
-	isEdit: boolean
-	editedId?: number
-}>()
-
 const priorityOptions = ref([] as TaskPriority[]);
+const store = useTemplateDayPlannerStore()
 
-const dialog = defineModel<boolean>('dialog', {required: true})
+const isEdit = computed(() => store.editedId !== undefined)
 
 const data = ref<TemplatePlannerTaskRequest>(new TemplatePlannerTaskRequest())
 
@@ -89,10 +84,12 @@ function setDefaultUrgency() {
 	data.value.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
 }
 
-watch(() => props.dialog, (value) => {
+watch(() => store.dialog, async (value) => {
 	if (value) {
-		if (props.editingTask) {
-			data.value = {...props.editingTask}
+		await nextTick()
+		if (store.editingTask) {
+			data.value = {...store.editingTask}
+			activityFormField.value?.setDefaultActivityId(store.editingTask.activityId)
 		} else {
 			// New mode: reset to defaults
 			data.value = new TemplatePlannerTaskRequest()
@@ -114,13 +111,13 @@ async function save() {
 
 	data.value.activityId = activityFormFieldResult.activityId
 
-	if (props.editedId) {
-		emit('edit', props.editedId, data.value)
+	if (store.editedId) {
+		emit('edit', store.editedId, data.value)
 	} else {
 		emit('create', data.value)
 	}
 
-	dialog.value = false
+	store.dialog = false
 }
 
 const emit = defineEmits<{

@@ -20,7 +20,7 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	selectedEventIds: Set<number>
 	dialog: boolean
 	editedId: number | undefined
-	editingEvent: TTaskRequest
+	editingTask: TTaskRequest
 	deleteDialog: boolean
 	toDeleteId: number | null
 	conflictSnackbar: boolean

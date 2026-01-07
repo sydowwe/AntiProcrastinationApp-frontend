@@ -229,10 +229,6 @@ function handleEscapeKey(e: KeyboardEvent): void {
 	filter: grayscale(20%) brightness(0.95);
 }
 
-.event-block.optional-task {
-	border: 2px dashed rgba(255, 255, 255, 0.5);
-}
-
 .event-content {
 	flex: 1;
 	padding: 8px 12px;

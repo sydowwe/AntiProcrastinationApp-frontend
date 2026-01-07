@@ -1,4 +1,4 @@
-import {defineStore, type StoreGeneric} from 'pinia'
+import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
@@ -72,7 +72,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	}
 
 	async function updateTaskIsDone(eventId: number, isDone: boolean) {
-		await patch(eventId, { isDone })
+		await patch(eventId, {isDone})
 	}
 
 	return {
@@ -86,4 +86,4 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		dateTimeFromSlotIndex,
 		datetimeToSlotIndex,
 	}
-}) satisfies () => IDayPlannerStore & StoreGeneric
+}) satisfies () => IDayPlannerStore
