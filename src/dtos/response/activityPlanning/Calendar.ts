@@ -1,5 +1,6 @@
 import {DayType} from '@/dtos/enum/DayType.ts';
 import {convertToEnum} from '@/composables/general/EnumComposable.ts';
+import {Time} from '@/utils/Time.ts';
 
 export class Calendar {
 	constructor(
@@ -8,8 +9,8 @@ export class Calendar {
 		public readonly dayType: DayType,              // DayType enum name
 		public readonly dayIndex: number,
 		public readonly label: string | null,
-		public readonly wakeUpTime: string | null,    // TimeOnly -> "HH:mm:ss"
-		public readonly bedTime: string | null,       // TimeOnly -> "HH:mm:ss"
+		public readonly wakeUpTime: Time,
+		public readonly bedTime: Time,
 		public readonly appliedTemplateId: number | null,
 		public readonly appliedTemplateName: string | null,
 		public readonly weather: string | null,
@@ -35,8 +36,8 @@ export class Calendar {
 			convertToEnum(DayType, json.dayType),
 			json.dayIndex,
 			json.label ?? null,
-			json.wakeUpTime ?? null,
-			json.bedTime ?? null,
+			Time.fromJson(json.wakeUpTime),
+			Time.fromJson(json.bedTime),
 			json.appliedTemplateId ?? null,
 			json.appliedTemplateName ?? null,
 			json.weather ?? null,

@@ -128,8 +128,9 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		try {
 			const createResponse = await API.post(`${config.entityName}`, entityData)
 
+			console.log(createResponse)
 			const response = await fetchById(createResponse.data)
-
+			console.log(response)
 			return response
 		} catch (e: any) {
 			error.value = e.message || `Failed to create ${config.entityName}`

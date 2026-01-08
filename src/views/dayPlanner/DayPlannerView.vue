@@ -52,6 +52,7 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
+import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
@@ -71,12 +72,13 @@ const {
 	redrawTask
 } = useDayPlannerCommon(store)
 
-const calendarId = ref<number>(-1)
+const calendar = ref<Calendar>()
 // Lifecycle hooks
 onMounted(async () => {
+	calendar.value = await fetchCalendarByDate(router.currentRoute.value.params.date as string)
 	store.viewedDate = urlStringToUTCDate(router.currentRoute.value.params.date as string)
-	const stateCalendarId = history.state.calendarId as number | undefined
-	calendarId.value = stateCalendarId ?? (await fetchCalendarByDate(router.currentRoute.value.params.date as string)).id
+	store.viewStartTime = calendar.value!.wakeUpTime;
+	store.viewEndTime = calendar.value!.bedTime;
 	await loadTasks()
 })
 
@@ -87,8 +89,7 @@ const currentDateFormatted = computed(() => {
 
 // Load tasks for the current date
 async function loadTasks() {
-
-	store.events = await fetchFiltered(new PlannerTaskFilter(calendarId.value, store.viewStartTime, store.viewEndTime));
+	store.events = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
 	initializeEventGridPositions()
 }
 
@@ -103,7 +104,7 @@ async function create(request: PlannerTaskRequest) {
 			return
 		}
 	}
-	request.calendarId = calendarId.value;
+	request.calendarId = calendar.value?.id;
 	const response = await createWithResponse(request)
 
 	if (response.isBackground) {

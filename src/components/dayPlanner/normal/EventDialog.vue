@@ -12,13 +12,13 @@
 			</VCol>
 
 			<VCol cols="12">
-				<TimeRangePicker v-model:start="start" v-model:end="end"></TimeRangePicker>
+				<TimeRangePicker v-model:start="data.startTime" v-model:end="data.endTime"></TimeRangePicker>
 			</VCol>
 
 			<VCol cols="12">
 				<VIdSelect
 					:label="$t('toDoList.urgency')"
-					v-model="store.editingTask.priorityId"
+					v-model="data.priorityId"
 					:clearable="false"
 					:items="priorityOptions"
 					required
@@ -56,7 +56,7 @@
 				<VSwitch
 					label="Is background"
 					color="primary"
-					v-model="store.editingTask.isBackground"
+					v-model="data.isBackground"
 					hideDetails
 				/>
 			</VCol>
@@ -65,14 +65,14 @@
 				<VSwitch
 					label="Is optional"
 					color="primary"
-					v-model="store.editingTask.isOptional"
+					v-model="data.isOptional"
 					hideDetails
 				/>
 			</VCol>
 
 			<VCol cols="12" sm="6">
 				<VTextField
-					v-model="store.editingTask.location"
+					v-model="data.location"
 					label="Location"
 					prependIcon="map-marker"
 					clearable
@@ -80,7 +80,7 @@
 			</VCol>
 
 			<VCol cols="12">
-				<VTextarea v-model="store.editingTask.notes" label="Notes" rows="3" autoGrow></VTextarea>
+				<VTextarea v-model="data.notes" label="Notes" rows="3" autoGrow></VTextarea>
 			</VCol>
 		</VRow>
 	</VForm>
@@ -93,7 +93,6 @@ import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {Time} from '@/utils/Time.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
@@ -109,8 +108,6 @@ const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormF
 const store = useDayPlannerStore()
 const {dialog} = storeToRefs(store)
 
-const start = ref<Time>(new Time(0, 0))
-const end = ref<Time>(new Time(0, 0))
 const priorityOptions = ref([] as TaskPriority[]);
 
 const isEdit = computed(() => store.editedId !== undefined)
@@ -154,23 +151,15 @@ async function save() {
 		return;
 	}
 
-	store.editingTask.activityId = activityFormFieldResult.activityId
-
-	// Set the Time objects
-	store.editingTask.startTime = start.value
-	store.editingTask.endTime = end.value
-
-	// Set the date (handle date change if time wraps past midnight)
-	const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
-	store.editingTask.date = new Date(viewedDate)
+	data.value.activityId = activityFormFieldResult.activityId
 
 	if (store.editedId) {
-		emit('edit', store.editedId, store.editingTask)
+		emit('edit', store.editedId, data.value)
 	} else {
-		emit('create', store.editingTask)
+		emit('create', data.value)
 	}
 
-	dialog.value = false
+	store.dialog = false
 }
 
 const emit = defineEmits<{

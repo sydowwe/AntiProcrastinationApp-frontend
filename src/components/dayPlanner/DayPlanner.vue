@@ -11,6 +11,8 @@
 			</div>
 
 			<TimeRangePicker
+				startIcon="sun"
+				endIcon="moon"
 				v-model:start="plannerStore.viewStartTime"
 				v-model:end="plannerStore.viewEndTime"
 			/>

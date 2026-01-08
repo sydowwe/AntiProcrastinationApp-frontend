@@ -5,6 +5,7 @@
 	<div class="d-flex ga-4 align-center">
 		<TimePicker
 			v-model="start"
+			:icon="startIcon"
 			:label="mode === 'length' ? 'Start' : 'From'"
 			:allowedMinutesSelected
 		/>
@@ -36,6 +37,7 @@
 	<TimePicker
 		v-else
 		v-model="end"
+		:icon="endIcon"
 		label="To"
 		:allowedMinutesSelected
 	/>
@@ -49,6 +51,12 @@ import {Time} from '@/utils/Time.ts'
 import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
 const props = defineProps({
+	startIcon: {
+		type: String,
+	},
+	endIcon: {
+		type: String,
+	},
 	allowedMinutesSelected: {
 		type: String as PropType<'5' | '10' | '15' | '20' | '30' | '45' | '60'>,
 		default: '10',
