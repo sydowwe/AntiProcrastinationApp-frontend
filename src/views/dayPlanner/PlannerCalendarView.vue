@@ -76,7 +76,7 @@
 									<!-- Wake/Bed Time -->
 									<div v-if="dayData.wakeUpTime || dayData.bedTime" class="cell-info">
 										<VIcon icon="fas fa-clock" size="small" class="mr-1"/>
-										<span class="info-text">{{ formatTime(dayData.wakeUpTime) }} - {{ formatTime(dayData.bedTime) }}</span>
+										<span class="info-text">{{ dayData.wakeUpTime.getString() }} - {{ dayData.bedTime.getString() }}</span>
 									</div>
 
 									<!-- Tasks Progress -->
@@ -307,12 +307,6 @@ function formatCellDate(dateString: string): string {
 		day: 'numeric',
 		month: 'short'
 	})
-}
-
-// Format time for display (HH:mm:ss -> HH:mm)
-function formatTime(timeString: string | null): string {
-	if (!timeString) return '-'
-	return timeString.slice(0, 5)
 }
 
 // Handle day click

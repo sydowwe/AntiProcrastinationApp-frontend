@@ -8,7 +8,7 @@
 			:prependIcon="icon"
 			:height="height"
 			:disabled
-			class="pr-2"
+			:class="{'pr-2': !!icon}"
 		>
 			{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
 		</VBtn>
@@ -28,21 +28,18 @@
 import {computed} from 'vue'
 import {Time} from '@/utils/Time.ts'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	label?: string
 	icon?: string
 	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
 	height?: string | number
 	disabled?: boolean
-}>()
-
-const {
-	label = 'Time',
-	icon = 'clock',
-	allowedMinutesSelected = '10',
-	height = 40,
-	disabled = false
-} = props
+}>(), {
+	label: 'Time',
+	allowedMinutesSelected: '10',
+	height: 40,
+	disabled: false
+})
 
 const time = defineModel<Time>({required: true})
 

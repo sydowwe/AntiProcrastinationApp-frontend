@@ -14,7 +14,6 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public activityId?: number,
 		public priorityId: number | null = null,
 		public isDone: boolean = false,
-		public date: Date = new Date(),
 		public todolistId: number | null = null,
 		public color: string = '#4287f5',
 	) {
@@ -36,7 +35,6 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.activity.id,
 			entity.priority?.id ?? null,
 			entity.isDone ?? false,
-			new Date(),
 			entity.todolistId ?? null,
 			entity.color ?? '#4287f5',
 		)
