@@ -15,13 +15,19 @@
 		conflictMessage="Task conflicts with existing schedule!"
 		@delete="del"
 	>
+		<!-- Edit details button -->
 		<template #headerPrepend>
-			<div>
-				<VBtn v-if="detailsHidden" color="secondaryOutline" prependIcon="eye" variant="outlined" @click="detailsHidden = !detailsHidden">
-					Edit details
-				</VBtn>
-			</div>
+			<VBtn
+				v-if="detailsHidden"
+				color="secondaryOutline"
+				prependIcon="eye"
+				variant="outlined"
+				@click="detailsHidden = !detailsHidden"
+			>
+				Edit details
+			</VBtn>
 		</template>
+
 		<!-- Custom event block for template planner -->
 		<template #event-block="{ event, onResizeStart }">
 			<TemplateEventBlock
