@@ -288,7 +288,7 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 export function useCalendarQuery() {
 	const url = 'calendar';
 	const {fetchById, fetchByField} = useEntityQuery<Calendar>({responseClass: Calendar, entityName: url})
-	const {update} = useEntityCommand<Calendar, any, any>({
+	const {updateWithResponse} = useEntityCommand<Calendar, any, any>({
 		responseClass: Calendar,
 		entityName: url
 	})
@@ -303,7 +303,7 @@ export function useCalendarQuery() {
 		return fetchByField('date', date)
 	}
 
-	return {fetchFiltered, fetchById, fetchByDate, update}
+	return {fetchFiltered, fetchById, fetchByDate, updateWithResponse}
 }
 
 export function useAlarmCrud() {

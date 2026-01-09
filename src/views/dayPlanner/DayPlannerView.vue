@@ -2,11 +2,19 @@
 <template>
 <DayPlanner
 	:plannerStore="store"
-	:title="currentDateFormatted"
-	addButtonText="Add New Event"
 	@redrawTask="redrawTask"
 	@delete="del"
 >
+	<!-- Header with calendar info -->
+	<template #header>
+		<DayPlannerHeader
+			:plannerStore="store"
+			:title="currentDateFormatted"
+			:calendar
+			@openDetails="calendarDetailsDialog = true"
+		/>
+	</template>
+
 	<!-- Custom event block for normal planner -->
 	<template #event-block="{ event, onResizeStart }">
 		<EventBlock
@@ -36,13 +44,22 @@
 		/>
 	</template>
 </DayPlanner>
+
+<!-- Calendar Details Dialog -->
+<CalendarDetailsDialog
+	v-model="calendarDetailsDialog"
+	:calendar="calendar"
+	@updated="updatedCalendar"
+/>
 </template>
 
 <script setup lang="ts">
 import {computed, onMounted, provide, ref, watch} from 'vue'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
+import DayPlannerHeader from '@/components/dayPlanner/DayPlannerHeader.vue'
 import EventDialog from '@/components/dayPlanner/normal/EventDialog.vue'
 import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
+import CalendarDetailsDialog from '@/components/dayPlanner/CalendarDetailsDialog.vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useCalendarQuery, useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts'
@@ -73,6 +90,8 @@ const {
 } = useDayPlannerCommon(store)
 
 const calendar = ref<Calendar>()
+const calendarDetailsDialog = ref(false)
+
 // Lifecycle hooks
 onMounted(async () => {
 	calendar.value = await fetchCalendarByDate(router.currentRoute.value.params.date as string)
@@ -182,6 +201,12 @@ function handleToggleSelectedIsDone(): void {
 				})
 		}
 	})
+}
+
+async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {
+	calendar.value = updatedCalendar;
+	store.viewStartTime = updatedCalendar.wakeUpTime
+	store.viewEndTime = updatedCalendar.bedTime
 }
 
 // Watch for time range changes

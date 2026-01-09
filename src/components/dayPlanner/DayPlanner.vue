@@ -3,10 +3,10 @@
 <VCard class="w-100 h-100 d-flex flex-column">
 	<!-- Header slot - each view provides its own header -->
 	<slot name="header" :store="plannerStore">
-		<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
+		<!-- Default header for template views -->
+		<VCardTitle class="px-5 pb-2 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
 			<div class="d-flex align-center ga-3">
 				<span class="text-h5">{{ title }}</span>
-
 				<slot name="headerPrepend"></slot>
 			</div>
 
@@ -18,8 +18,6 @@
 			/>
 
 			<div class="d-flex ga-2 align-center flex-wrap">
-				<slot name="headerAppend"></slot>
-
 				<VBtn
 					color="primary"
 					@click="plannerStore.openCreateDialogEmpty"
@@ -105,7 +103,7 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 
 const props = defineProps<{
 	plannerStore: TStore
-	title: string
+	title?: string
 	addButtonText?: string
 	conflictMessage?: string
 }>()
