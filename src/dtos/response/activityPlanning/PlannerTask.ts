@@ -4,6 +4,7 @@ import {Activity} from '@/dtos/response/Activity.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {Time} from '@/utils/Time.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
@@ -39,6 +40,22 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 
 	toSpan(): { startTime: Time; endTime: Time } {
 		return {startTime: this.startTime, endTime: this.endTime};
+	}
+
+	static fromTemplateTask(calendarId: number, templateTask: TemplatePlannerTask): PlannerTask {
+		return new PlannerTask(
+			templateTask.id,
+			templateTask.startTime,
+			templateTask.endTime,
+			calendarId,
+			templateTask.isBackground,
+			templateTask.isOptional,
+			false,
+			templateTask.activity,
+			templateTask.location,
+			templateTask.notes,
+			templateTask.priority,
+		)
 	}
 
 	static fromJson(json: any): PlannerTask {

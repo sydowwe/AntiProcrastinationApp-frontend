@@ -29,6 +29,46 @@ export class Calendar {
 		return this.dayIndex === 6 || this.dayIndex === 7;
 	}
 
+	getDayTypeColor(dayType?: DayType): string {
+		dayType = dayType ?? this.dayType;
+		switch (dayType) {
+			case DayType.Workday:
+				return 'primary'
+			case DayType.Weekend:
+				return 'success'
+			case DayType.Holiday:
+				return 'error'
+			case DayType.Vacation:
+				return 'secondary'
+			case DayType.SickDay:
+				return 'warning'
+			case DayType.Special:
+				return 'info'
+			default:
+				return 'surface-variant'
+		}
+	}
+
+	getDayTypeIcon(dayType?: DayType): string {
+		dayType = dayType ?? this.dayType;
+		switch (dayType) {
+			case DayType.Workday:
+				return 'briefcase'
+			case DayType.Weekend:
+				return 'mug-hot'
+			case DayType.Holiday:
+				return 'gift'
+			case DayType.Vacation:
+				return 'umbrella-beach'
+			case DayType.SickDay:
+				return 'notes-medical'
+			case DayType.Special:
+				return 'star'
+			default:
+				return 'calendar'
+		}
+	}
+
 	static fromJson(json: any): Calendar {
 		return new Calendar(
 			json.id,

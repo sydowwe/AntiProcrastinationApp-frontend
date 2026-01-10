@@ -1,49 +1,58 @@
 <!-- DayPlannerView.vue -->
 <template>
-<DayPlanner
-	:plannerStore="store"
-	@redrawTask="redrawTask"
-	@delete="del"
->
-	<!-- Header with calendar info -->
-	<template #header>
-		<DayPlannerHeader
-			:plannerStore="store"
-			:title="currentDateFormatted"
-			:calendar
-			@openDetails="calendarDetailsDialog = true"
-		/>
-	</template>
+<div class="d-flex ga-4 w-100">
+	<!-- Expandable Details -->
+	<VExpandXTransition mode="in-out">
+		<div v-if="expandedDetails">
+			<DayDetailsPanel :title="currentDateFormatted" :calendar @useTemplate="useTemplate"></DayDetailsPanel>
+		</div>
+	</VExpandXTransition>
+	<DayPlanner
+		class="flex-fill"
+		:plannerStore="store"
+		@redrawTask="redrawTask"
+		@delete="del"
+	>
+		<!-- Header with calendar info -->
+		<template #header>
+			<DayPlannerHeader
+				v-model:expandedDetails="expandedDetails"
+				:title="currentDateFormatted"
+				:calendar
+				@openDetails="calendarDetailsDialog = true"
+			/>
+		</template>
 
-	<!-- Custom event block for normal planner -->
-	<template #event-block="{ event, onResizeStart }">
-		<EventBlock
-			:event="event as PlannerTask"
-			@resizeStart="onResizeStart"
-		/>
-	</template>
+		<!-- Custom event block for normal planner -->
+		<template #event-block="{ event, onResizeStart }">
+			<EventBlock
+				:event="event as PlannerTask"
+				@resizeStart="onResizeStart"
+			/>
+		</template>
 
-	<!-- Toggle Done button for selection action bar -->
-	<template #selection-actions="{ store }">
-		<VBtn
-			v-if="store.selectedEventIds.size > 1"
-			size="small"
-			variant="tonal"
-			color="primaryOutline"
-			@click="handleToggleSelectedIsDone"
-		>
-			Toggle Done
-		</VBtn>
-	</template>
+		<!-- Toggle Done button for selection action bar -->
+		<template #selection-actions="{ store }">
+			<VBtn
+				v-if="store.selectedEventIds.size > 1"
+				size="small"
+				variant="tonal"
+				color="primaryOutline"
+				@click="handleToggleSelectedIsDone"
+			>
+				Toggle Done
+			</VBtn>
+		</template>
 
-	<!-- Custom dialog for normal planner -->
-	<template #dialog>
-		<EventDialog
-			@create="create"
-			@edit="edit"
-		/>
-	</template>
-</DayPlanner>
+		<!-- Custom dialog for normal planner -->
+		<template #dialog>
+			<EventDialog
+				@create="create"
+				@edit="edit"
+			/>
+		</template>
+	</DayPlanner>
+</div>
 
 <!-- Calendar Details Dialog -->
 <CalendarDetailsDialog
@@ -56,24 +65,28 @@
 <script setup lang="ts">
 import {computed, onMounted, provide, ref, watch} from 'vue'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
-import DayPlannerHeader from '@/components/dayPlanner/DayPlannerHeader.vue'
+import DayPlannerHeader from '@/components/dayPlanner/normal/DayPlannerHeader.vue'
 import EventDialog from '@/components/dayPlanner/normal/EventDialog.vue'
 import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
-import CalendarDetailsDialog from '@/components/dayPlanner/CalendarDetailsDialog.vue'
+import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
-import {useCalendarQuery, useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts'
+import {useCalendarQuery, useTaskPlannerCrud, useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
-import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
+import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue';
+import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
 const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
+const {fetchFiltered: fetchTemplateTasks} = useTemplatePlannerTaskCrud()
+const {fetchById: fetchTemplateById} = useTaskPlannerDayTemplateTaskCrud()
 const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
 const store = useDayPlannerStore()
 
@@ -101,6 +114,8 @@ onMounted(async () => {
 	await loadTasks()
 })
 
+const expandedDetails = ref(false)
+
 // View-specific computed properties
 const currentDateFormatted = computed(() => {
 	return formatToDateWithDay(store.viewedDate)
@@ -110,6 +125,14 @@ const currentDateFormatted = computed(() => {
 async function loadTasks() {
 	store.events = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
 	initializeEventGridPositions()
+}
+
+async function useTemplate(templateId: number) {
+	const useTemplate = await fetchTemplateById(templateId)
+	if (useTemplate) {
+		store.events = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(useTemplate.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
+		initializeEventGridPositions()
+	}
 }
 
 // CRUD operations
