@@ -62,11 +62,11 @@
 										<VChip
 											v-if="dayData.label"
 											size="small"
-											:color="!['Workday', 'Weekend'].includes(dayData.dayType) ? getDayTypeColor(dayData.dayType) : undefined"
+											:color="!['Workday', 'Weekend'].includes(dayData.dayType) ? dayData.getDayTypeColor() : undefined"
 											variant="flat"
 											class="cell-label-chip"
 										>
-											<VIcon :icon="getDayTypeIcon(dayData.dayType)" size="x-small" class="mr-1"/>
+											<VIcon :icon="dayData.getDayTypeIcon()" size="x-small" class="mr-1"/>
 											<strong>{{ dayData.label }}</strong>
 										</VChip>
 									</div>
@@ -315,31 +315,6 @@ function handleDayClick(dayData: Calendar | null) {
 	router.push({name: 'dayPlanner', params: {date: usStringToUrlString(dayData.date)}, state: {calendarId: dayData.id}})
 }
 
-// Get color for day type (WCAG compliant colors)
-function getDayTypeColor(dayType: string): string {
-	const colorMap: Record<string, string> = {
-		'Workday': 'blue-darken-2',
-		'Weekend': 'purple-darken-2',
-		'Holiday': 'red-darken-3',
-		'Vacation': 'teal-darken-3',
-		'SickDay': 'orange-darken-3',
-		'Special': 'pink-darken-3'
-	}
-	return colorMap[dayType] || 'grey-darken-2'
-}
-
-// Get icon for day type
-function getDayTypeIcon(dayType: string): string {
-	const iconMap: Record<string, string> = {
-		'Workday': 'fas fa-briefcase',
-		'Weekend': 'fas fa-mug-hot',
-		'Holiday': 'fas fa-gift',
-		'Vacation': 'fas fa-umbrella-beach',
-		'SickDay': 'fas fa-notes-medical',
-		'Special': 'fas fa-star'
-	}
-	return iconMap[dayType] || 'fas fa-calendar'
-}
 
 // Initialize with current week
 function initializeCurrentWeek() {
@@ -404,7 +379,7 @@ fetchCalendarData()
 }
 
 .day-header {
-	padding: 12px 8px;
+	padding: 12px 8px 0 8px;
 	text-align: center;
 	border-right: 1px solid rgba(var(--v-border-color), 0.3);
 	font-weight: 600;
