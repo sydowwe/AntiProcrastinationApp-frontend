@@ -44,7 +44,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 
 	static fromTemplateTask(calendarId: number, templateTask: TemplatePlannerTask): PlannerTask {
 		return new PlannerTask(
-			templateTask.id,
+			-templateTask.id,
 			templateTask.startTime,
 			templateTask.endTime,
 			calendarId,

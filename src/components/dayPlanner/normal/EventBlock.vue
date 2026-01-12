@@ -1,5 +1,6 @@
 <template>
 <BaseEventBlock
+	:class="classes"
 	:event
 	:backgroundColor="event.color"
 	:isPast="isPast"
@@ -10,6 +11,7 @@
 	@toggleIsDoneSelected="handleToggleIsDoneSelected"
 >
 	<template #checkbox>
+		{{ event.id }}
 		<VCheckbox
 			v-model="event.isDone"
 			class="event-checkbox"
@@ -88,6 +90,12 @@ const isPast = computed(() => {
 	return dateTime < currentTime.value
 })
 
+const classes = computed(() => {
+	return {
+		'templatePreview': event.id < 0
+	}
+})
+
 function getPriorityColor(priority: TaskPriority): string {
 	// You can customize priority colors based on your TaskPriority model
 	const priorityColors: Record<string, string> = {
@@ -158,5 +166,10 @@ const emit = defineEmits<{
 
 .event-block.done-task .event-time {
 	opacity: 0.6;
+}
+
+.templatePreview {
+	z-index: 20;
+	border: 3px dashed rgb(var(--v-theme-secondary)) !important;
 }
 </style>
