@@ -8,6 +8,8 @@ import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
+import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
+import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -21,9 +23,38 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const {formatToTime24H} = useMoment()
 	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>(() => new PlannerTaskRequest())
 	const {patch, fetchById} = useTaskPlannerCrud()
+	const {
+		initializeEventGridPositions,
+	} = useDayPlannerCommon(useDayPlannerStore())
 
 	// Day-specific state
 	const viewedDate = ref(new Date())
+
+	const templateInPreview = ref<TaskPlannerDayTemplate | null>(null)
+	const tasksFromTemplate = ref<PlannerTask[] | null>(null)
+
+	const isTemplateInPreview = computed(() => templateInPreview.value !== null)
+
+	function offsetTasksFromTemplate(offset: number) {
+		console.log(offset)
+		if (!tasksFromTemplate.value) return
+		core.events.value = core.events.value.filter(e => e.id > 0)
+		core.events.value = tasksFromTemplate.value.map(t => {
+			console.log(t.startTime.hours)
+
+			t.startTime.hours += offset;
+			console.log(t.startTime.hours)
+			t.endTime.hours += offset;
+			return t
+		})
+		initializeEventGridPositions()
+	}
+
+	function cancelTemplatePreview() {
+		templateInPreview.value = null
+		tasksFromTemplate.value = null
+		core.events.value = core.events.value.filter(e => e.id > 0)
+	}
 
 	// Day-specific computed
 	const viewStartDate = computed(() => {
@@ -79,6 +110,12 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		...core,
 		updateTaskSpan,
 		updateTaskIsDone,
+
+		templateInPreview,
+		isTemplateInPreview,
+		tasksFromTemplate,
+		offsetTasksFromTemplate,
+		cancelTemplatePreview,
 		// Day-specific
 		viewedDate,
 		viewStartDate,

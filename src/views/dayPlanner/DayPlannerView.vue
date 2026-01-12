@@ -31,6 +31,10 @@
 			/>
 		</template>
 
+		<template #action-bar>
+			<UseTemplateActionBar></UseTemplateActionBar>
+		</template>
+
 		<!-- Toggle Done button for selection action bar -->
 		<template #selection-actions="{ store }">
 			<VBtn
@@ -81,6 +85,7 @@ import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilt
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue';
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
+import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
@@ -128,9 +133,10 @@ async function loadTasks() {
 }
 
 async function useTemplate(templateId: number) {
-	const useTemplate = await fetchTemplateById(templateId)
-	if (useTemplate) {
-		store.events = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(useTemplate.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
+	store.templateInPreview = await fetchTemplateById(templateId)
+	if (store.templateInPreview) {
+		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
+		store.events.push(...store.tasksFromTemplate)
 		initializeEventGridPositions()
 	}
 }

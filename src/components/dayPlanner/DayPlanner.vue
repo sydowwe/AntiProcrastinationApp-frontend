@@ -45,6 +45,7 @@
 				</template>
 			</PlannerTasksColumn>
 
+			<slot name="action-bar"></slot>
 			<!-- Floating Selection Action Bar -->
 			<SelectionActionBar>
 				<slot name="selection-actions" :store="plannerStore"></slot>
