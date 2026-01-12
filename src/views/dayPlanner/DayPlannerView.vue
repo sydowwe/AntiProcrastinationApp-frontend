@@ -38,7 +38,7 @@
 		<!-- Toggle Done button for selection action bar -->
 		<template #selection-actions="{ store }">
 			<VBtn
-				v-if="store.selectedEventIds.size > 1"
+				v-if="store.selectedEventIds.size > 1 && !store.isTemplateInPreview"
 				size="small"
 				variant="tonal"
 				color="primaryOutline"
@@ -86,6 +86,7 @@ import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue';
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue';
+import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
@@ -119,7 +120,7 @@ onMounted(async () => {
 	await loadTasks()
 })
 
-const expandedDetails = ref(false)
+const expandedDetails = ref(true)
 
 // View-specific computed properties
 const currentDateFormatted = computed(() => {
@@ -132,9 +133,11 @@ async function loadTasks() {
 	initializeEventGridPositions()
 }
 
-async function useTemplate(templateId: number) {
-	store.templateInPreview = await fetchTemplateById(templateId)
+async function useTemplate(template: TaskPlannerDayTemplate) {
+	store.templateInPreview = template
 	if (store.templateInPreview) {
+		Object.assign(store.viewStartTime, template.defaultWakeUpTime)
+		Object.assign(store.viewEndTime, template.defaultBedTime);
 		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
 		store.events.push(...store.tasksFromTemplate)
 		initializeEventGridPositions()

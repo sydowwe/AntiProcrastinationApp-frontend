@@ -3,15 +3,19 @@
 			<span class="text-textMuted d-flex align-center ga-1">
 				{{ store.templateInPreview!.name }}
 			</span>
-	<VNumberInput v-model="templateStartOffset"
-	              :min="-10"
-	              :max="10"
-	              :clearable="false"
-	              min-width="140px"
-	              max-width="150px"
-	              density="compact"
-	              controlVariant="split"
-	              hideDetails
+	<VNumberInput
+		label="Offset (hours)"
+		v-model="templateStartOffset"
+		:min="-10"
+		:max="10"
+		:step="0.5"
+		:precision="null"
+		min-width="150px"
+		max-width="150px"
+		density="compact"
+		controlVariant="split"
+		decimalSeparator="."
+		hideDetails
 	></VNumberInput>
 
 	<!-- Slot for view-specific actions (e.g., Toggle Done) -->
@@ -19,11 +23,11 @@
 
 	<!-- Delete button -->
 	<VBtn
-		variant="outlined"
-		color="error"
-		@click="store.openDeleteDialog()"
+		variant="tonal"
+		color="success"
+		@click="emit('applyTemplate')"
 	>
-		Delete
+		Apply
 	</VBtn>
 </ActionBar>
 </template>
@@ -35,11 +39,17 @@ import {ref, watch} from 'vue';
 
 const store = useDayPlannerStore()
 
-const templateStartOffset = ref(0)
+const templateStartOffset = ref<number>(0)
 
 watch(templateStartOffset, (newVal) => {
-	store.offsetTasksFromTemplate(newVal)
+	if (newVal !== null && newVal !== undefined) {
+		store.offsetTasksFromTemplate(newVal)
+	}
 })
+
+const emit = defineEmits<{
+	applyTemplate: []
+}>()
 </script>
 
 <style scoped>

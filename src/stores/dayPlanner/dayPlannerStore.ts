@@ -36,21 +36,86 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const isTemplateInPreview = computed(() => templateInPreview.value !== null)
 
 	function offsetTasksFromTemplate(offset: number) {
-		console.log(offset)
 		if (!tasksFromTemplate.value) return
-		core.events.value = core.events.value.filter(e => e.id > 0)
-		core.events.value = tasksFromTemplate.value.map(t => {
-			console.log(t.startTime.hours)
 
-			t.startTime.hours += offset;
-			console.log(t.startTime.hours)
-			t.endTime.hours += offset;
-			return t
+
+		const defaultStart = templateInPreview.value!.defaultWakeUpTime
+		const defaultEnd = templateInPreview.value!.defaultBedTime
+
+		// Remove existing template preview tasks
+		core.events.value = core.events.value.filter(e => e.id > 0)
+
+		// Find the minimum start time and maximum end time after applying offset
+		const minStartMinutes = Math.min(...tasksFromTemplate.value.map(t => t.startTime.getInMinutes + offset * 60))
+		const maxEndMinutes = Math.max(...tasksFromTemplate.value.map(t => t.endTime.getInMinutes + offset * 60))
+
+		const currentViewStartMinutes = core.viewStartTime.value.getInMinutes
+		const currentViewEndMinutes = core.viewEndTime.value.getInMinutes
+
+		const defaultStartMinutes = defaultStart.getInMinutes
+		const defaultEndMinutes = defaultEnd.getInMinutes
+
+		// Normalize end times if they wrap to next day (e.g., 00:00 = 1440 minutes)
+		const normalizedCurrentViewEndMinutes = currentViewEndMinutes < currentViewStartMinutes
+			? currentViewEndMinutes + 1440
+			: currentViewEndMinutes
+
+		const normalizedDefaultEndMinutes = defaultEndMinutes < defaultStartMinutes
+			? defaultEndMinutes + 1440
+			: defaultEndMinutes
+
+		// Always reset to defaults at offset 0
+		if (offset === 0) {
+			core.viewStartTime.value = new Time(defaultStart.hours, defaultStart.minutes)
+			core.viewEndTime.value = new Time(defaultEnd.hours, defaultEnd.minutes)
+		} else {
+			// Extend view start if tasks overflow before current view start
+			if (minStartMinutes < currentViewStartMinutes) {
+				core.viewStartTime.value = Time.fromMinutes(minStartMinutes)
+			} else if (minStartMinutes >= defaultStartMinutes) {
+				// Reset to default if tasks fit within default range
+				core.viewStartTime.value = new Time(defaultStart.hours, defaultStart.minutes)
+			}
+
+			// Extend view end if tasks overflow after current view end
+			if (maxEndMinutes > normalizedCurrentViewEndMinutes) {
+				core.viewEndTime.value = Time.fromMinutes(maxEndMinutes)
+			} else if (maxEndMinutes <= normalizedDefaultEndMinutes) {
+				// Reset to default if tasks fit within default range
+				core.viewEndTime.value = new Time(defaultEnd.hours, defaultEnd.minutes)
+			}
+		}
+
+		// Create new tasks with offset times (offset is in hours, convert to minutes)
+		core.events.value = tasksFromTemplate.value.map(t => {
+			const newStartTime = Time.fromMinutes(t.startTime.getInMinutes + offset * 60)
+			const newEndTime = Time.fromMinutes(t.endTime.getInMinutes + offset * 60)
+
+			// Create shallow copy with updated times
+			const newTask = Object.create(Object.getPrototypeOf(t))
+			Object.assign(newTask, t, {
+				startTime: newStartTime,
+				endTime: newEndTime
+			})
+			return newTask
 		})
+
 		initializeEventGridPositions()
 	}
 
 	function cancelTemplatePreview() {
+		// Restore default view times from template
+		if (templateInPreview.value) {
+			core.viewStartTime.value = new Time(
+				templateInPreview.value.defaultWakeUpTime.hours,
+				templateInPreview.value.defaultWakeUpTime.minutes
+			)
+			core.viewEndTime.value = new Time(
+				templateInPreview.value.defaultBedTime.hours,
+				templateInPreview.value.defaultBedTime.minutes
+			)
+		}
+
 		templateInPreview.value = null
 		tasksFromTemplate.value = null
 		core.events.value = core.events.value.filter(e => e.id > 0)
@@ -99,10 +164,14 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	})
 
 	async function updateTaskSpan(eventId: number, span: TaskSpan) {
+		if (isTemplateInPreview.value)
+			return
 		await patch(eventId, span)
 	}
 
 	async function updateTaskIsDone(eventId: number, isDone: boolean) {
+		if (isTemplateInPreview.value)
+			return
 		await patch(eventId, {isDone})
 	}
 

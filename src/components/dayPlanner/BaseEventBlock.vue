@@ -22,7 +22,6 @@
 	@keydown.e="handleEKey"
 	@keydown.delete="handleDeleteKey"
 	@keydown.backspace="handleDeleteKey"
-	@keydown.space="handleSpaceKey"
 	@keydown.esc="handleEscapeKey"
 >
 	<slot name="checkbox"></slot>
@@ -119,13 +118,6 @@ const blockClasses = computed(() => [
 	}
 ])
 
-const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-	(e: 'toggleSelection', id: number): void
-	(e: 'toggleIsDone', id: number): void
-	(e: 'deleteSelected'): void
-	(e: 'toggleIsDoneSelected'): void
-}>()
 
 // Keyboard handlers
 function handleEnterKey(e: KeyboardEvent): void {
@@ -150,17 +142,16 @@ function handleDeleteKey(e: KeyboardEvent): void {
 	emit('deleteSelected')
 }
 
-function handleSpaceKey(e: KeyboardEvent): void {
-	e.preventDefault()
-	// Emit toggle isDone for all selected events
-	emit('toggleIsDoneSelected')
-}
-
 function handleEscapeKey(e: KeyboardEvent): void {
 	e.preventDefault()
 	store.clearSelection()
 	;(e.target as HTMLElement).blur()
 }
+
+const emit = defineEmits<{
+	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+	(e: 'deleteSelected'): void
+}>()
 </script>
 
 <style scoped>

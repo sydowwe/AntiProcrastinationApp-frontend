@@ -60,6 +60,7 @@
 
 		<VBtn
 			color="primary"
+			:disabled="store.isTemplateInPreview"
 			@click="store.openCreateDialogEmpty"
 		>
 			<VIcon icon="plus" size="18" class="mr-2"/>
