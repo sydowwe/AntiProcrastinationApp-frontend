@@ -10,10 +10,15 @@
 	</VBtn>
 	<div>
 		<div class="d-flex ga-2">
-			<VAutocomplete label="Template" v-model="selectedTemplateId" :items="templates" item-title="name" item-value="id"></VAutocomplete>
-			<VBtn color="primary" :disabled="!selectedTemplateId" @click="emit('useTemplate', selectedTemplateId!)">Use</VBtn>
+			<VAutocomplete label="Template" v-model="selectedTemplate" :items="templates" item-title="name" item-value="id" returnObject></VAutocomplete>
+			<VBtn color="primary" :disabled="!selectedTemplate" @click="emit('useTemplate', selectedTemplate!)">Use</VBtn>
 		</div>
-		<div v-if="selectedTemplateId">
+		<div v-if="selectedTemplate">
+			<span>{{ Time.getString(selectedTemplate.defaultWakeUpTime) }} - {{ Time.getString(selectedTemplate.defaultBedTime) }}</span>
+			<div>{{ selectedTemplate.name }}</div>
+			<div>{{ selectedTemplate.description }}</div>
+			<div>{{ selectedTemplate.suggestedForDayType }}</div>
+			<div>{{ selectedTemplate.tags.join(', ') }}</div>
 		</div>
 		<div v-if="calendar?.appliedTemplateName" class="detail-chip">
 			<VIcon icon="file-lines" size="18" color="secondary"/>
@@ -44,6 +49,7 @@ import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import {useTaskPlannerDayTemplateTaskCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {onMounted, ref} from 'vue';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
+import {Time} from '@/utils/Time.ts';
 
 const {fetchAll, fetchSelectOptions} = useTaskPlannerDayTemplateTaskCrud()
 
@@ -53,7 +59,7 @@ const props = defineProps<{
 }>()
 
 const templates = ref<TaskPlannerDayTemplate[]>([] as TaskPlannerDayTemplate[])
-const selectedTemplateId = ref<number | null>(null)
+const selectedTemplate = ref<TaskPlannerDayTemplate | null>(null)
 
 onMounted(async () => {
 	templates.value = await fetchAll()
@@ -61,7 +67,7 @@ onMounted(async () => {
 
 const emit = defineEmits<{
 	openDetails: [],
-	useTemplate: [templateId: number]
+	useTemplate: [template: TaskPlannerDayTemplate]
 }>()
 </script>
 

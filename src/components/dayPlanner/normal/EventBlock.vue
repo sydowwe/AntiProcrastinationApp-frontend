@@ -5,14 +5,12 @@
 	:backgroundColor="event.color"
 	:isPast="isPast"
 	@resizeStart="emit('resizeStart', $event)"
-	@toggleSelection="store.toggleEventSelection($event)"
-	@toggleIsDone="handleToggleIsDone($event)"
 	@deleteSelected="handleDeleteSelected"
-	@toggleIsDoneSelected="handleToggleIsDoneSelected"
+	@keydown.space="handleToggleIsDoneSelected"
 >
 	<template #checkbox>
-		{{ event.id }}
 		<VCheckbox
+			:disabled="store.isTemplateInPreview"
 			v-model="event.isDone"
 			class="event-checkbox"
 			hideDetails
@@ -106,21 +104,6 @@ function getPriorityColor(priority: TaskPriority): string {
 	return priorityColors[priority.text] || '#999'
 }
 
-function handleToggleIsDone(eventId: number): void {
-	const taskEvent = store.events.find(e => e.id === eventId)
-	if (!taskEvent) return
-
-	// Toggle isDone locally first for immediate feedback
-	taskEvent.isDone = !taskEvent.isDone
-
-	// Call API to update
-	store.updateTaskIsDone(eventId, taskEvent.isDone)
-		.catch((error) => {
-			// Revert on error
-			taskEvent.isDone = !taskEvent.isDone
-		})
-}
-
 function handleDeleteSelected(): void {
 	// Open delete dialog for selected events
 	store.openDeleteDialog()
@@ -145,7 +128,7 @@ function handleToggleIsDoneSelected(): void {
 }
 
 const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void,
 }>()
 </script>
 <style>
