@@ -42,8 +42,13 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	openEditDialog: () => void
 	toggleEventSelection: (eventId: number) => void
 	clearSelection: () => void
-	selectEvent: (eventId: number) => void
-	deselectEvent: (eventId: number) => void
+
+	setGridPositionFromSpan: (event: TTask) => void
+	checkOverlapsBackground: (start: Time, end: Time) => boolean
+	checkConflict: (newStart: Time, newEnd: Time, currentEventId?: number) => boolean
+	updateOverlapsBackgroundFlags: (bgStart: Time, bgEnd: Time) => void
+	initializeEventGridPositions: () => void
+	redrawTask: (eventId: number, updates: Partial<TTask>) => void
 
 	updateTaskSpan: (eventId: number, span: TaskSpan) => Promise<void>
 }

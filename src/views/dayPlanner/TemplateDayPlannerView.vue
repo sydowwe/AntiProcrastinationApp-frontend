@@ -11,7 +11,6 @@
 		class="flex-fill"
 		:plannerStore="store"
 		:title="store.templateName || 'Day Template'"
-		addButtonText="Add New Task"
 		conflictMessage="Task conflicts with existing schedule!"
 		@delete="del"
 	>
@@ -56,7 +55,6 @@ import TemplateEventBlock from '@/components/dayPlanner/template/TemplateEventBl
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 import {useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
-import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue';
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
@@ -83,15 +81,6 @@ provide('plannerStore', store)
 const currentTemplate = ref<TaskPlannerDayTemplate | null>(null)
 const detailsHidden = ref(false)
 
-// Use shared composable for all common time-based logic
-const {
-	checkOverlapsBackground,
-	checkConflict,
-	updateOverlapsBackgroundFlags,
-	initializeEventGridPositions,
-	setGridPositionFromSpan,
-} = useDayPlannerCommon(store)
-
 // Lifecycle hooks
 onMounted(async () => {
 	await loadTemplateDetails()
@@ -115,7 +104,7 @@ async function loadTemplateDetails() {
 
 async function loadTasks() {
 	store.events = await fetchFilteredTasks(new TemplatePlannerTaskFilter(templateId.value!, store.viewStartTime, store.viewEndTime));
-	initializeEventGridPositions()
+	store.initializeEventGridPositions()
 }
 
 async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<void> {
@@ -128,7 +117,7 @@ async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<vo
 // CRUD operations
 async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
 	if (!request.isBackground && request.startTime && request.endTime) {
-		if (checkConflict(request.startTime, request.endTime)) {
+		if (store.checkConflict(request.startTime, request.endTime)) {
 			store.conflictSnackbar = true
 			return
 		}
@@ -137,21 +126,21 @@ async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
 	const newTask = await createTaskWithResponse(request)
 
 	if (newTask.isBackground) {
-		updateOverlapsBackgroundFlags(newTask.startTime, newTask.endTime)
+		store.updateOverlapsBackgroundFlags(newTask.startTime, newTask.endTime)
 	} else {
-		newTask.isDuringBackgroundEvent = checkOverlapsBackground(
+		newTask.isDuringBackgroundEvent = store.checkOverlapsBackground(
 			newTask.startTime,
 			newTask.endTime
 		)
 	}
 
-	setGridPositionFromSpan(newTask)
+	store.setGridPositionFromSpan(newTask)
 	store.events.push(newTask)
 }
 
 async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<void> {
 	if (!request.isBackground && request.startTime && request.endTime) {
-		if (checkConflict(request.startTime, request.endTime, id)) {
+		if (store.checkConflict(request.startTime, request.endTime, id)) {
 			store.conflictSnackbar = true
 			return
 		}
@@ -166,13 +155,13 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 
 	if (request.isBackground !== updatedItem.isBackground) {
 		if (request.startTime && request.endTime) {
-			updateOverlapsBackgroundFlags(request.startTime, request.endTime)
+			store.updateOverlapsBackgroundFlags(request.startTime, request.endTime)
 		}
 	}
 
 	const fetchedItem = await fetchByIdTask(id)
 
-	setGridPositionFromSpan(fetchedItem)
+	store.setGridPositionFromSpan(fetchedItem)
 
 	store.events[index] = fetchedItem
 }
