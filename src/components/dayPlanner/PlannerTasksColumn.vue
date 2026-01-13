@@ -50,12 +50,10 @@ import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
-import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 
 // Inject the store from parent DayPlanner component
 const store = inject<TStore>('plannerStore')!
 
-const {redrawTask} = useDayPlannerCommon(store)
 const eventsColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => eventsColumnRef.value?.parentElement as HTMLElement)
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
@@ -97,7 +95,7 @@ function getSlotIndexFromPosition(y: number): number {
 function checkEventConflictByRow(newStartRow: number, newEndRow: number, eventId?: number): boolean {
 	return store.events.some(event => {
 		if (event.id === eventId || event.isBackground) return false
-		return !(newEndRow < event.gridRowStart || newStartRow > event.gridRowEnd)
+		return !(newEndRow <= event.gridRowStart || newStartRow >= event.gridRowEnd)
 	})
 }
 
@@ -191,7 +189,7 @@ function handlePointerMove(e: PointerEvent): void {
 
 		store.dragConflict = hasConflict || !fitsInView
 
-		redrawTask(store.draggingEventId,
+		store.redrawTask(store.draggingEventId,
 			{
 				startTime: store.slotIndexToTime(newStartRow - 1),
 				endTime: store.slotIndexToTime(newEndRow - 1),
@@ -214,7 +212,7 @@ function handlePointerMove(e: PointerEvent): void {
 		if (resizeDirection.value === 'top') {
 			const newStartRow = slotIndex + 1
 			if (newStartRow <= event.gridRowEnd && !checkEventConflictByRow(newStartRow, event.gridRowEnd, store.resizingEventId)) {
-				redrawTask(
+				store.redrawTask(
 					store.resizingEventId,
 					{
 						gridRowStart: newStartRow,
@@ -225,7 +223,7 @@ function handlePointerMove(e: PointerEvent): void {
 		} else if (resizeDirection.value === 'bottom') {
 			const newEndRow = slotIndex + 1
 			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, store.resizingEventId)) {
-				redrawTask(
+				store.redrawTask(
 					store.resizingEventId,
 					{
 						gridRowEnd: newEndRow,
@@ -273,13 +271,13 @@ function handlePointerUp(): void {
 			// Handle actual drag - update task position
 			if (event && (store.dragConflict || event.gridRowStart < 1 || event.gridRowEnd > store.totalGridRows)) {
 				// Revert to original position
-				redrawTask(store.draggingEventId, originalEventState.value)
+				store.redrawTask(store.draggingEventId, originalEventState.value)
 				store.conflictSnackbar = true
 			} else {
 				// Update the task span
 				store.updateTaskSpan(event.id, TaskSpan.fromTask(event))
 					.catch((error) => {
-						redrawTask(store.draggingEventId!, originalEventState.value)
+						store.redrawTask(store.draggingEventId!, originalEventState.value)
 					}).finally(() => {
 					(document.activeElement as HTMLElement).blur()
 				})
@@ -352,7 +350,7 @@ function handlePointerUp(): void {
 			// Handle actual resize - update task span
 			store.updateTaskSpan(store.resizingEventId, TaskSpan.fromTask(event!))
 				.catch((error) => {
-					redrawTask(store.resizingEventId!, originalEventState.value)
+					store.redrawTask(store.resizingEventId!, originalEventState.value)
 				})
 		}
 		// Note: Don't toggle selection on resize handle click

@@ -23,7 +23,7 @@
 					@click="plannerStore.openCreateDialogEmpty"
 					prependIcon="plus"
 				>
-					{{ addButtonText }}
+					Add New Task
 				</VBtn>
 			</div>
 		</VCardTitle>
@@ -105,7 +105,6 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 const props = defineProps<{
 	plannerStore: TStore
 	title?: string
-	addButtonText?: string
 	conflictMessage?: string
 }>()
 
@@ -123,7 +122,6 @@ const deleteConfirmationText = computed(() => {
 })
 
 const emit = defineEmits<{
-	redrawTask: [eventId: number, updates: Partial<IBasePlannerTask<IBasePlannerTaskRequest>>],
 	delete: []
 }>()
 </script>

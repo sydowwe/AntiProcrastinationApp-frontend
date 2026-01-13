@@ -2,6 +2,7 @@ import {computed, reactive, ref} from 'vue'
 import {Time} from '@/utils/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 
 export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
 	createEmptyRequest: () => TTaskRequest
@@ -146,13 +147,15 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		selectedEventIds.clear()
 	}
 
-	function selectEvent(eventId: number): void {
-		selectedEventIds.add(eventId)
-	}
 
-	function deselectEvent(eventId: number): void {
-		selectedEventIds.delete(eventId)
-	}
+	const {
+		setGridPositionFromSpan,
+		checkOverlapsBackground,
+		checkConflict,
+		updateOverlapsBackgroundFlags,
+		initializeEventGridPositions,
+		redrawTask
+	} = useDayPlannerCommon(viewStartTime, totalGridRows, events)
 
 	return {
 		// Time/Grid configuration
@@ -193,7 +196,13 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		openEditDialog,
 		toggleEventSelection,
 		clearSelection,
-		selectEvent,
-		deselectEvent
+
+
+		setGridPositionFromSpan,
+		checkOverlapsBackground,
+		checkConflict,
+		updateOverlapsBackgroundFlags,
+		initializeEventGridPositions,
+		redrawTask
 	}
 }

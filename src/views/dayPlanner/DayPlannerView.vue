@@ -10,7 +10,6 @@
 	<DayPlanner
 		class="flex-fill"
 		:plannerStore="store"
-		@redrawTask="redrawTask"
 		@delete="del"
 	>
 		<!-- Header with calendar info -->
@@ -77,7 +76,6 @@ import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useCalendarQuery, useTaskPlannerCrud, useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
-import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
@@ -99,14 +97,6 @@ const store = useDayPlannerStore()
 // Provide the store for slot content (EventBlock components)
 provide('plannerStore', store)
 // Use shared composable for all common logic
-const {
-	setGridPositionFromSpan,
-	checkOverlapsBackground,
-	checkConflict,
-	updateOverlapsBackgroundFlags,
-	initializeEventGridPositions,
-	redrawTask
-} = useDayPlannerCommon(store)
 
 const calendar = ref<Calendar>()
 const calendarDetailsDialog = ref(false)
@@ -130,7 +120,7 @@ const currentDateFormatted = computed(() => {
 // Load tasks for the current date
 async function loadTasks() {
 	store.events = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
-	initializeEventGridPositions()
+	store.initializeEventGridPositions()
 }
 
 async function useTemplate(template: TaskPlannerDayTemplate) {
@@ -140,7 +130,7 @@ async function useTemplate(template: TaskPlannerDayTemplate) {
 		Object.assign(store.viewEndTime, template.defaultBedTime);
 		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
 		store.events.push(...store.tasksFromTemplate)
-		initializeEventGridPositions()
+		store.initializeEventGridPositions()
 	}
 }
 
@@ -150,7 +140,7 @@ async function create(request: PlannerTaskRequest) {
 		return
 	}
 	if (!request.isBackground) {
-		if (checkConflict(request.startTime, request.endTime)) {
+		if (store.checkConflict(request.startTime, request.endTime)) {
 			store.conflictSnackbar = true
 			return
 		}
@@ -159,14 +149,14 @@ async function create(request: PlannerTaskRequest) {
 	const response = await createWithResponse(request)
 
 	if (response.isBackground) {
-		updateOverlapsBackgroundFlags(response.startTime, response.endTime)
+		store.updateOverlapsBackgroundFlags(response.startTime, response.endTime)
 	} else {
-		response.isDuringBackgroundEvent = checkOverlapsBackground(
+		response.isDuringBackgroundEvent = store.checkOverlapsBackground(
 			response.startTime,
 			response.endTime
 		)
 	}
-	setGridPositionFromSpan(response)
+	store.setGridPositionFromSpan(response)
 	store.events.push(response)
 }
 
@@ -176,7 +166,7 @@ async function edit(id: number, request: PlannerTaskRequest) {
 		return
 	}
 	if (!request.isBackground) {
-		if (checkConflict(request.startTime, request.endTime, id)) {
+		if (store.checkConflict(request.startTime, request.endTime, id)) {
 			store.conflictSnackbar = true
 			return
 		}
@@ -189,18 +179,18 @@ async function edit(id: number, request: PlannerTaskRequest) {
 	await update(id, request)
 
 	if (request.isBackground !== updatedItem.isBackground) {
-		updateOverlapsBackgroundFlags(request.startTime, request.endTime)
+		store.updateOverlapsBackgroundFlags(request.startTime, request.endTime)
 	}
 
 	updatedItem = await fetchById(id)
 
 	if (!request.isBackground) {
-		updatedItem.isDuringBackgroundEvent = checkOverlapsBackground(
+		updatedItem.isDuringBackgroundEvent = store.checkOverlapsBackground(
 			updatedItem.startTime,
 			updatedItem.endTime
 		)
 	}
-	setGridPositionFromSpan(updatedItem)
+	store.setGridPositionFromSpan(updatedItem)
 
 	store.events[index] = updatedItem
 }
@@ -243,7 +233,7 @@ async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {
 
 // Watch for time range changes
 watch([() => store.viewStartTime, () => store.viewEndTime], () => {
-	initializeEventGridPositions()
+	store.initializeEventGridPositions()
 }, {deep: true})
 
 // Watch for date changes to reload tasks

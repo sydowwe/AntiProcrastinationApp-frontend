@@ -9,7 +9,6 @@ import {Time} from '@/utils/Time.ts';
 import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
-import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -23,9 +22,6 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const {formatToTime24H} = useMoment()
 	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>(() => new PlannerTaskRequest())
 	const {patch, fetchById} = useTaskPlannerCrud()
-	const {
-		initializeEventGridPositions,
-	} = useDayPlannerCommon(useDayPlannerStore())
 
 	// Day-specific state
 	const viewedDate = ref(new Date())
@@ -100,7 +96,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 			return newTask
 		})
 
-		initializeEventGridPositions()
+		core.initializeEventGridPositions()
 	}
 
 	function cancelTemplatePreview() {
@@ -175,8 +171,15 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		await patch(eventId, {isDone})
 	}
 
+	function toggleEventSelection(eventId: number) {
+		if (isTemplateInPreview.value)
+			return
+		core.toggleEventSelection(eventId)
+	}
+
 	return {
 		...core,
+		toggleEventSelection,
 		updateTaskSpan,
 		updateTaskIsDone,
 

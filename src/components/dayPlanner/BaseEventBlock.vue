@@ -96,7 +96,7 @@ const backgroundColorComp = computed(() => {
 const style = computed(() => {
 	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1))
 	return {
-		marginRight: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
+		marginLeft: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
 		gridRow: `${event.gridRowStart} / span ${span}`
 	}
 })
@@ -205,9 +205,7 @@ const emit = defineEmits<{
 }
 
 .event-block:not(.no-hover):hover {
-	transform: scalex(1.015);
-	right: 0.75%;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	box-shadow: -6px 12px 12px rgba(0, 0, 0, 0.5);
 	z-index: 11;
 	cursor: grab;
 }
@@ -283,7 +281,7 @@ const emit = defineEmits<{
 	position: absolute;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
-	right: 0;
+	left: 0;
 	top: 2px;
 	bottom: 0;
 	z-index: 5;
