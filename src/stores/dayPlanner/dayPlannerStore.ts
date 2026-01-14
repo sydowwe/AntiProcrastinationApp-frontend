@@ -39,7 +39,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		const defaultEnd = templateInPreview.value!.defaultBedTime
 
 		// Remove existing template preview tasks
-		core.events.value = core.events.value.filter(e => e.id > 0)
+		core.tasks.value = core.tasks.value.filter(e => e.id > 0)
 
 		// Find the minimum start time and maximum end time after applying offset
 		const minStartMinutes = Math.min(...tasksFromTemplate.value.map(t => t.startTime.getInMinutes + offset * 60))
@@ -83,7 +83,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		}
 
 		// Create new tasks with offset times (offset is in hours, convert to minutes)
-		core.events.value = tasksFromTemplate.value.map(t => {
+		core.tasks.value = tasksFromTemplate.value.map(t => {
 			const newStartTime = Time.fromMinutes(t.startTime.getInMinutes + offset * 60)
 			const newEndTime = Time.fromMinutes(t.endTime.getInMinutes + offset * 60)
 
@@ -96,7 +96,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 			return newTask
 		})
 
-		core.initializeEventGridPositions()
+		core.initializeTaskGridPositions()
 	}
 
 	function cancelTemplatePreview() {
@@ -114,7 +114,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 		templateInPreview.value = null
 		tasksFromTemplate.value = null
-		core.events.value = core.events.value.filter(e => e.id > 0)
+		core.tasks.value = core.tasks.value.filter(e => e.id > 0)
 	}
 
 	// Day-specific computed
@@ -177,18 +177,18 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		core.openEditDialog()
 	}
 
-	function toggleEventSelection(eventId: number) {
+	function toggleTaskSelection(eventId: number) {
 		if (isTemplateInPreview.value && eventId >= 0)
 			return
-		core.toggleEventSelection(eventId)
+		core.toggleTaskSelection(eventId)
 	}
 
-	const showActionBar = computed(() => core.selectedEvents.value.length > 0 && !isTemplateInPreview.value)
+	const showActionBar = computed(() => core.selectedTasks.value.length > 0 && !isTemplateInPreview.value)
 
 	return {
 		...core,
 		openEditDialog,
-		toggleEventSelection,
+		toggleTaskSelection,
 		showActionBar,
 		updateTaskSpan,
 		updateTaskIsDone,

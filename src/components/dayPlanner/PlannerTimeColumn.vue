@@ -1,4 +1,3 @@
-<!-- TimeColumn.vue -->
 <template>
 <div
 	class="time-column"
@@ -47,11 +46,11 @@
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts'
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
-import {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {inject} from 'vue';
+import {Time} from '@/utils/Time.ts';
 
 const store = inject<TStore>('plannerStore')!
 

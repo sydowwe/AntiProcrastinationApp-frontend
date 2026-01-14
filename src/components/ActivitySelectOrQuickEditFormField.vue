@@ -1,19 +1,28 @@
 <template>
-<div class="d-flex justify-space-between">
-	<VSwitch color="primaryOutline" class="mb-4" v-model="isActivityFormHidden"
-	         :label="i18n.t('routineTodoList.quickCreateRoutineToDoListActivity')"
+<div class="flex-wrap d-flex justify-space-between">
+	<VSwitch class="ml-2 mb-2 flex-wrap" color="primaryOutline" v-model="isActivityFormHidden"
+	         :label='isEdit ? `Quick edit activity` :  `Quick create activity with role "${viewName}"`'
 	         density="comfortable" hideDetails></VSwitch>
 
-	<VSelect v-if="isActivityFormHidden && isEdit" max-width="150" label="Quick edit mode" v-model="quickEditMode" :items="['Overwrite', 'Clone']"></VSelect>
+	<VSelect class="flex-1-0 mb-4 mt-2" v-if="isActivityFormHidden && isEdit" min-width="150" max-width="150" density="compact" label="Quick edit mode"
+	         v-model="quickEditMode"
+	         :items="['Overwrite', 'Clone']" hideDetails></VSelect>
 </div>
-<ActivitySelectionForm ref="activityForm" v-model:activityId="selectedActivityId" v-if="!isActivityFormHidden" class="mb-5"
-                       :showFromToDoListField="false" :formDisabled="false" :isFilter="false" isInDialog
-                       :selectOptionsSource="ActivityOptionsSource.ALL"></ActivitySelectionForm>
-<template v-else>
-	<VTextField class="py-2" :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
-	<VTextarea class="py-2" :label="$t('general.text')" v-model="activityFormFieldData.text" rows="2"></VTextarea>
-	<VIdSelect class="py-2 pb-3" :label="$t('activities.category')" v-model="activityFormFieldData.categoryId" :items="categoryOptions" hide-details></VIdSelect>
-</template>
+<ActivitySelectionForm ref="activityForm"
+                       v-if="!isActivityFormHidden"
+                       v-model:activityId="selectedActivityId"
+                       :showFromToDoListField="false"
+                       :formDisabled="false"
+                       :isFilter="false"
+                       isInDialog
+                       :selectOptionsSource="ActivityOptionsSource.ALL"
+></ActivitySelectionForm>
+<div v-else class="d-flex flex-column ga-4 pt-3">
+	<VTextField :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
+	<VTextarea :label="$t('general.text')" v-model="activityFormFieldData.text" rows="2"></VTextarea>
+	<VIdSelect class="mb-3" density="compact" :label="$t('activities.category')" v-model="activityFormFieldData.categoryId" :items="categoryOptions"
+	           hide-details></VIdSelect>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -28,12 +37,13 @@ import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.t
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 import {QuickActivityToolsDto} from '@/dtos/response/QuickActivityToolsDto.ts';
-import type {Activity} from '@/dtos/response/Activity.ts';
+import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
 const {requiredRule} = useGeneralRules()
 const {fetchCategorySelectOptions} = useActivitySelectOptions()
+const {fetchById} = useActivityCrud()
 
 const activityForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 
@@ -85,7 +95,12 @@ async function execAndReturnStatus() {
 	return {activityId: selectedActivityId.value!, status: 'fromExisting'};
 }
 
-function onOpenEdit(oldActivity: Activity) {
+async function onOpenEdit(activityId: number) {
+	const oldActivity = await fetchById(activityId)
+	if (!oldActivity) {
+		showErrorSnackbar(`Activity with id ${activityId} not found`);
+		return;
+	}
 	isEdit.value = true;
 	isActivityFormHidden.value = true;
 
@@ -98,11 +113,6 @@ function onOpenEdit(oldActivity: Activity) {
 	selectedActivityId.value = oldActivity.id;
 }
 
-function setDefaultActivityId(activityId: number | undefined) {
-	console.log(activityId)
-	selectedActivityId.value = activityId;
-}
-
 function reset() {
 	isActivityFormHidden.value = false;
 	activityFormFieldData.value = QuickActivityToolsDto.createEmpty;
@@ -111,6 +121,6 @@ function reset() {
 }
 
 defineExpose({
-	execAndReturnStatus, setDefaultActivityId, reset, onOpenEdit
+	execAndReturnStatus, reset, onOpenEdit
 })
 </script>

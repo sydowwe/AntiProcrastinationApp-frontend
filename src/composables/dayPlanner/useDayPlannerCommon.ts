@@ -4,29 +4,26 @@ import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlann
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
 /**
- * Base event type for grid positioning with Date-based spans
+ * Base task type for grid positioning with Date-based spans
  */
 
 /**
  * Shared logic for day planner
- * Handles grid positioning, time calculations, and conflict detection for Date-based events
+ * Handles grid positioning, time calculations, and conflict detection for Date-based tasks
  */
 export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
 	viewStartTime: Ref<Time>,
 	totalGridRows: ComputedRef<number>,
-	events: Ref<T[]>
+	tasks: Ref<T[]>
 ) {
 	// --- Helpers: Time-based calculations (day-agnostic with midnight wrap support) ---
 	const MINUTES_IN_DAY = 1440
-
 
 	function minutesFromViewStart(t: Time): number {
 		// Normalize into [0, 1440)
 		const start = viewStartTime.value.getInMinutes
 		const m = t.getInMinutes
-		const diff = (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
-		console.log(diff)
-		return diff
+		return (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
 	}
 
 	function segmentizeRange(startM: number, endM: number): Array<{ s: number, e: number }> {
@@ -49,43 +46,43 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 
 
 	/**
-	 * Check if date ranges overlap with background events
+	 * Check if date ranges overlap with background tasks
 	 */
-	function checkOverlapsBackground(start: Time, end: Time): boolean {
-		return events.value.some(event => {
-			if (!event.isBackground) return false
+	function checkOverlapsBackground(task: T): boolean {
+		return tasks.value.some(backgroundTask => {
+			if (!backgroundTask.isBackground)
+				return false
 
-			if (event.startTime && event.endTime) {
-				return rangesOverlapTime(start, end, event.startTime, event.endTime)
+			if (backgroundTask.startTime && backgroundTask.endTime) {
+				return rangesOverlapTime(backgroundTask.startTime, backgroundTask.endTime, task.startTime, task.endTime)
 			}
 		})
 	}
 
 	/**
-	 * Check for event conflicts (non-background events)
+	 * Check for task conflicts (non-background tasks)
 	 */
-	function checkConflict(newStart: Time, newEnd: Time, currentEventId?: number): boolean {
+	function checkConflict(taskToCheck: T): boolean {
+		return tasks.value.some(task => {
+			if (task.id === taskToCheck.id || task.isBackground)
+				return false
 
-		return events.value.some(event => {
-			if (event.id === currentEventId || event.isBackground) return false
-
-			if (event.startTime && event.endTime) {
-				return rangesOverlapTime(newStart, newEnd, event.startTime, event.endTime)
+			if (task.startTime && task.endTime) {
+				return rangesOverlapTime(task.startTime, task.endTime, taskToCheck.startTime, taskToCheck.endTime)
 			}
 		})
 	}
 
 	/**
-	 * Update overlapping background flags for all events
+	 * Update overlapping background flags for all tasks that overlap with the given background task
 	 */
-	function updateOverlapsBackgroundFlags(bgStart: Time, bgEnd: Time): void {
+	function updateIsDuringBackgroundFlags(backgroundTask: T): void {
+		tasks.value.forEach(task => {
+			if (task.isBackground) return
 
-		events.value.forEach(event => {
-			if (event.isBackground) return
-
-			if (event.startTime && event.endTime) {
-				if (rangesOverlapTime(event.startTime, event.endTime, bgStart, bgEnd)) {
-					event.isDuringBackgroundEvent = true
+			if (task.startTime && task.endTime) {
+				if (rangesOverlapTime(task.startTime, task.endTime, backgroundTask.startTime, backgroundTask.endTime)) {
+					task.isDuringBackgroundTask = true
 				}
 				return
 			}
@@ -93,59 +90,55 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	}
 
 	/**
-	 * Initialize grid positions for all events
+	 * Initialize grid positions for all tasks
 	 */
-	function initializeEventGridPositions(): void {
-		events.value.forEach(event => {
-			setGridPositionFromSpan(event)
-			if (event.isBackground)
+	function initializeTaskGridPositions(): void {
+		tasks.value.forEach(task => {
+			setGridPositionFromSpan(task)
+			if (task.isBackground)
 				return
-			event.isDuringBackgroundEvent = checkOverlapsBackground(event.startTime, event.endTime)
+			task.isDuringBackgroundTask = checkOverlapsBackground(task)
 		})
 	}
 
 	/**
 	 * Calculate grid position from time span
 	 */
-	function setGridPositionFromSpan(event: T): void {
-		const startOffset = minutesFromViewStart(event.startTime) // [0, 1440)
-		let endOffset = minutesFromViewStart(event.endTime) // [0, 1440)
-
-		console.log(startOffset)
+	function setGridPositionFromSpan(task: T): void {
+		const startOffset = minutesFromViewStart(task.startTime) // [0, 1440)
+		let endOffset = minutesFromViewStart(task.endTime) // [0, 1440)
 
 		// If wraps over midnight, extend end by a full day to keep duration positive
-		if (event.endTime.getInMinutes < event.startTime.getInMinutes) {
+		if (task.endTime.getInMinutes < task.startTime.getInMinutes) {
 			endOffset += MINUTES_IN_DAY
 		}
 
 		const startRow = Math.floor(startOffset / 10) + 1
 		const endRow = Math.floor(endOffset / 10) + 1
 
-		event.gridRowStart = startRow >= endRow ? 1 : startRow
-		event.gridRowEnd = Math.min(totalGridRows.value + 1, endRow)
-
-		console.log(startOffset, startRow, event.gridRowStart)
+		task.gridRowStart = startRow >= endRow ? 1 : startRow
+		task.gridRowEnd = Math.min(totalGridRows.value + 1, endRow)
 	}
 
 	/**
 	 * Handle task span updates
 	 */
-	function redrawTask(eventId: number, updates: Partial<T>): void {
-		const eventIndex = events.value.findIndex(e => e.id === eventId)
-		if (eventIndex === -1) return
+	function redrawTask(taskId: number, updates: Partial<T>): void {
+		const taskIndex = tasks.value.findIndex(e => e.id === taskId)
+		if (taskIndex === -1) return
 
-		if (!events.value[eventIndex]) {
+		if (!tasks.value[taskIndex]) {
 			return
 		}
-		events.value[eventIndex] = {
-			...events.value[eventIndex],
+		tasks.value[taskIndex] = {
+			...tasks.value[taskIndex],
 			...updates
 		}
 
-		const event = events.value[eventIndex]
+		const task = tasks.value[taskIndex]
 		if (updates.startTime || updates.endTime) {
-			if (event.startTime && event.endTime) {
-				event.isDuringBackgroundEvent = checkOverlapsBackground(event.startTime, event.endTime)
+			if (task.startTime && task.endTime) {
+				task.isDuringBackgroundTask = checkOverlapsBackground(task)
 			}
 		}
 	}
@@ -153,8 +146,8 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	return {
 		checkOverlapsBackground,
 		checkConflict,
-		updateOverlapsBackgroundFlags,
-		initializeEventGridPositions,
+		updateIsDuringBackgroundFlags,
+		initializeTaskGridPositions,
 		setGridPositionFromSpan,
 		redrawTask
 	}

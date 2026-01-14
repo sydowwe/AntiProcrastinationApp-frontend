@@ -64,7 +64,7 @@
 			@click="store.openCreateDialogEmpty"
 		>
 			<VIcon icon="plus" size="18" class="mr-2"/>
-			Add Event
+			Add Task
 		</VBtn>
 
 		<VBtn

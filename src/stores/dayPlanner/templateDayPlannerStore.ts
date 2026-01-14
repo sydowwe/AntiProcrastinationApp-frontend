@@ -29,5 +29,5 @@ export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', () =
 		templateName,
 	}
 }, {
-	persist: {omit: ["events"]}
+	persist: {omit: ["tasks"]}
 }) satisfies () => ITemplateDayPlannerStore

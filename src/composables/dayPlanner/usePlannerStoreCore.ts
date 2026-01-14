@@ -12,11 +12,11 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const viewStartTime = ref(new Time(7, 30))
 	const viewEndTime = ref(new Time(1, 30))
 
-	// Events state
-	const events = ref<TTask[]>([])
+	// Tasks state
+	const tasks = ref<TTask[]>([])
 
 	// Selection state (for multi-select)
-	const selectedEventIds = reactive<Set<number>>(new Set())
+	const selectedTaskIds = reactive<Set<number>>(new Set())
 
 	// Dialog state
 	const dialog = ref(false)
@@ -24,12 +24,9 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const editingTask = ref<TTaskRequest>({} as TTaskRequest)
 	const deleteDialog = ref(false)
 
-	// Snackbar state
-	const conflictSnackbar = ref(false)
-
 	// Drag/Resize state
-	const draggingEventId = ref<number | null>(null)
-	const resizingEventId = ref<number | null>(null)
+	const draggingTaskId = ref<number | null>(null)
+	const resizingTaskId = ref<number | null>(null)
 	const dragConflict = ref(false)
 
 	// Time slots computed
@@ -75,21 +72,21 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	})
 
 	// Computed
-	const isDraggingAny = computed(() => draggingEventId.value !== null)
-	const isResizingAny = computed(() => resizingEventId.value !== null)
+	const isDraggingAny = computed(() => draggingTaskId.value !== null)
+	const isResizingAny = computed(() => resizingTaskId.value !== null)
 
 
-	const selectedEvents = computed(() =>
-		events.value.filter(e => selectedEventIds.has(e.id))
+	const selectedTasks = computed(() =>
+		tasks.value.filter(e => selectedTaskIds.has(e.id))
 	)
 
-	const showActionBar = computed(() => selectedEventIds.size > 0)
+	const showActionBar = computed(() => selectedTaskIds.size > 0)
 
 	const isOverMidnight = computed(() => viewStartTime.value.hours > viewEndTime.value.hours)
 
-	// Event handlers
+	// CRUD handlers
 	function openDeleteDialog(): void {
-		if (selectedEventIds.size > 0) {
+		if (selectedTaskIds.size > 0) {
 			deleteDialog.value = true
 		}
 	}
@@ -109,38 +106,38 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	}
 
 	function openEditDialog(): void {
-		// Only open edit dialog if exactly one event is selected
-		if (selectedEventIds.size !== 1) return
+		// Only open edit dialog if exactly one task is selected
+		if (selectedTaskIds.size !== 1) return
 
-		const selectedId = Array.from(selectedEventIds)[0]
-		const event = events.value.find(e => e.id === selectedId)
-		if (!event) return
+		const selectedId = Array.from(selectedTaskIds)[0]
+		const task = tasks.value.find(e => e.id === selectedId)
+		if (!task) return
 
-		editedId.value = event.id
+		editedId.value = task.id
 		editingTask.value = {
-			activityId: event.activity.id,
-			startTime: event.startTime,
-			endTime: event.endTime,
-			isBackground: event.isBackground,
-			isOptional: event.isOptional,
-			location: event.location,
-			notes: event.notes,
-			importanceId: event.importance?.id
+			activityId: task.activity.id,
+			startTime: task.startTime,
+			endTime: task.endTime,
+			isBackground: task.isBackground,
+			isOptional: task.isOptional,
+			location: task.location,
+			notes: task.notes,
+			importanceId: task.importance?.id
 		} as TTaskRequest
 		dialog.value = true
 	}
 
 	// Selection handlers
-	function toggleEventSelection(eventId: number): void {
-		if (selectedEventIds.has(eventId)) {
-			selectedEventIds.delete(eventId)
+	function toggleTaskSelection(taskId: number): void {
+		if (selectedTaskIds.has(taskId)) {
+			selectedTaskIds.delete(taskId)
 		} else {
-			selectedEventIds.add(eventId)
+			selectedTaskIds.add(taskId)
 		}
 	}
 
 	function clearSelection(): void {
-		selectedEventIds.clear()
+		selectedTaskIds.clear()
 	}
 
 
@@ -148,10 +145,10 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		setGridPositionFromSpan,
 		checkOverlapsBackground,
 		checkConflict,
-		updateOverlapsBackgroundFlags,
-		initializeEventGridPositions,
+		updateIsDuringBackgroundFlags,
+		initializeTaskGridPositions,
 		redrawTask
-	} = useDayPlannerCommon(viewStartTime, totalGridRows, events)
+	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks)
 
 	return {
 		// Time/Grid configuration
@@ -166,19 +163,18 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		timeToSlotIndex,
 
 		// State
-		events,
-		selectedEventIds,
+		tasks,
+		selectedTaskIds,
 		dialog,
 		editedId,
 		editingTask,
 		deleteDialog,
-		conflictSnackbar,
-		draggingEventId,
-		resizingEventId,
+		draggingTaskId,
+		resizingTaskId,
 		dragConflict,
 
 		// Computed
-		selectedEvents,
+		selectedTasks,
 		showActionBar,
 		isOverMidnight,
 		isDraggingAny,
@@ -189,15 +185,15 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		openCreateDialogPrefilled,
 		openCreateDialogEmpty,
 		openEditDialog,
-		toggleEventSelection,
+		toggleTaskSelection,
 		clearSelection,
 
 
 		setGridPositionFromSpan,
 		checkOverlapsBackground,
 		checkConflict,
-		updateOverlapsBackgroundFlags,
-		initializeEventGridPositions,
+		updateIsDuringBackgroundFlags,
+		initializeTaskGridPositions,
 		redrawTask
 	}
 }

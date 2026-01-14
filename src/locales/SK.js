@@ -384,6 +384,7 @@ const SK = {
         task: `Aktivita`,
         quickCreatePlannerActivity: `Rýchle vytvorenie aktivity v plánovači`,
         quickEditPlannerActivity: `Rýchla úprava aktivity`,
+        importance: `Dôležitosť`,
     }
 }
 export default SK;

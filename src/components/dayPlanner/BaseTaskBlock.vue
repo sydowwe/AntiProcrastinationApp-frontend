@@ -1,13 +1,13 @@
 <template>
 <VSheet
-	v-if="event.isBackground"
+	v-if="task.isBackground"
 	:color="backgroundColorComp"
 	:style="style"
-	:data-event-id="event.id"
-	:class="['base-event-block','background-event-block', { 'past-event': isPast, 'selected': isSelected }]"
+	:data-task-id="task.id"
+	:class="['base-task-block','background-task-block', { 'past-task': isPast, 'selected': isSelected }]"
 >
-	<VSheet class="background-event-label" :color="backgroundColorComp">
-		{{ event.activity.name }}
+	<VSheet class="background-task-label" :color="backgroundColorComp">
+		{{ task.activity.name }}
 	</VSheet>
 </VSheet>
 
@@ -15,9 +15,9 @@
 	v-else
 	:color="`${backgroundColorComp}E0`"
 	:style
-	:class="['base-event-block','event-block', ...blockClasses]"
-	:data-event-id="event.id"
+	:class="['base-task-block','task-block', ...blockClasses]"
 	:tabindex="0"
+	:data-task-id="task.id"
 	@keydown.enter="handleEnterKey"
 	@keydown.e="handleEKey"
 	@keydown.delete="handleDeleteKey"
@@ -27,40 +27,67 @@
 	<slot name="checkbox"></slot>
 	<div
 		class="resize-handle resize-handle-top"
-		:data-event-id="event.id"
 		@click.stop
-		@pointerdown="emit('resizeStart', { eventId: event.id, direction: 'top', $event })"
+		@pointerdown="emit('resizeStart', { taskId: task.id, direction: 'top', pointerEvent: $event })"
 	/>
 
-	<div class="event-content">
-		<div class="event-title">{{ event.activity.name }}</div>
+	<div class="task-content">
+		<div class="task-title">{{ task.activity.name }}</div>
 
 		<!-- Slot for time display - different for template vs regular -->
-		<slot name="time" :event="event">
-			<div class="event-time">{{ formattedTime }}</div>
+		<slot name="time" :task="task">
+			<div class="task-time">{{ formattedTime }}</div>
 		</slot>
 
 		<!-- Slot for additional chips/badges - different for template vs regular -->
-		<slot name="badges" :event="event">
-			<!-- Default: show category if exists -->
+		<slot name="badges" :task="task">
 			<VChip
-				v-if="event.activity.category"
+				v-if="task.importance"
 				size="x-small"
 				variant="flat"
-				:prependIcon="event.activity.category.icon ?? undefined"
-				:color="event.activity.category.color ?? 'white'"
-				class="event-chip"
+				:color="task.importance.color"
+				class="task-chip"
 			>
-				{{ event.activity.category.name }}
+				{{ task.importance.text }}
+			</VChip>
+
+			<VChip
+				v-if="task.isOptional"
+				size="x-small"
+				variant="outlined"
+				class="task-chip"
+			>
+				Optional
+			</VChip>
+
+			<VChip
+				v-if="task.location"
+				size="x-small"
+				variant="flat"
+				prependIcon="map-marker"
+				class="task-chip"
+			>
+				{{ task.location }}
+			</VChip>
+
+			<!-- Also show category if exists -->
+			<VChip
+				v-if="task.activity.category"
+				size="x-small"
+				variant="flat"
+				:prependIcon="task.activity.category.icon ?? undefined"
+				:color="task.activity.category.color ?? 'white'"
+				class="task-chip"
+			>
+				{{ task.activity.category.name }}
 			</VChip>
 		</slot>
 	</div>
 
 	<div
 		class="resize-handle resize-handle-bottom"
-		:data-event-id="event.id"
 		@click.stop
-		@pointerdown="$emit('resizeStart', { eventId: event.id, direction: 'bottom', $event })"
+		@pointerdown="emit('resizeStart', { taskId: task.id, direction: 'bottom', pointerEvent: $event })"
 	/>
 </VSheet>
 </template>
@@ -73,8 +100,8 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 
-const {event, backgroundColor, isPast, marginLeft} = defineProps<{
-	event: TTask
+const {task, backgroundColor, isPast, marginLeft} = defineProps<{
+	task: TTask
 	backgroundColor?: string
 	isPast?: boolean,
 	marginLeft?: string
@@ -84,38 +111,38 @@ const {event, backgroundColor, isPast, marginLeft} = defineProps<{
 const store = inject<TStore>('plannerStore')!
 
 // Computed states
-const isSelected = computed(() => store.selectedEventIds.has(event.id))
-const isDragging = computed(() => store.draggingEventId === event.id)
-const isResizing = computed(() => store.resizingEventId === event.id)
-const isConflict = computed(() => store.dragConflict && store.draggingEventId === event.id)
-const isAnyEventBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
+const isSelected = computed(() => store.selectedTaskIds.has(task.id))
+const isDragging = computed(() => store.draggingTaskId === task.id)
+const isResizing = computed(() => store.resizingTaskId === task.id)
+const isConflict = computed(() => store.dragConflict && store.draggingTaskId === task.id)
+const isAnyTaskBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
 const backgroundColorComp = computed(() => {
-	return backgroundColor || event.activity?.role?.color || '#4287f5'
+	return backgroundColor || task.activity?.role?.color || '#4287f5'
 })
 
 const style = computed(() => {
-	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1))
+	const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
 	return {
-		marginLeft: marginLeft ?? `${event.isDuringBackgroundEvent ? 36 : 0}px`,
-		gridRow: `${event.gridRowStart} / span ${span}`
+		marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
+		gridRow: `${task.gridRowStart} / span ${span}`
 	}
 })
 
 const formattedTime = computed(() => {
 	// Default time formatting (can be overridden via slot)
-	return `${Time.getString(event.startTime)} - ${Time.getString(event.endTime)}`
+	return `${Time.getString(task.startTime)} - ${Time.getString(task.endTime)}`
 })
 
 const blockClasses = computed(() => [
 	{
 		'dragging': isDragging.value,
 		'resizing': isResizing.value,
-		'past-event': isPast,
+		'past-task': isPast,
 		'selected': isSelected.value,
 		'conflict': isConflict.value,
-		'no-hover': isAnyEventBeingManipulated.value,
-		'optional-task': event.isOptional,
+		'no-hover': isAnyTaskBeingManipulated.value,
+		'optional-task': task.isOptional,
 	}
 ])
 
@@ -123,16 +150,16 @@ const blockClasses = computed(() => [
 // Keyboard handlers
 function handleEnterKey(e: KeyboardEvent): void {
 	e.preventDefault()
-	// Only open edit if single event is selected (this event is focused/selected)
-	if (isSelected.value && store.selectedEventIds.size === 1) {
+	// Only open edit if single task is selected (this task is focused/selected)
+	if (isSelected.value && store.selectedTaskIds.size === 1) {
 		store.openEditDialog()
 	}
 }
 
 function handleEKey(e: KeyboardEvent): void {
 	e.preventDefault()
-	// Only open edit if single event is selected
-	if (isSelected.value && store.selectedEventIds.size === 1) {
+	// Only open edit if single task is selected
+	if (isSelected.value && store.selectedTaskIds.size === 1) {
 		store.openEditDialog()
 	}
 }
@@ -149,18 +176,18 @@ function handleEscapeKey(e: KeyboardEvent): void {
 }
 
 const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
+	(e: 'resizeStart', payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }): void
 }>()
 </script>
 
 <style scoped>
-.base-event-block {
+.base-task-block {
 	box-sizing: border-box !important;
 	border: 2px hidden transparent;
 }
 
-/* Event Block Styles */
-.event-block {
+/* Task Block Styles */
+.task-block {
 	position: absolute;
 	top: 2px;
 	left: 0;
@@ -177,22 +204,22 @@ const emit = defineEmits<{
 }
 
 
-.event-block:focus {
+.task-block:focus {
 	outline: none;
 }
 
-.base-event-block.selected {
+.base-task-block.selected {
 	z-index: 11;
 	border: 2px solid #EEE;
 }
 
-.event-block.dragging {
+.task-block.dragging {
 	z-index: 100;
 	filter: brightness(0.9);
 	cursor: grabbing !important;
 }
 
-.event-block.conflict {
+.task-block.conflict {
 	opacity: 0.7 !important;
 	background: rgba(244, 67, 54, 0.7) !important;
 	animation: pulse 0.5s ease-in-out infinite;
@@ -207,24 +234,24 @@ const emit = defineEmits<{
 	}
 }
 
-.event-block:not(.no-hover):hover {
+.task-block:not(.no-hover):hover {
 	box-shadow: -6px 12px 12px rgba(0, 0, 0, 0.5);
 	z-index: 11;
 	cursor: grab;
 }
 
-.event-block.past-event {
+.task-block.past-task {
 	filter: grayscale(30%) brightness(0.9);
 }
 
-.event-block.past-event:hover {
+.task-block.past-task:hover {
 	filter: grayscale(20%) brightness(0.95);
 }
 
-.event-content {
+.task-content {
 	flex: 1;
 	padding: 8px 12px;
-	pointer-events: none;
+	pointer-tasks: none;
 	cursor: pointer;
 	min-height: 0;
 	display: flex;
@@ -236,7 +263,7 @@ const emit = defineEmits<{
 	column-gap: 20px;
 }
 
-.event-title {
+.task-title {
 	font-weight: 500;
 	font-size: 13px;
 	white-space: nowrap;
@@ -246,7 +273,7 @@ const emit = defineEmits<{
 	opacity: 1;
 }
 
-.event-time {
+.task-time {
 	font-size: 11px;
 	opacity: 1;
 	white-space: nowrap;
@@ -254,7 +281,7 @@ const emit = defineEmits<{
 	text-overflow: ellipsis;
 }
 
-.event-chip {
+.task-chip {
 	margin-top: 2px;
 }
 
@@ -274,8 +301,8 @@ const emit = defineEmits<{
 	background: rgba(0, 0, 0, 0.3);
 }
 
-/* Background Event Styles */
-.background-event-block {
+/* Background Task Styles */
+.background-task-block {
 	position: absolute;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
@@ -287,7 +314,7 @@ const emit = defineEmits<{
 	cursor: pointer;
 }
 
-.background-event-block::before {
+.background-task-block::before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -299,13 +326,13 @@ const emit = defineEmits<{
 		transparent 10px,
 		rgba(255, 255, 255, 0.4) 14px
 	);
-	pointer-events: none;
+	pointer-tasks: none;
 	z-index: 1;
 	opacity: 0.9;
 	box-sizing: border-box;
 }
 
-.background-event-label {
+.background-task-label {
 	color: white;
 	position: sticky;
 	z-index: 20;
@@ -320,7 +347,7 @@ const emit = defineEmits<{
 	font-weight: 600;
 }
 
-/* Animation for new events */
+/* Animation for new tasks */
 @keyframes slideIn {
 	from {
 		opacity: 0;
@@ -332,7 +359,7 @@ const emit = defineEmits<{
 	}
 }
 
-.event-block {
+.task-block {
 	animation: slideIn 0.3s ease-out;
 }
 </style>
