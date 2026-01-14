@@ -13,6 +13,7 @@
 
 	<!-- Midnight divider -->
 	<div
+		v-if="store.isOverMidnight"
 		class="midnight-divider"
 		:style="{ top: `${store.timeToSlotIndex(new Time(0,0)) * SLOT_HEIGHT}px` }"
 	>
@@ -69,11 +70,11 @@ const {isVisible, formattedTime, gridRowStyle} = useCurrentTimeIndicator(store)
 }
 
 .time-slot {
-	border-top: 2px dotted #999;
+	border-top: 2px solid #9993;
 }
 
 .time-slot:nth-of-type(3n+1) {
-	border-top-style: solid;
+	border-top-color: #999B;
 }
 
 .time-labels-overlay {

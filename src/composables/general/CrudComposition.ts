@@ -207,6 +207,24 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		}
 	}
 
+	async function batchedToggle(fieldName: string, ids: number[]): Promise<void> {
+		loading.value = true
+		error.value = null
+		try {
+			const response = await API.patch(`${config.entityName}/toggle-${fieldName}`, {
+				ids
+			})
+
+			return Promise.resolve()
+		} catch (e: any) {
+			error.value = e.message || `Failed to toggle ${fieldName} for ${config.entityName}s`
+			console.error(`Error toggling ${fieldName} for ${config.entityName}s:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
 	async function deleteEntity(id: number): Promise<void> {
 		loading.value = true
 		error.value = null
@@ -215,6 +233,20 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		} catch (e: any) {
 			error.value = e.message || `Failed to delete ${config.entityName} with ID ${id}`
 			console.error(`Error deleting ${config.entityName} with ID ${id}:`, e)
+			throw e
+		} finally {
+			loading.value = false
+		}
+	}
+
+	async function batchDelete(ids: number[]): Promise<void> {
+		loading.value = true
+		error.value = null
+		try {
+			await API.post(`${config.entityName}/batch-delete`, {ids})
+		} catch (e: any) {
+			error.value = e.message || `Failed to batch delete ${config.entityName}`
+			console.error(`Error batch deleting ${config.entityName}:`, e)
 			throw e
 		} finally {
 			loading.value = false
@@ -230,7 +262,9 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		updateWithResponse,
 		patch,
 		patchWithResponse,
+		batchedToggle,
 		deleteEntity,
+		batchDelete
 	}
 }
 

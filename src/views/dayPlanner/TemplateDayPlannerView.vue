@@ -69,7 +69,8 @@ const {
 	fetchFiltered: fetchFilteredTasks,
 	update: updateTask,
 	fetchById: fetchByIdTask,
-	deleteEntity: deleteTask
+	deleteEntity: deleteTask,
+	batchDelete: batchDeleteTask,
 } = useTemplatePlannerTaskCrud()
 
 const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
@@ -167,12 +168,20 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 }
 
 async function del(): Promise<void> {
-	if (store.toDeleteId !== null) {
-		await deleteTask(store.toDeleteId);
-		store.events.splice(store.events.findIndex(e => e.id === store.toDeleteId), 1)
+	if (store.selectedEventIds.size === 1) {
+		const idToDelete = store.selectedEventIds.values().next().value!;
+		await deleteTask(idToDelete).then(() => {
+			store.events.splice(store.events.findIndex(e => e.id === idToDelete), 1)
+			store.selectedEventIds.clear();
+		})
+	} else if (store.selectedEventIds.size > 1) {
+		const ids = Array.from(store.selectedEventIds)
+		await batchDeleteTask(ids).then(() => {
+			store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
+			store.selectedEventIds.clear();
+		})
 	}
 	store.deleteDialog = false
-	store.toDeleteId = null
 }
 
 // Watch for time range changes

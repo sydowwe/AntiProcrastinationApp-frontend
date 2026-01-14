@@ -17,6 +17,7 @@
 
 	<!-- Midnight divider -->
 	<div
+		v-if="store.isOverMidnight"
 		class="midnight-divider-events"
 		:style="{ top: `${store.timeToSlotIndex(new Time(0,0)) * SLOT_HEIGHT}px` }"
 	/>
@@ -122,12 +123,15 @@ function handlePointerDown(e: PointerEvent): void {
 	// Check if clicking on a resize handle (handled by EventBlock)
 	if (target.closest('.resize-handle')) return
 
+	if (target.closest('.v-checkbox.event-checkbox')) return
+
+
 	// Check if clicking on an event to potentially drag it
-	const eventBlock = target.closest('.event-block') as HTMLElement
-	if (eventBlock && !eventBlock.classList.contains('background-event-block')) {
+	const eventBlock = target.closest('.base-event-block') as HTMLElement
+	if (eventBlock) {
 		const eventId = parseInt(eventBlock.dataset.eventId || '0')
 		const event = store.events.find(ev => ev.id === eventId)
-		if (!event || event.isBackground) return
+		if (!event) return
 
 		// Track starting position but don't start dragging yet
 		pointerStartPos.value = {x: e.clientX, y: e.clientY}
@@ -136,7 +140,6 @@ function handlePointerDown(e: PointerEvent): void {
 		// Prepare for potential drag
 		store.draggingEventId = eventId
 		originalEventState.value = {...event}
-
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
 		dragStartSlot.value = slotIndex
 		dragOffset.value = slotIndex - (event.gridRowStart - 1)
@@ -178,7 +181,7 @@ function handlePointerMove(e: PointerEvent): void {
 
 		const currentSlot = getSlotIndexFromPosition(e.clientY)
 		const event = store.events.find(ev => ev.id === store.draggingEventId)
-		if (!event) return
+		if (!event || event.isBackground) return
 
 		const eventDuration = originalEventState.value.gridRowEnd - originalEventState.value.gridRowStart
 		const newStartRow = currentSlot - dragOffset.value + 1
@@ -286,6 +289,7 @@ function handlePointerUp(): void {
 			// No movement - it was just a click
 			const clickedEventId = store.draggingEventId
 
+
 			// Check if this is a double-click (click on same event within delay)
 			if (clickTimer.value !== null && lastClickedEventId.value === clickedEventId) {
 				// Double-click detected - cancel the pending selection toggle
@@ -293,33 +297,20 @@ function handlePointerUp(): void {
 				clickTimer.value = null
 				lastClickedEventId.value = null
 
-				// Open edit dialog for the clicked event without changing selection
-				const event = store.events.find(e => e.id === clickedEventId)
-				if (event) {
-					store.editedId = event.id
-					store.editingTask = {
-						activityId: event.activity.id,
-						startTime: event.startTime,
-						endTime: event.endTime,
-						isBackground: event.isBackground,
-						isOptional: event.isOptional,
-						location: event.location,
-						notes: event.notes,
-						priorityId: event.priority?.id
-					} as TTaskRequest
-					store.dialog = true
-				}
+				store.openEditDialog()
+				store.toggleEventSelection(clickedEventId)
+
 			} else {
 				// Potential first click - delay selection toggle to detect double-click
 				if (clickTimer.value !== null) {
 					clearTimeout(clickTimer.value)
 				}
+				store.toggleEventSelection(clickedEventId)
 
 				lastClickedEventId.value = clickedEventId
 
 				// Set timer to toggle selection after delay (if no second click comes)
 				clickTimer.value = window.setTimeout(() => {
-					store.toggleEventSelection(clickedEventId)
 					clickTimer.value = null
 					lastClickedEventId.value = null
 				}, DOUBLE_CLICK_DELAY)
@@ -394,12 +385,13 @@ onMounted(() => {
 }
 
 .event-slot {
-	border-top: 2px dotted #999;
+	border-top: 2px solid #9993;
 	transition: background-color 0.2s ease;
 }
 
 .event-slot:nth-of-type(3n+1) {
-	border-top-style: solid;
+	border-top-width: 2px;
+	border-top-color: #999B;
 }
 
 .event-slot.hoverable:hover {

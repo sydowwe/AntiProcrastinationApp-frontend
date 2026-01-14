@@ -4,7 +4,7 @@
 	:color="backgroundColorComp"
 	:style="style"
 	:data-event-id="event.id"
-	:class="['background-event-block', { 'past-event': isPast }]"
+	:class="['base-event-block','background-event-block', { 'past-event': isPast, 'selected': isSelected }]"
 >
 	<VSheet class="background-event-label" :color="backgroundColorComp">
 		{{ event.activity.name }}
@@ -15,7 +15,7 @@
 	v-else
 	:color="`${backgroundColorComp}E0`"
 	:style
-	:class="['event-block', ...blockClasses]"
+	:class="['base-event-block','event-block', ...blockClasses]"
 	:data-event-id="event.id"
 	:tabindex="0"
 	@keydown.enter="handleEnterKey"
@@ -73,10 +73,11 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 
-const {event, backgroundColor, isPast} = defineProps<{
+const {event, backgroundColor, isPast, marginLeft} = defineProps<{
 	event: TTask
 	backgroundColor?: string
-	isPast?: boolean
+	isPast?: boolean,
+	marginLeft?: string
 }>()
 
 // Inject the store from parent DayPlanner component
@@ -96,7 +97,7 @@ const backgroundColorComp = computed(() => {
 const style = computed(() => {
 	const span = Math.max(1, (event.gridRowEnd || 1) - (event.gridRowStart || 1))
 	return {
-		marginLeft: `${event.isDuringBackgroundEvent ? 35 : 0}px`,
+		marginLeft: marginLeft ?? `${event.isDuringBackgroundEvent ? 36 : 0}px`,
 		gridRow: `${event.gridRowStart} / span ${span}`
 	}
 })
@@ -138,23 +139,26 @@ function handleEKey(e: KeyboardEvent): void {
 
 function handleDeleteKey(e: KeyboardEvent): void {
 	e.preventDefault()
-	// Emit delete event for all selected events
-	emit('deleteSelected')
+	store.openDeleteDialog()
 }
 
 function handleEscapeKey(e: KeyboardEvent): void {
 	e.preventDefault()
-	store.clearSelection()
-	;(e.target as HTMLElement).blur()
+	store.clearSelection();
+	(e.target as HTMLElement).blur()
 }
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void
-	(e: 'deleteSelected'): void
 }>()
 </script>
 
 <style scoped>
+.base-event-block {
+	box-sizing: border-box !important;
+	border: 2px hidden transparent;
+}
+
 /* Event Block Styles */
 .event-block {
 	position: absolute;
@@ -166,7 +170,7 @@ const emit = defineEmits<{
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
 	display: flex;
-	flex-direction: row;
+	flex-direction: column;
 	overflow: hidden;
 	z-index: 10;
 	user-select: none;
@@ -177,10 +181,9 @@ const emit = defineEmits<{
 	outline: none;
 }
 
-.event-block.selected {
+.base-event-block.selected {
 	z-index: 11;
 	border: 2px solid #EEE;
-	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
 
 .event-block.dragging {
@@ -256,7 +259,6 @@ const emit = defineEmits<{
 }
 
 .resize-handle {
-	position: absolute;
 	width: 100%;
 	height: 8px;
 	background: rgba(0, 0, 0, 0.1);
@@ -266,10 +268,6 @@ const emit = defineEmits<{
 	justify-content: center;
 	transition: background 0.2s ease;
 	flex-shrink: 0;
-}
-
-.resize-handle-bottom {
-	bottom: 0;
 }
 
 .resize-handle:hover {
@@ -285,6 +283,8 @@ const emit = defineEmits<{
 	top: 2px;
 	bottom: 0;
 	z-index: 5;
+	width: 36px;
+	cursor: pointer;
 }
 
 .background-event-block::before {
@@ -295,15 +295,14 @@ const emit = defineEmits<{
 	right: 0;
 	bottom: 0;
 	background: repeating-linear-gradient(
-		135deg,
+		0deg,
 		transparent 10px,
-		transparent 10px,
-		rgba(255, 255, 255, 0.5) 20px,
-		rgba(255, 255, 255, 0.5) 20px
+		rgba(255, 255, 255, 0.4) 14px
 	);
 	pointer-events: none;
 	z-index: 1;
 	opacity: 0.9;
+	box-sizing: border-box;
 }
 
 .background-event-label {
@@ -312,9 +311,12 @@ const emit = defineEmits<{
 	z-index: 20;
 	opacity: 100%;
 	top: 46%;
-	padding: 7px 7px;
 	writing-mode: sideways-lr;
-	font-size: 15px;
+	padding: 8px 4px;
+	width: 100%;
+	border-radius: 4px;
+	border: 2px double rgba(255, 255, 255, 0.5);
+	font-size: 0.9rem;
 	font-weight: 600;
 }
 

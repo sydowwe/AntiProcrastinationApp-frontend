@@ -8,12 +8,15 @@
 </div>
 </template>
 
-<script setup lang="ts">
-import {computed} from 'vue'
-import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
+<script setup lang="ts"
+        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
+import {computed, inject} from 'vue'
 import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
+import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
+import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 
-const store = useDayPlannerStore()
+const store = inject<TStore>('plannerStore')!
 
 const {preview} = defineProps<{
 	preview?: CreationPreviewType,
@@ -35,7 +38,7 @@ const formattedTimeRange = computed(() => {
 	const startTime = store.slotIndexToTime(preview.startRow - 1)
 	const endTime = store.slotIndexToTime(preview.endRow)
 
-	return `${startTime} - ${endTime}`
+	return `${startTime.getString()} - ${endTime.getString()}`
 })
 
 

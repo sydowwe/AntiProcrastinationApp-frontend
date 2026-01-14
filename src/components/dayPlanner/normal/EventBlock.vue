@@ -3,16 +3,18 @@
 	:class="classes"
 	:event
 	:backgroundColor="event.color"
-	:isPast="isPast"
+	:isPast
 	@resizeStart="emit('resizeStart', $event)"
-	@deleteSelected="handleDeleteSelected"
-	@keydown.space="handleToggleIsDoneSelected"
+	@keydown.space.prevent="handleToggleIsDoneSelected"
 >
 	<template #checkbox>
 		<VCheckbox
+			v-if="event.id >= 0"
 			:disabled="store.isTemplateInPreview"
 			v-model="event.isDone"
+			@update:modelValue="emit('toggleIsDone', event.id)"
 			class="event-checkbox"
+			density="default"
 			hideDetails
 			@click.stop
 		/>
@@ -82,6 +84,7 @@ const {event} = defineProps<{
 	event: PlannerTask
 }>()
 
+
 const isPast = computed(() => {
 	const dateTime = new Date();
 	dateTime.setHours(event.endTime.hours, event.endTime.minutes);
@@ -90,6 +93,7 @@ const isPast = computed(() => {
 
 const classes = computed(() => {
 	return {
+		'pl-2': event.id < 0 && !event.isBackground,
 		'templatePreview': event.id < 0
 	}
 })
@@ -104,10 +108,6 @@ function getPriorityColor(priority: TaskPriority): string {
 	return priorityColors[priority.text] || '#999'
 }
 
-function handleDeleteSelected(): void {
-	// Open delete dialog for selected events
-	store.openDeleteDialog()
-}
 
 function handleToggleIsDoneSelected(): void {
 	// Toggle isDone for all selected events
@@ -128,13 +128,15 @@ function handleToggleIsDoneSelected(): void {
 }
 
 const emit = defineEmits<{
-	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void,
+	resizeStart: [payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }],
+	toggleIsDone: [taskId: number]
 }>()
 </script>
 <style>
 .event-checkbox {
 	z-index: 15;
-	padding: 10px 5px;
+	padding: 10px 0 10px 5px;
+	margin-right: -5px;
 }
 
 .event-block.done-task {
@@ -151,8 +153,15 @@ const emit = defineEmits<{
 	opacity: 0.6;
 }
 
-.templatePreview {
-	z-index: 20;
-	border: 3px dashed rgb(var(--v-theme-secondary)) !important;
+.base-event-block.templatePreview {
+	z-index: 50;
+	background-image: repeating-linear-gradient(
+		50deg,
+		transparent,
+		transparent 10px,
+		rgba(0, 0, 0, 0.07) 10px,
+		rgba(0, 0, 0, 0.07) 20px
+	) !important;
+	border: 2px solid rgba(var(--v-theme-secondary), 0.7);
 }
 </style>

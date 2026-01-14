@@ -33,7 +33,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public isDuringBackgroundEvent: boolean = false,
 	) {
 	}
-
+	
 	toRequest(): PlannerTaskRequest {
 		return PlannerTaskRequest.fromEntity(this)
 	}

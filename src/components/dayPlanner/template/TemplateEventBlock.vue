@@ -2,7 +2,6 @@
 <BaseEventBlock
 	:event
 	@resizeStart="emit('resizeStart', $event)"
-	@toggleSelection="store.toggleEventSelection($event)"
 	@deleteSelected="handleDeleteSelected"
 >
 	<!-- Use default time slot (already displays time strings correctly) -->

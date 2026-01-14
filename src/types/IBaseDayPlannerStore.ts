@@ -22,16 +22,15 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	editedId: number | undefined
 	editingTask: TTaskRequest
 	deleteDialog: boolean
-	toDeleteId: number | null
 	conflictSnackbar: boolean
 	draggingEventId: number | null
 	resizingEventId: number | null
 	dragConflict: boolean
 
 	// Computed
-	toDeleteEvent: TTask | null
 	selectedEvents: TTask[]
-	hasSelectedEvents: boolean
+	showActionBar: boolean
+	isOverMidnight: boolean
 	isDraggingAny: boolean
 	isResizingAny: boolean
 

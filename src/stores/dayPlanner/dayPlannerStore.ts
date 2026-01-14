@@ -171,15 +171,25 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		await patch(eventId, {isDone})
 	}
 
-	function toggleEventSelection(eventId: number) {
+	function openEditDialog() {
 		if (isTemplateInPreview.value)
+			return
+		core.openEditDialog()
+	}
+
+	function toggleEventSelection(eventId: number) {
+		if (isTemplateInPreview.value && eventId >= 0)
 			return
 		core.toggleEventSelection(eventId)
 	}
 
+	const showActionBar = computed(() => core.selectedEvents.value.length > 0 && !isTemplateInPreview.value)
+
 	return {
 		...core,
+		openEditDialog,
 		toggleEventSelection,
+		showActionBar,
 		updateTaskSpan,
 		updateTaskIsDone,
 

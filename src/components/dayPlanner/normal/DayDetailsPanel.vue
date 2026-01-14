@@ -11,7 +11,7 @@
 	<div>
 		<div class="d-flex ga-2">
 			<VAutocomplete label="Template" v-model="selectedTemplate" :items="templates" item-title="name" item-value="id" returnObject></VAutocomplete>
-			<VBtn color="primary" :disabled="!selectedTemplate" @click="emit('useTemplate', selectedTemplate!)">Use</VBtn>
+			<VBtn color="primary" :disabled="!selectedTemplate" @click="useTemplate">Use</VBtn>
 		</div>
 		<div v-if="selectedTemplate">
 			<span>{{ Time.getString(selectedTemplate.defaultWakeUpTime) }} - {{ Time.getString(selectedTemplate.defaultBedTime) }}</span>
@@ -50,8 +50,11 @@ import {useTaskPlannerDayTemplateTaskCrud} from '@/composables/ConcretesCrudComp
 import {onMounted, ref} from 'vue';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 import {Time} from '@/utils/Time.ts';
+import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 
 const {fetchAll, fetchSelectOptions} = useTaskPlannerDayTemplateTaskCrud()
+
+const store = useDayPlannerStore()
 
 const props = defineProps<{
 	title: string
@@ -64,6 +67,11 @@ const selectedTemplate = ref<TaskPlannerDayTemplate | null>(null)
 onMounted(async () => {
 	templates.value = await fetchAll()
 })
+
+function useTemplate() {
+	store.templateInPreview = selectedTemplate.value;
+	emit('useTemplate', selectedTemplate.value!)
+}
 
 const emit = defineEmits<{
 	openDetails: [],
