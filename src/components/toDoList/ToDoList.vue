@@ -424,7 +424,7 @@ const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
 			itemDoneDialogShown.value = true;
 		}
 	}
-	const request = {idList: isBatchAction ? selectedItemsIds : [toDoListItem.id]};
+	const request = {ids: isBatchAction ? selectedItemsIds : [toDoListItem.id]};
 	API.patch(`/${url}/toggle-is-done`, request)
 		.then(() => {
 			if (isBatchAction) {

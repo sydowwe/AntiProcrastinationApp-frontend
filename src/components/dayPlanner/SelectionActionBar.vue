@@ -1,12 +1,11 @@
 <template>
-<ActionBar :isShown="store.hasSelectedEvents" @cancel="store.clearSelection">
+<ActionBar :isShown="store.showActionBar" @cancel="store.clearSelection">
 		<span class="text-textMuted d-flex align-center ga-1">
 <!--				<VIcon icon="far fa-check-square"></VIcon>-->
 				<span class="font-weight-medium selection-count" style="font-size: 1rem; line-height: 1.2rem;">
 					{{ store.selectedEventIds.size }} selected
 				</span>
 			</span>
-	<!-- Edit button - only when 1 selected -->
 	<VBtn
 		v-if="store.selectedEventIds.size === 1"
 		variant="outlined"
@@ -16,10 +15,8 @@
 		Edit
 	</VBtn>
 
-	<!-- Slot for view-specific actions (e.g., Toggle Done) -->
-	<slot name="actions" :store="store"></slot>
+	<slot :store="store"></slot>
 
-	<!-- Delete button -->
 	<VBtn
 		variant="outlined"
 		color="error"

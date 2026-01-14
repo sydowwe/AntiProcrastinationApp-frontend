@@ -23,7 +23,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const editedId = ref<number | undefined>()
 	const editingTask = ref<TTaskRequest>({} as TTaskRequest)
 	const deleteDialog = ref(false)
-	const toDeleteId = ref<number | null>(null)
 
 	// Snackbar state
 	const conflictSnackbar = ref(false)
@@ -79,21 +78,18 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const isDraggingAny = computed(() => draggingEventId.value !== null)
 	const isResizingAny = computed(() => resizingEventId.value !== null)
 
-	const toDeleteEvent = computed(() =>
-		events.value.find(e => e.id === toDeleteId.value) ?? null
-	)
 
 	const selectedEvents = computed(() =>
 		events.value.filter(e => selectedEventIds.has(e.id))
 	)
 
-	const hasSelectedEvents = computed(() => selectedEventIds.size > 0)
+	const showActionBar = computed(() => selectedEventIds.size > 0)
+
+	const isOverMidnight = computed(() => viewStartTime.value.hours > viewEndTime.value.hours)
 
 	// Event handlers
 	function openDeleteDialog(): void {
-		// Use the first selected event ID if any are selected
 		if (selectedEventIds.size > 0) {
-			toDeleteId.value = Array.from(selectedEventIds)[0] ?? null
 			deleteDialog.value = true
 		}
 	}
@@ -176,16 +172,15 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		editedId,
 		editingTask,
 		deleteDialog,
-		toDeleteId,
 		conflictSnackbar,
 		draggingEventId,
 		resizingEventId,
 		dragConflict,
 
 		// Computed
-		toDeleteEvent,
 		selectedEvents,
-		hasSelectedEvents,
+		showActionBar,
+		isOverMidnight,
 		isDraggingAny,
 		isResizingAny,
 

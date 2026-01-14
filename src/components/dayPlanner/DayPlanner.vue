@@ -113,11 +113,12 @@ provide('plannerStore', props.plannerStore)
 
 
 const deleteConfirmationText = computed(() => {
-	if (props.plannerStore.hasSelectedEvents) {
+	const events = props.plannerStore.events.filter(e => props.plannerStore.selectedEventIds.has(e.id))
+	if (props.plannerStore.selectedEventIds.size > 1) {
 		const count = props.plannerStore.selectedEventIds.size
-		return `Are you sure you want to delete ${count} selected event${count > 1 ? 's' : ''}?`
+		return `Are you sure you want to delete ${count} selected events?`
 	}
-	const eventName = props.plannerStore.toDeleteEvent?.activity?.name ?? 'this event'
+	const eventName = events[0]?.activity?.name ?? 'this event'
 	return `Are you sure you want to delete ${eventName}?`
 })
 

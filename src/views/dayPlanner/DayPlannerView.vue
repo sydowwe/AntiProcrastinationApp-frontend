@@ -4,13 +4,14 @@
 	<!-- Expandable Details -->
 	<VExpandXTransition mode="in-out">
 		<div v-if="expandedDetails">
-			<DayDetailsPanel :title="currentDateFormatted" :calendar @useTemplate="useTemplate"></DayDetailsPanel>
+			<DayDetailsPanel :title="currentDateFormatted" :calendar @useTemplate="templatePreview"></DayDetailsPanel>
 		</div>
 	</VExpandXTransition>
 	<DayPlanner
 		class="flex-fill"
 		:plannerStore="store"
 		@delete="del"
+		@keydown.space="handleToggleIsDoneSelected"
 	>
 		<!-- Header with calendar info -->
 		<template #header>
@@ -27,6 +28,7 @@
 			<EventBlock
 				:event="event as PlannerTask"
 				@resizeStart="onResizeStart"
+				@toggleIsDone="handleToggleIsDone"
 			/>
 		</template>
 
@@ -38,10 +40,9 @@
 		<template #selection-actions="{ store }">
 			<VBtn
 				v-if="store.selectedEventIds.size > 1 && !store.isTemplateInPreview"
-				size="small"
 				variant="tonal"
 				color="primaryOutline"
-				@click="handleToggleSelectedIsDone"
+				@click="handleToggleIsDoneSelected"
 			>
 				Toggle Done
 			</VBtn>
@@ -74,7 +75,7 @@ import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
 import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
-import {useCalendarQuery, useTaskPlannerCrud, useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
+import {useCalendarQuery, useTaskPlannerCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
@@ -84,13 +85,11 @@ import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue';
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue';
-import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 
 const {showErrorSnackbar} = useSnackbar()
-const {createWithResponse, update, fetchById, deleteEntity, fetchFiltered} = useTaskPlannerCrud()
+const {createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, batchDelete, fetchFiltered} = useTaskPlannerCrud()
 const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
 const {fetchFiltered: fetchTemplateTasks} = useTemplatePlannerTaskCrud()
-const {fetchById: fetchTemplateById} = useTaskPlannerDayTemplateTaskCrud()
 const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
 const store = useDayPlannerStore()
 
@@ -121,13 +120,14 @@ const currentDateFormatted = computed(() => {
 async function loadTasks() {
 	store.events = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
 	store.initializeEventGridPositions()
+	await templatePreview()
 }
 
-async function useTemplate(template: TaskPlannerDayTemplate) {
-	store.templateInPreview = template
+async function templatePreview() {
 	if (store.templateInPreview) {
-		Object.assign(store.viewStartTime, template.defaultWakeUpTime)
-		Object.assign(store.viewEndTime, template.defaultBedTime);
+		store.selectedEventIds.clear()
+		Object.assign(store.viewStartTime, store.templateInPreview.defaultWakeUpTime)
+		Object.assign(store.viewEndTime, store.templateInPreview.defaultBedTime);
 		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
 		store.events.push(...store.tasksFromTemplate)
 		store.initializeEventGridPositions()
@@ -196,33 +196,46 @@ async function edit(id: number, request: PlannerTaskRequest) {
 }
 
 async function del(): Promise<void> {
-	if (store.toDeleteId !== null) {
-		await deleteEntity(store.toDeleteId);
-		store.events.splice(store.events.findIndex(e => e.id === store.toDeleteId), 1)
+	if (store.isTemplateInPreview) {
+		store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
+	} else if (store.selectedEventIds.size === 1) {
+		const idToDelete = store.selectedEventIds.values().next().value!;
+		await deleteEntity(idToDelete).then(() => {
+			store.events.splice(store.events.findIndex(e => e.id === idToDelete), 1)
+			store.selectedEventIds.clear();
+		})
+	} else if (store.selectedEventIds.size > 1) {
+		const ids = Array.from(store.selectedEventIds)
+		await batchDelete(ids).then(() => {
+			store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
+			store.selectedEventIds.clear();
+		})
 	}
 	store.deleteDialog = false
-	store.toDeleteId = null
 }
 
-function handleToggleSelectedIsDone(): void {
+async function handleToggleIsDone(taskId: number) {
+	await batchedToggleIsDone([taskId])
+		.catch((error) => {
+			const task = store.events.find(e => e.id === taskId)
+			if (task) {
+				task.isDone = !task.isDone
+			}
+		})
+}
+
+async function handleToggleIsDoneSelected() {
+	// Toggle isDone for all selected events
 	const selectedEventIds = Array.from(store.selectedEventIds)
 
-	selectedEventIds.forEach(eventId => {
-		const taskEvent = store.events.find(e => e.id === eventId)
-		if (!taskEvent) return
-
-		const newIsDone = !taskEvent.isDone
-		taskEvent.isDone = newIsDone
-
-		// We need to emit or call a store method to update
-		// For now, we'll assume the store has updateTaskIsDone
-		if ('updateTaskIsDone' in store) {
-			(store as any).updateTaskIsDone(eventId, newIsDone)
-				.catch(() => {
-					taskEvent.isDone = !newIsDone
-				})
-		}
-	})
+	await batchedToggleIsDone(selectedEventIds)
+		.then(() => {
+			const tasks = store.events.filter(e => selectedEventIds.includes(e.id))
+			tasks.forEach(task => {
+				task.isDone = !task.isDone
+			})
+			store.clearSelection()
+		})
 }
 
 async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {

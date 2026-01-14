@@ -119,7 +119,7 @@ export function useRoutineTimePeriodCrud() {
 
 	async function changeTimePeriodVisibility(id: number) {
 		try {
-			await API.patch(url + `/toggle-is-hidden`, {idList: [id]})
+			await API.patch(url + `/toggle-is-hidden`, {ids: [id]})
 		} catch (e: any) {
 			console.error(e)
 		}
@@ -221,17 +221,23 @@ export function useTaskPlannerCrud() {
 		create,
 		update,
 		patch,
-		deleteEntity
+		batchedToggle,
+		deleteEntity,
+		batchDelete
 	} = useEntityCommand<PlannerTask, any, any>({
 		responseClass: PlannerTask,
 		entityName: 'planner-task'
 	})
 
+	async function batchedToggleIsDone(ids: number[]): Promise<void> {
+		return await batchedToggle('is-done', ids)
+	}
+
 	const {fetchFiltered} = useFetchFiltered<PlannerTask, PlannerTaskFilter>(
 		PlannerTask,
 		'planner-task'
 	)
-	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity}
+	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, batchedToggleIsDone, deleteEntity, batchDelete}
 }
 
 
@@ -245,7 +251,8 @@ export function useTemplatePlannerTaskCrud() {
 		create,
 		update,
 		patch,
-		deleteEntity
+		deleteEntity,
+		batchDelete
 	} = useEntityCommand<TemplatePlannerTask, TemplatePlannerTaskRequest, TemplatePlannerTaskRequest>({
 		responseClass: TemplatePlannerTask,
 		createRequestClass: TemplatePlannerTaskRequest,
@@ -258,7 +265,7 @@ export function useTemplatePlannerTaskCrud() {
 		'template-planner-task'
 	)
 
-	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity}
+	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity, batchDelete}
 }
 
 export function useTaskPlannerDayTemplateTaskCrud() {
