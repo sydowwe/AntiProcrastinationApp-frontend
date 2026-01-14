@@ -22,13 +22,13 @@
 	<!-- Override badges slot to show priority, optional, location, and category -->
 	<template #badges="{ event: e }">
 		<VChip
-			v-if="event.priority"
+			v-if="event.importance"
 			size="x-small"
 			variant="flat"
-			:color="getPriorityColor(event.priority)"
+			:color="event.importance.color"
 			class="event-chip"
 		>
-			{{ event.priority.text }}
+			{{ event.importance.text }}
 		</VChip>
 
 		<VChip
@@ -71,7 +71,6 @@ import {useMoment} from '@/scripts/momentHelper.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
-import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import BaseEventBlock from '../BaseEventBlock.vue';
 
 const {formatToTime24H} = useMoment()
@@ -97,16 +96,6 @@ const classes = computed(() => {
 		'templatePreview': event.id < 0
 	}
 })
-
-function getPriorityColor(priority: TaskPriority): string {
-	// You can customize priority colors based on your TaskPriority model
-	const priorityColors: Record<string, string> = {
-		'High': '#e74c3c',
-		'Medium': '#ff9f1a',
-		'Low': '#4287f5'
-	}
-	return priorityColors[priority.text] || '#999'
-}
 
 
 function handleToggleIsDoneSelected(): void {

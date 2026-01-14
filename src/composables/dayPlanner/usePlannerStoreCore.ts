@@ -125,7 +125,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 			isOptional: event.isOptional,
 			location: event.location,
 			notes: event.notes,
-			priorityId: event.priority?.id
+			importanceId: event.importance?.id
 		} as TTaskRequest
 		dialog.value = true
 	}

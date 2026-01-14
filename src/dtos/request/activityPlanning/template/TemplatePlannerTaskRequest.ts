@@ -11,7 +11,7 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public isOptional: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
-		public priorityId: number | null = null,
+		public importanceId: number | null = null,
 		public templateId?: number
 	) {
 	}
@@ -25,7 +25,7 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.isOptional,
 			entity.location,
 			entity.notes,
-			entity.priority?.id ?? null,
+			entity.importance?.id ?? null,
 			entity.templateId
 		);
 	}

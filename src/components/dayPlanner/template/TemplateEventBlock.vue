@@ -2,20 +2,19 @@
 <BaseEventBlock
 	:event
 	@resizeStart="emit('resizeStart', $event)"
-	@deleteSelected="handleDeleteSelected"
 >
 	<!-- Use default time slot (already displays time strings correctly) -->
 
 	<!-- Override badges slot to show template-specific fields -->
 	<template #badges="{ event: e }">
 		<VChip
-			v-if="event.priority"
+			v-if="event.importance"
 			size="x-small"
 			variant="flat"
-			:color="getPriorityColor(event.priority)"
+			:color="event.importance.color"
 			class="event-chip"
 		>
-			{{ event.priority.text }}
+			{{ event.importance.text }}
 		</VChip>
 
 		<VChip
@@ -56,30 +55,14 @@
 import {inject} from 'vue'
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
-import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import BaseEventBlock from '@/components/dayPlanner/BaseEventBlock.vue';
 
-// Inject the store from parent DayPlanner component
 const store = inject<ReturnType<typeof useTemplateDayPlannerStore>>('plannerStore')!
 
 const {event} = defineProps<{
 	event: TemplatePlannerTask
 }>()
 
-function getPriorityColor(priority: TaskPriority): string {
-	// You can customize priority colors based on your TaskPriority model
-	const priorityColors: Record<string, string> = {
-		'High': '#e74c3c',
-		'Medium': '#ff9f1a',
-		'Low': '#4287f5'
-	}
-	return priorityColors[priority.text] || '#999'
-}
-
-function handleDeleteSelected(): void {
-	// Open delete dialog for selected events
-	store.openDeleteDialog()
-}
 
 const emit = defineEmits<{
 	(e: 'resizeStart', payload: { eventId: number; direction: 'top' | 'bottom'; $event: PointerEvent }): void

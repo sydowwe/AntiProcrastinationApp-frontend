@@ -18,9 +18,9 @@
 			<VCol cols="12">
 				<VIdSelect
 					:label="$t('toDoList.urgency')"
-					v-model="data.priorityId"
+					v-model="data.importanceId"
 					:clearable="false"
-					:items="priorityOptions"
+					:items="importanceOptions"
 					required
 					:rules="[requiredRule]"
 				></VIdSelect>
@@ -94,13 +94,13 @@ import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQui
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useTaskImportanceCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {storeToRefs} from 'pinia';
+import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
-const {fetchAll} = useTaskUrgencyCrud()
+const {fetchAll} = useTaskImportanceCrud()
 const {requiredRule} = useGeneralRules()
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
@@ -108,7 +108,7 @@ const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormF
 const store = useDayPlannerStore()
 const {dialog} = storeToRefs(store)
 
-const priorityOptions = ref([] as TaskPriority[]);
+const importanceOptions = ref([] as TaskImportance[]);
 
 const isEdit = computed(() => store.editedId !== undefined)
 const allowedStep = (m: number) => m % 10 === 0
@@ -116,13 +116,13 @@ const allowedStep = (m: number) => m % 10 === 0
 const data = ref<PlannerTaskRequest>(new PlannerTaskRequest())
 
 onMounted(async function () {
-	priorityOptions.value = await fetchAll();
+	importanceOptions.value = await fetchAll();
 	setDefaultUrgency();
 })
 
 function setDefaultUrgency() {
-	if (!store.editingTask.priorityId) {
-		store.editingTask.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
+	if (!store.editingTask.importanceId) {
+		store.editingTask.importanceId = importanceOptions.value.find((item) => item.importance === 1)?.id ?? null;
 	}
 }
 
