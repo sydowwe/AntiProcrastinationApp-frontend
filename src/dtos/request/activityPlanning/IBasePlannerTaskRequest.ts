@@ -8,5 +8,5 @@ export interface IBasePlannerTaskRequest {
 	isOptional: boolean;
 	location: string | null;
 	notes: string | null;
-	priorityId: number | null;
+	importanceId: number | null;
 }

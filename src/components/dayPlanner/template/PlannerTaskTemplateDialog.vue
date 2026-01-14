@@ -18,9 +18,9 @@
 			<VCol cols="12">
 				<VIdSelect
 					:label="$t('toDoList.urgency')"
-					v-model="data.priorityId"
+					v-model="data.importanceId"
 					:clearable="false"
-					:items="priorityOptions"
+					:items="importanceOptions"
 					required
 					:rules="[requiredRule]"
 				></VIdSelect>
@@ -58,17 +58,17 @@ import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQui
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useTaskImportanceCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
+import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
-const {fetchAll} = useTaskUrgencyCrud()
+const {fetchAll} = useTaskImportanceCrud()
 const {requiredRule} = useGeneralRules()
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
-const priorityOptions = ref([] as TaskPriority[]);
+const importanceOptions = ref([] as TaskImportance[]);
 const store = useTemplateDayPlannerStore()
 
 const isEdit = computed(() => store.editedId !== undefined)
@@ -76,12 +76,12 @@ const isEdit = computed(() => store.editedId !== undefined)
 const data = ref<TemplatePlannerTaskRequest>(new TemplatePlannerTaskRequest())
 
 onMounted(async () => {
-	priorityOptions.value = await fetchAll();
+	importanceOptions.value = await fetchAll();
 	setDefaultUrgency();
 })
 
 function setDefaultUrgency() {
-	data.value.priorityId = priorityOptions.value.find((item) => item.priority === 1)?.id ?? null;
+	data.value.importanceId = importanceOptions.value.find((item) => item.importance === 1)?.id ?? null;
 }
 
 watch(() => store.dialog, async (value) => {

@@ -1,5 +1,5 @@
 import type {Time} from '@/utils/Time.ts'
-import type {Ref} from 'vue'
+import type {ComputedRef, Ref} from 'vue'
 import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 
@@ -13,7 +13,7 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
  */
 export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
 	viewStartTime: Ref<Time>,
-	totalGridRows: Ref<number>,
+	totalGridRows: ComputedRef<number>,
 	events: Ref<T[]>
 ) {
 	// --- Helpers: Time-based calculations (day-agnostic with midnight wrap support) ---
@@ -25,6 +25,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		const start = viewStartTime.value.getInMinutes
 		const m = t.getInMinutes
 		const diff = (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
+		console.log(diff)
 		return diff
 	}
 
@@ -104,26 +105,26 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	}
 
 	/**
-	 * Calculate grid position from date span
+	 * Calculate grid position from time span
 	 */
 	function setGridPositionFromSpan(event: T): void {
-		// Prefer Time-based positioning if available; fallback to Date for compatibility
-		if (event.startTime && event.endTime) {
-			const startOffset = minutesFromViewStart(event.startTime) // [0, 1440)
-			let endOffset = minutesFromViewStart(event.endTime) // [0, 1440)
+		const startOffset = minutesFromViewStart(event.startTime) // [0, 1440)
+		let endOffset = minutesFromViewStart(event.endTime) // [0, 1440)
 
-			// If wraps over midnight, extend end by a full day to keep duration positive
-			if (event.endTime.getInMinutes < event.startTime.getInMinutes) {
-				endOffset += MINUTES_IN_DAY
-			}
+		console.log(startOffset)
 
-			const startRow = Math.floor(startOffset / 10) + 1
-			const endRow = Math.floor(endOffset / 10) + 1
-
-			event.gridRowStart = Math.max(1, startRow)
-			event.gridRowEnd = Math.min(totalGridRows.value + 1, endRow)
-			return
+		// If wraps over midnight, extend end by a full day to keep duration positive
+		if (event.endTime.getInMinutes < event.startTime.getInMinutes) {
+			endOffset += MINUTES_IN_DAY
 		}
+
+		const startRow = Math.floor(startOffset / 10) + 1
+		const endRow = Math.floor(endOffset / 10) + 1
+
+		event.gridRowStart = startRow >= endRow ? 1 : startRow
+		event.gridRowEnd = Math.min(totalGridRows.value + 1, endRow)
+
+		console.log(startOffset, startRow, event.gridRowStart)
 	}
 
 	/**

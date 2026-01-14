@@ -152,6 +152,7 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 	if (!updatedItem)
 		return
 
+	request.templateId = currentTemplate.value!.id;
 	await updateTask(id, request)
 
 	if (request.isBackground !== updatedItem.isBackground) {
@@ -161,9 +162,10 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 	}
 
 	const fetchedItem = await fetchByIdTask(id)
-
+	
 	store.setGridPositionFromSpan(fetchedItem)
 
+	fetchedItem.isDuringBackgroundEvent = store.checkOverlapsBackground(fetchedItem.startTime, fetchedItem.endTime)
 	store.events[index] = fetchedItem
 }
 

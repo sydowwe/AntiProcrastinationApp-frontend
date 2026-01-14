@@ -43,7 +43,7 @@ const props = withDefaults(defineProps<{
 
 const time = defineModel<Time>({required: true})
 
-const allowedMinutes = computed(() => (m: number) => m % parseInt(allowedMinutesSelected) === 0)
+const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
 
 const timeString = computed({
 	get() {

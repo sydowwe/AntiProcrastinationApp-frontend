@@ -1,8 +1,8 @@
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {Activity} from '@/dtos/response/Activity.ts';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {Time} from '@/utils/Time.ts';
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
+import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTaskRequest> {
 	constructor(
@@ -15,7 +15,7 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 		public activity: Activity,
 		public location: string | null,
 		public notes: string | null,
-		public priority: TaskPriority | null,
+		public importance: TaskImportance | null,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundEvent: boolean = false,
@@ -41,7 +41,7 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 			Activity.fromJson(json.activity),
 			json.location,
 			json.notes,
-			json.priority ? TaskPriority.fromJson(json.priority) : null,
+			json.importance ? TaskImportance.fromJson(json.importance) : null,
 			json.gridRowStart,
 			json.gridRowEnd,
 			json.isDuringBackgroundEvent,

@@ -26,7 +26,7 @@ import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useTaskUrgencyCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useTaskPriorityCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
@@ -38,7 +38,7 @@ const {showErrorSnackbar} = useSnackbar();
 const form = ref<InstanceType<typeof VForm>>();
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 
-const {fetchAll} = useTaskUrgencyCrud()
+const {fetchAll} = useTaskPriorityCrud()
 
 const priorityOptions = ref([] as TaskPriority[]);
 

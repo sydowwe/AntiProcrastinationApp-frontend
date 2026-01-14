@@ -88,9 +88,8 @@ function getSlotIndexFromPosition(y: number): number {
 
 	const rect = eventsColumnRef.value.getBoundingClientRect()
 	const relativeY = y - rect.top
-	const slotHeight = rect.height / store.totalGridRows
 
-	return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / slotHeight)))
+	return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / SLOT_HEIGHT)))
 }
 
 function checkEventConflictByRow(newStartRow: number, newEndRow: number, eventId?: number): boolean {
@@ -187,7 +186,7 @@ function handlePointerMove(e: PointerEvent): void {
 		const newStartRow = currentSlot - dragOffset.value + 1
 		const newEndRow = newStartRow + eventDuration
 
-		const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows
+		const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows + 1
 		const hasConflict = checkEventConflictByRow(newStartRow, newEndRow, store.draggingEventId)
 
 		store.dragConflict = hasConflict || !fitsInView
@@ -224,7 +223,7 @@ function handlePointerMove(e: PointerEvent): void {
 				)
 			}
 		} else if (resizeDirection.value === 'bottom') {
-			const newEndRow = slotIndex + 1
+			const newEndRow = slotIndex + 2
 			if (newEndRow >= event.gridRowStart && !checkEventConflictByRow(event.gridRowStart, newEndRow, store.resizingEventId)) {
 				store.redrawTask(
 					store.resizingEventId,

@@ -29,6 +29,7 @@ import type {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/te
 import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import type {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts';
 import type {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
+import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export function useActivityHistoryCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
@@ -86,7 +87,7 @@ export function useActivityCategoryCrud() {
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
-export function useTaskUrgencyCrud() {
+export function useTaskPriorityCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-priority'})
 	const {
 		createWithResponse,
@@ -240,6 +241,20 @@ export function useTaskPlannerCrud() {
 	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, batchedToggleIsDone, deleteEntity, batchDelete}
 }
 
+export function useTaskImportanceCrud() {
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskImportance>({responseClass: TaskImportance, entityName: 'task-importance'})
+	const {
+		createWithResponse,
+		create,
+		update,
+		deleteEntity
+	} = useEntityCommand<TaskImportance, any, any>({
+		responseClass: TaskImportance,
+		entityName: 'task-importance'
+	})
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+}
 
 export function useTemplatePlannerTaskCrud() {
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TemplatePlannerTask>({

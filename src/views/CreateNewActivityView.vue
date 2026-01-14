@@ -64,7 +64,7 @@ import type {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
 
 const {create} = useActivityCrud()
 const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOptions()
-const {fetchTaskUrgencySelectOptions} = useTaskPlanningSelectOptions()
+const {fetchTaskImportanceSelectOptions} = useTaskPlanningSelectOptions()
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const i18n = useI18n();
 
@@ -83,7 +83,7 @@ const urgencyOptions = ref<SelectOption[]>([]);
 onMounted(async () => {
 	roleOptions.value = await fetchRoleSelectOptions();
 	categoryOptions.value = await fetchCategorySelectOptions();
-	urgencyOptions.value = await fetchTaskUrgencySelectOptions();
+	urgencyOptions.value = await fetchTaskImportanceSelectOptions();
 	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0]?.id ?? null;
 })
 

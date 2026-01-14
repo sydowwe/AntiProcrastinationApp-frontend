@@ -1,9 +1,9 @@
 import {useEntityQuery} from '@/composables/general/CrudComposition.ts';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {TimePeriodEntity} from '@/dtos/response/TimePeriodEntity.ts';
+import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export function useTaskPlanningSelectOptions() {
-	const {fetchSelectOptions: fetchTaskUrgencySelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-priority'})
+	const {fetchSelectOptions: fetchTaskImportanceSelectOptions} = useEntityQuery<TaskImportance>({responseClass: TaskImportance, entityName: 'task-importance'})
 	const {fetchSelectOptions: fetchTimePeriodEntitySelectOptions} = useEntityQuery<TimePeriodEntity>({
 		responseClass: TimePeriodEntity,
 		entityName: 'routine-time-period'
@@ -11,7 +11,7 @@ export function useTaskPlanningSelectOptions() {
 
 
 	return {
-		fetchTaskUrgencySelectOptions,
+		fetchTaskImportanceSelectOptions,
 		fetchTimePeriodEntitySelectOptions,
 	}
 }

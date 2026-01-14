@@ -1,7 +1,7 @@
 import type {Activity} from '@/dtos/response/Activity.ts';
-import type {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import type {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	id: number;
@@ -12,7 +12,8 @@ export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	activity: Activity;
 	location: string | null;
 	notes: string | null;
-	priority: TaskPriority | null;
+	importance: TaskImportance | null;
+
 	// Grid positioning (added for UI)
 	gridRowStart: number;
 	gridRowEnd: number;

@@ -1,10 +1,10 @@
 import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {TaskStatus} from '@/dtos/enum/TaskStatus.ts';
 import {Activity} from '@/dtos/response/Activity.ts';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {Time} from '@/utils/Time.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
+import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
@@ -18,7 +18,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public activity: Activity,
 		public location: string | null,
 		public notes: string | null,
-		public priority: TaskPriority | null,
+		public importance: TaskImportance | null,
 		public status?: TaskStatus,
 		public actualStartTime: string | null = null,
 		public actualEndTime: string | null = null,
@@ -33,7 +33,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public isDuringBackgroundEvent: boolean = false,
 	) {
 	}
-	
+
 	toRequest(): PlannerTaskRequest {
 		return PlannerTaskRequest.fromEntity(this)
 	}
@@ -54,7 +54,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			templateTask.activity,
 			templateTask.location,
 			templateTask.notes,
-			templateTask.priority,
+			templateTask.importance,
 		)
 	}
 
@@ -70,7 +70,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			Activity.fromJson(json.activity),
 			json.location,
 			json.notes,
-			json.priority ? TaskPriority.fromJson(json.priority) : null,
+			json.importance ? TaskImportance.fromJson(json.importance) : null,
 			json.status,
 			json.actualStartTime ?? null,
 			json.actualEndTime ?? null,
