@@ -16,20 +16,20 @@
 		</div>
 	</div>
 	<VRow class="my-0">
-		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
+		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="pb-4">
 			<VIdAutocomplete label="Role" v-model="formData!.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
-			                 hide-details class="pb-1"></VIdAutocomplete>
+			                 hide-details density="compact"></VIdAutocomplete>
 		</VCol>
 		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
 			<VIdAutocomplete label="Category" v-model="formData!.categoryId" :items="filteredOptions.categoryOptions"
 			                 :disabled="formDisabled"
-			                 hide-details class="pb-1"></VIdAutocomplete>
+			                 hide-details density="compact"></VIdAutocomplete>
 		</VCol>
-		<VCol cols="12" class="py-4">
+		<VCol cols="12" class="pt-4 pb-0">
 			<InputWithButton icon="plus" color="success" @create="createNewActivity">
 				<VIdAutocomplete ref="activityField" :label="(isFilter ? '' : '*') + 'Activity'" v-model="activityIdModel" :items="filteredOptions.activityOptions"
 				                 :disabled="formDisabled"
-				                 :required="!isFilter" :rules="!isFilter ? [requiredRule] : []" class="pb-1"></VIdAutocomplete>
+				                 :required="!isFilter" :rules="!isFilter ? [requiredRule] : []"></VIdAutocomplete>
 			</InputWithButton>
 		</VCol>
 	</VRow>

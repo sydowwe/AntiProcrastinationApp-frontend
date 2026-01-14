@@ -18,7 +18,7 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 		public importance: TaskImportance | null,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
-		public isDuringBackgroundEvent: boolean = false,
+		public isDuringBackgroundTask: boolean = false,
 	) {
 	}
 
@@ -44,7 +44,7 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 			json.importance ? TaskImportance.fromJson(json.importance) : null,
 			json.gridRowStart,
 			json.gridRowEnd,
-			json.isDuringBackgroundEvent,
+			json.isDuringBackgroundTask,
 		)
 	}
 }

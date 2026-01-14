@@ -30,7 +30,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public estimatedMinuteLength?: number,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
-		public isDuringBackgroundEvent: boolean = false,
+		public isDuringBackgroundTask: boolean = false,
 	) {
 	}
 

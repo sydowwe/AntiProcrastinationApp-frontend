@@ -35,11 +35,11 @@
 			<!-- Time Column -->
 			<PlannerTimeColumn/>
 
-			<!-- Events Column with event block slot -->
+			<!-- Tasks Column with task block slot -->
 			<PlannerTasksColumn>
-				<template #event-block="{ event, onResizeStart }">
-					<!-- Default slot for event blocks - each view provides its own EventBlock component -->
-					<slot name="event-block" :event="event" :onResizeStart="onResizeStart">
+				<template #task-block="{ task, onResizeStart }">
+					<!-- Default slot for task blocks - each view provides its own TaskBlock component -->
+					<slot name="task-block" :task="task" :onResizeStart="onResizeStart">
 
 					</slot>
 				</template>
@@ -69,25 +69,9 @@
 	confirmBtnColor="error"
 />
 
-<!-- Dialog slot - each view provides its own dialog (EventDialog vs PlannerTaskTemplateDialog) -->
+<!-- Dialog slot - each view provides its own dialog (TaskDialog vs PlannerTaskTemplateDialog) -->
 <slot name="dialog" :store="plannerStore"/>
 
-<!-- Conflict Snackbar -->
-<VSnackbar
-	v-model="plannerStore.conflictSnackbar"
-	color="error"
-	:timeout="3000"
->
-	{{ conflictMessage }}
-	<template v-slot:actions>
-		<VBtn
-			variant="text"
-			@click="plannerStore.conflictSnackbar = false"
-		>
-			Close
-		</VBtn>
-	</template>
-</VSnackbar>
 </template>
 
 <script setup lang="ts"
@@ -105,7 +89,6 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
 const props = defineProps<{
 	plannerStore: TStore
 	title?: string
-	conflictMessage?: string
 }>()
 
 // Provide the store to all descendant components
@@ -113,13 +96,13 @@ provide('plannerStore', props.plannerStore)
 
 
 const deleteConfirmationText = computed(() => {
-	const events = props.plannerStore.events.filter(e => props.plannerStore.selectedEventIds.has(e.id))
-	if (props.plannerStore.selectedEventIds.size > 1) {
-		const count = props.plannerStore.selectedEventIds.size
-		return `Are you sure you want to delete ${count} selected events?`
+	const tasks = props.plannerStore.tasks.filter(e => props.plannerStore.selectedTaskIds.has(e.id))
+	if (props.plannerStore.selectedTaskIds.size > 1) {
+		const count = props.plannerStore.selectedTaskIds.size
+		return `Are you sure you want to delete ${count} selected tasks?`
 	}
-	const eventName = events[0]?.activity?.name ?? 'this event'
-	return `Are you sure you want to delete ${eventName}?`
+	const taskName = tasks[0]?.activity?.name ?? 'this task'
+	return `Are you sure you want to delete ${taskName}?`
 })
 
 const emit = defineEmits<{

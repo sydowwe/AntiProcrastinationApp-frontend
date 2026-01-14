@@ -3,11 +3,11 @@
 		<span class="text-textMuted d-flex align-center ga-1">
 <!--				<VIcon icon="far fa-check-square"></VIcon>-->
 				<span class="font-weight-medium selection-count" style="font-size: 1rem; line-height: 1.2rem;">
-					{{ store.selectedEventIds.size }} selected
+					{{ store.selectedTaskIds.size }} selected
 				</span>
 			</span>
 	<VBtn
-		v-if="store.selectedEventIds.size === 1"
+		v-if="store.selectedTaskIds.size === 1"
 		variant="outlined"
 		color="primaryOutline"
 		@click="store.openEditDialog"

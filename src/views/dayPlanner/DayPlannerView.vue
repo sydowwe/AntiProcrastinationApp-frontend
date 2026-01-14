@@ -23,10 +23,10 @@
 			/>
 		</template>
 
-		<!-- Custom event block for normal planner -->
-		<template #event-block="{ event, onResizeStart }">
-			<EventBlock
-				:event="event as PlannerTask"
+		<!-- Custom task block for normal planner -->
+		<template #task-block="{ task, onResizeStart }">
+			<PlannerTaskBlock
+				:task="task as PlannerTask"
 				@resizeStart="onResizeStart"
 				@toggleIsDone="handleToggleIsDone"
 			/>
@@ -39,7 +39,7 @@
 		<!-- Toggle Done button for selection action bar -->
 		<template #selection-actions="{ store }">
 			<VBtn
-				v-if="store.selectedEventIds.size > 1 && !store.isTemplateInPreview"
+				v-if="store.selectedTaskIds.size > 1 && !store.isTemplateInPreview"
 				variant="tonal"
 				color="primaryOutline"
 				@click="handleToggleIsDoneSelected"
@@ -50,7 +50,7 @@
 
 		<!-- Custom dialog for normal planner -->
 		<template #dialog>
-			<EventDialog
+			<PlannerTaskDialog
 				@create="create"
 				@edit="edit"
 			/>
@@ -70,8 +70,8 @@
 import {computed, onMounted, provide, ref, watch} from 'vue'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 import DayPlannerHeader from '@/components/dayPlanner/normal/DayPlannerHeader.vue'
-import EventDialog from '@/components/dayPlanner/normal/EventDialog.vue'
-import EventBlock from '@/components/dayPlanner/normal/EventBlock.vue'
+import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
+import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
@@ -118,19 +118,19 @@ const currentDateFormatted = computed(() => {
 
 // Load tasks for the current date
 async function loadTasks() {
-	store.events = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
-	store.initializeEventGridPositions()
+	store.tasks = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime));
+	store.initializeTaskGridPositions()
 	await templatePreview()
 }
 
 async function templatePreview() {
 	if (store.templateInPreview) {
-		store.selectedEventIds.clear()
+		store.selectedTaskIds.clear()
 		Object.assign(store.viewStartTime, store.templateInPreview.defaultWakeUpTime)
 		Object.assign(store.viewEndTime, store.templateInPreview.defaultBedTime);
 		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
-		store.events.push(...store.tasksFromTemplate)
-		store.initializeEventGridPositions()
+		store.tasks.push(...store.tasksFromTemplate)
+		store.initializeTaskGridPositions()
 	}
 }
 
@@ -139,25 +139,16 @@ async function create(request: PlannerTaskRequest) {
 	if (!request.startTime || !request.endTime) {
 		return
 	}
-	if (!request.isBackground) {
-		if (store.checkConflict(request.startTime, request.endTime)) {
-			store.conflictSnackbar = true
-			return
-		}
-	}
 	request.calendarId = calendar.value?.id;
 	const response = await createWithResponse(request)
 
 	if (response.isBackground) {
-		store.updateOverlapsBackgroundFlags(response.startTime, response.endTime)
+		store.updateIsDuringBackgroundFlags(response)
 	} else {
-		response.isDuringBackgroundEvent = store.checkOverlapsBackground(
-			response.startTime,
-			response.endTime
-		)
+		response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
 	}
 	store.setGridPositionFromSpan(response)
-	store.events.push(response)
+	store.tasks.push(response)
 }
 
 async function edit(id: number, request: PlannerTaskRequest) {
@@ -165,50 +156,41 @@ async function edit(id: number, request: PlannerTaskRequest) {
 		showErrorSnackbar('Set start time and end time')
 		return
 	}
-	if (!request.isBackground) {
-		if (store.checkConflict(request.startTime, request.endTime, id)) {
-			store.conflictSnackbar = true
-			return
-		}
-	}
-	const index = store.events.findIndex(e => e.id === id)
-	let updatedItem = store.events[index]
-	if (!updatedItem)
-		return
+	const index = store.tasks.findIndex(e => e.id === id)
+	const wasBackground = store.tasks[index]?.isBackground
 
 	await update(id, request)
 
-	if (request.isBackground !== updatedItem.isBackground) {
-		store.updateOverlapsBackgroundFlags(request.startTime, request.endTime)
+
+	const updatedItem = await fetchById(id)
+
+	if (request.isBackground !== wasBackground) {
+		store.updateIsDuringBackgroundFlags(updatedItem)
 	}
 
-	updatedItem = await fetchById(id)
-
-	if (!request.isBackground) {
-		updatedItem.isDuringBackgroundEvent = store.checkOverlapsBackground(
-			updatedItem.startTime,
-			updatedItem.endTime
-		)
-	}
 	store.setGridPositionFromSpan(updatedItem)
 
-	store.events[index] = updatedItem
+	store.tasks[index] = updatedItem
+
+	if (!request.isBackground) {
+		updatedItem.isDuringBackgroundTask = store.checkOverlapsBackground(updatedItem)
+	}
 }
 
 async function del(): Promise<void> {
 	if (store.isTemplateInPreview) {
-		store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
-	} else if (store.selectedEventIds.size === 1) {
-		const idToDelete = store.selectedEventIds.values().next().value!;
+		store.tasks = store.tasks.filter(e => !store.selectedTaskIds.has(e.id))
+	} else if (store.selectedTaskIds.size === 1) {
+		const idToDelete = store.selectedTaskIds.values().next().value!;
 		await deleteEntity(idToDelete).then(() => {
-			store.events.splice(store.events.findIndex(e => e.id === idToDelete), 1)
-			store.selectedEventIds.clear();
+			store.tasks.splice(store.tasks.findIndex(e => e.id === idToDelete), 1)
+			store.selectedTaskIds.clear();
 		})
-	} else if (store.selectedEventIds.size > 1) {
-		const ids = Array.from(store.selectedEventIds)
+	} else if (store.selectedTaskIds.size > 1) {
+		const ids = Array.from(store.selectedTaskIds)
 		await batchDelete(ids).then(() => {
-			store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
-			store.selectedEventIds.clear();
+			store.tasks = store.tasks.filter(e => !store.selectedTaskIds.has(e.id))
+			store.selectedTaskIds.clear();
 		})
 	}
 	store.deleteDialog = false
@@ -217,7 +199,7 @@ async function del(): Promise<void> {
 async function handleToggleIsDone(taskId: number) {
 	await batchedToggleIsDone([taskId])
 		.catch((error) => {
-			const task = store.events.find(e => e.id === taskId)
+			const task = store.tasks.find(e => e.id === taskId)
 			if (task) {
 				task.isDone = !task.isDone
 			}
@@ -225,12 +207,12 @@ async function handleToggleIsDone(taskId: number) {
 }
 
 async function handleToggleIsDoneSelected() {
-	// Toggle isDone for all selected events
-	const selectedEventIds = Array.from(store.selectedEventIds)
+	// Toggle isDone for all selected tasks
+	const selectedTaskIds = Array.from(store.selectedTaskIds)
 
-	await batchedToggleIsDone(selectedEventIds)
+	await batchedToggleIsDone(selectedTaskIds)
 		.then(() => {
-			const tasks = store.events.filter(e => selectedEventIds.includes(e.id))
+			const tasks = store.tasks.filter(e => selectedTaskIds.includes(e.id))
 			tasks.forEach(task => {
 				task.isDone = !task.isDone
 			})
@@ -246,7 +228,7 @@ async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {
 
 // Watch for time range changes
 watch([() => store.viewStartTime, () => store.viewEndTime], () => {
-	store.initializeEventGridPositions()
+	store.initializeTaskGridPositions()
 }, {deep: true})
 
 // Watch for date changes to reload tasks

@@ -16,19 +16,18 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	timeToSlotIndex: (time: Time) => number
 
 	// State
-	events: TTask[]
-	selectedEventIds: Set<number>
+	tasks: TTask[]
+	selectedTaskIds: Set<number>
 	dialog: boolean
 	editedId: number | undefined
 	editingTask: TTaskRequest
 	deleteDialog: boolean
-	conflictSnackbar: boolean
-	draggingEventId: number | null
-	resizingEventId: number | null
+	draggingTaskId: number | null
+	resizingTaskId: number | null
 	dragConflict: boolean
 
 	// Computed
-	selectedEvents: TTask[]
+	selectedTasks: TTask[]
 	showActionBar: boolean
 	isOverMidnight: boolean
 	isDraggingAny: boolean
@@ -39,15 +38,15 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	openCreateDialogPrefilled: (startTime: Time, endTime: Time) => void
 	openCreateDialogEmpty: () => void
 	openEditDialog: () => void
-	toggleEventSelection: (eventId: number) => void
+	toggleTaskSelection: (taskId: number) => void
 	clearSelection: () => void
 
-	setGridPositionFromSpan: (event: TTask) => void
-	checkOverlapsBackground: (start: Time, end: Time) => boolean
-	checkConflict: (newStart: Time, newEnd: Time, currentEventId?: number) => boolean
-	updateOverlapsBackgroundFlags: (bgStart: Time, bgEnd: Time) => void
-	initializeEventGridPositions: () => void
-	redrawTask: (eventId: number, updates: Partial<TTask>) => void
+	setGridPositionFromSpan: (task: TTask) => void
+	checkOverlapsBackground: (task: TTask) => boolean
+	updateIsDuringBackgroundFlags: (task: TTask) => void
+	checkConflict: (task: TTask, currentEventId?: number) => boolean
+	initializeTaskGridPositions: () => void
+	redrawTask: (taskId: number, updates: Partial<TTask>) => void
 
-	updateTaskSpan: (eventId: number, span: TaskSpan) => Promise<void>
+	updateTaskSpan: (taskId: number, span: TaskSpan) => Promise<void>
 }

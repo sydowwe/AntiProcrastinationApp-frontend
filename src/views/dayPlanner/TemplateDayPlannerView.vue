@@ -27,17 +27,17 @@
 			</VBtn>
 		</template>
 
-		<!-- Custom event block for template planner -->
-		<template #event-block="{ event, onResizeStart }">
-			<TemplateEventBlock
-				:event="event as TemplatePlannerTask"
+		<!-- Custom task block for template planner -->
+		<template #task-block="{ task, onResizeStart }">
+			<TemplatePlannerTaskBlock
+				:task="task as TemplatePlannerTask"
 				@resizeStart="onResizeStart"
 			/>
 		</template>
 
 		<!-- Custom dialog for template planner -->
 		<template #dialog>
-			<PlannerTaskTemplateDialog
+			<TemplatePlannerTaskDialog
 				@create="createTask"
 				@edit="edit"
 			/>
@@ -50,8 +50,8 @@
 import {computed, onMounted, provide, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
 import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
-import PlannerTaskTemplateDialog from '@/components/dayPlanner/template/PlannerTaskTemplateDialog.vue'
-import TemplateEventBlock from '@/components/dayPlanner/template/TemplateEventBlock.vue'
+import TemplatePlannerTaskDialog from '@/components/dayPlanner/template/TemplatePlannerTaskDialog.vue'
+import TemplatePlannerTaskBlock from '@/components/dayPlanner/template/TemplatePlannerTaskBlock.vue'
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 import {useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
@@ -76,7 +76,6 @@ const {
 const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
 
-// Provide the store for slot content (TemplateEventBlock components)
 provide('plannerStore', store)
 
 const currentTemplate = ref<TaskPlannerDayTemplate | null>(null)
@@ -104,8 +103,8 @@ async function loadTemplateDetails() {
 }
 
 async function loadTasks() {
-	store.events = await fetchFilteredTasks(new TemplatePlannerTaskFilter(templateId.value!, store.viewStartTime, store.viewEndTime));
-	store.initializeEventGridPositions()
+	store.tasks = await fetchFilteredTasks(new TemplatePlannerTaskFilter(templateId.value!, store.viewStartTime, store.viewEndTime));
+	store.initializeTaskGridPositions()
 }
 
 async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<void> {
@@ -117,70 +116,52 @@ async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<vo
 
 // CRUD operations
 async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
-	if (!request.isBackground && request.startTime && request.endTime) {
-		if (store.checkConflict(request.startTime, request.endTime)) {
-			store.conflictSnackbar = true
-			return
-		}
-	}
 	request.templateId = templateId.value!;
 	const newTask = await createTaskWithResponse(request)
 
 	if (newTask.isBackground) {
-		store.updateOverlapsBackgroundFlags(newTask.startTime, newTask.endTime)
+		store.updateIsDuringBackgroundFlags(newTask)
 	} else {
-		newTask.isDuringBackgroundEvent = store.checkOverlapsBackground(
-			newTask.startTime,
-			newTask.endTime
-		)
+		newTask.isDuringBackgroundTask = store.checkOverlapsBackground(newTask)
 	}
 
 	store.setGridPositionFromSpan(newTask)
-	store.events.push(newTask)
+	store.tasks.push(newTask)
 }
 
 async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<void> {
-	if (!request.isBackground && request.startTime && request.endTime) {
-		if (store.checkConflict(request.startTime, request.endTime, id)) {
-			store.conflictSnackbar = true
-			return
-		}
-	}
-
-	const index = store.events.findIndex((e: TemplatePlannerTask) => e.id === id)
-	let updatedItem = store.events[index]
-	if (!updatedItem)
-		return
-
 	request.templateId = currentTemplate.value!.id;
 	await updateTask(id, request)
 
-	if (request.isBackground !== updatedItem.isBackground) {
-		if (request.startTime && request.endTime) {
-			store.updateOverlapsBackgroundFlags(request.startTime, request.endTime)
-		}
+	const updatedItem = await fetchByIdTask(id)
+
+
+	const index = store.tasks.findIndex((e: TemplatePlannerTask) => e.id === id)
+	const wasBackground = store.tasks[index]?.isBackground
+	if (request.isBackground !== wasBackground) {
+		store.updateIsDuringBackgroundFlags(updatedItem)
 	}
 
-	const fetchedItem = await fetchByIdTask(id)
-	
-	store.setGridPositionFromSpan(fetchedItem)
+	store.setGridPositionFromSpan(updatedItem)
+	store.tasks[index] = updatedItem
 
-	fetchedItem.isDuringBackgroundEvent = store.checkOverlapsBackground(fetchedItem.startTime, fetchedItem.endTime)
-	store.events[index] = fetchedItem
+	if (!request.isBackground) {
+		updatedItem.isDuringBackgroundTask = store.checkOverlapsBackground(updatedItem)
+	}
 }
 
 async function del(): Promise<void> {
-	if (store.selectedEventIds.size === 1) {
-		const idToDelete = store.selectedEventIds.values().next().value!;
+	if (store.selectedTaskIds.size === 1) {
+		const idToDelete = store.selectedTaskIds.values().next().value!;
 		await deleteTask(idToDelete).then(() => {
-			store.events.splice(store.events.findIndex(e => e.id === idToDelete), 1)
-			store.selectedEventIds.clear();
+			store.tasks.splice(store.tasks.findIndex(e => e.id === idToDelete), 1)
+			store.selectedTaskIds.clear();
 		})
-	} else if (store.selectedEventIds.size > 1) {
-		const ids = Array.from(store.selectedEventIds)
+	} else if (store.selectedTaskIds.size > 1) {
+		const ids = Array.from(store.selectedTaskIds)
 		await batchDeleteTask(ids).then(() => {
-			store.events = store.events.filter(e => !store.selectedEventIds.has(e.id))
-			store.selectedEventIds.clear();
+			store.tasks = store.tasks.filter(e => !store.selectedTaskIds.has(e.id))
+			store.selectedTaskIds.clear();
 		})
 	}
 	store.deleteDialog = false

@@ -1,8 +1,8 @@
 <template>
 <ActionBar :isShown="store.isTemplateInPreview" @cancel="store.cancelTemplatePreview">
-	<template v-if="store.selectedEventIds.size > 0">
+	<template v-if="store.selectedTaskIds.size > 0">
 		<span class="text-textMuted font-weight-medium selection-count" style="font-size: 1rem; line-height: 1.2rem;">
-			{{ store.selectedEventIds.size }} selected
+			{{ store.selectedTaskIds.size }} selected
 		</span>
 		<VBtn
 			variant="outlined"

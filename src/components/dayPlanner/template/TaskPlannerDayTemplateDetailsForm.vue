@@ -14,7 +14,7 @@
 	</VCardTitle>
 	<VCardText class="flex-fill">
 		<VForm class="py-6 d-flex flex-column ga-4">
-			<div class="mb-5 d-flex flex-column flex-xl-row justify-space-between">
+			<div class="mb-5 d-flex flex-column ga-8 ga-xl-0 flex-xl-row justify-space-between">
 				<TimePicker
 					v-model="formData.defaultWakeUpTime"
 					label="Wake Up"

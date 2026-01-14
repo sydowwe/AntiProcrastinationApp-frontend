@@ -236,7 +236,7 @@ const EN = {
         hoursBack: `Hours back`,
         today: `Today`,
     },
-    controls:{
+    controls: {
         start: `Start`,
         pause: `Pause`,
         stop: `Stop`,
@@ -256,7 +256,7 @@ const EN = {
         placeOnToDoList: `Place on to-do list`,
         //===============================
         fromToDoList: `From to-do list`,
-        createNewActivity: `Create new activity`,        
+        createNewActivity: `Create new activity`,
         start: `Start`,
         pause: `Pause`,
         stop: `Stop`,
@@ -267,17 +267,17 @@ const EN = {
         enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,
     },
     pomodoroTimer: {
-        hint:``,
-        focusTime:`Focus time`,
-        shortRestTime:`Short rest time`,
-        longRestTime:`Long rest time`,
-        numberOfCycles:`Number of cycles`,
-        numberOfFocusIntervalsInCycle:`Number of focus interval in cycle`,
-        focus:`Focus`,
-        shortRest:`Short rest`,
-        longRest:`Long rest`,
+        hint: ``,
+        focusTime: `Focus time`,
+        shortRestTime: `Short rest time`,
+        longRestTime: `Long rest time`,
+        numberOfCycles: `Number of cycles`,
+        numberOfFocusIntervalsInCycle: `Number of focus interval in cycle`,
+        focus: `Focus`,
+        shortRest: `Short rest`,
+        longRest: `Long rest`,
     },
-    history:{
+    history: {
         addActivityToHistory: `Add activity to history`,
         lengthNotSet: `Length not set`,
         toHistory: `To history`
@@ -291,8 +291,8 @@ const EN = {
 
         emailConfirmed: `Email successfully confirmed, u can now proceed`,
         errorConfirmingEmail: `There was an error confirming your email, please try again`,
-        resendConfirmationEmail:`Resend confirmation email`,
-        confirmationEmailResent:`A confirmation email has been sent again to your email address. Please check your inbox and click the link in the email to confirm your address.\n You can close this tab now.`,
+        resendConfirmationEmail: `Resend confirmation email`,
+        confirmationEmailResent: `A confirmation email has been sent again to your email address. Please check your inbox and click the link in the email to confirm your address.\n You can close this tab now.`,
 
         userDoesntExist: `User with email: '{email}' doesn't exist`,
         wrongPassword: `Wrong password`,
@@ -369,9 +369,9 @@ const EN = {
         toContinueEnterPassword: `To continue enter your password`,
         show2FAQrCode: `Show 2FA qr code`,
         newScratchCodes: `Generate new scratch codes`,
-        passwordChangedSuccessfully:`Password changed successfully`,
+        passwordChangedSuccessfully: `Password changed successfully`,
         identityVerification: `Identity verification`,
-        emailCantBeSame:`Emails can't be same`,
+        emailCantBeSame: `Emails can't be same`,
         emailChangedSuccessfully: `Email changed successfully`,
         signOutWarning: `Warning: {subject} will log you out of all your devices for security reasons`,
         enablingTwoFactorAuth: `Enabling 2FA`,
@@ -381,7 +381,7 @@ const EN = {
         task: `Activity`,
         quickCreatePlannerActivity: `Quick create planner activity`,
         quickEditPlannerActivity: `Quick edit activity`,
-
+        importance: `Importance`,
     }
 }
 export default EN
