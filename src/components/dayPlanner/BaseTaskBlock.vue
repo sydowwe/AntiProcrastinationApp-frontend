@@ -251,7 +251,7 @@ const emit = defineEmits<{
 .task-content {
 	flex: 1;
 	padding: 8px 12px;
-	pointer-tasks: none;
+	pointer-events: none;
 	cursor: pointer;
 	min-height: 0;
 	display: flex;
@@ -326,7 +326,7 @@ const emit = defineEmits<{
 		transparent 10px,
 		rgba(255, 255, 255, 0.4) 14px
 	);
-	pointer-tasks: none;
+	pointer-events: none;
 	z-index: 1;
 	opacity: 0.9;
 	box-sizing: border-box;

@@ -43,7 +43,7 @@
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed, inject, onMounted, ref} from 'vue'
-import CreationPreview from './CreationPreview.vue'
+import CreationPreview from './misc/CreationPreview.vue'
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
 import {CreationPreviewType, SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts';
@@ -409,7 +409,7 @@ onMounted(() => {
 	height: 3px;
 	background: rgb(15, 39, 124);
 	z-index: 20;
-	pointer-tasks: none;
+	pointer-events: none;
 }
 
 .current-time-indicator {
@@ -419,7 +419,7 @@ onMounted(() => {
 	height: 3px;
 	background: linear-gradient(90deg, rgb(var(--v-theme-secondary)) 0%, rgb(var(--v-theme-primary)) 100%);
 	z-index: 20;
-	pointer-tasks: none;
+	pointer-events: none;
 	box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.5);
 }
 </style>

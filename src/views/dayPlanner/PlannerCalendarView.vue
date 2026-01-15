@@ -60,47 +60,49 @@
 										<span class="cell-date-text">{{ formatCellDate(dayData.date) }}</span>
 										<!-- Label chip with color based on day type -->
 										<VChip
-											v-if="dayData.label"
+											v-if="dayData.label || dayData.holidayName"
 											size="small"
-											:color="!['Workday', 'Weekend'].includes(dayData.dayType) ? dayData.getDayTypeColor() : undefined"
+											:color="!['Workday', 'Weekend'].includes(dayData.dayType) ? getDayTypeColor(dayData.dayType) : undefined"
 											variant="flat"
 											class="cell-label-chip"
 										>
-											<VIcon :icon="dayData.getDayTypeIcon()" size="x-small" class="mr-1"/>
-											<strong>{{ dayData.label }}</strong>
+											<VIcon :icon="getDayTypeIcon(dayData.dayType)" size="x-small" class="mr-1"/>
+											<strong>{{ dayData.label ?? dayData.holidayName }}</strong>
 										</VChip>
 									</div>
 								</div>
 
 								<div class="cell-content">
-									<!-- Wake/Bed Time -->
-									<div v-if="dayData.wakeUpTime || dayData.bedTime" class="cell-info">
-										<VIcon icon="fas fa-clock" size="small" class="mr-1"/>
-										<span class="info-text">{{ dayData.wakeUpTime.getString() }} - {{ dayData.bedTime.getString() }}</span>
-									</div>
+									<div class="d-flex ga-3 align-center">
+										<!-- Wake/Bed Time -->
+										<div v-if="dayData.wakeUpTime || dayData.bedTime" class="cell-info">
+											<VIcon icon="fas fa-clock" size="small" class="mr-1"/>
+											<span class="info-text">{{ dayData.wakeUpTime.getString() }} - {{ dayData.bedTime.getString() }}</span>
+										</div>
 
-									<!-- Tasks Progress -->
-									<div class="cell-info tasks-info">
-										<VIcon icon="fas fa-list-check" size="small" class="mr-1"/>
-										<div class="tasks-progress">
-											<span class="info-text">{{ dayData.completedTasks }}/{{ dayData.totalTasks }} tasks</span>
-											<VProgressLinear
-												v-if="dayData.totalTasks > 0"
-												:modelValue="dayData.completionRate"
-												:color="dayData.completionRate >= 80 ? 'success' : dayData.completionRate >= 50 ? 'warning' : 'error'"
-												height="6"
-												rounded
-												class="mt-1"
-											/>
-											<VChip
-												v-if="dayData.totalTasks > 0"
-												size="x-small"
-												:color="dayData.completionRate >= 80 ? 'success' : dayData.completionRate >= 50 ? 'warning' : 'error'"
-												variant="flat"
-												class="mt-1"
-											>
-												{{ Math.round(dayData.completionRate) }}%
-											</VChip>
+										<!-- Tasks Progress -->
+										<div class="cell-info tasks-info flex-grow-1">
+											<VIcon icon="fas fa-list-check" size="small" class="mr-1"/>
+											<div class="tasks-progress">
+												<span class="info-text">{{ dayData.completedTasks }}/{{ dayData.totalTasks }} tasks</span>
+												<VProgressLinear
+													v-if="dayData.totalTasks > 0"
+													:modelValue="dayData.completionRate"
+													:color="dayData.completionRate >= 80 ? 'success' : dayData.completionRate >= 50 ? 'warning' : 'error'"
+													height="6"
+													rounded
+													class="mt-1"
+												/>
+												<VChip
+													v-if="dayData.totalTasks > 0"
+													size="x-small"
+													:color="dayData.completionRate >= 80 ? 'success' : dayData.completionRate >= 50 ? 'warning' : 'error'"
+													variant="flat"
+													class="mt-1"
+												>
+													{{ Math.round(dayData.completionRate) }}%
+												</VChip>
+											</div>
 										</div>
 									</div>
 
@@ -141,6 +143,7 @@ import {useCalendarQuery} from '@/composables/ConcretesCrudComposable.ts'
 import router from '@/plugins/router.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
+import {getDayTypeColor, getDayTypeIcon} from '@/dtos/enum/DayType.ts';
 
 const {usStringToUrlString} = useMoment()
 const {fetchFiltered} = useCalendarQuery()
@@ -201,7 +204,6 @@ async function fetchCalendarData() {
 	try {
 		const filter = new CalendarFilter(dateRange.value.start, dateRange.value.end)
 		calendarData.value = await fetchFiltered(filter)
-		console.log(calendarData.value)
 	} catch (error) {
 		console.error('Error fetching calendar data:', error)
 		calendarData.value = []

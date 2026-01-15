@@ -4,7 +4,7 @@
 	<!-- Expandable Details -->
 	<VExpandXTransition mode="in-out">
 		<div v-if="expandedDetails">
-			<DayDetailsPanel :title="currentDateFormatted" :calendar @useTemplate="templatePreview"></DayDetailsPanel>
+			<DayDetailsPanel :title="currentDateFormatted" :calendar @useTemplate="templatePreview" @openDetails="calendarDetailsDialog = true"></DayDetailsPanel>
 		</div>
 	</VExpandXTransition>
 	<DayPlanner
@@ -19,7 +19,6 @@
 				v-model:expandedDetails="expandedDetails"
 				:title="currentDateFormatted"
 				:calendar
-				@openDetails="calendarDetailsDialog = true"
 			/>
 		</template>
 
