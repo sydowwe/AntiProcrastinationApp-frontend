@@ -17,7 +17,6 @@ import {fas} from '@fortawesome/free-solid-svg-icons'
 import {far} from '@fortawesome/free-regular-svg-icons'
 import {fab} from '@fortawesome/free-brands-svg-icons'
 // VUETIFY
-import '../node_modules/vuetify/dist/vuetify.css'
 import 'vuetify/styles'
 import {createVuetify} from 'vuetify'
 import * as components from 'vuetify/components'
@@ -100,6 +99,9 @@ export const vuetify = createVuetify({
 		VCardActions: {
 			VBtn: {variant: 'elevated'},
 		},
+		VCard: {
+			rounded: 'lg'
+		},
 		VBtn: {variant: 'elevated'},
 		VTextField: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VIdAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
@@ -114,7 +116,8 @@ export const vuetify = createVuetify({
 		VTextarea: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VMaskInput: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VCheckbox: {density: 'comfortable'},
-		VIconBtn: {rounded: ''}
+		VIconBtn: {rounded: ''},
+		VIcon: {size: '16'},
 	},
 	theme: {
 		defaultTheme: 'dark',

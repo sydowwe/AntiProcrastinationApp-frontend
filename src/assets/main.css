@@ -1,40 +1,37 @@
 @import './base.css';
 
 
-
-
 .dividerTextCenter {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .dividerTextCenter:after,
 .dividerTextCenter:before {
-  content: '';
-  flex: 1;
-  height: 2px;
-  background: #999;
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: #999;
 }
 
 .clickableIcon {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .v-list-item--three-line .v-list-item__append, .v-list-item--three-line .v-list-item__prepend {
-  align-self: center !important;
-  padding: 0 !important;
+    align-self: center !important;
+    padding: 0 !important;
 }
 
 .borderWhite {
-  border: 1px solid white !important;
+    border: 1px solid white !important;
 }
 
 .borderWhite2 {
-  border: 1px solid white !important;
-  border-collapse: collapse;
+    border: 1px solid white !important;
+    border-collapse: collapse;
 }
 
 .v-table--fixed-header > .v-table__wrapper > table > thead > tr > th {
-  border-bottom: 1px solid #BBB !important;
+    border-bottom: 1px solid #BBB !important;
 }
-

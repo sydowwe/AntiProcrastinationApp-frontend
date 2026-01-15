@@ -1,8 +1,8 @@
 <!-- TimeRangePicker.vue -->
 <template>
-<div class="d-flex ga-4 align-center flex-wrap">
+<div class="d-flex ga-2 align-center flex-wrap">
 	<!-- Start Time Picker -->
-	<div class="d-flex ga-4 align-center">
+	<div class="d-flex ga-2 align-center">
 		<TimePicker
 			v-model="start"
 			:icon="startIcon"

@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch} from 'vue'
+import {ref, watch, computed} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {VForm} from 'vuetify/components'
@@ -82,15 +82,32 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 const {updateWithResponse} = useCalendarQuery()
 const {showErrorSnackbar} = useSnackbar()
 
+const props = defineProps<{
+	calendar: Calendar
+}>()
+
 const model = defineModel<boolean>({required: true})
 const form = ref<InstanceType<typeof VForm>>()
 const data = ref<CalendarRequest>(new CalendarRequest())
 
-const dayTypeOptions = Object.values(DayType)
+const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
-const props = defineProps<{
-	calendar: Calendar | undefined
-}>()
+function getNaturalDayType(): DayType {
+	if (props.calendar.holidayName) {
+		return DayType.Holiday
+	}
+	// dayIndex 6 or 7 = weekend (Saturday/Sunday)
+	if (props.calendar.dayIndex === 6 || props.calendar.dayIndex === 7) {
+		return DayType.Weekend
+	}
+	return DayType.Workday
+}
+
+const dayTypeOptions = computed(() => {
+	const naturalType = getNaturalDayType()
+	// Show natural type + override types (Vacation, SickDay, Special)
+	return [naturalType, ...overrideDayTypes]
+})
 
 // Watch for calendar changes to populate form
 watch(() => props.calendar, (calendar) => {
@@ -101,10 +118,10 @@ watch(() => props.calendar, (calendar) => {
 
 async function save() {
 	const isValid = await form.value?.validate()
-	if (!isValid || !props.calendar?.id) {
+	if (!isValid || !props.calendar.id) {
 		return
 	}
-	await updateWithResponse(props.calendar?.id, data.value).then(
+	await updateWithResponse(props.calendar.id, data.value).then(
 		updatedEntity => {
 			emit('updated', updatedEntity)
 			model.value = false

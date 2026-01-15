@@ -78,9 +78,9 @@
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed, provide} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
-import PlannerTimeColumn from '@/components/dayPlanner/PlannerTimeColumn.vue'
+import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
-import SelectionActionBar from '@/components/dayPlanner/SelectionActionBar.vue'
+import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';

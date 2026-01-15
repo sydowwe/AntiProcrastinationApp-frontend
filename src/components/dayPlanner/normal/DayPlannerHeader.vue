@@ -17,16 +17,14 @@
 		</VIconBtn>
 		<h1 class="date-title">{{ title }}</h1>
 
-		<VChip
-			:color="calendar.getDayTypeColor()"
-			variant="flat"
-			size="small"
+		<DayTypeChip :dayType="calendar.dayType" isTonal></DayTypeChip>
+		<div
+			v-if="calendar?.label"
+			class="mt-1 text-medium-emphasis font-italic text-body-2"
+			style="margin-left: -4px"
 		>
-			<VIcon :icon="calendar.getDayTypeIcon()" size="16" class="mr-1"/>
-			{{ calendar.dayType }}
-		</VChip>
-		<span v-if="calendar.label">{{ calendar.label }}</span>
-
+			{{ calendar.label }}
+		</div>
 	</div>
 
 	<!-- Center: Progress -->
@@ -84,6 +82,7 @@ import {computed} from 'vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
+import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue';
 
 const store = useDayPlannerStore()
 const expanded = defineModel('expandedDetails', {required: true})
@@ -122,7 +121,7 @@ const progressColor = computed(() => {
 .left-section {
 	display: flex;
 	align-items: center;
-	gap: 16px;
+	gap: 12px;
 }
 
 .date-title {
@@ -130,7 +129,6 @@ const progressColor = computed(() => {
 	font-weight: 700;
 	margin: 0;
 }
-
 
 .progress-block {
 	width: 200px;
