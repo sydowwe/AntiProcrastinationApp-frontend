@@ -9,8 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue';
-
 defineProps({
 	isEdit: {
 		type: Boolean,
@@ -19,9 +17,8 @@ defineProps({
 })
 const isRepeated = defineModel<boolean>({required: true});
 
-const doneCount = defineModel<number | null>('doneCount',{required: true});
-const totalCount = defineModel<number | null>('totalCount',{required: true});
-
+const doneCount = defineModel<number | null>('doneCount', {required: true});
+const totalCount = defineModel<number | null>('totalCount', {required: true});
 </script>
 
 <style scoped>

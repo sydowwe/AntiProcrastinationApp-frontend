@@ -344,8 +344,8 @@ const EN = {
     toDoList: {
         add: 'Add',
         toDoList: 'To-do list',
-        urgency: `Urgency`,
-        timePeriod: `Time period`,
+        priority: `Priority`,
+        changeOrder: `Change order`,
         quickCreateToDoListActivity: `Quick create activity with to-do task category`,
         saveTask: `Record completion of the task`,
         quickEditToDoListActivity: `Quick edit to-do list activity`,
@@ -353,7 +353,6 @@ const EN = {
     routineTodoList: {
         add: 'Add',
         toDoList: 'To-do list',
-        urgency: `Urgency`,
         timePeriod: `Time period`,
         quickCreateRoutineToDoListActivity: `Quick create activity with routine to-do task category`,
         saveTask: `Record completion of the task`,

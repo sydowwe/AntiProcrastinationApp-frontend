@@ -40,7 +40,7 @@ import {TimePrecise} from '@/utils/TimePrecise.ts';
 const {create} = useActivityHistoryCrud()
 const {formatToDate} = useMoment()
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const props = defineProps({
 	plannerTask: {
 		type: Object as () => PlannerTask,
@@ -78,7 +78,7 @@ watch(dialogShown, (isShown) => {
 async function save() {
 	const request = await create(dateTime.value, length.value, props.toDoListItem?.activity.id)
 	if (request) {
-		showSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`, {color: 'success'});
+		showSuccessSnackbar(`Saved done planner task ${props.plannerTask?.activity.name} to history`);
 		dialogShown.value = false;
 	} else {
 		showErrorSnackbar(`Error saving planner task ${props.plannerTask?.activity.name} to history`);

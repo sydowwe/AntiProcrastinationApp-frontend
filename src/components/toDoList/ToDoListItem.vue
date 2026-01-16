@@ -15,7 +15,8 @@
 
 		<VListItemAction start>
 			<v-checkbox-btn v-if="!toDoListItem.isMultipleCount" v-model="toDoListItem.isDone" base-color="white" color="success"
-			                @click.stop="checkboxClicked" :disabled="isInChangeOrderMode" :style="isInChangeOrderMode ? 'color:white !important' : ''"></v-checkbox-btn>
+			                @click.prevent :disabled="isInChangeOrderMode"
+			                :style="isInChangeOrderMode ? 'color:white !important' : ''"></v-checkbox-btn>
 			<div v-else class="d-flex flex-column ga-1 align-center justify-center">
 				<VHover>
 					<template v-slot:default="{ isHovering, props }">
@@ -71,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch, onMounted, onBeforeUnmount} from 'vue';
+import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -184,8 +185,8 @@ const setupDraggable = () => {
 
 const actions = [
 	{name: 'select', variant: 'tonal', color: 'primaryOutline', icon: 'check-circle', action: toggleSelect},
-	{name: 'edit', variant: 'outlined', color: 'primaryOutline', icon: 'pencil', action: edit},
-	{name: 'delete', variant: 'outlined', color: 'secondaryOutline', icon: 'delete', action: del},
+	{name: 'edit', variant: 'outlined', color: 'primaryOutline', icon: 'pen-to-square', action: edit},
+	{name: 'delete', variant: 'outlined', color: 'secondaryOutline', icon: 'trash-can', action: del},
 ];
 
 function itemClicked(event: Event) {
@@ -198,13 +199,6 @@ function itemClicked(event: Event) {
 	emits('isDoneChanged', props.toDoListItem);
 }
 
-function checkboxClicked(event: Event) {
-	if (props.isInChangeOrderMode) {
-		event.preventDefault();
-		return;
-	}
-	// Let the v-model handle the change naturally
-}
 
 function minusClicked(event: Event) {
 	if (props.isInChangeOrderMode) {

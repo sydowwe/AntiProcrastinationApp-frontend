@@ -39,7 +39,6 @@ import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
-import type {ToDoListItemDialogType} from '@/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityCrud, useTaskPriorityCrud, useTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
@@ -56,7 +55,7 @@ const props = defineProps<{
 	listId?: number;
 }>();
 
-const toDoListDialog = ref<ToDoListItemDialogType>({} as ToDoListItemDialogType);
+const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>();
 const items = ref([] as TodoListItemEntity[]);
 const isInChangeOrderMode = ref(false);
 

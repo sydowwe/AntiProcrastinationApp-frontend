@@ -103,13 +103,14 @@ const close = () => {
 const openCreate = () => {
 	isEdit.value = false;
 	dialog.value = true;
+	activityFormField.value?.reset();
 };
 
 const openEdit = (entityToEdit: TodoListItemEntity) => {
 	isEdit.value = true;
 	oldItem.value = entityToEdit;
 
-	activityFormField.value?.onOpenEdit(entityToEdit.activity);
+	activityFormField.value?.onOpenEdit(entityToEdit.activity.id);
 	toDoListItem.value = ToDoListItemRequest.fromEntity(entityToEdit);
 	isRepeated.value = (entityToEdit.totalCount ?? 0) > 1;
 	dialog.value = true;

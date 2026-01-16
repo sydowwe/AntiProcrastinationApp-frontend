@@ -32,12 +32,12 @@ const props = withDefaults(defineProps<{
 	label?: string
 	icon?: string
 	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
-	height?: string | number
+	height?: 40 | 48 | 56,
 	disabled?: boolean
 }>(), {
 	label: 'Time',
 	allowedMinutesSelected: '10',
-	height: 40,
+	height: 48,
 	disabled: false
 })
 

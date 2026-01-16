@@ -3,7 +3,7 @@
 	<VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
 		<VRow v-if="timeInputVisible" justify="center">
 			<VCol cols="12" lg="6" md="8" sm="10">
-				<DateTimePicker ref="timePicker" :date-clearable="false" @timeChange="updateTimeInitial"></DateTimePicker>
+				<DateTimePicker v-model="alarmDateTime" :dateClearable="false"></DateTimePicker>
 			</VCol>
 		</VRow>
 		<VRow justify="center" class="mt-4 mb-7">
@@ -22,12 +22,13 @@ import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
 import {Time} from '@/utils/Time.ts';
 import {ActivityDialogType, ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
-import {ref} from 'vue';
+import {ref, watch} from 'vue';
 import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
 
+const alarmDateTime = ref<Date | null>(new Date());
 const alarmTime = ref(new Time());
 const timeInitial = ref(new Time());
 const timeRemaining = ref(0);
@@ -36,6 +37,12 @@ const startTimestamp = ref(new Date());
 const intervalId = ref(undefined as number | undefined);
 const timeInputVisible = ref(true);
 const formDisabled = ref(false);
+
+watch(alarmDateTime, (newDateTime) => {
+	if (newDateTime) {
+		timeInitial.value = new Time(newDateTime.getHours(), newDateTime.getMinutes());
+	}
+});
 
 async function start() {
 	if (activitySelectionForm.value.validate()) {
@@ -100,10 +107,6 @@ function resetTime() {
 
 function saveActivity() {
 	addActivityToHistory(startTimestamp.value, timePassed(), activitySelectionForm.value.getSelectedActivityId);
-}
-
-function updateTimeInitial(_timeInitial: Time) {
-	timeInitial.value = _timeInitial;
 }
 
 function timePassed() {

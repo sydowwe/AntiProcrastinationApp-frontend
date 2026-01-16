@@ -23,7 +23,7 @@ export const useSnackbar = () => {
 	const showErrorSnackbar = (customMessage: string, config?: ErrorSnackBarConfig) => {
 		showSnackbar(customMessage || 'Error', {
 			...config,
-			color: 'error',
+			color: 'errorDark',
 			closable: config?.closable || false
 		})
 	}
@@ -31,7 +31,7 @@ export const useSnackbar = () => {
 	const showSuccessSnackbar = (customMessage: string, config?: ErrorSnackBarConfig) => {
 		showSnackbar(customMessage || 'Success', {
 			...config,
-			color: 'success',
+			color: 'successDark',
 			closable: config?.closable || true
 		})
 	}
