@@ -1,6 +1,5 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import CreateNewActivityView from '@/views/CreateNewActivityView.vue'
 import PomodoroTimerView from "@/views/addActivityHistory/PomodoroTimerView.vue";
 import StopWatchView from '@/views/addActivityHistory/StopWatchView.vue'
 import TimerView from '@/views/addActivityHistory/TimerView.vue'
@@ -70,11 +69,6 @@ const router = createRouter({
 			path: '/todo-list',
 			name: 'toDoList',
 			component: ToDoListView
-		},
-		{
-			path: '/activities/new',
-			name: 'newActivity',
-			component: CreateNewActivityView
 		},
 		{
 			path: '/activity-history/pomodoro',

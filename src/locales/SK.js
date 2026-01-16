@@ -344,7 +344,8 @@ const SK = {
     toDoList: {
         add: 'Pridať',
         toDoList: 'To-do list',
-        urgency: `Naliehavosť`,
+        priority: `Priorita`,
+        changeOrder: `Zmena poradia`,
         timePeriod: `Časový úsek`,
         saveTask: `Zaznamenať dokončenie úlohy`,
         quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s roľou to-do úloha`,

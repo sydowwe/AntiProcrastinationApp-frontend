@@ -7,14 +7,14 @@
 			{{ i18n.t('history.toHistory').toLowerCase() }}?
 		</div>
 	</template>
-	<VForm @keyup.native.enter="save" class="d-flex flex-column ga-3">
-		<DateTimePicker :label="i18n.t('dateTime.date')" v-model="dateTime" :date-clearable="false"></DateTimePicker>
+	<VForm @keyup.native.enter="save" class="d-flex flex-column align-start ga-3">
+		<DateTimePicker :label="i18n.t('dateTime.date')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
 		<TimePicker :label="i18n.t('dateTime.length')" class="mx-auto" v-model="length"></TimePicker>
 	</VForm>
 </MyDialog>
 </template>
 <script setup lang="ts">
-import {onMounted, ref, watch} from 'vue';
+import {ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {Time} from '@/utils/Time.ts';
 
@@ -27,8 +27,7 @@ import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListIte
 
 const {create} = useActivityHistoryCrud()
 const i18n = useI18n();
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
-// const timePicker = ref<TimePickerType>({} as TimePickerType);
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const props = defineProps({
 	toDoListItem: {
 		type: Object as () => IBaseToDoListItem,
@@ -43,14 +42,11 @@ const dialogShown = defineModel<boolean>({required: true});
 const dateTime = ref(new Date());
 const length = ref(new Time());
 
-onMounted(() => {
-	// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
-})
 watch(dialogShown, (isShown) => {
 	if (isShown) {
 		if (!props.isRecursive) {
 			dateTime.value = new Date();
-			// timePicker.value.set(dateTime.value.getHours(), dateTime.value.getMinutes());
+			console.log(dateTime.value)
 		}
 	} else {
 		if (props.isRecursive) {
@@ -63,12 +59,16 @@ watch(dialogShown, (isShown) => {
 async function save() {
 	const request = await create(dateTime.value, length.value, props.toDoListItem?.activity.id)
 	if (request) {
-		showSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`, {color: 'success'});
+		showSuccessSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`);
 		dialogShown.value = false;
 	} else {
 		showErrorSnackbar(`Error saving to-do list task ${props.toDoListItem?.activity.name} to history`);
 	}
 }
+
+watch(dateTime, (newVal) => {
+	console.log(newVal)
+})
 
 const emit = defineEmits<{
 	openNext: []

@@ -1,9 +1,11 @@
 <template>
 <MyDialog v-model="dialog" title="Add new role" :confirmBtnLabel="$t('general.create')"
           @confirmed="onConfirmed">
-	<v-text-field label="Name" v-model="request.name" :rules="[requiredRule, lettersWithDiacriticsAndSpecialCharsRule]"></v-text-field>
-	<VTextarea label="Text" v-model="request.text"></VTextarea>
-	<VColorPicker label="Color" v-model="request.color" hide-inputs></VColorPicker>
+	<VForm ref="form" @submit.prevent="onConfirmed" class="d-flex flex-column ga-3">
+		<VTextField label="Name" v-model="request.name" :rules="[requiredRule, lettersWithDiacriticsAndSpecialCharsRule]"></VTextField>
+		<VTextarea label="Text" v-model="request.text"></VTextarea>
+		<VColorPicker label="Color" v-model="request.color" hide-inputs></VColorPicker>
+	</VForm>
 </MyDialog>
 </template>
 
@@ -14,6 +16,7 @@ import {Role} from '@/dtos/response/Role.ts';
 import {RoleRequest} from '@/dtos/request/RoleRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
+import type {VuetifyFormType} from '@/types/RefTypeInterfaces';
 
 const {useApi} = defineProps({
 	useApi: {
@@ -24,6 +27,7 @@ const {useApi} = defineProps({
 const {create, update} = useActivityRoleCrud()
 const {lettersWithDiacriticsAndSpecialCharsRule, requiredRule} = useGeneralRules()
 
+const form = ref<VuetifyFormType>({} as VuetifyFormType);
 const dialog = ref(false);
 const request = ref(new RoleRequest());
 const idToEdit = ref<number | null>(null);
@@ -31,18 +35,20 @@ const isEdit = ref(false);
 
 function openAddDialog() {
 	request.value = new RoleRequest();
-	dialog.value = true;
 	isEdit.value = false;
+	dialog.value = true;
 }
 
 function openEditDialog(oldRole: Role) {
 	idToEdit.value = oldRole.id;
 	request.value = RoleRequest.fromEntity(oldRole);
-	dialog.value = true;
 	isEdit.value = true;
+	dialog.value = true;
 }
 
 async function onConfirmed() {
+	const {valid} = await form.value.validate();
+	if (!valid) return;
 	if (isEdit.value) {
 		if (useApi) {
 			await update(idToEdit.value!, request.value);
@@ -56,6 +62,7 @@ async function onConfirmed() {
 		emit('create', request.value);
 	}
 	dialog.value = false;
+	form.value.reset();
 	request.value = new RoleRequest();
 	idToEdit.value = null;
 	isEdit.value = false;

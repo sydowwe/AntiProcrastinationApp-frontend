@@ -213,7 +213,6 @@ interface MenuItem {
 const items: MenuItem[] = [
 	{title: 'home', icon: 'home', to: '/', needsAdmin: false},
 	{title: 'history', icon: 'clock-rotate-left', to: '/activity-history', needsAdmin: false},
-	{title: 'createNewActivity', icon: 'plus', to: '/activities/new', needsAdmin: false},
 	{
 		title: 'toDoList',
 		icon: 'list-check',

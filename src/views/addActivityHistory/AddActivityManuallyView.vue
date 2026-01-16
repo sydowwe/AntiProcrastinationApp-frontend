@@ -5,7 +5,7 @@
 		<div class="d-flex ga-5">
 			<div class="bordered flex-grow-1">
 				<VLabel>{{ i18n.t('dateTime.when') }}</VLabel>
-				<DateTimePicker ref="dateTimePicker" :date-clearable="false"></DateTimePicker>
+				<DateTimePicker v-model="dateTime" :dateClearable="false"></DateTimePicker>
 			</div>
 			<div class="bordered">
 				<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
@@ -21,8 +21,8 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import type {ActivitySelectionFormType, DateTimePickerType} from '@/types/RefTypeInterfaces';
-import {onMounted, ref} from 'vue';
+import type {ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
+import {ref} from 'vue';
 import {Time} from '@/utils/Time.ts';
 import {useI18n} from 'vue-i18n';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
@@ -34,20 +34,15 @@ const i18n = useI18n();
 const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
 const formDisabled = ref(false);
 
-const dateTimePicker = ref<DateTimePickerType>({} as DateTimePickerType);
+const dateTime = ref<Date | null>(new Date());
 const timeLength = ref(new Time());
-
-onMounted(() => {
-	const now = new Date();
-	dateTimePicker.value.setTime(now.getHours(), now.getMinutes())
-})
 
 function saveActivity() {
 	if (activitySelectionForm.value.validate()) {
-		if (dateTimePicker.value?.getDateTime) {
-			// if (dateTimePicker.value?.getDateTime <= new Date()) {
+		if (dateTime.value) {
+			// if (dateTime.value <= new Date()) {
 			if (timeLength.value.isNotZero()) {
-				activitySelectionForm.value.saveActivityToHistory(dateTimePicker.value?.getDateTime, timeLength.value);
+				activitySelectionForm.value.saveActivityToHistory(dateTime.value, timeLength.value);
 			} else {
 				showErrorSnackbar(i18n.t('history.lengthNotSet'));
 			}

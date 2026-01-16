@@ -96,13 +96,14 @@ const close = () => {
 const openCreate = () => {
 	isEdit.value = false;
 	dialog.value = true;
+	activityFormField.value?.reset();
 };
 
 const openEdit = (entityToEdit: RoutineTodoListItemEntity) => {
 	isEdit.value = true;
 	entityBeforeEdit.value = entityToEdit;
 
-	activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity);
+	activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity.id);
 	routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit);
 	dialog.value = true;
 };

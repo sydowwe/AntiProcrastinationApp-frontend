@@ -1,21 +1,19 @@
 <template>
-<VRow>
-	<VCol cols="11" sm="5">
-		<VDateInput :label v-model="dateTime" :clearable="dateClearable" :min="minDate" :max="maxDate"></VDateInput>
+<VRow :style="{minWidth: (dateClearable ? '333px' : '275px')}">
+	<VCol cols="11" sm="7">
+		<VDateInput :label v-model="date" :clearable="dateClearable" persistent-clear :min="minDate" :max="maxDate"></VDateInput>
 	</VCol>
-	<VCol cols="11" sm="7" class="px-0">
+	<VCol cols="11" sm="5" class="px-0">
 		<TimePicker label="Čas" v-model="time"></TimePicker>
 	</VCol>
 </VRow>
 </template>
 <script setup lang="ts">
-import {computed, ref} from 'vue';
+import {nextTick, ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {VDateInput} from 'vuetify/labs/components';
-import {useMoment} from '@/scripts/momentHelper.ts';
-import {TimePrecise} from '@/utils/TimePrecise.ts';
+import {Time} from '@/utils/Time.ts';
 
-const {formatToDate} = useMoment()
 const props = defineProps({
 	dateClearable: {
 		type: Boolean,
@@ -39,33 +37,52 @@ const props = defineProps({
 	},
 	label: String,
 });
-const dateTime = props.dateClearable ? ref<Date | null>(null) : ref<Date>(new Date());
-const time = ref<TimePrecise>(new TimePrecise());
 
-function setTime(hours: number, minutes: number) {
-	dateTime.value?.setHours(hours, minutes, 0, 0);
-	time.value.hours = hours;
-	time.value.minutes = minutes;
-}
+const model = defineModel<Date | null>();
 
-function setDate(newDate: Date) {
-	dateTime.value = newDate;
-}
+// Initialize internal state from model
+const date = ref<Date | null>(model.value ? new Date(model.value) : null);
+const time = ref<Time>(new Time());
 
-const getDateTime = computed(() => {
-	if (!dateTime.value) {
-		return null;
-	}
-	let temp = new Date(dateTime.value);
-	temp.setHours(time.value.hours, time.value.minutes, 0, 0);
-	return temp;
+let isUpdatingFromModel = false;
+
+// Update model when date changes
+watch(date, () => {
+	if (isUpdatingFromModel) return;
+	updateModel();
 });
 
-defineExpose({
-	setTime,
-	setDate,
-	getDateISO: dateTime.value?.toISOString(),
-	getDate: dateTime.value?.getDate(),
-	getDateTime
-})
+// Update model when time changes
+watch(time, () => {
+	if (isUpdatingFromModel) return;
+	updateModel();
+}, {deep: true});
+
+function updateModel() {
+	if (!date.value) {
+		model.value = null;
+		return;
+	}
+
+	const combined = new Date(date.value);
+	combined.setHours(time.value.hours, time.value.minutes, 0, 0);
+	model.value = combined;
+}
+
+// Update internal state when model changes from parent
+watch(model, (newModel) => {
+	isUpdatingFromModel = true;
+
+	if (!newModel) {
+		date.value = null;
+		time.value = new Time();
+	} else {
+		date.value = new Date(newModel);
+		time.value = new Time(newModel.getHours(), newModel.getMinutes());
+	}
+
+	nextTick(() => {
+		isUpdatingFromModel = false;
+	});
+});
 </script>

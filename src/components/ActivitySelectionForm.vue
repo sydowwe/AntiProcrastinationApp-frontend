@@ -34,6 +34,8 @@
 		</VCol>
 	</VRow>
 </div>
+
+<CreateActivityDialog ref="createActivityDialog" @created="onActivityCreated"></CreateActivityDialog>
 </template>
 
 <script setup lang="ts">
@@ -44,20 +46,23 @@ import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';
 import {filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations,} from '@/composables/ActivitySelectsComposition';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import router from '@/plugins/router.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
 import type {VAutocomplete} from 'vuetify/components';
 import {ActivityFormSelectOptions} from '@/dtos/response/ActivityFormSelectOptions.ts';
 import type {ActivitySelectOptionCombination} from '@/dtos/response/ActivitySelectOptionCombination.ts';
+import CreateActivityDialog from '@/components/dialogs/activity/CreateActivityDialog.vue';
+import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import type {ActivityRequest} from '@/dtos/request/ActivityRequest.ts';
 
 
 const {requiredRule} = useGeneralRules()
 
-const {showErrorSnackbar, showSnackbar} = useSnackbar();
+const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const {create} = useActivityHistoryCrud()
 const activityField = ref<InstanceType<typeof VAutocomplete>>()
+const createActivityDialog = ref<InstanceType<typeof CreateActivityDialog>>()
 
 const props = defineProps({
 	isFilter: {
@@ -141,7 +146,7 @@ async function saveActivityToHistory(startTimestamp: Date, activityLength: Time)
 		const newId = await create(startTimestamp, activityLength, activityIdModel.value);
 
 		if (newId) {
-			showSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`, {color: 'success'});
+			showSuccessSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`);
 			return newId;
 		} else {
 			showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName.value} to history`);
@@ -151,7 +156,14 @@ async function saveActivityToHistory(startTimestamp: Date, activityLength: Time)
 }
 
 function createNewActivity() {
-	router.push('/activities/new');
+	createActivityDialog.value?.open();
+}
+
+function onActivityCreated(request: ActivityRequest, createdId: number) {
+	// Add new activity to the options
+	filteredOptions.value.activityOptions.push(new SelectOption(createdId, request.name));
+	// Auto-select the newly created activity
+	activityIdModel.value = createdId;
 }
 
 
