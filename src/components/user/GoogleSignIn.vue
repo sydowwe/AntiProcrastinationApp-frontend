@@ -7,7 +7,6 @@
 	>
 		{{ $t('authorization.continueWithGoogle') }}
 		<VIcon class="ml-1">
-			<FontAwesomeIcon icon="fa-brands fa-google"/>
 		</VIcon>
 	</VBtn>
 </GoogleLogin>

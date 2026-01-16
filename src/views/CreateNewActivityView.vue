@@ -23,17 +23,6 @@
 			<VRow no-gutters>
 				<VCheckbox :label="i18n.t('activities.isActivityUnavoidable')" v-model="activityRequest.isUnavoidable"
 				           hide-details></VCheckbox>
-				<VCheckbox :label="i18n.t('activities.placeOnToDoList')" v-model="activityRequest.isOnToDoList"
-				           hide-details></VCheckbox>
-				<VIdSelect
-					v-if="activityRequest.isOnToDoList"
-					class="ml-3"
-					:label="$t('toDoList.urgency')"
-					v-model="activityRequest.toDoListUrgencyId"
-					:clearable="false"
-					hide-details
-					:items="urgencyOptions"
-				></VIdSelect>
 			</VRow>
 			<VRow justify="center" no-gutters>
 				<VBtn class="mt-3" width="200" color="primary" @click="validateAndSendForm()">Create</VBtn>
@@ -54,7 +43,6 @@ import {ActivityRequest} from '@/dtos/request/ActivityRequest';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
-import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
 import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
 import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
 import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
@@ -64,7 +52,6 @@ import type {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
 
 const {create} = useActivityCrud()
 const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOptions()
-const {fetchTaskImportanceSelectOptions} = useTaskPlanningSelectOptions()
 const {showErrorSnackbar, showSnackbar} = useSnackbar();
 const i18n = useI18n();
 
@@ -77,14 +64,11 @@ const {requiredRule} = useGeneralRules()
 const activityRequest = ref(new ActivityRequest());
 const roleOptions = ref<SelectOption[]>([]);
 const categoryOptions = ref<SelectOption[]>([]);
-const urgencyOptions = ref<SelectOption[]>([]);
 
 
 onMounted(async () => {
 	roleOptions.value = await fetchRoleSelectOptions();
 	categoryOptions.value = await fetchCategorySelectOptions();
-	urgencyOptions.value = await fetchTaskImportanceSelectOptions();
-	activityRequest.value.toDoListUrgencyId = urgencyOptions.value[0]?.id ?? null;
 })
 
 

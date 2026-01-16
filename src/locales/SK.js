@@ -213,6 +213,8 @@ const SK = {
         hide: `Skryť`,
         show: `Zobraziť`,
         confirm: `Potvrdiť`,
+        new: `Nový`,
+        update: `Aktualizovať`,
     },
     dateTime: {
         when: `Kedy`,

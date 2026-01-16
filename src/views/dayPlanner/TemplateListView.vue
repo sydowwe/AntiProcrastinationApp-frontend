@@ -29,18 +29,20 @@
 				elevation="2"
 				@click="openTemplate(template.id)"
 			>
-				<VCardTitle class="d-flex justify-space-between align-center">
+				<VCardTitle class="pa-4 d-flex justify-space-between align-center">
 					<div class="d-flex align-center ga-2">
-						<VIcon v-if="template.icon">{{ template.icon }}</VIcon>
+						<VIcon class="ma-1" v-if="template.icon">{{ template.icon }}</VIcon>
 						<span>{{ template.name }}</span>
+						<VChip
+							v-if="!template.isActive"
+							size="small"
+							color="warning"
+						>
+							<VIcon icon="triangle-exclamation" class="mr-1"></VIcon>
+							Inactive
+						</VChip>
 					</div>
-					<VChip
-						v-if="!template.isActive"
-						size="small"
-						color="warning"
-					>
-						Inactive
-					</VChip>
+					<DayTypeChip :dayType="template.suggestedForDayType" isTonal></DayTypeChip>
 				</VCardTitle>
 
 				<VCardText>
@@ -50,20 +52,9 @@
 
 					<div class="template-meta">
 						<VChip
-							v-if="template.suggestedForDayType"
-							size="small"
-							color="primary"
-							variant="tonal"
-							class="mr-2 mb-2"
-						>
-							{{ template.suggestedForDayType }}
-						</VChip>
-
-						<VChip
 							v-for="tag in template.tags"
 							:key="tag"
 							size="small"
-							variant="outlined"
 							class="mr-2 mb-2"
 						>
 							{{ tag }}
@@ -78,18 +69,17 @@
 					</div>
 				</VCardText>
 
-				<VCardActions>
+				<VCardActions class="pa-4">
 					<VSpacer/>
 					<VBtn
-						size="small"
-						variant="text"
+						color="secondaryOutline"
+						variant="tonal"
 						@click.stop="openEditDialog(template)"
 					>
 						Edit Details
 					</VBtn>
 					<VBtn
-						size="small"
-						variant="text"
+						variant="tonal"
 						color="error"
 						@click.stop="confirmDelete(template)"
 					>
@@ -101,56 +91,23 @@
 	</VRow>
 
 	<!-- Create/Edit Dialog -->
-	<VDialog
+	<TemplateDetailsDialog
 		v-model="dialog"
-		maxWidth="600"
-		persistent
-	>
-		<TaskPlannerDayTemplateDetailsForm
-			ref="templateForm"
-			:template="editingTemplate"
-			@updateDetails="handleSaveTemplate"
-		/>
-		<VCardActions class="pa-4">
-			<VSpacer/>
-			<VBtn
-				variant="text"
-				@click="closeDialog"
-			>
-				Cancel
-			</VBtn>
-		</VCardActions>
-	</VDialog>
+		:template="editingTemplate"
+		@save="handleSaveTemplate"
+	/>
 
 	<!-- Delete Confirmation Dialog -->
-	<VDialog
+	<MyDialog
 		v-model="deleteDialog"
-		maxWidth="400"
+		title="Confirm Delete"
+		confirmBtnColor="errorDark"
+		confirmBtnLabel="Delete"
+		@confirmed="deleteTemplate"
 	>
-		<VCard>
-			<VCardTitle>Confirm Delete</VCardTitle>
-			<VCardText>
-				Are you sure you want to delete "{{ templateToDelete?.name }}"?
-				This action cannot be undone.
-			</VCardText>
-			<VCardActions>
-				<VSpacer/>
-				<VBtn
-					variant="text"
-					@click="deleteDialog = false"
-				>
-					Cancel
-				</VBtn>
-				<VBtn
-					color="error"
-					variant="text"
-					@click="deleteTemplate"
-				>
-					Delete
-				</VBtn>
-			</VCardActions>
-		</VCard>
-	</VDialog>
+		Are you sure you want to delete "{{ templateToDelete?.name }}"?
+		This action cannot be undone.
+	</MyDialog>
 </VContainer>
 </template>
 
@@ -160,7 +117,9 @@ import {useRouter} from 'vue-router'
 import {useTaskPlannerDayTemplateTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import type {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
-import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue'
+import TemplateDetailsDialog from '@/components/dayPlanner/template/TemplateDetailsDialog.vue'
+import MyDialog from '@/components/dialogs/MyDialog.vue'
+import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue';
 
 const router = useRouter()
 const {fetchAll, create, update, deleteEntity} = useTaskPlannerDayTemplateTaskCrud()
@@ -169,7 +128,6 @@ const templates = ref<TaskPlannerDayTemplate[]>([])
 const dialog = ref(false)
 const deleteDialog = ref(false)
 const templateToDelete = ref<TaskPlannerDayTemplate | null>(null)
-const templateForm = ref<InstanceType<typeof TaskPlannerDayTemplateDetailsForm> | null>(null)
 const editingTemplateId = ref<number | null>(null)
 const editingTemplate = ref<TaskPlannerDayTemplate | null>(null)
 

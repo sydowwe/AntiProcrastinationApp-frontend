@@ -5,8 +5,6 @@ export class ActivityRequest {
 	            public roleId: number | null = null,
 	            public categoryId: number | null = null,
 	            public isUnavoidable: boolean = false,
-	            public isOnToDoList: boolean = false,
-	            public toDoListUrgencyId: number | null = null
 	) {
 	}
 
@@ -14,12 +12,11 @@ export class ActivityRequest {
 		const {
 			name = '',
 			text = '',
-			isOnToDoList = false,
 			isUnavoidable = false,
 			roleId = 0,
 			categoryId = 0
 		} = object;
-		return new ActivityRequest(name, text, isOnToDoList, isUnavoidable, roleId, categoryId);
+		return new ActivityRequest(name, text, isUnavoidable, roleId, categoryId);
 	}
 }
 

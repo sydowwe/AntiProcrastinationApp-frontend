@@ -1,77 +1,79 @@
 <!-- DayPlanner.vue - Unified day planner component for both regular and template views -->
 <template>
-<VCard class="w-100 h-100 d-flex flex-column">
-	<!-- Header slot - each view provides its own header -->
-	<slot name="header" :store="plannerStore">
-		<!-- Default header for template views -->
-		<VCardTitle class="px-5 pb-2 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
-			<div class="d-flex align-center ga-3">
-				<span class="text-h5">{{ title }}</span>
-				<slot name="headerPrepend"></slot>
+<div>
+
+	<VCard class="w-100 h-100 d-flex flex-column">
+		<!-- Header slot - each view provides its own header -->
+		<slot name="header" :store="plannerStore">
+			<!-- Default header for template views -->
+			<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
+				<div class="d-flex align-center ga-3">
+					<span class="text-h5">{{ title }}</span>
+					<slot name="headerPrepend"></slot>
+				</div>
+
+				<TimeRangePicker
+					startIcon="sun"
+					endIcon="moon"
+					v-model:start="plannerStore.viewStartTime"
+					v-model:end="plannerStore.viewEndTime"
+				/>
+
+				<div class="d-flex ga-2 align-center flex-wrap">
+					<VBtn
+						color="primary"
+						@click="plannerStore.openCreateDialogEmpty"
+						prependIcon="plus"
+					>
+						Add New Task
+					</VBtn>
+				</div>
+			</VCardTitle>
+		</slot>
+
+		<VCardText class="pa-3 pa-md-4 flex-fill d-flex flex-column ga-4">
+			<div class="calendar-grid flex-fill">
+
+				<!-- Time Column -->
+				<PlannerTimeColumn/>
+
+				<!-- Tasks Column with task block slot -->
+				<PlannerTasksColumn>
+					<template #task-block="{ task, onResizeStart }">
+						<!-- Default slot for task blocks - each view provides its own TaskBlock component -->
+						<slot name="task-block" :task="task" :onResizeStart="onResizeStart">
+
+						</slot>
+					</template>
+				</PlannerTasksColumn>
+
+				<slot name="action-bar"></slot>
+				<!-- Floating Selection Action Bar -->
+				<SelectionActionBar>
+					<slot name="selection-actions" :store="plannerStore"></slot>
+				</SelectionActionBar>
 			</div>
 
-			<TimeRangePicker
-				startIcon="sun"
-				endIcon="moon"
-				v-model:start="plannerStore.viewStartTime"
-				v-model:end="plannerStore.viewEndTime"
-			/>
+			<!-- Legend slot - optional for future use -->
+			<!--		<slot name="legend">-->
+			<!--			<div class="calendar-legend">-->
+			<!--			</div>-->
+			<!--		</slot>-->
+		</VCardText>
+	</VCard>
 
-			<div class="d-flex ga-2 align-center flex-wrap">
-				<VBtn
-					color="primary"
-					@click="plannerStore.openCreateDialogEmpty"
-					prependIcon="plus"
-				>
-					Add New Task
-				</VBtn>
-			</div>
-		</VCardTitle>
-	</slot>
+	<!-- Delete Confirmation Dialog -->
+	<MyDialog
+		title="Delete confirmation"
+		:text="deleteConfirmationText"
+		v-model="plannerStore.deleteDialog"
+		@confirmed="emit('delete')"
+		confirmBtnColor="error"
+	/>
 
-	<VCardText class="pa-3 pa-md-4 flex-fill d-flex flex-column ga-4">
-		<div class="calendar-grid flex-fill">
-
-			<!-- Time Column -->
-			<PlannerTimeColumn/>
-
-			<!-- Tasks Column with task block slot -->
-			<PlannerTasksColumn>
-				<template #task-block="{ task, onResizeStart }">
-					<!-- Default slot for task blocks - each view provides its own TaskBlock component -->
-					<slot name="task-block" :task="task" :onResizeStart="onResizeStart">
-
-					</slot>
-				</template>
-			</PlannerTasksColumn>
-
-			<slot name="action-bar"></slot>
-			<!-- Floating Selection Action Bar -->
-			<SelectionActionBar>
-				<slot name="selection-actions" :store="plannerStore"></slot>
-			</SelectionActionBar>
-		</div>
-
-		<!-- Legend slot - optional for future use -->
-		<!--		<slot name="legend">-->
-		<!--			<div class="calendar-legend">-->
-		<!--			</div>-->
-		<!--		</slot>-->
-	</VCardText>
-</VCard>
-
-<!-- Delete Confirmation Dialog -->
-<MyDialog
-	title="Delete confirmation"
-	:text="deleteConfirmationText"
-	v-model="plannerStore.deleteDialog"
-	@confirmed="emit('delete')"
-	confirmBtnColor="error"
-/>
-
-<!-- Dialog slot - each view provides its own dialog (TaskDialog vs PlannerTaskTemplateDialog) -->
-<slot name="dialog" :store="plannerStore"/>
-
+	<!-- Dialog slot - each view provides its own dialog (TaskDialog vs PlannerTaskTemplateDialog) -->
+	<slot name="dialog" :store="plannerStore"/>
+</div>
 </template>
 
 <script setup lang="ts"

@@ -3,7 +3,7 @@
 	<slot>
 		<div class="d-flex align-center ga-2 text-overline mb-1">
 			<VIcon :icon="icon" size="14" :color/>
-			<span :style="`color: rgb(var(--v-theme-${color}))`">Notes</span>
+			<span :style="`color: rgb(var(--v-theme-${color}))`">{{ title }}</span>
 		</div>
 		<p class="text-body-2 text-white ma-0" style="white-space: pre-wrap">{{ text }}</p>
 	</slot>

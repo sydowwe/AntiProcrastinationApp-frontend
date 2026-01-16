@@ -1,21 +1,21 @@
 <template>
 <VDialog v-model="dialog" :persistent="persistent" :eager="eager" scrollable :maxWidth>
-	<VCard class="pa-2" color="surface">
-		<VCardTitle v-if="hasHeader">
+	<VCard class="pa-6" color="surface">
+		<VCardTitle class="mb-1 px-0" v-if="hasHeader">
 			<slot name="header">
-				<div class="text-h5 text-center mt-3 mb-1">
+				<div class="text-h5">
 					{{ title }}
 				</div>
 			</slot>
 		</VCardTitle>
-		<VCardText class="py-2">
+		<VCardText class="px-0 py-4">
 			<slot>
 						<span class="text-center">
 							{{ text }}
 						</span>
 			</slot>
 		</VCardText>
-		<VCardActions v-if="hasFooter" class="d-flex ga-4 justify-end ma-2">
+		<VCardActions v-if="hasFooter" class="d-flex ga-4 justify-end pt-3 px-0">
 			<slot name="footer">
 				<slot name="leftButton">
 					<VBtn v-if="hasCloseBtn" color="secondaryOutline" @click="onCloseBtnClick" variant="outlined" type="button">
