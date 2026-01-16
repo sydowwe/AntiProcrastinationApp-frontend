@@ -121,7 +121,7 @@
 									<!-- Notes -->
 									<div v-if="dayData.notes" class="cell-info notes secondary-info">
 										<VIcon icon="fas fa-note-sticky" size="small" class="mr-1"/>
-										<span class="text-truncate info-text">{{ dayData.notes }}</span>
+										<span class="info-text">{{ dayData.notes }}</span>
 									</div>
 								</div>
 							</template>
@@ -370,6 +370,7 @@ fetchCalendarData()
 	flex-direction: column;
 	height: 100%;
 	min-height: 0;
+	background-color: rgb(var(--v-theme-surface));
 }
 
 .calendar-header {
@@ -378,6 +379,7 @@ fetchCalendarData()
 	border-bottom: 2px solid rgb(var(--v-theme-neutral-400));
 	background-color: rgb(var(--v-theme-surface));
 	flex-shrink: 0;
+	padding-right: 15px;
 }
 
 .day-header {
@@ -403,7 +405,7 @@ fetchCalendarData()
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-	overflow-y: hidden;
+	overflow-y: auto;
 	overflow-x: hidden;
 	min-height: 0;
 }
@@ -412,7 +414,7 @@ fetchCalendarData()
 	display: grid;
 	grid-template-columns: repeat(var(--calendar-columns, 7), 1fr);
 	flex: 1;
-	min-height: 150px;
+	min-height: 220px;
 }
 
 .day-cell {
@@ -467,7 +469,7 @@ fetchCalendarData()
 
 /* Cell header */
 .cell-header {
-	padding: 10px 12px;
+	padding: 6px 6px 6px 10px;
 	border-bottom: 2px solid rgba(var(--v-border-color), 0.25);
 	flex-shrink: 0;
 	background: linear-gradient(to bottom, rgba(var(--v-theme-surface), 0.8), transparent);
@@ -561,10 +563,10 @@ fetchCalendarData()
 	max-width: 100%;
 }
 
-.cell-info .text-truncate {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.cell-info .info-text {
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	white-space: normal;
 }
 
 /* Dynamic column count based on visibility mode */

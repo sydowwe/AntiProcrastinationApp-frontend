@@ -20,7 +20,7 @@ import {fab} from '@fortawesome/free-brands-svg-icons'
 import 'vuetify/styles'
 import {createVuetify} from 'vuetify'
 import * as components from 'vuetify/components'
-import {VAutocomplete, VBtn, VSelect} from 'vuetify/components'
+import {VAutocomplete, VBtn, VIcon, VSelect} from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import {createVueI18nAdapter} from "vuetify/locale/adapters/vue-i18n";
 
@@ -94,6 +94,7 @@ export const vuetify = createVuetify({
 		VIdSelect: VSelect,
 		VIdAutocomplete: VAutocomplete,
 		VIconBtn: VBtn,
+		VIconSmall: VIcon,
 	},
 	defaults: {
 		VCardActions: {
@@ -117,7 +118,7 @@ export const vuetify = createVuetify({
 		VMaskInput: {variant: 'outlined', clearable: true, density: 'comfortable'},
 		VCheckbox: {density: 'comfortable'},
 		VIconBtn: {rounded: ''},
-		VIcon: {size: '16'},
+		VIconSmall: {size: '16'},
 	},
 	theme: {
 		defaultTheme: 'dark',

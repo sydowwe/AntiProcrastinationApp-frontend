@@ -1,17 +1,45 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
 <div class="d-flex flex-column flex-md-row ga-4 w-100 h-100">
-	<TaskPlannerDayTemplateDetailsForm
-		v-model="detailsHidden"
-		:template="currentTemplate"
-		@updateDetails="updateDetails"
-	/>
+	<VCard v-if="!detailsHidden" class="d-flex flex-column details-form" elevation="2">
+		<VCardTitle class="pt-5 px-5 pb-0 d-flex justify-space-between align-center">
+			<span class="text-grey-lighten-1">Template details</span>
+			<VIconBtn
+				color="secondaryOutline"
+				icon="xmark"
+				@click="detailsHidden = !detailsHidden"
+				variant="tonal"
+				size="40"
+			>
+				<VIcon size="24"></VIcon>
+			</VIconBtn>
+		</VCardTitle>
+		<VCardText class="flex-fill py-6">
+			<TaskPlannerDayTemplateDetailsForm
+				ref="detailsForm"
+				:isHidden="detailsHidden"
+				@onHide="detailsHidden = true"
+				:template="currentTemplate"
+				@updateDetails="updateDetails"
+				:isInDialog="false"
+			/>
+		</VCardText>
+		<VCardActions class="pa-5">
+			<VBtn
+				block
+				color="primary"
+				@click="updateDetails"
+			>
+				Update details
+			</VBtn>
+		</VCardActions>
+	</VCard>
+
 
 	<DayPlanner
 		class="flex-fill"
 		:plannerStore="store"
 		:title="store.templateName || 'Day Template'"
-		conflictMessage="Task conflicts with existing schedule!"
 		@delete="del"
 	>
 		<!-- Edit details button -->
@@ -57,12 +85,8 @@ import {useTaskPlannerDayTemplateTaskCrud, useTemplatePlannerTaskCrud} from '@/c
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest'
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue';
-import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
-
-const route = useRoute()
-const templateId = computed(() => route.params.templateId ? parseInt(route.params.templateId as string) : null)
 
 const {
 	createWithResponse: createTaskWithResponse,
@@ -75,8 +99,12 @@ const {
 
 const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
-
 provide('plannerStore', store)
+
+const detailsForm = ref<InstanceType<typeof TaskPlannerDayTemplateDetailsForm>>()
+
+const route = useRoute()
+const templateId = computed(() => route.params.templateId ? parseInt(route.params.templateId as string) : null)
 
 const currentTemplate = ref<TaskPlannerDayTemplate | null>(null)
 const detailsHidden = ref(false)
@@ -107,10 +135,13 @@ async function loadTasks() {
 	store.initializeTaskGridPositions()
 }
 
-async function updateDetails(request: TaskPlannerDayTemplateRequest): Promise<void> {
-	if (templateId.value) {
-		await update(templateId.value, request)
-		await loadTemplateDetails()
+async function updateDetails(): Promise<void> {
+	const request = await detailsForm.value?.validateAndGetData()
+	if (request) {
+		if (templateId.value) {
+			await update(templateId.value, request)
+			await loadTemplateDetails()
+		}
 	}
 }
 

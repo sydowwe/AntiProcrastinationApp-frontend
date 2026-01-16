@@ -213,6 +213,8 @@ const EN = {
         hide: `Hide`,
         show: `Show`,
         confirm: `Confirm`,
+        new: `New`,
+        update: `Update`,
 
     },
     dateTime: {

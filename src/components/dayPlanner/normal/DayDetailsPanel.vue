@@ -93,7 +93,7 @@
 			<span class="section-label">Day Info</span>
 		</div>
 
-		<SubtleCard v-if="calendar?.holidayName" title="Holiday name" color="errorDark" :text="calendar.holidayName" icon="gift"></SubtleCard>
+		<SubtleCard v-if="calendar?.holidayName" title="Holiday name" color="error" :text="calendar.holidayName" icon="gift"></SubtleCard>
 
 		<SubtleCard v-if="calendar?.weather" title="Weather" color="info" :text="calendar.weather" icon="cloud-sun"></SubtleCard>
 

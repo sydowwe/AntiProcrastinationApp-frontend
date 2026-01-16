@@ -9,14 +9,12 @@
 	<VListItemTitle class="text-white">{{ alarm.activity.name }}</VListItemTitle>
 	<VListItemSubtitle class="text-white">{{ alarm.activity.text }}</VListItemSubtitle>
 	<template v-slot:append class="align-center">
-		<VIcon v-if="isSelected">
-			<FontAwesomeIcon icon="fas fa-check-circle" class="text-info"></FontAwesomeIcon>
+		<VIcon icon="check-circle" v-if="isSelected">
 		</VIcon>
 		<v-menu location="start" transition="slide-y-transition">
 			<template v-slot:activator="{ props }">
 				<v-btn icon v-bind="props" color="white" variant="text" class="py-2 px-4">
-					<VIcon>
-						<FontAwesomeIcon icon="fas fa-ellipsis-vertical"></FontAwesomeIcon>
+					<VIcon icon="ellipsis-vertical">
 					</VIcon>
 				</v-btn>
 			</template>
@@ -24,8 +22,7 @@
 				<VListItem class="px-3" v-for="(item, i) in actions" :key="i">
 					<VBtn class="px-3" :color="item.color" width="100%" @click="item.action">
 						{{ actionButtonText(item.name) }}
-						<VIcon class="ml-2" slot="append">
-							<FontAwesomeIcon :icon="['fas', `${item.icon}`]"></FontAwesomeIcon>
+						<VIcon :icon="item.icon" class="ml-2" slot="append">
 						</VIcon>
 					</VBtn>
 				</VListItem>

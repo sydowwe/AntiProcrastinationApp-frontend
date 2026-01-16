@@ -6,31 +6,29 @@
 	maxWidth="600px"
 >
 	<VForm ref="form" @submit="save" validate-on="submit">
-		<VRow>
+		<div class="d-flex flex-column ga-4">
 			<!-- Wake-up and Bed Time -->
-			<VCol class="d-flex justify-center" cols="12">
+			<div class="d-flex justify-center">
 				<TimeRangePicker
 					v-model:start="data.wakeUpTime"
 					v-model:end="data.bedTime"
 					startIcon="sun"
 					endIcon="moon"
 				/>
-			</VCol>
+			</div>
 
 			<!-- Label -->
-			<VCol cols="12">
-				<VTextField
-					v-model="data.label"
-					label="Day Label"
-					prependIcon="tag"
-					placeholder="e.g., Project Deadline, Birthday..."
-					clearable
-					hideDetails
-				/>
-			</VCol>
+			<VTextField
+				v-model="data.label"
+				label="Day Label"
+				prependIcon="tag"
+				placeholder="e.g., Project Deadline, Birthday..."
+				clearable
+				hideDetails
+			/>
 
-			<!-- Day Type -->
-			<VCol cols="12" sm="6">
+			<!-- Day Type & Weather -->
+			<div class="d-flex ga-4">
 				<VSelect
 					v-model="data.dayType"
 					label="Day Type"
@@ -38,10 +36,6 @@
 					prependIcon="calendar-day"
 					hideDetails
 				/>
-			</VCol>
-
-			<!-- Weather -->
-			<VCol cols="12" sm="6">
 				<VTextField
 					v-model="data.weather"
 					label="Weather"
@@ -50,26 +44,24 @@
 					clearable
 					hideDetails
 				/>
-			</VCol>
+			</div>
 
 			<!-- Notes -->
-			<VCol cols="12">
-				<VTextarea
-					v-model="data.notes"
-					label="Notes"
-					prependIcon="note-sticky"
-					rows="4"
-					autoGrow
-					placeholder="Add any notes about this day..."
-				/>
-			</VCol>
-		</VRow>
+			<VTextarea
+				v-model="data.notes"
+				label="Notes"
+				prependIcon="note-sticky"
+				rows="4"
+				autoGrow
+				placeholder="Add any notes about this day..."
+			/>
+		</div>
 	</VForm>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
-import {ref, watch, computed} from 'vue'
+import {computed, ref, watch} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {VForm} from 'vuetify/components'
