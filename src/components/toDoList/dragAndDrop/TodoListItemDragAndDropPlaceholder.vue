@@ -1,14 +1,14 @@
 <template>
 <VListItem
 	class="empty-item-placeholder" :class="isFirst ? 'empty-item-placeholder-top' : ''"
-	variant="outlined"
+	variant="outlined" baseColor="primaryOutline"
 >
 	<template v-slot:prepend>
 		<VListItemAction start>
-			<VIcon icon="plus" size="20" color="primary"/>
+			<VIcon icon="plus" size="20"/>
 		</VListItemAction>
 	</template>
-	<VListItemTitle class="text-primary font-weight-medium">
+	<VListItemTitle class="font-weight-medium">
 		Drop here to add item
 	</VListItemTitle>
 </VListItem>

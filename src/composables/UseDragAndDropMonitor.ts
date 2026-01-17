@@ -2,6 +2,8 @@ import {ref, onBeforeUnmount, readonly} from 'vue';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 
 const globalIsDragging = ref(false);
+const globalDraggedActivityId = ref<number | null>(null);
+const globalDraggedSourceListId = ref<number | null>(null);
 
 export function useDragAndDropMonitor() {
   let globalMonitorCleanup: (() => void) | null = null;
@@ -15,12 +17,16 @@ export function useDragAndDropMonitor() {
       onDragStart: ({source}) => {
         if (source.data.type === 'todo-item') {
           globalIsDragging.value = true;
+          globalDraggedActivityId.value = source.data.activityId as number;
+          globalDraggedSourceListId.value = source.data.listId as number;
           console.log('Global drag start:', source.data);
         }
       },
       onDrop: ({source, location}) => {
         if (source.data.type === 'todo-item') {
           globalIsDragging.value = false;
+          globalDraggedActivityId.value = null;
+          globalDraggedSourceListId.value = null;
 
           if (onCrossListDrop) {
             const sourceListId = source.data.listId;
@@ -49,6 +55,8 @@ export function useDragAndDropMonitor() {
       globalMonitorCleanup = null;
     }
     globalIsDragging.value = false;
+    globalDraggedActivityId.value = null;
+    globalDraggedSourceListId.value = null;
   };
 
   onBeforeUnmount(() => {
@@ -58,6 +66,8 @@ export function useDragAndDropMonitor() {
   return {
     setupGlobalMonitor,
     cleanup,
-    globalIsDragging: readonly(globalIsDragging)
+    globalIsDragging: readonly(globalIsDragging),
+    globalDraggedActivityId: readonly(globalDraggedActivityId),
+    globalDraggedSourceListId: readonly(globalDraggedSourceListId)
   };
 }

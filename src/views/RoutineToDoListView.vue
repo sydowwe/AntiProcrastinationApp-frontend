@@ -28,6 +28,7 @@
 					:items="group.items"
 					:isInChangeOrderMode="isInChangeOrderMode"
 					:listId="group.timePeriod.id as number"
+					:activityIds="group.items.map(item => item.activity.id)"
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="onDelete"
