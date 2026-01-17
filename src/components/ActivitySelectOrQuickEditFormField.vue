@@ -1,27 +1,29 @@
 <template>
-<div class="flex-wrap d-flex justify-space-between">
-	<VSwitch class="ml-2 mb-2 flex-wrap" color="primaryOutline" v-model="isActivityFormHidden"
-	         :label='isEdit ? `Quick edit activity` :  `Quick create activity with role "${viewName}"`'
-	         density="comfortable" hideDetails></VSwitch>
+<div>
+	<div class="flex-wrap d-flex justify-space-between">
+		<VSwitch class="ml-2 mb-2 flex-wrap" color="primaryOutline" v-model="isActivityFormHidden"
+		         :label='isEdit ? `Quick edit activity` :  `Quick create activity with role "${viewName}"`'
+		         density="comfortable" hideDetails></VSwitch>
 
-	<VSelect class="flex-1-0 mb-4 mt-2" v-if="isActivityFormHidden && isEdit" min-width="150" max-width="150" density="compact" label="Quick edit mode"
-	         v-model="quickEditMode"
-	         :items="['Overwrite', 'Clone']" hideDetails></VSelect>
-</div>
-<ActivitySelectionForm ref="activityForm"
-                       v-if="!isActivityFormHidden"
-                       v-model:activityId="selectedActivityId"
-                       :showFromToDoListField="false"
-                       :formDisabled="false"
-                       :isFilter="false"
-                       isInDialog
-                       :selectOptionsSource="ActivityOptionsSource.ALL"
-></ActivitySelectionForm>
-<div v-else class="d-flex flex-column ga-4 pt-3">
-	<VTextField :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
-	<VTextarea :label="$t('general.text')" v-model="activityFormFieldData.text" rows="2"></VTextarea>
-	<VIdSelect class="mb-3" density="compact" :label="$t('activities.category')" v-model="activityFormFieldData.categoryId" :items="categoryOptions"
-	           hide-details></VIdSelect>
+		<VSelect class="flex-1-0 mb-4 mt-2" v-if="isActivityFormHidden && isEdit" min-width="150" max-width="150" density="compact" label="Quick edit mode"
+		         v-model="quickEditMode"
+		         :items="['Overwrite', 'Clone']" hideDetails></VSelect>
+	</div>
+	<ActivitySelectionForm ref="activityForm"
+	                       v-if="!isActivityFormHidden"
+	                       v-model:activityId="selectedActivityId"
+	                       :showFromToDoListField="false"
+	                       :formDisabled="false"
+	                       :isFilter="false"
+	                       isInDialog
+	                       :selectOptionsSource="ActivityOptionsSource.ALL"
+	></ActivitySelectionForm>
+	<div v-else class="d-flex flex-column ga-4 pt-3">
+		<VTextField :label="$t('general.name')+'*'" v-model="activityFormFieldData.name" required :rules="[requiredRule]"></VTextField>
+		<VTextarea :label="$t('general.text')" v-model="activityFormFieldData.text" rows="2"></VTextarea>
+		<VIdSelect class="mb-3" density="compact" :label="$t('activities.category')" v-model="activityFormFieldData.categoryId" :items="categoryOptions"
+		           hide-details></VIdSelect>
+	</div>
 </div>
 </template>
 

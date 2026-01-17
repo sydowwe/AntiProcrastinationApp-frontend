@@ -8,7 +8,7 @@
 	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit" class="d-flex flex-column">
 		<TimeRangePicker class="mx-auto pt-2 pb-6" v-model:start="data.startTime" v-model:end="data.endTime"></TimeRangePicker>
 
-		<VCard class="pa-4" color="background" rounded="lg" style="margin: 0 -8px">
+		<VCard class="pa-4" color="background" rounded="lg" style="margin: 0 -4px">
 			<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="Planner task" :isEdit></ActivitySelectOrQuickEditFormField>
 		</VCard>
 
