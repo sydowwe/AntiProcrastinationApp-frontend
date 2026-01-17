@@ -22,6 +22,7 @@
 		/>
 
 		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0" is-first></TodoListItemDragAndDropPlaceholder>
+		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && invalidDropIndicators[`0-top`] && index === 0" is-first is-invalid></TodoListItemDragAndDropPlaceholder>
 
 		<ToDoListItem
 			:toDoListItem="item"
@@ -30,7 +31,7 @@
 			:listId="listId"
 			:isDragging="dragState.draggedIndex === index"
 			@delete="deleteItem"
-			@edit="(entityToEdit: BaseToDoListItemEntity) => editItem(entityToEdit as TEntity)"
+			@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
 			@select="select"
 			@un-select="unSelect"
 			@isDoneChanged="handleIsDoneChanged"
@@ -45,34 +46,16 @@
 		/>
 
 		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"></TodoListItemDragAndDropPlaceholder>
+		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && invalidDropIndicators[`${index}-bottom`]" is-invalid></TodoListItemDragAndDropPlaceholder>
 	</div>
 
 	<!-- Empty state drop zone when list is empty -->
-	<VCard
+	<TodoListEmptyDropZone
 		v-if="items.length === 0 && isInChangeOrderMode"
 		ref="emptyDropZoneRef"
-		class="empty-drop-zone d-flex align-center justify-center"
-		:class="{
-			'is-drag-over': dragState.isEmptyZoneDraggedOver,
-			'is-invalid-drop': dragState.isEmptyZoneInvalidDrop
-		}"
-		variant="outlined"
-		:color="dragState.isEmptyZoneInvalidDrop ? 'error' : 'primary'"
-	>
-		<VCardText class="text-center">
-			<VIcon
-				:icon="dragState.isEmptyZoneInvalidDrop ? 'ban' : 'plus-circle'"
-				size="25"
-				:color="dragState.isEmptyZoneInvalidDrop ? 'error' : 'primary'"
-				class="mb-1"
-			/>
-			<div
-				:class="dragState.isEmptyZoneInvalidDrop ? 'text-error' : 'text-primary'"
-				class="font-weight-medium"
-			>{{ dragState.isEmptyZoneInvalidDrop ? 'Activity already exists' : 'Drop items here' }}
-			</div>
-		</VCardText>
-	</VCard>
+		:isDraggedOver="dragState.isEmptyZoneDraggedOver"
+		:isInvalidDrop="dragState.isEmptyZoneInvalidDrop"
+	/>
 </div>
 
 <ToDoListItemDoneDialog
@@ -83,21 +66,19 @@
 />
 </template>
 
-<script setup lang="ts" generic="TEntity extends BaseToDoListItemEntity">
+<script setup lang="ts" generic="TEntity extends IBaseToDoListItem">
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
-import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind.ts';
-import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef, watch} from 'vue';
+import {onMounted, ref, toRef} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
-import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
-import {useDragAndDropMonitor} from '@/composables/UseDragAndDropMonitor.ts';
+import TodoListEmptyDropZone from '@/components/toDoList/dragAndDrop/TodoListEmptyDropZone.vue';
+import {useTodoListDragAndDrop} from '@/composables/useTodoListDragAndDrop.ts';
 import {useAutoAnimate} from '@formkit/auto-animate/vue';
 import SubtleCard from '@/components/general/feedback/SubtleCard.vue';
-
-const crossListAnimatingIds = ref<Set<number>>(new Set());
+import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
 
 // Auto-animate controller
 const [autoParent] = useAutoAnimate({duration: 300, easing: 'ease-in-out'});
@@ -125,156 +106,11 @@ const props = defineProps({
 	}
 });
 
-// Drag and drop state
-const emptyDropZoneRef = useTemplateRef('emptyDropZoneRef');
-const dropZoneRefs = ref<{ [key: string]: HTMLElement }>({});
+// Drag and drop state - declare ref before using in composable
+const emptyDropZoneRef = ref<any>(null);
 
-
-const {setupGlobalMonitor, globalIsDragging, globalDraggedActivityId, globalDraggedSourceListId} = useDragAndDropMonitor();
-
-const isDragging = computed(() => globalIsDragging.value);
-
-const isDraggingDuplicateActivity = computed(() => {
-	if (!globalIsDragging.value || !globalDraggedActivityId.value) return false;
-	// Don't show warning if dragging within the same list
-	if (globalDraggedSourceListId.value === props.listId) return false;
-	// Show warning if this list already contains the dragged activity
-	return props.activityIds.includes(globalDraggedActivityId.value);
-});
-
-const dragState = reactive({
-	draggedIndex: null as number | null,
-	isDraggedOver: false,
-	isEmptyZoneDraggedOver: false,
-	isEmptyZoneInvalidDrop: false,
-});
-
-const dropIndicators = ref<{ [key: string]: boolean }>({});
-const invalidDropIndicators = ref<{ [key: string]: boolean }>({});
-
-let cleanupFunctions: (() => void)[] = [];
-
-const setDropZoneRef = (el: HTMLElement | null, index: number, position: 'top' | 'bottom') => {
-	if (el) {
-		dropZoneRefs.value[`${index}-${position}`] = el;
-	}
-};
-
-// Setup drag and drop monitoring
-onMounted(() => {
-	nextTick(() => {
-		setupDragAndDrop();
-	});
-});
-
-onBeforeUnmount(() => {
-	cleanupFunctions.forEach(cleanup => cleanup());
-});
-
-watch(() => props.isInChangeOrderMode, async (newValue) => {
-	// Clean up previous setup
-	cleanupFunctions.forEach(cleanup => cleanup());
-	cleanupFunctions = [];
-
-	if (newValue) {
-		await nextTick();
-		setupDragAndDrop();
-	}
-
-	// Reset drag state
-	dragState.draggedIndex = null;
-	dragState.isDraggedOver = false;
-	dragState.isEmptyZoneDraggedOver = false;
-	dragState.isEmptyZoneInvalidDrop = false;
-
-	// Clear drop indicators
-	Object.keys(dropIndicators.value).forEach(key => {
-		dropIndicators.value[key] = false;
-	});
-	Object.keys(invalidDropIndicators.value).forEach(key => {
-		invalidDropIndicators.value[key] = false;
-	});
-});
-
-watch(() => props.items.length, async () => {
-	if (props.isInChangeOrderMode) {
-		await nextTick();
-		setupDropZones();
-		if (props.items.length === 0) {
-			setupEmptyZone();
-		}
-	}
-});
-
-const setupDragAndDrop = () => {
-	if (!props.isInChangeOrderMode) return;
-
-	console.log('Setting up drag and drop for list:', props.listId);
-
-	// Setup global monitor for cross-list drops
-	setupGlobalMonitor((sourceListId, targetListId, itemId, dropTarget) => {
-		emit('crossListDrop', sourceListId, targetListId, itemId, dropTarget);
-	});
-
-	// Setup drop zones immediately when in change order mode
-	setupDropZones();
-
-	// Setup empty zone if needed
-	if (props.items.length === 0) {
-		setupEmptyZone();
-	}
-
-	// Monitor drag operations for this specific list
-	const monitorCleanup = monitorForElements({
-		onDragStart: ({source}: { source: any }) => {
-			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
-				const index = props.items.findIndex(item => item.id === source.data.itemId);
-				dragState.draggedIndex = index;
-				console.log('Set dragged index for list', props.listId, ':', index);
-			}
-		},
-		onDrop: ({source, location}: { source: any; location: any }) => {
-			// Only handle same-list drops here
-			if (source.data.type === 'todo-item' && source.data.listId === props.listId) {
-				const dropTarget = location.current.dropTargets.find((target: any) =>
-					target.data.listId === props.listId &&
-					(target.data.type === 'drop-zone' || target.data.type === 'empty-zone')
-				);
-
-				if (dropTarget) {
-					handleSameListDrop(source, dropTarget);
-				}
-			}
-
-			// Reset drag state for this list
-			if (source.data.listId === props.listId) {
-				dragState.draggedIndex = null;
-			}
-			dragState.isEmptyZoneDraggedOver = false;
-			dragState.isEmptyZoneInvalidDrop = false;
-
-			// Clear all drop indicators with animation delay
-			Object.keys(dropIndicators.value).forEach(key => {
-				dropIndicators.value[key] = false;
-			});
-			Object.keys(invalidDropIndicators.value).forEach(key => {
-				invalidDropIndicators.value[key] = false;
-			});
-		},
-	});
-
-	cleanupFunctions.push(monitorCleanup);
-};
-
-
-const handleSameListDrop = (source: any, dropTarget: any) => {
-	const itemId = source.data.itemId as number;
-	const sourceIndex = props.items.findIndex(item => item.id === itemId);
-
-	if (dropTarget.data.type === 'drop-zone') {
-		const targetIndex = dropTarget.data.index as number;
-		const position = dropTarget.data.position as 'top' | 'bottom';
-
+function handleSameListDrop(sourceIndex: number, targetIndex: number, itemId: number, dropType: 'drop-zone' | 'empty-zone', position?: 'top' | 'bottom') {
+	if (dropType === 'drop-zone' && position) {
 		let finalIndex = targetIndex;
 
 		if (position === 'bottom') {
@@ -298,7 +134,7 @@ const handleSameListDrop = (source: any, dropTarget: any) => {
 
 			emit('itemsReordered', sourceIndex, finalIndex, request);
 		}
-	} else if (dropTarget.data.type === 'empty-zone') {
+	} else if (dropType === 'empty-zone') {
 		const followingItem = props.items.length > 1 ? props.items[0] : null;
 
 		const request = new ChangeDisplayOrderRequest(
@@ -309,159 +145,34 @@ const handleSameListDrop = (source: any, dropTarget: any) => {
 
 		emit('itemsReordered', sourceIndex, 0, request);
 	}
-};
-
-const setupDropZones = () => {
-	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
-		const [indexStr, position] = key.split('-');
-		const index = parseInt(indexStr ?? '');
-
-		if (element) {
-			const cleanup = dropTargetForElements({
-				element,
-				canDrop: ({source}) => {
-					if (source.data.type !== 'todo-item') return false;
-
-					// Allow drops within the same list
-					if (source.data.listId === props.listId) return true;
-
-					// For cross-list drops, check if activity already exists
-					const activityId = source.data.activityId as number;
-					return !props.activityIds.includes(activityId);
-				},
-				getData: () => ({
-					type: 'drop-zone',
-					index,
-					position,
-					listId: props.listId
-				}),
-				onDragEnter: ({source}) => {
-					const activityId = source.data.activityId as number;
-					const isInvalid = source.data.listId !== props.listId && props.activityIds.includes(activityId);
-
-					if (isInvalid) {
-						invalidDropIndicators.value[key] = true;
-					} else {
-						dropIndicators.value[key] = true;
-					}
-				},
-				onDragLeave: () => {
-					dropIndicators.value[key] = false;
-					invalidDropIndicators.value[key] = false;
-				},
-			});
-
-			cleanupFunctions.push(cleanup);
-		}
-	});
-};
-
-const updateDropZonePositions = () => {
-	if (!isDragging.value) return;
-
-	Object.entries(dropZoneRefs.value).forEach(([key, element]) => {
-			const [indexStr, position] = key.split('-');
-			const index = parseInt(indexStr ?? '');
-
-			if (!element) return;
-
-			const container = element.closest('.todo-item-container');
-			const item = container?.querySelector('.v-list-item:not(.empty-item-placeholder)');
-			if (!item || !container) return;
-
-			const itemRect = item.getBoundingClientRect();
-			const itemHeight = itemRect.height;
-			const heightExtension = dropIndicators.value[key] ? 50 : 0;
-
-			const isFirst = index === 0;
-			const isLast = index === props.items.length - 1;
-			const isTop = position === 'top';
-
-			const isEdgeZone = (isFirst && isTop) || isLast;
-			const gapHeight = 20 + (isEdgeZone ? 4 : 0);
-
-			const height = (isEdgeZone ? itemHeight / 2 : itemHeight) + gapHeight + heightExtension;
-			element.style.height = `${height}px`;
-
-			if (isFirst && isTop) {
-				element.style.top = `-${gapHeight}px`;
-			} else if (isFirst) {
-				element.style.bottom = `-${itemHeight / 2 + gapHeight}px`;
-			} else {
-				element.style.top = `${itemHeight / 2}px`;
-			}
-		}
-	)
 }
 
-watch(() => globalIsDragging.value, async (newValue) => {
-	if (newValue && props.isInChangeOrderMode) {
-		await nextTick();
-		setupDropZones();
-		if (props.items.length === 0) {
-			setupEmptyZone();
-		} else {
-			updateDropZonePositions();
-		}
-	}
+function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
+	emit('crossListDrop', sourceListId, targetListId, itemId, dropTarget);
+}
+
+const {
+	isDragging,
+	isDraggingDuplicateActivity,
+	dragState,
+	dropIndicators,
+	invalidDropIndicators,
+	setDropZoneRef,
+	setupDragAndDrop,
+} = useTodoListDragAndDrop({
+	items: toRef(props, 'items'),
+	listId: toRef(props, 'listId'),
+	activityIds: toRef(props, 'activityIds'),
+	isInChangeOrderMode: toRef(props, 'isInChangeOrderMode'),
+	emptyDropZoneRef,
+	onSameListDrop: handleSameListDrop,
+	onCrossListDrop: handleCrossListDrop,
 });
 
-// Watch for drop indicator changes and update positions
-watch(() => dropIndicators.value, () => {
-	nextTick(() => {
-		updateDropZonePositions();
-	});
-}, {deep: true});
-
-// Handle drag state changes
-watch(() => dragState.draggedIndex, async (newValue, oldValue) => {
-	if (newValue !== null && oldValue === null) {
-		await nextTick();
-		setupDropZones();
-		updateDropZonePositions();
-	} else if (newValue === null && oldValue !== null) {
-		Object.keys(dropIndicators.value).forEach(key => {
-			dropIndicators.value[key] = false;
-		});
-	}
+// Setup drag and drop monitoring
+onMounted(() => {
+	setupDragAndDrop();
 });
-
-const setupEmptyZone = () => {
-	if (!emptyDropZoneRef.value?.$el) return;
-	const cleanup = dropTargetForElements({
-		element: emptyDropZoneRef.value?.$el,
-		canDrop: ({source}) => {
-			if (source.data.type !== 'todo-item') return false;
-
-			// Allow drops within the same list
-			if (source.data.listId === props.listId) return true;
-
-			// For cross-list drops, check if activity already exists
-			const activityId = source.data.activityId as number;
-			return !props.activityIds.includes(activityId);
-		},
-		getData: () => ({
-			type: 'empty-zone',
-			listId: props.listId,
-		}),
-		onDragEnter: ({source}) => {
-			const activityId = source.data.activityId as number;
-			const isInvalid = source.data.listId !== props.listId && props.activityIds.includes(activityId);
-
-			if (isInvalid) {
-				dragState.isEmptyZoneInvalidDrop = true;
-			} else {
-				dragState.isEmptyZoneDraggedOver = true;
-			}
-		},
-		onDragLeave: () => {
-			dragState.isEmptyZoneDraggedOver = false;
-			dragState.isEmptyZoneInvalidDrop = false;
-		},
-	});
-
-	cleanupFunctions.push(cleanup);
-};
 
 // Other methods not drag and drop
 const selectedItemsIds = ref([] as number[]);
@@ -484,11 +195,11 @@ function recursiveDialogsToSaveToHistory() {
 	}
 }
 
-const handleIsDoneChanged = (toDoListItem: BaseToDoListItemEntity) => {
+const handleIsDoneChanged = (toDoListItem: TEntity) => {
 	const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id);
 	if (toDoListItem.isDone) {
 		if (isBatchAction) {
-			changedItems.value = props.items.filter((item: BaseToDoListItemEntity) => selectedItemsIds.value.includes(item.id));
+			changedItems.value = props.items.filter((item: TEntity) => selectedItemsIds.value.includes(item.id));
 			recursiveDialogsToSaveToHistory();
 		} else {
 			currentDoneItem.value = toDoListItem;
@@ -533,7 +244,7 @@ const unSelect = (id: number) => {
 
 const emit = defineEmits<{
 	(e: 'itemsChanged', changedItems: number[]): void;
-	(e: 'editItem', entityToEdit: BaseToDoListItemEntity): void;
+	(e: 'editItem', entityToEdit: TEntity): void;
 	(e: 'deletedItem', id: number): void;
 	(e: 'batchDeletedItems', ids: number[]): void;
 	(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void;
@@ -584,32 +295,6 @@ const emit = defineEmits<{
 	z-index: 1000;
 	background: transparent;
 	pointer-events: auto;
-}
-
-.empty-drop-zone {
-	margin: 0 10px;
-	min-height: 120px;
-	pointer-events: auto;
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	border: 2px dashed rgba(var(--v-theme-primary), 0.3) !important;
-	background: rgba(var(--v-theme-primary), 0.02);
-}
-
-.empty-drop-zone.is-drag-over {
-	background: rgba(var(--v-theme-primary), 0.08) !important;
-	border-color: rgb(var(--v-theme-primary)) !important;
-	transform: scale(1.01);
-	box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.2),
-	inset 0 0 24px rgba(var(--v-theme-primary), 0.1);
-}
-
-.empty-drop-zone.is-invalid-drop {
-	background: rgba(var(--v-theme-error), 0.08) !important;
-	border: 2px dashed rgba(var(--v-theme-error), 0.5) !important;
-	transform: scale(1.01);
-	box-shadow: 0 4px 16px rgba(var(--v-theme-error), 0.2),
-	inset 0 0 24px rgba(var(--v-theme-error), 0.1);
-	cursor: not-allowed;
 }
 
 @keyframes fadeInScale {

@@ -1,15 +1,23 @@
 <template>
 <VListItem
-	class="empty-item-placeholder" :class="isFirst ? 'empty-item-placeholder-top' : ''"
-	variant="outlined" baseColor="primaryOutline"
+	class="empty-item-placeholder"
+	:class="{
+		'empty-item-placeholder-top': isFirst,
+		'empty-item-placeholder-invalid': isInvalid
+	}"
+	variant="outlined"
+	:baseColor="isInvalid ? 'error' : 'primaryOutline'"
 >
 	<template v-slot:prepend>
 		<VListItemAction start>
-			<VIcon icon="plus" size="20"/>
+			<VIcon
+				:icon="isInvalid ? 'ban' : 'plus'"
+				size="20"
+			/>
 		</VListItemAction>
 	</template>
 	<VListItemTitle class="font-weight-medium">
-		Drop here to add item
+		{{ isInvalid ? 'Activity already exists' : 'Drop here to add item' }}
 	</VListItemTitle>
 </VListItem>
 </template>
@@ -21,6 +29,10 @@ defineProps({
 		default: false,
 	},
 	isLast: {
+		type: Boolean,
+		default: false,
+	},
+	isInvalid: {
 		type: Boolean,
 		default: false,
 	},
@@ -49,5 +61,17 @@ defineProps({
 	border-color: rgb(var(--v-theme-primary)) !important;
 	transform: scale(1.02);
 	box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
+}
+
+.empty-item-placeholder-invalid {
+	border: 2px dashed rgba(var(--v-theme-error), 0.5) !important;
+	background: rgba(var(--v-theme-error), 0.05) !important;
+	cursor: not-allowed;
+}
+
+.empty-item-placeholder-invalid:hover {
+	background: rgba(var(--v-theme-error), 0.08) !important;
+	border-color: rgb(var(--v-theme-error)) !important;
+	box-shadow: 0 4px 12px rgba(var(--v-theme-error), 0.2);
 }
 </style>
