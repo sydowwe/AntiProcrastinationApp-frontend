@@ -34,11 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
+
+import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
 
 defineProps({
 	toDoListItem: {
-		type: Object as () => BaseToDoListItemEntity,
+		type: Object as () => IBaseToDoListItem,
 		required: true,
 	},
 	color: {
