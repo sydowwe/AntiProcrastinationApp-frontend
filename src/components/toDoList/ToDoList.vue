@@ -1,7 +1,13 @@
 <template>
 <div
-	class="todo-list" ref="autoParent"
+	class="todo-list"
+	:class="{ 'list-invalid-drop-target': isDraggingDuplicateActivity }"
+	ref="autoParent"
 >
+	<SubtleCard class="duplicate-warning-banner" v-if="isDraggingDuplicateActivity" color="error" icon="ban" title="Task already present in this list" titleCentered>
+
+	</SubtleCard>
+
 	<div
 		v-for="(item, index) in items"
 		:key="`${item.id}`"
@@ -46,13 +52,25 @@
 		v-if="items.length === 0 && isInChangeOrderMode"
 		ref="emptyDropZoneRef"
 		class="empty-drop-zone d-flex align-center justify-center"
-		:class="{ 'is-drag-over': dragState.isEmptyZoneDraggedOver }"
+		:class="{
+			'is-drag-over': dragState.isEmptyZoneDraggedOver,
+			'is-invalid-drop': dragState.isEmptyZoneInvalidDrop
+		}"
 		variant="outlined"
-		color="primary"
+		:color="dragState.isEmptyZoneInvalidDrop ? 'error' : 'primary'"
 	>
 		<VCardText class="text-center">
-			<VIcon icon="plus-circle" size="25" color="primary" class="mb-1"/>
-			<div class="text-primary font-weight-medium">Drop items here</div>
+			<VIcon
+				:icon="dragState.isEmptyZoneInvalidDrop ? 'ban' : 'plus-circle'"
+				size="25"
+				:color="dragState.isEmptyZoneInvalidDrop ? 'error' : 'primary'"
+				class="mb-1"
+			/>
+			<div
+				:class="dragState.isEmptyZoneInvalidDrop ? 'text-error' : 'text-primary'"
+				class="font-weight-medium"
+			>{{ dragState.isEmptyZoneInvalidDrop ? 'Activity already exists' : 'Drop items here' }}
+			</div>
 		</VCardText>
 	</VCard>
 </div>
@@ -77,6 +95,7 @@ import {dropTargetForElements, monitorForElements} from '@atlaskit/pragmatic-dra
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
 import {useDragAndDropMonitor} from '@/composables/UseDragAndDropMonitor.ts';
 import {useAutoAnimate} from '@formkit/auto-animate/vue';
+import SubtleCard from '@/components/general/feedback/SubtleCard.vue';
 
 const crossListAnimatingIds = ref<Set<number>>(new Set());
 
@@ -99,6 +118,10 @@ const props = defineProps({
 	listId: {
 		type: Number,
 		required: true,
+	},
+	activityIds: {
+		type: Array as () => number[],
+		required: true,
 	}
 });
 
@@ -107,17 +130,27 @@ const emptyDropZoneRef = useTemplateRef('emptyDropZoneRef');
 const dropZoneRefs = ref<{ [key: string]: HTMLElement }>({});
 
 
-const {setupGlobalMonitor, globalIsDragging} = useDragAndDropMonitor();
+const {setupGlobalMonitor, globalIsDragging, globalDraggedActivityId, globalDraggedSourceListId} = useDragAndDropMonitor();
 
 const isDragging = computed(() => globalIsDragging.value);
+
+const isDraggingDuplicateActivity = computed(() => {
+	if (!globalIsDragging.value || !globalDraggedActivityId.value) return false;
+	// Don't show warning if dragging within the same list
+	if (globalDraggedSourceListId.value === props.listId) return false;
+	// Show warning if this list already contains the dragged activity
+	return props.activityIds.includes(globalDraggedActivityId.value);
+});
 
 const dragState = reactive({
 	draggedIndex: null as number | null,
 	isDraggedOver: false,
 	isEmptyZoneDraggedOver: false,
+	isEmptyZoneInvalidDrop: false,
 });
 
 const dropIndicators = ref<{ [key: string]: boolean }>({});
+const invalidDropIndicators = ref<{ [key: string]: boolean }>({});
 
 let cleanupFunctions: (() => void)[] = [];
 
@@ -152,10 +185,14 @@ watch(() => props.isInChangeOrderMode, async (newValue) => {
 	dragState.draggedIndex = null;
 	dragState.isDraggedOver = false;
 	dragState.isEmptyZoneDraggedOver = false;
+	dragState.isEmptyZoneInvalidDrop = false;
 
 	// Clear drop indicators
 	Object.keys(dropIndicators.value).forEach(key => {
 		dropIndicators.value[key] = false;
+	});
+	Object.keys(invalidDropIndicators.value).forEach(key => {
+		invalidDropIndicators.value[key] = false;
 	});
 });
 
@@ -214,10 +251,14 @@ const setupDragAndDrop = () => {
 				dragState.draggedIndex = null;
 			}
 			dragState.isEmptyZoneDraggedOver = false;
+			dragState.isEmptyZoneInvalidDrop = false;
 
 			// Clear all drop indicators with animation delay
 			Object.keys(dropIndicators.value).forEach(key => {
 				dropIndicators.value[key] = false;
+			});
+			Object.keys(invalidDropIndicators.value).forEach(key => {
+				invalidDropIndicators.value[key] = false;
 			});
 		},
 	});
@@ -279,8 +320,14 @@ const setupDropZones = () => {
 			const cleanup = dropTargetForElements({
 				element,
 				canDrop: ({source}) => {
-					// Allow drops from any list when in change order mode
-					return source.data.type === 'todo-item';
+					if (source.data.type !== 'todo-item') return false;
+
+					// Allow drops within the same list
+					if (source.data.listId === props.listId) return true;
+
+					// For cross-list drops, check if activity already exists
+					const activityId = source.data.activityId as number;
+					return !props.activityIds.includes(activityId);
 				},
 				getData: () => ({
 					type: 'drop-zone',
@@ -288,11 +335,19 @@ const setupDropZones = () => {
 					position,
 					listId: props.listId
 				}),
-				onDragEnter: () => {
-					dropIndicators.value[key] = true;
+				onDragEnter: ({source}) => {
+					const activityId = source.data.activityId as number;
+					const isInvalid = source.data.listId !== props.listId && props.activityIds.includes(activityId);
+
+					if (isInvalid) {
+						invalidDropIndicators.value[key] = true;
+					} else {
+						dropIndicators.value[key] = true;
+					}
 				},
 				onDragLeave: () => {
 					dropIndicators.value[key] = false;
+					invalidDropIndicators.value[key] = false;
 				},
 			});
 
@@ -375,16 +430,33 @@ const setupEmptyZone = () => {
 	if (!emptyDropZoneRef.value?.$el) return;
 	const cleanup = dropTargetForElements({
 		element: emptyDropZoneRef.value?.$el,
-		canDrop: ({source}) => source.data.type === 'todo-item',
+		canDrop: ({source}) => {
+			if (source.data.type !== 'todo-item') return false;
+
+			// Allow drops within the same list
+			if (source.data.listId === props.listId) return true;
+
+			// For cross-list drops, check if activity already exists
+			const activityId = source.data.activityId as number;
+			return !props.activityIds.includes(activityId);
+		},
 		getData: () => ({
 			type: 'empty-zone',
 			listId: props.listId,
 		}),
-		onDragEnter: () => {
-			dragState.isEmptyZoneDraggedOver = true;
+		onDragEnter: ({source}) => {
+			const activityId = source.data.activityId as number;
+			const isInvalid = source.data.listId !== props.listId && props.activityIds.includes(activityId);
+
+			if (isInvalid) {
+				dragState.isEmptyZoneInvalidDrop = true;
+			} else {
+				dragState.isEmptyZoneDraggedOver = true;
+			}
 		},
 		onDragLeave: () => {
 			dragState.isEmptyZoneDraggedOver = false;
+			dragState.isEmptyZoneInvalidDrop = false;
 		},
 	});
 
@@ -477,6 +549,28 @@ const emit = defineEmits<{
 	padding: 24px 0;
 	min-height: 200px;
 	position: relative;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.todo-list.list-invalid-drop-target {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.duplicate-warning-banner {
+	animation: slideInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	z-index: 1001;
+}
+
+@keyframes slideInDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .todo-item-container {
@@ -507,6 +601,15 @@ const emit = defineEmits<{
 	transform: scale(1.01);
 	box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.2),
 	inset 0 0 24px rgba(var(--v-theme-primary), 0.1);
+}
+
+.empty-drop-zone.is-invalid-drop {
+	background: rgba(var(--v-theme-error), 0.08) !important;
+	border: 2px dashed rgba(var(--v-theme-error), 0.5) !important;
+	transform: scale(1.01);
+	box-shadow: 0 4px 16px rgba(var(--v-theme-error), 0.2),
+	inset 0 0 24px rgba(var(--v-theme-error), 0.1);
+	cursor: not-allowed;
 }
 
 @keyframes fadeInScale {

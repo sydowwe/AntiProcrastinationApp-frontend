@@ -71,20 +71,20 @@
 <DraggedItemPreview ref="dragPreviewRef" :toDoListItem :color/>
 </template>
 
-<script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
-import {type BaseToDoListItemEntity} from '@/dtos/response/base/BaseToDoListItemEntity.ts';
+<script setup lang="ts" generic="TItem extends IBaseToDoListItem">
+import {onBeforeUnmount, onMounted, type PropType, ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import {pointerOutsideOfPreview} from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
 import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue';
+import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
 
 const i18n = useI18n();
 
 const props = defineProps({
 	toDoListItem: {
-		type: Object as () => BaseToDoListItemEntity,
+		type: Object as PropType<TItem>,
 		required: true,
 	},
 	color: {
@@ -106,11 +106,11 @@ const props = defineProps({
 });
 
 const emits = defineEmits<{
-	edit: [toDoListItem: BaseToDoListItemEntity];
+	edit: [toDoListItem: TItem];
 	delete: [id: number];
 	select: [id: number];
 	unSelect: [id: number];
-	isDoneChanged: [toDoListItem: BaseToDoListItemEntity];
+	isDoneChanged: [toDoListItem: TItem];
 }>();
 
 const isSelected = ref(false);
@@ -152,6 +152,7 @@ const setupDraggable = () => {
 		getInitialData: () => ({
 			type: 'todo-item',
 			itemId: props.toDoListItem.id,
+			activityId: props.toDoListItem.activity.id,
 			listId: props.listId,
 		}),
 		onGenerateDragPreview: ({nativeSetDragImage}) => {
