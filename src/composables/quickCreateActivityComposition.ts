@@ -27,11 +27,11 @@ export function useQuickCreateActivity(viewName: string) {
 
 	async function quickCreateActivity() {
 		const roleId = await getQuickCreateActivityRoleIdByView();
-		const activityRequest = new ActivityRequest(dto.value.name, dto.value.text, roleId, dto.value.categoryId, false, false, null);
+		const activityRequest = new ActivityRequest(dto.value.name, dto.value.text, roleId, dto.value.categoryId, false);
 		return await create(activityRequest);
 	}
 
-	//TODO upravit ze ked je ine meno tak sa spyta ci upravit pre vsetky aktivity alebo naklonovat terajsiu len so zmenenym menom pre text vzdy menit vo vsetkyc aktivitach
+	//TODO needs refresh to other activities that are using this activity
 	async function quickEditActivity(activityId: number, quickEditMode: 'Overwrite' | 'Clone') {
 		const response = await API.patch(`/activity/${activityId}/${quickEditMode}`,
 			new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId))
