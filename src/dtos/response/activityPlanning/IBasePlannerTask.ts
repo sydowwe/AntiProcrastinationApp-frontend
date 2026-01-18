@@ -13,6 +13,7 @@ export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	location: string | null;
 	notes: string | null;
 	importance: TaskImportance | null;
+	color: string;
 
 	// Grid positioning (added for UI)
 	gridRowStart: number;

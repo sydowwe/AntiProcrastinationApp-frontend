@@ -19,14 +19,14 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public location: string | null,
 		public notes: string | null,
 		public importance: TaskImportance | null,
+		public color: string,
 		public status?: TaskStatus,
-		public actualStartTime: string | null = null,
-		public actualEndTime: string | null = null,
+		public actualStartTime: Time | null = null,
+		public actualEndTime: Time | null = null,
 		public isFromTemplate?: boolean,
 		public sourceTemplateTaskId: number | null = null,
 		public skipReason: string | null = null,
 		public todolistId: number | null = null,
-		public color?: string,
 		public estimatedMinuteLength?: number,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
@@ -55,6 +55,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			templateTask.location,
 			templateTask.notes,
 			templateTask.importance,
+			templateTask.color
 		)
 	}
 
@@ -71,19 +72,23 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			json.location,
 			json.notes,
 			json.importance ? TaskImportance.fromJson(json.importance) : null,
+			json.color,
 			json.status,
-			json.actualStartTime ?? null,
-			json.actualEndTime ?? null,
+			json.actualStartTime ? Time.fromJson(json.actualStartTime) : null,
+			json.actualEndTime ? Time.fromJson(json.actualEndTime) : null,
 			json.isFromTemplate,
 			json.sourceTemplateTaskId ?? null,
 			json.skipReason ?? null,
 			json.todolistId ?? null,
-			json.color,
 			json.estimatedMinuteLength,
 
 			0,
 			0,
 			false,
 		);
+	}
+
+	static listFromJsonList(objects: any[]) {
+		return objects.map((item: object) => this.fromJson(item));
 	}
 }

@@ -32,7 +32,7 @@
 		</template>
 
 		<template #action-bar>
-			<UseTemplateActionBar></UseTemplateActionBar>
+			<UseTemplateActionBar @applyTemplate="applyTemplate"></UseTemplateActionBar>
 		</template>
 
 		<!-- Toggle Done button for selection action bar -->
@@ -55,15 +55,15 @@
 			/>
 		</template>
 	</DayPlanner>
+	<!-- Calendar Details Dialog -->
+	<CalendarDetailsDialog
+		v-model="calendarDetailsDialog"
+		:calendar="calendar"
+		@updated="updatedCalendar"
+	/>
 </div>
-
-<!-- Calendar Details Dialog -->
-<CalendarDetailsDialog
-	v-model="calendarDetailsDialog"
-	:calendar="calendar"
-	@updated="updatedCalendar"
-/>
 </template>
+
 
 <script setup lang="ts">
 import {computed, onMounted, provide, ref, watch} from 'vue'
@@ -75,15 +75,19 @@ import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetail
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useCalendarQuery, useTaskPlannerCrud, useTemplatePlannerTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
-import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
-import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
+import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue';
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue';
+import {ApplyTemplateToTaskPlannerRequest} from '@/dtos/request/activityPlanning/ApplyTemplateToTaskPlannerRequest.ts';
+import {API} from '@/plugins/axiosConfig.ts';
+import type {ApplyTemplateConflictResolution} from '@/dtos/enum/ApplyTemplateConflictResolution.ts';
+import {ApplyTemplatePlannerTaskResponse} from '@/dtos/response/activityPlanning/ApplyTemplatePlannerTaskResponse.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, batchDelete, fetchFiltered} = useTaskPlannerCrud()
@@ -128,9 +132,25 @@ async function templatePreview() {
 		Object.assign(store.viewStartTime, store.templateInPreview.defaultWakeUpTime)
 		Object.assign(store.viewEndTime, store.templateInPreview.defaultBedTime);
 		store.tasksFromTemplate = (await fetchTemplateTasks(new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime))).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
+		store.tasks = store.tasks.filter(t => t.id > 0)
 		store.tasks.push(...store.tasksFromTemplate)
 		store.initializeTaskGridPositions()
 	}
+}
+
+async function applyTemplate(conflictResolution: ApplyTemplateConflictResolution, hourOffset: number) {
+	if (!store.templateInPreview) {
+		throw new Error('No template selected')
+	}
+	const tasksIncluded = store.tasks.filter(t => t.id < 0).map(t => PlannerTaskRequest.fromEntity(t))
+	const request = new ApplyTemplateToTaskPlannerRequest(store.templateInPreview.id, calendar.value!.id, conflictResolution, tasksIncluded)
+	const json = await API.post('calendar/apply-planner-template', request)
+	const response = ApplyTemplatePlannerTaskResponse.fromJson(json.data)
+
+	store.resetStore()
+	calendar.value = response.calendar
+	store.tasks = response.tasks
+	store.initializeTaskGridPositions()
 }
 
 // CRUD operations
@@ -232,6 +252,7 @@ watch([() => store.viewStartTime, () => store.viewEndTime], () => {
 
 // Watch for date changes to reload tasks
 watch(() => store.viewedDate, () => {
+	store.resetStore()
 	loadTasks()
 }, {deep: true})
 </script>

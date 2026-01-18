@@ -383,6 +383,10 @@ const EN = {
         quickCreatePlannerActivity: `Quick create planner activity`,
         quickEditPlannerActivity: `Quick edit activity`,
         importance: `Importance`,
+        ignore: `Ignore`,
+        overwrite: `Overwrite`,
+        mergeIgnore: `Merge and ignore`,
+        mergeOverwrite: `Merge and overwrite`,
     }
 }
 export default EN

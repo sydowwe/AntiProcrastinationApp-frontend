@@ -1,5 +1,5 @@
 <template>
-<ActionBar :isShown="store.isTemplateInPreview" @cancel="store.cancelTemplatePreview">
+<ActionBar class="py-3" :isShown="store.isTemplateInPreview" @cancel="store.cancelTemplatePreview">
 	<template v-if="store.selectedTaskIds.size > 0">
 		<span class="text-textMuted font-weight-medium selection-count" style="font-size: 1rem; line-height: 1.2rem;">
 			{{ store.selectedTaskIds.size }} selected
@@ -32,14 +32,14 @@
 		></VNumberInput>
 	</template>
 
-	<!-- Slot for view-specific actions (e.g., Toggle Done) -->
-	<slot name="actions" :store="store"></slot>
+	<VSelect label="Conflict resolution" :items="conflictResolutionOptions" minWidth="200"
+	         density="compact" v-model="conflictResolution" hideDetails></VSelect>
 
 	<!-- Delete button -->
 	<VBtn
 		variant="tonal"
 		color="success"
-		@click="emit('applyTemplate')"
+		@click="emit('applyTemplate', conflictResolution, templateStartOffset)"
 	>
 		Apply
 	</VBtn>
@@ -50,9 +50,13 @@
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import ActionBar from '@/components/general/ActionBar.vue';
 import {ref, watch} from 'vue';
+import {ApplyTemplateConflictResolution} from '@/dtos/enum/ApplyTemplateConflictResolution.ts';
+import {getEnumSelectOptions} from '@/composables/general/EnumComposable.ts';
 
 const store = useDayPlannerStore()
 
+const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
+const conflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
 const templateStartOffset = ref<number>(0)
 
 watch(templateStartOffset, (newVal) => {
@@ -62,7 +66,7 @@ watch(templateStartOffset, (newVal) => {
 })
 
 const emit = defineEmits<{
-	applyTemplate: []
+	applyTemplate: [conflictResolution: ApplyTemplateConflictResolution, hourOffset: number]
 }>()
 </script>
 

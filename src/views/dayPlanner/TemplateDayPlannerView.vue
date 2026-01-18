@@ -202,6 +202,13 @@ async function del(): Promise<void> {
 watch([() => store.viewStartTime, () => store.viewEndTime], () => {
 	loadTasks()
 }, {deep: true})
+
+// Watch for template changes
+watch(templateId, () => {
+	store.resetStore()
+	loadTemplateDetails()
+	loadTasks()
+})
 </script>
 
 <style scoped>

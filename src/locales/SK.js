@@ -388,6 +388,10 @@ const SK = {
         quickCreatePlannerActivity: `Rýchle vytvorenie aktivity v plánovači`,
         quickEditPlannerActivity: `Rýchla úprava aktivity`,
         importance: `Dôležitosť`,
+        ignore: `Ignorovať`,
+        overwrite: `Prepísať`,
+        mergeIgnore: `Zlúčiť a ignorovať`,
+        mergeOverwrite: `Zlúčiť a prepísať`,
     }
 }
 export default SK;

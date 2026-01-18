@@ -24,7 +24,6 @@
 	@keydown.backspace="handleDeleteKey"
 	@keydown.esc="handleEscapeKey"
 >
-	<slot name="checkbox"></slot>
 	<div
 		class="resize-handle resize-handle-top"
 		@click.stop
@@ -32,56 +31,65 @@
 	/>
 
 	<div class="task-content">
-		<div class="task-title">{{ task.activity.name }}</div>
+		<div class="task-header">
+			<div class="checkbox-wrapper">
+				<slot name="checkbox"></slot>
+			</div>
+			<div class="task-main">
+				<div class="task-title">{{ task.activity.name }}</div>
 
-		<!-- Slot for time display - different for template vs regular -->
-		<slot name="time" :task="task">
-			<div class="task-time">{{ formattedTime }}</div>
-		</slot>
+				<!-- Slot for time display - different for template vs regular -->
+				<slot name="time" :task="task">
+					<div class="task-time">{{ formattedTime }}</div>
+				</slot>
+			</div>
+		</div>
 
 		<!-- Slot for additional chips/badges - different for template vs regular -->
-		<slot name="badges" :task="task">
-			<VChip
-				v-if="task.importance"
-				size="x-small"
-				variant="flat"
-				:color="task.importance.color"
-				class="task-chip"
-			>
-				{{ task.importance.text }}
-			</VChip>
+		<div class="task-badges">
+			<slot name="badges" :task="task">
+				<VChip
+					v-if="task.importance"
+					size="x-small"
+					variant="flat"
+					:color="task.importance.color"
+					class="task-chip"
+				>
+					{{ task.importance.text }}
+				</VChip>
 
-			<VChip
-				v-if="task.isOptional"
-				size="x-small"
-				variant="outlined"
-				class="task-chip"
-			>
-				Optional
-			</VChip>
+				<VChip
+					v-if="task.isOptional"
+					size="x-small"
+					variant="outlined"
+					class="task-chip"
+				>
+					Optional
+				</VChip>
 
-			<VChip
-				v-if="task.location"
-				size="x-small"
-				variant="flat"
-				prependIcon="map-marker"
-				class="task-chip"
-			>
-				{{ task.location }}
-			</VChip>
+				<VChip
+					v-if="task.location"
+					size="x-small"
+					variant="flat"
+					prependIcon="map-marker"
+					class="task-chip"
+				>
+					{{ task.location }}
+				</VChip>
 
-			<!-- Also show category if exists -->
-			<VChip
-				v-if="task.activity.category"
-				size="x-small"
-				variant="flat"
-				:prependIcon="task.activity.category.icon ?? undefined"
-				:color="task.activity.category.color ?? 'white'"
-				class="task-chip"
-			>
-				{{ task.activity.category.name }}
-			</VChip>
-		</slot>
+				<!-- Also show category if exists -->
+				<VChip
+					v-if="task.activity.category"
+					size="x-small"
+					variant="flat"
+					:prependIcon="task.activity.category.icon ?? undefined"
+					:color="task.activity.category.color ?? 'white'"
+					class="task-chip"
+				>
+					{{ task.activity.category.name }}
+				</VChip>
+			</slot>
+		</div>
 	</div>
 
 	<div
@@ -256,11 +264,31 @@ const emit = defineEmits<{
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
-	align-content: start;
-	flex-wrap: wrap;
-	row-gap: 3px;
-	column-gap: 20px;
+	gap: 4px;
+	overflow: hidden;
+}
+
+.task-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	min-height: 0;
+}
+
+.checkbox-wrapper {
+	pointer-events: auto;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	padding-top: 1px;
+}
+
+.task-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
 .task-title {
@@ -275,14 +303,21 @@ const emit = defineEmits<{
 
 .task-time {
 	font-size: 11px;
-	opacity: 1;
+	opacity: 0.9;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
+.task-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	min-height: 0;
+}
+
 .task-chip {
-	margin-top: 2px;
+	flex-shrink: 0;
 }
 
 .resize-handle {
