@@ -83,7 +83,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		}
 
 		// Create new tasks with offset times (offset is in hours, convert to minutes)
-		core.tasks.value = tasksFromTemplate.value.map(t => {
+		core.tasks.value.push(...tasksFromTemplate.value.map(t => {
 			const newStartTime = Time.fromMinutes(t.startTime.getInMinutes + offset * 60)
 			const newEndTime = Time.fromMinutes(t.endTime.getInMinutes + offset * 60)
 
@@ -94,7 +94,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 				endTime: newEndTime
 			})
 			return newTask
-		})
+		}))
 
 		core.initializeTaskGridPositions()
 	}
@@ -185,6 +185,15 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	const showActionBar = computed(() => core.selectedTasks.value.length > 0 && !isTemplateInPreview.value)
 
+	function resetStore() {
+		// Reset core state
+		core.resetStore()
+
+		// Reset template state
+		templateInPreview.value = null
+		tasksFromTemplate.value = null
+	}
+
 	return {
 		...core,
 		openEditDialog,
@@ -198,6 +207,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		tasksFromTemplate,
 		offsetTasksFromTemplate,
 		cancelTemplatePreview,
+		resetStore,
 		// Day-specific
 		viewedDate,
 		viewStartDate,

@@ -76,7 +76,7 @@ const emit = defineEmits<{
 <style>
 .task-checkbox {
 	z-index: 15;
-	padding: 10px 0 10px 5px;
+	padding: 0 5px;
 	margin-right: -5px;
 }
 

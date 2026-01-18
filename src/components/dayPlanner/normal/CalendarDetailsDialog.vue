@@ -75,7 +75,7 @@ const {updateWithResponse} = useCalendarQuery()
 const {showErrorSnackbar} = useSnackbar()
 
 const props = defineProps<{
-	calendar: Calendar
+	calendar?: Calendar
 }>()
 
 const model = defineModel<boolean>({required: true})
@@ -85,11 +85,11 @@ const data = ref<CalendarRequest>(new CalendarRequest())
 const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
 function getNaturalDayType(): DayType {
-	if (props.calendar.holidayName) {
+	if (props.calendar!.holidayName) {
 		return DayType.Holiday
 	}
 	// dayIndex 6 or 7 = weekend (Saturday/Sunday)
-	if (props.calendar.dayIndex === 6 || props.calendar.dayIndex === 7) {
+	if (props.calendar!.dayIndex === 6 || props.calendar!.dayIndex === 7) {
 		return DayType.Weekend
 	}
 	return DayType.Workday
@@ -110,10 +110,10 @@ watch(() => props.calendar, (calendar) => {
 
 async function save() {
 	const isValid = await form.value?.validate()
-	if (!isValid || !props.calendar.id) {
+	if (!isValid || !props.calendar!.id) {
 		return
 	}
-	await updateWithResponse(props.calendar.id, data.value).then(
+	await updateWithResponse(props.calendar!.id, data.value).then(
 		updatedEntity => {
 			emit('updated', updatedEntity)
 			model.value = false

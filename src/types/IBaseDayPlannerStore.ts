@@ -49,4 +49,6 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	redrawTask: (taskId: number, updates: Partial<TTask>) => void
 
 	updateTaskSpan: (taskId: number, span: TaskSpan) => Promise<void>
+
+	resetStore: () => void
 }

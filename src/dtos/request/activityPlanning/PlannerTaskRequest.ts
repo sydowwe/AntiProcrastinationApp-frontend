@@ -13,9 +13,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public notes: string | null = null,
 		public activityId?: number,
 		public importanceId: number | null = null,
+		public color: string | null = null,
 		public isDone: boolean = false,
 		public todolistId: number | null = null,
-		public color: string = '#4287f5',
 	) {
 	}
 
@@ -34,9 +34,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.notes ?? null,
 			entity.activity.id,
 			entity.importance?.id ?? null,
+			entity.color,
 			entity.isDone ?? false,
 			entity.todolistId ?? null,
-			entity.color ?? '#4287f5',
 		)
 	}
 }

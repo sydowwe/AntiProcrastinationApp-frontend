@@ -150,6 +150,21 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		redrawTask
 	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks)
 
+	function resetStore() {
+		// Reset selection state
+		selectedTaskIds.clear()
+
+		// Reset dialog state
+		dialog.value = false
+		editedId.value = undefined
+		deleteDialog.value = false
+
+		// Reset drag/resize state
+		draggingTaskId.value = null
+		resizingTaskId.value = null
+		dragConflict.value = false
+	}
+
 	return {
 		// Time/Grid configuration
 		timeSlotDuration,
@@ -187,7 +202,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		openEditDialog,
 		toggleTaskSelection,
 		clearSelection,
-
+		resetStore,
 
 		setGridPositionFromSpan,
 		checkOverlapsBackground,
