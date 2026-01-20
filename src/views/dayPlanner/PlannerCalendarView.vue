@@ -340,7 +340,6 @@ function initializeCurrentWeek() {
 
 // Initialize on mount
 initializeCurrentWeek()
-fetchCalendarData()
 </script>
 
 <style scoped>

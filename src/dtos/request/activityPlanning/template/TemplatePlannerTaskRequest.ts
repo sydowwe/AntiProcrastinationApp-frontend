@@ -8,10 +8,10 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public endTime: Time = new Time(23, 0),
 		public activityId?: number,
 		public isBackground: boolean = false,
-		public isOptional: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
 		public importanceId: number | null = null,
+		public color: string = '#5c2caa',
 		public templateId?: number
 	) {
 	}
@@ -22,10 +22,10 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.endTime,
 			entity.activity.id,
 			entity.isBackground,
-			entity.isOptional,
 			entity.location,
 			entity.notes,
 			entity.importance?.id ?? null,
+			entity.color,
 			entity.templateId
 		);
 	}

@@ -17,10 +17,14 @@ export class Calendar {
 		public readonly weather: string | null,
 		public readonly notes: string | null,
 		public readonly totalTasks: number,
-		public readonly completedTasks: number,
-		public readonly completionRate: number,
+		public completedTasks: number,
 	) {
 	}
+
+	public get completionRate() {
+		return Math.round(this.completedTasks / this.totalTasks * 100);
+	}
+
 
 	get isToday() {
 		return this.date === new Date().toISOString().slice(0, 10);
@@ -47,7 +51,6 @@ export class Calendar {
 
 			json.totalTasks,
 			json.completedTasks,
-			json.completionRate,
 		);
 	}
 }

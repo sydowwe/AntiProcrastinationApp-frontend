@@ -21,7 +21,15 @@
 			required
 			:rules="[requiredRule]"
 		></VIdSelect>
-
+		
+		<VTextField
+			v-model="data.location"
+			label="Location"
+			prependIcon="map-marker"
+			clearable
+			hideDetails
+			class="pb-2"
+		/>
 		<slot name="additional-fields" :data="data"></slot>
 
 		<VTextarea label="Notes" v-model="data.notes" rows="3" auto-grow hideDetails></VTextarea>

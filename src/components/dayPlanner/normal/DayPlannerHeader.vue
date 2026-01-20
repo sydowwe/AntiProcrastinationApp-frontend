@@ -58,7 +58,7 @@
 
 		<VBtn
 			color="primary"
-			:disabled="store.isTemplateInPreview"
+			:disabled="store.isTemplateInPreview || !store.canCreate"
 			@click="store.openCreateDialogEmpty"
 		>
 			<VIcon icon="plus" size="18" class="mr-2"/>

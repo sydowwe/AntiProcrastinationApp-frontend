@@ -7,6 +7,13 @@
 	@resizeStart="emit('resizeStart', $event)"
 	@keydown.space.prevent="handleToggleIsDoneSelected"
 >
+	<template #time>
+		<div class="task-time" :class="{'text-decoration-line-through': task.actualStartTime && task.actualEndTime}">{{
+				formattedTime(task.startTime, task.endTime)
+			}}
+		</div>
+		<div class="task-time" v-if="task.actualStartTime && task.actualEndTime">{{ formattedTime(task.actualStartTime, task.actualEndTime) }}</div>
+	</template>
 	<template #checkbox>
 		<VCheckbox
 			v-if="task.id >= 0"
@@ -16,8 +23,21 @@
 			class="task-checkbox"
 			density="default"
 			hideDetails
+			:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
 			@click.stop
 		/>
+	</template>
+	<template #badges>
+		<ChipWithIcon
+			v-if="task.status !== PlannerTaskStatus.NotStarted"
+			class="task-chip"
+			size="x-small"
+			variant="flat"
+			:icon="getPlannerTaskStatusIcon(task.status)"
+			:color="getPlannerTaskStatusColor(task.status)"
+		>
+			{{ task.status }}
+		</ChipWithIcon>
 	</template>
 </BaseTaskBlock>
 </template>
@@ -28,6 +48,9 @@ import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import BaseTaskBlock from '../BaseTaskBlock.vue';
+import ChipWithIcon from '@/components/general/ChipWithIcon.vue';
+import {getPlannerTaskStatusColor, getPlannerTaskStatusIcon, PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
+import {Time} from '@/utils/Time.ts';
 
 const {currentTime} = useCurrentTime()
 
@@ -36,6 +59,11 @@ const store = inject<ReturnType<typeof useDayPlannerStore>>('plannerStore')!
 const {task} = defineProps<{
 	task: PlannerTask
 }>()
+
+const formattedTime = computed(() => (startTime: Time, endTime: Time) => {
+	// Default time formatting (can be overridden via slot)
+	return `${Time.getString(startTime)} - ${Time.getString(endTime)}`
+})
 
 const isPast = computed(() => {
 	const dateTime = new Date();
@@ -76,8 +104,20 @@ const emit = defineEmits<{
 <style>
 .task-checkbox {
 	z-index: 15;
-	padding: 0 5px;
-	margin-right: -5px;
+	pointer-events: auto;
+	cursor: pointer;
+}
+
+.task-checkbox.v-checkbox .v-selection-control {
+	min-height: 0 !important;
+}
+
+.task-time {
+	font-size: 0.8rem;
+	opacity: 0.9;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .task-block.done-task {

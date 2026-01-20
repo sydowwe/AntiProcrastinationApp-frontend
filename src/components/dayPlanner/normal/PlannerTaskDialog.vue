@@ -6,13 +6,13 @@
 	@create="emit('create', $event as PlannerTaskRequest)"
 >
 	<template #additional-fields="{ data }">
-		<VTextField
-			v-model="data.location"
-			label="Location"
-			prependIcon="map-marker"
-			clearable
-			hideDetails
-			class="pb-2"
+		<VSelect
+			v-model="data.status"
+			:items="statusOptions"
+			itemTitle="title"
+			itemValue="value"
+			label="Status"
+			class="pt-4"
 		/>
 	</template>
 </BasePlannerTaskDialog>
@@ -22,11 +22,15 @@
 import {computed} from 'vue'
 import BasePlannerTaskDialog from '@/components/dayPlanner/BasePlannerTaskDialog.vue';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
-import type {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
+import {PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
+import {getEnumSelectOptions} from '@/composables/general/EnumComposable.ts';
 
 const store = useDayPlannerStore()
 
 const isEdit = computed(() => store.editedId !== undefined)
+
+const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
 
 const emit = defineEmits<{
 	(e: 'edit', id: number, task: PlannerTaskRequest): void

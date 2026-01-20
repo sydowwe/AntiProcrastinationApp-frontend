@@ -387,6 +387,13 @@ const EN = {
         overwrite: `Overwrite`,
         mergeIgnore: `Merge and ignore`,
         mergeOverwrite: `Merge and overwrite`,
+        status: {
+            notStarted: `Not started`,
+            inProgress: `In progress`,
+            onHold: `On hold`,
+            completed: `Completed`,
+            cancelled: `Cancelled`,
+        },
     }
 }
 export default EN

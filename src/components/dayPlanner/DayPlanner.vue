@@ -24,6 +24,7 @@
 						color="primary"
 						@click="plannerStore.openCreateDialogEmpty"
 						prependIcon="plus"
+						:disabled="!plannerStore.canCreate"
 					>
 						Add New Task
 					</VBtn>

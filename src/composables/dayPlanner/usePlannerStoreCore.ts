@@ -82,6 +82,8 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 	const showActionBar = computed(() => selectedTaskIds.size > 0)
 
+	const canCreate = computed(() => selectedTaskIds.size === 0)
+
 	const isOverMidnight = computed(() => viewStartTime.value.hours > viewEndTime.value.hours)
 
 	// CRUD handlers
@@ -119,7 +121,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 			startTime: task.startTime,
 			endTime: task.endTime,
 			isBackground: task.isBackground,
-			isOptional: task.isOptional,
 			location: task.location,
 			notes: task.notes,
 			importanceId: task.importance?.id
@@ -191,6 +192,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		// Computed
 		selectedTasks,
 		showActionBar,
+		canCreate,
 		isOverMidnight,
 		isDraggingAny,
 		isResizingAny,

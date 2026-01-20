@@ -32,6 +32,7 @@ import type {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTas
 import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export function useActivityHistoryCrud() {
+	const url = 'activity-history'
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<ActivityHistory>({responseClass: ActivityHistory, entityName: 'activity'})
 	const {
 		createWithResponse,
@@ -42,7 +43,7 @@ export function useActivityHistoryCrud() {
 		responseClass: ActivityHistory,
 		createRequestClass: ActivityHistoryRequest,
 		updateRequestClass: ActivityHistoryRequest,
-		entityName: 'activity-history'
+		entityName: url
 	})
 
 	async function create(startTimestamp: Date, length?: Time, activityId?: number) {
@@ -54,41 +55,45 @@ export function useActivityHistoryCrud() {
 }
 
 export function useActivityCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Activity>({responseClass: Activity, entityName: 'activity'})
+	const url = 'activity'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Activity>({responseClass: Activity, entityName: url})
 	const {createWithResponse, create, update, deleteEntity} = useEntityCommand<Activity, ActivityRequest, ActivityRequest>({
 		responseClass: Activity,
 		createRequestClass: ActivityRequest,
 		updateRequestClass: ActivityRequest,
-		entityName: 'activity'
+		entityName: url
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
 export function useActivityRoleCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Role>({responseClass: Role, entityName: 'activity-role'})
+	const url = 'activity-role'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Role>({responseClass: Role, entityName: url})
 	const {createWithResponse, create, update, deleteEntity} = useEntityCommand<Role, RoleRequest, RoleRequest>({
 		responseClass: Role,
 		createRequestClass: RoleRequest,
 		updateRequestClass: RoleRequest,
-		entityName: 'activity-role'
+		entityName: url
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
 export function useActivityCategoryCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Category>({responseClass: Category, entityName: 'activity-category'})
+	const url = 'activity-category'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<Category>({responseClass: Category, entityName: url})
 	const {createWithResponse, create, update, deleteEntity} = useEntityCommand<Category, any, any>({
 		responseClass: Category,
-		entityName: 'activity-category'
+		entityName: url
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
 export function useTaskPriorityCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: 'task-priority'})
+	const url = 'task-priority'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPriority>({responseClass: TaskPriority, entityName: url})
 	const {
 		createWithResponse,
 		create,
@@ -96,7 +101,7 @@ export function useTaskPriorityCrud() {
 		deleteEntity
 	} = useEntityCommand<TaskPriority, any, any>({
 		responseClass: TaskPriority,
-		entityName: 'task-priority'
+		entityName: url
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
@@ -216,7 +221,8 @@ export function useRoutineTodoListItemCrud() {
 }
 
 export function useTaskPlannerCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<PlannerTask>({responseClass: PlannerTask, entityName: 'task-planner'})
+	const url = 'planner-task'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<PlannerTask>({responseClass: PlannerTask, entityName: url})
 	const {
 		createWithResponse,
 		create,
@@ -227,7 +233,7 @@ export function useTaskPlannerCrud() {
 		batchDelete
 	} = useEntityCommand<PlannerTask, any, any>({
 		responseClass: PlannerTask,
-		entityName: 'planner-task'
+		entityName: url
 	})
 
 	async function batchedToggleIsDone(ids: number[]): Promise<void> {
@@ -236,13 +242,14 @@ export function useTaskPlannerCrud() {
 
 	const {fetchFiltered} = useFetchFiltered<PlannerTask, PlannerTaskFilter>(
 		PlannerTask,
-		'planner-task'
+		url
 	)
 	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, batchedToggleIsDone, deleteEntity, batchDelete}
 }
 
 export function useTaskImportanceCrud() {
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskImportance>({responseClass: TaskImportance, entityName: 'task-importance'})
+	const url = 'task-importance'
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TaskImportance>({responseClass: TaskImportance, entityName: url})
 	const {
 		createWithResponse,
 		create,
@@ -250,16 +257,17 @@ export function useTaskImportanceCrud() {
 		deleteEntity
 	} = useEntityCommand<TaskImportance, any, any>({
 		responseClass: TaskImportance,
-		entityName: 'task-importance'
+		entityName: url
 	})
 
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
 }
 
 export function useTemplatePlannerTaskCrud() {
+	const url = 'template-planner-task'
 	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TemplatePlannerTask>({
 		responseClass: TemplatePlannerTask,
-		entityName: 'template-planner-task'
+		entityName: url
 	})
 	const {
 		createWithResponse,
@@ -272,21 +280,22 @@ export function useTemplatePlannerTaskCrud() {
 		responseClass: TemplatePlannerTask,
 		createRequestClass: TemplatePlannerTaskRequest,
 		updateRequestClass: TemplatePlannerTaskRequest,
-		entityName: 'template-planner-task'
+		entityName: url
 	})
 
 	const {fetchFiltered} = useFetchFiltered<TemplatePlannerTask, TemplatePlannerTaskFilter>(
 		TemplatePlannerTask,
-		'template-planner-task'
+		url
 	)
 
 	return {fetchById, fetchAll, fetchFiltered, fetchSelectOptions, createWithResponse, create, update, patch, deleteEntity, batchDelete}
 }
 
 export function useTaskPlannerDayTemplateTaskCrud() {
+	const url = 'task-planner-day-template'
 	const {fetchById, fetchByField, fetchAll, fetchSelectOptions} = useEntityQuery<TaskPlannerDayTemplate>({
 		responseClass: TaskPlannerDayTemplate,
-		entityName: 'task-planner-day-template'
+		entityName: url
 	})
 	const {
 		createWithResponse,
@@ -297,7 +306,7 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 		responseClass: TaskPlannerDayTemplate,
 		createRequestClass: TaskPlannerDayTemplateRequest,
 		updateRequestClass: TaskPlannerDayTemplateRequest,
-		entityName: 'task-planner-day-template'
+		entityName: url
 	})
 
 	async function fetchByName(name: string): Promise<TaskPlannerDayTemplate> {

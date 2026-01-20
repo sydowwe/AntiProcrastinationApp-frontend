@@ -1,10 +1,11 @@
 import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import type {TaskStatus} from '@/dtos/enum/TaskStatus.ts';
 import {Activity} from '@/dtos/response/Activity.ts';
 import {Time} from '@/utils/Time.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
+import {PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
+import {convertToEnum} from '@/composables/general/EnumComposable.ts';
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
@@ -13,14 +14,13 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public endTime: Time,
 		public calendarId: number,
 		public isBackground: boolean,
-		public isOptional: boolean,
 		public isDone: boolean,
 		public activity: Activity,
 		public location: string | null,
 		public notes: string | null,
 		public importance: TaskImportance | null,
 		public color: string,
-		public status?: TaskStatus,
+		public status: PlannerTaskStatus,
 		public actualStartTime: Time | null = null,
 		public actualEndTime: Time | null = null,
 		public isFromTemplate?: boolean,
@@ -49,13 +49,13 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			templateTask.endTime,
 			calendarId,
 			templateTask.isBackground,
-			templateTask.isOptional,
 			false,
 			templateTask.activity,
 			templateTask.location,
 			templateTask.notes,
 			templateTask.importance,
-			templateTask.color
+			templateTask.color,
+			PlannerTaskStatus.NotStarted
 		)
 	}
 
@@ -66,14 +66,13 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			Time.fromJson(json.endTime),
 			json.calendarId,
 			json.isBackground,
-			json.isOptional,
 			json.isDone ?? false,
 			Activity.fromJson(json.activity),
 			json.location,
 			json.notes,
 			json.importance ? TaskImportance.fromJson(json.importance) : null,
 			json.color,
-			json.status,
+			convertToEnum(PlannerTaskStatus, json.status),
 			json.actualStartTime ? Time.fromJson(json.actualStartTime) : null,
 			json.actualEndTime ? Time.fromJson(json.actualEndTime) : null,
 			json.isFromTemplate,

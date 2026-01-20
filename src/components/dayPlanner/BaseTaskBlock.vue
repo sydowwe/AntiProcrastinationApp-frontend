@@ -2,7 +2,7 @@
 <VSheet
 	v-if="task.isBackground"
 	:color="backgroundColorComp"
-	:style="style"
+	:style="style(task)"
 	:data-task-id="task.id"
 	:class="['base-task-block','background-task-block', { 'past-task': isPast, 'selected': isSelected }]"
 >
@@ -14,7 +14,7 @@
 <VSheet
 	v-else
 	:color="`${backgroundColorComp}E0`"
-	:style
+	:style="style(task)"
 	:class="['base-task-block','task-block', ...blockClasses]"
 	:tabindex="0"
 	:data-task-id="task.id"
@@ -31,64 +31,58 @@
 	/>
 
 	<div class="task-content">
-		<div class="task-header">
-			<div class="checkbox-wrapper">
-				<slot name="checkbox"></slot>
+		<div class="task-content-main">
+			<div class="d-flex flex-column flex-wrap">
+				<div class="task-header">
+					<slot name="checkbox"></slot>
+					<div v-if="task.importance?.importance !== 777" class="d-flex flex-column align-center">
+						<VIcon :icon="task.importance?.icon ?? undefined" :color="task.importance?.color" size="24"></VIcon>
+						<span class="text-caption">
+				{{ task.importance?.text }}
+				</span>
+					</div>
+					<div class="task-header-main">
+						<div class="task-title">{{ task.activity.name }}</div>
+
+						<!-- Slot for time display - different for template vs regular -->
+						<slot name="time" :task="task">
+							<div class="task-time">{{ formattedTime }}</div>
+						</slot>
+					</div>
+					<ChipWithIcon
+						v-if="task.activity.role"
+						class="task-chip"
+						size="x-small"
+						variant="flat"
+						:icon="task.activity.role.icon ?? undefined"
+						:color="task.activity.role.color ?? 'white'"
+					>
+						{{ task.activity.role.name }}
+					</ChipWithIcon>
+				</div>
+
+				<!-- Slot for additional chips/badges - different for template vs regular -->
+				<div class="d-flex ga-3 mt-1">
+					<div class="d-flex ga-1 align-center text-body-2">
+						<VIcon class="my-1" icon="location-dot"></VIcon>
+						<span class="mr-1">{{ task.location }}</span>
+					</div>
+					<div class="task-badges">
+						<div v-if="task.activity.category"
+						     class="task-category">
+							<VIcon v-if="task.activity.category.icon" :icon="task.activity.category.icon ?? undefined"></VIcon>
+							{{ task.activity.category.name }}
+						</div>
+						<slot name="badges"></slot>
+					</div>
+				</div>
 			</div>
-			<div class="task-main">
-				<div class="task-title">{{ task.activity.name }}</div>
-
-				<!-- Slot for time display - different for template vs regular -->
-				<slot name="time" :task="task">
-					<div class="task-time">{{ formattedTime }}</div>
-				</slot>
+			<div class="pt-1">
+				<span v-if="task.notes" class="text-caption">
+				<VIcon icon="far fa-note-sticky"></VIcon>
+				{{ task.notes }}
+				</span>
 			</div>
-		</div>
-
-		<!-- Slot for additional chips/badges - different for template vs regular -->
-		<div class="task-badges">
-			<slot name="badges" :task="task">
-				<VChip
-					v-if="task.importance"
-					size="x-small"
-					variant="flat"
-					:color="task.importance.color"
-					class="task-chip"
-				>
-					{{ task.importance.text }}
-				</VChip>
-
-				<VChip
-					v-if="task.isOptional"
-					size="x-small"
-					variant="outlined"
-					class="task-chip"
-				>
-					Optional
-				</VChip>
-
-				<VChip
-					v-if="task.location"
-					size="x-small"
-					variant="flat"
-					prependIcon="map-marker"
-					class="task-chip"
-				>
-					{{ task.location }}
-				</VChip>
-
-				<!-- Also show category if exists -->
-				<VChip
-					v-if="task.activity.category"
-					size="x-small"
-					variant="flat"
-					:prependIcon="task.activity.category.icon ?? undefined"
-					:color="task.activity.category.color ?? 'white'"
-					class="task-chip"
-				>
-					{{ task.activity.category.name }}
-				</VChip>
-			</slot>
 		</div>
 	</div>
 
@@ -107,6 +101,7 @@ import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlann
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
+import ChipWithIcon from '@/components/general/ChipWithIcon.vue';
 
 const {task, backgroundColor, isPast, marginLeft} = defineProps<{
 	task: TTask
@@ -129,11 +124,12 @@ const backgroundColorComp = computed(() => {
 	return backgroundColor || task.activity?.role?.color || '#4287f5'
 })
 
-const style = computed(() => {
+const style = computed(() => (task: TTask) => {
 	const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
 	return {
 		marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
-		gridRow: `${task.gridRowStart} / span ${span}`
+		gridRow: `${task.gridRowStart} / span ${span}`,
+		borderLeft: task.importance?.importance === 777 || (task.isBackground && task.importance?.importance === 666) ? '' : `4px solid ${task.importance?.color ?? 'transparent'}`,
 	}
 })
 
@@ -150,7 +146,6 @@ const blockClasses = computed(() => [
 		'selected': isSelected.value,
 		'conflict': isConflict.value,
 		'no-hover': isAnyTaskBeingManipulated.value,
-		'optional-task': task.isOptional,
 	}
 ])
 
@@ -192,6 +187,7 @@ const emit = defineEmits<{
 .base-task-block {
 	box-sizing: border-box !important;
 	border: 2px hidden transparent;
+	border-left-width: 3px;
 }
 
 /* Task Block Styles */
@@ -258,33 +254,29 @@ const emit = defineEmits<{
 
 .task-content {
 	flex: 1;
-	padding: 8px 12px;
 	pointer-events: none;
-	cursor: pointer;
-	min-height: 0;
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
 	gap: 4px;
 	overflow: hidden;
 }
 
+.task-content-main {
+	padding: 8px 12px 4px;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	gap: 16px;
+}
+
 .task-header {
 	display: flex;
-	align-items: flex-start;
-	gap: 8px;
+	align-items: center;
+	gap: 10px;
 	min-height: 0;
 }
 
-.checkbox-wrapper {
-	pointer-events: auto;
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	padding-top: 1px;
-}
-
-.task-main {
-	flex: 1;
+.task-header-main {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
@@ -302,7 +294,7 @@ const emit = defineEmits<{
 }
 
 .task-time {
-	font-size: 11px;
+	font-size: 0.8rem;
 	opacity: 0.9;
 	white-space: nowrap;
 	overflow: hidden;
@@ -311,13 +303,22 @@ const emit = defineEmits<{
 
 .task-badges {
 	display: flex;
+	align-items: center;
 	flex-wrap: wrap;
-	gap: 4px;
-	min-height: 0;
+	gap: 8px;
+	padding: 6px;
 }
 
 .task-chip {
 	flex-shrink: 0;
+}
+
+.task-category {
+	font-size: 0.7rem;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .resize-handle {

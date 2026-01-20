@@ -29,6 +29,7 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	// Computed
 	selectedTasks: TTask[]
 	showActionBar: boolean
+	canCreate: boolean
 	isOverMidnight: boolean
 	isDraggingAny: boolean
 	isResizingAny: boolean
