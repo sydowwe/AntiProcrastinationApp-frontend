@@ -1,6 +1,7 @@
 import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import {PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
 
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
@@ -8,12 +9,12 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public endTime: Time = new Time(23, 0),
 		public calendarId?: number,
 		public isBackground: boolean = false,
-		public isOptional: boolean = false,
 		public location: string | null = null,
 		public notes: string | null = null,
 		public activityId?: number,
 		public importanceId: number | null = null,
 		public color: string | null = null,
+		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
 		public isDone: boolean = false,
 		public todolistId: number | null = null,
 	) {
@@ -29,12 +30,13 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.endTime,
 			entity.calendarId,
 			entity.isBackground,
-			entity.isOptional,
 			entity.location ?? null,
 			entity.notes ?? null,
 			entity.activity.id,
 			entity.importance?.id ?? null,
 			entity.color,
+
+			entity.status,
 			entity.isDone ?? false,
 			entity.todolistId ?? null,
 		)

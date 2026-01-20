@@ -6,6 +6,7 @@ export class TaskImportance implements ITextColorResponse {
 		public text: string,
 		public color: string,
 		public importance: number,
+		public icon: string | null
 	) {
 	}
 
@@ -15,6 +16,7 @@ export class TaskImportance implements ITextColorResponse {
 			json.text,
 			json.color,
 			json.importance,
+			json.icon
 		);
 	}
 

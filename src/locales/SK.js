@@ -392,6 +392,13 @@ const SK = {
         overwrite: `Prepísať`,
         mergeIgnore: `Zlúčiť a ignorovať`,
         mergeOverwrite: `Zlúčiť a prepísať`,
+        status: {
+            notStarted: `Nezačaté`,
+            inProgress: `Prebieha`,
+            onHold: `Pozastavené`,
+            completed: `Dokončené`,
+            cancelled: `Zrušené`,
+        },
     }
 }
 export default SK;

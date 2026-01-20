@@ -64,6 +64,9 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	 */
 	function checkConflict(taskToCheck: T): boolean {
 		return tasks.value.some(task => {
+			console.log((taskToCheck.id ^ task.id) < 0)
+			if ((taskToCheck.id ^ task.id) < 0) // XOR so template doesn't check conflict with normal
+				return false
 			if (task.id === taskToCheck.id || task.isBackground)
 				return false
 

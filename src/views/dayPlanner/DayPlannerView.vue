@@ -178,6 +178,8 @@ async function edit(id: number, request: PlannerTaskRequest) {
 	const index = store.tasks.findIndex(e => e.id === id)
 	const wasBackground = store.tasks[index]?.isBackground
 
+	request.calendarId = calendar.value?.id;
+	request.isDone = store.tasks[index]?.isDone ?? false;
 	await update(id, request)
 
 
@@ -217,11 +219,13 @@ async function del(): Promise<void> {
 
 async function handleToggleIsDone(taskId: number) {
 	await batchedToggleIsDone([taskId])
-		.catch((error) => {
+		.then(() => {
 			const task = store.tasks.find(e => e.id === taskId)
 			if (task) {
-				task.isDone = !task.isDone
+				calendar.value!.completedTasks += (task.isDone ? 1 : -1)
 			}
+		})
+		.catch((error) => {
 		})
 }
 
@@ -235,6 +239,7 @@ async function handleToggleIsDoneSelected() {
 			tasks.forEach(task => {
 				task.isDone = !task.isDone
 			})
+			calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 			store.clearSelection()
 		})
 }

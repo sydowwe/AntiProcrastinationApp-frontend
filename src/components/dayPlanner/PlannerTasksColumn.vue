@@ -96,6 +96,8 @@ function getSlotIndexFromPosition(y: number): number {
 
 function checkTaskConflictByRow(newStartRow: number, newEndRow: number, taskId?: number): boolean {
 	return store.tasks.some(task => {
+		if (taskId !== undefined && (taskId ^ task.id) < 0) // XOR so template doesn't check conflict with normal
+			return false
 		if (task.id === taskId || task.isBackground) return false
 		return !(newEndRow <= task.gridRowStart || newStartRow >= task.gridRowEnd)
 	})
@@ -150,12 +152,14 @@ function handlePointerDown(e: PointerEvent): void {
 		return
 	}
 
-	// Clear selection when clicking on empty area
-	store.clearSelection()
+	// Start creating if clicking on empty space (only when no items selected)
+	if (target.closest('.task-block'))
+		return
+	if (target.closest('.current-time-indicator'))
+		return
+	if (!store.canCreate)
+		return
 
-	// Start creating if clicking on empty space
-	if (target.closest('.task-block')) return
-	if (target.closest('.current-time-indicator')) return
 
 	const slotIndex = getSlotIndexFromPosition(e.clientY)
 
