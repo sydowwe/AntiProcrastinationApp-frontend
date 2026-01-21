@@ -288,6 +288,11 @@ const EN = {
         focus: `Focus`,
         shortRest: `Short rest`,
         longRest: `Long rest`,
+        settings: `Settings`,
+        presets: `Presets`,
+        autoStartBreaks: `Auto-start breaks`,
+        autoStartFocus: `Auto-start focus sessions`,
+        soundEnabled: `Sound notifications enabled`,
     },
     history: {
         addActivityToHistory: `Add activity to history`,
