@@ -17,11 +17,11 @@
 					</VCard>
 					<VCard variant="tonal" class="pa-4 borderGrey">
 						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.shortRestTime') }}</VCardTitle>
-						<TimePicker v-model="shortRestInitialTime" :whatToShow="['minutes','seconds']"></TimePicker>
+						<TimePicker v-model="shortRestInitialTime" viewMode="minute"></TimePicker>
 					</VCard>
 					<VCard variant="tonal" class="pa-4 borderGrey">
 						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.longRestTime') }}</VCardTitle>
-						<TimePicker v-model="longRestInitialTime" :whatToShow="['minutes','seconds']"></TimePicker>
+						<TimePicker v-model="longRestInitialTime" viewMode="minute"></TimePicker>
 					</VCard>
 				</div>
 				<VCard variant="tonal" class="mt-3 d-flex flex-column flex-md-row justify-center ga-2 ga-md-3 pa-2 mx-auto borderGrey"
@@ -46,15 +46,17 @@
 			<TimerControls class="mt-4 mb-5" :paused="paused" :intervalId="intervalId" @start="start" @pause="pause"
 			               @stop="stop"></TimerControls>
 			<hr/>
-			<!--			<VRow>-->
-			<!--				<VCol cols="6">-->
-			<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
-			<!--				</VCol>-->
-			<!--				<VCol cols="6">-->
-			<!--					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>-->
-			<!--				</VCol>-->
-			<!--			</VRow>-->
+			<VRow>
+				<VCol cols="6">
+					<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
+				</VCol>
+				<VCol cols="6">
+					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
+				</VCol>
+			</VRow>
 			<SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTimer"></SaveActivityDialog>
+			<PomodoroSettingsDialog ref="settingsDialog" @save="saveSettings"></PomodoroSettingsDialog>
+			<PomodoroPresetsDialog ref="presetsDialog" @select="selectPreset"></PomodoroPresetsDialog>
 		</v-card>
 	</VCol>
 </VRow>
@@ -71,19 +73,20 @@ import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';
+import PomodoroSettingsDialog from '@/components/addActivityToHistory/PomodoroSettingsDialog.vue';
+import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue';
 
 const i18n = useI18n();
 
 const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const restActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();
+const settingsDialog = ref<InstanceType<typeof PomodoroSettingsDialog>>();
+const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>();
 
-// const focusInitialTime = ref(new TimeLengthObject(0, 25, 0));
-// const shortRestInitialTime = ref(new TimeLengthObject(0, 5, 0));
-// const longRestInitialTime = ref(new TimeLengthObject(0, 15, 0));
-const focusInitialTime = ref(new Time(0, 0.5));
-const shortRestInitialTime = ref(new Time(0, 0.25));
-const longRestInitialTime = ref(new Time(0, 1));
+const focusInitialTime = ref(new Time(0, 25));
+const shortRestInitialTime = ref(new Time(0, 5));
+const longRestInitialTime = ref(new Time(0, 15));
 const focusTimeElapsed = ref(0);
 const restTimeElapsed = ref(0);
 
@@ -234,6 +237,39 @@ function resetPickersToDefault() {
 function saveActivity() {
 	mainActivitySelectionForm.value?.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value));
 	restActivitySelectionForm.value?.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(restTimeElapsed.value));
+}
+
+function openSettings() {
+	const currentSettings = {
+		numberOfFocusPeriodsInCycle: numberOfFocusPeriodsInCycle.value,
+		numberOfCycles: numberOfCycles.value,
+		autoStartBreaks: false,
+		autoStartFocus: false,
+		soundEnabled: true
+	};
+	settingsDialog.value?.open(currentSettings);
+}
+
+function saveSettings(settings: {
+	numberOfFocusPeriodsInCycle: number;
+	numberOfCycles: number;
+	autoStartBreaks: boolean;
+	autoStartFocus: boolean;
+	soundEnabled: boolean
+}) {
+	numberOfFocusPeriodsInCycle.value = settings.numberOfFocusPeriodsInCycle;
+	numberOfCycles.value = settings.numberOfCycles;
+}
+
+function openPresets() {
+	presetsDialog.value?.open();
+}
+
+function selectPreset(preset: { focusTime: Time; shortRestTime: Time; longRestTime: Time; numberOfFocusPeriodsInCycle: number }) {
+	focusInitialTime.value = preset.focusTime;
+	shortRestInitialTime.value = preset.shortRestTime;
+	longRestInitialTime.value = preset.longRestTime;
+	numberOfFocusPeriodsInCycle.value = preset.numberOfFocusPeriodsInCycle;
 }
 </script>
 <style scoped>

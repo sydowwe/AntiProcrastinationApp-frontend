@@ -287,6 +287,11 @@ const SK = {
         focus: `Koncentrácia`,
         shortRest: `Krátky oddych`,
         longRest: `Dlhý oddych`,
+        settings: `Nastavenia`,
+        presets: `Predvoľby`,
+        autoStartBreaks: `Automaticky spustiť prestávky`,
+        autoStartFocus: `Automaticky spustiť sústredenie`,
+        soundEnabled: `Zvukové upozornenia povolené`,
     },
     history: {
         addActivityToHistory: `Pridať aktivitu do histórie`,

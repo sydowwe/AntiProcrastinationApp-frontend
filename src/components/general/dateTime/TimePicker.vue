@@ -35,13 +35,13 @@ const props = withDefaults(defineProps<{
 	icon?: string
 	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
 	height?: 40 | 48 | 56,
-	disabled?: boolean
+	disabled?: boolean,
 }>(), {
 	label: 'Time',
 	viewMode: 'hour',
 	allowedMinutesSelected: '10',
 	height: 48,
-	disabled: false
+	disabled: false,
 })
 
 const time = defineModel<Time>({required: true})
@@ -54,9 +54,11 @@ const timeString = computed({
 		return fixedTime.getString()
 	},
 	set(newTime: string) {
+		console.log(newTime)
 		time.value = Time.fromString(newTime)
 	}
 })
+console.log(time)
 </script>
 
 <style scoped>
