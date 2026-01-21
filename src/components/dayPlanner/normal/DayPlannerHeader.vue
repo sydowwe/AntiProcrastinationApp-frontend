@@ -59,7 +59,7 @@
 		<VBtn
 			color="primary"
 			:disabled="store.isTemplateInPreview || !store.canCreate"
-			@click="store.openCreateDialogEmpty"
+			@click="store.openCreateDialog"
 		>
 			<VIcon icon="plus" size="18" class="mr-2"/>
 			Add Task

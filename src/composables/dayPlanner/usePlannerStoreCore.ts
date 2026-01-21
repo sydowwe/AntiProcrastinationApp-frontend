@@ -3,10 +3,9 @@ import {Time} from '@/utils/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
+import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
 
-export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
-	createEmptyRequest: () => TTaskRequest
-) {
+export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>() {
 	// Time/Grid configuration state
 	const timeSlotDuration = ref(10)
 	const viewStartTime = ref(new Time(7, 30))
@@ -21,7 +20,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	// Dialog state
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()
-	const editingTask = ref<TTaskRequest>({} as TTaskRequest)
+	const creationPreview = ref<CreationPreviewType | undefined>()
 	const deleteDialog = ref(false)
 
 	// Drag/Resize state
@@ -93,17 +92,8 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		}
 	}
 
-	function openCreateDialogPrefilled(startTime: Time, endTime: Time): void {
+	function openCreateDialog(): void {
 		editedId.value = undefined
-		editingTask.value = createEmptyRequest()
-		editingTask.value.startTime = startTime
-		editingTask.value.endTime = endTime
-		dialog.value = true
-	}
-
-	function openCreateDialogEmpty(): void {
-		editedId.value = undefined
-		editingTask.value = createEmptyRequest()
 		dialog.value = true
 	}
 
@@ -116,15 +106,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		if (!task) return
 
 		editedId.value = task.id
-		editingTask.value = {
-			activityId: task.activity.id,
-			startTime: task.startTime,
-			endTime: task.endTime,
-			isBackground: task.isBackground,
-			location: task.location,
-			notes: task.notes,
-			importanceId: task.importance?.id
-		} as TTaskRequest
 		dialog.value = true
 	}
 
@@ -158,6 +139,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		// Reset dialog state
 		dialog.value = false
 		editedId.value = undefined
+		creationPreview.value = undefined
 		deleteDialog.value = false
 
 		// Reset drag/resize state
@@ -183,7 +165,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		selectedTaskIds,
 		dialog,
 		editedId,
-		editingTask,
+		creationPreview,
 		deleteDialog,
 		draggingTaskId,
 		resizingTaskId,
@@ -199,8 +181,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 
 		// Actions
 		openDeleteDialog,
-		openCreateDialogPrefilled,
-		openCreateDialogEmpty,
+		openCreateDialog,
 		openEditDialog,
 		toggleTaskSelection,
 		clearSelection,

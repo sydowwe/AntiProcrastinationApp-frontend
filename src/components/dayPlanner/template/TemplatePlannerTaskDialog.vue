@@ -2,7 +2,8 @@
 <BasePlannerTaskDialog
 	:title="!isEdit ? 'Add New Template Task' : 'Edit Template Task'"
 	:store
-	@edit="(taskId, task) => emit('edit', taskId, task as TemplatePlannerTaskRequest)"
+	:createEmptyRequest="() => new TemplatePlannerTaskRequest()"
+	@edit="(id, task) => emit('edit', id, task as TemplatePlannerTaskRequest)"
 	@create="emit('create', $event as TemplatePlannerTaskRequest)"
 />
 </template>
@@ -11,7 +12,7 @@
 import {computed} from 'vue'
 import BasePlannerTaskDialog from '@/components/dayPlanner/BasePlannerTaskDialog.vue';
 import {useTemplateDayPlannerStore} from '@/stores/dayPlanner/templateDayPlannerStore.ts';
-import type {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
+import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
 
 const store = useTemplateDayPlannerStore()
 

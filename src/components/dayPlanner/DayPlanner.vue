@@ -22,7 +22,7 @@
 				<div class="d-flex ga-2 align-center flex-wrap">
 					<VBtn
 						color="primary"
-						@click="plannerStore.openCreateDialogEmpty"
+						@click="plannerStore.openCreateDialog"
 						prependIcon="plus"
 						:disabled="!plannerStore.canCreate"
 					>

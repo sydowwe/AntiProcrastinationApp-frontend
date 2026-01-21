@@ -2,6 +2,7 @@ import type {Time} from '@/utils/Time.ts';
 import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {StoreGeneric} from 'pinia';
+import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
 
 export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest> extends StoreGeneric {
 	// Time/Grid configuration
@@ -20,7 +21,7 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	selectedTaskIds: Set<number>
 	dialog: boolean
 	editedId: number | undefined
-	editingTask: TTaskRequest
+	creationPreview: CreationPreviewType | undefined
 	deleteDialog: boolean
 	draggingTaskId: number | null
 	resizingTaskId: number | null
@@ -36,8 +37,7 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 
 	// Actions
 	openDeleteDialog: () => void
-	openCreateDialogPrefilled: (startTime: Time, endTime: Time) => void
-	openCreateDialogEmpty: () => void
+	openCreateDialog: () => void
 	openEditDialog: () => void
 	toggleTaskSelection: (taskId: number) => void
 	clearSelection: () => void
