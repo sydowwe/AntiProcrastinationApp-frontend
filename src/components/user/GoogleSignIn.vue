@@ -61,13 +61,6 @@ const callback: CallbackTypes.CodeResponseCallback = async (response) => {
 	}
 };
 
-
-const handleOnError = (errorEntity: any) => {
-	console.log("Error: ", errorResponse);
-	error.value = true;
-	loading.value = false;
-};
-
 </script>
 
 <style scoped>

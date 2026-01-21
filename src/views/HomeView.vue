@@ -1,24 +1,19 @@
 <template>
 <div class="d-flex ga-9">
-	<VList ref="todoList" class="kanban-column">
-		<VListItem v-for="todo in todos" :key="todo" class="kanban-item">
-			{{ todo }}
-		</VListItem>
-	</VList>
-	<VList ref="doneList" class="kanban-column">
-		<VListItem v-for="done in dones" :key="done" class="kanban-item">
-			{{ done }}
-		</VListItem>
-	</VList>
+	<TimePicker v-model="time" viewMode="second"></TimePicker>
+	<VTimePicker v-model="str" viewMode="second" variant="input"></VTimePicker>
 </div>
 </template>
 
 <script setup lang="ts">
-import { useDragAndDrop } from "@formkit/drag-and-drop/vue";
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
+import {Time} from '@/utils/Time.ts';
+import {ref, watch} from 'vue';
 
-const todoItems = ["Schedule perm", "Rewind VHS tapes", "Make change for the arcade", "Get disposable camera developed", "Learn C++", "Return Nintendo Power Glove"];
-const doneItems = ["Pickup new mix-tape from Beth"];
+const time = ref(new Time())
+const str = ref('')
 
-const [todoList, todos] = useDragAndDrop(todoItems, { group: "todoList" });
-const [doneList, dones] = useDragAndDrop(doneItems, { group: "todoList" });
+watch(str, (newVal) => {
+	console.log('str changed to:', newVal)
+})
 </script>

@@ -21,12 +21,10 @@ import ActivitySelectionForm from '../ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
 import {Time} from '@/utils/Time.ts';
-import {ActivityDialogType, ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
 import {ref, watch} from 'vue';
-import {addActivityToHistory} from '@/composables/SaveToHistoryComposition';
 
-const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
+const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
+const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();
 
 const alarmDateTime = ref<Date | null>(new Date());
 const alarmTime = ref(new Time());
@@ -45,7 +43,7 @@ watch(alarmDateTime, (newDateTime) => {
 });
 
 async function start() {
-	if (activitySelectionForm.value.validate()) {
+	if (activitySelectionForm.value?.validate()) {
 		formDisabled.value = true;
 		startTimestamp.value = new Date();
 		timeInputVisible.value = false;
@@ -54,10 +52,10 @@ async function start() {
 	}
 	const currentTime = new Date();
 	const hoursDiff = alarmTime.value.hours - currentTime.getHours();
-	const minutesDiff = alarmTime.value.minutes - currentTime.getMinutes();
-	const secondsDiff = alarmTime.value.seconds - currentTime.getSeconds();
+	let minutesDiff = alarmTime.value.minutes - currentTime.getMinutes();
+	minutesDiff += currentTime.getSeconds() > 29 ? 1 : 0;
 
-	const totalMilliseconds = hoursDiff * 60 * 60 * 1000 + minutesDiff * 60 * 1000 + secondsDiff * 1000;
+	const totalMilliseconds = hoursDiff * 60 * 60 * 1000 + minutesDiff * 60 * 1000;
 
 	if (totalMilliseconds > 0) {
 		setTimeout(() => {
@@ -92,7 +90,7 @@ function resume() {
 
 function stop() {
 	clearInterval(intervalId.value);
-	saveDialog.value.open(activitySelectionForm.value.getSelectedActivityName as string, timePassed().getNice);
+	saveDialog.value?.open(activitySelectionForm.value?.getSelectedActivityName as string, timePassed());
 }
 
 function resetTime() {
@@ -106,7 +104,7 @@ function resetTime() {
 }
 
 function saveActivity() {
-	addActivityToHistory(startTimestamp.value, timePassed(), activitySelectionForm.value.getSelectedActivityId);
+	activitySelectionForm.value?.saveActivityToHistory(startTimestamp.value, timePassed());
 }
 
 function timePassed() {

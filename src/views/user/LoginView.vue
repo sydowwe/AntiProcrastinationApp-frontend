@@ -57,8 +57,8 @@ import {useLoading} from '@/composables/general/LoadingComposable.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
-import type {VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
 import {PasswordSignInRequest} from '@/dtos/request/PasswordSignInRequest.ts';
+import {VForm} from 'vuetify/components';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();
@@ -67,7 +67,7 @@ const userStore = useUserStore();
 const {emailRules} = useUserDetailsValidation();
 const {executeRecaptcha} = useRecaptcha();
 
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
+const form = ref<InstanceType<typeof VForm>>();
 const loginRequest = ref(new PasswordSignInRequest());
 
 const twoFactorAuthDialog = ref(false);
@@ -79,7 +79,7 @@ onMounted(async () => {
 const isRedirectedFromRegistration = computed(() => !!userStore.userName);
 
 async function validateAndSendForm() {
-	const {valid} = await form.value.validate();
+	const {valid} = await form.value!.validate();
 	console.log(valid)
 	if (valid) {
 		showFullScreenLoading();

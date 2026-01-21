@@ -38,7 +38,7 @@ import {useI18n} from 'vue-i18n';
 import {Alarm} from '@/dtos/response/Alarm.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
 
-const {formatDateLocalized, formatToTime} = useMoment();
+const {formatToTime, formatToDate} = useMoment();
 
 const i18n = useI18n();
 
@@ -69,7 +69,7 @@ function itemClicked() {
 }
 
 const timeLabel = computed(() => {
-	return `${props.alarm?.startTimestamp === new Date() ? '' : formatDateLocalized(props.alarm?.startTimestamp)} - ${formatToTime(props.alarm?.startTimestamp)}`;
+	return `${props.alarm?.startTimestamp === new Date() ? '' : formatToDate(props.alarm?.startTimestamp)} - ${formatToTime(props.alarm?.startTimestamp)}`;
 })
 
 watch(

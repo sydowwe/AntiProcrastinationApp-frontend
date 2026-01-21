@@ -21,7 +21,6 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import type {ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
 import {ref} from 'vue';
 import {Time} from '@/utils/Time.ts';
 import {useI18n} from 'vue-i18n';
@@ -31,18 +30,18 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 const {showErrorSnackbar} = useSnackbar();
 const i18n = useI18n();
 
-const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
+const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const formDisabled = ref(false);
 
 const dateTime = ref<Date | null>(new Date());
 const timeLength = ref(new Time());
 
 function saveActivity() {
-	if (activitySelectionForm.value.validate()) {
+	if (activitySelectionForm.value?.validate()) {
 		if (dateTime.value) {
 			// if (dateTime.value <= new Date()) {
 			if (timeLength.value.isNotZero()) {
-				activitySelectionForm.value.saveActivityToHistory(dateTime.value, timeLength.value);
+				activitySelectionForm.value?.saveActivityToHistory(dateTime.value, timeLength.value);
 			} else {
 				showErrorSnackbar(i18n.t('history.lengthNotSet'));
 			}

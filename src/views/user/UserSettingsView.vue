@@ -8,7 +8,7 @@
 						<span>Email:</span>
 						<strong class="px-2">{{ userData.email }}</strong>
 					</span>
-				<VBtn color="main" @click="changeEmailDialog.open">{{ i18n.t('controls.edit') }}</VBtn>
+				<VBtn color="main" @click="changeEmailDialog?.open">{{ i18n.t('controls.edit') }}</VBtn>
 			</VCardText>
 		</VCard>
 		<VSwitch class="mx-auto my-2" color="main" :label="i18n.t('user.use2FA')" v-model="isTwoFactorAuthEnabled" hide-details
@@ -48,17 +48,15 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useUserStore} from '@/stores/userStore.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import type {DialogType, VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
 import {User} from '@/dtos/response/User.ts';
 
 const {showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = useSnackbar();
 const i18n = useI18n();
 const userStore = useUserStore();
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
 
-const changeEmailDialog = ref<DialogType>({} as DialogType);
+const changeEmailDialog = ref<InstanceType<typeof ChangeEmailDialog>>();
 const changePasswordDialog = ref(false);
-const verifyUserDialog = ref<DialogType>({} as DialogType);
+const verifyUserDialog = ref<InstanceType<typeof VerifyUserDialog>>();
 
 const qrCode2FADialog = ref(false);
 
@@ -70,20 +68,26 @@ const isTwoFactorAuthEnabled = ref(userData.value.twoFactorEnabled);
 
 getUserData();
 
-type TCurrentAction = 'toggleTwoFactorAuth' | 'deleteAccount'
+type TCurrentAction = 'toggleTwoFactorAuth' | 'deleteAccount' | 'show2FAQrCode' | 'showScratchCode'
 const currentAction = ref<TCurrentAction>('toggleTwoFactorAuth')
 const verifyUserDialogData = computed(() => {
-	let url = '';
+	let url = '/user/verify';
 	let onVerified = () => {
 	};
 	switch (currentAction.value) {
 		case 'deleteAccount':
-			url = `/user/delete-account`
+			url = '/user/delete-account';
 			onVerified = onDeleted;
 			break;
 		case 'toggleTwoFactorAuth':
-			url = `/user/toggle-two-factor-auth`
+			url = '/user/toggle-two-factor-auth';
 			onVerified = onToggleTwoFactorAuth;
+			break;
+		case 'show2FAQrCode':
+			onVerified = onShow2FAQrCode;
+			break;
+		case 'showScratchCode':
+			onVerified = onShowScratchCode;
 			break;
 	}
 	return {url, onVerified};
@@ -92,79 +96,84 @@ const verifyUserDialogData = computed(() => {
 function toggleTwoFactorAuth(event: Event) {
 	event.preventDefault();
 	currentAction.value = 'toggleTwoFactorAuth'
-	verifyUserDialog.value.open();
+	verifyUserDialog.value?.open();
 }
 
 function deleteAccount() {
 	currentAction.value = 'deleteAccount'
-	verifyUserDialog.value.open();
+	verifyUserDialog.value?.open();
 }
 
 function getUserData(): void {
 	API.post('/user/data', {})
 		.then((response) => {
 			userData.value = User.fromJson(response.data);
-			console.log(userData.value);
+			isTwoFactorAuthEnabled.value = userData.value.twoFactorEnabled;
 		})
 		.catch((error) => {
 			console.log(error);
 		});
 }
 
-const onToggleTwoFactorAuth = () => {
-	userData.value.twoFactorEnabled = isTwoFactorAuthEnabled.value;
+function onToggleTwoFactorAuth() {
+	userData.value.twoFactorEnabled = !userData.value.twoFactorEnabled;
+	isTwoFactorAuthEnabled.value = userData.value.twoFactorEnabled;
 }
 
-const changedEmail = () => {
+function changedEmail() {
 	userStore.logout();
 	router.push({name: 'login'});
 }
 
-const onDeleted = () => {
+function onDeleted() {
 	userStore.logout();
 	router.push({name: 'registration'});
 }
 
 function show2FAQrCode() {
-	onUserVerified.value = () => {
-		if (!qrCodeImage.value) {
-			API.post('/user/get-2fa-qr-code', {})
-				.then((response) => {
-					if (response.data.qrCode) {
-						qrCodeImage.value = response.data.qrCode;
-						qrCode2FADialog.value = true;
-					} else {
-						console.log(response);
-					}
-				})
-				.catch((error) => {
-					console.error(error);
-				});
-		} else {
-			qrCode2FADialog.value = true;
-		}
-	};
-	verifyPasswordDialog.value.open();
+	currentAction.value = 'show2FAQrCode';
+	verifyUserDialog.value?.open();
 }
 
-function showScratchCode() {
-	onUserVerified.value = () => {
-		API
-			.post('/user/get-2fa-scratch-code', {})
+function onShow2FAQrCode() {
+	if (!qrCodeImage.value) {
+		API.post('/user/get-2fa-qr-code', {})
 			.then((response) => {
-				if (response.data.new2FAQrCode === true) {
+				if (response.data.qrCode) {
+					qrCodeImage.value = response.data.qrCode;
+					qrCode2FADialog.value = true;
 				} else {
-					if (response.data.scratchCode) {
-						//TODO SHOW scratch code
-					} else {
-						console.error(response);
-					}
+					console.log(response);
 				}
 			})
 			.catch((error) => {
 				console.error(error);
 			});
-	};
-	verifyPasswordDialog.value.open();
+	} else {
+		qrCode2FADialog.value = true;
+	}
+}
+
+function showScratchCode() {
+	currentAction.value = 'showScratchCode';
+	verifyUserDialog.value?.open();
+}
+
+function onShowScratchCode() {
+	API.post('/user/get-2fa-scratch-code', {})
+		.then((response) => {
+			if (response.data.new2FAQrCode === true) {
+				// TODO: Handle new QR code case
+			} else {
+				if (response.data.scratchCode) {
+					// TODO: SHOW scratch code
+				} else {
+					console.error(response);
+				}
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+		});
 }
 </script>

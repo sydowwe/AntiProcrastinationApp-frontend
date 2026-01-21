@@ -2,11 +2,11 @@
 <MyDialog v-model="dialog" title="Create Activity" :isSmall="false" hasCloseBtn hasConfirmBtn confirmBtnLabel="Create" :confirmBtnDisabled="!isFormValid"
           @confirmed="validateAndSendForm" @closed="onClose">
 	<VForm ref="form" class="d-flex flex-column ga-3" @submit.prevent="validateAndSendForm">
-		<InputWithButton icon="plus" color="success" @create="addRoleDialog.openAddDialog">
+		<InputWithButton icon="plus" color="success" @create="addRoleDialog?.openAddDialog">
 			<VIdAutocomplete :label="i18n.t('activities.role')" v-model="activityRequest.roleId" :items="roleOptions" required
 			                 :rules="[requiredRule]"></VIdAutocomplete>
 		</InputWithButton>
-		<InputWithButton icon="plus" color="success" @create="addCategoryDialog.openAddDialog">
+		<InputWithButton icon="plus" color="success" @create="addCategoryDialog?.openAddDialog">
 			<VIdAutocomplete
 				:label="i18n.t('activities.category')"
 				v-model="activityRequest.categoryId"
@@ -31,7 +31,7 @@
 <ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"></ActivityCategoryDialog>
 </template>
 <script setup lang="ts">
-import type {VuetifyFormType} from '@/types/RefTypeInterfaces';
+import {VForm} from 'vuetify/components';
 import {ref, watch} from 'vue';
 import {RoleRequest} from '@/dtos/request/RoleRequest';
 import {SelectOption} from '@/dtos/response/SelectOption';
@@ -52,9 +52,9 @@ const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOp
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const i18n = useI18n();
 
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>({} as InstanceType<typeof ActivityRoleDialog>);
-const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>({} as InstanceType<typeof ActivityCategoryDialog>);
+const form = ref<InstanceType<typeof VForm>>();
+const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>();
+const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>();
 
 const {requiredRule} = useGeneralRules()
 
@@ -78,21 +78,21 @@ watch(dialog, async (isOpen) => {
 
 // Watch form validity
 watch(activityRequest, async () => {
-	if (form.value.validate) {
+	if (form.value?.validate) {
 		const {valid} = await form.value.validate();
 		isFormValid.value = valid;
 	}
 }, {deep: true})
 
 async function validateAndSendForm() {
-	const {valid} = await form.value.validate();
+	const {valid} = await form.value!.validate();
 	if (valid) {
 		const createdId = await create(activityRequest.value);
 		if (createdId) {
 			showSuccessSnackbar('Activity created successfully');
 			emit('created', activityRequest.value, createdId);
 			dialog.value = false;
-			form.value.reset();
+			form.value!.reset();
 			activityRequest.value = new ActivityRequest();
 		}
 	} else {
@@ -115,7 +115,7 @@ function open() {
 }
 
 function onClose() {
-	form.value.reset();
+	form.value!.reset();
 	activityRequest.value = new ActivityRequest();
 }
 

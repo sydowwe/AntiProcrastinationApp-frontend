@@ -14,7 +14,7 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	}
 
 	get isMultipleCount() {
-		return this.totalCount && this.totalCount !== 1;
+		return !!this.totalCount && this.totalCount !== 1;
 	}
 
 	static fromJson(json: any) {

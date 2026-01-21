@@ -80,8 +80,8 @@ import {TableColumn} from '@/dtos/dto/TableColumn.ts';
 import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {useDisplay} from 'vuetify/framework';
 import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue';
-import {getNestedValue} from '@/composable/table/TableHeaderComposable.ts';
 import DataTable from '@/components/general/dataTable/DataTable.vue';
+import {getNestedValue} from '@/composables/table/TableHeaderComposable.ts';
 
 const {mdAndDown} = useDisplay();
 const props = defineProps<{
@@ -110,7 +110,10 @@ const sortBy = defineModel<VSortItem[]>('sortBy', {required: true});
 const loading = defineModel<boolean>('loading', {required: true});
 
 watch(() => props.columns, () => {
-	sortBy.value.push(new VSortItem(props.columns[0].key, 'asc'));
+	if (!props.columns[0]?.key) {
+		return
+	}
+	sortBy.value.push(new VSortItem(props.columns[0]?.key, 'asc'));
 })
 
 function edit(item: TItem) {

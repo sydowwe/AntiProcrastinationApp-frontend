@@ -37,7 +37,7 @@ const toggleState = (e: PointerEvent) => {
 	e.preventDefault();
 	const currentIndex = NullFalseTrueCheckboxStates.indexOf(model.value);
 	const nextIndex = (currentIndex + 1) % NullFalseTrueCheckboxStates.length;
-	model.value = NullFalseTrueCheckboxStates[nextIndex];
+	model.value = NullFalseTrueCheckboxStates[nextIndex] ?? null;
 };
 </script>
 

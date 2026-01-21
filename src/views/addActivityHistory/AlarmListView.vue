@@ -14,24 +14,26 @@
 			@isActiveChanged="handleIsActiveChanged" :alarm="alarm"></AlarmItem>
 	</VList>
 </div>
+
+<AlarmDialog ref="alarmDialog" @add="add" @edit="edit"></AlarmDialog>
 </template>
 <script setup lang="ts">
 import AlarmItem from '@/components/addActivityToHistory/AlarmItem.vue';
+import AlarmDialog from '@/components/addActivityToHistory/AlarmDialog.vue';
 import {onMounted, ref} from "vue";
 import {Alarm} from "@/dtos/response/Alarm";
 import {AlarmRequest} from "@/dtos/request/AlarmRequest";
-import type {AlarmDialogType} from '@/types/RefTypeInterfaces';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useAlarmCrud} from '@/composables/ConcretesCrudComposable.ts';
 
-const alarmDialog = ref<AlarmDialogType>({} as AlarmDialogType);
+const alarmDialog = ref<InstanceType<typeof AlarmDialog>>();
 const i18n = useI18n();
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const alarmList = ref([] as Alarm[]);
 
-const {createWithResponse, update, deleteEntity} = useAlarmCrud()
+const {createWithResponse, updateWithResponse, deleteEntity} = useAlarmCrud()
 
 const url = "alarm";
 onMounted(() => {
@@ -79,7 +81,7 @@ const add = (alarm: AlarmRequest) => {
 
 
 const edit = (id: number, alarm: AlarmRequest) => {
-	update(id, alarm).then((response) => {
+	updateWithResponse(id, alarm).then((response) => {
 		alarmList.value[alarmList.value.findIndex((item) => item.id === id)] = response;
 		alarmList.value.sort(Alarm.frontEndSortFunction());
 		showSuccessSnackbar(i18n.t("successFeedback.edited"))

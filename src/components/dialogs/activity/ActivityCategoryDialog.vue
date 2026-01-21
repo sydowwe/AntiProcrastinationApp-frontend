@@ -16,7 +16,7 @@ import {Category} from '@/dtos/response/Category.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useActivityCategoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
-import type {VuetifyFormType} from '@/types/RefTypeInterfaces';
+import {VForm} from 'vuetify/components';
 
 const {create, update} = useActivityCategoryCrud()
 const {lettersWithDiacriticsAndSpecialCharsRule, requiredRule} = useGeneralRules()
@@ -28,7 +28,7 @@ const {useApi} = defineProps({
 	}
 })
 
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
+const form = ref<InstanceType<typeof VForm>>();
 const dialog = ref(false);
 const request = ref(new CategoryRequest());
 const idToEdit = ref<number | null>(null);
@@ -48,7 +48,7 @@ function openEditDialog(oldCategory: Category) {
 }
 
 async function onConfirmed() {
-	const {valid} = await form.value.validate();
+	const {valid} = await form.value!.validate();
 	if (!valid) return;
 	if (isEdit.value) {
 		if (useApi) {
@@ -63,7 +63,7 @@ async function onConfirmed() {
 		emit('create', request.value);
 	}
 	dialog.value = false;
-	form.value.reset();
+	form.value!.reset();
 	request.value = new CategoryRequest();
 	idToEdit.value = null;
 	isEdit.value = false;
