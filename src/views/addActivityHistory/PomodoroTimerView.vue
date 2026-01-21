@@ -13,7 +13,7 @@
 				<div class="d-flex justify-center ga-3">
 					<VCard variant="tonal" class="pa-4 borderGrey">
 						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.focusTime') }}</VCardTitle>
-						<TimePicker v-model="focusInitialTime" :whatToShow="['minutes','seconds']"></TimePicker>
+						<TimePicker v-model="focusInitialTime" viewMode="minute"></TimePicker>
 					</VCard>
 					<VCard variant="tonal" class="pa-4 borderGrey">
 						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.shortRestTime') }}</VCardTitle>
@@ -65,7 +65,6 @@ import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
 import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
 import {Time} from '@/utils/Time.ts';
-import type {ActivityDialogType, ActivitySelectionFormType,} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
@@ -75,9 +74,9 @@ import {TimePrecise} from '@/utils/TimePrecise.ts';
 
 const i18n = useI18n();
 
-const mainActivitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-const restActivitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
+const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
+const restActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
+const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();
 
 // const focusInitialTime = ref(new TimeLengthObject(0, 25, 0));
 // const shortRestInitialTime = ref(new TimeLengthObject(0, 5, 0));
@@ -141,7 +140,7 @@ checkNotificationPermission();
 function start() {
 	if (paused.value) {
 		resume();
-	} else if (mainActivitySelectionForm.value.validate()) {
+	} else if (mainActivitySelectionForm.value?.validate()) {
 		formDisabled.value = true;
 		startTimestamp.value = new Date();
 		timeInputVisible.value = false;
@@ -205,8 +204,8 @@ function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
 	const timeSpent = Time.fromSeconds(focusTimeElapsed.value);
 	const restNice = Time.fromSeconds(restTimeElapsed.value).getNice;
-	let activityName = mainActivitySelectionForm.value.getSelectedActivityName as string;
-	saveDialog.value.open(activityName, timeSpent);
+	let activityName = mainActivitySelectionForm.value?.getSelectedActivityName as string;
+	saveDialog.value?.open(activityName, timeSpent);
 	if (automatic) {
 		showNotification('Timer ended', `Your focused on ${activityName} for ${timeSpent.getNice} and rested for ${restNice}`);
 	}
@@ -233,8 +232,8 @@ function resetPickersToDefault() {
 }
 
 function saveActivity() {
-	mainActivitySelectionForm.value.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value));
-	restActivitySelectionForm.value.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(restTimeElapsed.value));
+	mainActivitySelectionForm.value?.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value));
+	restActivitySelectionForm.value?.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(restTimeElapsed.value));
 }
 </script>
 <style scoped>

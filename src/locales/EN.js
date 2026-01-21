@@ -51,6 +51,9 @@ const EN = {
                 previousMonth: 'Previous month',
                 nextMonth: 'Next month',
                 selectYear: 'Select year',
+                previousYear: 'Previous year',
+                nextYear: 'Next year',
+                selectMonth: 'Select month',
                 selectDate: '{0}',
                 // Full date format
                 currentDate: 'Today, {0}'
@@ -86,7 +89,10 @@ const EN = {
         timePicker: {
             am: 'AM',
             pm: 'PM',
-            title: 'Select Time'
+            title: 'Select Time',
+            hour: 'Hour',
+            minute: 'Minute',
+            second: 'Second'
         },
         pagination: {
             ariaLabel: {
@@ -142,7 +148,8 @@ const EN = {
             backspace: 'Backspace',
             option: 'Option',
             plus: 'plus',
-            shortcut: 'Keyboard shortcut: {0}'
+            shortcut: 'Keyboard shortcut: {0}',
+            or: 'or'
         },
         video: {
             play: 'Play',
@@ -237,6 +244,9 @@ const EN = {
         dateRange: `Date range`,
         hoursBack: `Hours back`,
         today: `Today`,
+    },
+    alarm: {
+        isActive: `Active`,
     },
     controls: {
         start: `Start`,

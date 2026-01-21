@@ -1,16 +1,3 @@
-<script setup lang="ts">
-import {defineEmits} from 'vue';
-
-const props = defineProps({
-	title: String,
-	hasFooter: {type: Boolean, default: true},
-})
-const emit = defineEmits<{
-	(e: 'cancel'): void;
-	(e: 'confirm'): void;
-}>();
-</script>
-
 <template>
 <VCard class="mt-5">
 	<VCardTitle v-if="title" class="mb-4">{{ title }}</VCardTitle>
@@ -27,6 +14,17 @@ const emit = defineEmits<{
 	</VCardActions>
 </VCard>
 </template>
+<script setup lang="ts">
+const props = defineProps({
+	title: String,
+	hasFooter: {type: Boolean, default: true},
+})
+const emit = defineEmits<{
+	(e: 'cancel'): void;
+	(e: 'confirm'): void;
+}>();
+</script>
+
 
 <style scoped>
 

@@ -72,37 +72,26 @@
 </template>
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
-import {onBeforeUnmount, onMounted, type PropType, ref, watch} from 'vue';
+import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import {pointerOutsideOfPreview} from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview';
 import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue';
 import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
+import {MenuItem} from '@/dtos/dto/MenuAction.ts';
 
 const i18n = useI18n();
 
-const props = defineProps({
-	toDoListItem: {
-		type: Object as PropType<TItem>,
-		required: true,
-	},
-	color: {
-		type: String,
-		required: true,
-	},
-	isInChangeOrderMode: {
-		type: Boolean,
-		default: false,
-	},
-	listId: {
-		type: Number,
-		required: true,
-	},
-	isDragging: {
-		type: Boolean,
-		default: false,
-	},
+const props = withDefaults(defineProps<{
+	toDoListItem: TItem;
+	color: string;
+	isInChangeOrderMode?: boolean;
+	listId: number;
+	isDragging?: boolean;
+}>(), {
+	isInChangeOrderMode: false,
+	isDragging: false,
 });
 
 const emits = defineEmits<{
@@ -185,9 +174,9 @@ const setupDraggable = () => {
 };
 
 const actions = [
-	{name: 'select', variant: 'tonal', color: 'primaryOutline', icon: 'check-circle', action: toggleSelect},
-	{name: 'edit', variant: 'outlined', color: 'primaryOutline', icon: 'pen-to-square', action: edit},
-	{name: 'delete', variant: 'outlined', color: 'secondaryOutline', icon: 'trash-can', action: del},
+	new MenuItem('select', 'tonal', 'primaryOutline', 'check-circle', toggleSelect),
+	new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', edit),
+	new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', del),
 ];
 
 function itemClicked(event: Event) {

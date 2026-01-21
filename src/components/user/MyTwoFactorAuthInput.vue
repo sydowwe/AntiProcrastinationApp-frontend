@@ -13,8 +13,9 @@
 
 <script setup lang="ts">
 import {ref} from 'vue';
+import {API} from '@/plugins/axiosConfig.ts';
 
-const token = defineModel<string | null>({required: true});
+const token = defineModel<string | undefined>({required: true});
 defineProps({
 	isTwoFactorAuthError: {
 		type: Boolean,
@@ -25,16 +26,16 @@ defineProps({
 const isTwoFactorAuthRequired = ref(false);
 
 async function triggerVisibilityCheck() {
-	return await  API.post('/user/get-2fa-status', {})
+	return await API.post('/user/get-2fa-status', {})
 		.then((response) => {
 			let isError = false;
 			if (response.data === true) {
 				isTwoFactorAuthRequired.value = true;
 			} else if (response.data === false) {
 				isTwoFactorAuthRequired.value = false;
-				token.value = null;
+				token.value = undefined;
 			} else {
-				console.error(error);
+				console.error(response.data);
 				isError = true;
 			}
 			return isError;
@@ -44,5 +45,6 @@ async function triggerVisibilityCheck() {
 			return true;
 		});
 }
-defineExpose({ triggerVisibilityCheck });
+
+defineExpose({triggerVisibilityCheck});
 </script>

@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import type {MyTwoFactorAuthInputType, VuetifyFormType} from '@/types/RefTypeInterfaces';
+import {VForm} from 'vuetify/components';
 
 import {useI18n} from 'vue-i18n';
 import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue';
@@ -35,34 +35,36 @@ const props = defineProps({
 	}
 })
 const dialog = ref(false);
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
-const twoFactorAuthInput = ref<MyTwoFactorAuthInputType>({} as MyTwoFactorAuthInputType);
+const form = ref<InstanceType<typeof VForm>>();
+const twoFactorAuthInput = ref<InstanceType<typeof MyTwoFactorAuthInput>>();
 
 const password = ref<string | null>(null);
 const loading = ref(false);
 
-const twoFactorAuthToken = ref<string | null>(null);
+const twoFactorAuthToken = ref<string | undefined>(undefined);
 const isTwoFactorAuthError = ref(false);
 
 async function open() {
 	console.log('aaaa')
-	if (!await twoFactorAuthInput.value.triggerVisibilityCheck()) {
+	if (!await twoFactorAuthInput.value!.triggerVisibilityCheck()) {
 		dialog.value = true;
 	}
 }
 
-function close(){
+function close() {
 	dialog.value = false;
 }
-function closeAndReset(){
+
+function closeAndReset() {
 	close();
 	reset();
 }
-function reset(){
-	form.value.reset();
+
+function reset() {
+	form.value!.reset();
 }
 
-async function defaultSubmit(){
+async function defaultSubmit() {
 	API.post(props.url, {
 		password: password.value,
 		twoFactorAuthToken: twoFactorAuthToken.value
@@ -74,19 +76,19 @@ async function defaultSubmit(){
 		})
 		.catch((error) => {
 			console.log(error);
-			form.value.reset();
+			form.value!.reset();
 			showErrorSnackbar(i18n.t('authorization.wrongPassword'), {timeout: 3000})
 		});
 }
 
 async function validateAndSendForm() {
 	loading.value = true;
-	const {valid} = await form.value.validate();
+	const {valid} = await form.value!.validate();
 	if (valid) {
-		if(props.useDefaultSubmitFunction){
+		if (props.useDefaultSubmitFunction) {
 			await defaultSubmit();
-		}else {
-			emit('submitted', password.value,twoFactorAuthToken.value)
+		} else {
+			emit('submitted', password.value, twoFactorAuthToken.value)
 		}
 	} else {
 		loading.value = false;
@@ -94,5 +96,5 @@ async function validateAndSendForm() {
 }
 
 const emit = defineEmits(['verified', 'submitted']);
-defineExpose({open, close, reset, closeAndReset });
+defineExpose({open, close, reset, closeAndReset});
 </script>

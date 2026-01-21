@@ -24,14 +24,14 @@
 	</template>
 </VDataTableServer>
 </template>
-<script setup lang="ts" generic="TItem extends IBaseResponse">
+<script setup lang="ts" generic="TItem extends IMyResponse">
 import {TableAction} from '@/dtos/dto/TableAction.ts';
 import {TableColumn} from '@/dtos/dto/TableColumn.ts';
 import {VSortItem} from '@/dtos/dto/VSortItem.ts';
-import {type IBaseResponse} from '@/dtos/response/interface/IMyResponse';
 import {computed} from 'vue';
 import {VDataTableServer} from 'vuetify/components';
-import {useTableHeader} from '@/composable/table/TableHeaderComposable.ts';
+import {useTableHeader} from '@/composables/table/TableHeaderComposable.ts';
+import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
 
 const props = defineProps<{
 	itemsLength: number,

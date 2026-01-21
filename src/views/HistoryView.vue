@@ -53,7 +53,7 @@ function handleFilterApplied(filterData: ActivityHistoryFilter, isDateRange: boo
 	let filter = {...filterData, dateTo: filterData.dateTo ? new Date(filterData.dateTo) : null};
 	filter.dateTo?.setHours(23, 59, 59, 999);
 	if (isDateRange) {
-		filter.hoursBack = null;
+		filter.hoursBack = undefined;
 		filter.dateFrom?.setHours(0, 0, 1, 0);
 	} else {
 		filter.dateFrom = null;

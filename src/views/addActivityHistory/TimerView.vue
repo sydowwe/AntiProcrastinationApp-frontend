@@ -16,15 +16,14 @@ import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
 import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
 import {Time} from '@/utils/Time.ts';
-import type {ActivityDialogType, ActivitySelectionFormType} from '@/types/RefTypeInterfaces';
 import {computed, ref} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';
 
-const activitySelectionForm = ref<ActivitySelectionFormType>({} as ActivitySelectionFormType);
-const saveDialog = ref<ActivityDialogType>({} as ActivityDialogType);
+const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
+const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();
 
 
 const timeInputVisible = ref(true);
@@ -43,7 +42,7 @@ checkNotificationPermission();
 function start() {
 	if (paused.value) {
 		resume();
-	} else if (activitySelectionForm.value.validate()) {
+	} else if (activitySelectionForm.value?.validate()) {
 		formDisabled.value = true;
 		startTimestamp.value = new Date();
 		timeInputVisible.value = false;
@@ -71,12 +70,12 @@ function resume() {
 
 function stop(automatic: boolean) {
 	clearInterval(intervalId.value);
-	let activityName = activitySelectionForm.value.getSelectedActivityName as string;
+	let activityName = activitySelectionForm.value!.getSelectedActivityName as string;
 	if (automatic) {
 		showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timePassed().getNice}`);
 	}
 	if (timePassed().getInMinutes > 0) {
-		saveDialog.value.open(activityName, timePassed());
+		saveDialog.value!.open(activityName, timePassed());
 	} else {
 		resetTimer();
 	}
@@ -95,7 +94,7 @@ function resetToDefault() {
 }
 
 function saveActivity() {
-	activitySelectionForm.value.saveActivityToHistory(startTimestamp.value, timePassed());
+	activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed());
 }
 
 function timePassed() {

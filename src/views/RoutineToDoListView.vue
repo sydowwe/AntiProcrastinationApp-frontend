@@ -2,7 +2,7 @@
 <div class="h-100 w-100 d-flex flex-column">
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center ga-2">
-			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
+			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
 			<VBtn
 				text="drag & drop"
 				:color="isInChangeOrderMode ? 'secondary' : 'secondaryOutline'"
@@ -61,7 +61,6 @@ import {RoutineTodoListGroupedList} from '@/dtos/response/RoutineTodoListGrouped
 import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequest';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest';
-import type {RoutineToDoListItemDialogType} from '@/types/RefTypeInterfaces';
 import {useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
@@ -69,7 +68,7 @@ const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
 const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder} = useRoutineTodoListItemCrud()
 
 const groupedItems = ref([] as RoutineTodoListGroupedList[]);
-const toDoListDialog = ref<RoutineToDoListItemDialogType>({} as RoutineToDoListItemDialogType);
+const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>();
 const isInChangeOrderMode = ref(false);
 
 onMounted(() => {

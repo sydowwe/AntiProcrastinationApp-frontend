@@ -88,7 +88,10 @@ async function add(toDoListItem: ToDoListItemRequest) {
 }
 
 async function quickEditedActivity(id: number) {
-	items.value[items.value.findIndex(item => item.id === id)].activity = await fetchByIdActivity(id);
+	const toDoList = items.value[items.value.findIndex(item => item.id === id)];
+	if (toDoList) {
+		toDoList.activity = await fetchByIdActivity(id);
+	}
 }
 
 async function edit(id: number, toDoListItemRequest: ToDoListItemRequest) {
@@ -133,7 +136,7 @@ async function updateAfterEdit(id: number, oldTaskUrgencyId?: number) {
 }
 
 async function itemsChanged(changedItems: number[]) {
-	if (changedItems.length === 1) {
+	if (changedItems.length === 1 && changedItems[0]) {
 		await updateAfterEdit(changedItems[0]);
 	} else {
 		items.value = await fetchAll();

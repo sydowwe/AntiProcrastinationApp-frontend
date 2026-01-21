@@ -344,6 +344,7 @@ export function useAlarmCrud() {
 		createWithResponse,
 		create,
 		update,
+		updateWithResponse,
 		deleteEntity
 	} = useEntityCommand<Alarm, AlarmRequest, AlarmRequest>({
 		responseClass: Alarm,
@@ -352,5 +353,5 @@ export function useAlarmCrud() {
 		entityName: url
 	})
 
-	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity}
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity}
 }

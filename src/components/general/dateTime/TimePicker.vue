@@ -17,6 +17,7 @@
 		<VTimePicker
 			v-model="timeString"
 			format="24hr"
+			:viewMode
 			:allowedMinutes
 			scrollable
 		/>
@@ -30,12 +31,14 @@ import {Time} from '@/utils/Time.ts'
 
 const props = withDefaults(defineProps<{
 	label?: string
+	viewMode?: 'hour' | 'minute' | 'second'
 	icon?: string
 	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
 	height?: 40 | 48 | 56,
 	disabled?: boolean
 }>(), {
 	label: 'Time',
+	viewMode: 'hour',
 	allowedMinutesSelected: '10',
 	height: 48,
 	disabled: false

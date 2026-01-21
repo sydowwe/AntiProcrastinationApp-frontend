@@ -38,8 +38,8 @@ import router from '@/plugins/router.ts';
 import {useUserStore} from '@/stores/userStore.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
-import type {VuetifyFormType} from '@/types/RefTypeInterfaces.ts';
 import {useI18n} from 'vue-i18n';
+import {VForm} from 'vuetify/components';
 import {RegistrationRequest} from '@/dtos/request/RegistrationRequest.ts';
 import {AvailableLocales} from '@/dtos/enum/AvailableLocales.ts';
 
@@ -54,7 +54,7 @@ async function goToLogin() {
 	await router.push({name: 'login'});
 }
 
-const form = ref<VuetifyFormType>({} as VuetifyFormType);
+const form = ref<InstanceType<typeof VForm>>();
 const registrationRequest = ref(new RegistrationRequest());
 
 const termsAndConditions = ref(false);
@@ -68,7 +68,7 @@ const {executeRecaptcha} = useRecaptcha();
 
 async function validateAndSendForm() {
 	const recaptchaToken = await executeRecaptcha('register');
-	const {valid} = await form.value.validate();
+	const {valid} = await form.value!.validate();
 	if (valid) {
 		showFullScreenLoading();
 		if (recaptchaToken != null && recaptchaToken != '') {

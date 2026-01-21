@@ -12,7 +12,7 @@
 		<VDateInput v-if="isDateRange"
 		            class="flex-1-0"
 		            :label="$t('dateTime.dateFrom')"
-		            :clearable="true" :display-format="formatToDate"
+		            :clearable="true" :display-format="formatToDateTs"
 		            v-model="filterData.dateFrom">
 		</VDateInput>
 		<div v-else class="flex-1-0 d-flex flex-column flex-md-row ">
@@ -24,7 +24,7 @@
 				              max-width="150px"
 				              hideDetails
 				></VNumberInput>
-				<v-slider
+				<VSlider
 					class="flex-1-0 ml-4 mr-3"
 					:label="$t('dateTime.hoursBack')"
 					v-model="filterData.hoursBack"
@@ -32,7 +32,7 @@
 					:max="MAX_HOURS_BACK"
 					:step="1"
 					hideDetails
-				></v-slider>
+				></VSlider>
 			</div>
 		</div>
 		<div class="flex-1-0 d-flex align-center">
@@ -48,7 +48,7 @@
 				:label="$t('dateTime.dateTo')"
 				v-model="filterData.dateTo"
 				:clearable="isDateRange"
-				:display-format="formatToDate"
+				:display-format="formatToDateTs"
 				:maxDate="new Date()"
 				hideDetails
 			>
@@ -73,9 +73,9 @@ import {useMoment} from '@/scripts/momentHelper.ts';
 import HistoryCurrentFilterInfo from '@/components/history/HistoryCurrentFilterInfo.vue';
 
 const {formatToDate} = useMoment()
+const formatToDateTs = formatToDate as (date: unknown) => string
 const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 provide('activitySelectionForm', activitySelectionForm);
-
 
 const MIN_HOURS_BACK = 2;
 const MAX_HOURS_BACK = 72;
