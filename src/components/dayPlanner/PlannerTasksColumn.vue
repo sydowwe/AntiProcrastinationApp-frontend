@@ -11,7 +11,7 @@
 	<div
 		v-for="(slot, index) in store.timeSlots"
 		:key="index"
-		:class="['task-slot', { 'hoverable': !creationPreview && !store.isDraggingAny }]"
+		:class="['task-slot', { 'hoverable': !localCreationPreview && !store.isDraggingAny }]"
 		:data-slot-index="index"
 	/>
 
@@ -30,8 +30,8 @@
 
 	<!-- Creation Preview -->
 	<CreationPreview
-		v-show="creationPreview"
-		:preview="creationPreview"
+		v-show="localCreationPreview"
+		:preview="localCreationPreview"
 	/>
 
 	<slot name="task-block" v-for="task in store.tasks" :key="task.id" :task="task" :onResizeStart="handleResizeStart">
@@ -62,8 +62,8 @@ const calendarGrid = computed(() => tasksColumnRef.value?.parentElement as HTMLE
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
 const {isVisible, gridRowStyle} = useCurrentTimeIndicator(store)
 
-// Creation state
-const creationPreview = ref<CreationPreviewType | undefined>(undefined)
+// Local creation state for preview rendering
+const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
 
 // Drag state (local to TasksColumn - not needed in TaskBlock)
 const originalTaskState = ref<TTask | null>(null)
@@ -163,7 +163,7 @@ function handlePointerDown(e: PointerEvent): void {
 
 	const slotIndex = getSlotIndexFromPosition(e.clientY)
 
-	creationPreview.value = CreationPreviewType.init(slotIndex + 1);
+	localCreationPreview.value = CreationPreviewType.init(slotIndex + 1);
 	e.preventDefault()
 }
 
@@ -246,21 +246,21 @@ function handlePointerMove(e: PointerEvent): void {
 	}
 
 	// Handle creation
-	if (!creationPreview.value) return
+	if (!localCreationPreview.value) return
 
 	const slotIndex = getSlotIndexFromPosition(e.clientY)
 
-	if (slotIndex >= creationPreview.value.initRow - 1) {
+	if (slotIndex >= localCreationPreview.value.initRow - 1) {
 		// Dragging down
 		const newEndRow = slotIndex + 1
-		if (!checkTaskConflictByRow(creationPreview.value.startRow, newEndRow)) {
-			creationPreview.value.endRow = newEndRow
+		if (!checkTaskConflictByRow(localCreationPreview.value.startRow, newEndRow)) {
+			localCreationPreview.value.endRow = newEndRow
 		}
 	} else {
 		// Dragging up
 		const newStartRow = slotIndex + 1
-		if (!checkTaskConflictByRow(newStartRow, creationPreview.value.endRow)) {
-			creationPreview.value.startRow = newStartRow
+		if (!checkTaskConflictByRow(newStartRow, localCreationPreview.value.endRow)) {
+			localCreationPreview.value.startRow = newStartRow
 		}
 	}
 }
@@ -364,14 +364,13 @@ function handlePointerUp(): void {
 	}
 
 	// Handle creation end
-	if (!creationPreview.value) return
+	if (!localCreationPreview.value) return
 
-	const startTime = store.slotIndexToTime(creationPreview.value.startRow - 1)
-	const endTime = store.slotIndexToTime(creationPreview.value.endRow)
+	// Store the creation preview in the store for the dialog to use
+	store.creationPreview = localCreationPreview.value
+	store.openCreateDialog()
 
-	store.openCreateDialogPrefilled(startTime, endTime)
-
-	creationPreview.value = undefined;
+	localCreationPreview.value = undefined;
 }
 
 

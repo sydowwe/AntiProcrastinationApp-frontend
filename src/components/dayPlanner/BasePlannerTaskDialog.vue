@@ -70,6 +70,7 @@ import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 const props = defineProps<{
 	title: string
 	store: TStore
+	createEmptyRequest: () => TTaskRequest
 }>()
 
 const emit = defineEmits<{
@@ -86,7 +87,7 @@ const importanceOptions = ref([] as TaskImportance[]);
 
 const isEdit = computed(() => props.store.editedId !== undefined)
 
-const data = ref<TTaskRequest>(props.store.editingTask as TTaskRequest)
+const data = ref<TTaskRequest>(props.createEmptyRequest())
 
 onMounted(async () => {
 	importanceOptions.value = await fetchAll();
@@ -100,14 +101,43 @@ function setDefaultImportance() {
 watch(() => props.store.dialog, async (value) => {
 	if (value) {
 		await nextTick()
-		if (props.store.editingTask) {
-			data.value = {...props.store.editingTask as TTaskRequest}
-			if (props.store.editedId) {
-				activityFormField.value?.onOpenEdit(props.store.editingTask.activityId!)
-			} else {
-				setDefaultImportance()
+
+		if (props.store.editedId) {
+			// Edit mode: load task data from store
+			const task = props.store.tasks.find(t => t.id === props.store.editedId)
+			if (task) {
+				// Use toRequest() method if available, otherwise manually map fields
+				if ('toRequest' in task && typeof task.toRequest === 'function') {
+					data.value = task.toRequest() as TTaskRequest
+				} else {
+					data.value = {
+						...props.createEmptyRequest(),
+						activityId: task.activity.id,
+						startTime: task.startTime,
+						endTime: task.endTime,
+						isBackground: task.isBackground,
+						location: task.location,
+						notes: task.notes,
+						importanceId: task.importance?.id ?? null,
+						color: task.color
+					} as TTaskRequest
+				}
+				activityFormField.value?.onOpenEdit(task.activity.id)
 			}
+		} else {
+			// Create mode: use empty request with optional time from creationPreview
+			data.value = props.createEmptyRequest()
+
+			if (props.store.creationPreview) {
+				data.value.startTime = props.store.slotIndexToTime(props.store.creationPreview.startRow - 1)
+				data.value.endTime = props.store.slotIndexToTime(props.store.creationPreview.endRow)
+			}
+
+			setDefaultImportance()
 		}
+	} else {
+		// Clear creation preview when dialog closes
+		props.store.creationPreview = undefined
 	}
 })
 

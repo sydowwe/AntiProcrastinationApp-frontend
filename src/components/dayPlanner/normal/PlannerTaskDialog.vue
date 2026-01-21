@@ -2,7 +2,8 @@
 <BasePlannerTaskDialog
 	:title="!isEdit ? 'Add New Task' : 'Edit Task'"
 	:store
-	@edit="(taskId, task) => emit('edit', taskId, task as PlannerTaskRequest)"
+	:createEmptyRequest="() => new PlannerTaskRequest()"
+	@edit="(id, task) => emit('edit', id, task as PlannerTaskRequest)"
 	@create="emit('create', $event as PlannerTaskRequest)"
 >
 	<template #additional-fields="{ data }">
