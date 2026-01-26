@@ -16,7 +16,7 @@
 		</div>
 	</div>
 	<VRow class="my-0">
-		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="pb-4">
+		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
 			<VIdAutocomplete label="Role" v-model="formData!.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
 			                 hide-details density="compact"></VIdAutocomplete>
 		</VCol>
