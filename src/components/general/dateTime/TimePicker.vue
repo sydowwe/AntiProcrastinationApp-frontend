@@ -1,28 +1,27 @@
 <!-- TimePicker.vue -->
 <template>
-<VMenu :closeOnContentClick="false">
-	<template v-slot:activator="{ props: menuProps }">
-		<VBtn
-			v-bind="menuProps"
-			variant="outlined"
-			:prependIcon="icon"
-			:height="height"
-			:disabled
-			:class="{'pr-2': !!icon}"
-		>
-			{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
-		</VBtn>
-	</template>
-	<template v-slot:default>
-		<VTimePicker
-			v-model="timeString"
-			format="24hr"
-			:viewMode
-			:allowedMinutes
-			scrollable
-		/>
-	</template>
-</VMenu>
+<VBtn
+	:variant
+	:color
+	:prependIcon="icon"
+	:height
+	:disabled
+	:class="{'pr-2': !!icon}"
+>
+	{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
+	<VMenu :closeOnContentClick="false" activator="parent">
+		<template v-slot:default>
+			<VTimePicker
+				v-model="timeString"
+				format="24hr"
+				:viewMode
+				:allowedMinutes
+				scrollable
+			/>
+		</template>
+	</VMenu>
+</VBtn>
+
 </template>
 
 <script setup lang="ts">
@@ -30,16 +29,19 @@ import {computed} from 'vue'
 import {Time} from '@/utils/Time.ts'
 
 const props = withDefaults(defineProps<{
+	variant?: 'outlined' | 'tonal' | 'elevated'
+	color?: string
 	label?: string
 	viewMode?: 'hour' | 'minute' | 'second'
 	icon?: string
-	allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
+	allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
 	height?: 40 | 48 | 56,
 	disabled?: boolean,
 }>(), {
+	variant: 'outlined',
 	label: 'Time',
 	viewMode: 'hour',
-	allowedMinutesSelected: '10',
+	allowedMinutesSelected: '1',
 	height: 48,
 	disabled: false,
 })

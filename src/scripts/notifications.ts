@@ -1,10 +1,10 @@
 export function showNotification(title: string, message: string) {
     if (Notification.permission === 'granted') {
-      console.log(title);
       const notification = new Notification(title, { body: message });
       notification.onclick = () => {
-        console.log('asdds');
-      }
+        window.focus();
+        notification.close();
+      };
       notification.onerror = (e: Event) => {
         console.log('Notification error:', e);
       };
