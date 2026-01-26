@@ -222,6 +222,7 @@ const SK = {
         confirm: `Potvrdiť`,
         new: `Nový`,
         update: `Aktualizovať`,
+        optional: `Voliteľné`,
     },
     dateTime: {
         when: `Kedy`,
@@ -292,6 +293,8 @@ const SK = {
         autoStartBreaks: `Automaticky spustiť prestávky`,
         autoStartFocus: `Automaticky spustiť sústredenie`,
         soundEnabled: `Zvukové upozornenia povolené`,
+        focusActivity: `Aktivita pre sústredenie`,
+        restActivity: `Aktivita pre oddych`,
     },
     history: {
         addActivityToHistory: `Pridať aktivitu do histórie`,

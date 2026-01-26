@@ -222,7 +222,7 @@ const EN = {
         confirm: `Confirm`,
         new: `New`,
         update: `Update`,
-
+        optional: `Optional`,
     },
     dateTime: {
         when: `When`,
@@ -293,6 +293,8 @@ const EN = {
         autoStartBreaks: `Auto-start breaks`,
         autoStartFocus: `Auto-start focus sessions`,
         soundEnabled: `Sound notifications enabled`,
+        focusActivity: `Focus activity`,
+        restActivity: `Rest activity`,
     },
     history: {
         addActivityToHistory: `Add activity to history`,
