@@ -1,9 +1,10 @@
 <template>
 <VProgressCircular :model-value="timerProgress"
+                   class="reversed-v-progress-circular mx-auto mb-4"
                    size="400"
                    width="30"
+                   rotate="360"
                    :color="color"
-                   class="mx-auto mb-4"
 >
 	<div class="d-flex flex-column">
 		<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
@@ -44,5 +45,11 @@ const timerProgress = computed(() => {
 })
 </script>
 <style scoped>
+.reversed-v-progress-circular {
+	transform: scaleX(-1);
+}
 
+.reversed-v-progress-circular :deep(.v-progress-circular__content) {
+	transform: scaleX(-1);
+}
 </style>

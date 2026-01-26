@@ -14,7 +14,7 @@
 		</div>
 		<div class="d-flex flex-column flex-sm-row mb-4">
 			<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-			<TimePicker v-model="startTime" class="ml-2 flex-grow-1"></TimePicker>
+			<TimePicker v-model="startTime" class="ml-2 flex-grow-1" allowedMinutesSelected="10"></TimePicker>
 		</div>
 		<div class="d-flex flex-column flex-sm-row mb-4">
 			<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
