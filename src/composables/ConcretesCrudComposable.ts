@@ -30,6 +30,8 @@ import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import type {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts';
 import type {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts';
 import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
+import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
+import {TimerPresetRequest} from '@/dtos/request/TimerPresetRequest.ts';
 
 export function useActivityHistoryCrud() {
 	const url = 'activity-history'
@@ -350,6 +352,25 @@ export function useAlarmCrud() {
 		responseClass: Alarm,
 		createRequestClass: AlarmRequest,
 		updateRequestClass: AlarmRequest,
+		entityName: url
+	})
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity}
+}
+
+export function useTimerPresetCrud() {
+	const url = 'timer-preset';
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TimerPreset>({responseClass: TimerPreset, entityName: url})
+	const {
+		createWithResponse,
+		create,
+		update,
+		updateWithResponse,
+		deleteEntity
+	} = useEntityCommand<TimerPreset, TimerPresetRequest, TimerPresetRequest>({
+		responseClass: TimerPreset,
+		createRequestClass: TimerPresetRequest,
+		updateRequestClass: TimerPresetRequest,
 		entityName: url
 	})
 

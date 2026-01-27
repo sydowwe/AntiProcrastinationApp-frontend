@@ -1,13 +1,15 @@
 <template>
-<VRow justify="center" noGutters>
-	<VCol cols="12" sm="11" md="10" lg="7" xl="6" class="mt-lg-5 mt-md-3 d-flex flex-column ga-6">
-		<TimePicker class="w-md-50 w-xl-25 mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" variant="tonal"
+<VRow justify="center" class="my-auto">
+	<VCol cols="12" sm="11" md="10" lg="7" xl="6" class="d-flex flex-column">
+		<TimePicker class="mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" variant="outlined" :height="56" icon="clock"
 		            color="secondaryOutline"></TimePicker>
 		<TimeDisplayWithProgress v-else :timeInitialObject="initialTime" :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
 
-		<TimerControls :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
-		<hr/>
-		<ActivitySelectionForm ref="activitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
+		<TimerControls class="my-7" :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
+		<hr class="mb-4"/>
+		<TimerPresetsSection :timeInputVisible @applyPreset="applyPreset"></TimerPresetsSection>
+		<hr class="mt-6 mb-4"/>
+		<ActivitySelectionForm ref="activitySelectionForm" v-model:activityId="selectedActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
 	</VCol>
 </VRow>
 <SaveActivityDialog ref="saveDialog" @saved="saveActivity" @resetTime="resetTimer"></SaveActivityDialog>
@@ -15,6 +17,7 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
+import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue';
 import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
 import {Time} from '@/utils/Time.ts';
 import {computed, onUnmounted, ref} from 'vue';
@@ -24,6 +27,7 @@ import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
+import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
 
 const {showErrorSnackbar} = useSnackbar();
 const {triggerTimerEndNotification, stopAllNotifications} = useTimerNotifications();
@@ -37,6 +41,7 @@ const paused = ref(false);
 const intervalId = ref<number | undefined>(undefined);
 const startTimestamp = ref(new Date());
 const formDisabled = ref(false);
+const selectedActivityId = ref<number | null>(null);
 
 // Timestamp-based timer state
 const endsAt = ref<number | null>(null);
@@ -153,16 +158,19 @@ function resetTimer() {
 	stopAllNotifications();
 }
 
-function resetToDefault() {
-	initialTime.value = new Time();
-}
-
 function saveActivity() {
 	activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed());
 }
 
 function timePassed() {
 	return timeRemaining.value === 0 ? initialTime.value : initialTime.value.subtract(timeRemainingObject.value.toTimeLength);
+}
+
+function applyPreset(preset: TimerPreset) {
+	initialTime.value = Time.fromMinutes(preset.duration);
+	if (preset.activity) {
+		selectedActivityId.value = preset.activity.id;
+	}
 }
 
 onUnmounted(() => {
