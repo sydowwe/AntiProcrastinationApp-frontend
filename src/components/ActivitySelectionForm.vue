@@ -3,16 +3,16 @@
 	<div class="d-flex flex-column flex-md-row ga-3">
 		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
 			<NullFalseTrueCheckbox label="From to-do list" v-model="formData!.isFromToDoList"
-			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
+			                       :disabled="formDisabled" hide-details density="compact"></NullFalseTrueCheckbox>
 			<VIdSelect v-if="formData?.isFromToDoList" class="flex-1-1" v-model="formData!.taskPriorityId" :items="filteredOptions.taskPriorityOptions"
-			           hide-details></VIdSelect>
+			           hide-details density="compact"></VIdSelect>
 
 		</div>
 		<div v-if="showFromToDoListField" class="flex-1-1 d-flex flex-column flex-md-row ga-3">
 			<NullFalseTrueCheckbox label="From routine to-do list" v-model="formData!.isFromRoutineToDoList"
-			                       :disabled="formDisabled" hide-details></NullFalseTrueCheckbox>
+			                       :disabled="formDisabled" hide-details density="compact"></NullFalseTrueCheckbox>
 			<VIdSelect v-if="formData!.isFromRoutineToDoList" class="flex-1-1" v-model="formData!.routineTimePeriodId"
-			           :items="filteredOptions.routineTimePeriodOptions" hide-details></VIdSelect>
+			           :items="filteredOptions.routineTimePeriodOptions" hide-details density="compact"></VIdSelect>
 		</div>
 	</div>
 	<VRow class="my-0">
