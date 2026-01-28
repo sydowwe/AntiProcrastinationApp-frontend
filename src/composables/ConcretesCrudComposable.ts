@@ -32,6 +32,8 @@ import type {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTas
 import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
 import {TimerPresetRequest} from '@/dtos/request/TimerPresetRequest.ts';
+import {PomodoroTimerPreset} from '@/dtos/response/PomodoroTimerPreset.ts';
+import {PomodoroTimerPresetRequest} from '@/dtos/request/PomodoroTimerPresetRequest.ts';
 
 export function useActivityHistoryCrud() {
 	const url = 'activity-history'
@@ -371,6 +373,25 @@ export function useTimerPresetCrud() {
 		responseClass: TimerPreset,
 		createRequestClass: TimerPresetRequest,
 		updateRequestClass: TimerPresetRequest,
+		entityName: url
+	})
+
+	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, updateWithResponse, deleteEntity}
+}
+
+export function usePomodoroTimerPresetCrud() {
+	const url = 'pomodoro-timer-preset';
+	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<PomodoroTimerPreset>({responseClass: PomodoroTimerPreset, entityName: url})
+	const {
+		createWithResponse,
+		create,
+		update,
+		updateWithResponse,
+		deleteEntity
+	} = useEntityCommand<PomodoroTimerPreset, PomodoroTimerPresetRequest, PomodoroTimerPresetRequest>({
+		responseClass: PomodoroTimerPreset,
+		createRequestClass: PomodoroTimerPresetRequest,
+		updateRequestClass: PomodoroTimerPresetRequest,
 		entityName: url
 	})
 
