@@ -55,7 +55,7 @@
 							{{ i18n.t('pomodoroTimer.focusActivity') }}
 						</h3>
 					</div>
-					<ActivitySelectionForm ref="mainActivitySelectionForm" :formDisabled="formDisabled"></ActivitySelectionForm>
+					<ActivitySelectionForm ref="mainActivitySelectionForm" v-model:activityId="focusActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
 				</VCol>
 				<VCol cols="6">
 					<div class="mb-1 d-flex ga-1 align-center">
@@ -64,7 +64,7 @@
 							{{ i18n.t('pomodoroTimer.restActivity') }} ({{ i18n.t('general.optional') }})
 						</h3>
 					</div>
-					<ActivitySelectionForm ref="restActivitySelectionForm" :formDisabled="formDisabled" isFilter></ActivitySelectionForm>
+					<ActivitySelectionForm ref="restActivitySelectionForm" v-model:activityId="restActivityId" :formDisabled="formDisabled" isFilter></ActivitySelectionForm>
 				</VCol>
 			</VRow>
 			<!-- Activity names display (after start) -->
@@ -180,6 +180,8 @@ const timeInputVisible = ref(true);
 const paused = ref(false);
 const intervalId = ref<number | undefined>(undefined);
 const formDisabled = ref(false);
+const focusActivityId = ref<number | null>(null);
+const restActivityId = ref<number | null>(null);
 
 checkNotificationPermission();
 
@@ -419,11 +421,26 @@ function openPresets() {
 	presetsDialog.value?.open();
 }
 
-function selectPreset(preset: { focusTime: Time; shortRestTime: Time; longRestTime: Time; numberOfFocusPeriodsInCycle: number }) {
+function selectPreset(preset: {
+	focusTime: Time;
+	shortRestTime: Time;
+	longRestTime: Time;
+	numberOfFocusPeriodsInCycle: number;
+	numberOfCycles: number;
+	focusActivityId: number | null;
+	restActivityId: number | null;
+}) {
 	focusInitialTime.value = preset.focusTime;
 	shortRestInitialTime.value = preset.shortRestTime;
 	longRestInitialTime.value = preset.longRestTime;
 	numberOfFocusPeriodsInCycle.value = preset.numberOfFocusPeriodsInCycle;
+	numberOfCycles.value = preset.numberOfCycles;
+	if (preset.focusActivityId) {
+		focusActivityId.value = preset.focusActivityId;
+	}
+	if (preset.restActivityId) {
+		restActivityId.value = preset.restActivityId;
+	}
 }
 
 onUnmounted(() => {
