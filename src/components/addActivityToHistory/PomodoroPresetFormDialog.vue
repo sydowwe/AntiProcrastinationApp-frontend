@@ -1,53 +1,102 @@
 <template>
 <MyDialog v-model="dialog" :title="isEdit ? 'Edit Pomodoro Preset' : 'Add Pomodoro Preset'"
           :confirmBtnLabel="isEdit ? $t('general.update') : $t('general.create')"
-          @confirmed="onConfirmed" :isSmall="false">
-	<VForm ref="form" @submit.prevent="onConfirmed" class="d-flex flex-column ga-3">
-		<VTextField label="Name" v-model="request.name" :rules="[requiredRule]"></VTextField>
+          @confirmed="onConfirmed">
+	<VForm ref="form" @submit.prevent="onConfirmed" class="d-flex flex-column ga-6">
+		<VBtnToggle
+			v-model="activeTab"
+			color="primaryOutline"
+			variant="tonal"
+			density="comfortable"
+			divided
+			mandatory
+		>
+			<VBtn value="basic" class="flex-1-1 text-none">
+				<VIcon icon="fa-solid fa-clock" size="small" class="mr-2"></VIcon>
+				Basic
+			</VBtn>
+			<VBtn value="focus" class="flex-1-1 text-none">
+				<VIcon icon="fa-solid fa-brain" size="small" class="mr-2"></VIcon>
+				With Focus Activity
+			</VBtn>
+			<VBtn value="both" class="flex-1-1 text-none">
+				<VIcon icon="fa-solid fa-list-check" size="small" class="mr-2"></VIcon>
+				With Both Activities
+			</VBtn>
+		</VBtnToggle>
 
-		<VTabs v-model="activeTab" color="primary" align-tabs="center">
-			<VTab value="basic">Basic</VTab>
-			<VTab value="focus">With Focus Activity</VTab>
-			<VTab value="both">With Both Activities</VTab>
-		</VTabs>
+		<VTextField
+			label="Preset Name"
+			v-model="request.name"
+			:rules="[requiredRule]"
+			hideDetails
+		></VTextField>
 
-		<VWindow v-model="activeTab">
-			<!-- Basic Tab -->
-			<VWindowItem value="basic">
-				<div class="d-flex flex-column ga-3 mt-3">
-					<TimePicker label="Focus Duration" v-model="focusDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Short Break Duration" v-model="shortBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Long Break Duration" v-model="longBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<VSelect label="Focus Periods per Cycle" v-model="request.focusPeriodInCycleCount" :items="[2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-					<VSelect label="Number of Cycles" v-model="request.numberOfCycles" :items="[1,2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-				</div>
-			</VWindowItem>
+		<VDivider></VDivider>
 
-			<!-- Focus Activity Tab -->
-			<VWindowItem value="focus">
-				<div class="d-flex flex-column ga-3 mt-3">
-					<TimePicker label="Focus Duration" v-model="focusDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Short Break Duration" v-model="shortBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Long Break Duration" v-model="longBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<VSelect label="Focus Periods per Cycle" v-model="request.focusPeriodInCycleCount" :items="[2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-					<VSelect label="Number of Cycles" v-model="request.numberOfCycles" :items="[1,2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-					<VIdAutocomplete label="Focus Activity" v-model="request.focusActivityId" :items="activityOptions" :rules="[requiredRule]"></VIdAutocomplete>
-				</div>
-			</VWindowItem>
+		<div style="margin-top: -8px">
+			<div class="text-subtitle-2 text-medium-emphasis mb-3">
+				<VIcon icon="fa-solid fa-stopwatch" size="small" class="mr-2"></VIcon>
+				Timer Durations
+			</div>
+			<div class="d-flex flex-column flex-sm-row ga-3">
+				<TimePicker label="Focus" v-model="focusDuration" viewMode="minute" variant="outlined" color="primary" density="comfortable"
+				            class="flex-sm-1-1"></TimePicker>
+				<TimePicker label="Short Break" v-model="shortBreakDuration" viewMode="minute" variant="outlined" color="success"
+				            density="comfortable" class="flex-sm-1-1"></TimePicker>
+				<TimePicker label="Long Break" v-model="longBreakDuration" viewMode="minute" variant="outlined" color="info"
+				            density="comfortable" class="flex-sm-1-1"></TimePicker>
+			</div>
+		</div>
 
-			<!-- Both Activities Tab -->
-			<VWindowItem value="both">
-				<div class="d-flex flex-column ga-3 mt-3">
-					<TimePicker label="Focus Duration" v-model="focusDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Short Break Duration" v-model="shortBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<TimePicker label="Long Break Duration" v-model="longBreakDuration" viewMode="minute" variant="outlined" color="primary"></TimePicker>
-					<VSelect label="Focus Periods per Cycle" v-model="request.focusPeriodInCycleCount" :items="[2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-					<VSelect label="Number of Cycles" v-model="request.numberOfCycles" :items="[1,2,3,4,5,6]" :rules="[requiredRule]"></VSelect>
-					<VIdAutocomplete label="Focus Activity" v-model="request.focusActivityId" :items="activityOptions" :rules="[requiredRule]"></VIdAutocomplete>
-					<VIdAutocomplete label="Rest Activity" v-model="request.restActivityId" :items="activityOptions" :rules="[requiredRule]"></VIdAutocomplete>
-				</div>
-			</VWindowItem>
-		</VWindow>
+		<VDivider></VDivider>
+
+		<div style="margin-top: -8px">
+			<div class="text-subtitle-2 text-medium-emphasis mb-4">
+				<VIcon icon="fa-solid fa-rotate" size="small" class="mr-2"></VIcon>
+				Cycle Settings
+			</div>
+			<div class="d-flex flex-column flex-sm-row ga-4">
+				<VSelect
+					label="Focus Periods per Cycle"
+					class="flex-sm-1-1"
+					v-model="request.focusPeriodInCycleCount"
+					:items="[2,3,4,5,6]"
+					:rules="[requiredRule]"
+					hideDetails
+					density="comfortable"
+				></VSelect>
+				<VSelect
+					label="Number of Cycles"
+					class="flex-sm-1-1"
+					v-model="request.numberOfCycles"
+					:items="[1,2,3,4,5,6]"
+					:rules="[requiredRule]"
+					hideDetails
+					density="comfortable"
+				></VSelect>
+			</div>
+		</div>
+
+		<VDivider v-if="activeTab !== 'basic'"></VDivider>
+
+		<VIdAutocomplete
+			v-if="activeTab === 'focus' || activeTab === 'both'"
+			label="Focus Activity"
+			v-model="request.focusActivityId"
+			:items="activityOptions"
+			:rules="[requiredRule]"
+			hideDetails
+		></VIdAutocomplete>
+
+		<VIdAutocomplete
+			v-if="activeTab === 'both'"
+			label="Rest Activity"
+			v-model="request.restActivityId"
+			:items="activityOptions"
+			:rules="[requiredRule]"
+			hideDetails
+		></VIdAutocomplete>
 	</VForm>
 
 	<template #centerButton v-if="isEdit">
@@ -64,7 +113,7 @@ import {computed, onMounted, ref} from 'vue';
 import {PomodoroTimerPreset} from '@/dtos/response/PomodoroTimerPreset.ts';
 import {PomodoroTimerPresetRequest} from '@/dtos/request/PomodoroTimerPresetRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {usePomodoroTimerPresetCrud, useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud, usePomodoroTimerPresetCrud} from '@/composables/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {Time} from '@/utils/Time.ts';

@@ -1,10 +1,17 @@
 <template>
-<MyDialog v-model="dialog" :title="$t('pomodoroTimer.presets')" :hasConfirmBtn="false" :closeBtnText="$t('general.close')" :isSmall="false">
-	<div class="d-flex justify-end mb-3">
-		<VBtn :variant="editMode ? 'tonal' : 'text'" :color="editMode ? 'primary' : 'default'" size="small" @click="toggleEditMode">
-			{{ editMode ? 'Done' : 'Edit' }}
-		</VBtn>
-	</div>
+<MyDialog v-model="dialog" :hasConfirmBtn="false" :closeBtnText="$t('general.close')">
+	<template #header>
+		<div class="px-6 mt-1 mb-4 d-flex ga-3 align-center">
+			<h3 class="text-h6">Timer {{ $t('pomodoroTimer.presets') }}</h3>
+			<VBtn variant="tonal" :color="editMode ? 'secondaryOutline' : 'default'" :prependIcon="editMode ? 'check' : 'pen-to-square'"
+			      @click="toggleEditMode">
+				{{ editMode ? 'Done' : 'Edit' }}
+			</VBtn>
+			<VBtn color="successDark" @click="openCreateDialog">
+				{{ $t('general.create') }}
+			</VBtn>
+		</div>
+	</template>
 
 	<div v-if="presets.length > 0" class="d-flex flex-column ga-3">
 		<VCard
@@ -12,15 +19,17 @@
 			:key="preset.id"
 			variant="outlined"
 			class="pa-4"
-			:class="{'cursor-pointer': !editMode}"
-			@click="!editMode && selectPreset(preset)"
-			hover
+			:class="{ 'no-interaction': editMode }"
+			:style="{ border: '1px solid rgba(256, 256, 256, 0.3)' }"
+			@click="!editMode ? selectPreset(preset) : undefined"
+			:hover="!editMode"
+			:ripple="!editMode"
 		>
-			<VCardTitle class="text-h6 pb-2 d-flex justify-space-between align-center">
+			<VCardTitle class="text-h6 px-0 pt-0 pb-2 d-flex justify-space-between align-center">
 				<span>{{ preset.name }}</span>
 				<div v-if="editMode" class="d-flex ga-2">
-					<VIconBtn icon="fa:pen-to-square" size="small" variant="text" @click.stop="openEditDialog(preset)"></VIconBtn>
-					<VIconBtn icon="fa:trash" size="small" variant="text" color="error" @click.stop="deletePreset(preset)"></VIconBtn>
+					<VIconBtn icon="pen-to-square" size="x-small" variant="tonal" @click.stop="openEditDialog(preset)"></VIconBtn>
+					<VIconBtn icon="trash" size="x-small" variant="tonal" color="error" @click.stop="deletePreset(preset)"></VIconBtn>
 				</div>
 			</VCardTitle>
 			<VCardText class="pa-0">
@@ -60,12 +69,6 @@
 	<div v-else class="text-center text-textMuted">
 		No presets yet
 	</div>
-
-	<template #rightButton>
-		<VBtn color="primary" @click="openCreateDialog">
-			{{ $t('general.create') }}
-		</VBtn>
-	</template>
 </MyDialog>
 
 <PomodoroPresetFormDialog ref="formDialog" @created="onPresetChanged" @updated="onPresetChanged" @deleted="onPresetChanged"></PomodoroPresetFormDialog>
@@ -151,7 +154,16 @@ defineExpose({open});
 </script>
 
 <style scoped>
-.cursor-pointer {
-	cursor: pointer;
+.no-interaction {
+	cursor: default !important;
+	pointer-events: none;
+}
+
+.no-interaction :deep(.v-card__overlay) {
+	display: none !important;
+}
+
+.no-interaction :deep(*) {
+	pointer-events: auto;
 }
 </style>

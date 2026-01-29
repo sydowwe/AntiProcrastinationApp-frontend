@@ -1,8 +1,9 @@
 <template>
 <VRow justify="center" class="my-auto">
 	<VCol cols="12" sm="11" md="10" lg="7" xl="6" class="d-flex flex-column">
-		<TimePicker class="mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" variant="outlined" :height="56" icon="clock"
-		            color="secondaryOutline"></TimePicker>
+		<TimePicker class="mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" variant="tonal" color="primaryOutline" :height="56"
+		            icon="hourglass-half"
+		></TimePicker>
 		<TimeDisplayWithProgress v-else :timeInitialObject="initialTime" :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
 
 		<TimerControls class="my-7" :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>

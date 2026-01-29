@@ -1,42 +1,40 @@
 <template>
-<VRow justify="center" noGutters>
-	<VCol cols="12" sm="10" md="10" lg="10" class="mt-lg-5 mt-md-3">
-		<v-card elevation="3" class="pa-6">
-			<v-card-title class="text-h5 text-center pb-0">Pomodoro Timer</v-card-title>
-			<v-card-subtitle class="text-h6 text-center mb-5">Stay focused, stay productive!</v-card-subtitle>
+<VRow justify="center" align="center" noGutters>
+	<VCol cols="12" sm="10" md="10" lg="10" class="mt-3 mt-md-0">
+		<VCard elevation="3" class="pa-6">
+			<VCardTitle class="text-h5 text-center pb-3">Pomodoro Timer</VCardTitle>
 			<div v-if="timeInputVisible">
 				<div class="d-flex justify-center ga-2 mb-3">
-					<VBtn color="warning" style="color: white!important;" @click="resetPickersToDefault">{{ i18n.t('controls.resetToDefaults') }}</VBtn>
-					<VBtn color="primary" @click="openPresets">{{ i18n.t('controls.presets') }}</VBtn>
-					<VBtn color="blue-grey-lighten-1" @click="openSettings">{{ i18n.t('controls.settings') }}</VBtn>
+					<VBtn variant="tonal" prependIcon="sliders" color="secondaryOutline" @click="openPresets">{{ i18n.t('controls.presets') }}</VBtn>
+					<VBtn variant="tonal" prependIcon="clock-rotate-left" @click="resetPickersToDefault">Defaults</VBtn>
 				</div>
 				<div class="d-flex justify-center ga-3">
-					<VCard variant="tonal" class="pa-4 borderGrey">
-						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.focusTime') }}</VCardTitle>
-						<TimePicker v-model="focusInitialTime" viewMode="minute"></TimePicker>
-					</VCard>
-					<VCard variant="tonal" class="pa-4 borderGrey">
-						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.shortRestTime') }}</VCardTitle>
-						<TimePicker v-model="shortRestInitialTime" viewMode="minute"></TimePicker>
-					</VCard>
-					<VCard variant="tonal" class="pa-4 borderGrey">
-						<VCardTitle class="text-center pt-0 mb-1">{{ i18n.t('pomodoroTimer.longRestTime') }}</VCardTitle>
-						<TimePicker v-model="longRestInitialTime" viewMode="minute"></TimePicker>
-					</VCard>
+					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
+						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.focusTime') }}</VCardTitle>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="focusInitialTime" viewMode="minute"></TimePicker>
+					</SubtleCard>
+					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
+						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.shortRestTime') }}</VCardTitle>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="shortRestInitialTime" viewMode="minute"></TimePicker>
+					</SubtleCard>
+					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
+						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.longRestTime') }}</VCardTitle>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="longRestInitialTime" viewMode="minute"></TimePicker>
+					</SubtleCard>
 				</div>
-				<VCard variant="tonal" class="mt-3 d-flex flex-column flex-md-row justify-center ga-2 ga-md-3 pa-2 mx-auto borderGrey"
-				       style="max-width: fit-content!important;">
-					<div class="d-flex ga-3">
-						<VLabel>{{ i18n.t('pomodoroTimer.numberOfFocusIntervalsInCycle') }}</VLabel>
+				<SubtleCard color="primary-accent" borderOpacity="high" class="mt-3 d-flex flex-column flex-md-row justify-center ga-2 ga-md-3 pa-2 mx-auto"
+				            style="max-width: fit-content!important;">
+					<div class="d-flex ga-3 align-center">
+						<h4>{{ i18n.t('pomodoroTimer.numberOfFocusIntervalsInCycle') }}</h4>
 						<VSelect class="flex-0-1" v-model="numberOfFocusPeriodsInCycle"
 						         :items="[2,3,4,5,6]" hide-details :clearable="false"></VSelect>
 					</div>
 					<div class="d-flex ga-3 justify-end align-center">
-						<VLabel>{{ i18n.t('pomodoroTimer.numberOfCycles') }}</VLabel>
+						<h4>{{ i18n.t('pomodoroTimer.numberOfCycles') }}</h4>
 						<VSelect class="flex-0-1" v-model="numberOfCycles"
 						         :items="[1,2,3,4,5,6]" hide-details :clearable="false"></VSelect>
 					</div>
-				</VCard>
+				</SubtleCard>
 			</div>
 			<div v-else class="d-flex align-center">
 				<TimeDisplayWithProgress :timeRemainingObject="timeDisplayObject.timeRemainingObject"
@@ -64,7 +62,8 @@
 							{{ i18n.t('pomodoroTimer.restActivity') }} ({{ i18n.t('general.optional') }})
 						</h3>
 					</div>
-					<ActivitySelectionForm ref="restActivitySelectionForm" v-model:activityId="restActivityId" :formDisabled="formDisabled" isFilter></ActivitySelectionForm>
+					<ActivitySelectionForm ref="restActivitySelectionForm" v-model:activityId="restActivityId" :formDisabled="formDisabled"
+					                       isFilter></ActivitySelectionForm>
 				</VCol>
 			</VRow>
 			<!-- Activity names display (after start) -->
@@ -79,9 +78,8 @@
 				</VChip>
 			</div>
 			<SaveActivityDialog ref="saveDialog" @saved="saveActivity()" @resetTime="resetTimer"></SaveActivityDialog>
-			<PomodoroSettingsDialog ref="settingsDialog" @save="saveSettings"></PomodoroSettingsDialog>
 			<PomodoroPresetsDialog ref="presetsDialog" @select="selectPreset"></PomodoroPresetsDialog>
-		</v-card>
+		</VCard>
 	</VCol>
 </VRow>
 
@@ -97,9 +95,9 @@ import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';
-import PomodoroSettingsDialog from '@/components/addActivityToHistory/PomodoroSettingsDialog.vue';
 import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue';
 import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
+import SubtleCard from '@/components/general/feedback/SubtleCard.vue';
 
 const i18n = useI18n();
 const {triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation} = useTimerNotifications();
@@ -107,7 +105,6 @@ const {triggerTimerEndNotification, stopAllNotifications, playNotificationSound,
 const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const restActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();
-const settingsDialog = ref<InstanceType<typeof PomodoroSettingsDialog>>();
 const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>();
 
 const focusInitialTime = ref(new Time(0, 25));
@@ -393,28 +390,6 @@ function saveActivity() {
 	if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
 		restActivitySelectionForm.value.saveActivityToHistory(startTimestamp.value, Time.fromSeconds(restTimeElapsed.value));
 	}
-}
-
-function openSettings() {
-	const currentSettings = {
-		numberOfFocusPeriodsInCycle: numberOfFocusPeriodsInCycle.value,
-		numberOfCycles: numberOfCycles.value,
-		autoStartBreaks: false,
-		autoStartFocus: false,
-		soundEnabled: true
-	};
-	settingsDialog.value?.open(currentSettings);
-}
-
-function saveSettings(settings: {
-	numberOfFocusPeriodsInCycle: number;
-	numberOfCycles: number;
-	autoStartBreaks: boolean;
-	autoStartFocus: boolean;
-	soundEnabled: boolean
-}) {
-	numberOfFocusPeriodsInCycle.value = settings.numberOfFocusPeriodsInCycle;
-	numberOfCycles.value = settings.numberOfCycles;
 }
 
 function openPresets() {

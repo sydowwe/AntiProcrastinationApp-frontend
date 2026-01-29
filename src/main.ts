@@ -41,7 +41,7 @@ pinia.use(context => {
 
 	// If persist is not defined or is true, apply default persistence
 	const persistedState = createPersistedState({
-		storage: localStorage,
+		storage: sessionStorage,
 		// Add any other global defaults here
 	})
 
