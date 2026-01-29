@@ -1,24 +1,24 @@
 <template>
 <VDialog v-model="dialog" :persistent="persistent" :eager="eager" :maxWidth>
-	<VCard class="py-6 px-0" color="surface">
-		<VCardTitle class="mb-1 px-6" v-if="hasHeader">
-			<slot name="header">
+	<VCard class="py-5 px-0" color="surface">
+		<slot name="header">
+			<VCardTitle class="mb-1 px-6" v-if="hasHeader">
 				<div class="text-h5">
 					{{ title }}
 				</div>
-			</slot>
-		</VCardTitle>
-		<VCardText class="px-6 py-4 overflow-y-auto">
+			</VCardTitle>
+		</slot>
+		<VCardText class="py-0 overflow-y-auto">
 			<slot>
-						<span class="text-center">
-							{{ text }}
-						</span>
+				<span class="px-6 py-4 text-center">
+					{{ text }}
+				</span>
 			</slot>
 		</VCardText>
-		<VCardActions v-if="hasFooter" class="d-flex ga-4 justify-end pt-3 px-8">
+		<VCardActions v-if="hasFooter" class="d-flex ga-3 pb-1 justify-end pt-4 px-6">
 			<slot name="footer">
 				<slot name="leftButton">
-					<VBtn v-if="hasCloseBtn" color="secondaryOutline" @click="onCloseBtnClick" variant="outlined" type="button">
+					<VBtn v-if="hasCloseBtn" :color="closeBtnColor" @click="onCloseBtnClick" :variant="closeBtnVariant" type="button">
 						{{ closeBtnText ?? i18n.t('general.cancel') }}
 					</VBtn>
 				</slot>
@@ -45,7 +45,6 @@ const i18n = useI18n();
 const props = defineProps({
 	title: {
 		type: String,
-		required: true,
 	},
 	text: String,
 	persistent: {
@@ -67,6 +66,14 @@ const props = defineProps({
 	hasCloseBtn: {
 		type: Boolean,
 		default: true
+	},
+	closeBtnColor: {
+		type: String,
+		default: 'secondaryOutline'
+	},
+	closeBtnVariant: {
+		type: String as () => 'text' | 'outlined' | 'tonal',
+		default: 'outlined'
 	},
 	closeBtnText: String,
 	hasConfirmBtn: {

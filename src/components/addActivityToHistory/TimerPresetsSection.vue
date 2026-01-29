@@ -19,7 +19,7 @@
 		</div>
 		<div v-if="timeOnlyPresets.length > 0" class="d-flex flex-wrap ga-2">
 			<VChip v-for="preset in timeOnlyPresets" :key="preset.id" @click="editMode ? openEditDialog(preset) : applyPreset(preset)"
-			       :variant="editMode ? 'outlined' : 'tonal'" color="primaryOutline">
+			       variant="tonal" color="primaryOutline">
 				{{ preset.durationFormatted }}
 				<template #close>
 					<VIcon v-if="editMode" icon="pen-to-square" size="16" class="mr-2"></VIcon>
@@ -40,7 +40,7 @@
 		</div>
 		<div v-if="activityPresets.length > 0" class="d-flex flex-wrap ga-2">
 			<VChip v-for="preset in activityPresets" :key="preset.id" @click="editMode ? openEditDialog(preset, true) : applyPreset(preset)"
-			       :variant="editMode ? 'outlined' : 'tonal'" color="secondary">
+			       variant="tonal" color="secondaryOutline">
 				{{ preset.durationFormatted }} · {{ preset.activity?.name }}
 				<template #close>
 					<VIcon v-if="editMode" icon="pen-to-square" size="16" class="mr-2"></VIcon>
@@ -87,6 +87,7 @@ onMounted(async function loadPresets() {
 
 async function loadPresetsData() {
 	allPresets.value = await fetchAll();
+	console.log(allPresets.value)
 }
 
 function applyPreset(preset: TimerPreset) {

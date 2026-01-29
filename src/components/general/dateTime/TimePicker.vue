@@ -8,7 +8,7 @@
 	:disabled
 	:class="{'pr-2': !!icon}"
 >
-	{{ label }} {{ timeString ? '-' : '' }} {{ timeString }}
+	{{ label }} {{ (timeString && label !== '') ? '-' : '' }} {{ timeString }}
 	<VMenu :closeOnContentClick="false" activator="parent">
 		<template v-slot:default>
 			<VTimePicker

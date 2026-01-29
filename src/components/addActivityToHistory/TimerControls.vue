@@ -1,8 +1,8 @@
 <template>
 <div class="d-flex justify-center ga-3">
-	<VBtn size="large" color="successDark" @click="emit('start')" :disabled="!!intervalId && !paused">{{ $t('controls.start') }}</VBtn>
-	<VBtn size="large" color="primary" @click="emit('pause')" :disabled="!intervalId || paused">{{ $t('controls.pause') }}</VBtn>
-	<VBtn size="large" color="errorDark" @click="emit('stop')" :disabled="!intervalId">{{ $t('controls.stop') }}</VBtn>
+	<VBtn size="large" prependIcon="play" color="successDark" @click="emit('start')" :disabled="!!intervalId && !paused">{{ $t('controls.start') }}</VBtn>
+	<VBtn size="large" prependIcon="pause" color="primary" @click="emit('pause')" :disabled="!intervalId || paused">{{ $t('controls.pause') }}</VBtn>
+	<VBtn size="large" prependIcon="stop" color="errorDark" @click="emit('stop')" :disabled="!intervalId">{{ $t('controls.stop') }}</VBtn>
 	<slot></slot>
 </div>
 </template>

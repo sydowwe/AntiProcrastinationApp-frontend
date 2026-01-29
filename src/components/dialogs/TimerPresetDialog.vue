@@ -1,6 +1,6 @@
 <template>
 <MyDialog v-model="dialog" :title="isEdit ? 'Edit timer preset' : 'Add timer preset'" :confirmBtnLabel="isEdit ? $t('general.update') : $t('general.create')"
-          @confirmed="onConfirmed">
+          @confirmed="onConfirmed" closeBtnColor="default" closeBtnVariant="tonal">
 	<VForm ref="form" @submit.prevent="onConfirmed" class="d-flex flex-column ga-6">
 		<TimePicker class="mx-auto" label="Duration" v-model="duration" viewMode="minute" variant="outlined" style="max-width: 200px"></TimePicker>
 		<VIdAutocomplete v-if="isActivityMode" label="Activity" v-model="request.activityId" :items="activityOptions" :rules="[requiredRule]"></VIdAutocomplete>
