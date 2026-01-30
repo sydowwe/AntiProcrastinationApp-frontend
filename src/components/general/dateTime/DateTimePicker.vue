@@ -1,18 +1,16 @@
 <template>
-<VRow :style="{minWidth: (dateClearable ? '333px' : '275px')}">
-	<VCol cols="11" sm="7">
-		<VDateInput :label v-model="date" :clearable="dateClearable" persistent-clear :min="minDate" :max="maxDate"></VDateInput>
-	</VCol>
-	<VCol cols="11" sm="5" class="px-0">
-		<TimePicker label="Čas" v-model="time"></TimePicker>
-	</VCol>
-</VRow>
+<div class="d-flex">
+	<VDateInput class="date-time-datePicker" :label="label ?? $t('dateTime.date')" v-model="date" :clearable="dateClearable" persistent-clear :min="minDate"
+	            :max="maxDate" hide-details minWidth="150px" maxWidth="150px" prependInnerIcon="far fa-calendar"></VDateInput>
+	<TimePickerTextField class="date-time-timePicker" :label="label ? '' : $t('dateTime.time')" v-model="time" minWidth="100px"
+	                     maxWidth="100px" hideDetails></TimePickerTextField>
+</div>
 </template>
 <script setup lang="ts">
 import {nextTick, ref, watch} from 'vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {VDateInput} from 'vuetify/labs/components';
 import {Time} from '@/utils/Time.ts';
+import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
 
 const props = defineProps({
 	dateClearable: {
@@ -86,3 +84,14 @@ watch(model, (newModel) => {
 	});
 });
 </script>
+<style scoped>
+.date-time-timePicker:deep(.v-field) {
+	border-bottom-left-radius: 0 !important;
+	border-top-left-radius: 0 !important;
+}
+
+.date-time-datePicker:deep(.v-field) {
+	border-bottom-right-radius: 0 !important;
+	border-top-right-radius: 0 !important;
+}
+</style>
