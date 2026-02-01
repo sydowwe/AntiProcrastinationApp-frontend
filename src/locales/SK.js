@@ -185,8 +185,8 @@ const SK = {
         routineToDoList: `Rutina`,
         createNewActivity: `Vytvoriť nový druh aktivity`,
         history: `História`,
-        addActivityToHistory: `Pridať aktivitu do histórie`,
-        addActivityManually: `Manuálne`,
+        recordActivity: `Zaznamenať aktivitu`,
+        recordActivityManually: `Manuálne`,
         pomodoroTimer: `Pomodoro časovač`,
         stopwatch: `Stopky`,
         timer: `Časovač`,
@@ -297,9 +297,13 @@ const SK = {
         restActivity: `Aktivita pre oddych`,
     },
     history: {
-        addActivityToHistory: `Pridať aktivitu do histórie`,
+        recordActivityToHistory: `Zaznamenať aktivitu do histórie`,
         lengthNotSet: `Nebola zadaná dĺžka`,
         toHistory: `Do histórie`,
+    },
+    filter: {
+        title: `Filter`,
+        apply: `Použiť filter`,
     },
     authorization: {
         logOut: `Odhlásiť sa`,

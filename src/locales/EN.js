@@ -186,8 +186,8 @@ const EN = {
         createNewActivity: `Create new kind of activity`,
         toDoList: `To-do list`,
         routineToDoList: `Routine`,
-        addActivityToHistory: `Add activity to history`,
-        addActivityManually: `Manually`,
+        recordActivity: `Record activity`,
+        recordActivityManually: `Manually`,
         pomodoroTimer: `Pomodoro timer`,
         stopwatch: `Stopwatch`,
         timer: `Timer`,
@@ -297,9 +297,13 @@ const EN = {
         restActivity: `Rest activity`,
     },
     history: {
-        addActivityToHistory: `Add activity to history`,
+        recordActivityToHistory: `Record activity to history`,
         lengthNotSet: `Length not set`,
         toHistory: `To history`
+    },
+    filter: {
+        title: `Filter`,
+        apply: `Apply Filter`,
     },
     authorization: {
         logOut: `Log out`,

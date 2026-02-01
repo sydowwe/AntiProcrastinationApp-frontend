@@ -8,14 +8,15 @@
 		</div>
 	</template>
 	<VForm @keyup.native.enter="save" class="d-flex flex-column align-start ga-3">
-		<DateTimePicker :label="i18n.t('dateTime.date')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
-		<TimePicker :label="i18n.t('dateTime.length')" class="mx-auto" v-model="length"></TimePicker>
+		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
+
+		<TimePickerTextField icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="length" minWidth="150px" maxWidth="150px"
+		                     hideDetails></TimePickerTextField>
 	</VForm>
 </MyDialog>
 </template>
 <script setup lang="ts">
 import {ref, watch} from 'vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {Time} from '@/utils/Time.ts';
 
 import {useI18n} from 'vue-i18n';
@@ -24,6 +25,7 @@ import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
 import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
+import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
 
 const {create} = useActivityHistoryCrud()
 const i18n = useI18n();
