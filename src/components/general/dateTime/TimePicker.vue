@@ -8,7 +8,10 @@
 	:disabled
 	:class="{'pr-2': !!icon}"
 >
-	{{ label }} {{ (timeString && label !== '') ? '-' : '' }} {{ timeString }}
+	<template v-if="!hideLabel && label">
+		{{ label }} -
+	</template>
+	{{ timeString }}
 	<VMenu :closeOnContentClick="false" activator="parent">
 		<template v-slot:default>
 			<VTimePicker
@@ -37,6 +40,7 @@ const props = withDefaults(defineProps<{
 	allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
 	height?: 40 | 48 | 56,
 	disabled?: boolean,
+	hideLabel?: boolean,
 }>(), {
 	variant: 'outlined',
 	label: 'Time',
@@ -44,6 +48,7 @@ const props = withDefaults(defineProps<{
 	allowedMinutesSelected: '1',
 	height: 48,
 	disabled: false,
+	hideLabel: false,
 })
 
 const time = defineModel<Time>({required: true})

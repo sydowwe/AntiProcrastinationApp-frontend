@@ -223,15 +223,15 @@ const items: MenuItem[] = [
 		]
 	},
 	{
-		title: 'addActivityToHistory',
-		icon: 'plus-circle',
+		title: 'recordActivity',
+		icon: 'floppy-disk',
 		needsAdmin: false,
 		children: [
-			{title: 'addActivityManually', icon: 'pen', to: '/activity-history/manual', needsAdmin: false},
-			{title: 'pomodoroTimer', icon: 'hourglass-end', to: '/activity-history/pomodoro', needsAdmin: false},
+			{title: 'recordActivityManually', icon: 'pen', to: '/activity-history/manual', needsAdmin: false},
+			{title: 'pomodoroTimer', icon: 'clock', to: '/activity-history/pomodoro', needsAdmin: false},
 			{title: 'stopwatch', icon: 'stopwatch', to: '/activity-history/stopwatch', needsAdmin: false},
-			{title: 'timer', icon: 'clock', to: '/activity-history/timer', needsAdmin: false},
-			{title: 'alarm', icon: 'alarm-clock', to: '/activity-history/alarms', needsAdmin: false},
+			{title: 'timer', icon: 'hourglass-end', to: '/activity-history/timer', needsAdmin: false},
+			// {title: 'alarm', icon: 'alarm-clock', to: '/activity-history/alarms', needsAdmin: false},
 		]
 	},
 	{
