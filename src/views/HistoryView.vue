@@ -1,11 +1,7 @@
 <template>
 <div class="w-100 d-flex flex-column">
-	<VRow justify="center" noGutters class="flex-0-1">
-		<VCol cols="10" sm="8" md="10" lg="8" class="pt-0 pt-md-2">
-			<HistoryPanelFilter @filterApplied="handleFilterApplied"></HistoryPanelFilter>
-		</VCol>
-	</VRow>
-	<VRow justify="start" class="my-2 flex-fill px-5 overflow-y-scroll" style="height: 0">
+	<HistoryPanelFilter @filterApplied="handleFilterApplied"></HistoryPanelFilter>
+	<VRow justify="start" class="my-2 flex-fill px-5 overflow-y-auto" style="height: 0">
 		<VCol cols="12" lg="6" class="py-0 py-md-2 d-flex flex-column">
 			<div class="w-100" v-for="groupedRecord in groupedRecords?.slice(0, midpoint)">
 				<div class="w-100 bg-blue-grey rounded text-center">{{ formatLocalized(groupedRecord.date, 'L') }}</div>
