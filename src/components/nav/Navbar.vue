@@ -293,7 +293,7 @@ const currentSite = computed(() => {
 
 const userStore = useUserStore();
 const logout = () => {
-	API.post('/user/logout', {}).then(() => {
+	API.post('/auth/logout', {}).then(() => {
 		userStore.logout();
 		router.push({name: 'login'});
 	});

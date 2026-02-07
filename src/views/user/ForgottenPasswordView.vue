@@ -35,7 +35,7 @@ async function resetPassword() {
 	if (valid) {
 		showFullScreenLoading();
 		API
-			.post('/user/forgotten-password', {email: email.value})
+			.post('/auth/forgotten-password', {email: email.value})
 			.then(() => {
 				dialog.value = true;
 			})

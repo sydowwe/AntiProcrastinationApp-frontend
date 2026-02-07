@@ -41,11 +41,11 @@ const error = ref(false);
 
 function submit() {
 	loading.value = true;
-	API.post('/user/login-2fa', {
-			stayLoggedIn: props.stayLoggedIn,
-			token: token.value,
-			email: props.email,
-		})
+	API.post('/auth/login/2fa', {
+		stayLoggedIn: props.stayLoggedIn,
+		token: token.value,
+		email: props.email,
+	})
 		.then(async (response) => {
 			console.log(response);
 			userStore.login(props.email);
@@ -56,8 +56,8 @@ function submit() {
 			error.value = true;
 			token.value = '';
 			otpInput.value?.focus();
-		}).finally(()=>{
-			loading.value = false;
+		}).finally(() => {
+		loading.value = false;
 	});
 }
 </script>

@@ -1,7 +1,7 @@
 <template>
 <div class="filter-container">
 	<!-- Filter Info - always visible, top bar -->
-	<div class="filter-info-bar">
+	<div class="filter-info-bar" :class="{ 'filter-panel-open': isFilterExpanded }">
 		<HistoryCurrentFilterInfo
 			:appliedFilter="appliedFilterData"
 			:appliedIsDateRange="appliedIsDateRange"
@@ -18,9 +18,9 @@
 	</div>
 
 	<!-- Filter Panel - slides in from right, full height -->
-	<VExpandXTransition mode="in-out">
+	<VExpandXTransition mode="out-in">
 		<div v-if="isFilterExpanded" class="filter-panel">
-			<VCard elevation="4" class="h-100 d-flex flex-column" tile>
+			<VCard elevation="4" class="h-100 d-flex flex-column filter-card" tile>
 				<!-- Header with close button -->
 				<VCardTitle class="d-flex align-center justify-space-between flex-0-0">
 					<span>{{ $t('filter.title') || 'Filter' }}</span>
@@ -35,7 +35,7 @@
 				<VDivider></VDivider>
 
 				<!-- Filter Content -->
-				<VCardText class="flex-fill overflow-y-auto">
+				<VCardText class="flex-fill overflow-y-auto filter-card-text">
 					<!-- Activity Selection -->
 					<div>
 						<ActivitySelectionForm
@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {ActivityHistoryFilter} from "@/dtos/dto/ActivityHistoryFilter.ts";
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
@@ -267,14 +267,13 @@ const emit = defineEmits<{
 	padding: 1rem;
 }
 
-/* When filter is expanded on desktop, add padding to prevent overlap */
 @media (min-width: 960px) {
 	.filter-info-bar {
 		padding: 1.5rem 2rem;
 	}
 
-	/* Add right padding when filter panel is open */
-	.filter-container:has(.filter-panel) .filter-info-bar {
+	/* Add right padding when filter panel is open - no transition for instant response */
+	.filter-info-bar.filter-panel-open {
 		padding-right: 470px; /* 450px panel + 20px margin */
 	}
 }
@@ -286,6 +285,16 @@ const emit = defineEmits<{
 	width: 100vw;
 	height: calc(100dvh - 64px);
 	z-index: 1000;
+}
+
+.filter-card {
+	overflow: hidden !important;
+}
+
+/* Hide overflow during transition */
+.v-leave-active .filter-card-text,
+.v-leave-to .filter-card-text {
+	overflow: hidden !important;
 }
 
 @media (min-width: 960px) {

@@ -1,15 +1,15 @@
 <template>
-	<div class="mx-auto my-auto text-center">
-		<div v-if="emailConfirmed" class="text-center d-flex flex-column">
-			<div class="mb-3 text-success">{{ i18n.t('authorization.emailConfirmed') }}</div>
-			<VBtn color="main" @click="router.push('/login')">{{ i18n.t('authorization.goToLogin') }}</VBtn>
-		</div>
-		<div v-if="emailConfirmationError" class="text-center">
-<!--			<span>{{ i18n.t('') }}</span>-->
-			<VBtn color="error" @click="resendConfirmationEmail">{{ i18n.t('authorization.resendConfirmationEmail') }}</VBtn>
-		</div>
-		<div v-if="confirmationEmailResent">{{ i18n.t('authorization.confirmationEmailResent') }}</div>
+<div class="mx-auto my-auto text-center">
+	<div v-if="emailConfirmed" class="text-center d-flex flex-column">
+		<div class="mb-3 text-success">{{ i18n.t('authorization.emailConfirmed') }}</div>
+		<VBtn color="main" @click="router.push('/login')">{{ i18n.t('authorization.goToLogin') }}</VBtn>
 	</div>
+	<div v-if="emailConfirmationError" class="text-center">
+		<!--			<span>{{ i18n.t('') }}</span>-->
+		<VBtn color="error" @click="resendConfirmationEmail">{{ i18n.t('authorization.resendConfirmationEmail') }}</VBtn>
+	</div>
+	<div v-if="confirmationEmailResent">{{ i18n.t('authorization.confirmationEmailResent') }}</div>
+</div>
 </template>
 <script setup lang="ts">
 import {useI18n} from "vue-i18n";
@@ -30,7 +30,7 @@ onMounted(() => {
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	API.post('/user' + router.currentRoute.value.fullPath)
+	API.post('/auth' + router.currentRoute.value.fullPath)
 		.then(() => {
 			emailConfirmed.value = true;
 		})
@@ -40,11 +40,11 @@ onMounted(() => {
 			console.log(error);
 		});
 })
-const resendConfirmationEmail = ()=>{
+const resendConfirmationEmail = () => {
 	showFullScreenLoading();
 	emailConfirmed.value = false;
 	emailConfirmationError.value = false;
-	API.post(`/user/resend-confirmation-email/${router.currentRoute.value.query['userId']}`)
+	API.post(`/auth/resend-confirmation-email/${router.currentRoute.value.query['userId']}`)
 		.then(() => {
 			confirmationEmailResent.value = true;
 		})
