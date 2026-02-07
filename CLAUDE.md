@@ -11,6 +11,7 @@
 
 ## Coding Standards
 
+- **Split larger components into logical smaller ones**
 - **Function Syntax**: Use `function name() {}` declarations instead of `const name = () => {}` for component logic to leverage hoisting and improve readability.
 - **Component Naming**: Use PascalCase for filenames and template tags (e.g., `<VBtn>`, `<MyCustomComponent>`).
 - use ref mostly only use reactive when its really needed or conventional
@@ -35,6 +36,7 @@
     2. For layout/spacing: use Vuetify utility classes (`d-flex`, `pa-2`, `ga-2`, `text-primary`, etc.)
     3. Use custom CSS only when no Vuetify prop or helper class exists
     4. For 1-2 simple property changes on a single element, use inline `style=""` to keep it close to the markup
+
     - Don't mix Vuetify classes and custom CSS for the same element - pick one approach per element.
 - **Number Inputs**: **Always** use `VNumberInput` instead of `VTextField` with `type="number"`.
     - VNumberInput provides built-in increment/decrement buttons and better number handling.

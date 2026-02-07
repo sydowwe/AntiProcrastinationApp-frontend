@@ -3,7 +3,7 @@
 	<VCol cols="12" sm="10" md="10" lg="10" xl="6" class="mt-3 mt-md-0">
 		<AddActivityManuallyForm ref="formRef"></AddActivityManuallyForm>
 		<div class="mt-8 w-100 text-center">
-			<VBtn @click="handleSave" color="primary">{{ i18n.t('history.addActivityToHistory') }}</VBtn>
+			<VBtn @click="handleSave" color="primary">{{ i18n.t('history.recordActivityToHistory') }}</VBtn>
 		</div>
 	</VCol>
 </VRow>

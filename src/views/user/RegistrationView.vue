@@ -76,7 +76,7 @@ async function validateAndSendForm() {
 			registrationRequest.value.currentLocale = AvailableLocales[i18n.locale.value.toUpperCase() as keyof typeof AvailableLocales];
 			registrationRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			console.log(registrationRequest.value);
-			API.post('/user/register', registrationRequest.value)
+			API.post('/auth/register', registrationRequest.value)
 				.then((response) => {
 					hideFullScreenLoading();
 					console.log(response);

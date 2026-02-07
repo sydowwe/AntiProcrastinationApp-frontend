@@ -13,15 +13,61 @@ export const API = axios.create({
 	responseType: 'json',
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{resolve: (value?: unknown) => void, reject: (reason?: unknown) => void}> = [];
+
+function processQueue(error: unknown, token: string | null = null) {
+	failedQueue.forEach(prom => {
+		if (error) {
+			prom.reject(error);
+		} else {
+			prom.resolve(token);
+		}
+	});
+	failedQueue = [];
+}
+
 API.interceptors.response.use(
-	(response) => {
+	async (response) => {
 		const {hideFullScreenLoading, axiosSuccessLoadingHide} = useLoading();
 		if (axiosSuccessLoadingHide) {
 			hideFullScreenLoading();
 		}
+
+		// Check for token expiration header
+		if (response.headers['x-token-expired']) {
+			const originalRequest = response.config;
+
+			if (isRefreshing) {
+				return new Promise((resolve, reject) => {
+					failedQueue.push({resolve, reject});
+				}).then(() => {
+					return API(originalRequest);
+				}).catch(err => {
+					return Promise.reject(err);
+				});
+			}
+
+			isRefreshing = true;
+
+			try {
+				await API.post('/auth/refresh');
+				processQueue(null);
+				isRefreshing = false;
+				return API(originalRequest);
+			} catch (error) {
+				processQueue(error, null);
+				isRefreshing = false;
+				const userStore = useUserStore();
+				userStore.logout();
+				router.push({name: 'login'});
+				return Promise.reject(error);
+			}
+		}
+
 		return Promise.resolve(response);
 	},
-	(error) => {
+	async (error) => {
 		const {showErrorSnackbar} = useSnackbar();
 		const userStore = useUserStore();
 
@@ -29,6 +75,35 @@ API.interceptors.response.use(
 			userStore.logout();
 			router.push({name: 'login'});
 		};
+
+		// Check for token expiration header in error response
+		if (error.response?.headers['x-token-expired']) {
+			const originalRequest = error.config;
+
+			if (isRefreshing) {
+				return new Promise((resolve, reject) => {
+					failedQueue.push({resolve, reject});
+				}).then(() => {
+					return API(originalRequest);
+				}).catch(err => {
+					return Promise.reject(err);
+				});
+			}
+
+			isRefreshing = true;
+
+			try {
+				await API.post('/auth/refresh');
+				processQueue(null);
+				isRefreshing = false;
+				return API(originalRequest);
+			} catch (refreshError) {
+				processQueue(refreshError, null);
+				isRefreshing = false;
+				logoutClient();
+				return Promise.reject(refreshError);
+			}
+		}
 
 		console.log(error)
 		if (router.currentRoute.value.name !== 'login' && (error.response?.status === HttpStatusCode.Unauthorized)) {

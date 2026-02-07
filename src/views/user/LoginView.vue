@@ -86,7 +86,7 @@ async function validateAndSendForm() {
 		loginRequest.value.recaptchaToken = await executeRecaptcha('login');
 		loginRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 		axiosSuccessLoadingHide.value = false;
-		API.post('/user/login', JSON.stringify(loginRequest.value))
+		API.post('/auth/login', JSON.stringify(loginRequest.value))
 			.then((response) => {
 				if (response.data) {
 					// i18n.locale.value = response.data.currentLocale.toUpperCase();

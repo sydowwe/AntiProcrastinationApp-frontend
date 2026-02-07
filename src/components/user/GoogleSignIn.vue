@@ -50,7 +50,7 @@ const callback: CallbackTypes.CodeResponseCallback = async (response) => {
 			googleSignInRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 			googleSignInRequest.value.code = response.code;
 
-			const apiResponse = await API.post('/user/google-sign-in', googleSignInRequest.value);
+			const apiResponse = await API.post('/user/login/google', googleSignInRequest.value);
 			emit('logged-in', apiResponse.data.email, apiResponse.data.currentLocale);
 		}
 	} catch (err) {
