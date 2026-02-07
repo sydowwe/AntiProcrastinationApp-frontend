@@ -38,3 +38,24 @@ export function getDomainColor(domain: string): string {
 
 	return `hsl(${hue}, ${saturation}%, ${lightness}%)`
 }
+
+/**
+ * Lightens an HSL color by a specified amount
+ * @param hslColor - HSL color string (e.g., "hsl(200, 60%, 45%)")
+ * @param amount - Amount to lighten (0-1, where 1 is maximum lightening)
+ * @returns Lightened HSL color string
+ */
+export function lightenColor(hslColor: string, amount: number): string {
+	// Parse HSL color
+	const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
+	if (!match) return hslColor
+
+	const h = parseInt(match[1])
+	const s = parseInt(match[2])
+	const l = parseInt(match[3])
+
+	// Increase lightness proportionally
+	const newL = Math.min(95, l + (100 - l) * amount)
+
+	return `hsl(${h}, ${s}%, ${newL}%)`
+}
