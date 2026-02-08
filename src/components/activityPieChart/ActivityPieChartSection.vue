@@ -1,54 +1,53 @@
 <template>
-	<div class="pie-chart-section">
-		<template v-if="loading">
-			<div class="d-flex ga-4">
-				<div class="flex-1-1">
-					<VSkeletonLoader type="image, list-item@3" />
-				</div>
-				<div class="flex-1-1">
-					<VSkeletonLoader type="card" />
-				</div>
+<div class="pie-chart-section">
+	<template v-if="loading">
+		<div class="d-flex ga-4">
+			<div class="flex-1-1">
+				<VSkeletonLoader type="image, list-item@3"/>
 			</div>
-		</template>
-
-		<template v-else-if="!domains || domains.length === 0">
-			<VCard variant="outlined" class="pa-8 text-center">
-				<div class="text-h6 text-medium-emphasis">
-					No activity recorded for this period
-				</div>
-			</VCard>
-		</template>
-
-		<template v-else>
-			<div class="content-grid">
-				<div class="chart-column">
-					<ActivityPieChart
-						:domains="pieSegments"
-						:viewMode="viewMode"
-						:selectedDomain="selectedDomain"
-						@update:viewMode="viewMode = $event"
-						@segmentClick="onSegmentClick"
-					/>
-				</div>
-
-				<div class="details-column">
-					<ActivityDetailsPanel
-						:mode="detailsMode"
-						:dayTotals="dayTotals"
-						:domainDetails="selectedDomainDetails"
-						@close="onDetailsClose"
-					/>
-				</div>
+			<div class="flex-1-1">
+				<VSkeletonLoader type="card"/>
 			</div>
-		</template>
-	</div>
+		</div>
+	</template>
+
+	<template v-else-if="!domains || domains.length === 0">
+		<VCard variant="outlined" class="pa-8 text-center">
+			<div class="text-h6 text-medium-emphasis">
+				No activity recorded for this period
+			</div>
+		</VCard>
+	</template>
+
+	<template v-else>
+		<div class="content-grid">
+			<div class="chart-column">
+				<ActivityPieChart
+					:domains="pieSegments"
+					v-model="viewMode"
+					:selectedDomain="selectedDomain"
+					@segmentClick="onSegmentClick"
+				/>
+			</div>
+
+			<div class="details-column">
+				<ActivityDetailsPanel
+					:mode="detailsMode"
+					:dayTotals="dayTotals"
+					:domainDetails="selectedDomainDetails"
+					@close="onDetailsClose"
+				/>
+			</div>
+		</div>
+	</template>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import {computed, ref} from 'vue'
 import ActivityPieChart from './ActivityPieChart.vue'
 import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
-import { getDomainColor } from '@/utils/domainColor'
+import {getDomainColor} from '@/utils/domainColor'
 
 interface PageVisit {
 	url: string
@@ -122,7 +121,7 @@ const pieSegments = computed<PieSegment[]>(() => {
 	for (const d of data) {
 		const percent = (d.seconds / total) * 100
 		if (percent >= threshold) {
-			significant.push({ ...d, percent })
+			significant.push({...d, percent})
 		} else {
 			otherSeconds += d.seconds
 		}
