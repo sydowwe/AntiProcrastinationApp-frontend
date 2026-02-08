@@ -1,70 +1,69 @@
 <template>
-	<VCard
-		class="domain-card"
-		:class="{ 'domain-card--clickable': true }"
-		elevation="2"
-		@click="handleClick"
-		@keydown.enter="handleClick"
-		@keydown.space.prevent="handleClick"
-		tabindex="0"
-		role="button"
-		:aria-label="`View details for ${domain.domain}`"
-	>
-		<VCardTitle class="text-center pb-2">
-			<VTooltip
-				:text="domain.domain"
-				location="top"
-			>
-				<template #activator="{ props: tooltipProps }">
-					<div v-bind="tooltipProps" class="domain-name">
-						{{ domain.domain }}
-					</div>
-				</template>
-			</VTooltip>
-		</VCardTitle>
-		<VDivider />
-		<VCardText class="pa-0">
-			<div class="stat-columns">
-				<template v-if="showActive && showBackground">
-					<ActivityStatColumn
-						label="Active"
-						:seconds="domain.active!.seconds"
-						:percentChange="domain.active!.percentChange"
-						:isNew="domain.isNew"
-					/>
-					<VDivider vertical />
-					<ActivityStatColumn
-						label="Background"
-						:seconds="domain.background!.seconds"
-						:percentChange="domain.background!.percentChange"
-						:isNew="domain.isNew"
-					/>
-				</template>
-				<template v-else-if="showActive">
-					<ActivityStatColumn
-						label="Active"
-						:seconds="domain.active!.seconds"
-						:percentChange="domain.active!.percentChange"
-						:isNew="domain.isNew"
-						class="single-column"
-					/>
-				</template>
-				<template v-else-if="showBackground">
-					<ActivityStatColumn
-						label="Background"
-						:seconds="domain.background!.seconds"
-						:percentChange="domain.background!.percentChange"
-						:isNew="domain.isNew"
-						class="single-column"
-					/>
-				</template>
-			</div>
-		</VCardText>
-	</VCard>
+<VCard
+	class="domain-card"
+	:class="{ 'domain-card--clickable': true }"
+	elevation="2"
+	@click="handleClick"
+	@keydown.enter="handleClick"
+	@keydown.space.prevent="handleClick"
+	tabindex="0"
+	role="button"
+	:aria-label="`View details for ${domain.domain}`"
+>
+	<VCardTitle class="text-center pb-2">
+		<VTooltip
+			:text="domain.domain"
+			location="top"
+		>
+			<template #activator="{ props: tooltipProps }">
+				<div v-bind="tooltipProps" class="domain-name">
+					{{ domain.domain }}
+				</div>
+			</template>
+		</VTooltip>
+	</VCardTitle>
+	<VCardText class="pa-0" style="background-color: rgb(55,55,55)">
+		<div class="stat-columns">
+			<template v-if="showActive && showBackground">
+				<ActivityStatColumn
+					label="Active"
+					:seconds="domain.active!.seconds"
+					:percentChange="domain.active!.percentChange"
+					:isNew="domain.isNew"
+				/>
+				<VDivider vertical/>
+				<ActivityStatColumn
+					label="Background"
+					:seconds="domain.background!.seconds"
+					:percentChange="domain.background!.percentChange"
+					:isNew="domain.isNew"
+				/>
+			</template>
+			<template v-else-if="showActive">
+				<ActivityStatColumn
+					label="Active"
+					:seconds="domain.active!.seconds"
+					:percentChange="domain.active!.percentChange"
+					:isNew="domain.isNew"
+					class="single-column"
+				/>
+			</template>
+			<template v-else-if="showBackground">
+				<ActivityStatColumn
+					label="Background"
+					:seconds="domain.background!.seconds"
+					:percentChange="domain.background!.percentChange"
+					:isNew="domain.isNew"
+					class="single-column"
+				/>
+			</template>
+		</div>
+	</VCardText>
+</VCard>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import {computed} from 'vue';
 import ActivityStatColumn from './ActivityStatColumn.vue';
 
 export interface ActivityStat {
@@ -129,9 +128,8 @@ function handleClick() {
 
 .stat-columns {
 	display: flex;
-	justify-content: center;
-	align-items: stretch;
-	min-height: 120px;
+	justify-content: space-evenly;
+	align-items: center;
 }
 
 .single-column {

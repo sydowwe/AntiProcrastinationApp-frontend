@@ -1,37 +1,39 @@
 <template>
-	<div class="stat-column">
-		<div class="text-caption text-medium-emphasis mb-1">
-			{{ label }}
+<div class="stat-column">
+	<div class="text-caption text-medium-emphasis mb-1">
+		{{ label }}
+	</div>
+	<div class="text-h6 font-weight-bold mb-1">
+		{{ formattedTime }}
+	</div>
+	<div style="font-size: 0.85rem!important;">
+		<VChip
+			v-if="isNew"
+			size="x-small"
+			color="info"
+			variant="flat"
+			style="font-size: 0.7rem!important;"
+		>
+			NEW
+		</VChip>
+		<div
+			v-else-if="percentChange !== null"
+			:class="comparisonClass"
+			:aria-label="comparisonAriaLabel"
+			style="font-size: 0.85rem!important;"
+		>
+			{{ comparisonText }}
 		</div>
-		<div class="text-h6 font-weight-bold mb-1">
-			{{ formattedTime }}
-		</div>
-		<div class="comparison-indicator">
-			<VChip
-				v-if="isNew"
-				size="small"
-				color="info"
-				variant="flat"
-			>
-				NEW
-			</VChip>
-			<div
-				v-else-if="percentChange !== null"
-				:class="comparisonClass"
-				:aria-label="comparisonAriaLabel"
-			>
-				{{ comparisonText }}
-			</div>
-			<div v-else class="text-caption text-disabled">
-				-
-			</div>
+		<div v-else class="text-caption text-disabled">
+			-
 		</div>
 	</div>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { formatDuration } from '@/utils/formatDuration';
+import {computed} from 'vue';
+import {formatDuration} from '@/utils/formatDuration';
 
 interface Props {
 	label: string;
@@ -74,14 +76,7 @@ const comparisonAriaLabel = computed(() => {
 	flex-direction: column;
 	align-items: center;
 	text-align: center;
-	padding: 8px;
+	padding: 12px 8px;
 	min-width: 80px;
-}
-
-.comparison-indicator {
-	min-height: 24px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 }
 </style>
