@@ -1,36 +1,35 @@
 <template>
-	<div class="pie-chart-container">
-		<VChart
-			ref="chartRef"
-			:option="chartOption"
-			:autoresize="true"
-			class="chart"
-			@click="handleChartClick"
-		/>
+<div class="pie-chart-container">
+	<VChart
+		ref="chartRef"
+		:option="chartOption"
+		class="chart"
+		@click="handleChartClick"
+	/>
 
-		<VRadioGroup
-			:modelValue="viewMode"
-			inline
-			hideDetails
-			class="mt-4 d-flex justify-center"
-			@update:modelValue="emit('update:viewMode', $event)"
-		>
-			<VRadio label="Total" value="total" />
-			<VRadio label="Active" value="active" />
-			<VRadio label="Background" value="background" />
-		</VRadioGroup>
-	</div>
+	<VRadioGroup
+		v-model="viewMode"
+		inline
+		density="comfortable"
+		hideDetails
+		color="primaryOutline"
+	>
+		<VRadio label="Total" value="total"/>
+		<VRadio label="Active" value="active"/>
+		<VRadio label="Background" value="background"/>
+	</VRadioGroup>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import {computed} from 'vue'
 import VChart from 'vue-echarts'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { PieChart } from 'echarts/charts'
-import { TooltipComponent, LegendComponent } from 'echarts/components'
-import type { EChartsOption } from 'echarts'
-import { formatDuration } from '@/utils/formatDuration'
+import {use} from 'echarts/core'
+import {CanvasRenderer} from 'echarts/renderers'
+import {PieChart} from 'echarts/charts'
+import {LegendComponent, TooltipComponent} from 'echarts/components'
+import type {EChartsOption} from 'echarts'
+import {formatDuration} from '@/utils/formatDuration'
 
 // Register ECharts components
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
@@ -44,12 +43,12 @@ interface PieSegment {
 
 const props = defineProps<{
 	domains: PieSegment[]
-	viewMode: 'total' | 'active' | 'background'
 	selectedDomain: string | null
 }>()
 
+const viewMode = defineModel<'total' | 'active' | 'background'>({required: true})
+
 const emit = defineEmits<{
-	(e: 'update:viewMode', value: 'total' | 'active' | 'background'): void
 	(e: 'segmentClick', domain: string | null): void
 }>()
 
@@ -75,14 +74,40 @@ const chartOption = computed<EChartsOption>(() => {
 						${formatDuration(seconds)} (${percent}%)`
 			},
 		},
+		legend: {
+			orient: 'vertical',
+			left: 0,
+			top: 'center',
+			borderColor: '#333',
+			borderRadius: 5,
+			borderWidth: 1,
+			padding: 10,
+			textStyle: {
+				color: '#fff',  // Bright white text for accessibility
+				fontSize: 12,
+				fontWeight: 300
+			},
+			formatter: (name: string) => {
+				const segment = props.domains.find(d =>
+					(d.domain === '_other' ? 'Other' : d.domain) === name
+				)
+				if (segment) {
+					const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name
+					return `${displayName} (${segment.percent.toFixed(1)}%)`
+				}
+				return name.length > 25 ? name.substring(0, 25) + '...' : name
+			},
+		},
 		series: [
 			{
 				type: 'pie',
-				radius: ['40%', '70%'],
+				center: ['120%', '42%'],  // Move pie to the right to make room for legend
+				width: 300,
+				height: 300,
+				radius: ['35%', '75%'],
 				avoidLabelOverlap: false,
 				itemStyle: {
-					borderRadius: 4,
-					borderColor: '#fff',
+					borderColor: '#ccc',
 					borderWidth: 2,
 				},
 				label: {
@@ -139,7 +164,7 @@ function handleChartClick(params: any) {
 }
 
 .chart {
-	width: 100%;
-	height: 400px;
+	height: 250px;
+	width: 500px; /* Increased width to accommodate legend on left */
 }
 </style>
