@@ -1,10 +1,10 @@
 /**
- * Generates a consistent, accessible color from a domain string
- * Uses HSL color space with good saturation and lightness for accessibility
- * Same domain always generates the same color
+ * Generates a consistent, accessible colour from a domain string
+ * Uses HSL colour space with good saturation and lightness for accessibility
+ * Same domain always generates the same colour
  *
- * @param domain - Domain name to generate color for
- * @returns HSL color string
+ * @param domain - Domain name to generate colour for
+ * @returns HSL colour string
  */
 export function getDomainColor(domain: string): string {
 	// Special case for "Other" grouping
@@ -20,7 +20,7 @@ export function getDomainColor(domain: string): string {
 	}
 
 	// Generate hue from hash (0-360)
-	// Avoid red (0-30) and yellow-green (60-90) to reduce colorblind issues
+	// Avoid red (0-30) and yellow-green (60-90) to reduce colourblind issues
 	const baseHue = Math.abs(hash % 360)
 	let hue: number
 
@@ -40,22 +40,37 @@ export function getDomainColor(domain: string): string {
 }
 
 /**
- * Lightens an HSL color by a specified amount
- * @param hslColor - HSL color string (e.g., "hsl(200, 60%, 45%)")
+ * Lightens an HSL colour by a specified amount
+ * @param hslColor - HSL colour string (e.g., "hsl(200, 60%, 45%)")
  * @param amount - Amount to lighten (0-1, where 1 is maximum lightening)
- * @returns Lightened HSL color string
+ * @returns Lightened HSL colour string
  */
 export function lightenColor(hslColor: string, amount: number): string {
-	// Parse HSL color
 	const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
 	if (!match) return hslColor
 
-	const h = parseInt(match[1])
-	const s = parseInt(match[2])
-	const l = parseInt(match[3])
+	const h = parseInt(match[1] ?? '')
+	const s = parseInt(match[2] ?? '')
+	const l = parseInt(match[3] ?? '')
 
-	// Increase lightness proportionally
 	const newL = Math.min(95, l + (100 - l) * amount)
 
 	return `hsl(${h}, ${s}%, ${newL}%)`
+}
+
+/**
+ * Returns an HSLA colour with the given opacity
+ * @param hslColor - HSL colour string (e.g., "hsl(200, 60%, 45%)")
+ * @param opacity - Opacity value (0-1)
+ * @returns HSLA colour string
+ */
+export function withOpacity(hslColor: string, opacity: number): string {
+	const match = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
+	if (!match) return hslColor
+
+	const h = parseInt(match[1] ?? '')
+	const s = parseInt(match[2] ?? '')
+	const l = parseInt(match[3] ?? '')
+
+	return `hsla(${h}, ${s}%, ${l}%, ${opacity})`
 }

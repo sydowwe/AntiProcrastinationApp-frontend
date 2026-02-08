@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npx vue-tsc:*)",
-      "mcp__vuetify__get_component_api_by_version"
+      "mcp__vuetify__get_component_api_by_version",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }
