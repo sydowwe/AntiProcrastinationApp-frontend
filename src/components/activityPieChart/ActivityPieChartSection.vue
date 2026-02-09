@@ -48,36 +48,9 @@ import {computed, ref} from 'vue'
 import ActivityPieChart from './ActivityPieChart.vue'
 import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
 import {getDomainColor} from '@/utils/domainColor'
-
-interface PageVisit {
-	url: string
-	seconds: number
-}
-
-interface DomainPieData {
-	domain: string
-	activeSeconds: number
-	backgroundSeconds: number
-	totalSeconds: number
-	pages: PageVisit[]
-	entries?: number
-}
-
-interface DayTotals {
-	totalSeconds: number
-	activeSeconds: number
-	backgroundSeconds: number
-	totalDomains: number
-	totalPages: number
-	totalVisits?: number
-}
-
-interface PieSegment {
-	domain: string
-	seconds: number
-	percent: number
-	color: string
-}
+import { DomainPieData } from './dto/DomainPieData'
+import { DayTotals } from './dto/DayTotals'
+import { PieSegment } from './dto/PieSegment'
 
 const props = defineProps<{
 	domains: DomainPieData[]

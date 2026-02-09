@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatDuration } from '@/utils/formatDuration'
-import type { TimelineSession } from './types'
+import type { TimelineSession } from './dto/TimelineSession'
 
 const props = defineProps<{
 	data: TimelineSession

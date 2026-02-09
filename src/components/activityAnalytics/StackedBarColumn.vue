@@ -1,38 +1,31 @@
 <template>
+<div
+	class="bar-column"
+	:style="barContainerStyle"
+	@mouseenter="$emit('mouseenter', $event)"
+	@mouseleave="$emit('mouseleave', $event)"
+	@click="$emit('click', $event)"
+>
+	<!-- Background portion (top, striped) -->
 	<div
-		class="bar-column"
-		:style="barContainerStyle"
-		@mouseenter="$emit('mouseenter', $event)"
-		@mouseleave="$emit('mouseleave', $event)"
-		@click="$emit('click', $event)"
-	>
-		<!-- Background portion (top, striped) -->
-		<div
-			v-if="data.backgroundSeconds > 0"
-			class="bar-segment bar-background"
-			:style="backgroundStyle"
-		/>
-		<!-- Active portion (bottom, solid) -->
-		<div
-			v-if="data.activeSeconds > 0"
-			class="bar-segment bar-active"
-			:style="activeStyle"
-		/>
-	</div>
+		v-if="data.backgroundSeconds > 0"
+		class="bar-segment bar-background"
+		:style="backgroundStyle"
+	/>
+	<!-- Active portion (bottom, solid) -->
+	<div
+		v-if="data.activeSeconds > 0"
+		class="bar-segment bar-active"
+		:style="activeStyle"
+	/>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { getDomainColor, lightenColor } from '@/utils/domainColor'
+import {computed} from 'vue'
+import {getDomainColor, lightenColor} from '@/utils/domainColor'
+import type {ColumnData} from '@/components/activityAnalytics/dto/ColumnData.ts';
 
-export interface ColumnData {
-	domain: string
-	activeSeconds: number
-	backgroundSeconds: number
-	activeMinutes: number
-	backgroundMinutes: number
-	url?: string
-}
 
 const props = defineProps<{
 	data: ColumnData
@@ -64,7 +57,7 @@ const backgroundMinutes = computed(() => props.data.backgroundMinutes)
 const activeStyle = computed(() => ({
 	flex: `${activeMinutes.value} 0 0`,
 	backgroundColor: domainColor.value,
-	borderRadius: backgroundMinutes.value > 0 ? '0 0 4px 4px' : '4px',
+	borderRadius: '0', // No bottom border radius
 }))
 
 const backgroundStyle = computed(() => ({
@@ -76,7 +69,7 @@ const backgroundStyle = computed(() => ({
 		${lightenColor(domainColor.value, 0.6)} 2px,
 		${lightenColor(domainColor.value, 0.6)} 4px
 	)`,
-	borderRadius: activeMinutes.value > 0 ? '4px 4px 0 0' : '4px',
+	borderRadius: '4px 4px 0 0', // Only top border radius
 }))
 </script>
 
@@ -84,6 +77,7 @@ const backgroundStyle = computed(() => ({
 .bar-column {
 	cursor: pointer;
 	transition: opacity 0.15s;
+	z-index: 5;
 }
 
 .bar-column:hover {

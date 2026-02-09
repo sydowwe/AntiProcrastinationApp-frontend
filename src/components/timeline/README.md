@@ -51,7 +51,8 @@ ActivityTimeline.vue (Parent)
 </template>
 
 <script setup lang="ts">
-import { ActivityTimeline, type TimelineSession } from '@/components/timeline'
+import ActivityTimeline from '@/components/timeline/ActivityTimeline.vue'
+import type { TimelineSession } from '@/components/timeline/dto/TimelineSession'
 
 const activeSessions: TimelineSession[] = [
   {

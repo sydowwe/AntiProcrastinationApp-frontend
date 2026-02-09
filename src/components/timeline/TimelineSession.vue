@@ -23,7 +23,7 @@
 import { computed } from 'vue'
 import { getDomainColor, withOpacity } from '@/utils/domainColor'
 import { formatDuration } from '@/utils/formatDuration'
-import type { TimelineSession, StackedSession, SessionPosition, LaneType } from './types'
+import type { TimelineSession, StackedSession, SessionPosition, LaneType } from './dto'
 
 const props = defineProps<{
 	session: TimelineSession | StackedSession

@@ -157,7 +157,7 @@ import {
 	filterSessionsForRange,
 	findActivityGaps,
 } from './timelineUtils'
-import type {Gap, StackedSession, TimelineSession, ViewMode,} from './types'
+import type {Gap, StackedSession, TimelineSession, ViewMode,} from './dto'
 
 const DIVIDER_HEIGHT = 16
 
