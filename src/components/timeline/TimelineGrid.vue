@@ -157,7 +157,10 @@ import {
 	filterSessionsForRange,
 	findActivityGaps,
 } from './timelineUtils'
-import type {Gap, StackedSession, TimelineSession, ViewMode,} from './dto'
+import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
+import type {StackedSession} from '@/components/timeline/dto/StackedSession.ts';
+import type {TimelineViewMode} from '@/components/timeline/dto/TimelineViewMode.ts';
+import type {Gap} from '@/components/timeline/dto/Gap.ts';
 
 const DIVIDER_HEIGHT = 16
 
@@ -166,7 +169,7 @@ const props = defineProps<{
 	backgroundSessions: StackedSession[]
 	from: Date
 	to: Date
-	viewMode: ViewMode
+	viewMode: TimelineViewMode
 	splitPoint: Date
 }>()
 

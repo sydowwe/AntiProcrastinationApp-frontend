@@ -35,14 +35,12 @@
 import {computed} from 'vue';
 import {formatDuration} from '@/utils/formatDuration';
 
-interface Props {
+const props = defineProps<{
 	label: string;
 	seconds: number;
 	percentChange: number | null;
 	isNew: boolean;
-}
-
-const props = defineProps<Props>();
+}>();
 
 const formattedTime = computed(() => formatDuration(props.seconds));
 

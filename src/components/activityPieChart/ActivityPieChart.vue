@@ -30,7 +30,7 @@ import {PieChart} from 'echarts/charts'
 import {LegendComponent, TooltipComponent} from 'echarts/components'
 import type {EChartsOption} from 'echarts'
 import {formatDuration} from '@/utils/formatDuration'
-import { PieSegment } from './dto/PieSegment'
+import {PieSegment} from './dto/PieSegment'
 
 // Register ECharts components
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
@@ -64,8 +64,7 @@ const chartOption = computed<EChartsOption>(() => {
 				const domain = params.name
 				const seconds = params.value
 				const percent = params.percent.toFixed(1)
-				return `<strong>${domain}</strong><br/>
-						${formatDuration(seconds)} (${percent}%)`
+				return `<strong>${domain}</strong><br/>${formatDuration(seconds)} (${percent}%)`
 			},
 		},
 		legend: {
