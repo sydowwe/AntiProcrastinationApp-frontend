@@ -1,47 +1,35 @@
 <template>
-	<div class="stacked-bars-tooltip" :style="positionStyle">
-		<div class="tooltip-header">{{ data.windowLabel }}</div>
-		<div class="tooltip-domain">{{ displayDomain }}</div>
-		<VDivider class="my-1" />
-		<div class="tooltip-row">
-			<span>Active:</span>
-			<span>{{ data.activeMinutes }}m</span>
-		</div>
-		<div class="tooltip-row">
-			<span>Background:</span>
-			<span>{{ data.backgroundMinutes }}m</span>
-		</div>
-		<div class="tooltip-row tooltip-total">
-			<span>Total:</span>
-			<span>{{ data.totalMinutes }}m</span>
-		</div>
-		<template v-if="data.url">
-			<VDivider class="my-1" />
-			<div class="tooltip-url" :title="data.url">{{ truncatedUrl }}</div>
-		</template>
+<div class="stacked-bars-tooltip" :style="positionStyle">
+	<div class="tooltip-header">{{ data.windowLabel }}</div>
+	<div class="tooltip-domain">{{ displayDomain }}</div>
+	<VDivider class="my-1"/>
+	<div class="tooltip-row">
+		<span>Active:</span>
+		<span>{{ data.activeMinutes }}m</span>
 	</div>
+	<div class="tooltip-row">
+		<span>Background:</span>
+		<span>{{ data.backgroundMinutes }}m</span>
+	</div>
+	<div class="tooltip-row tooltip-total">
+		<span>Total:</span>
+		<span>{{ data.totalMinutes }}m</span>
+	</div>
+	<template v-if="data.url">
+		<VDivider class="my-1"/>
+		<div class="tooltip-url" :title="data.url">{{ truncatedUrl }}</div>
+	</template>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-
-export interface TooltipData {
-	windowLabel: string
-	domain: string
-	activeMinutes: number
-	backgroundMinutes: number
-	totalMinutes: number
-	url?: string
-}
-
-export interface TooltipPosition {
-	x: number
-	y: number
-}
+import {computed} from 'vue'
+import type {TooltipData} from '@/components/activityAnalytics/dto/TooltipData.ts';
+import type {Position} from '@/dtos/dto/Position.ts';
 
 const props = defineProps<{
 	data: TooltipData
-	position: TooltipPosition
+	position: Position
 }>()
 
 const displayDomain = computed(() => {

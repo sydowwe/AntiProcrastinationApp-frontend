@@ -6,54 +6,54 @@ A comprehensive component for displaying activity distribution across time windo
 
 ```
 activityAnalytics/
-├── ActivityStackedBars.vue          # Parent container
+├── ActivityStackedBars.vue          # Parent container (includes window selector)
 ├── StackedBarsGrid.vue              # CSS Grid chart implementation
 ├── StackedBarColumn.vue             # Individual stacked bar
 ├── StackedBarsTooltip.vue           # Tooltip display
-├── WindowSizeSelector.vue           # Window duration selector
 └── README.md                        # This file
 ```
 
 ## Usage
 
 ```vue
+
 <template>
-  <ActivityStackedBars
-    :windows="activityWindows"
-    :loading="isLoading"
-    :availableWindowSizes="[15, 20, 30, 60, 90, 120]"
-    :initialWindowSize="30"
-    @windowSizeChange="handleWindowSizeChange"
-    @activityClick="handleActivityClick"
-  />
+	<ActivityStackedBars
+		:windows="activityWindows"
+		:loading="isLoading"
+		:availableWindowSizes="[15, 20, 30, 60, 90, 120]"
+		:initialWindowSize="30"
+		@windowSizeChange="handleWindowSizeChange"
+		@activityClick="handleActivityClick"
+	/>
 </template>
 
 <script setup lang="ts">
-import ActivityStackedBars, { type ActivityWindow } from '@/components/activityAnalytics/ActivityStackedBars.vue'
+	import ActivityStackedBars, {type ActivityWindow} from '@/components/activityAnalytics/ActivityStackedBars.vue'
 
-const activityWindows = ref<ActivityWindow[]>([
-  {
-    windowStart: new Date('2024-02-07T09:00:00'),
-    windowEnd: new Date('2024-02-07T09:30:00'),
-    activities: [
-      {
-        domain: 'github.com',
-        activeSeconds: 900,      // Solid portion
-        backgroundSeconds: 300,  // Striped portion
-        totalSeconds: 1200,
-        url: '/user/repo/pulls'  // Optional
-      }
-    ]
-  }
-])
+	const activityWindows = ref<ActivityWindow[]>([
+		{
+			windowStart: new Date('2024-02-07T09:00:00'),
+			windowEnd: new Date('2024-02-07T09:30:00'),
+			activities: [
+				{
+					domain: 'github.com',
+					activeSeconds: 900,      // Solid portion
+					backgroundSeconds: 300,  // Striped portion
+					totalSeconds: 1200,
+					url: '/user/repo/pulls'  // Optional
+				}
+			]
+		}
+	])
 
-function handleWindowSizeChange(size: number) {
-  console.log('Window size changed to:', size)
-}
+	function handleWindowSizeChange(size: number) {
+		console.log('Window size changed to:', size)
+	}
 
-function handleActivityClick({ window, domain }) {
-  console.log('Clicked activity:', domain, 'in window:', window)
-}
+	function handleActivityClick({window, domain}) {
+		console.log('Clicked activity:', domain, 'in window:', window)
+	}
 </script>
 ```
 
@@ -61,66 +61,72 @@ function handleActivityClick({ window, domain }) {
 
 ### ActivityStackedBars (Parent)
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `windows` | `ActivityWindow[]` | required | Array of time windows with activities |
-| `loading` | `boolean` | `false` | Shows skeleton loader |
-| `availableWindowSizes` | `number[]` | `[15, 20, 30, 60, 90, 120]` | Available window durations in minutes |
-| `initialWindowSize` | `number` | `30` | Initial selected window size |
+| Prop                   | Type               | Default                     | Description                           |
+|------------------------|--------------------|-----------------------------|---------------------------------------|
+| `windows`              | `ActivityWindow[]` | required                    | Array of time windows with activities |
+| `loading`              | `boolean`          | `false`                     | Shows skeleton loader                 |
+| `availableWindowSizes` | `number[]`         | `[15, 20, 30, 60, 90, 120]` | Available window durations in minutes |
+| `initialWindowSize`    | `number`           | `30`                        | Initial selected window size          |
 
 ### ActivityWindow Interface
 
 ```typescript
 interface ActivityWindow {
-  windowStart: Date
-  windowEnd: Date
-  activities: WindowActivity[]
+	windowStart: Date
+	windowEnd: Date
+	activities: WindowActivity[]
 }
 
 interface WindowActivity {
-  domain: string           // Domain name (e.g., 'github.com')
-  activeSeconds: number    // Active time (solid bar)
-  backgroundSeconds: number // Background time (striped bar)
-  totalSeconds: number     // Total time
-  url?: string            // Optional URL path for tooltip
+	domain: string           // Domain name (e.g., 'github.com')
+	activeSeconds: number    // Active time (solid bar)
+	backgroundSeconds: number // Background time (striped bar)
+	totalSeconds: number     // Total time
+	url?: string            // Optional URL path for tooltip
 }
 ```
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `windowSizeChange` | `number` | Emitted when window duration changes |
-| `activityClick` | `{ window: ActivityWindow, domain: string }` | Emitted when a bar is clicked |
+| Event              | Payload                                      | Description                          |
+|--------------------|----------------------------------------------|--------------------------------------|
+| `windowSizeChange` | `number`                                     | Emitted when window duration changes |
+| `activityClick`    | `{ window: ActivityWindow, domain: string }` | Emitted when a bar is clicked        |
 
 ## Features
 
 ### Adaptive Grid Layout
+
 - Automatically calculates optimal column widths based on container size
 - Responsive row heights based on window duration
 - Maintains 6-20px base unit range for readability
 
 ### "Other" Bucket
+
 - Automatically groups excess domains into an "Other" bucket
 - Max columns per window:
-  - 15-20 min: 4 columns
-  - 30-60 min: 5-6 columns
-  - 90-120 min: 8 columns
+    - 15-20 min: 4 columns
+    - 30-60 min: 5-6 columns
+    - 90-120 min: 8 columns
 
 ### Visual Indicators
+
 - **Solid bars**: Active time
 - **Striped bars**: Background time
 - **Empty windows**: Dashed border with "No activity" label
 - **Guide lines**: Adaptive intervals based on window size
 
 ### Interactive Tooltip
+
 Shows:
+
 - Window time range (e.g., "9:00 - 9:30")
 - Domain name
 - Active, Background, and Total minutes
 - URL path (if provided, truncated to 40 chars)
 
 ### Accessibility
+
 - Colors generated with WCAG AA contrast compliance
 - Striped pattern distinguishes background (not color alone)
 - Semantic HTML structure
@@ -129,6 +135,7 @@ Shows:
 ## Color System
 
 Colors are generated from domain strings using the `getDomainColor()` utility:
+
 - Consistent color per domain across all charts
 - HSL-based with 60-70% saturation and 45-55% lightness
 - Avoids problematic hues for colorblind users
@@ -137,6 +144,7 @@ Colors are generated from domain strings using the `getDomainColor()` utility:
 ## Grid System Details
 
 ### Unit Calculation
+
 ```
 baseUnit = floor(containerWidth / totalUnits)
 baseUnit = clamp(baseUnit, 6px, 20px)
@@ -147,6 +155,7 @@ Gap between windows = 2 units
 ```
 
 ### Row Heights
+
 ```
 15 min window  → 10px rows (150px total)
 20 min window  → 8px rows  (160px total)
@@ -157,7 +166,9 @@ Gap between windows = 2 units
 ```
 
 ### Guide Lines
+
 Intervals adapt to window size:
+
 - 15-30 min: Every 5 minutes
 - 60 min: Every 10 minutes
 - 90 min: Every 15 minutes
@@ -166,11 +177,13 @@ Intervals adapt to window size:
 ## Styling
 
 The component uses:
+
 1. **Vuetify props** for spacing and layout (`d-flex`, `pa-4`, etc.)
 2. **Scoped CSS** for grid-specific styling
 3. **Inline styles** for dynamic grid positioning
 
 To customize:
+
 - Override `.activity-stacked-bars` for container styling
 - Adjust `gridConfig` calculation for different dimensions
 - Modify `getDomainColor()` for custom color scheme

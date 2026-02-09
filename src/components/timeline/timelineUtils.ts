@@ -2,14 +2,12 @@
  * Timeline calculation utilities
  */
 
-import type {
-	TimelineSession,
-	StackedSession,
-	SessionPosition,
-	TimelineGridConfig,
-	Gap,
-	GapDisplay,
-} from './types'
+import {TimelineGridConfig} from '@/components/timeline/dto/TimelineGridConfig.ts';
+import {SessionPosition} from '@/components/timeline/dto/SessionPosition.ts';
+import {StackedSession} from '@/components/timeline/dto/StackedSession.ts';
+import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
+import {Gap} from '@/components/timeline/dto/Gap.ts';
+import {GapDisplay} from '@/components/timeline/dto/GapDisplay.ts';
 
 /**
  * Calculate timeline configuration based on container and time range
@@ -25,13 +23,13 @@ export function calculateTimelineConfig(
 
 	const pixelsPerMinute = containerWidth / totalMinutes
 
-	return {
+	return new TimelineGridConfig(
 		totalMinutes,
 		pixelsPerMinute,
 		laneHeight,
 		timeAxisHeight,
-		minBlockWidth: 2,
-	}
+		2 // minBlockWidth
+	)
 }
 
 /**
@@ -56,11 +54,11 @@ export function calculateSessionPosition(
 
 	const widthPixels = (widthPercent / 100) * containerWidth
 
-	return {
-		left: `${leftPercent}%`,
-		width: `${widthPercent}%`,
-		minWidth: widthPixels < config.minBlockWidth ? `${config.minBlockWidth}px` : 'auto',
-	}
+	return new SessionPosition(
+		`${leftPercent}%`,
+		`${widthPercent}%`,
+		widthPixels < config.minBlockWidth ? `${config.minBlockWidth}px` : 'auto'
+	)
 }
 
 /**
@@ -77,16 +75,22 @@ export function calculateWaterfallStack(sessions: TimelineSession[]): StackedSes
 		const startTime = session.startedAt.getTime()
 
 		let level = 0
-		while (level < levelEndTimes.length && levelEndTimes[level] > startTime) {
+		while (level < levelEndTimes.length && (levelEndTimes[level] ?? 0) > startTime) {
 			level++
 		}
 
 		levelEndTimes[level] = session.endedAt.getTime()
 
-		return {
-			...session,
-			stackLevel: level,
-		}
+		return new StackedSession(
+			session.id,
+			session.domain,
+			session.startedAt,
+			session.endedAt,
+			session.durationSeconds,
+			session.totalSeconds,
+			level,
+			session.url
+		)
 	})
 }
 
@@ -127,11 +131,11 @@ export function findActivityGaps(
 			const gapMinutes = (sessionStart - currentEnd) / (1000 * 60)
 
 			if (gapMinutes >= minGapMinutes) {
-				gaps.push({
-					startedAt: new Date(currentEnd),
-					endedAt: new Date(sessionStart),
-					durationMinutes: gapMinutes,
-				})
+				gaps.push(new Gap(
+					new Date(currentEnd),
+					new Date(sessionStart),
+					gapMinutes
+				))
 			}
 		}
 
@@ -142,11 +146,11 @@ export function findActivityGaps(
 		const gapMinutes = (to.getTime() - currentEnd) / (1000 * 60)
 
 		if (gapMinutes >= minGapMinutes) {
-			gaps.push({
-				startedAt: new Date(currentEnd),
-				endedAt: to,
-				durationMinutes: gapMinutes,
-			})
+			gaps.push(new Gap(
+				new Date(currentEnd),
+				to,
+				gapMinutes
+			))
 		}
 	}
 
@@ -160,11 +164,11 @@ export function calculateGapDisplay(gap: Gap, config: TimelineGridConfig): GapDi
 	const durationPixels = gap.durationMinutes * config.pixelsPerMinute
 	const labelMinWidth = 80
 
-	return {
-		showLabel: durationPixels >= labelMinWidth,
-		displayWidth: Math.max(durationPixels, 20),
-		compressed: durationPixels > labelMinWidth * 2,
-	}
+	return new GapDisplay(
+		durationPixels >= labelMinWidth,
+		Math.max(durationPixels, 20),
+		durationPixels > labelMinWidth * 2
+	)
 }
 
 /**

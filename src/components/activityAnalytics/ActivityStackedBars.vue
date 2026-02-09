@@ -1,54 +1,61 @@
 <template>
-	<div class="activity-stacked-bars">
-		<div class="header d-flex align-center justify-space-between mb-4">
-			<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>
-			<WindowSizeSelector v-model="selectedWindowSize" :options="availableWindowSizes" />
-		</div>
-
-		<!-- Loading state -->
-		<template v-if="loading">
-			<VSkeletonLoader type="image" height="250" />
-		</template>
-
-		<!-- Empty state -->
-		<template v-else-if="windows.length === 0">
-			<div class="empty-state d-flex flex-column align-center justify-center pa-8">
-				<VIcon size="48" color="grey-lighten-1">mdi-chart-bar</VIcon>
-				<p class="text-grey mt-2">No activity recorded for this period</p>
+<VCard class="pa-4">
+	<div class="d-flex align-center ga-6 mb-3">
+		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>
+		<VSelect
+			v-model="selectedWindowSize"
+			label="Window"
+			:items="formattedOptions"
+			density="compact"
+			hideDetails
+			style="max-width: 100px"
+		/>
+		<div v-if="legendItems.length > 0" class="legend d-flex flex-wrap ga-2">
+			<div
+				v-for="item in legendItems"
+				:key="item.domain"
+				class="legend-item d-flex align-center ga-1"
+			>
+				<div class="legend-color" :style="{ backgroundColor: item.color }"/>
+				<span class="legend-label">{{ item.label }}</span>
 			</div>
-		</template>
-
-		<!-- Chart -->
-		<template v-else>
-			<StackedBarsGrid
-				:windows="processedWindows"
-				:windowMinutes="selectedWindowSize"
-				@activity-click="handleActivityClick"
-			/>
-		</template>
+		</div>
 	</div>
+
+
+	<!-- Loading state -->
+	<template v-if="loading">
+		<VSkeletonLoader type="image" height="250"/>
+	</template>
+
+	<!-- Empty state -->
+	<template v-else-if="windows.length === 0">
+		<div class="empty-state d-flex flex-column align-center justify-center pa-8">
+			<VIcon size="48" color="grey-lighten-1">mdi-chart-bar</VIcon>
+			<p class="text-grey mt-2">No activity recorded for this period</p>
+		</div>
+	</template>
+
+	<!-- Chart -->
+	<template v-else>
+		<StackedBarsGrid
+			:windows="processedWindows"
+			:windowMinutes="selectedWindowSize"
+			@activity-click="handleActivityClick"
+		/>
+	</template>
+</VCard>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import WindowSizeSelector from './WindowSizeSelector.vue'
-import StackedBarsGrid, { type ProcessedWindow } from './StackedBarsGrid.vue'
-import type { ColumnData } from './StackedBarColumn.vue'
-import { getDomainColor } from '@/utils/domainColor'
+import {computed, ref, watch} from 'vue'
+import StackedBarsGrid from './StackedBarsGrid.vue'
+import type {ActivityWindow} from '@/dtos/response/activityTracking/ActivityWindow.ts';
+import type {WindowActivity} from '@/dtos/response/activityTracking/WindowActivity.ts';
+import type {ColumnData} from '@/components/activityAnalytics/dto/ColumnData.ts';
+import type {ProcessedWindow} from '@/components/activityAnalytics/dto/ProcessedWindow.ts';
+import {getDomainColor} from '@/utils/domainColor'
 
-export interface ActivityWindow {
-	windowStart: Date
-	windowEnd: Date
-	activities: WindowActivity[]
-}
-
-export interface WindowActivity {
-	domain: string
-	activeSeconds: number
-	backgroundSeconds: number
-	totalSeconds: number
-	url?: string
-}
 
 const props = withDefaults(
 	defineProps<{
@@ -64,13 +71,16 @@ const props = withDefaults(
 	}
 )
 
-const emit = defineEmits<{
-	(e: 'windowSizeChange', size: number): void
-	(e: 'activityClick', activity: { window: ActivityWindow; domain: string }): void
-}>()
 
 // Selected window size
 const selectedWindowSize = ref(props.initialWindowSize)
+
+const formattedOptions = computed(() =>
+	props.availableWindowSizes.map((mins) => ({
+		value: mins,
+		title: mins >= 60 ? `${mins / 60}h` : `${mins}m`,
+	}))
+)
 
 watch(selectedWindowSize, (newSize) => {
 	emit('windowSizeChange', newSize)
@@ -92,6 +102,38 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 		windowEnd: window.windowEnd,
 		columns: processWindowActivities(window.activities),
 	}))
+})
+
+// Legend items
+const legendItems = computed(() => {
+	const domainMap = new Map<string, { domain: string; label: string; color: string }>()
+
+	props.windows.forEach((window) => {
+		window.activities.forEach((activity) => {
+			if (!domainMap.has(activity.domain)) {
+				domainMap.set(activity.domain, {
+					domain: activity.domain,
+					label: activity.domain,
+					color: getDomainColor(activity.domain),
+				})
+			}
+		})
+	})
+
+	// Check if "Other" bucket is used in processed windows
+	processedWindows.value.forEach((window) => {
+		window.columns.forEach((col) => {
+			if (col.domain === '_other' && !domainMap.has('_other')) {
+				domainMap.set('_other', {
+					domain: '_other',
+					label: 'Other',
+					color: getDomainColor('_other'),
+				})
+			}
+		})
+	})
+
+	return Array.from(domainMap.values()).sort((a, b) => a.label.localeCompare(b.label))
 })
 
 function processWindowActivities(activities: WindowActivity[]): ColumnData[] {
@@ -136,24 +178,44 @@ function toColumnData(activity: WindowActivity): ColumnData {
 
 function handleActivityClick(bar: any) {
 	const window = props.windows[bar.windowIndex]
-	emit('activityClick', {
-		window,
-		domain: bar.domain,
-	})
+	if (!window)
+		throw new Error('Window not found')
+	emit('activityClick', window, bar.domain)
 }
+
+const emit = defineEmits<{
+	(e: 'windowSizeChange', size: number): void
+	(e: 'activityClick', window: ActivityWindow, domain: string): void
+}>()
 </script>
 
 <style scoped>
-.activity-stacked-bars {
-	background: white;
-	border-radius: 8px;
-	padding: 16px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
 .empty-state {
 	min-height: 250px;
 	background-color: #fafafa;
 	border-radius: 8px;
+}
+
+.legend {
+	font-size: 12px;
+}
+
+.legend-item {
+	padding: 2px 6px;
+	border-radius: 4px;
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+.legend-color {
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.legend-label {
+	font-size: 11px;
+	color: #fff;
+	white-space: nowrap;
 }
 </style>

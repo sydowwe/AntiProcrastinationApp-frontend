@@ -1,114 +1,107 @@
 <template>
-	<div ref="containerRef" class="stacked-bars-container">
-		<div class="stacked-bars-grid" :style="gridStyle">
-			<!-- Y-axis labels -->
-			<template v-for="line in guideLines" :key="`y-${line.minute}`">
-				<div class="y-axis-label" :style="{ gridRow: line.gridRow, gridColumn: 1 }">
-					{{ line.minute }}m
-				</div>
-			</template>
+<div ref="containerRef" class="stacked-bars-container">
+	<div class="stacked-bars-grid" :style="gridStyle">
+		<!-- Y-axis labels (left) -->
+		<template v-for="line in guideLines" :key="`y-left-${line.minute}`">
+			<div class="y-axis-label y-axis-label-left" :style="{ gridRow: line.gridRow, gridColumn: 1 }">
+				{{ line.minute }}m
+			</div>
+		</template>
 
-			<!-- Horizontal guide lines -->
-			<template v-for="line in guideLines" :key="`line-${line.minute}`">
-				<div
-					class="guide-line"
-					:style="{ gridRow: line.gridRow, gridColumn: `2 / ${totalColumns + 1}` }"
-				/>
-			</template>
+		<!-- Y-axis labels (right) -->
+		<template v-for="line in guideLines" :key="`y-right-${line.minute}`">
+			<div class="y-axis-label y-axis-label-right" :style="{ gridRow: line.gridRow, gridColumn: totalColumns + 2 }">
+				{{ line.minute }}m
+			</div>
+		</template>
 
-			<!-- Activity bars -->
-			<template v-for="bar in barSpans" :key="`${bar.windowIndex}-${bar.activityIndex}`">
-				<StackedBarColumn
-					:data="bar.data"
-					:gridColumnStart="bar.gridColumnStart"
-					:gridColumnEnd="bar.gridColumnEnd"
-					:gridRowStart="bar.gridRowStart"
-					:gridRowEnd="bar.gridRowEnd"
-					:windowMinutes
-					@mouseenter="showTooltip($event, bar)"
-					@mouseleave="hideTooltip"
-					@click="$emit('activityClick', bar)"
-				/>
-			</template>
+		<!-- Horizontal guide lines -->
+		<template v-for="line in guideLines" :key="`line-${line.minute}`">
+			<div
+				class="guide-line"
+				:style="{ gridRow: line.gridRow, gridColumn: `2 / ${totalColumns + 1}` }"
+			/>
+		</template>
 
-			<!-- X-axis labels (window time ranges) -->
-			<template v-for="(window, index) in windows" :key="`x-${index}`">
-				<div
-					class="x-axis-label"
-					:style="{
+		<!-- Bottom line (0m) -->
+		<div
+			class="bottom-line"
+			:style="{ gridRow: windowMinutes + 1, gridColumn: `2 / ${totalColumns + 1}` }"
+		/>
+
+		<!-- Window separators -->
+		<template v-for="(separator, index) in windowSeparators" :key="`separator-${index}`">
+			<div
+				class="window-separator"
+				:style="{
+					gridRow: `1 / ${windowMinutes + 1}`,
+					gridColumn: separator.gridColumn,
+				}"
+			/>
+		</template>
+
+		<!-- Activity bars -->
+		<template v-for="bar in barSpans" :key="`${bar.windowIndex}-${bar.activityIndex}`">
+			<StackedBarColumn
+				:data="bar.data"
+				:gridColumnStart="bar.gridColumnStart"
+				:gridColumnEnd="bar.gridColumnEnd"
+				:gridRowStart="bar.gridRowStart"
+				:gridRowEnd="bar.gridRowEnd"
+				:windowMinutes
+				@mouseenter="showTooltip($event, bar)"
+				@mouseleave="hideTooltip"
+				@click="emit('activityClick', bar)"
+			/>
+		</template>
+
+		<!-- X-axis labels (window time ranges) -->
+		<template v-for="(window, index) in windows" :key="`x-${index}`">
+			<div
+				class="x-axis-label"
+				:style="{
 						gridRow: windowMinutes + 1,
 						gridColumn: `${window.gridColumnStart} / ${window.gridColumnEnd}`,
 					}"
-				>
-					{{ formatWindowLabel(window) }}
-				</div>
-			</template>
+			>
+				{{ formatWindowLabel(window) }}
+			</div>
+		</template>
 
-			<!-- Empty window indicators -->
-			<template v-for="(window, index) in emptyWindows" :key="`empty-${index}`">
-				<div
-					class="empty-window"
-					:style="{
+		<!-- Empty window indicators -->
+		<template v-for="(window, index) in emptyWindows" :key="`empty-${index}`">
+			<div
+				class="empty-window"
+				:style="{
 						gridRow: `1 / ${windowMinutes + 1}`,
 						gridColumn: `${window.gridColumnStart} / ${window.gridColumnEnd}`,
 					}"
-				>
-					<span class="empty-label">No activity</span>
-				</div>
-			</template>
-		</div>
-
-		<!-- Tooltip -->
-		<StackedBarsTooltip
-			v-if="tooltipData"
-			:data="tooltipData"
-			:position="tooltipPosition"
-		/>
+			>
+				<span class="empty-label">No activity</span>
+			</div>
+		</template>
 	</div>
+
+	<!-- Tooltip -->
+	<StackedBarsTooltip
+		v-if="tooltipData"
+		:data="tooltipData"
+		:position="tooltipPosition"
+	/>
+</div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import StackedBarColumn, { type ColumnData } from './StackedBarColumn.vue'
-import StackedBarsTooltip, {
-	type TooltipData,
-	type TooltipPosition,
-} from './StackedBarsTooltip.vue'
+import {computed, onMounted, onUnmounted, ref} from 'vue'
+import StackedBarColumn from './StackedBarColumn.vue'
+import {ProcessedWindow} from '@/components/activityAnalytics/dto/ProcessedWindow'
+import {BarGridSpan} from '@/components/activityAnalytics/dto/BarGridSpan'
+import {GuideLine} from '@/components/activityAnalytics/dto/GuideLine'
+import {GridConfig} from '@/components/activityAnalytics/dto/GridConfig'
+import StackedBarsTooltip from '@/components/activityAnalytics/StackedBarsTooltip.vue';
+import type {TooltipData} from '@/components/activityAnalytics/dto/TooltipData.ts';
+import type {Position} from '@/dtos/dto/Position.ts';
 
-export interface ProcessedWindow {
-	windowStart: Date
-	windowEnd: Date
-	columns: ColumnData[]
-	gridColumnStart?: number
-	gridColumnEnd?: number
-}
-
-export interface BarGridSpan {
-	windowIndex: number
-	activityIndex: number
-	domain: string
-	gridColumnStart: number
-	gridColumnEnd: number
-	gridRowStart: number
-	gridRowEnd: number
-	data: ColumnData
-}
-
-interface GuideLine {
-	minute: number
-	gridRow: number
-	showLabel: boolean
-}
-
-interface GridConfig {
-	baseUnit: number
-	barWidthUnits: number
-	barGapUnits: number
-	windowGapUnits: number
-	yAxisWidth: number
-	xAxisHeight: number
-	rowHeight: number
-}
 
 const props = defineProps<{
 	windows: ProcessedWindow[]
@@ -122,7 +115,7 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLElement | null>(null)
 const containerWidth = ref(800)
 const tooltipData = ref<TooltipData | null>(null)
-const tooltipPosition = ref<TooltipPosition>({ x: 0, y: 0 })
+const tooltipPosition = ref<Position>({x: 0, y: 0})
 
 // Calculate grid configuration based on container width
 const gridConfig = computed<GridConfig>(() =>
@@ -169,60 +162,65 @@ function calculateGridConfig(
 	else if (windowMinutes <= 90) rowHeight = 3
 	else rowHeight = 2
 
-	return {
+	return new GridConfig(
 		baseUnit,
-		barWidthUnits: 3,
-		barGapUnits: 1,
-		windowGapUnits: 2,
+		3, // barWidthUnits
+		1, // barGapUnits
+		2, // windowGapUnits
 		yAxisWidth,
-		xAxisHeight: 30,
-		rowHeight,
-	}
+		30, // xAxisHeight
+		rowHeight
+	)
 }
 
 // Calculate bar positions and grid spans
 const barSpans = computed<BarGridSpan[]>(() => {
 	const spans: BarGridSpan[] = []
-	let currentCol = 2 // Column 1 is Y-axis
+	let currentCol = 3 // Column 1 is Y-axis, column 2 is start separator
 
 	props.windows.forEach((window, windowIndex) => {
 		const windowStartCol = currentCol
 
-		window.columns.forEach((col, colIndex) => {
-			const activeMinutes = col.activeMinutes
-			const backgroundMinutes = col.backgroundMinutes
-			const totalMinutes = activeMinutes + backgroundMinutes
+		if (window.columns.length === 0) {
+			// Empty window takes 5 columns
+			currentCol += 5
+		} else {
+			window.columns.forEach((col, colIndex) => {
+				const totalMinutes = col.activeMinutes + col.backgroundMinutes
 
-			// Calculate grid row positions (rows are numbered from top)
-			const gridRowStart = props.windowMinutes - totalMinutes + 1
-			const gridRowEnd = props.windowMinutes + 1
+				// Calculate grid row positions (rows are numbered from top)
+				const gridRowStart = props.windowMinutes - totalMinutes + 1
+				const gridRowEnd = props.windowMinutes + 1
 
-			spans.push({
-				windowIndex,
-				activityIndex: colIndex,
-				domain: col.domain,
-				gridColumnStart: currentCol,
-				gridColumnEnd: currentCol + 3, // Span 3 columns
-				gridRowStart,
-				gridRowEnd,
-				data: col,
+				spans.push(
+					new BarGridSpan(
+						windowIndex,
+						colIndex,
+						col.domain,
+						currentCol,
+						currentCol + 5, // gridColumnEnd - Span 5 columns
+						gridRowStart,
+						gridRowEnd,
+						col
+					)
+				)
+
+				currentCol += 5 // Bar width (5 units)
+
+				// Gap after bar (except last bar in window)
+				if (colIndex < window.columns.length - 1) {
+					currentCol += 1 // 1 unit gap
+				}
 			})
-
-			currentCol += 3 // Bar width (3 units)
-
-			// Gap after bar (except last bar in window)
-			if (colIndex < window.columns.length - 1) {
-				currentCol += 1 // 1 unit gap
-			}
-		})
+		}
 
 		// Store window column span
 		window.gridColumnStart = windowStartCol
 		window.gridColumnEnd = currentCol
 
-		// Window gap (except after last window)
+		// Window gap (except after last window) = 1 gap + 1 separator + 1 gap = 3 columns
 		if (windowIndex < props.windows.length - 1) {
-			currentCol += 2 // 2 unit gap
+			currentCol += 3
 		}
 	})
 
@@ -234,6 +232,8 @@ const totalColumns = computed(() => {
 	if (barSpans.value.length === 0) return 2
 
 	const lastBar = barSpans.value[barSpans.value.length - 1]
+	if (!lastBar)
+		return 0;
 	return lastBar.gridColumnEnd - 1
 })
 
@@ -245,28 +245,43 @@ const gridTemplateColumns = computed(() => {
 	// Y-axis column
 	columns.push(`${config.yAxisWidth}px`)
 
+	// Start separator
+	columns.push(`1px`)
+
 	let currentCol = 2
 	props.windows.forEach((window, windowIndex) => {
 		if (window.columns.length > 0) {
 			window.columns.forEach((col, colIndex) => {
-				// Activity bar = 3 units
-				columns.push(`${config.baseUnit * 3}px`)
+				// Activity bar = 5 columns at half width
+				for (let i = 0; i < 5; i++) {
+					columns.push(`${config.baseUnit / 2}px`)
+				}
 
-				// Gap after bar (except last bar in window)
+				// Gap after bar (except last bar in window) = 1 column at half width (smaller gap)
 				if (colIndex < window.columns.length - 1) {
-					columns.push(`${config.baseUnit}px`)
+					columns.push(`${config.baseUnit / 2}px`)
 				}
 			})
 		} else {
-			// Empty window placeholder
-			columns.push(`${config.baseUnit * 3}px`)
+			// Empty window placeholder = 5 columns at half width
+			for (let i = 0; i < 5; i++) {
+				columns.push(`${config.baseUnit / 2}px`)
+			}
 		}
 
-		// Window gap (except after last window)
+		// Window gap (except after last window) = 1 gap + 1 separator + 1 gap
 		if (windowIndex < props.windows.length - 1) {
-			columns.push(`${config.baseUnit * 2}px`)
+			columns.push(`${config.baseUnit / 2}px`) // Gap before separator
+			columns.push(`1px`) // Separator line
+			columns.push(`${config.baseUnit / 2}px`) // Gap after separator
 		}
 	})
+
+	// End separator
+	columns.push(`1px`)
+
+	// Right Y-axis column
+	columns.push(`${config.yAxisWidth}px`)
 
 	return columns.join(' ')
 })
@@ -301,11 +316,7 @@ const guideLines = computed<GuideLine[]>(() => {
 	const lines: GuideLine[] = []
 
 	for (let minute = interval; minute <= props.windowMinutes; minute += interval) {
-		lines.push({
-			minute,
-			gridRow: props.windowMinutes - minute + 1,
-			showLabel: true,
-		})
+		lines.push(new GuideLine(minute, props.windowMinutes - minute + 1, true))
 	}
 
 	return lines
@@ -314,6 +325,42 @@ const guideLines = computed<GuideLine[]>(() => {
 // Empty windows
 const emptyWindows = computed(() => {
 	return props.windows.filter((w) => w.columns.length === 0)
+})
+
+// Window separators
+const windowSeparators = computed(() => {
+	const separators: { gridColumn: number }[] = []
+	let currentCol = 2 // Start after Y-axis (column 2 is the start separator)
+
+	// Add separator at the start
+	separators.push({gridColumn: currentCol})
+	currentCol += 1 // Move past the start separator
+
+	props.windows.forEach((window, windowIndex) => {
+		// Skip past this window's columns
+		if (window.columns.length === 0) {
+			currentCol += 5
+		} else {
+			window.columns.forEach((col, colIndex) => {
+				currentCol += 5 // Bar width
+				if (colIndex < window.columns.length - 1) {
+					currentCol += 1 // Gap
+				}
+			})
+		}
+
+		// Add separator between windows
+		if (windowIndex < props.windows.length - 1) {
+			currentCol += 1 // Gap before separator
+			separators.push({gridColumn: currentCol})
+			currentCol += 2 // Separator + gap after
+		}
+	})
+
+	// Add separator at the end (no gap before it, it's immediately after the last window)
+	separators.push({gridColumn: currentCol})
+
+	return separators
 })
 
 // Grid style
@@ -342,7 +389,8 @@ function formatWindowLabel(window: ProcessedWindow): string {
 // Tooltip handlers
 function showTooltip(event: MouseEvent, bar: BarGridSpan) {
 	const window = props.windows[bar.windowIndex]
-
+	if (!window)
+		throw new Error('Window not found for bar')
 	tooltipData.value = {
 		windowLabel: formatWindowLabel(window),
 		domain: bar.data.domain,
@@ -370,6 +418,8 @@ onMounted(() => {
 		containerWidth.value = containerRef.value.clientWidth
 
 		resizeObserver = new ResizeObserver((entries) => {
+			if (!entries[0])
+				return
 			containerWidth.value = entries[0].contentRect.width
 		})
 
@@ -391,20 +441,30 @@ onUnmounted(() => {
 }
 
 .stacked-bars-grid {
+	padding-top: 5px;
 	min-width: 600px;
 }
 
 .y-axis-label {
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	padding-right: 8px;
 	font-size: 11px;
-	color: #666;
+	margin-bottom: 6px;
+	color: #fff;
+}
+
+.y-axis-label-left {
+	justify-content: flex-end;
+	padding-right: 6px;
+}
+
+.y-axis-label-right {
+	justify-content: flex-start;
+	padding-left: 6px;
 }
 
 .guide-line {
-	border-top: 1px solid #e0e0e0;
+	border-top: 1px solid #999;
 	pointer-events: none;
 	z-index: 1;
 }
@@ -414,8 +474,9 @@ onUnmounted(() => {
 	align-items: center;
 	justify-content: center;
 	font-size: 11px;
-	color: #666;
+	color: #fff;
 	padding-top: 4px;
+	text-wrap: nowrap;
 }
 
 .empty-window {
@@ -423,15 +484,27 @@ onUnmounted(() => {
 	align-items: center;
 	justify-content: center;
 	border: 1px dashed #e0e0e0;
-	border-radius: 4px;
-	background-color: #fafafa;
+	background-color: #999;
 	margin: 0 2px;
+	z-index: 5;
 }
 
 .empty-label {
 	font-size: 11px;
-	color: #999;
+	color: #000;
 	writing-mode: vertical-rl;
 	text-orientation: mixed;
+}
+
+.window-separator {
+	background-color: #999;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.bottom-line {
+	border-top: 1px solid #999;
+	pointer-events: none;
+	z-index: 1;
 }
 </style>

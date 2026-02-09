@@ -19,7 +19,7 @@
 import {computed} from 'vue'
 import TimelineSession from './TimelineSession.vue'
 import {calculateSessionPosition} from './timelineUtils'
-import type {LaneType, SessionPosition, StackedSession, TimelineGridConfig, TimelineSession as TimelineSessionType,} from './types'
+import type {LaneType, SessionPosition, StackedSession, TimelineGridConfig, TimelineSession as TimelineSessionType,} from './dto'
 
 const props = defineProps<{
 	sessions: (TimelineSessionType | StackedSession)[]

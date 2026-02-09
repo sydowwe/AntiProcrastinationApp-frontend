@@ -91,29 +91,8 @@
 import { computed } from 'vue'
 import { formatDuration } from '@/utils/formatDuration'
 import DomainDetailsList from './DomainDetailsList.vue'
-
-interface DayTotals {
-	totalSeconds: number
-	activeSeconds: number
-	backgroundSeconds: number
-	totalDomains: number
-	totalPages: number
-	totalVisits?: number
-}
-
-interface PageVisit {
-	url: string
-	seconds: number
-}
-
-interface DomainDetails {
-	domain: string
-	totalSeconds: number
-	activeSeconds: number
-	backgroundSeconds: number
-	entries: number
-	pages: PageVisit[]
-}
+import { DayTotals } from './dto/DayTotals'
+import { DomainDetails } from './dto/DomainDetails'
 
 const props = defineProps<{
 	mode: 'dayTotal' | 'domain'

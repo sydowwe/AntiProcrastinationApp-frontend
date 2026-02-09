@@ -30,16 +30,10 @@ import {PieChart} from 'echarts/charts'
 import {LegendComponent, TooltipComponent} from 'echarts/components'
 import type {EChartsOption} from 'echarts'
 import {formatDuration} from '@/utils/formatDuration'
+import { PieSegment } from './dto/PieSegment'
 
 // Register ECharts components
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
-
-interface PieSegment {
-	domain: string
-	seconds: number
-	percent: number
-	color: string
-}
 
 const props = defineProps<{
 	domains: PieSegment[]

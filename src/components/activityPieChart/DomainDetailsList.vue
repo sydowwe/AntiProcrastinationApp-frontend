@@ -36,11 +36,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { formatDuration } from '@/utils/formatDuration'
-
-interface PageVisit {
-	url: string
-	seconds: number
-}
+import { PageVisit } from './dto/PageVisit'
 
 const props = defineProps<{
 	pages: PageVisit[]

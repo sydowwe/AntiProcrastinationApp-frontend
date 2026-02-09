@@ -80,7 +80,7 @@ import {computed, ref} from 'vue'
 import {getDomainColor} from '@/utils/domainColor'
 import TimelineGrid from './TimelineGrid.vue'
 import {calculateWaterfallStack} from './timelineUtils'
-import type {TimelineSession, ViewMode} from './types'
+import type {TimelineSession, ViewMode} from './dto'
 
 const props = defineProps<{
 	activeSessions: TimelineSession[]

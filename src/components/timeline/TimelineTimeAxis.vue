@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
-import type {TimeMarker} from './types'
+import {TimeMarker} from './dto/TimeMarker'
 
 const props = defineProps<{
 	from: Date
@@ -62,12 +62,12 @@ const timeMarkers = computed(() => {
 			weight = 'minor'
 		}
 
-		markers.push({
-			time: date,
-			position: `${position}%`,
-			label: formatTimeLabel(date),
-			weight,
-		})
+		markers.push(new TimeMarker(
+			date,
+			`${position}%`,
+			formatTimeLabel(date),
+			weight
+		))
 
 		current += tickInterval * 60 * 1000
 	}
