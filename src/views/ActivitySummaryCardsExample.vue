@@ -13,9 +13,9 @@
 
 <script setup lang="ts">
 import {ref} from 'vue';
-import type {BaselineOption, BaselineType} from '@/components/activitySummary/BaselineSelector.vue';
-import type {DomainSummary} from '@/components/activitySummary/ActivityDomainCard.vue';
-import ActivitySummaryCards from '@/components/activitySummary/ActivitySummaryCards.vue';
+import type {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/BaselineSelector.vue';
+import type {DomainSummary} from '@/components/activityTracking/summaryCards/ActivityDomainCard.vue';
+import ActivitySummaryCards from '@/components/activityTracking/summaryCards/ActivitySummaryCards.vue';
 
 const loading = ref(false);
 const selectedBaseline = ref<BaselineType>('last7days');

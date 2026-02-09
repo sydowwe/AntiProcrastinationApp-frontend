@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import {computed} from 'vue';
 import ActivityStatColumn from './ActivityStatColumn.vue';
-import type {DomainSummary} from '@/components/activitySummary/dto/DomainSummary.ts';
+import type {DomainSummary} from '@/components/activityTracking/summaryCards/dto/DomainSummary.ts';
 
 const props = defineProps<{
 	domain: DomainSummary;

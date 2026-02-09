@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
-import type {TooltipData} from '@/components/activityAnalytics/dto/TooltipData.ts';
+import type {TooltipData} from '@/components/activityTracking/stackedBars/dto/TooltipData.ts';
 import type {Position} from '@/dtos/dto/Position.ts';
 
 const props = defineProps<{

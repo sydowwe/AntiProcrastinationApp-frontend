@@ -94,12 +94,12 @@
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, ref} from 'vue'
 import StackedBarColumn from './StackedBarColumn.vue'
-import {ProcessedWindow} from '@/components/activityAnalytics/dto/ProcessedWindow'
-import {BarGridSpan} from '@/components/activityAnalytics/dto/BarGridSpan'
-import {GuideLine} from '@/components/activityAnalytics/dto/GuideLine'
-import {GridConfig} from '@/components/activityAnalytics/dto/GridConfig'
-import StackedBarsTooltip from '@/components/activityAnalytics/StackedBarsTooltip.vue';
-import type {TooltipData} from '@/components/activityAnalytics/dto/TooltipData.ts';
+import {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow'
+import {BarGridSpan} from '@/components/activityTracking/stackedBars/dto/BarGridSpan'
+import {GuideLine} from '@/components/activityTracking/stackedBars/dto/GuideLine'
+import {GridConfig} from '@/components/activityTracking/stackedBars/dto/GridConfig'
+import StackedBarsTooltip from '@/components/activityTracking/stackedBars/StackedBarsTooltip.vue';
+import type {TooltipData} from '@/components/activityTracking/stackedBars/dto/TooltipData.ts';
 import type {Position} from '@/dtos/dto/Position.ts';
 
 

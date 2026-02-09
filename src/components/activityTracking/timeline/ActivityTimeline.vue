@@ -80,8 +80,8 @@ import {computed, ref} from 'vue'
 import {getDomainColor} from '@/utils/domainColor'
 import TimelineGrid from './TimelineGrid.vue'
 import {calculateWaterfallStack} from './timelineUtils'
-import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
-import type {TimelineViewMode} from '@/components/timeline/dto/TimelineViewMode.ts';
+import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts';
 
 const props = defineProps<{
 	activeSessions: TimelineSession[]

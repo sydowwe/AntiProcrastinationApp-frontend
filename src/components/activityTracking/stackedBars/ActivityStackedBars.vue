@@ -52,8 +52,8 @@ import {computed, ref, watch} from 'vue'
 import StackedBarsGrid from './StackedBarsGrid.vue'
 import type {ActivityWindow} from '@/dtos/response/activityTracking/ActivityWindow.ts';
 import type {WindowActivity} from '@/dtos/response/activityTracking/WindowActivity.ts';
-import type {ColumnData} from '@/components/activityAnalytics/dto/ColumnData.ts';
-import type {ProcessedWindow} from '@/components/activityAnalytics/dto/ProcessedWindow.ts';
+import type {ColumnData} from '@/components/activityTracking/stackedBars/dto/ColumnData.ts';
+import type {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow.ts';
 import {getDomainColor} from '@/utils/domainColor'
 
 

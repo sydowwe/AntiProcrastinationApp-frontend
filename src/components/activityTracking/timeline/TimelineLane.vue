@@ -18,11 +18,11 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {calculateSessionPosition} from './timelineUtils'
-import type {StackedSession} from '@/components/timeline/dto/StackedSession.ts';
-import type {LaneType} from '@/components/timeline/dto/LaneType.ts';
-import type {TimelineGridConfig} from '@/components/timeline/dto/TimelineGridConfig.ts';
-import type {SessionPosition} from '@/components/timeline/dto/SessionPosition.ts';
-import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
+import type {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
+import type {LaneType} from '@/components/activityTracking/timeline/dto/LaneType.ts';
+import type {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
+import type {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
+import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
 
 const props = defineProps<{
 	sessions: (TimelineSession | StackedSession)[]
