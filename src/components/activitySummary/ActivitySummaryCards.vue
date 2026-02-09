@@ -53,36 +53,26 @@
 </template>
 
 <script setup lang="ts">
+
+import type {DomainSummary} from '@/components/activitySummary/dto/DomainSummary.ts';
+import type {BaselineOption, BaselineType} from '@/components/activitySummary/dto/BaselineOption.ts';
 import {computed} from 'vue';
-import type {DomainSummary} from './ActivityDomainCard.vue';
-import ActivityDomainCard from './ActivityDomainCard.vue';
 
-// Type definitions from BaselineSelector
-export type BaselineType = 'last7days' | 'last30days' | 'sameWeekday' | 'allTime';
 
-export interface BaselineOption {
-	value: BaselineType;
-	label: string;
-}
-
-interface Props {
+const props = withDefaults(defineProps<{
 	domains: DomainSummary[];
 	baselineOptions: BaselineOption[];
 	selectedBaseline: BaselineType;
 	loading?: boolean;
-}
-
-interface Emits {
-	(e: 'update:selectedBaseline', value: BaselineType): void;
-
-	(e: 'domainClick', domain: string): void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+}>(), {
 	loading: false,
 });
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+	(e: 'update:selectedBaseline', value: BaselineType): void;
+
+	(e: 'domainClick', domain: string): void;
+}>();
 
 // Filter out domains with no activity (both active and background are 0 or null)
 const visibleDomains = computed(() => {

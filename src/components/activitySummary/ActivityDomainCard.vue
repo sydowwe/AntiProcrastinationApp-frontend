@@ -65,30 +65,15 @@
 <script setup lang="ts">
 import {computed} from 'vue';
 import ActivityStatColumn from './ActivityStatColumn.vue';
+import type {DomainSummary} from '@/components/activitySummary/dto/DomainSummary.ts';
 
-export interface ActivityStat {
-	seconds: number;
-	averageSeconds: number | null;
-	percentChange: number | null;
-}
-
-export interface DomainSummary {
-	domain: string;
-	active: ActivityStat | null;
-	background: ActivityStat | null;
-	isNew: boolean;
-}
-
-interface Props {
+const props = defineProps<{
 	domain: DomainSummary;
-}
+}>();
 
-interface Emits {
+const emit = defineEmits<{
 	(e: 'click', domain: string): void;
-}
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+}>();
 
 const showActive = computed(() => props.domain.active !== null && props.domain.active.seconds > 0);
 const showBackground = computed(() => props.domain.background !== null && props.domain.background.seconds > 0);

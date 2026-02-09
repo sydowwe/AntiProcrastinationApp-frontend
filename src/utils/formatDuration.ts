@@ -1,9 +1,10 @@
-import { Time } from '@/utils/Time.ts'
+import {Time} from '@/utils/Time.ts'
 
 export function formatDuration(seconds: number): string {
 	const time = Time.fromSeconds(seconds)
 	return time.getNice || '0m'
 }
+
 /**
  * Formats seconds into detailed duration string with seconds
  * @param seconds - Number of seconds to format
@@ -22,10 +23,9 @@ export function formatDurationDetailed(seconds: number): string {
 	if (minutes > 0) {
 		parts.push(`${minutes}m`);
 	}
-	const parts: string[] = []
-	if (hours > 0) parts.push(`${hours}h`)
-	if (minutes > 0) parts.push(`${minutes}m`)
-	if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
+	if (secs > 0 || parts.length === 0) {
+		parts.push(`${secs}s`)
+	}
 
 	return parts.join(' ')
 }

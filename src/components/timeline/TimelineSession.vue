@@ -1,29 +1,32 @@
 <template>
-	<div
-		class="timeline-session"
-		:class="[`session-${laneType}`, { 'session-mini': isMini }]"
-		:style="sessionStyle"
-		:title="session.domain"
-		role="button"
-		tabindex="0"
-		:aria-label="ariaLabel"
-		@mouseenter="$emit('mouseenter', $event)"
-		@mouseleave="$emit('mouseleave')"
-		@click="$emit('click')"
-		@keydown.enter="$emit('click')"
-		@keydown.space.prevent="$emit('click')"
-	>
+<div
+	class="timeline-session"
+	:class="[`session-${laneType}`, { 'session-mini': isMini }]"
+	:style="sessionStyle"
+	:title="session.domain"
+	role="button"
+	tabindex="0"
+	:aria-label="ariaLabel"
+	@mouseenter="$emit('mouseenter', $event)"
+	@mouseleave="$emit('mouseleave')"
+	@click="$emit('click')"
+	@keydown.enter="$emit('click')"
+	@keydown.space.prevent="$emit('click')"
+>
 		<span v-if="!isMini" class="session-label">
 			{{ truncatedDomain }}
 		</span>
-	</div>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { getDomainColor, withOpacity } from '@/utils/domainColor'
-import { formatDuration } from '@/utils/formatDuration'
-import type { TimelineSession, StackedSession, SessionPosition, LaneType } from './dto'
+import {computed} from 'vue'
+import {getDomainColor, withOpacity} from '@/utils/domainColor'
+import {formatDuration} from '@/utils/formatDuration'
+import type {StackedSession} from '@/components/timeline/dto/StackedSession.ts';
+import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
+import type {SessionPosition} from '@/components/timeline/dto/SessionPosition.ts';
+import type {LaneType} from '@/components/timeline/dto/LaneType.ts';
 
 const props = defineProps<{
 	session: TimelineSession | StackedSession
@@ -92,7 +95,7 @@ const ariaLabel = computed(() => {
 })
 
 function formatTime(date: Date): string {
-	return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+	return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
 }
 </script>
 
