@@ -2,12 +2,12 @@
  * Timeline calculation utilities
  */
 
-import {TimelineGridConfig} from '@/components/timeline/dto/TimelineGridConfig.ts';
-import {SessionPosition} from '@/components/timeline/dto/SessionPosition.ts';
-import {StackedSession} from '@/components/timeline/dto/StackedSession.ts';
-import type {TimelineSession} from '@/components/timeline/dto/TimelineSession.ts';
-import {Gap} from '@/components/timeline/dto/Gap.ts';
-import {GapDisplay} from '@/components/timeline/dto/GapDisplay.ts';
+import {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
+import {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
+import {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
+import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import {Gap} from '@/components/activityTracking/timeline/dto/Gap.ts';
+import {GapDisplay} from '@/components/activityTracking/timeline/dto/GapDisplay.ts';
 
 /**
  * Calculate timeline configuration based on container and time range

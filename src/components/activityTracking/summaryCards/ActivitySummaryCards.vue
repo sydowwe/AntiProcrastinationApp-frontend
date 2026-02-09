@@ -54,8 +54,8 @@
 
 <script setup lang="ts">
 
-import type {DomainSummary} from '@/components/activitySummary/dto/DomainSummary.ts';
-import type {BaselineOption, BaselineType} from '@/components/activitySummary/dto/BaselineOption.ts';
+import type {DomainSummary} from '@/components/activityTracking/summaryCards/dto/DomainSummary.ts';
+import type {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/dto/BaselineOption.ts';
 import {computed} from 'vue';
 
 
