@@ -1,4 +1,4 @@
-import {WindowActivity} from '@/dtos/response/activityTracking/WindowActivity.ts';
+import {WindowActivity} from '@/dtos/response/activityTracking/stackedBars/WindowActivity.ts';
 
 export class ActivityWindow {
 	constructor(

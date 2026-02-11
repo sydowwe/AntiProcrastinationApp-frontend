@@ -22,7 +22,7 @@ import type {StackedSession} from '@/components/activityTracking/timeline/dto/St
 import type {LaneType} from '@/components/activityTracking/timeline/dto/LaneType.ts';
 import type {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
 import type {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
-import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
 
 const props = defineProps<{
 	sessions: (TimelineSession | StackedSession)[]

@@ -31,7 +31,7 @@
 	<!-- Empty state -->
 	<template v-else-if="windows.length === 0">
 		<div class="empty-state d-flex flex-column align-center justify-center pa-8">
-			<VIcon size="48" color="grey-lighten-1">mdi-chart-bar</VIcon>
+			<VIcon size="48" color="grey-lighten-1">chart-bar</VIcon>
 			<p class="text-grey mt-2">No activity recorded for this period</p>
 		</div>
 	</template>
@@ -50,8 +50,8 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
 import StackedBarsGrid from './StackedBarsGrid.vue'
-import type {ActivityWindow} from '@/dtos/response/activityTracking/ActivityWindow.ts';
-import type {WindowActivity} from '@/dtos/response/activityTracking/WindowActivity.ts';
+import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts';
+import type {WindowActivity} from '@/dtos/response/activityTracking/stackedBars/WindowActivity.ts';
 import type {ColumnData} from '@/components/activityTracking/stackedBars/dto/ColumnData.ts';
 import type {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow.ts';
 import {getDomainColor} from '@/utils/domainColor'
@@ -192,7 +192,6 @@ const emit = defineEmits<{
 <style scoped>
 .empty-state {
 	min-height: 250px;
-	background-color: #fafafa;
 	border-radius: 8px;
 }
 

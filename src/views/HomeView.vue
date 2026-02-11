@@ -13,7 +13,7 @@
 import {ref} from 'vue'
 import ActivityStackedBars from '@/components/activityTracking/stackedBars/ActivityStackedBars.vue'
 import {generateMockActivityWindows} from '@/components/activityTracking/stackedBars/mockData'
-import type {ActivityWindow} from '@/dtos/response/activityTracking/ActivityWindow'
+import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts'
 
 const loading = ref(false)
 const mockWindows = ref(generateMockActivityWindows())

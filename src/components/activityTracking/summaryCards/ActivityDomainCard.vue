@@ -1,8 +1,8 @@
 <template>
 <VCard
 	class="domain-card"
-	:class="{ 'domain-card--clickable': true }"
-	elevation="2"
+	:class="{ 'domain-card--clickable': true, 'domain-card--selected': selected }"
+	:elevation="selected ? 6 : 2"
 	@click="handleClick"
 	@keydown.enter="handleClick"
 	@keydown.space.prevent="handleClick"
@@ -65,10 +65,11 @@
 <script setup lang="ts">
 import {computed} from 'vue';
 import ActivityStatColumn from './ActivityStatColumn.vue';
-import type {DomainSummary} from '@/components/activityTracking/summaryCards/dto/DomainSummary.ts';
+import type {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts';
 
 const props = defineProps<{
-	domain: DomainSummary;
+	domain: SummaryCardsData;
+	selected?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -102,6 +103,10 @@ function handleClick() {
 .domain-card--clickable:focus {
 	outline: 2px solid rgb(var(--v-theme-primary));
 	outline-offset: 2px;
+}
+
+.domain-card--selected {
+	border: 2px solid rgb(var(--v-theme-primary));
 }
 
 .domain-name {

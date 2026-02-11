@@ -20,6 +20,7 @@ import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue';
 import TemplateListView from '@/views/dayPlanner/TemplateListView.vue';
 import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue';
+import ActivityDashboard from '@/views/ActivityDashboard.vue';
 
 
 const router = createRouter({
@@ -54,6 +55,11 @@ const router = createRouter({
 			path: '/user/settings',
 			name: 'userSettings',
 			component: UserSettingsView
+		},
+		{
+			path: '/activity-tracking',
+			name: 'activityTracking',
+			component: ActivityDashboard
 		},
 		{
 			path: '/activity-history',

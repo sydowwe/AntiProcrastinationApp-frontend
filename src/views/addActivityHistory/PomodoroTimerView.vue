@@ -91,7 +91,7 @@ import {checkNotificationPermission, showNotification} from '@/scripts/notificat
 import {Time} from '@/utils/Time.ts';
 import {computed, onUnmounted, ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';

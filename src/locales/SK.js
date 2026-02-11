@@ -185,6 +185,7 @@ const SK = {
         routineToDoList: `Rutina`,
         createNewActivity: `Vytvoriť nový druh aktivity`,
         history: `História`,
+        activityTracking: `Sledovanie aktivity`,
         recordActivity: `Zaznamenať aktivitu`,
         recordActivityManually: `Manuálne`,
         pomodoroTimer: `Pomodoro časovač`,

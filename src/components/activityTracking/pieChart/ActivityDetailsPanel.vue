@@ -1,103 +1,103 @@
 <template>
-	<VCard variant="outlined">
-		<VCardTitle class="d-flex align-center justify-space-between">
-			<span>{{ headerText }}</span>
-			<VBtn
-				v-if="mode === 'domain'"
-				icon="mdi-close"
-				variant="text"
-				size="small"
-				density="compact"
-				aria-label="Close domain details"
-				@click="emit('close')"
-			/>
-		</VCardTitle>
+<VCard variant="outlined">
+	<VCardTitle class="d-flex align-center justify-space-between">
+		<span>{{ headerText }}</span>
+		<VBtn
+			v-if="mode === 'domain'"
+			icon="mdi-close"
+			variant="text"
+			size="small"
+			density="compact"
+			aria-label="Close domain details"
+			@click="emit('close')"
+		/>
+	</VCardTitle>
 
-		<VDivider />
+	<VDivider/>
 
-		<VCardText>
-			<template v-if="mode === 'dayTotal' && dayTotals">
-				<div class="details-grid">
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Total time:</span>
-						<span class="text-high-emphasis font-weight-medium">
+	<VCardText>
+		<template v-if="mode === 'dayTotal' && dayTotals">
+			<div class="details-grid">
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Total time:</span>
+					<span class="text-high-emphasis font-weight-medium">
 							{{ formatDuration(dayTotals.totalSeconds) }}
 						</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Active:</span>
-						<span>{{ formatDuration(dayTotals.activeSeconds) }}</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Background:</span>
-						<span>{{ formatDuration(dayTotals.backgroundSeconds) }}</span>
-					</div>
-
-					<VDivider class="my-3" />
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Domains:</span>
-						<span>{{ dayTotals.totalDomains }}</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Pages:</span>
-						<span>{{ dayTotals.totalPages }}</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Visits:</span>
-						<span>{{ dayTotals.totalVisits ?? '-' }}</span>
-					</div>
 				</div>
-			</template>
 
-			<template v-else-if="mode === 'domain' && domainDetails">
-				<div class="details-grid">
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Total:</span>
-						<span class="text-high-emphasis font-weight-medium">
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Active:</span>
+					<span>{{ formatDuration(dayTotals.activeSeconds) }}</span>
+				</div>
+
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Background:</span>
+					<span>{{ formatDuration(dayTotals.backgroundSeconds) }}</span>
+				</div>
+
+				<VDivider class="my-3"/>
+
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Domains:</span>
+					<span>{{ dayTotals.totalDomains }}</span>
+				</div>
+
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Pages:</span>
+					<span>{{ dayTotals.totalPages }}</span>
+				</div>
+
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Visits:</span>
+					<span>{{ dayTotals.totalVisits ?? '-' }}</span>
+				</div>
+			</div>
+		</template>
+
+		<template v-else-if="mode === 'domain' && domainDetails">
+			<div class="details-grid">
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Total:</span>
+					<span class="text-high-emphasis font-weight-medium">
 							{{ formatDuration(domainDetails.totalSeconds) }}
 						</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Active:</span>
-						<span>{{ formatDuration(domainDetails.activeSeconds) }}</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Background:</span>
-						<span>{{ formatDuration(domainDetails.backgroundSeconds) }}</span>
-					</div>
-
-					<div class="detail-row">
-						<span class="text-medium-emphasis">Entries:</span>
-						<span>{{ domainDetails.entries }}</span>
-					</div>
 				</div>
 
-				<VDivider class="my-4" />
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Active:</span>
+					<span>{{ formatDuration(domainDetails.activeSeconds) }}</span>
+				</div>
 
-				<DomainDetailsList :pages="domainDetails.pages" />
-			</template>
-		</VCardText>
-	</VCard>
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Background:</span>
+					<span>{{ formatDuration(domainDetails.backgroundSeconds) }}</span>
+				</div>
+
+				<div class="detail-row">
+					<span class="text-medium-emphasis">Entries:</span>
+					<span>{{ domainDetails.entries }}</span>
+				</div>
+			</div>
+
+			<VDivider class="my-4"/>
+
+			<DomainDetailsList :pages="domainDetails.pages"/>
+		</template>
+	</VCardText>
+</VCard>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { formatDuration } from '@/utils/formatDuration'
+import {computed} from 'vue'
+import {formatDuration} from '@/utils/formatDuration'
 import DomainDetailsList from './DomainDetailsList.vue'
-import { DayTotals } from './dto/DayTotals'
-import { DomainDetails } from './dto/DomainDetails'
+import type {DayTotals} from '@/dtos/response/activityTracking/pieChart/DayTotals.ts';
+import type {DomainPieData} from '@/dtos/response/activityTracking/pieChart/DomainPieData.ts';
 
 const props = defineProps<{
 	mode: 'dayTotal' | 'domain'
-	dayTotals: DayTotals | null
-	domainDetails: DomainDetails | null
+	dayTotals?: DayTotals
+	domainDetails: DomainPieData | null
 }>()
 
 const emit = defineEmits<{

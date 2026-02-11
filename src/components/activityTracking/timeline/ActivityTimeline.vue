@@ -43,7 +43,7 @@
 		v-else-if="activeSessions.length === 0 && backgroundSessions.length === 0"
 	>
 		<div class="empty-state">
-			<VIcon size="48" color="grey-lighten-1">mdi-timeline-outline</VIcon>
+			<VIcon size="48" color="grey-lighten-1">timeline</VIcon>
 			<p class="text-grey mt-2">No activity recorded for this period</p>
 		</div>
 	</template>
@@ -80,7 +80,7 @@ import {computed, ref} from 'vue'
 import {getDomainColor} from '@/utils/domainColor'
 import TimelineGrid from './TimelineGrid.vue'
 import {calculateWaterfallStack} from './timelineUtils'
-import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
 import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts';
 
 const props = defineProps<{

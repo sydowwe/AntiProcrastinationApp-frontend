@@ -8,6 +8,7 @@
 			:icon="startIcon"
 			:label="mode === 'length' ? 'Start' : 'From'"
 			:allowedMinutesSelected
+			hideDetails
 		/>
 		<!-- Mode Toggle Button -->
 		<VIconBtn
@@ -40,6 +41,7 @@
 		:icon="endIcon"
 		label="To"
 		:allowedMinutesSelected
+		hideDetails
 	/>
 
 </div>
@@ -48,7 +50,7 @@
 <script setup lang="ts">
 import {computed, type PropType, ref} from 'vue'
 import {Time} from '@/utils/Time.ts'
-import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue'
 
 const props = defineProps({
 	startIcon: {

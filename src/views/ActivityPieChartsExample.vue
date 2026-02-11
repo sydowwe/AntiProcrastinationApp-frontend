@@ -1,7 +1,5 @@
 <template>
-<div class="pa-4">
-	<h1 class="text-h4 mb-6">Activity Summary Example</h1>
-
+<div>
 	<ActivityPieChartSection
 		:domains="mockDomains"
 		:dayTotals="mockDayTotals"
@@ -9,18 +7,12 @@
 		:otherThresholdPercent="3"
 		@domainSelect="handleDomainSelect"
 	/>
-
-	<div class="mt-4">
-		<VBtn @click="toggleLoading">
-			Toggle Loading
-		</VBtn>
-	</div>
 </div>
 </template>
 
 <script setup lang="ts">
 import {ref} from 'vue'
-import ActivityPieChartSection from '../components/activityPieChart/ActivityPieChartSection.vue'
+import ActivityPieChartSection from '@/components/activityTracking/pieChart/ActivityPieChartSection.vue';
 
 const loading = ref(false)
 const selectedDomain = ref<string | null>(null)

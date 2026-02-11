@@ -1,5 +1,5 @@
 <template>
-<div class="pie-chart-section">
+<VCard class="pa-5">
 	<template v-if="loading">
 		<div class="d-flex ga-4">
 			<div class="flex-1-1">
@@ -20,7 +20,7 @@
 	</template>
 
 	<template v-else>
-		<div class="content-grid">
+		<div class="d-flex ga-4">
 			<div class="chart-column">
 				<ActivityPieChart
 					:domains="pieSegments"
@@ -30,17 +30,16 @@
 				/>
 			</div>
 
-			<div class="details-column">
-				<ActivityDetailsPanel
-					:mode="detailsMode"
-					:dayTotals="dayTotals"
-					:domainDetails="selectedDomainDetails"
-					@close="onDetailsClose"
-				/>
-			</div>
+			<ActivityDetailsPanel
+				class="flex-fill"
+				:mode="detailsMode"
+				:dayTotals="dayTotals"
+				:domainDetails="selectedDomainDetails"
+				@close="onDetailsClose"
+			/>
 		</div>
 	</template>
-</div>
+</VCard>
 </template>
 
 <script setup lang="ts">
@@ -48,13 +47,13 @@ import {computed, ref} from 'vue'
 import ActivityPieChart from './ActivityPieChart.vue'
 import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
 import {getDomainColor} from '@/utils/domainColor'
-import { DomainPieData } from './dto/DomainPieData'
-import { DayTotals } from './dto/DayTotals'
-import { PieSegment } from './dto/PieSegment'
+import {PieSegment} from './PieSegment.ts'
+import type {DomainPieData} from '@/dtos/response/activityTracking/pieChart/DomainPieData.ts';
+import type {DayTotals} from '@/dtos/response/activityTracking/pieChart/DayTotals.ts';
 
 const props = defineProps<{
 	domains: DomainPieData[]
-	dayTotals: DayTotals
+	dayTotals?: DayTotals
 	loading?: boolean
 	otherThresholdPercent?: number
 }>()
@@ -64,7 +63,7 @@ const emit = defineEmits<{
 }>()
 
 const viewMode = ref<'total' | 'active' | 'background'>('total')
-const selectedDomain = ref<string | null>(null)
+const selectedDomain = defineModel<string | null>('selectedDomain', {default: null})
 
 const pieSegments = computed<PieSegment[]>(() => {
 	const metric = viewMode.value
@@ -142,25 +141,4 @@ function onDetailsClose() {
 </script>
 
 <style scoped>
-.pie-chart-section {
-	width: 100%;
-}
-
-.content-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 24px;
-	align-items: start;
-}
-
-.chart-column,
-.details-column {
-	min-width: 0;
-}
-
-@media (max-width: 960px) {
-	.content-grid {
-		grid-template-columns: 1fr;
-	}
-}
 </style>

@@ -24,7 +24,7 @@ import {computed} from 'vue'
 import {getDomainColor, withOpacity} from '@/utils/domainColor'
 import {formatDuration} from '@/utils/formatDuration'
 import type {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
-import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
 import type {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
 import type {LaneType} from '@/components/activityTracking/timeline/dto/LaneType.ts';
 
