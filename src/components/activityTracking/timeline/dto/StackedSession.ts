@@ -1,16 +1,16 @@
-import { TimelineSession } from './TimelineSession'
+import {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
 
 export class StackedSession extends TimelineSession {
-  constructor(
-    id: number,
-    domain: string,
-    startedAt: Date,
-    endedAt: Date,
-    durationSeconds: number,
-    totalSeconds: number,
-    public stackLevel: number, // 0 = first row, 1 = second row, etc.
-    url?: string
-  ) {
-    super(id, domain, startedAt, endedAt, durationSeconds, totalSeconds, url)
-  }
+	constructor(
+		id: number,
+		domain: string,
+		startedAt: Date,
+		endedAt: Date,
+		durationSeconds: number,
+		totalSeconds: number,
+		public stackLevel: number, // 0 = first row, 1 = second row, etc.
+		url?: string
+	) {
+		super(id, domain, startedAt, endedAt, durationSeconds, totalSeconds, url)
+	}
 }

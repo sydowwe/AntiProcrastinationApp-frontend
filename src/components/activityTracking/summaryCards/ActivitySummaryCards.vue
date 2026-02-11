@@ -1,23 +1,19 @@
 <template>
 <div class="activity-summary-cards">
 	<!-- Header Section -->
-	<div class="d-flex justify-space-between align-center mb-4">
+	<div class="d-flex ga-6 align-center mb-4">
 		<h2 class="text-h5">Top Domains</h2>
 		<!-- Baseline Selector -->
-		<div class="d-flex align-center ga-2">
-			<span class="text-body-2 text-medium-emphasis">Compared to:</span>
-			<VSelect
-				:modelValue="selectedBaseline"
-				:items="baselineOptions"
-				itemValue="value"
-				itemTitle="label"
-				density="compact"
-				variant="outlined"
-				hideDetails
-				@update:modelValue="handleBaselineChange"
-				style="min-width: 170px;max-width: 170px;"
-			/>
-		</div>
+		<VSelect
+			label="Compared to"
+			:modelValue="selectedBaseline"
+			:items="baselineOptions"
+			density="compact"
+			variant="outlined"
+			hideDetails
+			@update:modelValue="handleBaselineChange"
+			style="min-width: 170px;max-width: 170px;"
+		/>
 	</div>
 
 	<VDivider class="mb-4"/>
@@ -33,7 +29,7 @@
 	</div>
 
 	<!-- Empty State -->
-	<div v-else-if="visibleDomains.length === 0" class="empty-state">
+	<div v-else-if="(visibleDomains?.length ?? 0) === 0" class="empty-state">
 		<VIcon icon="fas fa-chart-column" size="64" class="text-disabled mb-4"/>
 		<p class="text-body-1 text-medium-emphasis">
 			No activity recorded for this period
@@ -46,6 +42,7 @@
 			v-for="domain in visibleDomains"
 			:key="domain.domain"
 			:domain="domain"
+			:selected="domain.domain === selectedDomain"
 			@click="handleDomainClick"
 		/>
 	</div>
@@ -53,19 +50,21 @@
 </template>
 
 <script setup lang="ts">
-
-import type {DomainSummary} from '@/components/activityTracking/summaryCards/dto/DomainSummary.ts';
-import type {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/dto/BaselineOption.ts';
+import type {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts';
 import {computed} from 'vue';
+import ActivityDomainCard from '@/components/activityTracking/summaryCards/ActivityDomainCard.vue';
+import type {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts';
 
 
 const props = withDefaults(defineProps<{
-	domains: DomainSummary[];
+	domains: SummaryCardsData[] | null;
 	baselineOptions: BaselineOption[];
 	selectedBaseline: BaselineType;
+	selectedDomain?: string | null;
 	loading?: boolean;
 }>(), {
 	loading: false,
+	selectedDomain: null,
 });
 
 const emit = defineEmits<{
@@ -76,7 +75,7 @@ const emit = defineEmits<{
 
 // Filter out domains with no activity (both active and background are 0 or null)
 const visibleDomains = computed(() => {
-	return props.domains.filter(domain => {
+	return props.domains?.filter(domain => {
 		const hasActiveTime = domain.active !== null && domain.active.seconds > 0;
 		const hasBackgroundTime = domain.background !== null && domain.background.seconds > 0;
 		return hasActiveTime || hasBackgroundTime;
@@ -101,7 +100,7 @@ function handleDomainClick(domain: string) {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 16px;
-	justify-content: flex-start;
+	justify-content: center;
 }
 
 .skeleton-card {

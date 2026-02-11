@@ -157,7 +157,7 @@ import {
 	filterSessionsForRange,
 	findActivityGaps,
 } from './timelineUtils'
-import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
 import type {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
 import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts';
 import type {Gap} from '@/components/activityTracking/timeline/dto/Gap.ts';

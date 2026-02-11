@@ -30,7 +30,7 @@ import {PieChart} from 'echarts/charts'
 import {LegendComponent, TooltipComponent} from 'echarts/components'
 import type {EChartsOption} from 'echarts'
 import {formatDuration} from '@/utils/formatDuration'
-import {PieSegment} from './dto/PieSegment'
+import {PieSegment} from './PieSegment.ts'
 
 // Register ECharts components
 use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
@@ -71,10 +71,10 @@ const chartOption = computed<EChartsOption>(() => {
 			orient: 'vertical',
 			left: 0,
 			top: 'center',
-			borderColor: '#333',
+			borderColor: '#666',
 			borderRadius: 5,
 			borderWidth: 1,
-			padding: 10,
+			padding: 8,
 			textStyle: {
 				color: '#fff',  // Bright white text for accessibility
 				fontSize: 12,

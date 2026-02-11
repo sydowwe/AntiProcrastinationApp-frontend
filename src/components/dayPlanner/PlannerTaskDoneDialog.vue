@@ -25,7 +25,7 @@
 </template>
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
+import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
 import {Time} from '@/utils/Time.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 

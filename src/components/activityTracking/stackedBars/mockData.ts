@@ -1,5 +1,5 @@
-import {ActivityWindow} from '@/dtos/response/activityTracking/ActivityWindow'
-import {WindowActivity} from '@/dtos/response/activityTracking/WindowActivity'
+import {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts'
+import {WindowActivity} from '@/dtos/response/activityTracking/stackedBars/WindowActivity.ts'
 
 export function generateMockActivityWindows(): ActivityWindow[] {
 	const now = new Date()

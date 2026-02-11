@@ -5,7 +5,7 @@
 import {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
 import {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
 import {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
-import type {TimelineSession} from '@/components/activityTracking/timeline/dto/TimelineSession.ts';
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
 import {Gap} from '@/components/activityTracking/timeline/dto/Gap.ts';
 import {GapDisplay} from '@/components/activityTracking/timeline/dto/GapDisplay.ts';
 

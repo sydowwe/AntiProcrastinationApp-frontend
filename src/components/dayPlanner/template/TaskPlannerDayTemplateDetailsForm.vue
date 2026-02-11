@@ -58,7 +58,7 @@ import {ref, watch} from 'vue'
 import {DayType} from '@/dtos/enum/DayType.ts'
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
-import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue'
 import IconPicker from '@/components/general/inputs/IconPicker.vue';
 import type {VForm} from 'vuetify/components';
 

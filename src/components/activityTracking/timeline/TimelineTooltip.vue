@@ -1,34 +1,34 @@
 <template>
-	<div class="timeline-tooltip" :style="positionStyle">
-		<div class="tooltip-domain">{{ data.domain }}</div>
-		<VDivider class="my-1" />
-		<div class="tooltip-row">
-			<span>Start:</span>
-			<span>{{ formatTime(data.startedAt) }}</span>
-		</div>
-		<div class="tooltip-row">
-			<span>End:</span>
-			<span>{{ formatTime(data.endedAt) }}</span>
-		</div>
-		<div class="tooltip-row">
-			<span>Duration:</span>
-			<span>{{ formatDuration(data.durationSeconds) }}</span>
-		</div>
-		<div class="tooltip-row">
-			<span>Active time:</span>
-			<span>{{ formatDuration(data.totalSeconds) }}</span>
-		</div>
-		<template v-if="data.url">
-			<VDivider class="my-1" />
-			<div class="tooltip-url" :title="data.url">{{ truncatedUrl }}</div>
-		</template>
+<div class="timeline-tooltip" :style="positionStyle">
+	<div class="tooltip-domain">{{ data.domain }}</div>
+	<VDivider class="my-1"/>
+	<div class="tooltip-row">
+		<span>Start:</span>
+		<span>{{ formatTime(data.startedAt) }}</span>
 	</div>
+	<div class="tooltip-row">
+		<span>End:</span>
+		<span>{{ formatTime(data.endedAt) }}</span>
+	</div>
+	<div class="tooltip-row">
+		<span>Duration:</span>
+		<span>{{ formatDuration(data.durationSeconds) }}</span>
+	</div>
+	<div class="tooltip-row">
+		<span>Active time:</span>
+		<span>{{ formatDuration(data.totalSeconds) }}</span>
+	</div>
+	<template v-if="data.url">
+		<VDivider class="my-1"/>
+		<div class="tooltip-url" :title="data.url">{{ truncatedUrl }}</div>
+	</template>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { formatDuration } from '@/utils/formatDuration'
-import type { TimelineSession } from './dto/TimelineSession'
+import {computed} from 'vue'
+import {formatDuration} from '@/utils/formatDuration'
+import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
 
 const props = defineProps<{
 	data: TimelineSession
@@ -54,7 +54,7 @@ const truncatedUrl = computed(() => {
 })
 
 function formatTime(date: Date): string {
-	return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+	return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
 }
 </script>
 

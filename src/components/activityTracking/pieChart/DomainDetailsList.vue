@@ -1,45 +1,43 @@
 <template>
-	<div>
-		<div class="text-subtitle-2 text-medium-emphasis mb-2">Pages:</div>
+<div>
+	<div class="text-subtitle-2 text-medium-emphasis mb-2">Pages:</div>
 
-		<VList density="compact" class="py-0">
-			<VListItem
-				v-for="(page, index) in visiblePages"
-				:key="index"
-				:title="formatUrl(page.url)"
-				class="px-2"
-			>
-				<template #append>
-					<span class="text-medium-emphasis">
-						{{ formatDuration(page.seconds) }}
-					</span>
-				</template>
-
-				<VTooltip activator="parent" location="bottom">
-					{{ page.url }}
-				</VTooltip>
-			</VListItem>
-		</VList>
-
-		<VBtn
-			v-if="hasMore"
-			variant="text"
-			size="small"
-			class="mt-2"
-			@click="toggleExpanded"
+	<VList density="compact" class="py-0">
+		<VListItem
+			v-for="(page, index) in visiblePages"
+			:key="index"
+			:title="formatUrl(page)"
+			class="px-2"
 		>
-			{{ expanded ? '- Show less' : `+ ${remainingCount} more` }}
-		</VBtn>
-	</div>
+			<!--				<template #append>-->
+			<!--					<span class="text-medium-emphasis">-->
+			<!--						{{ formatDuration(page.seconds) }}-->
+			<!--					</span>-->
+			<!--				</template>-->
+
+			<!--				<VTooltip activator="parent" location="bottom">-->
+			<!--					{{ page.url }}-->
+			<!--				</VTooltip>-->
+		</VListItem>
+	</VList>
+
+	<VBtn
+		v-if="hasMore"
+		variant="text"
+		size="small"
+		class="mt-2"
+		@click="toggleExpanded"
+	>
+		{{ expanded ? '- Show less' : `+ ${remainingCount} more` }}
+	</VBtn>
+</div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { formatDuration } from '@/utils/formatDuration'
-import { PageVisit } from './dto/PageVisit'
+import {computed, ref} from 'vue'
 
 const props = defineProps<{
-	pages: PageVisit[]
+	pages: string[]
 	maxVisible?: number
 }>()
 
@@ -48,7 +46,8 @@ const expanded = ref(false)
 const maxVisibleCount = computed(() => props.maxVisible ?? 5)
 
 const sortedPages = computed(() =>
-	[...props.pages].sort((a, b) => b.seconds - a.seconds)
+	// [...props.pages].sort((a, b) => b.seconds - a.seconds)
+	props.pages
 )
 
 const visiblePages = computed(() =>
