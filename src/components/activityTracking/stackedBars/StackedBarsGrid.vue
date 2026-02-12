@@ -1,6 +1,16 @@
 <template>
-<div ref="containerRef" class="stacked-bars-container">
+<div class="stacked-bars-container">
 	<div class="stacked-bars-grid" :style="gridStyle">
+		<!-- Y-axis backgrounds (sticky full-column) -->
+		<div
+			class="y-axis-bg y-axis-bg-left"
+			:style="{ gridRow: `1 / ${windowMinutes + 2}`, gridColumn: 1 }"
+		/>
+		<div
+			class="y-axis-bg y-axis-bg-right"
+			:style="{ gridRow: `1 / ${windowMinutes + 2}`, gridColumn: totalColumns + 2 }"
+		/>
+
 		<!-- Y-axis labels (left) -->
 		<template v-for="line in guideLines" :key="`y-left-${line.minute}`">
 			<div class="y-axis-label y-axis-label-left" :style="{ gridRow: line.gridRow, gridColumn: 1 }">
@@ -92,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, ref} from 'vue'
+import {computed, ref} from 'vue'
 import StackedBarColumn from './StackedBarColumn.vue'
 import {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow'
 import {BarGridSpan} from '@/components/activityTracking/stackedBars/dto/BarGridSpan'
@@ -101,94 +111,54 @@ import {GridConfig} from '@/components/activityTracking/stackedBars/dto/GridConf
 import StackedBarsTooltip from '@/components/activityTracking/stackedBars/StackedBarsTooltip.vue';
 import type {TooltipData} from '@/components/activityTracking/stackedBars/dto/TooltipData.ts';
 import type {Position} from '@/dtos/dto/Position.ts';
+import {Time} from '@/utils/Time';
 
+const MIN_COL_WIDTH = 10
+const BAR_COLS = 3
 
 const props = defineProps<{
 	windows: ProcessedWindow[]
 	windowMinutes: number
+	timeFrom: Time
+	timeTo: Time
 }>()
 
 const emit = defineEmits<{
 	(e: 'activityClick', bar: BarGridSpan): void
 }>()
 
-const containerRef = ref<HTMLElement | null>(null)
-const containerWidth = ref(800)
 const tooltipData = ref<TooltipData | null>(null)
 const tooltipPosition = ref<Position>({x: 0, y: 0})
 
-// Calculate grid configuration based on container width
-const gridConfig = computed<GridConfig>(() =>
-	calculateGridConfig(containerWidth.value, props.windows, props.windowMinutes)
-)
+const gridConfig = computed<GridConfig>(() => {
+	const yAxisWidth = 44
+	const xAxisHeight = 30
 
-function calculateGridConfig(
-	width: number,
-	windows: ProcessedWindow[],
-	windowMinutes: number
-): GridConfig {
-	const yAxisWidth = 40
-	const availableWidth = width - yAxisWidth
-
-	// Count total units needed
-	let totalUnits = 0
-	windows.forEach((window, index) => {
-		const activityCount = window.columns.length
-		if (activityCount > 0) {
-			// Each activity = 3 units, gaps between = 1 unit each
-			const windowUnits = activityCount * 3 + Math.max(0, activityCount - 1)
-			totalUnits += windowUnits
-		} else {
-			// Empty window gets minimum space (e.g., 3 units)
-			totalUnits += 3
-		}
-
-		// Add window gap (except after last window)
-		if (index < windows.length - 1) {
-			totalUnits += 2
-		}
-	})
-
-	// Calculate base unit to fit available width
-	let baseUnit = Math.floor(availableWidth / totalUnits)
-	baseUnit = Math.max(6, Math.min(baseUnit, 20)) // Clamp between 6px and 20px
-
-	// Row height based on window size
 	let rowHeight: number
-	if (windowMinutes <= 15) rowHeight = 10
-	else if (windowMinutes <= 20) rowHeight = 8
-	else if (windowMinutes <= 30) rowHeight = 6
-	else if (windowMinutes <= 60) rowHeight = 4
-	else if (windowMinutes <= 90) rowHeight = 3
+	if (props.windowMinutes <= 15) rowHeight = 10
+	else if (props.windowMinutes <= 20) rowHeight = 8
+	else if (props.windowMinutes <= 30) rowHeight = 6
+	else if (props.windowMinutes <= 60) rowHeight = 4
+	else if (props.windowMinutes <= 90) rowHeight = 3
 	else rowHeight = 2
 
-	return new GridConfig(
-		baseUnit,
-		3, // barWidthUnits
-		1, // barGapUnits
-		2, // windowGapUnits
-		yAxisWidth,
-		30, // xAxisHeight
-		rowHeight
-	)
-}
+	return new GridConfig(0, 3, 1, 2, yAxisWidth, xAxisHeight, rowHeight)
+})
 
 // Calculate bar positions and grid spans
 const barSpans = computed<BarGridSpan[]>(() => {
 	const spans: BarGridSpan[] = []
-	let currentCol = 3 // Column 1 is Y-axis, column 2 is start separator
+	let currentCol = 4 // Col 1: Y-axis, Col 2: start sep, Col 3: start gap
 
 	props.windows.forEach((window, windowIndex) => {
 		const windowStartCol = currentCol
 
 		if (window.columns.length === 0) {
-			// Empty window takes 5 columns
-			currentCol += 5
+			currentCol += BAR_COLS * window.spanCount
 		} else {
 			window.columns.forEach((col, colIndex) => {
 				const totalMinutes = col.activeMinutes + col.backgroundMinutes
 
-				// Calculate grid row positions (rows are numbered from top)
 				const gridRowStart = props.windowMinutes - totalMinutes + 1
 				const gridRowEnd = props.windowMinutes + 1
 
@@ -198,14 +168,14 @@ const barSpans = computed<BarGridSpan[]>(() => {
 						colIndex,
 						col.domain,
 						currentCol,
-						currentCol + 5, // gridColumnEnd - Span 5 columns
+						currentCol + BAR_COLS,
 						gridRowStart,
 						gridRowEnd,
 						col
 					)
 				)
 
-				currentCol += 5 // Bar width (5 units)
+				currentCol += BAR_COLS
 
 				// Gap after bar (except last bar in window)
 				if (colIndex < window.columns.length - 1) {
@@ -229,58 +199,48 @@ const barSpans = computed<BarGridSpan[]>(() => {
 
 // Calculate total columns for guide lines
 const totalColumns = computed(() => {
-	if (barSpans.value.length === 0) return 2
-
-	const lastBar = barSpans.value[barSpans.value.length - 1]
-	if (!lastBar)
-		return 0;
-	return lastBar.gridColumnEnd - 1
+	// Trigger barSpans to ensure window.gridColumnStart/End are set
+	barSpans.value
+	const lastWindow = props.windows[props.windows.length - 1]
+	if (!lastWindow?.gridColumnEnd) return 3
+	return lastWindow.gridColumnEnd
 })
 
-// Build grid template columns
+const colUnit = `minmax(${MIN_COL_WIDTH}px, 1fr)`
+
 const gridTemplateColumns = computed(() => {
 	const columns: string[] = []
 	const config = gridConfig.value
 
-	// Y-axis column
 	columns.push(`${config.yAxisWidth}px`)
+	columns.push('1px')
+	columns.push(colUnit) // start gap
 
-	// Start separator
-	columns.push(`1px`)
-
-	let currentCol = 2
 	props.windows.forEach((window, windowIndex) => {
 		if (window.columns.length > 0) {
 			window.columns.forEach((col, colIndex) => {
-				// Activity bar = 5 columns at half width
-				for (let i = 0; i < 5; i++) {
-					columns.push(`${config.baseUnit / 2}px`)
+				for (let i = 0; i < BAR_COLS; i++) {
+					columns.push(colUnit)
 				}
-
-				// Gap after bar (except last bar in window) = 1 column at half width (smaller gap)
 				if (colIndex < window.columns.length - 1) {
-					columns.push(`${config.baseUnit / 2}px`)
+					columns.push(colUnit)
 				}
 			})
 		} else {
-			// Empty window placeholder = 5 columns at half width
-			for (let i = 0; i < 5; i++) {
-				columns.push(`${config.baseUnit / 2}px`)
+			for (let i = 0; i < BAR_COLS * window.spanCount; i++) {
+				columns.push(colUnit)
 			}
 		}
 
-		// Window gap (except after last window) = 1 gap + 1 separator + 1 gap
 		if (windowIndex < props.windows.length - 1) {
-			columns.push(`${config.baseUnit / 2}px`) // Gap before separator
-			columns.push(`1px`) // Separator line
-			columns.push(`${config.baseUnit / 2}px`) // Gap after separator
+			columns.push(colUnit)
+			columns.push('1px')
+			columns.push(colUnit)
 		}
 	})
 
-	// End separator
-	columns.push(`1px`)
-
-	// Right Y-axis column
+	columns.push(colUnit) // end gap
+	columns.push('1px')
 	columns.push(`${config.yAxisWidth}px`)
 
 	return columns.join(' ')
@@ -334,15 +294,15 @@ const windowSeparators = computed(() => {
 
 	// Add separator at the start
 	separators.push({gridColumn: currentCol})
-	currentCol += 1 // Move past the start separator
+	currentCol += 2 // Move past start separator + start gap
 
 	props.windows.forEach((window, windowIndex) => {
 		// Skip past this window's columns
 		if (window.columns.length === 0) {
-			currentCol += 5
+			currentCol += BAR_COLS * window.spanCount
 		} else {
 			window.columns.forEach((col, colIndex) => {
-				currentCol += 5 // Bar width
+				currentCol += BAR_COLS
 				if (colIndex < window.columns.length - 1) {
 					currentCol += 1 // Gap
 				}
@@ -357,8 +317,8 @@ const windowSeparators = computed(() => {
 		}
 	})
 
-	// Add separator at the end (no gap before it, it's immediately after the last window)
-	separators.push({gridColumn: currentCol})
+	// Add separator at the end (after end gap)
+	separators.push({gridColumn: currentCol + 1})
 
 	return separators
 })
@@ -410,28 +370,6 @@ function hideTooltip() {
 	tooltipData.value = null
 }
 
-// Resize observer
-let resizeObserver: ResizeObserver | null = null
-
-onMounted(() => {
-	if (containerRef.value) {
-		containerWidth.value = containerRef.value.clientWidth
-
-		resizeObserver = new ResizeObserver((entries) => {
-			if (!entries[0])
-				return
-			containerWidth.value = entries[0].contentRect.width
-		})
-
-		resizeObserver.observe(containerRef.value)
-	}
-})
-
-onUnmounted(() => {
-	if (resizeObserver) {
-		resizeObserver.disconnect()
-	}
-})
 </script>
 
 <style scoped>
@@ -442,7 +380,6 @@ onUnmounted(() => {
 
 .stacked-bars-grid {
 	padding-top: 5px;
-	min-width: 600px;
 }
 
 .y-axis-label {
@@ -451,16 +388,36 @@ onUnmounted(() => {
 	font-size: 11px;
 	margin-bottom: 6px;
 	color: #fff;
+	z-index: 21;
+}
+
+.y-axis-bg {
+	background: rgb(var(--v-theme-surface));
+	z-index: 20;
+}
+
+.y-axis-bg-left {
+	position: sticky;
+	left: 0;
+}
+
+.y-axis-bg-right {
+	position: sticky;
+	right: 0;
 }
 
 .y-axis-label-left {
 	justify-content: flex-end;
 	padding-right: 6px;
+	position: sticky;
+	left: 0;
 }
 
 .y-axis-label-right {
 	justify-content: flex-start;
 	padding-left: 6px;
+	position: sticky;
+	right: 0;
 }
 
 .guide-line {
@@ -479,19 +436,32 @@ onUnmounted(() => {
 	text-wrap: nowrap;
 }
 
+.x-axis-label-edge {
+	color: rgba(255, 255, 255, 0.7);
+	font-weight: 500;
+}
+
 .empty-window {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px dashed #e0e0e0;
-	background-color: #999;
-	margin: 0 2px;
-	z-index: 5;
+	background: repeating-linear-gradient(
+		-45deg,
+		rgba(200, 50, 50, 0.35),
+		rgba(200, 50, 50, 0.35) 6px,
+		rgba(255, 255, 255, 0.12) 6px,
+		rgba(255, 255, 255, 0.12) 12px
+	);
+	border-radius: 4px;
+	z-index: 15;
 }
 
 .empty-label {
 	font-size: 11px;
-	color: #000;
+	font-weight: 600;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: rgba(255, 130, 130, 0.9);
 	writing-mode: vertical-rl;
 	text-orientation: mixed;
 }

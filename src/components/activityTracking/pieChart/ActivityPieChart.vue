@@ -94,7 +94,7 @@ const chartOption = computed<EChartsOption>(() => {
 		series: [
 			{
 				type: 'pie',
-				center: ['120%', '42%'],  // Move pie to the right to make room for legend
+				center: ['115%', '42%'],  // Move pie to the right to make room for legend
 				width: 300,
 				height: 300,
 				radius: ['35%', '75%'],
@@ -158,6 +158,6 @@ function handleChartClick(params: any) {
 
 .chart {
 	height: 250px;
-	width: 500px; /* Increased width to accommodate legend on left */
+	width: 470px; /* Increased width to accommodate legend on left */
 }
 </style>

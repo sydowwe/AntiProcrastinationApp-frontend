@@ -20,7 +20,7 @@
 	</template>
 
 	<template v-else>
-		<div class="d-flex ga-4">
+		<div class="d-flex ga-2">
 			<div class="chart-column">
 				<ActivityPieChart
 					:domains="pieSegments"
