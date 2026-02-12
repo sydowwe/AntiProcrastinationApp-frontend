@@ -1,7 +1,7 @@
 <template>
 <div class="pa-2 w-100 h-100 d-flex flex-column">
 	<!-- Header -->
-	<div class="mb-6 w-100 d-flex align-center ga-6 flex-wrap">
+	<div class="mb-5 w-100 d-flex align-center ga-6 flex-wrap">
 		<h1 class="text-h4">Activity Dashboard</h1>
 		<div class="d-flex align-center ga-5 flex-wrap">
 			<VDateInput
@@ -9,23 +9,25 @@
 				label="Date"
 				hideDetails
 				:max="today"
+				density="compact"
 				style="min-width: 200px; max-width: 200px"
 			/>
 			<TimeRangePicker
 				v-model:start="timeFrom"
 				v-model:end="timeTo"
+				density="compact"
 			/>
 			<VBtnToggle
 				v-model="selectedVisualization"
 				mandatory
 				variant="outlined"
 				color="secondaryOutline"
-				style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important;"
+				style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px"
 			>
-				<VBtn value="stackedBars">
+				<VBtn value="stackedBars" height="40px">
 					Stacked Bars
 				</VBtn>
-				<VBtn value="timeline">
+				<VBtn value="timeline" height="40px">
 					Timeline
 				</VBtn>
 			</VBtnToggle>
@@ -33,46 +35,53 @@
 	</div>
 
 	<!-- Visualization Content -->
-	<ActivityStackedBars
-		v-if="selectedVisualization === 'stackedBars'"
-		:windows="stackedBarsData"
-		:loading="stackedBarsLoading"
-		:initialWindowSize="selectedWindowSize"
-		@windowSizeChange="handleWindowSizeChange"
-		@activityClick="handleActivityClick"
-	/>
-	<ActivityTimeline
-		v-else
-		:activeSessions="activeSessions"
-		:backgroundSessions="backgroundSessions"
-		:from="timelineFrom"
-		:to="timelineTo"
-		:loading="timelineLoading"
-		@sessionClick="handleSessionClick"
-	/>
+	<div class="flex-fill d-flex align-center">
+		<ActivityStackedBars
+			class="w-100"
+			v-if="selectedVisualization === 'stackedBars'"
+			:windows="stackedBarsData"
+			:loading="stackedBarsLoading"
+			:initialWindowSize="selectedWindowSize"
+			:timeFrom
+			:timeTo
+			@windowSizeChange="handleWindowSizeChange"
+			@activityClick="handleActivityClick"
+		/>
+		<ActivityTimeline
+			v-else
+			:activeSessions="activeSessions"
+			:backgroundSessions="backgroundSessions"
+			:from="timelineFrom"
+			:to="timelineTo"
+			:loading="timelineLoading"
+			@sessionClick="handleSessionClick"
+		/>
+	</div>
 
 	<!-- Top Section: Summary Cards + Pie Chart -->
-	<VRow class="mt-6">
-		<VCol cols="12" lg="7" class="pr-8">
-			<ActivitySummaryCards
-				:domains="summaryCardsData"
-				:baselineOptions="baselineOptions"
-				:selectedBaseline="selectedBaseline"
-				:selectedDomain="selectedDomain"
-				:loading="topDomainsLoading"
-				@update:selectedBaseline="handleBaselineChange"
-				@domainClick="handleDomainSelect"
-			/>
-		</VCol>
-		<VCol cols="12" lg="5">
-			<ActivityPieChartSection
-				v-model:selectedDomain="selectedDomain"
-				:domains="pieChartData?.domains ?? []"
-				:dayTotals="pieChartData?.totals"
-				:loading="topDomainsLoading"
-			/>
-		</VCol>
-	</VRow>
+	<div class="mt-6">
+		<VRow>
+			<VCol cols="12" lg="7" class="pr-8 pb-3">
+				<ActivitySummaryCards
+					:domains="summaryCardsData"
+					:baselineOptions="baselineOptions"
+					:selectedBaseline="selectedBaseline"
+					:selectedDomain="selectedDomain"
+					:loading="topDomainsLoading"
+					@update:selectedBaseline="handleBaselineChange"
+					@domainClick="handleDomainSelect"
+				/>
+			</VCol>
+			<VCol cols="12" lg="5" class="pb-3">
+				<ActivityPieChartSection
+					v-model:selectedDomain="selectedDomain"
+					:domains="pieChartData?.domains ?? []"
+					:dayTotals="pieChartData?.totals"
+					:loading="topDomainsLoading"
+				/>
+			</VCol>
+		</VRow>
+	</div>
 </div>
 </template>
 
@@ -101,7 +110,7 @@ import {DateAndTimeRangeRequest} from '@/dtos/request/activityTracking/DateAndTi
 const today = new Date()
 const date = ref<Date>(new Date('02-10-2026'))
 const timeFrom = ref(new Time(7, 0))
-const timeTo = ref(new Time(3, 0))
+const timeTo = ref(new Time(0, 0))
 
 // --- Shared State ---
 const selectedDomain = ref<string | null>(null)
@@ -162,7 +171,7 @@ async function fetchSummaryCardsData() {
 	topDomainsLoading.value = true
 	try {
 		summaryCardsData.value = await getSummaryCards(
-			new SummaryCardsRequest(formatDateForApi(date.value), timeFrom.value, timeTo.value, selectedBaseline.value, 5)
+			new SummaryCardsRequest(formatDateForApi(date.value), timeFrom.value, timeTo.value, selectedBaseline.value, 4)
 		)
 	} finally {
 		topDomainsLoading.value = false

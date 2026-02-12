@@ -1,6 +1,6 @@
 <template>
-<VCard class="pa-4">
-	<div class="d-flex align-center ga-6 mb-3">
+<VCard class="d-flex flex-column justify-center">
+	<div class="pt-4 pb-3 px-5 d-flex align-center ga-6">
 		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>
 		<VSelect
 			v-model="selectedWindowSize"
@@ -28,19 +28,14 @@
 		<VSkeletonLoader type="image" height="250"/>
 	</template>
 
-	<!-- Empty state -->
-	<template v-else-if="windows.length === 0">
-		<div class="empty-state d-flex flex-column align-center justify-center pa-8">
-			<VIcon size="48" color="grey-lighten-1">chart-bar</VIcon>
-			<p class="text-grey mt-2">No activity recorded for this period</p>
-		</div>
-	</template>
-
 	<!-- Chart -->
 	<template v-else>
 		<StackedBarsGrid
+			class="pb-1"
 			:windows="processedWindows"
 			:windowMinutes="selectedWindowSize"
+			:timeFrom="props.timeFrom"
+			:timeTo="props.timeTo"
 			@activity-click="handleActivityClick"
 		/>
 	</template>
@@ -53,8 +48,9 @@ import StackedBarsGrid from './StackedBarsGrid.vue'
 import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts';
 import type {WindowActivity} from '@/dtos/response/activityTracking/stackedBars/WindowActivity.ts';
 import type {ColumnData} from '@/components/activityTracking/stackedBars/dto/ColumnData.ts';
-import type {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow.ts';
+import {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow.ts';
 import {getDomainColor} from '@/utils/domainColor'
+import {Time} from '@/utils/Time'
 
 
 const props = withDefaults(
@@ -63,6 +59,8 @@ const props = withDefaults(
 		loading?: boolean
 		availableWindowSizes?: number[]
 		initialWindowSize?: number
+		timeFrom: Time
+		timeTo: Time
 	}>(),
 	{
 		loading: false,
@@ -95,13 +93,64 @@ const maxColumnsPerWindow = computed(() => {
 	return 4
 })
 
-// Process windows to add "Other" bucket logic
+// Build a lookup of API windows by their start time (minutes from midnight)
+function dateToMinutesKey(d: Date): number {
+	return d.getHours() * 60 + d.getMinutes()
+}
+
+// Generate all time slots from timeFrom to timeTo, merge with API data, aggregate consecutive empties
 const processedWindows = computed<ProcessedWindow[]>(() => {
-	return props.windows.map((window) => ({
-		windowStart: window.windowStart,
-		windowEnd: window.windowEnd,
-		columns: processWindowActivities(window.activities),
-	}))
+	const windowSize = selectedWindowSize.value
+	let fromMin = props.timeFrom.getInMinutes
+	let toMin = props.timeTo.getInMinutes
+	if (toMin <= fromMin) toMin += 24 * 60
+
+	// Index API windows by start minute
+	const apiMap = new Map<number, ActivityWindow>()
+	for (const w of props.windows) {
+		apiMap.set(dateToMinutesKey(w.windowStart), w)
+	}
+
+	// Generate all slots
+	const allSlots: ProcessedWindow[] = []
+	for (let min = fromMin; min < toMin; min += windowSize) {
+		const normalizedMin = min % (24 * 60)
+		const slotStart = new Date(0)
+		slotStart.setHours(Math.floor(normalizedMin / 60), normalizedMin % 60, 0, 0)
+		const endMin = (min + windowSize) % (24 * 60)
+		const slotEnd = new Date(0)
+		slotEnd.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0)
+
+		const apiWindow = apiMap.get(normalizedMin)
+		if (apiWindow && apiWindow.activities.length > 0) {
+			allSlots.push(new ProcessedWindow(
+				apiWindow.windowStart,
+				apiWindow.windowEnd,
+				processWindowActivities(apiWindow.activities),
+			))
+		} else {
+			allSlots.push(new ProcessedWindow(slotStart, slotEnd, []))
+		}
+	}
+
+	// Aggregate consecutive empty windows
+	const result: ProcessedWindow[] = []
+	for (const slot of allSlots) {
+		if (slot.columns.length > 0) {
+			result.push(slot)
+			continue
+		}
+		const prev = result[result.length - 1]
+		if (prev && prev.columns.length === 0) {
+			// Merge into previous empty block
+			prev.windowEnd = slot.windowEnd
+			prev.spanCount += 1
+		} else {
+			result.push(slot)
+		}
+	}
+
+	return result
 })
 
 // Legend items
@@ -190,11 +239,6 @@ const emit = defineEmits<{
 </script>
 
 <style scoped>
-.empty-state {
-	min-height: 250px;
-	border-radius: 8px;
-}
-
 .legend {
 	font-size: 12px;
 }

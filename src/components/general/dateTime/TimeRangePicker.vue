@@ -8,6 +8,7 @@
 			:icon="startIcon"
 			:label="mode === 'length' ? 'Start' : 'From'"
 			:allowedMinutesSelected
+			:density="density"
 			hideDetails
 		/>
 		<!-- Mode Toggle Button -->
@@ -27,7 +28,7 @@
 		v-model="span"
 		label="Time span (hours)"
 		controlVariant="split"
-		density="compact"
+		:density="density"
 		:min="1"
 		:max="24"
 		style="width: 150px"
@@ -41,6 +42,7 @@
 		:icon="endIcon"
 		label="To"
 		:allowedMinutesSelected
+		:density="density"
 		hideDetails
 	/>
 
@@ -62,6 +64,10 @@ const props = defineProps({
 	allowedMinutesSelected: {
 		type: String as PropType<'5' | '10' | '15' | '20' | '30' | '45' | '60'>,
 		default: '10',
+	},
+	density: {
+		type: String as PropType<'default' | 'comfortable' | 'compact'>,
+		default: 'comfortable',
 	}
 })
 

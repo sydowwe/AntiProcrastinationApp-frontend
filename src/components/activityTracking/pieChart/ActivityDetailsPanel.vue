@@ -118,7 +118,7 @@ const headerText = computed(() => {
 .details-grid {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 2px;
 }
 
 .detail-row {
