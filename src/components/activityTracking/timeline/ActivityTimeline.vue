@@ -40,7 +40,7 @@
 
 	<!-- Empty state -->
 	<template
-		v-else-if="activeSessions.length === 0 && backgroundSessions.length === 0"
+		v-else-if="primarySessions.length === 0 && detailSessions.length === 0 && backgroundSessions.length === 0"
 	>
 		<div class="empty-state">
 			<VIcon size="48" color="grey-lighten-1">timeline</VIcon>
@@ -51,7 +51,8 @@
 	<!-- Timeline -->
 	<template v-else>
 		<TimelineGrid
-			:activeSessions="activeSessions"
+			:primarySessions="primarySessions"
+			:detailSessions="detailSessions"
 			:backgroundSessions="stackedBackgroundSessions"
 			:from="from"
 			:to="to"
@@ -80,19 +81,20 @@ import {computed, ref} from 'vue'
 import {getDomainColor} from '@/utils/domainColor'
 import TimelineGrid from './TimelineGrid.vue'
 import {calculateWaterfallStack} from './timelineUtils'
-import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
+import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts';
 import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts';
 
 const props = defineProps<{
-	activeSessions: TimelineSession[]
-	backgroundSessions: TimelineSession[]
+	primarySessions: TimelineSessionDto[]
+	detailSessions: TimelineSessionDto[]
+	backgroundSessions: TimelineSessionDto[]
 	from: Date
 	to: Date
 	loading?: boolean
 }>()
 
 defineEmits<{
-	sessionClick: [session: TimelineSession]
+	sessionClick: [session: TimelineSessionDto]
 }>()
 
 const viewMode = ref<TimelineViewMode>('single')
@@ -111,7 +113,13 @@ const domainLegendEntries = computed(() => {
 	const seen = new Set<string>()
 	const entries: { domain: string; color: string }[] = []
 
-	for (const session of props.activeSessions) {
+	for (const session of props.primarySessions) {
+		if (!seen.has(session.domain)) {
+			seen.add(session.domain)
+			entries.push({domain: session.domain, color: getDomainColor(session.domain)})
+		}
+	}
+	for (const session of props.detailSessions) {
 		if (!seen.has(session.domain)) {
 			seen.add(session.domain)
 			entries.push({domain: session.domain, color: getDomainColor(session.domain)})

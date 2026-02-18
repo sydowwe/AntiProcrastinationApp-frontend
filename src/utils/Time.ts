@@ -37,7 +37,7 @@ export class Time {
 	}
 
 	public get getNice() {
-		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}`;
+		return `${this.hours != 0 ? this.hours + 'h' : ''} ${this.minutes != 0 ? this.minutes + 'm' : ''}`;
 	}
 
 	public subtract(objectToSubtract: Time) {

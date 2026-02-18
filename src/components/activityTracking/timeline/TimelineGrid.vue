@@ -1,142 +1,78 @@
 <template>
 <div ref="containerRef" class="timeline-container">
-	<div class="timeline-grid" :class="{ 'split-view': isSplitView }" :style="gridStyle">
-		<!-- Single row mode -->
-		<template v-if="!isSplitView">
-			<!-- Time axis -->
-			<TimelineTimeAxis
-				:from="from"
-				:to="to"
-				:containerWidth="containerWidth"
-				class="time-axis"
-			/>
+	<template v-for="(group, gi) in segmentGroups" :key="gi">
+		<div v-if="gi > 0" class="split-divider"/>
 
-			<!-- Active lane -->
-			<TimelineLane
-				:sessions="activeSessions"
-				:from="from"
-				:to="to"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="active"
-				class="active-lane"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
+		<div class="timeline-segments">
+			<template v-for="(segment, si) in group.segments" :key="si">
+				<!-- Activity segment -->
+				<div
+					v-if="segment.type === 'activity'"
+					class="activity-segment"
+					:style="{ width: group.widths[si] + 'px' }"
+				>
+					<TimelineTimeAxis
+						:from="segment.from"
+						:to="segment.to"
+						:containerWidth="group.widths[si]"
+					/>
+					<TimelineLane
+						:sessions="filterSessionsForRange(group.primarySessions, segment.from, segment.to)"
+						:from="segment.from"
+						:to="segment.to"
+						:containerWidth="group.widths[si]"
+						:config="config"
+						laneType="active"
+						@sessionHover="handleSessionHover"
+						@sessionLeave="handleSessionLeave"
+						@sessionClick="$emit('sessionClick', $event)"
+					/>
+					<TimelineLane
+						:sessions="filterSessionsForRange(group.detailSessions, segment.from, segment.to)"
+						:from="segment.from"
+						:to="segment.to"
+						:containerWidth="group.widths[si]"
+						:config="config"
+						laneType="active"
+						@sessionHover="handleSessionHover"
+						@sessionLeave="handleSessionLeave"
+						@sessionClick="$emit('sessionClick', $event)"
+					/>
+					<TimelineLane
+						:sessions="filterSessionsForRange(group.backgroundSessions, segment.from, segment.to)"
+						:from="segment.from"
+						:to="segment.to"
+						:containerWidth="group.widths[si]"
+						:config="config"
+						laneType="background"
+						:laneHeight="backgroundLaneHeight"
+						@sessionHover="handleSessionHover"
+						@sessionLeave="handleSessionLeave"
+						@sessionClick="$emit('sessionClick', $event)"
+					/>
+				</div>
 
-			<!-- Background lane -->
-			<TimelineLane
-				:sessions="backgroundSessions"
-				:from="from"
-				:to="to"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="background"
-				:laneHeight="backgroundLaneHeight"
-				class="background-lane"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
-
-			<!-- No activity gaps -->
-			<div
-				v-for="gap in activityGaps"
-				:key="`gap-${gap.startedAt.getTime()}`"
-				class="no-activity-gap"
-				:style="getGapStyle(gap)"
-			>
-					<span v-if="getGapDisplay(gap).showLabel" class="gap-label">
-						No activity
-					</span>
-			</div>
-		</template>
-
-		<!-- Split view mode -->
-		<template v-else>
-			<!-- First half -->
-			<TimelineTimeAxis
-				:from="from"
-				:to="splitPoint"
-				:containerWidth="containerWidth"
-				class="time-axis time-axis-first"
-			/>
-			<TimelineLane
-				:sessions="filterSessionsForRange(activeSessions, from, splitPoint)"
-				:from="from"
-				:to="splitPoint"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="active"
-				class="active-lane active-lane-first"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
-			<TimelineLane
-				:sessions="filterSessionsForRange(backgroundSessions, from, splitPoint)"
-				:from="from"
-				:to="splitPoint"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="background"
-				:laneHeight="backgroundLaneHeight"
-				class="background-lane background-lane-first"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
-
-			<!-- Divider -->
-			<div class="split-divider"/>
-
-			<!-- Second half -->
-			<TimelineTimeAxis
-				:from="splitPoint"
-				:to="to"
-				:containerWidth="containerWidth"
-				class="time-axis time-axis-second"
-			/>
-			<TimelineLane
-				:sessions="filterSessionsForRange(activeSessions, splitPoint, to)"
-				:from="splitPoint"
-				:to="to"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="active"
-				class="active-lane active-lane-second"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
-			<TimelineLane
-				:sessions="filterSessionsForRange(backgroundSessions, splitPoint, to)"
-				:from="splitPoint"
-				:to="to"
-				:containerWidth="containerWidth"
-				:config="config"
-				laneType="background"
-				:laneHeight="backgroundLaneHeight"
-				class="background-lane background-lane-second"
-				@sessionHover="handleSessionHover"
-				@sessionLeave="handleSessionLeave"
-				@sessionClick="$emit('sessionClick', $event)"
-			/>
-
-			<!-- Gaps for split view -->
-			<div
-				v-for="gap in activityGaps"
-				:key="`gap-${gap.startedAt.getTime()}`"
-				class="no-activity-gap"
-				:style="getGapStyleSplit(gap)"
-			>
-					<span v-if="getGapDisplay(gap).showLabel" class="gap-label">
-						No activity
-					</span>
-			</div>
-		</template>
-	</div>
+				<!-- Gap segment (compressed no-activity column) -->
+				<div v-else class="gap-segment">
+					<div class="gap-axis">
+						<!-- Start marker only when gap is the first segment -->
+						<div v-if="si === 0" class="gap-marker" style="left: 0">
+							<span class="gap-marker-label">{{ formatTime(segment.from) }}</span>
+							<div class="gap-marker-line"/>
+						</div>
+						<!-- End marker only when gap is the last segment -->
+						<div v-if="si === group.segments.length - 1" class="gap-marker" style="left: 100%">
+							<span class="gap-marker-label">{{ formatTime(segment.to) }}</span>
+							<div class="gap-marker-line"/>
+						</div>
+					</div>
+					<div class="gap-body">
+						<span class="gap-label-vertical">No activity</span>
+					</div>
+				</div>
+			</template>
+		</div>
+	</template>
 
 	<!-- Tooltip -->
 	<TimelineTooltip v-if="tooltipData" :data="tooltipData" :position="tooltipPosition"/>
@@ -149,23 +85,26 @@ import {useResizeObserver} from '@vueuse/core'
 import TimelineTimeAxis from './TimelineTimeAxis.vue'
 import TimelineLane from './TimelineLane.vue'
 import TimelineTooltip from './TimelineTooltip.vue'
-import {
-	calculateGapDisplay,
-	calculateLaneHeight,
-	calculateSessionPosition,
-	calculateTimelineConfig,
-	filterSessionsForRange,
-	findActivityGaps,
-} from './timelineUtils'
-import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
-import type {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
-import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts';
-import type {Gap} from '@/components/activityTracking/timeline/dto/Gap.ts';
+import {buildTimelineSegments, calculateLaneHeight, calculateSegmentWidths, calculateTimelineConfig, filterSessionsForRange,} from './timelineUtils'
+import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
+import type {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts'
+import type {TimelineViewMode} from '@/components/activityTracking/timeline/dto/TimelineViewMode.ts'
+import type {TimelineSegment} from '@/components/activityTracking/timeline/dto/TimelineSegment.ts'
 
-const DIVIDER_HEIGHT = 16
+const GAP_COLUMN_WIDTH = 48
+const GRID_PADDING = 32
+
+interface SegmentGroup {
+	segments: TimelineSegment[]
+	widths: number[]
+	primarySessions: TimelineSessionDto[]
+	detailSessions: TimelineSessionDto[]
+	backgroundSessions: StackedSession[]
+}
 
 const props = defineProps<{
-	activeSessions: TimelineSession[]
+	primarySessions: TimelineSessionDto[]
+	detailSessions: TimelineSessionDto[]
 	backgroundSessions: StackedSession[]
 	from: Date
 	to: Date
@@ -174,68 +113,66 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-	sessionClick: [session: TimelineSession]
+	sessionClick: [session: TimelineSessionDto]
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
 const containerWidth = ref(800)
 
-const tooltipData = ref<TimelineSession | null>(null)
+const tooltipData = ref<TimelineSessionDto | null>(null)
 const tooltipPosition = ref({x: 0, y: 0})
 
 const isSplitView = computed(() => props.viewMode === 'split')
 
-// Compute config internally based on measured container width
 const config = computed(() => {
 	return calculateTimelineConfig(containerWidth.value, props.from, props.to)
 })
 
-// Compute background lane height from stacked sessions
 const backgroundLaneHeight = computed(() => {
 	return calculateLaneHeight(props.backgroundSessions, config.value.laneHeight)
 })
 
-// Merge active and background sessions for gap detection
-const allSessions = computed(() => [...props.activeSessions, ...props.backgroundSessions])
+const segmentGroups = computed((): SegmentGroup[] => {
+	const available = containerWidth.value - GRID_PADDING
 
-const activityGaps = computed(() => {
-	return findActivityGaps(allSessions.value, props.from, props.to, 30)
-})
-
-const gridStyle = computed(() => {
-	if (isSplitView.value) {
-		return {
-			display: 'grid',
-			gridTemplateRows: `
-				auto
-				${config.value.laneHeight}px
-				${backgroundLaneHeight.value}px
-				${DIVIDER_HEIGHT}px
-				auto
-				${config.value.laneHeight}px
-				${backgroundLaneHeight.value}px
-			`,
-			gridTemplateColumns: '1fr',
-		}
+	if (!isSplitView.value) {
+		const allSessions = [...props.primarySessions, ...props.detailSessions, ...props.backgroundSessions]
+		const segments = buildTimelineSegments(allSessions, props.from, props.to)
+		const widths = calculateSegmentWidths(segments, available, GAP_COLUMN_WIDTH)
+		return [{
+			segments,
+			widths,
+			primarySessions: props.primarySessions,
+			detailSessions: props.detailSessions,
+			backgroundSessions: props.backgroundSessions,
+		}]
 	}
 
-	return {
-		display: 'grid',
-		gridTemplateRows: `
-			auto
-			${config.value.laneHeight}px
-			${backgroundLaneHeight.value}px
-		`,
-		gridTemplateColumns: '1fr',
-	}
+	const firstPrimary = filterSessionsForRange(props.primarySessions, props.from, props.splitPoint)
+	const firstDetail = filterSessionsForRange(props.detailSessions, props.from, props.splitPoint)
+	const firstBackground = filterSessionsForRange(props.backgroundSessions, props.from, props.splitPoint)
+	const firstAll = [...firstPrimary, ...firstDetail, ...firstBackground]
+	const firstSegments = buildTimelineSegments(firstAll, props.from, props.splitPoint)
+	const firstWidths = calculateSegmentWidths(firstSegments, available, GAP_COLUMN_WIDTH)
+
+	const secondPrimary = filterSessionsForRange(props.primarySessions, props.splitPoint, props.to)
+	const secondDetail = filterSessionsForRange(props.detailSessions, props.splitPoint, props.to)
+	const secondBackground = filterSessionsForRange(props.backgroundSessions, props.splitPoint, props.to)
+	const secondAll = [...secondPrimary, ...secondDetail, ...secondBackground]
+	const secondSegments = buildTimelineSegments(secondAll, props.splitPoint, props.to)
+	const secondWidths = calculateSegmentWidths(secondSegments, available, GAP_COLUMN_WIDTH)
+
+	return [
+		{segments: firstSegments, widths: firstWidths, primarySessions: firstPrimary, detailSessions: firstDetail, backgroundSessions: firstBackground},
+		{segments: secondSegments, widths: secondWidths, primarySessions: secondPrimary, detailSessions: secondDetail, backgroundSessions: secondBackground},
+	]
 })
 
-// Resize observer
 useResizeObserver(containerRef, (entries) => {
 	containerWidth.value = entries[0]?.contentRect.width ?? 600
 })
 
-function handleSessionHover(event: MouseEvent, session: TimelineSession | StackedSession) {
+function handleSessionHover(event: MouseEvent, session: TimelineSessionDto | StackedSession) {
 	tooltipData.value = session
 	tooltipPosition.value = {x: event.clientX, y: event.clientY}
 }
@@ -244,93 +181,8 @@ function handleSessionLeave() {
 	tooltipData.value = null
 }
 
-function getGapDisplay(gap: Gap) {
-	return calculateGapDisplay(gap, config.value)
-}
-
-function getGapStyle(gap: Gap) {
-	const position = calculateSessionPosition(
-		{
-			id: -1,
-			domain: 'gap',
-			startedAt: gap.startedAt,
-			endedAt: gap.endedAt,
-			durationSeconds: gap.durationMinutes * 60,
-			totalSeconds: 0,
-		},
-		props.from,
-		props.to,
-		containerWidth.value,
-		config.value,
-	)
-
-	const gapHeight = config.value.laneHeight + backgroundLaneHeight.value
-
-	return {
-		position: 'absolute',
-		left: position.left,
-		width: position.width,
-		top: `${config.value.timeAxisHeight}px`,
-		height: `${gapHeight}px`,
-		backgroundColor: 'rgba(var(--v-theme-on-surface), 0.04)',
-		border: '1px dashed rgba(var(--v-theme-on-surface), 0.15)',
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		pointerEvents: 'none',
-		zIndex: 1,
-	}
-}
-
-function getGapStyleSplit(gap: Gap) {
-	// Determine which half the gap belongs to based on midpoint
-	const gapMid = (gap.startedAt.getTime() + gap.endedAt.getTime()) / 2
-	const splitMid = props.splitPoint.getTime()
-	const isFirstHalf = gapMid < splitMid
-
-	const rangeFrom = isFirstHalf ? props.from : props.splitPoint
-	const rangeTo = isFirstHalf ? props.splitPoint : props.to
-
-	const position = calculateSessionPosition(
-		{
-			id: -1,
-			domain: 'gap',
-			startedAt: gap.startedAt,
-			endedAt: gap.endedAt,
-			durationSeconds: gap.durationMinutes * 60,
-			totalSeconds: 0,
-		},
-		rangeFrom,
-		rangeTo,
-		containerWidth.value,
-		config.value,
-	)
-
-	const gapHeight = config.value.laneHeight + backgroundLaneHeight.value
-
-	// Calculate top position based on which half
-	const firstHalfTop = config.value.timeAxisHeight
-	const secondHalfTop =
-		config.value.timeAxisHeight +
-		config.value.laneHeight +
-		backgroundLaneHeight.value +
-		DIVIDER_HEIGHT +
-		config.value.timeAxisHeight
-
-	return {
-		position: 'absolute',
-		left: position.left,
-		width: position.width,
-		top: `${isFirstHalf ? firstHalfTop : secondHalfTop}px`,
-		height: `${gapHeight}px`,
-		backgroundColor: 'rgba(var(--v-theme-on-surface), 0.04)',
-		border: '1px dashed rgba(var(--v-theme-on-surface), 0.15)',
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		pointerEvents: 'none',
-		zIndex: 1,
-	}
+function formatTime(date: Date): string {
+	return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
 }
 </script>
 
@@ -341,37 +193,81 @@ function getGapStyleSplit(gap: Gap) {
 	overflow-y: visible;
 }
 
-.timeline-grid {
+.timeline-segments {
+	display: flex;
 	min-width: 600px;
-	position: relative;
 	padding: 0 16px;
 }
 
-.split-divider {
-	background: rgba(var(--v-theme-on-surface), 0.06);
+.activity-segment {
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+}
+
+.gap-segment {
+	flex-shrink: 0;
+	width: 48px;
+	display: flex;
+	flex-direction: column;
+	cursor: default;
+}
+
+.gap-axis {
+	position: relative;
+	height: 32px;
+	border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+	overflow: visible;
+}
+
+.gap-marker {
+	position: absolute;
+	bottom: 0;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.gap-marker-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: rgba(var(--v-theme-on-surface), 0.7);
+	margin-bottom: 2px;
+	white-space: nowrap;
+}
+
+.gap-marker-line {
+	width: 1px;
+	height: 12px;
+	background-color: rgba(var(--v-theme-on-surface), 0.35);
+}
+
+.gap-body {
+	flex: 1;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: rgba(var(--v-theme-on-surface), 0.5);
+	background: rgba(var(--v-theme-on-surface), 0.03);
+	border-left: 1px dashed rgba(var(--v-theme-on-surface), 0.15);
+	border-right: 1px dashed rgba(var(--v-theme-on-surface), 0.15);
+}
+
+.gap-label-vertical {
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
 	font-size: 10px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-
-.split-divider::before {
-	content: '···';
-	font-size: 16px;
-}
-
-.no-activity-gap {
-	border-radius: 4px;
-}
-
-.gap-label {
-	font-size: 11px;
 	color: rgba(var(--v-theme-on-surface), 0.35);
 	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	letter-spacing: 1px;
 	font-weight: 500;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.split-divider {
+	background: rgb(240, 240, 240);
+	margin: 16px 0;
+	height: 1px;
 }
 </style>

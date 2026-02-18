@@ -28,10 +28,10 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {formatDuration} from '@/utils/formatDuration'
-import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
+import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 
 const props = defineProps<{
-	data: TimelineSession
+	data: TimelineSessionDto
 	position: { x: number; y: number }
 }>()
 

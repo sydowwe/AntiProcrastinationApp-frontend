@@ -35,7 +35,7 @@
 	</div>
 
 	<!-- Visualization Content -->
-	<div class="flex-fill d-flex align-center">
+	<div class="flex-fill">
 		<ActivityStackedBars
 			class="w-100"
 			v-if="selectedVisualization === 'stackedBars'"
@@ -49,8 +49,9 @@
 		/>
 		<ActivityTimeline
 			v-else
-			:activeSessions="activeSessions"
-			:backgroundSessions="backgroundSessions"
+			:primarySessions
+			:detailSessions
+			:backgroundSessions
 			:from="timelineFrom"
 			:to="timelineTo"
 			:loading="timelineLoading"
@@ -93,7 +94,7 @@ import ActivityStackedBars from '@/components/activityTracking/stackedBars/Activ
 import ActivityTimeline from '@/components/activityTracking/timeline/ActivityTimeline.vue'
 import {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts'
 import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts'
-import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
+import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 import {TimelineResponse} from '@/dtos/response/activityTracking/timeline/TimelineResponse.ts'
 import {getPieChart, getStackedBarsData, getSummaryCards, getTimeline} from '@/api/activityTrackingApi'
 import ActivitySummaryCards from '@/components/activityTracking/summaryCards/ActivitySummaryCards.vue';
@@ -108,14 +109,14 @@ import {DateAndTimeRangeRequest} from '@/dtos/request/activityTracking/DateAndTi
 
 // --- Date & Time State ---
 const today = new Date()
-const date = ref<Date>(new Date('02-10-2026'))
+const date = ref<Date>(new Date())
 const timeFrom = ref(new Time(7, 0))
 const timeTo = ref(new Time(0, 0))
 
 // --- Shared State ---
 const selectedDomain = ref<string | null>(null)
 const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
-const selectedVisualization = ref<'stackedBars' | 'timeline'>('stackedBars')
+const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')
 const selectedWindowSize = ref(30)
 
 // --- Baseline Options ---
@@ -140,7 +141,8 @@ const pieChartLoading = ref(false)
 const stackedBarsLoading = ref(false)
 const timelineLoading = ref(false)
 
-const activeSessions = computed(() => timelineData.value?.activeSessions ?? [])
+const primarySessions = computed(() => timelineData.value?.primarySessions ?? [])
+const detailSessions = computed(() => timelineData.value?.detailSessions ?? [])
 const backgroundSessions = computed(() => timelineData.value?.backgroundSessions ?? [])
 
 const timelineFrom = computed(() => {
@@ -241,7 +243,7 @@ function handleActivityClick(_window: ActivityWindow, domain: string) {
 	selectedDomain.value = domain
 }
 
-function handleSessionClick(session: TimelineSession) {
+function handleSessionClick(session: TimelineSessionDto) {
 	selectedDomain.value = session.domain
 }
 </script>

@@ -1,6 +1,6 @@
-import {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
+import {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 
-export class StackedSession extends TimelineSession {
+export class StackedSession extends TimelineSessionDto {
 	constructor(
 		id: number,
 		domain: string,

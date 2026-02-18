@@ -1,16 +1,18 @@
-import {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts'
+import {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 
 export class TimelineResponse {
 	constructor(
-		public activeSessions: TimelineSession[],
-		public backgroundSessions: TimelineSession[]
+		public primarySessions: TimelineSessionDto[],
+		public detailSessions: TimelineSessionDto[],
+		public backgroundSessions: TimelineSessionDto[]
 	) {
 	}
 
 	static fromJson(json: any): TimelineResponse {
 		return new TimelineResponse(
-			json.activeSessions?.map((s: any) => TimelineSession.fromJson(s)) || [],
-			json.backgroundSessions?.map((s: any) => TimelineSession.fromJson(s)) || []
+			json.primarySessions?.map((s: any) => TimelineSessionDto.fromJson(s)) || [],
+			json.detailSessions?.map((s: any) => TimelineSessionDto.fromJson(s)) || [],
+			json.backgroundSessions?.map((s: any) => TimelineSessionDto.fromJson(s)) || []
 		)
 	}
 }

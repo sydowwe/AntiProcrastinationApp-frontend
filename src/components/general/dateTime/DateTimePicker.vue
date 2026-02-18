@@ -1,8 +1,8 @@
 <template>
 <div class="d-flex">
 	<VDateInput class="date-time-datePicker" :label="label ?? $t('dateTime.date')" v-model="date" :clearable="dateClearable" persistent-clear :min="minDate"
-	            :max="maxDate" hide-details minWidth="150px" maxWidth="150px" prependInnerIcon="far fa-calendar"></VDateInput>
-	<TimePickerTextField class="date-time-timePicker" :label="label ? '' : $t('dateTime.time')" v-model="time" minWidth="100px"
+	            :max="maxDate" :density hide-details minWidth="150px" maxWidth="150px" prependInnerIcon="far fa-calendar"></VDateInput>
+	<TimePickerTextField class="date-time-timePicker" :label="label ? '' : $t('dateTime.time')" v-model="time" :density minWidth="100px"
 	                     maxWidth="100px" hideDetails></TimePickerTextField>
 </div>
 </template>
@@ -13,6 +13,10 @@ import {Time} from '@/utils/Time.ts';
 import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
 
 const props = defineProps({
+	density: {
+		type: String as () => 'compact' | 'comfortable' | 'default',
+		default: 'default',
+	},
 	dateClearable: {
 		type: Boolean,
 		default: true,
