@@ -13,15 +13,25 @@ export const API = axios.create({
 	responseType: 'json',
 });
 
+// Separate instance for refresh to avoid interceptor loops
+const refreshClient = axios.create({
+	baseURL: import.meta.env.VITE_API_URL + '/api',
+	headers: {
+		'Content-Type': 'application/json',
+		'Accept': 'application/json',
+	},
+	withCredentials: true,
+});
+
 let isRefreshing = false;
 let failedQueue: Array<{resolve: (value?: unknown) => void, reject: (reason?: unknown) => void}> = [];
 
-function processQueue(error: unknown, token: string | null = null) {
+function processQueue(error: unknown) {
 	failedQueue.forEach(prom => {
 		if (error) {
 			prom.reject(error);
 		} else {
-			prom.resolve(token);
+			prom.resolve();
 		}
 	});
 	failedQueue = [];
@@ -34,51 +44,35 @@ API.interceptors.response.use(
 			hideFullScreenLoading();
 		}
 
-		// Check for token expiration header
-		if (response.headers['x-token-expired']) {
-			const originalRequest = response.config;
-
-			if (isRefreshing) {
-				return new Promise((resolve, reject) => {
-					failedQueue.push({resolve, reject});
-				}).then(() => {
-					return API(originalRequest);
-				}).catch(err => {
-					return Promise.reject(err);
-				});
-			}
-
+		// Proactively refresh token if server signals expiration
+		if (response.headers['x-token-expired'] && !isRefreshing) {
 			isRefreshing = true;
-
 			try {
-				await API.post('/auth/refresh');
-				processQueue(null);
+				await refreshClient.post('/auth/refresh');
+			} catch {
+				// Silent fail — the next request will handle it via the error interceptor
+			} finally {
 				isRefreshing = false;
-				return API(originalRequest);
-			} catch (error) {
-				processQueue(error, null);
-				isRefreshing = false;
-				const userStore = useUserStore();
-				userStore.logout();
-				router.push({name: 'login'});
-				return Promise.reject(error);
 			}
 		}
 
-		return Promise.resolve(response);
+		return response;
 	},
 	async (error) => {
 		const {showErrorSnackbar} = useSnackbar();
 		const userStore = useUserStore();
+		const originalRequest = error.config;
 
-		const logoutClient = () => {
+		function logoutClient() {
 			userStore.logout();
 			router.push({name: 'login'});
-		};
+		}
 
-		// Check for token expiration header in error response
-		if (error.response?.headers['x-token-expired']) {
-			const originalRequest = error.config;
+		const needsRefresh = error.response?.status === HttpStatusCode.Unauthorized
+			|| error.response?.headers['x-token-expired'];
+
+		if (needsRefresh && !originalRequest._retry && router.currentRoute.value.name !== 'login') {
+			originalRequest._retry = true;
 
 			if (isRefreshing) {
 				return new Promise((resolve, reject) => {
@@ -93,28 +87,24 @@ API.interceptors.response.use(
 			isRefreshing = true;
 
 			try {
-				await API.post('/auth/refresh');
+				await refreshClient.post('/auth/refresh');
 				processQueue(null);
-				isRefreshing = false;
 				return API(originalRequest);
 			} catch (refreshError) {
-				processQueue(refreshError, null);
-				isRefreshing = false;
+				processQueue(refreshError);
 				logoutClient();
 				return Promise.reject(refreshError);
+			} finally {
+				isRefreshing = false;
 			}
 		}
 
-		console.log(error)
-		if (router.currentRoute.value.name !== 'login' && (error.response?.status === HttpStatusCode.Unauthorized)) {
-			console.error('unauthorizedeeeeeeeee')
-			showErrorSnackbar('Please log in before accessing the page', {closable: false});
-			logoutClient();
-		} else if ((error?.response?.status === HttpStatusCode.Forbidden)) {
+		if (error.response?.status === HttpStatusCode.Forbidden) {
 			showErrorSnackbar('You dont have permission for that action', {closable: false});
 		}
+
 		console.error('ERROR: ', error);
-		switch (error.status) {
+		switch (error.response?.status) {
 			case 409:
 				showErrorSnackbar('Conflict');
 				break;

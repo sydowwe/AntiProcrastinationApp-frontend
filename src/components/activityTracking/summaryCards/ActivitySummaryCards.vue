@@ -21,7 +21,7 @@
 	<!-- Loading State -->
 	<div v-if="loading" class="cards-grid">
 		<VSkeletonLoader
-			v-for="i in 5"
+			v-for="i in 4"
 			:key="i"
 			type="card"
 			class="skeleton-card"

@@ -22,10 +22,11 @@ import type {StackedSession} from '@/components/activityTracking/timeline/dto/St
 import type {LaneType} from '@/components/activityTracking/timeline/dto/LaneType.ts';
 import type {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
 import type {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
-import type {TimelineSession} from '@/dtos/response/activityTracking/timeline/TimelineSession.ts';
+import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts';
+import TimelineSession from '@/components/activityTracking/timeline/TimelineSession.vue';
 
 const props = defineProps<{
-	sessions: (TimelineSession | StackedSession)[]
+	sessions: (TimelineSessionDto | StackedSession)[]
 	from: Date
 	to: Date
 	containerWidth: number
@@ -35,9 +36,9 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
-	sessionHover: [event: MouseEvent, session: TimelineSession | StackedSession]
+	sessionHover: [event: MouseEvent, session: TimelineSessionDto | StackedSession]
 	sessionLeave: []
-	sessionClick: [session: TimelineSession | StackedSession]
+	sessionClick: [session: TimelineSessionDto | StackedSession]
 }>()
 
 const laneStyle = computed(() => ({
@@ -45,7 +46,7 @@ const laneStyle = computed(() => ({
 	position: 'relative',
 }))
 
-function getSessionPosition(session: TimelineSession | StackedSession): SessionPosition {
+function getSessionPosition(session: TimelineSessionDto | StackedSession): SessionPosition {
 	return calculateSessionPosition(
 		session,
 		props.from,
@@ -55,7 +56,7 @@ function getSessionPosition(session: TimelineSession | StackedSession): SessionP
 	)
 }
 
-function getStackLevel(session: TimelineSession | StackedSession): number {
+function getStackLevel(session: TimelineSessionDto | StackedSession): number {
 	return 'stackLevel' in session ? session.stackLevel : 0
 }
 </script>

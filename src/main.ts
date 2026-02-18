@@ -120,6 +120,16 @@ export const vuetify = createVuetify({
 		VIconBtn: {rounded: ''},
 		VIconSmall: {size: '16'},
 	},
+	display: {
+		thresholds: {
+			xs: 0,
+			sm: 600,
+			md: 960,
+			lg: 1280,  // starts at 1280, covers up to 1920px (HD)
+			xl: 1921,  // 1440p
+			xxl: 2560, // 4K
+		},
+	},
 	theme: {
 		defaultTheme: 'dark',
 		themes: {
