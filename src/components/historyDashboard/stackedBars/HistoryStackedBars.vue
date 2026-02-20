@@ -1,5 +1,5 @@
 <template>
-<VCard class="pa-4">
+<VCard class="pa-4 h-100 d-flex flex-column">
 	<template v-if="loading">
 		<VSkeletonLoader type="image" height="300"/>
 	</template>
@@ -10,13 +10,13 @@
 		</div>
 	</template>
 	<template v-else>
-		<VChart :option="chartOption" class="chart" autoresize/>
+		<VChart ref="chartRef" :option="chartOption" class="chart flex-fill" autoresize/>
 	</template>
 </VCard>
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref, useTemplateRef, onMounted, onBeforeUnmount} from 'vue'
 import VChart from 'vue-echarts'
 import {use} from 'echarts/core'
 import {CanvasRenderer} from 'echarts/renderers'
@@ -33,6 +33,27 @@ const props = defineProps<{
 	data: HistoryStackedBarsResponse | null
 	loading?: boolean
 }>()
+
+const chartRef = useTemplateRef<InstanceType<typeof VChart>>('chartRef')
+const chartHeight = ref(300)
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+	resizeObserver = new ResizeObserver(entries => {
+		for (const entry of entries) {
+			chartHeight.value = entry.contentRect.height
+		}
+	})
+	if (chartRef.value?.$el) {
+		resizeObserver.observe(chartRef.value.$el)
+	}
+})
+
+onBeforeUnmount(() => {
+	resizeObserver?.disconnect()
+})
+
+const ySplitNumber = computed(() => Math.max(2, Math.floor(chartHeight.value / 60)))
 
 function formatWindowLabel(windowStart: string, granularity: HistoryGranularity): string {
 	const date = new Date(windowStart)
@@ -133,6 +154,7 @@ const chartOption = computed<EChartsOption>(() => {
 			type: 'value',
 			name: 'Minutes',
 			nameTextStyle: {color: '#ccc'},
+			splitNumber: ySplitNumber.value,
 			axisLabel: {color: '#ccc'},
 		},
 		series,
@@ -142,7 +164,7 @@ const chartOption = computed<EChartsOption>(() => {
 
 <style scoped>
 .chart {
-	height: 300px;
+	min-height: 200px;
 	width: 100%;
 }
 </style>

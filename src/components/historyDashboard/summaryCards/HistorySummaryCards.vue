@@ -8,7 +8,6 @@
 			:modelValue="selectedBaseline"
 			:items="baselineOptions"
 			density="compact"
-			variant="outlined"
 			hideDetails
 			@update:modelValue="emit('update:selectedBaseline', $event)"
 			style="min-width: 170px; max-width: 170px;"
@@ -18,7 +17,6 @@
 			:modelValue="topN"
 			:items="topNOptions"
 			density="compact"
-			variant="outlined"
 			hideDetails
 			@update:modelValue="emit('update:topN', $event)"
 			style="min-width: 100px; max-width: 100px;"
@@ -29,8 +27,8 @@
 
 	<!-- Loading State -->
 	<div v-if="loading" class="cards-scroll" :class="scrollClass">
-		<div class="cards-row" :style="{'--cards-per-row': cardsPerRow}">
-			<VSkeletonLoader v-for="i in topN" :key="i" type="card" class="summary-card-slot"/>
+		<div class="cards-grid" :style="{'--cols': cols}">
+			<VSkeletonLoader v-for="i in topN" :key="i" type="card" class="skeleton-card"/>
 		</div>
 	</div>
 
@@ -41,12 +39,11 @@
 	</div>
 
 	<!-- Cards -->
-	<div v-else class="cards-scroll" :class="scrollClass">
-		<div class="cards-row" :style="{'--cards-per-row': cardsPerRow}">
+	<div v-else ref="scrollRef" class="cards-scroll" :class="scrollClass">
+		<div ref="gridRef" class="cards-grid" :style="{'--cols': cols}">
 			<HistorySummaryCard
 				v-for="card in data.cards"
 				:key="card.name"
-				class="summary-card-slot"
 				:card="card"
 				:selected="card.name === selectedGroup"
 				@click="handleCardClick"
@@ -57,8 +54,9 @@
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, nextTick, ref, watch} from 'vue'
 import {useDisplay} from 'vuetify'
+import {useResizeObserver} from '@vueuse/core'
 import {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts'
 import type {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 import type {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy.ts'
@@ -97,14 +95,72 @@ const topNOptions = [
 	{title: '10', value: 10},
 ]
 
+const scrollRef = ref<HTMLElement>()
+const gridRef = ref<HTMLElement>()
+const containerWidth = ref(1000)
+const cols = ref(4)
+
+useResizeObserver(scrollRef, (entries) => {
+	containerWidth.value = entries[0]?.contentRect.width ?? 1000
+	recalcCols()
+})
+
+// Generate candidates: topN (1 row), ceil(topN/2), ceil(topN/3), ... down to 1
+function getCandidates(n: number): number[] {
+	const candidates: number[] = []
+	for (let rows = 1; rows <= n; rows++) {
+		const perRow = Math.ceil(n / rows)
+		if (candidates.length === 0 || candidates[candidates.length - 1] !== perRow) {
+			candidates.push(perRow)
+		}
+	}
+	return candidates
+}
+
+function recalcCols() {
+	if (!gridRef.value || !scrollRef.value) return
+
+	const gap = 16
+	const available = containerWidth.value
+	const candidates = getCandidates(props.topN)
+
+	// Temporarily set grid to all cards in one row to measure each card's natural width
+	const prevCols = cols.value
+	cols.value = props.topN
+	// We can't measure synchronously after reactive change, so use the children's scrollWidth
+	// Instead, measure children's min-content widths directly
+	const children = Array.from(gridRef.value.children) as HTMLElement[]
+	const widths = children.map(c => c.scrollWidth)
+
+	// For each candidate, check if the widest cards in each column fit
+	for (const candidate of candidates) {
+		// For this candidate, column i gets cards at indices i, i+candidate, i+2*candidate, ...
+		let totalWidth = 0
+		for (let col = 0; col < candidate; col++) {
+			let maxW = 0
+			for (let idx = col; idx < widths.length; idx += candidate) {
+				maxW = Math.max(maxW, widths[idx] ?? 0)
+			}
+			totalWidth += maxW
+		}
+		totalWidth += (candidate - 1) * gap
+		if (totalWidth <= available) {
+			cols.value = candidate
+			return
+		}
+	}
+	// Fallback: 1 per row
+	cols.value = 1
+}
+
+watch([() => props.topN, () => props.data], () => {
+	nextTick(() => recalcCols())
+})
+
 const visibleRows = computed(() => {
-	// lg: 1 visible row, md and xl+: 2 visible rows
 	if (lgAndUp.value && !xlAndUp.value) return 1
 	return 2
 })
-
-// Grid always splits cards into 2 rows worth of columns
-const cardsPerRow = computed(() => Math.ceil(props.topN / 2))
 
 const scrollClass = computed(() => visibleRows.value === 1 ? 'scroll-1-row' : 'scroll-2-rows')
 
@@ -117,6 +173,13 @@ const groupByLabel = computed(() => {
 		case 'CATEGORY':
 			return 'Categories'
 	}
+})
+
+// Snap scroll to top when data changes
+watch(() => props.data, () => {
+	nextTick(() => {
+		if (scrollRef.value) scrollRef.value.scrollTop = 0
+	})
 })
 
 function handleCardClick(name: string) {
@@ -142,16 +205,21 @@ function handleCardClick(name: string) {
 	max-height: calc(2 * 160px + 1 * 16px);
 }
 
-.cards-row {
+.cards-grid {
 	display: grid;
-	grid-template-columns: repeat(var(--cards-per-row), auto);
+	grid-template-columns: repeat(var(--cols), auto);
 	gap: 16px;
 	justify-content: start;
 }
 
 /* Each grid row snaps into view */
-.cards-row > :deep(*) {
+.cards-grid > :deep(*) {
 	scroll-snap-align: start;
+}
+
+.skeleton-card {
+	min-width: 160px;
+	height: 160px;
 }
 
 .empty-state {

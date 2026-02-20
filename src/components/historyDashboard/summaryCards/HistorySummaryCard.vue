@@ -79,6 +79,7 @@ const comparisonClass = computed(() => {
 
 <style scoped>
 .summary-card {
+	min-width: 160px;
 	cursor: pointer;
 	transition: transform 0.2s, box-shadow 0.2s;
 }
