@@ -7,28 +7,28 @@
 			<HistoryDateRangeSelector v-model:dateFrom="dateFrom" v-model:dateTo="dateTo"/>
 			<HistoryGroupBySelector v-model="groupBy"/>
 		</template>
+		<VSpacer/>
+		<VTabs v-model="activeTab" color="primaryOutline" bgColor="surface">
+			<VTab value="dashboard">Dashboard</VTab>
+			<VTab value="timeline">Detailed Timeline</VTab>
+		</VTabs>
 	</div>
 
-	<!-- Tabs -->
-	<VTabs v-model="activeTab" class="mb-4">
-		<VTab value="dashboard">Dashboard</VTab>
-		<VTab value="timeline">Detailed Timeline</VTab>
-	</VTabs>
-
 	<!-- Tab Content -->
-	<VWindow v-model="activeTab" class="flex-fill" style="overflow-y: auto">
+	<VWindow v-model="activeTab" class="flex-fill" style="min-height: 0">
 		<!-- Dashboard Tab -->
-		<VWindowItem value="dashboard">
-			<div class="pa-1">
+		<VWindowItem value="dashboard" class="h-100">
+			<div class="pa-1 h-100 d-flex flex-column ga-6">
 				<!-- Stacked Bars -->
 				<HistoryStackedBars
-					class="mb-6"
+					class="flex-fill"
+					style="min-height: 200px"
 					:data="stackedBarsData"
 					:loading="stackedBarsLoading"
 				/>
 
 				<!-- Summary Cards + Pie Chart -->
-				<VRow>
+				<VRow class="flex-shrink-0 flex-grow-0">
 					<VCol cols="12" lg="6" class="pr-lg-8 pb-3">
 						<HistorySummaryCards
 							:data="summaryCardsData"
@@ -217,3 +217,9 @@ function handleFilterApplied(filterData: ActivityHistoryFilter, isDateRange: boo
 		})
 }
 </script>
+
+<style scoped>
+:deep(.v-window__container) {
+	height: 100%;
+}
+</style>
