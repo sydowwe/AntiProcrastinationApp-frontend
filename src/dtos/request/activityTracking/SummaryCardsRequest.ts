@@ -1,4 +1,4 @@
-import {DateAndTimeRangeRequest} from '@/dtos/request/activityTracking/DateAndTimeRangeRequest.ts';
+import {DateAndTimeRangeRequest} from '@/dtos/dto/DateAndTimeRangeRequest.ts';
 import type {Time} from '@/utils/Time.ts';
 import {BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts';
 

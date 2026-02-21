@@ -1,30 +1,59 @@
 import {API} from '@/plugins/axiosConfig'
-import type {HistoryStackedBarsRequest} from '@/dtos/request/historyDashboard/HistoryStackedBarsRequest.ts'
+import type {DashboardStackedBarsRequest} from '@/dtos/request/DashboardStackedBarsRequest'
 import type {HistoryPieChartRequest} from '@/dtos/request/historyDashboard/HistoryPieChartRequest.ts'
 import type {HistorySummaryCardsRequest} from '@/dtos/request/historyDashboard/HistorySummaryCardsRequest.ts'
+import type {DetailStackedBarsRequest} from '@/dtos/request/historyDetail/DetailStackedBarsRequest.ts'
+import type {DetailPieChartRequest} from '@/dtos/request/historyDetail/DetailPieChartRequest.ts'
+import type {DetailSummaryCardsRequest} from '@/dtos/request/historyDetail/DetailSummaryCardsRequest.ts'
 import {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 import {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 
-const BASE_URL = '/activity-history/dashboard'
+const SUMMARY_URL = '/activity-history/dashboard/summary'
+const DETAIL_URL = '/activity-history/dashboard/detail'
 
-export async function getHistoryStackedBars(
-	request: HistoryStackedBarsRequest
+// --- Summary (multi-day, ActivityDateRangeRequest based) ---
+
+export async function getSummaryStackedBars(
+	request: DashboardStackedBarsRequest
 ): Promise<HistoryStackedBarsResponse> {
-	const {data} = await API.post(`${BASE_URL}/stacked-bars`, request)
+	const {data} = await API.post(`${SUMMARY_URL}/stacked-bars`, request)
 	return HistoryStackedBarsResponse.fromJson(data)
 }
 
-export async function getHistoryPieChart(
+export async function getSummaryPieChart(
 	request: HistoryPieChartRequest
 ): Promise<HistoryPieChartResponse> {
-	const {data} = await API.post(`${BASE_URL}/pie-chart`, request)
+	const {data} = await API.post(`${SUMMARY_URL}/pie-chart`, request)
 	return HistoryPieChartResponse.fromJson(data)
 }
 
-export async function getHistorySummaryCards(
+export async function getSummarySummaryCards(
 	request: HistorySummaryCardsRequest
 ): Promise<HistorySummaryCardsResponse> {
-	const {data} = await API.post(`${BASE_URL}/summary-cards`, request)
+	const {data} = await API.post(`${SUMMARY_URL}/summary-cards`, request)
+	return HistorySummaryCardsResponse.fromJson(data)
+}
+
+// --- Detail (single-day, DateAndTimeRangeRequest based) ---
+
+export async function getDetailStackedBars(
+	request: DetailStackedBarsRequest
+): Promise<HistoryStackedBarsResponse> {
+	const {data} = await API.post(`${DETAIL_URL}/stacked-bars`, request)
+	return HistoryStackedBarsResponse.fromJson(data)
+}
+
+export async function getDetailPieChart(
+	request: DetailPieChartRequest
+): Promise<HistoryPieChartResponse> {
+	const {data} = await API.post(`${DETAIL_URL}/pie-chart`, request)
+	return HistoryPieChartResponse.fromJson(data)
+}
+
+export async function getDetailSummaryCards(
+	request: DetailSummaryCardsRequest
+): Promise<HistorySummaryCardsResponse> {
+	const {data} = await API.post(`${DETAIL_URL}/summary-cards`, request)
 	return HistorySummaryCardsResponse.fromJson(data)
 }

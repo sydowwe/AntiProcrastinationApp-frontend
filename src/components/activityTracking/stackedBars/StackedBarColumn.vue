@@ -42,7 +42,7 @@ defineEmits<{
 	(e: 'click', event: MouseEvent): void
 }>()
 
-const domainColor = computed(() => getDomainColor(props.data.domain))
+const domainColor = computed(() => props.data.color ?? getDomainColor(props.data.domain))
 
 const barContainerStyle = computed(() => ({
 	gridColumn: `${props.gridColumnStart} / ${props.gridColumnEnd}`,

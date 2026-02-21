@@ -1,16 +1,14 @@
 import {ActivityDateRangeRequest} from '@/dtos/dto/ActivityDateRangeRequest.ts'
 import type {ActivityDateRangeType} from '@/dtos/dto/ActivityDateRangeType.ts'
 import type {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy'
-import type {BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption'
 
-export class HistorySummaryCardsRequest extends ActivityDateRangeRequest {
+export class DashboardStackedBarsRequest extends ActivityDateRangeRequest {
 	constructor(
 		date: string,
 		rangeType: ActivityDateRangeType,
-		public groupBy: HistoryGroupBy,
-		public baseline: BaselineType,
-		public topN: number,
+		public windowMinutes: number,
 		endDate?: string,
+		public groupBy?: HistoryGroupBy,
 	) {
 		super(date, rangeType, endDate)
 	}

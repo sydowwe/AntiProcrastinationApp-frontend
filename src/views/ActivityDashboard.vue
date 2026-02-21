@@ -36,14 +36,15 @@
 
 	<!-- Visualization Content -->
 	<div class="flex-fill">
-		<ActivityStackedBars
+		<StackedBarsChart
 			class="w-100"
 			v-if="selectedVisualization === 'stackedBars'"
-			:windows="stackedBarsData"
+			:windows="stackedBarsWindows"
 			:loading="stackedBarsLoading"
 			:initialWindowSize="selectedWindowSize"
 			:timeFrom
 			:timeTo
+			:windowSizeOptions="activityWindowSizeOptions"
 			@windowSizeChange="handleWindowSizeChange"
 			@activityClick="handleActivityClick"
 		/>
@@ -90,7 +91,7 @@
 import {computed, ref, watch} from 'vue'
 import {Time} from '@/utils/Time'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-import ActivityStackedBars from '@/components/activityTracking/stackedBars/ActivityStackedBars.vue'
+import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 import ActivityTimeline from '@/components/activityTracking/timeline/ActivityTimeline.vue'
 import {BaselineOption, BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts'
 import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts'
@@ -104,8 +105,10 @@ import {SummaryCardsRequest} from '@/dtos/request/activityTracking/SummaryCardsR
 import {PieChartRequest} from '@/dtos/request/activityTracking/PieChartRequest.ts';
 import type {PieChartData} from '@/dtos/response/activityTracking/pieChart/PieChartData.ts';
 import ActivityPieChartSection from '@/components/activityTracking/pieChart/ActivityPieChartSection.vue';
-import {StackedBarsRequest} from '@/dtos/request/activityTracking/StackedBarsRequest.ts';
-import {DateAndTimeRangeRequest} from '@/dtos/request/activityTracking/DateAndTimeRangeRequest.ts';
+import {StackedBarsRequest} from '@/dtos/request/activityTracking/StackedBarsRequest.ts'
+import {DateAndTimeRangeRequest} from '@/dtos/dto/DateAndTimeRangeRequest.ts';
+import type {StackedBarsInputWindow} from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
+import {getDomainColor} from '@/utils/domainColor'
 
 // --- Date & Time State ---
 const today = new Date()
@@ -119,6 +122,9 @@ const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
 const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')
 const selectedWindowSize = ref(30)
 
+// --- Window size options for single day ---
+const activityWindowSizeOptions = [15, 20, 30, 60, 90, 120]
+
 // --- Baseline Options ---
 const baselineOptions: BaselineOption[] = [
 	new BaselineOption(BaselineType.Last7Days, 'Last 7 days'),
@@ -128,11 +134,8 @@ const baselineOptions: BaselineOption[] = [
 ]
 
 const summaryCardsData = ref<SummaryCardsData[] | null>(null)
-
 const pieChartData = ref<PieChartData | null>(null)
-
 const stackedBarsData = ref<ActivityWindow[]>([])
-
 const timelineData = ref<TimelineResponse | null>(null)
 
 // --- Loading States ---
@@ -158,6 +161,21 @@ const timelineTo = computed(() => {
 		d.setDate(d.getDate() + 1)
 	}
 	return d
+})
+
+// --- Map ActivityWindow[] → StackedBarsInputWindow[] ---
+const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() => {
+	return stackedBarsData.value.map((w) => ({
+		windowStart: w.windowStart,
+		windowEnd: w.windowEnd,
+		items: w.activities.map((a) => ({
+			name: a.domain,
+			activeSeconds: a.activeSeconds,
+			backgroundSeconds: a.backgroundSeconds,
+			color: getDomainColor(a.domain),
+			url: a.url,
+		})),
+	}))
 })
 
 // --- Formatting helpers ---
@@ -195,7 +213,12 @@ async function fetchStackedBarsData() {
 	stackedBarsLoading.value = true
 	try {
 		stackedBarsData.value = await getStackedBarsData(
-			new StackedBarsRequest(formatDateForApi(date.value), timeFrom.value, timeTo.value, selectedWindowSize.value)
+			new StackedBarsRequest(
+				formatDateForApi(date.value),
+				timeFrom.value,
+				timeTo.value,
+				selectedWindowSize.value,
+			)
 		)
 	} finally {
 		stackedBarsLoading.value = false
@@ -239,8 +262,8 @@ function handleWindowSizeChange(size: number) {
 	fetchStackedBarsData()
 }
 
-function handleActivityClick(_window: ActivityWindow, domain: string) {
-	selectedDomain.value = domain
+function handleActivityClick(_window: StackedBarsInputWindow, name: string) {
+	selectedDomain.value = name
 }
 
 function handleSessionClick(session: TimelineSessionDto) {

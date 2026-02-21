@@ -81,7 +81,7 @@ const chartOption = computed<EChartsOption>(() => {
 			{
 				type: 'pie',
 				center: ['115%', '42%'],
-				width: 300,
+				width: 470,
 				height: 300,
 				radius: ['35%', '75%'],
 				avoidLabelOverlap: false,
@@ -122,6 +122,5 @@ function handleChartClick(params: any) {
 <style scoped>
 .chart {
 	height: 250px;
-	width: 470px;
 }
 </style>

@@ -5,7 +5,8 @@ export class ColumnData {
 		public backgroundSeconds: number,
 		public activeMinutes: number,
 		public backgroundMinutes: number,
-		public url?: string
+		public url?: string,
+		public color?: string
 	) {
 	}
 }

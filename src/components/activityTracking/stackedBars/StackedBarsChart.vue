@@ -8,12 +8,12 @@
 			:items="formattedOptions"
 			density="compact"
 			hideDetails
-			style="max-width: 100px"
+			style="min-width: 100px;max-width: 100px"
 		/>
 		<div v-if="legendItems.length > 0" class="legend d-flex flex-wrap ga-2">
 			<div
 				v-for="item in legendItems"
-				:key="item.domain"
+				:key="item.name"
 				class="legend-item d-flex align-center ga-1"
 			>
 				<div class="legend-color" :style="{ backgroundColor: item.color }"/>
@@ -22,10 +22,17 @@
 		</div>
 	</div>
 
-
 	<!-- Loading state -->
 	<template v-if="loading">
 		<VSkeletonLoader type="image" height="250"/>
+	</template>
+
+	<!-- No data -->
+	<template v-else-if="windows.length === 0">
+		<div class="d-flex flex-column align-center justify-center pa-8">
+			<VIcon icon="fas fa-chart-bar" size="64" class="text-disabled mb-4"/>
+			<p class="text-body-1 text-medium-emphasis">No data for this period</p>
+		</div>
 	</template>
 
 	<!-- Chart -->
@@ -34,8 +41,8 @@
 			class="pb-1"
 			:windows="processedWindows"
 			:windowMinutes="selectedWindowSize"
-			:timeFrom="props.timeFrom"
-			:timeTo="props.timeTo"
+			:timeFrom
+			:timeTo
 			@activity-click="handleActivityClick"
 		/>
 	</template>
@@ -45,36 +52,36 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
 import StackedBarsGrid from './StackedBarsGrid.vue'
-import type {ActivityWindow} from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts';
-import type {WindowActivity} from '@/dtos/response/activityTracking/stackedBars/WindowActivity.ts';
-import type {ColumnData} from '@/components/activityTracking/stackedBars/dto/ColumnData.ts';
-import {ProcessedWindow} from '@/components/activityTracking/stackedBars/dto/ProcessedWindow.ts';
+import type {StackedBarsInputWindow, StackedBarsInputItem} from './dto/StackedBarsInput'
+import type {ColumnData} from './dto/ColumnData'
+import {ProcessedWindow} from './dto/ProcessedWindow'
 import {getDomainColor} from '@/utils/domainColor'
 import {Time} from '@/utils/Time'
 
-
 const props = withDefaults(
 	defineProps<{
-		windows: ActivityWindow[]
+		windows: StackedBarsInputWindow[]
 		loading?: boolean
-		availableWindowSizes?: number[]
-		initialWindowSize?: number
 		timeFrom: Time
 		timeTo: Time
+		windowSizeOptions: number[]
+		initialWindowSize: number
 	}>(),
 	{
 		loading: false,
-		availableWindowSizes: () => [15, 20, 30, 60, 90, 120],
-		initialWindowSize: 30,
 	}
 )
 
+const emit = defineEmits<{
+	windowSizeChange: [size: number]
+	activityClick: [window: StackedBarsInputWindow, name: string]
+}>()
 
 // Selected window size
 const selectedWindowSize = ref(props.initialWindowSize)
 
 const formattedOptions = computed(() =>
-	props.availableWindowSizes.map((mins) => ({
+	props.windowSizeOptions.map((mins) => ({
 		value: mins,
 		title: mins >= 60 ? `${mins / 60}h` : `${mins}m`,
 	}))
@@ -98,7 +105,50 @@ function dateToMinutesKey(d: Date): number {
 	return d.getHours() * 60 + d.getMinutes()
 }
 
-// Generate all time slots from timeFrom to timeTo, merge with API data, aggregate consecutive empties
+function resolveColor(name: string, color?: string): string {
+	return color ?? getDomainColor(name)
+}
+
+function toColumnData(item: StackedBarsInputItem): ColumnData {
+	return {
+		domain: item.name,
+		activeSeconds: item.activeSeconds,
+		backgroundSeconds: item.backgroundSeconds,
+		activeMinutes: Math.ceil(item.activeSeconds / 60),
+		backgroundMinutes: Math.ceil(item.backgroundSeconds / 60),
+		url: item.url,
+		color: resolveColor(item.name, item.color),
+	}
+}
+
+function processItems(items: StackedBarsInputItem[]): ColumnData[] {
+	const totalSeconds = (i: StackedBarsInputItem) => i.activeSeconds + i.backgroundSeconds
+	const sorted = [...items]
+		.filter((i) => totalSeconds(i) > 0)
+		.sort((a, b) => totalSeconds(b) - totalSeconds(a))
+
+	if (sorted.length <= maxColumnsPerWindow.value) {
+		return sorted.map(toColumnData)
+	}
+
+	const top = sorted.slice(0, maxColumnsPerWindow.value - 1)
+	const rest = sorted.slice(maxColumnsPerWindow.value - 1)
+	const otherActiveSeconds = rest.reduce((sum, i) => sum + i.activeSeconds, 0)
+	const otherBackgroundSeconds = rest.reduce((sum, i) => sum + i.backgroundSeconds, 0)
+
+	return [
+		...top.map(toColumnData),
+		{
+			domain: '_other',
+			activeSeconds: otherActiveSeconds,
+			backgroundSeconds: otherBackgroundSeconds,
+			activeMinutes: Math.ceil(otherActiveSeconds / 60),
+			backgroundMinutes: Math.ceil(otherBackgroundSeconds / 60),
+		},
+	]
+}
+
+// Generate all time slots, merge with API data, aggregate consecutive empties
 const processedWindows = computed<ProcessedWindow[]>(() => {
 	const windowSize = selectedWindowSize.value
 	let fromMin = props.timeFrom.getInMinutes
@@ -106,7 +156,7 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 	if (toMin <= fromMin) toMin += 24 * 60
 
 	// Index API windows by start minute
-	const apiMap = new Map<number, ActivityWindow>()
+	const apiMap = new Map<number, StackedBarsInputWindow>()
 	for (const w of props.windows) {
 		apiMap.set(dateToMinutesKey(w.windowStart), w)
 	}
@@ -122,11 +172,11 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 		slotEnd.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0)
 
 		const apiWindow = apiMap.get(normalizedMin)
-		if (apiWindow && apiWindow.activities.length > 0) {
+		if (apiWindow && apiWindow.items.length > 0) {
 			allSlots.push(new ProcessedWindow(
 				apiWindow.windowStart,
 				apiWindow.windowEnd,
-				processWindowActivities(apiWindow.activities),
+				processItems(apiWindow.items),
 			))
 		} else {
 			allSlots.push(new ProcessedWindow(slotStart, slotEnd, []))
@@ -142,7 +192,6 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 		}
 		const prev = result[result.length - 1]
 		if (prev && prev.columns.length === 0) {
-			// Merge into previous empty block
 			prev.windowEnd = slot.windowEnd
 			prev.spanCount += 1
 		} else {
@@ -155,75 +204,35 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 
 // Legend items
 const legendItems = computed(() => {
-	const domainMap = new Map<string, { domain: string; label: string; color: string }>()
+	const nameMap = new Map<string, { name: string; label: string; color: string }>()
 
-	props.windows.forEach((window) => {
-		window.activities.forEach((activity) => {
-			if (!domainMap.has(activity.domain)) {
-				domainMap.set(activity.domain, {
-					domain: activity.domain,
-					label: activity.domain,
-					color: getDomainColor(activity.domain),
+	for (const w of props.windows) {
+		for (const item of w.items) {
+			if (!nameMap.has(item.name)) {
+				nameMap.set(item.name, {
+					name: item.name,
+					label: item.name,
+					color: resolveColor(item.name, item.color),
 				})
 			}
-		})
-	})
+		}
+	}
 
-	// Check if "Other" bucket is used in processed windows
-	processedWindows.value.forEach((window) => {
-		window.columns.forEach((col) => {
-			if (col.domain === '_other' && !domainMap.has('_other')) {
-				domainMap.set('_other', {
-					domain: '_other',
+	// Check for "Other" bucket in processed windows
+	for (const w of processedWindows.value) {
+		for (const col of w.columns) {
+			if (col.domain === '_other' && !nameMap.has('_other')) {
+				nameMap.set('_other', {
+					name: '_other',
 					label: 'Other',
 					color: getDomainColor('_other'),
 				})
 			}
-		})
-	})
+		}
+	}
 
-	return Array.from(domainMap.values()).sort((a, b) => a.label.localeCompare(b.label))
+	return Array.from(nameMap.values()).sort((a, b) => a.label.localeCompare(b.label))
 })
-
-function processWindowActivities(activities: WindowActivity[]): ColumnData[] {
-	// Filter out zero-duration activities and sort by total time
-	const sorted = [...activities]
-		.filter((a) => a.totalSeconds > 0)
-		.sort((a, b) => b.totalSeconds - a.totalSeconds)
-
-	if (sorted.length <= maxColumnsPerWindow.value) {
-		return sorted.map(toColumnData)
-	}
-
-	// Take top N-1 and group rest into "Other"
-	const top = sorted.slice(0, maxColumnsPerWindow.value - 1)
-	const other = sorted.slice(maxColumnsPerWindow.value - 1)
-
-	const otherActiveSeconds = other.reduce((sum, a) => sum + a.activeSeconds, 0)
-	const otherBackgroundSeconds = other.reduce((sum, a) => sum + a.backgroundSeconds, 0)
-
-	return [
-		...top.map(toColumnData),
-		{
-			domain: '_other',
-			activeSeconds: otherActiveSeconds,
-			backgroundSeconds: otherBackgroundSeconds,
-			activeMinutes: Math.ceil(otherActiveSeconds / 60),
-			backgroundMinutes: Math.ceil(otherBackgroundSeconds / 60),
-		},
-	]
-}
-
-function toColumnData(activity: WindowActivity): ColumnData {
-	return {
-		domain: activity.domain,
-		activeSeconds: activity.activeSeconds,
-		backgroundSeconds: activity.backgroundSeconds,
-		activeMinutes: Math.ceil(activity.activeSeconds / 60),
-		backgroundMinutes: Math.ceil(activity.backgroundSeconds / 60),
-		url: activity.url,
-	}
-}
 
 function handleActivityClick(bar: any) {
 	const window = props.windows[bar.windowIndex]
@@ -231,11 +240,6 @@ function handleActivityClick(bar: any) {
 		throw new Error('Window not found')
 	emit('activityClick', window, bar.domain)
 }
-
-const emit = defineEmits<{
-	(e: 'windowSizeChange', size: number): void
-	(e: 'activityClick', window: ActivityWindow, domain: string): void
-}>()
 </script>
 
 <style scoped>
