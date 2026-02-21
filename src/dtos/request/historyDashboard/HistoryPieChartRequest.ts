@@ -1,13 +1,15 @@
-import {HistoryDateRangeRequest} from '@/dtos/request/historyDashboard/HistoryDateRangeRequest.ts'
-import type {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy.ts'
+import {ActivityDateRangeRequest} from '@/dtos/dto/ActivityDateRangeRequest.ts'
+import type {ActivityDateRangeType} from '@/dtos/dto/ActivityDateRangeType.ts'
+import type {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy'
 
-export class HistoryPieChartRequest extends HistoryDateRangeRequest {
+export class HistoryPieChartRequest extends ActivityDateRangeRequest {
 	constructor(
-		public dateFrom: string,
-		public dateTo: string,
 		public groupBy: HistoryGroupBy,
-		public minPercent: number,
+		public maxItems: number,
+		date: string,
+		rangeType: ActivityDateRangeType,
+		endDate?: string,
 	) {
-		super(dateFrom, dateTo, groupBy)
+		super(date, rangeType, endDate)
 	}
 }

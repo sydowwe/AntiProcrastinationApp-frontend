@@ -1,5 +1,5 @@
-import {DateAndTimeRangeRequest} from '@/dtos/request/activityTracking/DateAndTimeRangeRequest.ts';
 import type {Time} from '@/utils/Time.ts';
+import {DateAndTimeRangeRequest} from '@/dtos/dto/DateAndTimeRangeRequest.ts';
 
 export class StackedBarsRequest extends DateAndTimeRangeRequest {
 	constructor(
