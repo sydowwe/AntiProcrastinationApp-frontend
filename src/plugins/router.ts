@@ -22,6 +22,7 @@ import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vu
 import TemplateListView from '@/views/dayPlanner/TemplateListView.vue';
 import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue';
 import ActivityDashboard from '@/views/ActivityDashboard.vue';
+import HistoryCalendarView from '@/views/HistoryCalendarView.vue';
 
 
 const router = createRouter({
@@ -66,6 +67,11 @@ const router = createRouter({
 			path: '/activity-history',
 			name: 'activityHistory',
 			component: HistorySummaryView
+		},
+		{
+			path: '/activity-history/calendar',
+			name: 'activityHistoryCalendar',
+			component: HistoryCalendarView
 		},
 		{
 			path: '/activity-history/detail',

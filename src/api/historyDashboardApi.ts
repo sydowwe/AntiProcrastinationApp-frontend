@@ -8,6 +8,8 @@ import type {DetailSummaryCardsRequest} from '@/dtos/request/historyDetail/Detai
 import {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 import {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
+import type {CalendarActivityRequest} from '@/dtos/request/historyDashboard/CalendarActivityRequest.ts'
+import {CalendarActivityDaySummary} from '@/dtos/response/historyDashboard/CalendarActivityDaySummary.ts'
 
 const SUMMARY_URL = '/activity-history/dashboard/summary'
 const DETAIL_URL = '/activity-history/dashboard/detail'
@@ -56,4 +58,13 @@ export async function getDetailSummaryCards(
 ): Promise<HistorySummaryCardsResponse> {
 	const {data} = await API.post(`${DETAIL_URL}/summary-cards`, request)
 	return HistorySummaryCardsResponse.fromJson(data)
+}
+
+// --- Calendar Activity Summary (per-day activity breakdown for calendar view) ---
+
+export async function getCalendarActivitySummary(
+	request: CalendarActivityRequest
+): Promise<CalendarActivityDaySummary[]> {
+	const {data} = await API.post('/activity-history/dashboard/calendar', request)
+	return data.map((d: any) => CalendarActivityDaySummary.fromJson(d))
 }

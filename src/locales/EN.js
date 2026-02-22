@@ -183,6 +183,8 @@ const EN = {
     navigation: {
         home: `Home`,
         history: `History`,
+        historySummary: `Summary`,
+        historyCalendar: `Calendar`,
         activityTracking: `Activity tracking`,
         createNewActivity: `Create new kind of activity`,
         toDoList: `To-do list`,
