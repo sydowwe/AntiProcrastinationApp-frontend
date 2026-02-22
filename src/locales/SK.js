@@ -185,6 +185,8 @@ const SK = {
         routineToDoList: `Rutina`,
         createNewActivity: `Vytvoriť nový druh aktivity`,
         history: `História`,
+        historySummary: `Súhrn`,
+        historyCalendar: `Kalendár`,
         activityTracking: `Sledovanie aktivity`,
         recordActivity: `Zaznamenať aktivitu`,
         recordActivityManually: `Manuálne`,

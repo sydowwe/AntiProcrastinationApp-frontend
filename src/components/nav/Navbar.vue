@@ -212,7 +212,13 @@ interface MenuItem {
 
 const items: MenuItem[] = [
 	{title: 'home', icon: 'home', to: '/', needsAdmin: false},
-	{title: 'history', icon: 'clock-rotate-left', to: '/activity-history', needsAdmin: false},
+	{
+		title: 'history', icon: 'clock-rotate-left', needsAdmin: false,
+		children: [
+			{title: 'historySummary', icon: 'chart-pie', to: '/activity-history', needsAdmin: false},
+			{title: 'historyCalendar', icon: 'calendar', to: '/activity-history/calendar', needsAdmin: false},
+		]
+	},
 	{title: 'activityTracking', icon: 'clock-rotate-left', to: '/activity-tracking', needsAdmin: false},
 	{
 		title: 'toDoList',

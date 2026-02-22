@@ -111,6 +111,7 @@
 
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
+import {useRoute} from 'vue-router'
 import {useMoment} from '@/scripts/momentHelper.ts'
 import {API} from '@/plugins/axiosConfig.ts'
 import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts'
@@ -138,11 +139,12 @@ import HistoryPieChartSection from '@/components/historyDashboard/pieChart/Histo
 import HistoryPanelFilter from '@/components/history/HistoryPanelFilter.vue'
 import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
 
+const route = useRoute()
 const {formatLocalized} = useMoment()
 
 // --- State ---
 const today = new Date()
-const dateModel = ref<Date>(new Date())
+const dateModel = ref<Date>(route.query.date ? new Date(route.query.date as string) : new Date())
 const timeFrom = ref(new Time(0, 0))
 const timeTo = ref(new Time(23, 59))
 const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
