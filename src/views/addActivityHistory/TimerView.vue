@@ -22,7 +22,7 @@ import TimerPresetsSection from '../../components/addActivityToHistory/TimerPres
 import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
 import {Time} from '@/utils/Time.ts';
 import {computed, onUnmounted, ref} from 'vue';
-import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';

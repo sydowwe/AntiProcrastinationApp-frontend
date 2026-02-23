@@ -21,7 +21,7 @@ import {TimerPresetRequest} from '@/dtos/request/activityRecording/TimerPresetRe
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useActivityCrud, useTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
-import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {Time} from '@/utils/Time.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 

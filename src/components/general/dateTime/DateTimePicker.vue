@@ -2,15 +2,15 @@
 <div class="d-flex">
 	<VDateInput class="date-time-datePicker" :label="label ?? $t('dateTime.date')" v-model="date" :clearable="dateClearable" persistent-clear :min="minDate"
 	            :max="maxDate" :density hide-details minWidth="150px" maxWidth="150px" prependInnerIcon="far fa-calendar"></VDateInput>
-	<TimePickerTextField class="date-time-timePicker" :label="label ? '' : $t('dateTime.time')" v-model="time" :density minWidth="100px"
-	                     maxWidth="100px" hideDetails></TimePickerTextField>
+	<TimePicker class="date-time-timePicker" :label="label ? '' : $t('dateTime.time')" v-model="time" :density minWidth="100px"
+	            maxWidth="100px" hideDetails></TimePicker>
 </div>
 </template>
 <script setup lang="ts">
 import {nextTick, ref, watch} from 'vue';
 import {VDateInput} from 'vuetify/labs/components';
 import {Time} from '@/utils/Time.ts';
-import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 
 const props = defineProps({
 	density: {
