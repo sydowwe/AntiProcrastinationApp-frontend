@@ -41,20 +41,20 @@
 <script setup lang="ts">
 import {computed, onMounted, type PropType, reactive, ref, watch} from 'vue';
 import {Time} from '@/utils/Time.ts';
-import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
+import {ActivityFormRequest} from '@/dtos/request/activity/ActivityFormRequest.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';
 import {filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations,} from '@/composables/ActivitySelectsComposition';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
 import type {VAutocomplete} from 'vuetify/components';
-import {ActivityFormSelectOptions} from '@/dtos/response/ActivityFormSelectOptions.ts';
-import type {ActivitySelectOptionCombination} from '@/dtos/response/ActivitySelectOptionCombination.ts';
+import {ActivityFormSelectOptions} from '@/dtos/response/activity/ActivityFormSelectOptions.ts';
+import type {ActivitySelectOptionCombination} from '@/dtos/response/activity/ActivitySelectOptionCombination.ts';
 import CreateActivityDialog from '@/components/dialogs/activity/CreateActivityDialog.vue';
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
-import type {ActivityRequest} from '@/dtos/request/ActivityRequest.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
+import type {ActivityRequest} from '@/dtos/request/activity/ActivityRequest.ts';
 
 
 const {requiredRule} = useGeneralRules()

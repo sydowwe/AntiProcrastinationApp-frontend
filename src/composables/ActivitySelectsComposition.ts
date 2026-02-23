@@ -1,10 +1,10 @@
 // useSelectOptions.ts
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
-import {ActivitySelectOptionCombination} from '@/dtos/response/ActivitySelectOptionCombination.ts';
-import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
-import {ActivityFormSelectOptions} from '@/dtos/response/ActivityFormSelectOptions.ts';
+import {ActivitySelectOptionCombination} from '@/dtos/response/activity/ActivitySelectOptionCombination.ts';
+import {ActivityFormRequest} from '@/dtos/request/activity/ActivityFormRequest.ts';
+import {ActivityFormSelectOptions} from '@/dtos/response/activity/ActivityFormSelectOptions.ts';
 
 export enum EntityWithSelectOptions {
 	Role = 'role',

@@ -34,12 +34,12 @@ import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {onMounted, ref} from 'vue';
 import {useI18n} from 'vue-i18n';
-import type {SelectOption} from '@/dtos/response/SelectOption.ts';
+import type {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
-import {QuickActivityToolsDto} from '@/dtos/response/QuickActivityToolsDto.ts';
-import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {QuickActivityToolsDto} from '@/dtos/response/activity/QuickActivityToolsDto.ts';
+import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();

@@ -7,7 +7,7 @@ import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {Time} from '@/utils/Time.ts';
 import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {useTaskPlannerCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useTaskPlannerCrud} from '@/api/ConcretesCrudComposable.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {

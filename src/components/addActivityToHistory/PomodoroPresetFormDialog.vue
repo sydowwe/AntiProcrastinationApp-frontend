@@ -110,14 +110,14 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {computed, onMounted, ref} from 'vue';
-import {PomodoroTimerPreset} from '@/dtos/response/PomodoroTimerPreset.ts';
-import {PomodoroTimerPresetRequest} from '@/dtos/request/PomodoroTimerPresetRequest.ts';
+import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
+import {PomodoroTimerPresetRequest} from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityCrud, usePomodoroTimerPresetCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud, usePomodoroTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
 import {Time} from '@/utils/Time.ts';
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 
 const {create, update, deleteEntity} = usePomodoroTimerPresetCrud();
 const {fetchSelectOptions} = useActivityCrud();

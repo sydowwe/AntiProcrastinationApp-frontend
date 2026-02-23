@@ -12,10 +12,10 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {ref} from 'vue';
-import {Category} from '@/dtos/response/Category.ts';
+import {Category} from '@/dtos/response/activity/Category.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityCategoryCrud} from '@/composables/ConcretesCrudComposable.ts';
-import {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
+import {useActivityCategoryCrud} from '@/api/ConcretesCrudComposable.ts';
+import {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
 import {VForm} from 'vuetify/components';
 
 const {create, update} = useActivityCategoryCrud()

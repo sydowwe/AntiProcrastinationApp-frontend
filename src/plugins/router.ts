@@ -4,8 +4,8 @@ import PomodoroTimerView from "@/views/addActivityHistory/PomodoroTimerView.vue"
 import StopWatchView from '@/views/addActivityHistory/StopWatchView.vue'
 import TimerView from '@/views/addActivityHistory/TimerView.vue'
 import AlarmListView from '@/views/addActivityHistory/AlarmListView.vue'
-import HistorySummaryView from '@/views/HistorySummaryView.vue'
-import HistoryDetailView from '@/views/HistoryDetailView.vue'
+import HistorySummaryView from '@/views/history/HistorySummaryView.vue'
+import HistoryDetailView from '@/views/history/HistoryDetailView.vue'
 import ToDoListView from '@/views/ToDoListView.vue'
 import AddActivityManuallyView from '@/views/addActivityHistory/AddActivityManuallyView.vue'
 import LoginView from '@/views/user/LoginView.vue'
@@ -22,7 +22,7 @@ import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vu
 import TemplateListView from '@/views/dayPlanner/TemplateListView.vue';
 import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue';
 import ActivityDashboard from '@/views/ActivityDashboard.vue';
-import HistoryCalendarView from '@/views/HistoryCalendarView.vue';
+import HistoryCalendarView from '@/views/history/HistoryCalendarView.vue';
 
 
 const router = createRouter({

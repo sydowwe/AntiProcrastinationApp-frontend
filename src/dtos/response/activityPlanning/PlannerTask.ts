@@ -1,5 +1,5 @@
 import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {Activity} from '@/dtos/response/Activity.ts';
+import {Activity} from '@/dtos/response/activity/Activity.ts';
 import {Time} from '@/utils/Time.ts';
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';

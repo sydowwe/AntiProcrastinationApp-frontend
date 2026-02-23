@@ -22,7 +22,8 @@
 		/>
 
 		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0" is-first></TodoListItemDragAndDropPlaceholder>
-		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && invalidDropIndicators[`0-top`] && index === 0" is-first is-invalid></TodoListItemDragAndDropPlaceholder>
+		<TodoListItemDragAndDropPlaceholder v-if="isInChangeOrderMode && invalidDropIndicators[`0-top`] && index === 0" is-first
+		                                    is-invalid></TodoListItemDragAndDropPlaceholder>
 
 		<ToDoListItem
 			:toDoListItem="item"
@@ -69,7 +70,7 @@
 <script setup lang="ts" generic="TEntity extends IBaseToDoListItem">
 import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
-import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest.ts';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind.ts';
 import {onMounted, ref, toRef} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';

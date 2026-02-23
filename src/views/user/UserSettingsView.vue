@@ -48,7 +48,7 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useUserStore} from '@/stores/userStore.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {User} from '@/dtos/response/User.ts';
+import {User} from '@/dtos/response/user/User.ts';
 
 const {showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = useSnackbar();
 const i18n = useI18n();

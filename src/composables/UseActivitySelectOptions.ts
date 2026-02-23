@@ -1,7 +1,7 @@
 import {useEntityQuery} from '@/composables/general/CrudComposition.ts';
-import {Role} from '@/dtos/response/Role.ts';
-import {Category} from '@/dtos/response/Category.ts';
-import {Activity} from '@/dtos/response/Activity.ts';
+import {Role} from '@/dtos/response/activity/Role.ts';
+import {Category} from '@/dtos/response/activity/Category.ts';
+import {Activity} from '@/dtos/response/activity/Activity.ts';
 
 export function useActivitySelectOptions() {
 	const {fetchSelectOptions: fetchRoleSelectOptions} = useEntityQuery<Role>({responseClass: Role, entityName: 'activity-role'})

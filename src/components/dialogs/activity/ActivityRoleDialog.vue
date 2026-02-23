@@ -12,10 +12,10 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {ref} from 'vue';
-import {Role} from '@/dtos/response/Role.ts';
-import {RoleRequest} from '@/dtos/request/RoleRequest.ts';
+import {Role} from '@/dtos/response/activity/Role.ts';
+import {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityRoleCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityRoleCrud} from '@/api/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
 
 const {useApi} = defineProps({

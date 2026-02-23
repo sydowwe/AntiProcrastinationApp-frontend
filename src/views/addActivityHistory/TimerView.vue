@@ -28,7 +28,7 @@ import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import {TimePrecise} from '@/utils/TimePrecise.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
-import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
+import {TimerPreset} from '@/dtos/response/activityRecording/TimerPreset.ts';
 
 const {showErrorSnackbar} = useSnackbar();
 const {triggerTimerEndNotification, stopAllNotifications} = useTimerNotifications();

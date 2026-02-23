@@ -68,7 +68,7 @@ import type {VForm} from 'vuetify/components'
 import {CalendarRequest} from '@/dtos/request/activityPlanning/CalendarRequest.ts'
 import {DayType} from '@/dtos/enum/DayType.ts'
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
-import {useCalendarQuery} from '@/composables/ConcretesCrudComposable.ts';
+import {useCalendarQuery} from '@/api/ConcretesCrudComposable.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
 const {updateWithResponse} = useCalendarQuery()

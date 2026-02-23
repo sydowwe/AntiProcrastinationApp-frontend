@@ -40,7 +40,7 @@ import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
 import {useI18n} from 'vue-i18n';
 import {VForm} from 'vuetify/components';
-import {RegistrationRequest} from '@/dtos/request/RegistrationRequest.ts';
+import {RegistrationRequest} from '@/dtos/request/user/RegistrationRequest.ts';
 import {AvailableLocales} from '@/dtos/enum/AvailableLocales.ts';
 
 
