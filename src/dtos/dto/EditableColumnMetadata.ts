@@ -1,4 +1,4 @@
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {uncapitalizeString} from '@/scripts/helperMethods.ts';
 import {TableCellType} from '@/dtos/enum/TableCellType.ts';
 

@@ -79,8 +79,8 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import PomodoroPresetFormDialog from '@/components/addActivityToHistory/PomodoroPresetFormDialog.vue';
 import {onMounted, ref} from 'vue';
 import {Time} from '@/utils/Time.ts';
-import {PomodoroTimerPreset} from '@/dtos/response/PomodoroTimerPreset.ts';
-import {usePomodoroTimerPresetCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
+import {usePomodoroTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 
 const {fetchAll, deleteEntity} = usePomodoroTimerPresetCrud();
 

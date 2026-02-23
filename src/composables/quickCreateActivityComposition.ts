@@ -1,10 +1,10 @@
 import {ref} from 'vue';
-import {Role} from '@/dtos/response/Role.ts';
+import {Role} from '@/dtos/response/activity/Role.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
-import {QuickActivityToolsDto} from '@/dtos/response/QuickActivityToolsDto.ts';
-import {ActivityRequest} from '@/dtos/request/ActivityRequest.ts';
-import {QuickEditActivityRequest} from '@/dtos/request/QuickEditActivityRequest.ts';
+import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
+import {QuickActivityToolsDto} from '@/dtos/response/activity/QuickActivityToolsDto.ts';
+import {ActivityRequest} from '@/dtos/request/activity/ActivityRequest.ts';
+import {QuickEditActivityRequest} from '@/dtos/request/activity/QuickEditActivityRequest.ts';
 
 export type QuickCreateActivityRoleName = 'Routine task' | 'To-do list task' | 'Planner task'
 

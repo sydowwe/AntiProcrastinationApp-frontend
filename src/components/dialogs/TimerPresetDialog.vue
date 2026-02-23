@@ -16,14 +16,14 @@
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {computed, onMounted, ref} from 'vue';
-import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
-import {TimerPresetRequest} from '@/dtos/request/TimerPresetRequest.ts';
+import {TimerPreset} from '@/dtos/response/activityRecording/TimerPreset.ts';
+import {TimerPresetRequest} from '@/dtos/request/activityRecording/TimerPresetRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityCrud, useTimerPresetCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud, useTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
 import {Time} from '@/utils/Time.ts';
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 
 const {create, update, deleteEntity} = useTimerPresetCrud();
 const {fetchSelectOptions} = useActivityCrud();

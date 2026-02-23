@@ -21,12 +21,12 @@
 import AlarmItem from '@/components/addActivityToHistory/AlarmItem.vue';
 import AlarmDialog from '@/components/addActivityToHistory/AlarmDialog.vue';
 import {onMounted, ref} from "vue";
-import {Alarm} from "@/dtos/response/Alarm";
-import {AlarmRequest} from "@/dtos/request/AlarmRequest";
+import {Alarm} from "@/dtos/response/activityRecording/Alarm.ts";
+import {AlarmRequest} from "@/dtos/request/activityRecording/AlarmRequest.ts";
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {useAlarmCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useAlarmCrud} from '@/api/ConcretesCrudComposable.ts';
 
 const alarmDialog = ref<InstanceType<typeof AlarmDialog>>();
 const i18n = useI18n();

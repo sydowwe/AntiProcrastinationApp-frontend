@@ -19,7 +19,7 @@
 					</VCol>
 					<VCol cols="12" sm="6" class="d-flex align-center justify-start justify-sm-end pt-2 pt-sm-3">
 						<RouterLink class="mx-3" to="/forgotten-password">{{
-								i18n.t('authorization.forgotPassword')
+							i18n.t('authorization.forgotPassword')
 							}}
 						</RouterLink>
 					</VCol>
@@ -57,7 +57,7 @@ import {useLoading} from '@/composables/general/LoadingComposable.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {useRecaptcha} from '@/composables/UseRecaptchaHandler.ts';
-import {PasswordSignInRequest} from '@/dtos/request/PasswordSignInRequest.ts';
+import {PasswordSignInRequest} from '@/dtos/request/user/PasswordSignInRequest.ts';
 import {VForm} from 'vuetify/components';
 
 const i18n = useI18n();

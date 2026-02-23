@@ -4,7 +4,8 @@
       "Bash(npx vue-tsc:*)",
       "mcp__vuetify__get_component_api_by_version",
       "Bash(npm install:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

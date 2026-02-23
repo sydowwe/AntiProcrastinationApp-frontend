@@ -1,4 +1,4 @@
-import {Activity} from '@/dtos/response/Activity.ts';
+import {Activity} from '@/dtos/response/activity/Activity.ts';
 
 export interface IBaseToDoListItem {
 	id: number;

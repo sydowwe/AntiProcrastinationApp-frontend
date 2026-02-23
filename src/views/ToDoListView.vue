@@ -33,15 +33,15 @@
 
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
-import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest';
-import {TodoListItemEntity} from '@/dtos/response/TodoListItemEntity';
-import {ToDoListItemRequest} from '@/dtos/request/ToDoListItemRequest';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
+import {TodoListItemEntity} from '@/dtos/response/todoList/TodoListItemEntity.ts';
+import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useActivityCrud, useTaskPriorityCrud, useTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud, useTaskPriorityCrud, useTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()

@@ -1,6 +1,6 @@
 import {ref} from 'vue'
 import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
 import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';

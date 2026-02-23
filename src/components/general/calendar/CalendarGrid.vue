@@ -92,7 +92,7 @@ import {computed, ref, watch} from 'vue'
 import DateRangePicker from '@/components/general/dateTime/DateRangePicker.vue'
 import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts'
-import {useCalendarQuery} from '@/composables/ConcretesCrudComposable.ts'
+import {useCalendarQuery} from '@/api/ConcretesCrudComposable.ts'
 import {getDayTypeColor, getDayTypeIcon} from '@/dtos/enum/DayType.ts'
 import type {ICalendar} from '@/dtos/response/activityPlanning/ICalendar.ts'
 

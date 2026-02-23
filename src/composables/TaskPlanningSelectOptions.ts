@@ -1,5 +1,5 @@
 import {useEntityQuery} from '@/composables/general/CrudComposition.ts';
-import {TimePeriodEntity} from '@/dtos/response/TimePeriodEntity.ts';
+import {TimePeriodEntity} from '@/dtos/response/activityRecording/TimePeriodEntity.ts';
 import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 
 export function useTaskPlanningSelectOptions() {

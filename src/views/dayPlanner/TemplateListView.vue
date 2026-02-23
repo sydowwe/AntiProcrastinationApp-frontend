@@ -114,7 +114,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {useTaskPlannerDayTemplateTaskCrud} from '@/composables/ConcretesCrudComposable.ts'
+import {useTaskPlannerDayTemplateTaskCrud} from '@/api/ConcretesCrudComposable.ts'
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import type {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 import TemplateDetailsDialog from '@/components/dayPlanner/template/TemplateDetailsDialog.vue'

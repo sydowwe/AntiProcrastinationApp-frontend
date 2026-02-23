@@ -33,7 +33,7 @@ import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useMoment} from '@/scripts/momentHelper.ts';
-import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import type {VForm} from 'vuetify/components';
 
 const {create} = useActivityHistoryCrud()

@@ -19,7 +19,7 @@ import {useI18n} from 'vue-i18n';
 import {ref} from 'vue';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {Time} from '@/utils/Time.ts';
-import {useActivityHistoryCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 
 const {create} = useActivityHistoryCrud()
 

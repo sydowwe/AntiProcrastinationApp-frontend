@@ -18,10 +18,10 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
-import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequest.ts';
-import {RoutineTodoListItemEntity} from '@/dtos/response/RoutineTodoListItemEntity.ts';
+import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts';
+import {RoutineTodoListItemEntity} from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
-import {SelectOption} from '@/dtos/response/SelectOption.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';

@@ -56,8 +56,8 @@
 
 <script setup lang="ts">
 import {computed, onMounted, ref} from 'vue';
-import {TimerPreset} from '@/dtos/response/TimerPreset.ts';
-import {useTimerPresetCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {TimerPreset} from '@/dtos/response/activityRecording/TimerPreset.ts';
+import {useTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 import TimerPresetDialog from '@/components/dialogs/TimerPresetDialog.vue';
 
 defineProps({

@@ -1,4 +1,4 @@
-import {ActivityFormRequest} from '@/dtos/request/ActivityFormRequest.ts';
+import {ActivityFormRequest} from '@/dtos/request/activity/ActivityFormRequest.ts';
 
 export class ActivityHistoryFilter {
 	public activityFilter: ActivityFormRequest = ActivityFormRequest.createEmpty;

@@ -33,18 +33,18 @@
 <script setup lang="ts">
 import {VForm} from 'vuetify/components';
 import {ref, watch} from 'vue';
-import {RoleRequest} from '@/dtos/request/RoleRequest';
-import {SelectOption} from '@/dtos/response/SelectOption';
-import {ActivityRequest} from '@/dtos/request/ActivityRequest';
+import {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
+import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
+import {ActivityRequest} from '@/dtos/request/activity/ActivityRequest.ts';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
-import {useActivityCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
 import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue';
 import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
-import type {CategoryRequest} from '@/dtos/request/CategoryRequest.ts';
+import type {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 const {create} = useActivityCrud()

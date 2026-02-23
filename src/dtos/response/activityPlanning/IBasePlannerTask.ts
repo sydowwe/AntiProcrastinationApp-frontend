@@ -1,4 +1,4 @@
-import type {Activity} from '@/dtos/response/Activity.ts';
+import type {Activity} from '@/dtos/response/activity/Activity.ts';
 import type {Time} from '@/utils/Time.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';

@@ -56,12 +56,12 @@
 import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue';
 import ToDoList from '../components/toDoList/ToDoList.vue';
 import {computed, onMounted, ref} from 'vue';
-import {RoutineTodoListItemEntity} from '@/dtos/response/RoutineTodoListItemEntity';
-import {RoutineTodoListGroupedList} from '@/dtos/response/RoutineTodoListGroupedList';
-import {RoutineTodoListItemRequest} from '@/dtos/request/RoutineTodoListItemRequest';
+import {RoutineTodoListItemEntity} from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts';
+import {RoutineTodoListGroupedList} from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts';
+import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
-import {ChangeDisplayOrderRequest} from '@/dtos/request/ChangeDisplayOrderRequest';
-import {useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/composables/ConcretesCrudComposable.ts';
+import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
+import {useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/scripts/helperMethods.ts';
 
 const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
