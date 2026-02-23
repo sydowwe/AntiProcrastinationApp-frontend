@@ -1,18 +1,21 @@
-<!-- TimePicker.vue -->
+<!-- TimePickerTextField.vue -->
 <template>
-<VBtn
-	:variant
+<VMaskInput
+	v-model="inputValue"
+	:label
 	:color
-	:prependIcon="icon"
-	:height
 	:disabled
-	:class="{'pr-2': !!icon}"
+	:prependInnerIcon="icon"
+	:density
+	:clearable="false"
+
+
+	mask="##:##"
+	returnMaskedValue
+	:active="menuOpen"
+	ref="textFieldRef"
 >
-	<template v-if="!hideLabel && label">
-		{{ label }} -
-	</template>
-	{{ timeString }}
-	<VMenu :closeOnContentClick="false" activator="parent">
+	<VMenu :closeOnContentClick="false" activator="parent" v-model="menuOpen">
 		<template v-slot:default>
 			<VTimePicker
 				v-model="timeString"
@@ -23,37 +26,42 @@
 			/>
 		</template>
 	</VMenu>
-</VBtn>
+</VMaskInput>
 
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref, watch} from 'vue'
+import {VMaskInput} from 'vuetify/labs/components';
 import {Time} from '@/utils/Time.ts'
 
 const props = withDefaults(defineProps<{
-	variant?: 'outlined' | 'tonal' | 'elevated'
 	color?: string
 	label?: string
 	viewMode?: 'hour' | 'minute' | 'second'
 	icon?: string
 	allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
-	height?: 40 | 48 | 56,
+	density?: 'default' | 'comfortable' | 'compact'
 	disabled?: boolean,
-	hideLabel?: boolean,
 }>(), {
-	variant: 'outlined',
 	label: 'Time',
+	icon: 'far fa-clock',
 	viewMode: 'hour',
-	allowedMinutesSelected: '1',
-	height: 48,
+	allowedMinutesSelected: '5',
+	density: 'comfortable',
 	disabled: false,
-	hideLabel: false,
 })
 
 const time = defineModel<Time>({required: true})
+const menuOpen = ref(false)
+const inputValue = ref(Time.fromJson(time.value).getString())
 
 const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
+
+function roundToNearestAllowedMinute(minutes: number): number {
+	const interval = parseInt(props.allowedMinutesSelected)
+	return Math.round(minutes / interval) * interval
+}
 
 const timeString = computed({
 	get() {
@@ -61,13 +69,33 @@ const timeString = computed({
 		return fixedTime.getString()
 	},
 	set(newTime: string) {
-		console.log(newTime)
 		time.value = Time.fromString(newTime)
 	}
 })
-console.log(time)
-</script>
 
-<style scoped>
-/* Add any specific styles if needed */
-</style>
+// Watch inputValue and update timeString when complete
+watch(inputValue, (newValue) => {
+	if (newValue && newValue.length === 5) {
+		const [hours, minutes] = newValue.split(':').map(Number)
+		if (hours === undefined || minutes === undefined) {
+			return
+		}
+		// Validate 24-hour format (hours 0-23, minutes 0-59)
+		if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+			const roundedMinutes = roundToNearestAllowedMinute(minutes)
+			timeString.value = `${hours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`
+		} else {
+			// Reset to current valid time if invalid
+			inputValue.value = Time.fromJson(time.value).getString()
+		}
+	}
+})
+
+// Watch for external changes to time (e.g., from VTimePicker)
+watch(() => time.value, (newTime) => {
+	const newTimeString = Time.fromJson(newTime).getString()
+	if (inputValue.value !== newTimeString) {
+		inputValue.value = newTimeString
+	}
+}, {deep: true})
+</script>

@@ -7,7 +7,7 @@
 >
 	<div class="d-flex flex-column ga-4 pa-4">
 		<DateTimePicker :label="$t('dateTime.when')" v-model="editStartTimestamp" :dateClearable="false"/>
-		<TimePickerTextField icon="hourglass-end" :label="$t('dateTime.length')" v-model="editLength" minWidth="150px" maxWidth="150px" hideDetails/>
+		<TimePicker icon="hourglass-end" :label="$t('dateTime.length')" v-model="editLength" minWidth="150px" maxWidth="150px" hideDetails/>
 		<ActivitySelectionForm v-model:activityId="editActivityId" isInDialog :showFromToDoListField="false"/>
 	</div>
 </MyDialog>
@@ -21,7 +21,7 @@ import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {ActivityHistoryRequest} from '@/dtos/request/activityHistory/ActivityHistoryRequest.ts';
 

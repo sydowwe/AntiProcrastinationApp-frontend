@@ -4,8 +4,8 @@
 
 		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
 
-		<TimePickerTextField icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="timeLength" minWidth="150px" maxWidth="150px"
-		                     hideDetails></TimePickerTextField>
+		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="timeLength" minWidth="150px" maxWidth="150px"
+		            hideDetails></TimePicker>
 	</VForm>
 
 </div>
@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useI18n} from 'vue-i18n';
 import {ref} from 'vue';

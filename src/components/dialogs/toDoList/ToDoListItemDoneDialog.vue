@@ -10,8 +10,8 @@
 	<VForm @keyup.native.enter="save" class="d-flex flex-column align-start ga-3">
 		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
 
-		<TimePickerTextField icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="length" minWidth="150px" maxWidth="150px"
-		                     hideDetails></TimePickerTextField>
+		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="length" minWidth="150px" maxWidth="150px"
+		            hideDetails></TimePicker>
 	</VForm>
 </MyDialog>
 </template>
@@ -25,7 +25,7 @@ import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
-import TimePickerTextField from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 
 const {create} = useActivityHistoryCrud()
 const i18n = useI18n();

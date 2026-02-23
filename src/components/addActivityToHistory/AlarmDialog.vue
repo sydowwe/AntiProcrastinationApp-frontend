@@ -38,7 +38,7 @@ import {Alarm} from '@/dtos/response/activityRecording/Alarm.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {AlarmRequest} from '@/dtos/request/activityRecording/AlarmRequest.ts';
 import {VForm} from 'vuetify/components';
-import TimePicker from '@/components/general/dateTime/TimePickerTextField.vue';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {Time} from '@/utils/Time.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
