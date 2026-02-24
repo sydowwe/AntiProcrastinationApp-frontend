@@ -37,7 +37,7 @@ import {useI18n} from 'vue-i18n';
 import type {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {hasObjectChanged} from '@/scripts/helperMethods.ts';
+import {hasObjectChanged} from '@/utils/helperMethods.ts';
 import {QuickActivityToolsDto} from '@/dtos/response/activity/QuickActivityToolsDto.ts';
 import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
 

@@ -1,11 +1,11 @@
 import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
-import {useMoment} from '@/scripts/momentHelper.ts'
+import {useMoment} from '@/utils/momentHelper.ts'
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useTaskPlannerCrud} from '@/api/ConcretesCrudComposable.ts';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';

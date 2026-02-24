@@ -17,10 +17,10 @@
 import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue';
 import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue';
 import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
-import {TimePrecise} from '@/utils/TimePrecise.ts';
+import {TimePrecise} from '@/dtos/dto/TimePrecise.ts';
 
 const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
 const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>();

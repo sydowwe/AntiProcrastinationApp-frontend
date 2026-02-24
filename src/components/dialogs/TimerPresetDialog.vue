@@ -22,7 +22,7 @@ import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {useActivityCrud, useTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 
 const {create, update, deleteEntity} = useTimerPresetCrud();

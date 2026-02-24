@@ -42,7 +42,7 @@ import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vu
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityCrud, useTaskPriorityCrud, useTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
-import {hasObjectChanged} from '@/scripts/helperMethods.ts';
+import {hasObjectChanged} from '@/utils/helperMethods.ts';
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
 const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency, changeDisplayOrder} = useTodoListItemCrud()

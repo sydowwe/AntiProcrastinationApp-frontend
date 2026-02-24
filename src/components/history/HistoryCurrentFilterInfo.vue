@@ -107,8 +107,8 @@
 
 <script setup lang="ts">
 import {computed} from 'vue';
-import {useMoment} from '@/scripts/momentHelper.ts';
-import type {ActivityHistoryFilter} from '@/dtos/dto/ActivityHistoryFilter.ts';
+import {useMoment} from '@/utils/momentHelper.ts';
+import type {ActivityHistoryFilter} from '@/dtos/request/activityHistory/ActivityHistoryFilter.ts';
 
 const props = defineProps<{
 	appliedFilter: ActivityHistoryFilter;

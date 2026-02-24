@@ -9,7 +9,7 @@
 >
 	<template #time>
 		<div class="task-time" :class="{'text-decoration-line-through': task.actualStartTime && task.actualEndTime}">{{
-				formattedTime(task.startTime, task.endTime)
+			formattedTime(task.startTime, task.endTime)
 			}}
 		</div>
 		<div class="task-time" v-if="task.actualStartTime && task.actualEndTime">{{ formattedTime(task.actualStartTime, task.actualEndTime) }}</div>
@@ -50,7 +50,7 @@ import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import BaseTaskBlock from '../BaseTaskBlock.vue';
 import ChipWithIcon from '@/components/general/ChipWithIcon.vue';
 import {getPlannerTaskStatusColor, getPlannerTaskStatusIcon, PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 const {currentTime} = useCurrentTime()
 

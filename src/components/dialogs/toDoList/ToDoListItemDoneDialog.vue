@@ -17,7 +17,7 @@
 </template>
 <script setup lang="ts">
 import {ref, watch} from 'vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';

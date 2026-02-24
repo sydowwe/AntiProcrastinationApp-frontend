@@ -55,28 +55,28 @@
 
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
-import {ActivityDateRangeType} from '@/dtos/dto/ActivityDateRangeType.ts'
+import {ActivityDateRangeTypeEnum} from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 import {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 import {BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts'
-import {DashboardStackedBarsRequest} from '@/dtos/request/activityHistory/historyDashboard/DashboardStackedBarsRequest.ts'
-import {HistoryPieChartRequest} from '@/dtos/request/activityHistory/historyDashboard/HistoryPieChartRequest.ts'
-import {HistorySummaryCardsRequest} from '@/dtos/request/activityHistory/historyDashboard/HistorySummaryCardsRequest.ts'
 import {getSummaryPieChart, getSummaryStackedBars, getSummarySummaryCards} from '@/api/historyDashboardApi.ts'
 import type {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 import type {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import type {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 import type {StackedBarsInputWindow} from '@/components/activityTracking/stackedBars/dto/StackedBarsInput.ts'
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 import {getDomainColor} from '@/utils/domainColor.ts'
 import HistoryDateRangeSelector from '@/components/historyDashboard/controls/HistoryDateRangeSelector.vue'
 import HistoryGroupBySelector from '@/components/historyDashboard/controls/HistoryGroupBySelector.vue'
 import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 import HistorySummaryCards from '@/components/historyDashboard/summaryCards/HistorySummaryCards.vue'
 import HistoryPieChartSection from '@/components/historyDashboard/pieChart/HistoryPieChartSection.vue'
+import {HistorySummaryStackedBarsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryStackedBarsRequest.ts';
+import {HistorySummaryPieChartRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts';
+import {HistorySummarySummaryCardsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts';
 
 // --- State ---
 const date = ref('')
-const rangeType = ref<ActivityDateRangeType>(ActivityDateRangeType.OneWeek)
+const rangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.OneWeek)
 const endDate = ref<string | undefined>(undefined)
 const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
 const selectedGroup = ref<string | null>(null)
@@ -87,14 +87,14 @@ const selectedWindowSize = ref(60)
 // --- Window size options based on range type ---
 const windowSizeOptions = computed(() => {
 	switch (rangeType.value) {
-		case ActivityDateRangeType.OneWeek:
+		case ActivityDateRangeTypeEnum.OneWeek:
 			return [30, 60, 120, 240, 480, 720, 1440]
-		case ActivityDateRangeType.OneMonth:
-		case ActivityDateRangeType.ThisMonth:
+		case ActivityDateRangeTypeEnum.OneMonth:
+		case ActivityDateRangeTypeEnum.ThisMonth:
 			return [60, 120, 240, 480, 720, 1440, 10080]
-		case ActivityDateRangeType.ThisYear:
+		case ActivityDateRangeTypeEnum.ThisYear:
 			return [720, 1440, 10080, 20160, 43200]
-		case ActivityDateRangeType.CustomRange: {
+		case ActivityDateRangeTypeEnum.CustomRange: {
 			if (!date.value || !endDate.value) return [30, 60, 120, 240, 480, 720, 1440]
 			const start = new Date(date.value)
 			const end = new Date(endDate.value)
@@ -165,7 +165,7 @@ async function fetchStackedBars() {
 	stackedBarsLoading.value = true
 	try {
 		stackedBarsData.value = await getSummaryStackedBars(
-			new DashboardStackedBarsRequest(
+			new HistorySummaryStackedBarsRequest(
 				date.value,
 				rangeType.value,
 				selectedWindowSize.value,
@@ -182,7 +182,7 @@ async function fetchPieChart() {
 	pieChartLoading.value = true
 	try {
 		pieChartData.value = await getSummaryPieChart(
-			new HistoryPieChartRequest(
+			new HistorySummaryPieChartRequest(
 				groupBy.value,
 				1,
 				date.value,
@@ -199,7 +199,7 @@ async function fetchSummaryCards() {
 	summaryCardsLoading.value = true
 	try {
 		summaryCardsData.value = await getSummarySummaryCards(
-			new HistorySummaryCardsRequest(
+			new HistorySummarySummaryCardsRequest(
 				date.value,
 				rangeType.value,
 				groupBy.value,

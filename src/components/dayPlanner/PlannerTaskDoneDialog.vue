@@ -26,13 +26,13 @@
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 
 import {useI18n} from 'vue-i18n';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useMoment} from '@/scripts/momentHelper.ts';
+import {useMoment} from '@/utils/momentHelper.ts';
 import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import type {VForm} from 'vuetify/components';
 

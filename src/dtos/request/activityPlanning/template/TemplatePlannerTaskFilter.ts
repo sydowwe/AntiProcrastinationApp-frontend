@@ -1,5 +1,5 @@
 import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
-import type {Time} from '@/utils/Time.ts';
+import type {Time} from '@/dtos/dto/Time.ts';
 
 export class TemplatePlannerTaskFilter implements IFilterRequest {
 	constructor(

@@ -62,7 +62,7 @@ import type {ICalendar} from '@/dtos/response/activityPlanning/ICalendar.ts'
 import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
 import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import router from '@/plugins/router.ts'
-import {useMoment} from '@/scripts/momentHelper.ts'
+import {useMoment} from '@/utils/momentHelper.ts'
 
 const {usStringToUrlString} = useMoment()
 

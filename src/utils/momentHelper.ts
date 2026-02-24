@@ -1,7 +1,7 @@
 import 'moment/dist/locale/sk';
 import 'moment/dist/locale/cs';
 import moment from 'moment';
-import {capitalizeString} from '@/scripts/helperMethods';
+import {capitalizeString} from '@/utils/helperMethods.ts';
 
 export function useMoment() {
 	function toUTCDate(date: Date) {

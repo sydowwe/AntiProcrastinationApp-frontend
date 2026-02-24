@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import {computed, onMounted, type PropType, reactive, ref, watch} from 'vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {ActivityFormRequest} from '@/dtos/request/activity/ActivityFormRequest.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue';

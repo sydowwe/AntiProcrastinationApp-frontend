@@ -1,4 +1,4 @@
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 
 export function formatDuration(seconds: number): string {
 	const time = Time.fromSeconds(seconds)

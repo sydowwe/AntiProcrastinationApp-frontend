@@ -20,7 +20,7 @@
 import ActivitySelectionForm from '../ActivitySelectionForm.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
 import SaveActivityDialog from '../dialogs/SaveActivityDialog.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {ref, watch} from 'vue';
 
 const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
