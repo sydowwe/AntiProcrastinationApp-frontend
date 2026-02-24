@@ -6,6 +6,7 @@
 	@confirmed="handleConfirm"
 >
 	<TaskPlannerDayTemplateDetailsForm
+		class="py-2"
 		ref="detailsForm"
 		:template="template"
 	/>
@@ -32,6 +33,7 @@ const detailsForm = ref<InstanceType<typeof TaskPlannerDayTemplateDetailsForm> |
 
 async function handleConfirm() {
 	const formData = await detailsForm.value?.validateAndGetData()
+	console.log(formData)
 	if (formData) {
 		emit('save', formData)
 	}
