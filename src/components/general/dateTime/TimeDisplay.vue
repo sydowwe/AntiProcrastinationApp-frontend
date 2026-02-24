@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 
-import {TimePrecise, type TimePreciseKeys} from '@/utils/TimePrecise.ts';
+import {TimePrecise, type TimePreciseKeys} from '@/dtos/dto/TimePrecise.ts';
 
 const props = defineProps({
 	timeObject: {

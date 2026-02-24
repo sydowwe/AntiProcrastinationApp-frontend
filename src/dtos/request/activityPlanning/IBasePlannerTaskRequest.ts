@@ -1,4 +1,4 @@
-import type {Time} from '@/utils/Time.ts';
+import type {Time} from '@/dtos/dto/Time.ts';
 
 export interface IBasePlannerTaskRequest {
 	startTime?: Time;

@@ -1,5 +1,5 @@
 import {DayType} from '@/dtos/enum/DayType.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 
 export class CalendarRequest {

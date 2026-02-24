@@ -51,7 +51,7 @@ import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 // Inject the store from parent DayPlanner component

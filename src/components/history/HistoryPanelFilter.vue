@@ -117,11 +117,11 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
-import {ActivityHistoryFilter} from "@/dtos/dto/ActivityHistoryFilter.ts";
+import {ActivityHistoryFilter} from "@/dtos/request/activityHistory/ActivityHistoryFilter.ts";
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {VDateInput} from 'vuetify/labs/components';
-import {useMoment} from '@/scripts/momentHelper.ts';
+import {useMoment} from '@/utils/momentHelper.ts';
 import HistoryCurrentFilterInfo from '@/components/history/HistoryCurrentFilterInfo.vue';
 
 const {formatToDate} = useMoment()

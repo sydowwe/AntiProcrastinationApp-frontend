@@ -7,14 +7,14 @@
 		color="secondaryOutline"
 		style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 48px"
 	>
-		<VBtn :value="ActivityDateRangeType.ThisYear" height="48px">This year</VBtn>
-		<VBtn :value="ActivityDateRangeType.ThisMonth" height="48px">This month</VBtn>
-		<VBtn :value="ActivityDateRangeType.OneMonth" height="48px">30 days</VBtn>
-		<VBtn :value="ActivityDateRangeType.OneWeek" height="48px">7 days</VBtn>
-		<VBtn :value="ActivityDateRangeType.CustomRange" height="48px">Custom range</VBtn>
+		<VBtn :value="ActivityDateRangeTypeEnum.ThisYear" height="48px">This year</VBtn>
+		<VBtn :value="ActivityDateRangeTypeEnum.ThisMonth" height="48px">This month</VBtn>
+		<VBtn :value="ActivityDateRangeTypeEnum.OneMonth" height="48px">30 days</VBtn>
+		<VBtn :value="ActivityDateRangeTypeEnum.OneWeek" height="48px">7 days</VBtn>
+		<VBtn :value="ActivityDateRangeTypeEnum.CustomRange" height="48px">Custom range</VBtn>
 	</VBtnToggle>
 
-	<template v-if="selectedRangeType === ActivityDateRangeType.CustomRange">
+	<template v-if="selectedRangeType === ActivityDateRangeTypeEnum.CustomRange">
 		<VDateInput
 			v-model="rangeFromDate"
 			label="From"
@@ -39,14 +39,14 @@
 <script setup lang="ts">
 import {ref, watch} from 'vue'
 import {VDateInput} from 'vuetify/labs/components'
-import {ActivityDateRangeType} from '@/dtos/dto/ActivityDateRangeType.ts'
+import {ActivityDateRangeTypeEnum} from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 
 const date = defineModel<string>('date', {required: true})
-const rangeType = defineModel<ActivityDateRangeType>('rangeType', {required: true})
+const rangeType = defineModel<ActivityDateRangeTypeEnum>('rangeType', {required: true})
 const endDate = defineModel<string | undefined>('endDate', {required: true})
 
 const today = new Date()
-const selectedRangeType = ref<ActivityDateRangeType>(ActivityDateRangeType.OneWeek)
+const selectedRangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.OneWeek)
 
 // --- Custom Range state ---
 const rangeFromDate = ref<Date | undefined>(daysAgo(7))
@@ -70,14 +70,14 @@ function emitValues() {
 	rangeType.value = selectedRangeType.value
 
 	switch (selectedRangeType.value) {
-		case ActivityDateRangeType.OneWeek:
-		case ActivityDateRangeType.OneMonth:
-		case ActivityDateRangeType.ThisMonth:
-		case ActivityDateRangeType.ThisYear:
+		case ActivityDateRangeTypeEnum.OneWeek:
+		case ActivityDateRangeTypeEnum.OneMonth:
+		case ActivityDateRangeTypeEnum.ThisMonth:
+		case ActivityDateRangeTypeEnum.ThisYear:
 			date.value = todayStr
 			endDate.value = undefined
 			break
-		case ActivityDateRangeType.CustomRange:
+		case ActivityDateRangeTypeEnum.CustomRange:
 			if (rangeFromDate.value) {
 				date.value = formatDate(rangeFromDate.value)
 			}
@@ -90,6 +90,6 @@ function emitValues() {
 
 watch(selectedRangeType, () => emitValues(), {immediate: true})
 watch([rangeFromDate, rangeToDate], () => {
-	if (selectedRangeType.value === ActivityDateRangeType.CustomRange) emitValues()
+	if (selectedRangeType.value === ActivityDateRangeTypeEnum.CustomRange) emitValues()
 }, {deep: true})
 </script>

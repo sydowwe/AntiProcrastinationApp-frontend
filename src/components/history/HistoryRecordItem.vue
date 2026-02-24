@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import {computed} from 'vue';
 import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.ts';
-import {useMoment} from '@/scripts/momentHelper.ts'
+import {useMoment} from '@/utils/momentHelper.ts'
 import {MenuItem} from '@/dtos/dto/MenuAction.ts';
 
 const {formatToTime} = useMoment();

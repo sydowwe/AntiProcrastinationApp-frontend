@@ -1,4 +1,4 @@
-import {Serializable} from '@/scripts/classDeserializationHelper.ts';
+import {Serializable} from '@/utils/classDeserializationHelper.ts';
 
 @Serializable
 export class Time {

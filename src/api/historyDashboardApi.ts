@@ -1,15 +1,15 @@
 import {API} from '@/plugins/axiosConfig'
-import type {DashboardStackedBarsRequest} from '@/dtos/request/activityHistory/historyDashboard/DashboardStackedBarsRequest.ts'
-import type {HistoryPieChartRequest} from '@/dtos/request/activityHistory/historyDashboard/HistoryPieChartRequest.ts'
-import type {HistorySummaryCardsRequest} from '@/dtos/request/activityHistory/historyDashboard/HistorySummaryCardsRequest.ts'
 import type {DetailStackedBarsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailStackedBarsRequest.ts'
 import type {DetailPieChartRequest} from '@/dtos/request/activityHistory/historyDetail/DetailPieChartRequest.ts'
 import type {DetailSummaryCardsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailSummaryCardsRequest.ts'
 import {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 import {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
-import type {CalendarActivityRequest} from '@/dtos/request/activityHistory/historyDashboard/CalendarActivityRequest.ts'
 import {CalendarActivityDaySummary} from '@/dtos/response/historyDashboard/CalendarActivityDaySummary.ts'
+import type {CalendarActivityRequest} from '@/dtos/request/activityHistory/CalendarActivityRequest.ts';
+import type {HistorySummaryStackedBarsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryStackedBarsRequest.ts';
+import type {HistorySummaryPieChartRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts';
+import type {HistorySummarySummaryCardsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts';
 
 const SUMMARY_URL = '/activity-history/dashboard/summary'
 const DETAIL_URL = '/activity-history/dashboard/detail'
@@ -17,21 +17,21 @@ const DETAIL_URL = '/activity-history/dashboard/detail'
 // --- Summary (multi-day, ActivityDateRangeRequest based) ---
 
 export async function getSummaryStackedBars(
-	request: DashboardStackedBarsRequest
+	request: HistorySummaryStackedBarsRequest
 ): Promise<HistoryStackedBarsResponse> {
 	const {data} = await API.post(`${SUMMARY_URL}/stacked-bars`, request)
 	return HistoryStackedBarsResponse.fromJson(data)
 }
 
 export async function getSummaryPieChart(
-	request: HistoryPieChartRequest
+	request: HistorySummaryPieChartRequest
 ): Promise<HistoryPieChartResponse> {
 	const {data} = await API.post(`${SUMMARY_URL}/pie-chart`, request)
 	return HistoryPieChartResponse.fromJson(data)
 }
 
 export async function getSummarySummaryCards(
-	request: HistorySummaryCardsRequest
+	request: HistorySummarySummaryCardsRequest
 ): Promise<HistorySummaryCardsResponse> {
 	const {data} = await API.post(`${SUMMARY_URL}/summary-cards`, request)
 	return HistorySummaryCardsResponse.fromJson(data)

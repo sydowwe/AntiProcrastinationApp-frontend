@@ -1,4 +1,4 @@
-import type {Time} from '@/utils/Time.ts';
+import type {Time} from '@/dtos/dto/Time.ts';
 import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {StoreGeneric} from 'pinia';

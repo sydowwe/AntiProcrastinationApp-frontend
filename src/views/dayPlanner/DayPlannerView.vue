@@ -72,7 +72,7 @@ import DayPlannerHeader from '@/components/dayPlanner/normal/DayPlannerHeader.vu
 import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
-import {useMoment} from '@/scripts/momentHelper.ts'
+import {useMoment} from '@/utils/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import {useCalendarQuery, useTaskPlannerCrud, useTemplatePlannerTaskCrud} from '@/api/ConcretesCrudComposable.ts'
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'

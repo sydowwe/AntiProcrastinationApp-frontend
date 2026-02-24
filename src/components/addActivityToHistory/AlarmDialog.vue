@@ -39,7 +39,7 @@ import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {AlarmRequest} from '@/dtos/request/activityRecording/AlarmRequest.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 
 const {requiredRule} = useGeneralRules()

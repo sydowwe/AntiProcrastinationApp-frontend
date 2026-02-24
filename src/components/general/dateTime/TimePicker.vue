@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
 import {VMaskInput} from 'vuetify/labs/components';
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 
 const props = withDefaults(defineProps<{
 	color?: string

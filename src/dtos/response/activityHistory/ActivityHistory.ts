@@ -1,5 +1,5 @@
 import {Activity} from '../activity/Activity.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 export class ActivityHistory {
 	constructor(

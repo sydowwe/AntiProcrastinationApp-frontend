@@ -7,7 +7,7 @@ import {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/Summ
 import type {PieChartRequest} from '@/dtos/request/activityTracking/PieChartRequest.ts';
 import {PieChartData} from '@/dtos/response/activityTracking/pieChart/PieChartData.ts';
 import type {StackedBarsRequest} from '@/dtos/request/activityTracking/StackedBarsRequest.ts'
-import type {DateAndTimeRangeRequest} from '@/dtos/dto/DateAndTimeRangeRequest.ts';
+import type {DateAndTimeRangeRequest} from '@/dtos/request/general/DateAndTimeRangeRequest.ts';
 
 const BASE_URL = '/activity-tracking/web-extension'
 

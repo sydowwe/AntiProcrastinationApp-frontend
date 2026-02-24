@@ -1,5 +1,5 @@
 import type {DayType} from '@/dtos/enum/DayType.ts';
-import type {Time} from '@/utils/Time.ts';
+import type {Time} from '@/dtos/dto/Time.ts';
 
 export class TaskPlannerDayTemplate {
 	constructor(

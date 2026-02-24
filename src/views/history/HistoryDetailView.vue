@@ -15,13 +15,12 @@
 			<VBtn value="timeline" height="48px">Timeline</VBtn>
 		</VBtnToggle>
 		<div class="d-flex align-center ga-4 flex-wrap">
-			<VDateInput
+			<MyDateInput
 				v-model="dateModel"
 				label="Date"
 				hideDetails
 				:max="today"
 				density="comfortable"
-				style="min-width: 180px; max-width: 180px"
 			/>
 			<TimeRangePicker v-model:start="timeFrom" v-model:end="timeTo" density="comfortable" hideDetails></TimeRangePicker>
 		</div>
@@ -103,7 +102,7 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
-import {useMoment} from '@/scripts/momentHelper.ts'
+import {useMoment} from '@/utils/momentHelper.ts'
 import {API} from '@/plugins/axiosConfig.ts'
 import {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 import {BaselineType} from '@/components/activityTracking/summaryCards/BaselineOption.ts'
@@ -115,9 +114,8 @@ import type {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/
 import type {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import type {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 import type {StackedBarsInputWindow} from '@/components/activityTracking/stackedBars/dto/StackedBarsInput.ts'
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 import {getDomainColor} from '@/utils/domainColor.ts'
-import {VDateInput} from 'vuetify/labs/components'
 import HistoryGroupBySelector from '@/components/historyDashboard/controls/HistoryGroupBySelector.vue'
 import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 import HistorySummaryCards from '@/components/historyDashboard/summaryCards/HistorySummaryCards.vue'
@@ -129,6 +127,7 @@ import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.t
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import EditActivityHistoryDialog from '@/components/history/EditActivityHistoryDialog.vue';
 import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
+import MyDateInput from '@/components/general/dateTime/MyDateInput.vue';
 
 const route = useRoute()
 const {formatLocalized} = useMoment()

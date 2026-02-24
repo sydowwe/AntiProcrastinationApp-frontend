@@ -1,5 +1,5 @@
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {uncapitalizeString} from '@/scripts/helperMethods.ts';
+import {uncapitalizeString} from '@/utils/helperMethods.ts';
 import {TableCellType} from '@/dtos/enum/TableCellType.ts';
 
 export class EditableColumnMetadata {

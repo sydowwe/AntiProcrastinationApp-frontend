@@ -87,14 +87,14 @@
 <script setup lang="ts">
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue';
-import {checkNotificationPermission, showNotification} from '@/scripts/notifications';
-import {Time} from '@/utils/Time.ts';
+import {checkNotificationPermission, showNotification} from '@/utils/notifications.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {computed, onUnmounted, ref} from 'vue';
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
-import {TimePrecise} from '@/utils/TimePrecise.ts';
+import {TimePrecise} from '@/dtos/dto/TimePrecise.ts';
 import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue';
 import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
 import SubtleCard from '@/components/general/feedback/SubtleCard.vue';

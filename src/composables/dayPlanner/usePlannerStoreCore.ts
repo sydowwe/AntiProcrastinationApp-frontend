@@ -1,5 +1,5 @@
 import {computed, reactive, ref} from 'vue'
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';

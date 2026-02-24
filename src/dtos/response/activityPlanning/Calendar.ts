@@ -1,6 +1,6 @@
 import {DayType} from '@/dtos/enum/DayType.ts';
 import {convertToEnum} from '@/composables/general/EnumComposable.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 export class Calendar {
 	constructor(

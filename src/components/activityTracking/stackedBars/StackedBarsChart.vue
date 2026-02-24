@@ -56,7 +56,7 @@ import type {StackedBarsInputWindow, StackedBarsInputItem} from './dto/StackedBa
 import type {ColumnData} from './dto/ColumnData'
 import {ProcessedWindow} from './dto/ProcessedWindow'
 import {getDomainColor} from '@/utils/domainColor'
-import {Time} from '@/utils/Time'
+import {Time} from '@/dtos/dto/Time.ts'
 
 const props = withDefaults(
 	defineProps<{

@@ -62,7 +62,7 @@ import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoLis
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
 import {useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
-import {hasObjectChanged} from '@/scripts/helperMethods.ts';
+import {hasObjectChanged} from '@/utils/helperMethods.ts';
 
 const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
 const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder} = useRoutineTodoListItemCrud()

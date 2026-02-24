@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import {nextTick, ref, watch} from 'vue';
 import {VDateInput} from 'vuetify/labs/components';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 
 const props = defineProps({

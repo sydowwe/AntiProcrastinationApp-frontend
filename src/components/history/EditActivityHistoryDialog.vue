@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';

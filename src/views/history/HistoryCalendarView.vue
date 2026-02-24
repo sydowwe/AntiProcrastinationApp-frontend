@@ -46,9 +46,9 @@
 import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
 import router from '@/plugins/router.ts'
 import {getCalendarActivitySummary} from '@/api/historyDashboardApi.ts'
-import {CalendarActivityRequest} from '@/dtos/request/activityHistory/historyDashboard/CalendarActivityRequest.ts'
 import {CalendarActivityDaySummary} from '@/dtos/response/historyDashboard/CalendarActivityDaySummary.ts'
 import type {CalendarFilter} from '@/dtos/request/activityPlanning/CalendarFilter.ts'
+import {CalendarActivityRequest} from '@/dtos/request/activityHistory/CalendarActivityRequest.ts';
 
 function formatDateForApi(d: Date): string {
 	const year = d.getFullYear()

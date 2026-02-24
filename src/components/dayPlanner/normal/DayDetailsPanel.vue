@@ -107,7 +107,7 @@ import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
 import {useTaskPlannerDayTemplateTaskCrud} from '@/api/ConcretesCrudComposable.ts';
 import {onMounted, ref} from 'vue';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts';
 import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue';
 import SubtleCard from '@/components/general/feedback/SubtleCard.vue';

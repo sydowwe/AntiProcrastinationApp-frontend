@@ -2,7 +2,7 @@ import {useEntityCommand, useEntityQuery, useFetchFiltered} from '@/composables/
 import {Category} from '@/dtos/response/activity/Category.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';

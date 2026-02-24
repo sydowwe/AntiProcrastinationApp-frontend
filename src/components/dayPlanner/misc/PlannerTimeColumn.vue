@@ -50,7 +50,7 @@ import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlann
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
 import {inject} from 'vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 const store = inject<TStore>('plannerStore')!
 

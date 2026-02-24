@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import {computed, type PropType, ref} from 'vue'
-import {Time} from '@/utils/Time.ts'
+import {Time} from '@/dtos/dto/Time.ts'
 import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
 const props = defineProps({

@@ -18,7 +18,7 @@ import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useI18n} from 'vue-i18n';
 import {ref} from 'vue';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {Time} from '@/utils/Time.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
 
 const {create} = useActivityHistoryCrud()

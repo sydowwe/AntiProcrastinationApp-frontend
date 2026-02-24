@@ -111,7 +111,7 @@ import {GridConfig} from '@/components/activityTracking/stackedBars/dto/GridConf
 import StackedBarsTooltip from '@/components/activityTracking/stackedBars/StackedBarsTooltip.vue';
 import type {TooltipData} from '@/components/activityTracking/stackedBars/dto/TooltipData.ts';
 import type {Position} from '@/dtos/dto/Position.ts';
-import {Time} from '@/utils/Time';
+import {Time} from '@/dtos/dto/Time.ts';
 
 const MIN_COL_WIDTH = 10
 const BAR_COLS = 3
