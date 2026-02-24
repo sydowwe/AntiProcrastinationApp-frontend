@@ -7,18 +7,20 @@
 		hideDetails
 	/>
 
-	<div class="d-flex flex-column ga-8 ga-xl-0 flex-xl-row justify-space-between">
+	<div class="d-flex flex-column ga-8 ga-xl-4 flex-xl-row">
 		<TimePicker
 			v-model="formData.defaultWakeUpTime"
 			label="Wake Up"
 			icon="alarm-clock"
 			allowedMinutesSelected="10"
+			hideDetails
 		/>
 		<TimePicker
 			v-model="formData.defaultBedTime"
 			label="Bed Time"
 			icon="bed"
 			allowedMinutesSelected="10"
+			hideDetails
 		/>
 	</div>
 
@@ -82,7 +84,7 @@ watch(() => props.template, (newTemplate) => {
 }, {immediate: true})
 
 async function validateAndGetData() {
-	if (await form.value?.validate()) {
+	if (!await form.value?.validate()) {
 		return false
 	}
 	return formData.value
