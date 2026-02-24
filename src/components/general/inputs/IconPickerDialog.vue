@@ -104,17 +104,14 @@
 </template>
 
 <script setup lang="ts">
-import {computed, type PropType, ref, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {findIconByVuetifyString, formatIconName, getIconsByStyle, type IconInfo, type IconStyle, searchIcons, toVuetifyIcon} from '@/utils/fontAwesomeIcons'
 
 const dialog = defineModel<boolean>({required: true})
 
-const props = defineProps({
-	initialValue: {
-		type: Object as PropType<string | null>,
-		required: true,
-	}
-})
+const props = defineProps<{
+	initialValue: string | null
+}>()
 
 const emit = defineEmits<{
 	select: [icon: IconInfo]

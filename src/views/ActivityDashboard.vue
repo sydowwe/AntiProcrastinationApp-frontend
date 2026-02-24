@@ -1,16 +1,15 @@
 <template>
 <div class="pa-2 w-100 h-100 d-flex flex-column">
 	<!-- Header -->
-	<div class="mb-5 w-100 d-flex align-center ga-6 flex-wrap">
+	<div class="py-5 w-100 d-flex align-center ga-6 flex-wrap bg-background" style="position: sticky; top: -16px; z-index: 1000; margin-top:-24px">
 		<h1 class="text-h4">Activity Dashboard</h1>
 		<div class="d-flex align-center ga-5 flex-wrap">
-			<VDateInput
+			<MyDateInput
 				v-model="date"
 				label="Date"
 				hideDetails
 				:max="today"
 				density="compact"
-				style="min-width: 200px; max-width: 200px"
 			/>
 			<TimeRangePicker
 				v-model:start="timeFrom"
@@ -99,7 +98,6 @@ import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline
 import {TimelineResponse} from '@/dtos/response/activityTracking/timeline/TimelineResponse.ts'
 import {getPieChart, getStackedBarsData, getSummaryCards, getTimeline} from '@/api/activityTrackingApi'
 import ActivitySummaryCards from '@/components/activityTracking/summaryCards/ActivitySummaryCards.vue';
-import {VDateInput} from 'vuetify/labs/components';
 import {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts';
 import {SummaryCardsRequest} from '@/dtos/request/activityTracking/SummaryCardsRequest.ts';
 import {PieChartRequest} from '@/dtos/request/activityTracking/PieChartRequest.ts';
@@ -109,10 +107,11 @@ import {StackedBarsRequest} from '@/dtos/request/activityTracking/StackedBarsReq
 import {DateAndTimeRangeRequest} from '@/dtos/request/general/DateAndTimeRangeRequest.ts';
 import type {StackedBarsInputWindow} from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
 import {getDomainColor} from '@/utils/domainColor'
+import MyDateInput from '@/components/general/dateTime/MyDateInput.vue';
 
 // --- Date & Time State ---
 const today = new Date()
-const date = ref<Date>(new Date())
+const date = ref<Date>(new Date('02-08-2026'))
 const timeFrom = ref(new Time(7, 0))
 const timeTo = ref(new Time(0, 0))
 

@@ -1,28 +1,44 @@
 <template>
 <div class="d-flex">
-	<div class="flex-0-1 d-flex flex-column justify-space-between">
+	<div class="time-column d-flex flex-column justify-space-between align-center">
 		<div class="d-flex align-center w-100">
-			<VSheet class="startTime pa-1 w-100" rounded="lg" :elevation="15" color="green-darken-4">{{ formattedStartTimestamp }}</VSheet>
+			<VSheet class="time-label pa-1 w-100 text-body-2 text-center font-weight-medium"
+			        rounded="lg" color="surface-light">{{ formattedStartTimestamp }}
+			</VSheet>
 			<hr class="line"/>
 		</div>
-		<div class="d-flex justify-end w-100">
-			<VSheet class="length pa-1" rounded :elevation="15" color="teal-accent-4">{{ formattedLength }}</VSheet>
-		</div>
+		<VChip class="ml-auto font-weight-bold" :color="lengthColor" variant="tonal" size="small" style="border-radius: 5px">{{ formattedLength }}</VChip>
 		<div class="d-flex align-center w-100">
-			<VSheet class="endTime pa-1 w-100" color="indigo-darken-3" rounded="lg" :elevation="15">{{ formattedEndTimestamp }}</VSheet>
+			<VSheet class="time-label pa-1 w-100 text-body-2 text-center text-medium-emphasis"
+			        rounded="lg" color="surface-light">{{ formattedEndTimestamp }}
+			</VSheet>
 			<hr class="line"/>
 		</div>
 	</div>
-	<VCard class="elevation-2 flex-1-0 d-flex ">
+	<VCard class="elevation-2 flex-1-0 d-flex">
 		<div class="flex-fill">
-			<div class="d-flex align-start">
-				<div class="flex-fill">
-					<VCardTitle>{{ record.activity.name }}</VCardTitle>
-					<VCardSubtitle>{{ record.activity.role?.name }}</VCardSubtitle>
-				</div>
+			<div class="d-flex align-center">
+				<VCardTitle>{{ record.activity.name }}</VCardTitle>
+				<VChip
+					v-if="record.activity.role"
+					:color="record.activity.role.color ?? 'primary'"
+					variant="flat"
+					size="small"
+					label
+					:prependIcon="record.activity.role.icon ?? undefined"
+				>
+					{{ record.activity.role.name }}
+					<VTooltip activator="parent" v-if="record.activity.role?.text" class="text-body-2 text-medium-emphasis">
+						{{ record.activity.role.text }}
+					</VTooltip>
+				</VChip>
 			</div>
-			<VCardText>
-				<div>{{ $t('activities.category') }}: {{ record.activity.category?.name }}</div>
+			<VCardSubtitle v-if="record.activity.category" class="text-high-emphasis" style="opacity: 1">
+				<VIcon :icon="record.activity.category.icon ?? 'layer-group'" size="12" class="mr-1"/>
+				{{ record.activity.category.name }}
+			</VCardSubtitle>
+			<VCardText v-if="record.activity.text" class="px-4 pb-3 text-body-2 text-medium-emphasis" style="white-space: pre-line">
+				{{ record.activity.text }}
 			</VCardText>
 		</div>
 		<VMenu location="start" transition="slide-y-transition">
@@ -40,37 +56,51 @@
 	</VCard>
 </div>
 </template>
+
 <script setup lang="ts">
-import {computed} from 'vue';
-import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.ts';
+import {computed} from 'vue'
+import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.ts'
 import {useMoment} from '@/utils/momentHelper.ts'
-import {MenuItem} from '@/dtos/dto/MenuAction.ts';
+import {MenuItem} from '@/dtos/dto/MenuAction.ts'
 
-const {formatToTime} = useMoment();
+const {formatToTime} = useMoment()
 
-const props = defineProps({
-	record: {
-		type: ActivityHistory,
-		required: true,
-	},
-});
+const props = defineProps<{
+	record: ActivityHistory
+}>()
 
-const emit = defineEmits<{ edit: [record: ActivityHistory], delete: [id: number] }>();
+const emit = defineEmits<{ edit: [record: ActivityHistory], delete: [id: number] }>()
 
 const actions = [
 	new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', () => emit('edit', props.record)),
 	new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', () => emit('delete', props.record.id)),
-];
-const formattedStartTimestamp = computed(() => formatToTime(props.record.startTimestamp));
-const formattedLength = computed(() => props.record.length.getNice);
-const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length.getInSeconds));
+]
+
+const formattedStartTimestamp = computed(() => formatToTime(props.record.startTimestamp))
+const formattedLength = computed(() => props.record.length.getNice)
+const formattedEndTimestamp = computed(() => getEndOfActivityTime(props.record.startTimestamp, props.record.length.getInSeconds))
+
+const lengthColor = computed(() => {
+	const minutes = props.record.length.getInMinutes
+	if (minutes >= 120) return 'success'
+	if (minutes >= 60) return 'teal'
+	if (minutes >= 30) return 'info'
+	if (minutes >= 15) return 'warning'
+	return 'grey'
+})
 
 function getEndOfActivityTime(startTimestamp: Date, length: number) {
-	const endInMillis = startTimestamp.valueOf() + length * 1000;
-	return formatToTime(new Date(endInMillis));
+	const endInMillis = startTimestamp.valueOf() + length * 1000
+	return formatToTime(new Date(endInMillis))
 }
 </script>
+
 <style scoped>
+.time-column {
+	width: 4rem;
+	min-width: 4rem;
+}
+
 .line {
 	border-width: 2px;
 	min-width: 1rem !important;
