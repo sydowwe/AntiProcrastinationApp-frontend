@@ -4,11 +4,11 @@
 	mandatory
 	variant="outlined"
 	color="secondaryOutline"
-	style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 48px"
+	style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px"
 >
-	<VBtn :value="HistoryGroupBy.Activity" height="48px">Activity</VBtn>
-	<VBtn :value="HistoryGroupBy.Role" height="48px">Role</VBtn>
-	<VBtn :value="HistoryGroupBy.Category" height="48px">Category</VBtn>
+	<VBtn :value="HistoryGroupBy.Activity" height="40px">Activity</VBtn>
+	<VBtn :value="HistoryGroupBy.Role" height="40px">Role</VBtn>
+	<VBtn :value="HistoryGroupBy.Category" height="40px">Category</VBtn>
 </VBtnToggle>
 </template>
 

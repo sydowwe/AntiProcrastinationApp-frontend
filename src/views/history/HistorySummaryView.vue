@@ -184,7 +184,7 @@ async function fetchPieChart() {
 		pieChartData.value = await getSummaryPieChart(
 			new HistorySummaryPieChartRequest(
 				groupBy.value,
-				1,
+				20,
 				date.value,
 				rangeType.value,
 				endDate.value,
