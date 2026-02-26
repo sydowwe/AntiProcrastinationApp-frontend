@@ -1,36 +1,32 @@
 <template>
 <div class="d-flex align-center ga-4 flex-wrap">
-	<VBtnToggle
+	<VSelect
+		label="Range length"
 		v-model="selectedRangeType"
-		mandatory
+		:items="rangeTypeItems"
+		itemTitle="title"
+		itemValue="value"
 		variant="outlined"
-		color="secondaryOutline"
-		style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 48px"
-	>
-		<VBtn :value="ActivityDateRangeTypeEnum.ThisYear" height="48px">This year</VBtn>
-		<VBtn :value="ActivityDateRangeTypeEnum.ThisMonth" height="48px">This month</VBtn>
-		<VBtn :value="ActivityDateRangeTypeEnum.OneMonth" height="48px">30 days</VBtn>
-		<VBtn :value="ActivityDateRangeTypeEnum.OneWeek" height="48px">7 days</VBtn>
-		<VBtn :value="ActivityDateRangeTypeEnum.CustomRange" height="48px">Custom range</VBtn>
-	</VBtnToggle>
+		density="compact"
+		hideDetails
+		style="min-width: 140px; max-width: 140px"
+	/>
 
+	<MyDateInput
+		v-model="dateFrom"
+		label="From"
+		hideDetails
+		:max="dateTo ?? today"
+		density="compact"
+	/>
 	<template v-if="selectedRangeType === ActivityDateRangeTypeEnum.CustomRange">
-		<VDateInput
-			v-model="rangeFromDate"
-			label="From"
-			hideDetails
-			:max="rangeToDate ?? today"
-			density="comfortable"
-			style="min-width: 180px; max-width: 180px"
-		/>
-		<VDateInput
-			v-model="rangeToDate"
+		<MyDateInput
+			v-model="dateTo"
 			label="To"
 			hideDetails
-			:min="rangeFromDate"
+			:min="dateFrom"
 			:max="today"
-			density="comfortable"
-			style="min-width: 180px; max-width: 180px"
+			density="compact"
 		/>
 	</template>
 </div>
@@ -38,58 +34,61 @@
 
 <script setup lang="ts">
 import {ref, watch} from 'vue'
-import {VDateInput} from 'vuetify/labs/components'
 import {ActivityDateRangeTypeEnum} from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
+import MyDateInput from '@/components/general/dateTime/MyDateInput.vue';
+import {useMoment} from '@/utils/momentHelper.ts';
+
+const {formatToUsString} = useMoment()
 
 const date = defineModel<string>('date', {required: true})
 const rangeType = defineModel<ActivityDateRangeTypeEnum>('rangeType', {required: true})
 const endDate = defineModel<string | undefined>('endDate', {required: true})
 
 const today = new Date()
-const selectedRangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.OneWeek)
+const selectedRangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.Week)
+
+const rangeTypeItems = [
+	{title: '1 day', value: ActivityDateRangeTypeEnum.Day},
+	{title: '3 days', value: ActivityDateRangeTypeEnum.ThreeDays},
+	{title: '7 days', value: ActivityDateRangeTypeEnum.Week},
+	{title: '2 weeks', value: ActivityDateRangeTypeEnum.TwoWeeks},
+	{title: 'Month', value: ActivityDateRangeTypeEnum.Month},
+	{title: '3 months', value: ActivityDateRangeTypeEnum.ThreeMonths},
+	{title: 'Year', value: ActivityDateRangeTypeEnum.Year},
+	{title: 'Custom range', value: ActivityDateRangeTypeEnum.CustomRange},
+]
 
 // --- Custom Range state ---
-const rangeFromDate = ref<Date | undefined>(daysAgo(7))
-const rangeToDate = ref<Date | undefined>(new Date())
+const dateFrom = ref<Date>(new Date())
+const dateTo = ref<Date>(new Date())
 
-function daysAgo(n: number): Date {
-	const d = new Date()
-	d.setDate(d.getDate() - n)
-	return d
-}
-
-function formatDate(d: Date): string {
-	const year = d.getFullYear()
-	const month = String(d.getMonth() + 1).padStart(2, '0')
-	const day = String(d.getDate()).padStart(2, '0')
-	return `${year}-${month}-${day}`
-}
 
 function emitValues() {
-	const todayStr = formatDate(today)
+	const todayStr = formatToUsString(dateFrom.value)
 	rangeType.value = selectedRangeType.value
 
+	console.log(todayStr)
 	switch (selectedRangeType.value) {
-		case ActivityDateRangeTypeEnum.OneWeek:
-		case ActivityDateRangeTypeEnum.OneMonth:
-		case ActivityDateRangeTypeEnum.ThisMonth:
-		case ActivityDateRangeTypeEnum.ThisYear:
+		case ActivityDateRangeTypeEnum.Day:
+		case ActivityDateRangeTypeEnum.ThreeDays:
+		case ActivityDateRangeTypeEnum.Week:
+		case ActivityDateRangeTypeEnum.TwoWeeks:
+		case ActivityDateRangeTypeEnum.Month:
+		case ActivityDateRangeTypeEnum.ThreeMonths:
+		case ActivityDateRangeTypeEnum.Year:
 			date.value = todayStr
 			endDate.value = undefined
 			break
 		case ActivityDateRangeTypeEnum.CustomRange:
-			if (rangeFromDate.value) {
-				date.value = formatDate(rangeFromDate.value)
-			}
-			if (rangeToDate.value) {
-				endDate.value = formatDate(rangeToDate.value)
-			}
+			date.value = formatToUsString(dateFrom.value)
+			endDate.value = formatToUsString(dateTo.value)
 			break
 	}
 }
 
-watch(selectedRangeType, () => emitValues(), {immediate: true})
-watch([rangeFromDate, rangeToDate], () => {
-	if (selectedRangeType.value === ActivityDateRangeTypeEnum.CustomRange) emitValues()
-}, {deep: true})
+watch([selectedRangeType, dateFrom], () => emitValues(), {immediate: true, deep: true})
+watch(dateTo, () => {
+	if (selectedRangeType.value === ActivityDateRangeTypeEnum.CustomRange)
+		emitValues()
+}, {})
 </script>

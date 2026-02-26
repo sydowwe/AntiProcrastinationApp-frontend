@@ -10,6 +10,7 @@
 			hideDetails
 			style="min-width: 100px;max-width: 100px"
 		/>
+		<slot name="header-right"/>
 		<div v-if="legendItems.length > 0" class="legend d-flex flex-wrap ga-2">
 			<div
 				v-for="item in legendItems"
@@ -41,6 +42,7 @@
 			class="pb-1"
 			:windows="processedWindows"
 			:windowMinutes="selectedWindowSize"
+			:rowUnit
 			:timeFrom
 			:timeTo
 			@activity-click="handleActivityClick"
@@ -52,11 +54,12 @@
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue'
 import StackedBarsGrid from './StackedBarsGrid.vue'
-import type {StackedBarsInputWindow, StackedBarsInputItem} from './dto/StackedBarsInput'
+import type {StackedBarsInputItem, StackedBarsInputWindow} from './dto/StackedBarsInput'
 import type {ColumnData} from './dto/ColumnData'
 import {ProcessedWindow} from './dto/ProcessedWindow'
 import {getDomainColor} from '@/utils/domainColor'
 import {Time} from '@/dtos/dto/Time.ts'
+import {formatWindowMinutes, getRowUnit} from './stackedBarsUtils'
 
 const props = withDefaults(
 	defineProps<{
@@ -80,10 +83,12 @@ const emit = defineEmits<{
 // Selected window size
 const selectedWindowSize = ref(props.initialWindowSize)
 
+const rowUnit = computed(() => getRowUnit(selectedWindowSize.value))
+
 const formattedOptions = computed(() =>
 	props.windowSizeOptions.map((mins) => ({
 		value: mins,
-		title: mins >= 60 ? `${mins / 60}h` : `${mins}m`,
+		title: formatWindowMinutes(mins),
 	}))
 )
 
@@ -100,9 +105,13 @@ const maxColumnsPerWindow = computed(() => {
 	return 4
 })
 
-// Build a lookup of API windows by their start time (minutes from midnight)
+// Build a lookup of API windows by their start time
 function dateToMinutesKey(d: Date): number {
 	return d.getHours() * 60 + d.getMinutes()
+}
+
+function dateToIsoKey(d: Date): string {
+	return d.toISOString()
 }
 
 function resolveColor(name: string, color?: string): string {
@@ -148,9 +157,27 @@ function processItems(items: StackedBarsInputItem[]): ColumnData[] {
 	]
 }
 
+function isMultiDayData(): boolean {
+	if (props.windows.length < 2) return false
+	const sorted = props.windows
+	const firstDay = Math.floor(sorted[0].windowStart.getTime() / 86400000)
+	const lastDay = Math.floor(sorted[sorted.length - 1].windowStart.getTime() / 86400000)
+	return lastDay > firstDay
+}
+
 // Generate all time slots, merge with API data, aggregate consecutive empties
 const processedWindows = computed<ProcessedWindow[]>(() => {
 	const windowSize = selectedWindowSize.value
+
+	// Use ISO-key path for multi-day data to avoid minutes-from-midnight collisions
+	if (isMultiDayData()) {
+		return processLargeWindows(windowSize)
+	}
+
+	return processSmallWindows(windowSize)
+})
+
+function processSmallWindows(windowSize: number): ProcessedWindow[] {
 	let fromMin = props.timeFrom.getInMinutes
 	let toMin = props.timeTo.getInMinutes
 	if (toMin <= fromMin) toMin += 24 * 60
@@ -183,7 +210,44 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 		}
 	}
 
-	// Aggregate consecutive empty windows
+	return aggregateEmptyWindows(allSlots)
+}
+
+function processLargeWindows(windowSize: number): ProcessedWindow[] {
+	const sorted = [...props.windows].sort(
+		(a, b) => a.windowStart.getTime() - b.windowStart.getTime()
+	)
+
+	if (sorted.length === 0) return []
+
+	const allSlots: ProcessedWindow[] = []
+	for (const w of sorted) {
+		if (w.items.length > 0) {
+			allSlots.push(new ProcessedWindow(
+				w.windowStart,
+				w.windowEnd,
+				processItems(w.items),
+			))
+		} else {
+			allSlots.push(new ProcessedWindow(w.windowStart, w.windowEnd, []))
+		}
+	}
+
+	// For sub-daily windows, aggregate empties only within the same calendar day
+	// to prevent giant cross-day empty blocks
+	const firstDuration = sorted.length > 0
+		? (sorted[0].windowEnd.getTime() - sorted[0].windowStart.getTime()) / 60000
+		: windowSize
+
+	if (firstDuration < 1440) {
+		const perDay = aggregateEmptyWindowsPerDay(allSlots)
+		return mergeConsecutiveFullDayEmpties(perDay)
+	}
+
+	return aggregateEmptyWindows(allSlots)
+}
+
+function aggregateEmptyWindows(allSlots: ProcessedWindow[]): ProcessedWindow[] {
 	const result: ProcessedWindow[] = []
 	for (const slot of allSlots) {
 		if (slot.columns.length > 0) {
@@ -198,9 +262,71 @@ const processedWindows = computed<ProcessedWindow[]>(() => {
 			result.push(slot)
 		}
 	}
-
 	return result
-})
+}
+
+// Merges consecutive full-day empty blocks into compact single entries.
+// "Full day" = all slots from timeFrom to timeTo are empty (not necessarily 24h).
+// Also absorbs any adjacent sub-day empty slots into the preceding full-day empty range.
+function mergeConsecutiveFullDayEmpties(slots: ProcessedWindow[]): ProcessedWindow[] {
+	const fromMin = props.timeFrom.getInMinutes
+	const toMin = props.timeTo.getInMinutes
+	const dayDuration = toMin > fromMin ? toMin - fromMin : toMin + 24 * 60 - fromMin
+
+	const result: ProcessedWindow[] = []
+	for (const slot of slots) {
+		const durationMinutes = (slot.windowEnd.getTime() - slot.windowStart.getTime()) / 60000
+		const isFullDay = slot.columns.length === 0 && durationMinutes >= dayDuration
+		const isEmpty = slot.columns.length === 0
+
+		if (!isEmpty) {
+			result.push(slot)
+			continue
+		}
+
+		const prev = result[result.length - 1]
+		const prevIsFullDayEmpty = prev != null && prev.columns.length === 0
+			&& (prev.windowEnd.getTime() - prev.windowStart.getTime()) / 60000 >= dayDuration
+
+		if (isFullDay) {
+			if (prevIsFullDayEmpty) {
+				prev.windowEnd = slot.windowEnd
+				continue
+			}
+			slot.spanCount = 2
+			result.push(slot)
+		} else {
+			// Sub-day empty adjacent to a full-day empty: absorb into it
+			if (prevIsFullDayEmpty) {
+				prev.windowEnd = slot.windowEnd
+				continue
+			}
+			result.push(slot)
+		}
+	}
+	return result
+}
+
+// Like aggregateEmptyWindows but never merges across calendar day boundaries
+function aggregateEmptyWindowsPerDay(allSlots: ProcessedWindow[]): ProcessedWindow[] {
+	const result: ProcessedWindow[] = []
+	for (const slot of allSlots) {
+		if (slot.columns.length > 0) {
+			result.push(slot)
+			continue
+		}
+		const prev = result[result.length - 1]
+		const slotDay = Math.floor(slot.windowStart.getTime() / 86400000)
+		const prevDay = prev ? Math.floor(prev.windowStart.getTime() / 86400000) : -1
+		if (prev && prev.columns.length === 0 && slotDay === prevDay) {
+			prev.windowEnd = slot.windowEnd
+			prev.spanCount += 1
+		} else {
+			result.push(slot)
+		}
+	}
+	return result
+}
 
 // Legend items
 const legendItems = computed(() => {
