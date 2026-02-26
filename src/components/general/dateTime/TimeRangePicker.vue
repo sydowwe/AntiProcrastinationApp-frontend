@@ -6,7 +6,7 @@
 		<TimePicker
 			v-model="start"
 			:icon="startIcon"
-			:label="mode === 'length' ? 'Start' : 'From'"
+			:label="label ?? (mode === 'length' ? 'Start' : 'From')"
 			:allowedMinutesSelected
 			:density="density"
 			hideDetails
@@ -55,6 +55,10 @@ import {Time} from '@/dtos/dto/Time.ts'
 import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
 const props = defineProps({
+	label: {
+		type: String,
+		required: false
+	},
 	startIcon: {
 		type: String,
 	},

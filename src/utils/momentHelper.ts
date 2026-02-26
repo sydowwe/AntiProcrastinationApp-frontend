@@ -2,6 +2,7 @@ import 'moment/dist/locale/sk';
 import 'moment/dist/locale/cs';
 import moment from 'moment';
 import {capitalizeString} from '@/utils/helperMethods.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 export function useMoment() {
 	function toUTCDate(date: Date) {
@@ -32,6 +33,10 @@ export function useMoment() {
 	function usStringToUrlString(str: string) {
 		const parts = str.split('-');
 		return `${parts[2]}-${parts[1]}-${parts[0]}`;
+	}
+
+	function formatToUsString(date: Date) {
+		return moment(toUTCDate(date)).format('YYYY-MM-DD');
 	}
 
 	function formatToDateWithDay(date: Date | null) {
@@ -70,12 +75,19 @@ export function useMoment() {
 		return moment(date1).isSame(date2, 'day');
 	}
 
+	function formatTimeDtoToUtcTimeDto(time: Time) {
+		const tmp = moment(time.getString(), 'HH:mm');
+		const formatted = tmp.utc().format('HH:mm')
+		return Time.fromString(formatted);
+	}
+
 	return {
 		timeNiceFromMinutes,
 		toUTCDate,
 		stringToUTCDate,
 		urlStringToUTCDate,
 		usStringToUrlString,
+		formatToUsString,
 		formatToDateWithDay,
 		formatToDateWithDayAfter,
 		formatToDateWithoutYear,
@@ -84,7 +96,8 @@ export function useMoment() {
 		formatToTimeWithSec,
 		formatToTime24H,
 		formatLocalized,
-		equalsOnlyDate
+		equalsOnlyDate,
+		formatTimeDtoToUtcTimeDto
 	};
 }
 

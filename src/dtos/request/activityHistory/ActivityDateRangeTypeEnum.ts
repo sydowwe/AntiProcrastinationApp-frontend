@@ -1,8 +1,10 @@
 export enum ActivityDateRangeTypeEnum {
+	Day = 'Day',
+	ThreeDays = 'ThreeDays',
+	Week = 'Week',
+	TwoWeeks = 'TwoWeeks',
+	Month = 'Month',
+	ThreeMonths = 'ThreeMonths',
+	Year = 'Year',
 	CustomRange = 'CustomRange',
-	OneDay = 'OneDay',
-	OneWeek = 'OneWeek',
-	OneMonth = 'OneMonth',
-	ThisMonth = 'ThisMonth',
-	ThisYear = 'ThisYear',
 }

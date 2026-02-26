@@ -24,7 +24,19 @@
 			:windowSizeOptions="windowSizeOptions"
 			:initialWindowSize="selectedWindowSize"
 			@windowSizeChange="handleWindowSizeChange"
-		/>
+		>
+			<template v-slot:header-right>
+				<TimeRangePicker
+					class="flex-shrink-0"
+					v-model:start="windowStartTime"
+					v-model:end="windowEndTime"
+					label="Day from"
+					density="compact"
+					hideDetails
+					allowedMinutesSelected="30"
+				/>
+			</template>
+		</StackedBarsChart>
 
 		<!-- Summary Cards + Pie Chart -->
 		<VRow class="flex-shrink-0 flex-grow-0">
@@ -73,38 +85,52 @@ import HistoryPieChartSection from '@/components/historyDashboard/pieChart/Histo
 import {HistorySummaryStackedBarsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryStackedBarsRequest.ts';
 import {HistorySummaryPieChartRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts';
 import {HistorySummarySummaryCardsRequest} from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts';
+import {useMoment} from '@/utils/momentHelper.ts';
+import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 
+const {formatTimeDtoToUtcTimeDto} = useMoment()
 // --- State ---
 const date = ref('')
-const rangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.OneWeek)
+const rangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.Week)
 const endDate = ref<string | undefined>(undefined)
 const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
 const selectedGroup = ref<string | null>(null)
 const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
 const topN = ref(4)
-const selectedWindowSize = ref(60)
+const selectedWindowSize = ref(240)
+const windowStartTime = ref(new Time(8, 0))
+const windowEndTime = ref(new Time(1, 0))
 
 // --- Window size options based on range type ---
+const weekOptions = [2, 3, 4, 5, 8, 10, 12, 16, 24].map(h => h * 60)
+
 const windowSizeOptions = computed(() => {
 	switch (rangeType.value) {
-		case ActivityDateRangeTypeEnum.OneWeek:
-			return [30, 60, 120, 240, 480, 720, 1440]
-		case ActivityDateRangeTypeEnum.OneMonth:
-		case ActivityDateRangeTypeEnum.ThisMonth:
+		case ActivityDateRangeTypeEnum.Day:
+			return [15, 30, 60, 120, 240]
+		case ActivityDateRangeTypeEnum.ThreeDays:
+			return [30, 60, 120, 240, 480]
+		case ActivityDateRangeTypeEnum.Week:
+			return weekOptions
+		case ActivityDateRangeTypeEnum.TwoWeeks:
+			return [60, 120, 240, 480, 720, 1440]
+		case ActivityDateRangeTypeEnum.Month:
 			return [60, 120, 240, 480, 720, 1440, 10080]
-		case ActivityDateRangeTypeEnum.ThisYear:
-			return [720, 1440, 10080, 20160, 43200]
+		case ActivityDateRangeTypeEnum.ThreeMonths:
+			return [720, 1440, 10080, 20160]
+		case ActivityDateRangeTypeEnum.Year:
+			return [1440, 10080, 20160, 43200]
 		case ActivityDateRangeTypeEnum.CustomRange: {
-			if (!date.value || !endDate.value) return [30, 60, 120, 240, 480, 720, 1440]
+			if (!date.value || !endDate.value) return weekOptions
 			const start = new Date(date.value)
 			const end = new Date(endDate.value)
 			const diffDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
-			if (diffDays <= 7) return [30, 60, 120, 240, 480, 720, 1440]
+			if (diffDays <= 7) return weekOptions
 			if (diffDays <= 31) return [60, 120, 240, 480, 720, 1440, 10080]
 			return [720, 1440, 10080, 20160, 43200]
 		}
 		default:
-			return [30, 60, 120, 240, 480, 720, 1440]
+			return weekOptions
 	}
 })
 
@@ -169,6 +195,8 @@ async function fetchStackedBars() {
 				date.value,
 				rangeType.value,
 				selectedWindowSize.value,
+				formatTimeDtoToUtcTimeDto(windowStartTime.value),
+				formatTimeDtoToUtcTimeDto(windowEndTime.value),
 				endDate.value,
 				groupBy.value,
 			)
@@ -222,6 +250,7 @@ function fetchAll() {
 }
 
 watch([date, rangeType, endDate, groupBy], () => fetchAll())
+watch([windowStartTime, windowEndTime], () => fetchStackedBars())
 watch(selectedBaseline, () => fetchSummaryCards())
 
 // --- Event Handlers ---
