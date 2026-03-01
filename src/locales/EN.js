@@ -226,6 +226,9 @@ const EN = {
         new: `New`,
         update: `Update`,
         optional: `Optional`,
+        search: `Search`,
+        uncategorized: `Uncategorized`,
+        all: `All`,
     },
     dateTime: {
         when: `When`,
@@ -373,6 +376,21 @@ const EN = {
         quickCreateToDoListActivity: `Quick create activity with to-do task category`,
         saveTask: `Record completion of the task`,
         quickEditToDoListActivity: `Quick edit to-do list activity`,
+        namedList: {
+            lists: `To-do lists`,
+            categories: `Categories`,
+            add: `New list`,
+            icon: `Icon`,
+            description: `Description`,
+            category: `Category`,
+            empty: `No lists`,
+            deleteConfirm: `Delete list?`,
+            selectCategory: `Select a category`,
+        },
+        category: {
+            add: `New category`,
+            deleteConfirm: `Delete category?`,
+        },
     },
     routineTodoList: {
         add: 'Add',
@@ -401,6 +419,11 @@ const EN = {
         signOutWarning: `Warning: {subject} will log you out of all your devices for security reasons`,
         enablingTwoFactorAuth: `Enabling 2FA`,
 
+    },
+    successFeedback: {
+        added: `Added`,
+        edited: `Edited`,
+        deleted: `Deleted`,
     },
     planner: {
         task: `Activity`,
