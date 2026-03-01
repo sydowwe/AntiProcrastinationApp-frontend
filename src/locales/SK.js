@@ -226,6 +226,9 @@ const SK = {
         new: `Nový`,
         update: `Aktualizovať`,
         optional: `Voliteľné`,
+        search: `Hľadať`,
+        uncategorized: `Bez kategórie`,
+        all: `Všetky`,
     },
     dateTime: {
         when: `Kedy`,
@@ -375,6 +378,21 @@ const SK = {
         saveTask: `Zaznamenať dokončenie úlohy`,
         quickCreateToDoListActivity: `Rýchle vytvorenie aktivity s roľou to-do úloha`,
         quickEditToDoListActivity: `Rýchla úprava aktivity`,
+        namedList: {
+            lists: `To-do zoznamy`,
+            categories: `Kategórie`,
+            add: `Nový zoznam`,
+            icon: `Ikona`,
+            description: `Popis`,
+            category: `Kategória`,
+            empty: `Žiadne zoznamy`,
+            deleteConfirm: `Vymazať zoznam?`,
+            selectCategory: `Vyberte kategóriu`,
+        },
+        category: {
+            add: `Nová kategória`,
+            deleteConfirm: `Vymazať kategóriu?`,
+        },
     },
     routineTodoList: {
         routineTodoList: 'Routine to-do list',
@@ -407,6 +425,11 @@ const SK = {
         emailChangedSuccessfully: `Email bol úspešne zmenený`,
         signOutWarning: `Upozornenie: {subject} vás odhlási zo všetkých zariadení z bezpečnostných dôvodov`,
         enablingTwoFactorAuth: `Zapnutie 2FA`,
+    },
+    successFeedback: {
+        added: `Pridané`,
+        edited: `Upravené`,
+        deleted: `Vymazané`,
     },
     planner: {
         task: `Aktivita`,

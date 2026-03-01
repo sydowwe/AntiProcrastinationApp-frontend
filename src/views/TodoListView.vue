@@ -2,6 +2,7 @@
 <VRow justify="center" noGutters>
 	<VCol cols="12" sm="10" md="8" lg="4" class="mt-lg-5 mt-md-3">
 		<div class="d-flex justify-center mb-4 ga-2">
+			<VIconBtn icon="arrow-left" variant="tonal" density="comfortable" :to="{ name: 'toDoList' }"/>
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
 			<VIconBtn
 				color="secondary"
@@ -13,13 +14,18 @@
 		</div>
 		<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-6 px-md-4 px-lg-6">
 			<div class="d-flex flex-column align-center">
-				<VCardTitle class="pb-1">{{ isInChangeOrderMode ? $t('toDoList.changeOrder') : $t('toDoList.toDoList') }}</VCardTitle>
+				<VCardTitle class="pb-1">
+					<div class="d-flex align-center ga-2">
+						<VIcon v-if="listEntity?.icon" :icon="listEntity.icon" color="primary"/>
+						{{ isInChangeOrderMode ? $t('toDoList.changeOrder') : (listEntity?.name ?? $t('toDoList.toDoList')) }}
+					</div>
+				</VCardTitle>
 			</div>
 			<ToDoList
 				:kind="ToDoListKind.NORMAL"
 				:items
 				:isInChangeOrderMode
-				:listId="1"
+				:listId="namedListId"
 				@itemsChanged="itemsChanged"
 				@editItem="toDoListDialog?.openEdit"
 				@deletedItem="deleteItem"
@@ -38,29 +44,35 @@ import {TodoListItemEntity} from '@/dtos/response/todoList/TodoListItemEntity.ts
 import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import ToDoList from '../components/toDoList/ToDoList.vue';
-import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListDialog.vue';
+import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListItemDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useActivityCrud, useTaskPriorityCrud, useTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useActivityCrud, useTaskPriorityCrud, useTodoListCrud, useTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
 import {hasObjectChanged} from '@/utils/helperMethods.ts';
+import {TodoListEntity} from '@/dtos/response/todoList/TodoListEntity.ts';
+
+const props = defineProps<{
+	id: string;
+}>();
+
+const namedListId = Number(props.id);
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
-const {createWithResponse, update, deleteEntity, fetchAll, fetchById, changeUrgency, changeDisplayOrder} = useTodoListItemCrud()
 const {fetchById: fetchByIdTaskUrgency} = useTaskPriorityCrud()
+const {fetchById: fetchByIdNamedList} = useTodoListCrud()
+const {fetchAll, fetchById, createWithResponse, update, deleteEntity, changeUrgency, changeDisplayOrder} = useTodoListItemCrud(namedListId)
 
 const i18n = useI18n();
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 
-const props = defineProps<{
-	listId?: number;
-}>();
-
 const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>();
 const items = ref([] as TodoListItemEntity[]);
 const isInChangeOrderMode = ref(false);
+const listEntity = ref<TodoListEntity | null>(null);
 
 onMounted(async () => {
 	items.value = await fetchAll();
+	listEntity.value = await fetchByIdNamedList(namedListId);
 });
 
 function toggleChangeOrderMode() {
@@ -68,18 +80,13 @@ function toggleChangeOrderMode() {
 }
 
 async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
-	// Perform the reorder immediately for UI responsiveness
 	const [movedItem] = items.value.splice(oldIndex, 1);
 	if (movedItem) {
 		items.value.splice(newIndex, 0, movedItem);
 	}
-
-	console.log('Items reordered:', {oldIndex, newIndex, newOrder: items.value.map(item => item.id)});
-
 	await changeDisplayOrder(request)
 }
 
-// ... existing code for other methods ...
 async function add(toDoListItem: ToDoListItemRequest) {
 	const response = await createWithResponse(toDoListItem);
 	items.value.push(response);
