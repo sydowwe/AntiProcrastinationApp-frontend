@@ -1,4 +1,4 @@
-import {useEntityCommand, useEntityQuery, useFetchFiltered} from '@/composables/general/CrudComposition.ts';
+import {useEntityCommand, useEntityQuery, useFetchFiltered, useFetchFilteredSorted} from '@/composables/general/CrudComposition.ts';
 import {Category} from '@/dtos/response/activity/Category.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -18,6 +18,11 @@ import {TimePeriodRequest} from '@/dtos/request/activityRecording/TimePeriodRequ
 import {TodoListItemEntity} from '@/dtos/response/todoList/TodoListItemEntity.ts';
 import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.ts';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
+import {TodoListEntity} from '@/dtos/response/todoList/TodoListEntity.ts';
+import {TodoListRequest} from '@/dtos/request/todoList/TodoListRequest.ts';
+import {TodoListCategoryEntity} from '@/dtos/response/todoList/TodoListCategoryEntity.ts';
+import {TodoListCategoryRequest} from '@/dtos/request/todoList/TodoListCategoryRequest.ts';
+import {TodoListFilter} from '@/dtos/request/todoList/TodoListFilter.ts';
 import {RoutineTodoListItemEntity} from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts';
 import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts';
 import {RoutineTodoListGroupedList} from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts';
@@ -34,6 +39,9 @@ import {TimerPreset} from '@/dtos/response/activityRecording/TimerPreset.ts';
 import {TimerPresetRequest} from '@/dtos/request/activityRecording/TimerPresetRequest.ts';
 import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
 import {PomodoroTimerPresetRequest} from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts';
+import {FilterSortRequest} from '@/dtos/request/base/FilterSortRequest.ts';
+import {SortByRequest} from '@/dtos/request/base/SortByRequest.ts';
+import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
 
 export function useActivityHistoryCrud() {
 	const url = 'activity-history'
@@ -138,11 +146,43 @@ export function useRoutineTimePeriodCrud() {
 	return {fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity, changeTimePeriodVisibility}
 }
 
-export function useTodoListItemCrud() {
-	const url = 'todo-list';
-	const {fetchById, fetchAll, fetchSelectOptions} = useEntityQuery<TodoListItemEntity>({responseClass: TodoListItemEntity, entityName: url})
+export function useTodoListCrud() {
+	const url = 'todo-list'
+	const {fetchById} = useEntityQuery<TodoListEntity>({responseClass: TodoListEntity, entityName: url})
+	const {createWithResponse, update, deleteEntity} = useEntityCommand<TodoListEntity, TodoListRequest, TodoListRequest>({
+		responseClass: TodoListEntity,
+		createRequestClass: TodoListRequest,
+		updateRequestClass: TodoListRequest,
+		entityName: url
+	})
+
+	const {fetchFilteredSorted: baseFetchFilteredSorted} = useFetchFilteredSorted<TodoListEntity, TodoListFilter>(TodoListEntity, url)
+	const fetchFilteredSorted = async (isDesc: boolean, categoryId: number | null, name: string | null) =>
+		baseFetchFilteredSorted(new FilterSortRequest(true, [new SortByRequest('name', isDesc)], new TodoListFilter(categoryId, name)))
+
+	return {fetchById, createWithResponse, update, deleteEntity, fetchFilteredSorted}
+}
+
+export function useTodoListCategoryCrud() {
+	const url = 'todo-list-category'
+	const {fetchById, fetchSelectOptions} = useEntityQuery<TodoListCategoryEntity>({responseClass: TodoListCategoryEntity, entityName: url})
+	const {createWithResponse, update, deleteEntity} = useEntityCommand<TodoListCategoryEntity, TodoListCategoryRequest, TodoListCategoryRequest>({
+		responseClass: TodoListCategoryEntity,
+		createRequestClass: TodoListCategoryRequest,
+		updateRequestClass: TodoListCategoryRequest,
+		entityName: url
+	})
+	const {fetchFilteredSorted: baseFetchFilteredSorted} = useFetchFilteredSorted<TodoListCategoryEntity, IFilterRequest>(TodoListCategoryEntity, url)
+	const fetchFilteredSorted = async (isDesc: boolean, name: string | null) =>
+		baseFetchFilteredSorted(new FilterSortRequest(true, [new SortByRequest('name', isDesc)], {name} as IFilterRequest))
+
+	return {fetchById, fetchSelectOptions, fetchFilteredSorted, createWithResponse, update, deleteEntity}
+}
+
+export function useTodoListItemCrud(namedListId: number) {
+	const url = 'todo-list-item';
+	const {fetchById, fetchSelectOptions} = useEntityQuery<TodoListItemEntity>({responseClass: TodoListItemEntity, entityName: url})
 	const {
-		createWithResponse,
 		create,
 		update,
 		updateWithResponse,
@@ -154,6 +194,16 @@ export function useTodoListItemCrud() {
 		entityName: url
 	})
 
+	async function fetchAll(): Promise<TodoListItemEntity[]> {
+		const response = await API.get(url, {params: {namedListId}})
+		return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
+	}
+
+	async function createWithResponse(entityData: ToDoListItemRequest): Promise<TodoListItemEntity> {
+		const createResponse = await API.post(url, {...entityData, namedListId})
+		return fetchById(createResponse.data)
+	}
+
 	async function changeUrgency(id: number, urgencyId: number) {
 		try {
 			await API.patch(url + `/change-urgency/${id}/${urgencyId}`)
@@ -163,7 +213,6 @@ export function useTodoListItemCrud() {
 			return Promise.reject(e)
 		}
 	}
-
 
 	async function changeDisplayOrder(request: ChangeDisplayOrderRequest) {
 		try {
