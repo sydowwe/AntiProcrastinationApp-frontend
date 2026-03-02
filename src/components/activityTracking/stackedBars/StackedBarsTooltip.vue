@@ -1,19 +1,15 @@
 <template>
 <div class="stacked-bars-tooltip" :style="positionStyle">
-	<div class="tooltip-header">{{ data.windowLabel }}</div>
 	<div class="tooltip-domain">{{ displayDomain }}</div>
+	<div class="tooltip-timespan">{{ formatMinutes(data.totalMinutes) }}</div>
 	<VDivider class="my-1"/>
 	<div class="tooltip-row">
-		<span>Active:</span>
-		<span>{{ data.activeMinutes }}m</span>
+		<span>Active</span>
+		<span>{{ formatMinutes(data.activeMinutes) }}</span>
 	</div>
 	<div class="tooltip-row">
-		<span>Background:</span>
-		<span>{{ data.backgroundMinutes }}m</span>
-	</div>
-	<div class="tooltip-row tooltip-total">
-		<span>Total:</span>
-		<span>{{ data.totalMinutes }}m</span>
+		<span>Background</span>
+		<span>{{ formatMinutes(data.backgroundMinutes) }}</span>
 	</div>
 	<template v-if="data.url">
 		<VDivider class="my-1"/>
@@ -45,50 +41,61 @@ const positionStyle = computed(() => ({
 	left: `${props.position.x}px`,
 	top: `${props.position.y}px`,
 }))
+
+function formatMinutes(minutes: number): string {
+	if (minutes < 60) return `${minutes}m`
+	const h = Math.floor(minutes / 60)
+	const m = minutes % 60
+	return m === 0 ? `${h}h` : `${h}h ${m}m`
+}
 </script>
 
 <style scoped>
 .stacked-bars-tooltip {
 	position: fixed;
-	background: rgba(0, 0, 0, 0.9);
+	background: rgba(18, 18, 24, 0.97);
 	color: white;
-	padding: 8px 12px;
-	border-radius: 4px;
+	padding: 10px 14px;
+	border-radius: 6px;
 	font-size: 12px;
 	pointer-events: none;
-	z-index: 1000;
-	min-width: 160px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.tooltip-header {
-	font-weight: 600;
-	margin-bottom: 4px;
-	font-size: 13px;
+	z-index: 99999;
+	min-width: 170px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .tooltip-domain {
-	color: #aaa;
-	font-size: 11px;
-	margin-bottom: 4px;
+	font-weight: 700;
+	font-size: 14px;
+	margin-bottom: 2px;
+	letter-spacing: 0.2px;
+}
+
+.tooltip-timespan {
+	color: rgba(255, 255, 255, 0.55);
+	font-size: 12px;
+	font-weight: 500;
+	margin-bottom: 6px;
 }
 
 .tooltip-row {
 	display: flex;
 	justify-content: space-between;
-	gap: 16px;
+	gap: 20px;
 	padding: 2px 0;
+	color: rgba(255, 255, 255, 0.8);
 }
 
 .tooltip-total {
 	font-weight: 600;
-	border-top: 1px solid rgba(255, 255, 255, 0.2);
+	color: white;
+	border-top: 1px solid rgba(255, 255, 255, 0.15);
 	margin-top: 4px;
 	padding-top: 4px;
 }
 
 .tooltip-url {
-	color: #aaa;
+	color: rgba(255, 255, 255, 0.4);
 	font-size: 10px;
 	font-family: monospace;
 	margin-top: 4px;

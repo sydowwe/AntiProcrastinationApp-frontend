@@ -1,6 +1,5 @@
 export class TooltipData {
 	constructor(
-		public windowLabel: string,
 		public domain: string,
 		public activeMinutes: number,
 		public backgroundMinutes: number,

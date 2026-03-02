@@ -1,5 +1,4 @@
 export enum ActivityDateRangeTypeEnum {
-	Day = 'Day',
 	ThreeDays = 'ThreeDays',
 	Week = 'Week',
 	TwoWeeks = 'TwoWeeks',
