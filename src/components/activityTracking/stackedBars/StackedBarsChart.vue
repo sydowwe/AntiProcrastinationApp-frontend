@@ -1,7 +1,7 @@
 <template>
-<VCard class="d-flex flex-column justify-center">
-	<div class="pt-4 pb-3 px-5 d-flex align-center ga-6">
-		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>
+<VCard class="d-flex flex-column h-100">
+	<div class="pt-4 pb-3 px-5 d-flex align-center ga-5 flex-shrink-0">
+		<!--		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>-->
 		<VSelect
 			v-model="selectedWindowSize"
 			label="Window"
@@ -39,9 +39,11 @@
 	<!-- Chart -->
 	<template v-else>
 		<StackedBarsGrid
-			class="pb-1"
+			class="pb-1 flex-grow-1"
+			style="min-height: 0"
 			:windows="processedWindows"
 			:windowMinutes="selectedWindowSize"
+			:displayMaxMinutes
 			:rowUnit
 			:timeFrom
 			:timeTo
@@ -59,7 +61,7 @@ import type {ColumnData} from './dto/ColumnData'
 import {ProcessedWindow} from './dto/ProcessedWindow'
 import {getDomainColor} from '@/utils/domainColor'
 import {Time} from '@/dtos/dto/Time.ts'
-import {formatWindowMinutes, getRowUnit} from './stackedBarsUtils'
+import {formatWindowMinutes, getRowUnit, getYAxisInterval} from './stackedBarsUtils'
 
 const props = withDefaults(
 	defineProps<{
@@ -83,7 +85,20 @@ const emit = defineEmits<{
 // Selected window size
 const selectedWindowSize = ref(props.initialWindowSize)
 
-const rowUnit = computed(() => getRowUnit(selectedWindowSize.value))
+// Dynamic Y-axis: show only up to the tallest activity rounded to next full hour
+const displayMaxMinutes = computed(() => {
+	let max = 0
+	for (const w of processedWindows.value) {
+		for (const col of w.columns) {
+			const total = col.activeMinutes + col.backgroundMinutes
+			if (total > max) max = total
+		}
+	}
+	if (max === 0) return selectedWindowSize.value
+	return Math.min(Math.ceil(max / 60) * 60, selectedWindowSize.value)
+})
+
+const rowUnit = computed(() => getRowUnit(displayMaxMinutes.value))
 
 const formattedOptions = computed(() =>
 	props.windowSizeOptions.map((mins) => ({
@@ -96,14 +111,25 @@ watch(selectedWindowSize, (newSize) => {
 	emit('windowSizeChange', newSize)
 })
 
+watch(() => props.windowSizeOptions, (options) => {
+	selectedWindowSize.value = options[0]!
+})
+
 // Calculate max columns per window based on window size
 const maxColumnsPerWindow = computed(() => {
 	const windowSize = selectedWindowSize.value
+	if (windowSize >= 10080) return 20  // 1w+
+	if (windowSize >= 4320) return 18   // 3d+
+	if (windowSize >= 1440) return 15   // 1d+
+	if (windowSize >= 480) return 10    // 8h+
 	if (windowSize >= 90) return 8
 	if (windowSize >= 60) return 6
 	if (windowSize >= 30) return 5
 	return 4
 })
+
+// Minimum activity duration to show individually (below this → merge into Other)
+const minActivityMinutes = computed(() => getYAxisInterval(displayMaxMinutes.value))
 
 // Build a lookup of API windows by their start time
 function dateToMinutesKey(d: Date): number {
@@ -132,16 +158,24 @@ function toColumnData(item: StackedBarsInputItem): ColumnData {
 
 function processItems(items: StackedBarsInputItem[]): ColumnData[] {
 	const totalSeconds = (i: StackedBarsInputItem) => i.activeSeconds + i.backgroundSeconds
+	const minSeconds = minActivityMinutes.value * 60
 	const sorted = [...items]
 		.filter((i) => totalSeconds(i) > 0)
 		.sort((a, b) => totalSeconds(b) - totalSeconds(a))
 
-	if (sorted.length <= maxColumnsPerWindow.value) {
-		return sorted.map(toColumnData)
+	// Split into visible (above min duration) and too-small (below min duration)
+	const visible = sorted.filter((i) => totalSeconds(i) >= minSeconds)
+	const tooSmall = sorted.filter((i) => totalSeconds(i) < minSeconds)
+
+	// Apply max columns cap on visible items
+	const maxCols = maxColumnsPerWindow.value
+	const top = visible.length <= maxCols ? visible : visible.slice(0, maxCols - 1)
+	const rest = visible.length <= maxCols ? tooSmall : [...visible.slice(maxCols - 1), ...tooSmall]
+
+	if (rest.length === 0) {
+		return top.map(toColumnData)
 	}
 
-	const top = sorted.slice(0, maxColumnsPerWindow.value - 1)
-	const rest = sorted.slice(maxColumnsPerWindow.value - 1)
 	const otherActiveSeconds = rest.reduce((sum, i) => sum + i.activeSeconds, 0)
 	const otherBackgroundSeconds = rest.reduce((sum, i) => sum + i.backgroundSeconds, 0)
 
@@ -257,8 +291,8 @@ function aggregateEmptyWindows(allSlots: ProcessedWindow[]): ProcessedWindow[] {
 		const prev = result[result.length - 1]
 		if (prev && prev.columns.length === 0) {
 			prev.windowEnd = slot.windowEnd
-			prev.spanCount += 1
 		} else {
+			slot.spanCount = 3
 			result.push(slot)
 		}
 	}
@@ -320,7 +354,6 @@ function aggregateEmptyWindowsPerDay(allSlots: ProcessedWindow[]): ProcessedWind
 		const prevDay = prev ? Math.floor(prev.windowStart.getTime() / 86400000) : -1
 		if (prev && prev.columns.length === 0 && slotDay === prevDay) {
 			prev.windowEnd = slot.windowEnd
-			prev.spanCount += 1
 		} else {
 			result.push(slot)
 		}

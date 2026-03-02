@@ -45,10 +45,9 @@ const rangeType = defineModel<ActivityDateRangeTypeEnum>('rangeType', {required:
 const endDate = defineModel<string | undefined>('endDate', {required: true})
 
 const today = new Date()
-const selectedRangeType = ref<ActivityDateRangeTypeEnum>(ActivityDateRangeTypeEnum.Week)
+const selectedRangeType = ref<ActivityDateRangeTypeEnum>(rangeType.value)
 
 const rangeTypeItems = [
-	{title: '1 day', value: ActivityDateRangeTypeEnum.Day},
 	{title: '3 days', value: ActivityDateRangeTypeEnum.ThreeDays},
 	{title: '7 days', value: ActivityDateRangeTypeEnum.Week},
 	{title: '2 weeks', value: ActivityDateRangeTypeEnum.TwoWeeks},
@@ -59,8 +58,8 @@ const rangeTypeItems = [
 ]
 
 // --- Custom Range state ---
-const dateFrom = ref<Date>(new Date())
-const dateTo = ref<Date>(new Date())
+const dateFrom = ref<Date>(date.value ? new Date(date.value) : new Date())
+const dateTo = ref<Date>(endDate.value ? new Date(endDate.value) : new Date())
 
 
 function emitValues() {
@@ -69,7 +68,6 @@ function emitValues() {
 
 	console.log(todayStr)
 	switch (selectedRangeType.value) {
-		case ActivityDateRangeTypeEnum.Day:
 		case ActivityDateRangeTypeEnum.ThreeDays:
 		case ActivityDateRangeTypeEnum.Week:
 		case ActivityDateRangeTypeEnum.TwoWeeks:

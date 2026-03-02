@@ -1,6 +1,6 @@
 <template>
 <div class="stacked-bars-container">
-	<div class="stacked-bars-grid" :style="gridStyle">
+	<div class="stacked-bars-grid px-2" :style="gridStyle">
 		<!-- Y-axis backgrounds (sticky full-column) -->
 		<div
 			class="y-axis-bg y-axis-bg-left"
@@ -110,11 +110,13 @@
 	</div>
 
 	<!-- Tooltip -->
-	<StackedBarsTooltip
-		v-if="tooltipData"
-		:data="tooltipData"
-		:position="tooltipPosition"
-	/>
+	<Teleport to="body">
+		<StackedBarsTooltip
+			v-if="tooltipData"
+			:data="tooltipData"
+			:position="tooltipPosition"
+		/>
+	</Teleport>
 </div>
 </template>
 
@@ -129,7 +131,7 @@ import StackedBarsTooltip from '@/components/activityTracking/stackedBars/Stacke
 import type {TooltipData} from '@/components/activityTracking/stackedBars/dto/TooltipData.ts';
 import type {Position} from '@/dtos/dto/Position.ts';
 import {Time} from '@/dtos/dto/Time.ts';
-import {formatYAxisLabel} from './stackedBarsUtils'
+import {formatYAxisLabel, getYAxisInterval} from './stackedBarsUtils'
 
 const MIN_COL_WIDTH = 10
 const BAR_COLS = 3
@@ -137,6 +139,7 @@ const BAR_COLS = 3
 const props = defineProps<{
 	windows: ProcessedWindow[]
 	windowMinutes: number
+	displayMaxMinutes: number
 	rowUnit: number
 	timeFrom: Time
 	timeTo: Time
@@ -149,7 +152,7 @@ const emit = defineEmits<{
 const tooltipData = ref<TooltipData | null>(null)
 const tooltipPosition = ref<Position>({x: 0, y: 0})
 
-const totalRows = computed(() => Math.ceil(props.windowMinutes / props.rowUnit))
+const totalRows = computed(() => Math.ceil(props.displayMaxMinutes / props.rowUnit))
 
 const gridConfig = computed<GridConfig>(() => {
 	const yAxisWidth = 44
@@ -279,7 +282,7 @@ const gridTemplateRows = computed(() => {
 	const config = gridConfig.value
 
 	for (let i = 0; i < totalRows.value; i++) {
-		rows.push(`${config.rowHeight}px`)
+		rows.push('1fr')
 	}
 
 	// Time label row
@@ -295,21 +298,11 @@ const gridTemplateRows = computed(() => {
 
 // Calculate guide lines
 const guideLines = computed<GuideLine[]>(() => {
-	const wm = props.windowMinutes
+	const wm = props.displayMaxMinutes
 	const unit = props.rowUnit
 	const rows = totalRows.value
 
-	// Interval in minutes
-	let interval: number
-	if (wm <= 15) interval = 5
-	else if (wm <= 20) interval = 5
-	else if (wm <= 30) interval = 5
-	else if (wm <= 60) interval = 10
-	else if (wm <= 90) interval = 15
-	else if (wm <= 360) interval = 30
-	else if (wm <= 1440) interval = 120
-	else if (wm <= 10080) interval = 1440
-	else interval = 4320
+	const interval = getYAxisInterval(wm)
 
 	const lines: GuideLine[] = []
 
@@ -437,8 +430,12 @@ function formatWindowLabel(window: ProcessedWindow): string {
 
 	if (actualMinutes >= 1440) {
 		const startLabel = formatDate(start)
-		const endLabel = formatDate(new Date(end.getTime() - 1))
+		const endLabel = formatDate(new Date(end.getTime() - 86400000))
 		return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`
+	}
+	// Full-day empty block (spans the configured day range): show date instead of time
+	if (window.columns.length === 0 && actualMinutes * 60000 >= dayDurationMs.value) {
+		return formatDate(start)
 	}
 	// Sub-day: if date group row is shown below, display only the time here
 	if (isSubDayMultiDay.value) {
@@ -455,7 +452,7 @@ function formatWindowLabelFull(window: ProcessedWindow): string {
 
 	if (actualMinutes >= 1440) {
 		const startLabel = formatDate(start)
-		const endLabel = formatDate(new Date(end.getTime() - 1))
+		const endLabel = formatDate(new Date(end.getTime() - 86400000))
 		return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`
 	}
 	if (isSubDayMultiDay.value) {
@@ -466,11 +463,7 @@ function formatWindowLabelFull(window: ProcessedWindow): string {
 
 // Tooltip handlers
 function showTooltip(event: MouseEvent, bar: BarGridSpan) {
-	const window = props.windows[bar.windowIndex]
-	if (!window)
-		throw new Error('Window not found for bar')
 	tooltipData.value = {
-		windowLabel: formatWindowLabelFull(window),
 		domain: bar.data.domain,
 		activeMinutes: bar.data.activeMinutes,
 		backgroundMinutes: bar.data.backgroundMinutes,
@@ -493,20 +486,23 @@ function hideTooltip() {
 <style scoped>
 .stacked-bars-container {
 	width: 100%;
+	height: 100%;
 	overflow-x: auto;
+	overflow-y: hidden;
 }
 
 .stacked-bars-grid {
 	padding-top: 5px;
+	height: 100%;
 }
 
 .y-axis-label {
 	display: flex;
-	align-items: center;
+	align-items: start;
 	font-size: 11px;
-	margin-bottom: 6px;
 	color: #fff;
 	z-index: 21;
+	transform: translateY(-50%);
 }
 
 .y-axis-bg {
@@ -517,6 +513,7 @@ function hideTooltip() {
 .y-axis-bg-left {
 	position: sticky;
 	left: 0;
+	padding-left: 6px;
 }
 
 .y-axis-bg-right {
