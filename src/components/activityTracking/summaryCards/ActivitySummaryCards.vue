@@ -2,7 +2,7 @@
 <div class="activity-summary-cards">
 	<!-- Header Section -->
 	<div class="d-flex ga-6 align-center mb-4">
-		<h2 class="text-h5">Top Domains</h2>
+		<h2 class="text-h5">{{ title ?? 'Top Domains' }}</h2>
 		<!-- Baseline Selector -->
 		<VSelect
 			label="Compared to"
@@ -62,6 +62,7 @@ const props = withDefaults(defineProps<{
 	selectedBaseline: BaselineType;
 	selectedDomain?: string | null;
 	loading?: boolean;
+	title?: string;
 }>(), {
 	loading: false,
 	selectedDomain: null,

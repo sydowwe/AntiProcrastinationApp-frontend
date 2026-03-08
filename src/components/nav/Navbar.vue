@@ -219,7 +219,14 @@ const items: MenuItem[] = [
 			{title: 'historyCalendar', icon: 'calendar', to: '/activity-history/calendar', needsAdmin: false},
 		]
 	},
-	{title: 'activityTracking', icon: 'clock-rotate-left', to: '/activity-tracking', needsAdmin: false},
+	{
+		title: 'activityTracking', icon: 'clock-rotate-left', needsAdmin: false,
+		children: [
+			{title: 'activityTracking', icon: 'globe', to: '/activity-tracking', needsAdmin: false},
+			{title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings', needsAdmin: false},
+			{title: 'desktopActivityTracking', icon: 'desktop', to: '/activity-tracking/desktop', needsAdmin: false},
+		]
+	},
 	{
 		title: 'toDoList',
 		icon: 'list-check',

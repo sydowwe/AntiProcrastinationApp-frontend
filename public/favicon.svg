@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0D1B2A"/>
+            <stop offset="100%" stop-color="#1B2D4F"/>
+        </linearGradient>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00D4AA"/>
+            <stop offset="50%" stop-color="#00B4D8"/>
+            <stop offset="100%" stop-color="#7B61FF"/>
+        </linearGradient>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="shadow">
+            <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+        </filter>
+        <filter id="handGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#000" flood-opacity="0.7"/>
+        </filter>
+    </defs>
+
+    <!-- Background: rounded square -->
+    <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bgGrad)" filter="url(#shadow)"/>
+
+    <!-- Outer clock track -->
+    <circle cx="256" cy="256" r="195" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="35"/>
+
+    <!-- Active progress arc. Circ=2*pi*195=1225. 85%=1041. offset=1225/4=306 -->
+    <circle cx="256" cy="256" r="195"
+            fill="none"
+            stroke="url(#ringGrad)"
+            stroke-width="35"
+            stroke-linecap="butt"
+            stroke-dasharray="1041 1225"
+            stroke-dashoffset="306"
+            transform="rotate(-90 256 256)"
+            filter="url(#glow)"/>
+
+    <!-- Clock hands -->
+    <g>
+        <g filter="url(#handGlow)">
+            <!-- Hour hand -->
+            <line x1="256" y1="256" x2="256" y2="152"
+                  stroke="#ffffff" stroke-width="23" stroke-linecap="round"
+                  transform="rotate(35 256 256)"/>
+            <!-- Minute hand -->
+            <line x1="256" y1="256" x2="256" y2="115"
+                  stroke="#ffffff" stroke-width="17" stroke-linecap="round"
+                  transform="rotate(155 256 256)"/>
+        </g>
+        <!-- Center dot -->
+        <circle cx="256" cy="256" r="18" fill="#00D4AA"/>
+        <circle cx="256" cy="256" r="8" fill="#0D1B2A"/>
+    </g>
+
+    <!-- Tick marks centered on track -->
+    <g stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.5">
+        <line x1="256" y1="49" x2="256" y2="73"/>
+        <line x1="439" y1="256" x2="463" y2="256"/>
+        <line x1="256" y1="439" x2="256" y2="463"/>
+        <line x1="49" y1="256" x2="73" y2="256"/>
+    </g>
+</svg>
