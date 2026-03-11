@@ -27,11 +27,11 @@
 <script setup lang="ts" generic="TItem extends IMyResponse">
 import {TableAction} from '@/dtos/dto/TableAction.ts';
 import {TableColumn} from '@/dtos/dto/TableColumn.ts';
-import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {computed} from 'vue';
 import {VDataTableServer} from 'vuetify/components';
 import {useTableHeader} from '@/composables/table/TableHeaderComposable.ts';
 import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
+import type {SortItem} from 'vuetify/lib/components/VDataTable/composables/sort';
 
 const props = defineProps<{
 	itemsLength: number,
@@ -49,7 +49,7 @@ console.log(headers.value)
 const items = defineModel<TItem[]>({required: true});
 const itemsPerPage = defineModel<number>('itemsPerPage', {required: true});
 const page = defineModel<number>('page', {required: true});
-const sortBy = defineModel<VSortItem[]>('sortBy', {required: true});
+const sortBy = defineModel<SortItem[]>('sortBy', {required: true});
 
 const loading = defineModel<boolean>('loading', {required: true});
 

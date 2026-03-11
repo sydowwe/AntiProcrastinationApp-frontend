@@ -4,10 +4,10 @@ import {DesktopTimelineResponse} from '@/dtos/response/activityTracking/desktop/
 import {DesktopProcessSummaryDto} from '@/dtos/response/activityTracking/desktop/DesktopProcessSummaryDto.ts'
 import {DesktopPieChartResponse} from '@/dtos/response/activityTracking/desktop/DesktopPieChartResponse.ts'
 import {DesktopProcessDetailsResponse} from '@/dtos/response/activityTracking/desktop/DesktopProcessDetailsResponse.ts'
-import type {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/desktop/DesktopStackedBarsRequest.ts'
-import type {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/DesktopTimelineRequest.ts'
-import type {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/DesktopSummaryCardsRequest.ts'
-import type {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/DesktopPieChartRequest.ts'
+import type {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopStackedBarsRequest.ts'
+import type {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopTimelineRequest.ts'
+import type {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopSummaryCardsRequest.ts'
+import type {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopPieChartRequest.ts'
 
 const BASE_URL = '/activity-tracking/desktop'
 
