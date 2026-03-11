@@ -103,16 +103,11 @@ import {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/Summ
 import {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 import type {StackedBarsInputWindow} from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
 import {getDomainColor} from '@/utils/domainColor'
-import {
-	getDesktopPieChart,
-	getDesktopStackedBars,
-	getDesktopSummaryCards,
-	getDesktopTimeline,
-} from '@/api/desktopActivityTrackingApi.ts'
-import {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/desktop/DesktopStackedBarsRequest.ts'
-import {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/DesktopTimelineRequest.ts'
-import {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/DesktopSummaryCardsRequest.ts'
-import {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/DesktopPieChartRequest.ts'
+import {getDesktopPieChart, getDesktopStackedBars, getDesktopSummaryCards, getDesktopTimeline,} from '@/api/desktopActivityTrackingApi.ts'
+import {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopStackedBarsRequest.ts'
+import {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopTimelineRequest.ts'
+import {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopSummaryCardsRequest.ts'
+import {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopPieChartRequest.ts'
 import type {DesktopStackedBarsWindow} from '@/dtos/response/activityTracking/desktop/DesktopStackedBarsWindow.ts'
 import type {DesktopTimelineResponse} from '@/dtos/response/activityTracking/desktop/DesktopTimelineResponse.ts'
 import type {DesktopProcessSummaryDto} from '@/dtos/response/activityTracking/desktop/DesktopProcessSummaryDto.ts'

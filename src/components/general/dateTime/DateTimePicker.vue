@@ -89,13 +89,13 @@ watch(model, (newModel) => {
 });
 </script>
 <style scoped>
-.date-time-timePicker:deep(.v-field) {
-	border-bottom-left-radius: 0 !important;
-	border-top-left-radius: 0 !important;
-}
-
 .date-time-datePicker:deep(.v-field) {
 	border-bottom-right-radius: 0 !important;
 	border-top-right-radius: 0 !important;
+}
+
+.date-time-timePicker:deep(.v-field) {
+	border-bottom-left-radius: 0 !important;
+	border-top-left-radius: 0 !important;
 }
 </style>
