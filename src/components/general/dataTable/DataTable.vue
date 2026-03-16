@@ -45,7 +45,6 @@ const props = defineProps<{
 const columns = computed(() => props.columns)
 const headers = useTableHeader(columns, props.showActions ?? true, props.showExpand ?? false)
 
-console.log(headers.value)
 const items = defineModel<TItem[]>({required: true});
 const itemsPerPage = defineModel<number>('itemsPerPage', {required: true});
 const page = defineModel<number>('page', {required: true});

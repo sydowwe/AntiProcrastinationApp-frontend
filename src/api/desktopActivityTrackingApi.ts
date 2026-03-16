@@ -8,6 +8,11 @@ import type {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/de
 import type {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopTimelineRequest.ts'
 import type {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopSummaryCardsRequest.ts'
 import type {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopPieChartRequest.ts'
+import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
+import {TrackerDesktopMappingRequest} from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts';
+import {useFetchFilteredTable} from '@/api/fetchFilteredTable.ts';
+import {TrackerDesktopMappingResponse} from '@/dtos/response/activityTracking/desktop/settings/TrackerDesktopMappingResponse.ts';
+import type {DesktopDistinctEntriesFilterRequest} from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts';
 
 const BASE_URL = '/activity-tracking/desktop'
 
@@ -40,4 +45,28 @@ export async function getDesktopProcessDetails(
 		params: {processName, from, to}
 	})
 	return DesktopProcessDetailsResponse.fromJson(data)
+}
+
+
+export function useTrackerDesktopMappingCrud() {
+	const url = 'activity-tracking/desktop/settings/tracker-desktop-mapping-by-pattern';
+
+	const {
+		fetchFilteredTable,
+		loading: tableLoading
+	} = useFetchFilteredTable<TrackerDesktopMappingResponse, DesktopDistinctEntriesFilterRequest>(TrackerDesktopMappingResponse, url)
+	const {
+		createWithResponse,
+		create,
+		update,
+		updateWithResponse,
+		deleteEntity
+	} = useEntityCommand<TrackerDesktopMappingResponse, TrackerDesktopMappingRequest, TrackerDesktopMappingRequest>({
+		responseClass: TrackerDesktopMappingResponse,
+		createRequestClass: TrackerDesktopMappingRequest,
+		updateRequestClass: TrackerDesktopMappingRequest,
+		entityName: url
+	})
+
+	return {fetchFilteredTable, createWithResponse, create, update, updateWithResponse, deleteEntity, tableLoading}
 }

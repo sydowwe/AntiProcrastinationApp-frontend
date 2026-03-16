@@ -1,5 +1,4 @@
 import {ref} from 'vue'
-import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
@@ -299,35 +298,6 @@ export function useAttachmentUpload(entityName: string) {
 	}
 }
 
-// Separate composable for filtered table functionality
-export function useFetchFilteredTable<TTableResponse extends IMyResponse, TFilter extends IFilterRequest>(
-	tableResponseClass: IMyResponse & { fromJson(json: any): TTableResponse },
-	entityName: string,
-) {
-	const loading = ref(false)
-	const error = ref<string | null>(null)
-
-	async function fetchFilteredTable(request: FilteredTableRequest<TFilter>): Promise<{ items: TTableResponse[], itemsCount: number }> {
-		loading.value = true
-		error.value = null
-		try {
-			const response = await API.post(`/${entityName}/filtered-table`, request)
-			return {items: response.data.items.map((r: any) => tableResponseClass.fromJson(r)), itemsCount: response.data.itemsCount}
-		} catch (e: any) {
-			error.value = e.message || `Failed to fetch filtered ${entityName} table`
-			console.error(`Error fetching filtered ${entityName} table:`, e)
-			throw e
-		} finally {
-			loading.value = false
-		}
-	}
-
-	return {
-		loading,
-		error,
-		fetchFilteredTable
-	}
-}
 
 export function useFetchFilteredSorted<TResponse extends IMyResponse, TFilter extends IFilterRequest>(
 	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },
