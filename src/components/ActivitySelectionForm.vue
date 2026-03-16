@@ -16,26 +16,25 @@
 		</div>
 	</div>
 	<VRow class="my-0">
-		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
+		<VCol cols="12" :lg="isInDialog ? 12 : (isInRow ? 3 : 6)" class="py-4">
 			<VIdAutocomplete label="Role" v-model="formData!.roleId" :items="filteredOptions.roleOptions" :disabled="formDisabled"
 			                 hide-details density="compact"></VIdAutocomplete>
 		</VCol>
-		<VCol cols="12" :lg="isInDialog ? 12 : 6" class="py-4">
+		<VCol cols="12" :lg="isInDialog ? 12 : (isInRow ? 3 : 6)" class="py-4">
 			<VIdAutocomplete label="Category" v-model="formData!.categoryId" :items="filteredOptions.categoryOptions"
 			                 :disabled="formDisabled"
 			                 hide-details density="compact"></VIdAutocomplete>
 		</VCol>
-		<VCol cols="12" class="pt-4 pb-0">
-			<InputWithButton icon="plus" color="success" @create="createNewActivity">
+		<VCol :cols="isInRow ? 6 : 12" class="pt-4 pb-0">
+			<InputWithButton :showBtn="!isFilter" icon="plus" color="success" @create="createNewActivity" :density="isInRow ? 'compact' : 'comfortable'">
 				<VIdAutocomplete ref="activityField" :label="(isFilter ? '' : '*') + 'Activity'" v-model="activityIdModel" :items="filteredOptions.activityOptions"
-				                 :disabled="formDisabled"
+				                 :disabled="formDisabled" :density="isInRow ? 'compact' : 'comfortable'" :hideDetails="isInRow"
 				                 :required="!isFilter" :rules="!isFilter ? [requiredRule] : []"></VIdAutocomplete>
 			</InputWithButton>
 		</VCol>
 	</VRow>
+	<ActivityDialog ref="createActivityDialog" @created="onActivityCreated"></ActivityDialog>
 </div>
-
-<CreateActivityDialog ref="createActivityDialog" @created="onActivityCreated"></CreateActivityDialog>
 </template>
 
 <script setup lang="ts">
@@ -52,9 +51,9 @@ import InputWithButton from '@/components/general/InputWithButton.vue';
 import type {VAutocomplete} from 'vuetify/components';
 import {ActivityFormSelectOptions} from '@/dtos/response/activity/ActivityFormSelectOptions.ts';
 import type {ActivitySelectOptionCombination} from '@/dtos/response/activity/ActivitySelectOptionCombination.ts';
-import CreateActivityDialog from '@/components/dialogs/activity/CreateActivityDialog.vue';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import type {ActivityRequest} from '@/dtos/request/activity/ActivityRequest.ts';
+import ActivityDialog from '@/components/dialogs/activity/ActivityDialog.vue';
 
 
 const {requiredRule} = useGeneralRules()
@@ -62,7 +61,7 @@ const {requiredRule} = useGeneralRules()
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
 const {create} = useActivityHistoryCrud()
 const activityField = ref<InstanceType<typeof VAutocomplete>>()
-const createActivityDialog = ref<InstanceType<typeof CreateActivityDialog>>()
+const createActivityDialog = ref<InstanceType<typeof ActivityDialog>>()
 
 const props = defineProps({
 	isFilter: {
@@ -78,6 +77,10 @@ const props = defineProps({
 		default: true,
 	},
 	isInDialog: {
+		type: Boolean,
+		default: false,
+	},
+	isInRow: {
 		type: Boolean,
 		default: false,
 	},
@@ -116,9 +119,10 @@ onMounted(async () => {
 	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!);
 });
 
-watch(formData, () => {
+watch(formData, (newValue) => {
 	filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!);
-}, {deep: true})
+	activityIdModel.value = newValue.activityId;
+}, {deep: true, immediate: true});
 
 watch(activityIdModel, (newValue) => {
 	emit('activityIdChanged', newValue);
@@ -156,7 +160,7 @@ async function saveActivityToHistory(startTimestamp: Date, activityLength: Time)
 }
 
 function createNewActivity() {
-	createActivityDialog.value?.open();
+	createActivityDialog.value?.openAddDialog(formData.value.roleId ?? undefined, formData.value.categoryId ?? undefined);
 }
 
 function onActivityCreated(request: ActivityRequest, createdId: number) {

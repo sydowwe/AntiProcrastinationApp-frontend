@@ -197,7 +197,9 @@ const SK = {
         alarm: `Alarm`,
         taskPlanner: `Plánovač`,
         dayPlanner: `Plánovač dňa`,
-        templateDayPlanner: `Plánovač dňa - template`
+        templateDayPlanner: `Plánovač dňa - template`,
+        desktopSettings: `Nastavenia desktopu`,
+        activitySettings: `Nastavenia aktivít`,
     },
     general: {
         or: `Alebo`,

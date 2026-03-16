@@ -1,7 +1,7 @@
 <template>
 <div class="d-flex flex-1-1 ga-1">
 	<slot></slot>
-	<VIconBtn :icon :color :variant @click="emit('create')" :height="btnHeight"></VIconBtn>
+	<VIconBtn v-if="showBtn" :icon :color :variant @click="emit('create')" :height="btnHeight"></VIconBtn>
 </div>
 </template>
 
@@ -9,6 +9,10 @@
 import {computed} from 'vue';
 
 const props = defineProps({
+	showBtn: {
+		type: Boolean,
+		default: true
+	},
 	icon: {
 		type: String,
 		required: true,

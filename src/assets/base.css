@@ -1,39 +1,43 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
-  margin: 0;
-  font-weight: normal;
+    box-sizing: border-box;
+    margin: 0;
+    font-weight: normal;
 }
 
 body {
-  min-height: 100vh;
-  color: white !important;
-  transition: color 0.5s, background-color 0.5s;
-  line-height: 1.6;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-  Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-size: 15px;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    color: white !important;
+    transition: color 0.5s, background-color 0.5s;
+    line-height: 1.6;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 15px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 html {
-  overflow-y: hidden !important;
+    overflow-y: hidden !important;
 }
 
 @media (max-width: 768px) {
-  html {
-    font-size: 14px !important; /* Mobile base */
-  }
+    html {
+        font-size: 14px !important; /* Mobile base */
+    }
 }
 
 .bg-info, .bg-warning {
-  color: #FFFFFF !important;
+    color: #FFFFFF !important;
 }
 
 .is-hidden {
-  visibility: hidden;
-  opacity: 0; /* Often paired with visibility for smooth transitions */
+    visibility: hidden;
+    opacity: 0; /* Often paired with visibility for smooth transitions */
+}
+
+.v-tabs-window > .v-window__container {
+    height: 100% !important;
 }

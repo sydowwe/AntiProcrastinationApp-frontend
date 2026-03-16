@@ -198,6 +198,9 @@ const EN = {
         alarm: `Alarm`,
         taskPlanner: `Task planner`,
         dayPlanner: `Day planner`,
+        templateDayPlanner: `Day planner - template`,
+        desktopSettings: `Desktop settings`,
+        activitySettings: `Activity settings`,
     },
     general: {
         or: `Or`,

@@ -15,11 +15,11 @@
 		:showActions
 	>
 		<template v-slot:[`header.actions`]>
-			<div class="d-flex justify-center align-center ga-2">
+			<div v-if="showActionsHeader" class="d-flex justify-center align-center ga-2">
 				<VIconBtn
 					icon="plus"
 					width="40" height="36"
-					variant="flat"
+					variant="tonal"
 					color="success"
 					@click="emit('onAdd')"
 					title="Pridať">
@@ -70,10 +70,18 @@
 			</MyTableFooter>
 		</template>
 	</DataTable>
+
+	<MyDialog
+		title="Delete confirmation"
+		:text="deleteConfirmationText"
+		v-model="deleteDialog"
+		@confirmed="emit('onDelete')"
+		confirmBtnColor="error"
+	/>
 </div>
 </template>
 <script setup lang="ts" generic="TItem extends IIdResponse">
-import {computed, watch} from 'vue';
+import {computed, ref, watch} from 'vue';
 import {type IIdResponse} from '@/dtos/response/interface/IIdResponse.ts';
 import {TableAction} from '@/dtos/dto/TableAction.ts';
 import {TableColumn} from '@/dtos/dto/TableColumn.ts';
@@ -82,25 +90,29 @@ import {useDisplay} from 'vuetify/framework';
 import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue';
 import DataTable from '@/components/general/dataTable/DataTable.vue';
 import {getNestedValue} from '@/composables/table/TableHeaderComposable.ts';
+import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 const {mdAndDown} = useDisplay();
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	itemsLength: number,
 	columns: TableColumn[],
 	actions?: TableAction[],
 	showActions?: boolean,
+	showActionsHeader?: boolean,
 	showExpand?: boolean,
 	showSelect?: boolean,
-}>();
+	deleteConfirmationColumn?: string,
+}>(), {
+	showActions: true,
+	showActionsHeader: true,
+})
 
 const actions = props.actions ?? [
-	new TableAction("edit", "Upraviť", "primaryOutline", 'outlined', "pen", edit),
-	new TableAction("delete", "Vymazať", "primaryOutline", 'tonal', "trash", del)
+	new TableAction("edit", "Upraviť", "primaryOutline", 'tonal', "pen", edit),
+	new TableAction("delete", "Vymazať", "secondaryOutline", 'tonal', "trash", del)
 ];
 
 const columns = computed(() => props.columns)
-
-console.log(columns.value)
 
 const items = defineModel<TItem[]>({required: true});
 const itemsPerPage = defineModel<number>('itemsPerPage', {required: true});
@@ -108,6 +120,9 @@ const page = defineModel<number>('page', {required: true});
 const sortBy = defineModel<VSortItem[]>('sortBy', {required: true});
 
 const loading = defineModel<boolean>('loading', {required: true});
+
+const deleteDialog = ref(false);
+const deleteConfirmationText = ref<string | undefined>()
 
 watch(() => props.columns, () => {
 	if (!props.columns[0]?.key) {
@@ -121,7 +136,9 @@ function edit(item: TItem) {
 }
 
 function del(item: TItem) {
-	emit("onDelete", item);
+	deleteDialog.value = true;
+	const name = item[props.deleteConfirmationColumn];
+	deleteConfirmationText.value = `Are you sure you want to delete ${name}?`
 }
 
 const emit = defineEmits<{
