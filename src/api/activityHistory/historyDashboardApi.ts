@@ -1,4 +1,4 @@
-import {API} from '@/plugins/axiosConfig'
+import {API} from '@/plugins/axiosConfig.ts'
 import type {DetailStackedBarsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailStackedBarsRequest.ts'
 import type {DetailPieChartRequest} from '@/dtos/request/activityHistory/historyDetail/DetailPieChartRequest.ts'
 import type {DetailSummaryCardsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailSummaryCardsRequest.ts'

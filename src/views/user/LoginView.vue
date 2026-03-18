@@ -48,7 +48,7 @@
 import {computed, onMounted, ref} from 'vue';
 import GoogleSignIn from '@/components/user/GoogleSignIn.vue';
 import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue';
-import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
+import {useUserDetailsValidation} from '@/utils/UserAuthUtils.ts';
 import {useI18n} from 'vue-i18n';
 import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';

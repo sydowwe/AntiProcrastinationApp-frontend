@@ -8,8 +8,8 @@
 		</VTabs>
 		<div class="d-flex ga-2 ml-14 flex-1-1">
 			<template v-if="activeTab === 'activities'">
-				<VTextField v-model="activityFilter.name" label="Name" clearable hideDetails density="compact" />
-				<VTextField v-model="activityFilter.text" label="Text" clearable hideDetails density="compact" />
+				<VTextField v-model="activityFilter.name" label="Name" clearable hideDetails density="compact"/>
+				<VTextField v-model="activityFilter.text" label="Text" clearable hideDetails density="compact"/>
 				<VCombobox
 					v-model="(roleCombobox as any)"
 					label="Roles"
@@ -36,20 +36,20 @@
 				/>
 			</template>
 			<template v-else>
-				<VTextField v-model="nameTextFilter.name" label="Name" clearable hideDetails density="compact" />
-				<VTextField v-model="nameTextFilter.text" label="Text" clearable hideDetails density="compact" />
+				<VTextField v-model="nameTextFilter.name" label="Name" clearable hideDetails density="compact"/>
+				<VTextField v-model="nameTextFilter.text" label="Text" clearable hideDetails density="compact"/>
 			</template>
 		</div>
 	</div>
 	<VTabsWindow v-model="activeTab" class="flex-1-1 mt-2">
 		<VTabsWindowItem value="activities" class="flex-fill">
-			<ActivityTable :filter="activityFilter" />
+			<ActivityTable :filter="activityFilter"/>
 		</VTabsWindowItem>
 		<VTabsWindowItem value="roles" class="flex-fill">
-			<RoleTable :filter="nameTextFilter" />
+			<RoleTable :filter="nameTextFilter"/>
 		</VTabsWindowItem>
 		<VTabsWindowItem value="categories" class="flex-fill">
-			<CategoryTable :filter="nameTextFilter" />
+			<CategoryTable :filter="nameTextFilter"/>
 		</VTabsWindowItem>
 	</VTabsWindow>
 </div>
@@ -62,7 +62,7 @@ import RoleTable from '@/components/activity/RoleTable.vue';
 import CategoryTable from '@/components/activity/CategoryTable.vue';
 import {NameTextFilter} from '@/dtos/request/activity/NameTextFilter.ts';
 import {ActivityFilter} from '@/dtos/request/activity/ActivityFilter.ts';
-import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
+import {useActivitySelectOptions} from '@/composables/activity/UseActivitySelectOptions.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 
 const {fetchRoleSelectOptions, fetchCategorySelectOptions} = useActivitySelectOptions();

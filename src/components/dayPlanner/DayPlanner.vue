@@ -85,7 +85,7 @@ import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vu
 import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 

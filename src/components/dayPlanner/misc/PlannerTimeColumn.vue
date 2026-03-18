@@ -44,11 +44,11 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts'
+import {SLOT_HEIGHT} from '@/components/dayPlanner/DayPlannerTypes.ts'
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 import {inject} from 'vue';
 import {Time} from '@/dtos/dto/Time.ts';
 

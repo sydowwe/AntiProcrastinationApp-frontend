@@ -31,6 +31,7 @@
 			:isInChangeOrderMode="isInChangeOrderMode"
 			:listId="listId"
 			:isDragging="dragState.draggedIndex === index"
+			:streakConfig="streakConfig"
 			@delete="deleteItem"
 			@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
 			@select="select"
@@ -104,7 +105,11 @@ const props = defineProps({
 	activityIds: {
 		type: Array as () => number[],
 		required: true,
-	}
+	},
+	streakConfig: {
+		type: Object as () => { graceDays: number; periodLengthInDays: number } | undefined,
+		default: undefined,
+	},
 });
 
 // Drag and drop state - declare ref before using in composable
@@ -258,7 +263,7 @@ const emit = defineEmits<{
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	padding: 24px 0;
+	padding: 0;
 	min-height: 200px;
 	position: relative;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

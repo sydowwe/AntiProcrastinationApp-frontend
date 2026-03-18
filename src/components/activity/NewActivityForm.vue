@@ -1,32 +1,32 @@
 <template>
-	<VForm ref="form" class="d-flex flex-column ga-3" @submit.prevent="validate">
-		<InputWithButton icon="plus" color="success" @create="addRoleDialog?.openAddDialog">
-			<VIdAutocomplete
-				:label="$t('activities.role')"
-				v-model="model.roleId"
-				:items="roleOptions"
-				required
-				:rules="[requiredRule]"
-			/>
-		</InputWithButton>
-		<InputWithButton icon="plus" color="success" @create="addCategoryDialog?.openAddDialog">
-			<VIdAutocomplete
-				:label="$t('activities.category')"
-				v-model="model.categoryId"
-				:items="categoryOptions"
-			/>
-		</InputWithButton>
-		<InputWithButton icon="info" color="secondaryOutline">
-			<VTextField :label="$t('activities.activity')" v-model="model.name" :rules="[requiredRule]" required/>
-		</InputWithButton>
-		<VTextarea :label="$t('activities.activityDescription')" v-model="model.text" hideDetails/>
-		<VRow noGutters>
-			<VCheckbox :label="$t('activities.isActivityUnavoidable')" v-model="model.isUnavoidable" hideDetails/>
-		</VRow>
-	</VForm>
+<VForm ref="form" class="d-flex flex-column ga-3" @submit.prevent="validate">
+	<InputWithButton icon="plus" color="success" @create="addRoleDialog?.openAddDialog">
+		<VIdAutocomplete
+			:label="$t('activities.role')"
+			v-model="model.roleId"
+			:items="roleOptions"
+			required
+			:rules="[requiredRule]"
+		/>
+	</InputWithButton>
+	<InputWithButton icon="plus" color="success" @create="addCategoryDialog?.openAddDialog">
+		<VIdAutocomplete
+			:label="$t('activities.category')"
+			v-model="model.categoryId"
+			:items="categoryOptions"
+		/>
+	</InputWithButton>
+	<InputWithButton icon="info" color="secondaryOutline">
+		<VTextField :label="$t('activities.activity')" v-model="model.name" :rules="[requiredRule]" required/>
+	</InputWithButton>
+	<VTextarea :label="$t('activities.activityDescription')" v-model="model.text" hideDetails/>
+	<VRow noGutters>
+		<VCheckbox :label="$t('activities.isActivityUnavoidable')" v-model="model.isUnavoidable" hideDetails/>
+	</VRow>
+</VForm>
 
-	<ActivityRoleDialog ref="addRoleDialog" @created="onRoleCreated"/>
-	<ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"/>
+<ActivityRoleDialog ref="addRoleDialog" @created="onRoleCreated"/>
+<ActivityCategoryDialog ref="addCategoryDialog" @created="onCategoryCreated"/>
 </template>
 
 <script setup lang="ts">
@@ -39,7 +39,7 @@ import {ActivityRequest} from '@/dtos/request/activity/ActivityRequest.ts';
 import type {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
 import type {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
+import {useActivitySelectOptions} from '@/composables/activity/UseActivitySelectOptions.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 
 const model = defineModel<ActivityRequest>({required: true});

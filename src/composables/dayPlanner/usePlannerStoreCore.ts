@@ -3,7 +3,7 @@ import {Time} from '@/dtos/dto/Time.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
-import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
+import type {CreationPreviewType} from '@/components/dayPlanner/DayPlannerTypes.ts';
 
 export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>() {
 	// Time/Grid configuration state

@@ -15,14 +15,14 @@
 >
 	<template v-slot:formattedColumn="{ key, value }">
 		<template v-if="key === 'color'">
-			<VSheet v-if="value" :color="value" width="24" height="24" rounded="circle" />
+			<VSheet v-if="value" :color="value" width="24" height="24" rounded="circle"/>
 			<span v-else>—</span>
 		</template>
 		<template v-else>{{ value ?? '—' }}</template>
 	</template>
 </BasicTable>
 
-<ActivityRoleDialog ref="roleDialog" @created="loadItems" @updated="loadItems" />
+<ActivityRoleDialog ref="roleDialog" @created="loadItems" @updated="loadItems"/>
 </template>
 
 <script setup lang="ts">
@@ -34,8 +34,8 @@ import {TableColumn} from '@/dtos/dto/TableColumn.ts';
 import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
 import {NameTextFilter} from '@/dtos/request/activity/NameTextFilter.ts';
-import {useFetchFilteredTable} from '@/api/fetchFilteredTable.ts';
-import {useActivityRoleCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useFetchFilteredTable} from '@/api/base/fetchFilteredTable.ts';
+import {useActivityRoleCrud} from '@/api/activity/activityRoleApi.ts';
 
 const props = defineProps<{ filter: NameTextFilter }>();
 

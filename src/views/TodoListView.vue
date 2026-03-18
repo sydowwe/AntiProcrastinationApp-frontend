@@ -26,6 +26,7 @@
 				:items
 				:isInChangeOrderMode
 				:listId="namedListId"
+				:activityIds="items.map(item => item.activity.id)"
 				@itemsChanged="itemsChanged"
 				@editItem="toDoListDialog?.openEdit"
 				@deletedItem="deleteItem"
@@ -47,7 +48,10 @@ import ToDoList from '../components/toDoList/ToDoList.vue';
 import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListItemDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useActivityCrud, useTaskPriorityCrud, useTodoListCrud, useTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useActivityCrud} from '@/api/activity/activityApi.ts';
+import {useTaskPriorityCrud} from '@/api/todoList/taskPriorityApi.ts';
+import {useTodoListCrud} from '@/api/todoList/todoListApi.ts';
+import {useTodoListItemCrud} from '@/api/todoList/todoListItemApi.ts';
 import {hasObjectChanged} from '@/utils/helperMethods.ts';
 import {TodoListEntity} from '@/dtos/response/todoList/TodoListEntity.ts';
 

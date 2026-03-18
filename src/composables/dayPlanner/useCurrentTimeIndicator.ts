@@ -5,7 +5,7 @@ import {useMoment} from '@/utils/momentHelper.ts';
 import {Time} from '@/dtos/dto/Time.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 
 export function useCurrentTimeIndicator<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>>(store: TStore) {
 	const {formatToTime24H} = useMoment()

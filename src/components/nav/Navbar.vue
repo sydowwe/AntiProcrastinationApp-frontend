@@ -235,6 +235,7 @@ const items: MenuItem[] = [
 		children: [
 			{title: 'toDoList', icon: 'list-check', to: '/todo-list', needsAdmin: false},
 			{title: 'routineToDoList', icon: 'rotate', to: '/routine-todo-list', needsAdmin: false},
+			{title: 'routineSettings', icon: 'sliders', to: '/routine-settings', needsAdmin: false},
 		]
 	},
 	{

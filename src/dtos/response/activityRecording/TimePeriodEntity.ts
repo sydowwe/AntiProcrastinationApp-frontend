@@ -5,6 +5,11 @@ export class TimePeriodEntity {
 		public color: string | undefined = undefined,
 		public lengthInDays: number = 0,
 		public isHidden: boolean = false,
+		public streak: number = 0,
+		public bestStreak: number = 0,
+		public streakThreshold: number = 90,
+		public streakGraceDays: number = 0,
+		public resetAnchorDay: number = 0,
 	) {
 	}
 
@@ -15,8 +20,13 @@ export class TimePeriodEntity {
 			color = '',
 			lengthInDays = 0,
 			isHidden = false,
+			streak = 0,
+			bestStreak = 0,
+			streakThreshold = 90,
+			streakGraceDays = 0,
+			resetAnchorDay = 0,
 		} = object;
-		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden);
+		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden, streak, bestStreak, streakThreshold, streakGraceDays, resetAnchorDay);
 	}
 
 	static listFromObjects(objects: any[]) {

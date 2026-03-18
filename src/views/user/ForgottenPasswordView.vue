@@ -14,7 +14,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
+import {useUserDetailsValidation} from '@/utils/UserAuthUtils.ts';
 import {useI18n} from 'vue-i18n';
 import {VForm} from 'vuetify/components';
 import MyDialog from "@/components/dialogs/MyDialog.vue";

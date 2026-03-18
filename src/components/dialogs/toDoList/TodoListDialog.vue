@@ -34,7 +34,7 @@ import {TodoListRequest} from '@/dtos/request/todoList/TodoListRequest.ts';
 import {TodoListEntity} from '@/dtos/response/todoList/TodoListEntity.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import IconPicker from '@/components/general/inputs/IconPicker.vue';
-import {useTodoListCategoryCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useTodoListCategoryCrud} from '@/api/todoList/todoListCategoryApi.ts';
 import type {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 
 const {requiredRule} = useGeneralRules()

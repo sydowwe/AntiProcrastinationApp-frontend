@@ -26,6 +26,7 @@ import ActivityDashboard from '@/views/ActivityDashboard.vue';
 import HistoryCalendarView from '@/views/history/HistoryCalendarView.vue';
 import DesktopSettingsView from '@/views/settings/DesktopSettingsView.vue';
 import ActivitySettingsView from '@/views/settings/ActivitySettingsView.vue';
+import RoutineSettingsView from '@/views/settings/RoutineSettingsView.vue';
 import DesktopActivityDashboard from '@/views/DesktopActivityDashboard.vue';
 
 
@@ -66,6 +67,11 @@ const router = createRouter({
 			path: '/activity-settings',
 			name: 'activitySettings',
 			component: ActivitySettingsView
+		},
+		{
+			path: '/routine-settings',
+			name: 'routineSettings',
+			component: RoutineSettingsView
 		},
 		{
 			path: '/activity-tracking/desktop/settings/:tableView',

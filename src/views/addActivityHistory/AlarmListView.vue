@@ -26,7 +26,7 @@ import {AlarmRequest} from "@/dtos/request/activityRecording/AlarmRequest.ts";
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {API} from '@/plugins/axiosConfig.ts';
-import {useAlarmCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useAlarmCrud} from '@/api/activityHistory/alarmApi.ts';
 
 const alarmDialog = ref<InstanceType<typeof AlarmDialog>>();
 const i18n = useI18n();

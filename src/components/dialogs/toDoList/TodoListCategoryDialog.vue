@@ -9,7 +9,7 @@
 			required
 		/>
 		<IconPicker v-model="request.icon" class="mb-5"/>
-		<VColorPicker v-model="request.color" hideInputs class="mx-auto"/>
+		<ColorPicker v-model="request.color"/>
 	</VForm>
 </MyDialog>
 </template>
@@ -18,6 +18,7 @@
 import {ref} from 'vue';
 import {VForm} from 'vuetify/components';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import ColorPicker from '@/components/general/ColorPicker.vue';
 import IconPicker from '@/components/general/inputs/IconPicker.vue';
 import {TodoListCategoryRequest} from '@/dtos/request/todoList/TodoListCategoryRequest.ts';
 import {TodoListCategoryEntity} from '@/dtos/response/todoList/TodoListCategoryEntity.ts';

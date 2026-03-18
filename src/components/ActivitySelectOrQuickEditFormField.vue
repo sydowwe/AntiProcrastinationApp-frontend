@@ -29,17 +29,17 @@
 
 <script setup lang="ts">
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {type QuickCreateActivityRoleName, useQuickCreateActivity} from '@/composables/quickCreateActivityComposition.ts';
+import {type QuickCreateActivityRoleName, useQuickCreateActivity} from '@/composables/activity/quickCreateActivityComposition.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {onMounted, ref} from 'vue';
 import {useI18n} from 'vue-i18n';
 import type {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {useActivitySelectOptions} from '@/composables/UseActivitySelectOptions.ts';
+import {useActivitySelectOptions} from '@/composables/activity/UseActivitySelectOptions.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {hasObjectChanged} from '@/utils/helperMethods.ts';
 import {QuickActivityToolsDto} from '@/dtos/response/activity/QuickActivityToolsDto.ts';
-import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useActivityCrud} from '@/api/activity/activityApi.ts';
 
 const i18n = useI18n();
 const {showErrorSnackbar} = useSnackbar();

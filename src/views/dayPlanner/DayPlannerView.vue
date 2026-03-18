@@ -74,7 +74,9 @@ import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vu
 import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 import {useMoment} from '@/utils/momentHelper.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
-import {useCalendarQuery, useTaskPlannerCrud, useTemplatePlannerTaskCrud} from '@/api/ConcretesCrudComposable.ts'
+import {useCalendarQuery} from '@/api/calendarApi.ts'
+import {useTaskPlannerCrud} from '@/api/taskPlanner/plannerTaskApi.ts'
+import {useTemplatePlannerTaskCrud} from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import router from '@/plugins/router.ts';

@@ -29,7 +29,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts'
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import {inject} from 'vue';

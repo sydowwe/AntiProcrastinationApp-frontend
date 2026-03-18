@@ -8,9 +8,9 @@ import type {DesktopStackedBarsRequest} from '@/dtos/request/activityTracking/de
 import type {DesktopTimelineRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopTimelineRequest.ts'
 import type {DesktopSummaryCardsRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopSummaryCardsRequest.ts'
 import type {DesktopPieChartRequest} from '@/dtos/request/activityTracking/desktop/dashboard/DesktopPieChartRequest.ts'
-import {useEntityCommand} from '@/composables/general/CrudComposition.ts';
+import {useEntityCommand} from '@/api/base/useEntityCommand.ts';
 import {TrackerDesktopMappingRequest} from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts';
-import {useFetchFilteredTable} from '@/api/fetchFilteredTable.ts';
+import {useFetchFilteredTable} from '@/api/base/fetchFilteredTable.ts';
 import {TrackerDesktopMappingResponse} from '@/dtos/response/activityTracking/desktop/settings/TrackerDesktopMappingResponse.ts';
 import type {DesktopDistinctEntriesFilterRequest} from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts';
 

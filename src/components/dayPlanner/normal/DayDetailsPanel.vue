@@ -104,7 +104,7 @@
 
 <script setup lang="ts">
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
-import {useTaskPlannerDayTemplateTaskCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useTaskPlannerDayTemplateTaskCrud} from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts';
 import {onMounted, ref} from 'vue';
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
 import {Time} from '@/dtos/dto/Time.ts';
