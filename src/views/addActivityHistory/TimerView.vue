@@ -27,7 +27,7 @@ import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWi
 import TimerControls from '@/components/addActivityToHistory/TimerControls.vue';
 import {TimePrecise} from '@/dtos/dto/TimePrecise.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
+import {useTimerNotifications} from '@/composables/activity/useTimerNotifications.ts';
 import {TimerPreset} from '@/dtos/response/activityRecording/TimerPreset.ts';
 
 const {showErrorSnackbar} = useSnackbar();

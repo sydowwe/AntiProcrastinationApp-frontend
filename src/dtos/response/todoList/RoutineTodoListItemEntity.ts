@@ -10,6 +10,10 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public doneCount: number | null,
 		public totalCount: number | null,
 		public timePeriod: TimePeriodEntity,
+		public color: string | null = null,
+		public streak: number = 0,
+		public bestStreak: number = 0,
+		public lastCompletedAt: string | null = null,
 	) {
 	}
 
@@ -24,7 +28,11 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.isDone,
 			json.doneCount,
 			json.totalCount,
-			TimePeriodEntity.fromJson(json.routineTimePeriod)
+			TimePeriodEntity.fromJson(json.routineTimePeriod),
+			null,
+			json.streak ?? 0,
+			json.bestStreak ?? 0,
+			json.lastCompletedAt ?? null,
 		);
 	}
 

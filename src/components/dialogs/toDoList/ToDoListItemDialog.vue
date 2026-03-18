@@ -26,7 +26,7 @@ import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.t
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useTaskPriorityCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useTaskPriorityCrud} from '@/api/todoList/taskPriorityApi.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';

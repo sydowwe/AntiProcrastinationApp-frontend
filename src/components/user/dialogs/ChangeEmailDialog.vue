@@ -6,7 +6,7 @@
 </template>
 <script setup lang="ts">
 import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
-import {useUserDetailsValidation} from '@/composables/UserAutorizationComposition';
+import {useUserDetailsValidation} from '@/utils/UserAuthUtils.ts';
 import {ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';

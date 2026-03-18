@@ -96,7 +96,7 @@ import {useI18n} from 'vue-i18n';
 import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue';
 import {TimePrecise} from '@/dtos/dto/TimePrecise.ts';
 import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue';
-import {useTimerNotifications} from '@/composables/useTimerNotifications.ts';
+import {useTimerNotifications} from '@/composables/activity/useTimerNotifications.ts';
 import SubtleCard from '@/components/general/feedback/SubtleCard.vue';
 
 const i18n = useI18n();

@@ -11,10 +11,10 @@
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
 import {computed, inject} from 'vue'
-import type {CreationPreviewType} from '@/types/DayPlannerTypes.ts';
+import type {CreationPreviewType} from '@/components/dayPlanner/DayPlannerTypes.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 
 const store = inject<TStore>('plannerStore')!
 

@@ -27,13 +27,13 @@
 						      v-bind="props" style="width: 40px" @click.stop="progressClicked">
                             <VProgressLinear
 	                            color="neutral-400"
-	                            :model-value="(toDoListItem.doneCount ?? 1) / (toDoListItem.totalCount ?? 1) * 100"
+	                            :model-value="(toDoListItem.doneCount ?? 0) / (toDoListItem.totalCount ?? 1) * 100"
 	                            height="35"
 	                            bgOpacity="0.3"
 	                            style="border: 1px solid #777; border-radius: 4px;"
                             >
                                 <div class="d-flex align-center">
-                                    <span v-if="!toDoListItem.isDone && toDoListItem.doneCount !== null" class="text-white">{{ toDoListItem.doneCount }}</span>
+                                    <span v-if="!toDoListItem.isDone" class="text-white">{{ toDoListItem.doneCount ?? 0 }}</span>
                                     <VIcon v-if="toDoListItem.isDone" size="17" icon="check" color="success"></VIcon>
                                     <span class="text-white">/{{ toDoListItem.totalCount }}</span>
                                 </div>
@@ -49,6 +49,16 @@
 	<template v-slot:append>
 		<VIcon v-if="isSelected" icon="check-circle" color="#fff">
 		</VIcon>
+
+		<VTooltip v-if="itemStreak && itemStreak > 0 && !isInChangeOrderMode" location="top">
+			<template v-slot:activator="{ props: tooltipProps }">
+				<div v-bind="tooltipProps" class="d-flex align-center ga-1 mr-1" :class="gracePeriodActive ? 'text-warning' : 'text-white'">
+					<VIcon :icon="getMilestoneIcon(itemStreak) ?? 'fire-flame-curved'" size="14"></VIcon>
+					<span class="text-caption" style="line-height: 1">{{ itemStreak }}</span>
+				</div>
+			</template>
+			<span>Streak: {{ itemStreak }} | Best: {{ itemBestStreak }}<span v-if="gracePeriodActive"> | Grace period active!</span></span>
+		</VTooltip>
 
 		<VIcon v-if="isInChangeOrderMode" class="drag-handle my-1" icon="bars" color="white" size="small" style="height: 40px"></VIcon>
 		<v-menu v-else location="start" transition="slide-y-transition">
@@ -72,7 +82,7 @@
 </template>
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
@@ -89,10 +99,37 @@ const props = withDefaults(defineProps<{
 	isInChangeOrderMode?: boolean;
 	listId: number;
 	isDragging?: boolean;
+	streakConfig?: { graceDays: number; periodLengthInDays: number };
 }>(), {
 	isInChangeOrderMode: false,
 	isDragging: false,
+	streakConfig: undefined,
 });
+
+const itemStreak = computed(() => (props.toDoListItem as any).streak as number | undefined);
+const itemBestStreak = computed(() => (props.toDoListItem as any).bestStreak as number | undefined);
+const lastCompletedAt = computed(() => (props.toDoListItem as any).lastCompletedAt as string | null | undefined);
+
+const gracePeriodActive = computed(() => {
+	if (!props.streakConfig || !lastCompletedAt.value || !itemStreak.value) return false;
+	const {graceDays, periodLengthInDays} = props.streakConfig;
+	if (graceDays <= 0) return false;
+	const lastDone = new Date(lastCompletedAt.value);
+	const now = new Date();
+	const daysSince = Math.floor((now.getTime() - lastDone.getTime()) / (1000 * 60 * 60 * 24));
+	return daysSince >= periodLengthInDays && daysSince < periodLengthInDays + graceDays;
+});
+
+const MILESTONES = [7, 14, 30, 60, 90, 180, 365];
+
+function getMilestoneIcon(streak: number): string | null {
+	if (streak >= 365) return 'crown';
+	if (streak >= 180) return 'gem';
+	if (streak >= 90) return 'trophy';
+	if (streak >= 30) return 'star';
+	if (streak >= 7) return 'fire-flame-curved';
+	return null;
+}
 
 const emits = defineEmits<{
 	edit: [toDoListItem: TItem];

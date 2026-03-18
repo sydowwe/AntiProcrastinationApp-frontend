@@ -80,7 +80,7 @@ import PomodoroPresetFormDialog from '@/components/addActivityToHistory/Pomodoro
 import {onMounted, ref} from 'vue';
 import {Time} from '@/dtos/dto/Time.ts';
 import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
-import {usePomodoroTimerPresetCrud} from '@/api/ConcretesCrudComposable.ts';
+import {usePomodoroTimerPresetCrud} from '@/api/activityHistory/pomodoroTimerPresetApi.ts';
 
 const {fetchAll, deleteEntity} = usePomodoroTimerPresetCrud();
 

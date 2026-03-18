@@ -18,13 +18,13 @@
 			<span>{{ value ?? '—' }}</span>
 		</template>
 		<template v-else-if="key === 'isUnavoidable'">
-			<VIcon :color="value ? 'successDark' : 'grey'" :icon="value ? 'check' : 'xmark'" size="16" />
+			<VIcon :color="value ? 'successDark' : 'grey'" :icon="value ? 'check' : 'xmark'" size="16"/>
 		</template>
 		<template v-else>{{ value ?? '—' }}</template>
 	</template>
 </BasicTable>
 
-<ActivityDialog ref="activityDialog" @created="loadItems" @updated="loadItems" />
+<ActivityDialog ref="activityDialog" @created="loadItems" @updated="loadItems"/>
 </template>
 
 <script setup lang="ts">
@@ -36,8 +36,8 @@ import {TableColumn} from '@/dtos/dto/TableColumn.ts';
 import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {FilteredTableRequest} from '@/dtos/request/base/FilteredTableRequest.ts';
 import {ActivityFilter} from '@/dtos/request/activity/ActivityFilter.ts';
-import {useFetchFilteredTable} from '@/api/fetchFilteredTable.ts';
-import {useActivityCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useFetchFilteredTable} from '@/api/base/fetchFilteredTable.ts';
+import {useActivityCrud} from '@/api/activity/activityApi.ts';
 
 const props = defineProps<{ filter: ActivityFilter }>();
 

@@ -1,5 +1,5 @@
 import {nextTick, ref, watch} from "vue";
-import {EditableTableCell} from "@/dtos/dto/EditableTableCell";
+import {EditableTableCell} from "@/dtos/dto/EditableTableCell.ts";
 
 export type EditableCellEmits = 'editCell' | 'updatedCell' | 'editCellCanceled';
 

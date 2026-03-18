@@ -162,7 +162,7 @@ import {PatternMatchType} from '@/dtos/enum/PatternMatchType.ts';
 import {DesktopDistinctEntriesFilterRequest} from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts';
 import {VSortItem} from '@/dtos/dto/VSortItem.ts';
 import {TableColumn} from '@/dtos/dto/TableColumn.ts';
-import {useFetchFilteredTable} from '@/api/fetchFilteredTable.ts';
+import {useFetchFilteredTable} from '@/api/base/fetchFilteredTable.ts';
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {TrackerDesktopMappingRequest} from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts';
 import {useTrackerDesktopMappingCrud} from '@/api/desktopActivityTrackingApi.ts';

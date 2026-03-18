@@ -22,13 +22,16 @@ import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoLis
 import {RoutineTodoListItemEntity} from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {useTaskPlanningSelectOptions} from '@/composables/TaskPlanningSelectOptions.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue';
+import {useEntityQuery} from '@/api/base/useEntityQuery.ts';
+import {TimePeriodEntity} from '@/dtos/response/activityRecording/TimePeriodEntity.ts';
 
-
-const {fetchTimePeriodEntitySelectOptions} = useTaskPlanningSelectOptions()
+const {fetchSelectOptions: fetchTimePeriodEntitySelectOptions} = useEntityQuery<TimePeriodEntity>({
+	responseClass: TimePeriodEntity,
+	entityName: 'routine-time-period'
+})
 
 const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>();
 const form = ref<InstanceType<typeof VForm>>();

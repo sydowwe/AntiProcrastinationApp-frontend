@@ -61,11 +61,11 @@ import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQui
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useTaskImportanceCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useTaskImportanceCrud} from '@/api/taskPlanner/taskImportanceApi.ts';
 import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 
 const props = defineProps<{
 	title: string

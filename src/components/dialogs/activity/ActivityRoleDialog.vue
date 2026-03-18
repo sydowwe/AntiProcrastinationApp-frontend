@@ -4,18 +4,19 @@
 	<VForm ref="form" @submit.prevent="onConfirmed" class="d-flex flex-column ga-3">
 		<VTextField label="Name" v-model="request.name" :rules="[requiredRule, lettersWithDiacriticsAndSpecialCharsRule]"></VTextField>
 		<VTextarea label="Text" v-model="request.text"></VTextarea>
-		<VColorPicker label="Color" v-model="request.color" hide-inputs></VColorPicker>
+		<ColorPicker label="Color" v-model="request.color"></ColorPicker>
 	</VForm>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
 import MyDialog from '@/components/dialogs/MyDialog.vue';
+import ColorPicker from '@/components/general/ColorPicker.vue';
 import {ref} from 'vue';
 import {Role} from '@/dtos/response/activity/Role.ts';
 import {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
 import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
-import {useActivityRoleCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useActivityRoleCrud} from '@/api/activity/activityRoleApi.ts';
 import {VForm} from 'vuetify/components';
 
 const {useApi} = defineProps({

@@ -1,14 +1,3 @@
-// Type definitions
-export class TaskSpanData {
-	constructor(
-		public start: Date,
-		public end: Date,
-		public gridRowStart: number,
-		public gridRowEnd: number,
-	) {
-	}
-}
-
 export class CreationPreviewType {
 	constructor(
 		public initRow: number,

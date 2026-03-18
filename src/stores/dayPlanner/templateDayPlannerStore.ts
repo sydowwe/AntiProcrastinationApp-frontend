@@ -3,8 +3,8 @@ import {ref} from 'vue'
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
 import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
-import {useTemplatePlannerTaskCrud} from '@/api/ConcretesCrudComposable.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
+import {useTemplatePlannerTaskCrud} from '@/api/taskPlanner/templatePlannerTaskApi.ts';
 import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 
 export interface ITemplateDayPlannerStore extends IBaseDayPlannerStore<TemplatePlannerTask, TemplatePlannerTaskRequest> {

@@ -17,7 +17,7 @@
 import {computed, ref} from 'vue';
 import {ActivityHistory} from '@/dtos/response/activityHistory/ActivityHistory.ts';
 import {Time} from '@/dtos/dto/Time.ts';
-import {useActivityHistoryCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useActivityHistoryCrud} from '@/api/activityHistory/activityHistoryApi.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';

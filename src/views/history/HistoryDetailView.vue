@@ -80,7 +80,7 @@ import {BaselineType} from '@/components/activityTracking/summaryCards/BaselineO
 import {DetailStackedBarsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailStackedBarsRequest.ts'
 import {DetailPieChartRequest} from '@/dtos/request/activityHistory/historyDetail/DetailPieChartRequest.ts'
 import {DetailSummaryCardsRequest} from '@/dtos/request/activityHistory/historyDetail/DetailSummaryCardsRequest.ts'
-import {getDetailPieChart, getDetailStackedBars, getDetailSummaryCards} from '@/api/historyDashboardApi.ts'
+import {getDetailPieChart, getDetailStackedBars, getDetailSummaryCards} from '@/api/activityHistory/historyDashboardApi.ts'
 import type {HistoryStackedBarsResponse} from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 import type {HistoryPieChartResponse} from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 import type {HistorySummaryCardsResponse} from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'

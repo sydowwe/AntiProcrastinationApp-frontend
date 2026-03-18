@@ -2,39 +2,62 @@
 <div class="h-100 w-100 d-flex flex-column">
 	<VRow justify="center" class="mt-lg-5 mt-md-3 position-sticky">
 		<VCol cols="12" sm="10" md="4" lg="3" class="d-flex justify-center ga-2">
-			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate()" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
+			<VBtn to="/routine-settings" prependIcon="gear">Nastavenia</VBtn>
+			<VBtn class="flex-grow-1" color="primary" prependIcon="plus" @click="toDoListDialog?.openCreate()" :disabled="isInChangeOrderMode">
+				{{ $t('toDoList.add') }}
+			</VBtn>
 			<VBtn
-				text="drag & drop"
 				:color="isInChangeOrderMode ? 'secondary' : 'secondaryOutline'"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
 				append-icon="arrows-up-down"
-			></VBtn>
+			>Reorder items
+			</VBtn>
 		</VCol>
 	</VRow>
 	<VRow class="flex-grow-1 h-100 overflow-y-auto" justify="center">
 		<VCol class="px-2 h-auto" :md="shownGroups.length % 2 == 0 ? 6 : undefined" :lg="shownGroups.length > 2 ? 3 : undefined"
 		      v-for="group in shownGroups" :key="group.timePeriod.id">
-			<VCard class="mx-auto rounded-lg px-3 py-5 d-flex flex-column ga-4" min-width="350">
-				<VSheet class="mx-auto px-3 d-flex align-center ga-3" rounded color="neutral-300">
+			<VCard class="mx-auto rounded-lg px-4 py-5 d-flex flex-column ga-4" min-width="350">
+				<VSheet class="mx-auto px-3 d-flex align-center ga-3" rounded :color="getBgColor(group.timePeriod.color)">
 					<VCardTitle class="px-0">{{ group.timePeriod.text }}</VCardTitle>
+					<span class="text-caption opacity-60 ml-1">{{ group.timePeriod.lengthInDays }}d</span>
+					<VTooltip v-if="group.timePeriod.streak > 0" location="top">
+						<template v-slot:activator="{ props: tooltipProps }">
+							<div v-bind="tooltipProps" class="d-flex align-center ga-1 text-white">
+								<VIcon icon="fire-flame-curved" size="16" :color="group.timePeriod.streak >= group.timePeriod.bestStreak ? 'warning' : 'white'"></VIcon>
+								<span class="text-body-2 font-weight-bold">{{ group.timePeriod.streak }}</span>
+							</div>
+						</template>
+						<span>Group streak: {{ group.timePeriod.streak }} | Best: {{ group.timePeriod.bestStreak }}</span>
+					</VTooltip>
 					<VIconBtn color="white" variant="tonal" density="comfortable" class="ml-auto" icon="eye-slash"
 					          @click="toggleHideTimePeriod(group.timePeriod.id as number)" :title="$t('general.hide')" :disabled="isInChangeOrderMode">
 						<VIcon size="small"></VIcon>
 					</VIconBtn>
 				</VSheet>
+
 				<ToDoList
 					:kind="ToDoListKind.ROUTINE"
 					:items="group.items"
 					:isInChangeOrderMode="isInChangeOrderMode"
 					:listId="group.timePeriod.id as number"
 					:activityIds="group.items.map(item => item.activity.id)"
-					@itemsChanged="itemsChanged"
+					:streakConfig="{ graceDays: group.timePeriod.streakGraceDays, periodLengthInDays: group.timePeriod.lengthInDays }"
+				@itemsChanged="onItemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="onDelete"
 					@itemsReordered="(oldIndex, newIndex, request) => handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)"
 					@crossListDrop="handleCrossListDrop"
 				></ToDoList>
+				<VProgressLinear
+					:modelValue="groupProgress(group.items).done"
+					:max="groupProgress(group.items).total"
+					rounded="sm"
+					height="10"
+					color="secondary-accent"
+				>
+				</VProgressLinear>
 			</VCard>
 		</VCol>
 	</VRow>
@@ -61,9 +84,12 @@ import {RoutineTodoListGroupedList} from '@/dtos/response/todoList/RoutineTodoLi
 import {RoutineTodoListItemRequest} from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
-import {useRoutineTimePeriodCrud, useRoutineTodoListItemCrud} from '@/api/ConcretesCrudComposable.ts';
+import {useRoutineTimePeriodCrud} from '@/api/routineTodoList/timePeriodApi.ts';
+import {useRoutineTodoListItemCrud} from '@/api/routineTodoList/routineTodoListApi.ts';
 import {hasObjectChanged} from '@/utils/helperMethods.ts';
+import {useColor} from '@/utils/colorPalette.ts';
 
+const {getBgColor} = useColor();
 const {changeTimePeriodVisibility} = useRoutineTimePeriodCrud()
 const {fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder} = useRoutineTodoListItemCrud()
 
@@ -82,22 +108,15 @@ function toggleChangeOrderMode() {
 async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest, timePeriodId: number) {
 	const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId);
 	if (group) {
-		// Perform the reorder immediately for UI responsiveness
 		const [movedItem] = group.items.splice(oldIndex, 1);
 		if (movedItem) {
 			group.items.splice(newIndex, 0, movedItem);
 		}
-
-		console.log('Items reordered in group:', timePeriodId, {oldIndex, newIndex, newOrder: group.items.map(item => item.id)});
-
-		// Call the API to persist the change
 		await changeDisplayOrder(request);
 	}
 }
 
 async function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
-	console.log('Cross-group drop:', {sourceListId, targetListId, itemId});
-
 	const sourceGroup = groupedItems.value.find(g => g.timePeriod.id === sourceListId);
 	const targetGroup = groupedItems.value.find(g => g.timePeriod.id === targetListId);
 
@@ -108,10 +127,8 @@ async function handleCrossListDrop(sourceListId: number, targetListId: number, i
 
 	if (!movedItem) return;
 
-	// Remove from source
 	sourceGroup.items.splice(sourceIndex, 1);
 
-	// Calculate target position
 	let targetIndex = 0;
 	if (dropTarget.data.type === 'drop-zone') {
 		targetIndex = dropTarget.data.index;
@@ -119,10 +136,8 @@ async function handleCrossListDrop(sourceListId: number, targetListId: number, i
 			targetIndex += 1;
 		}
 	}
-	// Insert into target
 	targetGroup.items.splice(targetIndex, 0, movedItem);
 
-	// Update item's time period
 	const updateRequest = new RoutineTodoListItemRequest(
 		movedItem.activity.id,
 		targetListId,
@@ -133,7 +148,6 @@ async function handleCrossListDrop(sourceListId: number, targetListId: number, i
 
 	await update(itemId, updateRequest);
 
-	// Handle ordering
 	const precedingItem = targetIndex > 0 ? targetGroup.items[targetIndex - 1] : null;
 	const followingItem = targetIndex < targetGroup.items.length - 1 ? targetGroup.items[targetIndex + 1] : null;
 
@@ -149,10 +163,15 @@ async function handleCrossListDrop(sourceListId: number, targetListId: number, i
 const shownGroups = computed(() => groupedItems.value.filter(item => !item.timePeriod.isHidden))
 const hiddenGroups = computed(() => groupedItems.value.filter(item => item.timePeriod.isHidden))
 
+function groupProgress(items: RoutineTodoListItemEntity[]) {
+	const done = items.reduce((sum, item) => sum + (item.doneCount ?? (item.isDone ? 1 : 0)), 0);
+	const total = items.reduce((sum, item) => sum + (item.totalCount ?? 1), 0);
+	return {done, total};
+}
+
 function getAllRecords() {
 	getAllGrouped().then((response) => {
 		groupedItems.value = response;
-		console.log(groupedItems.value);
 	});
 }
 
@@ -199,7 +218,7 @@ async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemReq
 }
 
 function onDelete(id: number) {
-	deleteEntity(id).then((deletedItem) => {
+	deleteEntity(id).then(() => {
 		const group = groupedItems.value.find((group) => group.items.some((item) => item.id === id));
 		if (group) {
 			group.items = group.items.filter((item) => item.id !== id);
@@ -207,11 +226,10 @@ function onDelete(id: number) {
 	})
 }
 
-const itemsChanged = (changedItems: RoutineTodoListItemEntity[]) => {
-	console.log(changedItems);
+function onItemsChanged(changedItems: number[]) {
 	groupedItems.value = groupedItems.value.map((group) => ({
 		...group,
-		items: group.items.filter((item) => changedItems.some((changedItem) => changedItem.id === item.id)),
+		items: group.items.filter((item) => changedItems.includes(item.id)),
 	}));
-};
+}
 </script>

@@ -46,10 +46,10 @@ import {computed, inject, onMounted, ref} from 'vue'
 import CreationPreview from './misc/CreationPreview.vue'
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
-import {CreationPreviewType, SLOT_HEIGHT} from '@/types/DayPlannerTypes.ts';
+import {CreationPreviewType, SLOT_HEIGHT} from '@/components/dayPlanner/DayPlannerTypes.ts';
 import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/types/IBaseDayPlannerStore.ts';
+import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {Time} from '@/dtos/dto/Time.ts';
 
