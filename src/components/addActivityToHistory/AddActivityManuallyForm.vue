@@ -1,11 +1,9 @@
 <template>
 <div class="d-flex flex-column ga-3">
 	<ActivitySelectionForm ref="activitySelectionForm" :formDisabled></ActivitySelectionForm>
-	<div class="mx-auto d-flex ga-6">
-		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
-
-		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="timeLength" minWidth="150px" maxWidth="150px"
-		            hideDetails></TimePicker>
+	<div class="mx-auto d-flex flex-wrap ga-4">
+		<DateTimePicker class="mb-auto flex-grow-1" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
+		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="timeLength" hideDetails></TimePicker>
 	</div>
 </div>
 </template>

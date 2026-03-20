@@ -1,5 +1,5 @@
 <template>
-<GoogleLogin :callback="callback">
+<GoogleLogin :callback="callback" :clientId="clientId">
 	<VBtn
 		width="100%"
 		color="primary"
@@ -34,6 +34,7 @@ const emit = defineEmits(["logged-in"]);
 const googleSignInRequest = ref(new GoogleSignInRequest());
 const loading = ref(false);
 const error = ref(false);
+const clientId = import.meta.env.VITE_GOOGLE_LOGIN_CLIENT_ID;
 
 const callback: CallbackTypes.CodeResponseCallback = async (response) => {
 	console.log("Authorisation code", response.code);

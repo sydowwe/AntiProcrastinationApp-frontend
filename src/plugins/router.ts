@@ -41,22 +41,26 @@ const router = createRouter({
 		{
 			path: '/confirm-email',
 			name: 'confirmEmail',
-			component: ConfirmEmailView
+			component: ConfirmEmailView,
+			meta: { showRecaptchaBadge: true }
 		},
 		{
 			path: '/login',
 			name: 'login',
-			component: LoginView
+			component: LoginView,
+			meta: { showRecaptchaBadge: true }
 		},
 		{
 			path: '/registration',
 			name: 'registration',
-			component: RegistrationView
+			component: RegistrationView,
+			meta: { showRecaptchaBadge: true }
 		},
 		{
 			path: '/forgotten-password',
 			name: 'forgottenPassword',
-			component: ForgottenPasswordView
+			component: ForgottenPasswordView,
+			meta: { showRecaptchaBadge: true }
 		},
 		{
 			path: '/user/settings',
@@ -188,9 +192,11 @@ router.beforeEach((to, from, next) => {
 	}
 	hideFullScreenLoading();
 });
-router.afterEach(() => {
-
-
+router.afterEach((to) => {
+	const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null;
+	if (badge) {
+		badge.style.visibility = to.meta.showRecaptchaBadge ? 'visible' : 'hidden';
+	}
 });
 
 // const originalPush = router.push;

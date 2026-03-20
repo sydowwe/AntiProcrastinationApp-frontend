@@ -1,8 +1,8 @@
 <template>
 <VApp>
 	<Navbar></Navbar>
-	<VMain>
-		<VContainer class="h-100 d-flex pa-3 pa-md-4 overflow-y-auto" :fluid="true" style="max-height: calc(100vh - 64px)">
+	<VMain style="height: 100dvh; overflow: hidden;">
+		<VContainer class="h-100 d-flex pa-3 pa-md-4 overflow-y-auto" :fluid="true">
 			<RouterView></RouterView>
 		</VContainer>
 	</VMain>

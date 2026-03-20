@@ -229,9 +229,7 @@ export const vuetify = createVuetify({
 })
 app.use(vuetify);
 
-app.use(vue3GoogleLogin, {
-	clientId: import.meta.env.VITE_GOOGLE_LOGIN_CLIENT_ID
-})
+app.use(vue3GoogleLogin, {})
 
 
 app.use(autoAnimatePlugin)

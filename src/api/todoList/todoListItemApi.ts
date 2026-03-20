@@ -5,7 +5,7 @@ import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.t
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
 import {API} from '@/plugins/axiosConfig.ts';
 
-export function useTodoListItemCrud(namedListId: number) {
+export function useTodoListItemCrud(todoListId: number) {
 	const url = 'todo-list-item';
 	const {fetchById, fetchSelectOptions} = useEntityQuery<TodoListItemEntity>({responseClass: TodoListItemEntity, entityName: url})
 	const {
@@ -21,12 +21,12 @@ export function useTodoListItemCrud(namedListId: number) {
 	})
 
 	async function fetchAll(): Promise<TodoListItemEntity[]> {
-		const response = await API.get(url, {params: {namedListId}})
+		const response = await API.get(url, {params: {todoListId}})
 		return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
 	}
 
 	async function createWithResponse(entityData: ToDoListItemRequest): Promise<TodoListItemEntity> {
-		const createResponse = await API.post(url, {...entityData, namedListId})
+		const createResponse = await API.post(url, {...entityData, todoListId})
 		return fetchById(createResponse.data)
 	}
 

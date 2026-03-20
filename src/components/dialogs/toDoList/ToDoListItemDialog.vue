@@ -4,7 +4,8 @@
           :confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')">
 	<VForm ref="form" @keyup.native.enter="save" @submit="save" validate-on="submit">
 		<ActivitySelectOrQuickEditFormField ref="activityFormField" view-name="To-do list task" :isEdit></ActivitySelectOrQuickEditFormField>
-		<TodoListRepeatCountFormField class="my-5" v-model="isRepeated" v-model:done-count="toDoListItem.doneCount" v-model:total-count="toDoListItem.totalCount"
+		<TodoListRepeatCountFormField class="mt-3 mb-5" v-model="isRepeated" v-model:done-count="toDoListItem.doneCount"
+		                              v-model:total-count="toDoListItem.totalCount"
 		                              :isEdit></TodoListRepeatCountFormField>
 		<VIdSelect
 			:label="$t('toDoList.priority')"
@@ -63,14 +64,15 @@ onMounted(async () => {
 
 async function save() {
 	const isValid = await form.value?.validate()
-	if (!isValid) {
+	if (!isValid?.valid) {
 		return;
 	}
 
 	const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus();
-	if (activityFormFieldResult) {
-		toDoListItem.value.activityId = activityFormFieldResult.activityId
+	if (!activityFormFieldResult) {
+		return;
 	}
+	toDoListItem.value.activityId = activityFormFieldResult.activityId
 
 	if (!isRepeated.value) {
 		toDoListItem.value.totalCount = null;

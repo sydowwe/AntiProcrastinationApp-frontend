@@ -1,25 +1,28 @@
 <template>
 <VRow justify="center" align="center" noGutters>
 	<VCol cols="12" sm="10" md="10" lg="10" class="mt-3 mt-md-0">
-		<VCard elevation="3" class="pa-6">
+		<VCard elevation="3" class="pa-3 pa-md-6">
 			<VCardTitle class="text-h5 text-center pb-3">Pomodoro Timer</VCardTitle>
 			<div v-if="timeInputVisible">
 				<div class="d-flex justify-center ga-2 mb-3">
 					<VBtn variant="tonal" prependIcon="sliders" color="secondaryOutline" @click="openPresets">{{ i18n.t('controls.presets') }}</VBtn>
 					<VBtn variant="tonal" prependIcon="clock-rotate-left" @click="resetPickersToDefault">Defaults</VBtn>
 				</div>
-				<div class="d-flex justify-center ga-3">
-					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
-						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.focusTime') }}</VCardTitle>
-						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="focusInitialTime" viewMode="minute"></TimePicker>
+				<div class="d-flex flex-wrap justify-center ga-3">
+					<SubtleCard color="primary-accent" borderOpacity="high" class="d-flex align-center ga-3 pa-3">
+						<VSheet color="blue" rounded="sm" width="4" height="36" class="flex-shrink-0"></VSheet>
+						<span class="text-body-2 font-weight-medium flex-shrink-0">{{ i18n.t('pomodoroTimer.focus') }}</span>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="focusInitialTime" viewMode="minute" hideDetails></TimePicker>
 					</SubtleCard>
-					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
-						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.shortRestTime') }}</VCardTitle>
-						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="shortRestInitialTime" viewMode="minute"></TimePicker>
+					<SubtleCard color="primary-accent" borderOpacity="high" class="d-flex align-center ga-3 pa-3">
+						<VSheet color="yellow-lighten-2" rounded="sm" width="4" height="36" class="flex-shrink-0"></VSheet>
+						<span class="text-body-2 font-weight-medium flex-shrink-0">{{ i18n.t('pomodoroTimer.shortRest') }}</span>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="shortRestInitialTime" viewMode="minute" hideDetails></TimePicker>
 					</SubtleCard>
-					<SubtleCard color="primary-accent" borderOpacity="high" class="text-center pa-4">
-						<VCardTitle class="px-0 pt-0 mb-1">{{ i18n.t('pomodoroTimer.longRestTime') }}</VCardTitle>
-						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="longRestInitialTime" viewMode="minute"></TimePicker>
+					<SubtleCard color="primary-accent" borderOpacity="high" class="d-flex align-center ga-3 pa-3">
+						<VSheet color="deep-purple-lighten-1" rounded="sm" width="4" height="36" class="flex-shrink-0"></VSheet>
+						<span class="text-body-2 font-weight-medium flex-shrink-0">{{ i18n.t('pomodoroTimer.longRest') }}</span>
+						<TimePicker label="" variant="tonal" color="primaryOutline" v-model="longRestInitialTime" viewMode="minute" hideDetails></TimePicker>
 					</SubtleCard>
 				</div>
 				<SubtleCard color="primary-accent" borderOpacity="high" class="mt-3 d-flex flex-column flex-md-row justify-center ga-2 ga-md-3 pa-2 mx-auto"
@@ -46,7 +49,7 @@
 			<hr/>
 			<!-- Activity selection forms (before start) -->
 			<VRow v-if="timeInputVisible" class="mt-1">
-				<VCol cols="6">
+				<VCol cols="12" sm="6">
 					<div class="mb-1 d-flex ga-1 align-center">
 						<VIcon icon="fas fa-bullseye" size="20"></VIcon>
 						<h3 class="text-h6">
@@ -55,7 +58,7 @@
 					</div>
 					<ActivitySelectionForm ref="mainActivitySelectionForm" v-model:activityId="focusActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
 				</VCol>
-				<VCol cols="6">
+				<VCol cols="12" sm="6">
 					<div class="mb-1 d-flex ga-1 align-center">
 						<VIcon icon="fas fa-mug-hot" size="20"></VIcon>
 						<h3 class="text-h6">
@@ -67,7 +70,7 @@
 				</VCol>
 			</VRow>
 			<!-- Activity names display (after start) -->
-			<div v-else class="d-flex justify-center ga-6 mt-3">
+			<div v-else class="d-flex flex-wrap justify-center ga-3 mt-3">
 				<VChip color="primary" variant="tonal" size="large">
 					<VIcon icon="fas fa-bullseye" start></VIcon>
 					{{ mainActivitySelectionForm?.getSelectedActivityName }}

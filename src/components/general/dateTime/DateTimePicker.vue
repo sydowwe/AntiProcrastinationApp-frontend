@@ -15,7 +15,7 @@ import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 const props = defineProps({
 	density: {
 		type: String as () => 'compact' | 'comfortable' | 'default',
-		default: 'default',
+		default: 'comfortable',
 	},
 	dateClearable: {
 		type: Boolean,

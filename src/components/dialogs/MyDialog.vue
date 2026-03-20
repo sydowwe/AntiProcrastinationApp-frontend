@@ -1,11 +1,13 @@
 <template>
 <VDialog v-model="dialog" :persistent="persistent" :eager="eager" :maxWidth>
-	<VCard class="py-5 px-0" color="surface">
+	<VCard class="py-4 px-0" color="surface">
 		<slot name="header">
-			<VCardTitle class="mb-1 px-6" v-if="hasHeader">
-				<div class="text-h5">
-					{{ title }}
-				</div>
+			<VCardTitle class="pt-1 px-6" v-if="hasHeader">
+				<slot name="title">
+					<div class="text-h5">
+						{{ title }}
+					</div>
+				</slot>
 			</VCardTitle>
 		</slot>
 		<VCardText class="py-0 overflow-y-auto">
@@ -108,7 +110,7 @@ const maxWidth = computed(() => {
 	} else if (mdAndDown.value) {
 		return '70%'
 	} else if (lgAndDown.value) {
-		return props.isSmall ? '45%' : '70%'
+		return props.isSmall ? '40%' : '70%'
 	} else {
 		return props.isSmall ? '30%' : '50%'
 	}
