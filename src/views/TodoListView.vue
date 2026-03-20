@@ -25,7 +25,7 @@
 				:kind="ToDoListKind.NORMAL"
 				:items
 				:isInChangeOrderMode
-				:listId="namedListId"
+				:listId="todoListId"
 				:activityIds="items.map(item => item.activity.id)"
 				@itemsChanged="itemsChanged"
 				@editItem="toDoListDialog?.openEdit"
@@ -59,12 +59,12 @@ const props = defineProps<{
 	id: string;
 }>();
 
-const namedListId = Number(props.id);
+const todoListId = Number(props.id);
 
 const {fetchById: fetchByIdActivity} = useActivityCrud()
 const {fetchById: fetchByIdTaskUrgency} = useTaskPriorityCrud()
 const {fetchById: fetchByIdNamedList} = useTodoListCrud()
-const {fetchAll, fetchById, createWithResponse, update, deleteEntity, changeUrgency, changeDisplayOrder} = useTodoListItemCrud(namedListId)
+const {fetchAll, fetchById, createWithResponse, update, deleteEntity, changeUrgency, changeDisplayOrder} = useTodoListItemCrud(todoListId)
 
 const i18n = useI18n();
 const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
@@ -76,7 +76,7 @@ const listEntity = ref<TodoListEntity | null>(null);
 
 onMounted(async () => {
 	items.value = await fetchAll();
-	listEntity.value = await fetchByIdNamedList(namedListId);
+	listEntity.value = await fetchByIdNamedList(todoListId);
 });
 
 function toggleChangeOrderMode() {

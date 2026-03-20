@@ -8,8 +8,6 @@
 	:prependInnerIcon="icon"
 	:density
 	:clearable="false"
-
-
 	mask="##:##"
 	returnMaskedValue
 	:active="menuOpen"

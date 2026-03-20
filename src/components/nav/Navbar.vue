@@ -223,7 +223,7 @@ const items: MenuItem[] = [
 		title: 'activityTracking', icon: 'clock-rotate-left', needsAdmin: false,
 		children: [
 			{title: 'activityTracking', icon: 'globe', to: '/activity-tracking', needsAdmin: false},
-			{title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings', needsAdmin: false},
+			{title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings/distinctEntries', needsAdmin: false},
 			{title: 'desktopActivityTracking', icon: 'desktop', to: '/activity-tracking/desktop', needsAdmin: false},
 		]
 	},
@@ -234,8 +234,7 @@ const items: MenuItem[] = [
 		needsAdmin: false,
 		children: [
 			{title: 'toDoList', icon: 'list-check', to: '/todo-list', needsAdmin: false},
-			{title: 'routineToDoList', icon: 'rotate', to: '/routine-todo-list', needsAdmin: false},
-			{title: 'routineSettings', icon: 'sliders', to: '/routine-settings', needsAdmin: false},
+			{title: 'routineToDoList', icon: 'rotate', to: '/routine-todo-list', needsAdmin: false}
 		]
 	},
 	{

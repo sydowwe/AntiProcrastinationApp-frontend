@@ -7,10 +7,15 @@
 		<TimeDisplayWithProgress v-else :timeInitialObject="initialTime" :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
 
 		<TimerControls class="my-7" :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
-		<hr class="mb-4"/>
-		<TimerPresetsSection :timeInputVisible @applyPreset="applyPreset"></TimerPresetsSection>
-		<hr class="mt-6 mb-4"/>
-		<ActivitySelectionForm ref="activitySelectionForm" v-model:activityId="selectedActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
+		<template v-if="timeInputVisible">
+			<hr class="mb-4"/>
+			<TimerPresetsSection :timeInputVisible @applyPreset="applyPreset"></TimerPresetsSection>
+			<hr class="mt-6 mb-4"/>
+			<ActivitySelectionForm ref="activitySelectionForm" v-model:activityId="selectedActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
+		</template>
+		<VChip v-else color="primary" variant="tonal" size="large" class="mx-auto">
+			{{ activitySelectionForm?.getSelectedActivityName }}
+		</VChip>
 	</VCol>
 </VRow>
 <SaveActivityDialog ref="saveDialog" @saved="saveActivity" @resetTime="resetTimer"></SaveActivityDialog>
@@ -51,10 +56,13 @@ const notificationTimeoutId = ref<number | undefined>(undefined);
 const now = ref(Date.now()); // Reactive tick for forcing re-computation
 
 const timeRemaining = computed(() => {
-	if (endsAt.value === null) {
-		return 0;
+	if (endsAt.value !== null) {
+		return Math.max(0, Math.ceil((endsAt.value - now.value) / 1000));
 	}
-	return Math.max(0, Math.ceil((endsAt.value - now.value) / 1000));
+	if (pausedRemaining.value !== null) {
+		return Math.max(0, Math.ceil(pausedRemaining.value / 1000));
+	}
+	return 0;
 });
 
 const timeRemainingObject = computed(() => {

@@ -1,66 +1,50 @@
 <template>
+<!-- Mobile: slide-out category drawer -->
+<VNavigationDrawer v-model="categoryDrawerOpen" temporary location="left" class="d-md-none" width="280">
+	<TodoListCategoryPanel
+		:categories :selectedCategoryId :categorySortAsc
+		@selectCategory="onMobileSelectCategory"
+		@openCreate="categoryDialog?.openCreate()"
+		@openEdit="categoryDialog?.openEdit"
+		@confirmDelete="confirmDeleteCategory"
+		@toggleSort="toggleCategorySort"
+	/>
+</VNavigationDrawer>
+
 <VRow class="mt-lg-5 mt-md-3">
-	<!-- Left panel: categories -->
-	<VCol cols="4" lg="3">
-		<VCard class="px-3 pt-3 pb-2">
-			<div class="d-flex align-center justify-space-between px-4 mb-2">
-				<div class="d-flex align-center ga-4">
-					<span class="text-subtitle-1 font-weight-medium flex-grow-1">{{ $t('toDoList.namedList.categories') }}</span>
-					<VIconBtn
-						icon="plus"
-						density="comfortable"
-						color="success"
-						variant="tonal"
-						@click="categoryDialog?.openCreate()"
-					/>
-				</div>
-				<VIconBtn
-					:icon="categorySortAsc ? 'sort-alpha-down' : 'sort-alpha-up'"
-					density="comfortable"
-					variant="tonal"
-					@click="toggleCategorySort"
-				/>
-			</div>
-			<VList density="comfortable" style="--v-activated-opacity: 0">
-				<VListItem
-					class="pl-3 py-2"
-					:variant="selectedCategoryId === null ? 'outlined' : 'text'"
-					:style="selectedCategoryId === null ? { borderColor: 'rgb(var(--v-theme-primary))' } : {}"
-					prependIcon="list"
-					:title="$t('general.all')"
-					rounded="lg"
-					@click="selectCategory(null)"
-				/>
-				<VListItem
-					class="pr-2 pl-3 py-2"
-					v-for="cat in categories"
-					:key="cat.id"
-					:variant="selectedCategoryId === cat.id ? 'outlined' : 'text'"
-					:style="selectedCategoryId === cat.id ? { borderColor: 'rgb(var(--v-theme-primary))' } : {}"
-					:prependIcon="cat.icon ?? undefined"
-					:title="cat.name"
-					rounded="lg"
-					@click="selectCategory(cat.id)"
-				>
-					<template v-if="cat.id !== -1" #append>
-						<div class="d-flex ga-2">
-							<VIconBtn icon="pen" density="comfortable" variant="tonal" color="secondaryOutline" @click.stop="categoryDialog?.openEdit(cat)">
-								<VIcon size="16"></VIcon>
-							</VIconBtn>
-							<VIconBtn icon="trash" density="comfortable" variant="tonal" color="default" @click.stop="confirmDeleteCategory(cat)">
-								<VIcon size="16"></VIcon>
-							</VIconBtn>
-						</div>
-					</template>
-				</VListItem>
-			</VList>
+	<!-- Left panel: categories (desktop) -->
+	<VCol cols="4" lg="3" class="d-none d-md-block">
+		<VCard class="py-0">
+			<TodoListCategoryPanel
+				:categories :selectedCategoryId :categorySortAsc
+				@selectCategory="selectCategory"
+				@openCreate="categoryDialog?.openCreate()"
+				@openEdit="categoryDialog?.openEdit"
+				@confirmDelete="confirmDeleteCategory"
+				@toggleSort="toggleCategorySort"
+			/>
 		</VCard>
 	</VCol>
 
 	<!-- Right panel: lists -->
-	<VCol cols="8" lg="9">
-		<div class="d-flex justify-space-between align-center mb-5">
-			<VBtn color="primary" appendIcon="plus" @click="dialog?.openCreate(selectedCategoryIdForCreate)">{{ $t('toDoList.namedList.add') }}</VBtn>
+	<VCol cols="12" md="8" lg="9">
+		<div class="d-flex flex-column ga-2 mb-5">
+			<div class="d-flex align-center ga-2">
+				<VIconBtn icon="bars" density="comfortable" variant="tonal" class="d-md-none" @click="categoryDrawerOpen = true" />
+				<VBtn color="primary" appendIcon="plus" @click="dialog?.openCreate(selectedCategoryIdForCreate)">{{
+						$t('toDoList.namedList.add')
+					}}
+				</VBtn>
+				<VSpacer/>
+				<VIconBtn
+					:icon="listSortAsc ? 'sort-alpha-down' : 'sort-alpha-up'"
+					density="comfortable"
+					variant="outlined"
+					color="secondaryOutline"
+					@click="toggleListSort"
+					style="height: 40px; width: 40px;"
+				/>
+			</div>
 			<VTextField
 				v-model="listFilterName"
 				:label="$t('general.search')"
@@ -68,19 +52,10 @@
 				density="compact"
 				clearable
 				hideDetails
-				max-width="500"
-			/>
-			<VIconBtn
-				:icon="listSortAsc ? 'sort-alpha-down' : 'sort-alpha-up'"
-				density="comfortable"
-				variant="outlined"
-				color="secondaryOutline"
-				@click="toggleListSort"
-				style="height: 40px; width: 40px; align-self: center"
 			/>
 		</div>
 
-		<div v-autoAnimate class="d-flex flex-column ga-4">
+		<div class="d-flex flex-column ga-4">
 			<VCard
 				v-for="list in lists"
 				:key="list.id"
@@ -95,12 +70,8 @@
 						<div v-if="list.description" class="text-body-2 text-medium-emphasis mt-1">{{ list.description }}</div>
 					</div>
 					<div class="d-flex ga-2">
-						<VIconBtn icon="pen" density="comfortable" color="secondaryOutline" variant="tonal" @click.stop="dialog?.openEdit(list)">
-							<VIcon size="20"></VIcon>
-						</VIconBtn>
-						<VIconBtn icon="trash" density="comfortable" color="default" variant="tonal" @click.stop="confirmDelete(list)">
-							<VIcon size="20"></VIcon>
-						</VIconBtn>
+						<VIconBtn icon="pen" density="comfortable" color="secondaryOutline" variant="tonal" @click.stop="dialog?.openEdit(list)"/>
+						<VIconBtn icon="trash" density="comfortable" color="default" variant="tonal" @click.stop="confirmDelete(list)"/>
 					</div>
 				</div>
 			</VCard>
@@ -144,6 +115,7 @@ import {TodoListCategoryEntity} from '@/dtos/response/todoList/TodoListCategoryE
 import {TodoListCategoryRequest} from '@/dtos/request/todoList/TodoListCategoryRequest.ts';
 import TodoListDialog from '@/components/dialogs/toDoList/TodoListDialog.vue';
 import TodoListCategoryDialog from '@/components/dialogs/toDoList/TodoListCategoryDialog.vue';
+import TodoListCategoryPanel from '@/components/toDoList/TodoListCategoryPanel.vue';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 const router = useRouter();
@@ -163,6 +135,7 @@ const selectedCategoryId = ref<number | null>(null);
 const categorySortAsc = ref(true);
 const listFilterName = ref<string | null>(null);
 const listSortAsc = ref(true);
+const categoryDrawerOpen = ref(false);
 const dialog = ref<InstanceType<typeof TodoListDialog>>();
 const categoryDialog = ref<InstanceType<typeof TodoListCategoryDialog>>();
 const deleteDialog = ref(false);
@@ -194,6 +167,11 @@ async function loadLists() {
 async function selectCategory(id: number | null) {
 	selectedCategoryId.value = id;
 	await loadLists();
+}
+
+async function onMobileSelectCategory(id: number | null) {
+	await selectCategory(id);
+	categoryDrawerOpen.value = false;
 }
 
 async function toggleCategorySort() {

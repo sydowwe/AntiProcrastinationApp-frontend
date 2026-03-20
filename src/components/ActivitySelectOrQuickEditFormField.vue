@@ -1,11 +1,11 @@
 <template>
 <div>
-	<div class="flex-wrap d-flex justify-space-between">
-		<VSwitch class="ml-2 mb-2 flex-wrap" color="primaryOutline" v-model="isActivityFormHidden"
+	<div class="flex-wrap d-flex ga-2 justify-space-between">
+		<VSwitch class="mx-auto flex-wrap" color="primaryOutline" v-model="isActivityFormHidden"
 		         :label='isEdit ? `Quick edit activity` :  `Quick create activity with role "${viewName}"`'
 		         density="comfortable" hideDetails></VSwitch>
 
-		<VSelect class="flex-1-0 mb-4 mt-2" v-if="isActivityFormHidden && isEdit" min-width="150" max-width="150" density="compact" label="Quick edit mode"
+		<VSelect class="flex-1-0  my-2" v-if="isActivityFormHidden && isEdit" min-width="140" max-width="140" density="compact" label="Quick edit mode"
 		         v-model="quickEditMode"
 		         :items="['Overwrite', 'Clone']" hideDetails></VSelect>
 	</div>
@@ -90,7 +90,7 @@ async function execAndReturnStatus() {
 			return {activityId: newId, status: 'create'};
 		}
 	}
-	if (!await activityForm.value?.validate()) {
+	if ((await activityForm.value?.validate() ?? []).length > 0) {
 		showErrorSnackbar(`Please select an activity`);
 		return;
 	}

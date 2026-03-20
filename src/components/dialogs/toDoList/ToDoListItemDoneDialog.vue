@@ -1,16 +1,16 @@
 <template>
-<MyDialog v-model="dialogShown" title="" @confirmed="save" :eager="true">
-	<template v-slot:header>
-		<div class="text-wrap">
+<MyDialog v-model="dialogShown" title="" @confirmed="save" :eager="true" isSmall>
+	<template v-slot:title>
+		<span class="text-wrap">
 			{{ i18n.t('toDoList.saveTask') }}
 			<span class="text-purple-accent-4 font-weight-bold">{{ toDoListItem?.activity?.name }}</span>
 			{{ i18n.t('history.toHistory').toLowerCase() }}?
-		</div>
+		</span>
 	</template>
-	<VForm @keyup.native.enter="save" class="d-flex flex-column align-start ga-3">
+	<VForm @keyup.native.enter="save" class="d-flex flex-column flex-md-row align-center ga-4 ga-md-6 pt-3">
 		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
 
-		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="length" minWidth="150px" maxWidth="150px"
+		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="length" minWidth="150px" maxWidth="150px" viewMode="minute"
 		            hideDetails></TimePicker>
 	</VForm>
 </MyDialog>
