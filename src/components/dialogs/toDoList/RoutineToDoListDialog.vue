@@ -12,6 +12,15 @@
 		                              v-model:total-count="routineToDoListItem.totalCount" :isEdit></TodoListRepeatCountFormField>
 		<VIdSelect class="pt-2 pb-3" :label="$t('toDoList.timePeriod')" v-model="routineToDoListItem.timePeriodId" :clearable="false"
 		           :items="timePeriodOptions" hide-details></VIdSelect>
+		<VTextarea
+			v-model="routineToDoListItem.note"
+			label="Note"
+			density="compact"
+			hideDetails
+			:rows="2"
+			autoGrow
+			class="mt-3"
+		/>
 	</VForm>
 </MyDialog>
 </template>

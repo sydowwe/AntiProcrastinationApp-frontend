@@ -46,6 +46,16 @@
 	</template>
 	<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
 	<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
+	<VChip
+		v-if="dueDateChip"
+		:color="dueDateChip.color"
+		size="x-small"
+		variant="tonal"
+		density="compact"
+		prependIcon="calendar"
+		class="mt-1"
+	>{{ dueDateChip.label }}</VChip>
+	<span v-if="toDoListItem.note" class="text-caption text-medium-emphasis d-block mt-1">{{ toDoListItem.note }}</span>
 	<template v-slot:append>
 		<VIcon v-if="isSelected" icon="check-circle" color="#fff">
 		</VIcon>
@@ -83,6 +93,7 @@
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import {Time} from '@/dtos/dto/Time.ts';
 import {useI18n} from 'vue-i18n';
 import {draggable} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {setCustomNativeDragPreview} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
@@ -106,6 +117,23 @@ const props = withDefaults(defineProps<{
 	streakConfig: undefined,
 });
 
+const dueDateChip = computed(() => {
+	const dueDate = (props.toDoListItem as any).dueDate as string | null | undefined;
+	if (!dueDate) return null;
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const due = new Date(dueDate + 'T00:00:00');
+	const tomorrow = new Date(today);
+	tomorrow.setDate(today.getDate() + 1);
+	const isOverdue = due < today && !props.toDoListItem.isDone;
+	const isToday = due.getTime() === today.getTime();
+	const isTomorrow = due.getTime() === tomorrow.getTime();
+	let label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : due.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+	const dueTime = (props.toDoListItem as any).dueTime as Time | null | undefined;
+	if (dueTime) label += ' ' + Time.getString(dueTime);
+	return {label, color: isOverdue ? 'error' : isToday ? 'warning' : undefined};
+});
+
 const itemStreak = computed(() => (props.toDoListItem as any).streak as number | undefined);
 const itemBestStreak = computed(() => (props.toDoListItem as any).bestStreak as number | undefined);
 const lastCompletedAt = computed(() => (props.toDoListItem as any).lastCompletedAt as string | null | undefined);
@@ -119,8 +147,6 @@ const gracePeriodActive = computed(() => {
 	const daysSince = Math.floor((now.getTime() - lastDone.getTime()) / (1000 * 60 * 60 * 24));
 	return daysSince >= periodLengthInDays && daysSince < periodLengthInDays + graceDays;
 });
-
-const MILESTONES = [7, 14, 30, 60, 90, 180, 365];
 
 function getMilestoneIcon(streak: number): string | null {
 	if (streak >= 365) return 'crown';
@@ -232,7 +258,12 @@ function minusClicked(event: Event) {
 		event.preventDefault();
 		return;
 	}
-	// Add your minus button logic here
+	if (props.toDoListItem.doneCount === null || props.toDoListItem.doneCount <= 0) return;
+	props.toDoListItem.doneCount--;
+	if (props.toDoListItem.isDone) {
+		props.toDoListItem.isDone = false;
+		emits('isDoneChanged', props.toDoListItem);
+	}
 }
 
 function progressClicked(event: Event) {
@@ -240,12 +271,18 @@ function progressClicked(event: Event) {
 		event.preventDefault();
 		return;
 	}
-	// Add your progress click logic here
+	if (props.toDoListItem.doneCount === null || props.toDoListItem.totalCount === null) return;
+	if (props.toDoListItem.doneCount >= props.toDoListItem.totalCount) return;
+	props.toDoListItem.doneCount++;
+	if (props.toDoListItem.doneCount >= props.toDoListItem.totalCount) {
+		props.toDoListItem.isDone = true;
+		emits('isDoneChanged', props.toDoListItem);
+	}
 }
 
 watch(
 	() => props.toDoListItem.isDone,
-	(newValue) => {
+	() => {
 		isSelected.value = false;
 	}
 );

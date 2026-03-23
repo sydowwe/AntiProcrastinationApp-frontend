@@ -4,9 +4,21 @@
 	:class="{ 'list-invalid-drop-target': isDraggingDuplicateActivity }"
 	ref="autoParent"
 >
-	<SubtleCard class="duplicate-warning-banner" v-if="isDraggingDuplicateActivity" color="error" icon="ban" title="Task already present in this list" titleCentered>
+	<VProgressLinear
+		:modelValue="progress.done"
+		:max="progress.total"
+		rounded="sm"
+		height="17"
+		color="secondary-accent"
+		class="mt-2"
+	>
+	<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
+		{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
+	</span>
+	</VProgressLinear>
 
-	</SubtleCard>
+	<SubtleCard class="duplicate-warning-banner" v-if="isDraggingDuplicateActivity" color="error" icon="ban" title="Task already present in this list"
+	            titleCentered/>
 
 	<div
 		v-for="(item, index) in items"
@@ -58,14 +70,18 @@
 		:isDraggedOver="dragState.isEmptyZoneDraggedOver"
 		:isInvalidDrop="dragState.isEmptyZoneInvalidDrop"
 	/>
-</div>
+	<div v-if="items.length === 0 && !isInChangeOrderMode" class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis ga-3">
+		<VIcon icon="list-check" size="40" opacity="0.4"/>
+		<span class="text-body-2">No tasks</span>
+	</div>
 
-<ToDoListItemDoneDialog
-	v-model="itemDoneDialogShown"
-	:toDoListItem="currentDoneItem"
-	:isRecursive="isDialogRecursive"
-	@openNext="recursiveDialogsToSaveToHistory"
-/>
+	<ToDoListItemDoneDialog
+		v-model="itemDoneDialogShown"
+		:toDoListItem="currentDoneItem"
+		:isRecursive="isDialogRecursive"
+		@openNext="recursiveDialogsToSaveToHistory"
+	/>
+</div>
 </template>
 
 <script setup lang="ts" generic="TEntity extends IBaseToDoListItem">
@@ -73,7 +89,7 @@ import ToDoListItem from './ToDoListItem.vue';
 import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
 import {ToDoListKind} from '@/dtos/enum/ToDoListKind.ts';
-import {onMounted, ref, toRef} from 'vue';
+import {computed, onMounted, ref, toRef} from 'vue';
 import {API} from '@/plugins/axiosConfig.ts';
 import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue';
 import TodoListEmptyDropZone from '@/components/toDoList/dragAndDrop/TodoListEmptyDropZone.vue';
@@ -108,6 +124,10 @@ const props = defineProps({
 	},
 	streakConfig: {
 		type: Object as () => { graceDays: number; periodLengthInDays: number } | undefined,
+		default: undefined,
+	},
+	allItems: {
+		type: Array as () => TEntity[],
 		default: undefined,
 	},
 });
@@ -178,6 +198,13 @@ const {
 // Setup drag and drop monitoring
 onMounted(() => {
 	setupDragAndDrop();
+});
+
+const progress = computed(() => {
+	const source = props.allItems ?? props.items;
+	const done = source.reduce((sum, item) => sum + (item.doneCount ?? (item.isDone ? 1 : 0)), 0);
+	const total = source.reduce((sum, item) => sum + (item.totalCount ?? 1), 0);
+	return {done, total};
 });
 
 // Other methods not drag and drop

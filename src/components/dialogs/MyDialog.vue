@@ -1,5 +1,5 @@
 <template>
-<VDialog v-model="dialog" :persistent="persistent" :eager="eager" :maxWidth>
+<VDialog v-model="dialog" :persistent="persistent" :eager="eager" :maxWidth @keyup.enter="emit('confirmed')" @keyup.esc="onCloseBtnClick">
 	<VCard class="py-4 px-0" color="surface">
 		<slot name="header">
 			<VCardTitle class="pt-1 px-6" v-if="hasHeader">

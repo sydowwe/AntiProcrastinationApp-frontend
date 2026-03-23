@@ -4,6 +4,7 @@ export class BaseToDoListItemRequest {
 		public activityId?: number,
 		public doneCount: number | null = null,
 		public totalCount: number | null = null,
+		public note: string | null = null,
 	) {
 	}
 }

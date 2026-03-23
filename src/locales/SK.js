@@ -389,6 +389,8 @@ const SK = {
             description: `Popis`,
             category: `Kategória`,
             empty: `Žiadne zoznamy`,
+            emptyFilter: `Žiadne zoznamy nezodpovedajú vyhľadávaniu`,
+            emptyCategory: `Táto kategória nemá žiadne zoznamy`,
             deleteConfirm: `Vymazať zoznam?`,
             selectCategory: `Vyberte kategóriu`,
         },

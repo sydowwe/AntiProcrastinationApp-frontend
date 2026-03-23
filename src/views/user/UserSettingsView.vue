@@ -13,6 +13,8 @@
 		</VCard>
 		<VSwitch class="mx-auto my-2" color="main" :label="i18n.t('user.use2FA')" v-model="isTwoFactorAuthEnabled" hide-details
 		         density="compact" @click="toggleTwoFactorAuth"></VSwitch>
+		<VSwitch v-if="pushSupported" class="mx-auto my-2" color="main" label="Push Notifications" v-model="pushEnabled" hideDetails
+		         density="compact" @click="togglePushNotifications"></VSwitch>
 		<VRow justify="center">
 			<VCol cols="10" sm="8" md="6" lg="6" class="d-flex flex-column ga-2">
 				<VBtn v-if="userData.twoFactorEnabled" color="info" width="100%" @click="show2FAQrCode">
@@ -45,6 +47,7 @@ import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue';
 import {useI18n} from 'vue-i18n';
 import ChangeEmailDialog from '@/components/user/dialogs/ChangeEmailDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {usePushNotifications} from '@/composables/general/UsePushNotifications.ts';
 import {useUserStore} from '@/stores/userStore.ts';
 import router from '@/plugins/router.ts';
 import {API} from '@/plugins/axiosConfig.ts';
@@ -53,6 +56,7 @@ import {User} from '@/dtos/response/user/User.ts';
 const {showErrorSnackbar, showSuccessSnackbar, hideSnackbar} = useSnackbar();
 const i18n = useI18n();
 const userStore = useUserStore();
+const {isSupported: pushSupported, isSubscribed: pushEnabled, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe} = usePushNotifications();
 
 const changeEmailDialog = ref<InstanceType<typeof ChangeEmailDialog>>();
 const changePasswordDialog = ref(false);
@@ -92,6 +96,17 @@ const verifyUserDialogData = computed(() => {
 	}
 	return {url, onVerified};
 })
+
+async function togglePushNotifications(event: Event) {
+	event.preventDefault()
+	if (pushEnabled.value) {
+		const success = await pushUnsubscribe()
+		if (!success) showErrorSnackbar('Failed to disable push notifications')
+	} else {
+		const success = await pushSubscribe()
+		if (!success) showErrorSnackbar('Failed to enable push notifications')
+	}
+}
 
 function toggleTwoFactorAuth(event: Event) {
 	event.preventDefault();

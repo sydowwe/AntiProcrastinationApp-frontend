@@ -1,7 +1,6 @@
 import {Activity} from '@/dtos/response/activity/Activity.ts';
 import {TimePeriodEntity} from '../activityRecording/TimePeriodEntity.ts';
 import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
-
 export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	constructor(
 		public id: number,
@@ -14,6 +13,7 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public streak: number = 0,
 		public bestStreak: number = 0,
 		public lastCompletedAt: string | null = null,
+		public note: string | null = null,
 	) {
 	}
 
@@ -33,6 +33,7 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.streak ?? 0,
 			json.bestStreak ?? 0,
 			json.lastCompletedAt ?? null,
+			json.note ?? null,
 		);
 	}
 

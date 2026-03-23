@@ -6,6 +6,7 @@ export interface IBaseToDoListItem {
 	isDone: boolean;
 	doneCount: number | null;
 	totalCount: number | null;
+	note: string | null;
 
 	isMultipleCount: boolean;
 }

@@ -49,7 +49,9 @@ API.interceptors.response.use(
 			isRefreshing = true;
 			try {
 				await refreshClient.post('/auth/refresh');
-			} catch {
+				processQueue(null);
+			} catch (err) {
+				processQueue(err);
 				// Silent fail — the next request will handle it via the error interceptor
 			} finally {
 				isRefreshing = false;
@@ -71,14 +73,14 @@ API.interceptors.response.use(
 		const needsRefresh = error.response?.status === HttpStatusCode.Unauthorized
 			|| error.response?.headers['x-token-expired'];
 
-		if (needsRefresh && !originalRequest._retry && router.currentRoute.value.name !== 'login') {
+		if (needsRefresh && originalRequest && !originalRequest._retry && router.currentRoute.value.name !== 'login') {
 			originalRequest._retry = true;
 
 			if (isRefreshing) {
 				return new Promise((resolve, reject) => {
 					failedQueue.push({resolve, reject});
 				}).then(() => {
-					return API(originalRequest);
+					return API({...originalRequest, signal: undefined});
 				}).catch(err => {
 					return Promise.reject(err);
 				});
@@ -89,7 +91,7 @@ API.interceptors.response.use(
 			try {
 				await refreshClient.post('/auth/refresh');
 				processQueue(null);
-				return API(originalRequest);
+				return API({...originalRequest, signal: undefined});
 			} catch (refreshError) {
 				processQueue(refreshError);
 				logoutClient();

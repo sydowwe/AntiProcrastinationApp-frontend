@@ -1,29 +1,64 @@
 <template>
 <VRow justify="center" noGutters>
-	<VCol cols="12" sm="10" md="8" lg="4" class="mt-lg-5 mt-md-3">
-		<div class="d-flex justify-center mb-4 ga-2">
+	<VCol cols="12" sm="10" md="8" lg="4" class="mt-lg-5 mt-3">
+		<div class="d-flex justify-center mb-3 ga-3">
 			<VIconBtn icon="arrow-left" variant="tonal" density="comfortable" :to="{ name: 'toDoList' }"/>
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>
-			<VIconBtn
-				color="secondary"
+			<VBtn
+				:color=" isInChangeOrderMode ?  'secondary' : 'secondaryOutline'"
 				:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
 				@click="toggleChangeOrderMode"
-				density="comfortable"
-				icon="arrows-up-down"
-			></VIconBtn>
+				:disabled="sortMode === 'priority'"
+				prependIcon="arrows-up-down"
+			>{{ isInChangeOrderMode ? 'Finish reordering' : 'Change order' }}
+			</VBtn>
 		</div>
-		<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-6 px-md-4 px-lg-6">
-			<div class="d-flex flex-column align-center">
-				<VCardTitle class="pb-1">
-					<div class="d-flex align-center ga-2">
+		<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-4 px-md-6 px-md-4 px-lg-6">
+			<VRow class="pb-2">
+				<VCol cols="6" lg="4">
+					<VSwitch
+						class="ml-2"
+						v-model="hideDone"
+						label="Hide done"
+						density="compact"
+						hideDetails
+						color="primary-accent"
+						:disabled="isInChangeOrderMode"
+					/>
+				</VCol>
+				<VCol cols="12" lg="4" class="pb-0 pb-md-3 d-flex justify-center">
+					<VCardTitle class="pa-0 d-flex align-center ga-2">
 						<VIcon v-if="listEntity?.icon" :icon="listEntity.icon" color="primary"/>
-						{{ isInChangeOrderMode ? $t('toDoList.changeOrder') : (listEntity?.name ?? $t('toDoList.toDoList')) }}
-					</div>
-				</VCardTitle>
-			</div>
+						<span>{{ listEntity?.name }}</span>
+					</VCardTitle>
+				</VCol>
+				<VCol cols="6" lg="4" class="d-flex align-center justify-end">
+					<VBtn
+						variant="tonal"
+						density="comfortable"
+						color="primaryOutline"
+						prependIcon="arrow-up-wide-short"
+						@click="toggleSortMode"
+						:disabled="isInChangeOrderMode"
+					>{{ sortMode === 'priority' ? 'By priority' : 'Custom order' }}
+					</VBtn>
+				</VCol>
+			</VRow>
+			<VChipGroup v-if="availablePriorities.length > 1 && !isInChangeOrderMode" v-model="filterPriorityIds" multiple class="mb-1">
+				<VChip
+					v-for="p in availablePriorities"
+					:key="p.id"
+					:value="p.id"
+					:color="p.color"
+					filter
+					size="small"
+				>{{ p.text }}
+				</VChip>
+			</VChipGroup>
 			<ToDoList
 				:kind="ToDoListKind.NORMAL"
-				:items
+				:items="displayedItems"
+				:allItems="items"
 				:isInChangeOrderMode
 				:listId="todoListId"
 				:activityIds="items.map(item => item.activity.id)"
@@ -39,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {ChangeDisplayOrderRequest} from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts';
 import {TodoListItemEntity} from '@/dtos/response/todoList/TodoListItemEntity.ts';
 import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.ts';
@@ -74,6 +109,33 @@ const items = ref([] as TodoListItemEntity[]);
 const isInChangeOrderMode = ref(false);
 const listEntity = ref<TodoListEntity | null>(null);
 
+const hideDone = ref(false);
+const sortMode = ref<'custom' | 'priority'>('custom');
+const filterPriorityIds = ref<number[]>([]);
+
+const availablePriorities = computed(() => {
+	const seen = new Map<number, TodoListItemEntity['taskPriority']>();
+	for (const item of items.value) {
+		if (!seen.has(item.taskPriority.id)) {
+			seen.set(item.taskPriority.id, item.taskPriority);
+		}
+	}
+	return Array.from(seen.values()).sort((a, b) => a.priority - b.priority);
+});
+
+const displayedItems = computed(() => {
+	if (isInChangeOrderMode.value) return items.value;
+	let result = [...items.value];
+	if (hideDone.value) result = result.filter(item => !item.isDone);
+	if (filterPriorityIds.value.length > 0) {
+		result = result.filter(item => filterPriorityIds.value.includes(item.taskPriority.id));
+	}
+	if (sortMode.value === 'priority') {
+		result.sort(TodoListItemEntity.frontEndSortFunction());
+	}
+	return result;
+});
+
 onMounted(async () => {
 	items.value = await fetchAll();
 	listEntity.value = await fetchByIdNamedList(todoListId);
@@ -81,6 +143,10 @@ onMounted(async () => {
 
 function toggleChangeOrderMode() {
 	isInChangeOrderMode.value = !isInChangeOrderMode.value;
+}
+
+function toggleSortMode() {
+	sortMode.value = sortMode.value === 'custom' ? 'priority' : 'custom';
 }
 
 async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {

@@ -15,12 +15,38 @@
 			required
 			:rules="[requiredRule]"
 		></VIdSelect>
+		<VDateInput
+			v-model="dueDateValue"
+			label="Due date"
+			clearable
+			density="compact"
+			hideDetails
+			class="mt-3"
+			prependIcon=""
+			prependInnerIcon="calendar"
+		/>
+		<div v-if="dueDateValue" class="d-flex align-center ga-3 mt-2">
+			<VSwitch v-model="dueTimeEnabled" label="Specific time" density="compact" hideDetails />
+			<TimePicker v-if="dueTimeEnabled" v-model="dueTimeValue" label="Due time" density="compact" class="flex-grow-1" />
+		</div>
+		<VTextarea
+			v-model="noteValue"
+			label="Note"
+			density="compact"
+			hideDetails
+			:rows="2"
+			autoGrow
+			class="mt-3"
+		/>
 	</VForm>
 </MyDialog>
 </template>
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue';
+import {Time} from '@/dtos/dto/Time.ts';
+import {VDateInput} from 'vuetify/labs/components';
+import TimePicker from '@/components/general/dateTime/TimePicker.vue';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import {TodoListItemEntity} from '@/dtos/response/todoList/TodoListItemEntity.ts';
 import {ToDoListItemRequest} from '@/dtos/request/todoList/ToDoListItemRequest.ts';
@@ -49,12 +75,24 @@ const toDoListItem = ref(new ToDoListItemRequest());
 const oldItem = ref<TodoListItemEntity | null>(null);
 
 const isRepeated = ref(false);
+const dueDateValue = ref<string | null>(null);
+const dueTimeEnabled = ref(false);
+const dueTimeValue = ref<Time>(new Time(9, 0));
+const noteValue = ref('');
 
 watch(dialog, (newValue) => {
 	if (!newValue) {
 		toDoListItem.value = new ToDoListItemRequest();
 		setDefaultUrgency();
+		dueDateValue.value = null;
+		dueTimeEnabled.value = false;
+		dueTimeValue.value = new Time(9, 0);
+		noteValue.value = '';
 	}
+});
+
+watch(dueDateValue, (newVal) => {
+	if (!newVal) dueTimeEnabled.value = false;
 });
 
 onMounted(async () => {
@@ -80,6 +118,10 @@ async function save() {
 			toDoListItem.value.doneCount = null;
 		}
 	}
+
+	toDoListItem.value.dueDate = dueDateValue.value || null;
+	toDoListItem.value.dueTime = (dueDateValue.value && dueTimeEnabled.value) ? dueTimeValue.value : null;
+	toDoListItem.value.note = noteValue.value || null;
 
 	if (isEdit.value) {
 		emit('edit', oldItem.value?.id ?? 0, toDoListItem.value);
@@ -115,6 +157,10 @@ const openEdit = (entityToEdit: TodoListItemEntity) => {
 	activityFormField.value?.onOpenEdit(entityToEdit.activity.id);
 	toDoListItem.value = ToDoListItemRequest.fromEntity(entityToEdit);
 	isRepeated.value = (entityToEdit.totalCount ?? 0) > 1;
+	dueDateValue.value = entityToEdit.dueDate ?? null;
+	dueTimeEnabled.value = !!entityToEdit.dueTime;
+	dueTimeValue.value = entityToEdit.dueTime ?? new Time(9, 0);
+	noteValue.value = entityToEdit.note ?? '';
 	dialog.value = true;
 };
 const emit = defineEmits<{
