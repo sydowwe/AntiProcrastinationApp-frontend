@@ -7,11 +7,13 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 		public timePeriodId?: number,
 		public doneCount: number | null = null,
 		public totalCount: number | null = null,
-		public isDone: boolean = false) {
-		super(isDone, activityId);
+		public isDone: boolean = false,
+		public note: string | null = null,
+	) {
+		super(isDone, activityId, doneCount, totalCount, note);
 	}
 
 	static fromEntity(obj: RoutineTodoListItemEntity): RoutineTodoListItemRequest {
-		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.doneCount, obj.totalCount, obj.isDone);
+		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.doneCount, obj.totalCount, obj.isDone, obj.note);
 	}
 }

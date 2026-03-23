@@ -6,10 +6,11 @@ export class TodoListCategoryEntity implements IMyResponse {
 		public name: string,
 		public icon: string | null,
 		public color: string | null,
+		public listCount: number | null,
 	) {}
 
 	static fromJson(json: any) {
-		return new TodoListCategoryEntity(json.id, json.name, json.icon ?? null, json.color ?? null)
+		return new TodoListCategoryEntity(json.id, json.name, json.icon ?? null, json.color ?? null, json.listCount ?? null)
 	}
 
 	static listFromObjects(objects: any[]) {

@@ -2,7 +2,7 @@
 <VApp>
 	<Navbar></Navbar>
 	<VMain style="height: 100dvh; overflow: hidden;">
-		<VContainer class="h-100 d-flex pa-3 pa-md-4 overflow-y-auto" :fluid="true">
+		<VContainer class="h-100 d-flex py-0 px-3 px-md-4 overflow-y-auto" :fluid="true">
 			<RouterView></RouterView>
 		</VContainer>
 	</VMain>
@@ -14,6 +14,10 @@
 import Snackbar from '@/components/general/feedback/Snackbar.vue';
 import LoadingFullscreen from './components/dialogs/general/LoadingFullscreen.vue';
 import Navbar from '@/components/nav/Navbar.vue';
+import {usePushNotifications} from '@/composables/general/UsePushNotifications.ts';
+
+const {initPushSupport} = usePushNotifications()
+initPushSupport()
 </script>
 <style scoped>
 

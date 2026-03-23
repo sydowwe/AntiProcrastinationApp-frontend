@@ -10,6 +10,9 @@ export class TimePeriodEntity {
 		public streakThreshold: number = 90,
 		public streakGraceDays: number = 0,
 		public resetAnchorDay: number = 0,
+		public totalPeriodsCompleted: number = 0,
+		public totalPeriodsElapsed: number = 0,
+		public nextResetAt: string | null = null,
 	) {
 	}
 
@@ -25,8 +28,11 @@ export class TimePeriodEntity {
 			streakThreshold = 90,
 			streakGraceDays = 0,
 			resetAnchorDay = 0,
+			totalPeriodsCompleted = 0,
+			totalPeriodsElapsed = 0,
+			nextResetAt = null,
 		} = object;
-		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden, streak, bestStreak, streakThreshold, streakGraceDays, resetAnchorDay);
+		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden, streak, bestStreak, streakThreshold, streakGraceDays, resetAnchorDay, totalPeriodsCompleted, totalPeriodsElapsed, nextResetAt);
 	}
 
 	static listFromObjects(objects: any[]) {

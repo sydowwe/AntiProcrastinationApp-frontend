@@ -388,6 +388,8 @@ const EN = {
             description: `Description`,
             category: `Category`,
             empty: `No lists`,
+            emptyFilter: `No lists match your search`,
+            emptyCategory: `No lists in this category`,
             deleteConfirm: `Delete list?`,
             selectCategory: `Select a category`,
         },

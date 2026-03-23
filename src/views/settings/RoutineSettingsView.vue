@@ -12,7 +12,7 @@
 			:subtitle="`${period.lengthInDays} days`"
 		>
 			<template v-slot:prepend>
-				<VSheet v-if="period.color" :color="getBgColor(period.color)" width="16" height="16" rounded="circle" class="mr-3"/>
+				<VSheet v-if="period.color" :style="{ backgroundColor: getBgColor(period.color) }" width="16" height="16" rounded="circle" class="mr-3"/>
 				<VIcon v-else icon="clock" class="mr-3"/>
 			</template>
 			<template v-slot:append>

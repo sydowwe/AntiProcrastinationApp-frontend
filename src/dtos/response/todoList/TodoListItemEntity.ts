@@ -1,6 +1,7 @@
 import {Activity} from '@/dtos/response/activity/Activity.ts';
 import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
 import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
+import {Time} from '@/dtos/dto/Time.ts';
 
 export class TodoListItemEntity implements IBaseToDoListItem {
 	constructor(
@@ -10,6 +11,9 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		public doneCount: number | null,
 		public totalCount: number | null,
 		public taskPriority: TaskPriority,
+		public dueDate: string | null = null,
+		public dueTime: Time | null = null,
+		public note: string | null = null,
 	) {
 	}
 
@@ -24,7 +28,10 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.isDone,
 			json.doneCount,
 			json.totalCount,
-			TaskPriority.fromJson(json.taskPriority)
+			TaskPriority.fromJson(json.taskPriority),
+			json.dueDate ?? null,
+			json.dueTime ? Time.fromJson(json.dueTime) : null,
+			json.note ?? null,
 		);
 	}
 

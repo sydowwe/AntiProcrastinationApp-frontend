@@ -8,6 +8,8 @@ export class TodoListEntity implements IMyResponse {
 		public icon: string | null,
 		public description: string | null,
 		public category: TodoListCategoryEntity | null,
+		public itemCount: number | null,
+		public completedCount: number | null,
 	) {}
 
 	static fromJson(json: any) {
@@ -17,6 +19,8 @@ export class TodoListEntity implements IMyResponse {
 			json.icon ?? null,
 			json.description ?? null,
 			json.category ? TodoListCategoryEntity.fromJson(json.category) : null,
+			json.itemCount ?? null,
+			json.completedCount ?? null,
 		)
 	}
 

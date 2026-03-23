@@ -5,7 +5,7 @@ import {TodoListCategoryEntity} from '@/dtos/response/todoList/TodoListCategoryE
 import {TodoListCategoryRequest} from '@/dtos/request/todoList/TodoListCategoryRequest.ts';
 import {FilterSortRequest} from '@/dtos/request/base/FilterSortRequest.ts';
 import {SortByRequest} from '@/dtos/request/base/SortByRequest.ts';
-import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
+import {TodoListCategoryFilter} from '@/dtos/request/todoList/TodoListCategoryFilter.ts';
 
 export function useTodoListCategoryCrud() {
 	const url = 'todo-list-category'
@@ -16,9 +16,9 @@ export function useTodoListCategoryCrud() {
 		updateRequestClass: TodoListCategoryRequest,
 		entityName: url
 	})
-	const {fetchFilteredSorted: baseFetchFilteredSorted} = useFetchFilteredSorted<TodoListCategoryEntity, IFilterRequest>(TodoListCategoryEntity, url)
-	const fetchFilteredSorted = async (isDesc: boolean, name: string | null) =>
-		baseFetchFilteredSorted(new FilterSortRequest(true, [new SortByRequest('name', isDesc)], {name} as IFilterRequest))
+	const {fetchFilteredSorted: baseFetchFilteredSorted} = useFetchFilteredSorted<TodoListCategoryEntity, TodoListCategoryFilter>(TodoListCategoryEntity, url)
+	const fetchFilteredSorted = async (isDesc: boolean, hideEmpty: boolean, name: string | null) =>
+		baseFetchFilteredSorted(new FilterSortRequest(true, [new SortByRequest('name', isDesc)], new TodoListCategoryFilter(hideEmpty, name)))
 
 	return {fetchById, fetchSelectOptions, fetchFilteredSorted, createWithResponse, update, deleteEntity}
 }
