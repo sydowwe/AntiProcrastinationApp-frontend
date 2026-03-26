@@ -20,7 +20,7 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const {formatToTime24H} = useMoment()
-	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>(() => new PlannerTaskRequest())
+	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>()
 	const {patch, fetchById} = useTaskPlannerCrud()
 
 	// Day-specific state

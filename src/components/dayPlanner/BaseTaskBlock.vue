@@ -23,6 +23,7 @@
 	@keydown.delete="handleDeleteKey"
 	@keydown.backspace="handleDeleteKey"
 	@keydown.esc="handleEscapeKey"
+	@keydown.ctrl.d.prevent="handleDuplicateKey"
 >
 	<div
 		class="resize-handle resize-handle-top"
@@ -176,6 +177,12 @@ function handleEscapeKey(e: KeyboardEvent): void {
 	e.preventDefault()
 	store.clearSelection();
 	(e.target as HTMLElement).blur()
+}
+
+function handleDuplicateKey(): void {
+	if (isSelected.value && store.selectedTaskIds.size === 1) {
+		store.openDuplicateDialog()
+	}
 }
 
 const emit = defineEmits<{

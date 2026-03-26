@@ -35,10 +35,14 @@ export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskReques
 	isDraggingAny: boolean
 	isResizingAny: boolean
 
+	// Duplicate state
+	isDuplicating: boolean
+
 	// Actions
 	openDeleteDialog: () => void
 	openCreateDialog: () => void
 	openEditDialog: () => void
+	openDuplicateDialog: () => void
 	toggleTaskSelection: (taskId: number) => void
 	clearSelection: () => void
 

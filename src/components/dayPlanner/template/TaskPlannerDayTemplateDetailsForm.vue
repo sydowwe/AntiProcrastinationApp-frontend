@@ -68,6 +68,7 @@ const form = ref<InstanceType<typeof VForm>>()
 
 const props = defineProps<{
 	template: TaskPlannerDayTemplate | null
+	defaultValues?: TaskPlannerDayTemplateRequest | null
 }>()
 
 const formData = ref(new TaskPlannerDayTemplateRequest())
@@ -78,10 +79,19 @@ const dayTypeOptions = Object.values(DayType)
 watch(() => props.template, (newTemplate) => {
 	if (newTemplate) {
 		formData.value = TaskPlannerDayTemplateRequest.fromEntity(newTemplate)
+	} else if (props.defaultValues) {
+		formData.value = {...props.defaultValues}
 	} else {
 		formData.value = new TaskPlannerDayTemplateRequest()
 	}
 }, {immediate: true})
+
+// Also watch defaultValues for duplicate flow
+watch(() => props.defaultValues, (newDefaults) => {
+	if (newDefaults && !props.template) {
+		formData.value = {...newDefaults}
+	}
+})
 
 async function validateAndGetData() {
 	if (!await form.value?.validate()) {

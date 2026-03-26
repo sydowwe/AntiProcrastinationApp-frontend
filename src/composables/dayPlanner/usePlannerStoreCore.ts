@@ -23,6 +23,9 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const creationPreview = ref<CreationPreviewType | undefined>()
 	const deleteDialog = ref(false)
 
+	// Duplicate state
+	const isDuplicating = ref(false)
+
 	// Drag/Resize state
 	const draggingTaskId = ref<number | null>(null)
 	const resizingTaskId = ref<number | null>(null)
@@ -109,6 +112,12 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		dialog.value = true
 	}
 
+	function openDuplicateDialog(): void {
+		if (selectedTaskIds.size !== 1) return
+		isDuplicating.value = true
+		openEditDialog()
+	}
+
 	// Selection handlers
 	function toggleTaskSelection(taskId: number): void {
 		if (selectedTaskIds.has(taskId)) {
@@ -141,6 +150,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		editedId.value = undefined
 		creationPreview.value = undefined
 		deleteDialog.value = false
+		isDuplicating.value = false
 
 		// Reset drag/resize state
 		draggingTaskId.value = null
@@ -167,6 +177,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		editedId,
 		creationPreview,
 		deleteDialog,
+		isDuplicating,
 		draggingTaskId,
 		resizingTaskId,
 		dragConflict,
@@ -183,6 +194,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		openDeleteDialog,
 		openCreateDialog,
 		openEditDialog,
+		openDuplicateDialog,
 		toggleTaskSelection,
 		clearSelection,
 		resetStore,

@@ -1,6 +1,6 @@
 <!-- DayPlannerView.vue -->
 <template>
-<div class="d-flex ga-4 w-100">
+<div class="py-4 d-flex ga-4 w-100">
 	<!-- Expandable Details -->
 	<VExpandXTransition mode="in-out">
 		<div v-if="expandedDetails">
@@ -90,9 +90,11 @@ import {ApplyTemplateToTaskPlannerRequest} from '@/dtos/request/activityPlanning
 import {API} from '@/plugins/axiosConfig.ts';
 import type {ApplyTemplateConflictResolution} from '@/dtos/enum/ApplyTemplateConflictResolution.ts';
 import {ApplyTemplatePlannerTaskResponse} from '@/dtos/response/activityPlanning/ApplyTemplatePlannerTaskResponse.ts';
+import {useTaskPlannerDayTemplateTaskCrud} from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts';
 
 const {showErrorSnackbar} = useSnackbar()
 const {createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, batchDelete, fetchFiltered} = useTaskPlannerCrud()
+const {fetchById: fetchTemplateById} = useTaskPlannerDayTemplateTaskCrud()
 const {fetchByDate: fetchCalendarByDate} = useCalendarQuery()
 const {fetchFiltered: fetchTemplateTasks} = useTemplatePlannerTaskCrud()
 const {formatToDateWithDay, urlStringToUTCDate} = useMoment()
@@ -112,6 +114,17 @@ onMounted(async () => {
 	store.viewStartTime = calendar.value!.wakeUpTime;
 	store.viewEndTime = calendar.value!.bedTime;
 	await loadTasks()
+
+	// Auto-apply template from query param (e.g., from "Use Today" on template list)
+	const applyTemplateId = router.currentRoute.value.query.applyTemplateId
+	if (applyTemplateId) {
+		const template = await fetchTemplateById(parseInt(applyTemplateId as string))
+		if (template) {
+			store.templateInPreview = template
+			await templatePreview()
+		}
+		router.replace({query: {}})
+	}
 })
 
 const expandedDetails = ref(true)
