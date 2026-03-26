@@ -26,8 +26,8 @@
 			prependInnerIcon="calendar"
 		/>
 		<div v-if="dueDateValue" class="d-flex align-center ga-3 mt-2">
-			<VSwitch v-model="dueTimeEnabled" label="Specific time" density="compact" hideDetails />
-			<TimePicker v-if="dueTimeEnabled" v-model="dueTimeValue" label="Due time" density="compact" class="flex-grow-1" />
+			<VSwitch v-model="dueTimeEnabled" label="Specific time" density="compact" hideDetails/>
+			<TimePicker v-if="dueTimeEnabled" v-model="dueTimeValue" label="Due time" density="compact" class="flex-grow-1"/>
 		</div>
 		<VTextarea
 			v-model="noteValue"
@@ -54,7 +54,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {useI18n} from 'vue-i18n';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useTaskPriorityCrud} from '@/api/todoList/taskPriorityApi.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {VForm} from 'vuetify/components';
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue';

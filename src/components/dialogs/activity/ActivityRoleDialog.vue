@@ -15,7 +15,7 @@ import ColorPicker from '@/components/general/ColorPicker.vue';
 import {ref} from 'vue';
 import {Role} from '@/dtos/response/activity/Role.ts';
 import {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {useActivityRoleCrud} from '@/api/activity/activityRoleApi.ts';
 import {VForm} from 'vuetify/components';
 

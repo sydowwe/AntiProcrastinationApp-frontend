@@ -1,5 +1,5 @@
 <template>
-<div class="h-100 w-100 d-flex flex-column">
+<div class="py-4 h-100 w-100 d-flex flex-column">
 	<div class="d-flex align-center">
 		<VTabs v-model="activeTab" color="primaryOutline">
 			<VTab value="activities">Activities</VTab>

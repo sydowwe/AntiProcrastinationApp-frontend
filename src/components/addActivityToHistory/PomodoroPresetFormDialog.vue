@@ -112,7 +112,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {computed, onMounted, ref} from 'vue';
 import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
 import {PomodoroTimerPresetRequest} from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {useActivityCrud} from '@/api/activity/activityApi.ts';
 import {usePomodoroTimerPresetCrud} from '@/api/activityHistory/pomodoroTimerPresetApi.ts';
 import {VForm} from 'vuetify/components';

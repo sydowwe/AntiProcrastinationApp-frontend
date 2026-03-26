@@ -1,5 +1,5 @@
 <template>
-<div class="w-100 h-100">
+<div class="py-4 w-100 h-100">
 	<VCard elevation="2" class="h-100 d-flex flex-column">
 		<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
 			<VCardTitle class="pa-0">Distinct Process Entries</VCardTitle>
@@ -14,7 +14,7 @@
 				<VBtn value="distinctEntries" height="40" to="distinctEntries">Distinct entries</VBtn>
 				<VBtn value="mappings" height="40" to="mappings">Mappings</VBtn>
 			</VBtnToggle>
-			<DesktopEntriesFilterBar v-model="filter" @filter="distinctEntriesTable?.load()" />
+			<DesktopEntriesFilterBar v-model="filter" @filter="distinctEntriesTable?.load()"/>
 		</div>
 		<VCardText class="pt-1 d-flex flex-column ga-2">
 			<DesktopDistinctEntriesTable

@@ -9,6 +9,8 @@ export interface ErrorSnackBarConfig {
 
 export interface SnackBarConfig extends ErrorSnackBarConfig {
 	color?: string
+	actionLabel?: string
+	actionCallback?: () => void
 }
 
 const snackbar = ref(false)
@@ -16,6 +18,8 @@ const color = ref('primary')
 const message = ref('Done')
 const timeout = ref(3000)
 const closable = ref(false)
+const actionLabel = ref<string | null>(null)
+const actionCallback = ref<(() => void) | null>(null)
 
 export const useSnackbar = () => {
 	const {hideFullScreenLoading} = useLoading()
@@ -45,6 +49,8 @@ export const useSnackbar = () => {
 		timeout.value = config?.timeout ?? 3000
 		color.value = config?.color || color.value
 		closable.value = config?.closable || true
+		actionLabel.value = config?.actionLabel ?? null
+		actionCallback.value = config?.actionCallback ?? null
 		snackbar.value = true
 	}
 
@@ -59,6 +65,8 @@ export const useSnackbar = () => {
 		message: readonly(message),
 		timeout: readonly(timeout),
 		closable: readonly(closable),
+		actionLabel: readonly(actionLabel),
+		actionCallback: readonly(actionCallback),
 		showErrorSnackbar,
 		showSuccessSnackbar,
 		showSnackbar,

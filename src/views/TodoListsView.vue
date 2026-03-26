@@ -16,7 +16,7 @@
 		</VCard>
 	</VDialog>
 
-	<VRow class="mt-lg-5 mt-md-3 bg-background">
+	<VRow class="my-lg-2 my-md-1 bg-background">
 		<!-- Left panel: categories (desktop) -->
 		<VCol cols="4" lg="3" class="d-none d-md-block">
 			<VCard class="py-0">

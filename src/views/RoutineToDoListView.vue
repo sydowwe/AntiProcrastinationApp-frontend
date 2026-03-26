@@ -1,6 +1,6 @@
 <template>
-<div class="h-100 w-100 d-flex flex-column">
-	<div class="mx-auto w-100 w-md-33 d-flex flex-column ga-3 py-3 bg-background position-sticky px-3" style="top: 0; z-index: 1;">
+<div class="h-100 pb-4 pt-5 w-100 d-flex flex-column">
+	<div class="mx-auto w-100 w-md-33 d-flex flex-column ga-3 pb-3 bg-background position-sticky px-3" style="top: 0; z-index: 1;">
 		<div class="d-flex ga-3 align-center">
 			<VBtn to="/routine-settings" prependIcon="gear" variant="tonal" color="secondaryOutline">Nastavenia</VBtn>
 			<VSelect

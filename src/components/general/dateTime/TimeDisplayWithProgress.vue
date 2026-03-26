@@ -8,7 +8,7 @@
 >
 	<div class="d-flex flex-column">
 		<TimeDisplay :whatToShow="whatToShow" :timeObject="timeRemainingObject"></TimeDisplay>
-		<h1 class="text-white font-weight-bold text-center" v-if="title" style="line-height: 2.7rem">{{ title }}</h1>
+		<h2 v-if="title" class="text-white font-weight-bold text-center text-wrap" style="max-width: 300px">{{ title }}</h2>
 	</div>
 </VProgressCircular>
 </template>

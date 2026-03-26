@@ -46,7 +46,7 @@ import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueChec
 import {filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations,} from '@/composables/activity/ActivitySelectsComposition.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useActivityHistoryCrud} from '@/api/activityHistory/activityHistoryApi.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import InputWithButton from '@/components/general/InputWithButton.vue';
 import type {VAutocomplete} from 'vuetify/components';
 import {ActivityFormSelectOptions} from '@/dtos/response/activity/ActivityFormSelectOptions.ts';

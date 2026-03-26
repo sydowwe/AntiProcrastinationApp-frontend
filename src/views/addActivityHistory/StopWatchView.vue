@@ -1,5 +1,5 @@
 <template>
-<VRow justify="center" noGutters class="my-auto">
+<VRow justify="center" noGutters class="py-4 my-auto">
 	<VCol cols="12" sm="11" md="10" lg="7" xl="6" class="d-flex flex-column">
 		<VRow justify="center">
 			<VCol cols="12" sm="11" md="10" lg="8" xl="6">

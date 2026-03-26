@@ -35,7 +35,7 @@
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 import {computed, ref} from 'vue';
 import {Alarm} from '@/dtos/response/activityRecording/Alarm.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {AlarmRequest} from '@/dtos/request/activityRecording/AlarmRequest.ts';
 import {VForm} from 'vuetify/components';
 import TimePicker from '@/components/general/dateTime/TimePicker.vue';

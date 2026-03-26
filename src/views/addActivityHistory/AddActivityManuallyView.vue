@@ -1,5 +1,5 @@
 <template>
-<VRow justify="center" align="center">
+<VRow class="py-4" justify="center" align="center">
 	<VCol cols="12" sm="10" md="10" lg="10" xl="6" class="mt-3 mt-md-0">
 		<AddActivityManuallyForm ref="formRef"></AddActivityManuallyForm>
 		<div class="mt-8 w-100 text-center">
