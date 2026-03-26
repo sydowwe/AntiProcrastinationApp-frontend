@@ -60,7 +60,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue'
 import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue';
 import type {VForm} from 'vuetify/components';
 import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {useTaskImportanceCrud} from '@/api/taskPlanner/taskImportanceApi.ts';
 import type {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
@@ -85,7 +85,7 @@ const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormF
 
 const importanceOptions = ref([] as TaskImportance[]);
 
-const isEdit = computed(() => props.store.editedId !== undefined)
+const isEdit = computed(() => props.store.editedId !== undefined && !props.store.isDuplicating)
 
 const data = ref<TTaskRequest>(props.createEmptyRequest())
 
@@ -154,12 +154,13 @@ async function save() {
 
 	data.value.activityId = activityFormFieldResult.activityId
 
-	if (props.store.editedId) {
+	if (props.store.editedId && !props.store.isDuplicating) {
 		emit('edit', props.store.editedId, data.value)
 	} else {
 		emit('create', data.value)
 	}
 
+	props.store.isDuplicating = false
 	props.store.dialog = false
 }
 </script>

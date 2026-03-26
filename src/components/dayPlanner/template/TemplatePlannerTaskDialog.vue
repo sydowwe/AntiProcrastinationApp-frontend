@@ -1,6 +1,6 @@
 <template>
 <BasePlannerTaskDialog
-	:title="!isEdit ? 'Add New Template Task' : 'Edit Template Task'"
+	:title="store.isDuplicating ? 'Duplicate Template Task' : !isEdit ? 'Add New Template Task' : 'Edit Template Task'"
 	:store
 	:createEmptyRequest="() => new TemplatePlannerTaskRequest()"
 	@edit="(id, task) => emit('edit', id, task as TemplatePlannerTaskRequest)"

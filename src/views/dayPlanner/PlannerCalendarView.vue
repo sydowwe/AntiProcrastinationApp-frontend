@@ -1,5 +1,5 @@
 <template>
-<CalendarGrid @dayClick="handleDayClick">
+<CalendarGrid class="py-4" @dayClick="handleDayClick">
 	<template #day-cell-content="{ day }">
 		<div class="cell-content">
 			<div class="d-flex ga-3 align-center">

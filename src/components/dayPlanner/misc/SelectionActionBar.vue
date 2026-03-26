@@ -15,6 +15,15 @@
 		Edit
 	</VBtn>
 
+	<VBtn
+		v-if="store.selectedTaskIds.size === 1"
+		variant="outlined"
+		color="primaryOutline"
+		@click="store.openDuplicateDialog"
+	>
+		Duplicate
+	</VBtn>
+
 	<slot :store="store"></slot>
 
 	<VBtn

@@ -11,7 +11,7 @@ export interface ITemplateDayPlannerStore extends IBaseDayPlannerStore<TemplateP
 }
 
 export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', () => {
-	const core = usePlannerStoreCore<TemplatePlannerTask, TemplatePlannerTaskRequest>(() => new TemplatePlannerTaskRequest())
+	const core = usePlannerStoreCore<TemplatePlannerTask, TemplatePlannerTaskRequest>()
 	const {patch, fetchById} = useTemplatePlannerTaskCrud()
 	// Template metadata
 	const currentTemplateId = ref<number | null>(null)
