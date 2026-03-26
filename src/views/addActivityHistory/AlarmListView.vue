@@ -1,5 +1,5 @@
 <template>
-<div class="d-flex flex-column align-center">
+<div class="py-4 d-flex flex-column align-center">
 	<VBtn @click="alarmDialog?.openCreate" color="success">
 		{{ i18n.t("general.add") }}
 	</VBtn>

@@ -1,14 +1,23 @@
 <template>
 <VSnackbar class="mt-16" v-model="snackbar" :timeout :color location="top">
 	{{ message }}
-	<template v-if="closable" v-slot:actions>
-		<v-btn color="white" variant="text" @click="hideSnackbar"> {{ $t('general.close') }}</v-btn>
+	<template v-if="closable || actionLabel" v-slot:actions>
+		<VBtn v-if="actionLabel" color="white" variant="text" @click="handleAction">
+			{{ actionLabel }}
+		</VBtn>
+		<VBtn v-if="closable" color="white" variant="text" @click="hideSnackbar">
+			{{ $t('general.close') }}
+		</VBtn>
 	</template>
 </VSnackbar>
 </template>
 <script setup lang="ts">
-
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 
-const {snackbar, color, message, timeout, closable, hideSnackbar} = useSnackbar();
+const {snackbar, color, message, timeout, closable, actionLabel, actionCallback, hideSnackbar} = useSnackbar();
+
+function handleAction() {
+	actionCallback.value?.()
+	hideSnackbar()
+}
 </script>

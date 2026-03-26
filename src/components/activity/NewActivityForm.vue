@@ -40,7 +40,7 @@ import type {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
 import type {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {useActivitySelectOptions} from '@/composables/activity/UseActivitySelectOptions.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 
 const model = defineModel<ActivityRequest>({required: true});
 

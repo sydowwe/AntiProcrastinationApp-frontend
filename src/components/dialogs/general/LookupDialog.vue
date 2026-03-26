@@ -17,7 +17,7 @@ import {computed, ref} from 'vue';
 import {LookupRequest} from '@/dtos/request/general/LookupRequest.ts';
 import {LookupResponse} from '@/dtos/response/general/LookupResponse.ts';
 import {useI18n} from 'vue-i18n';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import MyDialog from '@/components/dialogs/MyDialog.vue';
 
 const i18n = useI18n();

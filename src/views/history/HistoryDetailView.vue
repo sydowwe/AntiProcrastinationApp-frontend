@@ -1,5 +1,5 @@
 <template>
-<div class="w-100 h-100 d-flex flex-column">
+<div class="py-4 w-100 h-100 d-flex flex-column">
 	<!-- Header -->
 	<div class="mb-4 w-100 d-flex align-center ga-6 flex-wrap">
 		<VIconBtn icon="calendar-days" variant="tonal" @click="router.push({name: 'activityHistoryCalendar'})" style="margin-right: -12px"></VIconBtn>

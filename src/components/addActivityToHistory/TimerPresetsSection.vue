@@ -2,7 +2,7 @@
 <div class="d-flex flex-column ga-4">
 	<div class="d-flex ga-3 align-center">
 		<h3 class="text-h6">Timer Presets</h3>
-		<VBtn variant="tonal" :color="editMode ? 'secondaryOutline' : 'default'" size="small" :prependIcon="editMode ? 'check' : 'pen-to-square'"
+		<VBtn variant="tonal" :color="editMode ? 'secondaryOutline' : 'default'" :prependIcon="editMode ? 'check' : 'pen-to-square'"
 		      @click="toggleEditMode">
 			{{ editMode ? 'Done' : 'Edit' }}
 		</VBtn>
@@ -12,13 +12,13 @@
 	<div class="d-flex flex-column ga-3">
 		<div class="d-flex ga-2 align-center">
 			<h4 class="text-subtitle-1">Quick Times</h4>
-			<VIconBtn v-if="editMode" icon="plus" variant="tonal" color="success" size="28" @click="openCreateDialog()"
+			<VIconBtn v-if="editMode" icon="plus" variant="tonal" color="success" size="32" @click="openCreateDialog()"
 			          :disabled="!timeInputVisible">
 				<VIcon size="18"></VIcon>
 			</VIconBtn>
 		</div>
 		<div v-if="timeOnlyPresets.length > 0" class="d-flex flex-wrap ga-2">
-			<VChip v-for="preset in timeOnlyPresets" :key="preset.id" @click="editMode ? openEditDialog(preset) : applyPreset(preset)"
+			<VChip :class="{'pr-4': editMode}" v-for="preset in timeOnlyPresets" :key="preset.id" @click="editMode ? openEditDialog(preset) : applyPreset(preset)"
 			       variant="tonal" color="primaryOutline">
 				{{ preset.durationFormatted }}
 				<template #close>
@@ -33,7 +33,7 @@
 	<div class="d-flex flex-column ga-3">
 		<div class="d-flex ga-2 align-center">
 			<h4 class="text-subtitle-1">Activity Presets</h4>
-			<VIconBtn v-if="editMode" icon="plus" variant="tonal" color="success" size="28" @click="openCreateDialog(true)"
+			<VIconBtn v-if="editMode" icon="plus" variant="tonal" color="success" size="32" @click="openCreateDialog(true)"
 			          :disabled="!timeInputVisible">
 				<VIcon size="18"></VIcon>
 			</VIconBtn>

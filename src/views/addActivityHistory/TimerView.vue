@@ -1,10 +1,11 @@
 <template>
-<VRow justify="center" class="my-auto">
+<VRow justify="center" class="py-4 my-auto">
 	<VCol cols="12" sm="11" md="10" lg="7" xl="6" class="d-flex flex-column">
-		<TimePicker class="mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" variant="tonal" color="primaryOutline" :height="56"
-		            icon="hourglass-half"
+		<TimePicker class="mx-auto" v-if="timeInputVisible" v-model="initialTime" viewMode="minute" :label="$t('dateTime.length')" color="primaryOutline"
+		            density="default" icon="hourglass-half" hideDetails
 		></TimePicker>
-		<TimeDisplayWithProgress v-else :timeInitialObject="initialTime" :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
+		<TimeDisplayWithProgress v-else :title="selectedActivityName" :timeInitialObject="initialTime"
+		                         :timeRemainingObject="timeRemainingObject"></TimeDisplayWithProgress>
 
 		<TimerControls class="my-7" :intervalId="intervalId" :paused="paused" @start="start" @pause="pause" @stop="stop"></TimerControls>
 		<template v-if="timeInputVisible">
@@ -13,9 +14,6 @@
 			<hr class="mt-6 mb-4"/>
 			<ActivitySelectionForm ref="activitySelectionForm" v-model:activityId="selectedActivityId" :formDisabled="formDisabled"></ActivitySelectionForm>
 		</template>
-		<VChip v-else color="primary" variant="tonal" size="large" class="mx-auto">
-			{{ activitySelectionForm?.getSelectedActivityName }}
-		</VChip>
 	</VCol>
 </VRow>
 <SaveActivityDialog ref="saveDialog" @saved="saveActivity" @resetTime="resetTimer"></SaveActivityDialog>
@@ -48,6 +46,7 @@ const intervalId = ref<number | undefined>(undefined);
 const startTimestamp = ref(new Date());
 const formDisabled = ref(false);
 const selectedActivityId = ref<number | null>(null);
+const selectedActivityName = ref<string>('');
 
 // Timestamp-based timer state
 const endsAt = ref<number | null>(null);
@@ -83,6 +82,7 @@ async function start() {
 		if (validationResult && validationResult.length === 0) {
 			formDisabled.value = true;
 			startTimestamp.value = new Date();
+			selectedActivityName.value = activitySelectionForm.value!.getSelectedActivityName as string;
 			timeInputVisible.value = false;
 			const durationMs = initialTime.value.getInSeconds * 1000;
 			const currentTime = Date.now();
@@ -144,7 +144,8 @@ function stop(automatic: boolean) {
 	intervalId.value = undefined;
 	notificationTimeoutId.value = undefined;
 
-	const activityName = activitySelectionForm.value!.getSelectedActivityName as string;
+	const activityName = selectedActivityName.value;
+	timeInputVisible.value = true;
 	if (automatic) {
 		triggerTimerEndNotification('Timer ended!', activityName);
 		showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timePassed().getNice}`);

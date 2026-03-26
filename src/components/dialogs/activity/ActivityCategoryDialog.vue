@@ -14,7 +14,7 @@ import MyDialog from '@/components/dialogs/MyDialog.vue';
 import ColorPicker from '@/components/general/ColorPicker.vue';
 import {ref} from 'vue';
 import {Category} from '@/dtos/response/activity/Category.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {useActivityCategoryCrud} from '@/api/activity/activityCategoryApi.ts';
 import {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
 import {VForm} from 'vuetify/components';

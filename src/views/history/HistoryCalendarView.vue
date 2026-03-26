@@ -1,5 +1,5 @@
 <template>
-<CalendarGrid :fetchFn="fetchCalendarActivity" @dayClick="handleDayClick">
+<CalendarGrid class="py-4" :fetchFn="fetchCalendarActivity" @dayClick="handleDayClick">
 	<template #day-cell-content="{ day }">
 		<div class="cell-content">
 			<!-- Wake/Bed Time -->

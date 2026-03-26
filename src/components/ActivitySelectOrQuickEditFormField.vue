@@ -31,7 +31,7 @@
 import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
 import {type QuickCreateActivityRoleName, useQuickCreateActivity} from '@/composables/activity/quickCreateActivityComposition.ts';
 import {ActivityOptionsSource} from '@/dtos/enum/ActivityOptionsSource.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 import {onMounted, ref} from 'vue';
 import {useI18n} from 'vue-i18n';
 import type {SelectOption} from '@/dtos/response/general/SelectOption.ts';

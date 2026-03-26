@@ -1,5 +1,5 @@
 <template>
-<div class=" w-100 h-100 d-flex flex-column">
+<div class="py-4 w-100 h-100 d-flex flex-column">
 	<!-- Header -->
 	<div class="mb-4 w-100 d-flex align-center ga-6 flex-wrap">
 		<h1 class="text-h4">Activity History</h1>

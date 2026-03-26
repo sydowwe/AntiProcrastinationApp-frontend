@@ -1,7 +1,7 @@
 <template>
-<div class="pa-2 w-100 h-100 d-flex flex-column">
+<div class="py-5 w-100 h-100 d-flex flex-column">
 	<!-- Header -->
-	<div class="py-5 w-100 d-flex align-center ga-6 flex-wrap bg-background" style="position: sticky; top: -16px; z-index: 1000; margin-top:-24px">
+	<div class="w-100 mb-3 d-flex align-center ga-6 flex-wrap bg-background" style="position: sticky; top: 0; z-index: 1000;">
 		<h1 class="text-h4">Desktop Activity</h1>
 		<div class="d-flex align-center ga-5 flex-wrap">
 			<MyDateInput

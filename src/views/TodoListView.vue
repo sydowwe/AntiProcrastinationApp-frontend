@@ -1,6 +1,6 @@
 <template>
-<VRow justify="center" noGutters>
-	<VCol cols="12" sm="10" md="8" lg="4" class="mt-lg-5 mt-3">
+<VRow class="my-lg-3 my-1" justify="center">
+	<VCol cols="12" sm="10" md="8" lg="4">
 		<div class="d-flex justify-center mb-3 ga-3">
 			<VIconBtn icon="arrow-left" variant="tonal" density="comfortable" :to="{ name: 'toDoList' }"/>
 			<VBtn class="flex-grow-1" color="primary" @click="toDoListDialog?.openCreate" :disabled="isInChangeOrderMode">{{ $t('toDoList.add') }}</VBtn>

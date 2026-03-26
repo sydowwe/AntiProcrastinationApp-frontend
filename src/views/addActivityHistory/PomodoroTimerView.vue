@@ -1,5 +1,5 @@
 <template>
-<VRow justify="center" align="center" noGutters>
+<VRow class="py-4" justify="center" align="center" noGutters>
 	<VCol cols="12" sm="10" md="10" lg="10" class="mt-3 mt-md-0">
 		<VCard elevation="3" class="pa-3 pa-md-6">
 			<VCardTitle class="text-h5 text-center pb-3">Pomodoro Timer</VCardTitle>

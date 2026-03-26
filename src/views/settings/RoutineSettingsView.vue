@@ -1,5 +1,5 @@
 <template>
-<div class="h-100 w-100 d-flex flex-column ga-4 pa-4">
+<div class="py-4 h-100 w-100 d-flex flex-column ga-4">
 	<div class="d-flex align-center ga-3">
 		<h2>Time Periods</h2>
 		<VBtn color="primary" prependIcon="plus" @click="timePeriodDialog?.openAddDialog()">Add</VBtn>

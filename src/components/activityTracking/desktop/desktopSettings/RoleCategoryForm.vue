@@ -23,7 +23,7 @@ import {ref} from 'vue';
 import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
 import {RoleRequest} from '@/dtos/request/activity/RoleRequest.ts';
 import type {CategoryRequest} from '@/dtos/request/activity/CategoryRequest.ts';
-import {useGeneralRules} from '@/composables/rules/RulesComposition.ts';
+import {useGeneralRules} from '@/composables/general/rules/RulesComposition.ts';
 
 const {requiredRule} = useGeneralRules()
 const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>();
