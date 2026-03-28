@@ -13,6 +13,34 @@
 						hideDetails
 						style="min-width: 170px"
 					/>
+					<template v-if="mdAndUp && templates.length >= 2">
+						<VBtn
+							v-if="!compareMode"
+							color="secondaryOutline"
+							variant="outlined"
+							prependIcon="columns"
+							@click="compareMode = true"
+						>
+							Compare
+						</VBtn>
+						<template v-else>
+							<VBtn
+								color="primary"
+								prependIcon="columns"
+								:disabled="compareSelection.length !== 2"
+								@click="openComparison"
+							>
+								Compare ({{ compareSelection.length }}/2)
+							</VBtn>
+							<VBtn
+								color="secondaryOutline"
+								variant="outlined"
+								@click="exitCompareMode"
+							>
+								Cancel
+							</VBtn>
+						</template>
+					</template>
 					<VBtn
 						color="primary"
 						prependIcon="plus"
@@ -64,6 +92,8 @@
 						:template
 						:isPinned="true"
 						:tasks="templateTasksMap.get(template.id)"
+						:compareMode="compareMode"
+						:isCompareSelected="compareSelection.includes(template.id)"
 						@click="openTemplate(template.id)"
 						@edit="openEditDialog(template)"
 						@delete="confirmDelete(template)"
@@ -71,6 +101,7 @@
 						@toggleActive="toggleActive(template)"
 						@applyToday="applyToToday(template.id)"
 						@duplicate="duplicateTemplate(template)"
+						@toggleCompare="toggleCompareSelection(template.id)"
 					/>
 				</VCol>
 			</VRow>
@@ -90,6 +121,8 @@
 					:template
 					:isPinned="false"
 					:tasks="templateTasksMap.get(template.id)"
+					:compareMode="compareMode"
+					:isCompareSelected="compareSelection.includes(template.id)"
 					@click="openTemplate(template.id)"
 					@edit="openEditDialog(template)"
 					@delete="confirmDelete(template)"
@@ -97,6 +130,7 @@
 					@toggleActive="toggleActive(template)"
 					@applyToday="applyToToday(template.id)"
 					@duplicate="duplicateTemplate(template)"
+					@toggleCompare="toggleCompareSelection(template.id)"
 				/>
 			</VCol>
 		</VRow>
@@ -121,6 +155,12 @@
 		Are you sure you want to delete "{{ templateToDelete?.name }}"?
 		This action cannot be undone.
 	</MyDialog>
+
+	<!-- Comparison Dialog -->
+	<TemplateComparisonDialog
+		v-model="compareDialog"
+		:templateIds="compareSelection"
+	/>
 </div>
 </template>
 
@@ -133,6 +173,7 @@ import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/tem
 import TemplateDetailsDialog from '@/components/dayPlanner/template/TemplateDetailsDialog.vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue';
+import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useMoment} from '@/utils/momentHelper.ts';
 import {useTemplatePlannerTaskCrud} from '@/api/taskPlanner/templatePlannerTaskApi.ts';
@@ -141,6 +182,9 @@ import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/templa
 import {Time} from '@/dtos/dto/Time.ts';
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 
+import {useDisplay} from 'vuetify'
+
+const {mdAndUp} = useDisplay()
 const router = useRouter()
 const {fetchAll, create, update, deleteEntity} = useTaskPlannerDayTemplateTaskCrud()
 const {fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse} = useTemplatePlannerTaskCrud()
@@ -206,6 +250,31 @@ const templateToDelete = ref<TaskPlannerDayTemplate | null>(null)
 const editingTemplate = ref<TaskPlannerDayTemplate | null>(null)
 const duplicateDefaultValues = ref<TaskPlannerDayTemplateRequest | null>(null)
 const duplicatingFromId = ref<number | null>(null)
+
+// Comparison mode
+const compareMode = ref(false)
+const compareSelection = ref<number[]>([])
+const compareDialog = ref(false)
+
+function toggleCompareSelection(templateId: number) {
+	const idx = compareSelection.value.indexOf(templateId)
+	if (idx >= 0) {
+		compareSelection.value.splice(idx, 1)
+	} else if (compareSelection.value.length < 2) {
+		compareSelection.value.push(templateId)
+	}
+}
+
+function openComparison() {
+	if (compareSelection.value.length === 2) {
+		compareDialog.value = true
+	}
+}
+
+function exitCompareMode() {
+	compareMode.value = false
+	compareSelection.value = []
+}
 
 async function loadTemplates() {
 	loading.value = true

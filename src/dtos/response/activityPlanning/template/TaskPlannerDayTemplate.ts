@@ -1,5 +1,7 @@
 import type {DayType} from '@/dtos/enum/DayType.ts';
+import type {DayOfWeek} from '@/dtos/enum/DayOfWeek.ts';
 import type {Time} from '@/dtos/dto/Time.ts';
+import type {Location} from '@/dtos/enum/Location.ts';
 
 export class TaskPlannerDayTemplate {
 	constructor(
@@ -13,7 +15,9 @@ export class TaskPlannerDayTemplate {
 		public icon: string | null,
 		public defaultWakeUpTime: Time,
 		public defaultBedTime: Time,
-		public lastUsedAt?: string
+		public scheduledDays: DayOfWeek[] = [],
+		public lastUsedAt?: string,
+		public suggestedLocation?: Location,
 	) {
 	}
 
@@ -29,7 +33,9 @@ export class TaskPlannerDayTemplate {
 			json.icon,
 			json.defaultWakeUpTime,
 			json.defaultBedTime,
-			json.lastUsedAt
+			json.scheduledDays ?? [],
+			json.lastUsedAt,
+			json.suggestedLocation ?? undefined,
 		);
 	}
 }

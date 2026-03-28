@@ -1,12 +1,20 @@
 <template>
 <VCard
 	class="template-card"
-	:class="{ 'inactive-template': !template.isActive }"
+	:class="{ 'inactive-template': !template.isActive, 'compare-selected': isCompareSelected }"
 	elevation="2"
-	@click="emit('click')"
+	@click="compareMode ? emit('toggleCompare') : emit('click')"
 >
 	<VCardTitle class="pa-4 d-flex justify-space-between align-center">
 		<div class="d-flex align-center ga-2">
+			<VCheckbox
+				v-if="compareMode"
+				:modelValue="isCompareSelected"
+				hideDetails
+				density="compact"
+				@click.stop="emit('toggleCompare')"
+				class="flex-grow-0"
+			/>
 			<VIcon class="ma-1" v-if="template.icon">{{ template.icon }}</VIcon>
 			<span>{{ template.name }}</span>
 		</div>
@@ -35,6 +43,18 @@
 				class="mr-2 mb-2"
 			>
 				{{ tag }}
+			</VChip>
+		</div>
+
+		<div v-if="template.scheduledDays?.length" class="d-flex ga-1 mt-2">
+			<VChip
+				v-for="day in template.scheduledDays"
+				:key="day"
+				size="x-small"
+				color="primary"
+				variant="tonal"
+			>
+				{{ DAY_OF_WEEK_SHORT_LABELS[day] }}
 			</VChip>
 		</div>
 
@@ -106,12 +126,15 @@ import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/temp
 import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
 import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue';
 import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue';
+import {DAY_OF_WEEK_SHORT_LABELS} from '@/dtos/enum/DayOfWeek.ts';
 import {useMoment} from '@/utils/momentHelper.ts';
 
 defineProps<{
 	template: TaskPlannerDayTemplate
 	isPinned: boolean
 	tasks?: TemplatePlannerTask[]
+	compareMode?: boolean
+	isCompareSelected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -122,6 +145,7 @@ const emit = defineEmits<{
 	togglePin: []
 	toggleActive: []
 	applyToday: []
+	toggleCompare: []
 }>()
 
 const {formatToDate} = useMoment()
@@ -140,6 +164,10 @@ const {formatToDate} = useMoment()
 
 .inactive-template {
 	opacity: 0.7;
+}
+
+.compare-selected {
+	border: 2px solid rgb(var(--v-theme-primary));
 }
 
 .template-meta {

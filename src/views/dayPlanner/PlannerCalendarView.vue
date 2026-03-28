@@ -1,70 +1,142 @@
 <template>
-<CalendarGrid class="py-4" @dayClick="handleDayClick">
+<CalendarGrid ref="calendarGridRef" class="py-4" @dayClick="handleDayClick">
+	<template #toolbar-append>
+		<VBtn
+			:color="isBulkSelectMode ? 'primary' : 'secondaryOutline'"
+			variant="tonal"
+			prependIcon="fas fa-calendar-check"
+			@click="toggleBulkSelectMode"
+		>
+			Select Days
+		</VBtn>
+	</template>
+
 	<template #day-cell-content="{ day }">
-		<div class="cell-content">
-			<div class="d-flex ga-3 align-center">
-				<!-- Wake/Bed Time -->
-				<div v-if="asCalendar(day).wakeUpTime || asCalendar(day).bedTime" class="cell-info">
-					<VIcon icon="fas fa-clock" size="small" class="mr-1"/>
-					<span class="info-text">{{ asCalendar(day).wakeUpTime.getString() }} - {{ asCalendar(day).bedTime.getString() }}</span>
-				</div>
-
-				<!-- Tasks Progress -->
-				<div class="cell-info tasks-info flex-grow-1">
-					<VIcon icon="fas fa-list-check" size="small" class="mr-1"/>
-					<div class="tasks-progress">
-						<span class="info-text">{{ asCalendar(day).completedTasks }}/{{ asCalendar(day).totalTasks }} tasks</span>
-						<VProgressLinear
-							v-if="asCalendar(day).totalTasks > 0"
-							:modelValue="asCalendar(day).completionRate"
-							:color="asCalendar(day).completionRate >= 80 ? 'success' : asCalendar(day).completionRate >= 50 ? 'warning' : 'error'"
-							height="6"
-							rounded
-							class="mt-1"
-						/>
-						<VChip
-							v-if="asCalendar(day).totalTasks > 0"
-							size="x-small"
-							:color="asCalendar(day).completionRate >= 80 ? 'success' : asCalendar(day).completionRate >= 50 ? 'warning' : 'error'"
-							variant="flat"
-							class="mt-1"
-						>
-							{{ Math.round(asCalendar(day).completionRate) }}%
-						</VChip>
-					</div>
-				</div>
-			</div>
-
-			<!-- Applied Template -->
-			<div v-if="asCalendar(day).appliedTemplateName" class="cell-info secondary-info">
-				<VIcon icon="fas fa-file-lines" size="small" class="mr-1"/>
-				<span class="info-text">{{ asCalendar(day).appliedTemplateName }}</span>
-			</div>
-
-			<!-- Weather -->
-			<div v-if="asCalendar(day).weather" class="cell-info secondary-info">
-				<VIcon icon="fas fa-cloud-sun" size="small" class="mr-1"/>
-				<span class="info-text">{{ asCalendar(day).weather }}</span>
-			</div>
-
-			<!-- Notes -->
-			<div v-if="asCalendar(day).notes" class="cell-info notes secondary-info">
-				<VIcon icon="fas fa-note-sticky" size="small" class="mr-1"/>
-				<span class="info-text">{{ asCalendar(day).notes }}</span>
-			</div>
-		</div>
+		<CalendarDayCellContent
+			:day="asCalendar(day)"
+			:selectionMode="isBulkSelectMode"
+			:selected="selectedDayIds.includes(asCalendar(day).id)"
+			:tasks="dayTasksMap.get(asCalendar(day).id) ?? []"
+			:activeTemplates
+			@quickApply="handleQuickApply"
+			@toggleSelection="toggleDaySelection"
+			@updateNotes="handleUpdateNotes"
+		/>
 	</template>
 </CalendarGrid>
+
+<CalendarStatsBar :days="calendarDays" class="px-4"/>
+
+<ActionBar :isShown="isBulkSelectMode" @cancel="toggleBulkSelectMode">
+	<span class="text-textMuted font-weight-medium">
+		{{ selectedDayIds.length }} day{{ selectedDayIds.length !== 1 ? 's' : '' }} selected
+	</span>
+	<VSelect
+		label="Change day type"
+		:items="dayTypeOptions"
+		density="compact"
+		minWidth="160"
+		hideDetails
+		@update:modelValue="executeBulkDayTypeChange"
+	/>
+	<VBtn
+		color="primary"
+		variant="tonal"
+		:disabled="selectedDayIds.length === 0"
+		:loading="bulkApplying"
+		@click="bulkApplyDialog = true"
+	>
+		Apply Template
+	</VBtn>
+	<VBtn
+		color="secondary"
+		variant="tonal"
+		:disabled="selectedDayIds.length === 0"
+		@click="copyDayDialog = true"
+	>
+		Copy Day
+	</VBtn>
+</ActionBar>
+
+<BulkApplyTemplateDialog
+	v-model="bulkApplyDialog"
+	:selectedCount="selectedDayIds.length"
+	:activeTemplates
+	@apply="executeBulkApply"
+/>
+
+<CopyDayDialog
+	v-model="copyDayDialog"
+	:selectedCount="selectedDayIds.length"
+	@copy="executeCopyDay"
+/>
 </template>
 
 <script setup lang="ts">
+import {computed, onMounted, ref, watch} from 'vue'
 import type {ICalendar} from '@/dtos/response/activityPlanning/ICalendar.ts'
-import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
 import {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
+import {CalendarRequest} from '@/dtos/request/activityPlanning/CalendarRequest.ts'
+import {DayType} from '@/dtos/enum/DayType.ts'
+import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
+import CalendarDayCellContent from '@/components/dayPlanner/calendar/CalendarDayCellContent.vue'
+import CalendarStatsBar from '@/components/dayPlanner/calendar/CalendarStatsBar.vue'
+import BulkApplyTemplateDialog from '@/components/dayPlanner/calendar/BulkApplyTemplateDialog.vue'
+import CopyDayDialog from '@/components/dayPlanner/calendar/CopyDayDialog.vue'
+import ActionBar from '@/components/general/ActionBar.vue'
 import router from '@/plugins/router.ts'
 import {useMoment} from '@/utils/momentHelper.ts'
+import {useTaskPlannerCrud} from '@/api/taskPlanner/plannerTaskApi.ts'
+import {useTaskPlannerDayTemplateTaskCrud} from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
+import {useTemplatePlannerTaskCrud} from '@/api/taskPlanner/templatePlannerTaskApi.ts'
+import {useCalendarQuery} from '@/api/calendarApi.ts'
+import {PlannerTaskFilter} from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
+import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
+import {ApplyTemplateToTaskPlannerRequest} from '@/dtos/request/activityPlanning/ApplyTemplateToTaskPlannerRequest.ts'
+import {ApplyTemplateConflictResolution} from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
+import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
+import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+import {API} from '@/plugins/axiosConfig.ts'
+import {useSnackbar} from '@/composables/general/SnackbarComposable.ts'
 
-const {usStringToUrlString} = useMoment()
+const {usStringToUrlString, formatToDate} = useMoment()
+const {showSuccessSnackbar, showErrorSnackbar} = useSnackbar()
+const {fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse} = useTaskPlannerCrud()
+const {fetchAll: fetchAllTemplates} = useTaskPlannerDayTemplateTaskCrud()
+const {fetchFiltered: fetchTemplateTasks} = useTemplatePlannerTaskCrud()
+const {updateWithResponse: updateCalendar, fetchByDate} = useCalendarQuery()
+
+const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
+const dayTasksMap = ref<Map<number, PlannerTask[]>>(new Map())
+const activeTemplates = ref<TaskPlannerDayTemplate[]>([])
+const isBulkSelectMode = ref(false)
+const selectedDayIds = ref<number[]>([])
+const bulkApplyDialog = ref(false)
+const bulkApplying = ref(false)
+const copyDayDialog = ref(false)
+
+const calendarDays = computed(() => (calendarGridRef.value?.calendarData ?? []) as Calendar[])
+
+const dayTypeOptions = Object.values(DayType).map(v => ({title: v, value: v}))
+
+onMounted(async () => {
+	activeTemplates.value = (await fetchAllTemplates()).filter(t => t.isActive)
+})
+
+watch(
+	() => calendarGridRef.value?.calendarData,
+	async (days) => {
+		if (!days) return
+		dayTasksMap.value = new Map()
+		const daysWithTasks = (days as Calendar[]).filter(d => d.totalTasks > 0)
+		await Promise.all(daysWithTasks.map(async d => {
+			const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
+			dayTasksMap.value.set(d.id, tasks)
+		}))
+	},
+	{deep: true}
+)
 
 function asCalendar(day: ICalendar): Calendar {
 	return day as Calendar
@@ -72,90 +144,116 @@ function asCalendar(day: ICalendar): Calendar {
 
 function handleDayClick(day: ICalendar) {
 	const cal = day as Calendar
+	if (isBulkSelectMode.value) {
+		toggleDaySelection(cal.id)
+		return
+	}
 	router.push({name: 'dayPlanner', params: {date: usStringToUrlString(cal.date)}, state: {calendarId: cal.id}})
+}
+
+function toggleDaySelection(calendarId: number) {
+	const idx = selectedDayIds.value.indexOf(calendarId)
+	if (idx >= 0) selectedDayIds.value.splice(idx, 1)
+	else selectedDayIds.value.push(calendarId)
+}
+
+function toggleBulkSelectMode() {
+	isBulkSelectMode.value = !isBulkSelectMode.value
+	if (!isBulkSelectMode.value) selectedDayIds.value = []
+}
+
+function handleQuickApply(day: Calendar, template: TaskPlannerDayTemplate) {
+	router.push({
+		name: 'dayPlanner',
+		params: {date: usStringToUrlString(day.date)},
+		query: {applyTemplateId: template.id.toString()},
+		state: {calendarId: day.id}
+	})
+}
+
+async function handleUpdateNotes(calendarId: number, notes: string) {
+	const day = calendarDays.value.find(d => d.id === calendarId)
+	if (!day) return
+	const req = CalendarRequest.fromResponse(day)
+	req.notes = notes
+	await updateCalendar(calendarId, req)
+	calendarGridRef.value?.refresh()
+}
+
+async function executeBulkApply(templateId: number, conflictResolution: ApplyTemplateConflictResolution) {
+	bulkApplying.value = true
+	try {
+		const template = activeTemplates.value.find(t => t.id === templateId)!
+		const templateTasks = await fetchTemplateTasks(
+			new TemplatePlannerTaskFilter(templateId, template.defaultWakeUpTime, template.defaultBedTime)
+		)
+		const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
+
+		const results = await Promise.allSettled(days.map(day => {
+			const taskRequests = templateTasks.map(t =>
+				PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t))
+			)
+			return API.post(
+				'calendar/apply-planner-template',
+				new ApplyTemplateToTaskPlannerRequest(templateId, day.id, conflictResolution, taskRequests)
+			)
+		}))
+
+		const failed = results.filter(r => r.status === 'rejected').length
+		selectedDayIds.value = []
+		isBulkSelectMode.value = false
+		bulkApplyDialog.value = false
+		calendarGridRef.value?.refresh()
+
+		if (failed > 0) showErrorSnackbar(`Applied to ${days.length - failed}/${days.length} days — ${failed} failed`)
+		else showSuccessSnackbar(`Template applied to ${days.length} day(s)`)
+	} finally {
+		bulkApplying.value = false
+	}
+}
+
+async function executeCopyDay(sourceDate: Date) {
+	try {
+		const formatted = formatToDate(sourceDate)
+		const sourceCalendar = await fetchByDate(formatted)
+		const sourceTasks = await fetchPlannerTasks(
+			new PlannerTaskFilter(sourceCalendar.id, sourceCalendar.wakeUpTime, sourceCalendar.bedTime)
+		)
+		const targetDays = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
+
+		await Promise.allSettled(
+			targetDays.flatMap(targetDay =>
+				sourceTasks.map(task => {
+					const req = PlannerTaskRequest.fromEntity(task)
+					req.calendarId = targetDay.id
+					return createTaskWithResponse(req)
+				})
+			)
+		)
+
+		selectedDayIds.value = []
+		isBulkSelectMode.value = false
+		copyDayDialog.value = false
+		calendarGridRef.value?.refresh()
+		showSuccessSnackbar(`Tasks copied to ${targetDays.length} day(s)`)
+	} catch {
+		showErrorSnackbar('Failed to copy tasks')
+	}
+}
+
+async function executeBulkDayTypeChange(dayType: DayType) {
+	const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
+	await Promise.allSettled(days.map(d => {
+		const req = CalendarRequest.fromResponse(d)
+		req.dayType = dayType
+		return updateCalendar(d.id, req)
+	}))
+	selectedDayIds.value = []
+	isBulkSelectMode.value = false
+	calendarGridRef.value?.refresh()
+	showSuccessSnackbar(`Day type updated for ${days.length} day(s)`)
 }
 </script>
 
 <style scoped>
-.cell-content {
-	flex: 1;
-	padding: 8px;
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
-.cell-info {
-	display: flex;
-	align-items: flex-start;
-	font-size: 13px;
-	color: rgb(var(--v-theme-on-surface));
-	line-height: 1.5;
-	gap: 4px;
-	padding: 4px 0;
-}
-
-.cell-info.tasks-info {
-	padding: 6px 8px;
-	background-color: rgba(var(--v-border-color), 0.12);
-	border-radius: 6px;
-	border: 1px solid rgba(var(--v-border-color), 0.15);
-}
-
-.cell-info.secondary-info {
-	padding: 4px 0;
-	opacity: 0.9;
-}
-
-.cell-info.secondary-info .info-text {
-	font-size: 12px;
-}
-
-.info-text {
-	flex: 1;
-}
-
-.tasks-progress {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.cell-info.notes {
-	max-width: 100%;
-}
-
-.cell-info .info-text {
-	word-wrap: break-word;
-	overflow-wrap: break-word;
-	white-space: normal;
-}
-
-@media (max-width: 960px) {
-	.cell-content {
-		padding: 10px;
-		gap: 8px;
-	}
-
-	.cell-info {
-		font-size: 12px;
-	}
-
-	.cell-info.tasks-info {
-		padding: 5px 6px;
-	}
-}
-
-@media (max-width: 600px) {
-	.cell-content {
-		padding: 8px;
-		gap: 6px;
-	}
-
-	.cell-info {
-		font-size: 11px;
-	}
-}
 </style>

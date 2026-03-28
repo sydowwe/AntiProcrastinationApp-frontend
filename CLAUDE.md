@@ -2,12 +2,14 @@
 
 ## Tech Stack
 
+- **Backend**: .Net10 with fastEndpoints
 - **Framework**: Vue 3.5+ (Composition API with `<script setup lang="ts">`)
 - **UI**: Vuetify 3
 - **ICONS** FontAwesome 7
 - **State**: Pinia (Composition API / Setup Stores) — persists to `sessionStorage` by default (set `persist: false` to disable)
 - **Routing**: Vue Router
-- **HTTP**: Axios — dual instances: `API` (main, with interceptors) and `refreshClient` (token refresh only, no interceptors). Never use `refreshClient` directly outside auth logic.
+- **HTTP**: Axios — dual instances: `API` (main, with interceptors) and `refreshClient` (token refresh only, no interceptors). Never use `refreshClient` directly
+  outside auth logic.
 - **Animations**: `@formkit/auto-animate` — registered globally, use `v-auto-animate` directive for list enter/leave animations instead of custom CSS transitions
 
 ## Coding Standards
@@ -32,7 +34,8 @@
     - Each entity has its own API composable in `src/api/` (e.g., `calendarApi.ts`). Compose them from base composables in `src/api/base/`.
     - **Base API composables** (`src/api/base/`):
         - `useEntityQuery<T>(config)` — `fetchById`, `fetchByField`, `fetchAll`, `fetchSelectOptions`
-        - `useEntityCommand<T, TCreate, TUpdate>(config)` — `create`, `createWithResponse`, `update`, `updateWithResponse`, `patch`, `patchWithResponse`, `batchedToggle`, `deleteEntity`, `batchDelete`
+        - `useEntityCommand<T, TCreate, TUpdate>(config)` — `create`, `createWithResponse`, `update`, `updateWithResponse`, `patch`, `patchWithResponse`,
+          `batchedToggle`, `deleteEntity`, `batchDelete`
         - `useFetchFiltered<T, TFilter>(class, entity)` — `fetchFiltered` (POST filter)
         - `useFetchFilteredSorted<T, TFilter>(class, entity)` — `fetchFilteredSorted` (POST filter+sort)
         - `fetchFilteredTable<T, TFilter>(class, entity)` — `fetchFilteredTable` (paginated, returns `{items, itemsCount}`)
@@ -46,7 +49,8 @@
 - **Loading**: Use `useLoading()` from `@/composables/general/LoadingComposable.ts` for full-screen loading state — `showFullScreenLoading()`,
   `hideFullScreenLoading()`.
 - **Error Handling**: Use `useErrorHandling()` from `@/composables/general/ErrorHandlingFunctions.ts` — maps HTTP error codes to localized snackbar messages.
-- **DTOs**: All DTOs live in `src/dtos/request/` and `src/dtos/response/`. Response DTOs must implement `IMyResponse` and have `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default params and `static fromJson()`.
+- **DTOs**: All DTOs live in `src/dtos/request/` and `src/dtos/response/`. Response DTOs must implement `IMyResponse` and have `static fromJson(object: any)` using
+  destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default params and `static fromJson()`.
 
 ## Existing Utilities — check before reimplementing
 
@@ -99,8 +103,10 @@
     - `VIdAutocomplete` → VAutocomplete with `itemValue="id"`, `itemTitle="text"`
     - `VIconBtn` → VBtn (rounded icon button)
     - `VIconSmall` → VIcon (size 16)
-- **Custom Theme Colors**: `primary`, `secondary`, `primaryOutline`, `secondaryOutline`, `errorDark`, `successDark`, `warningDark`, `primary-accent`, `secondary-accent`, `primary-container`, `secondary-container`, `textMuted`, `neutral-50` through `neutral-900`
-- **Component Defaults** (already configured, no need to repeat in templates): VBtn `variant="elevated"`, VCard `rounded="lg"`, VTextField/VIdSelect/VIdAutocomplete/VTextarea `variant="outlined" clearable density="comfortable"`
+- **Custom Theme Colors**: `primary`, `secondary`, `primaryOutline`, `secondaryOutline`, `errorDark`, `successDark`, `warningDark`, `primary-accent`,
+  `secondary-accent`, `primary-container`, `secondary-container`, `textMuted`, `neutral-50` through `neutral-900`
+- **Component Defaults** (already configured, no need to repeat in templates): VBtn `variant="elevated"`, VCard `rounded="lg"`,
+  VTextField/VIdSelect/VIdAutocomplete/VTextarea `variant="outlined" clearable density="comfortable"`
 
 ## Vuetify Components
 

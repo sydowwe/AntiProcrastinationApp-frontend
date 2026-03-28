@@ -15,7 +15,13 @@
 				{{ expanded ? 'Hide details' : 'Show details' }}
 			</VTooltip>
 		</VIconBtn>
+		<VIconBtn variant="tonal" density="compact" icon="chevron-left" @click="emit('navigateDate', -1)">
+			<VTooltip activator="parent" location="bottom">Previous day (←)</VTooltip>
+		</VIconBtn>
 		<h1 class="date-title">{{ title }}</h1>
+		<VIconBtn variant="tonal" density="compact" icon="chevron-right" @click="emit('navigateDate', 1)">
+			<VTooltip activator="parent" location="bottom">Next day (→)</VTooltip>
+		</VIconBtn>
 
 		<DayTypeChip :dayType="calendar.dayType" isTonal></DayTypeChip>
 		<div
@@ -38,14 +44,14 @@
 	</div>
 
 	<!-- Right: Time + Add -->
-	<div class="d-flex ga-3">
+	<div class="d-flex ga-3 align-center">
 		<div class="flex-1-1-100 progress-block">
 			<div class="progress-header">
 				<VIcon icon="list-check" size="18"/>
 				<span class="progress-label">{{ calendar.completedTasks }}/{{ calendar.totalTasks }} tasks</span>
 				<span class="progress-percent" :style="{ color: progressColor }">
-						{{ Math.round(calendar.completionRate) }}%
-					</span>
+					{{ Math.round(calendar.completionRate) }}%
+				</span>
 			</div>
 			<VProgressLinear
 				:modelValue="calendar.completionRate"
@@ -54,7 +60,37 @@
 				rounded
 				class="progress-bar"
 			/>
+			<div class="d-flex ga-2 mt-1 text-caption text-medium-emphasis">
+				<span>{{ timeNiceFromMinutes(taskStats.plannedMinutes) }} planned</span>
+				<span>·</span>
+				<span v-if="taskStats.overMinutes === 0" :class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-medium-emphasis'">
+					{{ timeNiceFromMinutes(taskStats.freeMinutes) }} free
+				</span>
+				<span v-else class="text-error font-weight-medium">
+					<VIcon icon="triangle-exclamation" size="11" class="mr-1"/>{{ timeNiceFromMinutes(taskStats.overMinutes) }} over capacity
+				</span>
+			</div>
 		</div>
+
+		<VTooltip :text="nextUndoDescription ? `Undo: ${nextUndoDescription}` : 'Nothing to undo'" location="bottom">
+			<template #activator="{ props: tooltipProps }">
+				<VBtn
+					v-bind="tooltipProps"
+					variant="tonal"
+					color="secondaryOutline"
+					:disabled="!canUndo"
+					@click="undo()"
+				>
+					<VIcon icon="rotate-left" />
+					<VBadge
+						v-if="stackSize > 0"
+						:content="stackSize"
+						color="primary"
+						floating
+					/>
+				</VBtn>
+			</template>
+		</VTooltip>
 
 		<VBtn
 			color="primary"
@@ -83,9 +119,17 @@ import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import {useDayPlannerStore} from '@/stores/dayPlanner/dayPlannerStore.ts'
 import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue';
+import {useUndoStack} from '@/composables/general/useUndoStack.ts';
+import {useMoment} from '@/utils/momentHelper.ts';
 
 const store = useDayPlannerStore()
 const expanded = defineModel('expandedDetails', {required: true})
+const {undo, canUndo, stackSize, nextUndoDescription} = useUndoStack()
+const {timeNiceFromMinutes} = useMoment()
+
+const emit = defineEmits<{
+	navigateDate: [delta: number]
+}>()
 
 const props = defineProps<{
 	title: string
@@ -106,6 +150,21 @@ const progressColor = computed(() => {
 	if (rate >= 80) return 'rgb(var(--v-theme-success))'
 	if (rate >= 50) return 'rgb(var(--v-theme-warning))'
 	return 'rgb(var(--v-theme-error))'
+})
+
+const taskStats = computed(() => {
+	const nonBgTasks = store.tasks.filter(t => !t.isBackground && t.id > 0)
+	const plannedMinutes = nonBgTasks.reduce((sum, t) => {
+		const start = t.startTime.getInMinutes
+		const end = t.endTime.getInMinutes
+		return sum + (end > start ? end - start : end + 1440 - start)
+	}, 0)
+	const viewStart = store.viewStartTime.getInMinutes
+	const viewEnd = store.viewEndTime.getInMinutes
+	const totalViewMinutes = viewEnd > viewStart ? viewEnd - viewStart : viewEnd + 1440 - viewStart
+	const freeMinutes = Math.max(0, totalViewMinutes - plannedMinutes)
+	const overMinutes = Math.max(0, plannedMinutes - totalViewMinutes)
+	return {plannedMinutes, freeMinutes, overMinutes}
 })
 </script>
 

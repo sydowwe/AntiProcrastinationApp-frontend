@@ -32,7 +32,7 @@ export const useSnackbar = () => {
 		})
 	}
 
-	const showSuccessSnackbar = (customMessage: string, config?: ErrorSnackBarConfig) => {
+	const showSuccessSnackbar = (customMessage: string, config?: SnackBarConfig) => {
 		showSnackbar(customMessage || 'Success', {
 			...config,
 			color: 'successDark',

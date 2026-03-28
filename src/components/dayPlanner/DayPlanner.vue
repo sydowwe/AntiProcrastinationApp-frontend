@@ -20,6 +20,25 @@
 				/>
 
 				<div class="d-flex ga-2 align-center flex-wrap">
+					<VTooltip :text="nextUndoDescription ? `Undo: ${nextUndoDescription}` : 'Nothing to undo'" location="bottom">
+						<template #activator="{ props: tooltipProps }">
+							<VBtn
+								v-bind="tooltipProps"
+								variant="tonal"
+								color="secondaryOutline"
+								:disabled="!canUndo"
+								@click="undo()"
+							>
+								<VIcon icon="rotate-left" />
+								<VBadge
+									v-if="stackSize > 0"
+									:content="stackSize"
+									color="primary"
+									floating
+								/>
+							</VBtn>
+						</template>
+					</VTooltip>
 					<VBtn
 						color="primary"
 						@click="plannerStore.openCreateDialog"
@@ -79,7 +98,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, provide} from 'vue'
+import {computed, onMounted, onUnmounted, provide} from 'vue'
 import MyDialog from '@/components/dialogs/MyDialog.vue'
 import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
@@ -88,6 +107,7 @@ import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import {useUndoStack} from '@/composables/general/useUndoStack.ts';
 
 const props = defineProps<{
 	plannerStore: TStore
@@ -111,6 +131,23 @@ const deleteConfirmationText = computed(() => {
 const emit = defineEmits<{
 	delete: []
 }>()
+
+const {undo, clear, canUndo, stackSize, nextUndoDescription} = useUndoStack()
+
+function handleKeyDown(e: KeyboardEvent) {
+	const target = e.target as HTMLElement
+	if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+	if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+		e.preventDefault()
+		undo()
+	}
+}
+
+onMounted(() => document.addEventListener('keydown', handleKeyDown))
+onUnmounted(() => {
+	document.removeEventListener('keydown', handleKeyDown)
+	clear()
+})
 </script>
 
 <style scoped>
