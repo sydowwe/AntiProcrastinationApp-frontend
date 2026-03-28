@@ -27,13 +27,21 @@
 				hideDetails
 			/>
 
-			<!-- Day Type & Weather -->
-			<div class="d-flex ga-4">
+			<!-- Day Type, Location & Weather -->
+			<div class="d-flex ga-4 flex-wrap">
 				<VSelect
 					v-model="data.dayType"
 					label="Day Type"
 					:items="dayTypeOptions"
 					prependIcon="calendar-day"
+					hideDetails
+				/>
+				<VSelect
+					v-model="data.location"
+					label="Location"
+					:items="locationOptions"
+					prependIcon="location-dot"
+					clearable
 					hideDetails
 				/>
 				<VTextField
@@ -67,6 +75,7 @@ import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 import type {VForm} from 'vuetify/components'
 import {CalendarRequest} from '@/dtos/request/activityPlanning/CalendarRequest.ts'
 import {DayType} from '@/dtos/enum/DayType.ts'
+import {Location} from '@/dtos/enum/Location.ts'
 import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
 import {useCalendarQuery} from '@/api/calendarApi.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
@@ -82,6 +91,7 @@ const model = defineModel<boolean>({required: true})
 const form = ref<InstanceType<typeof VForm>>()
 const data = ref<CalendarRequest>(new CalendarRequest())
 
+const locationOptions = Object.values(Location).map(v => ({title: v, value: v}))
 const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
 function getNaturalDayType(): DayType {

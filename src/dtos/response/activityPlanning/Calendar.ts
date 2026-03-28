@@ -1,6 +1,7 @@
 import {DayType} from '@/dtos/enum/DayType.ts';
 import {convertToEnum} from '@/composables/general/EnumComposable.ts';
 import {Time} from '@/dtos/dto/Time.ts';
+import type {Location} from '@/dtos/enum/Location.ts';
 
 export class Calendar {
 	constructor(
@@ -18,6 +19,7 @@ export class Calendar {
 		public readonly notes: string | null,
 		public readonly totalTasks: number,
 		public completedTasks: number,
+		public readonly location: Location | null = null,
 	) {
 	}
 
@@ -51,6 +53,7 @@ export class Calendar {
 
 			json.totalTasks,
 			json.completedTasks,
+			json.location ?? null,
 		);
 	}
 }

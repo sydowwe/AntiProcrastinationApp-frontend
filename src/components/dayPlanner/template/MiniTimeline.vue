@@ -28,11 +28,11 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
-import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
+import type {ITimelineTask} from '@/dtos/dto/ITimelineTask.ts'
 import type {Time} from '@/dtos/dto/Time.ts'
 
 const props = defineProps<{
-	tasks: TemplatePlannerTask[]
+	tasks: ITimelineTask[]
 	startTime: Time
 	endTime: Time
 }>()
@@ -46,7 +46,7 @@ const totalMinutes = computed(() => {
 const nonBackgroundTasks = computed(() => props.tasks.filter(t => !t.isBackground))
 const backgroundTasks = computed(() => props.tasks.filter(t => t.isBackground))
 
-function getPosition(task: TemplatePlannerTask) {
+function getPosition(task: ITimelineTask) {
 	const rangeStart = props.startTime.getInMinutes
 	const taskStart = task.startTime.getInMinutes
 	const taskEnd = task.endTime.getInMinutes

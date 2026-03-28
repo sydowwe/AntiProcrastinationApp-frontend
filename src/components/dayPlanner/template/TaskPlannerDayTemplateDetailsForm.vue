@@ -31,12 +31,21 @@
 		rows="2"
 		hideDetails
 	/>
-	<VSelect
-		v-model="formData.suggestedForDayType"
-		:items="dayTypeOptions"
-		label="Suggested for Day Type"
-		hideDetails
-	/>
+	<div class="d-flex ga-4">
+		<VSelect
+			v-model="formData.suggestedForDayType"
+			:items="dayTypeOptions"
+			label="Suggested for Day Type"
+			hideDetails
+		/>
+		<VSelect
+			v-model="formData.suggestedLocation"
+			:items="locationOptions"
+			label="Suggested Location"
+			clearable
+			hideDetails
+		/>
+	</div>
 	<VCombobox
 		v-model="formData.tags"
 		label="Tags"
@@ -48,6 +57,26 @@
 		clearable
 		closableChips
 	/>
+	<div>
+		<label class="text-caption text-medium-emphasis mb-1 d-block">Scheduled Days</label>
+		<VBtnToggle
+			v-model="formData.scheduledDays"
+			multiple
+			density="compact"
+			color="primary"
+			variant="outlined"
+			divided
+		>
+			<VBtn
+				v-for="day in dayOfWeekOptions"
+				:key="day.value"
+				:value="day.value"
+				size="small"
+			>
+				{{ day.label }}
+			</VBtn>
+		</VBtnToggle>
+	</div>
 	<div class="d-flex ga-4 justify-space-between align-center">
 		<IconPicker label="Icon" v-model="formData.icon"/>
 		<VSwitch label="Active" v-model="formData.isActive" color="primary" hideDetails density="comfortable"></VSwitch>
@@ -58,6 +87,8 @@
 <script setup lang="ts">
 import {ref, watch} from 'vue'
 import {DayType} from '@/dtos/enum/DayType.ts'
+import {DayOfWeek, DAY_OF_WEEK_SHORT_LABELS} from '@/dtos/enum/DayOfWeek.ts'
+import {Location} from '@/dtos/enum/Location.ts'
 import {TaskPlannerDayTemplateRequest} from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import TimePicker from '@/components/general/dateTime/TimePicker.vue'
@@ -74,6 +105,8 @@ const props = defineProps<{
 const formData = ref(new TaskPlannerDayTemplateRequest())
 
 const dayTypeOptions = Object.values(DayType)
+const dayOfWeekOptions = Object.values(DayOfWeek).map(d => ({value: d, label: DAY_OF_WEEK_SHORT_LABELS[d]}))
+const locationOptions = Object.values(Location).map(v => ({title: v, value: v}))
 
 // Populate form when template prop changes
 watch(() => props.template, (newTemplate) => {

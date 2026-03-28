@@ -96,6 +96,7 @@ import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/temp
 import {TemplatePlannerTaskFilter} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
 import {useMoment} from '@/utils/momentHelper.ts';
+import {useUndoStack} from '@/composables/general/useUndoStack.ts';
 
 const {
 	createWithResponse: createTaskWithResponse,
@@ -110,6 +111,7 @@ const {update, fetchById} = useTaskPlannerDayTemplateTaskCrud()
 const store = useTemplateDayPlannerStore()
 const {showSuccessSnackbar} = useSnackbar()
 const {timeNiceFromMinutes} = useMoment()
+const undoStack = useUndoStack()
 provide('plannerStore', store)
 
 const detailsForm = ref<InstanceType<typeof TaskPlannerDayTemplateDetailsForm>>()
@@ -179,15 +181,22 @@ async function createTask(request: TemplatePlannerTaskRequest): Promise<void> {
 
 	store.setGridPositionFromSpan(newTask)
 	store.tasks.push(newTask)
+	undoStack.push({
+		description: 'Task created',
+		undo: async () => {
+			await deleteTask(newTask.id)
+			store.tasks = store.tasks.filter(t => t.id !== newTask.id)
+		}
+	})
 	showSuccessSnackbar('Task created')
 }
 
 async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<void> {
+	const originalTask = {...store.tasks.find((e: TemplatePlannerTask) => e.id === id)!}
 	request.templateId = currentTemplate.value!.id;
 	await updateTask(id, request)
 
 	const updatedItem = await fetchByIdTask(id)
-
 
 	const index = store.tasks.findIndex((e: TemplatePlannerTask) => e.id === id)
 	const wasBackground = store.tasks[index]?.isBackground
@@ -201,6 +210,18 @@ async function edit(id: number, request: TemplatePlannerTaskRequest): Promise<vo
 	if (!request.isBackground) {
 		updatedItem.isDuringBackgroundTask = store.checkOverlapsBackground(updatedItem)
 	}
+	undoStack.push({
+		description: 'Task updated',
+		undo: async () => {
+			const undoRequest = TemplatePlannerTaskRequest.fromEntity(originalTask as TemplatePlannerTask)
+			undoRequest.templateId = templateId.value!
+			await updateTask(id, undoRequest)
+			const restored = await fetchByIdTask(id)
+			store.setGridPositionFromSpan(restored)
+			const idx = store.tasks.findIndex((e: TemplatePlannerTask) => e.id === id)
+			if (idx >= 0) store.tasks[idx] = restored
+		}
+	})
 	showSuccessSnackbar('Task updated')
 }
 
@@ -219,10 +240,9 @@ async function del(): Promise<void> {
 		store.selectedTaskIds.clear()
 	}
 	store.deleteDialog = false
-	showSuccessSnackbar('Task deleted', {
-		timeout: 5000,
-		actionLabel: 'Undo',
-		actionCallback: async () => {
+	undoStack.push({
+		description: 'Task deleted',
+		undo: async () => {
 			for (const task of deletedTasks) {
 				const request = TemplatePlannerTaskRequest.fromEntity(task)
 				request.templateId = templateId.value!
@@ -237,6 +257,7 @@ async function del(): Promise<void> {
 			}
 		}
 	})
+	showSuccessSnackbar('Task deleted')
 }
 
 // Watch for time range changes

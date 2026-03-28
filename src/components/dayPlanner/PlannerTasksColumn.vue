@@ -42,7 +42,7 @@
 
 <script setup lang="ts"
         generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, inject, onMounted, ref} from 'vue'
+import {computed, inject, nextTick, onMounted, ref} from 'vue'
 import CreationPreview from './misc/CreationPreview.vue'
 import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
 import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
@@ -51,9 +51,12 @@ import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/
 import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
 import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
 import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+import {useUndoStack} from '@/composables/general/useUndoStack.ts';
+import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
 import {Time} from '@/dtos/dto/Time.ts';
 
 const {showErrorSnackbar} = useSnackbar()
+const undoStack = useUndoStack()
 // Inject the store from parent DayPlanner component
 const store = inject<TStore>('plannerStore')!
 
@@ -61,6 +64,7 @@ const tasksColumnRef = ref<HTMLElement | undefined>(undefined)
 const calendarGrid = computed(() => tasksColumnRef.value?.parentElement as HTMLElement)
 const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
 const {isVisible, gridRowStyle} = useCurrentTimeIndicator(store)
+const {currentTime} = useCurrentTime()
 
 // Local creation state for preview rendering
 const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
@@ -285,8 +289,19 @@ function handlePointerUp(): void {
 				showErrorSnackbar('Task cannot be dragged outside of the grid')
 			} else {
 				// Update the task span
+				const capturedOriginal = {...originalTaskState.value} as TTask
+				const capturedId = task.id
 				store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
-					.catch((error) => {
+					.then(() => {
+						undoStack.push({
+							description: 'Task moved',
+							undo: async () => {
+								store.redrawTask(capturedId, capturedOriginal)
+								await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
+							}
+						})
+					})
+					.catch(() => {
 						store.redrawTask(store.draggingTaskId!, originalTaskState.value)
 					}).finally(() => {
 					(document.activeElement as HTMLElement).blur()
@@ -346,8 +361,19 @@ function handlePointerUp(): void {
 
 		if (didMove) {
 			// Handle actual resize - update task span
+			const capturedOriginal = {...originalTaskState.value} as TTask
+			const capturedId = store.resizingTaskId!
 			store.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task!))
-				.catch((error) => {
+				.then(() => {
+					undoStack.push({
+						description: 'Task resized',
+						undo: async () => {
+							store.redrawTask(capturedId, capturedOriginal)
+							await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
+						}
+					})
+				})
+				.catch(() => {
 					store.redrawTask(store.resizingTaskId!, originalTaskState.value)
 				})
 		}
@@ -376,6 +402,22 @@ function handlePointerUp(): void {
 
 onMounted(() => {
 	document.addEventListener('pointerup', handlePointerUp)
+
+	// Scroll to current time when viewing today
+	nextTick(() => {
+		if (!('viewedDate' in store)) return
+		const viewedDateValue = (store as any).viewedDate
+		const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
+		if (viewedDate.toDateString() !== new Date().toDateString()) return
+
+		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
+		if (slotIndex < 0) return
+
+		const grid = calendarGrid.value
+		if (grid) {
+			grid.scrollTop = Math.max(0, slotIndex * SLOT_HEIGHT - grid.clientHeight / 3)
+		}
+	})
 })
 
 </script>
