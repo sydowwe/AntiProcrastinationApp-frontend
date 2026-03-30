@@ -1,7 +1,7 @@
-import {fas} from '@fortawesome/free-solid-svg-icons'
-import {far} from '@fortawesome/free-regular-svg-icons'
-import {fab} from '@fortawesome/free-brands-svg-icons'
-import type {IconDefinition} from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 
 export type IconStyle = 'solid' | 'regular' | 'brands'
 
@@ -13,12 +13,7 @@ export interface IconInfo {
 }
 
 function isIconDefinition(value: unknown): value is IconDefinition {
-	return (
-		!!value &&
-		typeof value === 'object' &&
-		'iconName' in value &&
-		'prefix' in value
-	)
+	return !!value && typeof value === 'object' && 'iconName' in value && 'prefix' in value
 }
 
 function extractIcons(iconPack: Record<string, unknown>, style: IconStyle): IconInfo[] {
@@ -41,7 +36,7 @@ function extractIcons(iconPack: Record<string, unknown>, style: IconStyle): Icon
 				name: icon.iconName,
 				prefix: icon.prefix,
 				style,
-				definition: icon
+				definition: icon,
 			}
 		})
 }
@@ -93,12 +88,9 @@ export function searchIcons(icons: IconInfo[], query: string): IconInfo[] {
  * Formats icon name for display (e.g., "arrow-right" -> "Arrow Right")
  */
 export function formatIconName(name: string): string {
-	const val = name
-		.split('-')
-		.join(' ')
+	const val = name.split('-').join(' ')
 	return val.charAt(0).toUpperCase() + val.slice(1)
 }
-
 
 /**
  * Converts IconInfo to a Vuetify-compatible string format
@@ -138,7 +130,7 @@ export function parseVuetifyIcon(iconString: string | undefined | null): ParsedI
 	const prefixToStyle: Record<string, IconStyle> = {
 		fas: 'solid',
 		far: 'regular',
-		fab: 'brands'
+		fab: 'brands',
 	}
 
 	const style = prefixToStyle[prefix]
@@ -147,7 +139,7 @@ export function parseVuetifyIcon(iconString: string | undefined | null): ParsedI
 	// Extract icon name (remove "fa-" prefix if present)
 	const name = iconPart.startsWith('fa-') ? iconPart.slice(3) : iconPart
 
-	return {prefix, name, style}
+	return { prefix, name, style }
 }
 
 /**

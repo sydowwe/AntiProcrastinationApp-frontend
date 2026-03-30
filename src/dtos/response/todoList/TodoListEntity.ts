@@ -1,5 +1,5 @@
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
-import {TodoListCategoryEntity} from '@/dtos/response/todoList/TodoListCategoryEntity.ts';
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
+import { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 
 export class TodoListEntity implements IMyResponse {
 	constructor(

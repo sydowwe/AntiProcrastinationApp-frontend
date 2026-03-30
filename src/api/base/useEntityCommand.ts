@@ -1,7 +1,7 @@
-import {ref} from 'vue'
-import {API} from '@/plugins/axiosConfig.ts';
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
-import {useEntityQuery} from '@/api/base/useEntityQuery.ts';
+import { ref } from 'vue'
+import { API } from '@/plugins/axiosConfig.ts'
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
+import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 
 export interface CommandConfig<TResponse, TCreateRequest, TUpdateRequest> {
 	entityName: string
@@ -11,12 +11,12 @@ export interface CommandConfig<TResponse, TCreateRequest, TUpdateRequest> {
 }
 
 export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
-	config: CommandConfig<TResponse, TCreateRequest, TUpdateRequest>
+	config: CommandConfig<TResponse, TCreateRequest, TUpdateRequest>,
 ) {
 	const loading = ref(false)
 	const error = ref<string | null>(null)
 
-	const {fetchById} = useEntityQuery(config);
+	const { fetchById } = useEntityQuery(config)
 
 	async function create(entityData: TCreateRequest): Promise<number> {
 		loading.value = true
@@ -57,7 +57,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.put(`${config.entityName}/${id}`, entityData)
+			await API.put(`${config.entityName}/${id}`, entityData)
 
 			return Promise.resolve()
 		} catch (e: any) {
@@ -73,10 +73,9 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.put(`${config.entityName}/${id}`, entityData)
-			const updatedItem = await fetchById(id)
+			await API.put(`${config.entityName}/${id}`, entityData)
 
-			return updatedItem;
+			return await fetchById(id)
 		} catch (e: any) {
 			error.value = e.message || `Failed to update ${config.entityName} with ID ${id}`
 			console.error(`Error updating ${config.entityName} with ID ${id}:`, e)
@@ -90,7 +89,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.patch(`${config.entityName}/${id}`, entityData)
+			await API.patch(`${config.entityName}/${id}`, entityData)
 
 			return Promise.resolve()
 		} catch (e: any) {
@@ -106,10 +105,9 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.patch(`${config.entityName}/${id}`, entityData)
-			const updatedItem = await fetchById(id)
+			await API.patch(`${config.entityName}/${id}`, entityData)
 
-			return updatedItem;
+			return await fetchById(id)
 		} catch (e: any) {
 			error.value = e.message || `Failed to patch ${config.entityName} with ID ${id}`
 			console.error(`Error patching ${config.entityName} with ID ${id}:`, e)
@@ -123,11 +121,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.patch(`${config.entityName}/toggle-${fieldName}`, {
-				ids
-			})
-
-			return Promise.resolve()
+			await API.patch(`${config.entityName}/toggle-${fieldName}`, { ids })
 		} catch (e: any) {
 			error.value = e.message || `Failed to toggle ${fieldName} for ${config.entityName}s`
 			console.error(`Error toggling ${fieldName} for ${config.entityName}s:`, e)
@@ -155,7 +149,7 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		loading.value = true
 		error.value = null
 		try {
-			await API.post(`${config.entityName}/batch-delete`, {ids})
+			await API.post(`${config.entityName}/batch-delete`, { ids })
 		} catch (e: any) {
 			error.value = e.message || `Failed to batch delete ${config.entityName}`
 			console.error(`Error batch deleting ${config.entityName}:`, e)
@@ -176,6 +170,6 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		patchWithResponse,
 		batchedToggle,
 		deleteEntity,
-		batchDelete
+		batchDelete,
 	}
 }

@@ -6,6 +6,6 @@ export class GridConfig {
 		public windowGapUnits: number,
 		public yAxisWidth: number,
 		public xAxisHeight: number,
-		public rowHeight: number
+		public rowHeight: number,
 	) {}
 }

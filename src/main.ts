@@ -1,38 +1,37 @@
-import {createApp} from 'vue';
-import App from './App.vue';
+import { createApp } from 'vue'
+import App from './App.vue'
 // PINIA
-import {createPinia} from 'pinia';
-import {createPersistedState} from 'pinia-plugin-persistedstate';
+import { createPinia } from 'pinia'
+import { createPersistedState } from 'pinia-plugin-persistedstate'
 // ROUTER
-import router from './plugins/router.js';
+import router from './plugins/router.js'
 // AXIOS
 // I18N INTERNATIONALIZATION
-import {createI18n, useI18n} from 'vue-i18n'
-import EN from './locales/EN';
-import SK from './locales/SK';
+import { createI18n, useI18n } from 'vue-i18n'
+import EN from './locales/EN'
+import SK from './locales/SK'
 // FONT-AWESOME
-import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
-import {library} from '@fortawesome/fontawesome-svg-core'
-import {fas} from '@fortawesome/free-solid-svg-icons'
-import {far} from '@fortawesome/free-regular-svg-icons'
-import {fab} from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { far } from '@fortawesome/free-regular-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
 // VUETIFY
 import 'vuetify/styles'
-import {createVuetify} from 'vuetify'
+import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
-import {VAutocomplete, VBtn, VIcon, VSelect} from 'vuetify/components'
+import { VAutocomplete, VBtn, VIcon, VSelect } from 'vuetify/components'
 import * as directives from 'vuetify/directives'
-import {createVueI18nAdapter} from "vuetify/locale/adapters/vue-i18n";
+import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
 
-import {aliases, fa} from 'vuetify/lib/iconsets/fa-svg'
+import { aliases, fa } from 'vuetify/lib/iconsets/fa-svg'
 import './assets/main.css'
 import vue3GoogleLogin from 'vue3-google-login'
-import {autoAnimatePlugin} from '@formkit/auto-animate/vue'
+import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 
-const app = createApp(App);
+const app = createApp(App)
 
-
-const pinia = createPinia();
+const pinia = createPinia()
 pinia.use(context => {
 	// Check if persist was explicitly set to false
 	if (context.options.persist === false) {
@@ -57,29 +56,28 @@ pinia.use(context => {
 // 		await context.store.ensureLoaded();
 // 	}
 // });
-app.use(pinia);
+app.use(pinia)
 
-
-app.use(router);
+app.use(router)
 
 const i18n = createI18n({
 	locale: 'SK',
 	fallbackLocale: 'EN',
 	messages: {
 		SK,
-		EN
+		EN,
 	},
-});
-app.use(i18n);
+})
+app.use(i18n)
 
 library.add(fas)
 library.add(far)
 library.add(fab)
-app.component('FontAwesomeIcon', FontAwesomeIcon);
+app.component('FontAwesomeIcon', FontAwesomeIcon)
 
 export const vuetify = createVuetify({
 	locale: {
-		adapter: createVueI18nAdapter({i18n: i18n as any, useI18n}),
+		adapter: createVueI18nAdapter({ i18n: i18n as any, useI18n }),
 	},
 	components,
 	directives,
@@ -87,7 +85,7 @@ export const vuetify = createVuetify({
 		defaultSet: 'fa',
 		aliases,
 		sets: {
-			fa
+			fa,
 		},
 	},
 	aliases: {
@@ -98,35 +96,40 @@ export const vuetify = createVuetify({
 	},
 	defaults: {
 		VCardActions: {
-			VBtn: {variant: 'elevated'},
+			VBtn: { variant: 'elevated' },
 		},
 		VCard: {
-			rounded: 'lg'
+			rounded: 'lg',
 		},
-		VBtn: {variant: 'elevated'},
-		VTextField: {variant: 'outlined', clearable: true, density: 'comfortable'},
-		VIdAutocomplete: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
-		VAutocomplete: {variant: 'outlined', density: 'comfortable'},
-		VCombobox: {variant: 'outlined', density: 'comfortable'},
-		VNumberInput: {variant: 'outlined', density: 'comfortable'},
-		VDateInput: {variant: 'outlined', density: 'comfortable', prependIcon: "", prependInnerIcon: "calendar"},
+		VBtn: { variant: 'elevated' },
+		VTextField: { variant: 'outlined', clearable: true, density: 'comfortable' },
+		VIdAutocomplete: {
+			variant: 'outlined',
+			clearable: true,
+			density: 'comfortable',
+			itemValue: 'id',
+			itemTitle: 'text',
+		},
+		VAutocomplete: { variant: 'outlined', density: 'comfortable' },
+		VCombobox: { variant: 'outlined', density: 'comfortable' },
+		VNumberInput: { variant: 'outlined', density: 'comfortable' },
+		VDateInput: { variant: 'outlined', density: 'comfortable', prependIcon: '', prependInnerIcon: 'calendar' },
 
-
-		VIdSelect: {variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text'},
-		VSelect: {variant: 'outlined', density: 'comfortable'},
-		VTextarea: {variant: 'outlined', clearable: true, density: 'comfortable'},
-		VMaskInput: {variant: 'outlined', clearable: true, density: 'comfortable'},
-		VCheckbox: {density: 'comfortable'},
-		VIconBtn: {rounded: ''},
-		VIconSmall: {size: '16'},
+		VIdSelect: { variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text' },
+		VSelect: { variant: 'outlined', density: 'comfortable' },
+		VTextarea: { variant: 'outlined', clearable: true, density: 'comfortable' },
+		VMaskInput: { variant: 'outlined', clearable: true, density: 'comfortable' },
+		VCheckbox: { density: 'comfortable' },
+		VIconBtn: { rounded: '' },
+		VIconSmall: { size: '16' },
 	},
 	display: {
 		thresholds: {
 			xs: 0,
 			sm: 600,
 			md: 960,
-			lg: 1280,  // starts at 1280, covers up to 1920px (HD)
-			xl: 1921,  // 1440p
+			lg: 1280, // starts at 1280, covers up to 1920px (HD)
+			xl: 1921, // 1440p
 			xxl: 2560, // 4K
 		},
 	},
@@ -156,9 +159,9 @@ export const vuetify = createVuetify({
 					warningDark: '#CA8A04', // yellow-600
 					//info: '#0369A1', // sky-700
 					// infoOutline: '#38BDF8',
-					error: '#F87171',  // red-400 vs surface ≈ 4.8–4.9:1
-					success: '#34D399',  // emerald-400 ≈ ~5:1
-					warning: '#FACC15',  // darkyellow-400
+					error: '#F87171', // red-400 vs surface ≈ 4.8–4.9:1
+					success: '#34D399', // emerald-400 ≈ ~5:1
+					warning: '#FACC15', // darkyellow-400
 
 					// accents for tinted surfaces (not buttons)
 					// use deeper tones (800–900) or transparent tints over surface
@@ -167,13 +170,13 @@ export const vuetify = createVuetify({
 					'primary-container': '#1d3257', // subtle blue-tinted surface
 					'secondary-container': '#2A1F46', // subtle purple-tinted surface
 
-
 					'on-primary-accent': '#FFFFFF',
 					'on-secondary-accent': '#FFFFFF',
 					'on-primary-container': '#FFFFFF',
 					'on-secondary-container': '#FFFFFF',
 
 					// Neutral scale (dark enough variants safe with white text)
+					'neutral-0': '#282830',
 					'neutral-50': '#0B1220',
 					'neutral-100': '#111827',
 					'neutral-200': '#1F2937',
@@ -227,12 +230,10 @@ export const vuetify = createVuetify({
 		},
 	},
 })
-app.use(vuetify);
+app.use(vuetify)
 
 app.use(vue3GoogleLogin, {})
 
-
 app.use(autoAnimatePlugin)
 
-
-app.mount('#app');
+app.mount('#app')

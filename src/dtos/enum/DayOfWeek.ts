@@ -5,7 +5,7 @@ export enum DayOfWeek {
 	Thursday = 'Thursday',
 	Friday = 'Friday',
 	Saturday = 'Saturday',
-	Sunday = 'Sunday'
+	Sunday = 'Sunday',
 }
 
 export const DAY_OF_WEEK_SHORT_LABELS: Record<DayOfWeek, string> = {

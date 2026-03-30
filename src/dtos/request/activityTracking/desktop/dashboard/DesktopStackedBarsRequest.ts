@@ -1,5 +1,5 @@
-import type {Time} from '@/dtos/dto/Time.ts'
-import {DateAndTimeRangeRequest} from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
+import { DateAndTimeRangeRequest } from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
 
 export class DesktopStackedBarsRequest extends DateAndTimeRangeRequest {
 	constructor(
@@ -7,7 +7,7 @@ export class DesktopStackedBarsRequest extends DateAndTimeRangeRequest {
 		public from: Time,
 		public to: Time,
 		public windowMinutes: number,
-		public minSeconds?: number
+		public minSeconds?: number,
 	) {
 		super(date, from, to)
 	}

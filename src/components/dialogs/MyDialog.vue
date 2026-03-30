@@ -1,122 +1,140 @@
 <template>
-<VDialog v-model="dialog" :persistent="persistent" :eager="eager" :maxWidth @keyup.enter="emit('confirmed')" @keyup.esc="onCloseBtnClick">
-	<VCard class="py-4 px-0" color="surface">
-		<slot name="header">
-			<VCardTitle class="pt-1 px-6" v-if="hasHeader">
-				<slot name="title">
-					<div class="text-h5">
-						{{ title }}
-					</div>
-				</slot>
-			</VCardTitle>
-		</slot>
-		<VCardText class="py-0 overflow-y-auto">
-			<slot>
-				<span class="px-6 py-4 text-center">
-					{{ text }}
-				</span>
+	<VDialog
+		v-model="dialog"
+		:persistent="persistent"
+		:eager="eager"
+		:maxWidth
+		@keyup.enter="emit('confirmed')"
+		@keyup.esc="onCloseBtnClick"
+	>
+		<VCard
+			class="py-4 px-0"
+			color="surface"
+		>
+			<slot name="header">
+				<VCardTitle
+					v-if="hasHeader"
+					class="pt-1 px-6"
+				>
+					<slot name="title">
+						<div class="text-h5">
+							{{ title }}
+						</div>
+					</slot>
+				</VCardTitle>
 			</slot>
-		</VCardText>
-		<VCardActions v-if="hasFooter" class="d-flex ga-3 pb-1 justify-end pt-4 px-6">
-			<slot name="footer">
-				<slot name="leftButton">
-					<VBtn v-if="hasCloseBtn" :color="closeBtnColor" @click="onCloseBtnClick" :variant="closeBtnVariant" type="button">
-						{{ closeBtnText ?? i18n.t('general.cancel') }}
-					</VBtn>
+			<VCardText class="py-0 overflow-y-auto">
+				<slot>
+					<span class="px-6 py-4 text-center">
+						{{ text }}
+					</span>
 				</slot>
-				<slot name="centerButton"></slot>
-				<slot name="rightButton">
-					<VBtn v-if="hasConfirmBtn" :color="confirmBtnColor ?? 'primary'" @click="emit('confirmed')" :disabled="confirmBtnDisabled" type="button">
-						{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
-					</VBtn>
+			</VCardText>
+			<VCardActions
+				v-if="hasFooter"
+				class="d-flex ga-3 pb-1 justify-end pt-3 px-6"
+			>
+				<slot name="footer">
+					<slot name="leftButton">
+						<VBtn
+							v-if="hasCloseBtn"
+							:color="closeBtnColor"
+							:variant="closeBtnVariant"
+							type="button"
+							@click="onCloseBtnClick"
+						>
+							{{ closeBtnText ?? i18n.t('general.cancel') }}
+						</VBtn>
+					</slot>
+					<slot name="centerButton"></slot>
+					<slot name="rightButton">
+						<VBtn
+							v-if="hasConfirmBtn"
+							:color="confirmBtnColor ?? 'primary'"
+							:disabled="confirmBtnDisabled"
+							type="button"
+							@click="emit('confirmed')"
+						>
+							{{ confirmBtnLabel ?? i18n.t('general.confirm') }}
+						</VBtn>
+					</slot>
 				</slot>
-			</slot>
-		</VCardActions>
-	</VCard>
-</VDialog>
+			</VCardActions>
+		</VCard>
+	</VDialog>
 </template>
 
 <script setup lang="ts">
-import {useI18n} from 'vue-i18n';
-import {computed} from 'vue';
-import {useDisplay} from 'vuetify/framework';
+	import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
+	import { useDisplay } from 'vuetify/framework'
 
-const {smAndDown, mdAndDown, lgAndDown, xlAndDown} = useDisplay()
-const i18n = useI18n();
+	const props = withDefaults(
+		defineProps<{
+			title?: string
+			text?: string
+			persistent?: boolean
+			eager?: boolean
+			hasHeader?: boolean
+			hasFooter?: boolean
+			hasCloseBtn?: boolean
+			closeBtnColor?: string
+			closeBtnVariant?: 'text' | 'outlined' | 'tonal'
+			closeBtnText?: string
+			hasConfirmBtn?: boolean
+			confirmBtnLabel?: string
+			confirmBtnColor?: string
+			confirmBtnDisabled?: boolean
+			isSmall?: boolean
+		}>(),
+		{
+			title: undefined,
+			text: undefined,
+			persistent: true,
+			eager: false,
+			hasHeader: true,
+			hasFooter: true,
+			hasCloseBtn: true,
+			closeBtnColor: 'secondaryOutline',
+			closeBtnVariant: 'outlined',
+			closeBtnText: undefined,
+			hasConfirmBtn: true,
+			confirmBtnLabel: undefined,
+			confirmBtnColor: undefined,
+			confirmBtnDisabled: false,
+			isSmall: true,
+		},
+	)
+	const emit = defineEmits<{
+		closed: []
+		confirmed: []
+	}>()
+	const dialog = defineModel<boolean>({ required: true })
+	const { smAndDown, mdAndDown, lgAndDown } = useDisplay()
+	const i18n = useI18n()
 
-const props = defineProps({
-	title: {
-		type: String,
-	},
-	text: String,
-	persistent: {
-		type: Boolean,
-		default: true,
-	},
-	eager: {
-		type: Boolean,
-		default: false,
-	},
-	hasHeader: {
-		type: Boolean,
-		default: true,
-	},
-	hasFooter: {
-		type: Boolean,
-		default: true,
-	},
-	hasCloseBtn: {
-		type: Boolean,
-		default: true
-	},
-	closeBtnColor: {
-		type: String,
-		default: 'secondaryOutline'
-	},
-	closeBtnVariant: {
-		type: String as () => 'text' | 'outlined' | 'tonal',
-		default: 'outlined'
-	},
-	closeBtnText: String,
-	hasConfirmBtn: {
-		type: Boolean,
-		default: true
-	},
-	confirmBtnLabel: String,
-	confirmBtnColor: String,
-	confirmBtnDisabled: Boolean,
-	isSmall: {
-		type: Boolean,
-		default: true
-	},
-});
-
-const dialog = defineModel<boolean>({required: true})
-const emit = defineEmits(['closed', 'confirmed'])
-
-
-const onCloseBtnClick = () => {
-	dialog.value = false;
-	emit('closed');
-}
-
-function open() {
-	dialog.value = true;
-}
-
-const maxWidth = computed(() => {
-	if (smAndDown.value) {
-		return '90%'
-	} else if (mdAndDown.value) {
-		return '70%'
-	} else if (lgAndDown.value) {
-		return props.isSmall ? '40%' : '70%'
-	} else {
-		return props.isSmall ? '30%' : '50%'
+	function onCloseBtnClick() {
+		dialog.value = false
+		emit('closed')
 	}
-})
 
-defineExpose({
-	open
-})
+	function open() {
+		dialog.value = true
+	}
+
+	const maxWidth = computed(() => {
+		if (smAndDown.value) {
+			return '90%'
+		} else if (mdAndDown.value) {
+			return '70%'
+		} else if (lgAndDown.value) {
+			return props.isSmall ? '40%' : '70%'
+		} else {
+			return props.isSmall ? '30%' : '50%'
+		}
+	})
+
+	defineExpose({
+		open,
+	})
 </script>

@@ -1,84 +1,84 @@
-import 'moment/dist/locale/sk';
-import 'moment/dist/locale/cs';
-import moment from 'moment';
-import {capitalizeString} from '@/utils/helperMethods.ts';
-import {Time} from '@/dtos/dto/Time.ts';
+import 'moment/dist/locale/sk'
+import 'moment/dist/locale/cs'
+import moment from 'moment'
+import { capitalizeString } from '@/utils/helperMethods.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 
 export function useMoment() {
 	function toUTCDate(date: Date) {
-		let d = new Date(date);
+		const d = new Date(date)
 		d.setHours(0)
 		d.setMinutes(0)
-		return d;
+		return d
 	}
 
 	function timeNiceFromMinutes(minutes: number) {
-		const hours = Math.floor(minutes / 60);
-		const remainingMinutes = minutes % 60;
+		const hours = Math.floor(minutes / 60)
+		const remainingMinutes = minutes % 60
 
 		if (hours > 0) {
-			return `${hours}h ${remainingMinutes}m`;
+			return `${hours}h ${remainingMinutes}m`
 		}
-		return `${minutes}m`;
+		return `${minutes}m`
 	}
 
 	function stringToUTCDate(str: string) {
-		return toUTCDate(moment(str, 'DD.MM.YYYY').toDate());
+		return toUTCDate(moment(str, 'DD.MM.YYYY').toDate())
 	}
 
 	function urlStringToUTCDate(str: string) {
-		return toUTCDate(moment(str, 'DD-MM-YYYY').toDate());
+		return toUTCDate(moment(str, 'DD-MM-YYYY').toDate())
 	}
 
 	function usStringToUrlString(str: string) {
-		const parts = str.split('-');
-		return `${parts[2]}-${parts[1]}-${parts[0]}`;
+		const parts = str.split('-')
+		return `${parts[2]}-${parts[1]}-${parts[0]}`
 	}
 
 	function formatToUsString(date: Date) {
-		return moment(toUTCDate(date)).format('YYYY-MM-DD');
+		return moment(toUTCDate(date)).format('YYYY-MM-DD')
 	}
 
 	function formatToDateWithDay(date: Date | null) {
-		return moment(date).locale('sk').format('dd DD.MM.');
+		return moment(date).locale('sk').format('dd DD.MM.')
 	}
 
 	function formatToDateWithDayAfter(date: Date | null) {
-		return moment(date).locale('sk').format('DD.MM. dd');
+		return moment(date).locale('sk').format('DD.MM. dd')
 	}
 
 	function formatToDateWithoutYear(date: Date | null) {
-		return moment(date).locale('sk').format('DD.MM.');
+		return moment(date).locale('sk').format('DD.MM.')
 	}
 
 	function formatToDate(date: Date | null) {
-		return moment(date).locale('sk').format('L');
+		return moment(date).locale('sk').format('L')
 	}
 
 	function formatToTime(date: Date) {
-		return moment(date).locale('sk').format('LT');
+		return moment(date).locale('sk').format('LT')
 	}
 
 	function formatToTimeWithSec(date: Date) {
-		return moment(date).locale('sk').format('LTS');
+		return moment(date).locale('sk').format('LTS')
 	}
 
 	function formatLocalized(date: Date, format: string) {
-		return moment(date).locale('sk').format(format);
+		return moment(date).locale('sk').format(format)
 	}
 
 	function formatToTime24H(date: Date) {
-		return moment(date).locale('sk').format('HH:mm');
+		return moment(date).locale('sk').format('HH:mm')
 	}
 
 	function equalsOnlyDate(date1: Date, date2: Date) {
-		return moment(date1).isSame(date2, 'day');
+		return moment(date1).isSame(date2, 'day')
 	}
 
 	function formatTimeDtoToUtcTimeDto(time: Time) {
-		const tmp = moment(time.getString(), 'HH:mm');
+		const tmp = moment(time.getString(), 'HH:mm')
 		const formatted = tmp.utc().format('HH:mm')
-		return Time.fromString(formatted);
+		return Time.fromString(formatted)
 	}
 
 	return {
@@ -97,15 +97,14 @@ export function useMoment() {
 		formatToTime24H,
 		formatLocalized,
 		equalsOnlyDate,
-		formatTimeDtoToUtcTimeDto
-	};
+		formatTimeDtoToUtcTimeDto,
+	}
 }
 
-
 export function getTranslatedMonths(locale = 'sk') {
-	const months = moment.localeData(locale).months();
+	const months = moment.localeData(locale).months()
 	return months.map((month, index) => ({
 		value: index + 1,
-		title: capitalizeString(month)
-	}));
+		title: capitalizeString(month),
+	}))
 }

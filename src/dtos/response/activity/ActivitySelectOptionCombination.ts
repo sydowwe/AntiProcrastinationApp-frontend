@@ -1,4 +1,4 @@
-import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
+import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 export class ActivitySelectOptionCombination extends SelectOption {
 	constructor(
@@ -19,12 +19,19 @@ export class ActivitySelectOptionCombination extends SelectOption {
 			roleOption = SelectOption.fromJson(object.roleOption),
 			categoryOption = SelectOption.fromJson(object.categoryOption),
 			taskPriorityOption = SelectOption.fromJson(object.taskPriorityOption),
-			routineTimePeriodOption = SelectOption.fromJson(object.routineTimePeriodOption)
-		} = object;
-		return new ActivitySelectOptionCombination(id, text, roleOption, categoryOption, taskPriorityOption, routineTimePeriodOption);
+			routineTimePeriodOption = SelectOption.fromJson(object.routineTimePeriodOption),
+		} = object
+		return new ActivitySelectOptionCombination(
+			id,
+			text,
+			roleOption,
+			categoryOption,
+			taskPriorityOption,
+			routineTimePeriodOption,
+		)
 	}
 
 	static listFromJsonList(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
 }

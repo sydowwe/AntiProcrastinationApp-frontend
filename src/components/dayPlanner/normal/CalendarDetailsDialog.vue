@@ -1,138 +1,146 @@
 <template>
-<MyDialog
-	title="Day Details"
-	v-model="model"
-	@confirmed="save"
-	maxWidth="600px"
->
-	<VForm ref="form" @submit="save" validate-on="submit">
-		<div class="d-flex flex-column ga-4">
-			<!-- Wake-up and Bed Time -->
-			<div class="d-flex justify-center">
-				<TimeRangePicker
-					v-model:start="data.wakeUpTime"
-					v-model:end="data.bedTime"
-					startIcon="sun"
-					endIcon="moon"
-				/>
-			</div>
+	<MyDialog
+		v-model="model"
+		title="Day Details"
+		maxWidth="600px"
+		@confirmed="save"
+	>
+		<VForm
+			ref="form"
+			class="pt-2"
+			validateOn="submit"
+			@submit="save"
+		>
+			<div class="d-flex flex-column ga-4">
+				<!-- Wake-up and Bed Time -->
+				<div class="d-flex justify-center">
+					<TimeRangePicker
+						v-model:start="data.wakeUpTime"
+						v-model:end="data.bedTime"
+						startIcon="sun"
+						endIcon="moon"
+					/>
+				</div>
 
-			<!-- Label -->
-			<VTextField
-				v-model="data.label"
-				label="Day Label"
-				prependIcon="tag"
-				placeholder="e.g., Project Deadline, Birthday..."
-				clearable
-				hideDetails
-			/>
-
-			<!-- Day Type, Location & Weather -->
-			<div class="d-flex ga-4 flex-wrap">
-				<VSelect
-					v-model="data.dayType"
-					label="Day Type"
-					:items="dayTypeOptions"
-					prependIcon="calendar-day"
-					hideDetails
-				/>
-				<VSelect
-					v-model="data.location"
-					label="Location"
-					:items="locationOptions"
-					prependIcon="location-dot"
-					clearable
-					hideDetails
-				/>
+				<!-- Label -->
 				<VTextField
-					v-model="data.weather"
-					label="Weather"
-					prependIcon="cloud-sun"
-					placeholder="e.g., Sunny, Rainy..."
+					v-model="data.label"
+					label="Day Label"
+					prependIcon="tag"
+					placeholder="e.g., Project Deadline, Birthday..."
 					clearable
 					hideDetails
 				/>
-			</div>
 
-			<!-- Notes -->
-			<VTextarea
-				v-model="data.notes"
-				label="Notes"
-				prependIcon="note-sticky"
-				rows="4"
-				autoGrow
-				placeholder="Add any notes about this day..."
-			/>
-		</div>
-	</VForm>
-</MyDialog>
+				<!-- Day Type, Location & Weather -->
+				<div class="d-flex ga-4 flex-wrap">
+					<VSelect
+						v-model="data.dayType"
+						label="Day Type"
+						:items="dayTypeOptions"
+						prependIcon="calendar-day"
+						hideDetails
+					/>
+					<VSelect
+						v-model="data.location"
+						label="Location"
+						:items="locationOptions"
+						prependIcon="location-dot"
+						clearable
+						hideDetails
+					/>
+					<VTextField
+						v-model="data.weather"
+						label="Weather"
+						prependIcon="cloud-sun"
+						placeholder="e.g., Sunny, Rainy..."
+						clearable
+						hideDetails
+					/>
+				</div>
+
+				<!-- Notes -->
+				<VTextarea
+					v-model="data.notes"
+					label="Notes"
+					prependIcon="note-sticky"
+					rows="4"
+					autoGrow
+					placeholder="Add any notes about this day..."
+				/>
+			</div>
+		</VForm>
+	</MyDialog>
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
-import MyDialog from '@/components/dialogs/MyDialog.vue'
-import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-import type {VForm} from 'vuetify/components'
-import {CalendarRequest} from '@/dtos/request/activityPlanning/CalendarRequest.ts'
-import {DayType} from '@/dtos/enum/DayType.ts'
-import {Location} from '@/dtos/enum/Location.ts'
-import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
-import {useCalendarQuery} from '@/api/calendarApi.ts';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
+	import { computed, ref, watch } from 'vue'
+	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import type { VForm } from 'vuetify/components'
+	import { CalendarRequest } from '@/dtos/request/activityPlanning/CalendarRequest.ts'
+	import { DayType } from '@/dtos/enum/DayType.ts'
+	import { Location } from '@/dtos/enum/Location.ts'
+	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
+	import { useCalendarQuery } from '@/api/calendarApi.ts'
+	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 
-const {updateWithResponse} = useCalendarQuery()
-const {showErrorSnackbar} = useSnackbar()
+	const props = defineProps<{
+		calendar?: Calendar
+	}>()
+	const emit = defineEmits<{
+		updated: [updatedEntity: Calendar]
+	}>()
+	const model = defineModel<boolean>({ required: true })
+	const { updateWithResponse } = useCalendarQuery()
+	const { showErrorSnackbar } = useSnackbar()
 
-const props = defineProps<{
-	calendar?: Calendar
-}>()
+	const form = ref<InstanceType<typeof VForm>>()
+	const data = ref<CalendarRequest>(new CalendarRequest())
 
-const model = defineModel<boolean>({required: true})
-const form = ref<InstanceType<typeof VForm>>()
-const data = ref<CalendarRequest>(new CalendarRequest())
+	const locationOptions = Object.values(Location).map(v => ({ title: v, value: v }))
+	const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
-const locationOptions = Object.values(Location).map(v => ({title: v, value: v}))
-const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
-
-function getNaturalDayType(): DayType {
-	if (props.calendar!.holidayName) {
-		return DayType.Holiday
+	function getNaturalDayType(): DayType {
+		if (props.calendar!.holidayName) {
+			return DayType.Holiday
+		}
+		// dayIndex 6 or 7 = weekend (Saturday/Sunday)
+		if (props.calendar!.dayIndex === 6 || props.calendar!.dayIndex === 7) {
+			return DayType.Weekend
+		}
+		return DayType.Workday
 	}
-	// dayIndex 6 or 7 = weekend (Saturday/Sunday)
-	if (props.calendar!.dayIndex === 6 || props.calendar!.dayIndex === 7) {
-		return DayType.Weekend
-	}
-	return DayType.Workday
-}
 
-const dayTypeOptions = computed(() => {
-	const naturalType = getNaturalDayType()
-	// Show natural type + override types (Vacation, SickDay, Special)
-	return [naturalType, ...overrideDayTypes]
-})
-
-// Watch for calendar changes to populate form
-watch(() => props.calendar, (calendar) => {
-	if (calendar) {
-		data.value = CalendarRequest.fromResponse(calendar)
-	}
-}, {immediate: true})
-
-async function save() {
-	const isValid = await form.value?.validate()
-	if (!isValid || !props.calendar!.id) {
-		return
-	}
-	await updateWithResponse(props.calendar!.id, data.value).then(
-		updatedEntity => {
-			emit('updated', updatedEntity)
-			model.value = false
-		}).catch(() => {
-		showErrorSnackbar('Failed to update calendar')
+	const dayTypeOptions = computed(() => {
+		const naturalType = getNaturalDayType()
+		// Show natural type + override types (Vacation, SickDay, Special)
+		return [naturalType, ...overrideDayTypes]
 	})
-}
 
-const emit = defineEmits<{
-	updated: [updatedEntity: Calendar]
-}>()
+	// Watch for calendar changes to populate form
+	watch(
+		() => props.calendar,
+		calendar => {
+			if (calendar) {
+				data.value = CalendarRequest.fromResponse(calendar)
+			}
+		},
+		{ immediate: true },
+	)
+
+	async function save() {
+		const isValid = await form.value?.validate()
+		if (!isValid.valid || !props.calendar!.id) {
+			return
+		}
+		await updateWithResponse(props.calendar!.id, data.value)
+			.then(updatedEntity => {
+				emit('updated', updatedEntity)
+				model.value = false
+			})
+			.catch(() => {
+				showErrorSnackbar('Failed to update calendar')
+			})
+	}
 </script>

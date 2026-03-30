@@ -1,11 +1,11 @@
-import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {Activity} from '@/dtos/response/activity/Activity.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts';
-import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
-import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
-import {PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
-import {convertToEnum} from '@/composables/general/EnumComposable.ts';
+import { type IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import { Activity } from '@/dtos/response/activity/Activity.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
+import { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
+import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+import { convertToEnum } from '@/composables/general/EnumComposable.ts'
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
@@ -31,15 +31,14 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundTask: boolean = false,
-	) {
-	}
+	) {}
 
 	toRequest(): PlannerTaskRequest {
 		return PlannerTaskRequest.fromEntity(this)
 	}
 
 	toSpan(): { startTime: Time; endTime: Time } {
-		return {startTime: this.startTime, endTime: this.endTime};
+		return { startTime: this.startTime, endTime: this.endTime }
 	}
 
 	static fromTemplateTask(calendarId: number, templateTask: TemplatePlannerTask): PlannerTask {
@@ -55,7 +54,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			templateTask.notes,
 			templateTask.importance,
 			templateTask.color,
-			PlannerTaskStatus.NotStarted
+			PlannerTaskStatus.NotStarted,
 		)
 	}
 
@@ -84,10 +83,10 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			0,
 			0,
 			false,
-		);
+		)
 	}
 
 	static listFromJsonList(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
 }

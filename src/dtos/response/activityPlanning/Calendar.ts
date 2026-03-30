@@ -1,13 +1,13 @@
-import {DayType} from '@/dtos/enum/DayType.ts';
-import {convertToEnum} from '@/composables/general/EnumComposable.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import type {Location} from '@/dtos/enum/Location.ts';
+import { DayType } from '@/dtos/enum/DayType.ts'
+import { convertToEnum } from '@/composables/general/EnumComposable.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { Location } from '@/dtos/enum/Location.ts'
 
 export class Calendar {
 	constructor(
 		public readonly id: number,
-		public readonly date: string,                 // DateOnly -> ISO date string
-		public readonly dayType: DayType,              // DayType enum name
+		public readonly date: string, // DateOnly -> ISO date string
+		public readonly dayType: DayType, // DayType enum name
 		public readonly dayIndex: number,
 		public readonly label: string | null,
 		public readonly holidayName: string | null,
@@ -20,20 +20,18 @@ export class Calendar {
 		public readonly totalTasks: number,
 		public completedTasks: number,
 		public readonly location: Location | null = null,
-	) {
-	}
+	) {}
 
 	public get completionRate() {
-		return Math.round(this.completedTasks / this.totalTasks * 100);
+		return Math.round((this.completedTasks / this.totalTasks) * 100)
 	}
 
-
 	get isToday() {
-		return this.date === new Date().toISOString().slice(0, 10);
+		return this.date === new Date().toISOString().slice(0, 10)
 	}
 
 	get isWeekend() {
-		return this.dayIndex === 6 || this.dayIndex === 7;
+		return this.dayIndex === 6 || this.dayIndex === 7
 	}
 
 	static fromJson(json: any): Calendar {
@@ -54,6 +52,6 @@ export class Calendar {
 			json.totalTasks,
 			json.completedTasks,
 			json.location ?? null,
-		);
+		)
 	}
 }

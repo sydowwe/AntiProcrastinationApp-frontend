@@ -1,18 +1,13 @@
-import {Alarm} from '@/dtos/response/activityRecording/Alarm.ts';
+import { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
 
 export class AlarmRequest {
 	constructor(
 		public startTimestamp: Date = new Date(),
 		public isActive: boolean = false,
 		public activityId: number | null = null,
-	) {
-	}
+	) {}
 
 	static fromEntity(alarm: Alarm) {
-		return new AlarmRequest(
-			alarm.startTimestamp,
-			alarm.isActive,
-			alarm.activity.id
-		);
+		return new AlarmRequest(alarm.startTimestamp, alarm.isActive, alarm.activity.id)
 	}
 }

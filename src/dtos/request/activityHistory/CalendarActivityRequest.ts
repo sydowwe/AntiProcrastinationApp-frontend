@@ -3,6 +3,5 @@ export class CalendarActivityRequest {
 		public startDate: string,
 		public endDate: string,
 		public topN: number = 3,
-	) {
-	}
+	) {}
 }

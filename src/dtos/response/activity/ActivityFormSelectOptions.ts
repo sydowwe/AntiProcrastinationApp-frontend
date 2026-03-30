@@ -1,4 +1,4 @@
-import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
+import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 export class ActivityFormSelectOptions {
 	constructor(
@@ -7,6 +7,5 @@ export class ActivityFormSelectOptions {
 		public categoryOptions: SelectOption[] = [],
 		public taskPriorityOptions: SelectOption[] = [],
 		public routineTimePeriodOptions: SelectOption[] = [],
-	) {
-	}
+	) {}
 }

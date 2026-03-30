@@ -1,4 +1,4 @@
-import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
+import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
 
 export class ActivityFilter implements IFilterRequest {
 	constructor(
@@ -8,6 +8,5 @@ export class ActivityFilter implements IFilterRequest {
 		public roleIds: number[] | null = null,
 		public categoryName: string | null = null,
 		public categoryIds: number[] | null = null,
-	) {
-	}
+	) {}
 }

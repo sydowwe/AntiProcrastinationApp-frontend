@@ -1,6 +1,6 @@
-import {Time} from '@/dtos/dto/Time.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {TemplatePlannerTask} from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts';
+import { Time } from '@/dtos/dto/Time.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 
 export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
@@ -12,9 +12,8 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public notes: string | null = null,
 		public importanceId: number | null = null,
 		public color: string = '#5c2caa',
-		public templateId?: number
-	) {
-	}
+		public templateId?: number,
+	) {}
 
 	static fromEntity(entity: TemplatePlannerTask): TemplatePlannerTaskRequest {
 		return new TemplatePlannerTaskRequest(
@@ -26,7 +25,7 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.notes,
 			entity.importance?.id ?? null,
 			entity.color,
-			entity.templateId
-		);
+			entity.templateId,
+		)
 	}
 }

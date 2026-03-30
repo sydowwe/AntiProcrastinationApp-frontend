@@ -5,9 +5,8 @@ export class DayTotals {
 		public backgroundSeconds: number,
 		public totalDomains: number,
 		public totalPages: number,
-		public totalVisits?: number
-	) {
-	}
+		public totalVisits?: number,
+	) {}
 
 	static fromJson(json: any): DayTotals {
 		return new DayTotals(
@@ -16,7 +15,7 @@ export class DayTotals {
 			json.backgroundSeconds,
 			json.totalDomains,
 			json.totalPages,
-			json.totalVisits
-		);
+			json.totalVisits,
+		)
 	}
 }

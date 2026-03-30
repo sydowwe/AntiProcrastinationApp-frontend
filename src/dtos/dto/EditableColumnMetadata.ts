@@ -1,6 +1,6 @@
-import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {uncapitalizeString} from '@/utils/helperMethods.ts';
-import {TableCellType} from '@/dtos/enum/TableCellType.ts';
+import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+import { uncapitalizeString } from '@/utils/helperMethods.ts'
+import { TableCellType } from '@/dtos/enum/TableCellType.ts'
 
 export class EditableColumnMetadata {
 	constructor(
@@ -8,22 +8,15 @@ export class EditableColumnMetadata {
 		public type: TableCellType,
 		public isReadOnly: boolean,
 		public options: SelectOption[] | null = null,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any) {
-		const {
-			key = null,
-			type = TableCellType.TEXT,
-			isReadOnly = false,
-			options = null,
-		} = json;
+		const { key = null, type = TableCellType.TEXT, isReadOnly = false, options = null } = json
 
-		return new EditableColumnMetadata(uncapitalizeString(key), type, isReadOnly, options);
+		return new EditableColumnMetadata(uncapitalizeString(key), type, isReadOnly, options)
 	}
 
 	static listFromJsonList(jsonList: any[]): EditableColumnMetadata[] {
-		return jsonList.map((item: object) => EditableColumnMetadata.fromJson(item));
+		return jsonList.map((item: object) => EditableColumnMetadata.fromJson(item))
 	}
 }
-

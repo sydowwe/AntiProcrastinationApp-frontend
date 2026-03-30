@@ -1,6 +1,6 @@
-import type {ICreateRequest} from '@/dtos/request/interface/ICreateRequest.ts';
-import type {IUpdateRequest} from '@/dtos/request/interface/IUpdateRequest.ts';
-import type {TimePeriodEntity} from '@/dtos/response/activityRecording/TimePeriodEntity.ts';
+import type { ICreateRequest } from '@/dtos/request/interface/ICreateRequest.ts'
+import type { IUpdateRequest } from '@/dtos/request/interface/IUpdateRequest.ts'
+import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
 
 export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 	constructor(
@@ -11,8 +11,7 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 		public streakThreshold: number = 90,
 		public streakGraceDays: number = 0,
 		public resetAnchorDay: number = 0,
-	) {
-	}
+	) {}
 
 	static fromEntity(entity: TimePeriodEntity) {
 		return new TimePeriodRequest(
@@ -23,6 +22,6 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 			entity.streakThreshold,
 			entity.streakGraceDays,
 			entity.resetAnchorDay,
-		);
+		)
 	}
 }

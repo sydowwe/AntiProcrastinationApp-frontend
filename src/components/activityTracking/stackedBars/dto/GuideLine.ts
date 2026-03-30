@@ -3,6 +3,6 @@ export class GuideLine {
 		public minute: number,
 		public gridRow: number,
 		public showLabel: boolean,
-		public label: string = `${minute}m`
+		public label: string = `${minute}m`,
 	) {}
 }

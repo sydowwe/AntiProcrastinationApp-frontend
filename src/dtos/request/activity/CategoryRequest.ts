@@ -1,4 +1,4 @@
-import type {Category} from '@/dtos/response/activity/Category.ts';
+import type { Category } from '@/dtos/response/activity/Category.ts'
 
 export class CategoryRequest {
 	constructor(
@@ -6,10 +6,9 @@ export class CategoryRequest {
 		public text: string | null = null,
 		public color: string | null = null,
 		// public icon: string | null = null,
-	) {
-	}
+	) {}
 
 	static fromEntity(entity: Category) {
-		return new CategoryRequest(entity.name, entity.text, entity.color,)
+		return new CategoryRequest(entity.name, entity.text, entity.color)
 	}
 }

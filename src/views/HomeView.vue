@@ -1,11 +1,7 @@
 <template>
-<div class="home-view pa-4 w-100 h-100">
-</div>
+	<div class="home-view pa-4 w-100 h-100"></div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts"></script>
 
-</script>
-
-<style scoped>
-</style>
+<style scoped></style>

@@ -1,7 +1,7 @@
-import type {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import {PlannerTaskStatus} from '@/dtos/enum/PlannerTaskStatus.ts';
+import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
@@ -17,11 +17,10 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
 		public isDone: boolean = false,
 		public todolistId: number | null = null,
-	) {
-	}
+	) {}
 
 	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {
-		return new PlannerTaskRequest(startTime, endTime);
+		return new PlannerTaskRequest(startTime, endTime)
 	}
 
 	static fromEntity(entity: PlannerTask): PlannerTaskRequest {

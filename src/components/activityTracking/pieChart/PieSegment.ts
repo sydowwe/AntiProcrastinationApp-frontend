@@ -3,6 +3,6 @@ export class PieSegment {
 		public domain: string,
 		public seconds: number,
 		public percent: number,
-		public color: string
+		public color: string,
 	) {}
 }

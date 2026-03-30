@@ -1,4 +1,4 @@
-import type {Role} from '@/dtos/response/activity/Role.ts';
+import type { Role } from '@/dtos/response/activity/Role.ts'
 
 export class RoleRequest {
 	constructor(
@@ -6,10 +6,9 @@ export class RoleRequest {
 		public text: string | null = null,
 		public color: string | null = null,
 		// public icon: string | null = null,
-	) {
-	}
+	) {}
 
 	static fromEntity(entity: Role) {
-		return new RoleRequest(entity.name, entity.text, entity.color,)
+		return new RoleRequest(entity.name, entity.text, entity.color)
 	}
 }

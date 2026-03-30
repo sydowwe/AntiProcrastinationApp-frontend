@@ -9,6 +9,6 @@ export class BarGridSpan {
 		public gridColumnEnd: number,
 		public gridRowStart: number,
 		public gridRowEnd: number,
-		public data: ColumnData
+		public data: ColumnData,
 	) {}
 }

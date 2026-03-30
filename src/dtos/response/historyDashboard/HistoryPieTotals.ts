@@ -3,14 +3,9 @@ export class HistoryPieTotals {
 		public totalSeconds: number,
 		public totalEntries: number,
 		public uniqueGroups: number,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any): HistoryPieTotals {
-		return new HistoryPieTotals(
-			json.totalSeconds,
-			json.totalEntries,
-			json.uniqueGroups,
-		)
+		return new HistoryPieTotals(json.totalSeconds, json.totalEntries, json.uniqueGroups)
 	}
 }

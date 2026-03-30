@@ -1,12 +1,12 @@
-import {ref} from 'vue'
-import {API} from '@/plugins/axiosConfig.ts'
+import { ref } from 'vue'
+import { API } from '@/plugins/axiosConfig.ts'
 
 const isSupported = ref(false)
 const isSubscribed = ref(false)
 const permission = ref<NotificationPermission>('default')
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-	const padding = '='.repeat((4 - base64String.length % 4) % 4)
+	const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
 	const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
 	const rawData = window.atob(base64)
 	const outputArray = new Uint8Array(rawData.length)
@@ -30,7 +30,7 @@ async function subscribe(): Promise<boolean> {
 		permission.value = result
 		if (result !== 'granted') return false
 
-		const {data} = await API.get<string>('/push/vapid-public-key')
+		const { data } = await API.get<string>('/push/vapid-public-key')
 		const applicationServerKey = urlBase64ToUint8Array(data)
 
 		const subscription = await reg.pushManager.subscribe({
@@ -58,7 +58,7 @@ async function unsubscribe(): Promise<boolean> {
 			return true
 		}
 
-		await API.post('/push/unsubscribe', {endpoint: subscription.endpoint})
+		await API.post('/push/unsubscribe', { endpoint: subscription.endpoint })
 		await subscription.unsubscribe()
 		isSubscribed.value = false
 		return true

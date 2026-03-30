@@ -1,20 +1,24 @@
-import {computed, type ComputedRef, type Ref} from 'vue';
-import type {TableColumn} from '@/dtos/dto/TableColumn.ts';
+import { computed, type ComputedRef, type Ref } from 'vue'
+import type { TableColumn } from '@/dtos/dto/TableColumn.ts'
 
-export function useTableHeader<TColumn extends TableColumn>(columns: Ref<TColumn[]> | ComputedRef<TColumn[]>, hasActions: boolean, showExpand: boolean) {
+export function useTableHeader<TColumn extends TableColumn>(
+	columns: Ref<TColumn[]> | ComputedRef<TColumn[]>,
+	hasActions: boolean,
+	showExpand: boolean,
+) {
 	return computed(() => {
-		const headers: any[] = [];
+		const headers: any[] = []
 		if (showExpand) {
 			headers.push({
 				title: '',
 				value: 'data-table-expand',
 				key: 'data-table-expand',
 				sortable: false,
-			});
+			})
 		}
 
-		headers.push(...columns.value.map((col) => (
-			{
+		headers.push(
+			...columns.value.map(col => ({
 				title: col.text,
 				value: col.key,
 				key: col.key,
@@ -27,7 +31,7 @@ export function useTableHeader<TColumn extends TableColumn>(columns: Ref<TColumn
 						align: 'center',
 					},
 				},
-			}))
+			})),
 		)
 		if (hasActions) {
 			headers.push({
@@ -45,10 +49,10 @@ export function useTableHeader<TColumn extends TableColumn>(columns: Ref<TColumn
 				},
 			})
 		}
-		return headers;
-	});
+		return headers
+	})
 }
 
 export function getNestedValue(obj: any, key: string) {
-	return key.split('.').reduce((value, part) => value?.[part], obj);
+	return key.split('.').reduce((value, part) => value?.[part], obj)
 }

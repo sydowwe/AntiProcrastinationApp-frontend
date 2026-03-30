@@ -6,8 +6,7 @@ export class HistorySummaryCard {
 		public averageSeconds: number,
 		public percentChange: number | null,
 		public isNew: boolean,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any): HistorySummaryCard {
 		return new HistorySummaryCard(

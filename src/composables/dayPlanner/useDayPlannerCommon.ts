@@ -1,7 +1,7 @@
-import type {Time} from '@/dtos/dto/Time.ts'
-import type {ComputedRef, Ref} from 'vue'
-import {type IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
+import type { Time } from '@/dtos/dto/Time.ts'
+import type { ComputedRef, Ref } from 'vue'
+import { type IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 
 /**
  * Base task type for grid positioning with Date-based spans
@@ -11,11 +11,10 @@ import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBas
  * Shared logic for day planner
  * Handles grid positioning, time calculations, and conflict detection for Date-based tasks
  */
-export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>(
-	viewStartTime: Ref<Time>,
-	totalGridRows: ComputedRef<number>,
-	tasks: Ref<T[]>
-) {
+export function useDayPlannerCommon<
+	T extends IBasePlannerTask<TTaskRequest>,
+	TTaskRequest extends IBasePlannerTaskRequest,
+>(viewStartTime: Ref<Time>, totalGridRows: ComputedRef<number>, tasks: Ref<T[]>) {
 	// --- Helpers: Time-based calculations (day-agnostic with midnight wrap support) ---
 	const MINUTES_IN_DAY = 1440
 
@@ -26,13 +25,13 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		return (m - start + MINUTES_IN_DAY) % MINUTES_IN_DAY
 	}
 
-	function segmentizeRange(startM: number, endM: number): Array<{ s: number, e: number }> {
+	function segmentizeRange(startM: number, endM: number): Array<{ s: number; e: number }> {
 		// Returns one or two segments within [0, 1440) representing the range.
 		// If end < start => wraps over midnight, split into two segments.
-		if (endM >= startM) return [{s: startM, e: endM}]
+		if (endM >= startM) return [{ s: startM, e: endM }]
 		return [
-			{s: 0, e: endM},
-			{s: startM, e: MINUTES_IN_DAY}
+			{ s: 0, e: endM },
+			{ s: startM, e: MINUTES_IN_DAY },
 		]
 	}
 
@@ -41,17 +40,15 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		const bSegs = segmentizeRange(bStart.getInMinutes, bEnd.getInMinutes)
 
 		// Check any segment overlap
-		return aSegs.some(a => bSegs.some(b => (a.s < b.e && a.e > b.s)))
+		return aSegs.some(a => bSegs.some(b => a.s < b.e && a.e > b.s))
 	}
-
 
 	/**
 	 * Check if date ranges overlap with background tasks
 	 */
 	function checkOverlapsBackground(task: T): boolean {
 		return tasks.value.some(backgroundTask => {
-			if (!backgroundTask.isBackground)
-				return false
+			if (!backgroundTask.isBackground) return false
 
 			if (backgroundTask.startTime && backgroundTask.endTime) {
 				return rangesOverlapTime(backgroundTask.startTime, backgroundTask.endTime, task.startTime, task.endTime)
@@ -65,10 +62,10 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	function checkConflict(taskToCheck: T): boolean {
 		return tasks.value.some(task => {
 			console.log((taskToCheck.id ^ task.id) < 0)
-			if ((taskToCheck.id ^ task.id) < 0) // XOR so template doesn't check conflict with normal
+			if ((taskToCheck.id ^ task.id) < 0)
+				// XOR so template doesn't check conflict with normal
 				return false
-			if (task.id === taskToCheck.id || task.isBackground)
-				return false
+			if (task.id === taskToCheck.id || task.isBackground) return false
 
 			if (task.startTime && task.endTime) {
 				return rangesOverlapTime(task.startTime, task.endTime, taskToCheck.startTime, taskToCheck.endTime)
@@ -98,8 +95,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 	function initializeTaskGridPositions(): void {
 		tasks.value.forEach(task => {
 			setGridPositionFromSpan(task)
-			if (task.isBackground)
-				return
+			if (task.isBackground) return
 			task.isDuringBackgroundTask = checkOverlapsBackground(task)
 		})
 	}
@@ -135,7 +131,7 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		}
 		tasks.value[taskIndex] = {
 			...tasks.value[taskIndex],
-			...updates
+			...updates,
 		}
 
 		const task = tasks.value[taskIndex]
@@ -152,6 +148,6 @@ export function useDayPlannerCommon<T extends IBasePlannerTask<TTaskRequest>, TT
 		updateIsDuringBackgroundFlags,
 		initializeTaskGridPositions,
 		setGridPositionFromSpan,
-		redrawTask
+		redrawTask,
 	}
 }

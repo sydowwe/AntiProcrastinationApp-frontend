@@ -1,6 +1,6 @@
-import {DesktopDistinctEntriesFilterRequest} from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts';
-import {PatternMatchType} from '@/dtos/enum/PatternMatchType.ts';
-import {TrackerDesktopMappingTypeEnum} from '@/dtos/enum/TrackerDesktopMappingTypeEnum.ts';
+import { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
+import { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import { TrackerDesktopMappingTypeEnum } from '@/dtos/enum/TrackerDesktopMappingTypeEnum.ts'
 
 export class TrackerDesktopMappingsFilter extends DesktopDistinctEntriesFilterRequest {
 	constructor(
@@ -17,6 +17,6 @@ export class TrackerDesktopMappingsFilter extends DesktopDistinctEntriesFilterRe
 		// public roleId: number | null = null,
 		// public categoryId: number | null = null,
 	) {
-		super(processName, processNameMatchType, productName, productNameMatchType, windowTitle, windowTitleMatchType);
+		super(processName, processNameMatchType, productName, productNameMatchType, windowTitle, windowTitleMatchType)
 	}
 }

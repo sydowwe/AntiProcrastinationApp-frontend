@@ -132,7 +132,9 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 
+	const { showFullScreenLoading } = useLoading()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const undoStack = useUndoStack()
 	const { getSuggestions } = useTemplateSuggestion()
@@ -211,7 +213,9 @@
 
 	// Load tasks for the current date
 	async function loadTasks() {
-		store.tasks = await fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime))
+		store.tasks = await fetchFiltered(
+			new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime),
+		)
 		store.initializeTaskGridPositions()
 		await templatePreview()
 	}
@@ -242,6 +246,7 @@
 		if (!store.templateInPreview) {
 			throw new Error('No template selected')
 		}
+		showFullScreenLoading()
 		const tasksIncluded = store.tasks.filter(t => t.id < 0).map(t => PlannerTaskRequest.fromEntity(t))
 		const request = new ApplyTemplateToTaskPlannerRequest(
 			store.templateInPreview.id,

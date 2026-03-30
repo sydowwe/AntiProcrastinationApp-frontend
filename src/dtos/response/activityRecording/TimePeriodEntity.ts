@@ -13,8 +13,7 @@ export class TimePeriodEntity {
 		public totalPeriodsCompleted: number = 0,
 		public totalPeriodsElapsed: number = 0,
 		public nextResetAt: string | null = null,
-	) {
-	}
+	) {}
 
 	static fromJson(object: any) {
 		const {
@@ -31,11 +30,25 @@ export class TimePeriodEntity {
 			totalPeriodsCompleted = 0,
 			totalPeriodsElapsed = 0,
 			nextResetAt = null,
-		} = object;
-		return new TimePeriodEntity(id, text, color, lengthInDays, isHidden, streak, bestStreak, streakThreshold, streakGraceDays, resetAnchorDay, totalPeriodsCompleted, totalPeriodsElapsed, nextResetAt);
+		} = object
+		return new TimePeriodEntity(
+			id,
+			text,
+			color,
+			lengthInDays,
+			isHidden,
+			streak,
+			bestStreak,
+			streakThreshold,
+			streakGraceDays,
+			resetAnchorDay,
+			totalPeriodsCompleted,
+			totalPeriodsElapsed,
+			nextResetAt,
+		)
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
 }

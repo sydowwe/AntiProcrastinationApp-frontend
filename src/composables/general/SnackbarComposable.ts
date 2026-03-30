@@ -1,5 +1,5 @@
-import {readonly, ref} from 'vue'
-import {useLoading} from './LoadingComposable'
+import { readonly, ref } from 'vue'
+import { useLoading } from './LoadingComposable'
 
 export interface ErrorSnackBarConfig {
 	timeout?: number
@@ -22,13 +22,13 @@ const actionLabel = ref<string | null>(null)
 const actionCallback = ref<(() => void) | null>(null)
 
 export const useSnackbar = () => {
-	const {hideFullScreenLoading} = useLoading()
+	const { hideFullScreenLoading } = useLoading()
 
 	const showErrorSnackbar = (customMessage: string, config?: ErrorSnackBarConfig) => {
 		showSnackbar(customMessage || 'Error', {
 			...config,
 			color: 'errorDark',
-			closable: config?.closable || false
+			closable: config?.closable || false,
 		})
 	}
 
@@ -36,7 +36,7 @@ export const useSnackbar = () => {
 		showSnackbar(customMessage || 'Success', {
 			...config,
 			color: 'successDark',
-			closable: config?.closable || true
+			closable: config?.closable || true,
 		})
 	}
 
@@ -54,7 +54,6 @@ export const useSnackbar = () => {
 		snackbar.value = true
 	}
 
-
 	const hideSnackbar = () => {
 		snackbar.value = false
 	}
@@ -70,6 +69,6 @@ export const useSnackbar = () => {
 		showErrorSnackbar,
 		showSuccessSnackbar,
 		showSnackbar,
-		hideSnackbar
+		hideSnackbar,
 	}
 }

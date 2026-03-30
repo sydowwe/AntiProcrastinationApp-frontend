@@ -1,4 +1,4 @@
-import {ActivityStat} from '@/dtos/response/activityTracking/topDomains/ActivityStat.ts'
+import { ActivityStat } from '@/dtos/response/activityTracking/topDomains/ActivityStat.ts'
 
 export class DesktopProcessSummaryDto {
 	constructor(
@@ -6,9 +6,8 @@ export class DesktopProcessSummaryDto {
 		public productName: string,
 		public isNew: boolean,
 		public active: ActivityStat | null,
-		public background: ActivityStat | null
-	) {
-	}
+		public background: ActivityStat | null,
+	) {}
 
 	static fromJson(json: any): DesktopProcessSummaryDto {
 		return new DesktopProcessSummaryDto(
@@ -16,7 +15,7 @@ export class DesktopProcessSummaryDto {
 			json.productName,
 			json.isNew ?? false,
 			json.active ? ActivityStat.fromJson(json.active) : null,
-			json.background ? ActivityStat.fromJson(json.background) : null
+			json.background ? ActivityStat.fromJson(json.background) : null,
 		)
 	}
 }

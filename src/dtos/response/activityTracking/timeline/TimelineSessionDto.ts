@@ -6,11 +6,18 @@ export class TimelineSessionDto {
 		public endedAt: Date,
 		public durationSeconds: number,
 		public totalSeconds: number,
-		public url?: string
-	) {
-	}
+		public url?: string,
+	) {}
 
 	static fromJson(json: any): TimelineSessionDto {
-		return new TimelineSessionDto(json.id, json.domain, new Date(json.startedAt), new Date(json.endedAt), json.durationSeconds, json.totalSeconds, json.url)
+		return new TimelineSessionDto(
+			json.id,
+			json.domain,
+			new Date(json.startedAt),
+			new Date(json.endedAt),
+			json.durationSeconds,
+			json.totalSeconds,
+			json.url,
+		)
 	}
 }

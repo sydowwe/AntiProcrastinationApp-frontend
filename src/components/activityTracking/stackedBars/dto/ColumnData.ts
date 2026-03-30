@@ -6,7 +6,6 @@ export class ColumnData {
 		public activeMinutes: number,
 		public backgroundMinutes: number,
 		public url?: string,
-		public color?: string
-	) {
-	}
+		public color?: string,
+	) {}
 }

@@ -1,10 +1,13 @@
-import type {Time} from '@/dtos/dto/Time.ts';
-import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {StoreGeneric} from 'pinia';
-import type {CreationPreviewType} from '@/components/dayPlanner/DayPlannerTypes.ts';
+import type { Time } from '@/dtos/dto/Time.ts'
+import { type IBasePlannerTask, TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+import type { StoreGeneric } from 'pinia'
+import type { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
 
-export interface IBaseDayPlannerStore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest> extends StoreGeneric {
+export interface IBaseDayPlannerStore<
+	TTask extends IBasePlannerTask<TTaskRequest>,
+	TTaskRequest extends IBasePlannerTaskRequest,
+> extends StoreGeneric {
 	// Time/Grid configuration
 	timeSlotDuration: number
 	viewStartTime: Time

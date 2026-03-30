@@ -1,8 +1,8 @@
-import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {Activity} from '@/dtos/response/activity/Activity.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import {TemplatePlannerTaskRequest} from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts';
-import {TaskImportance} from '@/dtos/response/activityPlanning/TaskImportance.ts';
+import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import { Activity } from '@/dtos/response/activity/Activity.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
+import { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
 
 export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTaskRequest> {
 	constructor(
@@ -19,15 +19,14 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundTask: boolean = false,
-	) {
-	}
+	) {}
 
 	toRequest(): TemplatePlannerTaskRequest {
 		return TemplatePlannerTaskRequest.fromEntity(this)
 	}
 
 	toSpan(): { startTime: Time; endTime: Time } {
-		return {startTime: this.startTime, endTime: this.endTime};
+		return { startTime: this.startTime, endTime: this.endTime }
 	}
 
 	static fromJson(json: any) {

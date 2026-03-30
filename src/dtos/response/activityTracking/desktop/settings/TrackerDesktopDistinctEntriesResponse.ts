@@ -1,4 +1,4 @@
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 
 export class TrackerDesktopDistinctEntriesResponse implements IMyResponse {
 	constructor(
@@ -14,6 +14,6 @@ export class TrackerDesktopDistinctEntriesResponse implements IMyResponse {
 			json.processName,
 			json.productName,
 			json.windowTitle ?? null,
-		);
+		)
 	}
 }

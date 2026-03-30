@@ -1,4 +1,4 @@
-import type {DayType} from '@/dtos/enum/DayType.ts'
+import type { DayType } from '@/dtos/enum/DayType.ts'
 
 export interface ICalendar {
 	date: string

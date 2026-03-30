@@ -4,9 +4,8 @@ export class DesktopWindowActivity {
 		public productName: string,
 		public activeSeconds: number,
 		public backgroundSeconds: number,
-		public totalSeconds: number
-	) {
-	}
+		public totalSeconds: number,
+	) {}
 
 	static fromJson(json: any): DesktopWindowActivity {
 		return new DesktopWindowActivity(
@@ -14,7 +13,7 @@ export class DesktopWindowActivity {
 			json.productName,
 			json.activeSeconds,
 			json.backgroundSeconds,
-			json.totalSeconds
+			json.totalSeconds,
 		)
 	}
 }

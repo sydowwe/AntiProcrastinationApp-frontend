@@ -1,5 +1,3 @@
 export class EmailRequest {
-  constructor(
-    public email: string = '') {
-  }
+	constructor(public email: string = '') {}
 }
