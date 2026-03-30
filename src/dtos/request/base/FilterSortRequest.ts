@@ -1,6 +1,5 @@
-import {SortByRequest} from "./SortByRequest";
-import {FilterRequest} from '@/dtos/request/base/FilterRequest.ts'; // Adjust path as needed
-
+import { SortByRequest } from './SortByRequest'
+import { FilterRequest } from '@/dtos/request/base/FilterRequest.ts' // Adjust path as needed
 
 export class FilterSortRequest<TFilter> extends FilterRequest<TFilter> {
 	constructor(
@@ -8,6 +7,6 @@ export class FilterSortRequest<TFilter> extends FilterRequest<TFilter> {
 		public sortBy: SortByRequest[],
 		filter: TFilter | null = null,
 	) {
-		super(useFilter, filter);
+		super(useFilter, filter)
 	}
 }

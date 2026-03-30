@@ -1,12 +1,12 @@
-import type {Time} from '@/dtos/dto/Time.ts'
-import {DateAndTimeRangeRequest} from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
+import { DateAndTimeRangeRequest } from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
 
 export class DesktopPieChartRequest extends DateAndTimeRangeRequest {
 	constructor(
 		public date: string,
 		public from: Time,
 		public to: Time,
-		public minPercent?: number
+		public minPercent?: number,
 	) {
 		super(date, from, to)
 	}

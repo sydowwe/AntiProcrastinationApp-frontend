@@ -1,4 +1,4 @@
-import {PomodoroTimerPreset} from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts';
+import { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 
 export class PomodoroTimerPresetRequest {
 	constructor(
@@ -9,9 +9,8 @@ export class PomodoroTimerPresetRequest {
 		public focusPeriodInCycleCount: number = 4,
 		public numberOfCycles: number = 2,
 		public focusActivityId: number | null = null,
-		public restActivityId: number | null = null
-	) {
-	}
+		public restActivityId: number | null = null,
+	) {}
 
 	static fromEntity(preset: PomodoroTimerPreset) {
 		return new PomodoroTimerPresetRequest(
@@ -22,7 +21,7 @@ export class PomodoroTimerPresetRequest {
 			preset.focusPeriodInCycleCount,
 			preset.numberOfCycles,
 			preset.focusActivity?.id ?? null,
-			preset.restActivity?.id ?? null
-		);
+			preset.restActivity?.id ?? null,
+		)
 	}
 }

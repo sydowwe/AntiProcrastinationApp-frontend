@@ -1,7 +1,7 @@
-import type {DayType} from '@/dtos/enum/DayType.ts';
-import type {DayOfWeek} from '@/dtos/enum/DayOfWeek.ts';
-import type {Time} from '@/dtos/dto/Time.ts';
-import type {Location} from '@/dtos/enum/Location.ts';
+import type { DayType } from '@/dtos/enum/DayType.ts'
+import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
+import type { Location } from '@/dtos/enum/Location.ts'
 
 export class TaskPlannerDayTemplate {
 	constructor(
@@ -18,8 +18,7 @@ export class TaskPlannerDayTemplate {
 		public scheduledDays: DayOfWeek[] = [],
 		public lastUsedAt?: string,
 		public suggestedLocation?: Location,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any): TaskPlannerDayTemplate {
 		return new TaskPlannerDayTemplate(
@@ -36,7 +35,6 @@ export class TaskPlannerDayTemplate {
 			json.scheduledDays ?? [],
 			json.lastUsedAt,
 			json.suggestedLocation ?? undefined,
-		);
+		)
 	}
 }
-

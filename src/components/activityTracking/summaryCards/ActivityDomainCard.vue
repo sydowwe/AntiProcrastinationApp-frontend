@@ -1,130 +1,138 @@
 <template>
-<VCard
-	class="domain-card"
-	:class="{ 'domain-card--clickable': true, 'domain-card--selected': selected }"
-	:elevation="selected ? 6 : 2"
-	@click="handleClick"
-	@keydown.enter="handleClick"
-	@keydown.space.prevent="handleClick"
-	tabindex="0"
-	role="button"
-	:aria-label="`View details for ${domain.domain}`"
->
-	<VCardTitle class="text-center pb-2">
-		<VTooltip
-			:text="domain.domain"
-			location="top"
+	<VCard
+		class="domain-card"
+		:class="{ 'domain-card--clickable': true, 'domain-card--selected': selected }"
+		:elevation="selected ? 6 : 2"
+		tabindex="0"
+		role="button"
+		:aria-label="`View details for ${domain.domain}`"
+		@click="handleClick"
+		@keydown.enter="handleClick"
+		@keydown.space.prevent="handleClick"
+	>
+		<VCardTitle class="text-center pb-2">
+			<VTooltip
+				:text="domain.domain"
+				location="top"
+			>
+				<template #activator="{ props: tooltipProps }">
+					<div
+						v-bind="tooltipProps"
+						class="domain-name"
+					>
+						{{ domain.domain }}
+					</div>
+				</template>
+			</VTooltip>
+		</VCardTitle>
+		<VCardText
+			class="pa-0"
+			style="background-color: rgb(55, 55, 55)"
 		>
-			<template #activator="{ props: tooltipProps }">
-				<div v-bind="tooltipProps" class="domain-name">
-					{{ domain.domain }}
-				</div>
-			</template>
-		</VTooltip>
-	</VCardTitle>
-	<VCardText class="pa-0" style="background-color: rgb(55,55,55)">
-		<div class="stat-columns">
-			<template v-if="showActive && showBackground">
-				<ActivityStatColumn
-					label="Active"
-					:seconds="domain.active!.seconds"
-					:percentChange="domain.active!.percentChange"
-					:isNew="domain.isNew"
-				/>
-				<VDivider vertical/>
-				<ActivityStatColumn
-					label="Background"
-					:seconds="domain.background!.seconds"
-					:percentChange="domain.background!.percentChange"
-					:isNew="domain.isNew"
-				/>
-			</template>
-			<template v-else-if="showActive">
-				<ActivityStatColumn
-					label="Active"
-					:seconds="domain.active!.seconds"
-					:percentChange="domain.active!.percentChange"
-					:isNew="domain.isNew"
-					class="single-column"
-				/>
-			</template>
-			<template v-else-if="showBackground">
-				<ActivityStatColumn
-					label="Background"
-					:seconds="domain.background!.seconds"
-					:percentChange="domain.background!.percentChange"
-					:isNew="domain.isNew"
-					class="single-column"
-				/>
-			</template>
-		</div>
-	</VCardText>
-</VCard>
+			<div class="stat-columns">
+				<template v-if="showActive && showBackground">
+					<ActivityStatColumn
+						label="Active"
+						:seconds="domain.active!.seconds"
+						:percentChange="domain.active!.percentChange"
+						:isNew="domain.isNew"
+					/>
+					<VDivider vertical />
+					<ActivityStatColumn
+						label="Background"
+						:seconds="domain.background!.seconds"
+						:percentChange="domain.background!.percentChange"
+						:isNew="domain.isNew"
+					/>
+				</template>
+				<template v-else-if="showActive">
+					<ActivityStatColumn
+						label="Active"
+						:seconds="domain.active!.seconds"
+						:percentChange="domain.active!.percentChange"
+						:isNew="domain.isNew"
+						class="single-column"
+					/>
+				</template>
+				<template v-else-if="showBackground">
+					<ActivityStatColumn
+						label="Background"
+						:seconds="domain.background!.seconds"
+						:percentChange="domain.background!.percentChange"
+						:isNew="domain.isNew"
+						class="single-column"
+					/>
+				</template>
+			</div>
+		</VCardText>
+	</VCard>
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue';
-import ActivityStatColumn from './ActivityStatColumn.vue';
-import type {SummaryCardsData} from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts';
+	import { computed } from 'vue'
+	import ActivityStatColumn from './ActivityStatColumn.vue'
+	import type { SummaryCardsData } from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts'
 
-const props = defineProps<{
-	domain: SummaryCardsData;
-	selected?: boolean;
-}>();
+	const props = defineProps<{
+		domain: SummaryCardsData
+		selected?: boolean
+	}>()
 
-const emit = defineEmits<{
-	(e: 'click', domain: string): void;
-}>();
+	const emit = defineEmits<{
+		(e: 'click', domain: string): void
+	}>()
 
-const showActive = computed(() => props.domain.active !== null && props.domain.active.seconds > 0);
-const showBackground = computed(() => props.domain.background !== null && props.domain.background.seconds > 0);
+	const showActive = computed(() => props.domain.active !== null && props.domain.active.seconds > 0)
+	const showBackground = computed(() => props.domain.background !== null && props.domain.background.seconds > 0)
 
-function handleClick() {
-	emit('click', props.domain.domain);
-}
+	function handleClick() {
+		emit('click', props.domain.domain)
+	}
 </script>
 
 <style scoped>
-.domain-card {
-	min-width: 200px;
-	max-width: 300px;
-	transition: transform 0.2s, box-shadow 0.2s;
-}
+	.domain-card {
+		min-width: 200px;
+		max-width: 300px;
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
+	}
 
-.domain-card--clickable {
-	cursor: pointer;
-}
+	.domain-card--clickable {
+		cursor: pointer;
+	}
 
-.domain-card--clickable:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-}
+	.domain-card--clickable:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+	}
 
-.domain-card--clickable:focus {
-	outline: 2px solid rgb(var(--v-theme-primary));
-	outline-offset: 2px;
-}
+	.domain-card--clickable:focus {
+		outline: 2px solid rgb(var(--v-theme-primary));
+		outline-offset: 2px;
+	}
 
-.domain-card--selected {
-	border: 2px solid rgb(var(--v-theme-primary));
-}
+	.domain-card--selected {
+		border: 2px solid rgb(var(--v-theme-primary));
+	}
 
-.domain-name {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	max-width: 100%;
-}
+	.domain-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+	}
 
-.stat-columns {
-	display: flex;
-	justify-content: space-evenly;
-	align-items: center;
-}
+	.stat-columns {
+		display: flex;
+		justify-content: space-evenly;
+		align-items: center;
+	}
 
-.single-column {
-	flex: 1;
-	display: flex;
-	justify-content: center;
-}
+	.single-column {
+		flex: 1;
+		display: flex;
+		justify-content: center;
+	}
 </style>

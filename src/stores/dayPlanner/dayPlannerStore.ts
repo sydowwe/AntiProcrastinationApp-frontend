@@ -1,14 +1,13 @@
-import {defineStore} from 'pinia'
-import {computed, ref} from 'vue'
-import {useMoment} from '@/utils/momentHelper.ts'
-import {PlannerTask} from '@/dtos/response/activityPlanning/PlannerTask.ts'
-import {PlannerTaskRequest} from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
-import {usePlannerStoreCore} from '@/composables/dayPlanner/usePlannerStoreCore.ts';
-import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import {TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {useTaskPlannerCrud} from '@/api/taskPlanner/plannerTaskApi.ts';
-import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
+import { defineStore } from 'pinia'
+import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
+import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+import { usePlannerStoreCore } from '@/composables/dayPlanner/usePlannerStoreCore.ts'
+import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
+import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+import { computed, ref } from 'vue'
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -19,9 +18,8 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 }
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
-	const {formatToTime24H} = useMoment()
 	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>()
-	const {patch, fetchById} = useTaskPlannerCrud()
+	const { patch } = useTaskPlannerCrud()
 
 	// Day-specific state
 	const viewedDate = ref(new Date())
@@ -33,7 +31,6 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	function offsetTasksFromTemplate(offset: number) {
 		if (!tasksFromTemplate.value) return
-
 
 		const defaultStart = templateInPreview.value!.defaultWakeUpTime
 		const defaultEnd = templateInPreview.value!.defaultBedTime
@@ -52,13 +49,11 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		const defaultEndMinutes = defaultEnd.getInMinutes
 
 		// Normalize end times if they wrap to next day (e.g., 00:00 = 1440 minutes)
-		const normalizedCurrentViewEndMinutes = currentViewEndMinutes < currentViewStartMinutes
-			? currentViewEndMinutes + 1440
-			: currentViewEndMinutes
+		const normalizedCurrentViewEndMinutes =
+			currentViewEndMinutes < currentViewStartMinutes ? currentViewEndMinutes + 1440 : currentViewEndMinutes
 
-		const normalizedDefaultEndMinutes = defaultEndMinutes < defaultStartMinutes
-			? defaultEndMinutes + 1440
-			: defaultEndMinutes
+		const normalizedDefaultEndMinutes =
+			defaultEndMinutes < defaultStartMinutes ? defaultEndMinutes + 1440 : defaultEndMinutes
 
 		// Always reset to defaults at offset 0
 		if (offset === 0) {
@@ -83,18 +78,20 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		}
 
 		// Create new tasks with offset times (offset is in hours, convert to minutes)
-		core.tasks.value.push(...tasksFromTemplate.value.map(t => {
-			const newStartTime = Time.fromMinutes(t.startTime.getInMinutes + offset * 60)
-			const newEndTime = Time.fromMinutes(t.endTime.getInMinutes + offset * 60)
+		core.tasks.value.push(
+			...tasksFromTemplate.value.map(t => {
+				const newStartTime = Time.fromMinutes(t.startTime.getInMinutes + offset * 60)
+				const newEndTime = Time.fromMinutes(t.endTime.getInMinutes + offset * 60)
 
-			// Create shallow copy with updated times
-			const newTask = Object.create(Object.getPrototypeOf(t))
-			Object.assign(newTask, t, {
-				startTime: newStartTime,
-				endTime: newEndTime
-			})
-			return newTask
-		}))
+				// Create shallow copy with updated times
+				const newTask = Object.create(Object.getPrototypeOf(t))
+				Object.assign(newTask, t, {
+					startTime: newStartTime,
+					endTime: newEndTime,
+				})
+				return newTask
+			}),
+		)
 
 		core.initializeTaskGridPositions()
 	}
@@ -104,11 +101,11 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		if (templateInPreview.value) {
 			core.viewStartTime.value = new Time(
 				templateInPreview.value.defaultWakeUpTime.hours,
-				templateInPreview.value.defaultWakeUpTime.minutes
+				templateInPreview.value.defaultWakeUpTime.minutes,
 			)
 			core.viewEndTime.value = new Time(
 				templateInPreview.value.defaultBedTime.hours,
-				templateInPreview.value.defaultBedTime.minutes
+				templateInPreview.value.defaultBedTime.minutes,
 			)
 		}
 
@@ -140,7 +137,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	})
 
 	const dateTimeFromSlotIndex = computed(() => (slotIndex: number): Date => {
-		const {hours, minutes} = core.slotIndexToTime.value(slotIndex)
+		const { hours, minutes } = core.slotIndexToTime.value(slotIndex)
 
 		const date = new Date(viewedDate.value)
 
@@ -160,26 +157,22 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	})
 
 	async function updateTaskSpan(eventId: number, span: TaskSpan) {
-		if (isTemplateInPreview.value)
-			return
+		if (isTemplateInPreview.value) return
 		await patch(eventId, span)
 	}
 
 	async function updateTaskIsDone(eventId: number, isDone: boolean) {
-		if (isTemplateInPreview.value)
-			return
-		await patch(eventId, {isDone})
+		if (isTemplateInPreview.value) return
+		await patch(eventId, { isDone })
 	}
 
 	function openEditDialog() {
-		if (isTemplateInPreview.value)
-			return
+		if (isTemplateInPreview.value) return
 		core.openEditDialog()
 	}
 
 	function toggleTaskSelection(eventId: number) {
-		if (isTemplateInPreview.value && eventId >= 0)
-			return
+		if (isTemplateInPreview.value && eventId >= 0) return
 		core.toggleTaskSelection(eventId)
 	}
 

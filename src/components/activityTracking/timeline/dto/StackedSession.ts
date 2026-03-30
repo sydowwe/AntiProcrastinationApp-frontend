@@ -1,4 +1,4 @@
-import {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
+import { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 
 export class StackedSession extends TimelineSessionDto {
 	constructor(
@@ -9,7 +9,7 @@ export class StackedSession extends TimelineSessionDto {
 		durationSeconds: number,
 		totalSeconds: number,
 		public stackLevel: number, // 0 = first row, 1 = second row, etc.
-		url?: string
+		url?: string,
 	) {
 		super(id, domain, startedAt, endedAt, durationSeconds, totalSeconds, url)
 	}

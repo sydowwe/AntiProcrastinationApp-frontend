@@ -1,4 +1,4 @@
-import {ref, onUnmounted, type Ref, type ComputedRef} from 'vue'
+import { ref, onUnmounted, type Ref, type ComputedRef } from 'vue'
 
 const SCROLL_THRESHOLD = 30
 const MAX_SCROLL_SPEED = 15
@@ -22,7 +22,7 @@ export function useAutoScroll(scrollContainerRef: Ref<HTMLElement | undefined> |
 		}
 
 		if (distanceFromTop < SCROLL_THRESHOLD && distanceFromTop > 0) {
-			const intensity = 1 - (distanceFromTop / SCROLL_THRESHOLD)
+			const intensity = 1 - distanceFromTop / SCROLL_THRESHOLD
 			autoScrollSpeed.value = -intensity * MAX_SCROLL_SPEED
 
 			autoScrollInterval.value = setInterval(() => {
@@ -31,7 +31,7 @@ export function useAutoScroll(scrollContainerRef: Ref<HTMLElement | undefined> |
 				}
 			}, 16)
 		} else if (distanceFromBottom < SCROLL_THRESHOLD && distanceFromBottom > 0) {
-			const intensity = 1 - (distanceFromBottom / SCROLL_THRESHOLD)
+			const intensity = 1 - distanceFromBottom / SCROLL_THRESHOLD
 			autoScrollSpeed.value = intensity * MAX_SCROLL_SPEED
 
 			autoScrollInterval.value = setInterval(() => {

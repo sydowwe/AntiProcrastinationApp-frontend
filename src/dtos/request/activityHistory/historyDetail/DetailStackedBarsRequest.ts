@@ -1,6 +1,6 @@
-import {DateAndTimeRangeRequest} from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
-import type {Time} from '@/dtos/dto/Time.ts'
-import type {HistoryGroupBy} from '@/components/historyDashboard/types/HistoryGroupBy.ts'
+import { DateAndTimeRangeRequest } from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
+import type { HistoryGroupBy } from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 
 export class DetailStackedBarsRequest extends DateAndTimeRangeRequest {
 	constructor(

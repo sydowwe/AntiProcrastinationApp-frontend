@@ -1,8 +1,8 @@
-import {ref} from 'vue'
-import {API} from '@/plugins/axiosConfig.ts';
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
-import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
-import type {FilterSortRequest} from '@/dtos/request/base/FilterSortRequest.ts';
+import { ref } from 'vue'
+import { API } from '@/plugins/axiosConfig.ts'
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
+import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
+import type { FilterSortRequest } from '@/dtos/request/base/FilterSortRequest.ts'
 
 export function useFetchFilteredSorted<TResponse extends IMyResponse, TFilter extends IFilterRequest>(
 	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },
@@ -29,6 +29,6 @@ export function useFetchFilteredSorted<TResponse extends IMyResponse, TFilter ex
 	return {
 		loading,
 		error,
-		fetchFilteredSorted
+		fetchFilteredSorted,
 	}
 }

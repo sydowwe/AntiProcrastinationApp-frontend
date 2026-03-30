@@ -8,10 +8,9 @@ export class ActivityFormRequest {
 		public taskPriorityId: number | null = null,
 		public isFromRoutineToDoList: boolean | null = null,
 		public routineTimePeriodId: number | null = null,
-	) {
-	}
+	) {}
 
 	static get createEmpty() {
-		return new ActivityFormRequest();
+		return new ActivityFormRequest()
 	}
 }

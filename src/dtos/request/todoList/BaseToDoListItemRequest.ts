@@ -5,6 +5,5 @@ export class BaseToDoListItemRequest {
 		public doneCount: number | null = null,
 		public totalCount: number | null = null,
 		public note: string | null = null,
-	) {
-	}
+	) {}
 }

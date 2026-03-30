@@ -1,15 +1,19 @@
 // composables/useCurrentTimeIndicator.ts
-import {computed} from 'vue'
-import {useCurrentTime} from '@/composables/general/useCurrentTime.ts'
-import {useMoment} from '@/utils/momentHelper.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
+import { computed } from 'vue'
+import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
+import { useMoment } from '@/utils/momentHelper.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 
-export function useCurrentTimeIndicator<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>>(store: TStore) {
-	const {formatToTime24H} = useMoment()
-	const {currentTime} = useCurrentTime()
+export function useCurrentTimeIndicator<
+	TTask extends IBasePlannerTask<TTaskRequest>,
+	TTaskRequest extends IBasePlannerTaskRequest,
+	TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>,
+>(store: TStore) {
+	const { formatToTime24H } = useMoment()
+	const { currentTime } = useCurrentTime()
 
 	const isVisible = computed(() => {
 		// Only show in normal day planner (with viewedDate), not in template planner
@@ -32,9 +36,10 @@ export function useCurrentTimeIndicator<TTask extends IBasePlannerTask<TTaskRequ
 		const endMinutes = store.viewEndTime.getInMinutes
 
 		// If end < start, view wraps around midnight
-		const withinRange = endMinutes >= startMinutes
-			? (currentMinutes >= startMinutes && currentMinutes <= endMinutes)
-			: (currentMinutes >= startMinutes || currentMinutes <= endMinutes)
+		const withinRange =
+			endMinutes >= startMinutes
+				? currentMinutes >= startMinutes && currentMinutes <= endMinutes
+				: currentMinutes >= startMinutes || currentMinutes <= endMinutes
 
 		return withinRange
 	})
@@ -46,7 +51,7 @@ export function useCurrentTimeIndicator<TTask extends IBasePlannerTask<TTaskRequ
 
 		const gridRow = slotIndex + 1
 		return {
-			gridRow: `${gridRow} / ${gridRow}`
+			gridRow: `${gridRow} / ${gridRow}`,
 		}
 	})
 

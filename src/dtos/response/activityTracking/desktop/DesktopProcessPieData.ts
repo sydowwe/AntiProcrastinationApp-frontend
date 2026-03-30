@@ -6,9 +6,8 @@ export class DesktopProcessPieData {
 		public backgroundSeconds: number,
 		public totalSeconds: number,
 		public windowTitles: string[],
-		public entries: number
-	) {
-	}
+		public entries: number,
+	) {}
 
 	static fromJson(json: any): DesktopProcessPieData {
 		return new DesktopProcessPieData(
@@ -18,7 +17,7 @@ export class DesktopProcessPieData {
 			json.backgroundSeconds,
 			json.totalSeconds,
 			json.windowTitles ?? [],
-			json.entries
+			json.entries,
 		)
 	}
 }

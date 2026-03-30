@@ -28,27 +28,19 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { TimePrecise, type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
 
-	const props = defineProps({
-		color: {
-			type: String,
-			default: 'primary-accent',
+	const props = withDefaults(
+		defineProps<{
+			title: string
+			timeInitialObject: Time
+			timeRemainingObject: TimePrecise
+			color?: string
+			whatToShow?: TimePreciseKeys[]
+		}>(),
+		{
+			color: 'primary-accent',
+			whatToShow: () => ['hours', 'minutes', 'seconds'],
 		},
-		title: {
-			type: String,
-		},
-		timeInitialObject: {
-			type: Time,
-			required: true,
-		},
-		timeRemainingObject: {
-			type: TimePrecise,
-			required: true,
-		},
-		whatToShow: {
-			type: Array as () => TimePreciseKeys[],
-			default: () => ['hours', 'minutes', 'seconds'],
-		},
-	})
+	)
 
 	const timerProgress = computed(() => {
 		return (props.timeRemainingObject?.getInSeconds / props.timeInitialObject?.getInSeconds) * 100

@@ -5,9 +5,8 @@ export class DesktopPieTotals {
 		public backgroundSeconds: number,
 		public totalProcesses: number,
 		public totalWindowTitles: number,
-		public totalEntries: number
-	) {
-	}
+		public totalEntries: number,
+	) {}
 
 	static fromJson(json: any): DesktopPieTotals {
 		return new DesktopPieTotals(
@@ -16,7 +15,7 @@ export class DesktopPieTotals {
 			json.backgroundSeconds,
 			json.totalProcesses,
 			json.totalWindowTitles,
-			json.totalEntries
+			json.totalEntries,
 		)
 	}
 }

@@ -1,7 +1,7 @@
-import {DayType} from '@/dtos/enum/DayType.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts';
-import type {Location} from '@/dtos/enum/Location.ts';
+import { DayType } from '@/dtos/enum/DayType.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
+import type { Location } from '@/dtos/enum/Location.ts'
 
 export class CalendarRequest {
 	constructor(
@@ -12,10 +12,17 @@ export class CalendarRequest {
 		public weather: string | null = null,
 		public notes: string | null = null,
 		public location: Location | null = null,
-	) {
-	}
+	) {}
 
 	public static fromResponse(response: Calendar): CalendarRequest {
-		return new CalendarRequest(response.label, response.dayType, response.wakeUpTime, response.bedTime, response.weather, response.notes, response.location);
+		return new CalendarRequest(
+			response.label,
+			response.dayType,
+			response.wakeUpTime,
+			response.bedTime,
+			response.weather,
+			response.notes,
+			response.location,
+		)
 	}
 }

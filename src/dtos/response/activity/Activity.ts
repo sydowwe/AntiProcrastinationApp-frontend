@@ -1,5 +1,5 @@
-import {Category} from './Category.ts';
-import {Role} from "./Role.ts";
+import { Category } from './Category.ts'
+import { Role } from './Role.ts'
 
 export class Activity {
 	constructor(
@@ -9,8 +9,7 @@ export class Activity {
 		public isUnavoidable: boolean,
 		public role: Role,
 		public category: Category | null = null,
-	) {
-	}
+	) {}
 
 	static fromJson(object: any) {
 		const {
@@ -19,12 +18,12 @@ export class Activity {
 			text = '',
 			isUnavoidable = false,
 			role = new Role(),
-			category = new Category()
-		} = object;
-		return new Activity(id, name, text, isUnavoidable, role, category);
+			category = new Category(),
+		} = object
+		return new Activity(id, name, text, isUnavoidable, role, category)
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
 }

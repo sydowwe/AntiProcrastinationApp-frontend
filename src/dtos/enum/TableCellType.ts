@@ -11,5 +11,5 @@ export enum TableCellType {
 }
 
 export function isNumericCell(cellType: TableCellType) {
-	return cellType === TableCellType.NUMBER || cellType === TableCellType.DECIMAL;
+	return cellType === TableCellType.NUMBER || cellType === TableCellType.DECIMAL
 }

@@ -4,15 +4,9 @@ export class HistoryPieChartItem {
 		public totalSeconds: number,
 		public color: string | null,
 		public entries: number,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any): HistoryPieChartItem {
-		return new HistoryPieChartItem(
-			json.name,
-			json.totalSeconds,
-			json.color ?? null,
-			json.entries,
-		)
+		return new HistoryPieChartItem(json.name, json.totalSeconds, json.color ?? null, json.entries)
 	}
 }

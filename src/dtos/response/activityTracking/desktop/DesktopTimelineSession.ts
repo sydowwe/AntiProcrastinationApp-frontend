@@ -6,9 +6,8 @@ export class DesktopTimelineSession {
 		public startedAt: Date,
 		public endedAt: Date,
 		public durationSeconds: number,
-		public totalSeconds: number
-	) {
-	}
+		public totalSeconds: number,
+	) {}
 
 	static fromJson(json: any): DesktopTimelineSession {
 		return new DesktopTimelineSession(
@@ -18,7 +17,7 @@ export class DesktopTimelineSession {
 			new Date(json.startedAt),
 			new Date(json.endedAt),
 			json.durationSeconds,
-			json.totalSeconds
+			json.totalSeconds,
 		)
 	}
 }

@@ -1,4 +1,4 @@
-import {readonly, ref} from 'vue'
+import { readonly, ref } from 'vue'
 
 const fullScreenLoading = ref(false)
 const axiosSuccessLoadingHide = ref(true)
@@ -19,6 +19,6 @@ export const useLoading = () => {
 		fullScreenLoading: readonly(fullScreenLoading),
 		axiosSuccessLoadingHide,
 		showFullScreenLoading,
-		hideFullScreenLoading
+		hideFullScreenLoading,
 	}
 }

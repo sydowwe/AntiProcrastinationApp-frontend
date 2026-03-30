@@ -1,57 +1,41 @@
 <template>
-<div class="mx-auto d-flex ga-6">
-	<VForm @keyup.native.enter="save" class="d-flex flex-column align-start ga-3">
+	<div class="mx-auto d-flex ga-6">
+		<VForm class="d-flex flex-column align-start ga-3">
+			<DateTimePicker
+				v-model="dateTime"
+				class="mb-auto"
+				:label="$t('dateTime.when')"
+				:dateClearable="false"
+			></DateTimePicker>
 
-		<DateTimePicker class="mb-auto" :label="$t('dateTime.when')" v-model="dateTime" :dateClearable="false"></DateTimePicker>
-
-		<TimePicker icon="hourglass-end" :label="i18n.t('dateTime.length')" v-model="timeLength" minWidth="150px" maxWidth="150px"
-		            hideDetails></TimePicker>
-	</VForm>
-
-</div>
+			<TimePicker
+				v-model="timeLength"
+				icon="hourglass-end"
+				:label="i18n.t('dateTime.length')"
+				minWidth="150px"
+				maxWidth="150px"
+				hideDetails
+			></TimePicker>
+		</VForm>
+	</div>
 </template>
 
 <script setup lang="ts">
-import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue';
-import TimePicker from '@/components/general/dateTime/TimePicker.vue';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useI18n} from 'vue-i18n';
-import {ref} from 'vue';
-import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue';
-import {Time} from '@/dtos/dto/Time.ts';
-import {useActivityHistoryCrud} from '@/api/activityHistory/activityHistoryApi.ts';
+	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
+	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import { useI18n } from 'vue-i18n'
+	import { ref } from 'vue'
+	import { Time } from '@/dtos/dto/Time.ts'
 
-const {create} = useActivityHistoryCrud()
+	defineProps<{
+		activityId: number
+		activityName: string
+	}>()
 
-const {activityId, activityName} = defineProps<{
-	activityId: number;
-	activityName: string;
-}>();
+	const i18n = useI18n()
 
-const emit = defineEmits<{
-	saved: [];
-}>();
-
-const {showErrorSnackbar, showSuccessSnackbar} = useSnackbar();
-const i18n = useI18n();
-
-const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>();
-const dateTime = ref<Date | null>(new Date());
-const timeLength = ref(new Time());
-
-async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
-	const newId = await create(startTimestamp, activityLength, activityId);
-
-	if (newId) {
-		showSuccessSnackbar(`Added record of activity ${activityName} to history`);
-		return newId;
-	} else {
-		showErrorSnackbar(`Error saving record of activity ${activityName} to history`);
-		return null;
-	}
-}
+	const dateTime = ref<Date | null>(new Date())
+	const timeLength = ref(new Time())
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

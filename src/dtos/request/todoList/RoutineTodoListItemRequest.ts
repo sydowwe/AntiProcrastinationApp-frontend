@@ -1,5 +1,5 @@
-import {BaseToDoListItemRequest} from './BaseToDoListItemRequest.ts';
-import {RoutineTodoListItemEntity} from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts';
+import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
+import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
@@ -10,10 +10,17 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 		public isDone: boolean = false,
 		public note: string | null = null,
 	) {
-		super(isDone, activityId, doneCount, totalCount, note);
+		super(isDone, activityId, doneCount, totalCount, note)
 	}
 
 	static fromEntity(obj: RoutineTodoListItemEntity): RoutineTodoListItemRequest {
-		return new RoutineTodoListItemRequest(obj.activity.id, obj.timePeriod.id, obj.doneCount, obj.totalCount, obj.isDone, obj.note);
+		return new RoutineTodoListItemRequest(
+			obj.activity.id,
+			obj.timePeriod.id,
+			obj.doneCount,
+			obj.totalCount,
+			obj.isDone,
+			obj.note,
+		)
 	}
 }

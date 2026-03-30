@@ -1,5 +1,5 @@
-import type {PatternMatchType} from '@/dtos/enum/PatternMatchType.ts';
-import {ActivityFilterFormResponse} from '@/dtos/response/activity/ActivityFilterFormResponse.ts';
+import type { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import { ActivityFilterFormResponse } from '@/dtos/response/activity/ActivityFilterFormResponse.ts'
 
 export class TrackerDesktopMappingResponse {
 	constructor(
@@ -15,8 +15,7 @@ export class TrackerDesktopMappingResponse {
 		public activity: ActivityFilterFormResponse | null,
 		// public roleId: number | null,
 		// public categoryId: number | null,
-	) {
-	}
+	) {}
 
 	static fromJson(json: any): TrackerDesktopMappingResponse {
 		return new TrackerDesktopMappingResponse(
@@ -32,6 +31,6 @@ export class TrackerDesktopMappingResponse {
 			ActivityFilterFormResponse.fromJson(json.activity),
 			// json.roleId,
 			// json.categoryId,
-		);
+		)
 	}
 }

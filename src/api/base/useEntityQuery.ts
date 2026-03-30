@@ -1,16 +1,14 @@
-import {ref} from 'vue'
-import {SelectOption} from '@/dtos/response/general/SelectOption.ts';
-import {API} from '@/plugins/axiosConfig.ts';
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
+import { ref } from 'vue'
+import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+import { API } from '@/plugins/axiosConfig.ts'
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 
 export interface QueryConfig<TResponse> {
 	entityName: string
 	responseClass: IMyResponse & { fromJson(json: any): TResponse }
 }
 
-export function useEntityQuery<TResponse>(
-	config: QueryConfig<TResponse>
-) {
+export function useEntityQuery<TResponse>(config: QueryConfig<TResponse>) {
 	const loading = ref(false)
 	const error = ref<string | null>(null)
 
@@ -19,8 +17,7 @@ export function useEntityQuery<TResponse>(
 		error.value = null
 		try {
 			const response = await API.get(`${config.entityName}/${id}`)
-			const entity = config.responseClass.fromJson(response.data)
-			return entity
+			return config.responseClass.fromJson(response.data)
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch ${config.entityName} with ID ${id}`
 			console.error(`Error fetching ${config.entityName} with ID ${id}:`, e)
@@ -35,8 +32,7 @@ export function useEntityQuery<TResponse>(
 		error.value = null
 		try {
 			const response = await API.get(`${config.entityName}/by-${fieldTitle}/${fieldValue}`)
-			const entity = config.responseClass.fromJson(response.data)
-			return entity
+			return config.responseClass.fromJson(response.data)
 		} catch (e: any) {
 			error.value = e.message || `Failed to fetch ${config.entityName} by ${fieldTitle}: ${fieldValue}`
 			console.error(`Error fetching ${config.entityName} by ${fieldTitle}: ${fieldValue}:`, e)
@@ -82,6 +78,6 @@ export function useEntityQuery<TResponse>(
 		fetchById,
 		fetchByField,
 		fetchAll,
-		fetchSelectOptions
+		fetchSelectOptions,
 	}
 }

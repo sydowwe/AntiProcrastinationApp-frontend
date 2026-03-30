@@ -1,2 +1,1 @@
-export interface IFilterRequest {
-}
+export type IFilterRequest = object

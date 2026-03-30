@@ -1,6 +1,6 @@
-import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
-import type {Calendar} from '@/dtos/response/activityPlanning/Calendar.ts'
-import {DayOfWeek} from '@/dtos/enum/DayOfWeek.ts'
+import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
+import { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
 
 const DAY_INDEX_TO_DAY_OF_WEEK: Record<number, DayOfWeek> = {
 	1: DayOfWeek.Monday,
@@ -29,15 +29,19 @@ function scoreTemplate(template: TaskPlannerDayTemplate, calendar: Calendar): nu
 }
 
 export function useTemplateSuggestion() {
-	function getSuggestions(templates: TaskPlannerDayTemplate[], calendar: Calendar, limit = 2): TaskPlannerDayTemplate[] {
+	function getSuggestions(
+		templates: TaskPlannerDayTemplate[],
+		calendar: Calendar,
+		limit = 2,
+	): TaskPlannerDayTemplate[] {
 		const active = templates.filter(t => t.isActive)
 		return active
-			.map(t => ({template: t, score: scoreTemplate(t, calendar)}))
-			.filter(({score}) => score > 0)
+			.map(t => ({ template: t, score: scoreTemplate(t, calendar) }))
+			.filter(({ score }) => score > 0)
 			.sort((a, b) => b.score - a.score)
 			.slice(0, limit)
-			.map(({template}) => template)
+			.map(({ template }) => template)
 	}
 
-	return {getSuggestions}
+	return { getSuggestions }
 }

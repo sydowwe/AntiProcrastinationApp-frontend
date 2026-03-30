@@ -1,4 +1,4 @@
-import {LoginRequest} from './LoginRequest.ts';
+import { LoginRequest } from './LoginRequest.ts'
 
 export class PasswordSignInRequest extends LoginRequest {
 	constructor(
@@ -8,6 +8,6 @@ export class PasswordSignInRequest extends LoginRequest {
 		public email: string = '',
 		public password: string = '',
 	) {
-		super(stayLoggedIn, recaptchaToken, timezone);
+		super(stayLoggedIn, recaptchaToken, timezone)
 	}
 }

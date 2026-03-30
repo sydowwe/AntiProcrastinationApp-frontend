@@ -5,9 +5,8 @@ export class DomainPieData {
 		public backgroundSeconds: number,
 		public totalSeconds: number,
 		public pages: string[],
-		public entries: number
-	) {
-	}
+		public entries: number,
+	) {}
 
 	static fromJson(json: any): DomainPieData {
 		return new DomainPieData(
@@ -16,7 +15,7 @@ export class DomainPieData {
 			json.backgroundSeconds,
 			json.totalSeconds,
 			json.pages,
-			json.entries
-		);
+			json.entries,
+		)
 	}
 }

@@ -1,41 +1,39 @@
 <template>
-<div class="d-flex flex-1-1 ga-1">
-	<slot></slot>
-	<VIconBtn v-if="showBtn" :icon :color :variant @click="emit('create')" :height="btnHeight"></VIconBtn>
-</div>
+	<div class="d-flex flex-1-1 ga-1">
+		<slot></slot>
+		<VIconBtn
+			v-if="showBtn"
+			:icon
+			:color
+			:variant
+			:height="btnHeight"
+			@click="emit('create')"
+		></VIconBtn>
+	</div>
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue';
+	import { computed } from 'vue'
 
-const props = defineProps({
-	showBtn: {
-		type: Boolean,
-		default: true
-	},
-	icon: {
-		type: String,
-		required: true,
-	},
-	color: {
-		type: String,
-		required: true,
-	},
-	variant: {
-		type: String as () => "text" | "flat" | "tonal" | "elevated" | "outlined" | "plain" | undefined,
-		default: 'tonal',
-	},
-	density: {
-		type: String as () => "default" | "comfortable" | "compact" | undefined,
-		default: 'comfortable',
-	}
-});
+	const props = withDefaults(
+		defineProps<{
+			showBtn: boolean
+			icon: string
+			color: string
+			variant?: 'text' | 'flat' | 'tonal' | 'elevated' | 'outlined' | 'plain' | undefined
+			density?: 'default' | 'comfortable' | 'compact' | undefined
+		}>(),
+		{
+			variant: 'tonal',
+			density: 'comfortable',
+		},
+	)
 
-const btnHeight = computed(() => (props.density === 'compact' ? '40px' : '48px'));
+	const emit = defineEmits<{
+		create: []
+	}>()
 
-const emit = defineEmits(['create']);
+	const btnHeight = computed(() => (props.density === 'compact' ? '40px' : '48px'))
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

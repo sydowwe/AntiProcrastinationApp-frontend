@@ -1,7 +1,7 @@
-import {CalendarActivityRoleSummary} from '@/dtos/response/historyDashboard/CalendarActivityRoleSummary.ts'
-import {DayType} from '@/dtos/enum/DayType.ts'
-import {convertToEnum} from '@/composables/general/EnumComposable.ts'
-import {Time} from '@/dtos/dto/Time.ts'
+import { CalendarActivityRoleSummary } from '@/dtos/response/historyDashboard/CalendarActivityRoleSummary.ts'
+import { DayType } from '@/dtos/enum/DayType.ts'
+import { convertToEnum } from '@/composables/general/EnumComposable.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 
 export class CalendarActivityDaySummary {
 	constructor(
@@ -16,8 +16,7 @@ export class CalendarActivityDaySummary {
 		public readonly totalSeconds: number,
 		public readonly sessionCount: number,
 		public readonly topRoles: CalendarActivityRoleSummary[],
-	) {
-	}
+	) {}
 
 	get isToday() {
 		return this.date === new Date().toISOString().slice(0, 10)

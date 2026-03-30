@@ -1,7 +1,7 @@
-import {Activity} from '@/dtos/response/activity/Activity.ts';
-import {TaskPriority} from '@/dtos/response/activityPlanning/TaskPriority.ts';
-import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
-import {Time} from '@/dtos/dto/Time.ts';
+import { Activity } from '@/dtos/response/activity/Activity.ts'
+import { TaskPriority } from '@/dtos/response/activityPlanning/TaskPriority.ts'
+import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 
 export class TodoListItemEntity implements IBaseToDoListItem {
 	constructor(
@@ -14,11 +14,10 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		public dueDate: string | null = null,
 		public dueTime: Time | null = null,
 		public note: string | null = null,
-	) {
-	}
+	) {}
 
 	get isMultipleCount() {
-		return !!this.totalCount && this.totalCount !== 1;
+		return !!this.totalCount && this.totalCount !== 1
 	}
 
 	static fromJson(json: any) {
@@ -32,17 +31,17 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.dueDate ?? null,
 			json.dueTime ? Time.fromJson(json.dueTime) : null,
 			json.note ?? null,
-		);
+		)
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
 
 	static frontEndSortFunction() {
 		return (a: TodoListItemEntity, b: TodoListItemEntity) => {
-			const priorityComparison = a.taskPriority.priority - b.taskPriority.priority;
-			return priorityComparison !== 0 ? priorityComparison : a.id - b.id;
-		};
+			const priorityComparison = a.taskPriority.priority - b.taskPriority.priority
+			return priorityComparison !== 0 ? priorityComparison : a.id - b.id
+		}
 	}
 }

@@ -1,4 +1,4 @@
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 
 export class TodoListCategoryEntity implements IMyResponse {
 	constructor(
@@ -10,7 +10,13 @@ export class TodoListCategoryEntity implements IMyResponse {
 	) {}
 
 	static fromJson(json: any) {
-		return new TodoListCategoryEntity(json.id, json.name, json.icon ?? null, json.color ?? null, json.listCount ?? null)
+		return new TodoListCategoryEntity(
+			json.id,
+			json.name,
+			json.icon ?? null,
+			json.color ?? null,
+			json.listCount ?? null,
+		)
 	}
 
 	static listFromObjects(objects: any[]) {

@@ -3,6 +3,8 @@ import pluginVue from 'eslint-plugin-vue'
 import vuePrettierConfig from '@vue/eslint-config-prettier'
 
 export default defineConfigWithVueTs(
+	{ ignores: ['dist/**', 'node_modules/**', 'public/**', '*.min.js', 'src/assets/**'] },
+
 	pluginVue.configs['flat/recommended'],
 	vueTsConfigs.recommended,
 
@@ -13,7 +15,10 @@ export default defineConfigWithVueTs(
 			'vue/v-on-event-hyphenation': ['error', 'never'],
 			'vue/component-name-in-template-casing': ['error', 'PascalCase'],
 			'vue/block-order': ['error', { order: ['template', 'script', 'style'] }],
-			'vue/define-macros-order': ['error', { order: ['defineProps', 'defineEmits', 'defineModel', 'defineSlots'] }],
+			'vue/define-macros-order': [
+				'error',
+				{ order: ['defineProps', 'defineEmits', 'defineModel', 'defineSlots'] },
+			],
 			'vue/no-unused-refs': 'warn',
 			'vue/prop-name-casing': ['error', 'camelCase'],
 			'vue/define-emits-declaration': ['error', 'type-based'],
@@ -21,7 +26,7 @@ export default defineConfigWithVueTs(
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 			'@typescript-eslint/no-unused-expressions': 'warn',
-			'no-console': 'warn',
+			'no-console': ['off', { allow: ['error', 'warn'] }],
 			'prefer-const': 'warn',
 		},
 	},

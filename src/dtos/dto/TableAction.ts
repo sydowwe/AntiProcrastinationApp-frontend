@@ -3,9 +3,8 @@ export class TableAction {
 		public name: string,
 		public text: string,
 		public color: string,
-		public variant: "text" | "flat" | "outlined" | "tonal" | "elevated" | "plain" | undefined,
+		public variant: 'text' | 'flat' | 'outlined' | 'tonal' | 'elevated' | 'plain' | undefined,
 		public icon: string,
-		public onClick: Function
-	) {
-	}
+		public onClick: (item: any) => void,
+	) {}
 }

@@ -1,470 +1,485 @@
 <!-- TasksColumn.vue -->
 <template>
-<div
-	ref="tasksColumnRef"
-	class="tasks-column"
-	:style="{ gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)` }"
-	@pointerdown="handlePointerDown"
-	@pointermove="handlePointerMove"
->
-	<!-- Time Slots with hover effect -->
 	<div
-		v-for="(slot, index) in store.timeSlots"
-		:key="index"
-		:class="['task-slot', { 'hoverable': !localCreationPreview && !store.isDraggingAny }]"
-		:data-slot-index="index"
-	/>
+		ref="tasksColumnRef"
+		class="tasks-column"
+		:style="{ gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)` }"
+		@pointerdown="handlePointerDown"
+		@pointermove="handlePointerMove"
+	>
+		<!-- Time Slots with hover effect -->
+		<div
+			v-for="(slot, index) in store.timeSlots"
+			:key="index"
+			:class="['task-slot', { hoverable: !localCreationPreview && !store.isDraggingAny }]"
+			:data-slot-index="index"
+		/>
 
-	<!-- Midnight divider -->
-	<div
-		v-if="store.isOverMidnight"
-		class="midnight-divider-tasks"
-		:style="{ top: `${store.timeToSlotIndex(new Time(0,0)) * SLOT_HEIGHT}px` }"
-	/>
+		<!-- Midnight divider -->
+		<div
+			v-if="store.isOverMidnight"
+			class="midnight-divider-tasks"
+			:style="{ top: `${store.timeToSlotIndex(new Time(0, 0)) * SLOT_HEIGHT}px` }"
+		/>
 
-	<div
-		v-if="isVisible"
-		class="current-time-indicator"
-		:style="gridRowStyle"
-	/>
+		<div
+			v-if="isVisible"
+			class="current-time-indicator"
+			:style="gridRowStyle"
+		/>
 
-	<!-- Creation Preview -->
-	<CreationPreview
-		v-show="localCreationPreview"
-		:preview="localCreationPreview"
-	/>
+		<!-- Creation Preview -->
+		<CreationPreview
+			v-show="localCreationPreview"
+			:preview="localCreationPreview"
+		/>
 
-	<slot name="task-block" v-for="task in store.tasks" :key="task.id" :task="task" :onResizeStart="handleResizeStart">
-
-	</slot>
-</div>
+		<slot
+			v-for="task in store.tasks"
+			:key="task.id"
+			name="task-block"
+			:task="task"
+			:onResizeStart="handleResizeStart"
+		></slot>
+	</div>
 </template>
 
-<script setup lang="ts"
-        generic="TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest, TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>">
-import {computed, inject, nextTick, onMounted, ref} from 'vue'
-import CreationPreview from './misc/CreationPreview.vue'
-import {useAutoScroll} from '@/composables/general/useAutoScroll.ts';
-import {useCurrentTimeIndicator} from '@/composables/dayPlanner/useCurrentTimeIndicator.ts';
-import {CreationPreviewType, SLOT_HEIGHT} from '@/components/dayPlanner/DayPlannerTypes.ts';
-import {type IBasePlannerTask, TaskSpan} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts';
-import type {IBaseDayPlannerStore} from '@/stores/dayPlanner/IBaseDayPlannerStore.ts';
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts';
-import {useUndoStack} from '@/composables/general/useUndoStack.ts';
-import {useCurrentTime} from '@/composables/general/useCurrentTime.ts';
-import {Time} from '@/dtos/dto/Time.ts';
+<script
+	setup
+	lang="ts"
+	generic="
+		TTask extends IBasePlannerTask<TTaskRequest>,
+		TTaskRequest extends IBasePlannerTaskRequest,
+		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
+	"
+>
+	import { computed, inject, nextTick, onMounted, ref } from 'vue'
+	import CreationPreview from './misc/CreationPreview.vue'
+	import { useAutoScroll } from '@/composables/general/useAutoScroll.ts'
+	import { useCurrentTimeIndicator } from '@/composables/dayPlanner/useCurrentTimeIndicator.ts'
+	import { CreationPreviewType, SLOT_HEIGHT } from '@/components/dayPlanner/DayPlannerTypes.ts'
+	import { type IBasePlannerTask, TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
+	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
+	import { Time } from '@/dtos/dto/Time.ts'
 
-const {showErrorSnackbar} = useSnackbar()
-const undoStack = useUndoStack()
-// Inject the store from parent DayPlanner component
-const store = inject<TStore>('plannerStore')!
+	const { showErrorSnackbar } = useSnackbar()
+	const undoStack = useUndoStack()
+	// Inject the store from parent DayPlanner component
+	const store = inject<TStore>('plannerStore')!
 
-const tasksColumnRef = ref<HTMLElement | undefined>(undefined)
-const calendarGrid = computed(() => tasksColumnRef.value?.parentElement as HTMLElement)
-const {handleAutoScroll, stopAutoScroll} = useAutoScroll(calendarGrid)
-const {isVisible, gridRowStyle} = useCurrentTimeIndicator(store)
-const {currentTime} = useCurrentTime()
+	const tasksColumnRef = ref<HTMLElement | undefined>(undefined)
+	const calendarGrid = computed(() => tasksColumnRef.value?.parentElement as HTMLElement)
+	const { handleAutoScroll, stopAutoScroll } = useAutoScroll(calendarGrid)
+	const { isVisible, gridRowStyle } = useCurrentTimeIndicator(store)
+	const { currentTime } = useCurrentTime()
 
-// Local creation state for preview rendering
-const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
+	// Local creation state for preview rendering
+	const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
 
-// Drag state (local to TasksColumn - not needed in TaskBlock)
-const originalTaskState = ref<TTask | null>(null)
-const dragStartSlot = ref<number | null>(null)
-const dragOffset = ref<number>(0)
+	// Drag state (local to TasksColumn - not needed in TaskBlock)
+	const originalTaskState = ref<TTask | null>(null)
+	const dragStartSlot = ref<number | null>(null)
+	const dragOffset = ref<number>(0)
 
-// Resize state (local to TasksColumn - not needed in TaskBlock)
-const resizeStartSlot = ref<number | null>(null)
-const resizeDirection = ref<'top' | 'bottom' | null>(null)
+	// Resize state (local to TasksColumn - not needed in TaskBlock)
+	const resizeStartSlot = ref<number | null>(null)
+	const resizeDirection = ref<'top' | 'bottom' | null>(null)
 
-// Movement tracking to distinguish clicks from drags
-const MOVEMENT_THRESHOLD = 5 // pixels
-const pointerStartPos = ref<{ x: number; y: number } | null>(null)
-const hasMovedBeyondThreshold = ref(false)
+	// Movement tracking to distinguish clicks from drags
+	const MOVEMENT_THRESHOLD = 5 // pixels
+	const pointerStartPos = ref<{ x: number; y: number } | null>(null)
+	const hasMovedBeyondThreshold = ref(false)
 
-// Double-click detection
-const DOUBLE_CLICK_DELAY = 300 // ms
-const clickTimer = ref<number | null>(null)
-const lastClickedTaskId = ref<number | null>(null)
+	// Double-click detection
+	const DOUBLE_CLICK_DELAY = 300 // ms
+	const clickTimer = ref<number | null>(null)
+	const lastClickedTaskId = ref<number | null>(null)
 
-// Helper functions
-function getSlotIndexFromPosition(y: number): number {
-	if (!tasksColumnRef.value) return 0
+	// Helper functions
+	function getSlotIndexFromPosition(y: number): number {
+		if (!tasksColumnRef.value) return 0
 
-	const rect = tasksColumnRef.value.getBoundingClientRect()
-	const relativeY = y - rect.top
+		const rect = tasksColumnRef.value.getBoundingClientRect()
+		const relativeY = y - rect.top
 
-	return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / SLOT_HEIGHT)))
-}
+		return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / SLOT_HEIGHT)))
+	}
 
-function checkTaskConflictByRow(newStartRow: number, newEndRow: number, taskId?: number): boolean {
-	return store.tasks.some(task => {
-		if (taskId !== undefined && (taskId ^ task.id) < 0) // XOR so template doesn't check conflict with normal
-			return false
-		if (task.id === taskId || task.isBackground) return false
-		return !(newEndRow <= task.gridRowStart || newStartRow >= task.gridRowEnd)
-	})
-}
+	function checkTaskConflictByRow(newStartRow: number, newEndRow: number, taskId?: number): boolean {
+		return store.tasks.some(task => {
+			if (taskId !== undefined && (taskId ^ task.id) < 0)
+				// XOR so template doesn't check conflict with normal
+				return false
+			if (task.id === taskId || task.isBackground) return false
+			return !(newEndRow <= task.gridRowStart || newStartRow >= task.gridRowEnd)
+		})
+	}
 
-function handleResizeStart(payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }): void {
-	const task = store.tasks.find(ev => ev.id === payload.taskId)
-	if (!task) return
-
-	store.resizingTaskId = payload.taskId
-	resizeDirection.value = payload.direction
-	resizeStartSlot.value = task.gridRowStart - 1
-
-	// Track starting position for movement threshold
-	pointerStartPos.value = {x: payload.pointerEvent.clientX, y: payload.pointerEvent.clientY}
-	hasMovedBeyondThreshold.value = false
-	originalTaskState.value = {...task}
-
-	payload.pointerEvent.preventDefault()
-	payload.pointerEvent.stopPropagation()
-}
-
-function handlePointerDown(e: PointerEvent): void {
-	const target = e.target as HTMLElement
-
-	// Check if clicking on a resize handle (handled by TaskBlock)
-	if (target.closest('.resize-handle')) return
-
-	if (target.closest('.v-checkbox.task-checkbox')) return
-
-
-	// Check if clicking on an task to potentially drag it
-	const taskBlock = target.closest('.base-task-block') as HTMLElement
-	if (taskBlock) {
-		const taskId = parseInt(taskBlock.dataset.taskId || '0')
-		const task = store.tasks.find(ev => ev.id === taskId)
-
+	function handleResizeStart(payload: {
+		taskId: number
+		direction: 'top' | 'bottom'
+		pointerEvent: PointerEvent
+	}): void {
+		const task = store.tasks.find(ev => ev.id === payload.taskId)
 		if (!task) return
 
-		// Track starting position but don't start dragging yet
-		pointerStartPos.value = {x: e.clientX, y: e.clientY}
+		store.resizingTaskId = payload.taskId
+		resizeDirection.value = payload.direction
+		resizeStartSlot.value = task.gridRowStart - 1
+
+		// Track starting position for movement threshold
+		pointerStartPos.value = { x: payload.pointerEvent.clientX, y: payload.pointerEvent.clientY }
 		hasMovedBeyondThreshold.value = false
+		originalTaskState.value = { ...task }
 
-		// Prepare for potential drag
-		store.draggingTaskId = taskId
-		originalTaskState.value = {...task}
-		const slotIndex = getSlotIndexFromPosition(e.clientY)
-		dragStartSlot.value = slotIndex
-		dragOffset.value = slotIndex - (task.gridRowStart - 1)
-		console.log('aa')
-
-		return
+		payload.pointerEvent.preventDefault()
+		payload.pointerEvent.stopPropagation()
 	}
 
-	// Start creating if clicking on empty space (only when no items selected)
-	if (target.closest('.task-block'))
-		return
-	if (target.closest('.current-time-indicator'))
-		return
-	if (!store.canCreate)
-		return
+	function handlePointerDown(e: PointerEvent): void {
+		const target = e.target as HTMLElement
 
+		// Check if clicking on a resize handle (handled by TaskBlock)
+		if (target.closest('.resize-handle')) return
 
-	const slotIndex = getSlotIndexFromPosition(e.clientY)
+		if (target.closest('.v-checkbox.task-checkbox')) return
 
-	localCreationPreview.value = CreationPreviewType.init(slotIndex + 1);
-	e.preventDefault()
-}
+		// Check if clicking on an task to potentially drag it
+		const taskBlock = target.closest('.base-task-block') as HTMLElement
+		if (taskBlock) {
+			const taskId = parseInt(taskBlock.dataset.taskId || '0')
+			const task = store.tasks.find(ev => ev.id === taskId)
 
-function handlePointerMove(e: PointerEvent): void {
-	// Check if we've moved beyond threshold
-	if (pointerStartPos.value && !hasMovedBeyondThreshold.value) {
-		const dx = e.clientX - pointerStartPos.value.x
-		const dy = e.clientY - pointerStartPos.value.y
-		const distance = Math.sqrt(dx * dx + dy * dy)
+			if (!task) return
 
-		if (distance > MOVEMENT_THRESHOLD) {
-			hasMovedBeyondThreshold.value = true
+			// Track starting position but don't start dragging yet
+			pointerStartPos.value = { x: e.clientX, y: e.clientY }
+			hasMovedBeyondThreshold.value = false
+
+			// Prepare for potential drag
+			store.draggingTaskId = taskId
+			originalTaskState.value = { ...task }
+			const slotIndex = getSlotIndexFromPosition(e.clientY)
+			dragStartSlot.value = slotIndex
+			dragOffset.value = slotIndex - (task.gridRowStart - 1)
+			console.log('aa')
+
+			return
 		}
+
+		// Start creating if clicking on empty space (only when no items selected)
+		if (target.closest('.task-block')) return
+		if (target.closest('.current-time-indicator')) return
+		if (!store.canCreate) return
+
+		const slotIndex = getSlotIndexFromPosition(e.clientY)
+
+		localCreationPreview.value = CreationPreviewType.init(slotIndex + 1)
+		e.preventDefault()
 	}
 
-	// Handle dragging (only if moved beyond threshold)
-	if (store.draggingTaskId !== null && dragStartSlot.value !== null && originalTaskState.value) {
-		// Only actually drag if we've moved beyond threshold
-		if (!hasMovedBeyondThreshold.value) return
+	function handlePointerMove(e: PointerEvent): void {
+		// Check if we've moved beyond threshold
+		if (pointerStartPos.value && !hasMovedBeyondThreshold.value) {
+			const dx = e.clientX - pointerStartPos.value.x
+			const dy = e.clientY - pointerStartPos.value.y
+			const distance = Math.sqrt(dx * dx + dy * dy)
 
-		handleAutoScroll(e.clientY)
+			if (distance > MOVEMENT_THRESHOLD) {
+				hasMovedBeyondThreshold.value = true
+			}
+		}
 
-		const currentSlot = getSlotIndexFromPosition(e.clientY)
-		const task = store.tasks.find(ev => ev.id === store.draggingTaskId)
-		if (!task || task.isBackground) return
+		// Handle dragging (only if moved beyond threshold)
+		if (store.draggingTaskId !== null && dragStartSlot.value !== null && originalTaskState.value) {
+			// Only actually drag if we've moved beyond threshold
+			if (!hasMovedBeyondThreshold.value) return
 
-		const taskDuration = originalTaskState.value.gridRowEnd - originalTaskState.value.gridRowStart
-		const newStartRow = currentSlot - dragOffset.value + 1
-		const newEndRow = newStartRow + taskDuration
+			handleAutoScroll(e.clientY)
 
-		const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows + 1
-		const hasConflict = checkTaskConflictByRow(newStartRow, newEndRow, store.draggingTaskId)
+			const currentSlot = getSlotIndexFromPosition(e.clientY)
+			const task = store.tasks.find(ev => ev.id === store.draggingTaskId)
+			if (!task || task.isBackground) return
 
-		store.dragConflict = hasConflict || !fitsInView
+			const taskDuration = originalTaskState.value.gridRowEnd - originalTaskState.value.gridRowStart
+			const newStartRow = currentSlot - dragOffset.value + 1
+			const newEndRow = newStartRow + taskDuration
 
-		store.redrawTask(store.draggingTaskId,
-			{
+			const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows + 1
+			const hasConflict = checkTaskConflictByRow(newStartRow, newEndRow, store.draggingTaskId)
+
+			store.dragConflict = hasConflict || !fitsInView
+
+			store.redrawTask(store.draggingTaskId, {
 				startTime: store.slotIndexToTime(newStartRow - 1),
 				endTime: store.slotIndexToTime(newEndRow - 1),
 				gridRowStart: newStartRow,
-				gridRowEnd: newEndRow
-			} as Partial<TTask>
-		)
-		return
-	}
+				gridRowEnd: newEndRow,
+			} as Partial<TTask>)
+			return
+		}
 
-	// Handle resizing (only if moved beyond threshold)
-	if (store.resizingTaskId !== null && resizeDirection.value) {
-		// Only actually resize if we've moved beyond threshold
-		if (!hasMovedBeyondThreshold.value) return
+		// Handle resizing (only if moved beyond threshold)
+		if (store.resizingTaskId !== null && resizeDirection.value) {
+			// Only actually resize if we've moved beyond threshold
+			if (!hasMovedBeyondThreshold.value) return
+
+			const slotIndex = getSlotIndexFromPosition(e.clientY)
+			const task = store.tasks.find(ev => ev.id === store.resizingTaskId)
+			if (!task) return
+
+			if (resizeDirection.value === 'top') {
+				const newStartRow = slotIndex + 1
+				if (
+					newStartRow <= task.gridRowEnd &&
+					!checkTaskConflictByRow(newStartRow, task.gridRowEnd, store.resizingTaskId)
+				) {
+					store.redrawTask(store.resizingTaskId, {
+						gridRowStart: newStartRow,
+						startTime: store.slotIndexToTime(newStartRow - 1),
+					} as Partial<TTask>)
+				}
+			} else if (resizeDirection.value === 'bottom') {
+				const newEndRow = slotIndex + 2
+				if (
+					newEndRow >= task.gridRowStart &&
+					!checkTaskConflictByRow(task.gridRowStart, newEndRow, store.resizingTaskId)
+				) {
+					store.redrawTask(store.resizingTaskId, {
+						gridRowEnd: newEndRow,
+						endTime: store.slotIndexToTime(newEndRow - 1),
+					} as Partial<TTask>)
+				}
+			}
+			return
+		}
+
+		// Handle creation
+		if (!localCreationPreview.value) return
 
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
-		const task = store.tasks.find(ev => ev.id === store.resizingTaskId)
-		if (!task) return
 
-		if (resizeDirection.value === 'top') {
+		if (slotIndex >= localCreationPreview.value.initRow - 1) {
+			// Dragging down
+			const newEndRow = slotIndex + 1
+			if (!checkTaskConflictByRow(localCreationPreview.value.startRow, newEndRow)) {
+				localCreationPreview.value.endRow = newEndRow
+			}
+		} else {
+			// Dragging up
 			const newStartRow = slotIndex + 1
-			if (newStartRow <= task.gridRowEnd && !checkTaskConflictByRow(newStartRow, task.gridRowEnd, store.resizingTaskId)) {
-				store.redrawTask(
-					store.resizingTaskId,
-					{
-						gridRowStart: newStartRow,
-						startTime: store.slotIndexToTime(newStartRow - 1)
-					} as Partial<TTask>
-				)
-			}
-		} else if (resizeDirection.value === 'bottom') {
-			const newEndRow = slotIndex + 2
-			if (newEndRow >= task.gridRowStart && !checkTaskConflictByRow(task.gridRowStart, newEndRow, store.resizingTaskId)) {
-				store.redrawTask(
-					store.resizingTaskId,
-					{
-						gridRowEnd: newEndRow,
-						endTime: store.slotIndexToTime(newEndRow - 1)
-					} as Partial<TTask>
-				)
+			if (!checkTaskConflictByRow(newStartRow, localCreationPreview.value.endRow)) {
+				localCreationPreview.value.startRow = newStartRow
 			}
 		}
-		return
 	}
 
-	// Handle creation
-	if (!localCreationPreview.value) return
+	function handlePointerUp(): void {
+		stopAutoScroll()
 
-	const slotIndex = getSlotIndexFromPosition(e.clientY)
+		// Handle drag end
+		if (store.draggingTaskId !== null && originalTaskState.value) {
+			const task = store.tasks.find(ev => ev.id === store.draggingTaskId)
 
-	if (slotIndex >= localCreationPreview.value.initRow - 1) {
-		// Dragging down
-		const newEndRow = slotIndex + 1
-		if (!checkTaskConflictByRow(localCreationPreview.value.startRow, newEndRow)) {
-			localCreationPreview.value.endRow = newEndRow
-		}
-	} else {
-		// Dragging up
-		const newStartRow = slotIndex + 1
-		if (!checkTaskConflictByRow(newStartRow, localCreationPreview.value.endRow)) {
-			localCreationPreview.value.startRow = newStartRow
-		}
-	}
-}
+			// Check if actual movement occurred
+			const didMove =
+				hasMovedBeyondThreshold.value &&
+				task &&
+				(task.gridRowStart !== originalTaskState.value.gridRowStart ||
+					task.gridRowEnd !== originalTaskState.value.gridRowEnd)
 
-function handlePointerUp(): void {
-	stopAutoScroll()
-
-	// Handle drag end
-	if (store.draggingTaskId !== null && originalTaskState.value) {
-		const task = store.tasks.find(ev => ev.id === store.draggingTaskId)
-
-		// Check if actual movement occurred
-		const didMove = hasMovedBeyondThreshold.value && task &&
-			(task.gridRowStart !== originalTaskState.value.gridRowStart ||
-				task.gridRowEnd !== originalTaskState.value.gridRowEnd)
-
-		if (didMove) {
-			// Handle actual drag - update task position
-			if (task && (store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows)) {
-				// Revert to original position
-				store.redrawTask(store.draggingTaskId, originalTaskState.value)
-				showErrorSnackbar('Task cannot be dragged outside of the grid')
+			if (didMove) {
+				// Handle actual drag - update task position
+				if (task && (store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows)) {
+					// Revert to original position
+					store.redrawTask(store.draggingTaskId, originalTaskState.value)
+					showErrorSnackbar('Task cannot be dragged outside of the grid')
+				} else {
+					// Update the task span
+					const capturedOriginal = { ...originalTaskState.value } as TTask
+					const capturedId = task.id
+					store
+						.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+						.then(() => {
+							undoStack.push({
+								description: 'Task moved',
+								undo: async () => {
+									store.redrawTask(capturedId, capturedOriginal)
+									await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
+								},
+							})
+						})
+						.catch(() => {
+							store.redrawTask(store.draggingTaskId!, originalTaskState.value)
+						})
+						.finally(() => {
+							;(document.activeElement as HTMLElement).blur()
+						})
+				}
 			} else {
-				// Update the task span
-				const capturedOriginal = {...originalTaskState.value} as TTask
-				const capturedId = task.id
-				store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+				// No movement - it was just a click
+				const clickedTaskId = store.draggingTaskId
+
+				// Check if this is a double-click (click on same task within delay)
+				if (clickTimer.value !== null && lastClickedTaskId.value === clickedTaskId) {
+					// Double-click detected - cancel the pending selection toggle
+					clearTimeout(clickTimer.value)
+					clickTimer.value = null
+					lastClickedTaskId.value = null
+
+					store.openEditDialog()
+					store.toggleTaskSelection(clickedTaskId)
+				} else {
+					// Potential first click - delay selection toggle to detect double-click
+					if (clickTimer.value !== null) {
+						clearTimeout(clickTimer.value)
+					}
+					store.toggleTaskSelection(clickedTaskId)
+
+					lastClickedTaskId.value = clickedTaskId
+
+					// Set timer to toggle selection after delay (if no second click comes)
+					clickTimer.value = window.setTimeout(() => {
+						clickTimer.value = null
+						lastClickedTaskId.value = null
+					}, DOUBLE_CLICK_DELAY)
+				}
+			}
+
+			// Reset drag state
+			store.draggingTaskId = null
+			dragStartSlot.value = null
+			dragOffset.value = 0
+			store.dragConflict = false
+			originalTaskState.value = null
+			pointerStartPos.value = null
+			hasMovedBeyondThreshold.value = false
+			return
+		}
+
+		// Handle resize end
+		if (store.resizingTaskId !== null) {
+			const task = store.tasks.find(ev => ev.id === store.resizingTaskId)
+
+			// Check if actual movement occurred
+			const didMove =
+				hasMovedBeyondThreshold.value &&
+				task &&
+				originalTaskState.value &&
+				(task.gridRowStart !== originalTaskState.value.gridRowStart ||
+					task.gridRowEnd !== originalTaskState.value.gridRowEnd)
+
+			if (didMove) {
+				// Handle actual resize - update task span
+				const capturedOriginal = { ...originalTaskState.value } as TTask
+				const capturedId = store.resizingTaskId!
+				store
+					.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task!))
 					.then(() => {
 						undoStack.push({
-							description: 'Task moved',
+							description: 'Task resized',
 							undo: async () => {
 								store.redrawTask(capturedId, capturedOriginal)
 								await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
-							}
+							},
 						})
 					})
 					.catch(() => {
-						store.redrawTask(store.draggingTaskId!, originalTaskState.value)
-					}).finally(() => {
-					(document.activeElement as HTMLElement).blur()
-				})
-			}
-		} else {
-			// No movement - it was just a click
-			const clickedTaskId = store.draggingTaskId
-
-
-			// Check if this is a double-click (click on same task within delay)
-			if (clickTimer.value !== null && lastClickedTaskId.value === clickedTaskId) {
-				// Double-click detected - cancel the pending selection toggle
-				clearTimeout(clickTimer.value)
-				clickTimer.value = null
-				lastClickedTaskId.value = null
-
-				store.openEditDialog()
-				store.toggleTaskSelection(clickedTaskId)
-
-			} else {
-				// Potential first click - delay selection toggle to detect double-click
-				if (clickTimer.value !== null) {
-					clearTimeout(clickTimer.value)
-				}
-				store.toggleTaskSelection(clickedTaskId)
-
-				lastClickedTaskId.value = clickedTaskId
-
-				// Set timer to toggle selection after delay (if no second click comes)
-				clickTimer.value = window.setTimeout(() => {
-					clickTimer.value = null
-					lastClickedTaskId.value = null
-				}, DOUBLE_CLICK_DELAY)
-			}
-		}
-
-		// Reset drag state
-		store.draggingTaskId = null
-		dragStartSlot.value = null
-		dragOffset.value = 0
-		store.dragConflict = false
-		originalTaskState.value = null
-		pointerStartPos.value = null
-		hasMovedBeyondThreshold.value = false
-		return
-	}
-
-	// Handle resize end
-	if (store.resizingTaskId !== null) {
-		const task = store.tasks.find(ev => ev.id === store.resizingTaskId)
-
-		// Check if actual movement occurred
-		const didMove = hasMovedBeyondThreshold.value && task && originalTaskState.value &&
-			(task.gridRowStart !== originalTaskState.value.gridRowStart ||
-				task.gridRowEnd !== originalTaskState.value.gridRowEnd)
-
-		if (didMove) {
-			// Handle actual resize - update task span
-			const capturedOriginal = {...originalTaskState.value} as TTask
-			const capturedId = store.resizingTaskId!
-			store.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task!))
-				.then(() => {
-					undoStack.push({
-						description: 'Task resized',
-						undo: async () => {
-							store.redrawTask(capturedId, capturedOriginal)
-							await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
-						}
+						store.redrawTask(store.resizingTaskId!, originalTaskState.value)
 					})
-				})
-				.catch(() => {
-					store.redrawTask(store.resizingTaskId!, originalTaskState.value)
-				})
-		}
-		// Note: Don't toggle selection on resize handle click
+			}
+			// Note: Don't toggle selection on resize handle click
 
-		// Reset resize state
-		store.resizingTaskId = null
-		resizeStartSlot.value = null
-		resizeDirection.value = null
-		originalTaskState.value = null
-		pointerStartPos.value = null
-		hasMovedBeyondThreshold.value = false
-		return
+			// Reset resize state
+			store.resizingTaskId = null
+			resizeStartSlot.value = null
+			resizeDirection.value = null
+			originalTaskState.value = null
+			pointerStartPos.value = null
+			hasMovedBeyondThreshold.value = false
+			return
+		}
+
+		// Handle creation end
+		if (!localCreationPreview.value) return
+
+		// Store the creation preview in the store for the dialog to use
+		store.creationPreview = localCreationPreview.value
+		store.openCreateDialog()
+
+		localCreationPreview.value = undefined
 	}
 
-	// Handle creation end
-	if (!localCreationPreview.value) return
+	onMounted(() => {
+		document.addEventListener('pointerup', handlePointerUp)
 
-	// Store the creation preview in the store for the dialog to use
-	store.creationPreview = localCreationPreview.value
-	store.openCreateDialog()
+		// Scroll to current time when viewing today
+		nextTick(() => {
+			if (!('viewedDate' in store)) return
+			const viewedDateValue = (store as any).viewedDate
+			const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
+			if (viewedDate.toDateString() !== new Date().toDateString()) return
 
-	localCreationPreview.value = undefined;
-}
+			const slotIndex = store.timeToSlotIndex(
+				new Time(currentTime.value.getHours(), currentTime.value.getMinutes()),
+			)
+			if (slotIndex < 0) return
 
-
-onMounted(() => {
-	document.addEventListener('pointerup', handlePointerUp)
-
-	// Scroll to current time when viewing today
-	nextTick(() => {
-		if (!('viewedDate' in store)) return
-		const viewedDateValue = (store as any).viewedDate
-		const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
-		if (viewedDate.toDateString() !== new Date().toDateString()) return
-
-		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
-		if (slotIndex < 0) return
-
-		const grid = calendarGrid.value
-		if (grid) {
-			grid.scrollTop = Math.max(0, slotIndex * SLOT_HEIGHT - grid.clientHeight / 3)
-		}
+			const grid = calendarGrid.value
+			if (grid) {
+				grid.scrollTop = Math.max(0, slotIndex * SLOT_HEIGHT - grid.clientHeight / 3)
+			}
+		})
 	})
-})
-
 </script>
 
 <style scoped>
-.tasks-column {
-	display: grid;
-	position: relative;
-	background: rgb(var(--v-theme-neutral-100));
-	user-select: none;
-	cursor: crosshair;
-	touch-action: none;
-}
+	.tasks-column {
+		display: grid;
+		position: relative;
+		background: rgb(var(--v-theme-neutral-100));
+		user-select: none;
+		cursor: crosshair;
+		touch-action: none;
+	}
 
-.task-slot {
-	border-top: 2px solid #9993;
-	transition: background-color 0.2s ease;
-}
+	.task-slot {
+		border-top: 2px solid #9993;
+		transition: background-color 0.2s ease;
+	}
 
-.task-slot:nth-of-type(3n+1) {
-	border-top-width: 2px;
-	border-top-color: #999B;
-}
+	.task-slot:nth-of-type(3n + 1) {
+		border-top-width: 2px;
+		border-top-color: #999b;
+	}
 
-.task-slot.hoverable:hover {
-	background-color: rgba(0, 0, 0, 0.02);
-	cursor: cell;
-}
+	.task-slot.hoverable:hover {
+		background-color: rgba(0, 0, 0, 0.02);
+		cursor: cell;
+	}
 
-.midnight-divider-tasks {
-	position: absolute;
-	left: 0;
-	right: 0;
-	height: 3px;
-	background: rgb(15, 39, 124);
-	z-index: 20;
-	pointer-events: none;
-}
+	.midnight-divider-tasks {
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: rgb(15, 39, 124);
+		z-index: 20;
+		pointer-events: none;
+	}
 
-.current-time-indicator {
-	position: absolute;
-	left: 0;
-	right: 0;
-	height: 3px;
-	background: linear-gradient(90deg, rgb(var(--v-theme-secondary)) 0%, rgb(var(--v-theme-primary)) 100%);
-	z-index: 20;
-	pointer-events: none;
-	box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.5);
-}
+	.current-time-indicator {
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: linear-gradient(90deg, rgb(var(--v-theme-secondary)) 0%, rgb(var(--v-theme-primary)) 100%);
+		z-index: 20;
+		pointer-events: none;
+		box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.5);
+	}
 </style>

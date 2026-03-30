@@ -1,6 +1,6 @@
-import {Activity} from '@/dtos/response/activity/Activity.ts';
-import {TimePeriodEntity} from '../activityRecording/TimePeriodEntity.ts';
-import type {IBaseToDoListItem} from '@/dtos/response/interface/IBaseToDoListItem.ts';
+import { Activity } from '@/dtos/response/activity/Activity.ts'
+import { TimePeriodEntity } from '../activityRecording/TimePeriodEntity.ts'
+import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	constructor(
 		public id: number,
@@ -14,11 +14,10 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public bestStreak: number = 0,
 		public lastCompletedAt: string | null = null,
 		public note: string | null = null,
-	) {
-	}
+	) {}
 
 	get isMultipleCount() {
-		return !!this.totalCount && this.totalCount !== 1;
+		return !!this.totalCount && this.totalCount !== 1
 	}
 
 	static fromJson(json: any) {
@@ -34,11 +33,10 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.bestStreak ?? 0,
 			json.lastCompletedAt ?? null,
 			json.note ?? null,
-		);
+		)
 	}
 
 	static listFromObjects(objects: any[]) {
-		return objects.map((item: object) => this.fromJson(item));
+		return objects.map((item: object) => this.fromJson(item))
 	}
-
 }

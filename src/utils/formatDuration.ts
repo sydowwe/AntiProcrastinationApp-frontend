@@ -1,4 +1,4 @@
-import {Time} from '@/dtos/dto/Time.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 
 export function formatDuration(seconds: number): string {
 	const time = Time.fromSeconds(seconds)
@@ -16,12 +16,12 @@ export function formatDurationDetailed(seconds: number): string {
 	const secs = Math.floor(seconds % 60)
 
 	// If 1 minute or more, don't show seconds
-	const parts: string[] = [];
+	const parts: string[] = []
 	if (hours > 0) {
-		parts.push(`${hours}h`);
+		parts.push(`${hours}h`)
 	}
 	if (minutes > 0) {
-		parts.push(`${minutes}m`);
+		parts.push(`${minutes}m`)
 	}
 	if (secs > 0 || parts.length === 0) {
 		parts.push(`${secs}s`)

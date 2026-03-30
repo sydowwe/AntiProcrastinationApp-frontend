@@ -1,5 +1,5 @@
-import {AvailableLocales} from '@/dtos/enum/AvailableLocales.ts';
-import {EmailRequest} from './EmailRequest.ts';
+import { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+import { EmailRequest } from './EmailRequest.ts'
 
 export class RegistrationRequest extends EmailRequest {
 	constructor(
@@ -10,6 +10,6 @@ export class RegistrationRequest extends EmailRequest {
 		public currentLocale: AvailableLocales = AvailableLocales.SK,
 		public timezone: string = '',
 	) {
-		super(email);
+		super(email)
 	}
 }

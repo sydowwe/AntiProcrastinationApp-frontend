@@ -5,9 +5,8 @@ export class DomainDetailsResponse {
 		public activeSeconds: number,
 		public backgroundSeconds: number,
 		public entries: number,
-		public pages: string[]
-	) {
-	}
+		public pages: string[],
+	) {}
 
 	static fromJson(json: any): DomainDetailsResponse {
 		return new DomainDetailsResponse(
@@ -16,8 +15,7 @@ export class DomainDetailsResponse {
 			json.activeSeconds,
 			json.backgroundSeconds,
 			json.entries ?? 0,
-			json.pages?.map((p: any) => ({url: p.url, seconds: p.seconds})) || []
+			json.pages?.map((p: any) => ({ url: p.url, seconds: p.seconds })) || [],
 		)
 	}
-
 }

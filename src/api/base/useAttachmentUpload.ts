@@ -1,5 +1,5 @@
-import {ref} from 'vue'
-import {API} from '@/plugins/axiosConfig.ts';
+import { ref } from 'vue'
+import { API } from '@/plugins/axiosConfig.ts'
 
 export function useAttachmentUpload(entityName: string) {
 	const loading = ref(false)
@@ -12,7 +12,7 @@ export function useAttachmentUpload(entityName: string) {
 			const formData = new FormData()
 			formData.append('file', file)
 			const response = await API.post(`/${entityName}/${entityId}/attachments`, formData, {
-				headers: {'Content-Type': 'multipart/form-data'}
+				headers: { 'Content-Type': 'multipart/form-data' },
 			})
 			const newAttachment = response.data
 			return newAttachment
@@ -28,6 +28,6 @@ export function useAttachmentUpload(entityName: string) {
 	return {
 		loading,
 		error,
-		uploadAttachment
+		uploadAttachment,
 	}
 }

@@ -1,5 +1,5 @@
-import type {PatternMatchType} from '@/dtos/enum/PatternMatchType.ts';
-import type {DesktopDistinctEntriesFilterRequest} from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts';
+import type { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import type { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 
 export class TrackerDesktopMappingRequest {
 	constructor(
@@ -14,15 +14,14 @@ export class TrackerDesktopMappingRequest {
 		public activityId: number | null = null,
 		public roleId: number | null = null,
 		public categoryId: number | null = null,
-	) {
-	}
+	) {}
 
 	updatePattern(filter: DesktopDistinctEntriesFilterRequest) {
-		this.processName = filter.processName ?? null;
-		this.processNameMatchType = filter.processNameMatchType;
-		this.productName = filter.productName ?? null;
-		this.productNameMatchType = filter.productNameMatchType;
-		this.windowTitle = filter.windowTitle ?? null;
-		this.windowTitleMatchType = filter.windowTitleMatchType;
+		this.processName = filter.processName ?? null
+		this.processNameMatchType = filter.processNameMatchType
+		this.productName = filter.productName ?? null
+		this.productNameMatchType = filter.productNameMatchType
+		this.windowTitle = filter.windowTitle ?? null
+		this.windowTitleMatchType = filter.windowTitleMatchType
 	}
 }

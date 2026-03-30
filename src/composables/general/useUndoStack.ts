@@ -1,5 +1,5 @@
-import {computed, ref} from 'vue'
-import {useSnackbar} from '@/composables/general/SnackbarComposable.ts'
+import { computed, ref } from 'vue'
+import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 
 interface UndoEntry {
 	description: string
@@ -10,7 +10,7 @@ const stack = ref<UndoEntry[]>([])
 const MAX_UNDO = 10
 
 export function useUndoStack() {
-	const {showSuccessSnackbar} = useSnackbar()
+	const { showSuccessSnackbar } = useSnackbar()
 
 	function push(entry: UndoEntry) {
 		stack.value.unshift(entry)
@@ -32,5 +32,5 @@ export function useUndoStack() {
 	const stackSize = computed(() => stack.value.length)
 	const nextUndoDescription = computed(() => stack.value[0]?.description ?? null)
 
-	return {push, undo, clear, canUndo, stackSize, nextUndoDescription}
+	return { push, undo, clear, canUndo, stackSize, nextUndoDescription }
 }

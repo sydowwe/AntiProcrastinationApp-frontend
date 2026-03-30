@@ -3,35 +3,35 @@ export enum PlannerTaskStatus {
 	InProgress = 'inProgress',
 	OnHold = 'onHold',
 	Completed = 'completed',
-	Cancelled = 'cancelled'
+	Cancelled = 'cancelled',
 }
 
 export function getPlannerTaskStatusColor(status: PlannerTaskStatus): string {
 	switch (status) {
 		case PlannerTaskStatus.NotStarted:
-			return 'grey';
+			return 'grey'
 		case PlannerTaskStatus.InProgress:
-			return 'blue';
+			return 'blue'
 		case PlannerTaskStatus.OnHold:
-			return 'orange';
+			return 'orange'
 		case PlannerTaskStatus.Completed:
-			return 'green';
+			return 'green'
 		case PlannerTaskStatus.Cancelled:
-			return 'red';
+			return 'red'
 	}
 }
 
 export function getPlannerTaskStatusIcon(status: PlannerTaskStatus): string {
 	switch (status) {
 		case PlannerTaskStatus.NotStarted:
-			return 'fa-circle';
+			return 'fa-circle'
 		case PlannerTaskStatus.InProgress:
-			return 'fa-spinner';
+			return 'fa-spinner'
 		case PlannerTaskStatus.OnHold:
-			return 'fa-pause-circle';
+			return 'fa-pause-circle'
 		case PlannerTaskStatus.Completed:
-			return 'fa-circle-check';
+			return 'fa-circle-check'
 		case PlannerTaskStatus.Cancelled:
-			return 'fa-circle-xmark';
+			return 'fa-circle-xmark'
 	}
 }

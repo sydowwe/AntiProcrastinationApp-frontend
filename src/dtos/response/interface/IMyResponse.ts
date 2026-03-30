@@ -1,2 +1,1 @@
-export interface IMyResponse {
-}
+export type IMyResponse = object

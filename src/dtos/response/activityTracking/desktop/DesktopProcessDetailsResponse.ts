@@ -5,9 +5,8 @@ export class DesktopWindowTitleStats {
 		public activeSeconds: number,
 		public backgroundSeconds: number,
 		public fullscreenSeconds: number,
-		public soundSeconds: number
-	) {
-	}
+		public soundSeconds: number,
+	) {}
 
 	static fromJson(json: any): DesktopWindowTitleStats {
 		return new DesktopWindowTitleStats(
@@ -16,7 +15,7 @@ export class DesktopWindowTitleStats {
 			json.activeSeconds,
 			json.backgroundSeconds,
 			json.fullscreenSeconds,
-			json.soundSeconds
+			json.soundSeconds,
 		)
 	}
 }
@@ -24,9 +23,8 @@ export class DesktopWindowTitleStats {
 export class DesktopMonitorBreakdown {
 	constructor(
 		public monitor: number,
-		public activeSeconds: number
-	) {
-	}
+		public activeSeconds: number,
+	) {}
 
 	static fromJson(json: any): DesktopMonitorBreakdown {
 		return new DesktopMonitorBreakdown(json.monitor, json.activeSeconds)
@@ -44,9 +42,8 @@ export class DesktopProcessDetailsResponse {
 		public soundSeconds: number,
 		public monitorBreakdown: DesktopMonitorBreakdown[],
 		public entries: number,
-		public windowTitles: DesktopWindowTitleStats[]
-	) {
-	}
+		public windowTitles: DesktopWindowTitleStats[],
+	) {}
 
 	static fromJson(json: any): DesktopProcessDetailsResponse {
 		return new DesktopProcessDetailsResponse(
@@ -59,7 +56,7 @@ export class DesktopProcessDetailsResponse {
 			json.soundSeconds,
 			json.monitorBreakdown?.map((m: any) => DesktopMonitorBreakdown.fromJson(m)) || [],
 			json.entries,
-			json.windowTitles?.map((w: any) => DesktopWindowTitleStats.fromJson(w)) || []
+			json.windowTitles?.map((w: any) => DesktopWindowTitleStats.fromJson(w)) || [],
 		)
 	}
 }

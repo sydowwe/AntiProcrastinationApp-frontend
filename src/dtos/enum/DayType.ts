@@ -4,7 +4,7 @@ export enum DayType {
 	Holiday = 'Holiday',
 	Vacation = 'Vacation',
 	SickDay = 'SickDay',
-	Special = 'Special'
+	Special = 'Special',
 }
 
 export function getDayTypeColor(dayType: DayType, light: boolean = false): string {

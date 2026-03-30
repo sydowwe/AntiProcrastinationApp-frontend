@@ -1,8 +1,8 @@
-import type {DayType} from '@/dtos/enum/DayType.ts';
-import type {DayOfWeek} from '@/dtos/enum/DayOfWeek.ts';
-import {Time} from '@/dtos/dto/Time.ts';
-import type {TaskPlannerDayTemplate} from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts';
-import type {Location} from '@/dtos/enum/Location.ts';
+import type { DayType } from '@/dtos/enum/DayType.ts'
+import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+import type { Location } from '@/dtos/enum/Location.ts'
 
 export class TaskPlannerDayTemplateRequest {
 	constructor(
@@ -16,8 +16,7 @@ export class TaskPlannerDayTemplateRequest {
 		public tags: string[] = [],
 		public scheduledDays: DayOfWeek[] = [],
 		public suggestedLocation?: Location,
-	) {
-	}
+	) {}
 
 	static fromEntity(entity: TaskPlannerDayTemplate) {
 		return new TaskPlannerDayTemplateRequest(

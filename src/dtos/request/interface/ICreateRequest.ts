@@ -1,2 +1,1 @@
-export interface ICreateRequest {
-}
+export type ICreateRequest = object

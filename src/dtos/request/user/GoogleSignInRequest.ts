@@ -1,4 +1,4 @@
-import {PasswordSignInRequest} from './PasswordSignInRequest.ts';
+import { PasswordSignInRequest } from './PasswordSignInRequest.ts'
 
 export class GoogleSignInRequest extends PasswordSignInRequest {
 	constructor(
@@ -7,6 +7,6 @@ export class GoogleSignInRequest extends PasswordSignInRequest {
 		timezone: string = '',
 		public code: string | null = null,
 	) {
-		super(stayLoggedIn, recaptchaToken, timezone);
+		super(stayLoggedIn, recaptchaToken, timezone)
 	}
 }

@@ -105,6 +105,9 @@
     - `VIconSmall` → VIcon (size 16)
 - **Custom Theme Colors**: `primary`, `secondary`, `primaryOutline`, `secondaryOutline`, `errorDark`, `successDark`, `warningDark`, `primary-accent`,
   `secondary-accent`, `primary-container`, `secondary-container`, `textMuted`, `neutral-50` through `neutral-900`
+- **Color usage by variant**:
+    - `variant="elevated"` → use `primary`, `secondary`, `errorDark`, `successDark`, `warningDark`
+    - `variant="tonal"` or `variant="outlined"` → use `primaryOutline`, `secondaryOutline`, `error`, `success`, `warning`
 - **Component Defaults** (already configured, no need to repeat in templates): VBtn `variant="elevated"`, VCard `rounded="lg"`,
   VTextField/VIdSelect/VIdAutocomplete/VTextarea `variant="outlined" clearable density="comfortable"`
 

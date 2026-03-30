@@ -1,47 +1,47 @@
-import {nextTick, ref, watch} from "vue";
-import {EditableTableCell} from "@/dtos/dto/EditableTableCell.ts";
+import { nextTick, ref, watch } from 'vue'
+import { EditableTableCell } from '@/dtos/dto/EditableTableCell.ts'
 
-export type EditableCellEmits = 'editCell' | 'updatedCell' | 'editCellCanceled';
+export type EditableCellEmits = 'editCell' | 'updatedCell' | 'editCellCanceled'
 
 export function useEditableCell(
 	props: { cellItem: EditableTableCell },
-	emit: (e: EditableCellEmits, ...args: unknown[]) => void
+	emit: (e: EditableCellEmits, ...args: unknown[]) => void,
 ) {
-	const input = ref<HTMLInputElement | null>(null);
-	const newValue = ref();
-	const cellItem = ref<EditableTableCell>(props.cellItem);
+	const input = ref<HTMLInputElement | null>(null)
+	const newValue = ref()
+	const cellItem = ref<EditableTableCell>(props.cellItem)
 
 	// Watch for props.cellItem changes and update the local state
 	watch(
 		() => props.cellItem,
-		(newVal) => {
-			cellItem.value = newVal;
-		}
-	);
+		newVal => {
+			cellItem.value = newVal
+		},
+	)
 
 	// Start editing the cell
 	function startCellEdit() {
-		if (props.cellItem?.column.isReadOnly) return; // Do nothing if readOnly
-		cellItem.value.isEdit = true;
-		newValue.value = cellItem.value.value;
-		emit("editCell");
+		if (props.cellItem?.column.isReadOnly) return // Do nothing if readOnly
+		cellItem.value.isEdit = true
+		newValue.value = cellItem.value.value
+		emit('editCell')
 		nextTick(() => {
-			input.value?.focus();
-		});
+			input.value?.focus()
+		})
 	}
 
 	// Handle cell value updates
 	function cellValueUpdated() {
-		if (props.cellItem?.column.isReadOnly) return; // Do nothing if readOnly
-		cellItem.value.isEdit = false;
-		cellItem.value.newValue = newValue.value;
-		emit("updatedCell", cellItem.value);
+		if (props.cellItem?.column.isReadOnly) return // Do nothing if readOnly
+		cellItem.value.isEdit = false
+		cellItem.value.newValue = newValue.value
+		emit('updatedCell', cellItem.value)
 	}
 
 	// Handle canceling cell edits
 	function editCellCanceled() {
-		cellItem.value.isEdit = false;
-		emit("editCellCanceled");
+		cellItem.value.isEdit = false
+		emit('editCellCanceled')
 	}
 
 	return {
@@ -51,5 +51,5 @@ export function useEditableCell(
 		startCellEdit,
 		cellValueUpdated,
 		editCellCanceled,
-	};
+	}
 }

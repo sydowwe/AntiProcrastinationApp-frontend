@@ -1,5 +1,5 @@
-import {PatternMatchType} from '@/dtos/enum/PatternMatchType.ts';
-import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
+import { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
 
 export class DesktopDistinctEntriesFilterRequest implements IFilterRequest {
 	constructor(
@@ -9,6 +9,5 @@ export class DesktopDistinctEntriesFilterRequest implements IFilterRequest {
 		public productNameMatchType: PatternMatchType = PatternMatchType.Contains,
 		public windowTitle?: string,
 		public windowTitleMatchType: PatternMatchType = PatternMatchType.Contains,
-	) {
-	}
+	) {}
 }

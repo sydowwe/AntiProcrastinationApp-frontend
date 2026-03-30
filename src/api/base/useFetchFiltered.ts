@@ -1,7 +1,7 @@
-import {ref} from 'vue'
-import {API} from '@/plugins/axiosConfig.ts';
-import type {IMyResponse} from '@/dtos/response/interface/IMyResponse.ts';
-import type {IFilterRequest} from '@/dtos/request/interface/IFilterRequest.ts';
+import { ref } from 'vue'
+import { API } from '@/plugins/axiosConfig.ts'
+import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
+import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
 
 export function useFetchFiltered<TResponse extends IMyResponse, TFilter extends IFilterRequest>(
 	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },
@@ -28,6 +28,6 @@ export function useFetchFiltered<TResponse extends IMyResponse, TFilter extends 
 	return {
 		loading,
 		error,
-		fetchFiltered
+		fetchFiltered,
 	}
 }

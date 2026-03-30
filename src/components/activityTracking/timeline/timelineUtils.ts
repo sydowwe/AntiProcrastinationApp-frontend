@@ -2,22 +2,18 @@
  * Timeline calculation utilities
  */
 
-import {TimelineGridConfig} from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts';
-import {SessionPosition} from '@/components/activityTracking/timeline/dto/SessionPosition.ts';
-import {StackedSession} from '@/components/activityTracking/timeline/dto/StackedSession.ts';
-import type {TimelineSessionDto} from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts';
-import {Gap} from '@/components/activityTracking/timeline/dto/Gap.ts';
-import {GapDisplay} from '@/components/activityTracking/timeline/dto/GapDisplay.ts';
-import {TimelineSegment} from '@/components/activityTracking/timeline/dto/TimelineSegment.ts';
+import { TimelineGridConfig } from '@/components/activityTracking/timeline/dto/TimelineGridConfig.ts'
+import { SessionPosition } from '@/components/activityTracking/timeline/dto/SessionPosition.ts'
+import { StackedSession } from '@/components/activityTracking/timeline/dto/StackedSession.ts'
+import type { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
+import { Gap } from '@/components/activityTracking/timeline/dto/Gap.ts'
+import { GapDisplay } from '@/components/activityTracking/timeline/dto/GapDisplay.ts'
+import { TimelineSegment } from '@/components/activityTracking/timeline/dto/TimelineSegment.ts'
 
 /**
  * Calculate timeline configuration based on container and time range
  */
-export function calculateTimelineConfig(
-	containerWidth: number,
-	from: Date,
-	to: Date,
-): TimelineGridConfig {
+export function calculateTimelineConfig(containerWidth: number, from: Date, to: Date): TimelineGridConfig {
 	const totalMinutes = (to.getTime() - from.getTime()) / (1000 * 60)
 	const timeAxisHeight = 32
 	const laneHeight = 40
@@ -29,7 +25,7 @@ export function calculateTimelineConfig(
 		pixelsPerMinute,
 		laneHeight,
 		timeAxisHeight,
-		2 // minBlockWidth
+		2, // minBlockWidth
 	)
 }
 
@@ -58,7 +54,7 @@ export function calculateSessionPosition(
 	return new SessionPosition(
 		`${leftPercent}%`,
 		`${widthPercent}%`,
-		widthPixels < config.minBlockWidth ? `${config.minBlockWidth}px` : 'auto'
+		widthPixels < config.minBlockWidth ? `${config.minBlockWidth}px` : 'auto',
 	)
 }
 
@@ -66,13 +62,11 @@ export function calculateSessionPosition(
  * Calculate waterfall stacking for overlapping background sessions
  */
 export function calculateWaterfallStack(sessions: TimelineSessionDto[]): StackedSession[] {
-	const sorted = [...sessions].sort(
-		(a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
-	)
+	const sorted = [...sessions].sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
 
 	const levelEndTimes: number[] = []
 
-	return sorted.map((session) => {
+	return sorted.map(session => {
 		const startTime = session.startedAt.getTime()
 
 		let level = 0
@@ -90,7 +84,7 @@ export function calculateWaterfallStack(sessions: TimelineSessionDto[]): Stacked
 			session.durationSeconds,
 			session.totalSeconds,
 			level,
-			session.url
+			session.url,
 		)
 	})
 }
@@ -98,30 +92,20 @@ export function calculateWaterfallStack(sessions: TimelineSessionDto[]): Stacked
 /**
  * Calculate lane height based on max stack level
  */
-export function calculateLaneHeight(
-	stackedSessions: StackedSession[],
-	baseHeight: number,
-): number {
+export function calculateLaneHeight(stackedSessions: StackedSession[], baseHeight: number): number {
 	if (stackedSessions.length === 0) return baseHeight
 
-	const maxLevel = Math.max(0, ...stackedSessions.map((s) => s.stackLevel))
+	const maxLevel = Math.max(0, ...stackedSessions.map(s => s.stackLevel))
 	return baseHeight * (maxLevel + 1)
 }
 
 /**
  * Find activity gaps (periods with no activity)
  */
-export function findActivityGaps(
-	sessions: TimelineSessionDto[],
-	from: Date,
-	to: Date,
-	minGapMinutes = 30,
-): Gap[] {
+export function findActivityGaps(sessions: TimelineSessionDto[], from: Date, to: Date, minGapMinutes = 30): Gap[] {
 	const gaps: Gap[] = []
 
-	const sorted = [...sessions].sort(
-		(a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
-	)
+	const sorted = [...sessions].sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
 
 	let currentEnd = from.getTime()
 
@@ -132,11 +116,7 @@ export function findActivityGaps(
 			const gapMinutes = (sessionStart - currentEnd) / (1000 * 60)
 
 			if (gapMinutes >= minGapMinutes) {
-				gaps.push(new Gap(
-					new Date(currentEnd),
-					new Date(sessionStart),
-					gapMinutes
-				))
+				gaps.push(new Gap(new Date(currentEnd), new Date(sessionStart), gapMinutes))
 			}
 		}
 
@@ -147,11 +127,7 @@ export function findActivityGaps(
 		const gapMinutes = (to.getTime() - currentEnd) / (1000 * 60)
 
 		if (gapMinutes >= minGapMinutes) {
-			gaps.push(new Gap(
-				new Date(currentEnd),
-				to,
-				gapMinutes
-			))
+			gaps.push(new Gap(new Date(currentEnd), to, gapMinutes))
 		}
 	}
 
@@ -168,7 +144,7 @@ export function calculateGapDisplay(gap: Gap, config: TimelineGridConfig): GapDi
 	return new GapDisplay(
 		durationPixels >= labelMinWidth,
 		Math.max(durationPixels, 20),
-		durationPixels > labelMinWidth * 2
+		durationPixels > labelMinWidth * 2,
 	)
 }
 
@@ -181,7 +157,7 @@ export function filterSessionsForRange<T extends TimelineSessionDto>(
 	rangeFrom: Date,
 	rangeTo: Date,
 ): T[] {
-	return sessions.filter((session) => {
+	return sessions.filter(session => {
 		return session.startedAt < rangeTo && session.endedAt > rangeFrom
 	})
 }

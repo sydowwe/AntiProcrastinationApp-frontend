@@ -1,11 +1,14 @@
-import {computed, reactive, ref} from 'vue'
-import {Time} from '@/dtos/dto/Time.ts'
-import type {IBasePlannerTaskRequest} from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
-import type {IBasePlannerTask} from '@/dtos/response/activityPlanning/IBasePlannerTask.ts';
-import {useDayPlannerCommon} from '@/composables/dayPlanner/useDayPlannerCommon.ts';
-import type {CreationPreviewType} from '@/components/dayPlanner/DayPlannerTypes.ts';
+import { computed, reactive, ref } from 'vue'
+import { Time } from '@/dtos/dto/Time.ts'
+import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import { useDayPlannerCommon } from '@/composables/dayPlanner/useDayPlannerCommon.ts'
+import type { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
 
-export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>, TTaskRequest extends IBasePlannerTaskRequest>() {
+export function usePlannerStoreCore<
+	TTask extends IBasePlannerTask<TTaskRequest>,
+	TTaskRequest extends IBasePlannerTaskRequest,
+>() {
 	// Time/Grid configuration state
 	const timeSlotDuration = ref(10)
 	const viewStartTime = ref(new Time(7, 30))
@@ -77,10 +80,7 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 	const isDraggingAny = computed(() => draggingTaskId.value !== null)
 	const isResizingAny = computed(() => resizingTaskId.value !== null)
 
-
-	const selectedTasks = computed(() =>
-		tasks.value.filter(e => selectedTaskIds.has(e.id))
-	)
+	const selectedTasks = computed(() => tasks.value.filter(e => selectedTaskIds.has(e.id)))
 
 	const showActionBar = computed(() => selectedTaskIds.size > 0)
 
@@ -131,14 +131,13 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		selectedTaskIds.clear()
 	}
 
-
 	const {
 		setGridPositionFromSpan,
 		checkOverlapsBackground,
 		checkConflict,
 		updateIsDuringBackgroundFlags,
 		initializeTaskGridPositions,
-		redrawTask
+		redrawTask,
 	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks)
 
 	function resetStore() {
@@ -204,6 +203,6 @@ export function usePlannerStoreCore<TTask extends IBasePlannerTask<TTaskRequest>
 		checkConflict,
 		updateIsDuringBackgroundFlags,
 		initializeTaskGridPositions,
-		redrawTask
+		redrawTask,
 	}
 }
