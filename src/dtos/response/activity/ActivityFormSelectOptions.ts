@@ -1,4 +1,4 @@
-import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 export class ActivityFormSelectOptions {
 	constructor(

@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
-	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
+	import type { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'

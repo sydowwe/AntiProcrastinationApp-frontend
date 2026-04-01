@@ -70,8 +70,8 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import type { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 
 	const props = defineProps<{
 		alarm: Alarm

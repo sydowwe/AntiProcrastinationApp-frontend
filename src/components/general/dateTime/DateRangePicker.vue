@@ -130,24 +130,18 @@
 	import { computed, ref, watch } from 'vue'
 	import { VDateInput } from 'vuetify/labs/components'
 
-	const props = withDefaults(
-		defineProps<{
-			mode?: 'range' | 'month' | 'duration'
-			hideDetails?: boolean
-			density?: 'compact' | 'comfortable' | 'default'
-		}>(),
-		{
-			mode: 'month',
-			density: 'comfortable',
-		},
-	)
+	const { mode = 'month', hideDetails, density = 'comfortable' } = defineProps<{
+		mode?: 'range' | 'month' | 'duration'
+		hideDetails?: boolean
+		density?: 'compact' | 'comfortable' | 'default'
+	}>()
 
 	const dateRange = defineModel<{ start: Date | null; end: Date | null }>({
 		default: () => ({ start: null, end: null }),
 	})
 
 	// Mode state
-	const selectedMode = ref<'range' | 'month' | 'duration'>(props.mode || 'range')
+	const selectedMode = ref<'range' | 'month' | 'duration'>(mode || 'range')
 
 	// Range mode state
 	const rangeStart = ref<Date | null>(dateRange.value.start || null)

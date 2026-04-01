@@ -21,17 +21,15 @@
 </template>
 
 <script setup lang="ts">
-	import { TimePrecise, type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
+	import type { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+	import { type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			timeObject: TimePrecise
-			whatToShow: TimePreciseKeys[]
-		}>(),
-		{ whatToShow: () => ['hours', 'minutes', 'seconds'] },
-	)
+	const { timeObject, whatToShow = ['hours', 'minutes', 'seconds'] } = defineProps<{
+		timeObject: TimePrecise
+		whatToShow?: TimePreciseKeys[]
+	}>()
 
-	console.log(props.timeObject)
+	console.log(timeObject)
 	const timeLabels = {
 		hours: 'H',
 		minutes: 'M',

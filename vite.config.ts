@@ -1,19 +1,18 @@
-import {fileURLToPath, URL} from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vuetify from 'vite-plugin-vuetify'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import {VitePWA} from 'vite-plugin-pwa'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
 		vue({
-			script: {
-				defineModel: true,
-				propsDestructure: true,
-			},
+			script: {},
 		}),
+		vuetify({ autoImport: true }),
 		vueDevTools(),
 		VitePWA({
 			registerType: 'autoUpdate',
@@ -105,12 +104,9 @@ export default defineConfig({
 			},
 		}),
 	],
-	optimizeDeps: {
-		include: ['@formkit/drag-and-drop/vue'],
-	},
 	resolve: {
 		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url))
+			'@': fileURLToPath(new URL('./src', import.meta.url)),
 		},
 	},
 	define: {
@@ -122,7 +118,6 @@ export default defineConfig({
 		https: {
 			key: './config/localhost-key.pem',
 			cert: './config/localhost.pem',
-		}
+		},
 	},
 })
-

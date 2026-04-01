@@ -1,4 +1,4 @@
-import { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
+import type { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
 
 export class AlarmRequest {
 	constructor(

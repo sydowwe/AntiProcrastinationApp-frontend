@@ -116,7 +116,7 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
-	import { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 	import { useTimerPresetCrud } from '@/api/activityHistory/timerPresetApi.ts'
 	import TimerPresetDialog from '@/components/dialogs/TimerPresetDialog.vue'
 

@@ -17,14 +17,11 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 import { far } from '@fortawesome/free-regular-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
 // VUETIFY
-import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
 import { VAutocomplete, VBtn, VIcon, VSelect } from 'vuetify/components'
-import * as directives from 'vuetify/directives'
 import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
 
-import { aliases, fa } from 'vuetify/lib/iconsets/fa-svg'
+import { aliases, fa } from 'vuetify/iconsets/fa-svg'
 import './assets/main.css'
 import vue3GoogleLogin from 'vue3-google-login'
 import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
@@ -79,8 +76,6 @@ export const vuetify = createVuetify({
 	locale: {
 		adapter: createVueI18nAdapter({ i18n: i18n as any, useI18n }),
 	},
-	components,
-	directives,
 	icons: {
 		defaultSet: 'fa',
 		aliases,

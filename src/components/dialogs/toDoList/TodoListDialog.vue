@@ -40,7 +40,7 @@
 	import { VForm } from 'vuetify/components'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
-	import { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
+	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
 	import { useTodoListCategoryCrud } from '@/api/todoList/todoListCategoryApi.ts'

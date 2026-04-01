@@ -18,14 +18,9 @@
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 
-	const { isNew } = withDefaults(
-		defineProps<{
-			isNew: boolean
-		}>(),
-		{
-			isNew: false,
-		},
-	)
+	const { isNew } = defineProps<{
+		isNew: boolean
+	}>()
 
 	const newPassword = defineModel<string | null>({ required: true })
 

@@ -1,4 +1,4 @@
-import { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
+import type { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 
 export class PomodoroTimerPresetRequest {
 	constructor(

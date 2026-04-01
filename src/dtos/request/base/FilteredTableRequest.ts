@@ -1,7 +1,7 @@
 import { BaseTableRequest } from './BaseTableRequest.ts'
 import { SortByRequest } from './SortByRequest.ts'
 import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
-import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 
 export class FilteredTableRequest<TFilter extends IFilterRequest> extends BaseTableRequest {
 	constructor(

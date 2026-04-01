@@ -1,7 +1,7 @@
 <template>
 	<VCard
-		class="domain-card"
-		:class="{ 'domain-card--clickable': true, 'domain-card--selected': selected }"
+		class="domain-card domain-card--clickable"
+		:class="{ 'domain-card--selected': selected }"
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"

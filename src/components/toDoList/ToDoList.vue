@@ -122,7 +122,7 @@
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 
-	const props = withDefaults(
+	const { kind = ToDoListKind.NORMAL, items, isInChangeOrderMode, listId, activityIds, streakConfig, allItems } =
 		defineProps<{
 			kind?: number
 			items: TEntity[]
@@ -131,13 +131,7 @@
 			activityIds: number[]
 			streakConfig?: { graceDays: number; periodLengthInDays: number }
 			allItems?: TEntity[]
-		}>(),
-		{
-			kind: ToDoListKind.NORMAL,
-			streakConfig: undefined,
-			allItems: undefined,
-		},
-	)
+		}>()
 
 	const emit = defineEmits<{
 		(e: 'itemsChanged', changedItems: number[]): void
@@ -173,9 +167,9 @@
 				finalIndex -= 1
 			}
 
-			if (sourceIndex !== finalIndex && sourceIndex >= 0 && finalIndex >= 0 && finalIndex <= props.items.length) {
-				const precedingItem = finalIndex > 0 ? props.items[finalIndex] : null
-				const followingItem = finalIndex < props.items.length ? props.items[finalIndex + 1] : null
+			if (sourceIndex !== finalIndex && sourceIndex >= 0 && finalIndex >= 0 && finalIndex <= items.length) {
+				const precedingItem = finalIndex > 0 ? items[finalIndex] : null
+				const followingItem = finalIndex < items.length ? items[finalIndex + 1] : null
 
 				const request = new ChangeDisplayOrderRequest(
 					itemId,
@@ -186,7 +180,7 @@
 				emit('itemsReordered', sourceIndex, finalIndex, request)
 			}
 		} else if (dropType === 'empty-zone') {
-			const followingItem = props.items.length > 1 ? props.items[0] : null
+			const followingItem = items.length > 1 ? items[0] : null
 
 			const request = new ChangeDisplayOrderRequest(itemId, null, followingItem?.id ?? null)
 
@@ -207,10 +201,10 @@
 		setDropZoneRef,
 		setupDragAndDrop,
 	} = useTodoListDragAndDrop({
-		items: toRef(props, 'items'),
-		listId: toRef(props, 'listId'),
-		activityIds: toRef(props, 'activityIds'),
-		isInChangeOrderMode: toRef(props, 'isInChangeOrderMode'),
+		items: toRef(() => items),
+		listId: toRef(() => listId),
+		activityIds: toRef(() => activityIds),
+		isInChangeOrderMode: toRef(() => isInChangeOrderMode),
 		emptyDropZoneRef,
 		onSameListDrop: handleSameListDrop,
 		onCrossListDrop: handleCrossListDrop,
@@ -222,7 +216,7 @@
 	})
 
 	const progress = computed(() => {
-		const source = props.allItems ?? props.items
+		const source = allItems ?? items
 		const done = source.reduce((sum, item) => sum + (item.doneCount ?? (item.isDone ? 1 : 0)), 0)
 		const total = source.reduce((sum, item) => sum + (item.totalCount ?? 1), 0)
 		return { done, total }
@@ -233,7 +227,7 @@
 	const editItem = (entityToEdit: TEntity) => {
 		emit('editItem', entityToEdit)
 	}
-	const url = (props.kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'todo-list'
+	const url = (kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'todo-list'
 
 	const itemDoneDialogShown = ref(false)
 	const isDialogRecursive = ref(false)
@@ -253,7 +247,7 @@
 		const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id)
 		if (toDoListItem.isDone) {
 			if (isBatchAction) {
-				changedItems.value = props.items.filter((item: TEntity) => selectedItemsIds.value.includes(item.id))
+				changedItems.value = items.filter((item: TEntity) => selectedItemsIds.value.includes(item.id))
 				recursiveDialogsToSaveToHistory()
 			} else {
 				currentDoneItem.value = toDoListItem
@@ -292,7 +286,7 @@
 	}
 
 	const unSelect = (id: number) => {
-		selectedItemsIds.value = selectedItemsIds.value.filter(item => item != id)
+		selectedItemsIds.value = selectedItemsIds.value.filter(item => item !== id)
 	}
 </script>
 

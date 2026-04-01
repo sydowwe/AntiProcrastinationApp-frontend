@@ -31,13 +31,13 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { ref } from 'vue'
-	import { Category } from '@/dtos/response/activity/Category.ts'
+	import type { Category } from '@/dtos/response/activity/Category.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityCategoryCrud } from '@/api/activity/activityCategoryApi.ts'
 	import { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
 	import { VForm } from 'vuetify/components'
 
-	const { useApi } = withDefaults(defineProps<{ useApi?: boolean }>(), { useApi: true })
+	const { useApi = true } = defineProps<{ useApi?: boolean }>()
 
 	const emit = defineEmits<{
 		(e: 'created', newItem: CategoryRequest, createdId: number): void

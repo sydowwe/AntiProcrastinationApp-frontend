@@ -17,3 +17,5 @@ export const DAY_OF_WEEK_SHORT_LABELS: Record<DayOfWeek, string> = {
 	[DayOfWeek.Saturday]: 'Sat',
 	[DayOfWeek.Sunday]: 'Sun',
 }
+
+export const dayOfWeekOptions = Object.values(DayOfWeek).map(d => ({ value: d, label: DAY_OF_WEEK_SHORT_LABELS[d] }))

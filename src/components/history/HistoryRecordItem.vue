@@ -116,8 +116,8 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import type { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 
 	const props = defineProps<{

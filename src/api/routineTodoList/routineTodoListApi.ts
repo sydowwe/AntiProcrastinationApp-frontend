@@ -4,7 +4,7 @@ import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
 import { RoutineTodoListGroupedList } from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts'
-import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
+import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 import { API } from '@/plugins/axiosConfig.ts'
 
 export function useRoutineTodoListItemCrud() {

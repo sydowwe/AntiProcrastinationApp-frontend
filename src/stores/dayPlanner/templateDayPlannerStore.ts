@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 import { usePlannerStoreCore } from '@/composables/dayPlanner/usePlannerStoreCore.ts'
-import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
+import type { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
-import { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 
 export type ITemplateDayPlannerStore = IBaseDayPlannerStore<TemplatePlannerTask, TemplatePlannerTaskRequest>
 

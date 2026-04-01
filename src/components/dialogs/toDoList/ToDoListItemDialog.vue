@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
-		:eager="true"
+		eager
 		:title="isEdit ? $t('general.edit') : $t('toDoList.addItemTitle')"
 		:confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')"
 		@confirmed="save"
@@ -78,8 +78,8 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { VDateInput } from 'vuetify/labs/components'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
-	import { TaskPriority } from '@/dtos/response/activityPlanning/TaskPriority.ts'
-	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
+	import type { TaskPriority } from '@/dtos/response/activityPlanning/TaskPriority.ts'
+	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { useTaskPriorityCrud } from '@/api/todoList/taskPriorityApi.ts'

@@ -1,4 +1,4 @@
-import { SortByRequest } from './SortByRequest.ts'
+import type { SortByRequest } from './SortByRequest.ts'
 
 export class BaseTableRequest {
 	constructor(

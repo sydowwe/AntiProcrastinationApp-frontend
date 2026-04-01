@@ -11,7 +11,8 @@
 		<div
 			v-for="(slot, index) in store.timeSlots"
 			:key="index"
-			:class="['task-slot', { hoverable: !localCreationPreview && !store.isDraggingAny }]"
+			class="task-slot"
+			:class="[{ hoverable: !localCreationPreview && !store.isDraggingAny }]"
 			:data-slot-index="index"
 		/>
 

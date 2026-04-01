@@ -69,7 +69,7 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { computed, ref } from 'vue'
-	import { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'

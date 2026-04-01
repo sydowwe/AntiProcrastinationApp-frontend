@@ -25,7 +25,7 @@
 
 			<ActivitySelectionForm
 				v-model:activityId="request.activityId"
-				:isInDialog="true"
+				isInDialog
 				:showFromToDoListField="false"
 			></ActivitySelectionForm>
 
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { computed, ref } from 'vue'
-	import { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
+	import type { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { AlarmRequest } from '@/dtos/request/activityRecording/AlarmRequest.ts'
 	import { VForm } from 'vuetify/components'

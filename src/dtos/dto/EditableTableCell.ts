@@ -1,4 +1,4 @@
-import { EditableColumnMetadata } from './EditableColumnMetadata.ts'
+import type { EditableColumnMetadata } from './EditableColumnMetadata.ts'
 
 export class EditableTableCell {
 	constructor(

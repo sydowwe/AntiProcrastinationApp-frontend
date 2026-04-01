@@ -20,7 +20,7 @@
 	import { ref } from 'vue'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import NewActivityForm from '@/components/activity/NewActivityForm.vue'
-	import { Activity } from '@/dtos/response/activity/Activity.ts'
+	import type { Activity } from '@/dtos/response/activity/Activity.ts'
 	import { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
 

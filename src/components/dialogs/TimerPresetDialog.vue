@@ -46,7 +46,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
-	import { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 	import { TimerPresetRequest } from '@/dtos/request/activityRecording/TimerPresetRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -54,7 +54,7 @@
 	import { VForm } from 'vuetify/components'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 	const emit = defineEmits<{
 		(e: 'created'): void

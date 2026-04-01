@@ -23,16 +23,10 @@
 </template>
 
 <script setup lang="ts">
-	withDefaults(
-		defineProps<{
-			isFirst?: boolean
-			isInvalid?: boolean
-		}>(),
-		{
-			isFirst: false,
-			isInvalid: false,
-		},
-	)
+	const { isFirst = false, isInvalid = false } = defineProps<{
+		isFirst?: boolean
+		isInvalid?: boolean
+	}>()
 </script>
 
 <style scoped>

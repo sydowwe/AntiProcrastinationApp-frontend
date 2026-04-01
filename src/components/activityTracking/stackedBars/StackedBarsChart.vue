@@ -73,22 +73,17 @@
 	import type { ColumnData } from './dto/ColumnData'
 	import { ProcessedWindow } from './dto/ProcessedWindow'
 	import { getDomainColor } from '@/utils/domainColor'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 
-	const props = withDefaults(
-		defineProps<{
-			windows: StackedBarsInputWindow[]
-			loading?: boolean
-			timeFrom: Time
-			timeTo: Time
-			windowSizeOptions: number[]
-			initialWindowSize: number
-		}>(),
-		{
-			loading: false,
-		},
-	)
+	const { loading = false, windows, timeFrom, timeTo, windowSizeOptions, initialWindowSize } = defineProps<{
+		windows: StackedBarsInputWindow[]
+		loading?: boolean
+		timeFrom: Time
+		timeTo: Time
+		windowSizeOptions: number[]
+		initialWindowSize: number
+	}>()
 
 	const emit = defineEmits<{
 		windowSizeChange: [size: number]
@@ -96,7 +91,7 @@
 	}>()
 
 	// Selected window size
-	const selectedWindowSize = ref(props.initialWindowSize)
+	const selectedWindowSize = ref(initialWindowSize)
 
 	// Dynamic Y-axis: show only up to the tallest activity rounded to next full hour
 	const displayMaxMinutes = computed(() => {
@@ -114,7 +109,7 @@
 	const rowUnit = computed(() => getRowUnit(displayMaxMinutes.value))
 
 	const formattedOptions = computed(() =>
-		props.windowSizeOptions.map(mins => ({
+		windowSizeOptions.map(mins => ({
 			value: mins,
 			title: formatWindowMinutes(mins),
 		})),
@@ -125,7 +120,7 @@
 	})
 
 	watch(
-		() => props.windowSizeOptions,
+		() => windowSizeOptions,
 		options => {
 			selectedWindowSize.value = options[0]!
 		},
@@ -202,8 +197,8 @@
 	}
 
 	function isMultiDayData(): boolean {
-		if (props.windows.length < 2) return false
-		const sorted = props.windows
+		if (windows.length < 2) return false
+		const sorted = windows
 		const firstDay = Math.floor(sorted[0].windowStart.getTime() / 86400000)
 		const lastDay = Math.floor(sorted[sorted.length - 1].windowStart.getTime() / 86400000)
 		return lastDay > firstDay
@@ -222,13 +217,13 @@
 	})
 
 	function processSmallWindows(windowSize: number): ProcessedWindow[] {
-		const fromMin = props.timeFrom.getInMinutes
-		let toMin = props.timeTo.getInMinutes
+		const fromMin = timeFrom.getInMinutes
+		let toMin = timeTo.getInMinutes
 		if (toMin <= fromMin) toMin += 24 * 60
 
 		// Index API windows by start minute
 		const apiMap = new Map<number, StackedBarsInputWindow>()
-		for (const w of props.windows) {
+		for (const w of windows) {
 			apiMap.set(dateToMinutesKey(w.windowStart), w)
 		}
 
@@ -256,7 +251,7 @@
 	}
 
 	function processLargeWindows(windowSize: number): ProcessedWindow[] {
-		const sorted = [...props.windows].sort((a, b) => a.windowStart.getTime() - b.windowStart.getTime())
+		const sorted = [...windows].sort((a, b) => a.windowStart.getTime() - b.windowStart.getTime())
 
 		if (sorted.length === 0) return []
 
@@ -304,8 +299,8 @@
 	// "Full day" = all slots from timeFrom to timeTo are empty (not necessarily 24h).
 	// Also absorbs any adjacent sub-day empty slots into the preceding full-day empty range.
 	function mergeConsecutiveFullDayEmpties(slots: ProcessedWindow[]): ProcessedWindow[] {
-		const fromMin = props.timeFrom.getInMinutes
-		const toMin = props.timeTo.getInMinutes
+		const fromMin = timeFrom.getInMinutes
+		const toMin = timeTo.getInMinutes
 		const dayDuration = toMin > fromMin ? toMin - fromMin : toMin + 24 * 60 - fromMin
 
 		const result: ProcessedWindow[] = []
@@ -321,7 +316,7 @@
 
 			const prev = result[result.length - 1]
 			const prevIsFullDayEmpty =
-				prev != null &&
+				prev !== null &&
 				prev.columns.length === 0 &&
 				(prev.windowEnd.getTime() - prev.windowStart.getTime()) / 60000 >= dayDuration
 
@@ -368,7 +363,7 @@
 	const legendItems = computed(() => {
 		const nameMap = new Map<string, { name: string; label: string; color: string }>()
 
-		for (const w of props.windows) {
+		for (const w of windows) {
 			for (const item of w.items) {
 				if (!nameMap.has(item.name)) {
 					nameMap.set(item.name, {
@@ -397,7 +392,7 @@
 	})
 
 	function handleActivityClick(bar: any) {
-		const window = props.windows[bar.windowIndex]
+		const window = windows[bar.windowIndex]
 		if (!window) throw new Error('Window not found')
 		emit('activityClick', window, bar.domain)
 	}

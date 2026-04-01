@@ -71,7 +71,7 @@
 	import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
-	import { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()

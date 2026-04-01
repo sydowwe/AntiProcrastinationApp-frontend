@@ -29,7 +29,7 @@ export class TimePrecise {
 	}
 
 	public get getNice() {
-		return `${this.hours != 0 ? this.hours + 'h' : ''}${this.minutes != 0 ? this.minutes + 'm' : ''}${this.seconds}s`
+		return `${this.hours !== 0 ? this.hours + 'h' : ''}${this.minutes !== 0 ? this.minutes + 'm' : ''}${this.seconds}s`
 	}
 
 	public subtract(objectToSubtract: TimePrecise) {

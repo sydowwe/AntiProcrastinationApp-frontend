@@ -33,7 +33,7 @@
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
 	import { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
-	import { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
+	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 
 	const emit = defineEmits<{

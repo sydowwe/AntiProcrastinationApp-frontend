@@ -14,7 +14,8 @@
 </template>
 
 <script setup lang="ts">
-	import { DayType, getDayTypeColor, getDayTypeIcon } from '@/dtos/enum/DayType.ts'
+	import type { DayType } from '@/dtos/enum/DayType.ts'
+	import { getDayTypeColor, getDayTypeIcon } from '@/dtos/enum/DayType.ts'
 
 	const {} = defineProps<{
 		dayType: DayType

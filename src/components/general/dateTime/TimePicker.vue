@@ -35,35 +35,32 @@
 	import { VMaskInput } from 'vuetify/labs/components'
 	import { Time } from '@/dtos/dto/Time.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			color?: string
-			label?: string
-			viewMode?: 'hour' | 'minute' | 'second'
-			icon?: string
-			allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
-			density?: 'default' | 'comfortable' | 'compact'
-			disabled?: boolean
-		}>(),
-		{
-			color: 'base',
-			label: 'Time',
-			icon: 'far fa-clock',
-			viewMode: 'hour',
-			allowedMinutesSelected: '5',
-			density: 'comfortable',
-			disabled: false,
-		},
-	)
+	const {
+		color = 'base',
+		label = 'Time',
+		viewMode = 'hour',
+		icon = 'far fa-clock',
+		allowedMinutesSelected = '5',
+		density = 'comfortable',
+		disabled = false,
+	} = defineProps<{
+		color?: string
+		label?: string
+		viewMode?: 'hour' | 'minute' | 'second'
+		icon?: string
+		allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
+		density?: 'default' | 'comfortable' | 'compact'
+		disabled?: boolean
+	}>()
 
 	const time = defineModel<Time>({ required: true })
 	const menuOpen = ref(false)
 	const inputValue = ref(Time.fromJson(time.value).getString())
 
-	const allowedMinutes = computed(() => (m: number) => m % parseInt(props.allowedMinutesSelected) === 0)
+	const allowedMinutes = computed(() => (m: number) => m % parseInt(allowedMinutesSelected) === 0)
 
 	function roundToNearestAllowedMinute(minutes: number): number {
-		const interval = parseInt(props.allowedMinutesSelected)
+		const interval = parseInt(allowedMinutesSelected)
 		return Math.round(minutes / interval) * interval
 	}
 

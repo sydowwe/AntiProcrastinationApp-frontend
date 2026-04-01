@@ -116,7 +116,7 @@
 		paused.value = false
 		alarmTime.value = Time.fromSeconds(timeRemaining.value)
 		intervalId.value = setInterval(() => {
-			if (timeRemaining.value == 0) {
+			if (timeRemaining.value === 0) {
 				stop()
 			} else {
 				timeRemaining.value--
@@ -145,6 +145,6 @@
 	}
 
 	function timePassed() {
-		return timeRemaining.value == 0 ? timeInitial.value : timeInitial.value.subtract(alarmTime.value)
+		return timeRemaining.value === 0 ? timeInitial.value : timeInitial.value.subtract(alarmTime.value)
 	}
 </script>

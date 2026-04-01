@@ -74,8 +74,8 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import TimePeriodDialog from '@/components/dialogs/timePeriod/TimePeriodDialog.vue'
-	import { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
-	import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
+	import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import type { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 

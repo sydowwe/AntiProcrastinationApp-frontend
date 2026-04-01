@@ -3,7 +3,7 @@
 		v-model="dialogShown"
 		title="Task done"
 		:confirmButtonLabel="i18n.t('general.save')"
-		:eager="true"
+		eager
 		@confirmed="save"
 	>
 		<template #header>
@@ -50,12 +50,12 @@
 	import { onMounted, ref, watch } from 'vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
+	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 
 	import { useI18n } from 'vue-i18n'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import type { VForm } from 'vuetify/components'
 

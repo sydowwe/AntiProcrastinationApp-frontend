@@ -194,7 +194,7 @@
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 
-	const props = withDefaults(
+	const { toDoListItem, color, isInChangeOrderMode = false, listId, isDragging = false, streakConfig } =
 		defineProps<{
 			toDoListItem: TItem
 			color: string
@@ -202,13 +202,7 @@
 			listId: number
 			isDragging?: boolean
 			streakConfig?: { graceDays: number; periodLengthInDays: number }
-		}>(),
-		{
-			isInChangeOrderMode: false,
-			isDragging: false,
-			streakConfig: undefined,
-		},
-	)
+		}>()
 
 	const emits = defineEmits<{
 		edit: [toDoListItem: TItem]
@@ -221,32 +215,32 @@
 	const i18n = useI18n()
 
 	const isSelected = ref(false)
-	const isDone = ref(props.toDoListItem.isDone)
-	const doneCount = ref<number | null>(props.toDoListItem.doneCount)
+	const isDone = ref(toDoListItem.isDone)
+	const doneCount = ref<number | null>(toDoListItem.doneCount)
 
 	watch(
-		() => props.toDoListItem.isDone,
+		() => toDoListItem.isDone,
 		val => {
 			isDone.value = val
 			isSelected.value = false
 		},
 	)
 	watch(
-		() => props.toDoListItem.doneCount,
+		() => toDoListItem.doneCount,
 		val => {
 			doneCount.value = val
 		},
 	)
 
 	const dueDateChip = computed(() => {
-		const dueDate = (props.toDoListItem as any).dueDate as string | null | undefined
+		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
 		if (!dueDate) return null
 		const today = new Date()
 		today.setHours(0, 0, 0, 0)
 		const due = new Date(dueDate + 'T00:00:00')
 		const tomorrow = new Date(today)
 		tomorrow.setDate(today.getDate() + 1)
-		const isOverdue = due < today && !props.toDoListItem.isDone
+		const isOverdue = due < today && !toDoListItem.isDone
 		const isToday = due.getTime() === today.getTime()
 		const isTomorrow = due.getTime() === tomorrow.getTime()
 		let label = isToday
@@ -254,18 +248,18 @@
 			: isTomorrow
 				? 'Tomorrow'
 				: due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-		const dueTime = (props.toDoListItem as any).dueTime as Time | null | undefined
+		const dueTime = (toDoListItem as any).dueTime as Time | null | undefined
 		if (dueTime) label += ' ' + Time.getString(dueTime)
 		return { label, color: isOverdue ? 'error' : isToday ? 'warning' : undefined }
 	})
 
-	const itemStreak = computed(() => (props.toDoListItem as any).streak as number | undefined)
-	const itemBestStreak = computed(() => (props.toDoListItem as any).bestStreak as number | undefined)
-	const lastCompletedAt = computed(() => (props.toDoListItem as any).lastCompletedAt as string | null | undefined)
+	const itemStreak = computed(() => (toDoListItem as any).streak as number | undefined)
+	const itemBestStreak = computed(() => (toDoListItem as any).bestStreak as number | undefined)
+	const lastCompletedAt = computed(() => (toDoListItem as any).lastCompletedAt as string | null | undefined)
 
 	const gracePeriodActive = computed(() => {
-		if (!props.streakConfig || !lastCompletedAt.value || !itemStreak.value) return false
-		const { graceDays, periodLengthInDays } = props.streakConfig
+		if (!streakConfig || !lastCompletedAt.value || !itemStreak.value) return false
+		const { graceDays, periodLengthInDays } = streakConfig
 		if (graceDays <= 0) return false
 		const lastDone = new Date(lastCompletedAt.value)
 		const now = new Date()
@@ -299,7 +293,7 @@
 	})
 
 	watch(
-		() => props.isInChangeOrderMode,
+		() => isInChangeOrderMode,
 		newValue => {
 			if (cleanup) {
 				cleanup()
@@ -313,7 +307,7 @@
 	)
 
 	const setupDraggable = () => {
-		if (!props.isInChangeOrderMode) return
+		if (!isInChangeOrderMode) return
 
 		const element = itemRef.value?.$el || itemRef.value
 		if (!element) return
@@ -322,9 +316,9 @@
 			element,
 			getInitialData: () => ({
 				type: 'todo-item',
-				itemId: props.toDoListItem.id,
-				activityId: props.toDoListItem.activity.id,
-				listId: props.listId,
+				itemId: toDoListItem.id,
+				activityId: toDoListItem.activity.id,
+				listId: listId,
 			}),
 			onGenerateDragPreview: ({ nativeSetDragImage }) => {
 				const previewElement = dragPreviewRef.value?.$el
@@ -361,11 +355,11 @@
 	]
 
 	function emitChanged() {
-		emits('isDoneChanged', { ...props.toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
+		emits('isDoneChanged', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 	}
 
 	function itemClicked(event: Event) {
-		if (props.isInChangeOrderMode) {
+		if (isInChangeOrderMode) {
 			event.preventDefault()
 			return
 		}
@@ -375,7 +369,7 @@
 	}
 
 	function minusClicked(event: Event) {
-		if (props.isInChangeOrderMode) {
+		if (isInChangeOrderMode) {
 			event.preventDefault()
 			return
 		}
@@ -388,14 +382,14 @@
 	}
 
 	function progressClicked(event: Event) {
-		if (props.isInChangeOrderMode) {
+		if (isInChangeOrderMode) {
 			event.preventDefault()
 			return
 		}
-		if (doneCount.value === null || props.toDoListItem.totalCount === null) return
-		if (doneCount.value >= props.toDoListItem.totalCount) return
+		if (doneCount.value === null || toDoListItem.totalCount === null) return
+		if (doneCount.value >= toDoListItem.totalCount) return
 		doneCount.value++
-		if (doneCount.value >= props.toDoListItem.totalCount) {
+		if (doneCount.value >= toDoListItem.totalCount) {
 			isDone.value = true
 			emitChanged()
 		}
@@ -406,27 +400,27 @@
 	}
 
 	function edit() {
-		if (props.isInChangeOrderMode) return
+		if (isInChangeOrderMode) return
 
-		emits('edit', props.toDoListItem)
+		emits('edit', toDoListItem)
 		isSelected.value = false
 	}
 
 	function del() {
-		if (props.isInChangeOrderMode) return
+		if (isInChangeOrderMode) return
 
-		emits('delete', props.toDoListItem.id)
+		emits('delete', toDoListItem.id)
 		isSelected.value = false
 	}
 
 	function toggleSelect() {
-		if (props.isInChangeOrderMode) return
+		if (isInChangeOrderMode) return
 
 		isSelected.value = !isSelected.value
 		if (isSelected.value) {
-			emits('select', props.toDoListItem.id)
+			emits('select', toDoListItem.id)
 		} else {
-			emits('unSelect', props.toDoListItem.id)
+			emits('unSelect', toDoListItem.id)
 		}
 	}
 </script>

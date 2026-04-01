@@ -1,4 +1,4 @@
-import { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 
 export class TimerPresetRequest {
 	constructor(

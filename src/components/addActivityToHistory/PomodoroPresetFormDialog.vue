@@ -174,7 +174,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
-	import { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
+	import type { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -182,7 +182,7 @@
 	import { VForm } from 'vuetify/components'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 	const emit = defineEmits<{
 		(e: 'created'): void

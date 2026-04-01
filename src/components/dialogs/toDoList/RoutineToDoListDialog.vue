@@ -3,7 +3,7 @@
 		v-model="dialog"
 		:title="isEdit ? $t('general.edit') : $t('general.add') + ' to routine to-do list'"
 		:confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')"
-		:eager="true"
+		eager
 		@confirmed="save"
 		@closed="close"
 	>
@@ -55,9 +55,9 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
-	import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
+	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue'

@@ -15,25 +15,19 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	const props = withDefaults(
-		defineProps<{
-			showBtn: boolean
-			icon: string
-			color: string
-			variant?: 'text' | 'flat' | 'tonal' | 'elevated' | 'outlined' | 'plain' | undefined
-			density?: 'default' | 'comfortable' | 'compact' | undefined
-		}>(),
-		{
-			variant: 'tonal',
-			density: 'comfortable',
-		},
-	)
+	const { showBtn, icon, color, variant = 'tonal', density = 'comfortable' } = defineProps<{
+		showBtn: boolean
+		icon: string
+		color: string
+		variant?: 'text' | 'flat' | 'tonal' | 'elevated' | 'outlined' | 'plain' | undefined
+		density?: 'default' | 'comfortable' | 'compact' | undefined
+	}>()
 
 	const emit = defineEmits<{
 		create: []
 	}>()
 
-	const btnHeight = computed(() => (props.density === 'compact' ? '40px' : '48px'))
+	const btnHeight = computed(() => (density === 'compact' ? '40px' : '48px'))
 </script>
 
 <style scoped></style>

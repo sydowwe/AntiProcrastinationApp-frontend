@@ -178,7 +178,7 @@
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 
 	const props = defineProps<{
 		title: string

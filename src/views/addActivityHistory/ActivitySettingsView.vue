@@ -102,7 +102,7 @@
 	import { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
 	import { ActivityFilter } from '@/dtos/request/activity/ActivityFilter.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
 

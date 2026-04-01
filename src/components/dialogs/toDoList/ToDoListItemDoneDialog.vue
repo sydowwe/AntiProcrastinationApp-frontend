@@ -2,7 +2,7 @@
 	<MyDialog
 		v-model="dialogShown"
 		title=""
-		:eager="true"
+		eager
 		isSmall
 		@confirmed="save"
 	>

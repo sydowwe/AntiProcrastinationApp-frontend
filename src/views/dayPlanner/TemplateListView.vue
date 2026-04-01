@@ -1,72 +1,64 @@
 <template>
-	<div class="py-4">
-		<VRow>
-			<VCol cols="12">
-				<div class="d-flex justify-space-between align-center mb-4">
-					<h1 class="text-h4">Day Templates</h1>
-					<div class="d-flex align-center ga-3">
-						<VSelect
-							v-model="sortBy"
-							:items="sortOptions"
-							density="compact"
-							variant="outlined"
-							hideDetails
-							style="min-width: 170px"
-						/>
-						<template v-if="mdAndUp && templates.length >= 2">
-							<VBtn
-								v-if="!compareMode"
-								color="secondaryOutline"
-								variant="outlined"
-								prependIcon="columns"
-								@click="compareMode = true"
-							>
-								Compare
-							</VBtn>
-							<template v-else>
-								<VBtn
-									color="primary"
-									prependIcon="columns"
-									:disabled="compareSelection.length !== 2"
-									@click="openComparison"
-								>
-									Compare ({{ compareSelection.length }}/2)
-								</VBtn>
-								<VBtn
-									color="secondaryOutline"
-									variant="outlined"
-									@click="exitCompareMode"
-								>
-									Cancel
-								</VBtn>
-							</template>
-						</template>
+	<div class="py-6">
+		<div class="mb-5 d-flex justify-space-between align-center">
+			<h1 class="text-h4">Day Templates</h1>
+			<div class="d-flex align-center ga-3">
+				<template v-if="mdAndUp && templates.length >= 2">
+					<VBtn
+						v-if="!compareMode"
+						color="secondaryOutline"
+						variant="tonal"
+						prependIcon="columns"
+						@click="compareMode = true"
+					>
+						Compare
+					</VBtn>
+					<template v-else>
 						<VBtn
 							color="primary"
-							prependIcon="plus"
-							@click="openCreateDialog"
+							prependIcon="columns"
+							:disabled="compareSelection.length !== 2"
+							@click="openComparison"
 						>
-							Add Template
+							Compare ({{ compareSelection.length }}/2)
 						</VBtn>
-					</div>
-				</div>
-			</VCol>
-		</VRow>
+						<VBtn
+							color="secondaryOutline"
+							variant="outlined"
+							@click="exitCompareMode"
+						>
+							Cancel
+						</VBtn>
+					</template>
+				</template>
+				<VSelect
+					v-model="sortBy"
+					:items="sortOptions"
+					density="compact"
+					variant="outlined"
+					hideDetails
+					style="min-width: 170px"
+				/>
+				<VBtn
+					color="primary"
+					prependIcon="plus"
+					@click="openCreateDialog"
+				>
+					Add Template
+				</VBtn>
+			</div>
+		</div>
 
-		<VRow v-if="loading">
+		<VRow
+			class="w-100"
+			v-if="!templates.length"
+			justify="center"
+			align="center"
+		>
 			<VCol
 				cols="12"
-				class="d-flex justify-center pa-8"
+				lg="4"
 			>
-				<VProgressCircular
-					indeterminate
-					color="primary"
-				/>
-			</VCol>
-		</VRow>
-
-		<VRow v-else-if="!templates.length">
-			<VCol cols="12">
 				<VCard
 					class="text-center pa-8"
 					variant="flat"
@@ -90,21 +82,14 @@
 		<template v-if="templates.length">
 			<!-- Pinned templates -->
 			<template v-if="pinnedTemplates.length">
-				<VRow>
-					<VCol
-						cols="12"
-						class="pb-0"
-					>
-						<span class="text-caption text-medium-emphasis">
-							<VIcon
-								icon="thumbtack"
-								size="12"
-								class="mr-1"
-							/>
-							Pinned
-						</span>
-					</VCol>
-				</VRow>
+				<div class="ml-2 mb-3 text-h6">
+					<VIcon
+						icon="thumbtack"
+						size="12"
+						class="mr-1"
+					/>
+					Pinned
+				</div>
 				<VRow>
 					<VCol
 						v-for="template in pinnedTemplates"
@@ -115,7 +100,7 @@
 					>
 						<TemplateCard
 							:template
-							:isPinned="true"
+							isPinned
 							:tasks="templateTasksMap.get(template.id)"
 							:compareMode="compareMode"
 							:isCompareSelected="compareSelection.includes(template.id)"
@@ -132,14 +117,14 @@
 				</VRow>
 				<VDivider
 					v-if="unpinnedTemplates.length"
-					class="my-2"
+					class="my-5"
 				/>
 			</template>
 
-			<!-- Unpinned templates -->
-			<VRow v-if="unpinnedTemplates.length">
+			<!-- Active unpinned templates -->
+			<VRow v-if="activeUnpinnedTemplates.length">
 				<VCol
-					v-for="template in unpinnedTemplates"
+					v-for="template in activeUnpinnedTemplates"
 					:key="template.id"
 					cols="12"
 					md="6"
@@ -162,6 +147,44 @@
 					/>
 				</VCol>
 			</VRow>
+
+			<!-- Inactive templates -->
+			<template v-if="inactiveUnpinnedTemplates.length">
+				<VDivider class="mt-5 mb-2" />
+				<div class="ml-2 mb-3 text-h6">
+					<VIcon
+						icon="eye-slash"
+						size="12"
+						class="mr-1"
+					/>
+					Inactive
+				</div>
+				<VRow>
+					<VCol
+						v-for="template in inactiveUnpinnedTemplates"
+						:key="template.id"
+						cols="12"
+						md="6"
+						lg="4"
+					>
+						<TemplateCard
+							:template
+							:isPinned="false"
+							:tasks="templateTasksMap.get(template.id)"
+							:compareMode="compareMode"
+							:isCompareSelected="compareSelection.includes(template.id)"
+							@click="openTemplate(template.id)"
+							@edit="openEditDialog(template)"
+							@delete="confirmDelete(template)"
+							@togglePin="togglePin(template.id)"
+							@toggleActive="toggleActive(template)"
+							@applyToday="applyToToday(template.id)"
+							@duplicate="duplicateTemplate(template)"
+							@toggleCompare="toggleCompareSelection(template.id)"
+						/>
+					</VCol>
+				</VRow>
+			</template>
 		</template>
 
 		<!-- Create/Edit Dialog -->
@@ -202,7 +225,7 @@
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
@@ -210,7 +233,9 @@
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 
 	import { useDisplay } from 'vuetify'
+	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 
+	const { showFullScreenLoading } = useLoading()
 	const { mdAndUp } = useDisplay()
 	const router = useRouter()
 	const { fetchAll, create, update, deleteEntity } = useTaskPlannerDayTemplateTaskCrud()
@@ -221,7 +246,6 @@
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())
-	const loading = ref(false)
 
 	type SortOption = 'mostUsed' | 'recentlyUsed' | 'alphabetical'
 	const sortBy = ref<SortOption>('mostUsed')
@@ -231,22 +255,27 @@
 		{ title: 'Alphabetical', value: 'alphabetical' },
 	]
 
+	function activeFirst(a: { isActive: boolean }, b: { isActive: boolean }) {
+		return Number(b.isActive) - Number(a.isActive)
+	}
+
 	const sortedTemplates = computed(() => {
 		const sorted = [...templates.value]
 		switch (sortBy.value) {
 			case 'mostUsed':
-				return sorted.sort((a, b) => b.usageCount - a.usageCount)
+				return sorted.sort((a, b) => activeFirst(a, b) || b.usageCount - a.usageCount)
 			case 'recentlyUsed':
 				return sorted.sort((a, b) => {
+					if (activeFirst(a, b) !== 0) return activeFirst(a, b)
 					if (!a.lastUsedAt && !b.lastUsedAt) return 0
 					if (!a.lastUsedAt) return 1
 					if (!b.lastUsedAt) return -1
 					return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()
 				})
 			case 'alphabetical':
-				return sorted.sort((a, b) => a.name.localeCompare(b.name))
+				return sorted.sort((a, b) => activeFirst(a, b) || a.name.localeCompare(b.name))
 			default:
-				return sorted
+				return sorted.sort(activeFirst)
 		}
 	})
 
@@ -256,6 +285,8 @@
 
 	const pinnedTemplates = computed(() => sortedTemplates.value.filter(t => pinnedIds.value.has(t.id)))
 	const unpinnedTemplates = computed(() => sortedTemplates.value.filter(t => !pinnedIds.value.has(t.id)))
+	const activeUnpinnedTemplates = computed(() => unpinnedTemplates.value.filter(t => t.isActive))
+	const inactiveUnpinnedTemplates = computed(() => unpinnedTemplates.value.filter(t => !t.isActive))
 
 	function togglePin(templateId: number) {
 		if (pinnedIds.value.has(templateId)) {
@@ -305,21 +336,17 @@
 	}
 
 	async function loadTemplates() {
-		loading.value = true
-		try {
-			templates.value = await fetchAll()
-			// Fetch tasks for mini-timeline previews
-			const taskResults = await Promise.all(
-				templates.value.map(t =>
-					fetchFilteredTasks(new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime)).then(
-						tasks => [t.id, tasks] as const,
-					),
+		showFullScreenLoading()
+		templates.value = await fetchAll()
+		// Fetch tasks for mini-timeline previews
+		const taskResults = await Promise.all(
+			templates.value.map(t =>
+				fetchFilteredTasks(new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime)).then(
+					tasks => [t.id, tasks] as const,
 				),
-			)
-			templateTasksMap.value = new Map(taskResults)
-		} finally {
-			loading.value = false
-		}
+			),
+		)
+		templateTasksMap.value = new Map(taskResults)
 	}
 
 	function openCreateDialog() {
@@ -414,3 +441,8 @@
 		await loadTemplates()
 	})
 </script>
+<style scoped>
+	.v-col-lg-4 {
+		padding: 10px;
+	}
+</style>

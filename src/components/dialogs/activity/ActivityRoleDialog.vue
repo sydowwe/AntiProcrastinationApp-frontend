@@ -31,13 +31,13 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { ref } from 'vue'
-	import { Role } from '@/dtos/response/activity/Role.ts'
+	import type { Role } from '@/dtos/response/activity/Role.ts'
 	import { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
 	import { VForm } from 'vuetify/components'
 
-	const { useApi } = withDefaults(defineProps<{ useApi?: boolean }>(), { useApi: true })
+	const { useApi = true } = defineProps<{ useApi?: boolean }>()
 
 	const emit = defineEmits<{
 		(e: 'created', newItem: RoleRequest, createdId: number): void

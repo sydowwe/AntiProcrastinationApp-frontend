@@ -8,7 +8,7 @@
 	import MyPasswordInput from '@/components/user/MyPasswordInput.vue'
 	import { useI18n } from 'vue-i18n'
 
-	withDefaults(defineProps<{ autofocus?: boolean }>(), { autofocus: false })
+	const { autofocus = false } = defineProps<{ autofocus?: boolean }>()
 
 	const password = defineModel<string | null>({ required: true })
 	const i18n = useI18n()

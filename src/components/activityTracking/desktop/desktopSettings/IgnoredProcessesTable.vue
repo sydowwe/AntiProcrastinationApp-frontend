@@ -143,11 +143,11 @@
 	import { ref } from 'vue'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
+	import type { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 

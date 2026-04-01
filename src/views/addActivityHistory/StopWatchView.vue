@@ -51,7 +51,7 @@
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
 	import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
 	import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'

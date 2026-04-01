@@ -1,5 +1,6 @@
 <template>
 	<div class="d-flex align-center ga-2">
+		<span v-if="label">{{ label }}</span>
 		<div class="mini-timeline">
 			<div
 				v-for="(task, index) in nonBackgroundTasks"
@@ -22,10 +23,7 @@
 				}"
 			/>
 		</div>
-		<span
-			v-if="showCount"
-			class="text-caption text-medium-emphasis"
-		>
+		<span v-if="showCount">
 			{{ tasks.length }}
 		</span>
 	</div>
@@ -36,27 +34,26 @@
 	import type { ITimelineTask } from '@/dtos/dto/ITimelineTask.ts'
 	import type { Time } from '@/dtos/dto/Time.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			tasks: ITimelineTask[]
-			startTime: Time
-			endTime: Time
-			showCount?: boolean
-		}>(),
-		{ showCount: true },
-	)
+	const { tasks, startTime, endTime, label, showCount = true } = defineProps<{
+		tasks: ITimelineTask[]
+		startTime: Time
+		endTime: Time
+		label?: string
+		showCount?: boolean
+	}>()
+	console.log(tasks)
 
 	const totalMinutes = computed(() => {
-		const start = props.startTime.getInMinutes
-		const end = props.endTime.getInMinutes
+		const start = startTime.getInMinutes
+		const end = endTime.getInMinutes
 		return end > start ? end - start : end + 1440 - start
 	})
 
-	const nonBackgroundTasks = computed(() => props.tasks.filter(t => !t.isBackground))
-	const backgroundTasks = computed(() => props.tasks.filter(t => t.isBackground))
+	const nonBackgroundTasks = computed(() => tasks.filter(t => !t.isBackground))
+	const backgroundTasks = computed(() => tasks.filter(t => t.isBackground))
 
 	function getPosition(task: ITimelineTask) {
-		const rangeStart = props.startTime.getInMinutes
+		const rangeStart = startTime.getInMinutes
 		const taskStart = task.startTime.getInMinutes
 		const taskEnd = task.endTime.getInMinutes
 
@@ -74,23 +71,23 @@
 	.mini-timeline {
 		position: relative;
 		width: 100%;
-		height: 12px;
+		height: 16px;
 		background: rgba(var(--v-theme-on-surface), 0.08);
-		border-radius: 4px;
+		border-radius: 3px;
+		padding: 0 4px;
 		overflow: hidden;
 	}
 
 	.mini-timeline-segment {
 		position: absolute;
 		top: 1px;
-		height: 10px;
+		height: 14px;
 		border-radius: 3px;
-		min-width: 2px;
+		border: 2px solid #313131;
+		min-width: 3px;
 	}
 
 	.mini-timeline-bg {
 		opacity: 0.3;
-		top: 0;
-		height: 12px;
 	}
 </style>
