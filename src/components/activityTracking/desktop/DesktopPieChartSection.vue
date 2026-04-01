@@ -84,7 +84,7 @@
 	import ActivityPieChart from '@/components/activityTracking/pieChart/ActivityPieChart.vue'
 	import DesktopProcessDetailsPanel from './DesktopProcessDetailsPanel.vue'
 	import { getDomainColor } from '@/utils/domainColor'
-	import { PieSegment } from '@/components/activityTracking/pieChart/PieSegment.ts'
+	import type { PieSegment } from '@/components/activityTracking/pieChart/PieSegment.ts'
 	import { formatDuration } from '@/utils/formatDuration'
 	import { getDesktopProcessDetails } from '@/api/desktopActivityTrackingApi.ts'
 	import type { DesktopProcessPieData } from '@/dtos/response/activityTracking/desktop/DesktopProcessPieData.ts'

@@ -2,7 +2,7 @@
 	<MyDialog
 		v-model="dialog"
 		:title="i18n.t('user.passwordChange')"
-		:eager="true"
+		eager
 		@closed="form?.reset"
 		@confirmed="submit"
 	>

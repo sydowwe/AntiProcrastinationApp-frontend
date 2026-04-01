@@ -7,7 +7,7 @@
 		v-model:loading="loading"
 		:columns
 		:itemsLength
-		:showActions="true"
+		showActions
 		@onLoadItems="loadItems"
 		@onAdd="activityDialog.openAddDialog()"
 		@onEdit="onEdit"
@@ -41,9 +41,9 @@
 	import ActivityDialog from '@/components/dialogs/activity/ActivityDialog.vue'
 	import { Activity } from '@/dtos/response/activity/Activity.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
-	import { ActivityFilter } from '@/dtos/request/activity/ActivityFilter.ts'
+	import type { ActivityFilter } from '@/dtos/request/activity/ActivityFilter.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
 

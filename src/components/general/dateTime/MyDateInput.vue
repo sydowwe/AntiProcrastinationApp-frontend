@@ -1,7 +1,7 @@
 <template>
 	<div class="d-flex align-center">
 		<VIconBtn
-			v-if="props.dateShowArrows"
+			v-if="dateShowArrows"
 			icon="fa-solid fa-chevron-left"
 			variant="text"
 			:density="density"
@@ -16,7 +16,7 @@
 			style="min-width: 150px; max-width: 150px"
 		/>
 		<VIconBtn
-			v-if="props.dateShowArrows"
+			v-if="dateShowArrows"
 			icon="fa-solid fa-chevron-right"
 			variant="text"
 			:density="density"
@@ -33,12 +33,9 @@
 	import { computed, useAttrs } from 'vue'
 	import { VDateInput } from 'vuetify/labs/components'
 
-	const props = withDefaults(
-		defineProps<{
-			dateShowArrows?: boolean
-		}>(),
-		{ dateShowArrows: true },
-	)
+	const { dateShowArrows = true } = defineProps<{
+		dateShowArrows?: boolean
+	}>()
 
 	const date = defineModel<Date>({ required: true })
 	const attrs = useAttrs()

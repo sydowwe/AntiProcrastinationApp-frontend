@@ -24,7 +24,7 @@
 			v-model="formData"
 			class="flex-fill"
 			:showFromToDoListField="false"
-			:isInRow="true"
+			isInRow
 			isFilter
 		/>
 	</div>
@@ -33,9 +33,9 @@
 <script setup lang="ts">
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import { TrackerDesktopMappingsFilter } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingsFilter.ts'
+	import type { TrackerDesktopMappingsFilter } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingsFilter.ts'
 	import { TrackerDesktopMappingTypeOptions } from '@/dtos/enum/TrackerDesktopMappingTypeEnum.ts'
-	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
+	import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 
 	const mappingFilter = defineModel<TrackerDesktopMappingsFilter>({ required: true })
 	const formData = defineModel<ActivityFormRequest>('formData', { required: true })

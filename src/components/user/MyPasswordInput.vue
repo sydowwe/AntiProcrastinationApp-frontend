@@ -13,19 +13,12 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
-	withDefaults(
-		defineProps<{
-			isNew?: boolean
-			rules: unknown[]
-			label?: string | null
-			autofocus?: boolean
-		}>(),
-		{
-			isNew: false,
-			label: null,
-			autofocus: false,
-		},
-	)
+	const { isNew = false, rules, label = null, autofocus = false } = defineProps<{
+		isNew?: boolean
+		rules: unknown[]
+		label?: string | null
+		autofocus?: boolean
+	}>()
 	const password = defineModel<string | null>({ required: true })
 	const showPassword = ref(false)
 </script>

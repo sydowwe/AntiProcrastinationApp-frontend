@@ -1,6 +1,6 @@
 import type { DayType } from '@/dtos/enum/DayType.ts'
 import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
-import type { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 import type { Location } from '@/dtos/enum/Location.ts'
 
 export class TaskPlannerDayTemplate {
@@ -30,8 +30,8 @@ export class TaskPlannerDayTemplate {
 			json.tags,
 			json.description,
 			json.icon,
-			json.defaultWakeUpTime,
-			json.defaultBedTime,
+			Time.fromJson(json.defaultWakeUpTime),
+			Time.fromJson(json.defaultBedTime),
 			json.scheduledDays ?? [],
 			json.lastUsedAt,
 			json.suggestedLocation ?? undefined,

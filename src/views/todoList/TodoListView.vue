@@ -124,12 +124,12 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
-	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
+	import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
-	import ToDoList from '../components/toDoList/ToDoList.vue'
-	import ToDoListItemDialog from '../components/dialogs/toDoList/ToDoListItemDialog.vue'
+	import ToDoList from '../../components/toDoList/ToDoList.vue'
+	import ToDoListItemDialog from '../../components/dialogs/toDoList/ToDoListItemDialog.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -137,7 +137,7 @@
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
 	import { useTodoListItemCrud } from '@/api/todoList/todoListItemApi.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'
-	import { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
+	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 
 	const props = defineProps<{
 		id: string

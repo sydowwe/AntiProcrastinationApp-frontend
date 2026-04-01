@@ -1,5 +1,6 @@
 import type { Time } from '@/dtos/dto/Time.ts'
-import { type IBasePlannerTask, TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+import { type IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type { StoreGeneric } from 'pinia'
 import type { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'

@@ -1,8 +1,15 @@
-import 'moment/dist/locale/sk'
-import 'moment/dist/locale/cs'
-import moment from 'moment'
+import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
+import utc from 'dayjs/plugin/utc'
+import 'dayjs/locale/sk'
+import 'dayjs/locale/cs'
 import { capitalizeString } from '@/utils/helperMethods.ts'
 import { Time } from '@/dtos/dto/Time.ts'
+
+dayjs.extend(customParseFormat)
+dayjs.extend(localizedFormat)
+dayjs.extend(utc)
 
 export function useMoment() {
 	function toUTCDate(date: Date) {
@@ -23,11 +30,11 @@ export function useMoment() {
 	}
 
 	function stringToUTCDate(str: string) {
-		return toUTCDate(moment(str, 'DD.MM.YYYY').toDate())
+		return toUTCDate(dayjs(str, 'DD.MM.YYYY').toDate())
 	}
 
 	function urlStringToUTCDate(str: string) {
-		return toUTCDate(moment(str, 'DD-MM-YYYY').toDate())
+		return toUTCDate(dayjs(str, 'DD-MM-YYYY').toDate())
 	}
 
 	function usStringToUrlString(str: string) {
@@ -36,47 +43,47 @@ export function useMoment() {
 	}
 
 	function formatToUsString(date: Date) {
-		return moment(toUTCDate(date)).format('YYYY-MM-DD')
+		return dayjs(toUTCDate(date)).format('YYYY-MM-DD')
 	}
 
 	function formatToDateWithDay(date: Date | null) {
-		return moment(date).locale('sk').format('dd DD.MM.')
+		return dayjs(date).locale('sk').format('dd DD.MM.')
 	}
 
 	function formatToDateWithDayAfter(date: Date | null) {
-		return moment(date).locale('sk').format('DD.MM. dd')
+		return dayjs(date).locale('sk').format('DD.MM. dd')
 	}
 
 	function formatToDateWithoutYear(date: Date | null) {
-		return moment(date).locale('sk').format('DD.MM.')
+		return dayjs(date).locale('sk').format('DD.MM.')
 	}
 
 	function formatToDate(date: Date | null) {
-		return moment(date).locale('sk').format('L')
+		return dayjs(date).locale('sk').format('L')
 	}
 
 	function formatToTime(date: Date) {
-		return moment(date).locale('sk').format('LT')
+		return dayjs(date).locale('sk').format('LT')
 	}
 
 	function formatToTimeWithSec(date: Date) {
-		return moment(date).locale('sk').format('LTS')
+		return dayjs(date).locale('sk').format('LTS')
 	}
 
 	function formatLocalized(date: Date, format: string) {
-		return moment(date).locale('sk').format(format)
+		return dayjs(date).locale('sk').format(format)
 	}
 
 	function formatToTime24H(date: Date) {
-		return moment(date).locale('sk').format('HH:mm')
+		return dayjs(date).locale('sk').format('HH:mm')
 	}
 
 	function equalsOnlyDate(date1: Date, date2: Date) {
-		return moment(date1).isSame(date2, 'day')
+		return dayjs(date1).isSame(date2, 'day')
 	}
 
 	function formatTimeDtoToUtcTimeDto(time: Time) {
-		const tmp = moment(time.getString(), 'HH:mm')
+		const tmp = dayjs(time.getString(), 'HH:mm')
 		const formatted = tmp.utc().format('HH:mm')
 		return Time.fromString(formatted)
 	}
@@ -102,9 +109,11 @@ export function useMoment() {
 }
 
 export function getTranslatedMonths(locale = 'sk') {
-	const months = moment.localeData(locale).months()
+	const months = Array.from({ length: 12 }, (_, i) =>
+		capitalizeString(dayjs().locale(locale).month(i).format('MMMM')),
+	)
 	return months.map((month, index) => ({
 		value: index + 1,
-		title: capitalizeString(month),
+		title: month,
 	}))
 }

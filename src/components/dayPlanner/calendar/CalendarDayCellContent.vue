@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
+	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { DayType, getDayTypeColor } from '@/dtos/enum/DayType.ts'
 	import { LOCATION_ICONS, LOCATION_LABELS } from '@/dtos/enum/Location.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'

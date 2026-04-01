@@ -32,8 +32,8 @@
 	</VDataTableServer>
 </template>
 <script setup lang="ts" generic="TItem extends IMyResponse">
-	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
+	import type { TableAction } from '@/dtos/dto/TableAction.ts'
+	import type { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { computed } from 'vue'
 	import { VDataTableServer } from 'vuetify/components'
 	import { useTableHeader } from '@/composables/table/TableHeaderComposable.ts'

@@ -114,31 +114,32 @@
 	import { computed, ref, watch } from 'vue'
 	import { type IIdResponse } from '@/dtos/response/interface/IIdResponse.ts'
 	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
+	import type { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue'
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { getNestedValue } from '@/composables/table/TableHeaderComposable.ts'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 
-	const props = withDefaults(
-		defineProps<{
-			itemsLength: number
-			columns: TableColumn[]
-			actions?: TableAction[]
-			showActions?: boolean
-			showActionsHeader?: boolean
-			showExpand?: boolean
-			showSelect?: boolean
-			deleteConfirmationColumn?: string
-		}>(),
-		{
-			showActions: true,
-			showActionsHeader: true,
-			actions: undefined,
-			deleteConfirmationColumn: undefined,
-		},
-	)
+	const {
+		itemsLength,
+		columns: columnsProp,
+		actions: actionsProp,
+		showActions = true,
+		showActionsHeader = true,
+		showExpand,
+		showSelect,
+		deleteConfirmationColumn,
+	} = defineProps<{
+		itemsLength: number
+		columns: TableColumn[]
+		actions?: TableAction[]
+		showActions?: boolean
+		showActionsHeader?: boolean
+		showExpand?: boolean
+		showSelect?: boolean
+		deleteConfirmationColumn?: string
+	}>()
 	const emit = defineEmits<{
 		(e: 'onAdd'): void
 		(e: 'onDelete', item: TItem): void
@@ -150,20 +151,20 @@
 	const page = defineModel<number>('page', { required: true })
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
 	const loading = defineModel<boolean>('loading', { required: true })
-	const actions = props.actions ?? [
+	const actions = actionsProp ?? [
 		new TableAction('edit', 'Upraviť', 'primaryOutline', 'tonal', 'pen', edit),
 		new TableAction('delete', 'Vymazať', 'secondaryOutline', 'tonal', 'trash', del),
 	]
 
-	const columns = computed(() => props.columns)
+	const columns = computed(() => columnsProp)
 
 	const deleteDialog = ref(false)
 	const deleteConfirmationText = ref<string | undefined>()
 
 	watch(
-		() => props.columns,
+		() => columnsProp,
 		() => {
-			if (!props.columns[0]?.key) {
+			if (!columnsProp[0]?.key) {
 				return
 			}
 			sortBy.value.push(new VSortItem(props.columns[0]?.key, 'asc'))
@@ -176,8 +177,8 @@
 
 	function del(item: TItem) {
 		deleteDialog.value = true
-		const name = props.deleteConfirmationColumn
-			? (item as Record<string, unknown>)[props.deleteConfirmationColumn]
+		const name = deleteConfirmationColumn
+			? (item as Record<string, unknown>)[deleteConfirmationColumn]
 			: item.id
 		deleteConfirmationText.value = `Are you sure you want to delete ${name}?`
 	}

@@ -66,21 +66,21 @@
 	import ActivityDomainCard from '@/components/activityTracking/summaryCards/ActivityDomainCard.vue'
 	import type { SummaryCardsData } from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			domains: SummaryCardsData[] | null
-			baselineOptions: BaselineOption[]
-			selectedBaseline: BaselineType
-			selectedDomain?: string | null
-			loading?: boolean
-			title?: string
-		}>(),
-		{
-			loading: false,
-			selectedDomain: null,
-			title: 'Top Domains',
-		},
-	)
+	const {
+		domains,
+		baselineOptions,
+		selectedBaseline,
+		selectedDomain = null,
+		loading = false,
+		title = 'Top Domains',
+	} = defineProps<{
+		domains: SummaryCardsData[] | null
+		baselineOptions: BaselineOption[]
+		selectedBaseline: BaselineType
+		selectedDomain?: string | null
+		loading?: boolean
+		title?: string
+	}>()
 
 	const emit = defineEmits<{
 		(e: 'update:selectedBaseline', value: BaselineType): void
@@ -90,7 +90,7 @@
 
 	// Filter out domains with no activity (both active and background are 0 or null)
 	const visibleDomains = computed(() => {
-		return props.domains?.filter(domain => {
+		return domains?.filter(domain => {
 			const hasActiveTime = domain.active !== null && domain.active.seconds > 0
 			const hasBackgroundTime = domain.background !== null && domain.background.seconds > 0
 			return hasActiveTime || hasBackgroundTime

@@ -25,25 +25,26 @@
 <script setup lang="ts">
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
 	import { computed } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
-	import { TimePrecise, type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+	import { type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			title: string
-			timeInitialObject: Time
-			timeRemainingObject: TimePrecise
-			color?: string
-			whatToShow?: TimePreciseKeys[]
-		}>(),
-		{
-			color: 'primary-accent',
-			whatToShow: () => ['hours', 'minutes', 'seconds'],
-		},
-	)
+	const {
+		title,
+		timeInitialObject,
+		timeRemainingObject,
+		color = 'primary-accent',
+		whatToShow = ['hours', 'minutes', 'seconds'] as TimePreciseKeys[],
+	} = defineProps<{
+		title: string
+		timeInitialObject: Time
+		timeRemainingObject: TimePrecise
+		color?: string
+		whatToShow?: TimePreciseKeys[]
+	}>()
 
 	const timerProgress = computed(() => {
-		return (props.timeRemainingObject?.getInSeconds / props.timeInitialObject?.getInSeconds) * 100
+		return (timeRemainingObject?.getInSeconds / timeInitialObject?.getInSeconds) * 100
 	})
 </script>
 <style scoped>

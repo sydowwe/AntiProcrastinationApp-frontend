@@ -7,7 +7,7 @@
 		v-model:loading="loading"
 		:columns
 		:itemsLength
-		:showActions="true"
+		showActions
 		@onLoadItems="loadItems"
 		@onAdd="categoryDialog.openAddDialog()"
 		@onEdit="onEdit"
@@ -41,9 +41,9 @@
 	import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue'
 	import { Category } from '@/dtos/response/activity/Category.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
-	import { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
+	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityCategoryCrud } from '@/api/activity/activityCategoryApi.ts'
 

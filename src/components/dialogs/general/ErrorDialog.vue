@@ -3,7 +3,7 @@
 		v-model="dialog"
 		:title="title"
 		:text="message"
-		:persistent="true"
+		persistent
 		:closeBtnText="$t('general.close')"
 		:hasConfirmBtn="hasRetryButton"
 		@closed="emit('closed')"
@@ -13,14 +13,11 @@
 <script setup lang="ts">
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 
-	withDefaults(
-		defineProps<{
-			title: string
-			message: string
-			hasRetryButton?: boolean
-		}>(),
-		{ hasRetryButton: false },
-	)
+	const { hasRetryButton = false } = defineProps<{
+		title: string
+		message: string
+		hasRetryButton?: boolean
+	}>()
 	const emit = defineEmits<{
 		closed: []
 		retried: []

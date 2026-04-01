@@ -1,5 +1,5 @@
 import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
-import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
+import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(

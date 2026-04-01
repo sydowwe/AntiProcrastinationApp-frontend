@@ -2,7 +2,7 @@
 	<MyDialog
 		v-model="dialog"
 		:title="title ?? i18n.t('user.identityVerification')"
-		:eager="true"
+		eager
 		@closed="close"
 		@confirmed="validateAndSendForm"
 	>
@@ -33,18 +33,11 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			title?: string
-			url?: string
-			useDefaultSubmitFunction?: boolean
-		}>(),
-		{
-			title: undefined,
-			url: '/user/verify',
-			useDefaultSubmitFunction: true,
-		},
-	)
+	const { title, url = '/user/verify', useDefaultSubmitFunction = true } = defineProps<{
+		title?: string
+		url?: string
+		useDefaultSubmitFunction?: boolean
+	}>()
 	const emit = defineEmits<{
 		verified: [data: unknown]
 		submitted: [password: string | null, twoFactorAuthToken: string | undefined]
@@ -82,7 +75,7 @@
 	}
 
 	async function defaultSubmit() {
-		API.post(props.url, {
+		API.post(url, {
 			password: password.value,
 			twoFactorAuthToken: twoFactorAuthToken.value,
 		})
@@ -100,7 +93,7 @@
 		loading.value = true
 		const { valid } = await form.value!.validate()
 		if (valid) {
-			if (props.useDefaultSubmitFunction) {
+			if (useDefaultSubmitFunction) {
 				await defaultSubmit()
 			} else {
 				emit('submitted', password.value, twoFactorAuthToken.value)

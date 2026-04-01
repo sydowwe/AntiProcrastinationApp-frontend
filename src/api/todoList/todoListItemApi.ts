@@ -2,7 +2,7 @@ import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
-import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
+import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 import { API } from '@/plugins/axiosConfig.ts'
 
 export function useTodoListItemCrud(todoListId: number) {

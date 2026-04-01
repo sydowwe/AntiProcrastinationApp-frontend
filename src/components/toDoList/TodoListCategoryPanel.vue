@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-	import { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
+	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 
 	defineProps<{

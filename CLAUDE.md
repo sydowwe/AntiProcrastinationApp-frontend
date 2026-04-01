@@ -14,12 +14,14 @@
 
 ## Coding Standards
 
+- **Strict equality**: Always use `===`/`!==` (both in script and template). `== null` is allowed for null/undefined checks.
+- **Boolean attribute shorthand**: Use `loading` instead of `:loading="true"`.
 - **Split larger components into logical smaller ones**
 - **Function Syntax**: Use `function name() {}` declarations instead of `const name = () => {}` for component logic to leverage hoisting and improve readability.
 - **Component Naming**: Use PascalCase for filenames and template tags (e.g., `<VBtn>`, `<MyCustomComponent>`).
 - use ref mostly only use reactive when its really needed or conventional
 - **Props**:
-    - Define using: `const props = defineProps<{ foo: string, bar?: number }>()`.
+    - Define using destructure defaults — never use `withDefaults()`: `const { foo, bar = 42 } = defineProps<{ foo: string, bar?: number }>()`. Vue 3.5 reactive destructure keeps props reactive without `withDefaults`. Array/object defaults use the value directly (e.g., `items = []`), not factory functions.
     - Use **camelCase** in BOTH TS and Templates (e.g., `hideDetails` not `hide-details`).
     - use props just as the shorthand :prop instead of :prop="prop" when there is ref with same name
 - **Emits**:

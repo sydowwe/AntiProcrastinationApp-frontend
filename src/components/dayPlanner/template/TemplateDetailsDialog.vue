@@ -20,7 +20,7 @@
 	import TaskPlannerDayTemplateDetailsForm from '@/components/dayPlanner/template/TaskPlannerDayTemplateDetailsForm.vue'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 
-	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
+	import type { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 
 	defineProps<{
 		template: TaskPlannerDayTemplate | null

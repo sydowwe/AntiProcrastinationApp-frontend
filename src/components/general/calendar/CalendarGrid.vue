@@ -122,20 +122,12 @@
 	import { getDayTypeColor, getDayTypeIcon } from '@/dtos/enum/DayType.ts'
 	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
 
-	const props = withDefaults(
-		defineProps<{
-			dateRangeMode?: 'range' | 'month' | 'duration'
-			minRowHeight?: number
-			fetchFn?: (filter: CalendarFilter) => Promise<ICalendar[]>
-			selectedIds?: number[]
-		}>(),
-		{
-			dateRangeMode: 'month',
-			minRowHeight: 220,
-			fetchFn: undefined,
-			selectedIds: () => [],
-		},
-	)
+	const { dateRangeMode = 'month', minRowHeight = 220, fetchFn, selectedIds = [] } = defineProps<{
+		dateRangeMode?: 'range' | 'month' | 'duration'
+		minRowHeight?: number
+		fetchFn?: (filter: CalendarFilter) => Promise<ICalendar[]>
+		selectedIds?: number[]
+	}>()
 
 	const emit = defineEmits<{
 		dayClick: [day: ICalendar]
@@ -197,7 +189,7 @@
 		loading.value = true
 		try {
 			const filter = new CalendarFilter(dateRange.value.start, dateRange.value.end)
-			calendarData.value = props.fetchFn ? await props.fetchFn(filter) : await fetchFiltered(filter)
+			calendarData.value = fetchFn ? await fetchFn(filter) : await fetchFiltered(filter)
 		} catch (error) {
 			console.error('Error fetching calendar data:', error)
 			calendarData.value = []

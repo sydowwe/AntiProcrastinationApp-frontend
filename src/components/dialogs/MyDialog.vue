@@ -69,42 +69,39 @@
 	import { computed } from 'vue'
 	import { useDisplay } from 'vuetify/framework'
 
-	const props = withDefaults(
-		defineProps<{
-			title?: string
-			text?: string
-			persistent?: boolean
-			eager?: boolean
-			hasHeader?: boolean
-			hasFooter?: boolean
-			hasCloseBtn?: boolean
-			closeBtnColor?: string
-			closeBtnVariant?: 'text' | 'outlined' | 'tonal'
-			closeBtnText?: string
-			hasConfirmBtn?: boolean
-			confirmBtnLabel?: string
-			confirmBtnColor?: string
-			confirmBtnDisabled?: boolean
-			isSmall?: boolean
-		}>(),
-		{
-			title: undefined,
-			text: undefined,
-			persistent: true,
-			eager: false,
-			hasHeader: true,
-			hasFooter: true,
-			hasCloseBtn: true,
-			closeBtnColor: 'secondaryOutline',
-			closeBtnVariant: 'outlined',
-			closeBtnText: undefined,
-			hasConfirmBtn: true,
-			confirmBtnLabel: undefined,
-			confirmBtnColor: undefined,
-			confirmBtnDisabled: false,
-			isSmall: true,
-		},
-	)
+	const {
+		title,
+		text,
+		persistent = true,
+		eager = false,
+		hasHeader = true,
+		hasFooter = true,
+		hasCloseBtn = true,
+		closeBtnColor = 'secondaryOutline',
+		closeBtnVariant = 'outlined',
+		closeBtnText,
+		hasConfirmBtn = true,
+		confirmBtnLabel,
+		confirmBtnColor,
+		confirmBtnDisabled = false,
+		isSmall = true,
+	} = defineProps<{
+		title?: string
+		text?: string
+		persistent?: boolean
+		eager?: boolean
+		hasHeader?: boolean
+		hasFooter?: boolean
+		hasCloseBtn?: boolean
+		closeBtnColor?: string
+		closeBtnVariant?: 'text' | 'outlined' | 'tonal'
+		closeBtnText?: string
+		hasConfirmBtn?: boolean
+		confirmBtnLabel?: string
+		confirmBtnColor?: string
+		confirmBtnDisabled?: boolean
+		isSmall?: boolean
+	}>()
 	const emit = defineEmits<{
 		closed: []
 		confirmed: []
@@ -128,9 +125,9 @@
 		} else if (mdAndDown.value) {
 			return '70%'
 		} else if (lgAndDown.value) {
-			return props.isSmall ? '40%' : '70%'
+			return isSmall ? '40%' : '70%'
 		} else {
-			return props.isSmall ? '30%' : '50%'
+			return isSmall ? '30%' : '50%'
 		}
 	})
 

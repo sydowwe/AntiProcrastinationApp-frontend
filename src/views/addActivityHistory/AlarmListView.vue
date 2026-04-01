@@ -38,7 +38,7 @@
 	import AlarmDialog from '@/components/addActivityToHistory/AlarmDialog.vue'
 	import { onMounted, ref } from 'vue'
 	import { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
-	import { AlarmRequest } from '@/dtos/request/activityRecording/AlarmRequest.ts'
+	import type { AlarmRequest } from '@/dtos/request/activityRecording/AlarmRequest.ts'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
@@ -139,7 +139,7 @@
 	}
 
 	function unSelect(id: number) {
-		selectedItemsIds.value = selectedItemsIds.value.filter(item => item != id)
+		selectedItemsIds.value = selectedItemsIds.value.filter(item => item !== id)
 	}
 </script>
 <style scoped></style>

@@ -1,5 +1,5 @@
 import { RoutineTodoListItemEntity } from './RoutineTodoListItemEntity.ts'
-import { TimePeriodEntity } from '../activityRecording/TimePeriodEntity.ts'
+import type { TimePeriodEntity } from '../activityRecording/TimePeriodEntity.ts'
 
 export class RoutineTodoListGroupedList {
 	constructor(

@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import type { ActivityHistoryFilter } from '@/dtos/request/activityHistory/ActivityHistoryFilter.ts'
 
 	const props = defineProps<{

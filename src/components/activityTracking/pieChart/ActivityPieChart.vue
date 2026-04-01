@@ -38,7 +38,7 @@
 	import { LegendComponent, TooltipComponent } from 'echarts/components'
 	import type { EChartsOption } from 'echarts'
 	import { formatDuration } from '@/utils/formatDuration'
-	import { PieSegment } from './PieSegment.ts'
+	import type { PieSegment } from './PieSegment.ts'
 
 	const props = defineProps<{
 		domains: PieSegment[]

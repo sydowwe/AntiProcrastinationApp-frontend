@@ -18,16 +18,10 @@
 	import { VCheckbox } from 'vuetify/components'
 	import { NullFalseTrueCheckboxStates } from '@/dtos/enum/NullFalseTrueCheckboxStates.ts'
 
-	withDefaults(
-		defineProps<{
-			label?: string
-			hideDetails?: boolean
-		}>(),
-		{
-			label: '',
-			hideDetails: false,
-		},
-	)
+	const { label = '', hideDetails = false } = defineProps<{
+		label?: string
+		hideDetails?: boolean
+	}>()
 
 	const model = defineModel<boolean | null>({ default: null, required: true })
 

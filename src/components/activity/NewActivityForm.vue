@@ -69,7 +69,7 @@
 	import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue'
 	import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue'
 	import InputWithButton from '@/components/general/InputWithButton.vue'
-	import { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
+	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
 	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'

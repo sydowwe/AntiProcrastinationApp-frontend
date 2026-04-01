@@ -53,22 +53,13 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
-	withDefaults(
-		defineProps<{
-			label?: string
-			startIcon?: string
-			endIcon?: string
-			allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
-			density?: 'default' | 'comfortable' | 'compact'
-		}>(),
-		{
-			label: undefined,
-			startIcon: undefined,
-			endIcon: undefined,
-			allowedMinutesSelected: '10',
-			density: 'comfortable',
-		},
-	)
+	const { allowedMinutesSelected = '10', density = 'comfortable' } = defineProps<{
+		label?: string
+		startIcon?: string
+		endIcon?: string
+		allowedMinutesSelected?: '5' | '10' | '15' | '20' | '30' | '45' | '60'
+		density?: 'default' | 'comfortable' | 'compact'
+	}>()
 
 	const emit = defineEmits<{
 		(e: 'spanChanged', spanHours: number): void

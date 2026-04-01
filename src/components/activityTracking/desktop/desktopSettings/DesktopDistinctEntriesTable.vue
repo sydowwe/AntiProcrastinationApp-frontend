@@ -26,11 +26,11 @@
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
 	import { TrackerDesktopDistinctEntriesResponse } from '@/dtos/response/activityTracking/desktop/settings/TrackerDesktopDistinctEntriesResponse.ts'
-	import { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
+	import type { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
-	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
+	import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import DesktopDistinctEntriesActions from '@/components/activityTracking/desktop/desktopSettings/DesktopDistinctEntriesActions.vue'
 
 	const props = defineProps<{ filter: DesktopDistinctEntriesFilterRequest }>()

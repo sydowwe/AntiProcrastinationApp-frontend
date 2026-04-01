@@ -29,15 +29,10 @@
 	</VCard>
 </template>
 <script setup lang="ts">
-	withDefaults(
-		defineProps<{
-			title: string
-			hasFooter: boolean
-		}>(),
-		{
-			hasFooter: true,
-		},
-	)
+	const { title, hasFooter = true } = defineProps<{
+		title: string
+		hasFooter?: boolean
+	}>()
 	const emit = defineEmits<{
 		(e: 'cancel'): void
 		(e: 'confirm'): void

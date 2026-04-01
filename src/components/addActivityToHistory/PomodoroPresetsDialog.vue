@@ -123,7 +123,7 @@
 	import PomodoroPresetFormDialog from '@/components/addActivityToHistory/PomodoroPresetFormDialog.vue'
 	import { onMounted, ref } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
+	import type { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 	import { usePomodoroTimerPresetCrud } from '@/api/activityHistory/pomodoroTimerPresetApi.ts'
 
 	const emit = defineEmits<{

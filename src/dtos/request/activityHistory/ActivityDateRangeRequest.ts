@@ -1,4 +1,4 @@
-import { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
+import type { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 
 export class ActivityDateRangeRequest {
 	constructor(

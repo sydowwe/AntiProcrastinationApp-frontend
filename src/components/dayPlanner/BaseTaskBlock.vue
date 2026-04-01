@@ -4,7 +4,8 @@
 		:color="backgroundColorComp"
 		:style="style"
 		:data-task-id="task.id"
-		:class="['base-task-block', 'background-task-block', { 'past-task': isPast, selected: isSelected }]"
+		class="base-task-block background-task-block"
+		:class="[{ 'past-task': isPast, selected: isSelected }]"
 	>
 		<VSheet
 			class="background-task-label"
@@ -18,7 +19,8 @@
 		v-else
 		:color="`${backgroundColorComp}E0`"
 		:style="style"
-		:class="['base-task-block', 'task-block', ...blockClasses]"
+		class="base-task-block task-block"
+		:class="[...blockClasses]"
 		:tabindex="0"
 		:data-task-id="task.id"
 		@keydown.enter="handleEnterKey"

@@ -7,7 +7,7 @@
 			<ActivitySelectionForm
 				v-model="formData"
 				:showFromToDoListField="false"
-				:isInRow="true"
+				isInRow
 			/>
 		</div>
 		<VBtn
@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
+	import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 
 	const emit = defineEmits<{ clear: []; save: [] }>()
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')

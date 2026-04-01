@@ -153,11 +153,11 @@
 	></RoutineToDoListDialog>
 </template>
 <script setup lang="ts">
-	import RoutineToDoListDialog from '../components/dialogs/toDoList/RoutineToDoListDialog.vue'
-	import ToDoList from '../components/toDoList/ToDoList.vue'
+	import RoutineToDoListDialog from '../../components/dialogs/toDoList/RoutineToDoListDialog.vue'
+	import ToDoList from '../../components/toDoList/ToDoList.vue'
 	import { computed, onMounted, ref } from 'vue'
-	import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
-	import { RoutineTodoListGroupedList } from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts'
+	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
+	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
 	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'

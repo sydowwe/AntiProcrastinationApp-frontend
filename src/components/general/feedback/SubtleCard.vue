@@ -29,27 +29,25 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	const { color, borderOpacity } = withDefaults(
-		defineProps<{
-			color: string
-			borderOpacity?: 'low' | 'medium' | 'high'
-			title?: string
-			shortTitle?: boolean
-			titleCentered?: boolean
-			text?: string
-			hasIcon?: boolean
-			icon?: string
-		}>(),
-		{
-			borderOpacity: 'medium',
-			title: undefined,
-			shortTitle: false,
-			titleCentered: false,
-			text: undefined,
-			hasIcon: false,
-			icon: undefined,
-		},
-	)
+	const {
+		color,
+		borderOpacity = 'medium',
+		title,
+		shortTitle = false,
+		titleCentered = false,
+		text,
+		hasIcon = false,
+		icon,
+	} = defineProps<{
+		color: string
+		borderOpacity?: 'low' | 'medium' | 'high'
+		title?: string
+		shortTitle?: boolean
+		titleCentered?: boolean
+		text?: string
+		hasIcon?: boolean
+		icon?: string
+	}>()
 
 	const borderOpacityVal = computed(() => {
 		switch (borderOpacity) {

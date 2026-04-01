@@ -31,25 +31,23 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
-	withDefaults(
-		defineProps<{
-			label: string
-			density?: 'compact' | 'comfortable' | 'default'
-			dateClearable?: boolean
-			dateShowArrows?: boolean
-			maxDate?: Date | null
-			minDate?: Date | null
-			timeShowArrows?: boolean
-		}>(),
-		{
-			density: 'comfortable',
-			dateClearable: true,
-			dateShowArrows: true,
-			maxDate: null,
-			minDate: null,
-			timeShowArrows: true,
-		},
-	)
+	const {
+		label,
+		density = 'comfortable',
+		dateClearable = true,
+		dateShowArrows = true,
+		maxDate = null,
+		minDate = null,
+		timeShowArrows = true,
+	} = defineProps<{
+		label: string
+		density?: 'compact' | 'comfortable' | 'default'
+		dateClearable?: boolean
+		dateShowArrows?: boolean
+		maxDate?: Date | null
+		minDate?: Date | null
+		timeShowArrows?: boolean
+	}>()
 
 	const model = defineModel<Date | null>()
 

@@ -42,24 +42,21 @@
 	import IconPickerDialog from './IconPickerDialog.vue'
 	import { formatIconName, type IconInfo, parseVuetifyIcon, toVuetifyIcon } from '@/utils/fontAwesomeIcons'
 
-	withDefaults(
-		defineProps<{
-			label?: string
-			placeholder?: string
-			rules?: readonly ((value: unknown) => string | boolean)[]
-			hideDetails?: boolean | 'auto'
-			density?: 'default' | 'comfortable' | 'compact'
-			clearable?: boolean
-		}>(),
-		{
-			label: 'Ikona',
-			placeholder: 'Vyberte ikonu',
-			rules: () => [],
-			hideDetails: true,
-			density: 'comfortable',
-			clearable: true,
-		},
-	)
+	const {
+		label = 'Ikona',
+		placeholder = 'Vyberte ikonu',
+		rules = [],
+		hideDetails = true,
+		density = 'comfortable',
+		clearable = true,
+	} = defineProps<{
+		label?: string
+		placeholder?: string
+		rules?: readonly ((value: unknown) => string | boolean)[]
+		hideDetails?: boolean | 'auto'
+		density?: 'default' | 'comfortable' | 'compact'
+		clearable?: boolean
+	}>()
 
 	const emit = defineEmits<{
 		select: [icon: IconInfo]

@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, reactive, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
 	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
@@ -124,24 +124,21 @@
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import ActivityDialog from '@/components/dialogs/activity/ActivityDialog.vue'
 
-	const props = withDefaults(
-		defineProps<{
-			isFilter?: boolean
-			formDisabled?: boolean
-			showFromToDoListField?: boolean
-			isInDialog?: boolean
-			isInRow?: boolean
-			selectOptionsSource?: ActivityOptionsSource
-		}>(),
-		{
-			isFilter: false,
-			formDisabled: false,
-			showFromToDoListField: true,
-			isInDialog: false,
-			isInRow: false,
-			selectOptionsSource: ActivityOptionsSource.ALL,
-		},
-	)
+	const {
+		isFilter = false,
+		formDisabled = false,
+		showFromToDoListField = true,
+		isInDialog = false,
+		isInRow = false,
+		selectOptionsSource = ActivityOptionsSource.ALL,
+	} = defineProps<{
+		isFilter?: boolean
+		formDisabled?: boolean
+		showFromToDoListField?: boolean
+		isInDialog?: boolean
+		isInRow?: boolean
+		selectOptionsSource?: ActivityOptionsSource
+	}>()
 
 	const emit = defineEmits<{
 		(e: 'activityIdChanged', activityId: number | null): void
@@ -166,14 +163,14 @@
 
 	const activityIdModel = computed({
 		get: () => {
-			if (props.isFilter) {
+			if (isFilter) {
 				return formData.value!.activityId
 			} else {
 				return selectedActivityId.value
 			}
 		},
 		set: (value: number | null) => {
-			if (props.isFilter) {
+			if (isFilter) {
 				formData.value!.activityId = value
 			} else {
 				selectedActivityId.value = value
@@ -182,7 +179,7 @@
 	})
 
 	onMounted(async () => {
-		allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(props.selectOptionsSource)
+		allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(selectOptionsSource)
 		formData.value!.activityId = formData.value!.activityId ?? null
 		filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!)
 	})

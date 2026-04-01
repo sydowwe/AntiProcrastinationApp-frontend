@@ -47,7 +47,7 @@
 	import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue'
 	import { ref } from 'vue'
 	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
-	import { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
+	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
 
 	const model = defineModel<{ roleId: number | null; categoryId: number | null }>({ required: true })

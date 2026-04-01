@@ -1,4 +1,4 @@
-import { Time } from '@/dtos/dto/Time.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
 import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
 
 export class ActivityHistoryRequest {

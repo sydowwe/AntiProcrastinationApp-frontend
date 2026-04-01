@@ -1,4 +1,4 @@
-import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 
 export class SortByRequest {
 	constructor(

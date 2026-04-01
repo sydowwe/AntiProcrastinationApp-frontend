@@ -72,7 +72,7 @@
 								v-if="isDateRange"
 								v-model="filterData.dateFrom"
 								:label="$t('dateTime.dateFrom')"
-								:clearable="true"
+								clearable
 								:displayFormat="formatToDateTs"
 							></VDateInput>
 
@@ -134,7 +134,7 @@
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import { VDateInput } from 'vuetify/labs/components'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import HistoryCurrentFilterInfo from '@/components/history/HistoryCurrentFilterInfo.vue'
 
 	const emit = defineEmits<{

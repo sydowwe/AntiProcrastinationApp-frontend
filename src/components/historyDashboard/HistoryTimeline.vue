@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import { useMoment } from '@/utils/momentHelper.ts'
+	import { useMoment } from '@/utils/DateTimeHelper.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { DetailTimelineRequest } from '@/dtos/request/activityHistory/historyDetail/DetailTimelineRequest.ts'
 	import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
