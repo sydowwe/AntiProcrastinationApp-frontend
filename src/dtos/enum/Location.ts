@@ -15,3 +15,5 @@ export const LOCATION_ICONS: Record<Location, string> = {
 	[Location.Office]: 'building',
 	[Location.Travel]: 'plane',
 }
+
+export const locationOptions = Object.values(Location).map(v => ({ title: v, value: v }))

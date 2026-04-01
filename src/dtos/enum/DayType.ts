@@ -7,6 +7,8 @@ export enum DayType {
 	Special = 'Special',
 }
 
+export const dayTypeOptions = Object.values(DayType)
+
 export function getDayTypeColor(dayType: DayType, light: boolean = false): string {
 	switch (dayType) {
 		case DayType.Workday:

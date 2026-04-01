@@ -1,11 +1,11 @@
 <template>
 	<VCard
-		class="template-card"
+		class="h-100 d-flex flex-column template-card"
 		:class="{ 'inactive-template': !template.isActive, 'compare-selected': isCompareSelected }"
 		elevation="2"
 		@click="compareMode ? emit('toggleCompare') : emit('click')"
 	>
-		<VCardTitle class="pa-4 d-flex justify-space-between align-center">
+		<VCardTitle class="pa-4 pb-2 d-flex justify-space-between align-center">
 			<div class="d-flex align-center ga-2">
 				<VCheckbox
 					v-if="compareMode"
@@ -22,6 +22,18 @@
 					{{ template.icon }}
 				</VIcon>
 				<span>{{ template.name }}</span>
+
+				<VSwitch
+					:modelValue="template.isActive"
+					class="ml-2"
+					hideDetails
+					density="compact"
+					color="primary"
+					:label="template.isActive ? 'Active' : 'Inactive'"
+					@click.stop
+					@update:modelValue="emit('toggleActive')"
+				>
+				</VSwitch>
 			</div>
 			<div class="d-flex align-center ga-1">
 				<DayTypeChip
@@ -38,85 +50,90 @@
 			</div>
 		</VCardTitle>
 
-		<VCardText>
-			<div
-				v-if="template.description"
-				class="mb-2"
-			>
-				{{ template.description }}
+		<VCardText class="flex-fill">
+			<MiniTimeline
+				v-if="tasks && tasks.length"
+				class="mb-4"
+				label="Tasks"
+				:tasks="tasks"
+				:startTime="template.defaultWakeUpTime"
+				:endTime="template.defaultBedTime"
+			/>
+
+			<div class="mb-4 d-flex justify-space-between align-center">
+				<div class="d-flex align-center ga-4">
+					<span>Used {{ template.usageCount }} times</span>
+					<span v-if="template.lastUsedAt">Last: {{ formatToDate(new Date(template.lastUsedAt)) }}</span>
+				</div>
+				<div
+					v-if="template.scheduledDays?.length"
+					class="d-flex ga-1"
+				>
+					<VBtnToggle
+						v-model="template.scheduledDays"
+						multiple
+						density="compact"
+						color="primaryOutline"
+						variant="tonal"
+						divided
+						style="pointer-events: none; user-select: none;"
+					>
+						<VBtn
+							v-for="day in dayOfWeekOptions"
+							:key="day.value"
+							:value="day.value"
+							size="x-small"
+							style="border: 1px #777 solid;"
+						>
+							{{ day.label }}
+						</VBtn>
+					</VBtnToggle>
+				</div>
 			</div>
 
-			<div class="template-meta">
+			<div v-if="template.tags.length > 0" class="mb-3 template-meta">
 				<VChip
 					v-for="tag in template.tags"
 					:key="tag"
 					size="small"
-					class="mr-2 mb-2"
+					class="mr-2"
 				>
 					{{ tag }}
 				</VChip>
 			</div>
 
 			<div
-				v-if="template.scheduledDays?.length"
-				class="d-flex ga-1 mt-2"
+				v-if="template.description"
+				class="mb-3"
 			>
-				<VChip
-					v-for="day in template.scheduledDays"
-					:key="day"
-					size="x-small"
-					color="primary"
-					variant="tonal"
-				>
-					{{ DAY_OF_WEEK_SHORT_LABELS[day] }}
-				</VChip>
-			</div>
-
-			<MiniTimeline
-				v-if="tasks && tasks.length"
-				:tasks="tasks"
-				:startTime="template.defaultWakeUpTime"
-				:endTime="template.defaultBedTime"
-				class="mt-2"
-			/>
-
-			<div class="d-flex justify-space-between align-center mt-3 text-caption">
-				<span>Used {{ template.usageCount }} times</span>
-				<span v-if="template.lastUsedAt">Last: {{ formatToDate(new Date(template.lastUsedAt)) }}</span>
+				{{ template.description }}
 			</div>
 		</VCardText>
 
 		<VCardActions class="pa-4 d-flex align-center flex-wrap ga-2">
-			<VSwitch
-				:modelValue="template.isActive"
-				hideDetails
-				density="compact"
-				color="primary"
-				@click.stop
-				@update:modelValue="emit('toggleActive')"
-			>
-				<template #label>
-					<span class="text-caption">{{ template.isActive ? 'Active' : 'Inactive' }}</span>
-				</template>
-			</VSwitch>
+			<span v-if="template.suggestedLocation">
+				<VIcon class="mb-1">location-dot</VIcon>
+				{{ template.suggestedLocation }}
+			</span>
 			<VSpacer />
 			<VBtn
 				color="primary"
-				variant="tonal"
+				size="small"
 				prependIcon="play"
 				@click.stop="emit('applyToday')"
 			>
 				Use Today
 			</VBtn>
 			<VBtn
-				color="secondaryOutline"
-				variant="tonal"
+				color="secondary"
+				size="small"
 				@click.stop="emit('duplicate')"
 			>
 				Duplicate
 			</VBtn>
 			<VBtn
-				color="secondaryOutline"
+				color="primaryOutline"
+				size="small"
 				variant="tonal"
 				@click.stop="emit('edit')"
 			>
@@ -124,7 +141,8 @@
 			</VBtn>
 			<VBtn
 				variant="tonal"
-				color="error"
+				size="small"
+				color="secondaryOutline"
 				@click.stop="emit('delete')"
 			>
 				Delete
@@ -138,10 +156,10 @@
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue'
-	import { DAY_OF_WEEK_SHORT_LABELS } from '@/dtos/enum/DayOfWeek.ts'
+	import { dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
 	import { useMoment } from '@/utils/momentHelper.ts'
 
-	defineProps<{
+	const { tasks } = defineProps<{
 		template: TaskPlannerDayTemplate
 		isPinned: boolean
 		tasks?: TemplatePlannerTask[]
@@ -166,9 +184,8 @@
 <style scoped>
 	.template-card {
 		cursor: pointer;
-		transition:
-			transform 0.2s,
-			box-shadow 0.2s;
+		transition: transform 0.2s,
+		box-shadow 0.2s;
 	}
 
 	.template-card:hover {

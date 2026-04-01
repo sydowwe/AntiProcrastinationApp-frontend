@@ -1,5 +1,6 @@
 <template>
 	<div class="d-flex align-center ga-2">
+		<span v-if="label">{{ label }}</span>
 		<div class="mini-timeline">
 			<div
 				v-for="(task, index) in nonBackgroundTasks"
@@ -24,7 +25,6 @@
 		</div>
 		<span
 			v-if="showCount"
-			class="text-caption text-medium-emphasis"
 		>
 			{{ tasks.length }}
 		</span>
@@ -41,10 +41,12 @@
 			tasks: ITimelineTask[]
 			startTime: Time
 			endTime: Time
+			label?: string
 			showCount?: boolean
 		}>(),
-		{ showCount: true },
+		{ label: undefined, showCount: true },
 	)
+	console.log(props.tasks)
 
 	const totalMinutes = computed(() => {
 		const start = props.startTime.getInMinutes
@@ -74,23 +76,23 @@
 	.mini-timeline {
 		position: relative;
 		width: 100%;
-		height: 12px;
+		height: 16px;
 		background: rgba(var(--v-theme-on-surface), 0.08);
-		border-radius: 4px;
+		border-radius: 3px;
+		padding: 0 4px;
 		overflow: hidden;
 	}
 
 	.mini-timeline-segment {
 		position: absolute;
 		top: 1px;
-		height: 10px;
+		height: 14px;
 		border-radius: 3px;
-		min-width: 2px;
+		border: 2px solid #313131;
+		min-width: 3px;
 	}
 
 	.mini-timeline-bg {
 		opacity: 0.3;
-		top: 0;
-		height: 12px;
 	}
 </style>
