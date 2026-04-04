@@ -40,6 +40,7 @@
 			<div class="task-content-main">
 				<div class="d-flex flex-column flex-wrap">
 					<div class="task-header">
+						<slot name="prepend"></slot>
 						<slot name="checkbox"></slot>
 						<div
 							v-if="task.importance?.importance !== 777"

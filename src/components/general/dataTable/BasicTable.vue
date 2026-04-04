@@ -177,9 +177,7 @@
 
 	function del(item: TItem) {
 		deleteDialog.value = true
-		const name = deleteConfirmationColumn
-			? (item as Record<string, unknown>)[deleteConfirmationColumn]
-			: item.id
+		const name = deleteConfirmationColumn ? (item as Record<string, unknown>)[deleteConfirmationColumn] : item.id
 		deleteConfirmationText.value = `Are you sure you want to delete ${name}?`
 	}
 

@@ -76,7 +76,14 @@
 	import type { Time } from '@/dtos/dto/Time.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 
-	const { loading = false, windows, timeFrom, timeTo, windowSizeOptions, initialWindowSize } = defineProps<{
+	const {
+		loading = false,
+		windows,
+		timeFrom,
+		timeTo,
+		windowSizeOptions,
+		initialWindowSize,
+	} = defineProps<{
 		windows: StackedBarsInputWindow[]
 		loading?: boolean
 		timeFrom: Time

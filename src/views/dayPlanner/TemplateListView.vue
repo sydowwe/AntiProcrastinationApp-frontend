@@ -40,6 +40,15 @@
 					style="min-width: 170px"
 				/>
 				<VBtn
+					v-if="mdAndUp"
+					color="secondaryOutline"
+					variant="tonal"
+					prependIcon="code-compare"
+					@click="router.push({ name: 'dayPlannerTemplateSplit' })"
+				>
+					Edit Side by Side
+				</VBtn>
+				<VBtn
 					color="primary"
 					prependIcon="plus"
 					@click="openCreateDialog"
@@ -97,21 +106,37 @@
 						md="6"
 						lg="4"
 					>
-						<TemplateCard
-							:template
-							isPinned
-							:tasks="templateTasksMap.get(template.id)"
-							:compareMode="compareMode"
-							:isCompareSelected="compareSelection.includes(template.id)"
-							@click="openTemplate(template.id)"
-							@edit="openEditDialog(template)"
-							@delete="confirmDelete(template)"
-							@togglePin="togglePin(template.id)"
-							@toggleActive="toggleActive(template)"
-							@applyToday="applyToToday(template.id)"
-							@duplicate="duplicateTemplate(template)"
-							@toggleCompare="toggleCompareSelection(template.id)"
-						/>
+						<div
+							:ref="
+								el =>
+									registerCard(el as HTMLElement, template.id, 'pinned', () =>
+										pinnedTemplates.map(t => t.id),
+									)
+							"
+							:class="{
+								'drag-over-before':
+									dragOverState?.templateId === template.id && dragOverState.position === 'before',
+								'drag-over-after':
+									dragOverState?.templateId === template.id && dragOverState.position === 'after',
+							}"
+							class="template-drag-wrapper"
+						>
+							<TemplateCard
+								:template
+								isPinned
+								:tasks="templateTasksMap.get(template.id)"
+								:compareMode="compareMode"
+								:isCompareSelected="compareSelection.includes(template.id)"
+								@click="openTemplate(template.id)"
+								@edit="openEditDialog(template)"
+								@delete="confirmDelete(template)"
+								@togglePin="togglePin(template.id)"
+								@toggleActive="toggleActive(template)"
+								@applyToday="applyToToday(template.id)"
+								@duplicate="duplicateTemplate(template)"
+								@toggleCompare="toggleCompareSelection(template.id)"
+							/>
+						</div>
 					</VCol>
 				</VRow>
 				<VDivider
@@ -129,21 +154,37 @@
 					md="6"
 					lg="4"
 				>
-					<TemplateCard
-						:template
-						:isPinned="false"
-						:tasks="templateTasksMap.get(template.id)"
-						:compareMode="compareMode"
-						:isCompareSelected="compareSelection.includes(template.id)"
-						@click="openTemplate(template.id)"
-						@edit="openEditDialog(template)"
-						@delete="confirmDelete(template)"
-						@togglePin="togglePin(template.id)"
-						@toggleActive="toggleActive(template)"
-						@applyToday="applyToToday(template.id)"
-						@duplicate="duplicateTemplate(template)"
-						@toggleCompare="toggleCompareSelection(template.id)"
-					/>
+					<div
+						:ref="
+							el =>
+								registerCard(el as HTMLElement, template.id, 'active', () =>
+									activeUnpinnedTemplates.map(t => t.id),
+								)
+						"
+						:class="{
+							'drag-over-before':
+								dragOverState?.templateId === template.id && dragOverState.position === 'before',
+							'drag-over-after':
+								dragOverState?.templateId === template.id && dragOverState.position === 'after',
+						}"
+						class="template-drag-wrapper"
+					>
+						<TemplateCard
+							:template
+							:isPinned="false"
+							:tasks="templateTasksMap.get(template.id)"
+							:compareMode="compareMode"
+							:isCompareSelected="compareSelection.includes(template.id)"
+							@click="openTemplate(template.id)"
+							@edit="openEditDialog(template)"
+							@delete="confirmDelete(template)"
+							@togglePin="togglePin(template.id)"
+							@toggleActive="toggleActive(template)"
+							@applyToday="applyToToday(template.id)"
+							@duplicate="duplicateTemplate(template)"
+							@toggleCompare="toggleCompareSelection(template.id)"
+						/>
+					</div>
 				</VCol>
 			</VRow>
 
@@ -166,21 +207,37 @@
 						md="6"
 						lg="4"
 					>
-						<TemplateCard
-							:template
-							:isPinned="false"
-							:tasks="templateTasksMap.get(template.id)"
-							:compareMode="compareMode"
-							:isCompareSelected="compareSelection.includes(template.id)"
-							@click="openTemplate(template.id)"
-							@edit="openEditDialog(template)"
-							@delete="confirmDelete(template)"
-							@togglePin="togglePin(template.id)"
-							@toggleActive="toggleActive(template)"
-							@applyToday="applyToToday(template.id)"
-							@duplicate="duplicateTemplate(template)"
-							@toggleCompare="toggleCompareSelection(template.id)"
-						/>
+						<div
+							:ref="
+								el =>
+									registerCard(el as HTMLElement, template.id, 'inactive', () =>
+										inactiveUnpinnedTemplates.map(t => t.id),
+									)
+							"
+							:class="{
+								'drag-over-before':
+									dragOverState?.templateId === template.id && dragOverState.position === 'before',
+								'drag-over-after':
+									dragOverState?.templateId === template.id && dragOverState.position === 'after',
+							}"
+							class="template-drag-wrapper"
+						>
+							<TemplateCard
+								:template
+								:isPinned="false"
+								:tasks="templateTasksMap.get(template.id)"
+								:compareMode="compareMode"
+								:isCompareSelected="compareSelection.includes(template.id)"
+								@click="openTemplate(template.id)"
+								@edit="openEditDialog(template)"
+								@delete="confirmDelete(template)"
+								@togglePin="togglePin(template.id)"
+								@toggleActive="toggleActive(template)"
+								@applyToday="applyToToday(template.id)"
+								@duplicate="duplicateTemplate(template)"
+								@toggleCompare="toggleCompareSelection(template.id)"
+							/>
+						</div>
 					</VCol>
 				</VRow>
 			</template>
@@ -233,6 +290,7 @@
 
 	import { useDisplay } from 'vuetify'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useTemplateCardDragAndDrop } from '@/composables/dayPlanner/useTemplateCardDragAndDrop.ts'
 
 	const { showFullScreenLoading } = useLoading()
 	const { mdAndUp } = useDisplay()
@@ -282,10 +340,27 @@
 	const pinnedIds = ref<Set<number>>(new Set(JSON.parse(localStorage.getItem(PINNED_KEY) || '[]')))
 	watch(pinnedIds, val => localStorage.setItem(PINNED_KEY, JSON.stringify([...val])), { deep: true })
 
-	const pinnedTemplates = computed(() => sortedTemplates.value.filter(t => pinnedIds.value.has(t.id)))
+	const { applyOrder, registerCard, dragOverState } = useTemplateCardDragAndDrop()
+
+	const pinnedTemplates = computed(() =>
+		applyOrder(
+			sortedTemplates.value.filter(t => pinnedIds.value.has(t.id)),
+			'pinned',
+		),
+	)
 	const unpinnedTemplates = computed(() => sortedTemplates.value.filter(t => !pinnedIds.value.has(t.id)))
-	const activeUnpinnedTemplates = computed(() => unpinnedTemplates.value.filter(t => t.isActive))
-	const inactiveUnpinnedTemplates = computed(() => unpinnedTemplates.value.filter(t => !t.isActive))
+	const activeUnpinnedTemplates = computed(() =>
+		applyOrder(
+			unpinnedTemplates.value.filter(t => t.isActive),
+			'active',
+		),
+	)
+	const inactiveUnpinnedTemplates = computed(() =>
+		applyOrder(
+			unpinnedTemplates.value.filter(t => !t.isActive),
+			'inactive',
+		),
+	)
 
 	function togglePin(templateId: number) {
 		if (pinnedIds.value.has(templateId)) {
@@ -443,5 +518,34 @@
 <style scoped>
 	.v-col-lg-4 {
 		padding: 10px;
+	}
+
+	.template-drag-wrapper {
+		position: relative;
+		cursor: grab;
+	}
+
+	.template-drag-wrapper:active {
+		cursor: grabbing;
+	}
+
+	.template-drag-wrapper.drag-over-before::before,
+	.template-drag-wrapper.drag-over-after::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: rgb(var(--v-theme-primary));
+		border-radius: 2px;
+		z-index: 10;
+	}
+
+	.template-drag-wrapper.drag-over-before::before {
+		top: 0;
+	}
+
+	.template-drag-wrapper.drag-over-after::after {
+		bottom: 0;
 	}
 </style>

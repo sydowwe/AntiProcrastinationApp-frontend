@@ -21,6 +21,7 @@ import { useLoading } from '@/composables/general/LoadingComposable.ts'
 import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue'
 import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue'
 import TemplateListView from '@/views/dayPlanner/TemplateListView.vue'
+import TemplateSplitView from '@/views/dayPlanner/TemplateSplitView.vue'
 import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue'
 import ActivityDashboard from '@/views/tracker/ActivityDashboard.vue'
 import HistoryCalendarView from '@/views/history/HistoryCalendarView.vue'
@@ -162,6 +163,11 @@ const router = createRouter({
 			path: '/day-planner/templates',
 			name: 'dayPlannerTemplateList',
 			component: TemplateListView,
+		},
+		{
+			path: '/day-planner/templates/split',
+			name: 'dayPlannerTemplateSplit',
+			component: TemplateSplitView,
 		},
 		{
 			path: '/day-planner/templates/:templateId',

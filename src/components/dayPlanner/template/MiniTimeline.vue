@@ -34,7 +34,13 @@
 	import type { ITimelineTask } from '@/dtos/dto/ITimelineTask.ts'
 	import type { Time } from '@/dtos/dto/Time.ts'
 
-	const { tasks, startTime, endTime, label, showCount = true } = defineProps<{
+	const {
+		tasks,
+		startTime,
+		endTime,
+		label,
+		showCount = true,
+	} = defineProps<{
 		tasks: ITimelineTask[]
 		startTime: Time
 		endTime: Time

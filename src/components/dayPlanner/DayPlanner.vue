@@ -14,12 +14,30 @@
 						<slot name="headerPrepend"></slot>
 					</div>
 
-					<TimeRangePicker
-						v-model:start="viewStartTime"
-						v-model:end="viewEndTime"
-						startIcon="sun"
-						endIcon="moon"
-					/>
+					<div class="d-flex align-center ga-2">
+						<TimeRangePicker
+							v-model:start="viewStartTime"
+							v-model:end="viewEndTime"
+							startIcon="sun"
+							endIcon="moon"
+						/>
+						<VBtnToggle
+							v-model="timeSlotDurationModel"
+							density="compact"
+							variant="outlined"
+							color="primaryOutline"
+							mandatory
+						>
+							<VBtn
+								v-for="option in SNAP_INTERVAL_OPTIONS"
+								:key="option"
+								:value="option"
+								size="small"
+							>
+								{{ option }}m
+							</VBtn>
+						</VBtnToggle>
+					</div>
 
 					<div class="d-flex ga-2 align-center flex-wrap">
 						<VTooltip
@@ -137,6 +155,8 @@
 		delete: []
 	}>()
 
+	const SNAP_INTERVAL_OPTIONS = [5, 10, 15, 30]
+
 	// Provide the store to all descendant components
 	provide('plannerStore', props.plannerStore)
 
@@ -147,6 +167,13 @@
 	const viewEndTime = computed({
 		get: () => props.plannerStore.viewEndTime,
 		set: value => props.plannerStore.$patch({ viewEndTime: value }),
+	})
+	const timeSlotDurationModel = computed({
+		get: () => props.plannerStore.timeSlotDuration,
+		set: value => {
+			props.plannerStore.$patch({ timeSlotDuration: value })
+			props.plannerStore.initializeTaskGridPositions()
+		},
 	})
 	const deleteDialogVisible = computed({
 		get: () => props.plannerStore.deleteDialog,

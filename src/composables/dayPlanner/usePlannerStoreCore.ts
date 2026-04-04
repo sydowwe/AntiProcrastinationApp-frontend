@@ -138,7 +138,7 @@ export function usePlannerStoreCore<
 		updateIsDuringBackgroundFlags,
 		initializeTaskGridPositions,
 		redrawTask,
-	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks)
+	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks, timeSlotDuration)
 
 	function resetStore() {
 		// Reset selection state

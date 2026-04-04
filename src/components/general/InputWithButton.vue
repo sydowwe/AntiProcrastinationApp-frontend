@@ -15,7 +15,13 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 
-	const { showBtn, icon, color, variant = 'tonal', density = 'comfortable' } = defineProps<{
+	const {
+		showBtn,
+		icon,
+		color,
+		variant = 'tonal',
+		density = 'comfortable',
+	} = defineProps<{
 		showBtn: boolean
 		icon: string
 		color: string

@@ -121,8 +121,6 @@
 	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
-	const { formatToDateWithDay } = useDateTime()
-
 	const {
 		dateRangeMode = 'month',
 		minRowHeight = 220,
@@ -145,6 +143,8 @@
 		'day-cell-content'(props: { day: ICalendar }): any
 		'footer-center'(): any
 	}>()
+
+	const { formatToDateWithDay } = useDateTime()
 
 	const { fetchFiltered } = useCalendarQuery()
 

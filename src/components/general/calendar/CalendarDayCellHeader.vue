@@ -74,11 +74,7 @@
 	}
 
 	.cell-header.holiday {
-		background: linear-gradient(
-			to bottom,
-			rgba(var(--v-theme-error), 0.22),
-			rgba(var(--v-theme-error), 0.08)
-		);
+		background: linear-gradient(to bottom, rgba(var(--v-theme-error), 0.22), rgba(var(--v-theme-error), 0.08));
 	}
 
 	.cell-date-text {
