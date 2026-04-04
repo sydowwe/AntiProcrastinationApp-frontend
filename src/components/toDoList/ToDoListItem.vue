@@ -194,15 +194,21 @@
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 
-	const { toDoListItem, color, isInChangeOrderMode = false, listId, isDragging = false, streakConfig } =
-		defineProps<{
-			toDoListItem: TItem
-			color: string
-			isInChangeOrderMode?: boolean
-			listId: number
-			isDragging?: boolean
-			streakConfig?: { graceDays: number; periodLengthInDays: number }
-		}>()
+	const {
+		toDoListItem,
+		color,
+		isInChangeOrderMode = false,
+		listId,
+		isDragging = false,
+		streakConfig,
+	} = defineProps<{
+		toDoListItem: TItem
+		color: string
+		isInChangeOrderMode?: boolean
+		listId: number
+		isDragging?: boolean
+		streakConfig?: { graceDays: number; periodLengthInDays: number }
+	}>()
 
 	const emits = defineEmits<{
 		edit: [toDoListItem: TItem]

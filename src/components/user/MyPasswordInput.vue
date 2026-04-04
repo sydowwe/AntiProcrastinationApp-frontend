@@ -13,7 +13,12 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
-	const { isNew = false, rules, label = null, autofocus = false } = defineProps<{
+	const {
+		isNew = false,
+		rules,
+		label = null,
+		autofocus = false,
+	} = defineProps<{
 		isNew?: boolean
 		rules: unknown[]
 		label?: string | null

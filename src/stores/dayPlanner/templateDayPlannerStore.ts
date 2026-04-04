@@ -9,28 +9,28 @@ import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask
 
 export type ITemplateDayPlannerStore = IBaseDayPlannerStore<TemplatePlannerTask, TemplatePlannerTaskRequest>
 
-export const useTemplateDayPlannerStore = defineStore(
-	'templateDayPlanner',
-	() => {
-		const core = usePlannerStoreCore<TemplatePlannerTask, TemplatePlannerTaskRequest>()
-		const { patch } = useTemplatePlannerTaskCrud()
-		// Template metadata
-		const currentTemplateId = ref<number | null>(null)
-		const templateName = ref<string>('')
+function templatePlannerSetup() {
+	const core = usePlannerStoreCore<TemplatePlannerTask, TemplatePlannerTaskRequest>()
+	const { patch } = useTemplatePlannerTaskCrud()
+	const currentTemplateId = ref<number | null>(null)
+	const templateName = ref<string>('')
 
-		async function updateTaskSpan(eventId: number, span: TaskSpan) {
-			await patch(eventId, span)
-		}
+	async function updateTaskSpan(eventId: number, span: TaskSpan) {
+		await patch(eventId, span)
+	}
 
-		return {
-			...core,
-			// Template metadata
-			updateTaskSpan,
-			currentTemplateId,
-			templateName,
-		}
-	},
-	{
-		persist: { omit: ['tasks'] },
-	},
-) satisfies () => ITemplateDayPlannerStore
+	return {
+		...core,
+		updateTaskSpan,
+		currentTemplateId,
+		templateName,
+	}
+}
+
+export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', templatePlannerSetup, {
+	persist: { omit: ['tasks'] },
+}) satisfies () => ITemplateDayPlannerStore
+
+export const useSecondaryTemplateDayPlannerStore = defineStore('templateDayPlanner-secondary', templatePlannerSetup, {
+	persist: false,
+}) satisfies () => ITemplateDayPlannerStore

@@ -14,7 +14,7 @@ import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IB
 export function useDayPlannerCommon<
 	T extends IBasePlannerTask<TTaskRequest>,
 	TTaskRequest extends IBasePlannerTaskRequest,
->(viewStartTime: Ref<Time>, totalGridRows: ComputedRef<number>, tasks: Ref<T[]>) {
+>(viewStartTime: Ref<Time>, totalGridRows: ComputedRef<number>, tasks: Ref<T[]>, timeSlotDuration: Ref<number>) {
 	// --- Helpers: Time-based calculations (day-agnostic with midnight wrap support) ---
 	const MINUTES_IN_DAY = 1440
 
@@ -104,7 +104,7 @@ export function useDayPlannerCommon<
 	 * Calculate grid position from time span
 	 */
 	function setGridPositionFromSpan(task: T): void {
-		const viewDurationMinutes = totalGridRows.value * 10
+		const viewDurationMinutes = totalGridRows.value * timeSlotDuration.value
 		const viewStartMin = viewStartTime.value.getInMinutes
 		const viewEndMin = (viewStartMin + viewDurationMinutes) % MINUTES_IN_DAY
 
@@ -132,8 +132,8 @@ export function useDayPlannerCommon<
 			startOffset = 0
 		}
 
-		const startRow = Math.floor(startOffset / 10) + 1
-		const endRow = Math.floor(endOffset / 10) + 1
+		const startRow = Math.floor(startOffset / timeSlotDuration.value) + 1
+		const endRow = Math.floor(endOffset / timeSlotDuration.value) + 1
 
 		task.gridRowStart = startRow >= endRow ? 1 : startRow
 		task.gridRowEnd = Math.min(totalGridRows.value + 1, endRow)

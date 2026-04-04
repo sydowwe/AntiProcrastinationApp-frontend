@@ -39,7 +39,7 @@
 						label="Day Type"
 						:items="dayTypeOptions"
 						prependIcon="calendar-day"
-						max-width="200px"
+						maxWidth="200px"
 						hideDetails
 					/>
 					<VSelect

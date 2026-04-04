@@ -33,7 +33,11 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 
-	const { title, url = '/user/verify', useDefaultSubmitFunction = true } = defineProps<{
+	const {
+		title,
+		url = '/user/verify',
+		useDefaultSubmitFunction = true,
+	} = defineProps<{
 		title?: string
 		url?: string
 		useDefaultSubmitFunction?: boolean

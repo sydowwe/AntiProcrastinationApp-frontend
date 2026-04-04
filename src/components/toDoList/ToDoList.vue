@@ -122,16 +122,23 @@
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 
-	const { kind = ToDoListKind.NORMAL, items, isInChangeOrderMode, listId, activityIds, streakConfig, allItems } =
-		defineProps<{
-			kind?: number
-			items: TEntity[]
-			isInChangeOrderMode: boolean
-			listId: number
-			activityIds: number[]
-			streakConfig?: { graceDays: number; periodLengthInDays: number }
-			allItems?: TEntity[]
-		}>()
+	const {
+		kind = ToDoListKind.NORMAL,
+		items,
+		isInChangeOrderMode,
+		listId,
+		activityIds,
+		streakConfig,
+		allItems,
+	} = defineProps<{
+		kind?: number
+		items: TEntity[]
+		isInChangeOrderMode: boolean
+		listId: number
+		activityIds: number[]
+		streakConfig?: { graceDays: number; periodLengthInDays: number }
+		allItems?: TEntity[]
+	}>()
 
 	const emit = defineEmits<{
 		(e: 'itemsChanged', changedItems: number[]): void
