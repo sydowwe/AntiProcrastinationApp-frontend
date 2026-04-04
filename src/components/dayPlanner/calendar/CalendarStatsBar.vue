@@ -1,7 +1,7 @@
 <template>
 	<VSheet
 		v-if="days.length > 0"
-		class="d-flex flex-wrap align-center ga-3 pa-2"
+		class="d-flex flex-wrap align-center ga-2 pa-2"
 		rounded="lg"
 		style="border-color: #444"
 		border

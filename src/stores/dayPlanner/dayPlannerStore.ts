@@ -26,6 +26,8 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	const templateInPreview = ref<TaskPlannerDayTemplate | null>(null)
 	const tasksFromTemplate = ref<PlannerTask[] | null>(null)
+	const previewBaseStartTime = ref<Time | null>(null)
+	const previewBaseEndTime = ref<Time | null>(null)
 
 	const isTemplateInPreview = computed(() => templateInPreview.value !== null)
 
@@ -97,16 +99,11 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	}
 
 	function cancelTemplatePreview() {
-		// Restore default view times from template
-		if (templateInPreview.value) {
-			core.viewStartTime.value = new Time(
-				templateInPreview.value.defaultWakeUpTime.hours,
-				templateInPreview.value.defaultWakeUpTime.minutes,
-			)
-			core.viewEndTime.value = new Time(
-				templateInPreview.value.defaultBedTime.hours,
-				templateInPreview.value.defaultBedTime.minutes,
-			)
+		if (previewBaseStartTime.value) {
+			core.viewStartTime.value = previewBaseStartTime.value
+			core.viewEndTime.value = previewBaseEndTime.value!
+			previewBaseStartTime.value = null
+			previewBaseEndTime.value = null
 		}
 
 		templateInPreview.value = null
@@ -198,6 +195,8 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		templateInPreview,
 		isTemplateInPreview,
 		tasksFromTemplate,
+		previewBaseStartTime,
+		previewBaseEndTime,
 		offsetTasksFromTemplate,
 		cancelTemplatePreview,
 		resetStore,

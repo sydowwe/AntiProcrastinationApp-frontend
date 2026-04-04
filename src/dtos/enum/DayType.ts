@@ -1,7 +1,6 @@
 export enum DayType {
 	Workday = 'Workday',
 	Weekend = 'Weekend',
-	Holiday = 'Holiday',
 	Vacation = 'Vacation',
 	SickDay = 'SickDay',
 	Special = 'Special',
@@ -12,17 +11,14 @@ export const dayTypeOptions = Object.values(DayType)
 export function getDayTypeColor(dayType: DayType, light: boolean = false): string {
 	switch (dayType) {
 		case DayType.Workday:
-			return light ? 'primaryOutline' : 'primary'
 		case DayType.Weekend:
-			return light ? 'success' : 'successDark'
-		case DayType.Holiday:
-			return light ? 'error' : 'errorDark'
+			return 'base'
 		case DayType.Vacation:
 			return light ? 'secondaryOutline' : 'secondary'
 		case DayType.SickDay:
-			return 'warning'
+			return light ? 'success' : 'successDark'
 		case DayType.Special:
-			return 'info'
+			return light ? 'primaryOutline' : 'primary'
 		default:
 			return 'surface-variant'
 	}
@@ -34,8 +30,6 @@ export function getDayTypeIcon(dayType: DayType): string {
 			return 'briefcase'
 		case DayType.Weekend:
 			return 'mug-hot'
-		case DayType.Holiday:
-			return 'gift'
 		case DayType.Vacation:
 			return 'umbrella-beach'
 		case DayType.SickDay:

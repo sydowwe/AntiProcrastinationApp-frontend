@@ -4,19 +4,20 @@
 		<VCard
 			elevation="2"
 			class="calendar-card"
+			rounded
 			:loading="loading"
 		>
 			<!-- Controls header -->
-			<VCardTitle class="d-flex align-center justify-space-between flex-wrap ga-2 px-4 py-3">
-				<DateRangePicker
-					v-model="dateRange"
-					:mode="dateRangeMode"
-					density="compact"
-				/>
-
-				<slot name="toolbar-center" />
-				<div class="d-flex align-center ga-2 flex-wrap">
-					<slot name="toolbar-end" />
+			<VCardTitle
+				class="d-flex align-center justify-space-between flex-wrap ga-2 px-4 py-3"
+				style="border-bottom: 1px solid rgba(var(--v-border-color), 0.5)"
+			>
+				<div class="d-flex ga-3">
+					<DateRangePicker
+						v-model="dateRange"
+						:mode="dateRangeMode"
+						density="compact"
+					/>
 					<VSelect
 						v-model="dayVisibility"
 						label="Days to Show"
@@ -27,6 +28,11 @@
 						hideDetails
 						density="compact"
 					/>
+				</div>
+
+				<slot name="toolbar-center" />
+				<div class="d-flex align-center ga-2 flex-wrap">
+					<slot name="toolbar-end" />
 				</div>
 			</VCardTitle>
 			<VDivider />
@@ -69,35 +75,7 @@
 								@click="handleDayClick(dayData)"
 							>
 								<template v-if="dayData">
-									<!-- Header with date and label -->
-									<div class="cell-header">
-										<div class="header-top">
-											<span class="cell-date-text">{{ formatCellDate(dayData.date) }}</span>
-											<!-- Label chip with color based on day type -->
-											<VChip
-												v-if="dayData.label || dayData.holidayName"
-												size="x-small"
-												:color="
-													!['Workday', 'Weekend'].includes(dayData.dayType)
-														? getDayTypeColor(dayData.dayType)
-														: undefined
-												"
-												variant="flat"
-												class="cell-label-chip"
-											>
-												<VIcon
-													:icon="getDayTypeIcon(dayData.dayType)"
-													size="x-small"
-													class="mr-1"
-												/>
-												<strong>{{ dayData.label ?? dayData.holidayName }}</strong>
-											</VChip>
-											<slot
-												name="day-cell-header-append"
-												:day="dayData"
-											></slot>
-										</div>
-									</div>
+									<CalendarDayCellHeader :day="dayData" />
 
 									<!-- Slot for content below header -->
 									<slot
@@ -110,6 +88,26 @@
 					</div>
 				</div>
 			</VCardText>
+			<VCardActions
+				class="px-4 py-3 d-flex align-center justify-space-between flex-wrap ga-2"
+				style="border-top: 1px solid rgba(var(--v-border-color), 0.5)"
+			>
+				<div class="d-flex align-center ga-2">
+					<VChip
+						v-for="holiday in holidays"
+						:key="holiday.id"
+						class="px-2 text-caption"
+						rounded="sm"
+						tonal
+						color="error"
+					>
+						{{ formatToDateWithDay(holiday.date) }} - {{ holiday.holidayName }}
+					</VChip>
+				</div>
+				<div style="position: absolute; left: 50%; transform: translateX(-50%)">
+					<slot name="footer-center" />
+				</div>
+			</VCardActions>
 		</VCard>
 	</div>
 </template>
@@ -117,12 +115,20 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import DateRangePicker from '@/components/general/dateTime/DateRangePicker.vue'
+	import CalendarDayCellHeader from '@/components/general/calendar/CalendarDayCellHeader.vue'
 	import { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
-	import { getDayTypeColor, getDayTypeIcon } from '@/dtos/enum/DayType.ts'
 	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
-	const { dateRangeMode = 'month', minRowHeight = 220, fetchFn, selectedIds = [] } = defineProps<{
+	const { formatToDateWithDay } = useDateTime()
+
+	const {
+		dateRangeMode = 'month',
+		minRowHeight = 220,
+		fetchFn,
+		selectedIds = [],
+	} = defineProps<{
 		dateRangeMode?: 'range' | 'month' | 'duration'
 		minRowHeight?: number
 		fetchFn?: (filter: CalendarFilter) => Promise<ICalendar[]>
@@ -137,7 +143,7 @@
 		'toolbar-center'(): any
 		'toolbar-end'(): any
 		'day-cell-content'(props: { day: ICalendar }): any
-		'day-cell-header-append'(props: { day: ICalendar }): any
+		'footer-center'(): any
 	}>()
 
 	const { fetchFiltered } = useCalendarQuery()
@@ -149,6 +155,8 @@
 		start: new Date(),
 		end: new Date(),
 	})
+
+	const holidays = computed(() => calendarData.value.filter(cal => cal.holidayName))
 
 	type DayVisibility = 'all' | 'workdays' | 'weekend'
 	const dayVisibility = ref<DayVisibility>('all')
@@ -281,14 +289,6 @@
 		return weeks
 	})
 
-	function formatCellDate(dateString: string): string {
-		const date = new Date(dateString)
-		return date.toLocaleDateString('cs-CZ', {
-			day: 'numeric',
-			month: 'short',
-		})
-	}
-
 	function handleDayClick(dayData: ICalendar | null) {
 		if (!dayData) return
 		emit('dayClick', dayData)
@@ -335,6 +335,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
+		border: 1px solid rgba(var(--v-border-color), 0.5);
 	}
 
 	.calendar-card :deep(.v-card-text) {
@@ -358,13 +359,13 @@
 		border-bottom: 2px solid rgb(var(--v-theme-neutral-400));
 		background-color: rgb(var(--v-theme-surface));
 		flex-shrink: 0;
-		padding-right: 12px;
+		padding-right: 16px;
 	}
 
 	.day-header {
 		padding: 8px;
 		text-align: center;
-		border-right: 1px solid rgba(var(--v-border-color), 0.3);
+		border-right: 1px solid rgb(var(--v-border-color));
 		font-weight: 600;
 		font-size: 14px;
 		color: rgb(var(--v-theme-on-surface));
@@ -375,7 +376,7 @@
 	}
 
 	.day-header.weekend {
-		background: linear-gradient(to bottom, rgba(var(--v-theme-primary), 0.12), rgba(var(--v-theme-primary), 0.08));
+		background-color: rgba(var(--v-theme-primary), 0.08);
 		font-weight: 700;
 		color: rgb(var(--v-theme-on-surface));
 	}
@@ -416,7 +417,7 @@
 
 	.day-cell.selected {
 		outline: 2px solid white;
-		outline-offset: -2px;
+		outline-offset: 0;
 		z-index: 5;
 	}
 
@@ -430,74 +431,20 @@
 	}
 
 	.day-cell.weekend:not(.empty) {
-		background: linear-gradient(to bottom, rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.04));
-		border-left: 2px solid rgba(var(--v-theme-primary), 0.3);
-	}
-
-	.day-cell.weekend:hover:not(.empty) {
-		background: rgb(var(--v-theme-surface)) !important;
+		background-color: rgba(var(--v-theme-primary), 0.08);
 	}
 
 	.day-cell.today:not(.empty) {
-		background:
-			linear-gradient(rgba(var(--v-theme-secondary), 0.08), rgba(var(--v-theme-secondary), 0.08)),
-			rgb(var(--v-theme-surface));
+		background-color: rgba(253, 212, 0, 0.1);
 	}
 
 	.day-cell.today:hover:not(.empty) {
-		background:
-			linear-gradient(rgba(var(--v-theme-secondary), 0.08), rgba(var(--v-theme-secondary), 0.08)),
-			rgb(var(--v-theme-surface)) !important;
+		background-color: rgba(253, 212, 0, 0.1) !important;
 	}
 
 	.day-cell.empty {
 		background-color: rgba(var(--v-border-color), 0.05);
 		cursor: default;
-	}
-
-	/* Cell header */
-	.cell-header {
-		padding: 8px;
-		border-bottom: 2px solid rgba(var(--v-border-color), 0.25);
-		flex-shrink: 0;
-		background: linear-gradient(to bottom, rgba(var(--v-theme-surface), 0.8), transparent);
-		min-height: 48px;
-		display: flex;
-		align-items: center;
-	}
-
-	.header-top {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		width: 100%;
-	}
-
-	.cell-date-text {
-		font-weight: 700;
-		font-size: 14px;
-		color: rgb(var(--v-theme-on-surface));
-		letter-spacing: 0.3px;
-		line-height: 1.2;
-		display: inline-block;
-		flex-shrink: 0;
-	}
-
-	.day-cell.today .cell-date-text {
-		border: 2px solid rgb(var(--v-theme-secondary));
-		border-radius: 6px;
-		padding: 4px 8px;
-		color: white;
-		font-weight: 800;
-	}
-
-	.cell-label-chip {
-		font-weight: 600;
-		letter-spacing: 0.3px;
-		flex-shrink: 1;
-		min-width: 0;
-		align-self: center;
 	}
 
 	/* Dynamic column count based on visibility mode */
@@ -507,34 +454,10 @@
 	}
 
 	/* Responsive adjustments */
-	@media (max-width: 960px) {
-		.cell-header {
-			padding: 8px 10px 8px 14px;
-		}
-
-		.cell-date-text {
-			font-size: 13px;
-		}
-	}
-
 	@media (max-width: 600px) {
 		.day-header {
 			font-size: 12px;
 			padding: 8px 4px;
-		}
-
-		.cell-header {
-			padding: 6px 8px 6px 12px;
-		}
-
-		.cell-date-text {
-			font-size: 12px;
-		}
-
-		.header-top {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 4px;
 		}
 	}
 </style>

@@ -71,7 +71,7 @@
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { Alarm } from '@/dtos/response/activityRecording/Alarm.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
 	const props = defineProps<{
 		alarm: Alarm
@@ -86,7 +86,7 @@
 		toggleActive: [value: boolean]
 	}>()
 
-	const { formatToTime, formatToDate } = useMoment()
+	const { formatToTime, formatToDate } = useDateTime()
 
 	const i18n = useI18n()
 

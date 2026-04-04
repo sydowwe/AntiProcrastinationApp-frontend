@@ -22,7 +22,8 @@
 					{{ template.icon }}
 				</VIcon>
 				<span>{{ template.name }}</span>
-
+			</div>
+			<div class="d-flex align-center ga-2">
 				<VSwitch
 					:modelValue="template.isActive"
 					class="ml-2"
@@ -33,17 +34,15 @@
 					@click.stop
 					@update:modelValue="emit('toggleActive')"
 				></VSwitch>
-			</div>
-			<div class="d-flex align-center ga-1">
 				<DayTypeChip
 					:dayType="template.suggestedForDayType"
 					isTonal
 				/>
-				<VBtn
+				<VIconBtn
 					icon="thumbtack"
-					variant="text"
+					variant="tonal"
 					size="small"
-					:color="isPinned ? 'primary' : 'grey'"
+					:color="isPinned ? 'primaryOutline' : 'base'"
 					@click.stop="emit('togglePin')"
 				/>
 			</div>
@@ -113,9 +112,13 @@
 		</VCardText>
 
 		<VCardActions class="pa-4 d-flex align-center flex-wrap ga-2">
-			<span v-if="template.suggestedLocation">
-				<VIcon class="mb-1">location-dot</VIcon>
-				{{ template.suggestedLocation }}
+			<span v-if="template.defaultWakeUpTime">
+				<VIcon class="mb-1 mr-1">sun</VIcon>
+				{{ Time.getString(template.defaultWakeUpTime) }}
+			</span>
+			<span v-if="template.defaultBedTime">
+				<VIcon class="ml-2 mb-1">moon</VIcon>
+				{{ Time.getString(template.defaultBedTime) }}
 			</span>
 			<VSpacer />
 			<VBtn
@@ -159,7 +162,8 @@
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue'
 	import { dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { Time } from '@/dtos/dto/Time.ts'
 
 	const { tasks } = defineProps<{
 		template: TaskPlannerDayTemplate
@@ -180,7 +184,7 @@
 		toggleCompare: []
 	}>()
 
-	const { formatToDate } = useMoment()
+	const { formatToDate } = useDateTime()
 </script>
 
 <style scoped>

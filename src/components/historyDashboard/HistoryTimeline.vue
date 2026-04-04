@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { DetailTimelineRequest } from '@/dtos/request/activityHistory/historyDetail/DetailTimelineRequest.ts'
 	import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
@@ -87,7 +87,7 @@
 		timeTo: Time
 	}>()
 
-	const { formatLocalized } = useMoment()
+	const { formatLocalized } = useDateTime()
 
 	// --- Data ---
 	const historyList = ref<ActivityHistory[]>([])

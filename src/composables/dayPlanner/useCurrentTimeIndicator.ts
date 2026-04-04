@@ -1,7 +1,7 @@
 // composables/useCurrentTimeIndicator.ts
 import { computed } from 'vue'
 import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
-import { useMoment } from '@/utils/DateTimeHelper.ts'
+import { useDateTime } from '@/utils/DateTimeHelper.ts'
 import { Time } from '@/dtos/dto/Time.ts'
 import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
@@ -12,7 +12,7 @@ export function useCurrentTimeIndicator<
 	TTaskRequest extends IBasePlannerTaskRequest,
 	TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>,
 >(store: TStore) {
-	const { formatToTime24H } = useMoment()
+	const { formatToTime24H } = useDateTime()
 	const { currentTime } = useCurrentTime()
 
 	const isVisible = computed(() => {

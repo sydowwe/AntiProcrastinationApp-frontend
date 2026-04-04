@@ -7,18 +7,11 @@
 		<div class="left-section">
 			<VIconBtn
 				variant="tonal"
-				icon="info"
-				height="40"
-				width="50"
+				color="secondaryOutline"
+				icon="bars"
 				@click="expanded = !expanded"
 			>
-				<VIcon
-					style="margin-left: -2px; margin-right: 4px"
-					t
-					size="16"
-					:icon="expanded ? 'chevron-right' : 'chevron-left'"
-				/>
-				<VIcon size="16" />
+				<VIcon size="24" />
 				<VTooltip
 					activator="parent"
 					location="bottom"
@@ -28,32 +21,17 @@
 			</VIconBtn>
 			<VIconBtn
 				variant="tonal"
-				density="compact"
+				density="comfortable"
 				icon="chevron-left"
 				@click="emit('navigateDate', -1)"
-			>
-				<VTooltip
-					activator="parent"
-					location="bottom"
-				>
-					Previous day (←)
-				</VTooltip>
-			</VIconBtn>
+			></VIconBtn>
 			<h1 class="date-title">{{ title }}</h1>
 			<VIconBtn
 				variant="tonal"
-				density="compact"
+				density="comfortable"
 				icon="chevron-right"
 				@click="emit('navigateDate', 1)"
-			>
-				<VTooltip
-					activator="parent"
-					location="bottom"
-				>
-					Next day (→)
-				</VTooltip>
-			</VIconBtn>
-
+			></VIconBtn>
 			<DayTypeChip
 				:dayType="calendar.dayType"
 				isTonal
@@ -124,7 +102,7 @@
 			</div>
 
 			<VTooltip
-				:text="nextUndoDescription ? `Undo: ${nextUndoDescription}` : 'Nothing to undo'"
+				:text="undoTooltip"
 				location="bottom"
 			>
 				<template #activator="{ props: tooltipProps }">
@@ -133,7 +111,7 @@
 						variant="tonal"
 						color="secondaryOutline"
 						:disabled="!canUndo"
-						@click="undo()"
+						@click="emit('undo')"
 					>
 						<VIcon icon="rotate-left" />
 						<VBadge
@@ -178,7 +156,7 @@
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
 	const props = defineProps<{
 		title: string
@@ -186,11 +164,26 @@
 	}>()
 	const emit = defineEmits<{
 		navigateDate: [delta: number]
+		undo: []
 	}>()
 	const expanded = defineModel<boolean>('expandedDetails', { required: true })
 	const store = useDayPlannerStore()
-	const { undo, canUndo, stackSize, nextUndoDescription } = useUndoStack()
-	const { timeNiceFromMinutes } = useMoment()
+	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
+	const { timeNiceFromMinutes, formatToDateWithDay } = useDateTime()
+
+	const undoTooltip = computed(() => {
+		if (!nextUndoDescription.value) return 'Nothing to undo'
+		const isOtherDay =
+			nextUndoDate.value &&
+			!(
+				nextUndoDate.value.getFullYear() === store.viewedDate.getFullYear() &&
+				nextUndoDate.value.getMonth() === store.viewedDate.getMonth() &&
+				nextUndoDate.value.getDate() === store.viewedDate.getDate()
+			)
+		return isOtherDay
+			? `Undo: ${nextUndoDescription.value} · go to ${formatToDateWithDay(nextUndoDate.value!)}`
+			: `Undo: ${nextUndoDescription.value}`
+	})
 
 	const progressColorName = computed(() => {
 		if (!props.calendar) return 'grey'
@@ -246,7 +239,7 @@
 	}
 
 	.progress-block {
-		width: 200px;
+		width: 225px;
 		max-width: 300px;
 	}
 

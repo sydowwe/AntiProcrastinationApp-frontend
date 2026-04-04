@@ -25,6 +25,7 @@
 					:title="currentDateFormatted"
 					:calendar
 					@navigateDate="navigateDate"
+					@undo="handleUndo"
 				/>
 				<div
 					v-if="suggestions.length && showSuggestionBanner"
@@ -38,7 +39,7 @@
 						closable
 					>
 						<div class="d-flex align-center flex-wrap ga-2">
-							<span class="text-caption font-weight-medium">Suggested for today:</span>
+							<span class="text-white text-caption font-weight-medium">Suggested for today:</span>
 							<VChip
 								v-for="t in suggestions"
 								:key="t.id"
@@ -110,7 +111,8 @@
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 	import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
@@ -143,7 +145,7 @@
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
-	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useMoment()
+	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useDateTime()
 	const store = useDayPlannerStore()
 
 	// Provide the store for slot content (EventBlock components)
@@ -200,8 +202,30 @@
 	function navigateDate(delta: number) {
 		const date = new Date(store.viewedDate)
 		date.setDate(date.getDate() + delta)
+		navigateToDate(date)
+	}
+
+	function navigateToDate(date: Date) {
 		store.viewedDate = date
 		router.replace({ params: { date: usStringToUrlString(formatToUsString(date)) } })
+	}
+
+	let loadCompleteResolve: (() => void) | null = null
+
+	async function handleUndo() {
+		const nextDate = undoStack.nextUndoDate
+		if (nextDate && !isSameDay(nextDate, store.viewedDate)) {
+			const loadDone = new Promise<void>(resolve => {
+				loadCompleteResolve = resolve
+			})
+			navigateToDate(new Date(nextDate))
+			await loadDone
+		}
+		await undoStack.undo()
+	}
+
+	function isSameDay(a: Date, b: Date): boolean {
+		return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 	}
 
 	function handleArrowKey(e: KeyboardEvent) {
@@ -229,6 +253,10 @@
 	async function templatePreview() {
 		if (store.templateInPreview) {
 			store.selectedTaskIds.clear()
+			if (!store.previewBaseStartTime) {
+				store.previewBaseStartTime = new Time(store.viewStartTime.hours, store.viewStartTime.minutes)
+				store.previewBaseEndTime = new Time(store.viewEndTime.hours, store.viewEndTime.minutes)
+			}
 			Object.assign(store.viewStartTime, store.templateInPreview.defaultWakeUpTime)
 			Object.assign(store.viewEndTime, store.templateInPreview.defaultBedTime)
 			store.tasksFromTemplate = (
@@ -280,6 +308,7 @@
 		store.tasks.push(response)
 		undoStack.push({
 			description: 'Task created',
+			date: new Date(store.viewedDate),
 			undo: async () => {
 				await deleteEntity(response.id)
 				store.tasks = store.tasks.filter(t => t.id !== response.id)
@@ -315,6 +344,7 @@
 		}
 		undoStack.push({
 			description: 'Task updated',
+			date: new Date(store.viewedDate),
 			undo: async () => {
 				const undoRequest = PlannerTaskRequest.fromEntity(originalTask)
 				undoRequest.calendarId = calendar.value?.id
@@ -353,6 +383,7 @@
 		store.deleteDialog = false
 		undoStack.push({
 			description: 'Task deleted',
+			date: new Date(store.viewedDate),
 			undo: async () => {
 				for (const task of deletedTasks) {
 					const request = PlannerTaskRequest.fromEntity(task)
@@ -413,10 +444,17 @@
 	// Watch for date changes to reload tasks
 	watch(
 		() => store.viewedDate,
-		() => {
+		async () => {
 			store.resetStore()
 			showSuggestionBanner.value = true
-			loadTasks()
+			const dateStr = usStringToUrlString(formatToUsString(new Date(store.viewedDate)))
+			const newCalendar = await fetchCalendarByDate(dateStr)
+			calendar.value = newCalendar
+			store.viewStartTime = newCalendar.wakeUpTime
+			store.viewEndTime = newCalendar.bedTime
+			await loadTasks()
+			loadCompleteResolve?.()
+			loadCompleteResolve = null
 		},
 		{ deep: true },
 	)

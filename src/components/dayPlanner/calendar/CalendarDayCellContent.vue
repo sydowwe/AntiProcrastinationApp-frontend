@@ -1,14 +1,8 @@
 <template>
 	<div
 		class="cell-content"
-		:style="[completionBgStyle, dayTypeBorderStyle]"
+		:style="completionBgStyle"
 	>
-		<!-- Today top accent -->
-		<div
-			v-if="day.isToday"
-			class="today-accent"
-		/>
-
 		<div class="d-flex align-center justify-space-between">
 			<!-- Wake/Bed Time -->
 			<div
@@ -16,22 +10,25 @@
 				class="cell-info"
 			>
 				<VIcon
+					style="margin-top: 2px"
 					icon="fas fa-clock"
 					size="small"
 				/>
 				<span class="info-text">{{ day.wakeUpTime.getString() }} - {{ day.bedTime.getString() }}</span>
 			</div>
 
-			<VBtn
-				variant="outlined"
-				color="secondaryOutline"
-				size="small"
-				prependIcon="pen-to-square"
-				:disabled="isBulkSelectMode"
-				@click.stop="emit('editDetails', day)"
+			<!-- Location -->
+			<div
+				v-if="day.location"
+				class="cell-info secondary-info"
 			>
-				Details
-			</VBtn>
+				<VIcon
+					:icon="`fas fa-${LOCATION_ICONS[day.location]}`"
+					size="small"
+					class="mr-1"
+				/>
+				<span class="info-text">{{ LOCATION_LABELS[day.location] }}</span>
+			</div>
 		</div>
 
 		<div class="d-flex flex-column ga-1">
@@ -77,19 +74,6 @@
 			<span class="info-text">{{ day.weather }}</span>
 		</div>
 
-		<!-- Location -->
-		<div
-			v-if="day.location"
-			class="cell-info secondary-info"
-		>
-			<VIcon
-				:icon="`fas fa-${LOCATION_ICONS[day.location]}`"
-				size="small"
-				class="mr-1"
-			/>
-			<span class="info-text">{{ LOCATION_LABELS[day.location] }}</span>
-		</div>
-
 		<!-- Notes — read only -->
 		<div
 			v-if="day.notes"
@@ -108,25 +92,15 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-	import { DayType, getDayTypeColor } from '@/dtos/enum/DayType.ts'
 	import { LOCATION_ICONS, LOCATION_LABELS } from '@/dtos/enum/Location.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
-	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/components/dayPlanner/calendar/CellTaskProgress.vue'
 
 	const props = defineProps<{
 		day: Calendar
-		isBulkSelectMode: boolean
 		selected: boolean
 		tasks: PlannerTask[]
-		activeTemplates: TaskPlannerDayTemplate[]
-	}>()
-
-	const emit = defineEmits<{
-		quickApply: [day: Calendar, template: TaskPlannerDayTemplate]
-		toggleSelection: [calendarId: number]
-		editDetails: [day: Calendar]
 	}>()
 
 	const completionBgStyle = computed(() => {
@@ -136,12 +110,6 @@
 		if (rate >= 80) return { backgroundColor: 'rgba(var(--v-theme-success), 0.07)' }
 		if (rate >= 50) return { backgroundColor: 'rgba(var(--v-theme-warning), 0.07)' }
 		return isPast ? { backgroundColor: 'rgba(var(--v-theme-error), 0.07)' } : {}
-	})
-
-	const dayTypeBorderStyle = computed(() => {
-		if ([DayType.Workday, DayType.Weekend].includes(props.day.dayType)) return {}
-		const color = getDayTypeColor(props.day.dayType)
-		return { borderLeft: `3px solid rgb(var(--v-theme-${color}))` }
 	})
 </script>
 
@@ -154,16 +122,6 @@
 		flex-direction: column;
 		gap: 6px;
 		position: relative;
-	}
-
-	.today-accent {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 3px;
-		background: rgb(var(--v-theme-secondary));
-		border-radius: 0 0 2px 2px;
 	}
 
 	.cell-info {

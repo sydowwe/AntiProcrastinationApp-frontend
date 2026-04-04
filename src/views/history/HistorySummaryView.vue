@@ -101,10 +101,10 @@
 	import { HistorySummaryStackedBarsRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 
-	const { formatTimeDtoToUtcTimeDto } = useMoment()
+	const { formatTimeDtoToUtcTimeDto } = useDateTime()
 	const route = useRoute()
 	const router = useRouter()
 
