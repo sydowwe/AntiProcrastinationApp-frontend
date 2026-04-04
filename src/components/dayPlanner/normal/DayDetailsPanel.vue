@@ -116,6 +116,7 @@
 					</div>
 
 					<VBtn
+						v-if="selectedTemplate?.id !== store.templateInPreview?.id"
 						color="primary"
 						block
 						@click="useTemplate"
@@ -127,6 +128,20 @@
 						/>
 						Preview Template
 					</VBtn>
+					<VChip
+						v-else
+						color="success"
+						variant="tonal"
+						block
+						class="w-100 justify-center"
+					>
+						<VIcon
+							icon="check"
+							size="14"
+							class="mr-1"
+						/>
+						In Preview
+					</VChip>
 				</SubtleCard>
 			</VExpandTransition>
 
@@ -195,7 +210,7 @@
 <script setup lang="ts">
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
-	import { onMounted, ref } from 'vue'
+	import { onMounted, ref, watch } from 'vue'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
@@ -221,7 +236,17 @@
 
 	onMounted(async () => {
 		templates.value = await fetchAll()
+		if (store.templateInPreview) {
+			selectedTemplate.value = store.templateInPreview
+		}
 	})
+
+	watch(
+		() => store.templateInPreview,
+		val => {
+			selectedTemplate.value = val
+		},
+	)
 
 	function useTemplate() {
 		store.templateInPreview = selectedTemplate.value

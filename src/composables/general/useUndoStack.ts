@@ -3,6 +3,7 @@ import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 
 interface UndoEntry {
 	description: string
+	date?: Date
 	undo: () => Promise<void>
 }
 
@@ -31,6 +32,7 @@ export function useUndoStack() {
 	const canUndo = computed(() => stack.value.length > 0)
 	const stackSize = computed(() => stack.value.length)
 	const nextUndoDescription = computed(() => stack.value[0]?.description ?? null)
+	const nextUndoDate = computed(() => stack.value[0]?.date ?? null)
 
-	return { push, undo, clear, canUndo, stackSize, nextUndoDescription }
+	return { push, undo, clear, canUndo, stackSize, nextUndoDescription, nextUndoDate }
 }

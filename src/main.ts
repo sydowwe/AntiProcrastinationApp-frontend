@@ -184,7 +184,8 @@ export const vuetify = createVuetify({
 					'neutral-900': '#F3F4F6',
 				},
 				variables: {
-					'border-color': '#000000',
+					'border-color': '#666666',
+					'medium-emphasis-opacity': 0.82,
 				},
 			},
 			light: {

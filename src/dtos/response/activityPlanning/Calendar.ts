@@ -23,7 +23,7 @@ export class Calendar {
 	) {}
 
 	public get completionRate() {
-		return Math.round((this.completedTasks / this.totalTasks) * 100)
+		return this.totalTasks === 0 ? 0 : Math.round((this.completedTasks / this.totalTasks) * 100)
 	}
 
 	get isToday() {

@@ -39,6 +39,7 @@
 						label="Day Type"
 						:items="dayTypeOptions"
 						prependIcon="calendar-day"
+						max-width="200px"
 						hideDetails
 					/>
 					<VSelect
@@ -49,16 +50,15 @@
 						clearable
 						hideDetails
 					/>
-					<VTextField
-						v-model="data.weather"
-						label="Weather"
-						prependIcon="cloud-sun"
-						placeholder="e.g., Sunny, Rainy..."
-						clearable
-						hideDetails
-					/>
 				</div>
-
+				<VTextField
+					v-model="data.weather"
+					label="Weather"
+					prependIcon="cloud-sun"
+					placeholder="e.g., Sunny, Rainy..."
+					clearable
+					hideDetails
+				/>
 				<!-- Notes -->
 				<VTextarea
 					v-model="data.notes"
@@ -102,9 +102,6 @@
 	const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
 	function getNaturalDayType(): DayType {
-		if (props.calendar!.holidayName) {
-			return DayType.Holiday
-		}
 		// dayIndex 6 or 7 = weekend (Saturday/Sunday)
 		if (props.calendar!.dayIndex === 6 || props.calendar!.dayIndex === 7) {
 			return DayType.Weekend

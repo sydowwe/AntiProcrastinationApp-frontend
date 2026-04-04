@@ -1,6 +1,6 @@
 <template>
 	<VSheet
-		v-if="task.isBackground"
+		v-if="task.isBackground && !isOutOfView"
 		:color="backgroundColorComp"
 		:style="style"
 		:data-task-id="task.id"
@@ -16,7 +16,7 @@
 	</VSheet>
 
 	<VSheet
-		v-else
+		v-else-if="!isOutOfView"
 		:color="`${backgroundColorComp}E0`"
 		:style="style"
 		class="base-task-block task-block"
@@ -161,6 +161,8 @@
 	const backgroundColorComp = computed(() => {
 		return backgroundColor || task.activity?.role?.color || '#4287f5'
 	})
+
+	const isOutOfView = computed(() => task.gridRowStart === 1 && task.gridRowEnd === 1)
 
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))

@@ -101,7 +101,7 @@
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 
 	const {
@@ -116,7 +116,7 @@
 	const { update, fetchById } = useTaskPlannerDayTemplateTaskCrud()
 	const store = useTemplateDayPlannerStore()
 	const { showSuccessSnackbar } = useSnackbar()
-	const { timeNiceFromMinutes } = useMoment()
+	const { timeNiceFromMinutes } = useDateTime()
 	const undoStack = useUndoStack()
 	provide('plannerStore', store)
 

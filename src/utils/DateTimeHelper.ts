@@ -11,7 +11,7 @@ dayjs.extend(customParseFormat)
 dayjs.extend(localizedFormat)
 dayjs.extend(utc)
 
-export function useMoment() {
+export function useDateTime() {
 	function toUTCDate(date: Date) {
 		const d = new Date(date)
 		d.setHours(0)

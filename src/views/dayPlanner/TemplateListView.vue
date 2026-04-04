@@ -1,5 +1,5 @@
 <template>
-	<div class="py-6">
+	<div class="py-6 w-100">
 		<div class="mb-5 d-flex justify-space-between align-center">
 			<h1 class="text-h4">Day Templates</h1>
 			<div class="d-flex align-center ga-3">
@@ -50,10 +50,9 @@
 		</div>
 
 		<VRow
-			class="w-100"
+			class="w-100 mt-16"
 			v-if="!templates.length"
 			justify="center"
-			align="center"
 		>
 			<VCol
 				cols="12"
@@ -225,7 +224,7 @@
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
@@ -242,7 +241,7 @@
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
-	const { formatToUsString, usStringToUrlString } = useMoment()
+	const { formatToUsString, usStringToUrlString } = useDateTime()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())

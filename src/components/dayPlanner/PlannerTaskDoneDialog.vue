@@ -55,7 +55,7 @@
 	import { useI18n } from 'vue-i18n'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useMoment } from '@/utils/DateTimeHelper.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import type { VForm } from 'vuetify/components'
 
@@ -68,7 +68,7 @@
 	}>()
 	const dialogShown = defineModel<boolean>({ required: true })
 	const { create } = useActivityHistoryCrud()
-	const { formatToDate } = useMoment()
+	const { formatToDate } = useDateTime()
 	const formatToDateTs = formatToDate as (date: unknown) => string
 	const i18n = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()

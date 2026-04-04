@@ -38,17 +38,18 @@
 		<!-- Month Mode -->
 		<div
 			v-else-if="selectedMode === 'month'"
-			class="d-flex ga-2 flex-wrap align-center"
+			class="d-flex flex-wrap align-center"
 		>
-			<VBtn
+			<VIconBtn
 				icon="fa-solid fa-chevron-left"
-				:density
+				density="comfortable"
 				variant="text"
 				@click="previousMonth"
 			/>
 			<VAutocomplete
 				v-model="selectedMonthValue"
 				label="Month"
+				class="mr-2"
 				:items="monthOptions"
 				itemTitle="label"
 				:density
@@ -65,9 +66,9 @@
 				maxWidth="110px"
 				minWidth="110px"
 			/>
-			<VBtn
+			<VIconBtn
 				icon="fa-solid fa-chevron-right"
-				:density
+				density="comfortable"
 				variant="text"
 				@click="nextMonth"
 			/>
@@ -114,23 +115,27 @@
 				style="min-width: 120px"
 			/>
 		</div>
+		<!-- Validation Error -->
+		<VAlert
+			v-if="validationError"
+			type="error"
+			:density
+			class="mt-2"
+		>
+			{{ validationError }}
+		</VAlert>
 	</div>
-	<!-- Validation Error -->
-	<VAlert
-		v-if="validationError"
-		type="error"
-		:density
-		class="mt-2"
-	>
-		{{ validationError }}
-	</VAlert>
 </template>
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { VDateInput } from 'vuetify/labs/components'
 
-	const { mode = 'month', hideDetails, density = 'comfortable' } = defineProps<{
+	const {
+		mode = 'month',
+		hideDetails = false,
+		density = 'comfortable',
+	} = defineProps<{
 		mode?: 'range' | 'month' | 'duration'
 		hideDetails?: boolean
 		density?: 'compact' | 'comfortable' | 'default'

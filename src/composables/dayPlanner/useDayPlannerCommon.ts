@@ -104,12 +104,32 @@ export function useDayPlannerCommon<
 	 * Calculate grid position from time span
 	 */
 	function setGridPositionFromSpan(task: T): void {
-		const startOffset = minutesFromViewStart(task.startTime) // [0, 1440)
+		const viewDurationMinutes = totalGridRows.value * 10
+		const viewStartMin = viewStartTime.value.getInMinutes
+		const viewEndMin = (viewStartMin + viewDurationMinutes) % MINUTES_IN_DAY
+
+		// Hide tasks that have no overlap with the visible time window
+		const viewSegs = segmentizeRange(viewStartMin, viewEndMin)
+		const taskSegs = segmentizeRange(task.startTime.getInMinutes, task.endTime.getInMinutes)
+		const hasOverlap = viewSegs.some(v => taskSegs.some(t => v.s < t.e && v.e > t.s))
+		if (!hasOverlap) {
+			task.gridRowStart = 1
+			task.gridRowEnd = 1
+			return
+		}
+
+		let startOffset = minutesFromViewStart(task.startTime) // [0, 1440)
 		let endOffset = minutesFromViewStart(task.endTime) // [0, 1440)
 
 		// If wraps over midnight, extend end by a full day to keep duration positive
 		if (task.endTime.getInMinutes < task.startTime.getInMinutes) {
 			endOffset += MINUTES_IN_DAY
+		}
+
+		// If startOffset exceeds view duration, the task starts before viewStartTime (wrapped via modulo).
+		// Clamp to 0 so it renders from the top of the visible grid instead of stretching it.
+		if (startOffset > viewDurationMinutes) {
+			startOffset = 0
 		}
 
 		const startRow = Math.floor(startOffset / 10) + 1
