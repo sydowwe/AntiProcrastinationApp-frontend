@@ -26,7 +26,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public isFromTemplate?: boolean,
 		public sourceTemplateTaskId: number | null = null,
 		public skipReason: string | null = null,
-		public todolistId: number | null = null,
+		public todoListItemId: number | null = null,
 		public estimatedMinuteLength?: number,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,

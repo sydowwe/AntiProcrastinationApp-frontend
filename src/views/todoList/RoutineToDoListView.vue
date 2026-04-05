@@ -11,12 +11,12 @@
 					variant="tonal"
 					color="secondaryOutline"
 				>
-					Nastavenia
+					{{ $t('routineTodoList.settings') }}
 				</VBtn>
 				<VSelect
 					:modelValue="visibleGroupIds"
 					:items="groupSelectItems"
-					label="Groups"
+					:label="$t('routineTodoList.groups')"
 					multiple
 					chips
 					density="compact"
@@ -40,7 +40,7 @@
 					appendIcon="arrows-up-down"
 					@click="toggleChangeOrderMode"
 				>
-					Reorder
+					{{ $t('routineTodoList.reorder') }}
 				</VBtn>
 			</div>
 		</div>
@@ -90,25 +90,43 @@
 									prependIcon="triangle-exclamation"
 									class="text-black font-weight-bold"
 								>
-									{{ daysUntilReset(group.timePeriod) }}d left
+									{{ $t('routineTodoList.daysLeft', { days: daysUntilReset(group.timePeriod) }) }}
 								</VChip>
 							</div>
 						</div>
 
-						<VSheet
-							class="px-3 py-1 d-flex align-center ga-2"
-							rounded
-							:style="{ backgroundColor: getBgColor(group.timePeriod.color) }"
-						>
-							<VCardTitle class="px-0 py-0">{{ group.timePeriod.text }}</VCardTitle>
-							<span class="text-caption text-white opacity-70">{{ group.timePeriod.lengthInDays }}d</span>
-						</VSheet>
+						<div class="d-flex flex-column ga-1">
+							<VSheet
+								class="px-3 py-1 d-flex align-center ga-2"
+								rounded
+								:style="{ backgroundColor: getBgColor(group.timePeriod.color) }"
+							>
+								<VCardTitle class="px-0 py-0">{{ group.timePeriod.text }}</VCardTitle>
+								<span class="text-caption text-white opacity-70">{{ group.timePeriod.lengthInDays }}d</span>
+							</VSheet>
+							<VProgressLinear
+								:modelValue="groupProgressMap.get(group.timePeriod.id as number)?.done ?? 0"
+								:max="groupProgressMap.get(group.timePeriod.id as number)?.total ?? 1"
+								rounded="sm"
+								height="14"
+								color="secondary-accent"
+							>
+								<span
+									class="position-absolute w-100 text-center font-weight-bold text-white"
+									style="font-size: 10px"
+								>
+									{{ groupProgressMap.get(group.timePeriod.id as number)?.total
+										? Math.round(((groupProgressMap.get(group.timePeriod.id as number)?.done ?? 0) / (groupProgressMap.get(group.timePeriod.id as number)?.total ?? 1)) * 100)
+										: 0 }}%
+								</span>
+							</VProgressLinear>
+						</div>
 
 						<div class="d-flex justify-end">
 							<VSwitch
 								v-model="hideDoneGroupIds"
 								:value="group.timePeriod.id"
-								label="Hide done"
+								:label="$t('routineTodoList.hideDone')"
 								density="compact"
 								hideDetails
 								color="secondary-accent"
@@ -156,6 +174,7 @@
 	import RoutineToDoListDialog from '../../components/dialogs/toDoList/RoutineToDoListDialog.vue'
 	import ToDoList from '../../components/toDoList/ToDoList.vue'
 	import { computed, onMounted, ref } from 'vue'
+	import { useRoute, useRouter } from 'vue-router'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/RoutineTodoListGroupedList.ts'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
@@ -165,8 +184,10 @@
 	import { useRoutineTodoListItemCrud } from '@/api/routineTodoList/routineTodoListApi.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
-	import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 
+	const route = useRoute()
+	const router = useRouter()
 	const { getBgColor } = useColor()
 	const { fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder } =
 		useRoutineTodoListItemCrud()
@@ -175,7 +196,16 @@
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
 	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
 	const isInChangeOrderMode = ref(false)
-	const hideDoneGroupIds = ref<number[]>([])
+
+	const hideDoneGroupIds = computed({
+		get: (): number[] => {
+			const val = route.query.hideDone
+			if (!val) return []
+			return (Array.isArray(val) ? val : [val]).map(Number)
+		},
+		set: (val: number[]) =>
+			router.replace({ query: { ...route.query, hideDone: val.length ? val.map(String) : undefined } }),
+	})
 
 	const groupSelectItems = computed(() =>
 		groupedItems.value.map(g => ({ title: g.timePeriod.text, value: g.timePeriod.id as number })),
@@ -213,18 +243,19 @@
 		return group.items.filter(item => !item.isDone)
 	}
 
-	function consistencyPct(timePeriod: TimePeriodEntity): number {
+	function consistencyPct(timePeriod: RoutineTimePeriodEntity): number {
 		if (!timePeriod.totalPeriodsElapsed) return 0
 		return Math.round((timePeriod.totalPeriodsCompleted / timePeriod.totalPeriodsElapsed) * 100)
 	}
 
-	function consistencyColor(timePeriod: TimePeriodEntity): string {
+	function consistencyColor(timePeriod: RoutineTimePeriodEntity): string {
 		const pct = consistencyPct(timePeriod)
-		if (pct >= 80) return 'text-white'
-		return 'text-warning'
+		if (pct >= 80) return 'text-success'
+		if (pct >= 50) return 'text-warning'
+		return 'text-error'
 	}
 
-	function daysUntilReset(timePeriod: TimePeriodEntity): number {
+	function daysUntilReset(timePeriod: RoutineTimePeriodEntity): number {
 		if (!timePeriod.nextResetAt) return Infinity
 		const ms = new Date(timePeriod.nextResetAt).getTime() - Date.now()
 		return Math.ceil(ms / (1000 * 60 * 60 * 24))
@@ -235,6 +266,14 @@
 		const total = items.reduce((sum, item) => sum + (item.totalCount ?? 1), 0)
 		return { done, total }
 	}
+
+	const groupProgressMap = computed(() => {
+		const map = new Map<number, { done: number; total: number }>()
+		for (const group of groupedItems.value) {
+			map.set(group.timePeriod.id as number, groupProgress(group.items))
+		}
+		return map
+	})
 
 	function isAtRisk(group: RoutineTodoListGroupedList): boolean {
 		const days = daysUntilReset(group.timePeriod)

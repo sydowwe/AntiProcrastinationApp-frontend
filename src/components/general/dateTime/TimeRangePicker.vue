@@ -1,6 +1,6 @@
 <!-- TimeRangePicker.vue -->
 <template>
-	<div class="d-flex ga-2 align-center flex-wrap">
+	<div class="d-flex ga-2 align-center">
 		<!-- Start Time Picker -->
 		<div class="d-flex ga-2 align-center">
 			<TimePicker

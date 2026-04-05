@@ -8,6 +8,7 @@ import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask
 import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import { computed, ref } from 'vue'
+import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -15,6 +16,9 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 	viewEndDate: Date
 	dateTimeFromSlotIndex: (slotIndex: number) => Date
 	datetimeToSlotIndex: (time?: Date) => number
+	pendingInitialActivityId: number | undefined
+	pendingInitialTodoListItemId: number | undefined
+	openCreateDialogWithActivity: (activityId: number, todoListItemId?: number) => void
 }
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
@@ -23,6 +27,16 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	// Day-specific state
 	const viewedDate = ref(new Date())
+
+	// Pending initial data for create dialog (e.g. opened from todo list)
+	const pendingInitialActivityId = ref<number | undefined>(undefined)
+	const pendingInitialTodoListItemId = ref<number | undefined>(undefined)
+
+	function openCreateDialogWithActivity(activityId: number, todoListItemId?: number): void {
+		pendingInitialActivityId.value = activityId
+		pendingInitialTodoListItemId.value = todoListItemId
+		core.openCreateDialog()
+	}
 
 	const templateInPreview = ref<TaskPlannerDayTemplate | null>(null)
 	const tasksFromTemplate = ref<PlannerTask[] | null>(null)
@@ -158,9 +172,9 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		await patch(eventId, span)
 	}
 
-	async function updateTaskIsDone(eventId: number, isDone: boolean) {
+	async function updateTaskStatus(eventId: number, status: PlannerTaskStatus): Promise<void> {
 		if (isTemplateInPreview.value) return
-		await patch(eventId, { isDone })
+		await patch(eventId, { status, isDone: status === PlannerTaskStatus.Completed })
 	}
 
 	function openEditDialog() {
@@ -190,7 +204,11 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		toggleTaskSelection,
 		showActionBar,
 		updateTaskSpan,
-		updateTaskIsDone,
+		updateTaskStatus,
+
+		pendingInitialActivityId,
+		pendingInitialTodoListItemId,
+		openCreateDialogWithActivity,
 
 		templateInPreview,
 		isTemplateInPreview,

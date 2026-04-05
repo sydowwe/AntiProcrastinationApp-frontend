@@ -24,7 +24,12 @@
 				rounded="lg"
 				style="margin: 0 -4px"
 			>
+				<slot
+					name="before-activity"
+					:data="data"
+				/>
 				<ActivitySelectOrQuickEditFormField
+					v-show="!hideActivitySelector"
 					ref="activityFormField"
 					viewName="Planner task"
 					:isEdit
@@ -106,6 +111,7 @@
 		title: string
 		store: TStore
 		createEmptyRequest: () => TTaskRequest
+		hideActivitySelector?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -205,4 +211,9 @@
 
 		props.store.$patch({ isDuplicating: false, dialog: false })
 	}
+
+	defineExpose({
+		prefillActivity: (activityId: number) => activityFormField.value?.onOpenEdit(activityId),
+		resetActivityField: () => activityFormField.value?.reset(),
+	})
 </script>

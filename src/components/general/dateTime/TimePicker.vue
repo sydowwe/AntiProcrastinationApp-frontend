@@ -1,33 +1,53 @@
 <!-- TimePickerTextField.vue -->
 <template>
-	<VMaskInput
-		v-model="inputValue"
-		:label
-		:color
-		:disabled
-		:prependInnerIcon="icon"
-		:density
-		:clearable="false"
-		mask="##:##"
-		returnMaskedValue
-		:active="menuOpen"
-	>
-		<VMenu
-			v-model="menuOpen"
-			:closeOnContentClick="false"
-			activator="parent"
+	<div class="d-flex align-center">
+		<VIconBtn
+			v-if="showArrows"
+			:class="{ 'mb-5': !hideDetails }"
+			icon="fa-solid fa-chevron-left"
+			variant="text"
+			:density="density"
+			@click="quickAddMinutes(true)"
+		/>
+		<VMaskInput
+			v-model="inputValue"
+			:label
+			:color
+			:disabled
+			:prependInnerIcon="icon"
+			:density
+			:clearable="false"
+			mask="##:##"
+			returnMaskedValue
+			:active="menuOpen"
+			:hideDetails
+			:rules
 		>
-			<template #default>
-				<VTimePicker
-					v-model="timeString"
-					format="24hr"
-					:viewMode
-					:allowedMinutes
-					scrollable
-				/>
-			</template>
-		</VMenu>
-	</VMaskInput>
+			<VMenu
+				v-model="menuOpen"
+				:closeOnContentClick="false"
+				activator="parent"
+			>
+				<template #default>
+					<VTimePicker
+						v-model="timeString"
+						format="24hr"
+						:viewMode
+						:allowedMinutes
+						scrollable
+					/>
+				</template>
+			</VMenu>
+		</VMaskInput>
+		<VIconBtn
+			v-if="showArrows"
+			:class="{ 'mb-5': !hideDetails }"
+			icon="fa-solid fa-chevron-right"
+			variant="text"
+			:density="density"
+			@click="quickAddMinutes(false)"
+		/>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +57,9 @@
 
 	const {
 		color = 'base',
+		showArrows = false,
+		hideDetails = false,
+		rules = [],
 		label = 'Time',
 		viewMode = 'hour',
 		icon = 'far fa-clock',
@@ -45,6 +68,9 @@
 		disabled = false,
 	} = defineProps<{
 		color?: string
+		showArrows?: boolean
+		hideDetails?: boolean
+		rules?: readonly ((value: unknown) => string | boolean)[]
 		label?: string
 		viewMode?: 'hour' | 'minute' | 'second'
 		icon?: string
@@ -73,6 +99,16 @@
 			time.value = Time.fromString(newTime)
 		},
 	})
+
+	function quickAddMinutes(subtract: boolean): void {
+		const minutes = allowedMinutesSelected === '1' ? 5 : parseInt(allowedMinutesSelected)
+		if (subtract) {
+			const newMinutes = time.value.getInMinutes - minutes
+			time.value = Time.fromMinutes(newMinutes < 0 ? 0 : newMinutes)
+		} else {
+			time.value = Time.fromMinutes(time.value.getInMinutes + minutes)
+		}
+	}
 
 	// Watch inputValue and update timeString when complete
 	watch(inputValue, newValue => {

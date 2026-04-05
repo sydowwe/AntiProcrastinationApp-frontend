@@ -8,6 +8,7 @@
 		class="align-center listItem"
 		:class="{
 			'is-dragging': isDragging,
+			'is-overdue': isOverdue,
 		}"
 		@click="itemClicked"
 	>
@@ -88,12 +89,32 @@
 		>
 			{{ dueDateChip.label }}
 		</VChip>
+		<VChip
+			v-if="toDoListItem.suggestedTime"
+			size="x-small"
+			variant="tonal"
+			density="compact"
+			prependIcon="hourglass-half"
+			class="mt-1 ml-1"
+		>
+			{{ toDoListItem.suggestedTime.getNice }}
+		</VChip>
 		<span
 			v-if="toDoListItem.note"
 			class="text-caption text-medium-emphasis d-block mt-1"
+			style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
 		>
 			{{ toDoListItem.note }}
 		</span>
+		<TodoListItemSteps
+			v-if="localSteps.length > 0"
+			:steps="localSteps"
+			:itemId="toDoListItem.id"
+			:kind
+			:disabled="isInChangeOrderMode"
+			class="mt-2"
+			@stepToggled="onStepToggled"
+		/>
 		<template #append>
 			<VIcon
 				v-if="isSelected"
@@ -193,10 +214,14 @@
 	import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
+	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
+	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
+	import TodoListItemSteps from '@/components/toDoList/TodoListItemSteps.vue'
 
 	const {
 		toDoListItem,
 		color,
+		kind,
 		isInChangeOrderMode = false,
 		listId,
 		isDragging = false,
@@ -204,6 +229,7 @@
 	} = defineProps<{
 		toDoListItem: TItem
 		color: string
+		kind: ToDoListKind
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
@@ -216,6 +242,7 @@
 		select: [id: number]
 		unSelect: [id: number]
 		isDoneChanged: [toDoListItem: TItem]
+		addToPlanner: [toDoListItem: TItem]
 	}>()
 
 	const i18n = useI18n()
@@ -223,6 +250,7 @@
 	const isSelected = ref(false)
 	const isDone = ref(toDoListItem.isDone)
 	const doneCount = ref<number | null>(toDoListItem.doneCount)
+	const localSteps = ref<TodoListItemStepEntity[]>([...toDoListItem.steps])
 
 	watch(
 		() => toDoListItem.isDone,
@@ -237,6 +265,35 @@
 			doneCount.value = val
 		},
 	)
+	watch(
+		() => toDoListItem.steps,
+		val => {
+			localSteps.value = [...val]
+		},
+		{ deep: true },
+	)
+
+	function onStepToggled(_stepId: number, allDone: boolean, updatedSteps: TodoListItemStepEntity[]) {
+		localSteps.value = updatedSteps
+		const isRepeat = toDoListItem.isMultipleCount
+
+		if (allDone) {
+			if (isRepeat) {
+				localSteps.value = localSteps.value.map(s => ({ ...s, isDone: false }))
+				doneCount.value = (doneCount.value ?? 0) + 1
+				if (doneCount.value >= (toDoListItem.totalCount ?? 1)) isDone.value = true
+			} else {
+				isDone.value = true
+			}
+			emitChanged()
+		} else {
+			if (isDone.value) {
+				isDone.value = false
+				emitChanged()
+			}
+			doneCount.value = localSteps.value.filter(s => s.isDone).length
+		}
+	}
 
 	const dueDateChip = computed(() => {
 		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
@@ -257,6 +314,14 @@
 		const dueTime = (toDoListItem as any).dueTime as Time | null | undefined
 		if (dueTime) label += ' ' + Time.getString(dueTime)
 		return { label, color: isOverdue ? 'error' : isToday ? 'warning' : undefined }
+	})
+
+	const isOverdue = computed(() => {
+		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
+		if (!dueDate || toDoListItem.isDone) return false
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		return new Date(dueDate + 'T00:00:00') < today
 	})
 
 	const itemStreak = computed(() => (toDoListItem as any).streak as number | undefined)
@@ -357,6 +422,7 @@
 	const actions = [
 		new MenuItem('select', 'tonal', 'primaryOutline', 'check-circle', toggleSelect),
 		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', edit),
+		new MenuItem('addToPlanner', 'outlined', 'primaryOutline', 'calendar-plus', addToPlanner),
 		new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', del),
 	]
 
@@ -371,6 +437,10 @@
 		}
 
 		isDone.value = !isDone.value
+		if (isDone.value && localSteps.value.some(s => !s.isDone)) {
+			localSteps.value = localSteps.value.map(s => ({ ...s, isDone: true }))
+			doneCount.value = localSteps.value.length
+		}
 		emitChanged()
 	}
 
@@ -419,6 +489,10 @@
 		isSelected.value = false
 	}
 
+	function addToPlanner() {
+		emits('addToPlanner', toDoListItem)
+	}
+
 	function toggleSelect() {
 		if (isInChangeOrderMode) return
 
@@ -452,6 +526,10 @@
 
 	.listItem:has(.drag-handle):active {
 		cursor: grabbing;
+	}
+
+	.listItem.is-overdue {
+		border-color: rgb(var(--v-theme-error)) !important;
 	}
 
 	.is-dragging {

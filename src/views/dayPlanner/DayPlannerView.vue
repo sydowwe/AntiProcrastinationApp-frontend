@@ -67,7 +67,7 @@
 				<PlannerTaskBlock
 					:task="task as PlannerTask"
 					@resizeStart="onResizeStart"
-					@toggleIsDone="handleToggleIsDone"
+					@changeStatus="handleStatusChange"
 				/>
 			</template>
 
@@ -135,12 +135,13 @@
 	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 	const { showFullScreenLoading } = useLoading()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const undoStack = useUndoStack()
 	const { getSuggestions } = useTemplateSuggestion()
-	const { createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, batchDelete, fetchFiltered } =
+	const { createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, patchStatus, batchDelete, fetchFiltered } =
 		useTaskPlannerCrud()
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
@@ -402,24 +403,30 @@
 		showSuccessSnackbar('Task deleted')
 	}
 
-	async function handleToggleIsDone(taskId: number) {
-		await batchedToggleIsDone([taskId])
-			.then(() => {
-				const task = store.tasks.find(e => e.id === taskId)
-				if (task) {
-					calendar.value!.completedTasks += task.isDone ? 1 : -1
-				}
-			})
-			.catch(_error => {})
+	async function handleStatusChange(taskId: number, status: PlannerTaskStatus) {
+		const task = store.tasks.find(e => e.id === taskId)
+		if (!task) return
+		const previousStatus = task.status
+		const previousIsDone = task.isDone
+		task.status = status
+		task.isDone = status === PlannerTaskStatus.Completed
+		await patchStatus(taskId, status).catch(_error => {
+			task.status = previousStatus
+			task.isDone = previousIsDone
+		})
+		calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 	}
 
 	async function handleToggleIsDoneSelected() {
 		const selectedTaskIds = Array.from(store.selectedTaskIds)
+		const allCompleted = selectedTaskIds.every(id => store.tasks.find(e => e.id === id)?.status === PlannerTaskStatus.Completed)
+		const newStatus = allCompleted ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed
 
 		await batchedToggleIsDone(selectedTaskIds).then(() => {
 			const tasks = store.tasks.filter(e => selectedTaskIds.includes(e.id))
 			tasks.forEach(task => {
-				task.isDone = !task.isDone
+				task.status = newStatus
+				task.isDone = newStatus === PlannerTaskStatus.Completed
 			})
 			calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 			store.clearSelection()

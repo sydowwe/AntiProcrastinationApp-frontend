@@ -5,7 +5,7 @@
 		:backgroundColor="task.color"
 		:isPast
 		@resizeStart="emit('resizeStart', $event)"
-		@keydown.space.prevent="handleToggleIsDoneSelected"
+		@keydown.space.prevent="handleToggleStatusSelected"
 	>
 		<template #time>
 			<div
@@ -22,29 +22,47 @@
 			</div>
 		</template>
 		<template #checkbox>
-			<VCheckbox
+			<VMenu
 				v-if="task.id >= 0"
-				:modelValue="task.isDone"
 				:disabled="store.isTemplateInPreview"
-				class="task-checkbox"
-				density="default"
-				hideDetails
-				:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
-				@update:modelValue="emit('toggleIsDone', task.id)"
-				@click.stop
-			/>
-		</template>
-		<template #badges>
-			<ChipWithIcon
-				v-if="task.status !== PlannerTaskStatus.NotStarted"
-				class="task-chip"
-				size="x-small"
-				variant="flat"
-				:icon="getPlannerTaskStatusIcon(task.status)"
-				:color="getPlannerTaskStatusColor(task.status)"
+				location="bottom start"
+				:closeOnContentClick="true"
 			>
-				{{ task.status }}
-			</ChipWithIcon>
+				<template #activator="{ props: menuProps }">
+					<VIconBtn
+						v-bind="menuProps"
+						:icon="getPlannerTaskStatusIcon(task.status)"
+						:color="getPlannerTaskStatusColor(task.status)"
+						size="small"
+						variant="text"
+						class="status-btn"
+						:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
+						@click.stop
+					/>
+				</template>
+				<VCard>
+					<VList density="compact">
+						<VListItem
+							v-for="option in statusOptions"
+							:key="option.value"
+							:value="option.value"
+							:active="task.status === option.value"
+							color="primary"
+							@click="emit('changeStatus', task.id, option.value as PlannerTaskStatus)"
+						>
+							<template #prepend>
+								<VIcon
+									:icon="getPlannerTaskStatusIcon(option.value)"
+									:color="getPlannerTaskStatusColor(option.value)"
+									size="small"
+									class="mr-2"
+								/>
+							</template>
+							{{ option.title }}
+						</VListItem>
+					</VList>
+				</VCard>
+			</VMenu>
 		</template>
 	</BaseTaskBlock>
 </template>
@@ -55,13 +73,13 @@
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import {
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,
 		PlannerTaskStatus,
 	} from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
+	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 
 	const { task } = defineProps<{
 		task: PlannerTask
@@ -69,15 +87,16 @@
 
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
-		toggleIsDone: [taskId: number]
+		changeStatus: [taskId: number, status: PlannerTaskStatus]
 	}>()
 
 	const { currentTime } = useCurrentTime()
 
 	const store = inject<ReturnType<typeof useDayPlannerStore>>('plannerStore')!
 
+	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
+
 	const formattedTime = computed(() => (startTime: Time, endTime: Time) => {
-		// Default time formatting (can be overridden via slot)
 		return `${Time.getString(startTime)} - ${Time.getString(endTime)}`
 	})
 
@@ -94,33 +113,34 @@
 		}
 	})
 
-	function handleToggleIsDoneSelected(): void {
-		// Toggle isDone for all selected tasks
+	function handleToggleStatusSelected(): void {
 		const selectedTaskIds = Array.from(store.selectedTaskIds)
+		const allCompleted = selectedTaskIds.every(id => {
+			const t = store.tasks.find(e => e.id === id)
+			return t?.status === PlannerTaskStatus.Completed
+		})
+		const newStatus = allCompleted ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed
 
 		selectedTaskIds.forEach(taskId => {
-			const taskTask = store.tasks.find(e => e.id === taskId)
-			if (!taskTask) return
+			const taskItem = store.tasks.find(e => e.id === taskId)
+			if (!taskItem) return
 
-			const newIsDone = !taskTask.isDone
-			taskTask.isDone = newIsDone
+			taskItem.status = newStatus
+			taskItem.isDone = newStatus === PlannerTaskStatus.Completed
 
-			store.updateTaskIsDone(taskId, newIsDone).catch(error => {
-				console.error('Error updating task isDone:', error)
-				taskTask.isDone = !newIsDone
+			store.updateTaskStatus(taskId, newStatus).catch(error => {
+				console.error('Error updating task status:', error)
+				taskItem.status = newStatus === PlannerTaskStatus.Completed ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed
+				taskItem.isDone = !taskItem.isDone
 			})
 		})
 	}
 </script>
 <style>
-	.task-checkbox {
+	.status-btn {
 		z-index: 15;
 		pointer-events: auto;
 		cursor: pointer;
-	}
-
-	.task-checkbox.v-checkbox .v-selection-control {
-		min-height: 0 !important;
 	}
 
 	.task-time {

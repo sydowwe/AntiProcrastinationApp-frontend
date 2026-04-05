@@ -1,6 +1,6 @@
 import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { TaskPriority } from '@/dtos/response/activityPlanning/TaskPriority.ts'
+import { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 
 export function useTaskPriorityCrud() {
 	const url = 'task-priority'

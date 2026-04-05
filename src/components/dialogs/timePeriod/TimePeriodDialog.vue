@@ -69,14 +69,14 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { computed, ref } from 'vue'
-	import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { VForm } from 'vuetify/components'
 
 	const emit = defineEmits<{
-		(e: 'created', newItem: TimePeriodEntity): void
+		(e: 'created', newItem: RoutineTimePeriodEntity): void
 		(e: 'updated', updatedId: number, updatedItem: TimePeriodRequest): void
 	}>()
 
@@ -115,7 +115,7 @@
 		dialog.value = true
 	}
 
-	function openEditDialog(entity: TimePeriodEntity) {
+	function openEditDialog(entity: RoutineTimePeriodEntity) {
 		idToEdit.value = entity.id
 		request.value = TimePeriodRequest.fromEntity(entity)
 		isEdit.value = true

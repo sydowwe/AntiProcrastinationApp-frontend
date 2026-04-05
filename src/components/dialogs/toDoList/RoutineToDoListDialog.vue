@@ -39,6 +39,22 @@
 				:items="timePeriodOptions"
 				hideDetails
 			></VIdSelect>
+			<div class="d-flex align-center ga-3 mt-2">
+				<VSwitch
+					v-model="suggestedTimeEnabled"
+					:label="$t('toDoList.suggestedTime')"
+					density="compact"
+					hideDetails
+				/>
+				<TimePicker
+					v-if="suggestedTimeEnabled"
+					v-model="suggestedTimeValue"
+					:label="$t('toDoList.suggestedTime')"
+					density="compact"
+					class="flex-grow-1"
+					viewMode="minute"
+				/>
+			</div>
 			<VTextarea
 				v-model="routineToDoListItem.note"
 				label="Note"
@@ -48,6 +64,44 @@
 				autoGrow
 				class="mt-3"
 			/>
+			<div class="mt-3">
+				<span class="text-caption text-medium-emphasis">{{ $t('toDoList.steps') }}</span>
+				<div
+					v-for="(step, i) in dialogSteps"
+					:key="i"
+					class="d-flex align-center ga-2 mt-1"
+				>
+					<VTextField
+						v-model="step.name"
+						density="compact"
+						hideDetails
+						class="flex-grow-1"
+					/>
+					<VIconBtn
+						icon="trash-can"
+						color="error"
+						variant="text"
+						size="small"
+						@click="dialogSteps.splice(i, 1)"
+					/>
+				</div>
+				<div class="d-flex ga-2 mt-2">
+					<VTextField
+						v-model="newStepName"
+						:label="$t('toDoList.addStep')"
+						density="compact"
+						hideDetails
+						class="flex-grow-1"
+						@keyup.enter.stop="addDialogStep"
+					/>
+					<VIconBtn
+						icon="plus"
+						variant="tonal"
+						color="primaryOutline"
+						@click="addDialogStep"
+					/>
+				</div>
+			</div>
 		</VForm>
 	</MyDialog>
 </template>
@@ -62,7 +116,10 @@
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue'
 	import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-	import { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import { Time } from '@/dtos/dto/Time.ts'
+	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 
 	const emit = defineEmits<{
 		edit: []
@@ -70,8 +127,8 @@
 		quickEditedActivity: []
 	}>()
 
-	const { fetchSelectOptions: fetchTimePeriodEntitySelectOptions } = useEntityQuery<TimePeriodEntity>({
-		responseClass: TimePeriodEntity,
+	const { fetchSelectOptions: fetchRoutineTimePeriodEntitySelectOptions } = useEntityQuery<RoutineTimePeriodEntity>({
+		responseClass: RoutineTimePeriodEntity,
 		entityName: 'routine-time-period',
 	})
 
@@ -84,18 +141,28 @@
 	const isEdit = ref(false)
 	const entityBeforeEdit = ref<RoutineTodoListItemEntity | null>(null)
 
+	interface DialogStep { name: string; order: number; note: string | null }
+	const dialogSteps = ref<DialogStep[]>([])
+	const newStepName = ref('')
+
 	const isRepeated = ref(false)
+	const suggestedTimeEnabled = ref(false)
+	const suggestedTimeValue = ref<Time>(new Time())
 	const timePeriodOptions = ref<SelectOption[]>([])
 
 	watch(dialog, newValue => {
 		if (!newValue) {
 			routineToDoListItem.value = new RoutineTodoListItemRequest()
 			setDefaultTimePeriod()
+			suggestedTimeEnabled.value = false
+			suggestedTimeValue.value = new Time()
+			dialogSteps.value = []
+			newStepName.value = ''
 		}
 	})
 
 	onMounted(async () => {
-		timePeriodOptions.value = await fetchTimePeriodEntitySelectOptions()
+		timePeriodOptions.value = await fetchRoutineTimePeriodEntitySelectOptions()
 		setDefaultTimePeriod()
 	})
 
@@ -119,6 +186,9 @@
 				routineToDoListItem.value.doneCount = null
 			}
 		}
+		routineToDoListItem.value.suggestedTime = suggestedTimeEnabled.value ? suggestedTimeValue.value : null
+		routineToDoListItem.value.steps = dialogSteps.value.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
+		if (routineToDoListItem.value.steps.length > 0) routineToDoListItem.value.totalCount = null
 		if (isEdit.value) {
 			emit('edit', entityBeforeEdit.value, routineToDoListItem.value)
 		} else {
@@ -127,12 +197,22 @@
 		close()
 	}
 
+	function addDialogStep() {
+		if (!newStepName.value.trim()) return
+		dialogSteps.value.push({ name: newStepName.value.trim(), order: dialogSteps.value.length + 1, note: null })
+		newStepName.value = ''
+	}
+
 	const close = () => {
 		dialog.value = false
 
 		activityFormField.value?.reset()
 		routineToDoListItem.value = new RoutineTodoListItemRequest()
 		setDefaultTimePeriod()
+		suggestedTimeEnabled.value = false
+		suggestedTimeValue.value = new Time()
+		dialogSteps.value = []
+		newStepName.value = ''
 		entityBeforeEdit.value = null
 	}
 
@@ -148,6 +228,10 @@
 
 		activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity.id)
 		routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit)
+		isRepeated.value = entityToEdit.steps.length === 0 && (entityToEdit.totalCount ?? 0) > 1
+		suggestedTimeEnabled.value = !!entityToEdit.suggestedTime
+		suggestedTimeValue.value = entityToEdit.suggestedTime ?? new Time()
+		dialogSteps.value = entityToEdit.steps.map((s, i) => ({ name: s.name, order: i + 1, note: s.note }))
 		dialog.value = true
 	}
 

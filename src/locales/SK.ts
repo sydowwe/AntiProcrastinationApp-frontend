@@ -232,10 +232,12 @@ const SK = {
 		search: `Hľadať`,
 		uncategorized: `Bez kategórie`,
 		all: `Všetky`,
+		addToPlanner: `Pridať do plánovača`,
 	},
 	dateTime: {
 		when: `Kedy`,
 		length: `Dĺžka`,
+		lengthRequired: `Dĺžka musí byť väčšia ako 0`,
 		date: `Dátum`,
 		time: `Čas`,
 		year: `Rok`,
@@ -397,6 +399,8 @@ const SK = {
 		dueDate: `Termín`,
 		specificTime: `Konkrétny čas`,
 		dueTime: `Čas termínu`,
+		suggestedTime: `Odporúčaná dĺžka`,
+		uncheckAll: `Odškrtnúť všetky`,
 		note: `Poznámka`,
 		namedList: {
 			lists: `To-do zoznamy`,
@@ -423,6 +427,11 @@ const SK = {
 		saveTask: `Zaznamenať dokončenie úlohy`,
 		quickCreateRoutineToDoListActivity: `Rýchle vytvorenie aktivity s roľou rutinná úloha`,
 		quickEditToDoListActivity: `Rýchla úprava aktivity`,
+		settings: `Nastavenia`,
+		groups: `Skupiny`,
+		reorder: `Zmeniť poradie`,
+		hideDone: `Skryť hotové`,
+		daysLeft: `{days}d zostáva`,
 	},
 	user: {
 		userSettings: `Uživateľské nastavenia`,

@@ -1,5 +1,5 @@
 <template>
-	<div style="position: relative; height: 100%; width: 100%">
+	<div style="position: relative; height: 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden">
 		<!-- Mobile: full-area category dialog -->
 		<VDialog
 			v-model="categoryDrawerOpen"
@@ -30,14 +30,15 @@
 			</VCard>
 		</VDialog>
 
-		<VRow class="my-lg-2 my-md-1 bg-background">
+		<VRow class="my-lg-2 my-md-1 bg-background" align="stretch" style="flex: 1; min-height: 0; overflow: hidden">
 			<!-- Left panel: categories (desktop) -->
 			<VCol
 				cols="4"
 				lg="3"
 				class="d-none d-md-block"
+				style="height: 100%; overflow: hidden"
 			>
-				<VCard class="py-0">
+				<VCard class="py-0" style="height: 100%; overflow: hidden">
 					<TodoListCategoryPanel
 						v-model:hideEmpty="hideEmptyCategories"
 						v-model:filterName="categoryFilterName"
@@ -59,8 +60,9 @@
 				md="8"
 				lg="9"
 				class="bg-background"
+				style="height: 100%; overflow: hidden; display: flex; flex-direction: column"
 			>
-				<div class="py-4 pt-md-0 d-flex flex-column flex-md-row ga-3 sticky-toolbar">
+				<div class="py-4 pt-md-0 d-flex flex-column flex-md-row ga-3" style="flex-shrink: 0; background: rgb(var(--v-theme-background)); z-index: 10">
 					<div class="d-flex align-center ga-3">
 						<VBtn
 							prependIcon="bars"
@@ -105,10 +107,11 @@
 					</div>
 				</div>
 
-				<div
-					v-if="loading"
-					class="d-flex flex-column ga-3"
-				>
+				<div style="flex: 1; overflow-y: auto; min-height: 0">
+					<div
+						v-if="loading"
+						class="d-flex flex-column ga-3"
+					>
 					<VCard
 						v-for="i in 3"
 						:key="i"
@@ -233,7 +236,8 @@
 							<p class="text-subtitle-2 font-weight-medium mb-1">{{ $t('toDoList.namedList.empty') }}</p>
 						</template>
 					</div>
-				</template>
+					</template>
+				</div>
 			</VCol>
 		</VRow>
 
@@ -448,13 +452,6 @@
 		padding: 48px 24px;
 		text-align: center;
 		color: rgba(var(--v-theme-on-surface), 0.5);
-	}
-
-	.sticky-toolbar {
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		background: rgb(var(--v-theme-background));
 	}
 
 	.list-fade-enter-active {

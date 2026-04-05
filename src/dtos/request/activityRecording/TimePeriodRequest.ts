@@ -1,6 +1,6 @@
 import type { ICreateRequest } from '@/dtos/request/interface/ICreateRequest.ts'
 import type { IUpdateRequest } from '@/dtos/request/interface/IUpdateRequest.ts'
-import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 
 export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 	constructor(
@@ -13,7 +13,7 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 		public resetAnchorDay: number = 0,
 	) {}
 
-	static fromEntity(entity: TimePeriodEntity) {
+	static fromEntity(entity: RoutineTimePeriodEntity) {
 		return new TimePeriodRequest(
 			entity.text,
 			entity.color,

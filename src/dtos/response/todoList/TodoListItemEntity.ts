@@ -1,7 +1,8 @@
 import { Activity } from '@/dtos/response/activity/Activity.ts'
-import { TaskPriority } from '@/dtos/response/activityPlanning/TaskPriority.ts'
 import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 import { Time } from '@/dtos/dto/Time.ts'
+import { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
+import { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 
 export class TodoListItemEntity implements IBaseToDoListItem {
 	constructor(
@@ -14,6 +15,8 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		public dueDate: string | null = null,
 		public dueTime: Time | null = null,
 		public note: string | null = null,
+		public suggestedTime: Time | null = null,
+		public steps: TodoListItemStepEntity[] = [],
 	) {}
 
 	get isMultipleCount() {
@@ -31,6 +34,8 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.dueDate ?? null,
 			json.dueTime ? Time.fromJson(json.dueTime) : null,
 			json.note ?? null,
+			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
+			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
 		)
 	}
 

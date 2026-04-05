@@ -4,18 +4,36 @@
 		class="todo-list"
 		:class="{ 'list-invalid-drop-target': isDraggingDuplicateActivity }"
 	>
-		<VProgressLinear
-			:modelValue="progress.done"
-			:max="progress.total"
-			rounded="sm"
-			height="17"
-			color="secondary-accent"
-			class="mt-2"
-		>
-			<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
-				{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
+		<div class="d-flex align-center ga-2 mt-2">
+			<VProgressLinear
+				:modelValue="progress.done"
+				:max="progress.total"
+				rounded="sm"
+				height="17"
+				color="secondary-accent"
+				class="flex-grow-1"
+			>
+				<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
+					{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
+				</span>
+			</VProgressLinear>
+			<span
+				v-if="estimatedTimeRemaining"
+				class="text-caption text-medium-emphasis text-no-wrap"
+			>
+				~{{ estimatedTimeRemaining.getNice }}
 			</span>
-		</VProgressLinear>
+			<VIconBtn
+				v-if="progress.done > 0"
+				icon="fa-rotate-left"
+				variant="text"
+				density="compact"
+				color="textMuted"
+				size="small"
+				:title="$t('toDoList.uncheckAll')"
+				@click="uncheckAll"
+			/>
+		</div>
 
 		<SubtleCard
 			v-if="isDraggingDuplicateActivity"
@@ -52,6 +70,7 @@
 			<ToDoListItem
 				:toDoListItem="item"
 				:color="(item as any).taskPriority?.color ?? 'primary'"
+				:kind
 				:isInChangeOrderMode="isInChangeOrderMode"
 				:listId="listId"
 				:isDragging="dragState.draggedIndex === index"
@@ -61,6 +80,7 @@
 				@select="select"
 				@unSelect="unSelect"
 				@isDoneChanged="handleIsDoneChanged"
+				@addToPlanner="(item: TEntity) => emit('addToPlanner', item)"
 			/>
 
 			<!-- Drop zone below item (invisible overlay) - only when dragging -->
@@ -121,6 +141,7 @@
 	import { useAutoAnimate } from '@formkit/auto-animate/vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
+	import { Time } from '@/dtos/dto/Time.ts'
 
 	const {
 		kind = ToDoListKind.NORMAL,
@@ -147,6 +168,7 @@
 		(e: 'batchDeletedItems', ids: number[]): void
 		(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void
 		(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void
+		(e: 'addToPlanner', item: TEntity): void
 	}>()
 
 	// Auto-animate controller
@@ -229,12 +251,21 @@
 		return { done, total }
 	})
 
+	const estimatedTimeRemaining = computed(() => {
+		const source = allItems ?? items
+		const totalMinutes = source
+			.filter(item => !item.isDone)
+			.reduce((sum, item) => sum + (item.suggestedTime?.getInMinutes ?? 0), 0)
+		if (totalMinutes === 0) return null
+		return Time.fromMinutes(totalMinutes)
+	})
+
 	// Other methods not drag and drop
 	const selectedItemsIds = ref([] as number[])
 	const editItem = (entityToEdit: TEntity) => {
 		emit('editItem', entityToEdit)
 	}
-	const url = (kind === ToDoListKind.ROUTINE ? 'routine-' : '') + 'todo-list'
+	const url = kind === ToDoListKind.ROUTINE ? 'routine-todo-list' : 'todo-list-item'
 
 	const itemDoneDialogShown = ref(false)
 	const isDialogRecursive = ref(false)
@@ -294,6 +325,14 @@
 
 	const unSelect = (id: number) => {
 		selectedItemsIds.value = selectedItemsIds.value.filter(item => item !== id)
+	}
+
+	function uncheckAll() {
+		const doneIds = items.filter(item => item.isDone).map(item => item.id)
+		if (doneIds.length === 0) return
+		API.patch(`/${url}/toggle-is-done`, { ids: doneIds }).then(() => {
+			emit('itemsChanged', doneIds)
+		})
 	}
 </script>
 

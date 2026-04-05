@@ -14,7 +14,9 @@
 			</span>
 		</template>
 		<VForm
-			class="d-flex flex-column flex-md-row align-center ga-4 ga-md-6 pt-3"
+			ref="form"
+			class="d-flex flex-column flex-md-row align-start ga-4 ga-md-6 pt-3"
+			validateOn="submit"
 			@keyup.enter="save"
 		>
 			<DateTimePicker
@@ -31,7 +33,8 @@
 				minWidth="150px"
 				maxWidth="150px"
 				viewMode="minute"
-				hideDetails
+				:rules="[lengthNotZeroRule]"
+				showArrows
 			></TimePicker>
 		</VForm>
 	</MyDialog>
@@ -47,6 +50,7 @@
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import { VForm } from 'vuetify/components'
 
 	const props = defineProps<{
 		toDoListItem: IBaseToDoListItem
@@ -59,8 +63,18 @@
 	const { create } = useActivityHistoryCrud()
 	const i18n = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
+	const form = ref<InstanceType<typeof VForm>>()
 	const dateTime = ref(new Date())
 	const length = ref(new Time())
+
+	function lengthNotZeroRule(value: unknown) {
+		if (typeof value === 'string' && Time.fromString(value).isNotZero()) return true
+		return i18n.t('dateTime.lengthRequired')
+	}
+
+	watch(length, () => {
+		form.value?.resetValidation()
+	})
 
 	watch(dialogShown, isShown => {
 		if (isShown) {
@@ -68,6 +82,7 @@
 				dateTime.value = new Date()
 				console.log(dateTime.value)
 			}
+			length.value = props.toDoListItem?.suggestedTime ?? new Time()
 		} else {
 			if (props.isRecursive) {
 				setTimeout(() => emit('openNext'), 200)
@@ -77,6 +92,8 @@
 	})
 
 	async function save() {
+		const isValid = await form.value?.validate()
+		if (!isValid?.valid) return
 		const request = await create(dateTime.value, length.value, props.toDoListItem?.activity.id)
 		if (request) {
 			showSuccessSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`)

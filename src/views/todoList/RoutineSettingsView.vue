@@ -74,7 +74,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import TimePeriodDialog from '@/components/dialogs/timePeriod/TimePeriodDialog.vue'
-	import type { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
@@ -82,14 +82,14 @@
 	const { fetchAll, deleteEntity } = useRoutineTimePeriodCrud()
 	const { getBgColor } = useColor()
 
-	const timePeriods = ref<TimePeriodEntity[]>([])
+	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const timePeriodDialog = ref<InstanceType<typeof TimePeriodDialog>>()
 
 	onMounted(async () => {
 		timePeriods.value = await fetchAll()
 	})
 
-	function onCreated(created: TimePeriodEntity) {
+	function onCreated(created: RoutineTimePeriodEntity) {
 		timePeriods.value.push(created)
 	}
 

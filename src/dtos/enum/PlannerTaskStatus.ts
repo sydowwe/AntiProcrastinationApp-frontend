@@ -24,7 +24,7 @@ export function getPlannerTaskStatusColor(status: PlannerTaskStatus): string {
 export function getPlannerTaskStatusIcon(status: PlannerTaskStatus): string {
 	switch (status) {
 		case PlannerTaskStatus.NotStarted:
-			return 'fa-circle'
+			return 'fa-hourglass-start'
 		case PlannerTaskStatus.InProgress:
 			return 'fa-spinner'
 		case PlannerTaskStatus.OnHold:
