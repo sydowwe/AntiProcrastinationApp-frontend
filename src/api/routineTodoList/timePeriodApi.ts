@@ -1,4 +1,4 @@
-import { TimePeriodEntity } from '@/dtos/response/activityRecording/TimePeriodEntity.ts'
+import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
@@ -6,16 +6,16 @@ import { API } from '@/plugins/axiosConfig.ts'
 
 export function useRoutineTimePeriodCrud() {
 	const url = 'routine-time-period'
-	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<TimePeriodEntity>({
-		responseClass: TimePeriodEntity,
+	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<RoutineTimePeriodEntity>({
+		responseClass: RoutineTimePeriodEntity,
 		entityName: url,
 	})
 	const { createWithResponse, create, update, deleteEntity } = useEntityCommand<
-		TimePeriodEntity,
+		RoutineTimePeriodEntity,
 		TimePeriodRequest,
 		TimePeriodRequest
 	>({
-		responseClass: TimePeriodEntity,
+		responseClass: RoutineTimePeriodEntity,
 		createRequestClass: TimePeriodRequest,
 		updateRequestClass: TimePeriodRequest,
 		entityName: url,

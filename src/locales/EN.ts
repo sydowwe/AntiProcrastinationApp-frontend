@@ -233,10 +233,12 @@ const EN = {
 		search: `Search`,
 		uncategorized: `Uncategorized`,
 		all: `All`,
+		addToPlanner: `Add to planner`,
 	},
 	dateTime: {
 		when: `When`,
 		length: `Length`,
+		lengthRequired: `Length must be greater than 0`,
 		date: `Date`,
 		time: `Time`,
 		year: `Year`,
@@ -397,6 +399,8 @@ const EN = {
 		dueDate: `Due date`,
 		specificTime: `Specific time`,
 		dueTime: `Due time`,
+		suggestedTime: `Suggested duration`,
+		uncheckAll: `Uncheck all`,
 		note: `Note`,
 		namedList: {
 			lists: `To-do lists`,
@@ -423,6 +427,11 @@ const EN = {
 		quickCreateRoutineToDoListActivity: `Quick create activity with routine to-do task category`,
 		saveTask: `Record completion of the task`,
 		quickEditToDoListActivity: `Quick edit to-do list activity`,
+		settings: `Settings`,
+		groups: `Groups`,
+		reorder: `Reorder`,
+		hideDone: `Hide done`,
+		daysLeft: `{days}d left`,
 	},
 	user: {
 		userSettings: `User settings`,

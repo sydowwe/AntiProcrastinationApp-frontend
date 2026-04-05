@@ -1,6 +1,9 @@
 import { Activity } from '@/dtos/response/activity/Activity.ts'
-import { TimePeriodEntity } from '../activityRecording/TimePeriodEntity.ts'
 import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
+import { Time } from '@/dtos/dto/Time.ts'
+import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+import { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
+
 export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	constructor(
 		public id: number,
@@ -8,12 +11,14 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public isDone: boolean,
 		public doneCount: number | null,
 		public totalCount: number | null,
-		public timePeriod: TimePeriodEntity,
+		public timePeriod: RoutineTimePeriodEntity,
 		public color: string | null = null,
 		public streak: number = 0,
 		public bestStreak: number = 0,
 		public lastCompletedAt: string | null = null,
 		public note: string | null = null,
+		public suggestedTime: Time | null = null,
+		public steps: TodoListItemStepEntity[] = [],
 	) {}
 
 	get isMultipleCount() {
@@ -27,12 +32,14 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.isDone,
 			json.doneCount,
 			json.totalCount,
-			TimePeriodEntity.fromJson(json.routineTimePeriod),
+			RoutineTimePeriodEntity.fromJson(json.routineTimePeriod),
 			null,
 			json.streak ?? 0,
 			json.bestStreak ?? 0,
 			json.lastCompletedAt ?? null,
 			json.note ?? null,
+			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
+			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
 		)
 	}
 

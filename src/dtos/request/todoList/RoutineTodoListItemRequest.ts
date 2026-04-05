@@ -1,5 +1,7 @@
 import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
-import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
+import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+import type { Time } from '@/dtos/dto/Time.ts'
+import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
@@ -9,8 +11,10 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 		public totalCount: number | null = null,
 		public isDone: boolean = false,
 		public note: string | null = null,
+		public suggestedTime: Time | null = null,
+		public steps: TodoListItemStepRequest[] = [],
 	) {
-		super(isDone, activityId, doneCount, totalCount, note)
+		super(isDone, activityId, doneCount, totalCount, note, suggestedTime, steps)
 	}
 
 	static fromEntity(obj: RoutineTodoListItemEntity): RoutineTodoListItemRequest {
@@ -18,9 +22,11 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 			obj.activity.id,
 			obj.timePeriod.id,
 			obj.doneCount,
-			obj.totalCount,
+			obj.steps.length > 0 ? null : obj.totalCount,
 			obj.isDone,
 			obj.note,
+			obj.suggestedTime,
+			obj.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note)),
 		)
 	}
 }

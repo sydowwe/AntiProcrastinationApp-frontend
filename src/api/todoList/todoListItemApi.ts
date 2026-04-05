@@ -5,6 +5,11 @@ import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest
 import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 import { API } from '@/plugins/axiosConfig.ts'
 
+export async function fetchTodoListItems(todoListId?: number | null): Promise<TodoListItemEntity[]> {
+	const response = await API.get('todo-list-item', { params: todoListId != null ? { todoListId } : {} })
+	return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
+}
+
 export function useTodoListItemCrud(todoListId: number) {
 	const url = 'todo-list-item'
 	const { fetchById, fetchSelectOptions } = useEntityQuery<TodoListItemEntity>({

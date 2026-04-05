@@ -1,4 +1,4 @@
-export class TimePeriodEntity {
+export class RoutineTimePeriodEntity {
 	constructor(
 		public id: number = 0,
 		public text: string | null = null,
@@ -31,7 +31,7 @@ export class TimePeriodEntity {
 			totalPeriodsElapsed = 0,
 			nextResetAt = null,
 		} = object
-		return new TimePeriodEntity(
+		return new RoutineTimePeriodEntity(
 			id,
 			text,
 			color,
