@@ -25,6 +25,14 @@
 				v-model="request.color"
 				label="Color"
 			></ColorPicker>
+			<VNumberInput
+				v-model="request.historyDepth"
+				label="History depth (periods)"
+				:min="1"
+				:max="52"
+				hint="How many past periods to show in the completion heatmap"
+				persistentHint
+			></VNumberInput>
 			<VDivider></VDivider>
 			<span class="text-caption text-medium-emphasis">Streak settings</span>
 			<VNumberInput
@@ -69,7 +77,7 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { computed, ref } from 'vue'
-	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
@@ -107,6 +115,7 @@
 
 	function onLengthChanged() {
 		request.value.resetAnchorDay = 0
+		request.value.historyDepth = RoutineTimePeriodEntity.defaultHistoryDepth(request.value.lengthInDays)
 	}
 
 	function openAddDialog() {

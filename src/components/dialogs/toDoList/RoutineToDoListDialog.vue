@@ -69,8 +69,24 @@
 				<div
 					v-for="(step, i) in dialogSteps"
 					:key="i"
-					class="d-flex align-center ga-2 mt-1"
+					class="d-flex align-center ga-1 mt-1"
 				>
+					<div class="d-flex flex-column">
+						<VIconBtn
+							icon="chevron-up"
+							variant="text"
+							size="x-small"
+							:disabled="i === 0"
+							@click="moveStep(i, -1)"
+						/>
+						<VIconBtn
+							icon="chevron-down"
+							variant="text"
+							size="x-small"
+							:disabled="i === dialogSteps.length - 1"
+							@click="moveStep(i, 1)"
+						/>
+					</div>
 					<VTextField
 						v-model="step.name"
 						density="compact"
@@ -141,7 +157,11 @@
 	const isEdit = ref(false)
 	const entityBeforeEdit = ref<RoutineTodoListItemEntity | null>(null)
 
-	interface DialogStep { name: string; order: number; note: string | null }
+	interface DialogStep {
+		name: string
+		order: number
+		note: string | null
+	}
 	const dialogSteps = ref<DialogStep[]>([])
 	const newStepName = ref('')
 
@@ -187,8 +207,9 @@
 			}
 		}
 		routineToDoListItem.value.suggestedTime = suggestedTimeEnabled.value ? suggestedTimeValue.value : null
-		routineToDoListItem.value.steps = dialogSteps.value.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
-		if (routineToDoListItem.value.steps.length > 0) routineToDoListItem.value.totalCount = null
+		routineToDoListItem.value.steps = dialogSteps.value.map(
+			(s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note),
+		)
 		if (isEdit.value) {
 			emit('edit', entityBeforeEdit.value, routineToDoListItem.value)
 		} else {
@@ -201,6 +222,14 @@
 		if (!newStepName.value.trim()) return
 		dialogSteps.value.push({ name: newStepName.value.trim(), order: dialogSteps.value.length + 1, note: null })
 		newStepName.value = ''
+	}
+
+	function moveStep(index: number, direction: -1 | 1) {
+		const newIndex = index + direction
+		if (newIndex < 0 || newIndex >= dialogSteps.value.length) return
+		const temp = dialogSteps.value[index]
+		dialogSteps.value[index] = dialogSteps.value[newIndex]!
+		dialogSteps.value[newIndex] = temp!
 	}
 
 	const close = () => {
@@ -228,7 +257,7 @@
 
 		activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity.id)
 		routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit)
-		isRepeated.value = entityToEdit.steps.length === 0 && (entityToEdit.totalCount ?? 0) > 1
+		isRepeated.value = (entityToEdit.totalCount ?? 0) > 1
 		suggestedTimeEnabled.value = !!entityToEdit.suggestedTime
 		suggestedTimeValue.value = entityToEdit.suggestedTime ?? new Time()
 		dialogSteps.value = entityToEdit.steps.map((s, i) => ({ name: s.name, order: i + 1, note: s.note }))

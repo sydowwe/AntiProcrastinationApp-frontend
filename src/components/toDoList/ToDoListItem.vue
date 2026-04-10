@@ -12,11 +12,19 @@
 		}"
 		@click="itemClicked"
 	>
-		<template #prepend>
-			<VListItemAction start>
+		<div class="w-100 d-flex align-center ga-2">
+			<div class="pr-1">
+				<VIcon
+					v-if="isSelected"
+					class="ml-4"
+					icon="check-circle"
+					size="18"
+					color="warning"
+				></VIcon>
 				<v-checkbox-btn
-					v-if="!toDoListItem.isMultipleCount"
+					v-else-if="!toDoListItem.isMultipleCount"
 					v-model="isDone"
+					class="pl-2"
 					baseColor="white"
 					color="success"
 					:disabled="isInChangeOrderMode"
@@ -25,7 +33,7 @@
 				></v-checkbox-btn>
 				<div
 					v-else
-					class="d-flex flex-column ga-1 align-center justify-center"
+					class="pl-3 d-flex flex-column ga-1 align-center justify-center"
 				>
 					<VHover>
 						<template #default="{ isHovering, props: vHoverProps }">
@@ -35,165 +43,149 @@
 								icon="minus"
 								color="white"
 								variant="tonal"
-								width="40"
-								height="35"
+								size="35"
 								@click.stop="minusClicked"
 							>
 								<VIcon size="22"></VIcon>
 							</VIconBtn>
-							<span
+							<VProgressLinear
 								v-else
 								v-bind="vHoverProps"
-								style="width: 40px"
 								@click.stop="progressClicked"
+								color="neutral-400"
+								:modelValue="((doneCount ?? 0) / (toDoListItem.totalCount ?? 1)) * 100"
+								height="35"
+								bgOpacity="0.3"
+								style="width: 35px; border: 1px solid #777; border-radius: 4px"
 							>
-								<VProgressLinear
-									color="neutral-400"
-									:modelValue="((doneCount ?? 0) / (toDoListItem.totalCount ?? 1)) * 100"
-									height="35"
-									bgOpacity="0.3"
-									style="border: 1px solid #777; border-radius: 4px"
-								>
-									<div class="d-flex align-center">
-										<span
-											v-if="!isDone"
-											class="text-white"
-										>
-											{{ doneCount ?? 0 }}
-										</span>
-										<VIcon
-											v-if="isDone"
-											size="17"
-											icon="check"
-											color="success"
-										></VIcon>
-										<span class="text-white">/{{ toDoListItem.totalCount }}</span>
-									</div>
-								</VProgressLinear>
-							</span>
+								<div class="d-flex align-center">
+									<span
+										v-if="!isDone"
+										class="text-white"
+									>
+										{{ doneCount ?? 0 }}
+									</span>
+									<VIcon
+										v-if="isDone"
+										size="17"
+										icon="check"
+										color="success"
+									></VIcon>
+									<span class="text-white">/{{ toDoListItem.totalCount }}</span>
+								</div>
+							</VProgressLinear>
 						</template>
 					</VHover>
 				</div>
-			</VListItemAction>
-		</template>
-		<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
-		<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
-		<VChip
-			v-if="dueDateChip"
-			:color="dueDateChip.color"
-			size="x-small"
-			variant="tonal"
-			density="compact"
-			prependIcon="calendar"
-			class="mt-1"
-		>
-			{{ dueDateChip.label }}
-		</VChip>
-		<VChip
-			v-if="toDoListItem.suggestedTime"
-			size="x-small"
-			variant="tonal"
-			density="compact"
-			prependIcon="hourglass-half"
-			class="mt-1 ml-1"
-		>
-			{{ toDoListItem.suggestedTime.getNice }}
-		</VChip>
-		<span
-			v-if="toDoListItem.note"
-			class="text-caption text-medium-emphasis d-block mt-1"
-			style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-		>
-			{{ toDoListItem.note }}
-		</span>
+			</div>
+
+			<div class="flex-fill">
+				<div class="d-flex ga-1">
+					<VTooltip
+						v-if="itemStreak && itemStreak > 0 && !isInChangeOrderMode"
+						location="top"
+					>
+						<template #activator="{ props: tooltipProps }">
+							<div
+								v-bind="tooltipProps"
+								class="d-flex align-center ga-1 mt-1 mr-1"
+								:class="gracePeriodActive ? 'text-warning' : 'text-white'"
+							>
+								<VIcon
+									:icon="getMilestoneIcon(itemStreak) ?? 'fire-flame-curved'"
+									size="14"
+								></VIcon>
+								<span
+									class="text-caption"
+									style="line-height: 1"
+								>
+									{{ itemStreak }}
+								</span>
+							</div>
+						</template>
+						<span>
+							Streak: {{ itemStreak }} | Best: {{ itemBestStreak }}
+							<span v-if="gracePeriodActive">| Grace period active!</span>
+						</span>
+					</VTooltip>
+					<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
+				</div>
+				<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
+				<VTooltip
+					v-if="toDoListItem.note"
+					:text="toDoListItem.note"
+					location="bottom"
+					maxWidth="300"
+				>
+					<template #activator="{ props: tooltipProps }">
+						<span
+							v-bind="tooltipProps"
+							class="text-caption text-medium-emphasis d-block mt-1"
+							style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default"
+						>
+							{{ toDoListItem.note }}
+						</span>
+					</template>
+				</VTooltip>
+			</div>
+			<div>
+				<VIcon
+					v-if="isInChangeOrderMode"
+					class="drag-handle my-1"
+					icon="bars"
+					color="white"
+					size="small"
+					style="height: 40px"
+				></VIcon>
+				<v-menu
+					v-else
+					location="start"
+					transition="slide-y-transition"
+				>
+					<template #activator="{ props: menuProps }">
+						<VIconBtn
+							icon="ellipsis-vertical"
+							v-bind="menuProps"
+							class="my-1"
+							color="white"
+							variant="text"
+							size="40"
+							@click.stop=""
+						></VIconBtn>
+					</template>
+					<VList>
+						<VListItem
+							v-for="(item, i) in actions"
+							:key="i"
+							class="px-3"
+						>
+							<VBtn
+								class="px-3"
+								:color="item.color"
+								:variant="item.variant"
+								:appendIcon="item.icon"
+								width="100%"
+								@click="item.action"
+							>
+								{{ actionButtonText(item.name) }}
+							</VBtn>
+						</VListItem>
+					</VList>
+				</v-menu>
+			</div>
+		</div>
 		<TodoListItemSteps
 			v-if="localSteps.length > 0"
+			:key="stepsKey"
+			class="mt-2"
 			:steps="localSteps"
 			:itemId="toDoListItem.id"
 			:kind
+			:isDone
 			:disabled="isInChangeOrderMode"
-			class="mt-2"
-			@stepToggled="onStepToggled"
+			@mousedown.stop
+			@stepToggled="emits('stepToggled')"
 		/>
-		<template #append>
-			<VIcon
-				v-if="isSelected"
-				icon="check-circle"
-				color="#fff"
-			></VIcon>
-
-			<VTooltip
-				v-if="itemStreak && itemStreak > 0 && !isInChangeOrderMode"
-				location="top"
-			>
-				<template #activator="{ props: tooltipProps }">
-					<div
-						v-bind="tooltipProps"
-						class="d-flex align-center ga-1 mr-1"
-						:class="gracePeriodActive ? 'text-warning' : 'text-white'"
-					>
-						<VIcon
-							:icon="getMilestoneIcon(itemStreak) ?? 'fire-flame-curved'"
-							size="14"
-						></VIcon>
-						<span
-							class="text-caption"
-							style="line-height: 1"
-						>
-							{{ itemStreak }}
-						</span>
-					</div>
-				</template>
-				<span>
-					Streak: {{ itemStreak }} | Best: {{ itemBestStreak }}
-					<span v-if="gracePeriodActive">| Grace period active!</span>
-				</span>
-			</VTooltip>
-
-			<VIcon
-				v-if="isInChangeOrderMode"
-				class="drag-handle my-1"
-				icon="bars"
-				color="white"
-				size="small"
-				style="height: 40px"
-			></VIcon>
-			<v-menu
-				v-else
-				location="start"
-				transition="slide-y-transition"
-			>
-				<template #activator="{ props: menuProps }">
-					<VIconBtn
-						icon="ellipsis-vertical"
-						v-bind="menuProps"
-						class="my-1"
-						color="white"
-						variant="text"
-						size="40"
-						@click.stop=""
-					></VIconBtn>
-				</template>
-				<VList>
-					<VListItem
-						v-for="(item, i) in actions"
-						:key="i"
-						class="px-3"
-					>
-						<VBtn
-							class="px-3"
-							:color="item.color"
-							:variant="item.variant"
-							:appendIcon="item.icon"
-							width="100%"
-							@click="item.action"
-						>
-							{{ actionButtonText(item.name) }}
-						</VBtn>
-					</VListItem>
-				</VList>
-			</v-menu>
-		</template>
 	</VListItem>
 
 	<!-- Hidden drag preview template -->
@@ -214,7 +206,7 @@
 	import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
-	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
+	import type { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 	import TodoListItemSteps from '@/components/toDoList/TodoListItemSteps.vue'
 
@@ -241,7 +233,8 @@
 		delete: [id: number]
 		select: [id: number]
 		unSelect: [id: number]
-		isDoneChanged: [toDoListItem: TItem]
+		isDoneChanged: [toDoListItem: TItem, forceValue?: boolean]
+		stepToggled: []
 		addToPlanner: [toDoListItem: TItem]
 	}>()
 
@@ -251,6 +244,7 @@
 	const isDone = ref(toDoListItem.isDone)
 	const doneCount = ref<number | null>(toDoListItem.doneCount)
 	const localSteps = ref<TodoListItemStepEntity[]>([...toDoListItem.steps])
+	const stepsKey = ref(0)
 
 	watch(
 		() => toDoListItem.isDone,
@@ -272,28 +266,6 @@
 		},
 		{ deep: true },
 	)
-
-	function onStepToggled(_stepId: number, allDone: boolean, updatedSteps: TodoListItemStepEntity[]) {
-		localSteps.value = updatedSteps
-		const isRepeat = toDoListItem.isMultipleCount
-
-		if (allDone) {
-			if (isRepeat) {
-				localSteps.value = localSteps.value.map(s => ({ ...s, isDone: false }))
-				doneCount.value = (doneCount.value ?? 0) + 1
-				if (doneCount.value >= (toDoListItem.totalCount ?? 1)) isDone.value = true
-			} else {
-				isDone.value = true
-			}
-			emitChanged()
-		} else {
-			if (isDone.value) {
-				isDone.value = false
-				emitChanged()
-			}
-			doneCount.value = localSteps.value.filter(s => s.isDone).length
-		}
-	}
 
 	const dueDateChip = computed(() => {
 		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
@@ -405,8 +377,6 @@
 							const clonedPreview = previewElement.cloneNode(true) as HTMLElement
 							clonedPreview.style.display = 'block'
 
-							console.log(clonedPreview.style)
-							console.log(container.style)
 							container.appendChild(clonedPreview)
 
 							return () => {
@@ -426,8 +396,12 @@
 		new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', del),
 	]
 
-	function emitChanged() {
-		emits('isDoneChanged', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
+	function emitChanged(forceValue?: boolean) {
+		emits(
+			'isDoneChanged',
+			{ ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem,
+			forceValue,
+		)
 	}
 
 	function itemClicked(event: Event) {
@@ -436,11 +410,12 @@
 			return
 		}
 
-		isDone.value = !isDone.value
-		if (isDone.value && localSteps.value.some(s => !s.isDone)) {
-			localSteps.value = localSteps.value.map(s => ({ ...s, isDone: true }))
-			doneCount.value = localSteps.value.length
+		if (toDoListItem.isMultipleCount) {
+			progressClicked(event)
+			return
 		}
+
+		isDone.value = !isDone.value
 		emitChanged()
 	}
 
@@ -453,8 +428,8 @@
 		doneCount.value--
 		if (isDone.value) {
 			isDone.value = false
-			emitChanged()
 		}
+		emitChanged(false)
 	}
 
 	function progressClicked(event: Event) {
@@ -467,8 +442,8 @@
 		doneCount.value++
 		if (doneCount.value >= toDoListItem.totalCount) {
 			isDone.value = true
-			emitChanged()
 		}
+		emitChanged()
 	}
 
 	function actionButtonText(name: string) {
@@ -513,6 +488,7 @@
 		cursor: pointer;
 		backdrop-filter: blur(4px);
 		background: rgba(var(--v-theme-surface), 0.8);
+		padding: 10px 0;
 	}
 
 	.listItem:hover {

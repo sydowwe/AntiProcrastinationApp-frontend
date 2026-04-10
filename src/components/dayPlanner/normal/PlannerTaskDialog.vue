@@ -6,8 +6,19 @@
 		:createEmptyRequest="createEmptyRequest"
 		:hideActivitySelector="!isEdit && pickerMode !== 'all'"
 		@edit="(id, task) => emit('edit', id, task as PlannerTaskRequest)"
-		@create="emit('create', $event as PlannerTaskRequest)"
+		@create="handleCreate"
 	>
+		<template
+			v-if="showDatePicker && !isEdit"
+			#before-time
+		>
+			<MyDateInput
+				v-model="selectedDate"
+				:dateShowArrows="false"
+				class="mx-auto mb-2 pt-2"
+				style="min-width: 200px; max-width: 200px"
+			/>
+		</template>
 		<template #before-activity="{ data }">
 			<PlannerActivitySourcePicker
 				v-if="!isEdit"
@@ -35,10 +46,15 @@
 	import { computed, nextTick, ref, watch } from 'vue'
 	import BasePlannerTaskDialog from '@/components/dayPlanner/BasePlannerTaskDialog.vue'
 	import PlannerActivitySourcePicker from '@/components/dayPlanner/PlannerActivitySourcePicker.vue'
+	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+
+	const { showDatePicker = false } = defineProps<{
+		showDatePicker?: boolean
+	}>()
 
 	const emit = defineEmits<{
 		(e: 'edit', id: number, task: PlannerTaskRequest): void
@@ -48,6 +64,7 @@
 	const store = useDayPlannerStore()
 	const baseDialog = ref<InstanceType<typeof BasePlannerTaskDialog>>()
 	const pickerMode = ref<'all' | 'todo' | 'routine'>('all')
+	const selectedDate = ref(new Date())
 
 	const isEdit = computed(() => store.editedId !== undefined)
 
@@ -60,6 +77,13 @@
 			store.$patch({ pendingInitialTodoListItemId: undefined })
 		}
 		return req
+	}
+
+	function handleCreate(request: PlannerTaskRequest) {
+		if (showDatePicker) {
+			request.date = new Date(selectedDate.value)
+		}
+		emit('create', request)
 	}
 
 	function onPickerSelected(activityId: number, todoListItemId: number | undefined, data: PlannerTaskRequest) {
@@ -80,6 +104,7 @@
 		async value => {
 			if (!value) {
 				pickerMode.value = 'all'
+				selectedDate.value = new Date()
 				return
 			}
 			if (store.editedId === undefined && store.pendingInitialActivityId !== undefined) {
