@@ -5,24 +5,24 @@
 		:class="{ 'list-invalid-drop-target': isDraggingDuplicateActivity }"
 	>
 		<div class="d-flex align-center ga-2 mt-2">
-			<VProgressLinear
-				:modelValue="progress.done"
-				:max="progress.total"
-				rounded="sm"
-				height="17"
-				color="secondary-accent"
-				class="flex-grow-1"
-			>
-				<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
-					{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
-				</span>
-			</VProgressLinear>
 			<span
 				v-if="estimatedTimeRemaining"
 				class="text-caption text-medium-emphasis text-no-wrap"
 			>
 				~{{ estimatedTimeRemaining.getNice }}
 			</span>
+			<VProgressLinear
+				:modelValue="progress.done"
+				:max="progress.total"
+				rounded="sm"
+				height="17"
+				color="primary"
+				class="flex-grow-1"
+			>
+				<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
+					{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
+				</span>
+			</VProgressLinear>
 			<VIconBtn
 				v-if="progress.done > 0"
 				icon="fa-rotate-left"
@@ -45,78 +45,84 @@
 		/>
 
 		<div
-			v-for="(item, index) in items"
-			:key="`${item.id}`"
-			class="todo-item-container"
-			:data-index="index"
+			class="flex-fill overflow-y-auto d-flex flex-column ga-2"
+			style="height: 0"
 		>
-			<!-- Drop zone above item (invisible overlay) - only when dragging -->
 			<div
-				v-if="isInChangeOrderMode && isDragging && index === 0"
-				:ref="el => setDropZoneRef(el as HTMLElement, index, 'top')"
-				class="drop-zone-overlay drop-zone-overlay--top"
+				v-for="(item, index) in items"
+				:key="`${item.id}`"
+				class="todo-item-container"
+				:data-index="index"
+			>
+				<!-- Drop zone above item (invisible overlay) - only when dragging -->
+				<div
+					v-if="isInChangeOrderMode && isDragging && index === 0"
+					:ref="el => setDropZoneRef(el as HTMLElement, index, 'top')"
+					class="drop-zone-overlay drop-zone-overlay--top"
+				/>
+
+				<TodoListItemDragAndDropPlaceholder
+					v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0"
+					isFirst
+				></TodoListItemDragAndDropPlaceholder>
+				<TodoListItemDragAndDropPlaceholder
+					v-if="isInChangeOrderMode && invalidDropIndicators[`0-top`] && index === 0"
+					isFirst
+					isInvalid
+				></TodoListItemDragAndDropPlaceholder>
+
+				<ToDoListItem
+					:toDoListItem="item"
+					:color="(item as any).taskPriority?.color ?? 'primary'"
+					:kind
+					:isInChangeOrderMode="isInChangeOrderMode"
+					:listId="listId"
+					:isDragging="dragState.draggedIndex === index"
+					:streakConfig="streakConfig"
+					@delete="deleteItem"
+					@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
+					@select="select"
+					@unSelect="unSelect"
+					@isDoneChanged="handleIsDoneChanged"
+					@stepToggled="emit('itemsChanged', [item.id])"
+					@addToPlanner="(item: TEntity) => emit('addToPlanner', item)"
+				/>
+
+				<!-- Drop zone below item (invisible overlay) - only when dragging -->
+				<div
+					v-if="isInChangeOrderMode && isDragging"
+					:ref="el => setDropZoneRef(el as HTMLElement, index, 'bottom')"
+					class="drop-zone-overlay"
+					:class="{ 'drop-zone-overlay--bottom': index === items.length - 1 }"
+				/>
+
+				<TodoListItemDragAndDropPlaceholder
+					v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"
+				></TodoListItemDragAndDropPlaceholder>
+				<TodoListItemDragAndDropPlaceholder
+					v-if="isInChangeOrderMode && invalidDropIndicators[`${index}-bottom`]"
+					isInvalid
+				></TodoListItemDragAndDropPlaceholder>
+			</div>
+
+			<!-- Empty state drop zone when list is empty -->
+			<TodoListEmptyDropZone
+				v-if="items.length === 0 && isInChangeOrderMode"
+				ref="emptyDropZoneRef"
+				:isDraggedOver="dragState.isEmptyZoneDraggedOver"
+				:isInvalidDrop="dragState.isEmptyZoneInvalidDrop"
 			/>
-
-			<TodoListItemDragAndDropPlaceholder
-				v-if="isInChangeOrderMode && dropIndicators[`0-top`] && index === 0"
-				isFirst
-			></TodoListItemDragAndDropPlaceholder>
-			<TodoListItemDragAndDropPlaceholder
-				v-if="isInChangeOrderMode && invalidDropIndicators[`0-top`] && index === 0"
-				isFirst
-				isInvalid
-			></TodoListItemDragAndDropPlaceholder>
-
-			<ToDoListItem
-				:toDoListItem="item"
-				:color="(item as any).taskPriority?.color ?? 'primary'"
-				:kind
-				:isInChangeOrderMode="isInChangeOrderMode"
-				:listId="listId"
-				:isDragging="dragState.draggedIndex === index"
-				:streakConfig="streakConfig"
-				@delete="deleteItem"
-				@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
-				@select="select"
-				@unSelect="unSelect"
-				@isDoneChanged="handleIsDoneChanged"
-				@addToPlanner="(item: TEntity) => emit('addToPlanner', item)"
-			/>
-
-			<!-- Drop zone below item (invisible overlay) - only when dragging -->
 			<div
-				v-if="isInChangeOrderMode && isDragging"
-				:ref="el => setDropZoneRef(el as HTMLElement, index, 'bottom')"
-				class="drop-zone-overlay"
-				:class="{ 'drop-zone-overlay--bottom': index === items.length - 1 }"
-			/>
-
-			<TodoListItemDragAndDropPlaceholder
-				v-if="isInChangeOrderMode && dropIndicators[`${index}-bottom`]"
-			></TodoListItemDragAndDropPlaceholder>
-			<TodoListItemDragAndDropPlaceholder
-				v-if="isInChangeOrderMode && invalidDropIndicators[`${index}-bottom`]"
-				isInvalid
-			></TodoListItemDragAndDropPlaceholder>
-		</div>
-
-		<!-- Empty state drop zone when list is empty -->
-		<TodoListEmptyDropZone
-			v-if="items.length === 0 && isInChangeOrderMode"
-			ref="emptyDropZoneRef"
-			:isDraggedOver="dragState.isEmptyZoneDraggedOver"
-			:isInvalidDrop="dragState.isEmptyZoneInvalidDrop"
-		/>
-		<div
-			v-if="items.length === 0 && !isInChangeOrderMode"
-			class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis ga-3"
-		>
-			<VIcon
-				icon="list-check"
-				size="40"
-				opacity="0.4"
-			/>
-			<span class="text-body-2">No tasks</span>
+				v-if="items.length === 0 && !isInChangeOrderMode"
+				class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis ga-3"
+			>
+				<VIcon
+					icon="list-check"
+					size="40"
+					opacity="0.4"
+				/>
+				<span class="text-body-2">No tasks</span>
+			</div>
 		</div>
 
 		<ToDoListItemDoneDialog
@@ -125,6 +131,31 @@
 			:isRecursive="isDialogRecursive"
 			@openNext="recursiveDialogsToSaveToHistory"
 		/>
+
+		<VDialog
+			v-model="batchDeleteConfirmDialog"
+			maxWidth="360"
+		>
+			<VCard>
+				<VCardText class="pt-4">
+					{{ $t('toDoList.confirmBatchDelete', { count: pendingBatchDeleteIds.length }) }}
+				</VCardText>
+				<VCardActions class="justify-end ga-2 pb-3 px-4">
+					<VBtn
+						variant="text"
+						@click="batchDeleteConfirmDialog = false"
+					>
+						{{ $t('general.cancel') }}
+					</VBtn>
+					<VBtn
+						color="error"
+						@click="confirmBatchDelete"
+					>
+						{{ $t('general.delete') }}
+					</VBtn>
+				</VCardActions>
+			</VCard>
+		</VDialog>
 	</div>
 </template>
 
@@ -281,7 +312,7 @@
 		}
 	}
 
-	const handleIsDoneChanged = (toDoListItem: TEntity) => {
+	function handleIsDoneChanged(toDoListItem: TEntity, forceValue?: boolean) {
 		const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id)
 		if (toDoListItem.isDone) {
 			if (isBatchAction) {
@@ -293,7 +324,7 @@
 				itemDoneDialogShown.value = true
 			}
 		}
-		const request = { ids: isBatchAction ? selectedItemsIds : [toDoListItem.id] }
+		const request = { ids: isBatchAction ? selectedItemsIds : [toDoListItem.id], forceValue }
 		API.patch(`/${url}/toggle-is-done`, request)
 			.then(() => {
 				if (isBatchAction) {
@@ -308,13 +339,23 @@
 			})
 	}
 
+	const batchDeleteConfirmDialog = ref(false)
+	const pendingBatchDeleteIds = ref<number[]>([])
+
 	const deleteItem = (id: number) => {
-		if (selectedItemsIds.value.length > 1) {
-			const batchDeleteIds = selectedItemsIds.value.map((id: number) => id)
-			emit('batchDeletedItems', batchDeleteIds)
+		if (selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(id)) {
+			pendingBatchDeleteIds.value = [...selectedItemsIds.value]
+			batchDeleteConfirmDialog.value = true
 		} else {
 			emit('deletedItem', id)
 		}
+	}
+
+	function confirmBatchDelete() {
+		batchDeleteConfirmDialog.value = false
+		emit('batchDeletedItems', pendingBatchDeleteIds.value)
+		selectedItemsIds.value = []
+		pendingBatchDeleteIds.value = []
 	}
 
 	const select = (id: number) => {
@@ -340,7 +381,7 @@
 	.todo-list {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 12px;
 		padding: 0;
 		min-height: 200px;
 		position: relative;

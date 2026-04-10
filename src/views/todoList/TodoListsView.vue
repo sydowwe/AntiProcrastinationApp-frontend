@@ -30,7 +30,11 @@
 			</VCard>
 		</VDialog>
 
-		<VRow class="my-lg-2 my-md-1 bg-background" align="stretch" style="flex: 1; min-height: 0; overflow: hidden">
+		<VRow
+			class="my-lg-2 my-md-1 bg-background"
+			align="stretch"
+			style="flex: 1; min-height: 0; overflow: hidden"
+		>
 			<!-- Left panel: categories (desktop) -->
 			<VCol
 				cols="4"
@@ -38,7 +42,10 @@
 				class="d-none d-md-block"
 				style="height: 100%; overflow: hidden"
 			>
-				<VCard class="py-0" style="height: 100%; overflow: hidden">
+				<VCard
+					class="py-0"
+					style="height: 100%; overflow: hidden"
+				>
 					<TodoListCategoryPanel
 						v-model:hideEmpty="hideEmptyCategories"
 						v-model:filterName="categoryFilterName"
@@ -62,7 +69,10 @@
 				class="bg-background"
 				style="height: 100%; overflow: hidden; display: flex; flex-direction: column"
 			>
-				<div class="py-4 pt-md-0 d-flex flex-column flex-md-row ga-3" style="flex-shrink: 0; background: rgb(var(--v-theme-background)); z-index: 10">
+				<div
+					class="py-4 pt-md-0 d-flex flex-column flex-md-row ga-3"
+					style="flex-shrink: 0; background: rgb(var(--v-theme-background)); z-index: 10"
+				>
 					<div class="d-flex align-center ga-3">
 						<VBtn
 							prependIcon="bars"
@@ -112,130 +122,136 @@
 						v-if="loading"
 						class="d-flex flex-column ga-3"
 					>
-					<VCard
-						v-for="i in 3"
-						:key="i"
-						elevation="1"
-					>
-						<VSkeletonLoader type="list-item-two-line" />
-					</VCard>
-				</div>
-
-				<template v-else>
-					<TransitionGroup
-						name="list-fade"
-						tag="div"
-						class="d-flex flex-column ga-3"
-					>
 						<VCard
-							v-for="list in lists"
-							:key="list.id"
+							v-for="i in 3"
+							:key="i"
 							elevation="1"
-							class="list-card"
-							@click="router.push({ name: 'toDoListDetail', params: { id: list.id } })"
 						>
-							<div class="pa-4">
-								<div class="d-flex align-center ga-3">
-									<div
-										v-if="list.icon"
-										class="list-icon-wrap"
-									>
-										<VIcon
-											:icon="list.icon"
-											size="20"
-											color="primary"
-										/>
-									</div>
-									<div
-										class="flex-grow-1"
-										style="min-width: 0"
-									>
-										<div
-											class="text-subtitle-1 font-weight-medium"
-											style="line-height: 1.3"
-										>
-											{{ list.name }}
-										</div>
-										<div
-											v-if="list.description"
-											class="text-caption text-medium-emphasis mt-1"
-											style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-										>
-											{{ list.description }}
-										</div>
-									</div>
-									<div class="d-flex ga-2 flex-shrink-0">
-										<VIconBtn
-											icon="pen"
-											size="40"
-											color="secondaryOutline"
-											variant="tonal"
-											@click.stop="dialog?.openEdit(list)"
-										/>
-										<VIconBtn
-											icon="trash"
-											size="40"
-											color="default"
-											variant="tonal"
-											@click.stop="confirmDelete(list)"
-										/>
-									</div>
-								</div>
-
-								<div
-									v-if="list.itemCount !== null"
-									class="mt-3"
-								>
-									<div class="d-flex justify-space-between align-center mb-1">
-										<span class="text-caption text-medium-emphasis">
-											{{ list.completedCount ?? 0 }} / {{ list.itemCount }} done
-										</span>
-										<span class="text-caption font-weight-medium">
-											{{
-												list.itemCount > 0
-													? Math.round(((list.completedCount ?? 0) / list.itemCount) * 100)
-													: 0
-											}}%
-										</span>
-									</div>
-									<VProgressLinear
-										:modelValue="
-											list.itemCount > 0 ? ((list.completedCount ?? 0) / list.itemCount) * 100 : 0
-										"
-										color="primary"
-										bgColor="surface-variant"
-										rounded
-										height="4"
-									/>
-								</div>
-							</div>
+							<VSkeletonLoader type="list-item-two-line" />
 						</VCard>
-					</TransitionGroup>
-
-					<div
-						v-if="lists.length === 0"
-						class="empty-state"
-					>
-						<VIcon
-							icon="inbox"
-							size="40"
-							class="mb-3"
-							style="opacity: 0.3"
-						/>
-						<template v-if="listFilterName?.trim()">
-							<p class="text-subtitle-2 font-weight-medium mb-1">
-								{{ $t('toDoList.namedList.emptyFilter') }}
-							</p>
-						</template>
-						<template v-else-if="selectedCategoryId !== null">
-							<p class="text-subtitle-2 font-weight-medium mb-1">
-								{{ $t('toDoList.namedList.emptyCategory') }}
-							</p>
-						</template>
-						<template v-else>
-							<p class="text-subtitle-2 font-weight-medium mb-1">{{ $t('toDoList.namedList.empty') }}</p>
-						</template>
 					</div>
+
+					<template v-else>
+						<TransitionGroup
+							name="list-fade"
+							tag="div"
+							class="d-flex flex-column ga-3"
+						>
+							<VCard
+								v-for="list in lists"
+								:key="list.id"
+								elevation="1"
+								class="list-card"
+								@click="router.push({ name: 'toDoListDetail', params: { id: list.id } })"
+							>
+								<div class="pa-4">
+									<div class="d-flex align-center ga-3">
+										<div
+											v-if="list.icon"
+											class="list-icon-wrap"
+										>
+											<VIcon
+												:icon="list.icon"
+												size="20"
+												color="primary"
+											/>
+										</div>
+										<div
+											class="flex-grow-1"
+											style="min-width: 0"
+										>
+											<div
+												class="text-subtitle-1 font-weight-medium"
+												style="line-height: 1.3"
+											>
+												{{ list.name }}
+											</div>
+											<div
+												v-if="list.description"
+												class="text-caption text-medium-emphasis mt-1"
+												style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+											>
+												{{ list.description }}
+											</div>
+										</div>
+										<div class="d-flex ga-2 flex-shrink-0">
+											<VIconBtn
+												icon="pen"
+												size="40"
+												color="secondaryOutline"
+												variant="tonal"
+												@click.stop="dialog?.openEdit(list)"
+											/>
+											<VIconBtn
+												icon="trash"
+												size="40"
+												color="default"
+												variant="tonal"
+												@click.stop="confirmDelete(list)"
+											/>
+										</div>
+									</div>
+
+									<div
+										v-if="list.itemCount !== null"
+										class="mt-3"
+									>
+										<div class="d-flex justify-space-between align-center mb-1">
+											<span class="text-caption text-medium-emphasis">
+												{{ list.completedCount ?? 0 }} / {{ list.itemCount }} done
+											</span>
+											<span class="text-caption font-weight-medium">
+												{{
+													list.itemCount > 0
+														? Math.round(
+																((list.completedCount ?? 0) / list.itemCount) * 100,
+															)
+														: 0
+												}}%
+											</span>
+										</div>
+										<VProgressLinear
+											:modelValue="
+												list.itemCount > 0
+													? ((list.completedCount ?? 0) / list.itemCount) * 100
+													: 0
+											"
+											color="primary"
+											bgColor="surface-variant"
+											rounded
+											height="4"
+										/>
+									</div>
+								</div>
+							</VCard>
+						</TransitionGroup>
+
+						<div
+							v-if="lists.length === 0"
+							class="empty-state"
+						>
+							<VIcon
+								icon="inbox"
+								size="40"
+								class="mb-3"
+								style="opacity: 0.3"
+							/>
+							<template v-if="listFilterName?.trim()">
+								<p class="text-subtitle-2 font-weight-medium mb-1">
+									{{ $t('toDoList.namedList.emptyFilter') }}
+								</p>
+							</template>
+							<template v-else-if="selectedCategoryId !== null">
+								<p class="text-subtitle-2 font-weight-medium mb-1">
+									{{ $t('toDoList.namedList.emptyCategory') }}
+								</p>
+							</template>
+							<template v-else>
+								<p class="text-subtitle-2 font-weight-medium mb-1">
+									{{ $t('toDoList.namedList.empty') }}
+								</p>
+							</template>
+						</div>
 					</template>
 				</div>
 			</VCol>

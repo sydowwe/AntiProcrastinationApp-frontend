@@ -80,7 +80,6 @@
 		if (isShown) {
 			if (!props.isRecursive) {
 				dateTime.value = new Date()
-				console.log(dateTime.value)
 			}
 			length.value = props.toDoListItem?.suggestedTime ?? new Time()
 		} else {
@@ -96,15 +95,11 @@
 		if (!isValid?.valid) return
 		const request = await create(dateTime.value, length.value, props.toDoListItem?.activity.id)
 		if (request) {
-			showSuccessSnackbar(`Saved done to-do list task ${props.toDoListItem?.activity.name} to history`)
+			showSuccessSnackbar(i18n.t('toDoList.savedToHistory', { name: props.toDoListItem?.activity.name }))
 			dialogShown.value = false
 		} else {
-			showErrorSnackbar(`Error saving to-do list task ${props.toDoListItem?.activity.name} to history`)
+			showErrorSnackbar(i18n.t('toDoList.errorSavingToHistory', { name: props.toDoListItem?.activity.name }))
 		}
 	}
-
-	watch(dateTime, newVal => {
-		console.log(newVal)
-	})
 </script>
 <style scoped></style>

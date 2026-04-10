@@ -22,7 +22,7 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 			obj.activity.id,
 			obj.timePeriod.id,
 			obj.doneCount,
-			obj.steps.length > 0 ? null : obj.totalCount,
+			obj.totalCount,
 			obj.isDone,
 			obj.note,
 			obj.suggestedTime,

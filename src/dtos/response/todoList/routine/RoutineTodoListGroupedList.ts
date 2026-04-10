@@ -1,5 +1,5 @@
 import { RoutineTodoListItemEntity } from './RoutineTodoListItemEntity.ts'
-import type { RoutineTimePeriodEntity } from '../activityRecording/RoutineTimePeriodEntity.ts'
+import { RoutineTimePeriodEntity } from './RoutineTimePeriodEntity.ts'
 
 export class RoutineTodoListGroupedList {
 	constructor(
@@ -9,7 +9,7 @@ export class RoutineTodoListGroupedList {
 
 	static fromJson(json: any) {
 		return new RoutineTodoListGroupedList(
-			json.routineTimePeriod,
+			RoutineTimePeriodEntity.fromJson(json.routineTimePeriod),
 			RoutineTodoListItemEntity.listFromObjects(json.items),
 		)
 	}

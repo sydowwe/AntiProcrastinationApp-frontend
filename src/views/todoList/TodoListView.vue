@@ -4,10 +4,11 @@
 		justify="center"
 	>
 		<VCol
+			class="d-flex flex-column"
 			cols="12"
 			sm="10"
 			md="8"
-			lg="4"
+			lg="5"
 		>
 			<div class="d-flex justify-center mb-3 ga-3">
 				<VIconBtn
@@ -34,8 +35,8 @@
 					{{ isInChangeOrderMode ? 'Finish reordering' : 'Change order' }}
 				</VBtn>
 			</div>
-			<VCard class="mx-auto rounded-lg pt-3 pb-2 d-flex flex-column px-4 px-md-6 px-md-4 px-lg-6">
-				<VRow class="pb-2">
+			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
+				<VRow class="pb-2 flex-grow-0">
 					<VCol
 						cols="6"
 						lg="4"
@@ -77,13 +78,19 @@
 							:disabled="isInChangeOrderMode"
 							@click="toggleSortMode"
 						>
-							{{ sortMode === 'priority' ? 'By priority' : sortMode === 'dueDate' ? 'By due date' : 'Custom order' }}
+							{{
+								sortMode === 'priority'
+									? 'By priority'
+									: sortMode === 'dueDate'
+										? 'By due date'
+										: 'Custom order'
+							}}
 						</VBtn>
 					</VCol>
 				</VRow>
 				<div
 					v-if="!isInChangeOrderMode"
-					class="d-flex flex-wrap mb-1"
+					class="d-flex flex-wrap align-center mb-1"
 				>
 					<VChipGroup
 						v-if="availablePriorities.length > 1"
@@ -124,8 +131,19 @@
 							Today
 						</VChip>
 					</VChipGroup>
+					<VChip
+						v-if="filterPriorityIds.length > 0 || filterDueState !== null"
+						size="small"
+						variant="tonal"
+						color="secondaryOutline"
+						prependIcon="xmark"
+						@click="clearFilters"
+					>
+						{{ $t('toDoList.clearFilters') }}
+					</VChip>
 				</div>
 				<ToDoList
+					class="flex-fill"
 					:kind="ToDoListKind.NORMAL"
 					:items="displayedItems"
 					:allItems="items"
@@ -135,6 +153,7 @@
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="deleteItem"
+					@batchDeletedItems="batchDeleteItems"
 					@itemsReordered="handleOrderChange"
 					@addToPlanner="openAddToPlanner"
 				></ToDoList>
@@ -149,6 +168,7 @@
 		@changedUrgency="onChangedUrgency"
 	></ToDoListItemDialog>
 	<PlannerTaskDialog
+		showDatePicker
 		@create="createPlannerTask"
 	/>
 </template>
@@ -170,7 +190,9 @@
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
 	import { useTodoListItemCrud } from '@/api/todoList/todoListItemApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
+	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
@@ -190,6 +212,8 @@
 	const { fetchAll, fetchById, createWithResponse, update, deleteEntity, changeUrgency, changeDisplayOrder } =
 		useTodoListItemCrud(todoListId)
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
+	const { fetchByDate } = useCalendarQuery()
+	const { formatToUsString, usStringToUrlString } = useDateTime()
 	const plannerStore = useDayPlannerStore()
 
 	const i18n = useI18n()
@@ -205,14 +229,12 @@
 
 	const hideDone = computed({
 		get: () => route.query.hideDone === 'true',
-		set: val =>
-			router.replace({ query: { ...route.query, hideDone: val ? 'true' : undefined } }),
+		set: val => router.replace({ query: { ...route.query, hideDone: val ? 'true' : undefined } }),
 	})
 
 	const sortMode = computed({
 		get: () => (route.query.sort as SortMode) || 'custom',
-		set: (val: SortMode) =>
-			router.replace({ query: { ...route.query, sort: val === 'custom' ? undefined : val } }),
+		set: (val: SortMode) => router.replace({ query: { ...route.query, sort: val === 'custom' ? undefined : val } }),
 	})
 
 	const filterPriorityIds = computed({
@@ -229,8 +251,7 @@
 
 	const filterDueState = computed({
 		get: () => (route.query.due as DueFilter) ?? null,
-		set: (val: DueFilter) =>
-			router.replace({ query: { ...route.query, due: val ?? undefined } }),
+		set: (val: DueFilter) => router.replace({ query: { ...route.query, due: val ?? undefined } }),
 	})
 
 	const availablePriorities = computed(() => {
@@ -285,6 +306,11 @@
 
 	function toggleChangeOrderMode() {
 		isInChangeOrderMode.value = !isInChangeOrderMode.value
+	}
+
+	function clearFilters() {
+		filterPriorityIds.value = []
+		filterDueState.value = null
 	}
 
 	function toggleSortMode() {
@@ -348,6 +374,12 @@
 		}
 	}
 
+	async function batchDeleteItems(ids: number[]) {
+		await Promise.all(ids.map(id => deleteEntity(id)))
+		items.value = items.value.filter(item => !ids.includes(item.id))
+		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
+	}
+
 	async function updateAfterEdit(id: number, oldTaskUrgencyId?: number) {
 		const updatedItem = await fetchById(id)
 		const index = items.value.findIndex(item => item.id === id)
@@ -364,6 +396,12 @@
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {
+		if (request.date) {
+			const dateStr = usStringToUrlString(formatToUsString(request.date))
+			const calendar = await fetchByDate(dateStr)
+			request.calendarId = calendar.id
+		}
+		request.date = null
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
 	}

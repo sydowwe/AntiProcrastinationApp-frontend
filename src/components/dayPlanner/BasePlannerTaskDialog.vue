@@ -12,6 +12,7 @@
 			@keyup.enter="save"
 			@submit="save"
 		>
+			<slot name="before-time" />
 			<TimeRangePicker
 				v-model:start="data.startTime"
 				v-model:end="data.endTime"

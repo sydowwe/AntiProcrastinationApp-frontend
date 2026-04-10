@@ -90,8 +90,24 @@
 				<div
 					v-for="(step, i) in dialogSteps"
 					:key="i"
-					class="d-flex align-center ga-2 mt-1"
+					class="d-flex align-center ga-1 mt-1"
 				>
+					<div class="d-flex flex-column">
+						<VIconBtn
+							icon="chevron-up"
+							variant="text"
+							size="x-small"
+							:disabled="i === 0"
+							@click="moveStep(i, -1)"
+						/>
+						<VIconBtn
+							icon="chevron-down"
+							variant="text"
+							size="x-small"
+							:disabled="i === dialogSteps.length - 1"
+							@click="moveStep(i, 1)"
+						/>
+					</div>
 					<VTextField
 						v-model="step.name"
 						density="compact"
@@ -236,6 +252,14 @@
 		if (!newStepName.value.trim()) return
 		dialogSteps.value.push({ name: newStepName.value.trim(), order: dialogSteps.value.length + 1, note: null })
 		newStepName.value = ''
+	}
+
+	function moveStep(index: number, direction: -1 | 1) {
+		const newIndex = index + direction
+		if (newIndex < 0 || newIndex >= dialogSteps.value.length) return
+		const temp = dialogSteps.value[index]
+		dialogSteps.value[index] = dialogSteps.value[newIndex]!
+		dialogSteps.value[newIndex] = temp!
 	}
 
 	function setDefaultUrgency() {
