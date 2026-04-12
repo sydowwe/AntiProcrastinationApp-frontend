@@ -38,28 +38,31 @@
 		<DayPlanner
 			class="flex-fill"
 			:plannerStore="store"
-			:title="store.templateName || 'Day Template'"
 			@delete="del"
 		>
-			<template #headerPrepend>
-				<VBtn
-					v-if="detailsHidden"
-					color="secondaryOutline"
-					prependIcon="eye"
-					variant="outlined"
-					@click="detailsHidden = !detailsHidden"
-				>
-					Edit details
-				</VBtn>
-				<span
-					v-if="taskStats.taskCount > 0"
-					class="text-caption text-medium-emphasis"
-				>
-					{{ taskStats.taskCount }} tasks · {{ timeNiceFromMinutes(taskStats.plannedMinutes) }} planned ·
-					<span :class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-warning'">
-						{{ timeNiceFromMinutes(taskStats.freeMinutes) }} free
-					</span>
-				</span>
+			<template #header>
+				<TemplatePlannerHeader :title="store.templateName || 'Day Template'">
+					<template #headerPrepend>
+						<VBtn
+							v-if="detailsHidden"
+							color="secondaryOutline"
+							prependIcon="eye"
+							variant="outlined"
+							@click="detailsHidden = !detailsHidden"
+						>
+							Edit details
+						</VBtn>
+						<span
+							v-if="taskStats.taskCount > 0"
+							class="text-caption text-medium-emphasis"
+						>
+							{{ taskStats.taskCount }} tasks · {{ timeNiceFromMinutes(taskStats.plannedMinutes) }} planned ·
+							<span :class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-warning'">
+								{{ timeNiceFromMinutes(taskStats.freeMinutes) }} free
+							</span>
+						</span>
+					</template>
+				</TemplatePlannerHeader>
 			</template>
 
 			<template #task-block="{ task, onResizeStart }">
@@ -82,6 +85,7 @@
 <script setup lang="ts">
 	import { computed, onMounted, provide, ref, watch } from 'vue'
 	import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
+	import TemplatePlannerHeader from '@/components/dayPlanner/template/TemplatePlannerHeader.vue'
 	import TemplatePlannerTaskDialog from '@/components/dayPlanner/template/TemplatePlannerTaskDialog.vue'
 	import TemplatePlannerTaskBlock from '@/components/dayPlanner/template/TemplatePlannerTaskBlock.vue'
 	import {

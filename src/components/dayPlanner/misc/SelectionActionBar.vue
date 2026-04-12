@@ -13,6 +13,13 @@
 			</span>
 		</span>
 		<VBtn
+			variant="outlined"
+			color="error"
+			@click="store.openDeleteDialog"
+		>
+			Delete
+		</VBtn>
+		<VBtn
 			v-if="store.selectedTaskIds.size === 1"
 			variant="outlined"
 			color="primaryOutline"
@@ -23,22 +30,14 @@
 
 		<VBtn
 			v-if="store.selectedTaskIds.size === 1"
-			variant="outlined"
-			color="primaryOutline"
+			variant="tonal"
+			color="secondaryOutline"
 			@click="store.openDuplicateDialog"
 		>
 			Duplicate
 		</VBtn>
 
 		<slot :store="store"></slot>
-
-		<VBtn
-			variant="outlined"
-			color="error"
-			@click="store.openDeleteDialog"
-		>
-			Delete
-		</VBtn>
 	</ActionBar>
 </template>
 
