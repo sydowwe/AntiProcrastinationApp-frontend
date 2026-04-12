@@ -299,6 +299,12 @@
 					to: '/activity-tracking/desktop',
 					needsAdmin: false,
 				},
+				{
+					title: 'androidActivityTracking',
+					icon: 'fa-brands fa-android',
+					to: '/activity-tracking/android',
+					needsAdmin: false,
+				},
 			],
 		},
 		{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings', needsAdmin: false },

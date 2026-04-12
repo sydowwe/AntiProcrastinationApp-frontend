@@ -187,6 +187,7 @@ const EN = {
 		historyCalendar: `Calendar`,
 		activityTracking: `Web tracking`,
 		desktopActivityTracking: `Desktop tracking`,
+		androidActivityTracking: `Android tracking`,
 		createNewActivity: `Create new kind of activity`,
 		toDoList: `To-do list`,
 		routineToDoList: `Routine`,
