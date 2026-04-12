@@ -2,6 +2,7 @@
 	<div class="d-flex flex-column ga-3">
 		<ActivitySelectionForm
 			ref="activitySelectionForm"
+			v-model:activityId="preselectedActivityId"
 			:formDisabled
 		></ActivitySelectionForm>
 		<div class="mx-auto d-flex flex-wrap ga-4">
@@ -24,14 +25,22 @@
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
-	import { ref } from 'vue'
+	import { onMounted, ref } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
-	defineProps<{
+	const {
+		formDisabled,
+		initialActivityId,
+		initialDateTime,
+		initialLength,
+	} = defineProps<{
 		formDisabled?: boolean
+		initialActivityId?: number
+		initialDateTime?: Date
+		initialLength?: Time
 	}>()
 
 	const emit = defineEmits<{
@@ -44,6 +53,12 @@
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const dateTime = ref<Date | null>(new Date())
 	const timeLength = ref(new Time())
+	const preselectedActivityId = ref<number | null>(initialActivityId ?? null)
+
+	onMounted(() => {
+		if (initialDateTime) dateTime.value = initialDateTime
+		if (initialLength) timeLength.value = initialLength
+	})
 
 	function saveActivity() {
 		if (activitySelectionForm.value?.validate()) {
@@ -62,5 +77,6 @@
 
 	defineExpose({
 		saveActivity,
+		getValues: () => ({ dateTime: dateTime.value, timeLength: timeLength.value }),
 	})
 </script>

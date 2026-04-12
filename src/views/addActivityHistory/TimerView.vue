@@ -64,7 +64,7 @@
 	import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { computed, onUnmounted, ref } from 'vue'
+	import { computed, onMounted, onUnmounted, ref } from 'vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
@@ -72,6 +72,7 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+	import router from '@/plugins/router.ts'
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()
@@ -85,7 +86,19 @@
 	const intervalId = ref<number | undefined>(undefined)
 	const startTimestamp = ref(new Date())
 	const formDisabled = ref(false)
-	const selectedActivityId = ref<number | null>(null)
+
+	const query = router.currentRoute.value.query
+	const plannerTaskId = query.plannerTaskId as string | undefined
+	const plannerDate = query.plannerDate as string | undefined
+	const initialActivityId = query.activityId ? parseInt(query.activityId as string) : null
+
+	const selectedActivityId = ref<number | null>(initialActivityId)
+
+	onMounted(() => {
+		if (initialActivityId !== null) {
+			selectedActivityId.value = initialActivityId
+		}
+	})
 	const selectedActivityName = ref<string>('')
 
 	// Timestamp-based timer state
@@ -209,7 +222,19 @@
 	}
 
 	function saveActivity() {
-		activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed())
+		if (plannerTaskId && plannerDate) {
+			router.push({
+				name: 'dayPlanner',
+				params: { date: plannerDate },
+				query: {
+					plannerTaskId,
+					actualStartTime: Time.fromDate(startTimestamp.value).getString(),
+					actualLength: timePassed().getString(),
+				},
+			})
+		} else {
+			activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed())
+		}
 	}
 
 	function timePassed() {

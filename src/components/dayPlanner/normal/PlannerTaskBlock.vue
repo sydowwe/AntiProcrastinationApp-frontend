@@ -30,7 +30,7 @@
 				density="default"
 				hideDetails
 				:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
-				@update:modelValue="emit('toggleIsDone', task.id)"
+				@update:modelValue="val => val ? emit('logTime', task.id) : emit('toggleIsDone', task.id)"
 				@click.stop
 			/>
 		</template>
@@ -70,6 +70,7 @@
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
 		toggleIsDone: [taskId: number]
+		logTime: [taskId: number]
 	}>()
 
 	const { currentTime } = useCurrentTime()

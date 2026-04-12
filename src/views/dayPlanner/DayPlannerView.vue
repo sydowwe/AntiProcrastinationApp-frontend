@@ -27,39 +27,6 @@
 					@navigateDate="navigateDate"
 					@undo="handleUndo"
 				/>
-				<div
-					v-if="suggestions.length && showSuggestionBanner"
-					class="px-4 pb-2 pt-1"
-				>
-					<VAlert
-						v-model="showSuggestionBanner"
-						density="compact"
-						color="primary"
-						variant="tonal"
-						closable
-					>
-						<div class="d-flex align-center flex-wrap ga-2">
-							<span class="text-white text-caption font-weight-medium">Suggested for today:</span>
-							<VChip
-								v-for="t in suggestions"
-								:key="t.id"
-								size="small"
-								color="primary"
-								variant="elevated"
-								style="cursor: pointer"
-								@click="applyTemplateSuggestion(t)"
-							>
-								<VIcon
-									v-if="t.icon"
-									:icon="t.icon"
-									size="12"
-									class="mr-1"
-								/>
-								{{ t.name }}
-							</VChip>
-						</div>
-					</VAlert>
-				</div>
 			</template>
 
 			<!-- Custom task block for normal planner -->
@@ -68,6 +35,7 @@
 					:task="task as PlannerTask"
 					@resizeStart="onResizeStart"
 					@toggleIsDone="handleToggleIsDone"
+					@logTime="handleCheckboxLogTime"
 				/>
 			</template>
 
@@ -79,11 +47,32 @@
 			<template #selection-actions="{ store: slotStore }">
 				<VBtn
 					v-if="slotStore.selectedTaskIds.size > 1 && !slotStore.isTemplateInPreview"
-					variant="tonal"
-					color="primaryOutline"
+					color="primary"
 					@click="handleToggleIsDoneSelected"
 				>
 					Toggle Done
+				</VBtn>
+				<VBtn
+					v-if="slotStore.selectedTaskIds.size === 1 && !slotStore.isTemplateInPreview"
+					color="warning"
+					variant="tonal"
+					@click="skipDialog = true"
+				>
+					Skip
+				</VBtn>
+				<VBtn
+					v-if="!slotStore.isTemplateInPreview"
+					color="secondary"
+					@click="rescheduleDialog = true"
+				>
+					Reschedule
+				</VBtn>
+				<VBtn
+					v-if="slotStore.selectedTaskIds.size === 1 && !slotStore.isTemplateInPreview"
+					color="primary"
+					@click="handleLogTime"
+				>
+					Log time
 				</VBtn>
 			</template>
 
@@ -100,6 +89,28 @@
 			v-model="calendarDetailsDialog"
 			:calendar="calendar"
 			@updated="updatedCalendar"
+		/>
+		<!-- Reschedule Dialog -->
+		<RescheduleDialog
+			v-model="rescheduleDialog"
+			@reschedule="handleReschedule"
+		/>
+		<!-- Skip Dialog -->
+		<SkipReasonDialog
+			v-model="skipDialog"
+			@skip="handleSkip"
+		/>
+		<!-- Log Time Dialog -->
+		<LogTimeDialog
+			v-if="logTimeTaskId !== null"
+			v-model="logTimeDialog"
+			:activityId="logTimeActivityId!"
+			:plannerTaskId="logTimeTaskId"
+			:plannerDate="usStringToUrlString(formatToUsString(store.viewedDate))"
+			:manualMode="logTimeManualMode"
+			:initialStartTime="logTimeInitialStart"
+			:initialLength="logTimeInitialLength"
+			@confirm="handleLogTimeManualConfirm"
 		/>
 	</div>
 </template>
@@ -129,19 +140,29 @@
 	import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue'
 	import { ApplyTemplateToTaskPlannerRequest } from '@/dtos/request/activityPlanning/ApplyTemplateToTaskPlannerRequest.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
-	import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 	import { ApplyTemplatePlannerTaskResponse } from '@/dtos/response/activityPlanning/ApplyTemplatePlannerTaskResponse.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
-	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
+	import RescheduleDialog from '@/components/dayPlanner/normal/RescheduleDialog.vue'
+	import SkipReasonDialog from '@/components/dayPlanner/normal/SkipReasonDialog.vue'
+	import LogTimeDialog from '@/components/dayPlanner/normal/LogTimeDialog.vue'
+	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 	const { showFullScreenLoading } = useLoading()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const undoStack = useUndoStack()
-	const { getSuggestions } = useTemplateSuggestion()
-	const { createWithResponse, update, fetchById, deleteEntity, batchedToggleIsDone, batchDelete, fetchFiltered } =
-		useTaskPlannerCrud()
+	const {
+		createWithResponse,
+		update,
+		patch,
+		fetchById,
+		deleteEntity,
+		batchedToggleIsDone,
+		batchDelete,
+		fetchFiltered,
+	} = useTaskPlannerCrud()
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -153,13 +174,15 @@
 
 	const calendar = ref<Calendar>()
 	const calendarDetailsDialog = ref(false)
+	const rescheduleDialog = ref(false)
+	const skipDialog = ref(false)
+	const logTimeDialog = ref(false)
+	const logTimeManualMode = ref(false)
+	const logTimeTaskId = ref<number | null>(null)
+	const logTimeActivityId = ref<number | null>(null)
+	const logTimeInitialStart = ref(new Time())
+	const logTimeInitialLength = ref(new Time())
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
-	const showSuggestionBanner = ref(true)
-
-	const suggestions = computed(() => {
-		if (!calendar.value || !allTemplates.value.length || store.isTemplateInPreview) return []
-		return getSuggestions(allTemplates.value, calendar.value)
-	})
 
 	// Lifecycle hooks
 	onMounted(async () => {
@@ -173,6 +196,31 @@
 		store.viewStartTime = calendar.value!.wakeUpTime
 		store.viewEndTime = calendar.value!.bedTime
 		await loadTasks()
+
+		// Handle return from timer views — mark task done with actual times
+		const returnQuery = router.currentRoute.value.query
+		if (returnQuery.plannerTaskId && returnQuery.actualStartTime && returnQuery.actualLength) {
+			const taskId = parseInt(returnQuery.plannerTaskId as string)
+			const actualStartTime = Time.fromString(returnQuery.actualStartTime as string)
+			const actualLength = Time.fromString(returnQuery.actualLength as string)
+			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + actualLength.getInMinutes) % 1440)
+			const returnTask = store.tasks.find(t => t.id === taskId) as PlannerTask
+			await patch(taskId, {
+				startTime: returnTask.startTime,
+				endTime: returnTask.endTime,
+				isDone: true,
+				actualStartTime,
+				actualEndTime,
+			})
+			const idx = store.tasks.findIndex(t => t.id === taskId)
+			if (idx >= 0) {
+				store.tasks[idx]!.isDone = true
+				;(store.tasks[idx] as PlannerTask).actualStartTime = actualStartTime
+				;(store.tasks[idx] as PlannerTask).actualEndTime = actualEndTime
+			}
+			showSuccessSnackbar('Task marked done')
+			router.replace({ query: {} })
+		}
 
 		// Auto-apply template from query param (e.g., from "Use Today" on template list)
 		const applyTemplateId = router.currentRoute.value.query.applyTemplateId
@@ -233,6 +281,12 @@
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 		if (e.key === 'ArrowLeft') navigateDate(-1)
 		else if (e.key === 'ArrowRight') navigateDate(1)
+		else if ((e.key === 'n' || e.key === 'N') && store.canCreate && isSameDay(store.viewedDate, new Date())) {
+			const slotIndex = store.timeToSlotIndex(Time.fromDate(new Date()))
+			const durationSlots = Math.floor(60 / store.timeSlotDuration)
+			store.creationPreview = new CreationPreviewType(slotIndex + 1, slotIndex + 1, slotIndex + durationSlots)
+			store.openCreateDialog()
+		}
 	}
 
 	// Load tasks for the current date
@@ -242,12 +296,6 @@
 		)
 		store.initializeTaskGridPositions()
 		await templatePreview()
-	}
-
-	function applyTemplateSuggestion(template: TaskPlannerDayTemplate) {
-		store.templateInPreview = template
-		showSuggestionBanner.value = false
-		templatePreview()
 	}
 
 	async function templatePreview() {
@@ -426,6 +474,82 @@
 		})
 	}
 
+	function openLogTime(taskId: number, manual: boolean) {
+		const task = store.tasks.find(t => t.id === taskId) as PlannerTask
+		logTimeTaskId.value = taskId
+		logTimeActivityId.value = task.activity.id
+		const durationMins = (task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440
+		logTimeInitialStart.value = new Time(task.startTime.hours, task.startTime.minutes)
+		logTimeInitialLength.value = Time.fromMinutes(durationMins)
+		logTimeManualMode.value = manual
+		logTimeDialog.value = true
+	}
+
+	function handleLogTime() {
+		openLogTime(store.selectedTaskIds.values().next().value!, false)
+	}
+
+	function handleCheckboxLogTime(taskId: number) {
+		openLogTime(taskId, true)
+	}
+
+	async function handleLogTimeManualConfirm(actualStart: Time, length: Time) {
+		const id = logTimeTaskId.value!
+		const task = store.tasks.find(t => t.id === id) as PlannerTask
+		const actualEndTime = Time.fromMinutes((actualStart.getInMinutes + length.getInMinutes) % 1440)
+		await patch(id, {
+			startTime: task.startTime,
+			endTime: task.endTime,
+			isDone: true,
+			actualStartTime: actualStart,
+			actualEndTime,
+		})
+		const idx = store.tasks.findIndex(t => t.id === id)
+		if (idx >= 0) {
+			store.tasks[idx]!.isDone = true
+			;(store.tasks[idx] as PlannerTask).actualStartTime = actualStart
+			;(store.tasks[idx] as PlannerTask).actualEndTime = actualEndTime
+		}
+		store.clearSelection()
+		logTimeTaskId.value = null
+		showSuccessSnackbar('Task marked done')
+	}
+
+	async function handleSkip(reason: string) {
+		const id = store.selectedTaskIds.values().next().value!
+		const task = store.tasks.find(t => t.id === id) as PlannerTask
+		await patch(id, {
+			startTime: task.startTime,
+			endTime: task.endTime,
+			status: PlannerTaskStatus.Cancelled,
+			skipReason: reason,
+		})
+		const idx = store.tasks.findIndex(t => t.id === id)
+		if (idx >= 0) {
+			store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
+			;(store.tasks[idx] as PlannerTask).skipReason = reason
+		}
+		store.clearSelection()
+		showSuccessSnackbar('Task skipped')
+	}
+
+	async function handleReschedule(targetDate: Date) {
+		const targetCalendar = await fetchCalendarByDate(usStringToUrlString(formatToUsString(targetDate)))
+		const ids = Array.from(store.selectedTaskIds)
+		await Promise.all(
+			ids.map(id => {
+				const task = store.tasks.find(t => t.id === id)
+				if (!task) return
+				const request = PlannerTaskRequest.fromEntity(task as PlannerTask)
+				request.calendarId = targetCalendar.id
+				return update(id, request)
+			}),
+		)
+		store.tasks = store.tasks.filter(t => !store.selectedTaskIds.has(t.id))
+		store.clearSelection()
+		showSuccessSnackbar('Tasks rescheduled')
+	}
+
 	async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {
 		calendar.value = updatedCalendar
 		store.viewStartTime = updatedCalendar.wakeUpTime
@@ -446,7 +570,6 @@
 		() => store.viewedDate,
 		async () => {
 			store.resetStore()
-			showSuggestionBanner.value = true
 			const dateStr = usStringToUrlString(formatToUsString(new Date(store.viewedDate)))
 			const newCalendar = await fetchCalendarByDate(dateStr)
 			calendar.value = newCalendar

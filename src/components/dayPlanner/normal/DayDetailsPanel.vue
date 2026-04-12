@@ -20,6 +20,72 @@
 			</VBtn>
 		</div>
 
+		<div
+			v-if="calendar"
+			class="d-flex align-center ga-2 mb-4"
+		>
+			<DayTypeChip
+				:dayType="calendar.dayType"
+				isTonal
+			/>
+			<span
+				v-if="calendar.label"
+				class="mt-1 d-flex align-start"
+			>
+				<VIcon
+					size="16"
+					icon="location-dot"
+					style="margin-right: 2px"
+				></VIcon>
+				<span class="text-body-2 text-medium-emphasis font-italic">
+					{{ calendar.label }}
+				</span>
+			</span>
+		</div>
+
+		<!-- Overdue Tasks Banner -->
+		<VAlert
+			v-if="overdueTasks.length && showOverdueBanner"
+			v-model="showOverdueBanner"
+			density="compact"
+			color="warning"
+			variant="tonal"
+			closable
+			class="mb-4"
+		>
+			<p class="text-caption font-weight-medium mb-2">Not completed yesterday:</p>
+			<div class="d-flex flex-wrap ga-2 mb-2">
+				<VChip
+					v-for="t in overdueTasks"
+					:key="t.id"
+					size="small"
+					color="warning"
+					variant="tonal"
+					style="cursor: pointer"
+					@click="copyOverdueTask(t)"
+				>
+					{{ t.activity.name }}
+				</VChip>
+			</div>
+			<div class="d-flex align-center ga-2">
+				<VSelect
+					v-model="overdueConflictResolution"
+					:items="overdueConflictResolutionOptions"
+					density="compact"
+					hideDetails
+					style="min-width: 150px; max-width: 150px"
+				/>
+				<VBtn
+					size="small"
+					variant="tonal"
+					color="warning"
+					@click="copyOverdueTasks"
+				>
+					Copy all
+				</VBtn>
+			</div>
+		</VAlert>
+
 		<VDivider
 			class="mb-5"
 			opacity="0.3"
@@ -34,6 +100,30 @@
 					class="text-medium-emphasis"
 				/>
 				<span class="section-label">Day Template</span>
+			</div>
+
+			<div
+				v-if="suggestions.length"
+				class="d-flex align-center flex-wrap ga-2 mb-3"
+			>
+				<span class="section-label mr-1">Suggested:</span>
+				<VChip
+					v-for="t in suggestions"
+					:key="t.id"
+					size="small"
+					color="primary"
+					variant="elevated"
+					style="cursor: pointer; border-radius: 4px"
+					@click="selectSuggestion(t)"
+				>
+					<VIcon
+						v-if="t.icon"
+						:icon="t.icon"
+						size="12"
+						class="mr-1"
+					/>
+					{{ t.name }}
+				</VChip>
 			</div>
 
 			<VAutocomplete
@@ -210,14 +300,24 @@
 <script setup lang="ts">
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
-	import { onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
+	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
+	import { useCalendarQuery } from '@/api/calendarApi.ts'
+	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
+	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+	import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
+	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
+	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 
-	defineProps<{
+	const { title, calendar } = defineProps<{
 		title: string
 		calendar?: Calendar
 	}>()
@@ -228,11 +328,96 @@
 	}>()
 
 	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()
+	const { getSuggestions } = useTemplateSuggestion()
+	const { createWithResponse, batchDelete, fetchFiltered } = useTaskPlannerCrud()
+	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
+	const { formatToUsString, usStringToUrlString } = useDateTime()
+	const { showSuccessSnackbar } = useSnackbar()
 
 	const store = useDayPlannerStore()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([] as TaskPlannerDayTemplate[])
 	const selectedTemplate = ref<TaskPlannerDayTemplate | null>(null)
+	const overdueTasks = ref<PlannerTask[]>([])
+	const showOverdueBanner = ref(true)
+	const overdueConflictResolution = ref(ApplyTemplateConflictResolution.Ignore)
+	const overdueConflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
+
+	const suggestions = computed(() => {
+		if (!calendar || !templates.value.length || store.isTemplateInPreview) return []
+		return getSuggestions(templates.value, calendar)
+	})
+
+	watch(
+		() => calendar?.id,
+		async newId => {
+			showOverdueBanner.value = true
+			overdueTasks.value = []
+			if (!newId) return
+			const today = new Date()
+			const isToday =
+				store.viewedDate.getFullYear() === today.getFullYear() &&
+				store.viewedDate.getMonth() === today.getMonth() &&
+				store.viewedDate.getDate() === today.getDate()
+			if (!isToday) return
+			try {
+				const yesterday = new Date(store.viewedDate)
+				yesterday.setDate(yesterday.getDate() - 1)
+				const prevCalendar = await fetchCalendarByDate(usStringToUrlString(formatToUsString(yesterday)))
+				const prevTasks = await fetchFiltered(
+					new PlannerTaskFilter(prevCalendar.id, prevCalendar.wakeUpTime, prevCalendar.bedTime),
+				)
+				overdueTasks.value = prevTasks.filter(t => !t.isDone && !t.isBackground)
+			} catch {
+				overdueTasks.value = []
+			}
+		},
+		{ immediate: true },
+	)
+
+	function getOverlappingTasks(task: PlannerTask): PlannerTask[] {
+		return store.tasks.filter(
+			t =>
+				t.id > 0 &&
+				!t.isBackground &&
+				t.startTime.getInMinutes < task.endTime.getInMinutes &&
+				t.endTime.getInMinutes > task.startTime.getInMinutes,
+		) as PlannerTask[]
+	}
+
+	async function copyOverdueTask(task: PlannerTask) {
+		const resolution = overdueConflictResolution.value
+		const overlapping = getOverlappingTasks(task)
+		if (overlapping.length > 0) {
+			if (resolution === ApplyTemplateConflictResolution.MergeIgnore) return
+			if (
+				resolution === ApplyTemplateConflictResolution.Overwrite ||
+				resolution === ApplyTemplateConflictResolution.MergeOverwrite
+			) {
+				await batchDelete(overlapping.map(t => t.id))
+				store.tasks = store.tasks.filter(t => !overlapping.some(o => o.id === t.id))
+			}
+		}
+		const request = PlannerTaskRequest.fromEntity(task)
+		request.calendarId = calendar?.id
+		const created = await createWithResponse(request)
+		if (created.isBackground) {
+			store.updateIsDuringBackgroundFlags(created)
+		} else {
+			created.isDuringBackgroundTask = store.checkOverlapsBackground(created)
+		}
+		store.setGridPositionFromSpan(created)
+		store.tasks.push(created)
+		overdueTasks.value = overdueTasks.value.filter(t => t.id !== task.id)
+		if (overdueTasks.value.length === 0) showOverdueBanner.value = false
+	}
+
+	async function copyOverdueTasks() {
+		for (const task of [...overdueTasks.value]) {
+			await copyOverdueTask(task)
+		}
+		showSuccessSnackbar('Tasks carried over')
+	}
 
 	onMounted(async () => {
 		templates.value = await fetchAll()
@@ -247,6 +432,10 @@
 			selectedTemplate.value = val
 		},
 	)
+
+	function selectSuggestion(template: TaskPlannerDayTemplate) {
+		selectedTemplate.value = template
+	}
 
 	function useTemplate() {
 		store.templateInPreview = selectedTemplate.value

@@ -17,6 +17,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
 		public isDone: boolean = false,
 		public todolistId: number | null = null,
+		public skipReason: string | null = null,
+		public actualStartTime: Time | null = null,
+		public actualEndTime: Time | null = null,
 	) {}
 
 	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {

@@ -6,75 +6,9 @@
 			<slot
 				name="header"
 				:store="plannerStore"
-			>
-				<!-- Default header for template views -->
-				<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
-					<div class="d-flex align-center ga-3">
-						<span class="text-h5">{{ title }}</span>
-						<slot name="headerPrepend"></slot>
-					</div>
+			/>
 
-					<div class="d-flex align-center ga-2">
-						<TimeRangePicker
-							v-model:start="viewStartTime"
-							v-model:end="viewEndTime"
-							startIcon="sun"
-							endIcon="moon"
-						/>
-						<VBtnToggle
-							v-model="timeSlotDurationModel"
-							density="compact"
-							variant="outlined"
-							color="primaryOutline"
-							mandatory
-						>
-							<VBtn
-								v-for="option in SNAP_INTERVAL_OPTIONS"
-								:key="option"
-								:value="option"
-								size="small"
-							>
-								{{ option }}m
-							</VBtn>
-						</VBtnToggle>
-					</div>
-
-					<div class="d-flex ga-2 align-center flex-wrap">
-						<VTooltip
-							:text="nextUndoDescription ? `Undo: ${nextUndoDescription}` : 'Nothing to undo'"
-							location="bottom"
-						>
-							<template #activator="{ props: tooltipProps }">
-								<VBtn
-									v-bind="tooltipProps"
-									variant="tonal"
-									color="secondaryOutline"
-									:disabled="!canUndo"
-									@click="undo()"
-								>
-									<VIcon icon="rotate-left" />
-									<VBadge
-										v-if="stackSize > 0"
-										:content="stackSize"
-										color="primary"
-										floating
-									/>
-								</VBtn>
-							</template>
-						</VTooltip>
-						<VBtn
-							color="primary"
-							prependIcon="plus"
-							:disabled="!plannerStore.canCreate"
-							@click="plannerStore.openCreateDialog"
-						>
-							Add New Task
-						</VBtn>
-					</div>
-				</VCardTitle>
-			</slot>
-
-			<VCardText class="pa-3 pa-md-4 flex-fill d-flex flex-column ga-4">
+			<VCardText class="pa-3 pa-md-4 pt-2 pt-md-3 flex-fill d-flex flex-column ga-4">
 				<div class="calendar-grid flex-fill">
 					<!-- Time Column -->
 					<PlannerTimeColumn />
@@ -140,7 +74,6 @@
 	import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
@@ -148,33 +81,15 @@
 
 	const props = defineProps<{
 		plannerStore: TStore
-		title?: string
 	}>()
 
 	const emit = defineEmits<{
 		delete: []
 	}>()
 
-	const SNAP_INTERVAL_OPTIONS = [5, 10, 15, 30]
-
 	// Provide the store to all descendant components
 	provide('plannerStore', props.plannerStore)
 
-	const viewStartTime = computed({
-		get: () => props.plannerStore.viewStartTime,
-		set: value => props.plannerStore.$patch({ viewStartTime: value }),
-	})
-	const viewEndTime = computed({
-		get: () => props.plannerStore.viewEndTime,
-		set: value => props.plannerStore.$patch({ viewEndTime: value }),
-	})
-	const timeSlotDurationModel = computed({
-		get: () => props.plannerStore.timeSlotDuration,
-		set: value => {
-			props.plannerStore.$patch({ timeSlotDuration: value })
-			props.plannerStore.initializeTaskGridPositions()
-		},
-	})
 	const deleteDialogVisible = computed({
 		get: () => props.plannerStore.deleteDialog,
 		set: value => props.plannerStore.$patch({ deleteDialog: value }),
@@ -190,7 +105,7 @@
 		return `Are you sure you want to delete ${taskName}?`
 	})
 
-	const { undo, clear, canUndo, stackSize, nextUndoDescription } = useUndoStack()
+	const { undo, clear } = useUndoStack()
 
 	function handleKeyDown(e: KeyboardEvent) {
 		const target = e.target as HTMLElement

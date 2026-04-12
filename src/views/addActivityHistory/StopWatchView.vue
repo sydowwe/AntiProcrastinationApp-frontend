@@ -37,6 +37,7 @@
 			<hr class="mb-4" />
 			<ActivitySelectionForm
 				ref="activitySelectionForm"
+				v-model:activityId="selectedActivityId"
 				:formDisabled="formDisabled"
 			></ActivitySelectionForm>
 			<SaveActivityDialog
@@ -51,10 +52,11 @@
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
 	import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue'
-	import type { Time } from '@/dtos/dto/Time.ts'
-	import { computed, ref } from 'vue'
+	import { Time } from '@/dtos/dto/Time.ts'
+	import { computed, onMounted, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
 	import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+	import router from '@/plugins/router.ts'
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>()
@@ -64,6 +66,19 @@
 	const intervalId = ref<number | undefined>(undefined)
 	const startTimestamp = ref(new Date())
 	const formDisabled = ref(false)
+
+	const query = router.currentRoute.value.query
+	const plannerTaskId = query.plannerTaskId as string | undefined
+	const plannerDate = query.plannerDate as string | undefined
+	const initialActivityId = query.activityId ? parseInt(query.activityId as string) : null
+
+	const selectedActivityId = ref<number | null>(initialActivityId)
+
+	onMounted(() => {
+		if (initialActivityId !== null) {
+			selectedActivityId.value = initialActivityId
+		}
+	})
 
 	// Timestamp-based elapsed time tracking
 	const startedAt = ref<number | null>(null)
@@ -134,6 +149,18 @@
 	}
 
 	function saveActivity(length: Time) {
-		activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, length)
+		if (plannerTaskId && plannerDate) {
+			router.push({
+				name: 'dayPlanner',
+				params: { date: plannerDate },
+				query: {
+					plannerTaskId,
+					actualStartTime: Time.fromDate(startTimestamp.value).getString(),
+					actualLength: length.getString(),
+				},
+			})
+		} else {
+			activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, length)
+		}
 	}
 </script>
