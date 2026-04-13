@@ -22,29 +22,42 @@
 			</div>
 		</template>
 		<template #checkbox>
-			<VCheckbox
-				v-if="task.id >= 0"
-				:modelValue="task.isDone"
-				:disabled="store.isTemplateInPreview"
-				class="task-checkbox"
-				density="default"
-				hideDetails
-				:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
-				@update:modelValue="val => val ? emit('logTime', task.id) : emit('toggleIsDone', task.id)"
-				@click.stop
-			/>
-		</template>
-		<template #badges>
-			<ChipWithIcon
-				v-if="task.status !== PlannerTaskStatus.NotStarted"
-				class="task-chip"
-				size="x-small"
-				variant="flat"
-				:icon="getPlannerTaskStatusIcon(task.status)"
-				:color="getPlannerTaskStatusColor(task.status)"
-			>
-				{{ task.status }}
-			</ChipWithIcon>
+			<div class="status-column">
+				<VCheckbox
+					v-if="task.id >= 0"
+					:modelValue="task.isDone"
+					:disabled="store.isTemplateInPreview"
+					class="task-checkbox"
+					density="default"
+					hideDetails
+					@update:modelValue="val => val ? emit('logTime', task.id) : emit('toggleIsDone', task.id)"
+					@click.stop
+				/>
+				<VMenu :disabled="store.isTemplateInPreview || task.id < 0">
+					<template #activator="{ props: menuProps }">
+						<ChipWithIcon
+							v-bind="menuProps"
+							class="task-chip status-chip"
+							size="x-small"
+							variant="flat"
+							:icon="getPlannerTaskStatusIcon(task.status)"
+							:color="getPlannerTaskStatusColor(task.status)"
+							@click.stop
+						>
+							{{ task.status }}
+						</ChipWithIcon>
+					</template>
+					<VList density="compact">
+						<VListItem
+							v-for="status in allStatuses"
+							:key="status"
+							:prependIcon="getPlannerTaskStatusIcon(status)"
+							:title="status"
+							@click="emit('changeStatus', task.id, status)"
+						/>
+					</VList>
+				</VMenu>
+			</div>
 		</template>
 	</BaseTaskBlock>
 </template>
@@ -71,7 +84,10 @@
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
 		toggleIsDone: [taskId: number]
 		logTime: [taskId: number]
+		changeStatus: [taskId: number, status: PlannerTaskStatus]
 	}>()
+
+	const allStatuses = Object.values(PlannerTaskStatus)
 
 	const { currentTime } = useCurrentTime()
 
@@ -114,14 +130,27 @@
 	}
 </script>
 <style>
-	.task-checkbox {
+	.status-column {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		pointer-events: auto;
 		z-index: 15;
+	}
+
+	.task-checkbox {
 		pointer-events: auto;
 		cursor: pointer;
 	}
 
 	.task-checkbox.v-checkbox .v-selection-control {
 		min-height: 0 !important;
+	}
+
+	.status-chip {
+		pointer-events: auto;
+		cursor: pointer;
 	}
 
 	.task-time {

@@ -1,20 +1,20 @@
 <template>
 	<VRow
-		class="py-4"
+		:class="compact ? undefined : 'py-4'"
 		justify="center"
 		align="center"
 		noGutters
 	>
 		<VCol
 			cols="12"
-			sm="10"
-			md="10"
-			lg="10"
-			class="mt-3 mt-md-0"
+			:sm="compact ? undefined : 10"
+			:md="compact ? undefined : 10"
+			:lg="compact ? undefined : 10"
+			:class="compact ? undefined : 'mt-3 mt-md-0'"
 		>
 			<VCard
-				elevation="3"
-				class="pa-3 pa-md-6"
+				:elevation="compact ? 0 : 3"
+				:class="compact ? 'pa-0' : 'pa-3 pa-md-6'"
 			>
 				<VCardTitle class="text-h5 text-center pb-3">Pomodoro Timer</VCardTitle>
 				<div v-if="timeInputVisible">
@@ -157,7 +157,7 @@
 				<hr />
 				<!-- Activity selection forms (before start) -->
 				<VRow
-					v-if="timeInputVisible"
+					v-show="timeInputVisible"
 					class="mt-1"
 				>
 					<VCol
@@ -174,6 +174,7 @@
 							</h3>
 						</div>
 						<ActivitySelectionForm
+							v-if="!activityId"
 							ref="mainActivitySelectionForm"
 							v-model:activityId="focusActivityId"
 							:formDisabled="formDisabled"
@@ -202,7 +203,7 @@
 				</VRow>
 				<!-- Activity names display (after start) -->
 				<div
-					v-else
+					v-show="!timeInputVisible"
 					class="d-flex flex-wrap justify-center ga-3 mt-3"
 				>
 					<VChip
@@ -214,7 +215,7 @@
 							icon="fas fa-bullseye"
 							start
 						></VIcon>
-						{{ mainActivitySelectionForm?.getSelectedActivityName }}
+						{{ activityName ?? mainActivitySelectionForm?.getSelectedActivityName }}
 					</VChip>
 					<VChip
 						v-if="restActivitySelectionForm?.getSelectedActivityName"
@@ -256,8 +257,15 @@
 	import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
-	import router from '@/plugins/router.ts'
 
+	const { activityId = null, compact = false } = defineProps<{
+		activityId?: number | null
+		compact?: boolean
+	}>()
+	const emit = defineEmits<{
+		started: [actualStartTime: Time]
+		done: [startTimestamp: Date, length: Time]
+	}>()
 	const i18n = useI18n()
 	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
 		useTimerNotifications()
@@ -338,12 +346,7 @@
 	const intervalId = ref<number | undefined>(undefined)
 	const formDisabled = ref(false)
 
-	const query = router.currentRoute.value.query
-	const plannerTaskId = query.plannerTaskId as string | undefined
-	const plannerDate = query.plannerDate as string | undefined
-	const initialActivityId = query.activityId ? parseInt(query.activityId as string) : null
-
-	const focusActivityId = ref<number | null>(initialActivityId)
+	const focusActivityId = ref<number | null>(activityId)
 	const restActivityId = ref<number | null>(null)
 
 	checkNotificationPermission()
@@ -353,11 +356,12 @@
 			resume()
 		} else {
 			const validationResult = await mainActivitySelectionForm.value?.validate()
-			if (validationResult && validationResult.length === 0) {
+			if (!validationResult || validationResult.length === 0) {
 				formDisabled.value = true
 				startTimestamp.value = new Date()
 				timeInputVisible.value = false
 				startPhase(focusInitialTime.value.getInSeconds)
+				emit('started', Time.fromDate(startTimestamp.value))
 			}
 		}
 	}
@@ -443,7 +447,7 @@
 		}
 
 		// Show notification for phase end with context
-		const activityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
+		const focusActivityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
 		const cycleInfo = `Cycle ${currentCycle.value}/${numberOfCycles.value}`
 		const focusInfo = `Focus ${currentFocusPeriod.value}/${numberOfFocusPeriodsInCycle.value}`
 
@@ -453,12 +457,12 @@
 				startTitleAnimation(`Focus ended! | ${cycleInfo}`, `Time for a break`)
 				showNotification(
 					'Focus period ended',
-					`${activityName} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
+					`${focusActivityName} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
 				)
 				break
 			case 'shortBreak':
 				startTitleAnimation(`Break ended! | ${cycleInfo}`, `Time to focus`)
-				showNotification('Short break ended', `${cycleInfo} - Time to focus on ${activityName}!`)
+				showNotification('Short break ended', `${cycleInfo} - Time to focus on ${focusActivityName}!`)
 				break
 			case 'longBreak':
 				startTitleAnimation(`Long break ended!`, `Starting cycle ${currentCycle.value + 1}`)
@@ -514,19 +518,24 @@
 
 		const timeSpent = Time.fromSeconds(focusTimeElapsed.value)
 		const restTime = Time.fromSeconds(restTimeElapsed.value)
-		const activityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
+		const focusActivityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
 		const restActivityName = restActivitySelectionForm.value?.getSelectedActivityName as string
-		saveDialog.value?.open(activityName, timeSpent)
+
+		if (!activityId) {
+			saveDialog.value?.open(focusActivityName, timeSpent)
+		} else {
+			emit('done', startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value))
+		}
 
 		if (automatic) {
 			const completedCycles = currentCycle.value
 			triggerTimerEndNotification(
 				`🍅 Pomodoro complete! | ${completedCycles} cycle${completedCycles > 1 ? 's' : ''}`,
-				`${activityName} - ${timeSpent.getNice}`,
+				`${focusActivityName} - ${timeSpent.getNice}`,
 			)
 			showNotification(
 				'Pomodoro complete!',
-				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${activityName} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
+				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
 			)
 		}
 	}
@@ -557,28 +566,17 @@
 	}
 
 	function saveActivity() {
-		if (plannerTaskId && plannerDate) {
-			router.push({
-				name: 'dayPlanner',
-				params: { date: plannerDate },
-				query: {
-					plannerTaskId,
-					actualStartTime: Time.fromDate(startTimestamp.value).getString(),
-					actualLength: Time.fromSeconds(focusTimeElapsed.value).getString(),
-				},
-			})
-		} else {
+		if (!activityId) {
 			mainActivitySelectionForm.value?.saveActivityToHistory(
 				startTimestamp.value,
 				Time.fromSeconds(focusTimeElapsed.value),
 			)
-			// Only save rest activity if one was selected and there was rest time
-			if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
-				restActivitySelectionForm.value.saveActivityToHistory(
-					startTimestamp.value,
-					Time.fromSeconds(restTimeElapsed.value),
-				)
-			}
+		}
+		if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
+			restActivitySelectionForm.value.saveActivityToHistory(
+				startTimestamp.value,
+				Time.fromSeconds(restTimeElapsed.value),
+			)
 		}
 	}
 

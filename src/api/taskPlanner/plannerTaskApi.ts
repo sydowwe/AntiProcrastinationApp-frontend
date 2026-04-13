@@ -3,6 +3,8 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { useFetchFiltered } from '@/api/base/useFetchFiltered.ts'
 import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import type { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
+import type { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
+import { API } from '@/plugins/axiosConfig.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -23,6 +25,10 @@ export function useTaskPlannerCrud() {
 		return await batchedToggle('is-done', ids)
 	}
 
+	async function patchStatus(id: number, request: PatchPlannerTaskStatusRequest): Promise<void> {
+		await API.patch(`${url}/${id}/status`, request)
+	}
+
 	const { fetchFiltered } = useFetchFiltered<PlannerTask, PlannerTaskFilter>(PlannerTask, url)
 	return {
 		fetchById,
@@ -33,6 +39,7 @@ export function useTaskPlannerCrud() {
 		create,
 		update,
 		patch,
+		patchStatus,
 		batchedToggleIsDone,
 		deleteEntity,
 		batchDelete,

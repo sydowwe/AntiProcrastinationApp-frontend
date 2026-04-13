@@ -36,6 +36,7 @@
 					@resizeStart="onResizeStart"
 					@toggleIsDone="handleToggleIsDone"
 					@logTime="handleCheckboxLogTime"
+					@changeStatus="handleChangeStatus"
 				/>
 			</template>
 
@@ -104,13 +105,21 @@
 		<LogTimeDialog
 			v-if="logTimeTaskId !== null"
 			v-model="logTimeDialog"
-			:activityId="logTimeActivityId!"
-			:plannerTaskId="logTimeTaskId"
-			:plannerDate="usStringToUrlString(formatToUsString(store.viewedDate))"
 			:manualMode="logTimeManualMode"
 			:initialStartTime="logTimeInitialStart"
 			:initialLength="logTimeInitialLength"
 			@confirm="handleLogTimeManualConfirm"
+			@selectTimer="handleSelectTimer"
+		/>
+		<!-- Track Time dialog (stopwatch / timer / pomodoro) -->
+		<TrackTimeDialog
+			v-if="logTimeTaskId !== null"
+			v-model="trackTimeDialog"
+			:activityId="logTimeActivityId!"
+			:activityName="logTimeActivityName"
+			:plannerTaskId="logTimeTaskId"
+			:initialMethod="trackTimeInitialMethod"
+			@done="handleLogTimeDone"
 		/>
 	</div>
 </template>
@@ -148,7 +157,13 @@
 	import RescheduleDialog from '@/components/dayPlanner/normal/RescheduleDialog.vue'
 	import SkipReasonDialog from '@/components/dayPlanner/normal/SkipReasonDialog.vue'
 	import LogTimeDialog from '@/components/dayPlanner/normal/LogTimeDialog.vue'
+	import TrackTimeDialog from '@/components/dayPlanner/normal/TrackTimeDialog.vue'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+	import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
+	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
+	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
+
+	const { create: createActivityHistory } = useActivityHistoryCrud()
 
 	const { showFullScreenLoading } = useLoading()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
@@ -156,7 +171,7 @@
 	const {
 		createWithResponse,
 		update,
-		patch,
+		patchStatus,
 		fetchById,
 		deleteEntity,
 		batchedToggleIsDone,
@@ -180,8 +195,11 @@
 	const logTimeManualMode = ref(false)
 	const logTimeTaskId = ref<number | null>(null)
 	const logTimeActivityId = ref<number | null>(null)
+	const logTimeActivityName = ref('')
 	const logTimeInitialStart = ref(new Time())
 	const logTimeInitialLength = ref(new Time())
+	const trackTimeDialog = ref(false)
+	const trackTimeInitialMethod = ref<'stopwatch' | 'timer' | 'pomodoro'>('stopwatch')
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
 	// Lifecycle hooks
@@ -196,31 +214,6 @@
 		store.viewStartTime = calendar.value!.wakeUpTime
 		store.viewEndTime = calendar.value!.bedTime
 		await loadTasks()
-
-		// Handle return from timer views — mark task done with actual times
-		const returnQuery = router.currentRoute.value.query
-		if (returnQuery.plannerTaskId && returnQuery.actualStartTime && returnQuery.actualLength) {
-			const taskId = parseInt(returnQuery.plannerTaskId as string)
-			const actualStartTime = Time.fromString(returnQuery.actualStartTime as string)
-			const actualLength = Time.fromString(returnQuery.actualLength as string)
-			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + actualLength.getInMinutes) % 1440)
-			const returnTask = store.tasks.find(t => t.id === taskId) as PlannerTask
-			await patch(taskId, {
-				startTime: returnTask.startTime,
-				endTime: returnTask.endTime,
-				isDone: true,
-				actualStartTime,
-				actualEndTime,
-			})
-			const idx = store.tasks.findIndex(t => t.id === taskId)
-			if (idx >= 0) {
-				store.tasks[idx]!.isDone = true
-				;(store.tasks[idx] as PlannerTask).actualStartTime = actualStartTime
-				;(store.tasks[idx] as PlannerTask).actualEndTime = actualEndTime
-			}
-			showSuccessSnackbar('Task marked done')
-			router.replace({ query: {} })
-		}
 
 		// Auto-apply template from query param (e.g., from "Use Today" on template list)
 		const applyTemplateId = router.currentRoute.value.query.applyTemplateId
@@ -451,14 +444,13 @@
 	}
 
 	async function handleToggleIsDone(taskId: number) {
-		await batchedToggleIsDone([taskId])
-			.then(() => {
-				const task = store.tasks.find(e => e.id === taskId)
-				if (task) {
-					calendar.value!.completedTasks += task.isDone ? 1 : -1
-				}
-			})
-			.catch(_error => {})
+		await patchStatus(taskId, new PatchPlannerTaskStatusRequest(PlannerTaskStatus.NotStarted))
+		const task = store.tasks.find(e => e.id === taskId)
+		if (task) {
+			task.isDone = false
+			;(task as PlannerTask).status = PlannerTaskStatus.NotStarted
+			calendar.value!.completedTasks -= 1
+		}
 	}
 
 	async function handleToggleIsDoneSelected() {
@@ -474,58 +466,87 @@
 		})
 	}
 
-	function openLogTime(taskId: number, manual: boolean) {
-		const task = store.tasks.find(t => t.id === taskId) as PlannerTask
-		logTimeTaskId.value = taskId
+	function handleLogTime() {
+		const id = store.selectedTaskIds.values().next().value!
+		const task = store.tasks.find(t => t.id === id) as PlannerTask
+		logTimeTaskId.value = id
 		logTimeActivityId.value = task.activity.id
+		logTimeActivityName.value = task.activity.name
 		const durationMins = (task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440
 		logTimeInitialStart.value = new Time(task.startTime.hours, task.startTime.minutes)
 		logTimeInitialLength.value = Time.fromMinutes(durationMins)
-		logTimeManualMode.value = manual
-		logTimeDialog.value = true
-	}
-
-	function handleLogTime() {
-		openLogTime(store.selectedTaskIds.values().next().value!, false)
+		trackTimeInitialMethod.value = 'stopwatch'
+		trackTimeDialog.value = true
 	}
 
 	function handleCheckboxLogTime(taskId: number) {
-		openLogTime(taskId, true)
+		const task = store.tasks.find(t => t.id === taskId) as PlannerTask
+		logTimeTaskId.value = taskId
+		logTimeActivityId.value = task.activity.id
+		logTimeActivityName.value = task.activity.name
+		const durationMins = (task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440
+		logTimeInitialStart.value = new Time(task.startTime.hours, task.startTime.minutes)
+		logTimeInitialLength.value = Time.fromMinutes(durationMins)
+		logTimeManualMode.value = true
+		logTimeDialog.value = true
 	}
 
-	async function handleLogTimeManualConfirm(actualStart: Time, length: Time) {
+	async function handleChangeStatus(taskId: number, newStatus: PlannerTaskStatus): Promise<void> {
+		if (newStatus === PlannerTaskStatus.Completed) {
+			handleCheckboxLogTime(taskId)
+		} else if (newStatus === PlannerTaskStatus.Cancelled) {
+			store.selectedTaskIds.clear()
+			store.selectedTaskIds.add(taskId)
+			skipDialog.value = true
+		} else {
+			await patchStatus(taskId, new PatchPlannerTaskStatusRequest(newStatus))
+			const task = store.tasks.find(t => t.id === taskId)
+			if (task) task.status = newStatus
+			showSuccessSnackbar('Status updated')
+		}
+	}
+
+	async function completeLogTime(actualStartTime: Time, length: Time, startTimestamp: Date) {
 		const id = logTimeTaskId.value!
-		const task = store.tasks.find(t => t.id === id) as PlannerTask
-		const actualEndTime = Time.fromMinutes((actualStart.getInMinutes + length.getInMinutes) % 1440)
-		await patch(id, {
-			startTime: task.startTime,
-			endTime: task.endTime,
-			isDone: true,
-			actualStartTime: actualStart,
-			actualEndTime,
-		})
+		const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
+		await Promise.all([
+			patchStatus(
+				id,
+				new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
+			),
+			createActivityHistory(startTimestamp, length, logTimeActivityId.value!),
+		])
+		const updated = await fetchById(id)
 		const idx = store.tasks.findIndex(t => t.id === id)
 		if (idx >= 0) {
-			store.tasks[idx]!.isDone = true
-			;(store.tasks[idx] as PlannerTask).actualStartTime = actualStart
-			;(store.tasks[idx] as PlannerTask).actualEndTime = actualEndTime
+			store.tasks[idx] = updated
 		}
 		store.clearSelection()
 		logTimeTaskId.value = null
 		showSuccessSnackbar('Task marked done')
 	}
 
+	async function handleLogTimeManualConfirm(actualStart: Time, length: Time) {
+		const startDate = new Date(store.viewedDate)
+		startDate.setHours(actualStart.hours, actualStart.minutes, 0, 0)
+		await completeLogTime(actualStart, length, startDate)
+	}
+
+	async function handleLogTimeDone(startTimestamp: Date, length: Time) {
+		await completeLogTime(Time.fromDate(startTimestamp), length, startTimestamp)
+	}
+
+	function handleSelectTimer(type: string) {
+		trackTimeInitialMethod.value = type as 'stopwatch' | 'timer' | 'pomodoro'
+		trackTimeDialog.value = true
+	}
+
 	async function handleSkip(reason: string) {
 		const id = store.selectedTaskIds.values().next().value!
-		const task = store.tasks.find(t => t.id === id) as PlannerTask
-		await patch(id, {
-			startTime: task.startTime,
-			endTime: task.endTime,
-			status: PlannerTaskStatus.Cancelled,
-			skipReason: reason,
-		})
+		await patchStatus(id, new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Cancelled, null, null, reason))
 		const idx = store.tasks.findIndex(t => t.id === id)
 		if (idx >= 0) {
+			store.tasks[idx]!.isDone = false
 			store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
 			;(store.tasks[idx] as PlannerTask).skipReason = reason
 		}

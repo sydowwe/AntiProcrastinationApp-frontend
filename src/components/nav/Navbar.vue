@@ -320,7 +320,6 @@
 				{ title: 'pomodoroTimer', icon: 'clock', to: '/activity-history/pomodoro', needsAdmin: false },
 				{ title: 'stopwatch', icon: 'stopwatch', to: '/activity-history/stopwatch', needsAdmin: false },
 				{ title: 'timer', icon: 'hourglass-end', to: '/activity-history/timer', needsAdmin: false },
-				// {title: 'alarm', icon: 'alarm-clock', to: '/activity-history/alarms', needsAdmin: false},
 			],
 		},
 		{

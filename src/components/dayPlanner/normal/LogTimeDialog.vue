@@ -26,12 +26,12 @@
 			<div class="d-flex flex-column ga-3 py-2">
 				<VBtn
 					v-for="option in timerOptions"
-					:key="option.route"
+					:key="option.type"
 					:prependIcon="option.icon"
 					variant="tonal"
 					color="primaryOutline"
 					size="large"
-					@click="navigate(option.route)"
+					@click="handleSelectTimer(option.type)"
 				>
 					{{ option.label }}
 				</VBtn>
@@ -54,14 +54,10 @@
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { ref, watch } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import router from '@/plugins/router.ts'
 
 	const model = defineModel<boolean>({ default: false })
 
-	const { activityId, plannerTaskId, plannerDate, manualMode = false, initialStartTime, initialLength } = defineProps<{
-		activityId: number
-		plannerTaskId: number
-		plannerDate: string
+	const { manualMode = false, initialStartTime, initialLength } = defineProps<{
 		manualMode?: boolean
 		initialStartTime: Time
 		initialLength: Time
@@ -69,36 +65,34 @@
 
 	const emit = defineEmits<{
 		confirm: [startTime: Time, length: Time]
+		selectTimer: [type: string]
 	}>()
 
 	const timerOptions = [
-		{ label: 'Stopwatch', icon: 'fas fa-stopwatch', route: 'stopwatch' },
-		{ label: 'Timer', icon: 'fas fa-hourglass-half', route: 'timer' },
-		{ label: 'Pomodoro', icon: 'fas fa-circle-dot', route: 'pomodoroTimer' },
+		{ label: 'Stopwatch', icon: 'fas fa-stopwatch', type: 'stopwatch' },
+		{ label: 'Timer', icon: 'fas fa-hourglass-half', type: 'timer' },
+		{ label: 'Pomodoro', icon: 'fas fa-circle-dot', type: 'pomodoro' },
 	]
 
 	const isManual = ref(manualMode)
 	const startTime = ref(new Time())
 	const length = ref(new Time())
 
-	watch(model, open => {
-		if (open) {
-			isManual.value = manualMode
-			startTime.value = new Time(initialStartTime.hours, initialStartTime.minutes)
-			length.value = new Time(initialLength.hours, initialLength.minutes)
-		}
-	}, { immediate: true })
+	watch(
+		model,
+		open => {
+			if (open) {
+				isManual.value = manualMode
+				startTime.value = new Time(initialStartTime.hours, initialStartTime.minutes)
+				length.value = new Time(initialLength.hours, initialLength.minutes)
+			}
+		},
+		{ immediate: true },
+	)
 
-	function navigate(routeName: string) {
+	function handleSelectTimer(type: string) {
 		model.value = false
-		router.push({
-			name: routeName,
-			query: {
-				activityId: activityId.toString(),
-				plannerTaskId: plannerTaskId.toString(),
-				plannerDate: plannerDate,
-			},
-		})
+		emit('selectTimer', type)
 	}
 
 	function handleConfirm() {
