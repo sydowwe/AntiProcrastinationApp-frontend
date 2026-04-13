@@ -17,7 +17,7 @@
 
 	<VSheet
 		v-else-if="!isOutOfView"
-		:color="`${backgroundColorComp}E0`"
+		color="neutral-0"
 		:style="style"
 		class="base-task-block task-block"
 		:class="[...blockClasses]"
@@ -167,13 +167,13 @@
 
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
+		const hasImportance =
+			task.importance?.importance !== 777 && !(task.isBackground && task.importance?.importance === 666)
 		return {
 			marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
 			gridRow: `${task.gridRowStart} / span ${span}`,
-			borderLeft:
-				task.importance?.importance === 777 || (task.isBackground && task.importance?.importance === 666)
-					? ''
-					: `4px solid ${task.importance?.color ?? 'transparent'}`,
+			borderLeft: `6px solid ${backgroundColorComp.value}`,
+			borderRight: hasImportance ? `3px solid ${task.importance?.color ?? 'transparent'}` : '',
 		}
 	})
 
@@ -232,7 +232,6 @@
 	.base-task-block {
 		box-sizing: border-box !important;
 		border: 2px hidden transparent;
-		border-left-width: 3px;
 	}
 
 	/* Task Block Styles */
@@ -309,7 +308,6 @@
 
 	.task-content-main {
 		padding: 8px 12px 4px;
-		background-color: rgba(0, 0, 0, 0.5);
 		display: flex;
 		gap: 16px;
 	}
