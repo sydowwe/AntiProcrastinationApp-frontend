@@ -8,5 +8,4 @@ export interface IBasePlannerTaskRequest {
 	location: string | null
 	notes: string | null
 	importanceId: number | null
-	color: string | null
 }
