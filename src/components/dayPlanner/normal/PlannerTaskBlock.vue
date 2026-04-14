@@ -23,28 +23,17 @@
 		</template>
 		<template #checkbox>
 			<div class="status-column">
-				<VCheckbox
-					v-if="task.id >= 0"
-					:modelValue="task.isDone"
-					:disabled="store.isTemplateInPreview"
-					class="task-checkbox"
-					density="default"
-					hideDetails
-					@update:modelValue="val => val ? emit('logTime', task.id) : emit('toggleIsDone', task.id)"
-					@click.stop
-				/>
 				<VMenu :disabled="store.isTemplateInPreview || task.id < 0">
 					<template #activator="{ props: menuProps }">
 						<ChipWithIcon
 							v-bind="menuProps"
 							class="task-chip status-chip"
-							size="x-small"
 							variant="flat"
 							:icon="getPlannerTaskStatusIcon(task.status)"
 							:color="getPlannerTaskStatusColor(task.status)"
 							@click.stop
 						>
-							{{ task.status }}
+							{{ t(`planner.status.${task.status}`) }}
 						</ChipWithIcon>
 					</template>
 					<VList density="compact">
@@ -52,7 +41,7 @@
 							v-for="status in allStatuses"
 							:key="status"
 							:prependIcon="getPlannerTaskStatusIcon(status)"
-							:title="status"
+							:title="t(`planner.status.${status}`)"
 							@click="emit('changeStatus', task.id, status)"
 						/>
 					</VList>
@@ -64,17 +53,16 @@
 
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
-	import {
-		getPlannerTaskStatusColor,
-		getPlannerTaskStatusIcon,
-		PlannerTaskStatus,
-	} from '@/dtos/enum/PlannerTaskStatus.ts'
+	import { getPlannerTaskStatusColor, getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
+
+	const { t } = useI18n()
 
 	const { task } = defineProps<{
 		task: PlannerTask
@@ -82,8 +70,6 @@
 
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
-		toggleIsDone: [taskId: number]
-		logTime: [taskId: number]
 		changeStatus: [taskId: number, status: PlannerTaskStatus]
 	}>()
 
@@ -137,15 +123,6 @@
 		gap: 2px;
 		pointer-events: auto;
 		z-index: 15;
-	}
-
-	.task-checkbox {
-		pointer-events: auto;
-		cursor: pointer;
-	}
-
-	.task-checkbox.v-checkbox .v-selection-control {
-		min-height: 0 !important;
 	}
 
 	.status-chip {

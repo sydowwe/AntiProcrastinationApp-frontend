@@ -13,10 +13,8 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public notes: string | null = null,
 		public activityId?: number,
 		public importanceId: number | null = null,
-		public color: string | null = null,
 		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
-		public isDone: boolean = false,
-		public todolistId: number | null = null,
+		public todolistItemId: number | null = null,
 		public skipReason: string | null = null,
 		public actualStartTime: Time | null = null,
 		public actualEndTime: Time | null = null,
@@ -36,11 +34,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.notes ?? null,
 			entity.activity.id,
 			entity.importance?.id ?? null,
-			entity.color,
 
 			entity.status,
-			entity.isDone ?? false,
-			entity.todolistId ?? null,
+			entity.todolistItemId ?? null,
 		)
 	}
 }

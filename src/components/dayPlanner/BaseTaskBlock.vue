@@ -31,17 +31,25 @@
 		@keydown.ctrl.d.prevent="handleDuplicateKey"
 	>
 		<div
+			class="task-color-accent"
+			:style="{ backgroundColor: backgroundColorComp }"
+		/>
+		<div
 			class="resize-handle resize-handle-top"
 			@click.stop
 			@pointerdown="emit('resizeStart', { taskId: task.id, direction: 'top', pointerEvent: $event })"
 		/>
-
-		<div class="task-content">
-			<div class="task-content-main">
-				<div class="d-flex flex-column flex-wrap">
+		<div
+			id="task-content"
+			class="pl-5 pr-3 my-auto pointer-events-none d-flex justify-space-between align-center"
+		>
+			<div
+				id="task-content-main"
+				class="d-flex ga-2 align-center"
+			>
+				<div class="d-flex ga-4 align-center flex-wrap">
 					<div class="task-header">
 						<slot name="prepend"></slot>
-						<slot name="checkbox"></slot>
 						<div
 							v-if="task.importance?.importance !== 777"
 							class="d-flex flex-column align-center"
@@ -66,28 +74,17 @@
 								<div class="task-time">{{ formattedTime }}</div>
 							</slot>
 						</div>
-						<ChipWithIcon
-							v-if="task.activity.role"
-							class="task-chip"
-							size="x-small"
-							variant="flat"
-							:icon="task.activity.role.icon ?? undefined"
-							:color="task.activity.role.color ?? 'white'"
-						>
-							{{ task.activity.role.name }}
-						</ChipWithIcon>
-					</div>
-
-					<!-- Slot for additional chips/badges - different for template vs regular -->
-					<div class="d-flex ga-3 mt-1">
-						<div class="d-flex ga-1 align-center text-body-2">
-							<VIcon
-								class="my-1"
-								icon="location-dot"
-							></VIcon>
-							<span class="mr-1">{{ task.location }}</span>
-						</div>
-						<div class="task-badges">
+						<div class="d-flex flex-column align-start ga-2">
+							<ChipWithIcon
+								v-if="task.activity.role"
+								class="task-chip"
+								size="x-small"
+								variant="tonal"
+								:icon="task.activity.role.icon ?? undefined"
+								:color="task.activity.role.color ?? 'white'"
+							>
+								{{ task.activity.role.name }}
+							</ChipWithIcon>
 							<div
 								v-if="task.activity.category"
 								class="task-category"
@@ -98,7 +95,18 @@
 								></VIcon>
 								{{ task.activity.category.name }}
 							</div>
-							<slot name="badges"></slot>
+						</div>
+					</div>
+
+					<!-- Slot for additional chips/badges - different for template vs regular -->
+					<div class="d-flex ga-3 mt-1">
+						<div class="text-medium-emphasis d-flex ga-1 align-center text-body-2">
+							<VIcon
+								class="mb-1"
+								size="16"
+								icon="location-dot"
+							></VIcon>
+							<span>{{ task.location }}</span>
 						</div>
 					</div>
 				</div>
@@ -111,6 +119,9 @@
 						{{ task.notes }}
 					</span>
 				</div>
+			</div>
+			<div>
+				<slot name="checkbox"></slot>
 			</div>
 		</div>
 
@@ -172,7 +183,6 @@
 		return {
 			marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
 			gridRow: `${task.gridRowStart} / span ${span}`,
-			borderLeft: `6px solid ${backgroundColorComp.value}`,
 			borderRight: hasImportance ? `3px solid ${task.importance?.color ?? 'transparent'}` : '',
 		}
 	})
@@ -232,6 +242,16 @@
 	.base-task-block {
 		box-sizing: border-box !important;
 		border: 2px hidden transparent;
+	}
+
+	.task-color-accent {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 8px;
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	/* Task Block Styles */
@@ -296,22 +316,6 @@
 		filter: grayscale(20%) brightness(0.95);
 	}
 
-	.task-content {
-		flex: 1;
-		pointer-events: none;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 4px;
-		overflow: hidden;
-	}
-
-	.task-content-main {
-		padding: 8px 12px 4px;
-		display: flex;
-		gap: 16px;
-	}
-
 	.task-header {
 		display: flex;
 		align-items: center;
@@ -328,7 +332,7 @@
 
 	.task-title {
 		font-weight: 500;
-		font-size: 13px;
+		font-size: 16px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -344,14 +348,6 @@
 		text-overflow: ellipsis;
 	}
 
-	.task-badges {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 8px;
-		padding: 6px;
-	}
-
 	.task-chip {
 		flex-shrink: 0;
 	}
@@ -359,7 +355,7 @@
 	.task-category {
 		font-size: 0.7rem;
 		padding: 2px 6px;
-		border-radius: 4px;
+		border-radius: 12px;
 		background: rgba(255, 255, 255, 0.1);
 		border: 1px solid rgba(255, 255, 255, 0.4);
 	}

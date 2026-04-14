@@ -11,7 +11,6 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public location: string | null = null,
 		public notes: string | null = null,
 		public importanceId: number | null = null,
-		public color: string = '#5c2caa',
 		public templateId?: number,
 	) {}
 
@@ -24,7 +23,6 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.location,
 			entity.notes,
 			entity.importance?.id ?? null,
-			entity.color,
 			entity.templateId,
 		)
 	}

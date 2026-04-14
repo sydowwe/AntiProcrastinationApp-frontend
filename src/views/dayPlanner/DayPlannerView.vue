@@ -34,8 +34,6 @@
 				<PlannerTaskBlock
 					:task="task as PlannerTask"
 					@resizeStart="onResizeStart"
-					@toggleIsDone="handleToggleIsDone"
-					@logTime="handleCheckboxLogTime"
 					@changeStatus="handleChangeStatus"
 				/>
 			</template>
