@@ -17,7 +17,7 @@
 
 	<VSheet
 		v-else-if="!isOutOfView"
-		color="neutral-0"
+		color="primary-container"
 		:style="style"
 		class="base-task-block task-block"
 		:class="[...blockClasses]"
@@ -121,6 +121,7 @@
 				</div>
 			</div>
 			<div>
+				`
 				<slot name="checkbox"></slot>
 			</div>
 		</div>
@@ -232,8 +233,8 @@
 	}
 
 	function handleDuplicateKey(): void {
-		if (isSelected.value && store.selectedTaskIds.size === 1) {
-			store.openDuplicateDialog()
+		if (isSelected.value && store.selectedTaskIds.size >= 1) {
+			store.startDuplicate()
 		}
 	}
 </script>

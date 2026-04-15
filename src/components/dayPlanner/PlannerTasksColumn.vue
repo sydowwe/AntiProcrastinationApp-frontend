@@ -3,7 +3,14 @@
 	<div
 		ref="tasksColumnRef"
 		class="tasks-column"
-		:style="{ gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)` }"
+		:style="{
+			gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)`,
+			cursor: store.pendingClipboard
+				? store.pendingClipboard.mode === 'cut'
+					? 'move'
+					: 'copy'
+				: undefined,
+		}"
 		@pointerdown="handlePointerDown"
 		@pointermove="handlePointerMove"
 	>
@@ -175,6 +182,15 @@
 		// Start creating if clicking on empty space (only when no items selected)
 		if (target.closest('.task-block')) return
 		if (target.closest('.current-time-indicator')) return
+
+		// Clipboard placement mode: clicking a slot places the clipboard tasks
+		if (store.pendingClipboard !== null) {
+			const slotIndex = getSlotIndexFromPosition(e.clientY)
+			store.clipboardPlacementSlot = slotIndex + 1
+			e.preventDefault()
+			return
+		}
+
 		if (!store.canCreate) return
 
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -442,7 +458,7 @@
 	.tasks-column {
 		display: grid;
 		position: relative;
-		background: rgb(var(--v-theme-neutral-100));
+		background: rgb(var(--v-theme-neutral-50));
 		user-select: none;
 		cursor: crosshair;
 		touch-action: none;

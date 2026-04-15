@@ -42,11 +42,17 @@ export interface IBaseDayPlannerStore<
 	// Duplicate state
 	isDuplicating: boolean
 
+	// Clipboard state (cut / duplicate-to-slot)
+	pendingClipboard: { tasks: TTask[]; mode: 'cut' | 'duplicate' } | null
+	clipboardPlacementSlot: number | null
+
 	// Actions
 	openDeleteDialog: () => void
 	openCreateDialog: () => void
 	openEditDialog: () => void
 	openDuplicateDialog: () => void
+	startCut: () => void
+	startDuplicate: () => void
 	toggleTaskSelection: (taskId: number) => void
 	clearSelection: () => void
 
