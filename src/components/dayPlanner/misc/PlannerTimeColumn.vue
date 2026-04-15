@@ -67,7 +67,7 @@
 <style scoped>
 	.time-column {
 		display: grid;
-		background: rgb(var(--v-theme-neutral-50));
+		background: rgb(var(--v-theme-neutral-100));
 		position: relative;
 	}
 
@@ -96,7 +96,7 @@
 		transform: translateY(-50%);
 		color: #fff;
 		font-weight: 400;
-		background: rgb(var(--v-theme-neutral-50));
+		background: rgb(var(--v-theme-neutral-100));
 		padding: 0 1px;
 		font-size: 13px;
 	}

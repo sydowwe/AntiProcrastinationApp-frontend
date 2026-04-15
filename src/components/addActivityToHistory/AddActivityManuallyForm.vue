@@ -60,19 +60,20 @@
 		if (initialLength) timeLength.value = initialLength
 	})
 
-	function saveActivity() {
-		if (activitySelectionForm.value?.validate()) {
-			if (dateTime.value) {
-				if (timeLength.value.isNotZero()) {
-					activitySelectionForm.value?.saveActivityToHistory(dateTime.value, timeLength.value)
-					emit('saved')
-				} else {
-					showErrorSnackbar(i18n.t('history.lengthNotSet'))
-				}
-			} else {
-				showErrorSnackbar(i18n.t('date.selectDatePlease'))
-			}
+	async function saveActivity(): Promise<boolean> {
+		const errors = await activitySelectionForm.value?.validate()
+		if (errors && errors.length > 0) return false
+		if (!dateTime.value) {
+			showErrorSnackbar(i18n.t('date.selectDatePlease'))
+			return false
 		}
+		if (!timeLength.value.isNotZero()) {
+			showErrorSnackbar(i18n.t('history.lengthNotSet'))
+			return false
+		}
+		await activitySelectionForm.value?.saveActivityToHistory(dateTime.value, timeLength.value)
+		emit('saved')
+		return true
 	}
 
 	defineExpose({

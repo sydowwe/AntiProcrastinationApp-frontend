@@ -29,6 +29,10 @@ export function usePlannerStoreCore<
 	// Duplicate state
 	const isDuplicating = ref(false)
 
+	// Clipboard state (cut / duplicate-to-slot)
+	const pendingClipboard = ref<{ tasks: TTask[]; mode: 'cut' | 'duplicate' } | null>(null)
+	const clipboardPlacementSlot = ref<number | null>(null)
+
 	// Drag/Resize state
 	const draggingTaskId = ref<number | null>(null)
 	const resizingTaskId = ref<number | null>(null)
@@ -82,9 +86,9 @@ export function usePlannerStoreCore<
 
 	const selectedTasks = computed(() => tasks.value.filter(e => selectedTaskIds.has(e.id)))
 
-	const showActionBar = computed(() => selectedTaskIds.size > 0)
+	const showActionBar = computed(() => selectedTaskIds.size > 0 || pendingClipboard.value !== null)
 
-	const canCreate = computed(() => selectedTaskIds.size === 0)
+	const canCreate = computed(() => selectedTaskIds.size === 0 && pendingClipboard.value === null)
 
 	const isOverMidnight = computed(() => viewStartTime.value.hours > viewEndTime.value.hours)
 
@@ -118,6 +122,25 @@ export function usePlannerStoreCore<
 		openEditDialog()
 	}
 
+	function startCut(): void {
+		if (selectedTaskIds.size === 0) return
+		pendingClipboard.value = {
+			tasks: tasks.value.filter(t => selectedTaskIds.has(t.id)),
+			mode: 'cut',
+		}
+		tasks.value = tasks.value.filter(t => !selectedTaskIds.has(t.id))
+		selectedTaskIds.clear()
+	}
+
+	function startDuplicate(): void {
+		if (selectedTaskIds.size === 0) return
+		pendingClipboard.value = {
+			tasks: tasks.value.filter(t => selectedTaskIds.has(t.id)).map(t => ({ ...t })),
+			mode: 'duplicate',
+		}
+		selectedTaskIds.clear()
+	}
+
 	// Selection handlers
 	function toggleTaskSelection(taskId: number): void {
 		if (selectedTaskIds.has(taskId)) {
@@ -129,6 +152,12 @@ export function usePlannerStoreCore<
 
 	function clearSelection(): void {
 		selectedTaskIds.clear()
+		if (pendingClipboard.value?.mode === 'cut') {
+			tasks.value.push(...pendingClipboard.value.tasks)
+			initializeTaskGridPositions()
+		}
+		pendingClipboard.value = null
+		clipboardPlacementSlot.value = null
 	}
 
 	const {
@@ -150,6 +179,10 @@ export function usePlannerStoreCore<
 		creationPreview.value = undefined
 		deleteDialog.value = false
 		isDuplicating.value = false
+
+		// Reset clipboard state
+		pendingClipboard.value = null
+		clipboardPlacementSlot.value = null
 
 		// Reset drag/resize state
 		draggingTaskId.value = null
@@ -177,6 +210,8 @@ export function usePlannerStoreCore<
 		creationPreview,
 		deleteDialog,
 		isDuplicating,
+		pendingClipboard,
+		clipboardPlacementSlot,
 		draggingTaskId,
 		resizingTaskId,
 		dragConflict,
@@ -194,6 +229,8 @@ export function usePlannerStoreCore<
 		openCreateDialog,
 		openEditDialog,
 		openDuplicateDialog,
+		startCut,
+		startDuplicate,
 		toggleTaskSelection,
 		clearSelection,
 		resetStore,

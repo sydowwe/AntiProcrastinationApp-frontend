@@ -1,14 +1,14 @@
 <template>
 	<VRow
 		justify="center"
-		class="py-4 my-auto"
+		:class="compact ? undefined : 'py-4 my-auto'"
 	>
 		<VCol
 			cols="12"
-			sm="11"
-			md="10"
-			lg="7"
-			xl="6"
+			:sm="compact ? undefined : 11"
+			:md="compact ? undefined : 10"
+			:lg="compact ? undefined : 7"
+			:xl="compact ? undefined : 6"
 			class="d-flex flex-column"
 		>
 			<TimePicker
@@ -43,8 +43,12 @@
 					:timeInputVisible
 					@applyPreset="applyPreset"
 				></TimerPresetsSection>
-				<hr class="mt-6 mb-4" />
+				<hr
+					class="mt-6 mb-4"
+					v-if="!activityId"
+				/>
 				<ActivitySelectionForm
+					v-if="!activityId"
 					ref="activitySelectionForm"
 					v-model:activityId="selectedActivityId"
 					:formDisabled="formDisabled"
@@ -64,7 +68,7 @@
 	import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
-	import { computed, onMounted, onUnmounted, ref } from 'vue'
+	import { computed, onUnmounted, ref } from 'vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
@@ -72,7 +76,16 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
-	import router from '@/plugins/router.ts'
+
+	const { activityId = null, compact = false } = defineProps<{
+		activityId?: number | null
+		compact?: boolean
+	}>()
+
+	const emit = defineEmits<{
+		started: [actualStartTime: Time]
+		done: [startTimestamp: Date, length: Time]
+	}>()
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()
@@ -86,26 +99,13 @@
 	const intervalId = ref<number | undefined>(undefined)
 	const startTimestamp = ref(new Date())
 	const formDisabled = ref(false)
-
-	const query = router.currentRoute.value.query
-	const plannerTaskId = query.plannerTaskId as string | undefined
-	const plannerDate = query.plannerDate as string | undefined
-	const initialActivityId = query.activityId ? parseInt(query.activityId as string) : null
-
-	const selectedActivityId = ref<number | null>(initialActivityId)
-
-	onMounted(() => {
-		if (initialActivityId !== null) {
-			selectedActivityId.value = initialActivityId
-		}
-	})
+	const selectedActivityId = ref<number | null>(activityId)
 	const selectedActivityName = ref<string>('')
 
-	// Timestamp-based timer state
 	const endsAt = ref<number | null>(null)
 	const pausedRemaining = ref<number | null>(null)
 	const notificationTimeoutId = ref<number | undefined>(undefined)
-	const now = ref(Date.now()) // Reactive tick for forcing re-computation
+	const now = ref(Date.now())
 
 	const timeRemaining = computed(() => {
 		if (endsAt.value !== null) {
@@ -132,7 +132,7 @@
 				return
 			}
 			const validationResult = await activitySelectionForm.value?.validate()
-			if (validationResult && validationResult.length === 0) {
+			if (!validationResult || validationResult.length === 0) {
 				formDisabled.value = true
 				startTimestamp.value = new Date()
 				selectedActivityName.value = activitySelectionForm.value!.getSelectedActivityName as string
@@ -143,6 +143,7 @@
 				endsAt.value = currentTime + durationMs
 				startUpdateInterval()
 				scheduleNotificationTimeout()
+				emit('started', Time.fromDate(startTimestamp.value))
 			}
 		}
 	}
@@ -152,7 +153,6 @@
 		clearTimeout(notificationTimeoutId.value)
 		intervalId.value = undefined
 		notificationTimeoutId.value = undefined
-
 		if (endsAt.value !== null) {
 			pausedRemaining.value = endsAt.value - Date.now()
 			endsAt.value = null
@@ -172,7 +172,7 @@
 
 	function startUpdateInterval() {
 		intervalId.value = setInterval(() => {
-			now.value = Date.now() // Update reactive tick to trigger re-computation
+			now.value = Date.now()
 			if (timeRemaining.value === 0) {
 				stop(true)
 			}
@@ -197,14 +197,18 @@
 		intervalId.value = undefined
 		notificationTimeoutId.value = undefined
 
-		const activityName = selectedActivityName.value
+		const name = selectedActivityName.value
 		timeInputVisible.value = true
 		if (automatic) {
-			triggerTimerEndNotification('Timer ended!', activityName)
-			showNotification('Timer ended', `Your timer for ${activityName} ended it ran for ${timePassed().getNice}`)
+			triggerTimerEndNotification('Timer ended!', name)
+			showNotification('Timer ended', `Your timer for ${name} ended it ran for ${timePassed().getNice}`)
 		}
 		if (timePassed().getInMinutes > 0) {
-			saveDialog.value!.open(activityName, timePassed())
+			if (!activityId) {
+				saveDialog.value!.open(name, timePassed())
+			} else {
+				emit('done', startTimestamp.value, timePassed())
+			}
 		} else {
 			resetTimer()
 		}
@@ -221,19 +225,9 @@
 		stopAllNotifications()
 	}
 
-	function saveActivity() {
-		if (plannerTaskId && plannerDate) {
-			router.push({
-				name: 'dayPlanner',
-				params: { date: plannerDate },
-				query: {
-					plannerTaskId,
-					actualStartTime: Time.fromDate(startTimestamp.value).getString(),
-					actualLength: timePassed().getString(),
-				},
-			})
-		} else {
-			activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed())
+	async function saveActivity() {
+		if (!activityId) {
+			await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed())
 		}
 	}
 

@@ -3,7 +3,6 @@ import HomeView from '@/views/HomeView.vue'
 import PomodoroTimerView from '@/views/addActivityHistory/PomodoroTimerView.vue'
 import StopWatchView from '@/views/addActivityHistory/StopWatchView.vue'
 import TimerView from '@/views/addActivityHistory/TimerView.vue'
-import AlarmListView from '@/views/addActivityHistory/AlarmListView.vue'
 import HistorySummaryView from '@/views/history/HistorySummaryView.vue'
 import HistoryDetailView from '@/views/history/HistoryDetailView.vue'
 import TodoListView from '@/views/todoList/TodoListView.vue'
@@ -143,11 +142,6 @@ const router = createRouter({
 			path: '/activity-history/timer',
 			name: 'timer',
 			component: TimerView,
-		},
-		{
-			path: '/activity-history/alarms',
-			name: 'activityHistoryAlarms',
-			component: AlarmListView,
 		},
 		{
 			path: '/activity-history/manual',

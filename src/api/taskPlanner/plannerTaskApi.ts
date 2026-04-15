@@ -3,7 +3,7 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { useFetchFiltered } from '@/api/base/useFetchFiltered.ts'
 import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import type { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
-import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+import type { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -25,7 +25,7 @@ export function useTaskPlannerCrud() {
 	}
 
 	async function patchStatus(id: number, status: PlannerTaskStatus): Promise<void> {
-		return await patch(id, { status, isDone: status === PlannerTaskStatus.Completed })
+		return await patch(id, { status })
 	}
 
 	const { fetchFiltered } = useFetchFiltered<PlannerTask, PlannerTaskFilter>(PlannerTask, url)

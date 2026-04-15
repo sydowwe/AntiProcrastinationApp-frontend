@@ -1,8 +1,8 @@
 <template>
 	<VChip
-		:size="size ?? 'x-small'"
-		:variant="variant ?? 'flat'"
-		:color="color ?? 'white'"
+		:size="size"
+		:variant="variant"
+		:color="colorComp"
 	>
 		<VIcon
 			v-if="icon"
@@ -14,12 +14,25 @@
 </template>
 
 <script setup lang="ts">
-	defineProps<{
+	import { useColor } from '@/utils/colorPalette.ts'
+	import { computed } from 'vue'
+
+	const { getBgColor, getTextColor } = useColor()
+
+	const {
+		color,
+		variant = 'tonal',
+		size = 'default',
+	} = defineProps<{
 		icon?: string
 		color?: string
 		size?: string
 		variant?: 'text' | 'flat' | 'elevated' | 'outlined' | 'plain' | 'tonal'
 	}>()
+
+	const colorComp = computed(() =>
+		['tonal', 'outlined'].includes(variant) ? getTextColor(color) : getBgColor(color),
+	)
 </script>
 
 <style scoped></style>

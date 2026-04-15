@@ -27,39 +27,6 @@
 					@navigateDate="navigateDate"
 					@undo="handleUndo"
 				/>
-				<div
-					v-if="suggestions.length && showSuggestionBanner"
-					class="px-4 pb-2 pt-1"
-				>
-					<VAlert
-						v-model="showSuggestionBanner"
-						density="compact"
-						color="primary"
-						variant="tonal"
-						closable
-					>
-						<div class="d-flex align-center flex-wrap ga-2">
-							<span class="text-white text-caption font-weight-medium">Suggested for today:</span>
-							<VChip
-								v-for="t in suggestions"
-								:key="t.id"
-								size="small"
-								color="primary"
-								variant="elevated"
-								style="cursor: pointer"
-								@click="applyTemplateSuggestion(t)"
-							>
-								<VIcon
-									v-if="t.icon"
-									:icon="t.icon"
-									size="12"
-									class="mr-1"
-								/>
-								{{ t.name }}
-							</VChip>
-						</div>
-					</VAlert>
-				</div>
 			</template>
 
 			<!-- Custom task block for normal planner -->
@@ -144,6 +111,17 @@
 			:initialStartTime="logTimeInitialStart"
 			:initialLength="logTimeInitialLength"
 			@confirm="handleLogTimeManualConfirm"
+			@selectTimer="handleSelectTimer"
+		/>
+		<!-- Track Time dialog (stopwatch / timer / pomodoro) -->
+		<TrackTimeDialog
+			v-if="logTimeTaskId !== null"
+			v-model="trackTimeDialog"
+			:activityId="logTimeActivityId!"
+			:activityName="logTimeActivityName"
+			:plannerTaskId="logTimeTaskId"
+			:initialMethod="trackTimeInitialMethod"
+			@done="handleLogTimeDone"
 		/>
 	</div>
 </template>
@@ -181,8 +159,16 @@
 	import RescheduleDialog from '@/components/dayPlanner/normal/RescheduleDialog.vue'
 	import SkipReasonDialog from '@/components/dayPlanner/normal/SkipReasonDialog.vue'
 	import LogTimeDialog from '@/components/dayPlanner/normal/LogTimeDialog.vue'
+	import TrackTimeDialog from '@/components/dayPlanner/normal/TrackTimeDialog.vue'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+	import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
+	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
+	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
+	import { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+
+	const { create: createActivityHistory } = useActivityHistoryCrud()
 	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
+	import { patch } from 'axios'
 
 	const { showFullScreenLoading } = useLoading()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
@@ -215,8 +201,11 @@
 	const logTimeManualMode = ref(false)
 	const logTimeTaskId = ref<number | null>(null)
 	const logTimeActivityId = ref<number | null>(null)
+	const logTimeActivityName = ref('')
 	const logTimeInitialStart = ref(new Time())
 	const logTimeInitialLength = ref(new Time())
+	const trackTimeDialog = ref(false)
+	const trackTimeInitialMethod = ref<'stopwatch' | 'timer' | 'pomodoro'>('stopwatch')
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
 	// Lifecycle hooks
@@ -243,7 +232,7 @@
 			await patch(taskId, {
 				startTime: returnTask.startTime,
 				endTime: returnTask.endTime,
-				isDone: true,
+				status: PlannerTaskStatus.Completed,
 				actualStartTime,
 				actualEndTime,
 			})
@@ -331,6 +320,89 @@
 		)
 		store.initializeTaskGridPositions()
 		await templatePreview()
+	}
+
+	watch(
+		() => store.clipboardPlacementSlot,
+		async (slotIndex) => {
+			if (slotIndex === null || !store.pendingClipboard) return
+			await handleClipboardPlace(store.pendingClipboard, slotIndex)
+		},
+	)
+
+	async function handleClipboardPlace(
+		clipboard: { tasks: PlannerTask[]; mode: 'cut' | 'duplicate' },
+		startSlot: number,
+	) {
+		store.pendingClipboard = null
+		store.clipboardPlacementSlot = null
+
+		const sorted = [...clipboard.tasks].sort(
+			(a, b) => a.startTime.getInMinutes - b.startTime.getInMinutes,
+		)
+
+		const placementTime = store.slotIndexToTime(startSlot - 1)
+		const offsetMinutes = placementTime.getInMinutes - sorted[0].startTime.getInMinutes
+
+		if (clipboard.mode === 'cut') {
+			const originalSpans = sorted.map(t => ({
+				id: t.id,
+				startTime: new Time(t.startTime.hours, t.startTime.minutes),
+				endTime: new Time(t.endTime.hours, t.endTime.minutes),
+			}))
+			for (const task of sorted) {
+				const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				task.startTime = newStart
+				task.endTime = newEnd
+				store.setGridPositionFromSpan(task)
+				task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
+				store.tasks.push(task)
+				await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+			}
+			undoStack.push({
+				description: 'Task moved',
+				date: new Date(store.viewedDate),
+				undo: async () => {
+					for (const orig of originalSpans) {
+						const task = store.tasks.find(t => t.id === orig.id) as PlannerTask | undefined
+						if (!task) continue
+						task.startTime = orig.startTime
+						task.endTime = orig.endTime
+						store.setGridPositionFromSpan(task)
+						await store.updateTaskSpan(orig.id, new TaskSpan(orig.startTime, orig.endTime))
+					}
+				},
+			})
+			showSuccessSnackbar('Task moved')
+		}
+
+		if (clipboard.mode === 'duplicate') {
+			const created: PlannerTask[] = []
+			for (const task of sorted) {
+				const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const request = PlannerTaskRequest.fromEntity(task)
+				request.calendarId = calendar.value?.id
+				request.startTime = newStart
+				request.endTime = newEnd
+				const response = await createWithResponse(request)
+				store.setGridPositionFromSpan(response)
+				response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
+				store.tasks.push(response)
+				created.push(response)
+			}
+			undoStack.push({
+				description: 'Tasks duplicated',
+				date: new Date(store.viewedDate),
+				undo: async () => {
+					const ids = created.map(t => t.id)
+					await batchDelete(ids)
+					store.tasks = store.tasks.filter(t => !ids.includes(t.id))
+				},
+			})
+			showSuccessSnackbar('Tasks duplicated')
+		}
 	}
 
 	async function templatePreview() {
@@ -558,6 +630,35 @@
 		showSuccessSnackbar('Task marked done')
 	}
 
+	async function completeLogTime(actualStartTime: Time, length: Time, startTimestamp: Date) {
+		const id = logTimeTaskId.value!
+		const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
+		await Promise.all([
+			patchStatus(
+				id,
+				new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
+			),
+			createActivityHistory(startTimestamp, length, logTimeActivityId.value!),
+		])
+		const updated = await fetchById(id)
+		const idx = store.tasks.findIndex(t => t.id === id)
+		if (idx >= 0) {
+			store.tasks[idx] = updated
+		}
+		store.clearSelection()
+		logTimeTaskId.value = null
+		showSuccessSnackbar('Task marked done')
+	}
+
+	async function handleLogTimeDone(startTimestamp: Date, length: Time) {
+		await completeLogTime(Time.fromDate(startTimestamp), length, startTimestamp)
+	}
+
+	function handleSelectTimer(type: string) {
+		trackTimeInitialMethod.value = type as 'stopwatch' | 'timer' | 'pomodoro'
+		trackTimeDialog.value = true
+	}
+
 	async function handleSkip(reason: string) {
 		const id = store.selectedTaskIds.values().next().value!
 		const task = store.tasks.find(t => t.id === id) as PlannerTask
@@ -569,6 +670,7 @@
 		})
 		const idx = store.tasks.findIndex(t => t.id === id)
 		if (idx >= 0) {
+			store.tasks[idx]!.isDone = false
 			store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
 			;(store.tasks[idx] as PlannerTask).skipReason = reason
 		}
