@@ -39,16 +39,16 @@
 						:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
 						@click.stop
 					/>
-<!--					<ChipWithIcon-->
-<!--						v-if="task.status !== PlannerTaskStatus.NotStarted"-->
-<!--						class="task-chip"-->
-<!--						size="x-small"-->
-<!--						variant="flat"-->
-<!--						:icon="getPlannerTaskStatusIcon(task.status)"-->
-<!--						:color="getPlannerTaskStatusColor(task.status)"-->
-<!--					>-->
-<!--						{{ task.status }}-->
-<!--					</ChipWithIcon>-->
+					<!--					<ChipWithIcon-->
+					<!--						v-bind="menuProps"-->
+					<!--						class="task-chip status-chip"-->
+					<!--						variant="flat"-->
+					<!--						:icon="getPlannerTaskStatusIcon(task.status)"-->
+					<!--						:color="getPlannerTaskStatusColor(task.status)"-->
+					<!--						@click.stop-->
+					<!--					>-->
+					<!--						{{ t(`planner.status.${task.status}`) }}-->
+					<!--					</ChipWithIcon>-->
 				</template>
 				<VCard>
 					<VList density="compact">
@@ -56,20 +56,12 @@
 							v-for="option in statusOptions"
 							:key="option.value"
 							:value="option.value"
+							:prependIcon="getPlannerTaskStatusIcon(option)"
+							:title="t(`planner.status.${option}`)"
 							:active="task.status === option.value"
 							color="primary"
 							@click="emit('changeStatus', task.id, option.value as PlannerTaskStatus)"
-						>
-							<template #prepend>
-								<VIcon
-									:icon="getPlannerTaskStatusIcon(option.value)"
-									:color="getPlannerTaskStatusColor(option.value)"
-									size="small"
-									class="mr-2"
-								/>
-							</template>
-							{{ option.title }}
-						</VListItem>
+						></VListItem>
 					</VList>
 				</VCard>
 			</VMenu>
@@ -79,6 +71,7 @@
 
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
@@ -91,6 +84,8 @@
 	} from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+
+	const { t } = useI18n()
 
 	const { task } = defineProps<{
 		task: PlannerTask
@@ -139,12 +134,13 @@
 			if (!taskItem) return
 
 			taskItem.status = newStatus
-			taskItem.isDone = newStatus === PlannerTaskStatus.Completed
 
 			store.updateTaskStatus(taskId, newStatus).catch(error => {
 				console.error('Error updating task status:', error)
-				taskItem.status = newStatus === PlannerTaskStatus.Completed ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed
-				taskItem.isDone = !taskItem.isDone
+				taskItem.status =
+					newStatus === PlannerTaskStatus.Completed
+						? PlannerTaskStatus.NotStarted
+						: PlannerTaskStatus.Completed
 			})
 		})
 	}
@@ -155,9 +151,18 @@
 		pointer-events: auto;
 		cursor: pointer;
 	}
+	.status-column {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		pointer-events: auto;
+		z-index: 15;
+	}
 
-	.task-checkbox.v-checkbox .v-selection-control {
-		min-height: 0 !important;
+	.status-chip {
+		pointer-events: auto;
+		cursor: pointer;
 	}
 
 	.task-time {

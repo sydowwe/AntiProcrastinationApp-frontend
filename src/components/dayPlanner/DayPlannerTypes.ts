@@ -10,4 +10,4 @@ export class CreationPreviewType {
 	}
 }
 
-export const SLOT_HEIGHT = 22 // pixels
+export const SLOT_HEIGHT = 40 // pixels

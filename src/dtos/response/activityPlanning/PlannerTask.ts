@@ -27,7 +27,6 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public sourceTemplateTaskId: number | null = null,
 		public skipReason: string | null = null,
 		public todoListItemId: number | null = null,
-		public estimatedMinuteLength?: number,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundTask: boolean = false,
@@ -77,9 +76,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			json.isFromTemplate,
 			json.sourceTemplateTaskId ?? null,
 			json.skipReason ?? null,
-			json.todolistId ?? null,
-			json.estimatedMinuteLength,
-
+			json.todoListItemId ?? null,
 			0,
 			0,
 			false,
