@@ -256,6 +256,7 @@
 	import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import router from '@/plugins/router.ts'
 
 	const i18n = useI18n()
 	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
@@ -336,7 +337,13 @@
 	const paused = ref(false)
 	const intervalId = ref<number | undefined>(undefined)
 	const formDisabled = ref(false)
-	const focusActivityId = ref<number | null>(null)
+
+	const query = router.currentRoute.value.query
+	const plannerTaskId = query.plannerTaskId as string | undefined
+	const plannerDate = query.plannerDate as string | undefined
+	const initialActivityId = query.activityId ? parseInt(query.activityId as string) : null
+
+	const focusActivityId = ref<number | null>(initialActivityId)
 	const restActivityId = ref<number | null>(null)
 
 	checkNotificationPermission()
@@ -550,16 +557,28 @@
 	}
 
 	function saveActivity() {
-		mainActivitySelectionForm.value?.saveActivityToHistory(
-			startTimestamp.value,
-			Time.fromSeconds(focusTimeElapsed.value),
-		)
-		// Only save rest activity if one was selected and there was rest time
-		if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
-			restActivitySelectionForm.value.saveActivityToHistory(
+		if (plannerTaskId && plannerDate) {
+			router.push({
+				name: 'dayPlanner',
+				params: { date: plannerDate },
+				query: {
+					plannerTaskId,
+					actualStartTime: Time.fromDate(startTimestamp.value).getString(),
+					actualLength: Time.fromSeconds(focusTimeElapsed.value).getString(),
+				},
+			})
+		} else {
+			mainActivitySelectionForm.value?.saveActivityToHistory(
 				startTimestamp.value,
-				Time.fromSeconds(restTimeElapsed.value),
+				Time.fromSeconds(focusTimeElapsed.value),
 			)
+			// Only save rest activity if one was selected and there was rest time
+			if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
+				restActivitySelectionForm.value.saveActivityToHistory(
+					startTimestamp.value,
+					Time.fromSeconds(restTimeElapsed.value),
+				)
+			}
 		}
 	}
 
