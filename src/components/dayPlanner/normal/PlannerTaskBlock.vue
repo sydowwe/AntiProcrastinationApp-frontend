@@ -39,6 +39,16 @@
 						:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
 						@click.stop
 					/>
+<!--					<ChipWithIcon-->
+<!--						v-if="task.status !== PlannerTaskStatus.NotStarted"-->
+<!--						class="task-chip"-->
+<!--						size="x-small"-->
+<!--						variant="flat"-->
+<!--						:icon="getPlannerTaskStatusIcon(task.status)"-->
+<!--						:color="getPlannerTaskStatusColor(task.status)"-->
+<!--					>-->
+<!--						{{ task.status }}-->
+<!--					</ChipWithIcon>-->
 				</template>
 				<VCard>
 					<VList density="compact">
@@ -73,6 +83,7 @@
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
+	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import {
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,
@@ -88,6 +99,7 @@
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
 		changeStatus: [taskId: number, status: PlannerTaskStatus]
+		logTime: [taskId: number]
 	}>()
 
 	const { currentTime } = useCurrentTime()
@@ -97,6 +109,7 @@
 	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
 
 	const formattedTime = computed(() => (startTime: Time, endTime: Time) => {
+		// Default time formatting (can be overridden via slot)
 		return `${Time.getString(startTime)} - ${Time.getString(endTime)}`
 	})
 
@@ -141,6 +154,10 @@
 		z-index: 15;
 		pointer-events: auto;
 		cursor: pointer;
+	}
+
+	.task-checkbox.v-checkbox .v-selection-control {
+		min-height: 0 !important;
 	}
 
 	.task-time {

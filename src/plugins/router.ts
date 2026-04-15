@@ -29,6 +29,7 @@ import DesktopSettingsView from '@/views/tracker/DesktopSettingsView.vue'
 import ActivitySettingsView from '@/views/addActivityHistory/ActivitySettingsView.vue'
 import RoutineSettingsView from '@/views/todoList/RoutineSettingsView.vue'
 import DesktopActivityDashboard from '@/views/tracker/DesktopActivityDashboard.vue'
+import AndroidActivityDashboard from '@/views/tracker/AndroidActivityDashboard.vue'
 
 const router = createRouter({
 	history: createWebHistory('/'),
@@ -86,6 +87,11 @@ const router = createRouter({
 			path: '/activity-tracking/desktop',
 			name: 'desktopActivityDashboard',
 			component: DesktopActivityDashboard,
+		},
+		{
+			path: '/activity-tracking/android',
+			name: 'androidActivityDashboard',
+			component: AndroidActivityDashboard,
 		},
 		{
 			path: '/activity-tracking',

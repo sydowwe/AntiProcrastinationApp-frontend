@@ -16,7 +16,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public color: string | null = null,
 		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
 		public todoListItemId: number | null = null,
-		public date: Date | null = null,
+		public skipReason: string | null = null,
+		public actualStartTime: Time | null = null,
+		public actualEndTime: Time | null = null,
 	) {}
 
 	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {
@@ -36,6 +38,9 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 			entity.color,
 			entity.status,
 			entity.todoListItemId ?? null,
+			entity.skipReason,
+			entity.actualStartTime,
+			entity.actualEndTime,
 		)
 	}
 }
