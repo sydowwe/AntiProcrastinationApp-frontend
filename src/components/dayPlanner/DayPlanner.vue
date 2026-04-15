@@ -125,7 +125,7 @@
 
 <style scoped>
 	.calendar-grid {
-		background: rgb(var(--v-theme-neutral-50));
+		background: rgb(var(--v-theme-surface));
 		display: grid;
 		grid-template-columns: 80px 1fr;
 		gap: 0;
@@ -152,7 +152,7 @@
 	}
 
 	.calendar-grid::-webkit-scrollbar-track {
-		background: rgb(var(--v-theme-neutral-50));
+		background: rgb(var(--v-theme-surface));
 	}
 
 	.calendar-grid::-webkit-scrollbar-thumb {

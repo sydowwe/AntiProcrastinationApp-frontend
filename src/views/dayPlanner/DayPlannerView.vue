@@ -160,6 +160,7 @@
 	import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
+	import { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 
 	const { create: createActivityHistory } = useActivityHistoryCrud()
 
@@ -287,6 +288,89 @@
 		)
 		store.initializeTaskGridPositions()
 		await templatePreview()
+	}
+
+	watch(
+		() => store.clipboardPlacementSlot,
+		async (slotIndex) => {
+			if (slotIndex === null || !store.pendingClipboard) return
+			await handleClipboardPlace(store.pendingClipboard, slotIndex)
+		},
+	)
+
+	async function handleClipboardPlace(
+		clipboard: { tasks: PlannerTask[]; mode: 'cut' | 'duplicate' },
+		startSlot: number,
+	) {
+		store.pendingClipboard = null
+		store.clipboardPlacementSlot = null
+
+		const sorted = [...clipboard.tasks].sort(
+			(a, b) => a.startTime.getInMinutes - b.startTime.getInMinutes,
+		)
+
+		const placementTime = store.slotIndexToTime(startSlot - 1)
+		const offsetMinutes = placementTime.getInMinutes - sorted[0].startTime.getInMinutes
+
+		if (clipboard.mode === 'cut') {
+			const originalSpans = sorted.map(t => ({
+				id: t.id,
+				startTime: new Time(t.startTime.hours, t.startTime.minutes),
+				endTime: new Time(t.endTime.hours, t.endTime.minutes),
+			}))
+			for (const task of sorted) {
+				const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				task.startTime = newStart
+				task.endTime = newEnd
+				store.setGridPositionFromSpan(task)
+				task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
+				store.tasks.push(task)
+				await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+			}
+			undoStack.push({
+				description: 'Task moved',
+				date: new Date(store.viewedDate),
+				undo: async () => {
+					for (const orig of originalSpans) {
+						const task = store.tasks.find(t => t.id === orig.id) as PlannerTask | undefined
+						if (!task) continue
+						task.startTime = orig.startTime
+						task.endTime = orig.endTime
+						store.setGridPositionFromSpan(task)
+						await store.updateTaskSpan(orig.id, new TaskSpan(orig.startTime, orig.endTime))
+					}
+				},
+			})
+			showSuccessSnackbar('Task moved')
+		}
+
+		if (clipboard.mode === 'duplicate') {
+			const created: PlannerTask[] = []
+			for (const task of sorted) {
+				const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+				const request = PlannerTaskRequest.fromEntity(task)
+				request.calendarId = calendar.value?.id
+				request.startTime = newStart
+				request.endTime = newEnd
+				const response = await createWithResponse(request)
+				store.setGridPositionFromSpan(response)
+				response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
+				store.tasks.push(response)
+				created.push(response)
+			}
+			undoStack.push({
+				description: 'Tasks duplicated',
+				date: new Date(store.viewedDate),
+				undo: async () => {
+					const ids = created.map(t => t.id)
+					await batchDelete(ids)
+					store.tasks = store.tasks.filter(t => !ids.includes(t.id))
+				},
+			})
+			showSuccessSnackbar('Tasks duplicated')
+		}
 	}
 
 	async function templatePreview() {

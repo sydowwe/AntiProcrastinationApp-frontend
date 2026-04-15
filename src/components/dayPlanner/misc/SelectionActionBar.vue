@@ -3,41 +3,60 @@
 		:isShown="store.showActionBar"
 		@cancel="store.clearSelection"
 	>
-		<span class="text-textMuted d-flex align-center ga-1">
-			<!--				<VIcon icon="far fa-check-square"></VIcon>-->
+		<!-- Clipboard placement mode -->
+		<template v-if="store.pendingClipboard">
 			<span
-				class="font-weight-medium selection-count"
-				style="font-size: 1rem; line-height: 1.2rem"
+				class="text-textMuted d-flex align-center ga-1 font-weight-medium"
+				style="font-size: 0.9rem; line-height: 1.2rem"
 			>
-				{{ store.selectedTaskIds.size }} selected
+				{{ store.pendingClipboard.mode === 'cut' ? 'Cut' : 'Duplicating' }}:
+				{{ store.pendingClipboard.tasks.map(t => t.activity?.name ?? 'task').join(', ') }}
+				— click a slot to place
 			</span>
-		</span>
-		<VBtn
-			variant="outlined"
-			color="error"
-			@click="store.openDeleteDialog"
-		>
-			Delete
-		</VBtn>
-		<VBtn
-			v-if="store.selectedTaskIds.size === 1"
-			variant="outlined"
-			color="primaryOutline"
-			@click="store.openEditDialog"
-		>
-			Edit
-		</VBtn>
+		</template>
 
-		<VBtn
-			v-if="store.selectedTaskIds.size === 1"
-			variant="tonal"
-			color="secondaryOutline"
-			@click="store.openDuplicateDialog"
-		>
-			Duplicate
-		</VBtn>
+		<!-- Normal selection mode -->
+		<template v-else>
+			<span class="text-textMuted d-flex align-center ga-1">
+				<span
+					class="font-weight-medium selection-count"
+					style="font-size: 1rem; line-height: 1.2rem"
+				>
+					{{ store.selectedTaskIds.size }} selected
+				</span>
+			</span>
+			<VBtn
+				variant="outlined"
+				color="error"
+				@click="store.openDeleteDialog"
+			>
+				Delete
+			</VBtn>
+			<VBtn
+				v-if="store.selectedTaskIds.size === 1"
+				variant="outlined"
+				color="primaryOutline"
+				@click="store.openEditDialog"
+			>
+				Edit
+			</VBtn>
+			<VBtn
+				variant="tonal"
+				color="secondaryOutline"
+				@click="store.startCut"
+			>
+				Cut
+			</VBtn>
+			<VBtn
+				variant="tonal"
+				color="secondaryOutline"
+				@click="store.startDuplicate"
+			>
+				Duplicate
+			</VBtn>
 
-		<slot :store="store"></slot>
+			<slot :store="store"></slot>
+		</template>
 	</ActionBar>
 </template>
 
