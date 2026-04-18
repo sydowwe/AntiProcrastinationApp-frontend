@@ -23,10 +23,14 @@
 				</VIcon>
 				<span>{{ template.name }}</span>
 			</div>
-			<div class="d-flex align-center ga-2">
+			<div class="d-flex align-center ga-3">
+				<DayTypeChip
+					:dayType="template.suggestedForDayType"
+					isTonal
+					class="mr-1"
+				/>
 				<VSwitch
 					:modelValue="template.isActive"
-					class="ml-2"
 					hideDetails
 					density="compact"
 					color="primary"
@@ -34,15 +38,12 @@
 					@click.stop
 					@update:modelValue="emit('toggleActive')"
 				></VSwitch>
-				<DayTypeChip
-					:dayType="template.suggestedForDayType"
-					isTonal
-				/>
 				<VIconBtn
+					:class="{ 'pin-unpinned': !isPinned }"
 					icon="thumbtack"
-					variant="tonal"
+					variant="text"
 					size="small"
-					:color="isPinned ? 'primaryOutline' : 'base'"
+					:color="isPinned ? 'secondaryOutline' : 'base'"
 					@click.stop="emit('togglePin')"
 				/>
 			</div>
@@ -51,17 +52,22 @@
 		<VCardText class="flex-fill">
 			<MiniTimeline
 				v-if="tasks && tasks.length"
-				class="mb-4"
+				class="mb-3"
 				label="Tasks"
 				:tasks="tasks"
 				:startTime="template.defaultWakeUpTime"
 				:endTime="template.defaultBedTime"
 			/>
-
-			<div class="mb-4 d-flex justify-space-between align-center">
-				<div class="d-flex align-center ga-4">
-					<span>Used {{ template.usageCount }} times</span>
-					<span v-if="template.lastUsedAt">Last: {{ formatToDate(new Date(template.lastUsedAt)) }}</span>
+			<div class="mb-3 d-flex justify-space-between align-center">
+				<div class="text-caption mt-1 d-flex align-center ga-2">
+					<span v-if="template.defaultWakeUpTime">
+						<VIcon class="mb-1 mr-1">sun</VIcon>
+						{{ Time.getString(template.defaultWakeUpTime) }}
+					</span>
+					<span v-if="template.defaultBedTime">
+						<VIcon class="ml-2 mb-1">moon</VIcon>
+						{{ Time.getString(template.defaultBedTime) }}
+					</span>
 				</div>
 				<div
 					v-if="template.scheduledDays?.length"
@@ -89,6 +95,13 @@
 				</div>
 			</div>
 
+			<div class="mb-4 d-flex justify-space-between align-center">
+				<div class="d-flex align-center ga-4">
+					<span>Used {{ template.usageCount }} times</span>
+					<span v-if="template.lastUsedAt">Last: {{ formatToDate(new Date(template.lastUsedAt)) }}</span>
+				</div>
+			</div>
+
 			<div
 				v-if="template.tags.length > 0"
 				class="mb-3 template-meta"
@@ -111,46 +124,44 @@
 			</div>
 		</VCardText>
 
-		<VCardActions class="pa-4 d-flex align-center flex-wrap ga-2">
-			<span v-if="template.defaultWakeUpTime">
-				<VIcon class="mb-1 mr-1">sun</VIcon>
-				{{ Time.getString(template.defaultWakeUpTime) }}
-			</span>
-			<span v-if="template.defaultBedTime">
-				<VIcon class="ml-2 mb-1">moon</VIcon>
-				{{ Time.getString(template.defaultBedTime) }}
-			</span>
-			<VSpacer />
+		<VCardActions class="pa-4 d-flex align-center justify-space-between">
+			<div class="d-flex align-center justify-end ga-2">
+				<VBtn
+					variant="outlined"
+					prependIcon="trash"
+					size="small"
+					color="secondaryOutline"
+					@click.stop="emit('delete')"
+				>
+					Delete
+				</VBtn>
+				<VDivider vertical />
+				<VBtn
+					color="primaryOutline"
+					size="small"
+					variant="tonal"
+					prependIcon="pencil"
+					@click.stop="emit('edit')"
+				>
+					Edit Details
+				</VBtn>
+				<VBtn
+					variant="tonal"
+					color="secondaryOutline"
+					prependIcon="clone"
+					size="small"
+					@click.stop="emit('duplicate')"
+				>
+					Duplicate
+				</VBtn>
+			</div>
+
 			<VBtn
 				color="primary"
-				size="small"
 				prependIcon="play"
 				@click.stop="emit('applyToday')"
 			>
 				Use Today
-			</VBtn>
-			<VBtn
-				color="secondary"
-				size="small"
-				@click.stop="emit('duplicate')"
-			>
-				Duplicate
-			</VBtn>
-			<VBtn
-				color="primaryOutline"
-				size="small"
-				variant="tonal"
-				@click.stop="emit('edit')"
-			>
-				Edit Details
-			</VBtn>
-			<VBtn
-				variant="tonal"
-				size="small"
-				color="secondaryOutline"
-				@click.stop="emit('delete')"
-			>
-				Delete
 			</VBtn>
 		</VCardActions>
 	</VCard>
@@ -159,11 +170,11 @@
 <script setup lang="ts">
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
-	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue'
 	import { dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
+	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 
 	const { tasks } = defineProps<{
 		template: TaskPlannerDayTemplate
@@ -188,6 +199,11 @@
 </script>
 
 <style scoped>
+	.pin-unpinned:deep(.v-icon) {
+		transform: rotate(40deg);
+		transition: transform 0.2s ease;
+	}
+
 	.template-card {
 		cursor: pointer;
 		transition:

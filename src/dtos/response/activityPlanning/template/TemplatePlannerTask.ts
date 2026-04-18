@@ -21,6 +21,10 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 		public isDuringBackgroundTask: boolean = false,
 	) {}
 
+	get isTaskOneRow(): boolean {
+		return this.gridRowEnd - this.gridRowStart === 1
+	}
+
 	toRequest(): TemplatePlannerTaskRequest {
 		return TemplatePlannerTaskRequest.fromEntity(this)
 	}

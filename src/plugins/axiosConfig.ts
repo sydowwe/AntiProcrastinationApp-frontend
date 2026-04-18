@@ -40,7 +40,7 @@ function processQueue(error: unknown) {
 API.interceptors.response.use(
 	async response => {
 		const { hideFullScreenLoading, axiosSuccessLoadingHide } = useLoading()
-		if (axiosSuccessLoadingHide) {
+		if (axiosSuccessLoadingHide.value) {
 			hideFullScreenLoading()
 		}
 

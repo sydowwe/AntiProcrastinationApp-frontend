@@ -3,7 +3,8 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { useFetchFiltered } from '@/api/base/useFetchFiltered.ts'
 import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import type { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
-import type { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+import type { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
+import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -13,8 +14,8 @@ export function useTaskPlannerCrud() {
 	})
 	const { createWithResponse, create, update, patch, batchedToggle, deleteEntity, batchDelete } = useEntityCommand<
 		PlannerTask,
-		any,
-		any
+		PlannerTaskRequest,
+		PlannerTaskRequest
 	>({
 		responseClass: PlannerTask,
 		entityName: url,
@@ -24,8 +25,8 @@ export function useTaskPlannerCrud() {
 		return await batchedToggle('is-done', ids)
 	}
 
-	async function patchStatus(id: number, status: PlannerTaskStatus): Promise<void> {
-		return await patch(id, { status })
+	async function patchStatus(id: number, request: PatchPlannerTaskStatusRequest): Promise<void> {
+		return await patch(id, request, 'status')
 	}
 
 	const { fetchFiltered } = useFetchFiltered<PlannerTask, PlannerTaskFilter>(PlannerTask, url)

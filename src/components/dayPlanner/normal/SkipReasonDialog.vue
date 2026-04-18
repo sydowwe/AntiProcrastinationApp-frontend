@@ -21,11 +21,11 @@
 	import { ref, watch } from 'vue'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 
-	const model = defineModel<boolean>({ default: false })
-
 	const emit = defineEmits<{
 		skip: [reason: string]
 	}>()
+
+	const model = defineModel<boolean>({ default: false })
 
 	const reason = ref('')
 

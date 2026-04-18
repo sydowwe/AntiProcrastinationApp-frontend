@@ -170,14 +170,7 @@
 	const summaryCardsData = computed<SummaryCardsData[] | null>(() => {
 		if (!summaryCardsRaw.value) return null
 		return summaryCardsRaw.value.map(
-			d =>
-				new SummaryCardsData(
-					d.appLabel,
-					d.stat,
-					null,
-					d.stat?.seconds ?? 0,
-					d.isNew,
-				),
+			d => new SummaryCardsData(d.appLabel, d.stat, null, d.stat?.seconds ?? 0, d.isNew),
 		)
 	})
 
@@ -200,14 +193,7 @@
 		() =>
 			timelineRaw.value?.sessions.map(
 				s =>
-					new TimelineSessionDto(
-						s.id,
-						s.appLabel,
-						s.startedAt,
-						s.endedAt,
-						s.durationSeconds,
-						s.totalSeconds,
-					),
+					new TimelineSessionDto(s.id, s.appLabel, s.startedAt, s.endedAt, s.durationSeconds, s.totalSeconds),
 			) ?? [],
 	)
 

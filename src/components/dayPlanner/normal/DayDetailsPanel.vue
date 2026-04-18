@@ -313,11 +313,11 @@
 	import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
-	import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
+	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 
-	const { title, calendar } = defineProps<{
+	const { calendar } = defineProps<{
 		title: string
 		calendar?: Calendar
 	}>()

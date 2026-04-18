@@ -178,7 +178,11 @@
 	const toDoListItem = ref(new ToDoListItemRequest())
 	const oldItem = ref<TodoListItemEntity | null>(null)
 
-	interface DialogStep { name: string; order: number; note: string | null }
+	interface DialogStep {
+		name: string
+		order: number
+		note: string | null
+	}
 	const dialogSteps = ref<DialogStep[]>([])
 	const newStepName = ref('')
 

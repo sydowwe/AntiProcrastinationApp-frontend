@@ -11,8 +11,9 @@ export const dayTypeOptions = Object.values(DayType)
 export function getDayTypeColor(dayType: DayType, light: boolean = false): string {
 	switch (dayType) {
 		case DayType.Workday:
-		case DayType.Weekend:
 			return 'base'
+		case DayType.Weekend:
+			return light ? 'primaryOutline' : 'primary'
 		case DayType.Vacation:
 			return light ? 'secondaryOutline' : 'secondary'
 		case DayType.SickDay:

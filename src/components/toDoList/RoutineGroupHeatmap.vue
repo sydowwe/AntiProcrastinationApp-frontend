@@ -26,24 +26,20 @@
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 	import type { PeriodCompletion } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 
-	const CELL_SIZE = 13
-	const GAP = 4
-	const ROWS = 2
-
 	const { history, clickable = false } = defineProps<{
 		history: PeriodCompletion[]
 		lengthInDays: number
 		clickable?: boolean
 	}>()
-
 	const emit = defineEmits<{ click: [] }>()
+	const CELL_SIZE = 13
+	const GAP = 4
+	const ROWS = 2
 
 	const containerRef = ref<HTMLElement | null>(null)
 	const containerWidth = ref(0)
 
-	const columns = computed(() =>
-		Math.max(1, Math.floor((containerWidth.value + GAP) / (CELL_SIZE + GAP))),
-	)
+	const columns = computed(() => Math.max(1, Math.floor((containerWidth.value + GAP) / (CELL_SIZE + GAP))))
 
 	const displayed = computed(() => history.slice(-columns.value * ROWS))
 

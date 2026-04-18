@@ -66,7 +66,7 @@
 				:loading="loadingTodo"
 				noDataText="No tasks found"
 				required
-				:rules="[(v: unknown) => v != null || 'Please select a task']"
+				:rules="[(v: unknown) => v !== null || 'Please select a task']"
 			/>
 		</template>
 
@@ -90,7 +90,7 @@
 				:loading="loadingRoutine"
 				noDataText="No tasks found"
 				required
-				:rules="[(v: unknown) => v != null || 'Please select a task']"
+				:rules="[(v: unknown) => v !== null || 'Please select a task']"
 			/>
 		</template>
 	</div>

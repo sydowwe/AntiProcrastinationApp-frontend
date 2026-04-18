@@ -10,7 +10,7 @@
 			hideDetails
 		/>
 
-		<div class="d-flex flex-column ga-8 ga-xl-4 flex-xl-row">
+		<div class="mx-auto d-flex ga-8 ga-xl-4 flex-xl-row">
 			<TimePicker
 				v-model="formData.defaultWakeUpTime"
 				label="Wake Up"
@@ -60,8 +60,13 @@
 			clearable
 			closableChips
 		/>
-		<div class="d-flex ga-4 justify-space-between align-end">
+		<div
+			class="d-flex ga-4 align-end"
+			:class="{ 'flex-column': !isDialog }"
+		>
 			<IconPicker
+				class="flex-fill"
+				:class="{ 'w-100': !isDialog }"
 				v-model="formData.icon"
 				label="Icon"
 			/>
@@ -100,9 +105,10 @@
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
 	import type { VForm } from 'vuetify/components'
 
-	const props = defineProps<{
+	const { template, defaultValues } = defineProps<{
 		template: TaskPlannerDayTemplate | null
 		defaultValues?: TaskPlannerDayTemplateRequest | null
+		isDialog?: boolean
 	}>()
 
 	const form = ref<InstanceType<typeof VForm>>()
@@ -110,12 +116,12 @@
 
 	// Populate form when template prop changes
 	watch(
-		() => props.template,
+		() => template,
 		newTemplate => {
 			if (newTemplate) {
 				formData.value = TaskPlannerDayTemplateRequest.fromEntity(newTemplate)
-			} else if (props.defaultValues) {
-				formData.value = { ...props.defaultValues }
+			} else if (defaultValues) {
+				formData.value = { ...defaultValues }
 			} else {
 				formData.value = new TaskPlannerDayTemplateRequest()
 			}
@@ -125,9 +131,9 @@
 
 	// Also watch defaultValues for duplicate flow
 	watch(
-		() => props.defaultValues,
+		() => defaultValues,
 		newDefaults => {
-			if (newDefaults && !props.template) {
+			if (newDefaults && !template) {
 				formData.value = { ...newDefaults }
 			}
 		},

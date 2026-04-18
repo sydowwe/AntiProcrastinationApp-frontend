@@ -31,12 +31,7 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
-	const {
-		formDisabled,
-		initialActivityId,
-		initialDateTime,
-		initialLength,
-	} = defineProps<{
+	const { formDisabled, initialActivityId, initialDateTime, initialLength } = defineProps<{
 		formDisabled?: boolean
 		initialActivityId?: number
 		initialDateTime?: Date

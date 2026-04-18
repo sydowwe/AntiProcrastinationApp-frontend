@@ -19,11 +19,11 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
 
-	const model = defineModel<boolean>({ default: false })
-
 	const emit = defineEmits<{
 		reschedule: [date: Date]
 	}>()
+
+	const model = defineModel<boolean>({ default: false })
 
 	const tomorrow = new Date()
 	tomorrow.setDate(tomorrow.getDate() + 1)

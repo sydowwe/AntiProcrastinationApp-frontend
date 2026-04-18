@@ -5,11 +5,7 @@
 		class="tasks-column"
 		:style="{
 			gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)`,
-			cursor: store.pendingClipboard
-				? store.pendingClipboard.mode === 'cut'
-					? 'move'
-					: 'copy'
-				: undefined,
+			cursor: store.pendingClipboard ? (store.pendingClipboard.mode === 'cut' ? 'move' : 'copy') : undefined,
 		}"
 		@pointerdown="handlePointerDown"
 		@pointermove="handlePointerMove"
@@ -174,7 +170,6 @@
 			const slotIndex = getSlotIndexFromPosition(e.clientY)
 			dragStartSlot.value = slotIndex
 			dragOffset.value = slotIndex - (task.gridRowStart - 1)
-			console.log('aa')
 
 			return
 		}
@@ -319,11 +314,13 @@
 					// Update the task span
 					const capturedOriginal = { ...originalTaskState.value } as TTask
 					const capturedId = task.id
+					const moveDate = store.viewedDate ? new Date(store.viewedDate) : undefined
 					store
 						.updateTaskSpan(task.id, TaskSpan.fromTask(task))
 						.then(() => {
 							undoStack.push({
 								description: 'Task moved',
+								date: moveDate,
 								undo: async () => {
 									store.redrawTask(capturedId, capturedOriginal)
 									await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
@@ -394,11 +391,13 @@
 				// Handle actual resize - update task span
 				const capturedOriginal = { ...originalTaskState.value } as TTask
 				const capturedId = store.resizingTaskId!
+				const resizeDate = store.viewedDate ? new Date(store.viewedDate) : undefined
 				store
 					.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task!))
 					.then(() => {
 						undoStack.push({
 							description: 'Task resized',
+							date: resizeDate,
 							undo: async () => {
 								store.redrawTask(capturedId, capturedOriginal)
 								await store.updateTaskSpan(capturedId, TaskSpan.fromTask(capturedOriginal))
@@ -436,9 +435,8 @@
 
 		// Scroll to current time when viewing today
 		nextTick(() => {
-			if (!('viewedDate' in store)) return
-			const viewedDateValue = (store as any).viewedDate
-			const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
+			if (!store.viewedDate) return
+			const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
 			if (viewedDate.toDateString() !== new Date().toDateString()) return
 
 			const slotIndex = store.timeToSlotIndex(

@@ -10,6 +10,7 @@
 			class="py-2"
 			:template="template"
 			:defaultValues="defaultValues"
+			isDialog
 		/>
 	</MyDialog>
 </template>

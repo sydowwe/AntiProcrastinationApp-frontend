@@ -197,12 +197,11 @@
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 
-	const route = useRoute()
-	const router = useRouter()
-
 	const props = defineProps<{
 		id: string
 	}>()
+	const route = useRoute()
+	const router = useRouter()
 
 	const todoListId = Number(props.id)
 

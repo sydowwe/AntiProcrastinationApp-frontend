@@ -13,6 +13,8 @@ export interface IBaseDayPlannerStore<
 	timeSlotDuration: number
 	viewStartTime: Time
 	viewEndTime: Time
+	viewedDate?: Date
+	isTemplateInPreview?: boolean
 
 	// Time/Grid computed
 	timeSlots: Time[]

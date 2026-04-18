@@ -55,9 +55,11 @@
 	import { ref, watch } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 
-	const model = defineModel<boolean>({ default: false })
-
-	const { manualMode = false, initialStartTime, initialLength } = defineProps<{
+	const {
+		manualMode = false,
+		initialStartTime,
+		initialLength,
+	} = defineProps<{
 		manualMode?: boolean
 		initialStartTime: Time
 		initialLength: Time
@@ -67,6 +69,8 @@
 		confirm: [startTime: Time, length: Time]
 		selectTimer: [type: string]
 	}>()
+
+	const model = defineModel<boolean>({ default: false })
 
 	const timerOptions = [
 		{ label: 'Stopwatch', icon: 'fas fa-stopwatch', type: 'stopwatch' },
