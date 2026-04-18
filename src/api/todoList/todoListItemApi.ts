@@ -53,7 +53,7 @@ export function useTodoListItemCrud(todoListId: number) {
 			return Promise.resolve()
 		} catch (e: any) {
 			console.error(
-				`Error changing urgency of to-do list item ${request.movedItemId} between ${request.precedingItemId} and ${request.followingItemId}`,
+				`Error changing display order of to-do list item ${request.movedItemId} between ${request.precedingItemId} and ${request.followingItemId}`,
 				e,
 			)
 			return Promise.reject(e)

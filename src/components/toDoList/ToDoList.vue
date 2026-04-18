@@ -49,7 +49,7 @@
 			style="height: 0"
 		>
 			<div
-				v-for="(item, index) in items"
+				v-for="(item, index) in sortedItems"
 				:key="`${item.id}`"
 				class="todo-item-container"
 				:data-index="index"
@@ -73,7 +73,7 @@
 
 				<ToDoListItem
 					:toDoListItem="item"
-					:color="(item as any).taskPriority?.color ?? 'primary'"
+					:color="item instanceof TodoListItemEntity ? item.taskPriority.color : null"
 					:kind
 					:isInChangeOrderMode="isInChangeOrderMode"
 					:listId="listId"
@@ -171,6 +171,7 @@
 	import { useTodoListDragAndDrop } from '@/composables/useTodoListDragAndDrop.ts'
 	import { useAutoAnimate } from '@formkit/auto-animate/vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 
@@ -228,8 +229,8 @@
 			}
 
 			if (sourceIndex !== finalIndex && sourceIndex >= 0 && finalIndex >= 0 && finalIndex <= items.length) {
-				const precedingItem = finalIndex > 0 ? items[finalIndex] : null
-				const followingItem = finalIndex < items.length ? items[finalIndex + 1] : null
+				const precedingItem = finalIndex > 0 ? items[finalIndex - 1] : null
+				const followingItem = finalIndex < items.length ? items[finalIndex] : null
 
 				const request = new ChangeDisplayOrderRequest(
 					itemId,
@@ -273,6 +274,11 @@
 	// Setup drag and drop monitoring
 	onMounted(() => {
 		setupDragAndDrop()
+	})
+
+	const sortedItems = computed(() => {
+		if (isInChangeOrderMode) return items
+		return [...items.filter(item => !item.isDone), ...items.filter(item => item.isDone)]
 	})
 
 	const progress = computed(() => {

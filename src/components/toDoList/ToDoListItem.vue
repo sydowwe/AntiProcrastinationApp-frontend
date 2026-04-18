@@ -1,9 +1,6 @@
 <template>
 	<VListItem
 		ref="itemRef"
-		:active="!toDoListItem.isDone"
-		:color="color"
-		variant="tonal"
 		rounded
 		class="align-center listItem"
 		:class="{
@@ -12,6 +9,11 @@
 		}"
 		@click="itemClicked"
 	>
+		<div
+			v-if="accentColor"
+			class="priority-accent"
+			:style="{ background: accentColor }"
+		/>
 		<div class="w-100 d-flex align-center ga-2">
 			<div class="pr-1">
 				<VIcon
@@ -80,7 +82,7 @@
 			</div>
 
 			<div class="flex-fill">
-				<div class="d-flex ga-1">
+				<div class="d-flex ga-1 align-center">
 					<VTooltip
 						v-if="itemStreak && itemStreak > 0 && !isInChangeOrderMode"
 						location="top"
@@ -108,6 +110,15 @@
 							<span v-if="gracePeriodActive">| Grace period active!</span>
 						</span>
 					</VTooltip>
+					<ChipWithIcon
+						v-if="dueDateChip"
+						:vColor="dueDateChip.color"
+						variant="tonal"
+						size="x-small"
+						icon="calendar"
+					>
+						{{ dueDateChip.label }}
+					</ChipWithIcon>
 					<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
 				</div>
 				<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
@@ -176,7 +187,6 @@
 		</div>
 		<TodoListItemSteps
 			v-if="localSteps.length > 0"
-			:key="stepsKey"
 			class="mt-2"
 			:steps="localSteps"
 			:itemId="toDoListItem.id"
@@ -200,6 +210,9 @@
 	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useI18n } from 'vue-i18n'
+	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
+	import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+	import { useColor } from '@/utils/colorPalette.ts'
 	import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'
 	import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview'
@@ -209,10 +222,11 @@
 	import type { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 	import TodoListItemSteps from '@/components/toDoList/TodoListItemSteps.vue'
+	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 
 	const {
 		toDoListItem,
-		color,
+		color = null,
 		kind,
 		isInChangeOrderMode = false,
 		listId,
@@ -220,7 +234,7 @@
 		streakConfig,
 	} = defineProps<{
 		toDoListItem: TItem
-		color: string
+		color?: string | null
 		kind: ToDoListKind
 		isInChangeOrderMode?: boolean
 		listId: number
@@ -239,12 +253,14 @@
 	}>()
 
 	const i18n = useI18n()
+	const { getBgColor } = useColor()
+
+	const accentColor = computed(() => (color ? getBgColor(color) : undefined))
 
 	const isSelected = ref(false)
 	const isDone = ref(toDoListItem.isDone)
 	const doneCount = ref<number | null>(toDoListItem.doneCount)
 	const localSteps = ref<TodoListItemStepEntity[]>([...toDoListItem.steps])
-	const stepsKey = ref(0)
 
 	watch(
 		() => toDoListItem.isDone,
@@ -268,14 +284,16 @@
 	)
 
 	const dueDateChip = computed(() => {
-		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
+		const item = toDoListItem as unknown
+		if (!(item instanceof TodoListItemEntity)) return null
+		const { dueDate, dueTime } = item
 		if (!dueDate) return null
 		const today = new Date()
 		today.setHours(0, 0, 0, 0)
 		const due = new Date(dueDate + 'T00:00:00')
 		const tomorrow = new Date(today)
 		tomorrow.setDate(today.getDate() + 1)
-		const isOverdue = due < today && !toDoListItem.isDone
+		const overdue = due < today && !toDoListItem.isDone
 		const isToday = due.getTime() === today.getTime()
 		const isTomorrow = due.getTime() === tomorrow.getTime()
 		let label = isToday
@@ -283,22 +301,22 @@
 			: isTomorrow
 				? 'Tomorrow'
 				: due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-		const dueTime = (toDoListItem as any).dueTime as Time | null | undefined
 		if (dueTime) label += ' ' + Time.getString(dueTime)
-		return { label, color: isOverdue ? 'error' : isToday ? 'warning' : undefined }
+		return { label, color: overdue ? 'error' : isToday ? 'warning' : undefined, overdue }
 	})
 
-	const isOverdue = computed(() => {
-		const dueDate = (toDoListItem as any).dueDate as string | null | undefined
-		if (!dueDate || toDoListItem.isDone) return false
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
-		return new Date(dueDate + 'T00:00:00') < today
+	const itemStreak = computed(() => {
+		const item = toDoListItem as unknown
+		return item instanceof RoutineTodoListItemEntity ? item.streak : undefined
 	})
-
-	const itemStreak = computed(() => (toDoListItem as any).streak as number | undefined)
-	const itemBestStreak = computed(() => (toDoListItem as any).bestStreak as number | undefined)
-	const lastCompletedAt = computed(() => (toDoListItem as any).lastCompletedAt as string | null | undefined)
+	const itemBestStreak = computed(() => {
+		const item = toDoListItem as unknown
+		return item instanceof RoutineTodoListItemEntity ? item.bestStreak : undefined
+	})
+	const lastCompletedAt = computed(() => {
+		const item = toDoListItem as unknown
+		return item instanceof RoutineTodoListItemEntity ? item.lastCompletedAt : undefined
+	})
 
 	const gracePeriodActive = computed(() => {
 		if (!streakConfig || !lastCompletedAt.value || !itemStreak.value) return false
@@ -482,18 +500,28 @@
 
 <style scoped>
 	.listItem {
-		border: 2px solid black !important;
+		position: relative;
+		border: 1px solid rgba(128, 128, 128, 0.18);
 		border-radius: 5px;
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 		cursor: pointer;
-		backdrop-filter: blur(4px);
-		background: rgba(var(--v-theme-surface), 0.8);
+		background: rgba(255, 255, 255, 0.06);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 		padding: 10px 0;
+		overflow: hidden;
+	}
+
+	.priority-accent {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 6px;
 	}
 
 	.listItem:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
 	}
 
 	.listItem:has(.drag-handle) {
@@ -504,14 +532,9 @@
 		cursor: grabbing;
 	}
 
-	.listItem.is-overdue {
-		border-color: rgb(var(--v-theme-error)) !important;
-	}
-
 	.is-dragging {
 		opacity: 0.4;
 		z-index: 1;
-		border-color: rgba(var(--v-theme-primary), 0.5) !important;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 	}
 

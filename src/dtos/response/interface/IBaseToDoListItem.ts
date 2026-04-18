@@ -11,6 +11,5 @@ export interface IBaseToDoListItem {
 	note: string | null
 	suggestedTime: Time | null
 	steps: TodoListItemStepEntity[]
-
 	isMultipleCount: boolean
 }
