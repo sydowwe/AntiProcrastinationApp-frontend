@@ -23,7 +23,7 @@
 					</slot>
 				</VCardTitle>
 			</slot>
-			<VCardText class="py-0 overflow-y-auto">
+			<VCardText class="py-0 px-4 px-md-6 overflow-y-auto">
 				<slot>
 					<span class="px-6 py-4 text-center">
 						{{ text }}

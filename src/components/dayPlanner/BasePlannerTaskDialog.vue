@@ -2,7 +2,7 @@
 	<MyDialog
 		v-model="dialogVisible"
 		:title="title"
-		maxWidth="600px"
+		maxWidth="650px"
 		@confirmed="save"
 	>
 		<VForm
@@ -13,11 +13,19 @@
 			@submit="save"
 		>
 			<slot name="before-time" />
-			<TimeRangePicker
-				v-model:start="data.startTime"
-				v-model:end="data.endTime"
-				class="mx-auto pt-2 pb-6"
-			></TimeRangePicker>
+
+			<div class="d-flex justify-space-between my-3">
+				<TimeRangePicker
+					v-model:start="data.startTime"
+					v-model:end="data.endTime"
+				></TimeRangePicker>
+				<VSwitch
+					v-model="data.isBackground"
+					label="Is background"
+					color="primary"
+					hideDetails
+				/>
+			</div>
 
 			<VCard
 				class="pa-4"
@@ -43,6 +51,7 @@
 				:label="$t('planner.importance')"
 				:clearable="false"
 				:items="importanceOptions"
+				:prependInnerIcon="currentImportance?.icon"
 				required
 				:rules="[requiredRule]"
 			></VIdSelect>
@@ -50,7 +59,7 @@
 			<VTextField
 				v-model="data.location"
 				label="Location"
-				prependIcon="map-marker"
+				prependInnerIcon="location-dot"
 				clearable
 				hideDetails
 				class="pb-2"
@@ -63,26 +72,11 @@
 			<VTextarea
 				v-model="data.notes"
 				label="Notes"
+				prependInnerIcon="note-sticky"
 				rows="3"
 				autoGrow
 				hideDetails
 			></VTextarea>
-
-			<div class="d-flex justify-space-between mt-3">
-				<VSwitch
-					v-model="data.isBackground"
-					label="Is background"
-					color="primary"
-					hideDetails
-				/>
-
-				<VSwitch
-					v-model="data.isOptional"
-					label="Is optional"
-					color="primary"
-					hideDetails
-				/>
-			</div>
 		</VForm>
 	</MyDialog>
 </template>
@@ -126,6 +120,7 @@
 	const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>()
 
 	const importanceOptions = ref([] as TaskImportance[])
+	const currentImportance = computed(() => importanceOptions.value.find(i => i.id === data.value.importanceId))
 
 	const dialogVisible = computed({
 		get: () => props.store.dialog,
