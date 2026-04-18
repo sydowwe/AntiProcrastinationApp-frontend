@@ -2,7 +2,7 @@
 	<VChip
 		:size="size"
 		:variant="variant"
-		:color="colorComp"
+		:color="vColor ?? colorComp"
 	>
 		<VIcon
 			v-if="icon"
@@ -24,6 +24,7 @@
 	} = defineProps<{
 		icon?: string
 		color?: string
+		vColor?: string
 		size?: string
 		variant?: 'text' | 'flat' | 'elevated' | 'outlined' | 'plain' | 'tonal'
 	}>()

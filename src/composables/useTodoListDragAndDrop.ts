@@ -40,7 +40,6 @@ export function useTodoListDragAndDrop<TEntity extends IBaseToDoListItem>(
 
 	const dragState = reactive({
 		draggedIndex: null as number | null,
-		isDraggedOver: false,
 		isEmptyZoneDraggedOver: false,
 		isEmptyZoneInvalidDrop: false,
 	})
@@ -173,7 +172,6 @@ export function useTodoListDragAndDrop<TEntity extends IBaseToDoListItem>(
 				if (source.data.type === 'todo-item' && source.data.listId === listId.value) {
 					const index = items.value.findIndex(item => item.id === source.data.itemId)
 					dragState.draggedIndex = index
-					console.log('Set dragged index for list', listId.value, ':', index)
 				}
 			},
 			onDrop: ({ source, location }: { source: any; location: any }) => {
@@ -257,8 +255,6 @@ export function useTodoListDragAndDrop<TEntity extends IBaseToDoListItem>(
 	function setupDragAndDrop() {
 		if (!isInChangeOrderMode.value) return
 
-		console.log('Setting up drag and drop for list:', listId.value)
-
 		setupMonitor()
 		setupDropZones()
 
@@ -289,7 +285,6 @@ export function useTodoListDragAndDrop<TEntity extends IBaseToDoListItem>(
 
 			// Reset drag state
 			dragState.draggedIndex = null
-			dragState.isDraggedOver = false
 			dragState.isEmptyZoneDraggedOver = false
 			dragState.isEmptyZoneInvalidDrop = false
 
