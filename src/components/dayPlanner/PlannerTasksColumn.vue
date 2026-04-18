@@ -3,12 +3,29 @@
 	<div
 		ref="tasksColumnRef"
 		class="tasks-column"
+		:class="{
+			'clipboard-mode': store.pendingClipboard !== null,
+			'resizing-mode': store.isResizingAny,
+		}"
 		:style="{
 			gridTemplateRows: `repeat(${store.totalGridRows}, ${SLOT_HEIGHT}px)`,
-			cursor: store.pendingClipboard ? (store.pendingClipboard.mode === 'cut' ? 'move' : 'copy') : undefined,
+			cursor: store.isResizingAny
+				? 'ns-resize'
+				: store.isDraggingAny
+					? store.dragConflict
+						? 'not-allowed'
+						: 'grabbing'
+					: store.pendingClipboard
+						? store.clipboardConflict
+							? 'not-allowed'
+							: store.pendingClipboard.mode === 'cut'
+								? 'move'
+								: 'copy'
+						: undefined,
 		}"
 		@pointerdown="handlePointerDown"
 		@pointermove="handlePointerMove"
+		@pointerleave="removePreviewTasksFromGrid()"
 	>
 		<!-- Time Slots with hover effect -->
 		<div
@@ -57,7 +74,7 @@
 		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
 	"
 >
-	import { computed, inject, nextTick, onMounted, ref } from 'vue'
+	import { computed, inject, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 	import CreationPreview from './misc/CreationPreview.vue'
 	import { useAutoScroll } from '@/composables/general/useAutoScroll.ts'
 	import { useCurrentTimeIndicator } from '@/composables/dayPlanner/useCurrentTimeIndicator.ts'
@@ -83,6 +100,146 @@
 
 	// Local creation state for preview rendering
 	const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
+
+	// Clipboard preview task management
+	// Cut mode:  copies of clipboard tasks pushed into store.tasks (same IDs, originals safe in pendingClipboard)
+	// Duplicate: clones pushed with -task.id so originals stay visible at their positions
+	const previewTaskIds = ref<Set<number>>(new Set())
+
+	function addPreviewTasksToGrid(): void {
+		if (!store.pendingClipboard || previewTaskIds.value.size > 0) return
+		const { tasks: clipTasks, mode } = store.pendingClipboard
+		const ids = new Set<number>()
+		for (const t of clipTasks) {
+			const previewId = mode === 'cut' ? t.id : -t.id
+			// Start hidden (isOutOfView) so there is no flash before the first redrawTask
+			const copy = { ...t, id: previewId, gridRowStart: 1, gridRowEnd: 1 } as TTask
+			store.tasks.push(copy)
+			ids.add(previewId)
+		}
+		previewTaskIds.value = ids
+		store.clipboardPreviewTaskIds = new Set(ids)
+	}
+
+	function removePreviewTasksFromGrid(): void {
+		if (previewTaskIds.value.size === 0) return
+		store.tasks = store.tasks.filter(t => !previewTaskIds.value.has(t.id))
+		previewTaskIds.value = new Set()
+		store.clipboardPreviewTaskIds = new Set()
+		store.clipboardConflict = false
+	}
+
+	watch(
+		() => store.pendingClipboard,
+		val => {
+			if (!val) removePreviewTasksFromGrid()
+		},
+	)
+
+	// Arrow-key move — immediate redraw + debounced API patch
+	let arrowDebounceTimer: ReturnType<typeof setTimeout> | null = null
+	let arrowOriginals: TTask[] | null = null
+
+	function handleKeyDown(e: KeyboardEvent): void {
+		const target = e.target as HTMLElement
+		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+		if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+			e.preventDefault()
+			undoStack.undo()
+			return
+		}
+
+		if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && store.selectedTaskIds.size > 0) {
+			e.preventDefault()
+			const delta = e.key === 'ArrowUp' ? -1 : 1
+			const selectedIds = store.selectedTaskIds
+			const selectedTasks = store.tasks.filter(t => selectedIds.has(t.id) && !t.isBackground)
+			if (selectedTasks.length === 0) return
+
+			// Stop only at grid bounds — conflicts are allowed visually
+			for (const task of selectedTasks) {
+				const newStart = task.gridRowStart + delta
+				const newEnd = task.gridRowEnd + delta
+				if (newStart < 1 || newEnd > store.totalGridRows + 1) return
+			}
+
+			// Detect conflict (for indicator only)
+			let hasConflict = false
+			for (const task of selectedTasks) {
+				const newStart = task.gridRowStart + delta
+				const newEnd = task.gridRowEnd + delta
+				if (
+					store.tasks.some(t => {
+						if (selectedIds.has(t.id) || t.isBackground) return false
+						return !(newEnd <= t.gridRowStart || newStart >= t.gridRowEnd)
+					})
+				) {
+					hasConflict = true
+					break
+				}
+			}
+
+			// Capture originals on first press of a key-hold sequence
+			if (!arrowOriginals) arrowOriginals = selectedTasks.map(t => ({ ...t }) as TTask)
+
+			// Always redraw — show conflict state without blocking movement
+			store.arrowMoveConflict = hasConflict
+			for (const task of selectedTasks) {
+				const newStart = task.gridRowStart + delta
+				const newEnd = task.gridRowEnd + delta
+				store.redrawTask(task.id, {
+					startTime: store.slotIndexToTime(newStart - 1),
+					endTime: store.slotIndexToTime(newEnd - 1),
+					gridRowStart: newStart,
+					gridRowEnd: newEnd,
+				} as Partial<TTask>)
+			}
+
+			// Debounce: save when valid, leave as-is (still red) when conflicted
+			if (arrowDebounceTimer !== null) clearTimeout(arrowDebounceTimer)
+			arrowDebounceTimer = setTimeout(() => {
+				arrowDebounceTimer = null
+
+				// Still in conflict — stay drawn there, just don't patch
+				if (store.arrowMoveConflict) return
+
+				const originals = arrowOriginals!
+				arrowOriginals = null
+
+				const moveDate = store.viewedDate ? new Date(store.viewedDate) : undefined
+				const movedTasks = store.tasks.filter(t => originals.some(o => o.id === t.id))
+				Promise.all(movedTasks.map(t => store.updateTaskSpan(t.id, TaskSpan.fromTask(t))))
+					.then(() => {
+						undoStack.push({
+							description: movedTasks.length > 1 ? 'Tasks moved' : 'Task moved',
+							date: moveDate,
+							undo: async () => {
+								for (const orig of originals) {
+									store.redrawTask(orig.id, orig)
+									await store.updateTaskSpan(orig.id, TaskSpan.fromTask(orig))
+								}
+							},
+						})
+					})
+					.catch(() => {
+						for (const orig of originals) store.redrawTask(orig.id, orig)
+					})
+			}, 400)
+			return
+		}
+
+		if (e.key === 'Escape' && store.pendingClipboard !== null) {
+			e.preventDefault()
+			removePreviewTasksFromGrid()
+			store.clearSelection()
+			return
+		}
+
+		if ((e.key === 'n' || e.key === 'N') && store.canCreate) {
+			store.openCreateDialog()
+		}
+	}
 
 	// Drag state (local to TasksColumn - not needed in TaskBlock)
 	const originalTaskState = ref<TTask | null>(null)
@@ -147,6 +304,17 @@
 	function handlePointerDown(e: PointerEvent): void {
 		const target = e.target as HTMLElement
 
+		// Clipboard placement — must be first so clicking preview tasks also places
+		if (store.pendingClipboard !== null) {
+			if (target.closest('.resize-handle')) return
+			if (store.clipboardConflict) return
+			removePreviewTasksFromGrid()
+			const slotIndex = getSlotIndexFromPosition(e.clientY)
+			store.clipboardPlacementSlot = slotIndex + 1
+			e.preventDefault()
+			return
+		}
+
 		// Check if clicking on a resize handle (handled by TaskBlock)
 		if (target.closest('.resize-handle')) return
 
@@ -178,14 +346,6 @@
 		if (target.closest('.task-block')) return
 		if (target.closest('.current-time-indicator')) return
 
-		// Clipboard placement mode: clicking a slot places the clipboard tasks
-		if (store.pendingClipboard !== null) {
-			const slotIndex = getSlotIndexFromPosition(e.clientY)
-			store.clipboardPlacementSlot = slotIndex + 1
-			e.preventDefault()
-			return
-		}
-
 		if (!store.canCreate) return
 
 		const slotIndex = getSlotIndexFromPosition(e.clientY)
@@ -195,6 +355,44 @@
 	}
 
 	function handlePointerMove(e: PointerEvent): void {
+		// Clipboard hover: show real tasks following the cursor
+		if (store.pendingClipboard !== null) {
+			if (previewTaskIds.value.size === 0) addPreviewTasksToGrid()
+
+			const hoverRow = getSlotIndexFromPosition(e.clientY) + 1
+			const { tasks: clipTasks, mode } = store.pendingClipboard
+			const sorted = [...clipTasks].sort((a, b) => a.startTime.getInMinutes - b.startTime.getInMinutes)
+			const previewIds = previewTaskIds.value
+			let anyConflict = false
+
+			for (const task of sorted) {
+				const previewId = mode === 'cut' ? task.id : -task.id
+				const rowOffset = task.gridRowStart - sorted[0]!.gridRowStart
+				const duration = task.gridRowEnd - task.gridRowStart
+				const newStartRow = hoverRow + rowOffset
+				const newEndRow = newStartRow + duration
+
+				const outOfBounds = newStartRow < 1 || newEndRow > store.totalGridRows + 1
+				const hasConflict =
+					outOfBounds ||
+					store.tasks.some(t => {
+						if (previewIds.has(t.id) || t.isBackground) return false
+						return !(newEndRow <= t.gridRowStart || newStartRow >= t.gridRowEnd)
+					})
+				if (hasConflict) anyConflict = true
+
+				store.redrawTask(previewId, {
+					gridRowStart: Math.max(1, newStartRow),
+					gridRowEnd: Math.max(2, newEndRow),
+					startTime: store.slotIndexToTime(Math.max(0, newStartRow - 1)),
+					endTime: store.slotIndexToTime(Math.max(1, newEndRow - 1)),
+				} as Partial<TTask>)
+			}
+
+			store.clipboardConflict = anyConflict
+			return
+		}
+
 		// Check if we've moved beyond threshold
 		if (pointerStartPos.value && !hasMovedBeyondThreshold.value) {
 			const dx = e.clientX - pointerStartPos.value.x
@@ -432,6 +630,7 @@
 
 	onMounted(() => {
 		document.addEventListener('pointerup', handlePointerUp)
+		document.addEventListener('keydown', handleKeyDown)
 
 		// Scroll to current time when viewing today
 		nextTick(() => {
@@ -449,6 +648,13 @@
 				grid.scrollTop = Math.max(0, slotIndex * SLOT_HEIGHT - grid.clientHeight / 3)
 			}
 		})
+	})
+
+	onUnmounted(() => {
+		document.removeEventListener('pointerup', handlePointerUp)
+		document.removeEventListener('keydown', handleKeyDown)
+		if (arrowDebounceTimer !== null) clearTimeout(arrowDebounceTimer)
+		undoStack.clear()
 	})
 </script>
 
@@ -496,5 +702,10 @@
 		z-index: 20;
 		pointer-events: none;
 		box-shadow: 0 2px 8px rgba(var(--v-theme-secondary), 0.5);
+	}
+
+	.tasks-column.clipboard-mode *,
+	.tasks-column.resizing-mode * {
+		cursor: inherit !important;
 	}
 </style>

@@ -34,7 +34,7 @@
 			rows="2"
 			hideDetails
 		/>
-		<div class="d-flex ga-4">
+		<div class="d-flex flex-column flex-md-row ga-4">
 			<VSelect
 				v-model="formData.suggestedForDayType"
 				:items="dayTypeOptions"
@@ -61,8 +61,8 @@
 			closableChips
 		/>
 		<div
-			class="d-flex ga-4 align-end"
-			:class="{ 'flex-column': !isDialog }"
+			class="d-flex ga-4 flex-column flex-md-row align-center align-md-end"
+			:class="{ 'flex-column align-center': !isDialog }"
 		>
 			<IconPicker
 				class="flex-fill"

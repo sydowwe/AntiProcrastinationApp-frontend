@@ -4,7 +4,7 @@
 		elevation="0"
 	>
 		<!-- Header Section -->
-		<div class="d-flex align-center justify-space-between mb-4">
+		<div class="d-flex align-center justify-space-between mb-2">
 			<h3 class="text-subtitle-1 font-weight-bold ma-0">Day Details</h3>
 			<VBtn
 				variant="outlined"
@@ -20,74 +20,66 @@
 			</VBtn>
 		</div>
 
+		<!-- Day Info Section -->
 		<div
-			v-if="calendar"
-			class="d-flex align-center ga-2 mb-4"
+			v-if="calendar?.weather || calendar?.label || calendar?.notes || calendar?.holidayName"
+			class="d-flex flex-column ga-4"
 		>
-			<DayTypeChip
-				:dayType="calendar.dayType"
-				isTonal
-			/>
-			<span
-				v-if="calendar.label"
-				class="mt-1 d-flex align-start"
+			<div class="d-flex ga-2 align-center">
+				<VIcon icon="tag"></VIcon>
+				<h2 v-if="calendar?.label">{{ calendar.label }}</h2>
+			</div>
+
+			<div
+				v-if="calendar"
+				class="d-flex align-center ga-2"
 			>
-				<VIcon
-					size="16"
-					icon="location-dot"
-					style="margin-right: 2px"
-				></VIcon>
-				<span class="text-body-2 text-medium-emphasis font-italic">
-					{{ calendar.label }}
+				<DayTypeChip
+					:dayType="calendar.dayType"
+					isTonal
+				/>
+				<span
+					v-if="calendar.location"
+					class="mt-1 d-flex align-start"
+				>
+					<VIcon
+						size="16"
+						icon="location-dot"
+						style="margin-right: 2px"
+					></VIcon>
+					<span class="text-body-2 text-medium-emphasis font-italic">
+						{{ calendar.location }}
+					</span>
 				</span>
-			</span>
+			</div>
+
+			<SubtleCard
+				v-if="calendar?.holidayName"
+				title="Holiday name"
+				color="error"
+				:text="calendar.holidayName"
+				icon="gift"
+			></SubtleCard>
+
+			<SubtleCard
+				v-if="calendar?.weather"
+				title="Weather"
+				color="info"
+				:text="calendar.weather"
+				icon="cloud-sun"
+			></SubtleCard>
+
+			<SubtleCard
+				v-if="calendar?.notes"
+				title="Notes"
+				color="warning"
+				:text="calendar.notes"
+				icon="note-sticky"
+			></SubtleCard>
 		</div>
 
-		<!-- Overdue Tasks Banner -->
-		<VAlert
-			v-if="overdueTasks.length && showOverdueBanner"
-			v-model="showOverdueBanner"
-			density="compact"
-			color="warning"
-			variant="tonal"
-			closable
-			class="mb-4"
-		>
-			<p class="text-caption font-weight-medium mb-2">Not completed yesterday:</p>
-			<div class="d-flex flex-wrap ga-2 mb-2">
-				<VChip
-					v-for="t in overdueTasks"
-					:key="t.id"
-					size="small"
-					color="warning"
-					variant="tonal"
-					style="cursor: pointer"
-					@click="copyOverdueTask(t)"
-				>
-					{{ t.activity.name }}
-				</VChip>
-			</div>
-			<div class="d-flex align-center ga-2">
-				<VSelect
-					v-model="overdueConflictResolution"
-					:items="overdueConflictResolutionOptions"
-					density="compact"
-					hideDetails
-					style="min-width: 150px; max-width: 150px"
-				/>
-				<VBtn
-					size="small"
-					variant="tonal"
-					color="warning"
-					@click="copyOverdueTasks"
-				>
-					Copy all
-				</VBtn>
-			</div>
-		</VAlert>
-
 		<VDivider
-			class="mb-5"
+			class="my-5"
 			opacity="0.3"
 		/>
 
@@ -254,46 +246,46 @@
 
 		<VDivider
 			class="mb-5"
-			opacity="0.1"
+			opacity="0.3"
 		/>
-		<!-- Day Info Section -->
-		<div
-			v-if="calendar?.weather || calendar?.label || calendar?.notes || calendar?.holidayName"
-			class="d-flex flex-column ga-4"
+
+		<!-- Overdue Tasks Banner -->
+		<SubtleCard
+			v-if="overdueTasks.length && showOverdueBanner"
+			color="error"
+			title="Not completed yesterday:"
+			closable
+			@close="showOverdueBanner = false"
+			class="mb-4"
 		>
-			<div class="d-flex align-center ga-2">
-				<VIcon
-					icon="circle-info"
-					size="16"
-					class="text-medium-emphasis"
-				/>
-				<span class="section-label">Day Info</span>
+			<div class="d-flex flex-wrap ga-2 mb-2">
+				<VChip
+					v-for="t in overdueTasks"
+					:key="t.id"
+					size="small"
+					rounded="sm"
+					style="cursor: pointer"
+					@click="copyOverdueTask(t)"
+				>
+					{{ t.activity.name }}
+				</VChip>
 			</div>
-
-			<SubtleCard
-				v-if="calendar?.holidayName"
-				title="Holiday name"
-				color="error"
-				:text="calendar.holidayName"
-				icon="gift"
-			></SubtleCard>
-
-			<SubtleCard
-				v-if="calendar?.weather"
-				title="Weather"
-				color="info"
-				:text="calendar.weather"
-				icon="cloud-sun"
-			></SubtleCard>
-
-			<SubtleCard
-				v-if="calendar?.notes"
-				title="Notes"
-				color="warning"
-				:text="calendar.notes"
-				icon="note-sticky"
-			></SubtleCard>
-		</div>
+			<div class="d-flex align-center ga-2">
+				<VSelect
+					v-model="overdueConflictResolution"
+					:items="overdueConflictResolutionOptions"
+					density="compact"
+					hideDetails
+					style="min-width: 150px; max-width: 150px"
+				/>
+				<VBtn
+					variant="tonal"
+					@click="copyOverdueTasks"
+				>
+					Copy all
+				</VBtn>
+			</div>
+		</SubtleCard>
 	</VCard>
 </template>
 
@@ -367,7 +359,10 @@
 				const prevTasks = await fetchFiltered(
 					new PlannerTaskFilter(prevCalendar.id, prevCalendar.wakeUpTime, prevCalendar.bedTime),
 				)
-				overdueTasks.value = prevTasks.filter(t => !t.isDone && !t.isBackground)
+				const planActivityIds = new Set(store.tasks.map(t => t.activity.id))
+				overdueTasks.value = prevTasks.filter(
+					t => !t.isDone && !t.isBackground && !planActivityIds.has(t.activity.id),
+				)
 			} catch {
 				overdueTasks.value = []
 			}

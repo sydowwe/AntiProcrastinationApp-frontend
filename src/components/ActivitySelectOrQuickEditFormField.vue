@@ -65,10 +65,7 @@
 
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import {
-		type QuickCreateActivityRoleName,
-		useQuickCreateActivity,
-	} from '@/composables/activity/quickCreateActivityComposition.ts'
+	import { type QuickCreateActivityRoleName, useQuickCreateActivity } from '@/composables/activity/quickCreateActivityComposition.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref } from 'vue'
@@ -142,7 +139,7 @@
 			showErrorSnackbar(i18n.t('activities.activityNotFound', { id: activityId }))
 			return
 		}
-		isEdit.value = true
+		isEdit.value = false
 		isActivityFormHidden.value = true
 
 		quickEditMode.value = 'Overwrite'
@@ -156,7 +153,9 @@
 
 		activityFormFieldData.value = JSON.parse(JSON.stringify(activityBeforeEdit.value))
 
-		selectedActivityId.value = oldActivity.id
+		selectedActivityId.value = activityId
+
+		console.log(selectedActivityId.value)
 	}
 
 	function reset() {

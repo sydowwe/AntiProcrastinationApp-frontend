@@ -32,11 +32,14 @@ export function usePlannerStoreCore<
 	// Clipboard state (cut / duplicate-to-slot)
 	const pendingClipboard = ref<{ tasks: TTask[]; mode: 'cut' | 'duplicate' } | null>(null)
 	const clipboardPlacementSlot = ref<number | null>(null)
+	const clipboardConflict = ref(false)
+	const clipboardPreviewTaskIds = reactive<Set<number>>(new Set())
 
 	// Drag/Resize state
 	const draggingTaskId = ref<number | null>(null)
 	const resizingTaskId = ref<number | null>(null)
 	const dragConflict = ref(false)
+	const arrowMoveConflict = ref(false)
 
 	// Time slots computed
 	const timeSlots = computed<Time[]>(() => {
@@ -183,11 +186,14 @@ export function usePlannerStoreCore<
 		// Reset clipboard state
 		pendingClipboard.value = null
 		clipboardPlacementSlot.value = null
+		clipboardConflict.value = false
+		clipboardPreviewTaskIds.clear()
 
 		// Reset drag/resize state
 		draggingTaskId.value = null
 		resizingTaskId.value = null
 		dragConflict.value = false
+		arrowMoveConflict.value = false
 	}
 
 	return {
@@ -212,9 +218,12 @@ export function usePlannerStoreCore<
 		isDuplicating,
 		pendingClipboard,
 		clipboardPlacementSlot,
+		clipboardConflict,
+		clipboardPreviewTaskIds,
 		draggingTaskId,
 		resizingTaskId,
 		dragConflict,
+		arrowMoveConflict,
 
 		// Computed
 		selectedTasks,

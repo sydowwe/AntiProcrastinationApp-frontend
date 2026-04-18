@@ -109,10 +109,7 @@
 	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
-	import {
-		filterActivityFormSelectOptions,
-		getAllActivityFormSelectOptionsCombinations,
-	} from '@/composables/activity/ActivitySelectsComposition.ts'
+	import { filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations } from '@/composables/activity/ActivitySelectsComposition.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
@@ -166,6 +163,7 @@
 			if (isFilter) {
 				return formData.value!.activityId
 			} else {
+				console.log(selectedActivityId.value)
 				return selectedActivityId.value
 			}
 		},
@@ -187,8 +185,10 @@
 	watch(
 		formData,
 		newValue => {
-			filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!)
-			activityIdModel.value = newValue.activityId
+			if (isFilter) {
+				filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!)
+				activityIdModel.value = newValue.activityId
+			}
 		},
 		{ deep: true, immediate: true },
 	)

@@ -60,18 +60,14 @@
 		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
 	"
 >
-	import { computed, inject, onMounted, onUnmounted } from 'vue'
+	import { computed, inject } from 'vue'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
-	import { type IBasePlannerTask, TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
+	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
-	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-	import { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
-	import { isSameDay } from '@/utils/DateTimeHelper.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
 
 	const emit = defineEmits<{
 		delete: []
@@ -94,103 +90,6 @@
 		return `Are you sure you want to delete ${taskName}?`
 	})
 
-	const { undo, clear, push } = useUndoStack()
-
-	async function handleArrowMove(direction: 'up' | 'down') {
-		const selectedIds = store.selectedTaskIds
-		if (selectedIds.size === 0) return
-
-		const rowDelta = direction === 'up' ? -1 : 1
-		const tasks = store.tasks.filter(t => selectedIds.has(t.id) && !t.isBackground)
-		if (tasks.length === 0) return
-
-		// Pre-compute new grid rows and check validity for all tasks first
-		const moves = tasks.map(task => ({
-			task,
-			newStartRow: task.gridRowStart + rowDelta,
-			newEndRow: task.gridRowEnd + rowDelta,
-		}))
-
-		for (const { newStartRow, newEndRow, task } of moves) {
-			if (newStartRow < 1 || newEndRow > store.totalGridRows + 1) return
-			const hasConflict = store.tasks.some(other => {
-				if (selectedIds.has(other.id) || other.isBackground || other.id === task.id) return false
-				return !(newEndRow <= other.gridRowStart || newStartRow >= other.gridRowEnd)
-			})
-			if (hasConflict) return
-		}
-
-		// Capture originals for undo
-		const originals = tasks.map(t => ({ ...t }) as TTask)
-
-		// Apply moves locally
-		for (const { task, newStartRow, newEndRow } of moves) {
-			store.redrawTask(task.id, {
-				startTime: store.slotIndexToTime(newStartRow - 1),
-				endTime: store.slotIndexToTime(newEndRow - 1),
-				gridRowStart: newStartRow,
-				gridRowEnd: newEndRow,
-			} as Partial<TTask>)
-		}
-
-		// Persist and push undo
-		const undoDate = store.viewedDate ? new Date(store.viewedDate) : undefined
-		await Promise.all(
-			moves.map(({ task }) => {
-				const updated = store.tasks.find(t => t.id === task.id)!
-				return store.updateTaskSpan(task.id, TaskSpan.fromTask(updated))
-			}),
-		)
-			.then(() => {
-				push({
-					description: tasks.length > 1 ? 'Tasks moved' : 'Task moved',
-					date: undoDate,
-					undo: async () => {
-						for (const orig of originals) {
-							store.redrawTask(orig.id, orig)
-							await store.updateTaskSpan(orig.id, TaskSpan.fromTask(orig))
-						}
-					},
-				})
-			})
-			.catch(() => {
-				for (const orig of originals) {
-					store.redrawTask(orig.id, orig)
-				}
-			})
-	}
-
-	function handleKeyDown(e: KeyboardEvent) {
-		const target = e.target as HTMLElement
-		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
-		if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-			e.preventDefault()
-			undo()
-			return
-		}
-		if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && store.selectedTaskIds.size > 0) {
-			e.preventDefault()
-			handleArrowMove(e.key === 'ArrowUp' ? 'up' : 'down')
-			return
-		}
-		if (
-			(e.key === 'n' || e.key === 'N') &&
-			store.canCreate &&
-			store.viewedDate &&
-			isSameDay(store.viewedDate, new Date())
-		) {
-			const slotIndex = store.timeToSlotIndex(Time.fromDate(new Date()))
-			const durationSlots = Math.floor(60 / store.timeSlotDuration)
-			store.creationPreview = new CreationPreviewType(slotIndex + 1, slotIndex + 1, slotIndex + durationSlots)
-			store.openCreateDialog()
-		}
-	}
-
-	onMounted(() => document.addEventListener('keydown', handleKeyDown))
-	onUnmounted(() => {
-		document.removeEventListener('keydown', handleKeyDown)
-		clear()
-	})
 </script>
 
 <style scoped>

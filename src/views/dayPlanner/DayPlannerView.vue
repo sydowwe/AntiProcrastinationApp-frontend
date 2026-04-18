@@ -68,14 +68,6 @@
 					</VCard>
 				</VMenu>
 				<VBtn
-					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
-					color="warning"
-					variant="tonal"
-					@click="skipDialog = true"
-				>
-					Skip
-				</VBtn>
-				<VBtn
 					v-if="!store.isTemplateInPreview"
 					color="secondary"
 					@click="rescheduleDialog = true"
@@ -158,7 +150,7 @@
 	import { useClipboardHandling } from '@/composables/dayPlanner/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
 
-	const { showFullScreenLoading } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showSuccessSnackbar } = useSnackbar()
 	const undoStack = useUndoStack()
 	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
@@ -353,13 +345,17 @@
 			}
 			return
 		}
+		if (status === PlannerTaskStatus.Cancelled) {
+			skipDialog.value = true
+			return
+		}
 		await Promise.all(
 			selectedTaskIds.map(async taskId => {
 				const task = store.tasks.find(e => e.id === taskId)
 				if (!task) return
 				const previousStatus = task.status
 				task.status = status
-				if (status === PlannerTaskStatus.Cancelled || status === PlannerTaskStatus.NotStarted) {
+				if (status === PlannerTaskStatus.NotStarted) {
 					task.actualStartTime = null
 					task.actualEndTime = null
 				}
@@ -373,22 +369,27 @@
 	}
 
 	async function handleSkip(reason: string) {
-		const id = store.selectedTaskIds.values().next().value!
-		const task = store.tasks.find(t => t.id === id) as PlannerTask
-		await patch(id, {
-			startTime: task.startTime,
-			endTime: task.endTime,
-			status: PlannerTaskStatus.Cancelled,
-			skipReason: reason,
-		})
-		const idx = store.tasks.findIndex(t => t.id === id)
-		if (idx >= 0) {
-			store.tasks[idx]!.isDone = false
-			store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
-			;(store.tasks[idx] as PlannerTask).skipReason = reason
-		}
+		const ids = Array.from(store.selectedTaskIds)
+		await Promise.all(
+			ids.map(async id => {
+				const task = store.tasks.find(t => t.id === id) as PlannerTask
+				if (!task) return
+				await patch(id, {
+					startTime: task.startTime,
+					endTime: task.endTime,
+					status: PlannerTaskStatus.Cancelled,
+					skipReason: reason,
+				})
+				const idx = store.tasks.findIndex(t => t.id === id)
+				if (idx >= 0) {
+					store.tasks[idx]!.isDone = false
+					store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
+					;(store.tasks[idx] as PlannerTask).skipReason = reason
+				}
+			}),
+		)
 		store.clearSelection()
-		showSuccessSnackbar('Task skipped')
+		showSuccessSnackbar(ids.length > 1 ? 'Tasks skipped' : 'Task skipped')
 	}
 
 	async function handleReschedule(targetDate: Date) {
@@ -427,6 +428,7 @@
 	watch(
 		() => store.viewedDate,
 		async () => {
+			showFullScreenLoading()
 			store.resetStore()
 			const dateStr = usStringToUrlString(formatToUsString(new Date(store.viewedDate)))
 			const newCalendar = await fetchCalendarByDate(dateStr)
@@ -436,6 +438,7 @@
 			await loadTasks()
 			loadCompleteResolve?.()
 			loadCompleteResolve = null
+			hideFullScreenLoading()
 		},
 		{ deep: true },
 	)

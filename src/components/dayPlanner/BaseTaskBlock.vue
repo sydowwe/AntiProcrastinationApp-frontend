@@ -169,7 +169,12 @@
 	const isSelected = computed(() => store.selectedTaskIds.has(task.id))
 	const isDragging = computed(() => store.draggingTaskId === task.id)
 	const isResizing = computed(() => store.resizingTaskId === task.id)
-	const isConflict = computed(() => store.dragConflict && store.draggingTaskId === task.id)
+	const isConflict = computed(
+		() =>
+			(store.dragConflict && store.draggingTaskId === task.id) ||
+			(store.clipboardConflict && store.clipboardPreviewTaskIds.has(task.id)) ||
+			(store.arrowMoveConflict && store.selectedTaskIds.has(task.id)),
+	)
 	const isAnyTaskBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
 	const backgroundColorComp = computed(() => {
@@ -298,6 +303,7 @@
 		opacity: 0.7 !important;
 		background: rgba(244, 67, 54, 0.7) !important;
 		animation: pulse 0.5s ease-in-out infinite;
+		cursor: not-allowed !important;
 	}
 
 	@keyframes pulse {

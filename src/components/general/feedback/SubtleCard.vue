@@ -3,19 +3,34 @@
 		class="pa-3 rounded-lg"
 		:style="style"
 	>
-		<slot>
-			<div
-				class="w-100 d-flex align-center ga-2 mb-1"
-				:class="{ 'text-overline': shortTitle, 'justify-center': titleCentered }"
+		<div
+			v-if="title || closable"
+			class="w-100 d-flex align-center ga-2 mb-1"
+			:class="{ 'text-overline': shortTitle, 'justify-center': titleCentered }"
+		>
+			<VIcon
+				v-if="hasIcon"
+				:icon="icon"
+				size="16"
+				:color
+			/>
+			<span
+				v-if="title"
+				:style="`color: rgb(var(--v-theme-${color}))`"
 			>
-				<VIcon
-					v-if="hasIcon"
-					:icon="icon"
-					size="16"
-					:color
-				/>
-				<span :style="`color: rgb(var(--v-theme-${color}))`">{{ title }}</span>
-			</div>
+				{{ title }}
+			</span>
+			<VSpacer v-if="closable" />
+			<VIconBtn
+				v-if="closable"
+				icon="fas fa-xmark"
+				size="x-small"
+				variant="text"
+				:color
+				@click="emit('close')"
+			/>
+		</div>
+		<slot>
 			<p
 				class="text-body-2 text-white ma-0"
 				style="white-space: pre-wrap"
@@ -38,6 +53,7 @@
 		text,
 		hasIcon = false,
 		icon,
+		closable = false,
 	} = defineProps<{
 		color: string
 		borderOpacity?: 'low' | 'medium' | 'high'
@@ -47,7 +63,10 @@
 		text?: string
 		hasIcon?: boolean
 		icon?: string
+		closable?: boolean
 	}>()
+
+	const emit = defineEmits<{ close: [] }>()
 
 	const borderOpacityVal = computed(() => {
 		switch (borderOpacity) {
