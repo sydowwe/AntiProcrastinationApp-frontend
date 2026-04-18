@@ -9,7 +9,7 @@
 			:density="density"
 			:clearable="clearable"
 			readonly
-			style="cursor: pointer; min-width: 250px !important"
+			style="cursor: pointer; min-width: 220px !important"
 			@click:clear="clearValue"
 			@click="openDialog"
 		>

@@ -60,7 +60,7 @@
 
 		<VRow
 			class="w-100 mt-16"
-			v-if="!templates.length"
+			v-if="!templates.length && !fullScreenLoading"
 			justify="center"
 		>
 			<VCol
@@ -87,7 +87,7 @@
 			</VCol>
 		</VRow>
 
-		<template v-if="templates.length">
+		<template v-if="templates.length && !fullScreenLoading">
 			<!-- Pinned templates -->
 			<template v-if="pinnedTemplates.length">
 				<div class="ml-2 mb-3 text-h6">
@@ -167,7 +167,7 @@
 							'drag-over-after':
 								dragOverState?.templateId === template.id && dragOverState.position === 'after',
 						}"
-						class="template-drag-wrapper"
+						class="template-drag-wrapper h-100"
 					>
 						<TemplateCard
 							:template
@@ -292,7 +292,7 @@
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import { useTemplateCardDragAndDrop } from '@/composables/dayPlanner/useTemplateCardDragAndDrop.ts'
 
-	const { showFullScreenLoading } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()
 	const { mdAndUp } = useDisplay()
 	const router = useRouter()
 	const { fetchAll, create, update, deleteEntity } = useTaskPlannerDayTemplateTaskCrud()
@@ -411,6 +411,7 @@
 
 	async function loadTemplates() {
 		showFullScreenLoading()
+		axiosSuccessLoadingHide.value = false
 		templates.value = await fetchAll()
 		// Fetch tasks for mini-timeline previews
 		const taskResults = await Promise.all(
@@ -421,6 +422,7 @@
 			),
 		)
 		templateTasksMap.value = new Map(taskResults)
+		hideFullScreenLoading()
 	}
 
 	function openCreateDialog() {

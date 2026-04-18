@@ -26,7 +26,7 @@
 					class="mb-2"
 					hideDetails
 				/>
-				<TemplatePlannerPanel
+				<TemplateDayPlannerView
 					v-if="leftTemplateId !== null"
 					storeId="main"
 					:templateId="leftTemplateId"
@@ -55,7 +55,7 @@
 					class="mb-2"
 					hideDetails
 				/>
-				<TemplatePlannerPanel
+				<TemplateDayPlannerView
 					v-if="rightTemplateId !== null"
 					storeId="secondary"
 					:templateId="rightTemplateId"
@@ -76,7 +76,6 @@
 	import { onBeforeUnmount, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-	import TemplatePlannerPanel from '@/components/dayPlanner/template/TemplatePlannerPanel.vue'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import {
@@ -85,6 +84,7 @@
 	} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue'
 
 	const router = useRouter()
 	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()

@@ -39,66 +39,65 @@
 			@click.stop
 			@pointerdown="emit('resizeStart', { taskId: task.id, direction: 'top', pointerEvent: $event })"
 		/>
-		<div
-			id="task-content"
-			class="pl-5 pr-3 my-auto pointer-events-none d-flex justify-space-between align-center"
-		>
-			<div
-				id="task-content-main"
-				class="d-flex ga-2 align-center"
-			>
+		<div class="task-content pl-5 pr-3 pointer-events-none flex-fill d-flex align-center">
+			<div class="task-content-main w-100 d-flex justify-space-between align-center">
 				<div class="d-flex ga-4 align-center flex-wrap">
-					<div class="task-header">
-						<slot name="prepend"></slot>
+					<slot name="prepend"></slot>
+					<div
+						v-if="task.importance?.importance !== 777"
+						class="d-flex"
+						:class="{ 'flex-column align-center': !task.isTaskOneRow }"
+					>
+						<VIcon
+							:icon="task.importance?.icon ?? undefined"
+							:color="task.importance?.color"
+							:size="task.isTaskOneRow ? 20 : 24"
+						></VIcon>
+						<span class="text-caption">
+							{{ task.importance?.text }}
+						</span>
+					</div>
+					<div class="task-header-main">
+						<div class="task-title">{{ task.activity.name }}</div>
+
+						<!-- Slot for time display - different for template vs regular -->
+						<slot
+							name="time"
+							:task="task"
+						>
+							<div
+								v-if="!task.isTaskOneRow"
+								class="task-time"
+							>
+								{{ formattedTime }}
+							</div>
+						</slot>
+					</div>
+					<div
+						class="d-flex align-center ga-2"
+						:class="{ 'flex-column align-start': !task.isTaskOneRow }"
+					>
+						<ChipWithIcon
+							class="task-chip"
+							size="x-small"
+							variant="tonal"
+							:icon="task.activity.role.icon ?? undefined"
+							:color="task.activity.role.color ?? 'white'"
+						>
+							{{ task.activity.role.name }}
+						</ChipWithIcon>
 						<div
-							v-if="task.importance?.importance !== 777"
-							class="d-flex flex-column align-center"
+							v-if="task.activity.category"
+							class="task-category"
 						>
 							<VIcon
-								:icon="task.importance?.icon ?? undefined"
-								:color="task.importance?.color"
-								size="24"
+								v-if="task.activity.category.icon"
+								:icon="task.activity.category.icon ?? undefined"
 							></VIcon>
-							<span class="text-caption">
-								{{ task.importance?.text }}
-							</span>
-						</div>
-						<div class="task-header-main">
-							<div class="task-title">{{ task.activity.name }}</div>
-
-							<!-- Slot for time display - different for template vs regular -->
-							<slot
-								name="time"
-								:task="task"
-							>
-								<div class="task-time">{{ formattedTime }}</div>
-							</slot>
-						</div>
-						<div class="d-flex flex-column align-start ga-2">
-							<ChipWithIcon
-								v-if="task.activity.role"
-								class="task-chip"
-								size="x-small"
-								variant="tonal"
-								:icon="task.activity.role.icon ?? undefined"
-								:color="task.activity.role.color ?? 'white'"
-							>
-								{{ task.activity.role.name }}
-							</ChipWithIcon>
-							<div
-								v-if="task.activity.category"
-								class="task-category"
-							>
-								<VIcon
-									v-if="task.activity.category.icon"
-									:icon="task.activity.category.icon ?? undefined"
-								></VIcon>
-								{{ task.activity.category.name }}
-							</div>
+							{{ task.activity.category.name }}
 						</div>
 					</div>
 
-					<!-- Slot for additional chips/badges - different for template vs regular -->
 					<div class="d-flex ga-3 mt-1">
 						<div class="text-medium-emphasis d-flex ga-1 align-center text-body-2">
 							<VIcon
@@ -109,20 +108,22 @@
 							<span>{{ task.location }}</span>
 						</div>
 					</div>
+					<div class="pt-1">
+						<span
+							v-if="task.notes"
+							class="text-caption"
+						>
+							<VIcon
+								icon="far fa-note-sticky"
+								:size="task.isTaskOneRow ? 16 : 18"
+							></VIcon>
+							{{ task.notes }}
+						</span>
+					</div>
 				</div>
-				<div class="pt-1">
-					<span
-						v-if="task.notes"
-						class="text-caption"
-					>
-						<VIcon icon="far fa-note-sticky"></VIcon>
-						{{ task.notes }}
-					</span>
+				<div>
+					<slot name="checkbox"></slot>
 				</div>
-			</div>
-			<div>
-				`
-				<slot name="checkbox"></slot>
 			</div>
 		</div>
 
@@ -267,9 +268,15 @@
 		transition: all 0.2s ease;
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
+		overflow: clip;
 		z-index: 10;
 		user-select: none;
+	}
+
+	.task-content-main {
+		position: sticky;
+		top: 0;
+		bottom: 0;
 	}
 
 	.task-block:focus {
@@ -315,13 +322,6 @@
 
 	.task-block.past-task:hover {
 		filter: grayscale(20%) brightness(0.95);
-	}
-
-	.task-header {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		min-height: 0;
 	}
 
 	.task-header-main {

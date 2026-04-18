@@ -32,6 +32,10 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public isDuringBackgroundTask: boolean = false,
 	) {}
 
+	get isTaskOneRow(): boolean {
+		return this.gridRowEnd - this.gridRowStart === 1
+	}
+
 	toRequest(): PlannerTaskRequest {
 		return PlannerTaskRequest.fromEntity(this)
 	}

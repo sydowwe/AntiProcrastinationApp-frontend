@@ -232,4 +232,4 @@ app.use(vue3GoogleLogin, {})
 
 app.use(autoAnimatePlugin)
 
-app.mount('#app')
+router.isReady().then(() => app.mount('#app'))

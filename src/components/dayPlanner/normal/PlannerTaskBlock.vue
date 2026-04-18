@@ -9,13 +9,14 @@
 	>
 		<template #time>
 			<div
+				v-if="!task.isTaskOneRow"
 				class="task-time"
 				:class="{ 'text-decoration-line-through': task.actualStartTime && task.actualEndTime }"
 			>
 				{{ formattedTime(task.startTime, task.endTime) }}
 			</div>
 			<div
-				v-if="task.actualStartTime && task.actualEndTime"
+				v-if="!task.isTaskOneRow && task.actualStartTime && task.actualEndTime"
 				class="task-time"
 			>
 				{{ formattedTime(task.actualStartTime, task.actualEndTime) }}
@@ -26,40 +27,32 @@
 				v-if="task.id >= 0"
 				:disabled="store.isTemplateInPreview"
 				location="bottom start"
-				:closeOnContentClick="true"
+				closeOnContentClick
 			>
 				<template #activator="{ props: menuProps }">
-					<VIconBtn
+					<ChipWithIcon
 						v-bind="menuProps"
+						class="task-chip status-chip"
+						variant="flat"
+						:size="task.isTaskOneRow ? 'x-small' : 'default'"
 						:icon="getPlannerTaskStatusIcon(task.status)"
 						:color="getPlannerTaskStatusColor(task.status)"
-						size="small"
-						variant="text"
-						class="status-btn"
-						:style="task.importance?.importance !== 777 ? 'margin-right: -4px;' : ''"
+						@pointerdown.stop
 						@click.stop
-					/>
-					<!--					<ChipWithIcon-->
-					<!--						v-bind="menuProps"-->
-					<!--						class="task-chip status-chip"-->
-					<!--						variant="flat"-->
-					<!--						:icon="getPlannerTaskStatusIcon(task.status)"-->
-					<!--						:color="getPlannerTaskStatusColor(task.status)"-->
-					<!--						@click.stop-->
-					<!--					>-->
-					<!--						{{ t(`planner.status.${task.status}`) }}-->
-					<!--					</ChipWithIcon>-->
+					>
+						{{ t(`planner.status.${task.status}`) }}
+					</ChipWithIcon>
 				</template>
 				<VCard>
 					<VList density="compact">
 						<VListItem
 							v-for="option in statusOptions"
+							v-show="task.status !== option.value"
 							:key="option.value"
 							:value="option.value"
 							:prependIcon="getPlannerTaskStatusIcon(option)"
-							:title="t(`planner.status.${option}`)"
-							:active="task.status === option.value"
-							color="primary"
+							:title="option.title"
+							color="secondaryOutline"
 							@click="emit('changeStatus', task.id, option.value as PlannerTaskStatus)"
 						></VListItem>
 					</VList>
@@ -85,8 +78,6 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 
-	const { t } = useI18n()
-
 	const { task } = defineProps<{
 		task: PlannerTask
 	}>()
@@ -94,8 +85,9 @@
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
 		changeStatus: [taskId: number, status: PlannerTaskStatus]
-		logTime: [taskId: number]
 	}>()
+
+	const { t } = useI18n()
 
 	const { currentTime } = useCurrentTime()
 

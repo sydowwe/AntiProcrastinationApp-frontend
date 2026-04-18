@@ -26,7 +26,10 @@
 				showTodo
 				showRoutine
 				class="mb-3"
-				@selected="({ activityId, todoListItemId }) => onPickerSelected(activityId, todoListItemId, data as PlannerTaskRequest)"
+				@selected="
+					({ activityId, todoListItemId }) =>
+						onPickerSelected(activityId, todoListItemId, data as PlannerTaskRequest)
+				"
 			/>
 		</template>
 		<template #additional-fields="{ data }">

@@ -85,11 +85,11 @@ export function useEntityCommand<TResponse, TCreateRequest, TUpdateRequest>(
 		}
 	}
 
-	async function patch(id: number, entityData: Partial<TUpdateRequest>): Promise<void> {
+	async function patch(id: number, entityData: Partial<TUpdateRequest>, urlParam?: string): Promise<void> {
 		loading.value = true
 		error.value = null
 		try {
-			await API.patch(`${config.entityName}/${id}`, entityData)
+			await API.patch(`${config.entityName}/${id}${!urlParam ? '' : '/' + urlParam}`, entityData)
 
 			return Promise.resolve()
 		} catch (e: any) {

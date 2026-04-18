@@ -19,12 +19,10 @@
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import TimerView from '@/views/addActivityHistory/TimerView.vue'
 	import { ref } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
-
-	const model = defineModel<boolean>({ default: false })
 
 	const { activityId, activityName, plannerTaskId } = defineProps<{
 		activityId: number
@@ -35,6 +33,8 @@
 	const emit = defineEmits<{
 		done: [startTimestamp: Date, length: Time]
 	}>()
+
+	const model = defineModel<boolean>({ default: false })
 
 	const { patchStatus } = useTaskPlannerCrud()
 	const isRunning = ref(false)

@@ -2,6 +2,7 @@
 	<MyPasswordInput
 		v-model="password"
 		:rules="passwordRulesLog"
+		:autofocus="autofocus"
 	></MyPasswordInput>
 </template>
 <script setup lang="ts">

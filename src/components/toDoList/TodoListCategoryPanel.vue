@@ -47,7 +47,10 @@
 
 		<VDivider class="my-2" />
 
-		<div class="cat-list pa-2" style="flex: 1; overflow-y: auto; min-height: 0">
+		<div
+			class="cat-list pa-2"
+			style="flex: 1; overflow-y: auto; min-height: 0"
+		>
 			<div
 				class="cat-item"
 				:class="{ 'cat-item--active': selectedCategoryId === null }"

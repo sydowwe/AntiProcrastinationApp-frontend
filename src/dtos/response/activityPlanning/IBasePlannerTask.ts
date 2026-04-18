@@ -19,6 +19,7 @@ export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	gridRowEnd: number
 	isDuringBackgroundTask: boolean
 
+	isTaskOneRow: boolean
 	toRequest(): TRequest
 }
 

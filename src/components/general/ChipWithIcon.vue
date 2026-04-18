@@ -17,8 +17,6 @@
 	import { useColor } from '@/utils/colorPalette.ts'
 	import { computed } from 'vue'
 
-	const { getBgColor, getTextColor } = useColor()
-
 	const {
 		color,
 		variant = 'tonal',
@@ -29,6 +27,8 @@
 		size?: string
 		variant?: 'text' | 'flat' | 'elevated' | 'outlined' | 'plain' | 'tonal'
 	}>()
+
+	const { getBgColor, getTextColor } = useColor()
 
 	const colorComp = computed(() =>
 		['tonal', 'outlined'].includes(variant) ? getTextColor(color) : getBgColor(color),
