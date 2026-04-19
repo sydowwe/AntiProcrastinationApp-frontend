@@ -5,7 +5,7 @@
 			class="h-100 d-flex flex-column"
 		>
 			<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
-				<VCardTitle class="pa-0">Distinct Process Entries</VCardTitle>
+				<VCardTitle class="pa-0">Distinct App Entries</VCardTitle>
 				<VBtnToggle
 					v-model="tableView"
 					mandatory
@@ -29,12 +29,12 @@
 						Mappings
 					</VBtn>
 				</VBtnToggle>
-				<DesktopEntriesFilterBar
+				<AndroidEntriesFilterBar
 					v-model="filter"
 					@filter="distinctEntriesTable?.load()"
 				/>
 			</div>
-			<VCardText class="pt-1 flex-fill d-flex flex-column ga-2">
+			<VCardText class="pt-1 d-flex flex-column ga-2">
 				<VAlert
 					v-if="!hintDismissed"
 					type="info"
@@ -46,7 +46,7 @@
 					<strong>Save</strong>. The filter becomes the rule — future entries matching it will be mapped automatically. To
 					edit an existing rule, open the <strong>Mappings</strong> tab and click edit.
 				</VAlert>
-				<DesktopDistinctEntriesTable
+				<AndroidDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"
 					ref="distinctEntriesTable"
 					v-model:mode="mode"
@@ -55,7 +55,7 @@
 					@clear="clear"
 					@save="saved"
 				/>
-				<DesktopMappingsTable
+				<AndroidMappingsTable
 					v-else-if="tableView === 'mappings'"
 					ref="mappingsTable"
 					@edit="edit"
@@ -68,7 +68,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 
-	const HINT_KEY = 'desktopSettingsHintDismissed'
+	const HINT_KEY = 'androidSettingsHintDismissed'
 	const hintDismissed = ref(localStorage.getItem(HINT_KEY) === 'true')
 
 	function dismissHint() {
@@ -76,28 +76,28 @@
 		localStorage.setItem(HINT_KEY, 'true')
 	}
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
-	import { TrackerDesktopMappingRequest } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts'
-	import { useTrackerDesktopMappingCrud } from '@/api/desktopActivityTrackingApi.ts'
+	import { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
+	import { TrackerAndroidMappingRequest } from '@/dtos/request/activityTracking/android/settings/TrackerAndroidMappingRequest.ts'
+	import { useTrackerAndroidMappingCrud } from '@/api/androidActivityTrackingApi.ts'
 	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
-	import type { TrackerDesktopMappingResponse } from '@/dtos/response/activityTracking/desktop/settings/TrackerDesktopMappingResponse.ts'
+	import type { TrackerAndroidMappingResponse } from '@/dtos/response/activityTracking/android/settings/TrackerAndroidMappingResponse.ts'
 	import router from '@/plugins/router.ts'
-	import DesktopEntriesFilterBar from '@/components/activityTracking/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
-	import DesktopDistinctEntriesTable from '@/components/activityTracking/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
-	import DesktopMappingsTable from '@/components/activityTracking/desktop/desktopSettings/DesktopMappingsTable.vue'
+	import AndroidEntriesFilterBar from '@/components/activityTracking/android/androidSettings/AndroidEntriesFilterBar.vue'
+	import AndroidDistinctEntriesTable from '@/components/activityTracking/android/androidSettings/AndroidDistinctEntriesTable.vue'
+	import AndroidMappingsTable from '@/components/activityTracking/android/androidSettings/AndroidMappingsTable.vue'
 
 	const { showErrorSnackbar } = useSnackbar()
-	const { create, update } = useTrackerDesktopMappingCrud()
+	const { create, update } = useTrackerAndroidMappingCrud()
 
 	const tableView = ref<'distinctEntries' | 'mappings'>('distinctEntries')
-	const filter = ref(new DesktopDistinctEntriesFilterRequest())
+	const filter = ref(new AndroidDistinctEntriesFilterRequest())
 	const formData = ref(new ActivityFormRequest())
 	const mode = ref<'toActivity' | 'toIgnored'>('toActivity')
 	const editedId = ref<number | null>(null)
-	const request = ref(new TrackerDesktopMappingRequest())
+	const request = ref(new TrackerAndroidMappingRequest())
 
-	const distinctEntriesTable = ref<InstanceType<typeof DesktopDistinctEntriesTable> | null>(null)
-	const mappingsTable = ref<InstanceType<typeof DesktopMappingsTable> | null>(null)
+	const distinctEntriesTable = ref<InstanceType<typeof AndroidDistinctEntriesTable> | null>(null)
+	const mappingsTable = ref<InstanceType<typeof AndroidMappingsTable> | null>(null)
 
 	onMounted(() => {
 		tableView.value = router.currentRoute.value.params.tableView as 'distinctEntries' | 'mappings'
@@ -111,15 +111,13 @@
 		{ deep: true },
 	)
 
-	function edit(item: TrackerDesktopMappingResponse) {
+	function edit(item: TrackerAndroidMappingResponse) {
 		editedId.value = item.id
-		request.value = new TrackerDesktopMappingRequest()
-		filter.value.processName = item.processName
-		filter.value.processNameMatchType = item.processNameMatchType
-		filter.value.productName = item.productName
-		filter.value.productNameMatchType = item.productNameMatchType
-		filter.value.windowTitle = item.windowTitle
-		filter.value.windowTitleMatchType = item.windowTitleMatchType
+		request.value = new TrackerAndroidMappingRequest()
+		filter.value.appLabel = item.appLabel ?? undefined
+		filter.value.appLabelMatchType = item.appLabelMatchType ?? filter.value.appLabelMatchType
+		filter.value.packageName = item.packageName ?? undefined
+		filter.value.packageNameMatchType = item.packageNameMatchType ?? filter.value.packageNameMatchType
 		if (item.activity) {
 			formData.value.activityId = item.activity.id
 			formData.value.roleId = item.activity.roleId
@@ -129,7 +127,7 @@
 			mode.value = 'toIgnored'
 		}
 		tableView.value = 'distinctEntries'
-		router.push({ name: 'desktopSettings', params: { tableView: 'distinctEntries' } })
+		router.push({ name: 'androidSettings', params: { tableView: 'distinctEntries' } })
 	}
 
 	async function saved() {
@@ -140,7 +138,7 @@
 			} else {
 				await create(request.value)
 			}
-			request.value = new TrackerDesktopMappingRequest()
+			request.value = new TrackerAndroidMappingRequest()
 		} catch {
 			showErrorSnackbar('Failed to save mapping')
 		}
@@ -148,9 +146,9 @@
 
 	function clear() {
 		editedId.value = null
-		filter.value = new DesktopDistinctEntriesFilterRequest()
+		filter.value = new AndroidDistinctEntriesFilterRequest()
 		mode.value = 'toActivity'
-		request.value = new TrackerDesktopMappingRequest()
+		request.value = new TrackerAndroidMappingRequest()
 		formData.value = new ActivityFormRequest()
 	}
 </script>

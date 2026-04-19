@@ -305,6 +305,12 @@
 					to: '/activity-tracking/android',
 					needsAdmin: false,
 				},
+				{
+					title: 'androidSettings',
+					icon: 'wrench',
+					to: '/activity-tracking/android/settings/distinctEntries',
+					needsAdmin: false,
+				},
 			],
 		},
 		{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings', needsAdmin: false },
