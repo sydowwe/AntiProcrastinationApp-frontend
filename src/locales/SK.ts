@@ -200,6 +200,7 @@ const SK = {
 		dayPlanner: `Plánovač dňa`,
 		templateDayPlanner: `Plánovač dňa - template`,
 		desktopSettings: `Nastavenia desktopu`,
+		androidSettings: `Nastavenia androidu`,
 		activitySettings: `Nastavenia aktivít`,
 	},
 	general: {

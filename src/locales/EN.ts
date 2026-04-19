@@ -201,6 +201,7 @@ const EN = {
 		dayPlanner: `Day planner`,
 		templateDayPlanner: `Day planner - template`,
 		desktopSettings: `Desktop settings`,
+		androidSettings: `Android settings`,
 		activitySettings: `Activity settings`,
 	},
 	general: {
