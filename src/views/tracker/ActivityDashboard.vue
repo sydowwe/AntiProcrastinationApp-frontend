@@ -30,13 +30,13 @@
 						value="stackedBars"
 						height="40px"
 					>
-						Stacked Bars
+						{{ $t('tracker.stackedBars') }}
 					</VBtn>
 					<VBtn
 						value="timeline"
 						height="40px"
 					>
-						Timeline
+						{{ $t('tracker.timeline') }}
 					</VBtn>
 				</VBtnToggle>
 			</div>

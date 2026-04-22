@@ -29,7 +29,7 @@
 	>
 		<!-- Time Slots with hover effect -->
 		<div
-			v-for="(slot, index) in store.timeSlots"
+			v-for="(_, index) in store.timeSlots"
 			:key="index"
 			class="task-slot"
 			:class="[{ hoverable: !localCreationPreview && !store.isDraggingAny }]"
@@ -74,7 +74,7 @@
 		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
 	"
 >
-	import { inject, nextTick, onMounted, ref } from 'vue'
+	import { inject, nextTick, onMounted, ref, watch } from 'vue'
 	import CreationPreview from './misc/CreationPreview.vue'
 	import { useCurrentTimeIndicator } from '@/composables/dayPlanner/useCurrentTimeIndicator.ts'
 	import { SLOT_HEIGHT } from '@/components/dayPlanner/DayPlannerTypes.ts'
@@ -102,23 +102,27 @@
 		})
 	usePlannerKeyboard(store, removePreviewTasksFromGrid)
 
-	onMounted(() => {
-		nextTick(() => {
-			if (!store.viewedDate) return
-			const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
-			if (viewedDate.toDateString() !== new Date().toDateString()) return
+	function scrollToNow(): void {
+		if (!store.viewedDate) return
+		const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
+		if (viewedDate.toDateString() !== new Date().toDateString()) return
 
-			const slotIndex = store.timeToSlotIndex(
-				new Time(currentTime.value.getHours(), currentTime.value.getMinutes()),
-			)
-			if (slotIndex < 0) return
+		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
+		if (slotIndex < 0) return
 
-			const grid = tasksColumnRef.value?.parentElement as HTMLElement
-			if (grid) {
-				grid.scrollTop = Math.max(0, slotIndex * SLOT_HEIGHT - grid.clientHeight / 3)
-			}
-		})
-	})
+		const grid = tasksColumnRef.value?.parentElement as HTMLElement
+		if (!grid) return
+
+		const nowPixel = slotIndex * SLOT_HEIGHT
+		const isNowVisible = nowPixel >= grid.scrollTop && nowPixel <= grid.scrollTop + grid.clientHeight
+		if (!isNowVisible) {
+			grid.scrollTop = Math.max(0, nowPixel - grid.clientHeight / 3)
+		}
+	}
+
+	watch(currentTime, scrollToNow)
+
+	onMounted(() => nextTick(scrollToNow))
 </script>
 
 <style scoped>

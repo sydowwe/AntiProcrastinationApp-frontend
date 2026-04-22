@@ -42,9 +42,13 @@
 					closable
 					@click:close="dismissHint"
 				>
-					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click
-					<strong>Save</strong>. The filter becomes the rule — future entries matching it will be mapped automatically. To
-					edit an existing rule, open the <strong>Mappings</strong> tab and click edit.
+					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and
+					click
+					<strong>Save</strong>
+					. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an
+					existing rule, open the
+					<strong>Mappings</strong>
+					tab and click edit.
 				</VAlert>
 				<DesktopDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"
@@ -67,14 +71,6 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-
-	const HINT_KEY = 'desktopSettingsHintDismissed'
-	const hintDismissed = ref(localStorage.getItem(HINT_KEY) === 'true')
-
-	function dismissHint() {
-		hintDismissed.value = true
-		localStorage.setItem(HINT_KEY, 'true')
-	}
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingRequest } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts'
@@ -85,6 +81,14 @@
 	import DesktopEntriesFilterBar from '@/components/activityTracking/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
 	import DesktopDistinctEntriesTable from '@/components/activityTracking/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
 	import DesktopMappingsTable from '@/components/activityTracking/desktop/desktopSettings/DesktopMappingsTable.vue'
+
+	const HINT_KEY = 'desktopSettingsHintDismissed'
+	const hintDismissed = ref(localStorage.getItem(HINT_KEY) === 'true')
+
+	function dismissHint() {
+		hintDismissed.value = true
+		localStorage.setItem(HINT_KEY, 'true')
+	}
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { create, update } = useTrackerDesktopMappingCrud()

@@ -12,7 +12,7 @@ export function useRoutineTodoListItemCrud() {
 
 	const url = '/routine-todo-list'
 
-	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<RoutineTodoListItemEntity>({
+	const { fetchById, fetchAll } = useEntityQuery<RoutineTodoListItemEntity>({
 		responseClass: RoutineTodoListItemEntity,
 		entityName: url,
 	})
@@ -54,7 +54,6 @@ export function useRoutineTodoListItemCrud() {
 	return {
 		fetchById,
 		fetchAll,
-		fetchSelectOptions,
 		createWithResponse,
 		create,
 		update,

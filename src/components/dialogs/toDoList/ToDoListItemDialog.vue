@@ -163,7 +163,7 @@
 		(e: 'add', toDoList: ToDoListItemRequest): void
 		(e: 'edit', idToEdit: number, toDoListItem: ToDoListItemRequest): void
 		(e: 'quickEditedActivity', id: number): void
-		(e: 'changedUrgency', id: number, taskPriorityId?: number): void
+		(e: 'changedPriority', id: number, taskPriorityId?: number): void
 	}>()
 	const { requiredRule } = useGeneralRules()
 	const form = ref<InstanceType<typeof VForm>>()
@@ -197,7 +197,7 @@
 	watch(dialog, newValue => {
 		if (!newValue) {
 			toDoListItem.value = new ToDoListItemRequest()
-			setDefaultUrgency()
+			setDefaultPriority()
 			dueDateValue.value = null
 			dueTimeEnabled.value = false
 			dueTimeValue.value = new Time(9, 0)
@@ -215,7 +215,7 @@
 
 	onMounted(async () => {
 		priorityOptions.value = await fetchAll()
-		setDefaultUrgency()
+		setDefaultPriority()
 	})
 
 	async function save() {
@@ -266,7 +266,7 @@
 		dialogSteps.value[newIndex] = temp!
 	}
 
-	function setDefaultUrgency() {
+	function setDefaultPriority() {
 		toDoListItem.value.taskPriorityId = priorityOptions.value.find(item => item.priority === 1)?.id
 	}
 
@@ -275,7 +275,7 @@
 
 		activityFormField.value?.reset()
 		toDoListItem.value = new ToDoListItemRequest()
-		setDefaultUrgency()
+		setDefaultPriority()
 		suggestedTimeEnabled.value = false
 		suggestedTimeValue.value = new Time()
 		dialogSteps.value = []

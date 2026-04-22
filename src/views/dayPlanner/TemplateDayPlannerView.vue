@@ -109,6 +109,7 @@
 		batchDelete: batchDeleteTask,
 		applyContext,
 		buildRequestFromEntity,
+		getCurrentContext: () => String(store.currentTemplateId),
 	})
 	const crud = usePlannerCrud(store, {
 		createWithResponse: createTaskWithResponse,

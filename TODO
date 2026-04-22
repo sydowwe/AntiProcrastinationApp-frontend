@@ -1,45 +1,23 @@
-pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky
-
-pridat do pridavania aktivity do historie manuelane moznost vybrat bud dlzku aktivity alebo novu funkciu rozmedzie casove ktore  sa po prekliknuti z dlzky da na datum ktory je zaciatocny
-
-
-rozdelit history podla datumov - visualne uz len
-
-prerobit JWT na hhtpOnly cookie storage
-nastavit CRSF v backende a nginx
-backend osetrit prekryvanie aktivit + length
-history aj taskplanner pouzit column end_time
-
-pridat zoznamy aktivit,roli, a categorii kde ich budem moct upravovat mazat, pridavat atd
-takisto to pridat pre historie aj s upravou, mozno toto mat na 2 views s rovnakym filtrom jedno pre upravu(asi klasika tabulka) jedno pre pekne timelinove zobrazenie, ale pridat do filtra aj zobrazit vsetko a obratit filter (tj vyhovujuce filtru nezobrazovat)
-
-
-
-POMODORO timer
-
-tweak frontEnd
-
-ALARM dorobit
-RUTinny todolist - dokoncit group funckionality
-
+====current plans====
+fix @composables/activity/ActivitySelectsComposition.ts
 Google Sign in backend
+
+
+
+
+=== incremental plans  ====
+tweak frontEnd pre mobil
+pridat loadingy na vsetky stranky
+
+
 
 pridat moznost reminderu do plannertask a routiny a todolist
 ====future plans====
 
 pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
 
-pridat planovanie ako rozvrh aby som si mohol naplanovat dennu rutinu atd
+ You already have addToPlanner wired up in ToDoListItem. The reverse — dragging a to-do item directly onto the day planner grid — would close the loop and feel very natural.
 
-zlepsit a skraslit historyView mozno tiez pridat moznost zobrazenia do tabulky ako rozvrh
+The streak data is already tracked per routine item. A small "personal bests" panel in the routine view showing longest-ever streaks would add gamification without new backend work.
 
-
-dorobit backend exception handling poriadne
-
-dorobit EmailService
-
-pridat loadingy na vsetky stranky
-
-rozsirenie pre automaticke sledovanie aktivit???
-
-
+pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky

@@ -6,6 +6,7 @@
 		:class="{
 			'is-dragging': isDragging,
 			'is-overdue': isOverdue,
+			'is-done': isDone,
 		}"
 		@click="itemClicked"
 	>
@@ -23,7 +24,7 @@
 					size="18"
 					color="warning"
 				></VIcon>
-				<v-checkbox-btn
+				<VCheckboxBtn
 					v-else-if="!toDoListItem.isMultipleCount"
 					v-model="isDone"
 					class="pl-2"
@@ -32,7 +33,7 @@
 					:disabled="isInChangeOrderMode"
 					:style="isInChangeOrderMode ? 'color:white !important' : ''"
 					@click.prevent
-				></v-checkbox-btn>
+				/>
 				<div
 					v-else
 					class="pl-3 d-flex flex-column ga-1 align-center justify-center"
@@ -119,7 +120,25 @@
 					>
 						{{ dueDateChip.label }}
 					</ChipWithIcon>
-					<VListItemTitle class="text-white">{{ toDoListItem.activity.name }}</VListItemTitle>
+					<VChip
+						v-if="toDoListItem.suggestedTime?.isNotZero()"
+						size="x-small"
+						variant="tonal"
+						color="neutral-600"
+						prependIcon="clock"
+					>
+						~{{ toDoListItem.suggestedTime!.getNice }}
+					</VChip>
+					<VIcon
+						v-if="isOverdue"
+						icon="triangle-exclamation"
+						color="error"
+						size="14"
+						class="mb-1"
+					/>
+					<VListItemTitle :class="['text-white', { 'text-decoration-line-through': isDone }]">
+						{{ toDoListItem.activity.name }}
+					</VListItemTitle>
 				</div>
 				<VListItemSubtitle class="text-white">{{ toDoListItem.activity.text }}</VListItemSubtitle>
 				<VTooltip
@@ -148,7 +167,7 @@
 					size="small"
 					style="height: 40px"
 				></VIcon>
-				<v-menu
+				<VMenu
 					v-else
 					location="start"
 					transition="slide-y-transition"
@@ -182,7 +201,7 @@
 							</VBtn>
 						</VListItem>
 					</VList>
-				</v-menu>
+				</VMenu>
 			</div>
 		</div>
 		<TodoListItemSteps
@@ -509,6 +528,10 @@
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 		padding: 10px 0;
 		overflow: hidden;
+	}
+
+	.listItem.is-done {
+		opacity: 0.55;
 	}
 
 	.priority-accent {

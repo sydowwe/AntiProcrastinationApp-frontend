@@ -179,7 +179,7 @@
 			activityName: activitySelectionFormRef.value?.getSelectedActivityName,
 			roleName: activitySelectionFormRef.value?.getSelectedRoleName,
 			categoryName: activitySelectionFormRef.value?.getSelectedCategoryName,
-			taskPriorityName: activitySelectionFormRef.value?.getSelectedTaskUrgencyName,
+			taskPriorityName: activitySelectionFormRef.value?.getSelectedTaskPriorityName,
 			routineTimePeriodName: activitySelectionFormRef.value?.getSelectedRoutineTimePeriodName,
 		}
 

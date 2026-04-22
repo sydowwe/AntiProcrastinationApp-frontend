@@ -10,7 +10,11 @@
 				style="font-size: 0.9rem; line-height: 1.2rem"
 			>
 				{{ store.pendingClipboard.mode === 'cut' ? 'Cut' : 'Duplicating' }}:
-				{{ store.pendingClipboard.tasks.map(t => t.activity?.name ?? 'task').join(', ') }}
+				{{
+					store.pendingClipboard.tasks.length === 1
+						? (store.pendingClipboard.tasks[0].activity?.name ?? 'task')
+						: `${store.pendingClipboard.tasks[0].activity?.name ?? 'task'} +${store.pendingClipboard.tasks.length - 1} more`
+				}}
 				— click a slot to place
 			</span>
 		</template>

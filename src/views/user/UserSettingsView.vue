@@ -72,6 +72,33 @@
 					>
 						{{ i18n.t('user.newScratchCodes') }}
 					</VBtn>
+					<VCard
+						variant="outlined"
+						color="secondaryOutline"
+						class="pa-3"
+					>
+						<div class="d-flex justify-space-between align-center">
+							<div class="d-flex align-center ga-2">
+								<VIcon icon="fab fa-google" />
+								<span>{{ i18n.t('googleCalendar.title') }}</span>
+								<VChip
+									:color="googleCalendarConnected ? 'success' : 'error'"
+									size="small"
+									density="compact"
+								>
+									{{ i18n.t(googleCalendarConnected ? 'googleCalendar.connected' : 'googleCalendar.notConnected') }}
+								</VChip>
+							</div>
+							<VBtn
+								:color="googleCalendarConnected ? 'error' : 'primary'"
+								:loading="googleCalendarLoading"
+								size="small"
+								@click="toggleGoogleCalendar"
+							>
+								{{ i18n.t(googleCalendarConnected ? 'googleCalendar.disconnect' : 'googleCalendar.connect') }}
+							</VBtn>
+						</div>
+					</VCard>
 					<VBtn
 						width="100%"
 						color="warning"
@@ -116,8 +143,35 @@
 	import router from '@/plugins/router.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { User } from '@/dtos/response/user/User.ts'
+	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
 
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
+	const { getStatus: getGoogleCalendarStatus, getAuthUrl, disconnect: disconnectGoogleCalendar } = useGoogleCalendarApi()
+
+	const googleCalendarConnected = ref(false)
+	const googleCalendarLoading = ref(false)
+
+	getGoogleCalendarStatus().then(connected => {
+		googleCalendarConnected.value = connected
+	})
+
+	async function toggleGoogleCalendar() {
+		googleCalendarLoading.value = true
+		try {
+			if (googleCalendarConnected.value) {
+				await disconnectGoogleCalendar()
+				googleCalendarConnected.value = false
+				showSuccessSnackbar(i18n.t('googleCalendar.disconnectSuccess'))
+			} else {
+				const url = await getAuthUrl()
+				window.location.href = url
+			}
+		} catch {
+			showErrorSnackbar(i18n.t('googleCalendar.connectFailed'))
+		} finally {
+			googleCalendarLoading.value = false
+		}
+	}
 	const i18n = useI18n()
 	const userStore = useUserStore()
 	const {

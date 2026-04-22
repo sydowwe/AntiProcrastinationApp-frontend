@@ -104,12 +104,12 @@
 								<VListItem
 									to="/user/settings"
 									prependIcon="user-gear"
-									title="Nastavenia"
+									:title="$t('controls.settings')"
 									class="px-4 py-2"
 								/>
 								<VListItem
 									prependIcon="arrow-right-from-bracket"
-									title="Odhlásiť sa"
+									:title="$t('authorization.logOut')"
 									class="px-4 py-2"
 									@click="logout"
 								/>
@@ -121,7 +121,7 @@
 						:icon="theme.global.current.value.dark ? 'sun' : 'moon'"
 						variant="elevated"
 						:color="theme.global.current.value.dark ? 'white' : 'black'"
-						:title="theme.global.current.value.dark ? 'Svetlý režim' : 'Tmavý režim'"
+						:title="theme.global.current.value.dark ? $t('theme.switchToLight') : $t('theme.switchToDark')"
 						@click="toggleTheme"
 					/>
 				</div>

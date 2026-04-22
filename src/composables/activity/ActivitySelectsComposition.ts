@@ -9,7 +9,7 @@ import { ActivityFormSelectOptions } from '@/dtos/response/activity/ActivityForm
 export enum EntityWithSelectOptions {
 	Role = 'role',
 	Category = 'category',
-	TaskUrgency = 'task-priority',
+	TaskPriority = 'task-priority',
 	TimePeriod = 'routine-time-period',
 }
 

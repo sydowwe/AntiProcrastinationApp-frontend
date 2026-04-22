@@ -61,7 +61,6 @@ export function useDayPlannerCommon<
 	 */
 	function checkConflict(taskToCheck: T): boolean {
 		return tasks.value.some(task => {
-			console.log((taskToCheck.id ^ task.id) < 0)
 			if ((taskToCheck.id ^ task.id) < 0)
 				// XOR so template doesn't check conflict with normal
 				return false

@@ -30,6 +30,7 @@ import RoutineSettingsView from '@/views/todoList/RoutineSettingsView.vue'
 import DesktopActivityDashboard from '@/views/tracker/DesktopActivityDashboard.vue'
 import AndroidActivityDashboard from '@/views/tracker/AndroidActivityDashboard.vue'
 import AndroidSettingsView from '@/views/tracker/AndroidSettingsView.vue'
+import GoogleCalendarCallbackView from '@/views/googleCalendar/GoogleCalendarCallbackView.vue'
 
 const router = createRouter({
 	history: createWebHistory('/'),
@@ -180,6 +181,11 @@ const router = createRouter({
 			name: 'dayPlannerTemplate',
 			component: TemplateDayPlannerView,
 			props: true,
+		},
+		{
+			path: '/google-calendar/callback',
+			name: 'googleCalendarCallback',
+			component: GoogleCalendarCallbackView,
 		},
 		// {
 		//   path: '/about',
