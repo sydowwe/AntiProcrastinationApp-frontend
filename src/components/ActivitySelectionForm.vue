@@ -109,7 +109,10 @@
 	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
-	import { filterActivityFormSelectOptions, getAllActivityFormSelectOptionsCombinations } from '@/composables/activity/ActivitySelectsComposition.ts'
+	import {
+		filterActivityFormSelectOptions,
+		getAllActivityFormSelectOptionsCombinations,
+	} from '@/composables/activity/ActivitySelectsComposition.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
@@ -258,7 +261,7 @@
 		return options.find(item => item.id === formData.value!.categoryId)?.text || ''
 	})
 
-	const getSelectedTaskUrgencyName = computed((): string => {
+	const getSelectedTaskPriorityName = computed((): string => {
 		const options = filteredOptions.value.taskPriorityOptions || []
 		return options.find(item => item.id === formData.value!.taskPriorityId)?.text || ''
 	})
@@ -282,7 +285,7 @@
 		getSelectedActivityId,
 		getSelectedRoleName,
 		getSelectedCategoryName,
-		getSelectedTaskUrgencyName,
+		getSelectedTaskPriorityName,
 		getSelectedRoutineTimePeriodName,
 		saveActivityToHistory,
 	})

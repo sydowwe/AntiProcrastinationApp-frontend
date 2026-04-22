@@ -16,6 +16,7 @@ export function useClipboardHandling<
 		batchDelete: (ids: number[]) => Promise<void>
 		applyContext: (request: TTaskRequest) => void
 		buildRequestFromEntity: (task: TTask) => TTaskRequest
+		getCurrentContext: () => string
 	},
 ) {
 	const { push } = useUndoStack()
@@ -31,36 +32,56 @@ export function useClipboardHandling<
 		const undoDate = store.viewedDate ? new Date(store.viewedDate) : undefined
 
 		if (clipboard.mode === 'cut') {
-			const originalSpans = sorted.map(t => ({
-				id: t.id,
-				startTime: new Time(t.startTime.hours, t.startTime.minutes),
-				endTime: new Time(t.endTime.hours, t.endTime.minutes),
-			}))
-			for (const task of sorted) {
-				const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
-				const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
-				task.startTime = newStart
-				task.endTime = newEnd
-				store.setGridPositionFromSpan(task)
-				task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
-				store.tasks.push(task)
-				await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+			const isCrossContext = !!clipboard.sourceContext && clipboard.sourceContext !== api.getCurrentContext()
+
+			if (isCrossContext) {
+				const ids = sorted.map(t => t.id)
+				for (const task of sorted) {
+					const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+					const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+					const request = api.buildRequestFromEntity(task)
+					api.applyContext(request)
+					request.startTime = newStart
+					request.endTime = newEnd
+					const response = await api.createWithResponse(request)
+					store.setGridPositionFromSpan(response)
+					response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
+					store.tasks.push(response)
+				}
+				await api.batchDelete(ids)
+				showSuccessSnackbar('Task moved')
+			} else {
+				const originalSpans = sorted.map(t => ({
+					id: t.id,
+					startTime: new Time(t.startTime.hours, t.startTime.minutes),
+					endTime: new Time(t.endTime.hours, t.endTime.minutes),
+				}))
+				for (const task of sorted) {
+					const newStart = Time.fromMinutes((task.startTime.getInMinutes + offsetMinutes + 1440) % 1440)
+					const newEnd = Time.fromMinutes((task.endTime.getInMinutes + offsetMinutes + 1440) % 1440)
+					task.startTime = newStart
+					task.endTime = newEnd
+					store.setGridPositionFromSpan(task)
+					task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
+					store.tasks.push(task)
+					await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
+				}
+				push({
+					description: 'Task moved',
+					date: undoDate,
+					undo: async () => {
+						for (const orig of originalSpans) {
+							const task = store.tasks.find(t => t.id === orig.id) as TTask | undefined
+							if (!task) continue
+							task.startTime = orig.startTime
+							task.endTime = orig.endTime
+							store.setGridPositionFromSpan(task)
+							await store.updateTaskSpan(orig.id, new TaskSpan(orig.startTime, orig.endTime))
+						}
+					},
+				})
+				showSuccessSnackbar('Task moved')
 			}
-			push({
-				description: 'Task moved',
-				date: undoDate,
-				undo: async () => {
-					for (const orig of originalSpans) {
-						const task = store.tasks.find(t => t.id === orig.id) as TTask | undefined
-						if (!task) continue
-						task.startTime = orig.startTime
-						task.endTime = orig.endTime
-						store.setGridPositionFromSpan(task)
-						await store.updateTaskSpan(orig.id, new TaskSpan(orig.startTime, orig.endTime))
-					}
-				},
-			})
-			showSuccessSnackbar('Task moved')
 		}
 
 		if (clipboard.mode === 'duplicate') {

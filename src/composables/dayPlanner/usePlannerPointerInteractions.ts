@@ -30,10 +30,8 @@ export function usePlannerPointerInteractions<
 	const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
 
 	const originalTaskState = ref<TTask | null>(null)
-	const dragStartSlot = ref<number | null>(null)
 	const dragOffset = ref<number>(0)
 
-	const resizeStartSlot = ref<number | null>(null)
 	const resizeDirection = ref<'top' | 'bottom' | null>(null)
 
 	const pointerStartPos = ref<{ x: number; y: number } | null>(null)
@@ -67,8 +65,6 @@ export function usePlannerPointerInteractions<
 
 		store.resizingTaskId = payload.taskId
 		resizeDirection.value = payload.direction
-		resizeStartSlot.value = task.gridRowStart - 1
-
 		pointerStartPos.value = { x: payload.pointerEvent.clientX, y: payload.pointerEvent.clientY }
 		hasMovedBeyondThreshold.value = false
 		originalTaskState.value = { ...task }
@@ -105,7 +101,6 @@ export function usePlannerPointerInteractions<
 			store.draggingTaskId = taskId
 			originalTaskState.value = { ...task }
 			const slotIndex = getSlotIndexFromPosition(e.clientY)
-			dragStartSlot.value = slotIndex
 			dragOffset.value = slotIndex - (task.gridRowStart - 1)
 			return
 		}
@@ -165,7 +160,7 @@ export function usePlannerPointerInteractions<
 			}
 		}
 
-		if (store.draggingTaskId !== null && dragStartSlot.value !== null && originalTaskState.value) {
+		if (store.draggingTaskId !== null && originalTaskState.value) {
 			if (!hasMovedBeyondThreshold.value) return
 
 			handleAutoScroll(e.clientY)
@@ -302,7 +297,6 @@ export function usePlannerPointerInteractions<
 			}
 
 			store.draggingTaskId = null
-			dragStartSlot.value = null
 			dragOffset.value = 0
 			store.dragConflict = false
 			originalTaskState.value = null
@@ -343,7 +337,6 @@ export function usePlannerPointerInteractions<
 			}
 
 			store.resizingTaskId = null
-			resizeStartSlot.value = null
 			resizeDirection.value = null
 			originalTaskState.value = null
 			pointerStartPos.value = null

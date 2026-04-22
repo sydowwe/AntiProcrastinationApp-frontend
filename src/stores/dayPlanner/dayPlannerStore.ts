@@ -7,7 +7,8 @@ import { Time } from '@/dtos/dto/Time.ts'
 import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { deserializeClipboard, serializeClipboard } from '@/composables/dayPlanner/usePlannerClipboardStorage.ts'
 import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
@@ -20,6 +21,8 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 	pendingInitialTodoListItemId: number | undefined
 	openCreateDialogWithActivity: (activityId: number, todoListItemId?: number) => void
 }
+
+const CLIPBOARD_KEY = 'planner-clipboard'
 
 export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	const core = usePlannerStoreCore<PlannerTask, PlannerTaskRequest>()
@@ -189,6 +192,26 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	const showActionBar = computed(() => core.selectedTasks.value.length > 0 && !isTemplateInPreview.value)
 
+	function startCut() {
+		core.startCut()
+		if (core.pendingClipboard.value)
+			core.pendingClipboard.value = { ...core.pendingClipboard.value, sourceContext: viewedDate.value.toDateString() }
+	}
+
+	// Persist clipboard across day navigation
+	const savedClipboard = sessionStorage.getItem(CLIPBOARD_KEY)
+	if (savedClipboard) {
+		try {
+			core.pendingClipboard.value = deserializeClipboard(savedClipboard)
+		} catch {
+			sessionStorage.removeItem(CLIPBOARD_KEY)
+		}
+	}
+	watch(core.pendingClipboard, val => {
+		if (val) sessionStorage.setItem(CLIPBOARD_KEY, serializeClipboard(val))
+		else sessionStorage.removeItem(CLIPBOARD_KEY)
+	})
+
 	function resetStore() {
 		// Reset core state
 		core.resetStore()
@@ -203,6 +226,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		openEditDialog,
 		toggleTaskSelection,
 		showActionBar,
+		startCut,
 		updateTaskSpan,
 		updateTaskStatus,
 

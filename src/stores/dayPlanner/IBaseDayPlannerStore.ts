@@ -45,7 +45,7 @@ export interface IBaseDayPlannerStore<
 	isDuplicating: boolean
 
 	// Clipboard state (cut / duplicate-to-slot)
-	pendingClipboard: { tasks: TTask[]; mode: 'cut' | 'duplicate' } | null
+	pendingClipboard: { tasks: TTask[]; mode: 'cut' | 'duplicate'; sourceContext?: string } | null
 	clipboardPlacementSlot: number | null
 	clipboardConflict: boolean
 	clipboardPreviewTaskIds: Set<number>

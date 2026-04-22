@@ -4,7 +4,7 @@ import { Category } from '@/dtos/response/activity/Category.ts'
 
 export function useActivityCategoryCrud() {
 	const url = 'activity-category'
-	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<Category>({
+	const { fetchById, fetchAll } = useEntityQuery<Category>({
 		responseClass: Category,
 		entityName: url,
 	})
@@ -13,5 +13,5 @@ export function useActivityCategoryCrud() {
 		entityName: url,
 	})
 
-	return { fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity }
+	return { fetchById, fetchAll, createWithResponse, create, update, deleteEntity }
 }

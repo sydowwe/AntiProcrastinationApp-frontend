@@ -30,7 +30,7 @@ export function usePlannerStoreCore<
 	const isDuplicating = ref(false)
 
 	// Clipboard state (cut / duplicate-to-slot)
-	const pendingClipboard = ref<{ tasks: TTask[]; mode: 'cut' | 'duplicate' } | null>(null)
+	const pendingClipboard = ref<{ tasks: TTask[]; mode: 'cut' | 'duplicate'; sourceContext?: string } | null>(null)
 	const clipboardPlacementSlot = ref<number | null>(null)
 	const clipboardConflict = ref(false)
 	const clipboardPreviewTaskIds = reactive<Set<number>>(new Set())

@@ -138,8 +138,8 @@
 	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 
 	const emit = defineEmits<{
-		edit: []
-		add: []
+		edit: [entity: RoutineTodoListItemEntity, request: RoutineTodoListItemRequest]
+		add: [request: RoutineTodoListItemRequest]
 		quickEditedActivity: []
 	}>()
 

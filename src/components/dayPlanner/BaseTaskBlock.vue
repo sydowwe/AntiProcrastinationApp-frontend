@@ -309,10 +309,10 @@
 	@keyframes pulse {
 		0%,
 		100% {
-			transform: scale(1);
+			box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
 		}
 		50% {
-			transform: scale(1.02);
+			box-shadow: 0 0 0 4px rgba(244, 67, 54, 0.4);
 		}
 	}
 

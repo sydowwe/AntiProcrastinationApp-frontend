@@ -6,6 +6,7 @@
 		>
 			<ActivitySelectionForm
 				v-model="formData"
+				v-model:activityId="formData!.activityId"
 				:showFromToDoListField="false"
 				isInRow
 			/>

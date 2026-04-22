@@ -32,7 +32,7 @@
 					prependIcon="arrows-up-down"
 					@click="toggleChangeOrderMode"
 				>
-					{{ isInChangeOrderMode ? 'Finish reordering' : 'Change order' }}
+					{{ isInChangeOrderMode ? $t('toDoList.finishReordering') : $t('toDoList.changeOrder') }}
 				</VBtn>
 			</div>
 			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
@@ -44,7 +44,7 @@
 						<VSwitch
 							v-model="hideDone"
 							class="ml-2"
-							label="Hide done"
+							:label="$t('toDoList.hideDone')"
 							density="compact"
 							hideDetails
 							color="primary-accent"
@@ -80,10 +80,10 @@
 						>
 							{{
 								sortMode === 'priority'
-									? 'By priority'
+									? $t('toDoList.sortByPriority')
 									: sortMode === 'dueDate'
-										? 'By due date'
-										: 'Custom order'
+										? $t('toDoList.sortByDueDate')
+										: $t('toDoList.sortCustom')
 							}}
 						</VBtn>
 					</VCol>
@@ -165,7 +165,7 @@
 		@add="add"
 		@edit="edit"
 		@quickEditedActivity="quickEditedActivity"
-		@changedUrgency="onChangedUrgency"
+		@changedPriority="onChangedPriority"
 	></ToDoListItemDialog>
 	<PlannerTaskDialog
 		showDatePicker
@@ -206,9 +206,9 @@
 	const todoListId = Number(props.id)
 
 	const { fetchById: fetchByIdActivity } = useActivityCrud()
-	const { fetchById: fetchByIdTaskUrgency } = useTaskPriorityCrud()
+	const { fetchById: fetchByIdTaskPriority } = useTaskPriorityCrud()
 	const { fetchById: fetchByIdNamedList } = useTodoListCrud()
-	const { fetchAll, fetchById, createWithResponse, update, deleteEntity, changeUrgency, changeDisplayOrder } =
+	const { fetchAll, fetchById, createWithResponse, update, deleteEntity, changePriority, changeDisplayOrder } =
 		useTodoListItemCrud(todoListId)
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchByDate } = useCalendarQuery()
@@ -352,15 +352,15 @@
 		}
 	}
 
-	async function onChangedUrgency(id: number, taskPriorityId?: number) {
+	async function onChangedPriority(id: number, taskPriorityId?: number) {
 		if (!taskPriorityId) {
-			showErrorSnackbar(i18n.t('errorFeedback.noUrgencySelected'))
+			showErrorSnackbar(i18n.t('errorFeedback.noPrioritySelected'))
 			return
 		}
-		changeUrgency(id, taskPriorityId).then(async () => {
+		changePriority(id, taskPriorityId).then(async () => {
 			const item = items.value.find(i => i.id === id)
 			if (item) {
-				item.taskPriority = await fetchByIdTaskUrgency(taskPriorityId)
+				item.taskPriority = await fetchByIdTaskPriority(taskPriorityId)
 			}
 		})
 	}
@@ -379,10 +379,10 @@
 		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
 	}
 
-	async function updateAfterEdit(id: number, oldTaskUrgencyId?: number) {
+	async function updateAfterEdit(id: number, oldTaskPriorityId?: number) {
 		const updatedItem = await fetchById(id)
 		const index = items.value.findIndex(item => item.id === id)
-		if (oldTaskUrgencyId === updatedItem.taskPriority.id) {
+		if (oldTaskPriorityId === updatedItem.taskPriority.id) {
 			items.value[index] = updatedItem
 		} else {
 			items.value[index] = updatedItem

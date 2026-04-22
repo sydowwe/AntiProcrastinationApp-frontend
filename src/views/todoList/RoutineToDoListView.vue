@@ -256,10 +256,15 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
+	<RoutineConfetti
+		v-if="showConfetti"
+		:key="confettiKey"
+	/>
 </template>
 <script setup lang="ts">
 	import RoutineToDoListDialog from '../../components/dialogs/toDoList/RoutineToDoListDialog.vue'
 	import ToDoList from '../../components/toDoList/ToDoList.vue'
+	import RoutineConfetti from '@/components/toDoList/RoutineConfetti.vue'
 	import RoutineGroupHeatmap from '@/components/toDoList/RoutineGroupHeatmap.vue'
 	import RoutineGroupHistoryDialog from '@/components/toDoList/RoutineGroupHistoryDialog.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
@@ -299,6 +304,18 @@
 	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
 	const historyDialog = ref<InstanceType<typeof RoutineGroupHistoryDialog>>()
 	const isInChangeOrderMode = ref(false)
+
+	const showConfetti = ref(false)
+	const confettiKey = ref(0)
+	const celebratedGroupIds = new Set<number>()
+
+	function triggerConfetti() {
+		confettiKey.value++
+		showConfetti.value = true
+		setTimeout(() => {
+			showConfetti.value = false
+		}, 2500)
+	}
 
 	const hideDoneGroupIds = computed({
 		get: (): number[] => {
@@ -359,10 +376,10 @@
 	}
 
 	function visibleItems(group: RoutineTodoListGroupedList): RoutineTodoListItemEntity[] {
-		const items = hideDoneGroupIds.value.includes(group.timePeriod.id as number)
-			? group.items.filter(item => !item.isDone)
-			: [...group.items]
-		return [...items.filter(item => !item.isDone), ...items.filter(item => item.isDone)]
+		if (hideDoneGroupIds.value.includes(group.timePeriod.id as number)) {
+			return group.items.filter(item => !item.isDone)
+		}
+		return [...group.items]
 	}
 
 	function consistencyPct(timePeriod: RoutineTimePeriodEntity): number {
@@ -613,6 +630,15 @@
 				const index = group.items.findIndex(item => item.id === id)
 				if (index !== -1) {
 					group.items[index] = updatedItem
+					const groupId = group.timePeriod.id as number
+					if (
+						group.items.length > 0 &&
+						group.items.every(item => item.isDone) &&
+						!celebratedGroupIds.has(groupId)
+					) {
+						celebratedGroupIds.add(groupId)
+						triggerConfetti()
+					}
 				}
 			}
 		}

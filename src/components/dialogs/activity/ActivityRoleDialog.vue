@@ -7,7 +7,7 @@
 	>
 		<VForm
 			ref="form"
-			class="d-flex flex-column ga-3"
+			class="py-2 d-flex flex-column ga-3"
 			@submit.prevent="onConfirmed"
 		>
 			<VTextField

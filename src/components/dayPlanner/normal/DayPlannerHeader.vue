@@ -19,19 +19,35 @@
 					{{ expanded ? 'Hide details' : 'Show details' }}
 				</VTooltip>
 			</VIconBtn>
-			<VIconBtn
-				variant="tonal"
-				density="comfortable"
-				icon="chevron-left"
-				@click="emit('navigateDate', -1)"
-			></VIconBtn>
+			<div class="mb-3 nav-btn-wrap">
+				<div
+					v-if="prevDayCount !== null"
+					class="text-caption text-no-wrap text-primaryOutline"
+				>
+					{{ prevDayCount }} tasks
+				</div>
+				<VIconBtn
+					variant="tonal"
+					density="comfortable"
+					icon="chevron-left"
+					@click="emit('navigateDate', -1)"
+				></VIconBtn>
+			</div>
 			<h1 class="date-title">{{ title }}</h1>
-			<VIconBtn
-				variant="tonal"
-				density="comfortable"
-				icon="chevron-right"
-				@click="emit('navigateDate', 1)"
-			></VIconBtn>
+			<div class="mb-3 nav-btn-wrap">
+				<div
+					v-if="nextDayCount"
+					class="text-caption text-no-wrap text-primaryOutline"
+				>
+					{{ nextDayCount }} tasks
+				</div>
+				<VIconBtn
+					variant="tonal"
+					density="comfortable"
+					icon="chevron-right"
+					@click="emit('navigateDate', 1)"
+				></VIconBtn>
+			</div>
 
 			<DayPlannerProgressBlock :calendar />
 		</div>
@@ -92,18 +108,23 @@
 			>
 				Calendar
 			</VBtn>
+			<GoogleCalendarSyncBtn :calendarId="calendar?.id" />
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import DayPlannerProgressBlock from '@/components/dayPlanner/normal/DayPlannerProgressBlock.vue'
+	import GoogleCalendarSyncBtn from '@/components/dayPlanner/normal/GoogleCalendarSyncBtn.vue'
+	import { useCalendarQuery } from '@/api/calendarApi.ts'
+	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
+	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 
 	const { title, calendar } = defineProps<{
 		title: string
@@ -116,7 +137,37 @@
 	const expanded = defineModel<boolean>('expandedDetails', { required: true })
 	const store = useDayPlannerStore()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
-	const { formatToDateWithDay } = useDateTime()
+	const { formatToDateWithDay, formatToUsString, usStringToUrlString } = useDateTime()
+	const { fetchByDate } = useCalendarQuery()
+	const { fetchFiltered } = useTaskPlannerCrud()
+
+	const prevDayCount = ref<number | null>(null)
+	const nextDayCount = ref<number | null>(null)
+
+	async function fetchCountForDate(date: Date): Promise<number> {
+		const cal = await fetchByDate(usStringToUrlString(formatToUsString(date)))
+		const tasks = await fetchFiltered(new PlannerTaskFilter(cal.id, store.viewStartTime, store.viewEndTime))
+		return tasks.filter(t => !t.isBackground).length
+	}
+
+	watch(
+		() => store.viewedDate,
+		date => {
+			prevDayCount.value = null
+			nextDayCount.value = null
+			const prev = new Date(date)
+			prev.setDate(prev.getDate() - 1)
+			const next = new Date(date)
+			next.setDate(next.getDate() + 1)
+			fetchCountForDate(prev)
+				.then(n => (prevDayCount.value = n))
+				.catch(() => {})
+			fetchCountForDate(next)
+				.then(n => (nextDayCount.value = n))
+				.catch(() => {})
+		},
+		{ immediate: true },
+	)
 
 	const undoTooltip = computed(() => {
 		if (!nextUndoDescription.value) return 'Nothing to undo'
@@ -146,6 +197,13 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
+	}
+
+	.nav-btn-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
 	}
 
 	.date-title {

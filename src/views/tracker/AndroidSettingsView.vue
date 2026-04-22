@@ -103,14 +103,6 @@
 		tableView.value = router.currentRoute.value.params.tableView as 'distinctEntries' | 'mappings'
 	})
 
-	watch(
-		formData,
-		newValue => {
-			request.value.activityId = newValue.activityId
-		},
-		{ deep: true },
-	)
-
 	function edit(item: TrackerAndroidMappingResponse) {
 		editedId.value = item.id
 		request.value = new TrackerAndroidMappingRequest()
@@ -132,6 +124,9 @@
 
 	async function saved() {
 		request.value.updatePattern(filter.value)
+		request.value.activityId = formData.value.activityId
+		request.value.roleId = formData.value.roleId
+		request.value.categoryId = formData.value.categoryId
 		try {
 			if (editedId.value) {
 				await update(editedId.value, request.value)

@@ -5,7 +5,7 @@ import { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 
 export function useActivityRoleCrud() {
 	const url = 'activity-role'
-	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<Role>({ responseClass: Role, entityName: url })
+	const { fetchById, fetchAll } = useEntityQuery<Role>({ responseClass: Role, entityName: url })
 	const { createWithResponse, create, update, deleteEntity } = useEntityCommand<Role, RoleRequest, RoleRequest>({
 		responseClass: Role,
 		createRequestClass: RoleRequest,
@@ -13,5 +13,5 @@ export function useActivityRoleCrud() {
 		entityName: url,
 	})
 
-	return { fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity }
+	return { fetchById, fetchAll, createWithResponse, create, update, deleteEntity }
 }

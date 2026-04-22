@@ -12,7 +12,7 @@ export async function fetchTodoListItems(todoListId?: number | null): Promise<To
 
 export function useTodoListItemCrud(todoListId: number) {
 	const url = 'todo-list-item'
-	const { fetchById, fetchSelectOptions } = useEntityQuery<TodoListItemEntity>({
+	const { fetchById } = useEntityQuery<TodoListItemEntity>({
 		responseClass: TodoListItemEntity,
 		entityName: url,
 	})
@@ -37,12 +37,12 @@ export function useTodoListItemCrud(todoListId: number) {
 		return fetchById(createResponse.data)
 	}
 
-	async function changeUrgency(id: number, urgencyId: number) {
+	async function changePriority(id: number, priorityId: number) {
 		try {
-			await API.patch(url + `/change-urgency/${id}/${urgencyId}`)
+			await API.patch(url + `/change-priority/${id}/${priorityId}`)
 			return Promise.resolve()
 		} catch (e: any) {
-			console.error(`Error changing urgency of to-do list item ${id} to urgencyId ${urgencyId}`, e)
+			console.error(`Error changing priority of to-do list item ${id} to priorityId ${priorityId}`, e)
 			return Promise.reject(e)
 		}
 	}
@@ -63,13 +63,12 @@ export function useTodoListItemCrud(todoListId: number) {
 	return {
 		fetchById,
 		fetchAll,
-		fetchSelectOptions,
 		createWithResponse,
 		create,
 		update,
 		updateWithResponse,
 		deleteEntity,
-		changeUrgency,
+		changePriority,
 		changeDisplayOrder,
 	}
 }

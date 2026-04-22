@@ -170,7 +170,7 @@
 		return PlannerTaskRequest.fromEntity(task)
 	}
 
-	useClipboardHandling(store, { createWithResponse, batchDelete, applyContext, buildRequestFromEntity })
+	useClipboardHandling(store, { createWithResponse, batchDelete, applyContext, buildRequestFromEntity, getCurrentContext: () => store.viewedDate.toDateString() })
 	const crud = usePlannerCrud(store, {
 		createWithResponse,
 		update,
