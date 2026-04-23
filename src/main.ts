@@ -115,6 +115,7 @@ export const vuetify = createVuetify({
 		VTextarea: { variant: 'outlined', clearable: true, density: 'comfortable' },
 		VMaskInput: { variant: 'outlined', clearable: true, density: 'comfortable' },
 		VCheckbox: { density: 'comfortable' },
+		VSwitch: { density: 'comfortable' },
 		VIconBtn: { rounded: '' },
 		VIconSmall: { size: '16' },
 	},

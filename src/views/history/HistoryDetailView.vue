@@ -1,7 +1,7 @@
 <template>
-	<div class="py-4 w-100 h-100 d-flex flex-column">
+	<div class="px-2 py-6 w-100 h-100 d-flex flex-column">
 		<!-- Header -->
-		<div class="mb-4 w-100 d-flex align-center ga-6 flex-wrap">
+		<div class="w-100 d-flex align-center ga-6 flex-wrap">
 			<VIconBtn
 				icon="calendar-days"
 				variant="tonal"
@@ -141,6 +141,7 @@
 	import HistoryTimeline from '@/components/historyDashboard/HistoryTimeline.vue'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
+	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	const route = useRoute()
 	const router = useRouter()
@@ -160,14 +161,6 @@
 	const isStackedBars = computed(() => selectedVisualization.value === 'stackedBars')
 	// --- Window size options for single day ---
 	const windowSizeOptions = [15, 20, 30, 60]
-
-	// --- Formatting ---
-	function formatDateForApi(d: Date): string {
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
 
 	const date = computed(() => formatDateForApi(dateModel.value))
 

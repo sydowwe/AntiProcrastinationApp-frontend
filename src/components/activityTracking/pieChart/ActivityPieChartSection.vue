@@ -14,7 +14,7 @@
 		<template v-else-if="!domains || domains.length === 0">
 			<VCard
 				variant="outlined"
-				class="pa-8 text-center"
+				class="h-100 pa-8 text-center"
 			>
 				<div class="text-h6 text-medium-emphasis">No activity recorded for this period</div>
 			</VCard>

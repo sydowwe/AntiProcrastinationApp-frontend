@@ -21,6 +21,7 @@
 	const props = defineProps<{
 		items: HistoryPieChartItem[]
 		selectedGroup: string | null
+		isNarrow?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -81,7 +82,7 @@
 				{
 					type: 'pie',
 					center: ['115%', '42%'],
-					width: 470,
+					width: props.isNarrow ? 300 : 470,
 					height: 300,
 					radius: ['35%', '75%'],
 					avoidLabelOverlap: false,

@@ -1,5 +1,5 @@
 <template>
-	<VCard class="pa-5">
+	<VCard class="h-100 pa-5">
 		<template v-if="loading">
 			<div class="d-flex ga-4">
 				<div class="flex-1-1">

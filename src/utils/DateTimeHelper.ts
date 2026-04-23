@@ -16,6 +16,13 @@ export function isSameDay(a?: Date | null | undefined, b?: Date | null | undefin
 	return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
+export function formatDateForApi(d: Date): string {
+	const year = d.getFullYear()
+	const month = String(d.getMonth() + 1).padStart(2, '0')
+	const day = String(d.getDate()).padStart(2, '0')
+	return `${year}-${month}-${day}`
+}
+
 export function useDateTime() {
 	function toUTCDate(date: Date) {
 		const d = new Date(date)

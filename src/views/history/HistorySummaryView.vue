@@ -1,5 +1,5 @@
 <template>
-	<div class="py-4 w-100 h-100 d-flex flex-column">
+	<div class="py-6 w-100 h-100 d-flex flex-column">
 		<!-- Header -->
 		<div class="mb-4 w-100 d-flex align-center ga-6 flex-wrap">
 			<h1 class="text-h4">Activity History</h1>
@@ -13,7 +13,7 @@
 
 		<!-- Body -->
 		<div
-			class="flex-fill d-flex flex-column ga-6"
+			class="flex-fill d-flex flex-column ga-4"
 			style="min-height: 0"
 		>
 			<!-- Stacked Bars -->
@@ -49,6 +49,7 @@
 					class="pr-lg-8 pb-3"
 				>
 					<HistorySummaryCards
+						class="h-100"
 						:data="summaryCardsData"
 						:groupBy="groupBy"
 						:selectedGroup="selectedGroup"
@@ -82,11 +83,7 @@
 	import { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 	import { HistoryGroupBy } from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 	import { BaselineType } from '@/components/activityTracking/summaryCards/BaselineOption.ts'
-	import {
-		getSummaryPieChart,
-		getSummaryStackedBars,
-		getSummarySummaryCards,
-	} from '@/api/activityHistory/historyDashboardApi.ts'
+	import { getSummaryPieChart, getSummaryStackedBars, getSummarySummaryCards } from '@/api/activityHistory/historyDashboardApi.ts'
 	import type { HistoryStackedBarsResponse } from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 	import type { HistorySummaryCardsResponse } from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'

@@ -12,6 +12,7 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 		public isDone: boolean = false,
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
+		public suggestedDay: number | null = null,
 		public steps: TodoListItemStepRequest[] = [],
 	) {
 		super(isDone, activityId, doneCount, totalCount, note, suggestedTime, steps)
@@ -26,6 +27,7 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 			obj.isDone,
 			obj.note,
 			obj.suggestedTime,
+			obj.suggestedDay,
 			obj.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note)),
 		)
 	}

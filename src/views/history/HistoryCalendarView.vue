@@ -79,13 +79,7 @@
 	import type { CalendarActivityDaySummary } from '@/dtos/response/historyDashboard/CalendarActivityDaySummary.ts'
 	import type { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { CalendarActivityRequest } from '@/dtos/request/activityHistory/CalendarActivityRequest.ts'
-
-	function formatDateForApi(d: Date): string {
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
+	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	function formatDuration(totalSeconds: number): string {
 		const hours = Math.floor(totalSeconds / 3600)

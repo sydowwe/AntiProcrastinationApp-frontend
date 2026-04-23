@@ -132,6 +132,7 @@
 	import type { AndroidTimelineResponse } from '@/dtos/response/activityTracking/android/AndroidTimelineResponse.ts'
 	import type { AndroidAppSummaryDto } from '@/dtos/response/activityTracking/android/AndroidAppSummaryDto.ts'
 	import type { AndroidPieChartResponse } from '@/dtos/response/activityTracking/android/AndroidPieChartResponse.ts'
+	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	// --- Date & Time State ---
 	const today = new Date()
@@ -212,14 +213,6 @@
 		}
 		return d
 	})
-
-	// --- Helpers ---
-	function formatDateForApi(d: Date): string {
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
 
 	// --- Fetch Functions ---
 	async function fetchSummaryCards() {
