@@ -101,11 +101,13 @@
 	const selectedWindowSize = ref(initialWindowSize)
 
 	// Dynamic Y-axis: show only up to the tallest activity rounded to next full hour
+	// Uses raw windows (not processedWindows) to avoid a circular computed dependency:
+	// displayMaxMinutes → processedWindows → minActivityMinutes → displayMaxMinutes
 	const displayMaxMinutes = computed(() => {
 		let max = 0
-		for (const w of processedWindows.value) {
-			for (const col of w.columns) {
-				const total = col.activeMinutes + col.backgroundMinutes
+		for (const w of windows) {
+			for (const item of w.items) {
+				const total = Math.ceil(item.activeSeconds / 60) + Math.ceil(item.backgroundSeconds / 60)
 				if (total > max) max = total
 			}
 		}
@@ -323,7 +325,7 @@
 
 			const prev = result[result.length - 1]
 			const prevIsFullDayEmpty =
-				prev !== null &&
+				prev != null &&
 				prev.columns.length === 0 &&
 				(prev.windowEnd.getTime() - prev.windowStart.getTime()) / 60000 >= dayDuration
 

@@ -129,6 +129,15 @@
 					>
 						~{{ toDoListItem.suggestedTime!.getNice }}
 					</VChip>
+					<VChip
+						v-if="itemSuggestedDay"
+						size="x-small"
+						variant="tonal"
+						color="neutral-600"
+						prependIcon="calendar-day"
+					>
+						{{ weekDayNames[itemSuggestedDay - 1] }}
+					</VChip>
 					<VIcon
 						v-if="isOverdue"
 						icon="triangle-exclamation"
@@ -324,6 +333,8 @@
 		return { label, color: overdue ? 'error' : isToday ? 'warning' : undefined, overdue }
 	})
 
+	const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 	const itemStreak = computed(() => {
 		const item = toDoListItem as unknown
 		return item instanceof RoutineTodoListItemEntity ? item.streak : undefined
@@ -331,6 +342,10 @@
 	const itemBestStreak = computed(() => {
 		const item = toDoListItem as unknown
 		return item instanceof RoutineTodoListItemEntity ? item.bestStreak : undefined
+	})
+	const itemSuggestedDay = computed(() => {
+		const item = toDoListItem as unknown
+		return item instanceof RoutineTodoListItemEntity ? item.suggestedDay : undefined
 	})
 	const lastCompletedAt = computed(() => {
 		const item = toDoListItem as unknown

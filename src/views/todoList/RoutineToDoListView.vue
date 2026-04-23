@@ -98,7 +98,10 @@
 							</div>
 						</div>
 					</div>
-					<div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px">
+					<div
+						class="mt-2 mb-1"
+						style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px"
+					>
 						<!-- Left: streak + consistency stats -->
 						<div class="mb-1 d-flex flex-column ga-1">
 							<div
@@ -291,6 +294,7 @@
 	const router = useRouter()
 	const { t } = useI18n()
 	const { getBgColor } = useColor()
+
 	const { fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder } =
 		useRoutineTodoListItemCrud()
 	const { changeTimePeriodVisibility } = useRoutineTimePeriodCrud()

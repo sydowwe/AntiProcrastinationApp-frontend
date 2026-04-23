@@ -125,6 +125,7 @@
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/utils/domainColor'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
+	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	// --- Date & Time State ---
 	const today = new Date()
@@ -195,12 +196,6 @@
 	})
 
 	// --- Formatting helpers ---
-	function formatDateForApi(d: Date): string {
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
 
 	// --- Fetch Functions ---
 	async function fetchSummaryCardsData() {

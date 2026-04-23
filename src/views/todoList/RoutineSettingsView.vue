@@ -10,59 +10,47 @@
 				Add
 			</VBtn>
 		</div>
-		<VList
-			lines="two"
-			class="rounded-lg"
-			color="surface"
+		<BasicTable
+			v-model="timePeriods"
+			v-model:itemsPerPage="itemsPerPage"
+			v-model:page="page"
+			v-model:sortBy="sortBy"
+			v-model:loading="loading"
+			:columns
+			:itemsLength="timePeriods.length"
+			:showSelect="false"
+			:showActionsHeader="false"
+			@onLoadItems="loadItems"
+			@onEdit="timePeriodDialog?.openEditDialog($event)"
+			@onDelete="onDelete"
 		>
-			<VListItem
-				v-for="period in timePeriods"
-				:key="period.id"
-				:title="period.text ?? ''"
-				:subtitle="`${period.lengthInDays} days`"
-			>
-				<template #prepend>
-					<VSheet
-						v-if="period.color"
-						:style="{ backgroundColor: getBgColor(period.color) }"
-						width="16"
-						height="16"
-						rounded="circle"
-						class="mr-3"
-					/>
-					<VIcon
-						v-else
-						icon="clock"
-						class="mr-3"
-					/>
-				</template>
-				<template #append>
-					<div class="d-flex ga-2">
-						<VIconBtn
-							icon="pen"
-							density="comfortable"
-							variant="tonal"
-							color="secondaryOutline"
-							:title="$t('general.edit')"
-							@click="timePeriodDialog?.openEditDialog(period)"
-						></VIconBtn>
-						<VIconBtn
-							icon="trash"
-							density="comfortable"
-							variant="tonal"
-							color="error"
-							:title="$t('general.delete')"
-							@click="onDelete(period.id)"
-						></VIconBtn>
+			<template #formattedColumn="{ id, key, value }">
+				<template v-if="key === 'color'">
+					<div class="d-flex justify-center">
+						<VSheet
+							v-if="value"
+							:style="{ backgroundColor: getBgColor(value as string) }"
+							width="22"
+							height="22"
+							rounded="circle"
+						/>
+						<VIcon
+							v-else
+							icon="clock"
+							size="22"
+						/>
 					</div>
 				</template>
-			</VListItem>
-			<VListItem
-				v-if="timePeriods.length === 0"
-				title="No time periods yet"
-				class="text-disabled"
-			/>
-		</VList>
+				<template v-else-if="key === 'streakThreshold'">{{ value }}%</template>
+				<template v-else-if="key === 'streakGraceDays'">
+					{{ (value as number) > 0 ? `${value}d` : '—' }}
+				</template>
+				<template v-else-if="key === 'resetAnchorDay'">
+					{{ (value as number) > 0 ? formatAnchorDay(id, value as number) : '—' }}
+				</template>
+				<template v-else>{{ value ?? '—' }}</template>
+			</template>
+		</BasicTable>
 	</div>
 	<TimePeriodDialog
 		ref="timePeriodDialog"
@@ -72,10 +60,13 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { ref } from 'vue'
+	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
 	import TimePeriodDialog from '@/components/dialogs/timePeriod/TimePeriodDialog.vue'
-	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
+	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
+	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 
@@ -84,10 +75,42 @@
 
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const timePeriodDialog = ref<InstanceType<typeof TimePeriodDialog>>()
+	const itemsPerPage = ref(25)
+	const page = ref(1)
+	const sortBy = ref<VSortItem[]>([new VSortItem('lengthInDays', 'asc')])
+	const loading = ref(false)
 
-	onMounted(async () => {
+	const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+	const columns: TableColumn[] = [
+		new TableColumn('color', '', false),
+		new TableColumn('text', 'Name'),
+		new TableColumn('lengthInDays', 'Length (days)'),
+		new TableColumn('resetAnchorDay', 'Reset anchor', false),
+		new TableColumn('streakThreshold', 'Streak threshold'),
+		new TableColumn('streakGraceDays', 'Grace days'),
+	]
+
+	async function loadItems() {
+		loading.value = true
 		timePeriods.value = await fetchAll()
-	})
+		loading.value = false
+	}
+
+	function periodById(id: number): RoutineTimePeriodEntity | undefined {
+		return timePeriods.value.find(p => p.id === id)
+	}
+
+	function isWeekAligned(lengthInDays: number): boolean {
+		return lengthInDays <= 7 || lengthInDays % 7 === 0
+	}
+
+	function formatAnchorDay(id: number, value: number): string {
+		const period = periodById(id)
+		if (!period) return String(value)
+		if (isWeekAligned(period.lengthInDays)) return weekDayNames[value - 1] ?? String(value)
+		return `${value}th`
+	}
 
 	function onCreated(created: RoutineTimePeriodEntity) {
 		timePeriods.value.push(created)
@@ -100,8 +123,8 @@
 		}
 	}
 
-	async function onDelete(id: number) {
-		await deleteEntity(id)
-		timePeriods.value = timePeriods.value.filter(p => p.id !== id)
+	async function onDelete(item: RoutineTimePeriodEntity) {
+		await deleteEntity(item.id)
+		timePeriods.value = timePeriods.value.filter(p => p.id !== item.id)
 	}
 </script>

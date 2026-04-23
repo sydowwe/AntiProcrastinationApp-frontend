@@ -22,6 +22,7 @@
 			:active="menuOpen"
 			:hideDetails
 			:rules
+			:width
 		>
 			<VMenu
 				v-model="menuOpen"
@@ -62,6 +63,7 @@
 		rules = [],
 		label = 'Time',
 		viewMode = 'hour',
+		width = '100px',
 		icon = 'far fa-clock',
 		allowedMinutesSelected = '5',
 		density = 'comfortable',
@@ -73,6 +75,7 @@
 		rules?: readonly ((value: unknown) => string | boolean)[]
 		label?: string
 		viewMode?: 'hour' | 'minute' | 'second'
+		width?: string
 		icon?: string
 		allowedMinutesSelected?: '1' | '5' | '10' | '15' | '20' | '30' | '45' | '60'
 		density?: 'default' | 'comfortable' | 'compact'

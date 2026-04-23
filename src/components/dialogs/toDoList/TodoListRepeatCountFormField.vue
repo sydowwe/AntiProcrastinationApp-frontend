@@ -1,19 +1,16 @@
 <template>
-	<div
-		class="d-flex ga-4"
-		:class="{ 'flex-column': isEdit }"
-	>
+	<div class="d-flex ga-6">
 		<VSwitch
 			v-model="isRepeated"
-			class="mx-auto"
+			class="ml-2"
 			label="Is repeated"
 			color="secondaryOutline"
-			density="comfortable"
+			density="compact"
 			hideDetails
 		></VSwitch>
 		<div
 			v-if="isRepeated"
-			class="my-2 mx-auto d-flex ga-4 align-center"
+			class="d-flex ga-4 align-center"
 		>
 			<VNumberInput
 				v-if="isEdit"

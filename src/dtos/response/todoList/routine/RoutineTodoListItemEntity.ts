@@ -18,6 +18,7 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public lastCompletedAt: string | null = null,
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
+		public suggestedDay: number | null = null,
 		public steps: TodoListItemStepEntity[] = [],
 	) {}
 
@@ -39,6 +40,7 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.lastCompletedAt ?? null,
 			json.note ?? null,
 			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
+			json.suggestedDay ?? null,
 			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
 		)
 	}
