@@ -118,6 +118,8 @@ export const vuetify = createVuetify({
 		VSwitch: { density: 'comfortable' },
 		VIconBtn: { rounded: '' },
 		VIconSmall: { size: '16' },
+		VForm: { class: 'py-2' },
+		VCol: { class: 'pa-2' },
 	},
 	display: {
 		thresholds: {

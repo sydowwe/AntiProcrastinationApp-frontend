@@ -10,15 +10,16 @@
 		</VCardTitle>
 		<VDivider />
 		<VCardText
-			class="d-flex align-center justify-center"
+			class="pa-5 d-flex align-center justify-center"
 			style="flex: 1"
 		>
 			<VRow>
 				<VCol cols="6">
 					<VBtn
 						block
+						variant="tonal"
 						height="110"
-						color="primary"
+						color="primaryOutline"
 						prependIcon="fas fa-circle-half-stroke"
 						class="d-flex flex-column"
 						style="font-size: 14px"
@@ -30,8 +31,9 @@
 				<VCol cols="6">
 					<VBtn
 						block
+						variant="tonal"
 						height="110"
-						color="primary"
+						color="primaryOutline"
 						prependIcon="fas fa-hourglass-half"
 						class="d-flex flex-column"
 						style="font-size: 14px"
@@ -43,8 +45,9 @@
 				<VCol cols="6">
 					<VBtn
 						block
+						variant="tonal"
 						height="110"
-						color="secondary"
+						color="secondaryOutline"
 						prependIcon="fas fa-stopwatch"
 						class="d-flex flex-column"
 						style="font-size: 14px"
@@ -56,8 +59,9 @@
 				<VCol cols="6">
 					<VBtn
 						block
+						variant="tonal"
 						height="110"
-						color="secondary"
+						color="secondaryOutline"
 						prependIcon="fas fa-pen"
 						class="d-flex flex-column"
 						style="font-size: 14px"
