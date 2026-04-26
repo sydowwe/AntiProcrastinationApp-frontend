@@ -1,5 +1,5 @@
 <template>
-	<VCard style="display: flex; flex-direction: column">
+	<VCard style="display: flex; flex-direction: column; overflow: hidden">
 		<VCardTitle class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
 			<span class="text-h6">{{ $t('home.todoList') }}</span>
 			<div class="d-flex align-center ga-1">
@@ -37,44 +37,19 @@
 				density="compact"
 				class="pa-0"
 			>
-				<VListItem
+				<ToDoListItem
 					v-for="item in visibleItems"
 					:key="item.id"
-					class="px-1 rounded-lg mb-1 cursor-pointer"
-					@click="toggleItem(item)"
-				>
-					<template #prepend>
-						<VIcon
-							:icon="item.isDone ? 'fas fa-circle-check' : 'far fa-circle'"
-							:color="item.isDone ? 'success' : 'textMuted'"
-							size="18"
-							class="me-2"
-						/>
-					</template>
-					<VListItemTitle
-						class="text-body-2"
-						:class="{ 'text-decoration-line-through text-medium-emphasis': item.isDone }"
-					>
-						{{ item.activity.name }}
-					</VListItemTitle>
-					<template #append>
-						<div class="d-flex align-center ga-2">
-							<template v-if="item.isMultipleCount && item.doneCount !== null && item.totalCount !== null">
-								<span class="text-caption text-medium-emphasis">
-									{{ item.doneCount }}/{{ item.totalCount }}
-								</span>
-							</template>
-							<VChip
-								v-if="item.dueDate"
-								:color="dueDateColor(item.dueDate)"
-								size="x-small"
-								variant="tonal"
-							>
-								{{ dueDateLabel(item.dueDate) }}
-							</VChip>
-						</div>
-					</template>
-				</VListItem>
+					:toDoListItem="item"
+					:kind="ToDoListKind.NORMAL"
+					:listId="0"
+					class="my-2"
+					@isDoneChanged="handleIsDoneChanged"
+					@stepToggled="load"
+					@edit="router.push({ name: 'toDoList' })"
+					@delete="router.push({ name: 'toDoList' })"
+					@addToPlanner="router.push({ name: 'taskPlanner' })"
+				/>
 			</VList>
 		</VCardText>
 	</VCard>
@@ -83,16 +58,16 @@
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
-	import { useI18n } from 'vue-i18n'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
+	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
+	import ToDoListItem from '@/components/toDoList/ToDoListItem.vue'
 
 	const router = useRouter()
-	const { t } = useI18n()
 
 	const items = ref<TodoListItemEntity[]>([])
 	const loading = ref(true)
-	const hideDone = ref(false)
+	const hideDone = ref(true)
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
@@ -101,22 +76,6 @@
 		const due = new Date(dueDate)
 		due.setHours(0, 0, 0, 0)
 		return Math.round((due.getTime() - today.getTime()) / 86_400_000)
-	}
-
-	function dueDateColor(dueDate: string): string {
-		const diff = daysDiff(dueDate)
-		if (diff < 0) return 'error'
-		if (diff === 0) return 'primary'
-		if (diff === 1) return 'warning'
-		return 'success'
-	}
-
-	function dueDateLabel(dueDate: string): string {
-		const diff = daysDiff(dueDate)
-		if (diff < 0) return t('home.overdue')
-		if (diff === 0) return t('home.dueToday')
-		if (diff === 1) return t('home.dueTomorrow')
-		return t('home.dueIn', { days: diff })
 	}
 
 	const sortedItems = computed(() =>
@@ -128,17 +87,11 @@
 		}),
 	)
 
-	const visibleItems = computed(() =>
-		hideDone.value ? sortedItems.value.filter(i => !i.isDone) : sortedItems.value,
-	)
+	const visibleItems = computed(() => (hideDone.value ? sortedItems.value.filter(i => !i.isDone) : sortedItems.value))
 
-	async function toggleItem(item: TodoListItemEntity) {
-		item.isDone = !item.isDone
-		try {
-			await API.patch('todo-list-item/toggle-is-done', { ids: [item.id] })
-		} catch {
-			item.isDone = !item.isDone
-		}
+	function handleIsDoneChanged(item: TodoListItemEntity, forceValue?: boolean) {
+		const request = { ids: [item.id], forceValue }
+		API.patch('todo-list-item/toggle-is-done', request).catch(() => load())
 	}
 
 	async function load() {

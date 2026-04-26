@@ -1,7 +1,30 @@
 <template>
-	<VCard style="display: flex; flex-direction: column">
+	<VCard style="display: flex; flex-direction: column; overflow: hidden; height: 100%">
 		<VCardTitle class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
 			<span class="text-h6">{{ $t('home.routineTodoList') }}</span>
+			<div class="d-flex align-center ga-2">
+				<VSheet
+					v-for="period in timePeriods"
+					:key="period.id"
+					rounded="lg"
+					class="px-4 py-2 d-flex align-center ga-2"
+					color="neutral-100"
+				>
+					<span class="text-caption font-weight-medium">{{ period.text }}</span>
+					<VIcon
+						icon="fas fa-fire"
+						color="warning"
+						size="12"
+					/>
+					<span class="text-caption font-weight-bold">{{ period.streak }}</span>
+					<VIcon
+						icon="fas fa-trophy"
+						color="amber"
+						size="12"
+					/>
+					<span class="text-caption text-medium-emphasis">{{ period.bestStreak }}</span>
+				</VSheet>
+			</div>
 			<div class="d-flex align-center ga-1">
 				<VIconBtn
 					:icon="hideDone ? 'fa-eye' : 'fa-eye-slash'"
@@ -66,72 +89,26 @@
 							density="compact"
 							class="pa-0"
 						>
-							<VListItem
+							<ToDoListItem
 								v-for="item in filteredItems(group)"
 								:key="item.id"
-								class="px-1 rounded-lg mb-1 cursor-pointer"
-								@click="toggleItem(item)"
-							>
-								<template #prepend>
-									<VIcon
-										:icon="item.isDone ? 'fas fa-circle-check' : 'far fa-circle'"
-										:color="item.isDone ? 'success' : 'textMuted'"
-										size="18"
-										class="me-2"
-									/>
-								</template>
-								<VListItemTitle
-									class="text-body-2"
-									:class="{ 'text-decoration-line-through text-medium-emphasis': item.isDone }"
-								>
-									{{ item.activity.name }}
-								</VListItemTitle>
-								<template
-									v-if="item.isMultipleCount && item.doneCount !== null && item.totalCount !== null"
-									#append
-								>
-									<span class="text-caption text-medium-emphasis">
-										{{ item.doneCount }}/{{ item.totalCount }}
-									</span>
-								</template>
-							</VListItem>
+								:toDoListItem="item"
+								:color="item.color"
+								:kind="ToDoListKind.ROUTINE"
+								:listId="0"
+								:streakConfig="{
+									graceDays: item.timePeriod.streakGraceDays,
+									periodLengthInDays: item.timePeriod.lengthInDays,
+								}"
+								class="my-2"
+								@isDoneChanged="handleIsDoneChanged"
+								@stepToggled="load"
+								@edit="router.push({ name: 'routineToDoList' })"
+								@delete="router.push({ name: 'routineToDoList' })"
+								@addToPlanner="router.push({ name: 'taskPlanner' })"
+							/>
 						</VList>
 					</div>
-				</div>
-				<div
-					v-if="loadingPeriods"
-					class="d-flex justify-center pt-2"
-				>
-					<VProgressCircular
-						indeterminate
-						size="20"
-					/>
-				</div>
-				<div
-					v-else
-					class="d-flex ga-2 pt-2"
-				>
-					<VSheet
-						v-for="period in timePeriods"
-						:key="period.id"
-						rounded="lg"
-						class="px-4 py-2 d-flex align-center ga-2"
-						color="neutral-100"
-					>
-						<span class="text-caption font-weight-medium">{{ period.text }}</span>
-						<VIcon
-							icon="fas fa-fire"
-							color="warning"
-							size="12"
-						/>
-						<span class="text-caption font-weight-bold">{{ period.streak }}</span>
-						<VIcon
-							icon="fas fa-trophy"
-							color="amber"
-							size="12"
-						/>
-						<span class="text-caption text-medium-emphasis">{{ period.bestStreak }}</span>
-					</VSheet>
 				</div>
 			</div>
 		</VCardText>
@@ -147,6 +124,8 @@
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
+	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
+	import ToDoListItem from '@/components/toDoList/ToDoListItem.vue'
 
 	const router = useRouter()
 	const { getAllGrouped } = useRoutineTodoListItemCrud()
@@ -156,7 +135,7 @@
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const loading = ref(true)
 	const loadingPeriods = ref(true)
-	const hideDone = ref(false)
+	const hideDone = ref(true)
 
 	const todayDayOfWeek = (() => {
 		const d = new Date().getDay()
@@ -175,7 +154,12 @@
 	}
 
 	const visibleGroups = computed(() =>
-		groupedItems.value.filter(g => !g.timePeriod.isHidden && todayItems(g).length > 0),
+		groupedItems.value.filter(g => {
+			if (g.timePeriod.isHidden) return false
+			const items = todayItems(g)
+			if (items.length === 0) return false
+			return !hideDone.value || items.some(i => !i.isDone)
+		}),
 	)
 
 	function groupProgress(group: RoutineTodoListGroupedList) {
@@ -190,13 +174,13 @@
 		return hideDone.value ? items.filter(i => !i.isDone) : items
 	}
 
-	async function toggleItem(item: RoutineTodoListItemEntity) {
-		item.isDone = !item.isDone
-		try {
-			await API.patch('/routine-todo-list/toggle-is-done', { ids: [item.id] })
-		} catch {
-			item.isDone = !item.isDone
+	function handleIsDoneChanged(item: RoutineTodoListItemEntity, forceValue?: boolean) {
+		const sourceItem = groupedItems.value.flatMap(g => g.items).find(i => i.id === item.id)
+		if (sourceItem) {
+			sourceItem.isDone = item.isDone
+			sourceItem.doneCount = item.doneCount
 		}
+		API.patch('/routine-todo-list/toggle-is-done', { ids: [item.id], forceValue }).catch(() => load())
 	}
 
 	async function load() {

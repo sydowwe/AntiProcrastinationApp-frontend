@@ -3,7 +3,7 @@
 		<Navbar></Navbar>
 		<VMain style="height: 100dvh; overflow: hidden">
 			<VContainer
-				class="h-100 d-flex py-0 px-3 px-md-4 overflow-y-auto"
+				class="h-100 d-flex py-0 px-2 px-md-3 overflow-y-auto"
 				fluid
 			>
 				<RouterView></RouterView>

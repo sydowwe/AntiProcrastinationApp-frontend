@@ -359,6 +359,7 @@ const SK = {
 		name: `Meno`,
 		surname: `Priezvisko`,
 		continueWithGoogle: `Pokračujte pomocou Google`,
+		googleLoginError: `Chyba pri prihlásení cez Google. Skúste to znova.`,
 		dontHaveAccountYet: `Nemáte ešte účet`,
 
 		// usernameOrEmailRequired: 'Používateľské meno alebo email je povinné',

@@ -64,6 +64,7 @@
 	const categoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>()
 
 	const columns: TableColumn[] = [
+		new TableColumn('role', 'Role'),
 		new TableColumn('name', 'Name'),
 		new TableColumn('text', 'Text', false),
 		new TableColumn('color', 'Color', false),

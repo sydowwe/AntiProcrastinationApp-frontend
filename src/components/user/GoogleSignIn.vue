@@ -1,85 +1,89 @@
 <template>
-	<GoogleLogin
-		:callback="callback"
-		:clientId="clientId"
+	<VBtn
+		width="100%"
+		color="primary"
+		:disabled="loading"
+		@click="signIn"
 	>
-		<VBtn
-			width="100%"
-			color="primary"
-			:disabled="loading"
-		>
-			{{ $t('authorization.continueWithGoogle') }}
-			<VIcon class="ml-1"></VIcon>
-		</VBtn>
-	</GoogleLogin>
+		{{ $t('authorization.continueWithGoogle') }}
+		<VIcon class="ml-1"></VIcon>
+	</VBtn>
 	<div
 		v-if="error"
 		class="error-message"
 	>
-		Error logging in. Please try again.
+		{{ $t('authorization.googleLoginError') }}
 	</div>
 </template>
 
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { GoogleSignInRequest } from '@/dtos/request/user/GoogleSignInRequest.ts'
-	import { type CallbackTypes, GoogleLogin } from 'vue3-google-login'
+	import { googleSdkLoaded } from 'vue3-google-login'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { useRecaptcha } from '@/composables/UseRecaptchaHandler.ts'
 
-	const props = defineProps<{
+	const { isStayLoggedIn } = defineProps<{
 		isStayLoggedIn: boolean
 	}>()
 
 	const emit = defineEmits<{
-		loggedIn: []
+		loggedIn: [email: string, currentLocale: string]
 	}>()
 
 	const { executeRecaptcha } = useRecaptcha()
 
-	const googleSignInRequest = ref(new GoogleSignInRequest())
 	const loading = ref(false)
 	const error = ref(false)
 	const clientId = import.meta.env.VITE_GOOGLE_LOGIN_CLIENT_ID
 
-	const callback: CallbackTypes.CodeResponseCallback = async response => {
-		console.log('Authorisation code', response.code)
+	function signIn() {
+		googleSdkLoaded(google => {
+			google.accounts.oauth2
+				.initCodeClient({
+					client_id: clientId,
+					scope: 'email openid',
+					ux_mode: 'popup',
+					callback: handleCode,
+				})
+				.requestCode()
+		})
+	}
 
+	async function handleCode(response: { code: string }) {
 		loading.value = true
 		error.value = false
+
+		let loginData: { email: string; currentLocale: string } | null = null
 
 		try {
 			const recaptchaToken = await executeRecaptcha('google_sign_in')
 
 			if (recaptchaToken) {
-				googleSignInRequest.value.stayLoggedIn = props.isStayLoggedIn
-				googleSignInRequest.value.recaptchaToken = recaptchaToken
-				googleSignInRequest.value.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-				googleSignInRequest.value.code = response.code
+				const request = new GoogleSignInRequest(
+					isStayLoggedIn,
+					recaptchaToken,
+					Intl.DateTimeFormat().resolvedOptions().timeZone,
+					response.code,
+				)
 
-				const apiResponse = await API.post('/user/login/google', googleSignInRequest.value)
-				emit('loggedIn', apiResponse.data.email, apiResponse.data.currentLocale)
+				const apiResponse = await API.post('/auth/login/google', request)
+				loginData = { email: apiResponse.data.email, currentLocale: apiResponse.data.currentLocale }
 			}
 		} catch (err) {
-			console.log(err)
+			console.error(err)
 			error.value = true
 		} finally {
 			loading.value = false
+		}
+
+		if (loginData) {
+			emit('loggedIn', loginData.email, loginData.currentLocale)
 		}
 	}
 </script>
 
 <style scoped>
-	iframe {
-		width: 224px !important;
-		height: 40px !important;
-		margin: 0 !important;
-	}
-
-	.haAclf {
-		padding: 0 !important;
-	}
-
 	.error-message {
 		color: red;
 		margin-top: 10px;

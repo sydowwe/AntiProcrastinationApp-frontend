@@ -7,11 +7,12 @@ export class Category implements INameTextColorIconResponse {
 		public text: string | null = null,
 		public color: string | null = null,
 		public icon: string | null = null,
+		public role: string | null = null,
 	) {}
 
 	static fromJson(object: any) {
-		const { id = 0, name = '', text = '', color = '', icon = '' } = object
-		return new Category(id, name, text, color, icon)
+		const { id = 0, name = '', text = '', color = '', icon = '', role = '' } = object
+		return new Category(id, name, text, color, icon, role)
 	}
 
 	static listFromObjects(objects: any[]) {

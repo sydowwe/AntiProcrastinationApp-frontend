@@ -359,6 +359,7 @@ const EN = {
 		name: `Name`,
 		surname: `Surname`,
 		continueWithGoogle: `Continue with google`,
+		googleLoginError: `Error logging in with Google. Please try again.`,
 		dontHaveAccountYet: `Don't have an account yet`,
 
 		// usernameOrEmailRequired: 'Username or Email is required',

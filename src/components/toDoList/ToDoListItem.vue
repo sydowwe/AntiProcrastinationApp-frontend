@@ -224,14 +224,13 @@
 			@mousedown.stop
 			@stepToggled="emits('stepToggled')"
 		/>
+		<!-- Hidden drag preview template -->
+		<DraggedItemPreview
+			ref="dragPreviewRef"
+			:toDoListItem
+			:color
+		/>
 	</VListItem>
-
-	<!-- Hidden drag preview template -->
-	<DraggedItemPreview
-		ref="dragPreviewRef"
-		:toDoListItem
-		:color
-	/>
 </template>
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">

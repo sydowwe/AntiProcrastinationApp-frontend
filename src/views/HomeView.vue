@@ -1,39 +1,54 @@
 <template>
-	<div class="px-2 py-8 w-100 h-100 d-flex flex-column">
-		<VRow class="flex-fill">
-			<VCol
-				cols="12"
-				md="6"
+	<div
+		class="py-3 w-100 h-100 d-flex flex-column"
+		style="overflow: hidden"
+	>
+		<div style="flex: 1 1 0; min-height: 0; overflow: hidden">
+			<VRow
+				class="ma-0 h-100"
+				align="stretch"
 			>
-				<DayPlannerWidget class="h-100" />
-			</VCol>
-			<VCol
-				cols="12"
-				md="6"
+				<VCol
+					cols="12"
+					md="6"
+					style="min-height: 0; height: 100%"
+				>
+					<DayPlannerWidget class="h-100" />
+				</VCol>
+				<VCol
+					cols="12"
+					md="6"
+					style="min-height: 0; height: 100%"
+				>
+					<RoutineTodoWidget class="h-100" />
+				</VCol>
+			</VRow>
+		</div>
+		<div style="flex: 0 0 400px; min-height: 0; overflow: hidden">
+			<VRow
+				class="ma-0 h-100"
+				align="stretch"
 			>
-				<RoutineTodoWidget class="h-100" />
-			</VCol>
-		</VRow>
-		<VRow style="max-height: 400px">
-			<VCol
-				cols="4"
-				alignSelf="stretch"
-			>
-				<ActivityHistoryWidget class="h-100" />
-			</VCol>
-			<VCol
-				cols="4"
-				alignSelf="stretch"
-			>
-				<QuickRecordWidget class="h-100" />
-			</VCol>
-			<VCol
-				cols="4"
-				alignSelf="stretch"
-			>
-				<TodoListWidget class="h-100" />
-			</VCol>
-		</VRow>
+				<VCol
+					cols="4"
+					style="min-height: 0"
+				>
+					<ActivityHistoryWidget class="h-100" />
+				</VCol>
+				<VCol
+					cols="4"
+					style="min-height: 0"
+				>
+					<QuickRecordWidget class="h-100" />
+				</VCol>
+				<VCol
+					cols="4"
+					style="min-height: 0"
+				>
+					<TodoListWidget class="h-100" />
+				</VCol>
+			</VRow>
+		</div>
 	</div>
 </template>
 
