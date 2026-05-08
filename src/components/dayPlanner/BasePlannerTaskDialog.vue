@@ -14,17 +14,22 @@
 		>
 			<slot name="before-time" />
 
-			<div class="d-flex justify-space-between my-3">
-				<TimeRangePicker
-					v-model:start="data.startTime"
-					v-model:end="data.endTime"
-				></TimeRangePicker>
-				<VSwitch
-					v-model="data.isBackground"
-					label="Is background"
-					color="primary"
-					hideDetails
-				/>
+			<TimeRangePicker
+				class="mx-auto my-3"
+				v-model:start="data.startTime"
+				v-model:end="data.endTime"
+			></TimeRangePicker>
+			<div class="mx-auto d-flex flex-wrap ga-1 mb-2">
+				<VChip
+					v-for="d in DURATION_CHIPS"
+					:key="d"
+					size="small"
+					:color="currentDurationMinutes === d ? 'primaryOutline' : undefined"
+					variant="tonal"
+					@click="setDuration(d)"
+				>
+					{{ formatDurationChip(d) }}
+				</VChip>
 			</div>
 
 			<VCard
@@ -45,16 +50,25 @@
 				></ActivitySelectOrQuickEditFormField>
 			</VCard>
 
-			<VIdSelect
-				v-model="data.importanceId"
-				class="pt-8 pb-2"
-				:label="$t('planner.importance')"
-				:clearable="false"
-				:items="importanceOptions"
-				:prependInnerIcon="currentImportance?.icon"
-				required
-				:rules="[requiredRule]"
-			></VIdSelect>
+			<div class="d-flex ga-4 ga-md-8">
+				<VIdSelect
+					v-model="data.importanceId"
+					class="pt-8 pb-2"
+					:label="$t('planner.importance')"
+					:clearable="false"
+					:items="importanceOptions"
+					:prependInnerIcon="currentImportance?.icon"
+					required
+					:rules="[requiredRule]"
+				></VIdSelect>
+				<VSwitch
+					class="text-no-wrap"
+					v-model="data.isBackground"
+					label="Is background"
+					color="primary"
+					hideDetails
+				/>
+			</div>
 
 			<VTextField
 				v-model="data.location"
@@ -95,6 +109,7 @@
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import type { VForm } from 'vuetify/components'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import { Time } from '@/dtos/dto/Time.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useTaskImportanceCrud } from '@/api/taskPlanner/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
@@ -105,8 +120,9 @@
 	const props = defineProps<{
 		title: string
 		store: TStore
-		createEmptyRequest: () => TTaskRequest
+		createEmptyRequest: (suggestedDurationMinutes?: number) => TTaskRequest
 		hideActivitySelector?: boolean
+		suggestedDurationMinutes?: number
 	}>()
 
 	const emit = defineEmits<{
@@ -124,7 +140,7 @@
 
 	const dialogVisible = computed({
 		get: () => props.store.dialog,
-		set: value => props.store.$patch({ dialog: value }),
+		set: value => (props.store.dialog = value),
 	})
 
 	const isEdit = computed(() => props.store.editedId !== undefined && !props.store.isDuplicating)
@@ -170,7 +186,7 @@
 					}
 				} else {
 					// Create mode: use empty request with optional time from creationPreview
-					data.value = props.createEmptyRequest()
+					data.value = props.createEmptyRequest(props.suggestedDurationMinutes)
 
 					if (props.store.creationPreview) {
 						data.value.startTime = props.store.slotIndexToTime(props.store.creationPreview.startRow - 1)
@@ -181,10 +197,30 @@
 				}
 			} else {
 				// Clear creation preview when dialog closes
-				props.store.$patch({ creationPreview: undefined })
+				props.store.creationPreview = undefined
 			}
 		},
 	)
+
+	const DURATION_CHIPS = [10, 15, 20, 30, 45, 60, 90, 120, 180]
+
+	const currentDurationMinutes = computed(() => {
+		if (!data.value.startTime || !data.value.endTime) return 0
+		let diff = Time.fromJson(data.value.endTime).getInMinutes - Time.fromJson(data.value.startTime).getInMinutes
+		if (diff < 0) diff += 24 * 60
+		return diff
+	})
+
+	function setDuration(minutes: number) {
+		if (!data.value.startTime) return
+		data.value.endTime = Time.fromMinutes((Time.fromJson(data.value.startTime).getInMinutes + minutes) % (24 * 60))
+	}
+
+	function formatDurationChip(minutes: number): string {
+		if (minutes < 60) return `${minutes}m`
+		const h = minutes / 60
+		return Number.isInteger(h) ? `${h}h` : `${Math.floor(h)}½h`
+	}
 
 	async function save() {
 		const isValid = await form.value?.validate()
@@ -205,7 +241,8 @@
 			emit('create', data.value)
 		}
 
-		props.store.$patch({ isDuplicating: false, dialog: false })
+		props.store.isDuplicating = false
+		props.store.dialog = false
 	}
 
 	defineExpose({

@@ -28,12 +28,12 @@
 				<TodoListRepeatCountFormField
 					class="mt-2"
 					v-model="isRepeated"
-					v-model:doneCount="routineToDoListItem.doneCount"
-					v-model:totalCount="routineToDoListItem.totalCount"
+					v-model:doneCount="request.doneCount"
+					v-model:totalCount="request.totalCount"
 					:isEdit
 				></TodoListRepeatCountFormField>
 				<VIdSelect
-					v-model="routineToDoListItem.timePeriodId"
+					v-model="request.timePeriodId"
 					:label="$t('toDoList.timePeriod')"
 					:clearable="false"
 					:items="timePeriodOptions"
@@ -55,9 +55,13 @@
 						viewMode="minute"
 						hideDetails
 						width="150px"
+						allowedMinutesSelected="1"
 					/>
 				</div>
-				<div class="d-flex align-center">
+				<div
+					v-if="request.timePeriodId"
+					class="d-flex align-center"
+				>
 					<VSwitch
 						class="ml-2"
 						v-model="suggestedDayEnabled"
@@ -78,7 +82,7 @@
 					></VSelect>
 				</div>
 				<VTextarea
-					v-model="routineToDoListItem.note"
+					v-model="request.note"
 					label="Note"
 					density="compact"
 					hideDetails
@@ -147,7 +151,6 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
-	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/RoutineTodoListItemEntity.ts'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import { VForm } from 'vuetify/components'
@@ -158,6 +161,7 @@
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
+	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 
 	const emit = defineEmits<{
 		edit: [entity: RoutineTodoListItemEntity, request: RoutineTodoListItemRequest]
@@ -173,7 +177,7 @@
 	const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>()
 	const form = ref<InstanceType<typeof VForm>>()
 
-	const routineToDoListItem = ref(new RoutineTodoListItemRequest())
+	const request = ref(new RoutineTodoListItemRequest())
 
 	const dialog = ref(false)
 	const isEdit = ref(false)
@@ -206,7 +210,7 @@
 
 	watch(dialog, newValue => {
 		if (!newValue) {
-			routineToDoListItem.value = new RoutineTodoListItemRequest()
+			request.value = new RoutineTodoListItemRequest()
 			setDefaultTimePeriod()
 			suggestedTimeEnabled.value = false
 			suggestedTimeValue.value = new Time()
@@ -223,34 +227,32 @@
 	})
 
 	const setDefaultTimePeriod = () => {
-		routineToDoListItem.value.timePeriodId = timePeriodOptions.value[0]?.id
+		request.value.timePeriodId = timePeriodOptions.value[0]?.id
 	}
 
 	async function save() {
 		const isValid = await form.value?.validate()
-		if (!isValid.valid) {
+		if (!isValid?.valid) {
 			return
 		}
 
 		const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus()
 		if (activityFormFieldResult) {
-			routineToDoListItem.value.activityId = activityFormFieldResult.activityId
+			request.value.activityId = activityFormFieldResult.activityId
 		}
 		if (!isRepeated.value) {
-			routineToDoListItem.value.totalCount = null
+			request.value.totalCount = null
 			if (isEdit.value) {
-				routineToDoListItem.value.doneCount = null
+				request.value.doneCount = null
 			}
 		}
-		routineToDoListItem.value.suggestedTime = suggestedTimeEnabled.value ? suggestedTimeValue.value : null
-		routineToDoListItem.value.suggestedDay = suggestedDayEnabled.value ? suggestedDayValue.value : null
-		routineToDoListItem.value.steps = dialogSteps.value.map(
-			(s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note),
-		)
+		request.value.suggestedTime = suggestedTimeEnabled.value ? suggestedTimeValue.value : null
+		request.value.suggestedDay = suggestedDayEnabled.value ? suggestedDayValue.value : null
+		request.value.steps = dialogSteps.value.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
 		if (isEdit.value) {
-			emit('edit', entityBeforeEdit.value, routineToDoListItem.value)
+			emit('edit', entityBeforeEdit.value, request.value)
 		} else {
-			emit('add', routineToDoListItem.value)
+			emit('add', request.value)
 		}
 		close()
 	}
@@ -273,7 +275,7 @@
 		dialog.value = false
 
 		activityFormField.value?.reset()
-		routineToDoListItem.value = new RoutineTodoListItemRequest()
+		request.value = new RoutineTodoListItemRequest()
 		setDefaultTimePeriod()
 		suggestedTimeEnabled.value = false
 		suggestedTimeValue.value = new Time()
@@ -295,7 +297,7 @@
 		entityBeforeEdit.value = entityToEdit
 
 		activityFormField.value?.onOpenEdit(entityBeforeEdit.value.activity.id)
-		routineToDoListItem.value = RoutineTodoListItemRequest.fromEntity(entityToEdit)
+		request.value = RoutineTodoListItemRequest.fromEntity(entityToEdit)
 		isRepeated.value = (entityToEdit.totalCount ?? 0) > 1
 		suggestedTimeEnabled.value = !!entityToEdit.suggestedTime
 		suggestedTimeValue.value = entityToEdit.suggestedTime ?? new Time()

@@ -235,6 +235,7 @@ const SK = {
 		uncategorized: `Bez kategórie`,
 		all: `Všetky`,
 		addToPlanner: `Pridať do plánovača`,
+		logTime: `Zaznamenať čas`,
 	},
 	dateTime: {
 		when: `Kedy`,

@@ -6,7 +6,7 @@ import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	constructor(
 		public startTime: Time = new Time(7, 0),
-		public endTime: Time = new Time(23, 0),
+		public endTime: Time = new Time(8, 0),
 		public calendarId?: number,
 		public isBackground: boolean = false,
 		public location: string | null = null,
@@ -19,6 +19,16 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public actualStartTime: Time | null = null,
 		public actualEndTime: Time | null = null,
 	) {}
+
+	static createEmpty(): PlannerTaskRequest {
+		const now = new Date()
+		const newHours = now.getHours() + 1
+		const newMinutes = Math.ceil(now.getMinutes() / 5) * 5
+		return new PlannerTaskRequest(
+			new Time(now.getHours(), newMinutes),
+			new Time(newHours === 24 ? 0 : newHours, newMinutes),
+		)
+	}
 
 	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {
 		return new PlannerTaskRequest(startTime, endTime)

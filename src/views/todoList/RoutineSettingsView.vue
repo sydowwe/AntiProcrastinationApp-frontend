@@ -48,6 +48,16 @@
 				<template v-else-if="key === 'resetAnchorDay'">
 					{{ (value as number) > 0 ? formatAnchorDay(id, value as number) : '—' }}
 				</template>
+				<template v-else-if="key === 'isHidden'">
+					<VSwitch
+						class="mx-auto pr-4"
+						style="width: fit-content"
+						:modelValue="value"
+						color="primaryOutline"
+						@update:modelValue="onVisibilityChange"
+						hideDetails
+					></VSwitch>
+				</template>
 				<template v-else>{{ value ?? '—' }}</template>
 			</template>
 		</BasicTable>
@@ -63,14 +73,14 @@
 	import { ref } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
 	import TimePeriodDialog from '@/components/dialogs/timePeriod/TimePeriodDialog.vue'
-	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
+	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 
-	const { fetchAll, deleteEntity } = useRoutineTimePeriodCrud()
+	const { fetchAll, deleteEntity, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { getBgColor } = useColor()
 
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
@@ -89,6 +99,7 @@
 		new TableColumn('resetAnchorDay', 'Reset anchor', false),
 		new TableColumn('streakThreshold', 'Streak threshold'),
 		new TableColumn('streakGraceDays', 'Grace days'),
+		new TableColumn('isHidden', 'Is hidden'),
 	]
 
 	async function loadItems() {
@@ -126,5 +137,11 @@
 	async function onDelete(item: RoutineTimePeriodEntity) {
 		await deleteEntity(item.id)
 		timePeriods.value = timePeriods.value.filter(p => p.id !== item.id)
+	}
+
+	function onVisibilityChange(isHidden: boolean, id: number) {
+		changeTimePeriodVisibility(id)
+		const a = timePeriods.value.find(timePeriod => timePeriod.id === id)
+		if (a) a.isHidden = isHidden
 	}
 </script>

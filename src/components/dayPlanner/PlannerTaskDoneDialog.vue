@@ -1,110 +1,80 @@
 <template>
 	<MyDialog
 		v-model="dialogShown"
-		title="Task done"
-		:confirmButtonLabel="i18n.t('general.save')"
 		eager
 		@confirmed="save"
 	>
 		<template #header>
 			<div class="text-wrap">
-				{{ i18n.t('toDoList.saveTask') }}
+				{{ $t('toDoList.saveTask') }}
 				<span class="text-purple-accent-4 font-weight-bold">{{ plannerTask?.activity?.name }}</span>
-				{{ i18n.t('history.toHistory').toLowerCase() }}?
+				{{ $t('history.toHistory').toLowerCase() }}?
 			</div>
 		</template>
-		<VForm
-			ref="form"
-			validateOn="submit"
-			@keyup.enter="save"
+		<LogTimeForm
+			ref="logTimeForm"
+			v-model:dateTime="dateTime"
+			v-model:length="length"
+			class="pt-3"
 			@submit="save"
-		>
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.date') }}</VLabel>
-				<VDateInput
-					v-model="dateTime"
-					class="ml-2 flex-grow-1"
-					:displayFormat="formatToDateTs"
-					:clearable="false"
-				></VDateInput>
-			</div>
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.time') }}</VLabel>
-				<TimePicker
-					v-model="startTime"
-					class="ml-2 flex-grow-1"
-					allowedMinutesSelected="10"
-				></TimePicker>
-			</div>
-			<div class="d-flex flex-column flex-sm-row mb-4">
-				<VLabel>{{ i18n.t('dateTime.length') }}</VLabel>
-				<TimePicker
-					v-model="length"
-					class="ml-2 flex-grow-1"
-				></TimePicker>
-			</div>
-		</VForm>
+		/>
 	</MyDialog>
 </template>
+
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
-
 	import { useI18n } from 'vue-i18n'
 	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import LogTimeForm from '@/components/general/LogTimeForm.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
-	import type { VForm } from 'vuetify/components'
 
 	const props = defineProps<{
 		plannerTask: PlannerTask
 		isRecursive: boolean
 	}>()
-	const emit = defineEmits<{
-		openNext: []
-	}>()
+	const emit = defineEmits<{ openNext: [] }>()
 	const dialogShown = defineModel<boolean>({ required: true })
+
 	const { create } = useActivityHistoryCrud()
-	const { formatToDate } = useDateTime()
-	const formatToDateTs = formatToDate as (date: unknown) => string
-	const i18n = useI18n()
+	const { t } = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 
-	const form = ref<InstanceType<typeof VForm>>()
+	const logTimeForm = ref<InstanceType<typeof LogTimeForm>>()
 	const dateTime = ref(new Date())
-	const startTime = ref(new Time())
 	const length = ref(new Time())
 
 	function calculateMinuteLength(): number {
 		const startMinutes = props.plannerTask.startTime.getInMinutes
 		const endMinutes = props.plannerTask.endTime.getInMinutes
+		if (endMinutes >= startMinutes) return endMinutes - startMinutes
+		return 24 * 60 - startMinutes + endMinutes
+	}
 
-		if (endMinutes >= startMinutes) {
-			return endMinutes - startMinutes
-		} else {
-			// Task crosses midnight
-			return 24 * 60 - startMinutes + endMinutes
-		}
+	function initDateTime() {
+		const now = new Date()
+		now.setHours(props.plannerTask.startTime.hours, props.plannerTask.startTime.minutes, 0, 0)
+		dateTime.value = now
+	}
+
+	function initLength() {
+		const mins = calculateMinuteLength()
+		length.value = new Time(Math.floor(mins / 60), mins % 60)
 	}
 
 	onMounted(() => {
-		const now = new Date()
-		startTime.value = Time.fromDate(now)
-		const minuteLength = calculateMinuteLength()
-		length.value = new Time(Math.floor(minuteLength / 60), minuteLength % 60)
+		initDateTime()
+		initLength()
 	})
 
 	watch(dialogShown, isShown => {
 		if (isShown) {
 			if (!props.isRecursive) {
-				dateTime.value = new Date()
-				startTime.value = Time.fromDate(new Date())
+				initDateTime()
 			}
-			const minuteLength = calculateMinuteLength()
-			length.value = new Time(Math.floor(minuteLength / 60), minuteLength % 60)
+			initLength()
 		} else {
 			if (props.isRecursive) {
 				setTimeout(() => emit('openNext'), 200)
@@ -113,22 +83,14 @@
 	})
 
 	async function save() {
-		const isValid = await form.value?.validate()
-		if (!isValid?.valid) {
-			return
-		}
-
-		// Set the time on the date from the startTime
-		dateTime.value.setHours(startTime.value.hours)
-		dateTime.value.setMinutes(startTime.value.minutes)
-
+		const isValid = await logTimeForm.value?.validate()
+		if (!isValid?.valid) return
 		const request = await create(dateTime.value, length.value, props.plannerTask.activity.id)
 		if (request) {
-			showSuccessSnackbar(`Saved done planner task ${props.plannerTask.activity.name} to history`)
+			showSuccessSnackbar(t('toDoList.savedToHistory', { name: props.plannerTask.activity.name }))
 			dialogShown.value = false
 		} else {
-			showErrorSnackbar(`Error saving planner task ${props.plannerTask.activity.name} to history`)
+			showErrorSnackbar(t('toDoList.errorSavingToHistory', { name: props.plannerTask.activity.name }))
 		}
 	}
 </script>
-<style scoped></style>

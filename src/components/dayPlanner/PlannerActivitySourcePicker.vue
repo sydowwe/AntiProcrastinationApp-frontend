@@ -5,12 +5,12 @@
 			mandatory
 			density="compact"
 			color="primary"
-			rounded="lg"
-			class="w-100"
+			rounded
+			class="w-100 pb-1 mb-2 mt-2"
 		>
 			<VBtn
 				value="all"
-				class="flex-grow-1"
+				class="px-1 px-md-2 flex-grow-1"
 			>
 				All activities
 			</VBtn>
@@ -18,7 +18,7 @@
 				v-if="showTodo"
 				value="todo"
 				prependIcon="list-check"
-				class="flex-grow-1"
+				class="px-1 px-md-2 flex-grow-1"
 			>
 				To-do list
 			</VBtn>
@@ -26,14 +26,14 @@
 				v-if="showRoutine"
 				value="routine"
 				prependIcon="rotate"
-				class="flex-grow-1"
+				class="px-1 px-md-2 flex-grow-1"
 			>
 				Routine
 			</VBtn>
 		</VBtnToggle>
 
 		<template v-if="pickerMode === 'todo'">
-			<div class="d-flex ga-2">
+			<div class="mb-2 d-flex ga-3">
 				<VAutocomplete
 					v-model="filterListId"
 					:items="todoLists"
@@ -41,6 +41,7 @@
 					itemTitle="name"
 					label="List"
 					clearable
+					prependIcon="filter"
 					density="compact"
 					hideDetails
 					class="flex-1-1"
@@ -72,10 +73,12 @@
 
 		<template v-if="pickerMode === 'routine'">
 			<VIdAutocomplete
+				class="mb-2"
 				v-model="filterPeriodId"
 				:items="routinePeriods"
 				label="Period"
 				clearable
+				prependIcon="filter"
 				density="compact"
 				hideDetails
 			/>
@@ -100,7 +103,6 @@
 	import { computed, ref, watch } from 'vue'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
-	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
 	import { fetchTodoListItems } from '@/api/todoList/todoListItemApi.ts'
 	import { useTaskPriorityCrud } from '@/api/todoList/taskPriorityApi.ts'
@@ -108,14 +110,20 @@
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
-	const { showTodo = false, showRoutine = true } = defineProps<{
+	const {
+		showTodo = false,
+		showRoutine = true,
+		initialActivityId,
+	} = defineProps<{
 		showTodo?: boolean
 		showRoutine?: boolean
+		initialActivityId?: number
 	}>()
 
 	const emit = defineEmits<{
-		selected: [{ activityId: number; todoListItemId?: number }]
+		selected: [activityId: number, todoListItemId?: number]
 	}>()
 
 	const pickerMode = defineModel<'all' | 'todo' | 'routine'>('pickerMode', { default: 'all' })
@@ -130,7 +138,7 @@
 	const loadingTodo = ref(false)
 
 	// Routine mode state
-	const routinePeriods = ref<RoutineTimePeriodEntity[]>([])
+	const routinePeriods = ref<SelectOption[]>([])
 	const allRoutineItems = ref<RoutineTodoListItemEntity[]>([])
 	const filterPeriodId = ref<number | null>(null)
 	const selectedRoutineItemId = ref<number | null>(null)
@@ -164,6 +172,10 @@
 				seen.add(item.activity.id)
 				return true
 			})
+			if (initialActivityId != null) {
+				const match = allTodoItems.value.find(item => item.activity.id === initialActivityId)
+				if (match) selectedTodoItemId.value = match.id
+			}
 		} finally {
 			loadingTodo.value = false
 		}
@@ -180,6 +192,10 @@
 				seenRoutine.add(item.activity.id)
 				return true
 			})
+			if (initialActivityId != null) {
+				const match = allRoutineItems.value.find(item => item.activity.id === initialActivityId)
+				if (match) selectedRoutineItemId.value = match.id
+			}
 		} finally {
 			loadingRoutine.value = false
 		}
@@ -194,15 +210,19 @@
 		}
 	}
 
-	watch(pickerMode, async mode => {
-		selectedTodoItemId.value = null
-		selectedRoutineItemId.value = null
-		filterListId.value = null
-		filterPriorityId.value = null
-		filterPeriodId.value = null
-		if (mode === 'todo') await loadTodoData()
-		else if (mode === 'routine') await loadRoutineData()
-	})
+	watch(
+		pickerMode,
+		async mode => {
+			selectedTodoItemId.value = null
+			selectedRoutineItemId.value = null
+			filterListId.value = null
+			filterPriorityId.value = null
+			filterPeriodId.value = null
+			if (mode === 'todo') await loadTodoData()
+			else if (mode === 'routine') await loadRoutineData()
+		},
+		{ immediate: true },
+	)
 
 	watch(filterListId, async () => {
 		selectedTodoItemId.value = null
@@ -212,14 +232,14 @@
 	watch(selectedTodoItemId, id => {
 		if (id != null) {
 			const item = allTodoItems.value.find(i => i.id === id)
-			if (item) emit('selected', { activityId: item.activity.id, todoListItemId: item.id })
+			if (item) emit('selected', item.activity.id, item.id)
 		}
 	})
 
 	watch(selectedRoutineItemId, id => {
 		if (id != null) {
 			const item = allRoutineItems.value.find(i => i.id === id)
-			if (item) emit('selected', { activityId: item.activity.id })
+			if (item) emit('selected', item.activity.id)
 		}
 	})
 </script>

@@ -64,76 +64,19 @@ export function filterActivityFormSelectOptions(
 	)
 	filteredOptions.roleOptions = uniqueOptions(combinationsForRole.map(combination => combination.roleOption))
 	filteredOptions.categoryOptions = uniqueOptions(
-		combinationsForCategory.map(combination => combination.categoryOption).filter(option => option !== null),
+		combinationsForCategory
+			.map(combination => combination.categoryOption)
+			.filter((option): option is SelectOption => option !== null),
 	)
 	filteredOptions.taskPriorityOptions = uniqueOptions(
-		allOptionsCombinations.map(combination => combination.taskPriorityOption).filter(option => option !== null),
+		allOptionsCombinations
+			.map(combination => combination.taskPriorityOption)
+			.filter((option): option is SelectOption => option !== null),
 	)
 	filteredOptions.routineTimePeriodOptions = uniqueOptions(
 		allOptionsCombinations
 			.map(combination => combination.routineTimePeriodOption)
-			.filter(option => option !== null),
+			.filter((option): option is SelectOption => option !== null),
 	)
 	return filteredOptions
 }
-
-// export async function getAllActivityFormSelectOptions(activitySource: ActivityOptionsSource) {
-// 	const allOptions = new ActivityFormSelectOptions();
-// 	let url = `${activitySource}/get-all-activity-form-select-options`;
-// 	return axios
-// 		.post(url)
-// 		.then((response) => {
-// 			allOptions.activityOptions = ActivitySelectOptionCombination.listFromObjects(response.data);
-// 			Object.assign(allOptions, parseOptionsListFromCombinations(allOptions.activityOptions));
-// 			return allOptions;
-// 		})
-// 		.catch((error) => {
-// 			console.error('Error fetching options:', error);
-// 			return allOptions;
-// 		});
-// }
-//
-// export function useActivitySelectOptionsFiltered(allOptions: Ref<ActivityFormSelectOptions>,
-//                                                  formData: Ref<ActivityFormRequest>) {
-// 	watch(() => formData.value.roleId, (newVal, oldVal) => {
-// 		console.log((newVal !== oldVal && newVal));
-// 		console.log(newVal);
-// 		console.log(oldVal);
-// 		if (newVal !== oldVal && newVal) {
-// 			formData.value.activityId = null;
-// 		}
-// 	})
-// 	watch(() => formData.value.categoryId, (newVal, oldVal) => {
-// 		if (newVal !== oldVal && newVal) {
-// 			formData.value.activityId = null;
-// 		}
-// 	})
-//
-// 	return computed(() => {
-// 		const {roleId, categoryId} = formData.value;
-// 		const filteredOptions = new ActivityFormSelectOptions();
-// 		filteredOptions.activityOptions = allOptions.value.activityOptions.filter(activity =>
-// 			(roleId === null || activity.roleOption.id === roleId) &&
-// 			(categoryId === null || activity.categoryOption?.id === categoryId)
-// 		);
-// 		const {roleOptions, categoryOptions} = parseOptionsListFromCombinations(filteredOptions.activityOptions);
-// 		filteredOptions.roleOptions = roleId && !categoryId ? allOptions.value.roleOptions : roleOptions;
-// 		filteredOptions.categoryOptions = categoryId && !roleId ? allOptions.value.categoryOptions : categoryOptions;
-// 		return filteredOptions;
-// 	});
-// }
-//
-//
-// function parseOptionsListFromCombinations(combinations: ActivitySelectOptionCombination[]) {
-// 	const roleOptions = combinations
-// 		.map(c => c.roleOption)
-// 		.filter((option, index, self) =>
-// 			index === self.findIndex((o) => o.id === option.id)
-// 		);
-// 	const categoryOptions = combinations
-// 		.map(c => c.categoryOption)
-// 		.filter((option, index, self) =>
-// 			option !== null && index === self.findIndex((o) => o.id === option.id)
-// 		);
-// 	return {roleOptions, categoryOptions};
-// }

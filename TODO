@@ -1,8 +1,4 @@
 ====current plans====
-fix @composables/activity/ActivitySelectsComposition.ts
-Google Sign in backend
-
-
 
 
 === incremental plans  ====
@@ -10,13 +6,10 @@ tweak frontEnd pre mobil
 pridat loadingy na vsetky stranky
 
 
-
-pridat moznost reminderu do plannertask a routiny a todolist
 ====future plans====
 
-pridat akcny plan ako v robote co by kolko okien malo trvat a aku to ma prioritu atd
 
- You already have addToPlanner wired up in ToDoListItem. The reverse — dragging a to-do item directly onto the day planner grid — would close the loop and feel very natural.
+You already have addToPlanner wired up in ToDoListItem. The reverse — dragging a to-do item directly onto the day planner grid — would close the loop and feel very natural.
 
 The streak data is already tracked per routine item. A small "personal bests" panel in the routine view showing longest-ever streaks would add gamification without new backend work.
 

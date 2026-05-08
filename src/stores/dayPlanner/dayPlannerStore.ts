@@ -9,7 +9,7 @@ import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import { computed, ref, watch } from 'vue'
 import { deserializeClipboard, serializeClipboard } from '@/composables/dayPlanner/usePlannerClipboardStorage.ts'
-import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+import type { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -19,7 +19,14 @@ export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, Plan
 	datetimeToSlotIndex: (time?: Date) => number
 	pendingInitialActivityId: number | undefined
 	pendingInitialTodoListItemId: number | undefined
-	openCreateDialogWithActivity: (activityId: number, todoListItemId?: number) => void
+	pendingPickerMode: 'all' | 'todo' | 'routine' | undefined
+	pendingSuggestedDuration: Time | undefined
+	openCreateDialogWithActivity: (
+		activityId: number,
+		todoListItemId?: number,
+		pickerMode?: 'all' | 'todo' | 'routine',
+		suggestedDuration?: Time,
+	) => void
 }
 
 const CLIPBOARD_KEY = 'planner-clipboard'
@@ -34,10 +41,19 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	// Pending initial data for create dialog (e.g. opened from todo list)
 	const pendingInitialActivityId = ref<number | undefined>(undefined)
 	const pendingInitialTodoListItemId = ref<number | undefined>(undefined)
+	const pendingPickerMode = ref<'all' | 'todo' | 'routine' | undefined>(undefined)
+	const pendingSuggestedDuration = ref<Time | undefined>(undefined)
 
-	function openCreateDialogWithActivity(activityId: number, todoListItemId?: number): void {
+	function openCreateDialogWithActivity(
+		activityId: number,
+		todoListItemId?: number,
+		pickerMode?: 'all' | 'todo' | 'routine',
+		suggestedDuration?: Time,
+	): void {
 		pendingInitialActivityId.value = activityId
 		pendingInitialTodoListItemId.value = todoListItemId
+		pendingPickerMode.value = pickerMode
+		pendingSuggestedDuration.value = suggestedDuration
 		core.openCreateDialog()
 	}
 
@@ -177,7 +193,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 	async function updateTaskStatus(eventId: number, status: PlannerTaskStatus): Promise<void> {
 		if (isTemplateInPreview.value) return
-		await patch(eventId, { status, isDone: status === PlannerTaskStatus.Completed })
+		await patch(eventId, { status })
 	}
 
 	function openEditDialog() {
@@ -195,7 +211,10 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 	function startCut() {
 		core.startCut()
 		if (core.pendingClipboard.value)
-			core.pendingClipboard.value = { ...core.pendingClipboard.value, sourceContext: viewedDate.value.toDateString() }
+			core.pendingClipboard.value = {
+				...core.pendingClipboard.value,
+				sourceContext: viewedDate.value.toDateString(),
+			}
 	}
 
 	// Persist clipboard across day navigation
@@ -232,6 +251,8 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 
 		pendingInitialActivityId,
 		pendingInitialTodoListItemId,
+		pendingPickerMode,
+		pendingSuggestedDuration,
 		openCreateDialogWithActivity,
 
 		templateInPreview,

@@ -1,7 +1,7 @@
 <template>
 	<div class="h-100 pb-4 pt-5 w-100 d-flex flex-column">
 		<div
-			class="mx-auto w-100 w-md-33 d-flex flex-column ga-3 pb-3 bg-background position-sticky px-3"
+			class="mx-auto w-100 w-lg-66 d-flex flex-column flex-lg-row justify-lg-center ga-3 pb-3 bg-background position-sticky px-3"
 			style="top: 0; z-index: 1"
 		>
 			<div class="d-flex ga-3 align-center">
@@ -14,10 +14,10 @@
 					{{ $t('routineTodoList.settings') }}
 				</VBtn>
 				<VSelect
-					:modelValue="visibleGroupIds"
+					:modelValue="smAndDown ? singleVisibleGroupId : visibleGroupIds"
 					:items="groupSelectItems"
 					:label="$t('routineTodoList.groups')"
-					multiple
+					:multiple="!smAndDown"
 					chips
 					density="compact"
 					hideDetails
@@ -277,30 +277,26 @@
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
 	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
-	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useRoutineTodoListItemCrud } from '@/api/routineTodoList/routineTodoListApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
-	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+	import { useDisplay } from 'vuetify/framework'
 
 	const route = useRoute()
 	const router = useRouter()
 	const { t } = useI18n()
 	const { getBgColor } = useColor()
+	const { smAndDown } = useDisplay()
 
 	const { fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder } =
 		useRoutineTodoListItemCrud()
-	const { changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
-	const { fetchByDate } = useCalendarQuery()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 	const { showSuccessSnackbar } = useSnackbar()
 	const plannerStore = useDayPlannerStore()
 
@@ -341,16 +337,26 @@
 
 	const visibleGroups = computed(() => groupedItems.value.filter(g => !g.timePeriod.isHidden))
 
-	async function onGroupSelectUpdate(newIds: number[]) {
-		const currentIds = visibleGroupIds.value
-		const toToggle = [
-			...currentIds.filter(id => !newIds.includes(id)),
-			...newIds.filter(id => !currentIds.includes(id)),
-		]
-		for (const id of toToggle) {
-			await changeTimePeriodVisibility(id)
-			const group = groupedItems.value.find(g => g.timePeriod.id === id)
-			if (group) group.timePeriod.isHidden = !group.timePeriod.isHidden
+	const singleVisibleGroupId = computed(() => visibleGroupIds.value[0] ?? null)
+
+	async function onGroupSelectUpdate(newVal: number | number[]) {
+		if (smAndDown.value) {
+			const newId = newVal as number
+			if (newId == null) return
+			for (const group of groupedItems.value) {
+				group.timePeriod.isHidden = group.timePeriod.id !== newId
+			}
+		} else {
+			const newIds = newVal as number[]
+			const currentIds = visibleGroupIds.value
+			const toToggle = [
+				...currentIds.filter(id => !newIds.includes(id)),
+				...newIds.filter(id => !currentIds.includes(id)),
+			]
+			for (const id of toToggle) {
+				const group = groupedItems.value.find(g => g.timePeriod.id === id)
+				if (group) group.timePeriod.isHidden = !group.timePeriod.isHidden
+			}
 		}
 	}
 
@@ -612,16 +618,15 @@
 	}
 
 	function openAddToPlanner(item: RoutineTodoListItemEntity) {
-		plannerStore.openCreateDialogWithActivity(item.activity.id)
+		plannerStore.openCreateDialogWithActivity(
+			item.activity.id,
+			undefined,
+			'routine',
+			item.suggestedTime ?? undefined,
+		)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {
-		if (request.date) {
-			const dateStr = usStringToUrlString(formatToUsString(request.date))
-			const calendar = await fetchByDate(dateStr)
-			request.calendarId = calendar.id
-		}
-		request.date = null
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(t('successFeedback.added'))
 	}

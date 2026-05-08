@@ -111,10 +111,7 @@
 		if (isActivityFormHidden.value) {
 			if (isEdit.value && activityBeforeEdit.value?.id) {
 				if (hasObjectChanged(activityBeforeEdit.value, activityFormFieldData.value)) {
-					if (activityBeforeEdit.value.name === activityFormFieldData.value.name) {
-						activityFormFieldData.value.name += i18n.t('activities.copySuffix')
-					}
-					const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
+const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
 					if (cloneId && quickEditMode.value === 'Clone') {
 						return { activityId: cloneId, status: 'edit' }
 					}
@@ -139,7 +136,7 @@
 			showErrorSnackbar(i18n.t('activities.activityNotFound', { id: activityId }))
 			return
 		}
-		isEdit.value = false
+		isEdit.value = true
 		isActivityFormHidden.value = true
 
 		quickEditMode.value = 'Overwrite'

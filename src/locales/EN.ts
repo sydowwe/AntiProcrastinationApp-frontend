@@ -236,6 +236,7 @@ const EN = {
 		uncategorized: `Uncategorized`,
 		all: `All`,
 		addToPlanner: `Add to planner`,
+		logTime: `Log time`,
 	},
 	dateTime: {
 		when: `When`,

@@ -5,7 +5,8 @@
 		:store
 		:createEmptyRequest="createEmptyRequest"
 		:hideActivitySelector="!isEdit && pickerMode !== 'all'"
-		@edit="(id, task) => emit('edit', id, task as PlannerTaskRequest)"
+		:suggestedDurationMinutes
+		@edit="(id: number, task: PlannerTaskRequest) => emit('edit', id, task)"
 		@create="handleCreate"
 	>
 		<template
@@ -25,10 +26,10 @@
 				v-model:pickerMode="pickerMode"
 				showTodo
 				showRoutine
-				class="mb-3"
+				:initialActivityId="initialPickerActivityId"
 				@selected="
-					({ activityId, todoListItemId }) =>
-						onPickerSelected(activityId, todoListItemId, data as PlannerTaskRequest)
+					(actId: number, todoItemId?: number) =>
+						onPickerSelected(actId, todoItemId, data as PlannerTaskRequest)
 				"
 			/>
 		</template>
@@ -54,6 +55,8 @@
 	import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { Time } from '@/dtos/dto/Time.ts'
+	import { useCalendarQuery } from '@/api/calendarApi.ts'
 
 	const { showDatePicker = false } = defineProps<{
 		showDatePicker?: boolean
@@ -64,26 +67,35 @@
 		(e: 'create', task: PlannerTaskRequest): void
 	}>()
 
+	const { fetchByDate } = useCalendarQuery()
 	const store = useDayPlannerStore()
 	const baseDialog = ref<InstanceType<typeof BasePlannerTaskDialog>>()
 	const pickerMode = ref<'all' | 'todo' | 'routine'>('all')
 	const selectedDate = ref(new Date())
+	const initialPickerActivityId = ref<number | undefined>(undefined)
 
 	const isEdit = computed(() => store.editedId !== undefined)
+	const suggestedDurationMinutes = computed(() =>
+		store.pendingSuggestedDuration ? Math.max(10, store.pendingSuggestedDuration.getInMinutes) : undefined,
+	)
 
 	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
 
-	function createEmptyRequest(): PlannerTaskRequest {
-		const req = new PlannerTaskRequest()
+	function createEmptyRequest(suggestedDurationMinutes?: number): PlannerTaskRequest {
+		const req = PlannerTaskRequest.createEmpty()
 		if (store.pendingInitialTodoListItemId !== undefined) {
 			req.todoListItemId = store.pendingInitialTodoListItemId
 			store.$patch({ pendingInitialTodoListItemId: undefined })
+		}
+		if (suggestedDurationMinutes !== undefined) {
+			req.endTime = Time.fromMinutes(req.startTime.getInMinutes + suggestedDurationMinutes)
 		}
 		return req
 	}
 
 	function handleCreate(request: PlannerTaskRequest) {
 		if (showDatePicker) {
+			fetchByDate(selectedDate.value)
 			request.date = new Date(selectedDate.value)
 		}
 		emit('create', request)
@@ -108,13 +120,23 @@
 			if (!value) {
 				pickerMode.value = 'all'
 				selectedDate.value = new Date()
+				initialPickerActivityId.value = undefined
+				store.$patch({ pendingSuggestedDuration: undefined })
 				return
 			}
 			if (store.editedId === undefined && store.pendingInitialActivityId !== undefined) {
 				const activityId = store.pendingInitialActivityId
-				store.$patch({ pendingInitialActivityId: undefined })
-				await nextTick()
-				baseDialog.value?.prefillActivity(activityId)
+				const initialPickerMode = store.pendingPickerMode
+				store.$patch({ pendingInitialActivityId: undefined, pendingPickerMode: undefined })
+				if (initialPickerMode) {
+					pickerMode.value = initialPickerMode
+				}
+				if (initialPickerMode === 'routine' || initialPickerMode === 'todo') {
+					initialPickerActivityId.value = activityId
+				} else {
+					await nextTick()
+					baseDialog.value?.prefillActivity(activityId)
+				}
 			}
 		},
 	)

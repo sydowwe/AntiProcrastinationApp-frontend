@@ -149,6 +149,7 @@
 	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
 	import { useClipboardHandling } from '@/composables/dayPlanner/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
+	import { useTaskReminders } from '@/composables/dayPlanner/useTaskReminders.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showSuccessSnackbar } = useSnackbar()
@@ -162,6 +163,7 @@
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useDateTime()
 	const store = useDayPlannerStore()
+	useTaskReminders(() => store.tasks, store.viewedDate)
 
 	function applyContext(req: PlannerTaskRequest) {
 		req.calendarId = calendar.value?.id

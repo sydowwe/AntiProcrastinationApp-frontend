@@ -16,7 +16,7 @@
 				v-model:pickerMode="pickerMode"
 				showRoutine
 				class="mb-3"
-				@selected="({ activityId }) => baseDialog?.prefillActivity(activityId)"
+				@selected="(activityId) => baseDialog?.prefillActivity(activityId)"
 			/>
 		</template>
 	</BasePlannerTaskDialog>

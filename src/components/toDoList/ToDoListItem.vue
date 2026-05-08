@@ -277,6 +277,7 @@
 		isDoneChanged: [toDoListItem: TItem, forceValue?: boolean]
 		stepToggled: []
 		addToPlanner: [toDoListItem: TItem]
+		logTime: [toDoListItem: TItem]
 	}>()
 
 	const i18n = useI18n()
@@ -444,6 +445,7 @@
 		new MenuItem('select', 'tonal', 'primaryOutline', 'check-circle', toggleSelect),
 		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', edit),
 		new MenuItem('addToPlanner', 'outlined', 'primaryOutline', 'calendar-plus', addToPlanner),
+		new MenuItem('logTime', 'outlined', 'primaryOutline', 'clock', logTime),
 		new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', del),
 	]
 
@@ -517,6 +519,10 @@
 
 	function addToPlanner() {
 		emits('addToPlanner', toDoListItem)
+	}
+
+	function logTime() {
+		emits('logTime', toDoListItem)
 	}
 
 	function toggleSelect() {

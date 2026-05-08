@@ -67,6 +67,8 @@
 		currentTemplate.value = template
 		store.currentTemplateId = templateId
 		store.templateName = template.name
+		store.viewStartTime = template.defaultWakeUpTime
+		store.viewEndTime = template.defaultBedTime
 	}
 
 	async function updateDetails(): Promise<void> {

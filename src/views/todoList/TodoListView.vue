@@ -391,16 +391,10 @@
 	}
 
 	function openAddToPlanner(item: TodoListItemEntity) {
-		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id)
+		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id, 'todo', item.suggestedTime ?? undefined)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {
-		if (request.date) {
-			const dateStr = usStringToUrlString(formatToUsString(request.date))
-			const calendar = await fetchByDate(dateStr)
-			request.calendarId = calendar.id
-		}
-		request.date = null
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
 	}

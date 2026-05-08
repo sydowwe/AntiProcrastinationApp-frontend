@@ -86,6 +86,7 @@
 					@isDoneChanged="handleIsDoneChanged"
 					@stepToggled="emit('itemsChanged', [item.id])"
 					@addToPlanner="(item: TEntity) => emit('addToPlanner', item)"
+					@logTime="(item: TEntity) => openLogTimeDialog(item)"
 				/>
 
 				<!-- Drop zone below item (invisible overlay) - only when dragging -->
@@ -316,6 +317,12 @@
 			itemDoneDialogShown.value = true
 			changedItems.value.splice(0, 1)
 		}
+	}
+
+	function openLogTimeDialog(item: TEntity) {
+		currentDoneItem.value = item
+		isDialogRecursive.value = false
+		itemDoneDialogShown.value = true
 	}
 
 	function handleIsDoneChanged(toDoListItem: TEntity, forceValue?: boolean) {
