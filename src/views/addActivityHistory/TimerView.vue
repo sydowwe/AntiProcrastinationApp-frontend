@@ -77,9 +77,10 @@
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 
-	const { activityId = null, compact = false } = defineProps<{
+	const { activityId = null, compact = false, initialDuration } = defineProps<{
 		activityId?: number | null
 		compact?: boolean
+		initialDuration?: Time
 	}>()
 
 	const emit = defineEmits<{
@@ -94,7 +95,7 @@
 	const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>()
 
 	const timeInputVisible = ref(true)
-	const initialTime = ref(new Time())
+	const initialTime = ref(initialDuration ? new Time(initialDuration.hours, initialDuration.minutes) : new Time())
 	const paused = ref(false)
 	const intervalId = ref<number | undefined>(undefined)
 	const startTimestamp = ref(new Date())

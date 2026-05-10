@@ -1,30 +1,13 @@
 <!-- TemplatePlannerPanel.vue - Reusable template planner panel, used in both single and split-view -->
 <template>
-	<VCard
-		v-if="!detailsHidden"
-		class="d-flex flex-column details-form"
-		elevation="2"
-		style="max-width: 500px"
-	>
-		<VCardTitle class="pt-5 px-5 pb-0 d-flex justify-space-between align-center">
-			<span class="text-grey-lighten-1">Template details</span>
-			<VIconBtn
-				color="secondaryOutline"
-				icon="xmark"
-				variant="tonal"
-				size="40"
-				@click="detailsHidden = !detailsHidden"
-			>
-				<VIcon size="28"></VIcon>
-			</VIconBtn>
-		</VCardTitle>
-		<VCardText class="flex-fill px-6 py-4">
+	<div class="d-flex flex-column flex-fill">
+		<div class="flex-fill px-6 py-4">
 			<TaskPlannerDayTemplateDetailsForm
 				ref="detailsForm"
 				:template="currentTemplate"
 			/>
-		</VCardText>
-		<VCardActions class="pa-5">
+		</div>
+		<div class="pa-5">
 			<VBtn
 				block
 				color="primary"
@@ -32,8 +15,8 @@
 			>
 				Update details
 			</VBtn>
-		</VCardActions>
-	</VCard>
+		</div>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -47,7 +30,6 @@
 	const { templateId } = defineProps<{
 		templateId: number | null
 	}>()
-	const detailsHidden = defineModel<boolean>({ required: true })
 
 	const store = inject<ITemplateDayPlannerStore>('plannerStore')!
 	const { showSuccessSnackbar } = useSnackbar()

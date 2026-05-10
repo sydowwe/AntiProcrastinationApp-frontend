@@ -1,14 +1,60 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
 	<div class="py-4 d-flex flex-column flex-md-row ga-4 w-100 h-100">
-		<RoutineSidePanel
-			v-model:visible="routinePanelVisible"
-			@update:selectedItem="selectedRoutineItem = $event"
-		/>
-		<TemplatePlannerPanel
-			v-model="detailsHidden"
-			:templateId="templateId"
-		/>
+		<VCard
+			v-show="panelOpen || mdAndUp"
+			class="d-flex flex-column"
+			elevation="2"
+			style="width: 400px; min-width: 280px"
+		>
+			<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
+				<div class="d-flex justify-space-between align-center">
+					<span class="text-grey-lighten-1">
+						{{ activePanel === 'details' ? 'Template details' : 'Routine Tasks' }}
+					</span>
+					<VIconBtn
+						class="d-md-none"
+						color="secondaryOutline"
+						icon="xmark"
+						variant="tonal"
+						size="36"
+						@click="panelOpen = false"
+					/>
+				</div>
+				<VBtnToggle
+					v-model="activePanel"
+					mandatory
+					class="d-none d-md-flex"
+					style="width: 100%"
+					density="compact"
+					variant="outlined"
+					color="secondaryOutline"
+				>
+					<VBtn
+						value="details"
+						prependIcon="sliders"
+						style="flex: 1"
+					>
+						Details
+					</VBtn>
+					<VBtn
+						value="routine"
+						prependIcon="rotate"
+						style="flex: 1"
+					>
+						Routine
+					</VBtn>
+				</VBtnToggle>
+			</VCardTitle>
+			<TemplatePlannerPanel
+				v-if="activePanel === 'details'"
+				:templateId="templateId"
+			/>
+			<RoutineSidePanel
+				v-else
+				@update:selectedItem="selectedRoutineItem = $event"
+			/>
+		</VCard>
 
 		<div
 			class="flex-fill d-flex"
@@ -22,24 +68,28 @@
 				<template #header>
 					<TemplatePlannerHeader :title="store.templateName || 'Day Template'">
 						<template #headerPrepend>
-							<VBtn
-								v-if="detailsHidden"
-								color="secondaryOutline"
-								prependIcon="eye"
+							<VBtnToggle
+								v-model="activePanel"
+								mandatory
+								class="d-flex d-md-none"
+								density="compact"
 								variant="outlined"
-								@click="((detailsHidden = !detailsHidden), (routinePanelVisible = false))"
+								color="secondaryOutline"
+								@update:modelValue="panelOpen = true"
 							>
-								Edit details
-							</VBtn>
-							<VBtn
-								v-if="!routinePanelVisible"
-								:color="routinePanelVisible ? 'secondary' : 'secondaryOutline'"
-								:variant="routinePanelVisible ? 'elevated' : 'outlined'"
-								prependIcon="rotate"
-								@click="((routinePanelVisible = !routinePanelVisible), (detailsHidden = false))"
-							>
-								Routine
-							</VBtn>
+								<VBtn
+									value="details"
+									prependIcon="sliders"
+								>
+									Details
+								</VBtn>
+								<VBtn
+									value="routine"
+									prependIcon="rotate"
+								>
+									Routine
+								</VBtn>
+							</VBtnToggle>
 							<VChip
 								v-if="selectedRoutineItem"
 								color="secondary"
@@ -95,16 +145,14 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+	import { useDisplay } from 'vuetify'
 	import DayPlanner from '@/components/dayPlanner/DayPlanner.vue'
 	import TemplatePlannerHeader from '@/components/dayPlanner/template/TemplatePlannerHeader.vue'
 	import TemplatePlannerTaskDialog from '@/components/dayPlanner/template/TemplatePlannerTaskDialog.vue'
 	import TemplatePlannerTaskBlock from '@/components/dayPlanner/template/TemplatePlannerTaskBlock.vue'
 	import RoutineSidePanel from '@/components/dayPlanner/template/RoutineSidePanel.vue'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
-	import {
-		useSecondaryTemplateDayPlannerStore,
-		useTemplateDayPlannerStore,
-	} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
+	import { useSecondaryTemplateDayPlannerStore, useTemplateDayPlannerStore } from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
@@ -122,6 +170,7 @@
 	}>()
 
 	const route = useRoute()
+	const { mdAndUp } = useDisplay()
 	const templateId = computed(() => (route.params.templateId ? parseInt(route.params.templateId as string) : null))
 
 	const {
@@ -166,22 +215,14 @@
 	provide('isSplitView', isSplitView)
 	provide('splitViewStoreId', storeId)
 
-	const detailsHidden = ref(false)
-	const routinePanelVisible = ref(false)
+	const activePanel = ref<'details' | 'routine'>('details')
+	const panelOpen = ref(true)
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 
 	provide('selectedRoutineItem', selectedRoutineItem)
 
-	let detailsWereVisible = false
-
-	watch(routinePanelVisible, visible => {
-		if (visible) {
-			detailsWereVisible = !detailsHidden.value
-			detailsHidden.value = true
-		} else {
-			selectedRoutineItem.value = null
-			if (detailsWereVisible) detailsHidden.value = false
-		}
+	watch(activePanel, panel => {
+		if (panel !== 'routine') selectedRoutineItem.value = null
 	})
 
 	const taskStats = computed(() => {
@@ -209,7 +250,7 @@
 	})
 
 	async function loadTasks() {
-		if (!templateId) return
+		if (templateId.value == null) return
 		store.tasks = await fetchFilteredTasks(
 			new TemplatePlannerTaskFilter(templateId.value, store.viewStartTime, store.viewEndTime),
 		)

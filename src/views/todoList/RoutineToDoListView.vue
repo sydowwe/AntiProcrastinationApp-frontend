@@ -224,6 +224,7 @@
 							"
 							@crossListDrop="handleCrossListDrop"
 							@addToPlanner="openAddToPlanner"
+							@logTime="openLogTime"
 						></ToDoList>
 					</div>
 					<div class="pl-2 pt-2 d-flex ga-3">
@@ -259,6 +260,7 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
+	<LogTimeController ref="logTimeController" />
 	<RoutineConfetti
 		v-if="showConfetti"
 		:key="confettiKey"
@@ -271,6 +273,7 @@
 	import RoutineGroupHeatmap from '@/components/toDoList/RoutineGroupHeatmap.vue'
 	import RoutineGroupHistoryDialog from '@/components/toDoList/RoutineGroupHistoryDialog.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
+	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
@@ -303,6 +306,7 @@
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
 	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
 	const historyDialog = ref<InstanceType<typeof RoutineGroupHistoryDialog>>()
+	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
 	const isInChangeOrderMode = ref(false)
 
 	const showConfetti = ref(false)
@@ -624,6 +628,10 @@
 			'routine',
 			item.suggestedTime ?? undefined,
 		)
+	}
+
+	function openLogTime(item: RoutineTodoListItemEntity) {
+		logTimeController.value?.open(item.activity.id, item.activity.name, undefined, item.suggestedTime ?? undefined)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {

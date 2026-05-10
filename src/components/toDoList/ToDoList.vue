@@ -202,6 +202,7 @@
 		(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void
 		(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void
 		(e: 'addToPlanner', item: TEntity): void
+		(e: 'logTime', item: TEntity): void
 	}>()
 
 	// Auto-animate controller
@@ -320,9 +321,7 @@
 	}
 
 	function openLogTimeDialog(item: TEntity) {
-		currentDoneItem.value = item
-		isDialogRecursive.value = false
-		itemDoneDialogShown.value = true
+		emit('logTime', item)
 	}
 
 	function handleIsDoneChanged(toDoListItem: TEntity, forceValue?: boolean) {

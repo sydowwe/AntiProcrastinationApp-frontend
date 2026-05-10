@@ -1,10 +1,7 @@
 <template>
 	<LogTimeDialog
-		v-if="logTimeTaskId !== null"
+		v-if="logTimeActivityId !== null"
 		v-model="logTimeDialog"
-		:activityId="logTimeActivityId!"
-		:plannerTaskId="logTimeTaskId"
-		:plannerDate="plannerDate"
 		:manualMode="logTimeManualMode"
 		:initialStartTime="logTimeInitialStart"
 		:initialLength="logTimeInitialLength"
@@ -12,24 +9,24 @@
 		@selectTimer="handleSelectTimer"
 	/>
 	<TrackTimeDialog
-		v-if="logTimeTaskId !== null"
+		v-if="logTimeActivityId !== null"
 		v-model="trackTimeDialog"
 		:activityId="logTimeActivityId!"
 		:activityName="logTimeActivityName"
-		:plannerTaskId="logTimeTaskId"
+		:plannerTaskId="currentPlannerTaskId ?? undefined"
 		:initialMethod="trackTimeInitialMethod"
+		:initialLength="logTimeInitialLength"
 		@done="handleLogTimeDone"
 	/>
 </template>
 
 <script setup lang="ts">
-	import { computed, ref, watch } from 'vue'
+	import { ref, watch } from 'vue'
 	import LogTimeDialog from '@/components/dayPlanner/normal/LogTimeDialog.vue'
 	import TrackTimeDialog from '@/components/dayPlanner/normal/TrackTimeDialog.vue'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
@@ -40,12 +37,11 @@
 	const store = useDayPlannerStore()
 	const { patchStatus, fetchById } = useTaskPlannerCrud()
 	const { create: createActivityHistory } = useActivityHistoryCrud()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 	const { showSuccessSnackbar } = useSnackbar()
 
 	const logTimeDialog = ref(false)
 	const logTimeManualMode = ref(false)
-	const logTimeTaskId = ref<number | null>(null)
+	const currentPlannerTaskId = ref<number | null>(null)
 	const logTimeActivityId = ref<number | null>(null)
 	const logTimeActivityName = ref('')
 	const logTimeInitialStart = ref(new Time())
@@ -53,9 +49,7 @@
 	const trackTimeDialog = ref(false)
 	const trackTimeInitialMethod = ref<'stopwatch' | 'timer' | 'pomodoro'>('stopwatch')
 
-	const plannerDate = computed(() => usStringToUrlString(formatToUsString(store.viewedDate)))
-
-	// Handle return from timer views once tasks are loaded
+	// Handle return from timer views once tasks are loaded (planner context only)
 	const returnQuery = router.currentRoute.value.query
 	if (returnQuery.plannerTaskId && returnQuery.actualStartTime && returnQuery.actualLength) {
 		const stopWatch = watch(
@@ -86,9 +80,19 @@
 		)
 	}
 
-	function openLogTime(taskId: number, manual: boolean) {
+	function open(activityId: number, activityName: string, initialStartTime?: Time, initialLength?: Time) {
+		currentPlannerTaskId.value = null
+		logTimeActivityId.value = activityId
+		logTimeActivityName.value = activityName
+		logTimeInitialStart.value = initialStartTime ?? new Time()
+		logTimeInitialLength.value = initialLength ?? new Time()
+		logTimeManualMode.value = false
+		logTimeDialog.value = true
+	}
+
+	function openPlannerTask(taskId: number, manual: boolean) {
 		const task = store.tasks.find(t => t.id === taskId) as PlannerTask
-		logTimeTaskId.value = taskId
+		currentPlannerTaskId.value = taskId
 		logTimeActivityId.value = task.activity.id
 		logTimeActivityName.value = task.activity.name
 		const durationMins = (task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440
@@ -99,50 +103,64 @@
 	}
 
 	function openFromSelection() {
-		openLogTime(store.selectedTaskIds.values().next().value!, false)
+		openPlannerTask(store.selectedTaskIds.values().next().value!, false)
 	}
 
 	function openManual(taskId: number) {
-		openLogTime(taskId, true)
+		openPlannerTask(taskId, true)
 	}
 
 	async function handleLogTimeManualConfirm(actualStartTime: Time, length: Time) {
-		const id = logTimeTaskId.value!
-		const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
-		await patchStatus(
-			id,
-			new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
-		)
-		const idx = store.tasks.findIndex(t => t.id === id)
-		if (idx >= 0) {
-			store.tasks[idx].actualStartTime = actualStartTime
-			store.tasks[idx].actualEndTime = actualEndTime
-			store.tasks[idx].status = PlannerTaskStatus.Completed
+		const plannerTaskId = currentPlannerTaskId.value
+		if (plannerTaskId !== null) {
+			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
+			await patchStatus(
+				plannerTaskId,
+				new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
+			)
+			const idx = store.tasks.findIndex(t => t.id === plannerTaskId)
+			if (idx >= 0) {
+				store.tasks[idx].actualStartTime = actualStartTime
+				store.tasks[idx].actualEndTime = actualEndTime
+				store.tasks[idx].status = PlannerTaskStatus.Completed
+			}
+			store.clearSelection()
+			showSuccessSnackbar('Task marked completed')
+		} else {
+			const startTimestamp = new Date()
+			startTimestamp.setHours(actualStartTime.hours, actualStartTime.minutes, 0, 0)
+			await createActivityHistory(startTimestamp, length, logTimeActivityId.value!)
+			showSuccessSnackbar('Time logged')
 		}
-		store.clearSelection()
-		logTimeTaskId.value = null
-		showSuccessSnackbar('Task marked completed')
+		logTimeActivityId.value = null
+		currentPlannerTaskId.value = null
 	}
 
-	async function handleLogTimeDone(startTimestamp: Date, length: Time) {
-		const id = logTimeTaskId.value!
-		const actualStartTime = Time.fromDate(startTimestamp)
-		const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
-		await Promise.all([
-			patchStatus(
-				id,
-				new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
-			),
-			createActivityHistory(startTimestamp, length, logTimeActivityId.value!),
-		])
-		const updated = await fetchById(id)
-		const idx = store.tasks.findIndex(t => t.id === id)
-		if (idx >= 0) {
-			store.tasks[idx] = updated
+	async function handleLogTimeDone({ startTimestamp, length }: { startTimestamp: Date; length: Time }) {
+		const plannerTaskId = currentPlannerTaskId.value
+		if (plannerTaskId !== null) {
+			const actualStartTime = Time.fromDate(startTimestamp)
+			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
+			await Promise.all([
+				patchStatus(
+					plannerTaskId,
+					new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
+				),
+				createActivityHistory(startTimestamp, length, logTimeActivityId.value!),
+			])
+			const updated = await fetchById(plannerTaskId)
+			const idx = store.tasks.findIndex(t => t.id === plannerTaskId)
+			if (idx >= 0) {
+				store.tasks[idx] = updated
+			}
+			store.clearSelection()
+			showSuccessSnackbar('Task marked done')
+		} else {
+			await createActivityHistory(startTimestamp, length, logTimeActivityId.value!)
+			showSuccessSnackbar('Time logged')
 		}
-		store.clearSelection()
-		logTimeTaskId.value = null
-		showSuccessSnackbar('Task marked done')
+		logTimeActivityId.value = null
+		currentPlannerTaskId.value = null
 	}
 
 	function handleSelectTimer(type: string) {
@@ -150,5 +168,5 @@
 		trackTimeDialog.value = true
 	}
 
-	defineExpose({ openManual, openFromSelection })
+	defineExpose({ open, openManual, openFromSelection })
 </script>

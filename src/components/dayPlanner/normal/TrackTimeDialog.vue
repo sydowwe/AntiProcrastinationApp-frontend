@@ -51,6 +51,7 @@
 			<TimerView
 				v-else-if="selectedMethod === 'timer'"
 				:activityId
+				:initialDuration="initialLength"
 				compact
 				@started="handleStarted"
 				@done="handleDone"
@@ -84,11 +85,13 @@
 		activityName,
 		plannerTaskId,
 		initialMethod = 'stopwatch',
+		initialLength,
 	} = defineProps<{
 		activityId: number
 		activityName: string
-		plannerTaskId: number
+		plannerTaskId?: number
 		initialMethod?: Method
+		initialLength?: Time
 	}>()
 
 	const emit = defineEmits<{
@@ -116,7 +119,9 @@
 
 	function handleStarted(actualStartTime: Time) {
 		isRunning.value = true
-		patchStatus(plannerTaskId, new PatchPlannerTaskStatusRequest(PlannerTaskStatus.InProgress, actualStartTime))
+		if (plannerTaskId) {
+			patchStatus(plannerTaskId, new PatchPlannerTaskStatusRequest(PlannerTaskStatus.InProgress, actualStartTime))
+		}
 	}
 
 	function handleDone(startTimestamp: Date, length: Time) {

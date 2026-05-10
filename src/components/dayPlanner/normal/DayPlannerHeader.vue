@@ -6,19 +6,12 @@
 		<!-- Left: Date + Edit -->
 		<div class="left-section">
 			<VIconBtn
+				class="d-md-none"
 				variant="tonal"
 				color="secondaryOutline"
 				icon="bars"
-				@click="expanded = !expanded"
-			>
-				<VIcon size="24" />
-				<VTooltip
-					activator="parent"
-					location="bottom"
-				>
-					{{ expanded ? 'Hide details' : 'Show details' }}
-				</VTooltip>
-			</VIconBtn>
+				@click="panelOpen = !panelOpen"
+			/>
 			<div class="mb-3 nav-btn-wrap">
 				<div
 					v-if="prevDayCount !== null"
@@ -100,6 +93,30 @@
 				Add Task
 			</VBtn>
 
+			<VBtnToggle
+				v-model="activePanel"
+				mandatory
+				class="d-flex d-md-none"
+				density="compact"
+				variant="outlined"
+				color="secondaryOutline"
+				@update:modelValue="panelOpen = true"
+			>
+				<VBtn
+					value="details"
+					prependIcon="calendar-day"
+					@click="panelOpen = true"
+				>
+					Details
+				</VBtn>
+				<VBtn
+					value="routine"
+					prependIcon="rotate"
+					@click="panelOpen = true"
+				>
+					Routine
+				</VBtn>
+			</VBtnToggle>
 			<VBtn
 				color="secondaryOutline"
 				variant="tonal"
@@ -107,14 +124,6 @@
 				prependIcon="far fa-calendar"
 			>
 				Calendar
-			</VBtn>
-			<VBtn
-				:color="expandedRoutine ? 'secondary' : 'secondaryOutline'"
-				:variant="expandedRoutine ? 'elevated' : 'tonal'"
-				prependIcon="rotate"
-				@click="expandedRoutine = !expandedRoutine"
-			>
-				Routine
 			</VBtn>
 			<GoogleCalendarSyncBtn :calendarId="calendar?.id" />
 		</div>
@@ -142,8 +151,8 @@
 		navigateDate: [delta: number]
 		undo: []
 	}>()
-	const expanded = defineModel<boolean>('expandedDetails', { required: true })
-	const expandedRoutine = defineModel<boolean>('expandedRoutine', { required: true })
+	const activePanel = defineModel<'details' | 'routine'>('activePanel', { required: true })
+	const panelOpen = defineModel<boolean>('panelOpen', { required: true })
 	const store = useDayPlannerStore()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
 	const { formatToDateWithDay, formatToUsString, usStringToUrlString } = useDateTime()

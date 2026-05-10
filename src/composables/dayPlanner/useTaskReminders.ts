@@ -4,7 +4,12 @@ import { checkNotificationPermission, showNotification } from '@/utils/notificat
 import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 
-export function useTaskReminders(getTasks: () => PlannerTask[], getViewedDate: () => Date | string, minutesBefore = 10) {
+export function useTaskReminders(
+	getTasks: () => PlannerTask[],
+	getViewedDate: () => Date | string,
+	getMinutesBefore: () => number = () => 10,
+	getEnabled: () => boolean = () => true,
+) {
 	const { currentTime } = useCurrentTime()
 	const notifiedTaskIds = new Set<number>()
 
@@ -15,6 +20,8 @@ export function useTaskReminders(getTasks: () => PlannerTask[], getViewedDate: (
 	watch(
 		currentTime,
 		now => {
+			if (!getEnabled()) return
+
 			const today = new Date()
 			const viewedDate = new Date(getViewedDate())
 			if (
@@ -32,7 +39,7 @@ export function useTaskReminders(getTasks: () => PlannerTask[], getViewedDate: (
 				if (notifiedTaskIds.has(task.id)) continue
 
 				const diff = task.startTime.getInMinutes - nowMinutes
-				if (diff > 0 && diff <= minutesBefore) {
+				if (diff > 0 && diff <= getMinutesBefore()) {
 					notifiedTaskIds.add(task.id)
 					showNotification(task.activity.name, `Starts in ${diff} minute${diff !== 1 ? 's' : ''}`)
 				}

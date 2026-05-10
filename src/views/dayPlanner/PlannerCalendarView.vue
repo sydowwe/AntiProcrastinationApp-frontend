@@ -168,9 +168,11 @@
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
 
 	const { usStringToUrlString, formatToDate } = useDateTime()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
+	const settingsStore = useDayPlannerSettingsStore()
 	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -185,6 +187,7 @@
 	const applyTemplateId = ref<number | null>(null)
 	const applyPreviewMode = ref(true)
 	const applyConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
+
 	const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
 	const selectedDayIds = ref<number[]>([])
 	const bulkApplyDialog = ref(false)
@@ -198,6 +201,10 @@
 	const dayTypeOptions = Object.values(DayType).map(v => ({ title: v, value: v }))
 
 	onMounted(async () => {
+		await settingsStore.loadSettings()
+		applyTemplateId.value = settingsStore.defaultApplyTemplateId
+		applyConflictResolution.value = settingsStore.defaultConflictResolution
+		applyPreviewMode.value = settingsStore.defaultApplyPreviewMode
 		activeTemplates.value = (await fetchAllTemplates()).filter(t => t.isActive)
 	})
 

@@ -156,6 +156,7 @@
 					@batchDeletedItems="batchDeleteItems"
 					@itemsReordered="handleOrderChange"
 					@addToPlanner="openAddToPlanner"
+					@logTime="openLogTime"
 				></ToDoList>
 			</VCard>
 		</VCol>
@@ -171,6 +172,7 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
+	<LogTimeController ref="logTimeController" />
 </template>
 
 <script setup lang="ts">
@@ -183,6 +185,7 @@
 	import ToDoList from '../../components/toDoList/ToDoList.vue'
 	import ToDoListItemDialog from '../../components/dialogs/toDoList/ToDoListItemDialog.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
+	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -219,6 +222,7 @@
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
+	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
 	const items = ref([] as TodoListItemEntity[])
 	const isInChangeOrderMode = ref(false)
 	const listEntity = ref<TodoListEntity | null>(null)
@@ -392,6 +396,10 @@
 
 	function openAddToPlanner(item: TodoListItemEntity) {
 		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id, 'todo', item.suggestedTime ?? undefined)
+	}
+
+	function openLogTime(item: TodoListItemEntity) {
+		logTimeController.value?.open(item.activity.id, item.activity.name, undefined, item.suggestedTime ?? undefined)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {

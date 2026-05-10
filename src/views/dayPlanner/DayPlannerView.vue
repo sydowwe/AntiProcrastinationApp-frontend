@@ -1,29 +1,19 @@
 <!-- DayPlannerView.vue -->
 <template>
 	<div class="py-4 d-flex ga-4 w-100">
-		<!-- Left panel: routine or details (with suggestions embedded) -->
-		<VExpandXTransition mode="in-out">
-			<div
-				v-if="routinePanelVisible || expandedDetails"
-				class="align-self-stretch d-flex"
-			>
-				<RoutineSidePanel
-					v-if="routinePanelVisible"
-					v-model:visible="routinePanelVisible"
-					@update:selectedItem="selectedRoutineItem = $event"
-				/>
-				<DayDetailsPanel
-					v-else
-					:title="currentDateFormatted"
-					:calendar
-					:repeatingTasks="suggestions"
-					:addedIds="addedSuggestionIds"
-					@useTemplate="templatePreview"
-					@openDetails="calendarDetailsDialog = true"
-					@addRepeatingTask="handleAddSuggestion"
-				/>
-			</div>
-		</VExpandXTransition>
+		<!-- Left panel: unified details/routine panel -->
+		<DayPlannerSidePanel
+			v-model:panelOpen="panelOpen"
+			v-model:activePanel="activePanel"
+			:title="currentDateFormatted"
+			:calendar
+			:suggestions
+			:addedIds="addedSuggestionIds"
+			@openEditDialog="calendarDetailsDialog = true"
+			@useTemplate="templatePreview"
+			@addRepeatingTask="handleAddSuggestion"
+			@update:selectedItem="selectedRoutineItem = $event"
+		/>
 		<DayPlanner
 			class="flex-fill"
 			@delete="crud.del"
@@ -31,8 +21,8 @@
 			<!-- Header with calendar info -->
 			<template #header>
 				<DayPlannerHeader
-					v-model:expandedDetails="expandedDetails"
-					v-model:expandedRoutine="routinePanelVisible"
+					v-model:activePanel="activePanel"
+					v-model:panelOpen="panelOpen"
 					:title="currentDateFormatted"
 					:calendar
 					@navigateDate="navigateDate"
@@ -152,7 +142,7 @@
 	import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-	import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue'
+	import DayPlannerSidePanel from '@/components/dayPlanner/normal/DayPlannerSidePanel.vue'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import UseTemplateActionBar from '@/components/dayPlanner/normal/UseTemplateActionBar.vue'
 	import { ApplyTemplateToTaskPlannerRequest } from '@/dtos/request/activityPlanning/ApplyTemplateToTaskPlannerRequest.ts'
@@ -173,11 +163,12 @@
 	import { useTaskReminders } from '@/composables/dayPlanner/useTaskReminders.ts'
 	import { useRepeatingPlannerTaskApi } from '@/api/taskPlanner/repeatingPlannerTaskApi.ts'
 	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
-	import RoutineSidePanel from '@/components/dayPlanner/template/RoutineSidePanel.vue'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showSuccessSnackbar } = useSnackbar()
+	const settingsStore = useDayPlannerSettingsStore()
 	const undoStack = useUndoStack()
 	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
 		useTaskPlannerCrud()
@@ -188,7 +179,12 @@
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useDateTime()
 	const store = useDayPlannerStore()
-	useTaskReminders(() => store.tasks, () => store.viewedDate)
+	useTaskReminders(
+		() => store.tasks,
+		() => store.viewedDate,
+		() => settingsStore.reminderMinutesBefore,
+		() => settingsStore.remindersEnabled,
+	)
 
 	function applyContext(req: PlannerTaskRequest) {
 		req.calendarId = calendar.value?.id
@@ -220,19 +216,23 @@
 
 	const suggestions = ref<RepeatingPlannerTask[]>([])
 	const addedSuggestionIds = ref<Set<number>>(new Set())
-	const routinePanelVisible = ref(false)
+	const activePanel = ref<'details' | 'routine'>('details')
+	const panelOpen = ref(true)
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 	const skipDialog = ref(false)
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
 	provide('selectedRoutineItem', selectedRoutineItem)
 
-	watch(routinePanelVisible, visible => {
-		if (!visible) selectedRoutineItem.value = null
+	watch(activePanel, panel => {
+		if (panel !== 'routine') selectedRoutineItem.value = null
 	})
 
 	// Lifecycle hooks
 	onMounted(async () => {
+		await settingsStore.loadSettings()
+		store.timeSlotDuration = settingsStore.slotDurationMinutes
+
 		const dateParam = router.currentRoute.value.params.date as string | undefined
 		if (!dateParam) {
 			router.replace({
@@ -267,7 +267,6 @@
 		document.removeEventListener('keydown', handleArrowKey)
 	})
 
-	const expandedDetails = ref(true)
 
 	// View-specific computed properties
 	const currentDateFormatted = computed(() => {
@@ -300,6 +299,7 @@
 	}
 
 	function handleArrowKey(e: KeyboardEvent) {
+		if (!settingsStore.arrowKeyNavEnabled) return
 		const target = e.target as HTMLElement
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 		if (e.key === 'ArrowLeft') navigateDate(-1)
