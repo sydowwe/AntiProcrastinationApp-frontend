@@ -101,6 +101,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import { Time } from '@/dtos/dto/Time.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
@@ -123,7 +124,7 @@
 	}>()
 
 	const emit = defineEmits<{
-		selected: [activityId: number, todoListItemId?: number]
+		selected: [activityId: number, todoListItemId?: number, suggestedTime?: Time]
 	}>()
 
 	const pickerMode = defineModel<'all' | 'todo' | 'routine'>('pickerMode', { default: 'all' })
@@ -239,7 +240,7 @@
 	watch(selectedRoutineItemId, id => {
 		if (id != null) {
 			const item = allRoutineItems.value.find(i => i.id === id)
-			if (item) emit('selected', item.activity.id)
+			if (item) emit('selected', item.activity.id, undefined, item.suggestedTime ?? undefined)
 		}
 	})
 </script>

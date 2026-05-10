@@ -61,8 +61,8 @@
 			closableChips
 		/>
 		<div
-			class="d-flex ga-4 flex-column flex-md-row align-center align-md-end"
-			:class="{ 'flex-column align-center': !isDialog }"
+			class="d-flex ga-4"
+			:class="isDialog ? 'flex-column flex-md-row align-center align-md-end' : 'flex-column'"
 		>
 			<IconPicker
 				class="flex-fill"
@@ -105,7 +105,11 @@
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
 	import type { VForm } from 'vuetify/components'
 
-	const { template, defaultValues } = defineProps<{
+	const {
+		template,
+		defaultValues,
+		isDialog = false,
+	} = defineProps<{
 		template: TaskPlannerDayTemplate | null
 		defaultValues?: TaskPlannerDayTemplateRequest | null
 		isDialog?: boolean

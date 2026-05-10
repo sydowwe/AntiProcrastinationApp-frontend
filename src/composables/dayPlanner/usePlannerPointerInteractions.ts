@@ -250,7 +250,10 @@ export function usePlannerPointerInteractions<
 					task.gridRowEnd !== originalTaskState.value.gridRowEnd)
 
 			if (didMove) {
-				if (task && (store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows)) {
+				if (
+					task &&
+					(store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows + 1)
+				) {
 					store.redrawTask(store.draggingTaskId, originalTaskState.value)
 					showErrorSnackbar('Task cannot be dragged outside of the grid')
 				} else {

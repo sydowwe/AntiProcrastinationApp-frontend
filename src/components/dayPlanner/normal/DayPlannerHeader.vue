@@ -108,6 +108,14 @@
 			>
 				Calendar
 			</VBtn>
+			<VBtn
+				:color="expandedRoutine ? 'secondary' : 'secondaryOutline'"
+				:variant="expandedRoutine ? 'elevated' : 'tonal'"
+				prependIcon="rotate"
+				@click="expandedRoutine = !expandedRoutine"
+			>
+				Routine
+			</VBtn>
 			<GoogleCalendarSyncBtn :calendarId="calendar?.id" />
 		</div>
 	</div>
@@ -135,6 +143,7 @@
 		undo: []
 	}>()
 	const expanded = defineModel<boolean>('expandedDetails', { required: true })
+	const expandedRoutine = defineModel<boolean>('expandedRoutine', { required: true })
 	const store = useDayPlannerStore()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
 	const { formatToDateWithDay, formatToUsString, usStringToUrlString } = useDateTime()

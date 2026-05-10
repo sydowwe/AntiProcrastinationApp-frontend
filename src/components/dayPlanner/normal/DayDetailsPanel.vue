@@ -244,6 +244,73 @@
 			</div>
 		</div>
 
+		<!-- Repeating Task Suggestions -->
+		<template v-if="repeatingTasks?.length">
+			<VDivider
+				class="my-5"
+				opacity="0.3"
+			/>
+			<div class="mb-2">
+				<div class="d-flex align-center ga-2 mb-3">
+					<VIcon
+						icon="rotate"
+						size="16"
+						class="text-medium-emphasis"
+					/>
+					<span class="section-label">Repeating Tasks</span>
+					<VChip
+						size="x-small"
+						color="primaryOutline"
+						variant="tonal"
+					>
+						{{ repeatingTasks.length }}
+					</VChip>
+				</div>
+				<div class="d-flex flex-column ga-2">
+					<VCard
+						v-for="task in repeatingTasks"
+						:key="task.id"
+						class="pa-3"
+						variant="outlined"
+						:color="addedIds?.has(task.id) ? 'success' : undefined"
+						rounded="lg"
+					>
+						<div class="d-flex align-center ga-2">
+							<VSheet
+								:color="task.color || task.activity.role?.color || 'primary'"
+								width="10"
+								height="10"
+								rounded="circle"
+								class="flex-shrink-0"
+							/>
+							<div class="flex-fill min-width-0">
+								<div class="text-body-2 font-weight-medium text-truncate">
+									{{ task.activity.name }}
+								</div>
+								<div class="text-caption text-medium-emphasis">
+									{{ task.startTime.getString() }} – {{ task.endTime.getString() }}
+								</div>
+							</div>
+							<VIconBtn
+								v-if="!addedIds?.has(task.id)"
+								icon="plus"
+								size="small"
+								color="primary"
+								variant="tonal"
+								@click="emit('addRepeatingTask', task)"
+							/>
+							<VIcon
+								v-else
+								icon="check"
+								size="16"
+								color="success"
+							/>
+						</div>
+					</VCard>
+				</div>
+			</div>
+		</template>
+
 		<VDivider
 			class="mb-5"
 			opacity="0.3"
@@ -308,15 +375,19 @@
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
 
-	const { calendar } = defineProps<{
+	const { calendar, repeatingTasks, addedIds } = defineProps<{
 		title: string
 		calendar?: Calendar
+		repeatingTasks?: RepeatingPlannerTask[]
+		addedIds?: Set<number>
 	}>()
 
 	const emit = defineEmits<{
 		openDetails: []
 		useTemplate: [template: TaskPlannerDayTemplate]
+		addRepeatingTask: [task: RepeatingPlannerTask]
 	}>()
 
 	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()

@@ -3,6 +3,7 @@ import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IB
 import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { Time } from '@/dtos/dto/Time.ts'
 
 export function usePlannerCrud<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -126,5 +127,68 @@ export function usePlannerCrud<
 		showSuccessSnackbar('Task deleted')
 	}
 
-	return { create, edit, del }
+	async function splitTask() {
+		if (store.selectedTaskIds.size !== 1) return
+		const id = Array.from(store.selectedTaskIds)[0]!
+		const task = store.tasks.find(e => e.id === id)
+		if (!task) return
+
+		const startMin = task.startTime.getInMinutes
+		const endMin = task.endTime.getInMinutes
+		const effectiveEndMin = endMin <= startMin ? endMin + 1440 : endMin
+		const totalDuration = effectiveEndMin - startMin
+
+		if (totalDuration < 2) {
+			showErrorSnackbar('Task is too short to split')
+			return
+		}
+
+		const midMin = startMin + Math.floor(totalDuration / 2)
+		const midTime = Time.fromMinutes(midMin % 1440)
+		const originalEndTime = task.endTime
+
+		const updatedRequest = api.buildRequestFromEntity(task)
+		updatedRequest.endTime = midTime
+		api.applyContext(updatedRequest)
+
+		const secondRequest = api.buildRequestFromEntity(task)
+		secondRequest.startTime = midTime
+		secondRequest.endTime = originalEndTime
+		api.applyContext(secondRequest)
+
+		await api.update(id, updatedRequest)
+		const updatedOriginal = await api.fetchById(id)
+		const newTask = await api.createWithResponse(secondRequest)
+
+		const index = store.tasks.findIndex(e => e.id === id)
+		store.setGridPositionFromSpan(updatedOriginal)
+		store.tasks[index] = updatedOriginal
+
+		store.setGridPositionFromSpan(newTask)
+		newTask.isDuringBackgroundTask = store.checkOverlapsBackground(newTask)
+		store.tasks.push(newTask)
+
+		store.selectedTaskIds.clear()
+
+		push({
+			description: 'Task split',
+			date: undoDate(),
+			undo: async () => {
+				await api.deleteEntity(newTask.id)
+				store.tasks = store.tasks.filter(t => t.id !== newTask.id)
+				const restoreRequest = api.buildRequestFromEntity(updatedOriginal)
+				restoreRequest.endTime = originalEndTime
+				api.applyContext(restoreRequest)
+				await api.update(id, restoreRequest)
+				const restored = await api.fetchById(id)
+				store.setGridPositionFromSpan(restored)
+				const idx = store.tasks.findIndex(e => e.id === id)
+				if (idx >= 0) store.tasks[idx] = restored
+			},
+		})
+
+		showSuccessSnackbar('Task split')
+	}
+
+	return { create, edit, del, splitTask }
 }

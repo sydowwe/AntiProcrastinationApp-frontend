@@ -16,8 +16,9 @@
 
 			<TimeRangePicker
 				class="mx-auto my-3"
-				v-model:start="data.startTime"
+				:start="data.startTime"
 				v-model:end="data.endTime"
+				@update:start="onStartTimeChange"
 			></TimeRangePicker>
 			<div class="mx-auto d-flex flex-wrap ga-1 mb-2">
 				<VChip
@@ -211,6 +212,13 @@
 		return diff
 	})
 
+	function onStartTimeChange(newStart: Time) {
+		let duration = Time.fromJson(data.value.endTime).getInMinutes - Time.fromJson(data.value.startTime).getInMinutes
+		if (duration < 0) duration += 24 * 60
+		data.value.startTime = newStart
+		data.value.endTime = Time.fromMinutes((newStart.getInMinutes + duration) % (24 * 60))
+	}
+
 	function setDuration(minutes: number) {
 		if (!data.value.startTime) return
 		data.value.endTime = Time.fromMinutes((Time.fromJson(data.value.startTime).getInMinutes + minutes) % (24 * 60))
@@ -248,5 +256,6 @@
 	defineExpose({
 		prefillActivity: (activityId: number) => activityFormField.value?.onOpenEdit(activityId),
 		resetActivityField: () => activityFormField.value?.reset(),
+		applySuggestedTime: (durationMinutes: number) => setDuration(durationMinutes),
 	})
 </script>

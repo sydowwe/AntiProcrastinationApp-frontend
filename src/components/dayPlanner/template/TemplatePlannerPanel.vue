@@ -15,10 +15,10 @@
 				size="40"
 				@click="detailsHidden = !detailsHidden"
 			>
-				<VIcon size="24"></VIcon>
+				<VIcon size="28"></VIcon>
 			</VIconBtn>
 		</VCardTitle>
-		<VCardText class="flex-fill py-6">
+		<VCardText class="flex-fill px-6 py-4">
 			<TaskPlannerDayTemplateDetailsForm
 				ref="detailsForm"
 				:template="currentTemplate"

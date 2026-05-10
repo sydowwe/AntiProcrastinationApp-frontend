@@ -341,6 +341,7 @@
 			children: [
 				{ title: 'dayPlanner', icon: 'calendar-days', to: '/day-planner', needsAdmin: false },
 				{ title: 'templateDayPlanner', icon: 'calendar-day', to: '/day-planner/templates', needsAdmin: false },
+				{ title: 'dayPlannerSettings', icon: 'gear', to: '/day-planner/settings', needsAdmin: false },
 			],
 		},
 	]

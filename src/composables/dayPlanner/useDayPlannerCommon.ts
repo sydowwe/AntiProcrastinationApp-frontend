@@ -145,15 +145,9 @@ export function useDayPlannerCommon<
 		const taskIndex = tasks.value.findIndex(e => e.id === taskId)
 		if (taskIndex === -1) return
 
-		if (!tasks.value[taskIndex]) {
-			return
-		}
-		tasks.value[taskIndex] = {
-			...tasks.value[taskIndex],
-			...updates,
-		}
-
 		const task = tasks.value[taskIndex]
+		if (!task) return
+		Object.assign(task, updates)
 		if (updates.startTime || updates.endTime) {
 			if (task.startTime && task.endTime) {
 				task.isDuringBackgroundTask = checkOverlapsBackground(task)

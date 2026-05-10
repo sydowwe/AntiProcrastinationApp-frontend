@@ -14,6 +14,16 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 		public templateId?: number,
 	) {}
 
+	static createEmpty(): TemplatePlannerTaskRequest {
+		const now = new Date()
+		const newHours = now.getHours() + 1
+		const newMinutes = Math.ceil(now.getMinutes() / 5) * 5
+		return new TemplatePlannerTaskRequest(
+			new Time(now.getHours(), newMinutes),
+			new Time(newHours === 24 ? 0 : newHours, newMinutes),
+		)
+	}
+
 	static fromEntity(entity: TemplatePlannerTask): TemplatePlannerTaskRequest {
 		return new TemplatePlannerTaskRequest(
 			entity.startTime,

@@ -70,7 +70,7 @@
 		</div>
 		<VTabsWindow
 			v-model="activeTab"
-			class="flex-1-1 mt-2"
+			class="flex-fill mt-2"
 		>
 			<VTabsWindowItem
 				value="activities"

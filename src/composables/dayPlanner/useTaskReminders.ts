@@ -4,18 +4,19 @@ import { checkNotificationPermission, showNotification } from '@/utils/notificat
 import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 
-export function useTaskReminders(getTasks: () => PlannerTask[], viewedDate: Date, minutesBefore = 10) {
+export function useTaskReminders(getTasks: () => PlannerTask[], getViewedDate: () => Date | string, minutesBefore = 10) {
 	const { currentTime } = useCurrentTime()
 	const notifiedTaskIds = new Set<number>()
 
 	checkNotificationPermission()
 
-	watch(viewedDate, () => notifiedTaskIds.clear())
+	watch(getViewedDate, () => notifiedTaskIds.clear())
 
 	watch(
 		currentTime,
 		now => {
 			const today = new Date()
+			const viewedDate = new Date(getViewedDate())
 			if (
 				viewedDate.getFullYear() !== today.getFullYear() ||
 				viewedDate.getMonth() !== today.getMonth() ||

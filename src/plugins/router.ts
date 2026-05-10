@@ -22,6 +22,7 @@ import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vu
 import TemplateListView from '@/views/dayPlanner/TemplateListView.vue'
 import TemplateSplitView from '@/views/dayPlanner/TemplateSplitView.vue'
 import PlannerCalendarView from '@/views/dayPlanner/PlannerCalendarView.vue'
+import DayPlannerSettingsView from '@/views/dayPlanner/DayPlannerSettingsView.vue'
 import ActivityDashboard from '@/views/tracker/ActivityDashboard.vue'
 import HistoryCalendarView from '@/views/history/HistoryCalendarView.vue'
 import DesktopSettingsView from '@/views/tracker/DesktopSettingsView.vue'
@@ -159,6 +160,11 @@ const router = createRouter({
 			path: '/day-planner',
 			name: 'plannerCalendar',
 			component: PlannerCalendarView,
+		},
+		{
+			path: '/day-planner/settings',
+			name: 'dayPlannerSettings',
+			component: DayPlannerSettingsView,
 		},
 		{
 			path: '/day-planner/:date',

@@ -1,15 +1,27 @@
 <!-- DayPlannerView.vue -->
 <template>
 	<div class="py-4 d-flex ga-4 w-100">
-		<!-- Expandable Details -->
+		<!-- Left panel: routine or details (with suggestions embedded) -->
 		<VExpandXTransition mode="in-out">
-			<div v-if="expandedDetails">
+			<div
+				v-if="routinePanelVisible || expandedDetails"
+				class="align-self-stretch d-flex"
+			>
+				<RoutineSidePanel
+					v-if="routinePanelVisible"
+					v-model:visible="routinePanelVisible"
+					@update:selectedItem="selectedRoutineItem = $event"
+				/>
 				<DayDetailsPanel
+					v-else
 					:title="currentDateFormatted"
 					:calendar
+					:repeatingTasks="suggestions"
+					:addedIds="addedSuggestionIds"
 					@useTemplate="templatePreview"
 					@openDetails="calendarDetailsDialog = true"
-				></DayDetailsPanel>
+					@addRepeatingTask="handleAddSuggestion"
+				/>
 			</div>
 		</VExpandXTransition>
 		<DayPlanner
@@ -20,6 +32,7 @@
 			<template #header>
 				<DayPlannerHeader
 					v-model:expandedDetails="expandedDetails"
+					v-model:expandedRoutine="routinePanelVisible"
 					:title="currentDateFormatted"
 					:calendar
 					@navigateDate="navigateDate"
@@ -81,6 +94,14 @@
 				>
 					Log time
 				</VBtn>
+				<VBtn
+					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
+					variant="tonal"
+					color="secondaryOutline"
+					@click="crud.splitTask"
+				>
+					Split
+				</VBtn>
 			</template>
 
 			<!-- Custom dialog for normal planner -->
@@ -118,7 +139,7 @@
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 	import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
-	import { isSameDay, useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi, isSameDay, useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
@@ -150,6 +171,10 @@
 	import { useClipboardHandling } from '@/composables/dayPlanner/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
 	import { useTaskReminders } from '@/composables/dayPlanner/useTaskReminders.ts'
+	import { useRepeatingPlannerTaskApi } from '@/api/taskPlanner/repeatingPlannerTaskApi.ts'
+	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
+	import RoutineSidePanel from '@/components/dayPlanner/template/RoutineSidePanel.vue'
+	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showSuccessSnackbar } = useSnackbar()
@@ -163,7 +188,7 @@
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useDateTime()
 	const store = useDayPlannerStore()
-	useTaskReminders(() => store.tasks, store.viewedDate)
+	useTaskReminders(() => store.tasks, () => store.viewedDate)
 
 	function applyContext(req: PlannerTaskRequest) {
 		req.calendarId = calendar.value?.id
@@ -183,6 +208,8 @@
 		buildRequestFromEntity,
 	})
 
+	const { fetchSuggestionsForDate } = useRepeatingPlannerTaskApi()
+
 	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
 	// Provide the store for slot content (EventBlock components)
 	provide('plannerStore', store)
@@ -190,8 +217,19 @@
 	const calendar = ref<Calendar>()
 	const calendarDetailsDialog = ref(false)
 	const rescheduleDialog = ref(false)
+
+	const suggestions = ref<RepeatingPlannerTask[]>([])
+	const addedSuggestionIds = ref<Set<number>>(new Set())
+	const routinePanelVisible = ref(false)
+	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 	const skipDialog = ref(false)
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
+
+	provide('selectedRoutineItem', selectedRoutineItem)
+
+	watch(routinePanelVisible, visible => {
+		if (!visible) selectedRoutineItem.value = null
+	})
 
 	// Lifecycle hooks
 	onMounted(async () => {
@@ -270,11 +308,26 @@
 
 	// Load tasks for the current date
 	async function loadTasks() {
-		store.tasks = await fetchFiltered(
-			new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime),
-		)
+		const [tasks, fetched] = await Promise.all([
+			fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime)),
+			fetchSuggestionsForDate(formatDateForApi(store.viewedDate)),
+		])
+		store.tasks = tasks
+		suggestions.value = fetched
+		addedSuggestionIds.value = new Set()
 		store.initializeTaskGridPositions()
 		await templatePreview()
+	}
+
+	async function handleAddSuggestion(task: RepeatingPlannerTask) {
+		const req = new PlannerTaskRequest(task.startTime, task.endTime)
+		req.activityId = task.activity.id
+		req.isBackground = task.isBackground
+		req.location = task.location
+		req.notes = task.notes
+		req.importanceId = task.importance?.id ?? null
+		await crud.create(req)
+		addedSuggestionIds.value = new Set([...addedSuggestionIds.value, task.id])
 	}
 
 	async function templatePreview() {

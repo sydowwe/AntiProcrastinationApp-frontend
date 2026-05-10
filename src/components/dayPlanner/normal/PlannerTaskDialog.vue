@@ -28,8 +28,8 @@
 				showRoutine
 				:initialActivityId="initialPickerActivityId"
 				@selected="
-					(actId: number, todoItemId?: number) =>
-						onPickerSelected(actId, todoItemId, data as PlannerTaskRequest)
+					(actId: number, todoItemId?: number, suggestedTime?: Time) =>
+						onPickerSelected(actId, todoItemId, suggestedTime, data as PlannerTaskRequest)
 				"
 			/>
 		</template>
@@ -101,10 +101,13 @@
 		emit('create', request)
 	}
 
-	function onPickerSelected(activityId: number, todoListItemId: number | undefined, data: PlannerTaskRequest) {
+	function onPickerSelected(activityId: number, todoListItemId: number | undefined, suggestedTime: Time | undefined, data: PlannerTaskRequest) {
 		baseDialog.value?.prefillActivity(activityId)
 		if (todoListItemId != null) {
 			data.todoListItemId = todoListItemId
+		}
+		if (suggestedTime != null) {
+			data.endTime = Time.fromMinutes(data.startTime.getInMinutes + suggestedTime.getInMinutes)
 		}
 	}
 
