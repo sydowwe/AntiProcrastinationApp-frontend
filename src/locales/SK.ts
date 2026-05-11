@@ -561,6 +561,11 @@ const SK = {
 			completed: `Dokončené`,
 			cancelled: `Zrušené`,
 		},
+		templateSuggestions: {
+			suggestedForYou: `Odporúčané pre vás`,
+			usedOn: `Použité v {label}`,
+			timesCount: `{count}×`,
+		},
 	},
 }
 export default SK

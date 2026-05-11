@@ -10,28 +10,49 @@
 			<span class="section-label">Day Template</span>
 		</div>
 
+		<!-- Backend Suggestions -->
 		<div
-			v-if="suggestions.length"
-			class="d-flex align-center flex-wrap ga-2 mb-3"
+			v-if="backendSuggestions.length && !store.isTemplateInPreview"
+			class="mb-4"
 		>
-			<span class="section-label mr-1">Suggested:</span>
-			<VChip
-				v-for="t in suggestions"
-				:key="t.id"
-				size="small"
-				color="primary"
-				variant="elevated"
-				style="cursor: pointer; border-radius: 4px"
-				@click="selectSuggestion(t)"
-			>
+			<div class="d-flex align-center ga-1 mb-2">
 				<VIcon
-					v-if="t.icon"
-					:icon="t.icon"
-					size="12"
-					class="mr-1"
+					icon="wand-magic-sparkles"
+					size="14"
+					class="text-primary"
 				/>
-				{{ t.name }}
-			</VChip>
+				<span class="section-label text-primary">{{ t('planner.templateSuggestions.suggestedForYou') }}</span>
+			</div>
+			<div class="d-flex flex-column ga-2">
+				<div
+					v-for="s in backendSuggestions"
+					:key="s.template.id"
+					class="suggestion-item d-flex align-center justify-space-between pa-2 rounded-lg"
+					style="cursor: pointer"
+					@click="selectSuggestion(s.template)"
+				>
+					<div class="d-flex align-center ga-2 flex-wrap">
+						<VIcon
+							v-if="s.template.icon"
+							:icon="s.template.icon"
+							size="16"
+							class="text-medium-emphasis"
+						/>
+						<span class="text-body-2 font-weight-medium">{{ s.template.name }}</span>
+						<VChip
+							size="x-small"
+							variant="tonal"
+							color="primaryOutline"
+							class="flex-shrink-0"
+						>
+							{{ t('planner.templateSuggestions.usedOn', { label: s.patternLabel }) }}
+						</VChip>
+					</div>
+					<span class="text-caption text-medium-emphasis flex-shrink-0 ml-2">
+						{{ t('planner.templateSuggestions.timesCount', { count: s.occurrenceCount }) }}
+					</span>
+				</div>
+			</div>
 		</div>
 
 		<VAutocomplete
@@ -162,15 +183,16 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { onMounted, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
+	import type { TemplateSuggestionResponse } from '@/dtos/response/activityPlanning/template/TemplateSuggestionResponse.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
-	import { useTemplateSuggestion } from '@/composables/dayPlanner/useTemplateSuggestion.ts'
 
 	const { calendar } = defineProps<{
 		calendar?: Calendar
@@ -180,20 +202,21 @@
 		useTemplate: []
 	}>()
 
+	const { t } = useI18n()
 	const store = useDayPlannerStore()
-	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()
-	const { getSuggestions } = useTemplateSuggestion()
+	const { fetchAll, fetchSuggestions } = useTaskPlannerDayTemplateTaskCrud()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const selectedTemplate = ref<TaskPlannerDayTemplate | null>(null)
-
-	const suggestions = computed(() => {
-		if (!calendar || !templates.value.length || store.isTemplateInPreview) return []
-		return getSuggestions(templates.value, calendar)
-	})
+	const backendSuggestions = ref<TemplateSuggestionResponse[]>([])
 
 	onMounted(async () => {
-		templates.value = await fetchAll()
+		const [allTemplates, suggestions] = await Promise.all([
+			fetchAll(),
+			calendar?.date ? fetchSuggestions(calendar.date) : Promise.resolve([]),
+		])
+		templates.value = allTemplates
+		backendSuggestions.value = suggestions
 		if (store.templateInPreview) {
 			selectedTemplate.value = store.templateInPreview
 		}
@@ -227,5 +250,15 @@
 
 	.applied-badge {
 		background: rgba(var(--v-theme-success), 0.08);
+	}
+
+	.suggestion-item {
+		background: rgba(var(--v-theme-primary), 0.06);
+		border: 1px solid rgba(var(--v-theme-primary), 0.15);
+		transition: background 0.15s;
+	}
+
+	.suggestion-item:hover {
+		background: rgba(var(--v-theme-primary), 0.12);
 	}
 </style>

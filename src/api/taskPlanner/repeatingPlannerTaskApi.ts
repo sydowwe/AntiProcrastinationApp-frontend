@@ -2,6 +2,7 @@ import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
 import { RepeatingPlannerTaskRequest } from '@/dtos/request/activityPlanning/RepeatingPlannerTaskRequest.ts'
+import { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
 import { API } from '@/plugins/axiosConfig.ts'
 
 export function useRepeatingPlannerTaskApi() {
@@ -21,9 +22,9 @@ export function useRepeatingPlannerTaskApi() {
 		entityName: url,
 	})
 
-	async function fetchSuggestionsForDate(date: string): Promise<RepeatingPlannerTask[]> {
+	async function fetchSuggestionsForDate(date: string): Promise<SuggestionResponse[]> {
 		const response = await API.get(`${url}/suggestions`, { params: { date } })
-		return RepeatingPlannerTask.listFromObjects(response.data)
+		return SuggestionResponse.listFromObjects(response.data)
 	}
 
 	return {

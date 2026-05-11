@@ -82,14 +82,14 @@
 	import DayDetailsPanel from '@/components/dayPlanner/normal/DayDetailsPanel.vue'
 	import RoutineSidePanel from '@/components/dayPlanner/template/RoutineSidePanel.vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
+	import type { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 
 	const { title, calendar, suggestions, addedIds } = defineProps<{
 		title: string
 		calendar: Calendar | undefined
-		suggestions: RepeatingPlannerTask[]
-		addedIds: Set<number>
+		suggestions: SuggestionResponse[]
+		addedIds: Set<string>
 	}>()
 
 	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
@@ -98,7 +98,7 @@
 	const emit = defineEmits<{
 		openEditDialog: []
 		useTemplate: []
-		addRepeatingTask: [task: RepeatingPlannerTask]
+		addRepeatingTask: [task: SuggestionResponse]
 		'update:selectedItem': [item: RoutineTodoListItemEntity | null]
 	}>()
 

@@ -83,7 +83,7 @@
 				<RepeatingTasksSection
 					:tasks="repeatingTasks"
 					:addedIds
-					@add="(task: RepeatingPlannerTask) => emit('addRepeatingTask', task)"
+					@add="(task: SuggestionResponse) => emit('addRepeatingTask', task)"
 				/>
 			</div>
 		</template>
@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
+	import type { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import DayTemplatePicker from '@/components/dayPlanner/normal/DayTemplatePicker.vue'
@@ -109,14 +109,14 @@
 	const { calendar, repeatingTasks, addedIds } = defineProps<{
 		title: string
 		calendar?: Calendar
-		repeatingTasks?: RepeatingPlannerTask[]
-		addedIds?: Set<number>
+		repeatingTasks?: SuggestionResponse[]
+		addedIds?: Set<string>
 	}>()
 
 	const emit = defineEmits<{
 		openDetails: []
 		useTemplate: []
-		addRepeatingTask: [task: RepeatingPlannerTask]
+		addRepeatingTask: [task: SuggestionResponse]
 	}>()
 </script>
 

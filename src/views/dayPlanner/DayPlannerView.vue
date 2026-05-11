@@ -162,7 +162,7 @@
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
 	import { useTaskReminders } from '@/composables/dayPlanner/useTaskReminders.ts'
 	import { useRepeatingPlannerTaskApi } from '@/api/taskPlanner/repeatingPlannerTaskApi.ts'
-	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
+	import type { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
 
@@ -214,8 +214,8 @@
 	const calendarDetailsDialog = ref(false)
 	const rescheduleDialog = ref(false)
 
-	const suggestions = ref<RepeatingPlannerTask[]>([])
-	const addedSuggestionIds = ref<Set<number>>(new Set())
+	const suggestions = ref<SuggestionResponse[]>([])
+	const addedSuggestionIds = ref<Set<string>>(new Set())
 	const activePanel = ref<'details' | 'routine'>('details')
 	const panelOpen = ref(true)
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
@@ -319,7 +319,7 @@
 		await templatePreview()
 	}
 
-	async function handleAddSuggestion(task: RepeatingPlannerTask) {
+	async function handleAddSuggestion(task: SuggestionResponse) {
 		const req = new PlannerTaskRequest(task.startTime, task.endTime)
 		req.activityId = task.activity.id
 		req.isBackground = task.isBackground
@@ -327,7 +327,7 @@
 		req.notes = task.notes
 		req.importanceId = task.importance?.id ?? null
 		await crud.create(req)
-		addedSuggestionIds.value = new Set([...addedSuggestionIds.value, task.id])
+		addedSuggestionIds.value = new Set([...addedSuggestionIds.value, task.key])
 	}
 
 	async function templatePreview() {

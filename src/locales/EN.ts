@@ -557,6 +557,11 @@ const EN = {
 			completed: `Completed`,
 			cancelled: `Cancelled`,
 		},
+		templateSuggestions: {
+			suggestedForYou: `Suggested for you`,
+			usedOn: `Used on {label}s`,
+			timesCount: `{count}×`,
+		},
 	},
 }
 export default EN
