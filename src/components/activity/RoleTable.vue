@@ -17,7 +17,7 @@
 			<template v-if="key === 'color'">
 				<VSheet
 					v-if="value"
-					:color="value"
+					:color="getBgColor(value)"
 					width="24"
 					height="24"
 					rounded="circle"
@@ -46,9 +46,11 @@
 	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
+	import { useColor } from '@/utils/colorPalette.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
+	const { getBgColor } = useColor()
 	const { fetchFilteredTable, loading } = useFetchFilteredTable<Role, NameTextFilter>(Role, 'activity-role')
 	const { deleteEntity } = useActivityRoleCrud()
 

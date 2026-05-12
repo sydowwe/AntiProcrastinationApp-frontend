@@ -1,3 +1,9 @@
+export interface PlacingItem {
+	name: string
+	icon: string
+	color?: string
+}
+
 export class CreationPreviewType {
 	constructor(
 		public initRow: number,

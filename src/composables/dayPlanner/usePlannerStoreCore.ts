@@ -3,7 +3,7 @@ import { Time } from '@/dtos/dto/Time.ts'
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import { useDayPlannerCommon } from '@/composables/dayPlanner/useDayPlannerCommon.ts'
-import type { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
+import type { CreationPreviewType, PlacingItem } from '@/components/dayPlanner/DayPlannerTypes.ts'
 
 export function usePlannerStoreCore<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -25,6 +25,9 @@ export function usePlannerStoreCore<
 	const editedId = ref<number | undefined>()
 	const creationPreview = ref<CreationPreviewType | undefined>()
 	const deleteDialog = ref(false)
+
+	// Placing item state (routine item, todo item, external task, etc.)
+	const placingItem = ref<PlacingItem | null>(null)
 
 	// Duplicate state
 	const isDuplicating = ref(false)
@@ -176,6 +179,9 @@ export function usePlannerStoreCore<
 		// Reset selection state
 		selectedTaskIds.clear()
 
+		// Reset placing item state
+		placingItem.value = null
+
 		// Reset dialog state
 		dialog.value = false
 		editedId.value = undefined
@@ -211,6 +217,7 @@ export function usePlannerStoreCore<
 		// State
 		tasks,
 		selectedTaskIds,
+		placingItem,
 		dialog,
 		editedId,
 		creationPreview,

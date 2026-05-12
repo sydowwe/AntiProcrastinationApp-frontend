@@ -68,38 +68,6 @@
 				<template #header>
 					<TemplatePlannerHeader :title="store.templateName || 'Day Template'">
 						<template #headerPrepend>
-							<VBtnToggle
-								v-model="activePanel"
-								mandatory
-								class="d-flex d-md-none"
-								density="compact"
-								variant="outlined"
-								color="secondaryOutline"
-								@update:modelValue="panelOpen = true"
-							>
-								<VBtn
-									value="details"
-									prependIcon="sliders"
-								>
-									Details
-								</VBtn>
-								<VBtn
-									value="routine"
-									prependIcon="rotate"
-								>
-									Routine
-								</VBtn>
-							</VBtnToggle>
-							<VChip
-								v-if="selectedRoutineItem"
-								color="secondary"
-								prependIcon="rotate"
-								closable
-								style="max-width: 160px"
-								@click:close="selectedRoutineItem = null"
-							>
-								{{ selectedRoutineItem.activity.name }}
-							</VChip>
 							<span
 								v-if="taskStats.taskCount > 0"
 								class="text-caption text-medium-emphasis"
@@ -224,6 +192,17 @@
 	watch(activePanel, panel => {
 		if (panel !== 'routine') selectedRoutineItem.value = null
 	})
+
+	watch(selectedRoutineItem, item => {
+		store.placingItem = item ? { name: item.activity.name, icon: 'rotate' } : null
+	})
+
+	watch(
+		() => store.placingItem,
+		item => {
+			if (!item) selectedRoutineItem.value = null
+		},
+	)
 
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground)

@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
+	import { useRoute, useRouter } from 'vue-router'
 	import ActivityTable from '@/components/activity/ActivityTable.vue'
 	import RoleTable from '@/components/activity/RoleTable.vue'
 	import CategoryTable from '@/components/activity/CategoryTable.vue'
@@ -105,8 +106,10 @@
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 
 	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
+	const route = useRoute()
+	const router = useRouter()
 
-	const activeTab = ref('activities')
+	const activeTab = ref((route.params.tab as string) || 'activities')
 	const nameTextFilter = ref(new NameTextFilter())
 	const activityFilter = ref(new ActivityFilter())
 	const roleCombobox = ref<any[]>([])
@@ -119,12 +122,31 @@
 		categoryOptions.value = await fetchCategorySelectOptions()
 	})
 
-	watch(activeTab, () => {
-		nameTextFilter.value = new NameTextFilter()
-		activityFilter.value = new ActivityFilter()
-		roleCombobox.value = []
-		categoryCombobox.value = []
+	watch(activeTab, newTab => {
+		if (route.params.tab !== newTab) {
+			router.replace({ name: 'activitySettings', params: { tab: newTab } })
+		}
 	})
+
+	watch(
+		activeTab,
+		() => {
+			nameTextFilter.value = new NameTextFilter()
+			activityFilter.value = new ActivityFilter()
+			roleCombobox.value = []
+			categoryCombobox.value = []
+		},
+		{ immediate: false },
+	)
+
+	watch(
+		() => route.params.tab,
+		newTab => {
+			if (newTab && newTab !== activeTab.value) {
+				activeTab.value = newTab as string
+			}
+		},
+	)
 
 	watch(
 		roleCombobox,

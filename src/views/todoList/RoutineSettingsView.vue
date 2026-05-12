@@ -29,7 +29,7 @@
 					<div class="d-flex justify-center">
 						<VSheet
 							v-if="value"
-							:style="{ backgroundColor: getBgColor(value as string) }"
+							:color="getBgColor(value)"
 							width="22"
 							height="22"
 							rounded="circle"

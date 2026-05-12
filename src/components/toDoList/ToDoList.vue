@@ -74,19 +74,18 @@
 				<ToDoListItem
 					:toDoListItem="item"
 					:color="item instanceof TodoListItemEntity ? item.taskPriority.color : null"
-					:kind
+					:kind="kind"
 					:isInChangeOrderMode="isInChangeOrderMode"
 					:listId="listId"
 					:isDragging="dragState.draggedIndex === index"
 					:streakConfig="streakConfig"
-					@delete="deleteItem"
+					@delete="id => emit('deletedItem', id)"
 					@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
-					@select="select"
-					@unSelect="unSelect"
 					@isDoneChanged="handleIsDoneChanged"
 					@stepToggled="emit('itemsChanged', [item.id])"
-					@addToPlanner="(item: TEntity) => emit('addToPlanner', item)"
-					@logTime="(item: TEntity) => openLogTimeDialog(item)"
+					@addToPlanner="(i: TEntity) => emit('addToPlanner', i)"
+					@logTime="(i: TEntity) => emit('logTime', i, false)"
+					@itemClicked="(i: TEntity) => emit('logTime', i, true)"
 				/>
 
 				<!-- Drop zone below item (invisible overlay) - only when dragging -->
@@ -125,44 +124,11 @@
 				<span class="text-body-2">No tasks</span>
 			</div>
 		</div>
-
-		<ToDoListItemDoneDialog
-			v-model="itemDoneDialogShown"
-			:toDoListItem="currentDoneItem"
-			:isRecursive="isDialogRecursive"
-			@openNext="recursiveDialogsToSaveToHistory"
-		/>
-
-		<VDialog
-			v-model="batchDeleteConfirmDialog"
-			maxWidth="360"
-		>
-			<VCard>
-				<VCardText class="pt-4">
-					{{ $t('toDoList.confirmBatchDelete', { count: pendingBatchDeleteIds.length }) }}
-				</VCardText>
-				<VCardActions class="justify-end ga-2 pb-3 px-4">
-					<VBtn
-						variant="text"
-						@click="batchDeleteConfirmDialog = false"
-					>
-						{{ $t('general.cancel') }}
-					</VBtn>
-					<VBtn
-						color="error"
-						@click="confirmBatchDelete"
-					>
-						{{ $t('general.delete') }}
-					</VBtn>
-				</VCardActions>
-			</VCard>
-		</VDialog>
 	</div>
 </template>
 
 <script setup lang="ts" generic="TEntity extends IBaseToDoListItem">
 	import ToDoListItem from './ToDoListItem.vue'
-	import ToDoListItemDoneDialog from '@/components/dialogs/toDoList/ToDoListItemDoneDialog.vue'
 	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import { computed, onMounted, ref, toRef } from 'vue'
@@ -198,11 +164,10 @@
 		(e: 'itemsChanged', changedItems: number[]): void
 		(e: 'editItem', entityToEdit: TEntity): void
 		(e: 'deletedItem', id: number): void
-		(e: 'batchDeletedItems', ids: number[]): void
 		(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void
 		(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void
 		(e: 'addToPlanner', item: TEntity): void
-		(e: 'logTime', item: TEntity): void
+		(e: 'logTime', item: TEntity, isManual: boolean): void
 	}>()
 
 	// Auto-animate controller
@@ -300,84 +265,21 @@
 	})
 
 	// Other methods not drag and drop
-	const selectedItemsIds = ref([] as number[])
 	const editItem = (entityToEdit: TEntity) => {
 		emit('editItem', entityToEdit)
 	}
 	const url = kind === ToDoListKind.ROUTINE ? 'routine-todo-list' : 'todo-list-item'
 
-	const itemDoneDialogShown = ref(false)
-	const isDialogRecursive = ref(false)
-	const changedItems = ref([] as TEntity[])
-	const currentDoneItem = ref({} as TEntity)
-
-	function recursiveDialogsToSaveToHistory() {
-		if (changedItems.value.length > 0) {
-			isDialogRecursive.value = true
-			currentDoneItem.value = changedItems.value[0]
-			itemDoneDialogShown.value = true
-			changedItems.value.splice(0, 1)
-		}
-	}
-
-	function openLogTimeDialog(item: TEntity) {
-		emit('logTime', item)
-	}
-
 	function handleIsDoneChanged(toDoListItem: TEntity, forceValue?: boolean) {
-		const isBatchAction = selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(toDoListItem.id)
-		if (toDoListItem.isDone) {
-			if (isBatchAction) {
-				changedItems.value = items.filter((item: TEntity) => selectedItemsIds.value.includes(item.id))
-				recursiveDialogsToSaveToHistory()
-			} else {
-				currentDoneItem.value = toDoListItem
-				isDialogRecursive.value = false
-				itemDoneDialogShown.value = true
-			}
-		}
-		const request = { ids: isBatchAction ? selectedItemsIds : [toDoListItem.id], forceValue }
+		const id = toDoListItem.id
+		const request = { ids: [id], forceValue }
 		API.patch(`/${url}/toggle-is-done`, request)
 			.then(() => {
-				if (isBatchAction) {
-					emit('itemsChanged', selectedItemsIds.value)
-					selectedItemsIds.value = []
-				} else {
-					emit('itemsChanged', [toDoListItem.id])
-				}
+				emit('itemsChanged', [id])
 			})
 			.catch(error => {
 				console.error(error)
 			})
-	}
-
-	const batchDeleteConfirmDialog = ref(false)
-	const pendingBatchDeleteIds = ref<number[]>([])
-
-	const deleteItem = (id: number) => {
-		if (selectedItemsIds.value.length > 1 && selectedItemsIds.value.includes(id)) {
-			pendingBatchDeleteIds.value = [...selectedItemsIds.value]
-			batchDeleteConfirmDialog.value = true
-		} else {
-			emit('deletedItem', id)
-		}
-	}
-
-	function confirmBatchDelete() {
-		batchDeleteConfirmDialog.value = false
-		emit('batchDeletedItems', pendingBatchDeleteIds.value)
-		selectedItemsIds.value = []
-		pendingBatchDeleteIds.value = []
-	}
-
-	const select = (id: number) => {
-		if (!selectedItemsIds.value.includes(id)) {
-			selectedItemsIds.value.push(id)
-		}
-	}
-
-	const unSelect = (id: number) => {
-		selectedItemsIds.value = selectedItemsIds.value.filter(item => item !== id)
 	}
 
 	function uncheckAll() {

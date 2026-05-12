@@ -313,7 +313,7 @@
 				},
 			],
 		},
-		{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings', needsAdmin: false },
+		{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings/activities', needsAdmin: false },
 		{
 			title: 'toDoList',
 			icon: 'list-check',

@@ -4,7 +4,6 @@
 		<VSheet
 			v-if="isShown"
 			class="action-bar d-flex align-center ga-2 ga-md-3 px-3 py-2"
-			color="neutral-50"
 			elevation="8"
 		>
 			<slot></slot>
@@ -38,7 +37,7 @@
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 50;
-		border: 1px solid rgba(var(--v-theme-on-surface), 0.33);
+		border: 2px solid rgba(var(--v-theme-on-surface), 0.25);
 		border-radius: 6px;
 		min-width: min-content;
 		text-wrap: nowrap;

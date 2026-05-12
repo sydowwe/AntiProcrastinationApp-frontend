@@ -21,12 +21,6 @@
 							></slot>
 						</template>
 					</PlannerTasksColumn>
-
-					<slot name="action-bar"></slot>
-					<!-- Floating Selection Action Bar -->
-					<SelectionActionBar>
-						<slot name="selection-actions"></slot>
-					</SelectionActionBar>
 				</div>
 
 				<!-- Legend slot - optional for future use -->
@@ -45,7 +39,18 @@
 			confirmBtnColor="error"
 			@confirmed="emit('delete')"
 		/>
-
+		<ActionBar
+			:isShown="!!store.placingItem"
+			@cancel="store.placingItem = null"
+		>
+			<span class="text-body-2 text-medium-emphasis">Placing</span>
+			<span class="text-body-2 text-high-emphasis">{{ store.placingItem?.name }}</span>
+		</ActionBar>
+		<slot name="action-bar"></slot>
+		<!-- Floating Selection Action Bar -->
+		<SelectionActionBar>
+			<slot name="selection-actions"></slot>
+		</SelectionActionBar>
 		<!-- Dialog slot - each view provides its own dialog (TaskDialog vs PlannerTaskTemplateDialog) -->
 		<slot name="dialog" />
 	</div>
@@ -68,6 +73,7 @@
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
+	import ActionBar from '@/components/general/ActionBar.vue'
 
 	const emit = defineEmits<{
 		delete: []
@@ -89,7 +95,6 @@
 		const taskName = tasks[0]?.activity?.name ?? 'this task'
 		return `Are you sure you want to delete ${taskName}?`
 	})
-
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <!-- TemplatePlannerPanel.vue - Reusable template planner panel, used in both single and split-view -->
 <template>
 	<div class="d-flex flex-column flex-fill">
-		<div class="flex-fill px-6 py-4">
+		<div class="flex-fill pa-4">
 			<TaskPlannerDayTemplateDetailsForm
 				ref="detailsForm"
 				:template="currentTemplate"

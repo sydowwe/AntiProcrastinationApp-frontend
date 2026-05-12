@@ -17,15 +17,8 @@
 		/>
 		<div class="w-100 d-flex align-center ga-2">
 			<div class="pr-1">
-				<VIcon
-					v-if="isSelected"
-					class="ml-4"
-					icon="check-circle"
-					size="18"
-					color="warning"
-				></VIcon>
 				<VCheckboxBtn
-					v-else-if="!toDoListItem.isMultipleCount"
+					v-if="!toDoListItem.isMultipleCount"
 					v-model="isDone"
 					class="pl-2"
 					baseColor="white"
@@ -145,7 +138,10 @@
 						size="14"
 						class="mb-1"
 					/>
-					<VListItemTitle :class="['text-white', { 'text-decoration-line-through': isDone }]">
+					<VListItemTitle
+						class="text-white"
+						:class="{ 'text-decoration-line-through': isDone }"
+					>
 						{{ toDoListItem.activity.name }}
 					</VListItemTitle>
 				</div>
@@ -272,12 +268,11 @@
 	const emits = defineEmits<{
 		edit: [toDoListItem: TItem]
 		delete: [id: number]
-		select: [id: number]
-		unSelect: [id: number]
 		isDoneChanged: [toDoListItem: TItem, forceValue?: boolean]
 		stepToggled: []
 		addToPlanner: [toDoListItem: TItem]
 		logTime: [toDoListItem: TItem]
+		itemClicked: [toDoListItem: TItem]
 	}>()
 
 	const i18n = useI18n()
@@ -285,7 +280,6 @@
 
 	const accentColor = computed(() => (color ? getBgColor(color) : undefined))
 
-	const isSelected = ref(false)
 	const isDone = ref(toDoListItem.isDone)
 	const doneCount = ref<number | null>(toDoListItem.doneCount)
 	const localSteps = ref<TodoListItemStepEntity[]>([...toDoListItem.steps])
@@ -294,7 +288,6 @@
 		() => toDoListItem.isDone,
 		val => {
 			isDone.value = val
-			isSelected.value = false
 		},
 	)
 	watch(
@@ -442,7 +435,6 @@
 	}
 
 	const actions = [
-		new MenuItem('select', 'tonal', 'primaryOutline', 'check-circle', toggleSelect),
 		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', edit),
 		new MenuItem('addToPlanner', 'outlined', 'primaryOutline', 'calendar-plus', addToPlanner),
 		new MenuItem('logTime', 'outlined', 'primaryOutline', 'clock', logTime),
@@ -468,8 +460,13 @@
 			return
 		}
 
+		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
+
+		const oldIsDone = isDone.value
 		isDone.value = !isDone.value
-		emitChanged()
+		if (oldIsDone !== isDone.value) {
+			emitChanged()
+		}
 	}
 
 	function minusClicked(event: Event) {
@@ -477,12 +474,16 @@
 			event.preventDefault()
 			return
 		}
+		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 		if (doneCount.value === null || doneCount.value <= 0) return
 		doneCount.value--
+		const oldIsDone = isDone.value
 		if (isDone.value) {
 			isDone.value = false
 		}
-		emitChanged(false)
+		if (oldIsDone !== isDone.value) {
+			emitChanged(false)
+		}
 	}
 
 	function progressClicked(event: Event) {
@@ -490,31 +491,33 @@
 			event.preventDefault()
 			return
 		}
+		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 		if (doneCount.value === null || toDoListItem.totalCount === null) return
 		if (doneCount.value >= toDoListItem.totalCount) return
 		doneCount.value++
+		const oldIsDone = isDone.value
 		if (doneCount.value >= toDoListItem.totalCount) {
 			isDone.value = true
 		}
-		emitChanged()
+		if (oldIsDone !== isDone.value) {
+			emitChanged()
+		}
 	}
 
 	function actionButtonText(name: string) {
-		return i18n.t(isSelected.value && name === 'select' ? `general.un${name}` : `general.${name}`)
+		return i18n.t(`general.${name}`)
 	}
 
 	function edit() {
 		if (isInChangeOrderMode) return
 
 		emits('edit', toDoListItem)
-		isSelected.value = false
 	}
 
 	function del() {
 		if (isInChangeOrderMode) return
 
 		emits('delete', toDoListItem.id)
-		isSelected.value = false
 	}
 
 	function addToPlanner() {
@@ -523,17 +526,6 @@
 
 	function logTime() {
 		emits('logTime', toDoListItem)
-	}
-
-	function toggleSelect() {
-		if (isInChangeOrderMode) return
-
-		isSelected.value = !isSelected.value
-		if (isSelected.value) {
-			emits('select', toDoListItem.id)
-		} else {
-			emits('unSelect', toDoListItem.id)
-		}
 	}
 </script>
 

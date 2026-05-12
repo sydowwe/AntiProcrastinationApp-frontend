@@ -118,7 +118,7 @@
 			v-model="skipDialog"
 			@skip="handleSkip"
 		/>
-		<LogTimeController ref="logTimeController" />
+		<DayPlannerLogTimeController ref="logTimeController" />
 	</div>
 </template>
 
@@ -153,7 +153,7 @@
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import RescheduleDialog from '@/components/dayPlanner/normal/RescheduleDialog.vue'
 	import SkipReasonDialog from '@/components/dayPlanner/normal/SkipReasonDialog.vue'
-	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
+	import DayPlannerLogTimeController from '@/components/dayPlanner/normal/DayPlannerLogTimeController.vue'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
@@ -206,7 +206,7 @@
 
 	const { fetchSuggestionsForDate } = useRepeatingPlannerTaskApi()
 
-	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
+	const logTimeController = ref<InstanceType<typeof DayPlannerLogTimeController>>()
 	// Provide the store for slot content (EventBlock components)
 	provide('plannerStore', store)
 
@@ -227,6 +227,17 @@
 	watch(activePanel, panel => {
 		if (panel !== 'routine') selectedRoutineItem.value = null
 	})
+
+	watch(selectedRoutineItem, item => {
+		store.placingItem = item ? { name: item.activity.name, icon: 'rotate' } : null
+	})
+
+	watch(
+		() => store.placingItem,
+		item => {
+			if (!item) selectedRoutineItem.value = null
+		},
+	)
 
 	// Lifecycle hooks
 	onMounted(async () => {

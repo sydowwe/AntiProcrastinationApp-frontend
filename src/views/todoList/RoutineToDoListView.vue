@@ -217,7 +217,6 @@
 							@itemsChanged="onItemsChanged"
 							@editItem="toDoListDialog?.openEdit"
 							@deletedItem="onDelete"
-							@batchDeletedItems="onBatchDelete"
 							@itemsReordered="
 								(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
 									handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)
@@ -260,7 +259,7 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
-	<LogTimeController ref="logTimeController" />
+	<TodoListLogTimeController ref="logTimeController" :kind="ToDoListKind.ROUTINE" @itemsChanged="onItemsChanged" />
 	<RoutineConfetti
 		v-if="showConfetti"
 		:key="confettiKey"
@@ -273,7 +272,7 @@
 	import RoutineGroupHeatmap from '@/components/toDoList/RoutineGroupHeatmap.vue'
 	import RoutineGroupHistoryDialog from '@/components/toDoList/RoutineGroupHistoryDialog.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
-	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
+	import TodoListLogTimeController from '@/components/toDoList/TodoListLogTimeController.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
@@ -306,7 +305,7 @@
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
 	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
 	const historyDialog = ref<InstanceType<typeof RoutineGroupHistoryDialog>>()
-	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
+	const logTimeController = ref<InstanceType<typeof TodoListLogTimeController>>()
 	const isInChangeOrderMode = ref(false)
 
 	const showConfetti = ref(false)
@@ -614,13 +613,6 @@
 		})
 	}
 
-	async function onBatchDelete(ids: number[]) {
-		await Promise.all(ids.map(id => deleteEntity(id)))
-		for (const group of groupedItems.value) {
-			group.items = group.items.filter(item => !ids.includes(item.id))
-		}
-	}
-
 	function openAddToPlanner(item: RoutineTodoListItemEntity) {
 		plannerStore.openCreateDialogWithActivity(
 			item.activity.id,
@@ -630,8 +622,8 @@
 		)
 	}
 
-	function openLogTime(item: RoutineTodoListItemEntity) {
-		logTimeController.value?.open(item.activity.id, item.activity.name, undefined, item.suggestedTime ?? undefined)
+	function openLogTime(item: RoutineTodoListItemEntity, isManual: boolean) {
+		logTimeController.value?.open(item.activity.id, item.activity.name, isManual, undefined, item.suggestedTime ?? undefined, item.id)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {

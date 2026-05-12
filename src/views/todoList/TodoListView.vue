@@ -153,7 +153,6 @@
 					@itemsChanged="itemsChanged"
 					@editItem="toDoListDialog?.openEdit"
 					@deletedItem="deleteItem"
-					@batchDeletedItems="batchDeleteItems"
 					@itemsReordered="handleOrderChange"
 					@addToPlanner="openAddToPlanner"
 					@logTime="openLogTime"
@@ -172,7 +171,11 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
-	<LogTimeController ref="logTimeController" />
+	<TodoListLogTimeController
+		ref="logTimeController"
+		:kind="ToDoListKind.NORMAL"
+		@itemsChanged="itemsChanged"
+	/>
 </template>
 
 <script setup lang="ts">
@@ -185,7 +188,7 @@
 	import ToDoList from '../../components/toDoList/ToDoList.vue'
 	import ToDoListItemDialog from '../../components/dialogs/toDoList/ToDoListItemDialog.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
-	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
+	import TodoListLogTimeController from '@/components/toDoList/TodoListLogTimeController.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -222,7 +225,7 @@
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
-	const logTimeController = ref<InstanceType<typeof LogTimeController>>()
+	const logTimeController = ref<InstanceType<typeof TodoListLogTimeController>>()
 	const items = ref([] as TodoListItemEntity[])
 	const isInChangeOrderMode = ref(false)
 	const listEntity = ref<TodoListEntity | null>(null)
@@ -377,12 +380,6 @@
 		}
 	}
 
-	async function batchDeleteItems(ids: number[]) {
-		await Promise.all(ids.map(id => deleteEntity(id)))
-		items.value = items.value.filter(item => !ids.includes(item.id))
-		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
-	}
-
 	async function updateAfterEdit(id: number, oldTaskPriorityId?: number) {
 		const updatedItem = await fetchById(id)
 		const index = items.value.findIndex(item => item.id === id)
@@ -398,8 +395,15 @@
 		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id, 'todo', item.suggestedTime ?? undefined)
 	}
 
-	function openLogTime(item: TodoListItemEntity) {
-		logTimeController.value?.open(item.activity.id, item.activity.name, undefined, item.suggestedTime ?? undefined)
+	function openLogTime(item: TodoListItemEntity, isManual: boolean) {
+		logTimeController.value?.open(
+			item.activity.id,
+			item.activity.name,
+			isManual,
+			undefined,
+			item.suggestedTime ?? undefined,
+			item.id,
+		)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {

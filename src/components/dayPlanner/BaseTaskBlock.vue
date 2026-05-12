@@ -12,6 +12,14 @@
 			:color="backgroundColorComp"
 		>
 			{{ task.activity.name }}
+			<VIcon
+				v-if="!!task.importance"
+				class="mb-1 mr-1"
+				:icon="task.importance?.icon ?? undefined"
+				:color="task.importance?.color"
+				:size="20"
+				style="transform: rotate(-90deg)"
+			></VIcon>
 		</VSheet>
 	</VSheet>
 
@@ -44,7 +52,7 @@
 				<div class="d-flex ga-4 align-center flex-wrap">
 					<slot name="prepend"></slot>
 					<div
-						v-if="task.importance?.importance !== 777"
+						v-if="!!task.importance"
 						class="d-flex"
 						:class="{ 'flex-column align-center': !task.isTaskOneRow }"
 					>
@@ -53,9 +61,9 @@
 							:color="task.importance?.color"
 							:size="task.isTaskOneRow ? 20 : 24"
 						></VIcon>
-						<span class="text-caption">
-							{{ task.importance?.text }}
-						</span>
+						<!--						<span class="text-caption">-->
+						<!--							{{ task.importance?.text }}-->
+						<!--						</span>-->
 					</div>
 					<div class="task-header-main">
 						<div class="task-title">{{ task.activity.name }}</div>
@@ -98,28 +106,30 @@
 						</div>
 					</div>
 
-					<div class="d-flex ga-3 mt-1">
-						<div class="text-medium-emphasis d-flex ga-1 align-center text-body-2">
-							<VIcon
-								class="mb-1"
-								size="16"
-								icon="location-dot"
-							></VIcon>
-							<span>{{ task.location }}</span>
-						</div>
+					<div
+						v-if="task.location"
+						class="text-medium-emphasis text-body-2"
+					>
+						<VIcon
+							class="mr-1"
+							size="16"
+							icon="location-dot"
+							style="margin-bottom: 2px"
+						></VIcon>
+						<span>{{ task.location }}</span>
 					</div>
-					<div class="pt-1">
-						<span
-							v-if="task.notes"
-							class="text-caption"
-						>
-							<VIcon
-								icon="far fa-note-sticky"
-								:size="task.isTaskOneRow ? 16 : 18"
-							></VIcon>
-							{{ task.notes }}
-						</span>
-					</div>
+					<span
+						v-if="task.notes"
+						class="text-caption"
+					>
+						<VIcon
+							icon="far fa-note-sticky"
+							class="mr-1"
+							:size="task.isTaskOneRow ? 16 : 18"
+							style="margin-bottom: 3px"
+						></VIcon>
+						{{ task.notes }}
+					</span>
 				</div>
 				<div>
 					<slot name="checkbox"></slot>
@@ -150,10 +160,10 @@
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import { useColor } from '@/utils/colorPalette.ts'
 
-	const { task, backgroundColor, isPast, marginLeft } = defineProps<{
+	const { task, isPast, marginLeft } = defineProps<{
 		task: TTask
-		backgroundColor?: string
 		isPast?: boolean
 		marginLeft?: string
 	}>()
@@ -164,6 +174,7 @@
 
 	// Inject the store from parent DayPlanner component
 	const store = inject<TStore>('plannerStore')!
+	const { getBgColor } = useColor()
 
 	// Computed states
 	const isSelected = computed(() => store.selectedTaskIds.has(task.id))
@@ -178,19 +189,16 @@
 	const isAnyTaskBeingManipulated = computed(() => store.isDraggingAny || store.isResizingAny)
 
 	const backgroundColorComp = computed(() => {
-		return backgroundColor || task.activity?.role?.color || '#4287f5'
+		return getBgColor(task.activity?.role?.color) || '#4287f5'
 	})
 
 	const isOutOfView = computed(() => task.gridRowStart === 1 && task.gridRowEnd === 1)
 
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
-		const hasImportance =
-			task.importance?.importance !== 777 && !(task.isBackground && task.importance?.importance === 666)
 		return {
 			marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
 			gridRow: `${task.gridRowStart} / span ${span}`,
-			borderRight: hasImportance ? `3px solid ${task.importance?.color ?? 'transparent'}` : '',
 		}
 	})
 

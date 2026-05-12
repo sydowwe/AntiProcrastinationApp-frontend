@@ -3,7 +3,7 @@ import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask
 import { type IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type { StoreGeneric } from 'pinia'
-import type { CreationPreviewType } from '@/components/dayPlanner/DayPlannerTypes.ts'
+import type { CreationPreviewType, PlacingItem } from '@/components/dayPlanner/DayPlannerTypes.ts'
 
 export interface IBaseDayPlannerStore<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -25,6 +25,7 @@ export interface IBaseDayPlannerStore<
 	// State
 	tasks: TTask[]
 	selectedTaskIds: Set<number>
+	placingItem: PlacingItem | null
 	dialog: boolean
 	editedId: number | undefined
 	creationPreview: CreationPreviewType | undefined

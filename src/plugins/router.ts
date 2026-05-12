@@ -71,9 +71,10 @@ const router = createRouter({
 			component: UserSettingsView,
 		},
 		{
-			path: '/activity-settings',
+			path: '/activity-settings/:tab?',
 			name: 'activitySettings',
 			component: ActivitySettingsView,
+			props: true,
 		},
 		{
 			path: '/routine-settings',

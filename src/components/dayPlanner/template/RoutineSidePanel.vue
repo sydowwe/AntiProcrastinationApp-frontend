@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="flex-fill py-4 d-flex flex-column"
+		class="flex-fill pa-4 d-flex flex-column"
 		style="overflow-y: auto; min-height: 0"
 	>
 		<div
@@ -18,12 +18,13 @@
 				density="compact"
 				hideDetails
 			/>
-			<VChip
+			<div
 				v-if="displayItems.length > 0"
-				class="mx-auto mt-4"
+				class="mt-4 d-flex ga-2 justify-center"
 			>
-				{{ inPlanCount }} / {{ displayItems.length }} in plan
-			</VChip>
+				<VChip>{{ inPlanCount }} / {{ totalCount }} tasks</VChip>
+				<VChip>{{ inPlanCountAllPlanned }} / {{ displayItems.length }} fully planned</VChip>
+			</div>
 			<div
 				v-if="displayItems.length === 0"
 				class="text-center text-medium-emphasis py-6 text-caption"
@@ -38,22 +39,20 @@
 				<VListItem
 					v-for="item in displayItems"
 					:key="item.id"
-					:active="selectedItemId === item.id"
-					activeColor="secondary"
+					color="secondaryOutline"
 					rounded="lg"
-					class="my-1"
+					class="px-2 py-1 my-1"
 					style="cursor: pointer"
+					:style="selectedItemId === item.id ? 'border: 1px solid rgb(var(--v-theme-secondaryOutline))' : ''"
 					@click="toggleItem(item)"
 				>
 					<template #prepend>
 						<VSheet
 							class="text-caption text-medium-emphasis"
-							:class="
-								planCountForItem(item) === (item.totalCount ? item.totalCount : 1) ? 'text-success' : ''
-							"
+							:class="planCountForItem(item) >= (item.totalCount ?? 1) ? 'text-success' : ''"
 							style="border: 1px solid rgb(var(--v-border-color)); border-radius: 8px; padding: 1px 6px"
 						>
-							{{ planCountForItem(item) }} / {{ item.totalCount ? item.totalCount : 1 }}
+							{{ planCountForItem(item) }} / {{ item.totalCount ?? 1 }}
 						</VSheet>
 					</template>
 					<VListItemTitle class="text-body-2 font-weight-medium">
@@ -85,16 +84,6 @@
 							<span class="text-caption">{{ formatDuration(item.suggestedTime.getInMinutes) }}</span>
 						</span>
 					</VListItemSubtitle>
-					<template #append>
-						<div class="d-flex align-center ga-1">
-							<VIcon
-								v-if="selectedItemId === item.id"
-								icon="check"
-								color="secondary"
-								size="14"
-							/>
-						</div>
-					</template>
 				</VListItem>
 			</VList>
 		</template>
@@ -102,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, inject, onMounted, ref } from 'vue'
+	import { computed, inject, onMounted, ref, watch } from 'vue'
 	import { useRoutineTodoListItemCrud } from '@/api/routineTodoList/routineTodoListApi.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
@@ -130,7 +119,7 @@
 		() => groupedItems.value.find(g => g.timePeriod.id === selectedPeriodId.value) ?? null,
 	)
 
-	const displayItems = computed(() => currentGroup.value?.items ?? [])
+	const displayItems = computed<RoutineTodoListItemEntity[]>(() => currentGroup.value?.items ?? [])
 
 	const plannedActivityCounts = computed(() => {
 		const counts = new Map<number, number>()
@@ -146,7 +135,11 @@
 		return plannedActivityCounts.value.get(item.activity.id) ?? 0
 	}
 
-	const inPlanCount = computed(() => displayItems.value.filter(item => planCountForItem(item) > 0).length)
+	const inPlanCount = computed(() => displayItems.value.reduce((sum, item) => sum + (planCountForItem(item) ?? 1), 0))
+	const inPlanCountAllPlanned = computed(
+		() => displayItems.value.filter(item => planCountForItem(item) === (item.totalCount ?? 1)).length,
+	)
+	const totalCount = computed(() => displayItems.value.reduce((sum, item) => sum + (item.totalCount ?? 1), 0))
 
 	function formatDuration(minutes: number): string {
 		if (minutes < 60) return `${minutes}m`
@@ -169,6 +162,20 @@
 		selectedItemId.value = null
 		emit('update:selectedItem', null)
 	}
+
+	watch(
+		() => plannerStore?.placingItem,
+		item => {
+			if (!item && selectedItemId.value !== null) clearSelection()
+		},
+	)
+
+	watch(plannedActivityCounts, counts => {
+		if (selectedItemId.value === null) return
+		const selected = displayItems.value.find(i => i.id === selectedItemId.value)
+		if (!selected) return
+		if ((counts.get(selected.activity.id) ?? 0) >= (selected.totalCount ?? 1)) clearSelection()
+	})
 
 	defineExpose({ clearSelection })
 
