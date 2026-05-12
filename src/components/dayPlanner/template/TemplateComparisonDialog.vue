@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'

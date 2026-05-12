@@ -31,7 +31,7 @@
 				color="textMuted"
 				size="small"
 				:title="$t('toDoList.uncheckAll')"
-				@click="uncheckAll"
+				@click="handleUncheckAll"
 			/>
 		</div>
 
@@ -71,22 +71,10 @@
 					isInvalid
 				></TodoListItemDragAndDropPlaceholder>
 
-				<ToDoListItem
-					:toDoListItem="item"
-					:color="item instanceof TodoListItemEntity ? item.taskPriority.color : null"
-					:kind="kind"
-					:isInChangeOrderMode="isInChangeOrderMode"
-					:listId="listId"
+				<slot
+					:item="item"
 					:isDragging="dragState.draggedIndex === index"
-					:streakConfig="streakConfig"
-					@delete="id => emit('deletedItem', id)"
-					@edit="(entityToEdit: TEntity) => editItem(entityToEdit as TEntity)"
-					@isDoneChanged="handleIsDoneChanged"
-					@stepToggled="emit('itemsChanged', [item.id])"
-					@addToPlanner="(i: TEntity) => emit('addToPlanner', i)"
-					@logTime="(i: TEntity) => emit('logTime', i, false)"
-					@itemClicked="(i: TEntity) => emit('logTime', i, true)"
-				/>
+				></slot>
 
 				<!-- Drop zone below item (invisible overlay) - only when dragging -->
 				<div
@@ -128,46 +116,28 @@
 </template>
 
 <script setup lang="ts" generic="TEntity extends IBaseToDoListItem">
-	import ToDoListItem from './ToDoListItem.vue'
 	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
-	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import { computed, onMounted, ref, toRef } from 'vue'
-	import { API } from '@/plugins/axiosConfig.ts'
 	import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue'
 	import TodoListEmptyDropZone from '@/components/toDoList/dragAndDrop/TodoListEmptyDropZone.vue'
 	import { useTodoListDragAndDrop } from '@/composables/useTodoListDragAndDrop.ts'
 	import { useAutoAnimate } from '@formkit/auto-animate/vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
-	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 
-	const {
-		kind = ToDoListKind.NORMAL,
-		items,
-		isInChangeOrderMode,
-		listId,
-		activityIds,
-		streakConfig,
-		allItems,
-	} = defineProps<{
-		kind?: number
+	const { items, isInChangeOrderMode, listId, activityIds, allItems } = defineProps<{
 		items: TEntity[]
 		isInChangeOrderMode: boolean
 		listId: number
 		activityIds: number[]
-		streakConfig?: { graceDays: number; periodLengthInDays: number }
 		allItems?: TEntity[]
 	}>()
 
 	const emit = defineEmits<{
-		(e: 'itemsChanged', changedItems: number[]): void
-		(e: 'editItem', entityToEdit: TEntity): void
-		(e: 'deletedItem', id: number): void
 		(e: 'itemsReordered', oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest): void
 		(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void
-		(e: 'addToPlanner', item: TEntity): void
-		(e: 'logTime', item: TEntity, isManual: boolean): void
+		(e: 'uncheckAll', doneIds: number[]): void
 	}>()
 
 	// Auto-animate controller
@@ -264,30 +234,11 @@
 		return Time.fromMinutes(totalMinutes)
 	})
 
-	// Other methods not drag and drop
-	const editItem = (entityToEdit: TEntity) => {
-		emit('editItem', entityToEdit)
-	}
-	const url = kind === ToDoListKind.ROUTINE ? 'routine-todo-list' : 'todo-list-item'
-
-	function handleIsDoneChanged(toDoListItem: TEntity, forceValue?: boolean) {
-		const id = toDoListItem.id
-		const request = { ids: [id], forceValue }
-		API.patch(`/${url}/toggle-is-done`, request)
-			.then(() => {
-				emit('itemsChanged', [id])
-			})
-			.catch(error => {
-				console.error(error)
-			})
-	}
-
-	function uncheckAll() {
-		const doneIds = items.filter(item => item.isDone).map(item => item.id)
-		if (doneIds.length === 0) return
-		API.patch(`/${url}/toggle-is-done`, { ids: doneIds }).then(() => {
-			emit('itemsChanged', doneIds)
-		})
+	function handleUncheckAll() {
+		emit(
+			'uncheckAll',
+			items.filter(item => item.isDone).map(item => item.id),
+		)
 	}
 </script>
 

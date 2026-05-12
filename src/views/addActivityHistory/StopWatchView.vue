@@ -55,7 +55,7 @@
 <script setup lang="ts">
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
-	import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue'
+	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'

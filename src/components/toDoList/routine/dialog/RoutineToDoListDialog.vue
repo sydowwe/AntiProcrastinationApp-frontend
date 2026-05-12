@@ -25,13 +25,13 @@
 			></ActivitySelectOrQuickEditFormField>
 
 			<div class="d-flex flex-column ga-6">
-				<TodoListRepeatCountFormField
+				<BaseTodoListRepeatCountFormField
 					class="mt-2"
 					v-model="isRepeated"
 					v-model:doneCount="request.doneCount"
 					v-model:totalCount="request.totalCount"
 					:isEdit
-				></TodoListRepeatCountFormField>
+				></BaseTodoListRepeatCountFormField>
 				<VIdSelect
 					v-model="request.timePeriodId"
 					:label="$t('toDoList.timePeriod')"
@@ -151,17 +151,17 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
-	import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue'
 	import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
+	import BaseTodoListRepeatCountFormField from '@/components/toDoList/BaseTodoListRepeatCountFormField.vue'
 
 	const emit = defineEmits<{
 		edit: [entity: RoutineTodoListItemEntity, request: RoutineTodoListItemRequest]

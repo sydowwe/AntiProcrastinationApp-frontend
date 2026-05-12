@@ -59,8 +59,7 @@
 					:clearable="false"
 					:items="importanceOptions"
 					:prependInnerIcon="currentImportance?.icon"
-					required
-					:rules="[requiredRule]"
+					hideDetails
 				></VIdSelect>
 				<VSwitch
 					class="text-no-wrap"
@@ -106,7 +105,7 @@
 	"
 >
 	import { computed, nextTick, onMounted, ref, watch } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import type { VForm } from 'vuetify/components'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'

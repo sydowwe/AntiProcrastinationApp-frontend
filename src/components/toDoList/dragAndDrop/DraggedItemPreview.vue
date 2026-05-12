@@ -58,9 +58,9 @@
 <script setup lang="ts">
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 
-	defineProps<{
+	const { color = 'base' } = defineProps<{
 		toDoListItem: IBaseToDoListItem
-		color: string
+		color?: string
 	}>()
 </script>
 

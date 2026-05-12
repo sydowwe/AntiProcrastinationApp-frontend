@@ -277,7 +277,7 @@
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 	import TemplateDetailsDialog from '@/components/dayPlanner/template/TemplateDetailsDialog.vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'

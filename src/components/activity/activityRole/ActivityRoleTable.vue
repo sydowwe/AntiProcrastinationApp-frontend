@@ -38,7 +38,6 @@
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue'
 	import { Role } from '@/dtos/response/activity/Role.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
@@ -47,6 +46,7 @@
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
+	import ActivityRoleDialog from '@/components/activity/activityRole/ActivityRoleDialog.vue'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 

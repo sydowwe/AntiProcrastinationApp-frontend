@@ -75,7 +75,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import type { VForm } from 'vuetify/components'
 	import { CalendarRequest } from '@/dtos/request/activityPlanning/CalendarRequest.ts'

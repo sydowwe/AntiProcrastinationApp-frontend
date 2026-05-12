@@ -194,7 +194,9 @@
 					/>
 					<VBtn
 						color="primary"
-						:disabled="!newSkipReason.trim() || settingsStore.predefinedSkipReasons.includes(newSkipReason.trim())"
+						:disabled="
+							!newSkipReason.trim() || settingsStore.predefinedSkipReasons.includes(newSkipReason.trim())
+						"
 						@click="addSkipReason"
 					>
 						Add
@@ -255,7 +257,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import RepeatingTaskDialog from '@/components/dayPlanner/settings/RepeatingTaskDialog.vue'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { TableAction } from '@/dtos/dto/TableAction.ts'

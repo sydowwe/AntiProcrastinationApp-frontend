@@ -172,7 +172,9 @@
 						clearable
 						density="comfortable"
 						:hideDetails="!(showRecurrenceError && recurrenceError)"
-						:errorMessages="showRecurrenceError && recurrenceError && !fromDate ? recurrenceError : undefined"
+						:errorMessages="
+							showRecurrenceError && recurrenceError && !fromDate ? recurrenceError : undefined
+						"
 						style="min-width: 190px"
 					/>
 					<VDateInput
@@ -216,7 +218,7 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import ActiveWindowPicker from '@/components/dayPlanner/settings/ActiveWindowPicker.vue'
@@ -252,11 +254,13 @@
 		switch (data.value.recurrenceType) {
 			case RecurrenceType.DayOfWeek:
 				if (data.value.scheduledDays.length === 0) return 'Select at least one day'
-				if (hasActiveWindow.value && (!fromDate.value || !toDate.value)) return 'Both dates required for active window'
+				if (hasActiveWindow.value && (!fromDate.value || !toDate.value))
+					return 'Both dates required for active window'
 				return null
 			case RecurrenceType.DayOfMonth:
 				if (data.value.scheduledDates.length === 0) return 'Select at least one day of month'
-				if (hasActiveWindow.value && (!fromDate.value || !toDate.value)) return 'Both dates required for active window'
+				if (hasActiveWindow.value && (!fromDate.value || !toDate.value))
+					return 'Both dates required for active window'
 				return null
 			case RecurrenceType.DateRange:
 				if (!fromDate.value && !toDate.value) return 'Both dates are required'
@@ -303,8 +307,7 @@
 		fromDate.value = task.activeFromDate ? new Date(task.activeFromDate) : null
 		toDate.value = task.activeToDate ? new Date(task.activeToDate) : null
 		hasActiveWindow.value =
-			(task.recurrenceType === RecurrenceType.DayOfWeek ||
-				task.recurrenceType === RecurrenceType.DayOfMonth) &&
+			(task.recurrenceType === RecurrenceType.DayOfWeek || task.recurrenceType === RecurrenceType.DayOfMonth) &&
 			!!(task.activeFromDate || task.activeToDate)
 		activityFormField.value?.onOpenEdit(task.activity.id)
 		dialog.value = true

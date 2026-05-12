@@ -11,7 +11,7 @@
 				<TimePicker
 					v-model="startTime"
 					icon="clock"
-					label="Actual start time"
+					label="Start time"
 					hideDetails
 				/>
 				<TimePicker
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { ref, watch } from 'vue'
 	import { Time } from '@/dtos/dto/Time.ts'

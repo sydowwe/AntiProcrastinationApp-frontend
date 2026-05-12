@@ -38,7 +38,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'

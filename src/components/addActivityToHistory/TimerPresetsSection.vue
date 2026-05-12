@@ -60,7 +60,10 @@
 		</div>
 
 		<!-- Activity Presets Section -->
-		<div class="d-flex flex-column ga-3">
+		<div
+			v-if="activityPresetsVisible"
+			class="d-flex flex-column ga-3"
+		>
 			<div class="d-flex ga-2 align-center">
 				<h4 class="text-subtitle-1">Activity Presets</h4>
 				<VIconBtn
@@ -118,10 +121,11 @@
 	import { computed, onMounted, ref } from 'vue'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 	import { useTimerPresetCrud } from '@/api/activityHistory/timerPresetApi.ts'
-	import TimerPresetDialog from '@/components/dialogs/TimerPresetDialog.vue'
+	import TimerPresetDialog from '@/components/addActivityToHistory/TimerPresetDialog.vue'
 
 	defineProps<{
 		timeInputVisible: boolean
+		activityPresetsVisible: boolean
 	}>()
 
 	const emit = defineEmits<{

@@ -21,7 +21,8 @@
 - **Component Naming**: Use PascalCase for filenames and template tags (e.g., `<VBtn>`, `<MyCustomComponent>`).
 - use ref mostly only use reactive when its really needed or conventional
 - **Props**:
-    - Define using destructure defaults — never use `withDefaults()`: `const { foo, bar = 42 } = defineProps<{ foo: string, bar?: number }>()`. Vue 3.5 reactive destructure keeps props reactive without `withDefaults`. Array/object defaults use the value directly (e.g., `items = []`), not factory functions.
+    - Define using destructure defaults — never use `withDefaults()`: `const { foo, bar = 42 } = defineProps<{ foo: string, bar?: number }>()`. Vue 3.5 reactive
+      destructure keeps props reactive without `withDefaults`. Array/object defaults use the value directly (e.g., `items = []`), not factory functions.
     - Use **camelCase** in BOTH TS and Templates (e.g., `hideDetails` not `hide-details`).
     - use props just as the shorthand :prop instead of :prop="prop" when there is ref with same name
 - **Emits**:
@@ -93,10 +94,10 @@
 - `inputs/IconPicker.vue`, `IconPickerDialog.vue` — FontAwesome icon picker
 - `inputs/NullFalseTrueCheckbox.vue` — tri-state checkbox
 
-### `src/components/dialogs/`
+### `src/components/general/dialogs/`
 
 - `MyDialog.vue` — base dialog with responsive width, header/footer slots, confirm/close buttons. Use as the base for all dialogs.
-- `general/ErrorDialog.vue` — error dialog with optional retry button, wraps `MyDialog`.
+- `ErrorDialog.vue` — error dialog with optional retry button, wraps `MyDialog`.
 
 ## Vuetify Custom Aliases & Theme
 

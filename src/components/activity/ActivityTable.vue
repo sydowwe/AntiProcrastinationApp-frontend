@@ -38,7 +38,7 @@
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import ActivityDialog from '@/components/dialogs/activity/ActivityDialog.vue'
+	import ActivityDialog from '@/components/activity/ActivityDialog.vue'
 	import { Activity } from '@/dtos/response/activity/Activity.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'

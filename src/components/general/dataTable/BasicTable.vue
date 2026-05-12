@@ -119,7 +119,7 @@
 	import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue'
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { getNestedValue } from '@/composables/table/TableHeaderComposable.ts'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	const {
 		itemsLength,

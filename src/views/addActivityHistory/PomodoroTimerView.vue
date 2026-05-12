@@ -245,7 +245,7 @@
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import SaveActivityDialog from '@/components/dialogs/SaveActivityDialog.vue'
+	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { computed, onUnmounted, ref } from 'vue'

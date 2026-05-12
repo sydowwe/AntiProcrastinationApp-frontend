@@ -37,7 +37,7 @@
 				density="compact"
 				class="pa-0"
 			>
-				<ToDoListItem
+				<NormalTodoListItem
 					v-for="item in visibleItems"
 					:key="item.id"
 					:toDoListItem="item"
@@ -61,7 +61,7 @@
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
-	import ToDoListItem from '@/components/toDoList/ToDoListItem.vue'
+	import NormalTodoListItem from '@/components/toDoList/normal/NormalTodoListItem.vue'
 
 	const router = useRouter()
 

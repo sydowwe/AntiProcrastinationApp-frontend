@@ -15,7 +15,7 @@
 </template>
 <script setup lang="ts">
 	import Snackbar from '@/components/general/feedback/Snackbar.vue'
-	import LoadingFullscreen from './components/dialogs/general/LoadingFullscreen.vue'
+	import LoadingFullscreen from '@/components/general/dialogs/LoadingFullscreen.vue'
 	import Navbar from '@/components/nav/Navbar.vue'
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
 

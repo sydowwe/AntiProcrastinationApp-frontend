@@ -72,13 +72,13 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import TimePeriodDialog from '@/components/dialogs/timePeriod/TimePeriodDialog.vue'
 	import type { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import TimePeriodDialog from '@/components/toDoList/routine/dialog/TimePeriodDialog.vue'
 
 	const { fetchAll, deleteEntity, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { getBgColor } = useColor()

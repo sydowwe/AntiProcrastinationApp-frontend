@@ -66,8 +66,8 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue'
-	import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue'
+	import ActivityRoleDialog from '@/components/activity/activityRole/ActivityRoleDialog.vue'
+	import ActivityCategoryDialog from '@/components/activity/activityCategory/ActivityCategoryDialog.vue'
 	import InputWithButton from '@/components/general/InputWithButton.vue'
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'

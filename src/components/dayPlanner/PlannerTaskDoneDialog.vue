@@ -26,7 +26,7 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { useI18n } from 'vue-i18n'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import LogTimeForm from '@/components/general/LogTimeForm.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'

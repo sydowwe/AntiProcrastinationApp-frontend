@@ -19,15 +19,14 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
 	import VChart from 'vue-echarts'
 	import { use } from 'echarts/core'
 	import { HeatmapChart } from 'echarts/charts'
 	import { CalendarComponent, TooltipComponent, VisualMapComponent } from 'echarts/components'
 	import { CanvasRenderer } from 'echarts/renderers'
 	import { computed, ref } from 'vue'
-	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
-	import type { PeriodCompletion } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import type { PeriodCompletion, RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	use([HeatmapChart, CalendarComponent, TooltipComponent, VisualMapComponent, CanvasRenderer])
 

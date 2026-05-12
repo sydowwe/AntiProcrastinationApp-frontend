@@ -5,7 +5,6 @@
 		class="align-center listItem"
 		:class="{
 			'is-dragging': isDragging,
-			'is-overdue': isOverdue,
 			'is-done': isDone,
 		}"
 		@click="itemClicked"
@@ -77,42 +76,10 @@
 
 			<div class="flex-fill">
 				<div class="d-flex ga-1 align-center">
-					<VTooltip
-						v-if="itemStreak && itemStreak > 0 && !isInChangeOrderMode"
-						location="top"
-					>
-						<template #activator="{ props: tooltipProps }">
-							<div
-								v-bind="tooltipProps"
-								class="d-flex align-center ga-1 mt-1 mr-1"
-								:class="gracePeriodActive ? 'text-warning' : 'text-white'"
-							>
-								<VIcon
-									:icon="getMilestoneIcon(itemStreak) ?? 'fire-flame-curved'"
-									size="14"
-								></VIcon>
-								<span
-									class="text-caption"
-									style="line-height: 1"
-								>
-									{{ itemStreak }}
-								</span>
-							</div>
-						</template>
-						<span>
-							Streak: {{ itemStreak }} | Best: {{ itemBestStreak }}
-							<span v-if="gracePeriodActive">| Grace period active!</span>
-						</span>
-					</VTooltip>
-					<ChipWithIcon
-						v-if="dueDateChip"
-						:vColor="dueDateChip.color"
-						variant="tonal"
-						size="x-small"
-						icon="calendar"
-					>
-						{{ dueDateChip.label }}
-					</ChipWithIcon>
+					<slot
+						name="pre-chips"
+						:isInChangeOrderMode
+					/>
 					<VChip
 						v-if="toDoListItem.suggestedTime?.isNotZero()"
 						size="x-small"
@@ -122,22 +89,7 @@
 					>
 						~{{ toDoListItem.suggestedTime!.getNice }}
 					</VChip>
-					<VChip
-						v-if="itemSuggestedDay"
-						size="x-small"
-						variant="tonal"
-						color="neutral-600"
-						prependIcon="calendar-day"
-					>
-						{{ weekDayNames[itemSuggestedDay - 1] }}
-					</VChip>
-					<VIcon
-						v-if="isOverdue"
-						icon="triangle-exclamation"
-						color="error"
-						size="14"
-						class="mb-1"
-					/>
+					<slot name="post-chips" />
 					<VListItemTitle
 						class="text-white"
 						:class="{ 'text-decoration-line-through': isDone }"
@@ -209,7 +161,7 @@
 				</VMenu>
 			</div>
 		</div>
-		<TodoListItemSteps
+		<BaseTodoListItemSteps
 			v-if="localSteps.length > 0"
 			class="mt-2"
 			:steps="localSteps"
@@ -231,10 +183,7 @@
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
 	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
 	import { useI18n } from 'vue-i18n'
-	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
-	import { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'
@@ -244,8 +193,7 @@
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 	import type { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
-	import TodoListItemSteps from '@/components/toDoList/TodoListItemSteps.vue'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import BaseTodoListItemSteps from '@/components/toDoList/BaseTodoListItemSteps.vue'
 
 	const {
 		toDoListItem,
@@ -254,7 +202,6 @@
 		isInChangeOrderMode = false,
 		listId,
 		isDragging = false,
-		streakConfig,
 	} = defineProps<{
 		toDoListItem: TItem
 		color?: string | null
@@ -262,13 +209,12 @@
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
-		streakConfig?: { graceDays: number; periodLengthInDays: number }
 	}>()
 
 	const emits = defineEmits<{
 		edit: [toDoListItem: TItem]
 		delete: [id: number]
-		isDoneChanged: [toDoListItem: TItem, forceValue?: boolean]
+		isDoneChanged: [id: number, forceValue?: boolean]
 		stepToggled: []
 		addToPlanner: [toDoListItem: TItem]
 		logTime: [toDoListItem: TItem]
@@ -304,72 +250,11 @@
 		{ deep: true },
 	)
 
-	const dueDateChip = computed(() => {
-		const item = toDoListItem as unknown
-		if (!(item instanceof TodoListItemEntity)) return null
-		const { dueDate, dueTime } = item
-		if (!dueDate) return null
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
-		const due = new Date(dueDate + 'T00:00:00')
-		const tomorrow = new Date(today)
-		tomorrow.setDate(today.getDate() + 1)
-		const overdue = due < today && !toDoListItem.isDone
-		const isToday = due.getTime() === today.getTime()
-		const isTomorrow = due.getTime() === tomorrow.getTime()
-		let label = isToday
-			? 'Today'
-			: isTomorrow
-				? 'Tomorrow'
-				: due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-		if (dueTime) label += ' ' + Time.getString(dueTime)
-		return { label, color: overdue ? 'error' : isToday ? 'warning' : undefined, overdue }
-	})
-
-	const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-	const itemStreak = computed(() => {
-		const item = toDoListItem as unknown
-		return item instanceof RoutineTodoListItemEntity ? item.streak : undefined
-	})
-	const itemBestStreak = computed(() => {
-		const item = toDoListItem as unknown
-		return item instanceof RoutineTodoListItemEntity ? item.bestStreak : undefined
-	})
-	const itemSuggestedDay = computed(() => {
-		const item = toDoListItem as unknown
-		return item instanceof RoutineTodoListItemEntity ? item.suggestedDay : undefined
-	})
-	const lastCompletedAt = computed(() => {
-		const item = toDoListItem as unknown
-		return item instanceof RoutineTodoListItemEntity ? item.lastCompletedAt : undefined
-	})
-
-	const gracePeriodActive = computed(() => {
-		if (!streakConfig || !lastCompletedAt.value || !itemStreak.value) return false
-		const { graceDays, periodLengthInDays } = streakConfig
-		if (graceDays <= 0) return false
-		const lastDone = new Date(lastCompletedAt.value)
-		const now = new Date()
-		const daysSince = Math.floor((now.getTime() - lastDone.getTime()) / (1000 * 60 * 60 * 24))
-		return daysSince >= periodLengthInDays && daysSince < periodLengthInDays + graceDays
-	})
-
-	function getMilestoneIcon(streak: number): string | null {
-		if (streak >= 365) return 'crown'
-		if (streak >= 180) return 'gem'
-		if (streak >= 90) return 'trophy'
-		if (streak >= 30) return 'star'
-		if (streak >= 7) return 'fire-flame-curved'
-		return null
-	}
-
 	const itemRef = ref<any>(null)
 	const dragPreviewRef = ref<InstanceType<typeof DraggedItemPreview> | null>(null)
 
 	let cleanup: (() => void) | null = null
 
-	// Setup draggable functionality
 	onMounted(() => {
 		setupDraggable()
 	})
@@ -394,7 +279,7 @@
 		},
 	)
 
-	const setupDraggable = () => {
+	function setupDraggable() {
 		if (!isInChangeOrderMode) return
 
 		const element = itemRef.value?.$el || itemRef.value
@@ -418,7 +303,6 @@
 							y: '8px',
 						}),
 						render: ({ container }) => {
-							// Clone the preview element
 							const clonedPreview = previewElement.cloneNode(true) as HTMLElement
 							clonedPreview.style.display = 'block'
 
@@ -442,11 +326,7 @@
 	]
 
 	function emitChanged(forceValue?: boolean) {
-		emits(
-			'isDoneChanged',
-			{ ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem,
-			forceValue,
-		)
+		emits('isDoneChanged', toDoListItem.id, forceValue)
 	}
 
 	function itemClicked(event: Event) {
@@ -510,13 +390,11 @@
 
 	function edit() {
 		if (isInChangeOrderMode) return
-
 		emits('edit', toDoListItem)
 	}
 
 	function del() {
 		if (isInChangeOrderMode) return
-
 		emits('delete', toDoListItem.id)
 	}
 

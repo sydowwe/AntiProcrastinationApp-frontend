@@ -89,11 +89,10 @@
 							density="compact"
 							class="pa-0"
 						>
-							<ToDoListItem
+							<RoutineTodoListItem
 								v-for="item in filteredItems(group)"
 								:key="item.id"
 								:toDoListItem="item"
-								:color="item.color"
 								:kind="ToDoListKind.ROUTINE"
 								:listId="0"
 								:streakConfig="{
@@ -125,7 +124,7 @@
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
-	import ToDoListItem from '@/components/toDoList/ToDoListItem.vue'
+	import RoutineTodoListItem from '@/components/toDoList/routine/RoutineTodoListItem.vue'
 
 	const router = useRouter()
 	const { getAllGrouped } = useRoutineTodoListItemCrud()

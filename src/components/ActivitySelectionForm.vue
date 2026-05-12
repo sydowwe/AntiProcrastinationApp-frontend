@@ -122,7 +122,7 @@
 	import type { ActivitySelectOptionCombination } from '@/dtos/response/activity/ActivitySelectOptionCombination.ts'
 	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
-	import ActivityDialog from '@/components/dialogs/activity/ActivityDialog.vue'
+	import ActivityDialog from '@/components/activity/ActivityDialog.vue'
 
 	const {
 		isFilter = false,

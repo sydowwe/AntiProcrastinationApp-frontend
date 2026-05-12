@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
 
 	const settingsStore = useDayPlannerSettingsStore()

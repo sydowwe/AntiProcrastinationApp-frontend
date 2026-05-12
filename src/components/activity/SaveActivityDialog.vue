@@ -12,7 +12,7 @@
 </template>
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import type { Time } from '@/dtos/dto/Time.ts'
 
 	const emit = defineEmits<{

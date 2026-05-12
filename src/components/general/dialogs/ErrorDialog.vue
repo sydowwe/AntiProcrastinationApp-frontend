@@ -11,7 +11,7 @@
 	></MyDialog>
 </template>
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	const { hasRetryButton = false } = defineProps<{
 		title: string

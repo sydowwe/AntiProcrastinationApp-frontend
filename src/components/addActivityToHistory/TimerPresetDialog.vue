@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 	import { TimerPresetRequest } from '@/dtos/request/activityRecording/TimerPresetRequest.ts'

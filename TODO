@@ -14,3 +14,47 @@ You already have addToPlanner wired up in ToDoListItem. The reverse — dragging
 The streak data is already tracked per routine item. A small "personal bests" panel in the routine view showing longest-ever streaks would add gamification without new backend work.
 
 pridavanie do plannera rutinne veci ktore mi tam skocia kazdy den automaticky
+
+
+
+Top offenders:
+
+  ┌───────┬──────────────────────────────────────────┐
+  │ Lines │                   File                   │
+  ├───────┼──────────────────────────────────────────┤
+  │ 618   │ addActivityHistory/PomodoroTimerView.vue │
+  ├───────┼──────────────────────────────────────────┤
+  │ 553   │ dayPlanner/TemplateListView.vue          │
+  ├───────┼──────────────────────────────────────────┤
+  │ 515   │ dayPlanner/DayPlannerView.vue            │
+  ├───────┼──────────────────────────────────────────┤
+  │ 483   │ todoList/TodoListsView.vue               │
+  ├───────┼──────────────────────────────────────────┤
+  │ 444   │ todoList/TodoListView.vue                │
+  ├───────┼──────────────────────────────────────────┤
+  │ 417   │ dayPlanner/PlannerCalendarView.vue       │
+  └───────┴──────────────────────────────────────────┘
+
+  PomodoroTimerView.vue is the largest at 618 lines. The day planner and todo list views are the main candidates for splitting into smaller components.
+
+● Top offenders in src/components:
+
+  ┌───────┬───────────────────────────────────────────────────┐
+  │ Lines │                       File                        │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 641   │ activityTracking/stackedBars/StackedBarsGrid.vue  │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 473   │ toDoList/BaseTodoListItem.vue                     │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 463   │ general/calendar/CalendarGrid.vue                 │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 451   │ dayPlanner/BaseTaskBlock.vue                      │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 433   │ activityTracking/stackedBars/StackedBarsChart.vue │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 405   │ nav/Navbar.vue                                    │
+  ├───────┼───────────────────────────────────────────────────┤
+  │ 383   │ dayPlanner/settings/RepeatingTaskDialog.vue       │
+  └───────┴───────────────────────────────────────────────────┘
+
+  StackedBarsGrid.vue at 641 lines is the biggest. BaseTodoListItem.vue and BaseTaskBlock.vue are also prime candidates for splitting given they're "base" components that likely have a lot of conditional logic.

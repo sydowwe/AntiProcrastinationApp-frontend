@@ -34,7 +34,7 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'

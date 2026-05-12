@@ -18,6 +18,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	const props = defineProps<{
 		qrCodeImage: string
@@ -27,7 +28,6 @@
 	}>()
 	const dialog = defineModel<boolean>({ required: true })
 	const i18n = useI18n()
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
 
 	const qrCodeImageUrl = computed(() => `data:image/png;base64,${props.qrCodeImage}`)
 

@@ -79,7 +79,7 @@
 	import type { Time } from '@/dtos/dto/Time.ts'
 	import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
 	import EditActivityHistoryDialog from '@/components/history/EditActivityHistoryDialog.vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	const props = defineProps<{
 		date: string

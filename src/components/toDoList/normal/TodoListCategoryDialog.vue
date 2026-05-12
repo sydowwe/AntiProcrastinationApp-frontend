@@ -29,7 +29,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
 	import { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'

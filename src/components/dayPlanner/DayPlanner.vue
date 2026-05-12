@@ -66,7 +66,7 @@
 	"
 >
 	import { computed, inject } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'

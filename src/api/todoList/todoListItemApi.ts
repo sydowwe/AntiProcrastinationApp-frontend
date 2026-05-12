@@ -60,6 +60,27 @@ export function useTodoListItemCrud(todoListId: number) {
 		}
 	}
 
+	async function toggleIsDone(id: number, forceValue?: boolean) {
+		try {
+			await API.patch(`/${url}/toggle-is-done`, { ids: [id], forceValue })
+			return Promise.resolve()
+		} catch (error) {
+			console.error(error)
+			return Promise.reject(error)
+		}
+	}
+
+	async function uncheckAll(doneIds: number[]) {
+		if (doneIds.length === 0) return
+		try {
+			await API.patch(`/${url}/toggle-is-done`, { ids: doneIds })
+			return Promise.resolve()
+		} catch (error) {
+			console.error(error)
+			return Promise.reject(error)
+		}
+	}
+
 	return {
 		fetchById,
 		fetchAll,
@@ -70,5 +91,7 @@ export function useTodoListItemCrud(todoListId: number) {
 		deleteEntity,
 		changePriority,
 		changeDisplayOrder,
+		toggleIsDone,
+		uncheckAll,
 	}
 }

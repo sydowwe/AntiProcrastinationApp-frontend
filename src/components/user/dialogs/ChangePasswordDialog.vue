@@ -30,7 +30,7 @@
 	import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue'
 	import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue'
 	import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 

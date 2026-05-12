@@ -41,6 +41,7 @@
 				<hr class="mb-4" />
 				<TimerPresetsSection
 					:timeInputVisible
+					:activityPresetsVisible="!activityId"
 					@applyPreset="applyPreset"
 				></TimerPresetsSection>
 				<hr
@@ -64,7 +65,7 @@
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
-	import SaveActivityDialog from '../../components/dialogs/SaveActivityDialog.vue'
+	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
 	import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
@@ -77,8 +78,14 @@
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 
-	const { activityId = null, compact = false, initialDuration } = defineProps<{
+	const {
+		activityId = null,
+		activityName = '',
+		compact = false,
+		initialDuration,
+	} = defineProps<{
 		activityId?: number | null
+		activityName?: string
 		compact?: boolean
 		initialDuration?: Time
 	}>()
@@ -136,7 +143,8 @@
 			if (!validationResult || validationResult.length === 0) {
 				formDisabled.value = true
 				startTimestamp.value = new Date()
-				selectedActivityName.value = activitySelectionForm.value!.getSelectedActivityName as string
+				selectedActivityName.value =
+					(activitySelectionForm.value?.getSelectedActivityName as string) ?? activityName
 				timeInputVisible.value = false
 				const durationMs = initialTime.value.getInSeconds * 1000
 				const currentTime = Date.now()

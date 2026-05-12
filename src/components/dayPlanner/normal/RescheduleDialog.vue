@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
 
 	const emit = defineEmits<{

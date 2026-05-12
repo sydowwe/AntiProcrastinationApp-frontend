@@ -298,10 +298,10 @@
 	import type { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 	import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
-	import TodoListDialog from '@/components/dialogs/toDoList/TodoListDialog.vue'
-	import TodoListCategoryDialog from '@/components/dialogs/toDoList/TodoListCategoryDialog.vue'
-	import TodoListCategoryPanel from '@/components/toDoList/TodoListCategoryPanel.vue'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import TodoListCategoryPanel from '@/components/toDoList/normal/TodoListCategoryPanel.vue'
+	import TodoListDialog from '@/components/toDoList/normal/TodoListDialog.vue'
+	import TodoListCategoryDialog from '@/components/toDoList/normal/TodoListCategoryDialog.vue'
 
 	const router = useRouter()
 	const i18n = useI18n()

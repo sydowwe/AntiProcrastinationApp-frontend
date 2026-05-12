@@ -17,13 +17,13 @@
 				viewName="To-do list task"
 				:isEdit
 			></ActivitySelectOrQuickEditFormField>
-			<TodoListRepeatCountFormField
+			<BaseTodoListRepeatCountFormField
 				v-model="isRepeated"
 				v-model:doneCount="toDoListItem.doneCount"
 				v-model:totalCount="toDoListItem.totalCount"
 				class="mt-3 mb-5"
 				:isEdit
-			></TodoListRepeatCountFormField>
+			></BaseTodoListRepeatCountFormField>
 			<VIdSelect
 				v-model="toDoListItem.taskPriorityId"
 				:label="$t('toDoList.priority')"
@@ -150,14 +150,14 @@
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useTaskPriorityCrud } from '@/api/todoList/taskPriorityApi.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
-	import TodoListRepeatCountFormField from '@/components/dialogs/toDoList/TodoListRepeatCountFormField.vue'
 	import type { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
 	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
+	import BaseTodoListRepeatCountFormField from '@/components/toDoList/BaseTodoListRepeatCountFormField.vue'
 
 	const emit = defineEmits<{
 		(e: 'add', toDoList: ToDoListItemRequest): void

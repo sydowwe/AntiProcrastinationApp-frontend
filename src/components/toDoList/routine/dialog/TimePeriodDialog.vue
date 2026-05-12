@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { computed, ref } from 'vue'
 	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
@@ -99,7 +99,7 @@
 		{ label: 'Sunday', value: 7 },
 	]
 
-const { createWithResponse, update } = useRoutineTimePeriodCrud()
+	const { createWithResponse, update } = useRoutineTimePeriodCrud()
 	const { requiredRule } = useGeneralRules()
 
 	const form = ref<InstanceType<typeof VForm>>()
@@ -113,7 +113,7 @@ const { createWithResponse, update } = useRoutineTimePeriodCrud()
 		return d <= 7 || d % 7 === 0
 	})
 
-function onLengthChanged() {
+	function onLengthChanged() {
 		request.value.resetAnchorDay = 0
 		request.value.historyDepth = RoutineTimePeriodEntity.defaultHistoryDepth(request.value.lengthInDays)
 	}

@@ -142,7 +142,7 @@
 						{{ $t('toDoList.clearFilters') }}
 					</VChip>
 				</div>
-				<ToDoList
+				<BaseToDoList
 					class="flex-fill"
 					:kind="ToDoListKind.NORMAL"
 					:items="displayedItems"
@@ -150,13 +150,25 @@
 					:isInChangeOrderMode
 					:listId="todoListId"
 					:activityIds="items.map(item => item.activity.id)"
-					@itemsChanged="itemsChanged"
-					@editItem="toDoListDialog?.openEdit"
-					@deletedItem="deleteItem"
 					@itemsReordered="handleOrderChange"
-					@addToPlanner="openAddToPlanner"
-					@logTime="openLogTime"
-				></ToDoList>
+					@uncheckAll="uncheckAll"
+				>
+					<template #default="{ item, isDragging }">
+						<NormalTodoListItem
+							:toDoListItem="item as TodoListItemEntity"
+							:isInChangeOrderMode
+							:listId="todoListId"
+							:isDragging="isDragging"
+							@delete="deleteItem"
+							@edit="toDoListDialog?.openEdit"
+							@isDoneChanged="handleIsDoneChange"
+							@stepToggled="itemsChanged"
+							@addToPlanner="openAddToPlanner"
+							@logTime="openLogTime($event, false)"
+							@itemClicked="openLogTime($event, true)"
+						/>
+					</template>
+				</BaseToDoList>
 			</VCard>
 		</VCol>
 	</VRow>
@@ -171,7 +183,7 @@
 		showDatePicker
 		@create="createPlannerTask"
 	/>
-	<TodoListLogTimeController
+	<BaseTodoListLogTimeController
 		ref="logTimeController"
 		:kind="ToDoListKind.NORMAL"
 		@itemsChanged="itemsChanged"
@@ -185,10 +197,8 @@
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
-	import ToDoList from '../../components/toDoList/ToDoList.vue'
-	import ToDoListItemDialog from '../../components/dialogs/toDoList/ToDoListItemDialog.vue'
+	import BaseToDoList from '../../components/toDoList/BaseToDoList.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
-	import TodoListLogTimeController from '@/components/toDoList/TodoListLogTimeController.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
@@ -196,12 +206,13 @@
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
 	import { useTodoListItemCrud } from '@/api/todoList/todoListItemApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
-	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
+	import NormalTodoListItem from '@/components/toDoList/normal/NormalTodoListItem.vue'
+	import BaseTodoListLogTimeController from '@/components/toDoList/BaseTodoListLogTimeController.vue'
+	import ToDoListItemDialog from '@/components/toDoList/normal/ToDoListItemDialog.vue'
 
 	const props = defineProps<{
 		id: string
@@ -214,18 +225,25 @@
 	const { fetchById: fetchByIdActivity } = useActivityCrud()
 	const { fetchById: fetchByIdTaskPriority } = useTaskPriorityCrud()
 	const { fetchById: fetchByIdNamedList } = useTodoListCrud()
-	const { fetchAll, fetchById, createWithResponse, update, deleteEntity, changePriority, changeDisplayOrder } =
-		useTodoListItemCrud(todoListId)
+	const {
+		fetchAll,
+		fetchById,
+		createWithResponse,
+		update,
+		deleteEntity,
+		changePriority,
+		changeDisplayOrder,
+		toggleIsDone,
+		uncheckAll,
+	} = useTodoListItemCrud(todoListId)
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
-	const { fetchByDate } = useCalendarQuery()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 	const plannerStore = useDayPlannerStore()
 
 	const i18n = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
-	const logTimeController = ref<InstanceType<typeof TodoListLogTimeController>>()
+	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const items = ref([] as TodoListItemEntity[])
 	const isInChangeOrderMode = ref(false)
 	const listEntity = ref<TodoListEntity | null>(null)
@@ -409,6 +427,11 @@
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
+	}
+
+	async function handleIsDoneChange(id: number, forceValue: boolean) {
+		await toggleIsDone(id, forceValue)
+		await itemsChanged([id])
 	}
 
 	async function itemsChanged(changedItems: number[]) {

@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import ColorPicker from '@/components/general/ColorPicker.vue'
 	import { ref } from 'vue'
 	import type { Category } from '@/dtos/response/activity/Category.ts'

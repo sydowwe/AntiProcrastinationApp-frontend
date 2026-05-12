@@ -172,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/dialogs/MyDialog.vue'
+	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import type { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts'
