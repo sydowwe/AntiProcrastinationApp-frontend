@@ -1,6 +1,9 @@
 <template>
 	<VCard class="h-100 rounded-lg px-3 px-md-4 pt-4 pb-2 d-flex flex-column">
-		<RoutinePeriodTimeline :timePeriod="group.timePeriod" />
+		<RoutinePeriodTimeline
+			:color="group.timePeriod.color"
+			:timePeriod="group.timePeriod"
+		/>
 		<RoutineGroupStats
 			:timePeriod="group.timePeriod"
 			:items="group.items"
@@ -27,8 +30,14 @@
 				:isInChangeOrderMode
 				:listId="group.timePeriod.id"
 				:activityIds="group.items.map(item => item.activity.id)"
-				@itemsReordered="(oldIndex, newIndex, request) => emit('itemsReordered', oldIndex, newIndex, request)"
-				@crossListDrop="(sourceId, targetId, itemId, dropTarget) => emit('crossListDrop', sourceId, targetId, itemId, dropTarget)"
+				@itemsReordered="
+					(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
+						emit('itemsReordered', oldIndex, newIndex, request)
+				"
+				@crossListDrop="
+					(sourceId: number, targetId: number, itemId: number, dropTarget: any) =>
+						emit('crossListDrop', sourceId, targetId, itemId, dropTarget)
+				"
 			>
 				<template #default="{ item, isDragging }">
 					<RoutineTodoListItem
@@ -40,13 +49,13 @@
 							graceDays: group.timePeriod.streakGraceDays,
 							periodLengthInDays: group.timePeriod.lengthInDays,
 						}"
-						@delete="id => emit('delete', id)"
-						@edit="item => emit('edit', item)"
-						@isDoneChanged="(id, val) => emit('isDoneChanged', id, val)"
-						@stepToggled="ids => emit('stepToggled', ids)"
-						@addToPlanner="item => emit('addToPlanner', item)"
-						@logTime="item => emit('logTime', item, false)"
-						@itemClicked="item => emit('logTime', item, true)"
+						@delete="(id: number) => emit('delete', id)"
+						@edit="(i: RoutineTodoListItemEntity) => emit('edit', i)"
+						@isDoneChanged="(id: number, val: boolean) => emit('isDoneChanged', id, val)"
+						@stepToggled="(ids: number[]) => emit('stepToggled', ids)"
+						@addToPlanner="(i: RoutineTodoListItemEntity) => emit('addToPlanner', i)"
+						@logTime="(i: RoutineTodoListItemEntity) => emit('logTime', i, false)"
+						@itemClicked="(i: RoutineTodoListItemEntity) => emit('logTime', i, true)"
 					/>
 				</template>
 			</BaseToDoList>
@@ -74,7 +83,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
-	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
+	import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
@@ -89,8 +98,6 @@
 		isInChangeOrderMode: boolean
 	}>()
 
-	const hideDone = defineModel<boolean>('hideDone', { default: false })
-
 	const emit = defineEmits<{
 		logTime: [item: RoutineTodoListItemEntity, isManual: boolean]
 		addToPlanner: [item: RoutineTodoListItemEntity]
@@ -102,6 +109,8 @@
 		crossListDrop: [sourceListId: number, targetListId: number, itemId: number, dropTarget: any]
 		openHistory: [timePeriod: RoutineTimePeriodEntity]
 	}>()
+
+	const hideDone = defineModel<boolean>('hideDone', { default: false })
 
 	const isAllDoneHidden = computed(
 		() => hideDone.value && group.items.length > 0 && group.items.every(item => item.isDone),

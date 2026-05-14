@@ -129,3 +129,13 @@ export function getTranslatedMonths(locale = 'sk') {
 		title: month,
 	}))
 }
+
+export const allDaysOfWeek = [
+	{ index: 1, name: 'Monday', shortName: 'Mon', isWeekend: false },
+	{ index: 2, name: 'Tuesday', shortName: 'Tue', isWeekend: false },
+	{ index: 3, name: 'Wednesday', shortName: 'Wed', isWeekend: false },
+	{ index: 4, name: 'Thursday', shortName: 'Thu', isWeekend: false },
+	{ index: 5, name: 'Friday', shortName: 'Fri', isWeekend: false },
+	{ index: 6, name: 'Saturday', shortName: 'Sat', isWeekend: true },
+	{ index: 7, name: 'Sunday', shortName: 'Sun', isWeekend: true },
+]

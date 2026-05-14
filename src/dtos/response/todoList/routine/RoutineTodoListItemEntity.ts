@@ -3,6 +3,7 @@ import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListI
 import { Time } from '@/dtos/dto/Time.ts'
 import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 import { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
+import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
 
 export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	constructor(
@@ -18,7 +19,8 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public lastCompletedAt: string | null = null,
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
-		public suggestedDay: number | null = null,
+		public suggestedDays: DayOfWeek[] = [],
+		public suggestedDayOfMonth: number | null = null,
 		public steps: TodoListItemStepEntity[] = [],
 	) {}
 
@@ -40,7 +42,8 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.lastCompletedAt ?? null,
 			json.note ?? null,
 			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
-			json.suggestedDay ?? null,
+			json.suggestedDays ?? [],
+			json.suggestedDayOfMonth ?? null,
 			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
 		)
 	}

@@ -1,7 +1,7 @@
 import { computed, nextTick, onBeforeUnmount, reactive, ref, type Ref, watch } from 'vue'
 import { dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { useDragAndDropMonitor } from '@/composables/UseDragAndDropMonitor.ts'
 import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
+import { useDragAndDropMonitor } from '@/composables/todoListDragAndDrop/UseDragAndDropMonitor.ts'
 
 interface UseTodoListDragAndDropOptions<TEntity extends IBaseToDoListItem> {
 	items: Ref<TEntity[]>

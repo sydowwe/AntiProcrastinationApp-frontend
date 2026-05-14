@@ -31,8 +31,6 @@
 
 <style scoped>
 	.empty-item-placeholder {
-		margin-top: 10px;
-		margin-bottom: -10px;
 		border: 2px dashed rgba(var(--v-theme-primary), 0.5) !important;
 		border-radius: 8px !important;
 		background: rgba(var(--v-theme-primary), 0.05) !important;
@@ -42,8 +40,11 @@
 	}
 
 	.empty-item-placeholder.empty-item-placeholder-top {
-		margin-top: -10px;
-		margin-bottom: 10px;
+		margin-bottom: 12px;
+	}
+
+	.empty-item-placeholder:not(.empty-item-placeholder-top) {
+		margin-top: 16px;
 	}
 
 	.empty-item-placeholder:hover {

@@ -8,7 +8,7 @@
 			#prepend
 		>
 			<div
-				:ref="el => setupDragHandle(el as HTMLElement | null)"
+				:ref="(el: HTMLElement) => setupDragHandle(el as HTMLElement | null)"
 				class="split-drag-handle"
 				title="Drag to other template"
 				@click.stop

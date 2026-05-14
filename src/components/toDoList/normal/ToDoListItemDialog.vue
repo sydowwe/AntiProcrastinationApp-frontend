@@ -60,22 +60,10 @@
 					class="flex-grow-1"
 				/>
 			</div>
-			<div class="d-flex align-center ga-3 mt-2">
-				<VSwitch
-					v-model="suggestedTimeEnabled"
-					:label="$t('toDoList.suggestedTime')"
-					density="compact"
-					hideDetails
-				/>
-				<TimePicker
-					v-if="suggestedTimeEnabled"
-					v-model="suggestedTimeValue"
-					:label="$t('toDoList.suggestedTime')"
-					density="compact"
-					class="flex-grow-1"
-					viewMode="minute"
-				/>
-			</div>
+			<SuggestedTimeFormField
+				class="mt-2"
+				v-model="suggestedTime"
+			/>
 			<VTextarea
 				v-model="noteValue"
 				:label="$t('toDoList.note')"
@@ -85,60 +73,10 @@
 				autoGrow
 				class="mt-3"
 			/>
-			<div class="mt-3">
-				<span class="text-caption text-medium-emphasis">{{ $t('toDoList.steps') }}</span>
-				<div
-					v-for="(step, i) in dialogSteps"
-					:key="i"
-					class="d-flex align-center ga-1 mt-1"
-				>
-					<div class="d-flex flex-column">
-						<VIconBtn
-							icon="chevron-up"
-							variant="text"
-							size="x-small"
-							:disabled="i === 0"
-							@click="moveStep(i, -1)"
-						/>
-						<VIconBtn
-							icon="chevron-down"
-							variant="text"
-							size="x-small"
-							:disabled="i === dialogSteps.length - 1"
-							@click="moveStep(i, 1)"
-						/>
-					</div>
-					<VTextField
-						v-model="step.name"
-						density="compact"
-						hideDetails
-						class="flex-grow-1"
-					/>
-					<VIconBtn
-						icon="trash-can"
-						color="error"
-						variant="text"
-						size="small"
-						@click="dialogSteps.splice(i, 1)"
-					/>
-				</div>
-				<div class="d-flex ga-2 mt-2">
-					<VTextField
-						v-model="newStepName"
-						:label="$t('toDoList.addStep')"
-						density="compact"
-						hideDetails
-						class="flex-grow-1"
-						@keyup.enter.stop="addDialogStep"
-					/>
-					<VIconBtn
-						icon="plus"
-						variant="tonal"
-						color="primaryOutline"
-						@click="addDialogStep"
-					/>
-				</div>
-			</div>
+			<TodoListStepsFormField
+				class="mt-3"
+				v-model="dialogSteps"
+			/>
 		</VForm>
 	</MyDialog>
 </template>
@@ -158,6 +96,8 @@
 	import type { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
 	import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 	import BaseTodoListRepeatCountFormField from '@/components/toDoList/BaseTodoListRepeatCountFormField.vue'
+	import SuggestedTimeFormField from '@/components/toDoList/SuggestedTimeFormField.vue'
+	import TodoListStepsFormField from '@/components/toDoList/TodoListStepsFormField.vue'
 
 	const emit = defineEmits<{
 		(e: 'add', toDoList: ToDoListItemRequest): void
@@ -178,20 +118,13 @@
 	const toDoListItem = ref(new ToDoListItemRequest())
 	const oldItem = ref<TodoListItemEntity | null>(null)
 
-	interface DialogStep {
-		name: string
-		order: number
-		note: string | null
-	}
-	const dialogSteps = ref<DialogStep[]>([])
-	const newStepName = ref('')
+	const dialogSteps = ref<TodoListItemStepRequest[]>([])
 
 	const isRepeated = ref(false)
 	const dueDateValue = ref<string | null>(null)
 	const dueTimeEnabled = ref(false)
 	const dueTimeValue = ref<Time>(new Time(9, 0))
-	const suggestedTimeEnabled = ref(false)
-	const suggestedTimeValue = ref<Time>(new Time())
+	const suggestedTime = ref<Time | null>(null)
 	const noteValue = ref('')
 
 	watch(dialog, newValue => {
@@ -201,11 +134,9 @@
 			dueDateValue.value = null
 			dueTimeEnabled.value = false
 			dueTimeValue.value = new Time(9, 0)
-			suggestedTimeEnabled.value = false
-			suggestedTimeValue.value = new Time()
+			suggestedTime.value = null
 			noteValue.value = ''
 			dialogSteps.value = []
-			newStepName.value = ''
 		}
 	})
 
@@ -239,7 +170,7 @@
 
 		toDoListItem.value.dueDate = dueDateValue.value || null
 		toDoListItem.value.dueTime = dueDateValue.value && dueTimeEnabled.value ? dueTimeValue.value : null
-		toDoListItem.value.suggestedTime = suggestedTimeEnabled.value ? suggestedTimeValue.value : null
+		toDoListItem.value.suggestedTime = suggestedTime.value
 		toDoListItem.value.note = noteValue.value || null
 		toDoListItem.value.steps = dialogSteps.value.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
 		if (toDoListItem.value.steps.length > 0) toDoListItem.value.totalCount = null
@@ -252,20 +183,6 @@
 		close()
 	}
 
-	function addDialogStep() {
-		if (!newStepName.value.trim()) return
-		dialogSteps.value.push({ name: newStepName.value.trim(), order: dialogSteps.value.length + 1, note: null })
-		newStepName.value = ''
-	}
-
-	function moveStep(index: number, direction: -1 | 1) {
-		const newIndex = index + direction
-		if (newIndex < 0 || newIndex >= dialogSteps.value.length) return
-		const temp = dialogSteps.value[index]
-		dialogSteps.value[index] = dialogSteps.value[newIndex]!
-		dialogSteps.value[newIndex] = temp!
-	}
-
 	function setDefaultPriority() {
 		toDoListItem.value.taskPriorityId = priorityOptions.value.find(item => item.priority === 1)?.id
 	}
@@ -276,10 +193,8 @@
 		activityFormField.value?.reset()
 		toDoListItem.value = new ToDoListItemRequest()
 		setDefaultPriority()
-		suggestedTimeEnabled.value = false
-		suggestedTimeValue.value = new Time()
+		suggestedTime.value = null
 		dialogSteps.value = []
-		newStepName.value = ''
 		isEdit.value = false
 		oldItem.value = null
 	}
@@ -299,10 +214,9 @@
 		dueDateValue.value = entityToEdit.dueDate ?? null
 		dueTimeEnabled.value = !!entityToEdit.dueTime
 		dueTimeValue.value = entityToEdit.dueTime ?? new Time(9, 0)
-		suggestedTimeEnabled.value = !!entityToEdit.suggestedTime
-		suggestedTimeValue.value = entityToEdit.suggestedTime ?? new Time()
+		suggestedTime.value = entityToEdit.suggestedTime ?? null
 		noteValue.value = entityToEdit.note ?? ''
-		dialogSteps.value = entityToEdit.steps.map((s, i) => ({ name: s.name, order: i + 1, note: s.note }))
+		dialogSteps.value = entityToEdit.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
 		dialog.value = true
 	}
 	defineExpose({

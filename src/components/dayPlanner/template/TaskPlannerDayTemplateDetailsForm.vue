@@ -72,23 +72,7 @@
 			/>
 			<div>
 				<label class="text-caption text-medium-emphasis mb-1 d-block">Scheduled Days</label>
-				<VBtnToggle
-					v-model="formData.scheduledDays"
-					multiple
-					density="compact"
-					color="secondaryOutline"
-					variant="tonal"
-					divided
-				>
-					<VBtn
-						v-for="day in dayOfWeekOptions"
-						:key="day.value"
-						:value="day.value"
-						size="small"
-					>
-						{{ day.label }}
-					</VBtn>
-				</VBtnToggle>
+				<DayOfWeekPicker v-model="formData.scheduledDays" />
 			</div>
 		</div>
 	</VForm>
@@ -97,12 +81,13 @@
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
 	import { dayTypeOptions } from '@/dtos/enum/DayType.ts'
-	import { DayOfWeek, dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
+	import { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
 	import { locationOptions } from '@/dtos/enum/Location.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import IconPicker from '@/components/general/inputs/IconPicker.vue'
+	import DayOfWeekPicker from '@/components/general/inputs/DayOfWeekPicker.vue'
 	import type { VForm } from 'vuetify/components'
 
 	const {

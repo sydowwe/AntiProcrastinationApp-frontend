@@ -61,29 +61,20 @@
 							class="calendar-week"
 							:style="{ 'min-height': minRowHeight + 'px' }"
 						>
-							<div
+							<CalendarDayCell
 								v-for="(dayData, dayIndex) in week"
 								:key="dayIndex"
-								class="day-cell"
-								:class="{
-									weekend: dayData?.isWeekend,
-									empty: !dayData,
-									today: dayData?.isToday,
-									selected: dayData && selectedIds.includes(dayData.id),
-									[`day-type-${dayData?.dayType?.toLowerCase()}`]: dayData?.dayType,
-								}"
-								@click="handleDayClick(dayData)"
+								:dayData
+								:selected="!!dayData && selectedIds.includes(dayData.id)"
+								@click="handleDayClick"
 							>
-								<template v-if="dayData">
-									<CalendarDayCellHeader :day="dayData" />
-
-									<!-- Slot for content below header -->
+								<template #default="{ day }">
 									<slot
 										name="day-cell-content"
-										:day="dayData"
+										:day="day"
 									/>
 								</template>
-							</div>
+							</CalendarDayCell>
 						</div>
 					</div>
 				</div>
@@ -115,11 +106,12 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import DateRangePicker from '@/components/general/dateTime/DateRangePicker.vue'
-	import CalendarDayCellHeader from '@/components/general/calendar/CalendarDayCellHeader.vue'
+	import CalendarDayCell from '@/components/general/calendar/CalendarDayCell.vue'
 	import { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { allDaysOfWeek, useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { useCalendarWeeks } from '@/composables/general/useCalendarWeeks.ts'
 
 	const {
 		dateRangeMode = 'month',
@@ -167,26 +159,18 @@
 		{ label: 'Weekend (Fri-Sun)', value: 'weekend' },
 	]
 
-	const allDays = [
-		{ index: 1, name: 'Monday', shortName: 'Mon', isWeekend: false },
-		{ index: 2, name: 'Tuesday', shortName: 'Tue', isWeekend: false },
-		{ index: 3, name: 'Wednesday', shortName: 'Wed', isWeekend: false },
-		{ index: 4, name: 'Thursday', shortName: 'Thu', isWeekend: false },
-		{ index: 5, name: 'Friday', shortName: 'Fri', isWeekend: false },
-		{ index: 6, name: 'Saturday', shortName: 'Sat', isWeekend: true },
-		{ index: 7, name: 'Sunday', shortName: 'Sun', isWeekend: true },
-	]
-
 	const visibleDayHeaders = computed(() => {
 		if (dayVisibility.value === 'workdays') {
-			return allDays.filter(day => !day.isWeekend)
+			return allDaysOfWeek.filter(day => !day.isWeekend)
 		} else if (dayVisibility.value === 'weekend') {
-			return allDays.filter(day => day.index >= 5)
+			return allDaysOfWeek.filter(day => day.index >= 5)
 		}
-		return allDays
+		return allDaysOfWeek
 	})
 
 	const numColumns = computed(() => visibleDayHeaders.value.length)
+
+	const { calendarWeeks } = useCalendarWeeks(calendarData, dateRange, visibleDayHeaders)
 
 	async function fetchCalendarData() {
 		if (!dateRange.value.start || !dateRange.value.end) {
@@ -214,83 +198,7 @@
 		{ deep: true },
 	)
 
-	const calendarWeeks = computed(() => {
-		if (!dateRange.value.start || !dateRange.value.end) {
-			return []
-		}
-
-		const start = new Date(dateRange.value.start)
-		const end = new Date(dateRange.value.end)
-
-		const startDay = start.getDay()
-		const daysToMonday = startDay === 0 ? 6 : startDay - 1
-		const weekStart = new Date(start)
-		weekStart.setDate(start.getDate() - daysToMonday)
-		weekStart.setHours(0, 0, 0, 0)
-
-		const endDay = end.getDay()
-		const daysToSunday = endDay === 0 ? 0 : 7 - endDay
-		const weekEnd = new Date(end)
-		weekEnd.setDate(end.getDate() + daysToSunday)
-		weekEnd.setHours(23, 59, 59, 999)
-
-		const weekMap = new Map<string, Map<number, ICalendar>>()
-
-		calendarData.value.forEach(cal => {
-			const parts = cal.date.split('-').map(Number)
-			const year = parts[0]
-			const month = parts[1]
-			const day = parts[2]
-
-			if (!year || !month || !day) {
-				console.warn(`Invalid date format: ${cal.date}`)
-				return
-			}
-
-			const date = new Date(year, month - 1, day)
-
-			const dayOfWeek = date.getDay()
-			const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-			const monday = new Date(date)
-			monday.setDate(date.getDate() - daysToMonday)
-			monday.setHours(0, 0, 0, 0)
-
-			const weekKey = monday.toISOString().slice(0, 10)
-
-			if (!weekMap.has(weekKey)) {
-				weekMap.set(weekKey, new Map())
-			}
-			weekMap.get(weekKey)!.set(cal.dayIndex, cal)
-		})
-
-		const weeks: (ICalendar | null)[][] = []
-		const currentDate = new Date(weekStart)
-
-		while (currentDate <= weekEnd) {
-			const weekKey = currentDate.toISOString().slice(0, 10)
-			const weekData = weekMap.get(weekKey) || new Map()
-
-			const week: (ICalendar | null)[] = new Array(visibleDayHeaders.value.length).fill(null)
-
-			weekData.forEach((cal, dayIndex) => {
-				const columnIndex = visibleDayHeaders.value.findIndex(day => day.index === dayIndex)
-				if (columnIndex !== -1) {
-					week[columnIndex] = cal
-				}
-			})
-
-			if (week.some(day => day !== null)) {
-				weeks.push(week)
-			}
-
-			currentDate.setDate(currentDate.getDate() + 7)
-		}
-
-		return weeks
-	})
-
-	function handleDayClick(dayData: ICalendar | null) {
-		if (!dayData) return
+	function handleDayClick(dayData: ICalendar) {
 		emit('dayClick', dayData)
 	}
 
@@ -394,57 +302,6 @@
 		display: grid;
 		grid-template-columns: repeat(var(--calendar-columns, 7), 1fr);
 		flex: 1;
-	}
-
-	.day-cell {
-		border-right: 1px solid rgba(var(--v-border-color), 0.5);
-		border-bottom: 1px solid rgba(var(--v-border-color), 0.5);
-		display: flex;
-		flex-direction: column;
-		cursor: pointer;
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease;
-		min-height: 100%;
-		position: relative;
-		overflow: hidden;
-		will-change: transform;
-	}
-
-	.day-cell:last-child {
-		border-right: none;
-	}
-
-	.day-cell.selected {
-		outline: 2px solid white;
-		outline-offset: 0;
-		z-index: 5;
-	}
-
-	.day-cell:hover:not(.empty) {
-		transform: scale(1.02);
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-		z-index: 10;
-		position: relative;
-		background-color: rgb(var(--v-theme-surface)) !important;
-		background-image: none !important;
-	}
-
-	.day-cell.weekend:not(.empty) {
-		background-color: rgba(var(--v-theme-primary), 0.08);
-	}
-
-	.day-cell.today:not(.empty) {
-		background-color: rgba(253, 212, 0, 0.1);
-	}
-
-	.day-cell.today:hover:not(.empty) {
-		background-color: rgba(253, 212, 0, 0.1) !important;
-	}
-
-	.day-cell.empty {
-		background-color: rgba(var(--v-border-color), 0.05);
-		cursor: default;
 	}
 
 	/* Dynamic column count based on visibility mode */

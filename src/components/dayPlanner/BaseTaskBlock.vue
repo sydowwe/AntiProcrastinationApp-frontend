@@ -1,27 +1,10 @@
 <template>
-	<VSheet
+	<BackgroundTaskBlock
 		v-if="task.isBackground && !isOutOfView"
-		:color="backgroundColorComp"
-		:style="style"
-		:data-task-id="task.id"
-		class="base-task-block background-task-block"
-		:class="[{ 'past-task': isPast, selected: isSelected }]"
-	>
-		<VSheet
-			class="background-task-label"
-			:color="backgroundColorComp"
-		>
-			{{ task.activity.name }}
-			<VIcon
-				v-if="!!task.importance"
-				class="mb-1 mr-1"
-				:icon="task.importance?.icon ?? undefined"
-				:color="task.importance?.color"
-				:size="20"
-				style="transform: rotate(-90deg)"
-			></VIcon>
-		</VSheet>
-	</VSheet>
+		:task
+		:isPast
+		:marginLeft
+	/>
 
 	<VSheet
 		v-else-if="!isOutOfView"
@@ -161,6 +144,8 @@
 	import { Time } from '@/dtos/dto/Time.ts'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import { useColor } from '@/utils/colorPalette.ts'
+	import BackgroundTaskBlock from '@/components/dayPlanner/BackgroundTaskBlock.vue'
+	import { useTaskBlockKeyboard } from '@/composables/dayPlanner/useTaskBlockKeyboard.ts'
 
 	const { task, isPast, marginLeft } = defineProps<{
 		task: TTask
@@ -172,11 +157,9 @@
 		(e: 'resizeStart', payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }): void
 	}>()
 
-	// Inject the store from parent DayPlanner component
 	const store = inject<TStore>('plannerStore')!
 	const { getBgColor } = useColor()
 
-	// Computed states
 	const isSelected = computed(() => store.selectedTaskIds.has(task.id))
 	const isDragging = computed(() => store.draggingTaskId === task.id)
 	const isResizing = computed(() => store.resizingTaskId === task.id)
@@ -218,39 +201,8 @@
 		},
 	])
 
-	// Keyboard handlers
-	function handleEnterKey(e: KeyboardEvent): void {
-		e.preventDefault()
-		// Only open edit if single task is selected (this task is focused/selected)
-		if (isSelected.value && store.selectedTaskIds.size === 1) {
-			store.openEditDialog()
-		}
-	}
-
-	function handleEKey(e: KeyboardEvent): void {
-		e.preventDefault()
-		// Only open edit if single task is selected
-		if (isSelected.value && store.selectedTaskIds.size === 1) {
-			store.openEditDialog()
-		}
-	}
-
-	function handleDeleteKey(e: KeyboardEvent): void {
-		e.preventDefault()
-		store.openDeleteDialog()
-	}
-
-	function handleEscapeKey(e: KeyboardEvent): void {
-		e.preventDefault()
-		store.clearSelection()
-		;(e.target as HTMLElement).blur()
-	}
-
-	function handleDuplicateKey(): void {
-		if (isSelected.value && store.selectedTaskIds.size >= 1) {
-			store.startDuplicate()
-		}
-	}
+	const { handleEnterKey, handleEKey, handleDeleteKey, handleEscapeKey, handleDuplicateKey } =
+		useTaskBlockKeyboard(store, isSelected)
 </script>
 
 <style scoped>
@@ -289,7 +241,6 @@
 	.task-content-main {
 		position: sticky;
 		top: 0;
-		bottom: 0;
 	}
 
 	.task-block:focus {
@@ -352,7 +303,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		line-height: 1.2;
-		opacity: 1;
 	}
 
 	.task-time {
@@ -389,48 +339,6 @@
 
 	.resize-handle:hover {
 		background: rgba(0, 0, 0, 0.3);
-	}
-
-	/* Background Task Styles */
-	.background-task-block {
-		position: absolute;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s ease;
-		left: 0;
-		top: 2px;
-		bottom: 0;
-		z-index: 5;
-		width: 36px;
-		cursor: pointer;
-	}
-
-	.background-task-block::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: repeating-linear-gradient(0deg, transparent 10px, rgba(255, 255, 255, 0.4) 14px);
-		pointer-events: none;
-		z-index: 1;
-		opacity: 0.9;
-		box-sizing: border-box;
-	}
-
-	.background-task-label {
-		color: white;
-		position: sticky;
-		z-index: 20;
-		opacity: 100%;
-		top: 46%;
-		writing-mode: sideways-lr;
-		padding: 8px 4px;
-		width: 100%;
-		border-radius: 4px;
-		border: 2px double rgba(255, 255, 255, 0.5);
-		font-size: 0.9rem;
-		font-weight: 600;
 	}
 
 	/* Animation for new tasks */

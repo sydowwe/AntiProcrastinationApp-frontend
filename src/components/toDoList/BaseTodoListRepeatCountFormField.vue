@@ -2,7 +2,7 @@
 	<div class="d-flex ga-6">
 		<VSwitch
 			v-model="isRepeated"
-			class="ml-2"
+			class="ml-2 my-1"
 			label="Is repeated"
 			color="secondaryOutline"
 			density="compact"

@@ -1,0 +1,15 @@
+:root {
+  --v-theme-primary: 0, 0, 0;
+  --v-theme-secondary: 0, 0, 0;
+  --v-theme-background: 0, 0, 0;
+  --v-theme-surface: 0, 0, 0;
+  --v-theme-on-primary: 0, 0, 0;
+  --v-theme-on-secondary: 0, 0, 0;
+  --v-theme-on-background: 0, 0, 0;
+  --v-theme-on-surface: 0, 0, 0;
+  --v-theme-error: 0, 0, 0;
+  --v-theme-warning: 0, 0, 0;
+  --v-theme-info: 0, 0, 0;
+  --v-theme-success: 0, 0, 0;
+  /* add others as needed */
+}

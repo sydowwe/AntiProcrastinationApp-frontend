@@ -2,6 +2,7 @@ import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
 import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 import type { Time } from '@/dtos/dto/Time.ts'
 import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
+import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(
@@ -12,7 +13,8 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 		public isDone: boolean = false,
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
-		public suggestedDay: number | null = null,
+		public suggestedDays: DayOfWeek[] = [],
+		public suggestedDayOfMonth: number | null = null,
 		public steps: TodoListItemStepRequest[] = [],
 	) {
 		super(isDone, activityId, doneCount, totalCount, note, suggestedTime, steps)
@@ -27,7 +29,8 @@ export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 			obj.isDone,
 			obj.note,
 			obj.suggestedTime,
-			obj.suggestedDay,
+			obj.suggestedDays,
+			obj.suggestedDayOfMonth,
 			obj.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note)),
 		)
 	}

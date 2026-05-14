@@ -131,6 +131,7 @@
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
 	import { useRoute } from 'vue-router'
 	import TemplatePlannerPanel from '@/components/dayPlanner/template/TemplatePlannerPanel.vue'
+	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 
 	const { storeId = 'main', isSplitView = false } = defineProps<{
 		storeId?: 'main' | 'secondary'
@@ -150,6 +151,7 @@
 		batchDelete: batchDeleteTask,
 	} = useTemplatePlannerTaskCrud()
 
+	const { showFullScreenLoading } = useLoading()
 	const { timeNiceFromMinutes } = useDateTime()
 	const undoStack = useUndoStack()
 
@@ -230,6 +232,7 @@
 
 	async function loadTasks() {
 		if (templateId.value == null) return
+		if (!isSplitView) showFullScreenLoading()
 		store.tasks = await fetchFilteredTasks(
 			new TemplatePlannerTaskFilter(templateId.value, store.viewStartTime, store.viewEndTime),
 		)

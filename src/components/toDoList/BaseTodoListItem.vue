@@ -26,52 +26,14 @@
 					:style="isInChangeOrderMode ? 'color:white !important' : ''"
 					@click.prevent
 				/>
-				<div
+				<TodoListItemCounter
 					v-else
-					class="pl-3 d-flex flex-column ga-1 align-center justify-center"
-				>
-					<VHover>
-						<template #default="{ isHovering, props: vHoverProps }">
-							<VIconBtn
-								v-if="isHovering"
-								v-bind="vHoverProps"
-								icon="minus"
-								color="white"
-								variant="tonal"
-								size="35"
-								@click.stop="minusClicked"
-							>
-								<VIcon size="22"></VIcon>
-							</VIconBtn>
-							<VProgressLinear
-								v-else
-								v-bind="vHoverProps"
-								@click.stop="progressClicked"
-								color="neutral-400"
-								:modelValue="((doneCount ?? 0) / (toDoListItem.totalCount ?? 1)) * 100"
-								height="35"
-								bgOpacity="0.3"
-								style="width: 35px; border: 1px solid #777; border-radius: 4px"
-							>
-								<div class="d-flex align-center">
-									<span
-										v-if="!isDone"
-										class="text-white"
-									>
-										{{ doneCount ?? 0 }}
-									</span>
-									<VIcon
-										v-if="isDone"
-										size="17"
-										icon="check"
-										color="success"
-									></VIcon>
-									<span class="text-white">/{{ toDoListItem.totalCount }}</span>
-								</div>
-							</VProgressLinear>
-						</template>
-					</VHover>
-				</div>
+					:doneCount
+					:totalCount="toDoListItem.totalCount"
+					:isDone
+					@minus="minusClicked"
+					@increment="progressClicked"
+				/>
 			</div>
 
 			<div class="flex-fill">
@@ -118,47 +80,51 @@
 			<div>
 				<VIcon
 					v-if="isInChangeOrderMode"
-					class="drag-handle my-1"
+					class="drag-handle my-1 mr-3"
 					icon="bars"
 					color="white"
 					size="small"
 					style="height: 40px"
 				></VIcon>
-				<VMenu
+				<div
 					v-else
-					location="start"
-					transition="slide-y-transition"
+					class="d-flex align-center ga-2"
 				>
-					<template #activator="{ props: menuProps }">
-						<VIconBtn
-							icon="ellipsis-vertical"
-							v-bind="menuProps"
-							class="my-1"
-							color="white"
-							variant="text"
-							size="40"
-							@click.stop=""
-						></VIconBtn>
-					</template>
-					<VList>
-						<VListItem
-							v-for="(item, i) in actions"
-							:key="i"
-							class="px-3"
-						>
-							<VBtn
+					<VMenu
+						location="start"
+						transition="slide-y-transition"
+					>
+						<template #activator="{ props: menuProps }">
+							<VIconBtn
+								icon="ellipsis-vertical"
+								v-bind="menuProps"
+								class="mr-1"
+								color="white"
+								variant="text"
+								size="40"
+								@click.stop=""
+							></VIconBtn>
+						</template>
+						<VList>
+							<VListItem
+								v-for="(item, i) in actions"
+								:key="i"
 								class="px-3"
-								:color="item.color"
-								:variant="item.variant"
-								:appendIcon="item.icon"
-								width="100%"
-								@click="item.action"
 							>
-								{{ actionButtonText(item.name) }}
-							</VBtn>
-						</VListItem>
-					</VList>
-				</VMenu>
+								<VBtn
+									class="px-3"
+									:color="item.color"
+									:variant="item.variant"
+									:appendIcon="item.icon"
+									width="100%"
+									@click="item.action"
+								>
+									{{ actionButtonText(item.name) }}
+								</VBtn>
+							</VListItem>
+						</VList>
+					</VMenu>
+				</div>
 			</div>
 		</div>
 		<BaseTodoListItemSteps
@@ -182,18 +148,17 @@
 </template>
 
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
-	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useColor } from '@/utils/colorPalette.ts'
-	import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-	import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview'
-	import { pointerOutsideOfPreview } from '@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview'
 	import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 	import type { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 	import BaseTodoListItemSteps from '@/components/toDoList/BaseTodoListItemSteps.vue'
+	import TodoListItemCounter from '@/components/toDoList/TodoListItemCounter.vue'
+	import { useTodoItemDraggable } from '@/composables/todoListDragAndDrop/useTodoItemDraggable.ts'
 
 	const {
 		toDoListItem,
@@ -253,76 +218,22 @@
 	const itemRef = ref<any>(null)
 	const dragPreviewRef = ref<InstanceType<typeof DraggedItemPreview> | null>(null)
 
-	let cleanup: (() => void) | null = null
-
-	onMounted(() => {
-		setupDraggable()
+	useTodoItemDraggable({
+		elementRef: itemRef,
+		previewRef: dragPreviewRef,
+		isInChangeOrderMode: () => isInChangeOrderMode,
+		getData: () => ({
+			itemId: toDoListItem.id,
+			activityId: toDoListItem.activity.id,
+			listId,
+		}),
 	})
-
-	onBeforeUnmount(() => {
-		if (cleanup) {
-			cleanup()
-		}
-	})
-
-	watch(
-		() => isInChangeOrderMode,
-		newValue => {
-			if (cleanup) {
-				cleanup()
-				cleanup = null
-			}
-
-			if (newValue) {
-				setupDraggable()
-			}
-		},
-	)
-
-	function setupDraggable() {
-		if (!isInChangeOrderMode) return
-
-		const element = itemRef.value?.$el || itemRef.value
-		if (!element) return
-
-		cleanup = draggable({
-			element,
-			getInitialData: () => ({
-				type: 'todo-item',
-				itemId: toDoListItem.id,
-				activityId: toDoListItem.activity.id,
-				listId: listId,
-			}),
-			onGenerateDragPreview: ({ nativeSetDragImage }) => {
-				const previewElement = dragPreviewRef.value?.$el
-				if (previewElement) {
-					setCustomNativeDragPreview({
-						nativeSetDragImage,
-						getOffset: pointerOutsideOfPreview({
-							x: '16px',
-							y: '8px',
-						}),
-						render: ({ container }) => {
-							const clonedPreview = previewElement.cloneNode(true) as HTMLElement
-							clonedPreview.style.display = 'block'
-
-							container.appendChild(clonedPreview)
-
-							return () => {
-								container.removeChild(clonedPreview)
-							}
-						},
-					})
-				}
-			},
-		})
-	}
 
 	const actions = [
-		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', edit),
-		new MenuItem('addToPlanner', 'outlined', 'primaryOutline', 'calendar-plus', addToPlanner),
 		new MenuItem('logTime', 'outlined', 'primaryOutline', 'clock', logTime),
-		new MenuItem('delete', 'outlined', 'secondaryOutline', 'trash-can', del),
+		new MenuItem('addToPlanner', 'outlined', 'primaryOutline', 'calendar-plus', addToPlanner),
+		new MenuItem('edit', 'outlined', 'secondaryOutline', 'pen-to-square', edit),
+		new MenuItem('delete', 'tonal', 'secondaryOutline', 'trash-can', del),
 	]
 
 	function emitChanged(forceValue?: boolean) {
@@ -336,7 +247,7 @@
 		}
 
 		if (toDoListItem.isMultipleCount) {
-			progressClicked(event)
+			progressClicked()
 			return
 		}
 
@@ -349,12 +260,8 @@
 		}
 	}
 
-	function minusClicked(event: Event) {
-		if (isInChangeOrderMode) {
-			event.preventDefault()
-			return
-		}
-		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
+	function minusClicked() {
+		if (isInChangeOrderMode) return
 		if (doneCount.value === null || doneCount.value <= 0) return
 		doneCount.value--
 		const oldIsDone = isDone.value
@@ -366,11 +273,8 @@
 		}
 	}
 
-	function progressClicked(event: Event) {
-		if (isInChangeOrderMode) {
-			event.preventDefault()
-			return
-		}
+	function progressClicked() {
+		if (isInChangeOrderMode) return
 		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 		if (doneCount.value === null || toDoListItem.totalCount === null) return
 		if (doneCount.value >= toDoListItem.totalCount) return

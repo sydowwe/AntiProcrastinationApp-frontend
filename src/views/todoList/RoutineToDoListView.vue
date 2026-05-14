@@ -63,7 +63,7 @@
 					:group
 					:isInChangeOrderMode
 					:hideDone="hideDoneGroupIds.includes(group.timePeriod.id as number)"
-					@update:hideDone="val => updateHideDone(group.timePeriod.id as number, val)"
+					@update:hideDone="(val: boolean) => updateHideDone(group.timePeriod.id as number, val)"
 					@logTime="openLogTime"
 					@addToPlanner="openAddToPlanner"
 					@delete="onDelete"
@@ -71,7 +71,7 @@
 					@isDoneChanged="handleIsDoneChange"
 					@stepToggled="onItemsChanged"
 					@itemsReordered="
-						(oldIndex, newIndex, request) =>
+						(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
 							handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)
 					"
 					@crossListDrop="handleCrossListDrop"
@@ -117,6 +117,7 @@
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
@@ -132,6 +133,7 @@
 		useRoutineTodoListItemCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { showFullScreenLoading } = useLoading()
 	const plannerStore = useDayPlannerStore()
 
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
@@ -217,6 +219,7 @@
 	}
 
 	function getAllRecords() {
+		showFullScreenLoading()
 		getAllGrouped().then(response => {
 			groupedItems.value = response
 		})
@@ -229,6 +232,7 @@
 			updatedList.push(response)
 			updatedList.sort((a, b) => a.id - b.id)
 		}
+		showSuccessSnackbar(t('successFeedback.added'))
 	}
 
 	async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
@@ -248,6 +252,7 @@
 				updatedList.push(updatedItem)
 			}
 		}
+		showSuccessSnackbar(t('successFeedback.updated'))
 	}
 
 	function onDelete(id: number) {

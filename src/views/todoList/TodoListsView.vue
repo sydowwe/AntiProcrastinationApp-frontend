@@ -137,93 +137,13 @@
 							tag="div"
 							class="d-flex flex-column ga-3"
 						>
-							<VCard
+							<TodoListCard
 								v-for="list in lists"
 								:key="list.id"
-								elevation="1"
-								class="list-card"
-								@click="router.push({ name: 'toDoListDetail', params: { id: list.id } })"
-							>
-								<div class="pa-4">
-									<div class="d-flex align-center ga-3">
-										<div
-											v-if="list.icon"
-											class="list-icon-wrap"
-										>
-											<VIcon
-												:icon="list.icon"
-												size="20"
-												color="primary"
-											/>
-										</div>
-										<div
-											class="flex-grow-1"
-											style="min-width: 0"
-										>
-											<div
-												class="text-subtitle-1 font-weight-medium"
-												style="line-height: 1.3"
-											>
-												{{ list.name }}
-											</div>
-											<div
-												v-if="list.description"
-												class="text-caption text-medium-emphasis mt-1"
-												style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-											>
-												{{ list.description }}
-											</div>
-										</div>
-										<div class="d-flex ga-2 flex-shrink-0">
-											<VIconBtn
-												icon="pen"
-												size="40"
-												color="secondaryOutline"
-												variant="tonal"
-												@click.stop="dialog?.openEdit(list)"
-											/>
-											<VIconBtn
-												icon="trash"
-												size="40"
-												color="default"
-												variant="tonal"
-												@click.stop="confirmDelete(list)"
-											/>
-										</div>
-									</div>
-
-									<div
-										v-if="list.itemCount !== null"
-										class="mt-3"
-									>
-										<div class="d-flex justify-space-between align-center mb-1">
-											<span class="text-caption text-medium-emphasis">
-												{{ list.completedCount ?? 0 }} / {{ list.itemCount }} done
-											</span>
-											<span class="text-caption font-weight-medium">
-												{{
-													list.itemCount > 0
-														? Math.round(
-																((list.completedCount ?? 0) / list.itemCount) * 100,
-															)
-														: 0
-												}}%
-											</span>
-										</div>
-										<VProgressLinear
-											:modelValue="
-												list.itemCount > 0
-													? ((list.completedCount ?? 0) / list.itemCount) * 100
-													: 0
-											"
-											color="primary"
-											bgColor="surface-variant"
-											rounded
-											height="4"
-										/>
-									</div>
-								</div>
-							</VCard>
+								:list
+								@openEdit="dialog?.openEdit(list)"
+								@confirmDelete="confirmDelete(list)"
+							/>
 						</TransitionGroup>
 
 						<div
@@ -288,65 +208,57 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced } from '@vueuse/core'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useTodoListCategoryCrud } from '@/api/todoList/todoListCategoryApi.ts'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
+	import { useTodoListCategories } from '@/composables/todoList/useTodoListCategories.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
-	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
-	import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TodoListCategoryPanel from '@/components/toDoList/normal/TodoListCategoryPanel.vue'
 	import TodoListDialog from '@/components/toDoList/normal/TodoListDialog.vue'
 	import TodoListCategoryDialog from '@/components/toDoList/normal/TodoListCategoryDialog.vue'
+	import TodoListCard from '@/components/toDoList/normal/TodoListCard.vue'
 
-	const router = useRouter()
 	const i18n = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
-	const {
-		fetchFilteredSorted: fetchCategories,
-		createWithResponse: createCategory,
-		update: updateCategory,
-		deleteEntity: deleteCategoryEntity,
-	} = useTodoListCategoryCrud()
 
-	const categories = ref([] as TodoListCategoryEntity[])
-	const lists = ref([] as TodoListEntity[])
+	const lists = ref<TodoListEntity[]>([])
 	const loading = ref(false)
-	const selectedCategoryId = ref<number | null>(null)
-	const categorySortAsc = ref(true)
-	const hideEmptyCategories = ref(false)
-	const categoryFilterName = ref<string | null>(null)
 	const listFilterName = ref<string | null>(null)
 	const listSortAsc = ref(true)
-	const categoryDrawerOpen = ref(false)
 	const dialog = ref<InstanceType<typeof TodoListDialog>>()
 	const categoryDialog = ref<InstanceType<typeof TodoListCategoryDialog>>()
 	const deleteDialog = ref(false)
 	const listToDelete = ref<TodoListEntity | null>(null)
-	const deleteCategoryDialog = ref(false)
-	const categoryToDelete = ref<TodoListCategoryEntity | null>(null)
+
+	const {
+		categories,
+		selectedCategoryId,
+		categorySortAsc,
+		hideEmptyCategories,
+		categoryFilterName,
+		categoryDrawerOpen,
+		deleteCategoryDialog,
+		categoryToDelete,
+		loadCategories,
+		selectCategory,
+		onMobileSelectCategory,
+		toggleCategorySort,
+		addCategory,
+		editCategory,
+		confirmDeleteCategory,
+		deleteCategoryConfirmed,
+	} = useTodoListCategories(loadLists)
 
 	onMounted(async () => {
 		await Promise.all([loadCategories(), loadLists()])
 	})
 
 	watch(listSortAsc, loadLists)
-	watch(hideEmptyCategories, loadCategories)
-	watchDebounced(categoryFilterName, loadCategories, { debounce: 300 })
 	watchDebounced(listFilterName, loadLists, { debounce: 300 })
-
-	async function loadCategories() {
-		categories.value = await fetchCategories(
-			categorySortAsc.value,
-			hideEmptyCategories.value,
-			categoryFilterName.value?.trim() || null,
-		)
-	}
 
 	async function loadLists() {
 		loading.value = true
@@ -359,21 +271,6 @@
 		} finally {
 			loading.value = false
 		}
-	}
-
-	async function selectCategory(id: number | null) {
-		selectedCategoryId.value = id
-		await loadLists()
-	}
-
-	async function onMobileSelectCategory(id: number | null) {
-		await selectCategory(id)
-		categoryDrawerOpen.value = false
-	}
-
-	async function toggleCategorySort() {
-		categorySortAsc.value = !categorySortAsc.value
-		await loadCategories()
 	}
 
 	function toggleListSort() {
@@ -405,62 +302,9 @@
 		await loadCategories()
 		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
 	}
-
-	async function addCategory(request: TodoListCategoryRequest) {
-		request.color ??= 'default'
-		await createCategory(request)
-		await loadCategories()
-		showSuccessSnackbar(i18n.t('successFeedback.added'))
-	}
-
-	async function editCategory(id: number, request: TodoListCategoryRequest) {
-		await updateCategory(id, request)
-		await loadCategories()
-		showSuccessSnackbar(i18n.t('successFeedback.edited'))
-	}
-
-	function confirmDeleteCategory(category: TodoListCategoryEntity) {
-		categoryToDelete.value = category
-		deleteCategoryDialog.value = true
-	}
-
-	async function deleteCategoryConfirmed() {
-		if (!categoryToDelete.value) return
-		await deleteCategoryEntity(categoryToDelete.value.id)
-		if (selectedCategoryId.value === categoryToDelete.value.id) {
-			selectedCategoryId.value = null
-		}
-		categoryToDelete.value = null
-		await Promise.all([loadCategories(), loadLists()])
-		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
-	}
 </script>
 
 <style scoped>
-	.list-card {
-		cursor: pointer;
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease,
-			border-color 0.2s ease;
-	}
-
-	.list-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.28) !important;
-	}
-
-	.list-icon-wrap {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 10px;
-		flex-shrink: 0;
-		background: rgba(var(--v-theme-primary), 0.1);
-	}
-
 	.empty-state {
 		display: flex;
 		flex-direction: column;

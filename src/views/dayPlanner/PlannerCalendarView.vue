@@ -45,79 +45,25 @@
 		</template>
 	</CalendarGrid>
 
-	<ActionBar
+	<ApplyTemplateActionBar
 		:isShown="isApplyTemplateMode"
+		:activeTemplates
+		v-model:templateId="applyTemplateId"
+		v-model:previewMode="applyPreviewMode"
+		v-model:conflictResolution="applyConflictResolution"
 		@cancel="toggleApplyTemplateMode"
-	>
-		<VAutocomplete
-			v-model="applyTemplateId"
-			:items="activeTemplates"
-			itemTitle="name"
-			itemValue="id"
-			label="Select template"
-			density="compact"
-			hideDetails
-			minWidth="200"
-		/>
-		<VBtnToggle
-			v-model="applyPreviewMode"
-			mandatory
-			density="compact"
-			divided
-			color="secondary"
-		>
-			<VBtn :value="true">Preview</VBtn>
-			<VBtn :value="false">Apply</VBtn>
-		</VBtnToggle>
-		<VSelect
-			v-if="!applyPreviewMode"
-			v-model="applyConflictResolution"
-			label="Conflict resolution"
-			:items="conflictResolutionOptions"
-			density="compact"
-			hideDetails
-			minWidth="185"
-		/>
-	</ActionBar>
+	/>
 
-	<ActionBar
+	<BulkSelectActionBar
 		:isShown="isBulkSelectMode"
+		:selectedCount="selectedDayIds.length"
+		:bulkApplying
 		@cancel="toggleBulkSelectMode"
-	>
-		<span class="text-textMuted font-weight-medium">
-			{{ selectedDayIds.length }} day{{ selectedDayIds.length !== 1 ? 's' : '' }} selected
-		</span>
-		<VBtn
-			variant="outlined"
-			color="secondaryOutline"
-			@click="selectAllShown"
-		>
-			Select All
-		</VBtn>
-		<VSelect
-			label="Change day type"
-			:items="dayTypeOptions"
-			density="compact"
-			minWidth="185"
-			hideDetails
-			@update:modelValue="executeBulkDayTypeChange"
-		/>
-		<VBtn
-			color="primary"
-			:disabled="selectedDayIds.length === 0"
-			:loading="bulkApplying"
-			@click="bulkApplyDialog = true"
-		>
-			Apply Template
-		</VBtn>
-		<VBtn
-			color="secondary"
-			:disabled="selectedDayIds.length === 0"
-			@click="copyDayDialog = true"
-		>
-			Copy Day
-		</VBtn>
-	</ActionBar>
+		@selectAll="selectAllShown"
+		@changeDayType="executeBulkDayTypeChange"
+		@openApplyTemplate="bulkApplyDialog = true"
+		@openCopyDay="copyDayDialog = true"
+	/>
 
 	<BulkApplyTemplateDialog
 		v-model="bulkApplyDialog"
@@ -151,7 +97,8 @@
 	import BulkApplyTemplateDialog from '@/components/dayPlanner/calendar/BulkApplyTemplateDialog.vue'
 	import CopyDayDialog from '@/components/dayPlanner/calendar/CopyDayDialog.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ApplyTemplateActionBar from '@/components/dayPlanner/calendar/ApplyTemplateActionBar.vue'
+	import BulkSelectActionBar from '@/components/dayPlanner/calendar/BulkSelectActionBar.vue'
 	import router from '@/plugins/router.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
@@ -162,34 +109,41 @@
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import { ApplyTemplateToTaskPlannerRequest } from '@/dtos/request/activityPlanning/ApplyTemplateToTaskPlannerRequest.ts'
 	import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
+	import { useCalendarModes } from '@/composables/dayPlanner/useCalendarModes.ts'
 
 	const { usStringToUrlString, formatToDate } = useDateTime()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
+	const { showFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
 	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const { updateWithResponse: updateCalendar, fetchByDate } = useCalendarQuery()
 
+	const {
+		isBulkSelectMode,
+		isEditDetailsMode,
+		isApplyTemplateMode,
+		selectedDayIds,
+		applyTemplateId,
+		applyPreviewMode,
+		toggleBulkSelectMode,
+		toggleEditDetailsMode,
+		toggleApplyTemplateMode,
+		toggleDaySelection,
+	} = useCalendarModes()
+
 	const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
 	const dayTasksMap = ref<Map<number, PlannerTask[]>>(new Map())
 	const activeTemplates = ref<TaskPlannerDayTemplate[]>([])
-	const isBulkSelectMode = ref(false)
-	const isEditDetailsMode = ref(false)
-	const isApplyTemplateMode = ref(false)
-	const applyTemplateId = ref<number | null>(null)
-	const applyPreviewMode = ref(true)
 	const applyConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
-
-	const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
-	const selectedDayIds = ref<number[]>([])
 	const bulkApplyDialog = ref(false)
 	const bulkApplying = ref(false)
 	const copyDayDialog = ref(false)
@@ -198,9 +152,8 @@
 
 	const calendarDays = computed(() => (calendarGridRef.value?.calendarData ?? []) as Calendar[])
 
-	const dayTypeOptions = Object.values(DayType).map(v => ({ title: v, value: v }))
-
 	onMounted(async () => {
+		showFullScreenLoading()
 		await settingsStore.loadSettings()
 		applyTemplateId.value = settingsStore.defaultApplyTemplateId
 		applyConflictResolution.value = settingsStore.defaultConflictResolution
@@ -262,48 +215,9 @@
 		selectedDayIds.value = calendarDays.value.map(d => d.id)
 	}
 
-	function toggleDaySelection(calendarId: number) {
-		const idx = selectedDayIds.value.indexOf(calendarId)
-		if (idx >= 0) selectedDayIds.value.splice(idx, 1)
-		else selectedDayIds.value.push(calendarId)
-	}
-
 	function handleEditDetails(day: Calendar) {
 		editingDay.value = day
 		detailsDialog.value = true
-	}
-
-	function toggleBulkSelectMode() {
-		isBulkSelectMode.value = !isBulkSelectMode.value
-		if (isBulkSelectMode.value) {
-			isEditDetailsMode.value = false
-			isApplyTemplateMode.value = false
-			applyTemplateId.value = null
-		} else {
-			selectedDayIds.value = []
-		}
-	}
-
-	function toggleEditDetailsMode() {
-		isEditDetailsMode.value = !isEditDetailsMode.value
-		if (isEditDetailsMode.value) {
-			isBulkSelectMode.value = false
-			isApplyTemplateMode.value = false
-			selectedDayIds.value = []
-			applyTemplateId.value = null
-		}
-	}
-
-	function toggleApplyTemplateMode() {
-		isApplyTemplateMode.value = !isApplyTemplateMode.value
-		if (isApplyTemplateMode.value) {
-			isBulkSelectMode.value = false
-			isEditDetailsMode.value = false
-			selectedDayIds.value = []
-		} else {
-			applyTemplateId.value = null
-			applyPreviewMode.value = true
-		}
 	}
 
 	async function applyTemplateToDaySingle(day: Calendar, template: TaskPlannerDayTemplate) {

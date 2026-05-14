@@ -25,6 +25,7 @@
 					label="Left Template"
 					class="mb-2"
 					hideDetails
+					:loading="templateOptionsLoading"
 				/>
 				<TemplateDayPlannerView
 					v-if="leftTemplateId !== null"
@@ -54,6 +55,7 @@
 					label="Right Template"
 					class="mb-2"
 					hideDetails
+					:loading="templateOptionsLoading"
 				/>
 				<TemplateDayPlannerView
 					v-if="rightTemplateId !== null"
@@ -95,6 +97,7 @@
 	const secondaryStore = useSecondaryTemplateDayPlannerStore()
 
 	const templateOptions = ref<{ id: number; text: string }[]>([])
+	const templateOptionsLoading = ref(false)
 	const leftTemplateId = ref<number | null>(null)
 	const rightTemplateId = ref<number | null>(null)
 
@@ -107,8 +110,10 @@
 	let monitorCleanup: (() => void) | null = null
 
 	onMounted(async () => {
+		templateOptionsLoading.value = true
 		const templates = await fetchAll()
 		templateOptions.value = templates.map(t => ({ id: t.id, text: t.name }))
+		templateOptionsLoading.value = false
 
 		setupDropTargets()
 

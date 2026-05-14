@@ -16,7 +16,7 @@
 				<div class="timeline-track">
 					<div
 						class="timeline-fill"
-						:style="{ width: seg.fill + '%' }"
+						:style="{ width: seg.fill + '%', backgroundColor: getBgColor(color) }"
 					/>
 				</div>
 				<span
@@ -38,9 +38,11 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import { useColor } from '@/utils/colorPalette.ts'
 
-	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity }>()
+	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity; color: string }>()
 
+	const { getBgColor } = useColor()
 	const { t } = useI18n()
 
 	interface TimelineSegment {
@@ -62,7 +64,8 @@
 		if (!timePeriod.nextResetAt) return ''
 		const msRemaining = new Date(timePeriod.nextResetAt).getTime() - Date.now()
 		const daysRemaining = msRemaining / (1000 * 60 * 60 * 24)
-		if (daysRemaining < 2) return t('routineTodoList.hoursLeft', { hours: roundHalf(msRemaining / (1000 * 60 * 60)) })
+		if (daysRemaining < 2)
+			return t('routineTodoList.hoursLeft', { hours: roundHalf(msRemaining / (1000 * 60 * 60)) })
 		if (daysRemaining < 30) return t('routineTodoList.daysLeft', { days: roundHalf(daysRemaining) })
 		if (daysRemaining < 90) return t('routineTodoList.weeksLeft', { weeks: roundHalf(daysRemaining / 7) })
 		return t('routineTodoList.monthsLeft', { months: roundHalf(daysRemaining / 30) })
@@ -103,7 +106,11 @@
 		return boundaries.slice(0, -1).map((slotStart, i) => {
 			const slotEnd = boundaries[i + 1]
 			const fill =
-				slotEnd <= now ? 100 : slotStart >= now ? 0 : Math.round(((now - slotStart) / (slotEnd - slotStart)) * 100)
+				slotEnd <= now
+					? 100
+					: slotStart >= now
+						? 0
+						: Math.round(((now - slotStart) / (slotEnd - slotStart)) * 100)
 
 			const labelDate = new Date(slotStart)
 			const label =
@@ -146,7 +153,6 @@
 
 	.timeline-fill {
 		height: 100%;
-		background: rgb(var(--v-theme-secondary));
 		border-radius: 4px;
 		transition: width 0.3s ease;
 	}

@@ -45,7 +45,7 @@
 		/>
 
 		<div
-			class="flex-fill overflow-y-auto d-flex flex-column ga-2"
+			class="flex-fill overflow-y-auto d-flex flex-column ga-4"
 			style="height: 0"
 		>
 			<div
@@ -57,7 +57,7 @@
 				<!-- Drop zone above item (invisible overlay) - only when dragging -->
 				<div
 					v-if="isInChangeOrderMode && isDragging && index === 0"
-					:ref="el => setDropZoneRef(el as HTMLElement, index, 'top')"
+					:ref="(el: HTMLElement) => setDropZoneRef(el as HTMLElement, index, 'top')"
 					class="drop-zone-overlay drop-zone-overlay--top"
 				/>
 
@@ -79,7 +79,7 @@
 				<!-- Drop zone below item (invisible overlay) - only when dragging -->
 				<div
 					v-if="isInChangeOrderMode && isDragging"
-					:ref="el => setDropZoneRef(el as HTMLElement, index, 'bottom')"
+					:ref="(el: HTMLElement) => setDropZoneRef(el as HTMLElement, index, 'bottom')"
 					class="drop-zone-overlay"
 					:class="{ 'drop-zone-overlay--bottom': index === items.length - 1 }"
 				/>
@@ -120,11 +120,11 @@
 	import { computed, onMounted, ref, toRef } from 'vue'
 	import TodoListItemDragAndDropPlaceholder from '@/components/toDoList/dragAndDrop/TodoListItemDragAndDropPlaceholder.vue'
 	import TodoListEmptyDropZone from '@/components/toDoList/dragAndDrop/TodoListEmptyDropZone.vue'
-	import { useTodoListDragAndDrop } from '@/composables/useTodoListDragAndDrop.ts'
 	import { useAutoAnimate } from '@formkit/auto-animate/vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
+	import { useTodoListDragAndDrop } from '@/composables/todoListDragAndDrop/useTodoListDragAndDrop.ts'
 
 	const { items, isInChangeOrderMode, listId, activityIds, allItems } = defineProps<{
 		items: TEntity[]
@@ -246,7 +246,7 @@
 	.todo-list {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 16px;
 		padding: 0;
 		min-height: 200px;
 		position: relative;

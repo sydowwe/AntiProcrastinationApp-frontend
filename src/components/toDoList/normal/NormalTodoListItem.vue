@@ -3,6 +3,8 @@
 		:kind="ToDoListKind.NORMAL"
 		:listId
 		:toDoListItem
+		:isInChangeOrderMode
+		:isDragging
 		:color="toDoListItem.taskPriority.color"
 		:isOverdue="dueDateChip?.overdue ?? false"
 		@edit="emits('edit', $event)"
@@ -44,7 +46,7 @@
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 
-	const { toDoListItem } = defineProps<{
+	const { toDoListItem, isInChangeOrderMode = false, isDragging = false } = defineProps<{
 		toDoListItem: TodoListItemEntity
 		isInChangeOrderMode?: boolean
 		listId: number

@@ -108,16 +108,16 @@
 					>
 						<div
 							:ref="
-								el =>
+								(el: HTMLElement) =>
 									registerCard(el as HTMLElement, template.id, 'pinned', () =>
 										pinnedTemplates.map(t => t.id),
 									)
 							"
 							:class="{
 								'drag-over-before':
-									dragOverState?.templateId === template.id && dragOverState.position === 'before',
+									dragOverState?.templateId === template.id && dragOverState?.position === 'before',
 								'drag-over-after':
-									dragOverState?.templateId === template.id && dragOverState.position === 'after',
+									dragOverState?.templateId === template.id && dragOverState?.position === 'after',
 							}"
 							class="template-drag-wrapper"
 						>
@@ -156,16 +156,16 @@
 				>
 					<div
 						:ref="
-							el =>
+							(el: HTMLElement) =>
 								registerCard(el as HTMLElement, template.id, 'active', () =>
 									activeUnpinnedTemplates.map(t => t.id),
 								)
 						"
 						:class="{
 							'drag-over-before':
-								dragOverState?.templateId === template.id && dragOverState.position === 'before',
+								dragOverState?.templateId === template.id && dragOverState?.position === 'before',
 							'drag-over-after':
-								dragOverState?.templateId === template.id && dragOverState.position === 'after',
+								dragOverState?.templateId === template.id && dragOverState?.position === 'after',
 						}"
 						class="template-drag-wrapper h-100"
 					>
@@ -209,16 +209,16 @@
 					>
 						<div
 							:ref="
-								el =>
+								(el: HTMLElement) =>
 									registerCard(el as HTMLElement, template.id, 'inactive', () =>
 										inactiveUnpinnedTemplates.map(t => t.id),
 									)
 							"
 							:class="{
 								'drag-over-before':
-									dragOverState?.templateId === template.id && dragOverState.position === 'before',
+									dragOverState?.templateId === template.id && dragOverState?.position === 'before',
 								'drag-over-after':
-									dragOverState?.templateId === template.id && dragOverState.position === 'after',
+									dragOverState?.templateId === template.id && dragOverState?.position === 'after',
 							}"
 							class="template-drag-wrapper"
 						>

@@ -59,7 +59,7 @@
 		<VSheet
 			class="px-3 d-flex align-center ga-2"
 			rounded
-			:style="{ backgroundColor: getBgColor(timePeriod.color) }"
+			:color="getBgColor(timePeriod.color)"
 			style="cursor: default"
 		>
 			<VCardTitle class="px-0 py-0">{{ timePeriod.text }}</VCardTitle>

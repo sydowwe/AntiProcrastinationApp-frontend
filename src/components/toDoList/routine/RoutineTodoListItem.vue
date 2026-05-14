@@ -3,6 +3,8 @@
 		:kind="ToDoListKind.ROUTINE"
 		:listId
 		:toDoListItem
+		:isInChangeOrderMode
+		:isDragging
 		:color="toDoListItem.color"
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
@@ -43,13 +45,22 @@
 		</template>
 		<template #post-chips>
 			<VChip
-				v-if="toDoListItem.suggestedDay"
+				v-for="day in toDoListItem.suggestedDays"
+				:key="day"
+				size="x-small"
+				variant="tonal"
+				color="neutral-600"
+			>
+				{{ DAY_OF_WEEK_SHORT_LABELS[day] }}
+			</VChip>
+			<VChip
+				v-if="toDoListItem.suggestedDayOfMonth"
 				size="x-small"
 				variant="tonal"
 				color="neutral-600"
 				prependIcon="calendar-day"
 			>
-				{{ weekDayNames[toDoListItem.suggestedDay - 1] }}
+				Day {{ toDoListItem.suggestedDayOfMonth }}
 			</VChip>
 		</template>
 	</BaseTodoListItem>
@@ -60,8 +71,9 @@
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import BaseTodoListItem from '@/components/toDoList/BaseTodoListItem.vue'
+	import { DAY_OF_WEEK_SHORT_LABELS } from '@/dtos/enum/DayOfWeek.ts'
 
-	const { toDoListItem, streakConfig } = defineProps<{
+	const { toDoListItem, streakConfig, isInChangeOrderMode = false, isDragging = false } = defineProps<{
 		toDoListItem: RoutineTodoListItemEntity
 		streakConfig?: { graceDays: number; periodLengthInDays: number }
 		isInChangeOrderMode?: boolean
@@ -78,8 +90,6 @@
 		logTime: [toDoListItem: RoutineTodoListItemEntity]
 		itemClicked: [toDoListItem: RoutineTodoListItemEntity]
 	}>()
-
-	const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 	const gracePeriodActive = computed(() => {
 		if (!streakConfig || !toDoListItem.lastCompletedAt || !toDoListItem.streak) return false
