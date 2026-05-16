@@ -1,5 +1,9 @@
 <template>
-	<LogTimeController ref="inner" @confirm="handleConfirm" @trackingDone="handleTrackingDone" />
+	<LogTimeController
+		ref="inner"
+		@confirm="handleConfirm"
+		@trackingDone="handleTrackingDone"
+	/>
 </template>
 
 <script setup lang="ts">
@@ -13,7 +17,10 @@
 
 	const { kind } = defineProps<{ kind: ToDoListKind }>()
 
-	const emit = defineEmits<{ itemsChanged: [ids: number[]] }>()
+	const emit = defineEmits<{
+		itemsChanged: [ids: number[]]
+		logTimeCreated: [{ historyRecordId: number; itemId: number | undefined; itemWasCompleted: boolean }]
+	}>()
 
 	const { create: createActivityHistory } = useActivityHistoryCrud()
 	const { showSuccessSnackbar } = useSnackbar()
@@ -24,19 +31,30 @@
 
 	const url = kind === ToDoListKind.ROUTINE ? 'routine-todo-list' : 'todo-list-item'
 
-	function open(activityId: number, activityName: string, isManual = false, initialStartTime?: Time, initialLength?: Time, itemId?: number) {
+	function open(
+		activityId: number,
+		activityName: string,
+		isManual = false,
+		initialStartTime?: Time,
+		initialLength?: Time,
+		itemId?: number,
+	) {
 		currentItemId.value = itemId ?? null
 		currentActivityId.value = activityId
 		inner.value?.open(activityId, activityName, isManual, initialStartTime, initialLength)
 	}
 
 	async function finalize(startTimestamp: Date, length: Time) {
-		await createActivityHistory(startTimestamp, length, currentActivityId.value!)
+		const historyRecordId = await createActivityHistory(startTimestamp, length, currentActivityId.value!)
 		showSuccessSnackbar('Time logged')
+		const itemId = currentItemId.value ?? undefined
+		let itemWasCompleted = false
 		if (currentItemId.value !== null) {
 			await API.patch(`/${url}/toggle-is-done`, { ids: [currentItemId.value] })
+			itemWasCompleted = true
 			emit('itemsChanged', [currentItemId.value])
 		}
+		emit('logTimeCreated', { historyRecordId, itemId, itemWasCompleted })
 		currentItemId.value = null
 		currentActivityId.value = null
 	}

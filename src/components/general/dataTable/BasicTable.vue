@@ -120,6 +120,7 @@
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { getNestedValue } from '@/composables/table/TableHeaderComposable.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import { useUserStore } from '@/stores/userStore.ts'
 
 	const {
 		itemsLength,
@@ -140,17 +141,26 @@
 		showSelect?: boolean
 		deleteConfirmationColumn?: string
 	}>()
+
 	const emit = defineEmits<{
 		(e: 'onAdd'): void
 		(e: 'onDelete', item: TItem): void
 		(e: 'onEdit', item: TItem): void
 		(e: 'onLoadItems'): void
 	}>()
+
 	const items = defineModel<TItem[]>({ required: true })
+
 	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
+
 	const page = defineModel<number>('page', { required: true })
+
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
+
 	const loading = defineModel<boolean>('loading', { required: true })
+
+	const userStore = useUserStore()
+
 	const actions = actionsProp ?? [
 		new TableAction('edit', 'Upraviť', 'primaryOutline', 'tonal', 'pen', edit),
 		new TableAction('delete', 'Vymazať', 'secondaryOutline', 'tonal', 'trash', del),
@@ -176,8 +186,12 @@
 	}
 
 	function del(item: TItem) {
-		deleteDialog.value = true
 		const name = deleteConfirmationColumn ? (item as Record<string, unknown>)[deleteConfirmationColumn] : item.id
+		if (!userStore.currentUser.askBeforeDelete) {
+			emit('onDelete', item)
+			return
+		}
+		deleteDialog.value = true
 		deleteConfirmationText.value = `Are you sure you want to delete ${name}?`
 	}
 

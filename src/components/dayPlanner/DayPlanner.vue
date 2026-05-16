@@ -65,7 +65,7 @@
 		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
 	"
 >
-	import { computed, inject } from 'vue'
+	import { computed, inject, watch } from 'vue'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
@@ -74,16 +74,25 @@
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 	import ActionBar from '@/components/general/ActionBar.vue'
+	import { useUserStore } from '@/stores/userStore.ts'
 
 	const emit = defineEmits<{
 		delete: []
 	}>()
 
 	const store = inject<TStore>('plannerStore')!
+	const userStore = useUserStore()
 
 	const deleteDialogVisible = computed({
 		get: () => store.deleteDialog,
 		set: value => store.$patch({ deleteDialog: value }),
+	})
+
+	watch(deleteDialogVisible, val => {
+		if (val && !userStore.currentUser.askBeforeDelete) {
+			deleteDialogVisible.value = false
+			emit('delete')
+		}
 	})
 
 	const deleteConfirmationText = computed(() => {

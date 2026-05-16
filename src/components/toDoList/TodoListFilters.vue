@@ -59,13 +59,12 @@
 	import type { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 	import type { DueFilter } from '@/composables/todoList/useTodoListFilters.ts'
 
-	const filterPriorityIds = defineModel<number[]>('filterPriorityIds', { default: [] })
-	const filterDueState = defineModel<DueFilter>('filterDueState', { default: null })
-
 	const { isInChangeOrderMode, availablePriorities } = defineProps<{
 		isInChangeOrderMode: boolean
 		availablePriorities: TaskPriority[]
 	}>()
+	const filterPriorityIds = defineModel<number[]>('filterPriorityIds', { default: [] })
+	const filterDueState = defineModel<DueFilter>('filterDueState', { default: null })
 
 	function clearFilters() {
 		filterPriorityIds.value = []

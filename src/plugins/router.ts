@@ -14,6 +14,7 @@ import ForgottenPasswordView from '@/views/user/ForgottenPasswordView.vue'
 import UserSettingsView from '@/views/user/UserSettingsView.vue'
 import RoutineToDoListView from '@/views/todoList/RoutineToDoListView.vue'
 import ConfirmEmailView from '@/views/user/ConfirmEmailView.vue'
+import ConfirmEmailChangeView from '@/views/user/ConfirmEmailChangeView.vue'
 import { useUserStore } from '@/stores/userStore'
 import { useLoading } from '@/composables/general/LoadingComposable.ts'
 // import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
@@ -45,6 +46,12 @@ const router = createRouter({
 			path: '/confirm-email',
 			name: 'confirmEmail',
 			component: ConfirmEmailView,
+			meta: { showRecaptchaBadge: true },
+		},
+		{
+			path: '/confirm-email-change',
+			name: 'confirmEmailChange',
+			component: ConfirmEmailChangeView,
 			meta: { showRecaptchaBadge: true },
 		},
 		{
@@ -206,7 +213,14 @@ const router = createRouter({
 })
 
 const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
-const allowedRoutes = ['login', 'registration', 'termsAndConditions', 'confirmEmail', 'forgottenPassword']
+const allowedRoutes = [
+	'login',
+	'registration',
+	'termsAndConditions',
+	'confirmEmail',
+	'confirmEmailChange',
+	'forgottenPassword',
+]
 router.beforeEach(to => {
 	showFullScreenLoading()
 	if (!allowedRoutes.includes(to.name?.toString() ?? '') && !useUserStore().isAuthenticated) {

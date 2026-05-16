@@ -31,5 +31,15 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 		return TemplateSuggestionResponse.listFromObjects(response.data)
 	}
 
-	return { fetchById, fetchByName, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity, fetchSuggestions }
+	return {
+		fetchById,
+		fetchByName,
+		fetchAll,
+		fetchSelectOptions,
+		createWithResponse,
+		create,
+		update,
+		deleteEntity,
+		fetchSuggestions,
+	}
 }

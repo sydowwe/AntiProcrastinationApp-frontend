@@ -281,6 +281,7 @@
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useUserStore } from '@/stores/userStore.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
@@ -299,6 +300,7 @@
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const userStore = useUserStore()
 	const { formatToUsString, usStringToUrlString } = useDateTime()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
@@ -498,9 +500,13 @@
 		})
 	}
 
-	function confirmDelete(template: TaskPlannerDayTemplate) {
+	async function confirmDelete(template: TaskPlannerDayTemplate) {
 		templateToDelete.value = template
-		deleteDialog.value = true
+		if (!userStore.currentUser.askBeforeDelete) {
+			await deleteTemplate()
+		} else {
+			deleteDialog.value = true
+		}
 	}
 
 	async function deleteTemplate() {

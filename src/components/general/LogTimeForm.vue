@@ -33,10 +33,9 @@
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { VForm } from 'vuetify/components'
 
+	const emit = defineEmits<{ submit: [] }>()
 	const dateTime = defineModel<Date>('dateTime', { required: true })
 	const length = defineModel<Time>('length', { required: true })
-
-	const emit = defineEmits<{ submit: [] }>()
 
 	const { t } = useI18n()
 	const form = ref<InstanceType<typeof VForm>>()

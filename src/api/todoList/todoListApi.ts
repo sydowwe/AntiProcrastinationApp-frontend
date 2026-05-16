@@ -9,7 +9,10 @@ import { SortByRequest } from '@/dtos/request/base/SortByRequest.ts'
 
 export function useTodoListCrud() {
 	const url = 'todo-list'
-	const { fetchById } = useEntityQuery<TodoListEntity>({ responseClass: TodoListEntity, entityName: url })
+	const { fetchById, fetchSelectOptions } = useEntityQuery<TodoListEntity>({
+		responseClass: TodoListEntity,
+		entityName: url,
+	})
 	const { createWithResponse, update, deleteEntity } = useEntityCommand<
 		TodoListEntity,
 		TodoListRequest,
@@ -30,5 +33,5 @@ export function useTodoListCrud() {
 			new FilterSortRequest(true, [new SortByRequest('name', isDesc)], new TodoListFilter(categoryId, name)),
 		)
 
-	return { fetchById, createWithResponse, update, deleteEntity, fetchFilteredSorted }
+	return { fetchById, fetchSelectOptions, createWithResponse, update, deleteEntity, fetchFilteredSorted }
 }

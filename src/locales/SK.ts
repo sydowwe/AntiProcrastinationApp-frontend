@@ -237,6 +237,7 @@ const SK = {
 		all: `Všetky`,
 		addToPlanner: `Pridať do plánovača`,
 		logTime: `Zaznamenať čas`,
+		moveToList: `Presunúť do zoznamu`,
 	},
 	dateTime: {
 		when: `Kedy`,
@@ -340,6 +341,9 @@ const SK = {
 		resendConfirmationEmail: `Opätovne odoslať potvrdzovací email`,
 		confirmationEmailResent: `Potvrdzovací email bol opätovne odoslaný na vašu emailovú adresu. Skontrolujte svoju schránku a kliknite na odkaz v emaile, aby ste potvrdili svoju adresu. Toto okno môžete zavrieť.`,
 
+		emailChangeConfirmed: `E-mailová adresa bola úspešne zmenená, môžete sa prihlásiť s novým e-mailom`,
+		errorConfirmingEmailChange: `Chyba pri potvrdení zmeny e-mailu, skúste to prosím znova`,
+
 		userDoesntExist: `Používateľ s emailom: '{email}' neexistuje`,
 		wrongPassword: `Nesprávne heslo`,
 		login: `Prihlásenie`,
@@ -420,6 +424,8 @@ const SK = {
 		errorSavingToHistory: `Chyba pri ukladaní {name} do histórie`,
 		clearFilters: `Vymazať filtre`,
 		confirmBatchDelete: `Vymazať {count} vybraných úloh?`,
+		moveToList: `Presunúť do zoznamu`,
+		destinationList: `Cieľový zoznam`,
 		namedList: {
 			lists: `To-do zoznamy`,
 			categories: `Kategórie`,
@@ -461,6 +467,8 @@ const SK = {
 		sortCustom: `Vlastné poradie`,
 		sortUndoneFirst: `Nehotové prvé`,
 		sortDoneFirst: `Hotové prvé`,
+		personalBests: `Osobné rekordy`,
+		consistency: `Konzistentnosť`,
 	},
 	user: {
 		userSettings: `Uživateľské nastavenia`,
@@ -493,6 +501,45 @@ const SK = {
 		twoFactorAuthDisabled: `Dvojfaktorové overenie vypnuté`,
 		noQrCodeReceived: `Server nevrátil QR kód`,
 		noScratchCodeReceived: `Server nevrátil záložný kód`,
+		// Account info
+		accountInfo: `Informácie o účte`,
+		security: `Bezpečnosť`,
+		memberSince: `Člen od`,
+		lastLogin: `Posledné prihlásenie`,
+		verified: `Overený`,
+		emailNotVerified: `Neoverený`,
+		resendVerification: `Znovu odoslať overenie`,
+		verificationSent: `Overovací email odoslaný`,
+		// Appearance
+		appearance: `Vzhľad`,
+		language: `Jazyk`,
+		timezone: `Časové pásmo`,
+		firstDayOfWeek: `Prvý deň týždňa`,
+		preferenceSaved: `Nastavenie uložené`,
+		// Preferences
+		preferences: `Predvoľby`,
+		askBeforeDelete: `Pýtať sa pred vymazaním`,
+		// Sessions
+		sessions: `Aktívne sedenia`,
+		thisDevice: `Toto zariadenie`,
+		lastUsed: `Naposledy použité`,
+		revokeSession: `Odvolať`,
+		logOutAllOtherDevices: `Odhlásiť zo všetkých ostatných zariadení`,
+		logOutAllOtherDevicesConfirm: `Tým sa ukončia všetky sedenia okrem tohto zariadenia. Pokračovať?`,
+		sessionRevoked: `Sedenie odvolané`,
+		allOtherSessionsRevoked: `Všetky ostatné sedenia odvolané`,
+		noSessions: `Žiadne aktívne sedenia`,
+		// Export
+		exportData: `Exportovať moje dáta`,
+		exportDataDescription: `Stiahnuť úplnú zálohu dát účtu vo formáte JSON.`,
+		exportSuccess: `Export úspešne stiahnutý`,
+		exportFailed: `Export dát zlyhal`,
+		// About
+		about: `O aplikácii`,
+		appVersion: `Verzia aplikácie`,
+		termsOfService: `Podmienky používania`,
+		privacyPolicy: `Zásady ochrany súkromia`,
+		contactSupport: `Kontaktovať podporu`,
 	},
 	googleCalendar: {
 		title: `Google Kalendár`,
@@ -511,14 +558,30 @@ const SK = {
 		added: `Pridané`,
 		edited: `Upravené`,
 		deleted: `Vymazané`,
+		moved: `Úspešne presunuté`,
 	},
 	tracker: {
 		stackedBars: `Stĺpcový graf`,
 		timeline: `Časová os`,
 	},
 	theme: {
+		label: `Téma`,
+		light: `Svetlá`,
+		dark: `Tmavá`,
+		system: `Systémová`,
 		switchToLight: `Prepnúť na svetlý režim`,
 		switchToDark: `Prepnúť na tmavý režim`,
+	},
+	locales: {
+		SK: `Slovenčina`,
+		EN: `Angličtina`,
+		CZ: `Čeština`,
+	},
+	weekdays: {
+		short: {
+			mon: `Po`,
+			sun: `Ne`,
+		},
 	},
 	home: {
 		dayPlanner: `Plánovač dňa`,

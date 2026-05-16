@@ -69,7 +69,11 @@
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
-	import { getPlannerTaskStatusColor, getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
+	import {
+		getPlannerTaskStatusColor,
+		getPlannerTaskStatusIcon,
+		PlannerTaskStatus,
+	} from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 

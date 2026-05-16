@@ -107,7 +107,7 @@
 						</template>
 						<VList>
 							<VListItem
-								v-for="(item, i) in actions"
+								v-for="(item, i) in [...actions, ...additionalActions]"
 								:key="i"
 								class="px-3"
 							>
@@ -167,6 +167,7 @@
 		isInChangeOrderMode = false,
 		listId,
 		isDragging = false,
+		additionalActions = [],
 	} = defineProps<{
 		toDoListItem: TItem
 		color?: string | null
@@ -174,6 +175,7 @@
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
+		additionalActions?: MenuItem[]
 	}>()
 
 	const emits = defineEmits<{

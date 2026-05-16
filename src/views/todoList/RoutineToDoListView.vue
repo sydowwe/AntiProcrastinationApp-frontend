@@ -42,6 +42,12 @@
 				>
 					{{ $t('routineTodoList.reorder') }}
 				</VBtn>
+				<TodoListUndoBtn
+					:canUndo
+					:stackSize
+					:nextUndoDescription
+					@click="undo"
+				/>
 			</div>
 		</div>
 		<VRow
@@ -70,6 +76,7 @@
 					@edit="toDoListDialog?.openEdit"
 					@isDoneChanged="handleIsDoneChange"
 					@stepToggled="onItemsChanged"
+					@uncheckAll="(doneIds: number[]) => handleUncheckAll(doneIds, group.timePeriod.id as number)"
 					@itemsReordered="
 						(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
 							handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)
@@ -94,6 +101,7 @@
 		ref="logTimeController"
 		:kind="ToDoListKind.ROUTINE"
 		@itemsChanged="onItemsChanged"
+		@logTimeCreated="onLogTimeCreated"
 	/>
 	<RoutineConfetti
 		v-if="showConfetti"
@@ -107,17 +115,19 @@
 	import RoutineGroupCard from '@/components/toDoList/routine/RoutineGroupCard.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 	import BaseTodoListLogTimeController from '@/components/toDoList/BaseTodoListLogTimeController.vue'
+	import TodoListUndoBtn from '@/components/toDoList/TodoListUndoBtn.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
-	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
 	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
+	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
 	import { useRoutineTodoListItemCrud } from '@/api/routineTodoList/routineTodoListApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useTodoListUndo } from '@/composables/todoList/useTodoListUndo.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
@@ -129,12 +139,32 @@
 	const { t } = useI18n()
 	const { smAndDown } = useDisplay()
 
-	const { fetchById, createWithResponse, update, deleteEntity, getAllGrouped, changeDisplayOrder, toggleIsDone } =
-		useRoutineTodoListItemCrud()
+	const {
+		fetchById,
+		createWithResponse,
+		update,
+		deleteEntity,
+		getAllGrouped,
+		changeDisplayOrder,
+		toggleIsDone,
+		uncheckAll: uncheckAllApi,
+	} = useRoutineTodoListItemCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const plannerStore = useDayPlannerStore()
+
+	const {
+		undo,
+		canUndo,
+		stackSize,
+		nextUndoDescription,
+		pushDeleteUndo,
+		pushUncheckAllUndo,
+		pushReorderUndo,
+		pushEditUndo,
+		pushLogTimeUndo,
+	} = useTodoListUndo()
 
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
 	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
@@ -236,6 +266,7 @@
 	}
 
 	async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
+		const savedRequest = RoutineTodoListItemRequest.fromEntity(beforeEditEntity)
 		await update(beforeEditEntity.id, toDoListItemRequest)
 		const updatedItem = await fetchById(beforeEditEntity.id)
 		const updatedList = groupedItems.value.find(group => group.timePeriod.id === updatedItem.timePeriod.id)?.items
@@ -253,13 +284,39 @@
 			}
 		}
 		showSuccessSnackbar(t('successFeedback.updated'))
+		pushEditUndo(beforeEditEntity.activity.name, async () => {
+			await update(beforeEditEntity.id, savedRequest)
+			const reverted = await fetchById(beforeEditEntity.id)
+			const targetGroup = groupedItems.value.find(g => g.timePeriod.id === reverted.timePeriod.id)
+			if (targetGroup) {
+				const idx = targetGroup.items.findIndex(i => i.id === reverted.id)
+				if (idx !== -1) targetGroup.items[idx] = reverted
+				else targetGroup.items.push(reverted)
+			}
+			if (reverted.timePeriod.id !== updatedItem.timePeriod.id) {
+				const movedGroup = groupedItems.value.find(g => g.timePeriod.id === updatedItem.timePeriod.id)
+				if (movedGroup) movedGroup.items = movedGroup.items.filter(i => i.id !== reverted.id)
+			}
+		})
 	}
 
-	function onDelete(id: number) {
-		deleteEntity(id).then(() => {
-			const group = groupedItems.value.find(group => group.items.some(item => item.id === id))
-			if (group) {
-				group.items = group.items.filter(item => item.id !== id)
+	async function onDelete(id: number) {
+		const group = groupedItems.value.find(g => g.items.some(item => item.id === id))
+		if (!group) return
+		const savedIndex = group.items.findIndex(item => item.id === id)
+		const savedItem = group.items[savedIndex]
+		if (!savedItem) return
+		const precedingId = savedIndex > 0 ? (group.items[savedIndex - 1]?.id ?? null) : null
+		const followingId = savedIndex < group.items.length - 1 ? (group.items[savedIndex + 1]?.id ?? null) : null
+		await deleteEntity(id)
+		group.items = group.items.filter(item => item.id !== id)
+		pushDeleteUndo(savedItem.activity.name, async () => {
+			const restored = await createWithResponse(RoutineTodoListItemRequest.fromEntity(savedItem))
+			await changeDisplayOrder(new ChangeDisplayOrderRequest(restored.id, precedingId, followingId))
+			const targetGroup = groupedItems.value.find(g => g.timePeriod.id === restored.timePeriod.id)
+			if (targetGroup) {
+				targetGroup.items.push(restored)
+				targetGroup.items.sort((a, b) => a.id - b.id)
 			}
 		})
 	}
@@ -284,6 +341,37 @@
 		)
 	}
 
+	function onLogTimeCreated({
+		historyRecordId,
+		itemId,
+		itemWasCompleted,
+	}: {
+		historyRecordId: number
+		itemId: number | undefined
+		itemWasCompleted: boolean
+	}) {
+		let activityName = ''
+		if (itemId !== undefined) {
+			for (const group of groupedItems.value) {
+				const found = group.items.find(i => i.id === itemId)
+				if (found) {
+					activityName = found.activity.name
+					break
+				}
+			}
+		}
+		pushLogTimeUndo(
+			activityName,
+			historyRecordId,
+			itemWasCompleted && itemId !== undefined
+				? async () => {
+						await toggleIsDone(itemId, false)
+						await onItemsChanged([itemId])
+					}
+				: undefined,
+		)
+	}
+
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(t('successFeedback.added'))
@@ -301,13 +389,35 @@
 		timePeriodId: number,
 	) {
 		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
-		if (group) {
-			const [movedItem] = group.items.splice(oldIndex, 1)
-			if (movedItem) {
-				group.items.splice(newIndex, 0, movedItem)
+		if (!group) return
+		const movedItem = group.items[oldIndex]
+		if (!movedItem) return
+		const originalPrecedingId = oldIndex > 0 ? (group.items[oldIndex - 1]?.id ?? null) : null
+		const originalFollowingId = oldIndex < group.items.length - 1 ? (group.items[oldIndex + 1]?.id ?? null) : null
+		const [moved] = group.items.splice(oldIndex, 1)
+		if (moved) group.items.splice(newIndex, 0, moved)
+		await changeDisplayOrder(request)
+		const reverseRequest = new ChangeDisplayOrderRequest(movedItem.id, originalPrecedingId, originalFollowingId)
+		pushReorderUndo(movedItem.activity.name, async () => {
+			await changeDisplayOrder(reverseRequest)
+			const currentGroup = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
+			if (currentGroup) {
+				const currentIndex = currentGroup.items.findIndex(i => i.id === movedItem.id)
+				if (currentIndex !== -1) {
+					const [movedBack] = currentGroup.items.splice(currentIndex, 1)
+					if (movedBack) currentGroup.items.splice(oldIndex, 0, movedBack)
+				}
 			}
-			await changeDisplayOrder(request)
-		}
+		})
+	}
+
+	async function handleUncheckAll(doneIds: number[], groupId: number) {
+		await uncheckAllApi(doneIds)
+		await onItemsChanged(doneIds)
+		pushUncheckAllUndo(doneIds.length, async () => {
+			for (const id of doneIds) await toggleIsDone(id, true)
+			await onItemsChanged(doneIds)
+		})
 	}
 
 	async function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
@@ -320,6 +430,10 @@
 		const movedItem = sourceGroup.items[sourceIndex]
 
 		if (!movedItem) return
+
+		const originalPrecedingId = sourceIndex > 0 ? (sourceGroup.items[sourceIndex - 1]?.id ?? null) : null
+		const originalFollowingId =
+			sourceIndex < sourceGroup.items.length - 1 ? (sourceGroup.items[sourceIndex + 1]?.id ?? null) : null
 
 		sourceGroup.items.splice(sourceIndex, 1)
 
@@ -345,6 +459,28 @@
 		const followingItem = targetIndex < targetGroup.items.length - 1 ? targetGroup.items[targetIndex + 1] : null
 		const orderRequest = new ChangeDisplayOrderRequest(itemId, precedingItem?.id ?? null, followingItem?.id ?? null)
 		await changeDisplayOrder(orderRequest)
+
+		const reverseUpdateRequest = new RoutineTodoListItemRequest(
+			movedItem.activity.id,
+			sourceListId,
+			movedItem.doneCount,
+			movedItem.totalCount,
+			movedItem.isDone,
+		)
+		const reverseOrderRequest = new ChangeDisplayOrderRequest(itemId, originalPrecedingId, originalFollowingId)
+		pushReorderUndo(movedItem.activity.name, async () => {
+			await update(itemId, reverseUpdateRequest)
+			await changeDisplayOrder(reverseOrderRequest)
+			const currentTarget = groupedItems.value.find(g => g.timePeriod.id === targetListId)
+			const currentSource = groupedItems.value.find(g => g.timePeriod.id === sourceListId)
+			if (currentTarget && currentSource) {
+				const idx = currentTarget.items.findIndex(i => i.id === itemId)
+				if (idx !== -1) {
+					const [item] = currentTarget.items.splice(idx, 1)
+					if (item) currentSource.items.splice(sourceIndex, 0, item)
+				}
+			}
+		})
 	}
 
 	async function onItemsChanged(changedItems: number[]) {

@@ -238,6 +238,7 @@ const EN = {
 		all: `All`,
 		addToPlanner: `Add to planner`,
 		logTime: `Log time`,
+		moveToList: `Move to list`,
 	},
 	dateTime: {
 		when: `When`,
@@ -341,6 +342,9 @@ const EN = {
 		resendConfirmationEmail: `Resend confirmation email`,
 		confirmationEmailResent: `A confirmation email has been sent again to your email address. Please check your inbox and click the link in the email to confirm your address.\n You can close this tab now.`,
 
+		emailChangeConfirmed: `Email address successfully changed, you can now log in with your new email`,
+		errorConfirmingEmailChange: `There was an error confirming your email change, please try again`,
+
 		userDoesntExist: `User with email: '{email}' doesn't exist`,
 		wrongPassword: `Wrong password`,
 		goToLogin: `Go to login page`,
@@ -420,6 +424,8 @@ const EN = {
 		errorSavingToHistory: `Error saving {name} to history`,
 		clearFilters: `Clear filters`,
 		confirmBatchDelete: `Delete {count} selected items?`,
+		moveToList: `Move to list`,
+		destinationList: `Destination list`,
 		namedList: {
 			lists: `To-do lists`,
 			categories: `Categories`,
@@ -461,6 +467,8 @@ const EN = {
 		sortCustom: `Custom order`,
 		sortUndoneFirst: `Undone first`,
 		sortDoneFirst: `Done first`,
+		personalBests: `Personal Bests`,
+		consistency: `Consistency`,
 	},
 	user: {
 		userSettings: `User settings`,
@@ -489,6 +497,45 @@ const EN = {
 		twoFactorAuthDisabled: `Two-factor authentication disabled`,
 		noQrCodeReceived: `No QR code received from server`,
 		noScratchCodeReceived: `No scratch code received from server`,
+		// Account info
+		accountInfo: `Account info`,
+		security: `Security`,
+		memberSince: `Member since`,
+		lastLogin: `Last login`,
+		verified: `Verified`,
+		emailNotVerified: `Not verified`,
+		resendVerification: `Resend verification`,
+		verificationSent: `Verification email sent`,
+		// Appearance
+		appearance: `Appearance`,
+		language: `Language`,
+		timezone: `Timezone`,
+		firstDayOfWeek: `First day of week`,
+		preferenceSaved: `Preference saved`,
+		// Preferences
+		preferences: `Preferences`,
+		askBeforeDelete: `Ask before deleting items`,
+		// Sessions
+		sessions: `Active sessions`,
+		thisDevice: `This device`,
+		lastUsed: `Last used`,
+		revokeSession: `Revoke`,
+		logOutAllOtherDevices: `Log out of all other devices`,
+		logOutAllOtherDevicesConfirm: `This will end all sessions except this device. Continue?`,
+		sessionRevoked: `Session revoked`,
+		allOtherSessionsRevoked: `All other sessions revoked`,
+		noSessions: `No active sessions found`,
+		// Export
+		exportData: `Export my data`,
+		exportDataDescription: `Download a full JSON backup of your account data.`,
+		exportSuccess: `Export downloaded successfully`,
+		exportFailed: `Failed to export data`,
+		// About
+		about: `About`,
+		appVersion: `App version`,
+		termsOfService: `Terms of Service`,
+		privacyPolicy: `Privacy Policy`,
+		contactSupport: `Contact support`,
 	},
 	googleCalendar: {
 		title: `Google Calendar`,
@@ -507,14 +554,30 @@ const EN = {
 		added: `Added`,
 		edited: `Edited`,
 		deleted: `Deleted`,
+		moved: `Moved successfully`,
 	},
 	tracker: {
 		stackedBars: `Stacked bars`,
 		timeline: `Timeline`,
 	},
 	theme: {
+		label: `Theme`,
+		light: `Light`,
+		dark: `Dark`,
+		system: `System`,
 		switchToLight: `Switch to light mode`,
 		switchToDark: `Switch to dark mode`,
+	},
+	locales: {
+		SK: `Slovak`,
+		EN: `English`,
+		CZ: `Czech`,
+	},
+	weekdays: {
+		short: {
+			mon: `Mon`,
+			sun: `Sun`,
+		},
 	},
 	home: {
 		dayPlanner: `Day planner`,

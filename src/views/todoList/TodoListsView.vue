@@ -220,8 +220,10 @@
 	import TodoListDialog from '@/components/toDoList/normal/TodoListDialog.vue'
 	import TodoListCategoryDialog from '@/components/toDoList/normal/TodoListCategoryDialog.vue'
 	import TodoListCard from '@/components/toDoList/normal/TodoListCard.vue'
+	import { useUserStore } from '@/stores/userStore.ts'
 
 	const i18n = useI18n()
+	const userStore = useUserStore()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
 
@@ -289,9 +291,13 @@
 		showSuccessSnackbar(i18n.t('successFeedback.edited'))
 	}
 
-	function confirmDelete(list: TodoListEntity) {
+	async function confirmDelete(list: TodoListEntity) {
 		listToDelete.value = list
-		deleteDialog.value = true
+		if (!userStore.currentUser.askBeforeDelete) {
+			await deleteConfirmed()
+		} else {
+			deleteDialog.value = true
+		}
 	}
 
 	async function deleteConfirmed() {

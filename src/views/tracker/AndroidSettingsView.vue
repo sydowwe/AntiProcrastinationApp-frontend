@@ -42,9 +42,13 @@
 					closable
 					@click:close="dismissHint"
 				>
-					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click
-					<strong>Save</strong>. The filter becomes the rule — future entries matching it will be mapped automatically. To
-					edit an existing rule, open the <strong>Mappings</strong> tab and click edit.
+					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and
+					click
+					<strong>Save</strong>
+					. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an
+					existing rule, open the
+					<strong>Mappings</strong>
+					tab and click edit.
 				</VAlert>
 				<AndroidDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"

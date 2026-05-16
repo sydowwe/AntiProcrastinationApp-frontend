@@ -10,7 +10,7 @@ import { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/Rou
 export function useRoutineTodoListItemCrud() {
 	const { showErrorSnackbar } = useSnackbar()
 
-	const url = '/routine-todo-list'
+	const url = 'routine-todo-list'
 
 	const { fetchById, fetchAll } = useEntityQuery<RoutineTodoListItemEntity>({
 		responseClass: RoutineTodoListItemEntity,

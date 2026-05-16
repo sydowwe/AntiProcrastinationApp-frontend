@@ -1,4 +1,4 @@
-import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
+import type { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 
 export class UserPlannerSettingsRequest {
 	constructor(

@@ -92,15 +92,14 @@
 		addedIds: Set<string>
 	}>()
 
-	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
-	const activePanel = defineModel<'details' | 'routine'>('activePanel', { default: 'details' })
-
 	const emit = defineEmits<{
 		openEditDialog: []
 		useTemplate: []
 		addRepeatingTask: [task: SuggestionResponse]
 		'update:selectedItem': [item: RoutineTodoListItemEntity | null]
 	}>()
+	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
+	const activePanel = defineModel<'details' | 'routine'>('activePanel', { default: 'details' })
 
 	const { mdAndUp } = useDisplay()
 </script>

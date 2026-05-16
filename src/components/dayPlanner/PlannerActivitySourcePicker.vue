@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/dtos/dto/Time.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'

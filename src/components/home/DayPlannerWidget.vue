@@ -94,7 +94,11 @@
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
-	import { PlannerTaskStatus, getPlannerTaskStatusColor, getPlannerTaskStatusIcon } from '@/dtos/enum/PlannerTaskStatus.ts'
+	import {
+		PlannerTaskStatus,
+		getPlannerTaskStatusColor,
+		getPlannerTaskStatusIcon,
+	} from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
@@ -122,7 +126,9 @@
 		loading.value = true
 		try {
 			calendar.value = await fetchByDate(todayStr)
-			tasks.value = await fetchFiltered(new PlannerTaskFilter(calendar.value.id, new Time(0, 0), new Time(23, 59)))
+			tasks.value = await fetchFiltered(
+				new PlannerTaskFilter(calendar.value.id, new Time(0, 0), new Time(23, 59)),
+			)
 		} catch {
 			calendar.value = null
 		} finally {

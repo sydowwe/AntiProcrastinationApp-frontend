@@ -1,5 +1,8 @@
 <template>
-	<ActionBar :isShown @cancel="emit('cancel')">
+	<ActionBar
+		:isShown
+		@cancel="emit('cancel')"
+	>
 		<VAutocomplete
 			v-model="templateId"
 			:items="activeTemplates"

@@ -80,6 +80,7 @@
 	import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
 	import EditActivityHistoryDialog from '@/components/history/EditActivityHistoryDialog.vue'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import { useUserStore } from '@/stores/userStore.ts'
 
 	const props = defineProps<{
 		date: string
@@ -140,10 +141,15 @@
 	const { deleteEntity } = useActivityHistoryCrud()
 	const deleteDialog = ref(false)
 	const deleteTargetId = ref<number | null>(null)
+	const userStore = useUserStore()
 
-	function handleDeleteRequest(id: number) {
+	async function handleDeleteRequest(id: number) {
 		deleteTargetId.value = id
-		deleteDialog.value = true
+		if (!userStore.currentUser.askBeforeDelete) {
+			await confirmDelete()
+		} else {
+			deleteDialog.value = true
+		}
 	}
 
 	async function confirmDelete() {

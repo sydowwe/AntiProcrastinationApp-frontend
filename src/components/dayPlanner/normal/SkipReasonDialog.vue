@@ -37,13 +37,13 @@
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
 
-	const settingsStore = useDayPlannerSettingsStore()
-
 	const emit = defineEmits<{
 		skip: [reason: string]
 	}>()
 
 	const model = defineModel<boolean>({ default: false })
+
+	const settingsStore = useDayPlannerSettingsStore()
 
 	const reason = ref('')
 

@@ -65,7 +65,10 @@
 
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import { type QuickCreateActivityRoleName, useQuickCreateActivity } from '@/composables/activity/quickCreateActivityComposition.ts'
+	import {
+		type QuickCreateActivityRoleName,
+		useQuickCreateActivity,
+	} from '@/composables/activity/quickCreateActivityComposition.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref } from 'vue'
@@ -111,7 +114,7 @@
 		if (isActivityFormHidden.value) {
 			if (isEdit.value && activityBeforeEdit.value?.id) {
 				if (hasObjectChanged(activityBeforeEdit.value, activityFormFieldData.value)) {
-const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
+					const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
 					if (cloneId && quickEditMode.value === 'Clone') {
 						return { activityId: cloneId, status: 'edit' }
 					}
