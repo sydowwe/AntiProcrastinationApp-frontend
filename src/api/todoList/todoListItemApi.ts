@@ -70,6 +70,16 @@ export function useTodoListItemCrud(todoListId: number) {
 		}
 	}
 
+	async function moveToList(id: number, destinationListId: number) {
+		try {
+			await API.patch(`${url}/move/${id}/${destinationListId}`)
+			return Promise.resolve()
+		} catch (e: any) {
+			console.error(`Error moving todo list item ${id} to list ${destinationListId}`, e)
+			return Promise.reject(e)
+		}
+	}
+
 	async function uncheckAll(doneIds: number[]) {
 		if (doneIds.length === 0) return
 		try {
@@ -91,6 +101,7 @@ export function useTodoListItemCrud(todoListId: number) {
 		deleteEntity,
 		changePriority,
 		changeDisplayOrder,
+		moveToList,
 		toggleIsDone,
 		uncheckAll,
 	}

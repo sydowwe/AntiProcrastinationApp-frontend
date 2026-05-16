@@ -25,7 +25,10 @@
 	import { CalendarComponent, TooltipComponent, VisualMapComponent } from 'echarts/components'
 	import { CanvasRenderer } from 'echarts/renderers'
 	import { computed, ref } from 'vue'
-	import type { PeriodCompletion, RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
+	import type {
+		PeriodCompletion,
+		RoutineTimePeriodEntity,
+	} from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	use([HeatmapChart, CalendarComponent, TooltipComponent, VisualMapComponent, CanvasRenderer])

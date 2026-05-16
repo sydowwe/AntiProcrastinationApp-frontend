@@ -69,10 +69,7 @@
 
 		// Compute real date ranges for padding cells going back before the oldest slice entry.
 		// When history is completely empty, anchor from one period ahead of now.
-		const anchorMs =
-			slice.length > 0
-				? new Date(slice[0].periodStart).getTime()
-				: Date.now() + msPerPeriod
+		const anchorMs = slice.length > 0 ? new Date(slice[0].periodStart).getTime() : Date.now() + msPerPeriod
 
 		const pads: PeriodCompletion[] = Array.from({ length: padCount }, (_, i) => {
 			const endMs = anchorMs - (padCount - 1 - i) * msPerPeriod
@@ -116,9 +113,7 @@
 
 	function tooltipText(p: PeriodCompletion): string {
 		const label =
-			lengthInDays === 1
-				? formatDate(p.periodStart)
-				: `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
+			lengthInDays === 1 ? formatDate(p.periodStart) : `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
 		if (p.totalCount === 0) return `${label} · 0 done`
 		const ratio = p.completedCount / p.totalCount
 		if (ratio >= 1) return `${label} · All done`

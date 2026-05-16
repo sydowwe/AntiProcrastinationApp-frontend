@@ -71,9 +71,7 @@
 				if (store.editedId === undefined && selectedRoutineItem?.value) {
 					baseDialog.value?.prefillActivity(selectedRoutineItem.value.activity.id)
 					if (selectedRoutineItem.value.suggestedTime && !store.creationPreview) {
-						baseDialog.value?.applySuggestedTime(
-							selectedRoutineItem.value.suggestedTime.getInMinutes,
-						)
+						baseDialog.value?.applySuggestedTime(selectedRoutineItem.value.suggestedTime.getInMinutes)
 					}
 				}
 			} else {

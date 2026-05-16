@@ -83,7 +83,11 @@
 	import { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 	import { HistoryGroupBy } from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 	import { BaselineType } from '@/components/activityTracking/summaryCards/BaselineOption.ts'
-	import { getSummaryPieChart, getSummaryStackedBars, getSummarySummaryCards } from '@/api/activityHistory/historyDashboardApi.ts'
+	import {
+		getSummaryPieChart,
+		getSummaryStackedBars,
+		getSummarySummaryCards,
+	} from '@/api/activityHistory/historyDashboardApi.ts'
 	import type { HistoryStackedBarsResponse } from '@/dtos/response/historyDashboard/HistoryStackedBarsResponse.ts'
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 	import type { HistorySummaryCardsResponse } from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'

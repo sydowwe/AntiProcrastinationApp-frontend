@@ -5,11 +5,13 @@ import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 import { useTodoListCategoryCrud } from '@/api/todoList/todoListCategoryApi.ts'
 import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
+import { useUserStore } from '@/stores/userStore.ts'
 
 export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const i18n = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { fetchFilteredSorted, createWithResponse, update, deleteEntity } = useTodoListCategoryCrud()
+	const userStore = useUserStore()
 
 	const categories = ref<TodoListCategoryEntity[]>([])
 	const selectedCategoryId = ref<number | null>(null)
@@ -59,9 +61,13 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		showSuccessSnackbar(i18n.t('successFeedback.edited'))
 	}
 
-	function confirmDeleteCategory(category: TodoListCategoryEntity) {
+	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
 		categoryToDelete.value = category
-		deleteCategoryDialog.value = true
+		if (!userStore.currentUser.askBeforeDelete) {
+			await deleteCategoryConfirmed()
+		} else {
+			deleteCategoryDialog.value = true
+		}
 	}
 
 	async function deleteCategoryConfirmed() {

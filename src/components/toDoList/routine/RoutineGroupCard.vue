@@ -38,6 +38,7 @@
 					(sourceId: number, targetId: number, itemId: number, dropTarget: any) =>
 						emit('crossListDrop', sourceId, targetId, itemId, dropTarget)
 				"
+				@uncheckAll="(doneIds: number[]) => emit('uncheckAll', doneIds)"
 			>
 				<template #default="{ item, isDragging }">
 					<RoutineTodoListItem
@@ -105,6 +106,7 @@
 		edit: [item: RoutineTodoListItemEntity]
 		isDoneChanged: [id: number, forceValue: boolean]
 		stepToggled: [changedItems: number[]]
+		uncheckAll: [doneIds: number[]]
 		itemsReordered: [oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest]
 		crossListDrop: [sourceListId: number, targetListId: number, itemId: number, dropTarget: any]
 		openHistory: [timePeriod: RoutineTimePeriodEntity]

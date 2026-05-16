@@ -261,7 +261,7 @@
 	import RepeatingTaskDialog from '@/components/dayPlanner/settings/RepeatingTaskDialog.vue'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { useRepeatingPlannerTaskApi } from '@/api/taskPlanner/repeatingPlannerTaskApi.ts'
 	import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
 	import type { RepeatingPlannerTaskRequest } from '@/dtos/request/activityPlanning/RepeatingPlannerTaskRequest.ts'

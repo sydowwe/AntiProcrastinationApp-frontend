@@ -1,5 +1,8 @@
 <template>
-	<ActionBar :isShown @cancel="emit('cancel')">
+	<ActionBar
+		:isShown
+		@cancel="emit('cancel')"
+	>
 		<span class="text-textMuted font-weight-medium">
 			{{ selectedCount }} day{{ selectedCount !== 1 ? 's' : '' }} selected
 		</span>

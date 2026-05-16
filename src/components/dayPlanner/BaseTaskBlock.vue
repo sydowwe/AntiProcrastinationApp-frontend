@@ -201,8 +201,10 @@
 		},
 	])
 
-	const { handleEnterKey, handleEKey, handleDeleteKey, handleEscapeKey, handleDuplicateKey } =
-		useTaskBlockKeyboard(store, isSelected)
+	const { handleEnterKey, handleEKey, handleDeleteKey, handleEscapeKey, handleDuplicateKey } = useTaskBlockKeyboard(
+		store,
+		isSelected,
+	)
 </script>
 
 <style scoped>

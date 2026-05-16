@@ -133,10 +133,9 @@
 
 	const theme = useTheme()
 
-	function toggleTheme() {
-		const newTheme = theme.global.current.value.dark ? 'light' : 'dark'
-		theme.change(newTheme)
-		localStorage.setItem('theme', newTheme)
+	async function toggleTheme() {
+		const next = theme.global.current.value.dark ? 'light' : 'dark'
+		await userStore.setPreferences({ theme: next })
 	}
 
 	function logout() {

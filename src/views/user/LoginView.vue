@@ -91,12 +91,18 @@
 			:email="loginRequest.email"
 			:stayLoggedIn="loginRequest.stayLoggedIn"
 		></LoginVerifyQrCode>
+		<ResendConfirmationEmail
+			v-if="showResendConfirmation"
+			:email="loginRequest.email"
+			class="mt-4"
+		></ResendConfirmationEmail>
 	</div>
 </template>
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 	import GoogleSignIn from '@/components/user/GoogleSignIn.vue'
 	import LoginVerifyQrCode from '../../components/user/LoginVerifyQrCode.vue'
+	import ResendConfirmationEmail from '@/components/user/ResendConfirmationEmail.vue'
 	import { useUserDetailsValidation } from '@/utils/UserAuthUtils.ts'
 	import { useI18n } from 'vue-i18n'
 	import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue'
@@ -120,9 +126,11 @@
 	const loginRequest = ref(new PasswordSignInRequest())
 
 	const twoFactorAuthDialog = ref(false)
+	const showResendConfirmation = ref(false)
 
 	onMounted(async () => {
 		loginRequest.value.email = userStore.userName
+		showResendConfirmation.value = isRedirectedFromRegistration.value
 	})
 
 	const isRedirectedFromRegistration = computed(() => !!userStore.userName)
@@ -166,6 +174,7 @@
 							showErrorSnackbar(error.response.data.errors.generalErrors[0])
 						} else if (error.response.data.errors.generalErrors.includes('Email not confirmed')) {
 							showErrorSnackbar(i18n.t('authorization.emailConfirmationNeeded'))
+							showResendConfirmation.value = true
 						}
 					}
 				})

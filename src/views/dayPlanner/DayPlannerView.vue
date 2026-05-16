@@ -193,7 +193,13 @@
 		return PlannerTaskRequest.fromEntity(task)
 	}
 
-	useClipboardHandling(store, { createWithResponse, batchDelete, applyContext, buildRequestFromEntity, getCurrentContext: () => store.viewedDate.toDateString() })
+	useClipboardHandling(store, {
+		createWithResponse,
+		batchDelete,
+		applyContext,
+		buildRequestFromEntity,
+		getCurrentContext: () => store.viewedDate.toDateString(),
+	})
 	const crud = usePlannerCrud(store, {
 		createWithResponse,
 		update,
@@ -277,7 +283,6 @@
 	onUnmounted(() => {
 		document.removeEventListener('keydown', handleArrowKey)
 	})
-
 
 	// View-specific computed properties
 	const currentDateFormatted = computed(() => {

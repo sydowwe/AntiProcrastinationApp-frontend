@@ -104,8 +104,8 @@ export function useNavItems() {
 		return item
 	}
 
-	const filteredItems = computed(() =>
-		items.map(item => filterMenuItem(item)).filter(item => item !== null) as MenuItem[],
+	const filteredItems = computed(
+		() => items.map(item => filterMenuItem(item)).filter(item => item !== null) as MenuItem[],
 	)
 
 	function getAllMenuItems(menuItems: MenuItem[]): MenuItem[] {

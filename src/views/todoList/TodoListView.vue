@@ -34,6 +34,12 @@
 				>
 					{{ isInChangeOrderMode ? $t('toDoList.finishReordering') : $t('toDoList.changeOrder') }}
 				</VBtn>
+				<TodoListUndoBtn
+					:canUndo
+					:stackSize
+					:nextUndoDescription
+					@click="undo"
+				/>
 			</div>
 			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
 				<VRow class="pb-2 flex-grow-0">
@@ -103,7 +109,7 @@
 					:listId="todoListId"
 					:activityIds="items.map(item => item.activity.id)"
 					@itemsReordered="handleOrderChange"
-					@uncheckAll="uncheckAll"
+					@uncheckAll="handleUncheckAll"
 				>
 					<template #default="{ item, isDragging }">
 						<NormalTodoListItem
@@ -116,6 +122,7 @@
 							@isDoneChanged="handleIsDoneChange"
 							@stepToggled="itemsChanged"
 							@addToPlanner="openAddToPlanner"
+							@moveToList="openMoveToList"
 							@logTime="openLogTime($event, false)"
 							@itemClicked="openLogTime($event, true)"
 						/>
@@ -139,14 +146,20 @@
 		ref="logTimeController"
 		:kind="ToDoListKind.NORMAL"
 		@itemsChanged="itemsChanged"
+		@logTimeCreated="onLogTimeCreated"
+	/>
+	<MoveToListDialog
+		ref="moveToListDialog"
+		:currentListId="todoListId"
+		@moved="moveItemToList"
 	/>
 </template>
 
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
-	import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
+	import { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind'
 	import BaseToDoList from '../../components/toDoList/BaseToDoList.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
@@ -165,8 +178,11 @@
 	import NormalTodoListItem from '@/components/toDoList/normal/NormalTodoListItem.vue'
 	import BaseTodoListLogTimeController from '@/components/toDoList/BaseTodoListLogTimeController.vue'
 	import ToDoListItemDialog from '@/components/toDoList/normal/ToDoListItemDialog.vue'
+	import MoveToListDialog from '@/components/toDoList/normal/MoveToListDialog.vue'
 	import TodoListFilters from '@/components/toDoList/TodoListFilters.vue'
+	import TodoListUndoBtn from '@/components/toDoList/TodoListUndoBtn.vue'
 	import { useTodoListFilters } from '@/composables/todoList/useTodoListFilters.ts'
+	import { useTodoListUndo } from '@/composables/todoList/useTodoListUndo.ts'
 
 	const props = defineProps<{
 		id: string
@@ -185,8 +201,9 @@
 		deleteEntity,
 		changePriority,
 		changeDisplayOrder,
+		moveToList,
 		toggleIsDone,
-		uncheckAll,
+		uncheckAll: uncheckAllApi,
 	} = useTodoListItemCrud(todoListId)
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const plannerStore = useDayPlannerStore()
@@ -197,6 +214,7 @@
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
+	const moveToListDialog = ref<InstanceType<typeof MoveToListDialog>>()
 	const items = ref([] as TodoListItemEntity[])
 	const listEntity = ref<TodoListEntity | null>(null)
 
@@ -212,6 +230,18 @@
 		toggleSortMode,
 	} = useTodoListFilters(items)
 
+	const {
+		undo,
+		canUndo,
+		stackSize,
+		nextUndoDescription,
+		pushDeleteUndo,
+		pushUncheckAllUndo,
+		pushReorderUndo,
+		pushEditUndo,
+		pushLogTimeUndo,
+	} = useTodoListUndo()
+
 	onMounted(async () => {
 		showFullScreenLoading()
 		items.value = await fetchAll()
@@ -219,11 +249,18 @@
 	})
 
 	async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
-		const [movedItem] = items.value.splice(oldIndex, 1)
-		if (movedItem) {
-			items.value.splice(newIndex, 0, movedItem)
-		}
+		const movedItem = items.value[oldIndex]
+		if (!movedItem) return
+		const originalPrecedingId = oldIndex > 0 ? (items.value[oldIndex - 1]?.id ?? null) : null
+		const originalFollowingId = oldIndex < items.value.length - 1 ? (items.value[oldIndex + 1]?.id ?? null) : null
+		const [moved] = items.value.splice(oldIndex, 1)
+		items.value.splice(newIndex, 0, moved!)
 		await changeDisplayOrder(request)
+		const reverseRequest = new ChangeDisplayOrderRequest(movedItem.id, originalPrecedingId, originalFollowingId)
+		pushReorderUndo(movedItem.activity.name, async () => {
+			await changeDisplayOrder(reverseRequest)
+			items.value = await fetchAll()
+		})
 	}
 
 	async function add(toDoListItem: ToDoListItemRequest) {
@@ -246,9 +283,14 @@
 			beforeEditEntity &&
 			hasObjectChanged(ToDoListItemRequest.fromEntity(beforeEditEntity), toDoListItemRequest)
 		) {
+			const savedRequest = ToDoListItemRequest.fromEntity(beforeEditEntity)
 			await update(id, toDoListItemRequest)
 			await updateAfterEdit(id, beforeEditEntity.taskPriority.id)
 			showSuccessSnackbar(i18n.t('successFeedback.edited'))
+			pushEditUndo(beforeEditEntity.activity.name, async () => {
+				await update(id, savedRequest)
+				await updateAfterEdit(id)
+			})
 		}
 	}
 
@@ -266,11 +308,27 @@
 	}
 
 	async function deleteItem(id: number) {
+		const savedItem = items.value.find(item => item.id === id)
+		const savedIndex = items.value.findIndex(item => item.id === id)
+		if (!savedItem || savedIndex === -1) return
+		const precedingId = savedIndex > 0 ? (items.value[savedIndex - 1]?.id ?? null) : null
+		const followingId = savedIndex < items.value.length - 1 ? (items.value[savedIndex + 1]?.id ?? null) : null
 		await deleteEntity(id)
-		const index = items.value.findIndex(item => item.id === id)
-		if (index !== -1) {
-			items.value.splice(index, 1)
-		}
+		items.value.splice(savedIndex, 1)
+		pushDeleteUndo(savedItem.activity.name, async () => {
+			const restored = await createWithResponse(ToDoListItemRequest.fromEntity(savedItem))
+			await changeDisplayOrder(new ChangeDisplayOrderRequest(restored.id, precedingId, followingId))
+			items.value = await fetchAll()
+		})
+	}
+
+	async function handleUncheckAll(doneIds: number[]) {
+		await uncheckAllApi(doneIds)
+		await itemsChanged(doneIds)
+		pushUncheckAllUndo(doneIds.length, async () => {
+			for (const id of doneIds) await toggleIsDone(id, true)
+			items.value = await fetchAll()
+		})
 	}
 
 	async function updateAfterEdit(id: number, oldTaskPriorityId?: number) {
@@ -282,6 +340,19 @@
 			items.value[index] = updatedItem
 			items.value.sort(TodoListItemEntity.frontEndSortFunction())
 		}
+	}
+
+	function openMoveToList(item: TodoListItemEntity) {
+		moveToListDialog.value?.open(item.id)
+	}
+
+	async function moveItemToList(itemId: number, destinationListId: number) {
+		await moveToList(itemId, destinationListId)
+		const index = items.value.findIndex(item => item.id === itemId)
+		if (index !== -1) {
+			items.value.splice(index, 1)
+		}
+		showSuccessSnackbar(i18n.t('successFeedback.moved'))
 	}
 
 	function openAddToPlanner(item: TodoListItemEntity) {
@@ -296,6 +367,28 @@
 			undefined,
 			item.suggestedTime ?? undefined,
 			item.id,
+		)
+	}
+
+	function onLogTimeCreated({
+		historyRecordId,
+		itemId,
+		itemWasCompleted,
+	}: {
+		historyRecordId: number
+		itemId: number | undefined
+		itemWasCompleted: boolean
+	}) {
+		const item = itemId !== undefined ? items.value.find(i => i.id === itemId) : undefined
+		pushLogTimeUndo(
+			item?.activity.name ?? '',
+			historyRecordId,
+			itemWasCompleted && itemId !== undefined
+				? async () => {
+						await toggleIsDone(itemId, false)
+						await itemsChanged([itemId])
+					}
+				: undefined,
 		)
 	}
 

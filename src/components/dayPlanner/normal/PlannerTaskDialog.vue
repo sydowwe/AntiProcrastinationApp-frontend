@@ -101,7 +101,12 @@
 		emit('create', request)
 	}
 
-	function onPickerSelected(activityId: number, todoListItemId: number | undefined, suggestedTime: Time | undefined, data: PlannerTaskRequest) {
+	function onPickerSelected(
+		activityId: number,
+		todoListItemId: number | undefined,
+		suggestedTime: Time | undefined,
+		data: PlannerTaskRequest,
+	) {
 		baseDialog.value?.prefillActivity(activityId)
 		if (todoListItemId != null) {
 			data.todoListItemId = todoListItemId

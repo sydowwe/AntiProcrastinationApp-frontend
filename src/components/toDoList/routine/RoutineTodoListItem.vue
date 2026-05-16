@@ -73,7 +73,12 @@
 	import BaseTodoListItem from '@/components/toDoList/BaseTodoListItem.vue'
 	import { DAY_OF_WEEK_SHORT_LABELS } from '@/dtos/enum/DayOfWeek.ts'
 
-	const { toDoListItem, streakConfig, isInChangeOrderMode = false, isDragging = false } = defineProps<{
+	const {
+		toDoListItem,
+		streakConfig,
+		isInChangeOrderMode = false,
+		isDragging = false,
+	} = defineProps<{
 		toDoListItem: RoutineTodoListItemEntity
 		streakConfig?: { graceDays: number; periodLengthInDays: number }
 		isInChangeOrderMode?: boolean

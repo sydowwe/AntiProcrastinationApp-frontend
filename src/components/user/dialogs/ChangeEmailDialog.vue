@@ -46,7 +46,7 @@
 	)
 
 	function onSubmit(password: string, twoFactorAuthToken: string) {
-		API.post('/user/change-email', {
+		API.patch('/user/change-email', {
 			newEmail: newEmail.value,
 			password: password,
 			twoFactorAuthToken: twoFactorAuthToken,

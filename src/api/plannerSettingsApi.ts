@@ -1,8 +1,8 @@
 import { API } from '@/plugins/axiosConfig.ts'
 import { UserPlannerSettings } from '@/dtos/response/UserPlannerSettings.ts'
-import { UserPlannerSettingsRequest } from '@/dtos/request/UserPlannerSettingsRequest.ts'
+import type { UserPlannerSettingsRequest } from '@/dtos/request/UserPlannerSettingsRequest.ts'
 
-const url = 'user/planner-settings'
+const url = 'planner/settings'
 
 export function usePlannerSettingsApi() {
 	async function fetchSettings(): Promise<UserPlannerSettings> {

@@ -23,7 +23,10 @@ function templatePlannerSetup(storageKey: string) {
 	function startCut() {
 		core.startCut()
 		if (core.pendingClipboard.value)
-			core.pendingClipboard.value = { ...core.pendingClipboard.value, sourceContext: String(currentTemplateId.value) }
+			core.pendingClipboard.value = {
+				...core.pendingClipboard.value,
+				sourceContext: String(currentTemplateId.value),
+			}
 	}
 
 	const savedClipboard = sessionStorage.getItem(storageKey)
@@ -48,10 +51,18 @@ function templatePlannerSetup(storageKey: string) {
 	}
 }
 
-export const useTemplateDayPlannerStore = defineStore('templateDayPlanner', () => templatePlannerSetup('template-planner-clipboard'), {
-	persist: { omit: ['tasks'] },
-}) satisfies () => ITemplateDayPlannerStore
+export const useTemplateDayPlannerStore = defineStore(
+	'templateDayPlanner',
+	() => templatePlannerSetup('template-planner-clipboard'),
+	{
+		persist: { omit: ['tasks'] },
+	},
+) satisfies () => ITemplateDayPlannerStore
 
-export const useSecondaryTemplateDayPlannerStore = defineStore('templateDayPlanner-secondary', () => templatePlannerSetup('template-planner-clipboard-secondary'), {
-	persist: false,
-}) satisfies () => ITemplateDayPlannerStore
+export const useSecondaryTemplateDayPlannerStore = defineStore(
+	'templateDayPlanner-secondary',
+	() => templatePlannerSetup('template-planner-clipboard-secondary'),
+	{
+		persist: false,
+	},
+) satisfies () => ITemplateDayPlannerStore

@@ -120,7 +120,10 @@
 	import TemplatePlannerTaskBlock from '@/components/dayPlanner/template/TemplatePlannerTaskBlock.vue'
 	import RoutineSidePanel from '@/components/dayPlanner/template/RoutineSidePanel.vue'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
-	import { useSecondaryTemplateDayPlannerStore, useTemplateDayPlannerStore } from '@/stores/dayPlanner/templateDayPlannerStore.ts'
+	import {
+		useSecondaryTemplateDayPlannerStore,
+		useTemplateDayPlannerStore,
+	} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'

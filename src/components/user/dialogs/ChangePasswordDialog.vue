@@ -13,7 +13,10 @@
 		>
 			<h5 class="text-red">{{ i18n.t('user.signOutWarning', { subject: i18n.t('user.passwordChange') }) }}</h5>
 			<MyVerifyPasswordInput v-model="password"></MyVerifyPasswordInput>
-			<MyNewPasswordInput v-model="newPassword"></MyNewPasswordInput>
+			<MyNewPasswordInput
+				v-model="newPassword"
+				:isNew="true"
+			></MyNewPasswordInput>
 			<MyTwoFactorAuthInput
 				ref="twoFactorAuthInput"
 				v-model="twoFactorAuthToken"

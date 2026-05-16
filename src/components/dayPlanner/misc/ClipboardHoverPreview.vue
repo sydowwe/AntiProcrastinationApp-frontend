@@ -9,10 +9,7 @@
 	/>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 	defineProps<{
 		previews: Array<{ startRow: number; endRow: number; hasConflict: boolean }>
 	}>()

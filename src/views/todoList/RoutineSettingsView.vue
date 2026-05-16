@@ -10,6 +10,7 @@
 				Add
 			</VBtn>
 		</div>
+		<PersonalBestsPanel :timePeriods="timePeriods" />
 		<BasicTable
 			v-model="timePeriods"
 			v-model:itemsPerPage="itemsPerPage"
@@ -79,6 +80,7 @@
 	import { useColor } from '@/utils/colorPalette.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import TimePeriodDialog from '@/components/toDoList/routine/dialog/TimePeriodDialog.vue'
+	import PersonalBestsPanel from '@/components/toDoList/routine/PersonalBestsPanel.vue'
 
 	const { fetchAll, deleteEntity, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { getBgColor } = useColor()

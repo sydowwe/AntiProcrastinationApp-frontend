@@ -7,6 +7,7 @@
 		:isDragging
 		:color="toDoListItem.taskPriority.color"
 		:isOverdue="dueDateChip?.overdue ?? false"
+		:additionalActions
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
 		@isDoneChanged="(id: number, forceValue: boolean) => emits('isDoneChanged', id, forceValue)"
@@ -45,8 +46,13 @@
 	import BaseTodoListItem from '@/components/toDoList/BaseTodoListItem.vue'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
+	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
 
-	const { toDoListItem, isInChangeOrderMode = false, isDragging = false } = defineProps<{
+	const {
+		toDoListItem,
+		isInChangeOrderMode = false,
+		isDragging = false,
+	} = defineProps<{
 		toDoListItem: TodoListItemEntity
 		isInChangeOrderMode?: boolean
 		listId: number
@@ -61,7 +67,14 @@
 		addToPlanner: [toDoListItem: TodoListItemEntity]
 		logTime: [toDoListItem: TodoListItemEntity]
 		itemClicked: [toDoListItem: TodoListItemEntity]
+		moveToList: [toDoListItem: TodoListItemEntity]
 	}>()
+
+	const additionalActions = [
+		new MenuItem('moveToList', 'outlined', 'primaryOutline', 'arrow-right-arrow-left', function () {
+			emits('moveToList', toDoListItem)
+		}),
+	]
 
 	const dueDateChip = computed(() => {
 		const { dueDate, dueTime } = toDoListItem
