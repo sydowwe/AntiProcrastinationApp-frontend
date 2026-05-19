@@ -15,7 +15,7 @@
 	>
 		<template #formattedColumn="{ key, value }">
 			<template v-if="key === 'experienceType'">
-				<span>{{ value == null ? '—' : $t(`enums.experienceType.${value}`) }}</span>
+				<span>{{ value?.text ?? '—' }}</span>
 			</template>
 			<template v-else-if="key === 'requiresTravel'">
 				<VIcon

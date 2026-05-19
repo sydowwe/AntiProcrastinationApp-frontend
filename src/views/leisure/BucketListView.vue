@@ -15,11 +15,11 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.experienceTypes as ExperienceType[] | null"
+						v-model="draft.experienceTypeIds"
 						:label="$t('leisure.fields.experienceType')"
-						:items="experienceOptions"
-						itemValue="value"
-						itemTitle="title"
+						:items="experienceTypeOptions"
+						itemValue="id"
+						itemTitle="text"
 						multiple
 						chips
 						clearable
@@ -56,24 +56,29 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
 	import BucketListTable from '@/components/leisure/bucketList/BucketListTable.vue'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBucketListProfileFilter } from '@/dtos/request/leisure/ActivityBucketListProfileFilter.ts'
-	import { ExperienceType } from '@/dtos/enum/ExperienceType.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import { useActivityExperienceTypeApi } from '@/api/leisure/activityLookupApi.ts'
 
 	const i18n = useI18n()
 	const filter = ref(new ActivityBucketListProfileFilter())
 
-	const experienceOptions = getEnumSelectOptions(ExperienceType, 'enums.experienceType')
+	const { fetchAll: fetchExperienceTypes } = useActivityExperienceTypeApi()
+	const experienceTypeOptions = ref<LookupResponse[]>([])
+
+	onMounted(async () => {
+		experienceTypeOptions.value = await fetchExperienceTypes()
+	})
 
 	const chipFormatters: ChipFormatters<ActivityBucketListProfileFilter> = {
 		activityName: v =>
 			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		experienceTypes: v =>
+		experienceTypeIds: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.experienceType')} (${v.length})`, icon: 'star' } : null,
 		minComfortZoneStep: (_, f) =>
 			f.minComfortZoneStep != null || f.maxComfortZoneStep != null

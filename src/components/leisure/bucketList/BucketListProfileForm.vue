@@ -28,7 +28,7 @@
 		entityToEdit
 			? new ActivityBucketListProfileRequest(
 					entityToEdit.activityId,
-					entityToEdit.experienceType,
+					entityToEdit.experienceType.id,
 					entityToEdit.comfortZoneStep,
 					entityToEdit.requiresTravel,
 					entityToEdit.financialGoal,

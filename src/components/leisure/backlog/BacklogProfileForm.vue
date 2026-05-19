@@ -24,13 +24,13 @@
 		entityToEdit
 			? new ActivityBacklogProfileRequest(
 					entityToEdit.activityId,
-					entityToEdit.locationType,
-					entityToEdit.weatherDependency,
+					entityToEdit.locationType.id,
+					entityToEdit.weatherDependency.id,
 					entityToEdit.energyLevel,
 					entityToEdit.effortType,
 					entityToEdit.minParticipants,
 					entityToEdit.maxParticipants,
-					entityToEdit.expectedCostTier,
+					entityToEdit.expectedCostTier.id,
 					entityToEdit.durationMinutes,
 					entityToEdit.isOneTime,
 				)

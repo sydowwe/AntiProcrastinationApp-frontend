@@ -1,9 +1,7 @@
-import { ExperienceType } from '@/dtos/enum/ExperienceType.ts'
-
 export class ActivityBucketListProfileRequest {
 	constructor(
 		public activityId: number = 0,
-		public experienceType: ExperienceType = ExperienceType.Skill,
+		public experienceTypeId: number = 0,
 		public comfortZoneStep: number = 1,
 		public requiresTravel: boolean = false,
 		public financialGoal: number | null = null,
@@ -13,7 +11,7 @@ export class ActivityBucketListProfileRequest {
 	static fromJson(object: any) {
 		const {
 			activityId = 0,
-			experienceType = ExperienceType.Skill,
+			experienceTypeId = 0,
 			comfortZoneStep = 1,
 			requiresTravel = false,
 			financialGoal = null,
@@ -21,7 +19,7 @@ export class ActivityBucketListProfileRequest {
 		} = object
 		return new ActivityBucketListProfileRequest(
 			activityId,
-			experienceType,
+			experienceTypeId,
 			comfortZoneStep,
 			requiresTravel,
 			financialGoal,

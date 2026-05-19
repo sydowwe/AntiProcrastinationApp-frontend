@@ -12,14 +12,10 @@
 			:rules="[requiredRule]"
 			:disabled="lockActivity"
 		/>
-		<VSelect
-			v-model="model.experienceType"
+		<VIdSelect
+			v-model="model.experienceTypeId"
 			:label="$t('leisure.fields.experienceType')"
-			:items="experienceOptions"
-			itemValue="value"
-			itemTitle="title"
-			variant="outlined"
-			density="comfortable"
+			:items="experienceTypeOptions"
 		/>
 		<ComfortZoneStepper
 			v-model="model.comfortZoneStep"
@@ -47,26 +43,29 @@
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { ActivityBucketListProfileRequest } from '@/dtos/request/leisure/ActivityBucketListProfileRequest.ts'
-	import { ExperienceType } from '@/dtos/enum/ExperienceType.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
 	import ComfortZoneStepper from '@/components/leisure/bucketList/ComfortZoneStepper.vue'
+	import { useActivityExperienceTypeApi } from '@/api/leisure/activityLookupApi.ts'
 
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
 	const model = defineModel<ActivityBucketListProfileRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
 	const { fetchActivitySelectOptions } = useActivitySelectOptions()
+	const { fetchAll: fetchExperienceTypes } = useActivityExperienceTypeApi()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const activityOptions = ref<SelectOption[]>([])
-
-	const experienceOptions = getEnumSelectOptions(ExperienceType, 'enums.experienceType')
+	const experienceTypeOptions = ref<LookupResponse[]>([])
 
 	onMounted(async () => {
-		activityOptions.value = await fetchActivitySelectOptions()
+		;[activityOptions.value, experienceTypeOptions.value] = await Promise.all([
+			fetchActivitySelectOptions(),
+			fetchExperienceTypes(),
+		])
 	})
 
 	async function validate() {

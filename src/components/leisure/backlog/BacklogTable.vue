@@ -25,6 +25,9 @@
 					size="16"
 				/>
 			</template>
+			<template v-else-if="lookupColumns.includes(key)">
+				<span>{{ value?.text ?? '—' }}</span>
+			</template>
 			<template v-else-if="enumColumns.includes(key)">
 				<span>{{ value == null ? '—' : $t(`enums.${key}.${value}`) }}</span>
 			</template>
@@ -59,7 +62,8 @@
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([])
 
-	const enumColumns = ['locationType', 'weatherDependency', 'energyLevel', 'effortType', 'expectedCostTier']
+	const lookupColumns = ['locationType', 'weatherDependency', 'expectedCostTier']
+	const enumColumns = ['energyLevel', 'effortType']
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),

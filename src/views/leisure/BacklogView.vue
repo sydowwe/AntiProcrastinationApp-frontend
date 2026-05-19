@@ -15,11 +15,11 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.locationTypes"
+						v-model="draft.locationTypeIds"
 						:label="$t('leisure.fields.locationType')"
-						:items="locationOptions"
-						itemValue="value"
-						itemTitle="title"
+						:items="locationTypeOptions"
+						itemValue="id"
+						itemTitle="text"
 						multiple
 						chips
 						clearable
@@ -28,11 +28,11 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.weatherDependencies"
+						v-model="draft.weatherDependencyIds"
 						:label="$t('leisure.fields.weatherDependency')"
-						:items="weatherOptions"
-						itemValue="value"
-						itemTitle="title"
+						:items="weatherDependencyOptions"
+						itemValue="id"
+						itemTitle="text"
 						multiple
 						chips
 						clearable
@@ -67,11 +67,11 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.expectedCostTiers"
+						v-model="draft.expectedCostTierIds"
 						:label="$t('leisure.fields.expectedCostTier')"
-						:items="costOptions"
-						itemValue="value"
-						itemTitle="title"
+						:items="expectedCostTierOptions"
+						itemValue="id"
+						itemTitle="text"
 						multiple
 						chips
 						clearable
@@ -103,40 +103,56 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
 	import BacklogTable from '@/components/leisure/backlog/BacklogTable.vue'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBacklogProfileFilter } from '@/dtos/request/leisure/ActivityBacklogProfileFilter.ts'
-	import { LocationType } from '@/dtos/enum/LocationType.ts'
-	import { WeatherDependency } from '@/dtos/enum/WeatherDependency.ts'
 	import { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 	import { EffortType } from '@/dtos/enum/EffortType.ts'
-	import { ExpectedCostTier } from '@/dtos/enum/ExpectedCostTier.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import {
+		useActivityLocationTypeApi,
+		useActivityWeatherDependencyApi,
+		useActivityExpectedCostTierApi,
+	} from '@/api/leisure/activityLookupApi.ts'
 
 	const i18n = useI18n()
 	const filter = ref(new ActivityBacklogProfileFilter())
 
-	const locationOptions = getEnumSelectOptions(LocationType, 'enums.locationType')
-	const weatherOptions = getEnumSelectOptions(WeatherDependency, 'enums.weatherDependency')
+	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
+	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()
+	const { fetchAll: fetchExpectedCostTiers } = useActivityExpectedCostTierApi()
+
+	const locationTypeOptions = ref<LookupResponse[]>([])
+	const weatherDependencyOptions = ref<LookupResponse[]>([])
+	const expectedCostTierOptions = ref<LookupResponse[]>([])
+
 	const energyOptions = getEnumSelectOptions(EnergyLevel, 'enums.energyLevel')
 	const effortOptions = getEnumSelectOptions(EffortType, 'enums.effortType')
-	const costOptions = getEnumSelectOptions(ExpectedCostTier, 'enums.expectedCostTier')
+
+	onMounted(async () => {
+		;[locationTypeOptions.value, weatherDependencyOptions.value, expectedCostTierOptions.value] = await Promise.all([
+			fetchLocationTypes(),
+			fetchWeatherDependencies(),
+			fetchExpectedCostTiers(),
+		])
+	})
 
 	const chipFormatters: ChipFormatters<ActivityBacklogProfileFilter> = {
 		activityName: v =>
 			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		locationTypes: v =>
+		locationTypeIds: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.locationType')} (${v.length})`, icon: 'location-dot' } : null,
-		weatherDependencies: v =>
+		weatherDependencyIds: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.weatherDependency')} (${v.length})`, icon: 'cloud-sun' } : null,
 		energyLevels: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.energyLevel')} (${v.length})`, icon: 'bolt' } : null,
 		effortTypes: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.effortType')} (${v.length})`, icon: 'dumbbell' } : null,
-		expectedCostTiers: v =>
+		expectedCostTierIds: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.expectedCostTier')} (${v.length})`, icon: 'sack-dollar' } : null,
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,

@@ -12,23 +12,15 @@
 			:rules="[requiredRule]"
 			:disabled="lockActivity"
 		/>
-		<VSelect
-			v-model="model.locationType"
+		<VIdSelect
+			v-model="model.locationTypeId"
 			:label="$t('leisure.fields.locationType')"
-			:items="locationOptions"
-			itemValue="value"
-			itemTitle="title"
-			variant="outlined"
-			density="comfortable"
+			:items="locationTypeOptions"
 		/>
-		<VSelect
-			v-model="model.weatherDependency"
+		<VIdSelect
+			v-model="model.weatherDependencyId"
 			:label="$t('leisure.fields.weatherDependency')"
-			:items="weatherOptions"
-			itemValue="value"
-			itemTitle="title"
-			variant="outlined"
-			density="comfortable"
+			:items="weatherDependencyOptions"
 		/>
 		<VSelect
 			v-model="model.energyLevel"
@@ -49,14 +41,10 @@
 			density="comfortable"
 			clearable
 		/>
-		<VSelect
-			v-model="model.expectedCostTier"
+		<VIdSelect
+			v-model="model.expectedCostTierId"
 			:label="$t('leisure.fields.expectedCostTier')"
-			:items="costOptions"
-			itemValue="value"
-			itemTitle="title"
-			variant="outlined"
-			density="comfortable"
+			:items="expectedCostTierOptions"
 		/>
 		<div class="d-flex ga-3">
 			<VNumberInput
@@ -94,33 +82,49 @@
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { ActivityBacklogProfileRequest } from '@/dtos/request/leisure/ActivityBacklogProfileRequest.ts'
-	import { LocationType } from '@/dtos/enum/LocationType.ts'
-	import { WeatherDependency } from '@/dtos/enum/WeatherDependency.ts'
 	import { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 	import { EffortType } from '@/dtos/enum/EffortType.ts'
-	import { ExpectedCostTier } from '@/dtos/enum/ExpectedCostTier.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import {
+		useActivityLocationTypeApi,
+		useActivityWeatherDependencyApi,
+		useActivityExpectedCostTierApi,
+	} from '@/api/leisure/activityLookupApi.ts'
 
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
 	const model = defineModel<ActivityBacklogProfileRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
 	const { fetchActivitySelectOptions } = useActivitySelectOptions()
+	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
+	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()
+	const { fetchAll: fetchExpectedCostTiers } = useActivityExpectedCostTierApi()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const activityOptions = ref<SelectOption[]>([])
+	const locationTypeOptions = ref<LookupResponse[]>([])
+	const weatherDependencyOptions = ref<LookupResponse[]>([])
+	const expectedCostTierOptions = ref<LookupResponse[]>([])
 
-	const locationOptions = getEnumSelectOptions(LocationType, 'enums.locationType')
-	const weatherOptions = getEnumSelectOptions(WeatherDependency, 'enums.weatherDependency')
 	const energyOptions = getEnumSelectOptions(EnergyLevel, 'enums.energyLevel')
 	const effortOptions = getEnumSelectOptions(EffortType, 'enums.effortType')
-	const costOptions = getEnumSelectOptions(ExpectedCostTier, 'enums.expectedCostTier')
 
 	onMounted(async () => {
-		activityOptions.value = await fetchActivitySelectOptions()
+		;[
+			activityOptions.value,
+			locationTypeOptions.value,
+			weatherDependencyOptions.value,
+			expectedCostTierOptions.value,
+		] = await Promise.all([
+			fetchActivitySelectOptions(),
+			fetchLocationTypes(),
+			fetchWeatherDependencies(),
+			fetchExpectedCostTiers(),
+		])
 	})
 
 	async function validate() {

@@ -1,12 +1,12 @@
 import type { IIdResponse } from '@/dtos/response/interface/IIdResponse.ts'
 import { ActivityInfo } from '@/dtos/response/leisure/ActivityInfo.ts'
-import { ExperienceType } from '@/dtos/enum/ExperienceType.ts'
+import { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
 
 export class ActivityBucketListProfile implements IIdResponse {
 	constructor(
 		public activityId: number,
 		public activity: ActivityInfo,
-		public experienceType: ExperienceType,
+		public experienceType: LookupResponse,
 		public comfortZoneStep: number,
 		public requiresTravel: boolean,
 		public financialGoal: number | null,
@@ -21,7 +21,7 @@ export class ActivityBucketListProfile implements IIdResponse {
 		const {
 			activityId = 0,
 			activity = {},
-			experienceType = ExperienceType.Skill,
+			experienceType = {},
 			comfortZoneStep = 1,
 			requiresTravel = false,
 			financialGoal = null,
@@ -30,7 +30,7 @@ export class ActivityBucketListProfile implements IIdResponse {
 		return new ActivityBucketListProfile(
 			activityId,
 			ActivityInfo.fromJson(activity),
-			experienceType,
+			LookupResponse.fromJson(experienceType),
 			comfortZoneStep,
 			requiresTravel,
 			financialGoal,
