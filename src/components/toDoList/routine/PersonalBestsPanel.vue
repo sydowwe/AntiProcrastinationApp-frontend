@@ -31,7 +31,10 @@
 				<VDivider class="mb-2" />
 
 				<div class="d-flex ga-3">
-					<VTooltip :text="$t('routineTodoList.bestStreak')" location="bottom">
+					<VTooltip
+						:text="$t('routineTodoList.bestStreak')"
+						location="bottom"
+					>
 						<template #activator="{ props: tip }">
 							<div
 								v-bind="tip"
@@ -46,12 +49,17 @@
 								<span
 									class="text-body-2 font-weight-bold"
 									:class="p.streak === p.bestStreak && p.streak > 0 ? 'text-warning' : ''"
-								>{{ p.bestStreak }}</span>
+								>
+									{{ p.bestStreak }}
+								</span>
 							</div>
 						</template>
 					</VTooltip>
 
-					<VTooltip :text="$t('routineTodoList.streaks')" location="bottom">
+					<VTooltip
+						:text="$t('routineTodoList.streaks')"
+						location="bottom"
+					>
 						<template #activator="{ props: tip }">
 							<div
 								v-bind="tip"
@@ -68,7 +76,10 @@
 						</template>
 					</VTooltip>
 
-					<VTooltip :text="$t('routineTodoList.consistencyLegend')" location="bottom">
+					<VTooltip
+						:text="$t('routineTodoList.consistencyLegend')"
+						location="bottom"
+					>
 						<template #activator="{ props: tip }">
 							<div
 								v-bind="tip"
@@ -82,7 +93,9 @@
 								<span
 									class="text-body-2 font-weight-bold"
 									:class="consistencyColor(p)"
-								>{{ consistencyPct(p) }}%</span>
+								>
+									{{ consistencyPct(p) }}%
+								</span>
 							</div>
 						</template>
 					</VTooltip>

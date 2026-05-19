@@ -61,21 +61,8 @@
 		@cancel="toggleBulkSelectMode"
 		@selectAll="selectAllShown"
 		@changeDayType="executeBulkDayTypeChange"
-		@openApplyTemplate="bulkApplyDialog = true"
-		@openCopyDay="copyDayDialog = true"
-	/>
-
-	<BulkApplyTemplateDialog
-		v-model="bulkApplyDialog"
-		:selectedCount="selectedDayIds.length"
-		:activeTemplates
-		@apply="executeBulkApply"
-	/>
-
-	<CopyDayDialog
-		v-model="copyDayDialog"
-		:selectedCount="selectedDayIds.length"
-		@copy="executeCopyDay"
+		@openApplyTemplate="openBulkApplyDialog"
+		@openCopyDay="openCopyDayDialog"
 	/>
 
 	<CalendarDetailsDialog
@@ -94,8 +81,8 @@
 	import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
 	import CalendarDayCellContent from '@/components/dayPlanner/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/components/dayPlanner/calendar/CalendarStatsBar.vue'
-	import BulkApplyTemplateDialog from '@/components/dayPlanner/calendar/BulkApplyTemplateDialog.vue'
-	import CopyDayDialog from '@/components/dayPlanner/calendar/CopyDayDialog.vue'
+	import BulkApplyTemplateForm from '@/components/dayPlanner/calendar/BulkApplyTemplateForm.vue'
+	import CopyDayForm from '@/components/dayPlanner/calendar/CopyDayForm.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 	import ApplyTemplateActionBar from '@/components/dayPlanner/calendar/ApplyTemplateActionBar.vue'
 	import BulkSelectActionBar from '@/components/dayPlanner/calendar/BulkSelectActionBar.vue'
@@ -116,12 +103,14 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import { useDayPlannerSettingsStore } from '@/stores/dayPlanner/dayPlannerSettingsStore.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useCalendarModes } from '@/composables/dayPlanner/useCalendarModes.ts'
 
 	const { usStringToUrlString, formatToDate } = useDateTime()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
+	const { openDialog } = useDialog()
 	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -144,9 +133,7 @@
 	const dayTasksMap = ref<Map<number, PlannerTask[]>>(new Map())
 	const activeTemplates = ref<TaskPlannerDayTemplate[]>([])
 	const applyConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
-	const bulkApplyDialog = ref(false)
 	const bulkApplying = ref(false)
-	const copyDayDialog = ref(false)
 	const detailsDialog = ref(false)
 	const editingDay = ref<Calendar | null>(null)
 
@@ -248,6 +235,32 @@
 		})
 	}
 
+	async function openBulkApplyDialog() {
+		const result = await openDialog<{ templateId: number; conflictResolution: ApplyTemplateConflictResolution }>({
+			component: BulkApplyTemplateForm,
+			componentProps: { activeTemplates: activeTemplates.value },
+			dialogProps: {
+				title: `Apply Template to ${selectedDayIds.value.length} day(s)`,
+				confirmBtnLabel: 'Apply',
+			},
+		})
+		if (!result) return
+		await executeBulkApply(result.templateId, result.conflictResolution)
+	}
+
+	async function openCopyDayDialog() {
+		const result = await openDialog<{ sourceDate: Date }>({
+			component: CopyDayForm,
+			componentProps: { selectedCount: selectedDayIds.value.length },
+			dialogProps: {
+				title: `Copy tasks to ${selectedDayIds.value.length} day(s)`,
+				confirmBtnLabel: 'Copy',
+			},
+		})
+		if (!result) return
+		await executeCopyDay(result.sourceDate)
+	}
+
 	async function executeBulkApply(templateId: number, conflictResolution: ApplyTemplateConflictResolution) {
 		bulkApplying.value = true
 		try {
@@ -272,7 +285,6 @@
 			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
 			isBulkSelectMode.value = false
-			bulkApplyDialog.value = false
 			calendarGridRef.value?.refresh()
 
 			if (failed > 0)
@@ -304,7 +316,6 @@
 
 			selectedDayIds.value = []
 			isBulkSelectMode.value = false
-			copyDayDialog.value = false
 			calendarGridRef.value?.refresh()
 			showSuccessSnackbar(`Tasks copied to ${targetDays.length} day(s)`)
 		} catch {

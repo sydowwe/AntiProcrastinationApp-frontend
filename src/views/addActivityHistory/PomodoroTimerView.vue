@@ -230,11 +230,6 @@
 						{{ restActivitySelectionForm?.getSelectedActivityName }}
 					</VChip>
 				</div>
-				<SaveActivityDialog
-					ref="saveDialog"
-					@saved="saveActivity()"
-					@resetTime="resetTimer"
-				></SaveActivityDialog>
 				<PomodoroPresetsDialog
 					ref="presetsDialog"
 					@select="selectPreset"
@@ -245,7 +240,7 @@
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
+	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { computed, onUnmounted, ref } from 'vue'
@@ -257,6 +252,7 @@
 	import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null
@@ -269,10 +265,10 @@
 	const i18n = useI18n()
 	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
 		useTimerNotifications()
+	const { openDialog } = useDialog()
 
 	const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const restActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
-	const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
 
 	const focusInitialTime = ref(new Time(0, 25))
@@ -499,7 +495,7 @@
 		}
 	}
 
-	function stop(automatic: boolean) {
+	async function stop(automatic: boolean) {
 		clearInterval(intervalId.value)
 		clearTimeout(notificationTimeoutId.value)
 		intervalId.value = undefined
@@ -521,12 +517,6 @@
 		const focusActivityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
 		const restActivityName = restActivitySelectionForm.value?.getSelectedActivityName as string
 
-		if (!activityId) {
-			saveDialog.value?.open(focusActivityName, timeSpent)
-		} else {
-			emit('done', startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value))
-		}
-
 		if (automatic) {
 			const completedCycles = currentCycle.value
 			triggerTimerEndNotification(
@@ -537,6 +527,20 @@
 				'Pomodoro complete!',
 				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
 			)
+		}
+
+		if (!activityId) {
+			const result = await openDialog<boolean>({
+				component: SaveActivityBody,
+				componentProps: { activity: focusActivityName, timeSpent },
+				dialogProps: { title: i18n.t('activities.recordNewActivity') },
+			})
+			if (result) {
+				saveActivity()
+			}
+			resetTimer()
+		} else {
+			emit('done', startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value))
 		}
 	}
 

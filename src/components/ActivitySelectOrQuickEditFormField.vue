@@ -96,6 +96,7 @@
 
 	const selectedActivityId = ref<number | undefined>(undefined)
 	const categoryOptions = ref<SelectOption[]>([])
+	const loading = ref(false)
 
 	const quickEditModeItems = computed(() => [
 		{ title: i18n.t('activities.overwrite'), value: 'Overwrite' },
@@ -107,7 +108,9 @@
 	const quickEditMode = ref<'Overwrite' | 'Clone'>('Overwrite')
 
 	onMounted(async () => {
+		loading.value = true
 		categoryOptions.value = await fetchCategorySelectOptions()
+		loading.value = false
 	})
 
 	async function execAndReturnStatus() {
@@ -134,7 +137,9 @@
 	}
 
 	async function onOpenEdit(activityId: number) {
+		loading.value = true
 		const oldActivity = await fetchById(activityId)
+		loading.value = false
 		if (!oldActivity) {
 			showErrorSnackbar(i18n.t('activities.activityNotFound', { id: activityId }))
 			return
@@ -169,5 +174,6 @@
 		execAndReturnStatus,
 		reset,
 		onOpenEdit,
+		loading,
 	})
 </script>

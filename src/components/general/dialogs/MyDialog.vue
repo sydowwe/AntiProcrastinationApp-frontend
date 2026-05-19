@@ -10,6 +10,7 @@
 		<VCard
 			class="py-4 px-0"
 			color="surface"
+			:loading="loading"
 		>
 			<slot name="header">
 				<VCardTitle
@@ -23,12 +24,23 @@
 					</slot>
 				</VCardTitle>
 			</slot>
-			<VCardText class="py-0 px-4 px-md-6 overflow-y-auto">
+			<VCardText
+				class="py-0 px-4 px-md-6 overflow-y-auto"
+				style="position: relative"
+			>
 				<slot>
 					<span class="px-6 py-4 text-center">
 						{{ text }}
 					</span>
 				</slot>
+				<!--				<VOverlay-->
+				<!--					:modelValue="loading"-->
+				<!--					contained-->
+				<!--					class="align-center justify-center"-->
+				<!--					scrim="surface"-->
+				<!--				>-->
+				<!--					<VProgressCircular indeterminate color="primary" />-->
+				<!--				</VOverlay>-->
 			</VCardText>
 			<VCardActions
 				v-if="hasFooter"
@@ -84,6 +96,7 @@
 		confirmBtnLabel,
 		confirmBtnColor,
 		confirmBtnDisabled = false,
+		loading = false,
 		isSmall = true,
 	} = defineProps<{
 		title?: string
@@ -100,6 +113,7 @@
 		confirmBtnLabel?: string
 		confirmBtnColor?: string
 		confirmBtnDisabled?: boolean
+		loading?: boolean
 		isSmall?: boolean
 	}>()
 	const emit = defineEmits<{

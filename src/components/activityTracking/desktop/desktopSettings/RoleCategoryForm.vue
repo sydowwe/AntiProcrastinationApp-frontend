@@ -4,7 +4,7 @@
 			icon="plus"
 			color="success"
 			density="compact"
-			@create="addRoleDialog?.openAddDialog"
+			@create="openAddRoleDialog"
 		>
 			<VIdAutocomplete
 				v-model="model.roleId"
@@ -19,7 +19,7 @@
 			icon="plus"
 			color="success"
 			density="compact"
-			@create="addCategoryDialog?.openAddDialog"
+			@create="openAddCategoryDialog"
 		>
 			<VIdAutocomplete
 				v-model="model.categoryId"
@@ -30,41 +30,43 @@
 				density="compact"
 			></VIdAutocomplete>
 		</InputWithButton>
-		<ActivityRoleDialog
-			ref="addRoleDialog"
-			@created="onRoleCreated"
-		></ActivityRoleDialog>
-		<ActivityCategoryDialog
-			ref="addCategoryDialog"
-			@created="onCategoryCreated"
-		></ActivityCategoryDialog>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import ActivityCategoryDialog from '@/components/dialogs/activity/ActivityCategoryDialog.vue'
+	import ActivityCategoryForm from '@/components/activity/activityCategory/ActivityCategoryForm.vue'
 	import InputWithButton from '@/components/general/InputWithButton.vue'
-	import ActivityRoleDialog from '@/components/dialogs/activity/ActivityRoleDialog.vue'
+	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
 	import { ref } from 'vue'
 	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const model = defineModel<{ roleId: number | null; categoryId: number | null }>({ required: true })
-	const addRoleDialog = ref<InstanceType<typeof ActivityRoleDialog>>()
-	const addCategoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>()
+	const { openDialog } = useDialog()
 
 	const roleOptions = ref<SelectOption[]>([])
 	const categoryOptions = ref<SelectOption[]>([])
 
-	function onRoleCreated(request: RoleRequest, createdId: number) {
-		roleOptions.value.push(new SelectOption(createdId, request.name))
-		model.value.roleId = createdId
+	async function openAddRoleDialog() {
+		const result = await openDialog<{ request: RoleRequest; createdId?: number }>({
+			component: ActivityRoleForm,
+			dialogProps: { title: 'Add new role', confirmBtnLabel: 'Create' },
+		})
+		if (!result?.createdId) return
+		roleOptions.value.push(new SelectOption(result.createdId, result.request.name))
+		model.value.roleId = result.createdId
 	}
 
-	function onCategoryCreated(request: CategoryRequest, createdId: number) {
-		categoryOptions.value.push(new SelectOption(createdId, request.name))
-		model.value.categoryId = createdId
+	async function openAddCategoryDialog() {
+		const result = await openDialog<{ request: CategoryRequest; createdId?: number }>({
+			component: ActivityCategoryForm,
+			dialogProps: { title: 'Add new category', confirmBtnLabel: 'Create' },
+		})
+		if (!result?.createdId) return
+		categoryOptions.value.push(new SelectOption(result.createdId, result.request.name))
+		model.value.categoryId = result.createdId
 	}
 </script>
 

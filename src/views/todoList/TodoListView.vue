@@ -148,11 +148,6 @@
 		@itemsChanged="itemsChanged"
 		@logTimeCreated="onLogTimeCreated"
 	/>
-	<MoveToListDialog
-		ref="moveToListDialog"
-		:currentListId="todoListId"
-		@moved="moveItemToList"
-	/>
 </template>
 
 <script setup lang="ts">
@@ -178,11 +173,12 @@
 	import NormalTodoListItem from '@/components/toDoList/normal/NormalTodoListItem.vue'
 	import BaseTodoListLogTimeController from '@/components/toDoList/BaseTodoListLogTimeController.vue'
 	import ToDoListItemDialog from '@/components/toDoList/normal/ToDoListItemDialog.vue'
-	import MoveToListDialog from '@/components/toDoList/normal/MoveToListDialog.vue'
+	import MoveToListForm from '@/components/toDoList/normal/MoveToListForm.vue'
 	import TodoListFilters from '@/components/toDoList/TodoListFilters.vue'
 	import TodoListUndoBtn from '@/components/toDoList/TodoListUndoBtn.vue'
 	import { useTodoListFilters } from '@/composables/todoList/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/composables/todoList/useTodoListUndo.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{
 		id: string
@@ -211,10 +207,10 @@
 	const i18n = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
+	const { openDialog } = useDialog()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
-	const moveToListDialog = ref<InstanceType<typeof MoveToListDialog>>()
 	const items = ref([] as TodoListItemEntity[])
 	const listEntity = ref<TodoListEntity | null>(null)
 
@@ -342,8 +338,16 @@
 		}
 	}
 
-	function openMoveToList(item: TodoListItemEntity) {
-		moveToListDialog.value?.open(item.id)
+	async function openMoveToList(item: TodoListItemEntity) {
+		const result = await openDialog<{ destinationListId: number }>({
+			component: MoveToListForm,
+			componentProps: { currentListId: todoListId },
+			dialogProps: {
+				title: i18n.t('toDoList.moveToList'),
+			},
+		})
+		if (!result) return
+		await moveItemToList(item.id, result.destinationListId)
 	}
 
 	async function moveItemToList(itemId: number, destinationListId: number) {

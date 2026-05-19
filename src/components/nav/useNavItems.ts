@@ -84,6 +84,17 @@ const items: MenuItem[] = [
 			{ title: 'dayPlannerSettings', icon: 'gear', to: '/day-planner/settings', needsAdmin: false },
 		],
 	},
+	{
+		title: 'leisure',
+		icon: 'umbrella-beach',
+		needsAdmin: false,
+		children: [
+			{ title: 'backlog', icon: 'box-archive', to: '/leisure/backlog', needsAdmin: false },
+			{ title: 'projects', icon: 'screwdriver-wrench', to: '/leisure/projects', needsAdmin: false },
+			{ title: 'bucketList', icon: 'star', to: '/leisure/bucket-list', needsAdmin: false },
+			{ title: 'memoryAnchors', icon: 'anchor', to: '/leisure/memory-anchors', needsAdmin: false },
+		],
+	},
 ]
 
 export type { MenuItem }

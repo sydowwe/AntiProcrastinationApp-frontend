@@ -73,7 +73,7 @@
 				<VBtn
 					v-if="!store.isTemplateInPreview"
 					color="secondary"
-					@click="rescheduleDialog = true"
+					@click="openRescheduleDialog"
 				>
 					Reschedule
 				</VBtn>
@@ -108,16 +108,6 @@
 			:calendar="calendar"
 			@updated="updatedCalendar"
 		/>
-		<!-- Reschedule Dialog -->
-		<RescheduleDialog
-			v-model="rescheduleDialog"
-			@reschedule="handleReschedule"
-		/>
-		<!-- Skip Dialog -->
-		<SkipReasonDialog
-			v-model="skipDialog"
-			@skip="handleSkip"
-		/>
 		<DayPlannerLogTimeController ref="logTimeController" />
 	</div>
 </template>
@@ -151,8 +141,9 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
-	import RescheduleDialog from '@/components/dayPlanner/normal/RescheduleDialog.vue'
-	import SkipReasonDialog from '@/components/dayPlanner/normal/SkipReasonDialog.vue'
+	import RescheduleForm from '@/components/dayPlanner/normal/RescheduleForm.vue'
+	import SkipReasonForm from '@/components/dayPlanner/normal/SkipReasonForm.vue'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import DayPlannerLogTimeController from '@/components/dayPlanner/normal/DayPlannerLogTimeController.vue'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
@@ -168,6 +159,7 @@
 
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { openDialog } = useDialog()
 	const settingsStore = useDayPlannerSettingsStore()
 	const undoStack = useUndoStack()
 	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
@@ -218,14 +210,12 @@
 
 	const calendar = ref<Calendar>()
 	const calendarDetailsDialog = ref(false)
-	const rescheduleDialog = ref(false)
 
 	const suggestions = ref<SuggestionResponse[]>([])
 	const addedSuggestionIds = ref<Set<string>>(new Set())
 	const activePanel = ref<'details' | 'routine'>('details')
 	const panelOpen = ref(true)
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
-	const skipDialog = ref(false)
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
 	provide('selectedRoutineItem', selectedRoutineItem)
@@ -417,7 +407,7 @@
 			return
 		}
 		if (status === PlannerTaskStatus.Cancelled) {
-			skipDialog.value = true
+			openSkipDialog()
 			return
 		}
 		await Promise.all(
@@ -437,6 +427,33 @@
 		)
 		calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 		store.clearSelection()
+	}
+
+	async function openSkipDialog() {
+		const result = await openDialog<{ reason: string }>({
+			component: SkipReasonForm,
+			dialogProps: {
+				title: 'Skip task',
+				confirmBtnLabel: 'Skip',
+				confirmBtnColor: 'warning',
+			},
+		})
+		if (result) {
+			await handleSkip(result.reason)
+		}
+	}
+
+	async function openRescheduleDialog() {
+		const result = await openDialog<{ date: Date }>({
+			component: RescheduleForm,
+			dialogProps: {
+				title: 'Reschedule tasks',
+				confirmBtnLabel: 'Reschedule',
+			},
+		})
+		if (result) {
+			await handleReschedule(result.date)
+		}
 	}
 
 	async function handleSkip(reason: string) {

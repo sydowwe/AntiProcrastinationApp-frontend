@@ -7,52 +7,78 @@
 			justify="start"
 			class="my-2 mx-0"
 		>
-			<VCol
-				cols="12"
-				lg="6"
-				class="py-0 py-md-2 d-flex flex-column"
-			>
-				<template
-					v-for="(record, i) in firstHalf"
-					:key="record.id"
+			<template v-if="singleColumn">
+				<VCol
+					cols="12"
+					class="py-0 py-md-2 d-flex flex-column"
 				>
-					<div
-						v-if="isDayChange(firstHalf, i)"
-						class="w-100 bg-blue-grey rounded text-center mb-2"
+					<template
+						v-for="(record, i) in historyList"
+						:key="record.id"
 					>
-						{{ formatLocalized(record.startTimestamp, 'L') }}
-					</div>
-					<HistoryRecordItem
-						class="my-2 my-md-3 w-100"
-						:record="record"
-						@edit="handleEdit"
-						@delete="handleDeleteRequest"
-					/>
-				</template>
-			</VCol>
-			<VCol
-				cols="12"
-				lg="6"
-				class="py-0 py-md-2 d-flex flex-column"
-			>
-				<template
-					v-for="(record, i) in secondHalf"
-					:key="record.id"
+						<div
+							v-if="isDayChange(historyList, i)"
+							class="w-100 bg-blue-grey rounded text-center mb-2"
+						>
+							{{ formatLocalized(record.startTimestamp, 'L') }}
+						</div>
+						<HistoryRecordItem
+							class="my-2 my-md-3 w-100"
+							:record="record"
+							@edit="handleEdit"
+							@delete="handleDeleteRequest"
+						/>
+					</template>
+				</VCol>
+			</template>
+			<template v-else>
+				<VCol
+					cols="12"
+					lg="6"
+					class="py-0 py-md-2 d-flex flex-column"
 				>
-					<div
-						v-if="isDayChange(secondHalf, i)"
-						class="w-100 bg-blue-grey rounded text-center mb-2"
+					<template
+						v-for="(record, i) in firstHalf"
+						:key="record.id"
 					>
-						{{ formatLocalized(record.startTimestamp, 'L') }}
-					</div>
-					<HistoryRecordItem
-						class="my-2 my-md-3 w-100"
-						:record="record"
-						@edit="handleEdit"
-						@delete="handleDeleteRequest"
-					/>
-				</template>
-			</VCol>
+						<div
+							v-if="isDayChange(firstHalf, i)"
+							class="w-100 bg-blue-grey rounded text-center mb-2"
+						>
+							{{ formatLocalized(record.startTimestamp, 'L') }}
+						</div>
+						<HistoryRecordItem
+							class="my-2 my-md-3 w-100"
+							:record="record"
+							@edit="handleEdit"
+							@delete="handleDeleteRequest"
+						/>
+					</template>
+				</VCol>
+				<VCol
+					cols="12"
+					lg="6"
+					class="py-0 py-md-2 d-flex flex-column"
+				>
+					<template
+						v-for="(record, i) in secondHalf"
+						:key="record.id"
+					>
+						<div
+							v-if="isDayChange(secondHalf, i)"
+							class="w-100 bg-blue-grey rounded text-center mb-2"
+						>
+							{{ formatLocalized(record.startTimestamp, 'L') }}
+						</div>
+						<HistoryRecordItem
+							class="my-2 my-md-3 w-100"
+							:record="record"
+							@edit="handleEdit"
+							@delete="handleDeleteRequest"
+						/>
+					</template>
+				</VCol>
+			</template>
 		</VRow>
 
 		<MyDialog
@@ -61,10 +87,6 @@
 			text="Are you sure you want to delete this activity history record?"
 			confirmBtnColor="error"
 			@confirmed="confirmDelete"
-		/>
-		<EditActivityHistoryDialog
-			ref="editDialogRef"
-			@saved="fetchData"
 		/>
 	</div>
 </template>
@@ -78,14 +100,16 @@
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import type { Time } from '@/dtos/dto/Time.ts'
 	import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
-	import EditActivityHistoryDialog from '@/components/history/EditActivityHistoryDialog.vue'
+	import EditActivityHistoryForm from '@/components/history/EditActivityHistoryForm.vue'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useUserStore } from '@/stores/userStore.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{
 		date: string
 		timeFrom: Time
 		timeTo: Time
+		singleColumn?: boolean
 	}>()
 
 	const { formatLocalized } = useDateTime()
@@ -161,9 +185,14 @@
 	}
 
 	// --- Edit ---
-	const editDialogRef = ref<InstanceType<typeof EditActivityHistoryDialog>>()
+	const { openDialog } = useDialog()
 
-	function handleEdit(record: ActivityHistory) {
-		editDialogRef.value?.open(record)
+	async function handleEdit(record: ActivityHistory) {
+		const result = await openDialog({
+			component: EditActivityHistoryForm,
+			componentProps: { record },
+			dialogProps: { title: 'Edit Activity History', isSmall: false },
+		})
+		if (result) fetchData()
 	}
 </script>

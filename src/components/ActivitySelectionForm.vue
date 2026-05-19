@@ -96,33 +96,21 @@
 				</InputWithButton>
 			</VCol>
 		</VRow>
-		<ActivityDialog
-			ref="createActivityDialog"
-			@created="onActivityCreated"
-		></ActivityDialog>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, reactive, ref, watch } from 'vue'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import { reactive, ref, watch } from 'vue'
 	import { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
-	import {
-		filterActivityFormSelectOptions,
-		getAllActivityFormSelectOptionsCombinations,
-	} from '@/composables/activity/ActivitySelectsComposition.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import InputWithButton from '@/components/general/InputWithButton.vue'
 	import type { VAutocomplete } from 'vuetify/components'
-	import { ActivityFormSelectOptions } from '@/dtos/response/activity/ActivityFormSelectOptions.ts'
-	import type { ActivitySelectOptionCombination } from '@/dtos/response/activity/ActivitySelectOptionCombination.ts'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import ActivityForm from '@/components/activity/ActivityForm.vue'
+	import { useActivitySelectionFormState } from '@/composables/activity/useActivitySelectionFormState.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
-	import ActivityDialog from '@/components/activity/ActivityDialog.vue'
 
 	const {
 		isFilter = false,
@@ -152,134 +140,46 @@
 	const selectedActivityId = defineModel<number | null>('activityId', { default: null })
 
 	const { requiredRule } = useGeneralRules()
-
-	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
-	const { create } = useActivityHistoryCrud()
+	const { openDialog } = useDialog()
 	const activityField = ref<InstanceType<typeof VAutocomplete>>()
-	const createActivityDialog = ref<InstanceType<typeof ActivityDialog>>()
 
-	const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([])
-	const filteredOptions = ref(new ActivityFormSelectOptions())
-
-	const activityIdModel = computed({
-		get: () => {
-			if (isFilter) {
-				return formData.value!.activityId
-			} else {
-				console.log(selectedActivityId.value)
-				return selectedActivityId.value
-			}
-		},
-		set: (value: number | null) => {
-			if (isFilter) {
-				formData.value!.activityId = value
-			} else {
-				selectedActivityId.value = value
-			}
-		},
-	})
-
-	onMounted(async () => {
-		allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(selectOptionsSource)
-		formData.value!.activityId = formData.value!.activityId ?? null
-		filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!)
-	})
-
-	watch(
-		formData,
-		newValue => {
-			if (isFilter) {
-				filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value!)
-				activityIdModel.value = newValue.activityId
-			}
-		},
-		{ deep: true, immediate: true },
-	)
+	const {
+		loading,
+		filteredOptions,
+		activityIdModel,
+		getSelectedActivityName,
+		getSelectedActivityId,
+		getSelectedRoleName,
+		getSelectedCategoryName,
+		getSelectedTaskPriorityName,
+		getSelectedRoutineTimePeriodName,
+		saveActivityToHistory,
+		onActivityCreated,
+	} = useActivitySelectionFormState(formData, selectedActivityId, isFilter, selectOptionsSource)
 
 	watch(activityIdModel, newValue => {
 		emit('activityIdChanged', newValue)
 	})
 
-	watch(
-		() => formData.value!.isFromToDoList,
-		newValue => {
-			if (!newValue) {
-				formData.value!.taskPriorityId = null
-			}
-		},
-	)
-	watch(
-		() => formData.value!.isFromRoutineToDoList,
-		newValue => {
-			if (!newValue) {
-				formData.value!.routineTimePeriodId = null
-			}
-		},
-	)
-
 	async function validate() {
 		return await activityField.value?.validate()
 	}
 
-	async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
-		if (!activityIdModel.value) {
-			showErrorSnackbar(`Please select an activity`)
-		} else {
-			const newId = await create(startTimestamp, activityLength, activityIdModel.value)
-
-			if (newId) {
-				showSuccessSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`)
-				return newId
-			} else {
-				showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName.value} to history`)
-				return null
-			}
-		}
+	async function createNewActivity() {
+		const result = await openDialog<{ request: ActivityRequest; createdId?: number }>({
+			component: ActivityForm,
+			componentProps: {
+				initialRoleId: formData.value.roleId ?? undefined,
+				initialCategoryId: formData.value.categoryId ?? undefined,
+			},
+			dialogProps: { title: 'Create Activity', confirmBtnLabel: 'Create', isSmall: false },
+		})
+		if (!result?.createdId) return
+		onActivityCreated(result.request, result.createdId)
 	}
-
-	function createNewActivity() {
-		createActivityDialog.value?.openAddDialog(
-			formData.value.roleId ?? undefined,
-			formData.value.categoryId ?? undefined,
-		)
-	}
-
-	function onActivityCreated(request: ActivityRequest, createdId: number) {
-		// Add new activity to the options
-		filteredOptions.value.activityOptions.push(new SelectOption(createdId, request.name))
-		// Auto-select the newly created activity
-		activityIdModel.value = createdId
-	}
-
-	const getSelectedRoleName = computed((): string => {
-		const options = filteredOptions.value.roleOptions || []
-		return options.find(item => item.id === formData.value!.roleId)?.text || ''
-	})
-
-	const getSelectedCategoryName = computed((): string => {
-		const options = filteredOptions.value.categoryOptions || []
-		return options.find(item => item.id === formData.value!.categoryId)?.text || ''
-	})
-
-	const getSelectedTaskPriorityName = computed((): string => {
-		const options = filteredOptions.value.taskPriorityOptions || []
-		return options.find(item => item.id === formData.value!.taskPriorityId)?.text || ''
-	})
-
-	const getSelectedRoutineTimePeriodName = computed((): string => {
-		const options = filteredOptions.value.routineTimePeriodOptions || []
-		return options.find(item => item.id === formData.value!.routineTimePeriodId)?.text || ''
-	})
-
-	const getSelectedActivityName = computed((): string => {
-		return filteredOptions.value?.activityOptions.find(item => item.id === activityIdModel.value)?.text || ''
-	})
-
-	const getSelectedActivityId = computed(() => {
-		return formData.value!.activityId
-	})
 
 	defineExpose({
+		loading,
 		validate,
 		getSelectedActivityName,
 		getSelectedActivityId,

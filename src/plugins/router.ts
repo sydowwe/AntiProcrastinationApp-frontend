@@ -33,6 +33,10 @@ import DesktopActivityDashboard from '@/views/tracker/DesktopActivityDashboard.v
 import AndroidActivityDashboard from '@/views/tracker/AndroidActivityDashboard.vue'
 import AndroidSettingsView from '@/views/tracker/AndroidSettingsView.vue'
 import GoogleCalendarCallbackView from '@/views/googleCalendar/GoogleCalendarCallbackView.vue'
+import BacklogView from '@/views/leisure/BacklogView.vue'
+import ProjectsView from '@/views/leisure/ProjectsView.vue'
+import BucketListView from '@/views/leisure/BucketListView.vue'
+import MemoryAnchorsView from '@/views/leisure/MemoryAnchorsView.vue'
 
 const router = createRouter({
 	history: createWebHistory('/'),
@@ -200,6 +204,26 @@ const router = createRouter({
 			path: '/google-calendar/callback',
 			name: 'googleCalendarCallback',
 			component: GoogleCalendarCallbackView,
+		},
+		{
+			path: '/leisure/backlog',
+			name: 'leisureBacklog',
+			component: BacklogView,
+		},
+		{
+			path: '/leisure/projects',
+			name: 'leisureProjects',
+			component: ProjectsView,
+		},
+		{
+			path: '/leisure/bucket-list',
+			name: 'leisureBucketList',
+			component: BucketListView,
+		},
+		{
+			path: '/leisure/memory-anchors',
+			name: 'leisureMemoryAnchors',
+			component: MemoryAnchorsView,
 		},
 		// {
 		//   path: '/about',

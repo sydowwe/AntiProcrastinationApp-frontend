@@ -61,21 +61,17 @@
 				</VRow>
 			</VForm>
 		</VCol>
-		<QrCodeFor2FADialog
-			v-model="qrCode2FADialog"
-			:qrCodeImage="qrCodeImage"
-			@done="goToLogin"
-		></QrCodeFor2FADialog>
 	</VRow>
 </template>
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import QrCodeFor2FADialog from '../../components/user/dialogs/QrCodeFor2FADialog.vue'
+	import QrCodeFor2FABody from '@/components/user/dialogs/QrCodeFor2FABody.vue'
 	import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue'
 	import { useUserDetailsValidation } from '@/utils/UserAuthUtils.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import router from '@/plugins/router.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
@@ -89,6 +85,7 @@
 	const i18n = useI18n()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showErrorSnackbar } = useSnackbar()
+	const { openDialog } = useDialog()
 	const userStore = useUserStore()
 	const { emailRules } = useUserDetailsValidation()
 
@@ -102,10 +99,20 @@
 	const termsAndConditions = ref(false)
 	const termsAndConditionsRules = [(v: boolean) => v || i18n.t('authorization.termsAndConditionsRequired')]
 
-	const qrCode2FADialog = ref(false)
-	const qrCodeImage = ref('')
-
 	const { executeRecaptcha } = useRecaptcha()
+
+	async function open2FADialog(qrCodeImage: string) {
+		await openDialog({
+			component: QrCodeFor2FABody,
+			componentProps: { qrCodeImage },
+			dialogProps: {
+				title: i18n.t('authorization.twoFA'),
+				confirmBtnLabel: i18n.t('general.done'),
+				hasCloseBtn: false,
+			},
+		})
+		await goToLogin()
+	}
 
 	async function validateAndSendForm() {
 		const recaptchaToken = await executeRecaptcha('register')
@@ -128,8 +135,7 @@
 					if (response.data?.twoFactorEnabled) {
 						if (response.data.qrCode) {
 							if (response.data.recoveryCodes) {
-								qrCodeImage.value = response.data.qrCode
-								qrCode2FADialog.value = true
+								open2FADialog(response.data.qrCode)
 							} else {
 								showErrorSnackbar(i18n.t('authorization.noRecoveryCodesReceived'))
 							}

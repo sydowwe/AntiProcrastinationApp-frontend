@@ -44,22 +44,19 @@
 				v-model:activityId="selectedActivityId"
 				:formDisabled
 			></ActivitySelectionForm>
-			<SaveActivityDialog
-				ref="saveDialog"
-				@saved="saveActivity"
-				@resetTime="resetTime"
-			></SaveActivityDialog>
 		</VCol>
 	</VRow>
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
-	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
+	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
 	import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null
@@ -71,8 +68,10 @@
 		done: [startTimestamp: Date, length: Time]
 	}>()
 
+	const { openDialog } = useDialog()
+	const { t } = useI18n()
+
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
-	const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>()
 
 	const time = ref(new TimePrecise())
 	const paused = ref(false)
@@ -121,7 +120,7 @@
 		formDisabled.value = false
 	}
 
-	function stop() {
+	async function stop() {
 		clearInterval(intervalId.value)
 		if (startedAt.value !== null) {
 			pausedElapsed.value += Date.now() - startedAt.value
@@ -130,7 +129,16 @@
 		updateTimeDisplay()
 		const name = activitySelectionForm.value?.getSelectedActivityName
 		if (!activityId) {
-			saveDialog.value!.open(name!, time.value.toTimeLength)
+			const timeLength = time.value.toTimeLength
+			const result = await openDialog<boolean>({
+				component: SaveActivityBody,
+				componentProps: { activity: name!, timeSpent: timeLength },
+				dialogProps: { title: t('activities.recordNewActivity') },
+			})
+			if (result) {
+				await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timeLength)
+			}
+			resetTime()
 		} else {
 			emit('done', startTimestamp.value, time.value.toTimeLength)
 		}
@@ -143,11 +151,5 @@
 		startedAt.value = null
 		pausedElapsed.value = 0
 		formDisabled.value = false
-	}
-
-	async function saveActivity(length: Time) {
-		if (!activityId) {
-			await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, length)
-		}
 	}
 </script>

@@ -17,7 +17,7 @@ export function useFetchFilteredTable<TTableResponse extends IMyResponse, TFilte
 		loading.value = true
 		error.value = null
 		try {
-			const response = await API.post(`/${entityName}/filtered-table`, request)
+			const response = await API.post(`/${entityName}/grid`, request)
 			return {
 				items: response.data.items.map((r: any) => tableResponseClass.fromJson(r)),
 				itemsCount: response.data.itemsCount,

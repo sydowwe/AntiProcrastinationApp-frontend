@@ -44,10 +44,7 @@
 					hideDetails
 				></TimeRangePicker>
 			</div>
-			<HistoryGroupBySelector
-				v-if="isStackedBars"
-				v-model="groupBy"
-			/>
+			<HistoryGroupBySelector v-model="groupBy" />
 		</div>
 
 		<!-- Visualization Toggle -->
@@ -105,13 +102,47 @@
 			</VRow>
 		</div>
 
-		<!-- Timeline -->
-		<HistoryTimeline
+		<!-- Timeline + Context Panel -->
+		<VRow
 			v-if="!isStackedBars"
-			:date="date"
-			:timeFrom
-			:timeTo
-		/>
+			class="flex-fill mt-0"
+			style="min-height: 0"
+		>
+			<VCol
+				cols="12"
+				lg="7"
+				class="d-flex flex-column overflow-hidden h-100"
+			>
+				<HistoryTimeline
+					:date="date"
+					:timeFrom
+					:timeTo
+					singleColumn
+				/>
+			</VCol>
+			<VCol
+				cols="12"
+				lg="5"
+				class="d-flex flex-column ga-4 overflow-y-auto"
+			>
+				<HistoryPieChartSection
+					v-model:selectedGroup="selectedGroup"
+					:data="pieChartData"
+					:loading="pieChartLoading"
+				/>
+				<HistorySummaryCards
+					:data="summaryCardsData"
+					:groupBy
+					:selectedGroup
+					:selectedBaseline
+					:topN
+					:loading="summaryCardsLoading"
+					@update:selectedBaseline="handleBaselineChange"
+					@update:topN="handleTopNChange"
+					@groupClick="handleGroupSelect"
+				/>
+			</VCol>
+		</VRow>
 	</div>
 </template>
 
@@ -153,7 +184,7 @@
 	const timeTo = ref(new Time(23, 59))
 	const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
 	const selectedGroup = ref<string | null>(null)
-	const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
+	const selectedBaseline = ref<BaselineType>(BaselineType.SameWeekday)
 	const topN = ref(4)
 	const selectedWindowSize = ref(30)
 	const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')

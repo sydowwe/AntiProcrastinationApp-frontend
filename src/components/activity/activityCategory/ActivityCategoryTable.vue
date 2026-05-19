@@ -9,7 +9,7 @@
 		:itemsLength
 		showActions
 		@onLoadItems="loadItems"
-		@onAdd="categoryDialog.openAddDialog()"
+		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
@@ -27,12 +27,6 @@
 			<template v-else>{{ value ?? '—' }}</template>
 		</template>
 	</BasicTable>
-
-	<ActivityCategoryDialog
-		ref="categoryDialog"
-		@created="loadItems"
-		@updated="loadItems"
-	/>
 </template>
 
 <script setup lang="ts">
@@ -45,7 +39,8 @@
 	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityCategoryCrud } from '@/api/activity/activityCategoryApi.ts'
-	import ActivityCategoryDialog from '@/components/activity/activityCategory/ActivityCategoryDialog.vue'
+	import ActivityCategoryForm from '@/components/activity/activityCategory/ActivityCategoryForm.vue'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
@@ -54,14 +49,13 @@
 		'activity-category',
 	)
 	const { deleteEntity } = useActivityCategoryCrud()
+	const { openDialog } = useDialog()
 
 	const items = ref<Category[]>([])
 	const itemsLength = ref(0)
 	const itemsPerPage = ref(10)
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([])
-
-	const categoryDialog = ref<InstanceType<typeof ActivityCategoryDialog>>()
 
 	const columns: TableColumn[] = [
 		new TableColumn('role', 'Role'),
@@ -93,8 +87,21 @@
 		itemsLength.value = result.itemsCount
 	}
 
-	function onEdit(item: Category) {
-		categoryDialog.value!.openEditDialog(item)
+	async function openCreateDialog() {
+		const result = await openDialog({
+			component: ActivityCategoryForm,
+			dialogProps: { title: 'Add new category', confirmBtnLabel: 'Create' },
+		})
+		if (result) await loadItems()
+	}
+
+	async function onEdit(item: Category) {
+		const result = await openDialog({
+			component: ActivityCategoryForm,
+			componentProps: { entityToEdit: item },
+			dialogProps: { title: 'Edit category', confirmBtnLabel: 'Save' },
+		})
+		if (result) await loadItems()
 	}
 
 	async function onDelete(item: Category) {

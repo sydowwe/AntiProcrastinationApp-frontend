@@ -9,7 +9,7 @@
 		:itemsLength
 		showActions
 		@onLoadItems="loadItems"
-		@onAdd="activityDialog.openAddDialog()"
+		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
@@ -27,18 +27,12 @@
 			<template v-else>{{ value ?? '—' }}</template>
 		</template>
 	</BasicTable>
-
-	<ActivityDialog
-		ref="activityDialog"
-		@created="loadItems"
-		@updated="loadItems"
-	/>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import ActivityDialog from '@/components/activity/ActivityDialog.vue'
+	import ActivityForm from '@/components/activity/ActivityForm.vue'
 	import { Activity } from '@/dtos/response/activity/Activity.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
@@ -46,19 +40,19 @@
 	import type { ActivityFilter } from '@/dtos/request/activity/ActivityFilter.ts'
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{ filter: ActivityFilter }>()
 
 	const { fetchFilteredTable, loading } = useFetchFilteredTable<Activity, ActivityFilter>(Activity, 'activity')
 	const { deleteEntity } = useActivityCrud()
+	const { openDialog } = useDialog()
 
 	const items = ref<Activity[]>([])
 	const itemsLength = ref(0)
 	const itemsPerPage = ref(10)
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([])
-
-	const activityDialog = ref<InstanceType<typeof ActivityDialog>>()
 
 	const columns: TableColumn[] = [
 		new TableColumn('name', 'Name'),
@@ -93,8 +87,21 @@
 		itemsLength.value = result.itemsCount
 	}
 
-	function onEdit(item: Activity) {
-		activityDialog.value!.openEditDialog(item)
+	async function openCreateDialog() {
+		const result = await openDialog({
+			component: ActivityForm,
+			dialogProps: { title: 'Create Activity', confirmBtnLabel: 'Create', isSmall: false },
+		})
+		if (result) await loadItems()
+	}
+
+	async function onEdit(item: Activity) {
+		const result = await openDialog({
+			component: ActivityForm,
+			componentProps: { entityToEdit: item },
+			dialogProps: { title: 'Edit Activity', confirmBtnLabel: 'Save', isSmall: false },
+		})
+		if (result) await loadItems()
 	}
 
 	async function onDelete(item: Activity) {

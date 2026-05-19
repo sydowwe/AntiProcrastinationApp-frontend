@@ -220,7 +220,7 @@
 		loading.value = true
 		try {
 			const response = await API.post(
-				'/activity-tracking/desktop/settings/activity-tracking-settings-desktop-ignored-process/filtered-table',
+				'/activity-tracking/desktop/settings/activity-tracking-settings-desktop-ignored-process/grid',
 				{
 					page: page.value,
 					itemsPerPage: itemsPerPage.value,

@@ -9,7 +9,7 @@
 		:itemsLength
 		showActions
 		@onLoadItems="loadItems"
-		@onAdd="roleDialog.openAddDialog()"
+		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
@@ -27,12 +27,6 @@
 			<template v-else>{{ value ?? '—' }}</template>
 		</template>
 	</BasicTable>
-
-	<ActivityRoleDialog
-		ref="roleDialog"
-		@created="loadItems"
-		@updated="loadItems"
-	/>
 </template>
 
 <script setup lang="ts">
@@ -46,21 +40,21 @@
 	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
-	import ActivityRoleDialog from '@/components/activity/activityRole/ActivityRoleDialog.vue'
+	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
 	const { getBgColor } = useColor()
 	const { fetchFilteredTable, loading } = useFetchFilteredTable<Role, NameTextFilter>(Role, 'activity-role')
 	const { deleteEntity } = useActivityRoleCrud()
+	const { openDialog } = useDialog()
 
 	const items = ref<Role[]>([])
 	const itemsLength = ref(0)
 	const itemsPerPage = ref(10)
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([])
-
-	const roleDialog = ref<InstanceType<typeof ActivityRoleDialog>>()
 
 	const columns: TableColumn[] = [
 		new TableColumn('name', 'Name'),
@@ -91,8 +85,21 @@
 		itemsLength.value = result.itemsCount
 	}
 
-	function onEdit(item: Role) {
-		roleDialog.value!.openEditDialog(item)
+	async function openCreateDialog() {
+		const result = await openDialog({
+			component: ActivityRoleForm,
+			dialogProps: { title: 'Add new role', confirmBtnLabel: 'Create' },
+		})
+		if (result) await loadItems()
+	}
+
+	async function onEdit(item: Role) {
+		const result = await openDialog({
+			component: ActivityRoleForm,
+			componentProps: { entityToEdit: item },
+			dialogProps: { title: 'Edit role', confirmBtnLabel: 'Save' },
+		})
+		if (result) await loadItems()
 	}
 
 	async function onDelete(item: Role) {

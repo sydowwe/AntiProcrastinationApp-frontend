@@ -17,7 +17,7 @@
 				</span>
 				<VBtn
 					color="primary"
-					@click="changeEmailDialog?.open()"
+					@click="openChangeEmailDialog"
 				>
 					{{ i18n.t('controls.edit') }}
 				</VBtn>
@@ -86,7 +86,7 @@
 			</VBtn>
 			<VBtn
 				color="warning"
-				@click="changePasswordDialog = true"
+				@click="openChangePasswordDialog"
 			>
 				{{ i18n.t('user.changePassword') }}
 			</VBtn>
@@ -98,21 +98,9 @@
 			</VBtn>
 		</div>
 	</VCard>
-
-	<ChangeEmailDialog
-		ref="changeEmailDialog"
-		:email="userStore.currentUser.email"
-		@changed="onEmailChanged"
-	/>
-	<ChangePasswordDialog v-model="changePasswordDialog" />
-	<VerifyUserDialog
-		ref="verifyUserDialog"
-		:url="verifyUserDialogData.url"
-		@verified="verifyUserDialogData.onVerified"
-	/>
 </template>
 <script setup lang="ts">
-	import { computed, ref } from 'vue'
+	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
@@ -120,9 +108,10 @@
 	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import router from '@/plugins/router.ts'
-	import ChangeEmailDialog from '@/components/user/dialogs/ChangeEmailDialog.vue'
-	import ChangePasswordDialog from '@/components/user/dialogs/ChangePasswordDialog.vue'
-	import VerifyUserDialog from '@/components/user/dialogs/VerifyUserDialog.vue'
+	import ChangeEmailForm from '@/components/user/dialogs/ChangeEmailForm.vue'
+	import ChangePasswordForm from '@/components/user/dialogs/ChangePasswordForm.vue'
+	import VerifyUserForm from '@/components/user/dialogs/VerifyUserForm.vue'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()
@@ -139,9 +128,7 @@
 		unsubscribe: pushUnsubscribe,
 	} = usePushNotifications()
 
-	const changeEmailDialog = ref<InstanceType<typeof ChangeEmailDialog>>()
-	const changePasswordDialog = ref(false)
-	const verifyUserDialog = ref<InstanceType<typeof VerifyUserDialog>>()
+	const { openDialog } = useDialog()
 	const qrCodeImage = ref('')
 	const googleCalendarConnected = ref(false)
 	const googleCalendarLoading = ref(false)
@@ -154,33 +141,6 @@
 	API.get<boolean>('/user/2fa/status').then(r => {
 		isTwoFactorAuthEnabled.value = r.data
 		userStore.currentUser.twoFactorEnabled = r.data
-	})
-
-	type TCurrentAction = 'toggleTwoFactorAuth' | 'deleteAccount' | 'show2FAQrCode' | 'showScratchCode'
-	const currentAction = ref<TCurrentAction>('toggleTwoFactorAuth')
-
-	const verifyUserDialogData = computed(() => {
-		let url = '/user/verify'
-		let onVerified: (data?: unknown) => void = () => {}
-		switch (currentAction.value) {
-			case 'deleteAccount':
-				url = '/user/delete-account'
-				onVerified = onDeleted
-				break
-			case 'toggleTwoFactorAuth':
-				url = '/user/2fa/toggle'
-				onVerified = onToggleTwoFactorAuth
-				break
-			case 'show2FAQrCode':
-				url = '/user/2fa/reset'
-				onVerified = onShow2FAQrCode
-				break
-			case 'showScratchCode':
-				url = '/user/2fa/recovery-codes/regenerate'
-				onVerified = onShowScratchCode
-				break
-		}
-		return { url, onVerified }
 	})
 
 	async function toggleGoogleCalendar() {
@@ -214,15 +174,22 @@
 		}
 	}
 
+	async function openVerifyDialog(url: string, onVerified: (data?: unknown) => void) {
+		const result = await openDialog({
+			component: VerifyUserForm,
+			componentProps: { url },
+			dialogProps: { title: i18n.t('user.identityVerification') },
+		})
+		if (result !== null) onVerified(result)
+	}
+
 	function toggleTwoFactorAuth(event: Event) {
 		event.preventDefault()
-		currentAction.value = 'toggleTwoFactorAuth'
-		verifyUserDialog.value?.open()
+		openVerifyDialog('/user/2fa/toggle', onToggleTwoFactorAuth)
 	}
 
 	function deleteAccount() {
-		currentAction.value = 'deleteAccount'
-		verifyUserDialog.value?.open()
+		openVerifyDialog('/user/delete-account', onDeleted)
 	}
 
 	function onToggleTwoFactorAuth(data?: unknown) {
@@ -243,8 +210,7 @@
 	}
 
 	function show2FAQrCode() {
-		currentAction.value = 'show2FAQrCode'
-		verifyUserDialog.value?.open()
+		openVerifyDialog('/user/2fa/reset', onShow2FAQrCode)
 	}
 
 	function onShow2FAQrCode(data?: unknown) {
@@ -257,8 +223,23 @@
 	}
 
 	function showScratchCode() {
-		currentAction.value = 'showScratchCode'
-		verifyUserDialog.value?.open()
+		openVerifyDialog('/user/2fa/recovery-codes/regenerate', onShowScratchCode)
+	}
+
+	async function openChangePasswordDialog() {
+		await openDialog({
+			component: ChangePasswordForm,
+			dialogProps: { title: i18n.t('user.passwordChange') },
+		})
+	}
+
+	async function openChangeEmailDialog() {
+		const result = await openDialog<boolean>({
+			component: ChangeEmailForm,
+			componentProps: { currentEmail: userStore.currentUser.email },
+			dialogProps: { title: i18n.t('user.emailChange') },
+		})
+		if (result) onEmailChanged()
 	}
 
 	function onShowScratchCode(data?: unknown) {

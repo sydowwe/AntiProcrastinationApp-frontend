@@ -57,15 +57,10 @@
 			</template>
 		</VCol>
 	</VRow>
-	<SaveActivityDialog
-		ref="saveDialog"
-		@saved="saveActivity"
-		@resetTime="resetTimer"
-	></SaveActivityDialog>
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
-	import SaveActivityDialog from '@/components/activity/SaveActivityDialog.vue'
+	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
 	import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue'
 	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
@@ -77,6 +72,8 @@
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const {
 		activityId = null,
@@ -97,9 +94,10 @@
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()
+	const { openDialog } = useDialog()
+	const { t } = useI18n()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
-	const saveDialog = ref<InstanceType<typeof SaveActivityDialog>>()
 
 	const timeInputVisible = ref(true)
 	const initialTime = ref(initialDuration ? new Time(initialDuration.hours, initialDuration.minutes) : new Time())
@@ -200,7 +198,7 @@
 		}
 	}
 
-	function stop(automatic: boolean) {
+	async function stop(automatic: boolean) {
 		clearInterval(intervalId.value)
 		clearTimeout(notificationTimeoutId.value)
 		intervalId.value = undefined
@@ -214,7 +212,16 @@
 		}
 		if (timePassed().getInMinutes > 0) {
 			if (!activityId) {
-				saveDialog.value!.open(name, timePassed())
+				const timeLength = timePassed()
+				const result = await openDialog<boolean>({
+					component: SaveActivityBody,
+					componentProps: { activity: name, timeSpent: timeLength },
+					dialogProps: { title: t('activities.recordNewActivity') },
+				})
+				if (result) {
+					await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timeLength)
+				}
+				resetTimer()
 			} else {
 				emit('done', startTimestamp.value, timePassed())
 			}
@@ -232,12 +239,6 @@
 		endsAt.value = null
 		pausedRemaining.value = null
 		stopAllNotifications()
-	}
-
-	async function saveActivity() {
-		if (!activityId) {
-			await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timePassed())
-		}
 	}
 
 	function timePassed() {

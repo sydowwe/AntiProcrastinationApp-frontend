@@ -1,5 +1,6 @@
 <template>
 	<VChart
+		autoresize
 		:option="chartOption"
 		class="chart"
 		@click="handleChartClick"
@@ -57,6 +58,7 @@
 			legend: {
 				orient: 'vertical',
 				left: 0,
+				right: '42%',
 				top: 'center',
 				borderColor: '#666',
 				borderRadius: 5,
@@ -81,9 +83,7 @@
 			series: [
 				{
 					type: 'pie',
-					center: ['115%', '42%'],
-					width: props.isNarrow ? 300 : 470,
-					height: 300,
+					center: ['74%', '50%'],
 					radius: ['35%', '75%'],
 					avoidLabelOverlap: false,
 					itemStyle: {

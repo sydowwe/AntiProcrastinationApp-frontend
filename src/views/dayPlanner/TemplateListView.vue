@@ -243,14 +243,6 @@
 			</template>
 		</template>
 
-		<!-- Create/Edit Dialog -->
-		<TemplateDetailsDialog
-			v-model="dialog"
-			:template="editingTemplate"
-			:defaultValues="duplicateDefaultValues"
-			@save="handleSaveTemplate"
-		/>
-
 		<!-- Delete Confirmation Dialog -->
 		<MyDialog
 			v-model="deleteDialog"
@@ -276,11 +268,12 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
-	import TemplateDetailsDialog from '@/components/dayPlanner/template/TemplateDetailsDialog.vue'
+	import TemplateDetailsForm from '@/components/dayPlanner/template/TemplateDetailsForm.vue'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
@@ -300,6 +293,7 @@
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { openDialog } = useDialog()
 	const userStore = useUserStore()
 	const { formatToUsString, usStringToUrlString } = useDateTime()
 
@@ -379,12 +373,9 @@
 		await loadTemplates()
 	}
 
-	const dialog = ref(false)
 	const deleteDialog = ref(false)
 	const templateToDelete = ref<TaskPlannerDayTemplate | null>(null)
-	const editingTemplate = ref<TaskPlannerDayTemplate | null>(null)
-	const duplicateDefaultValues = ref<TaskPlannerDayTemplateRequest | null>(null)
-	const duplicatingFromId = ref<number | null>(null)
+	let duplicatingFromId: number | null = null
 
 	// Comparison mode
 	const compareMode = ref(false)
@@ -427,45 +418,57 @@
 		hideFullScreenLoading()
 	}
 
+	async function openTemplateDialog(
+		template: TaskPlannerDayTemplate | null,
+		defaultValues: TaskPlannerDayTemplateRequest | null = null,
+	) {
+		const result = await openDialog<{ request: TaskPlannerDayTemplateRequest }>({
+			component: TemplateDetailsForm,
+			componentProps: { template, defaultValues },
+			dialogProps: {
+				title: template ? `Edit template` : `New template`,
+				confirmBtnLabel: template ? 'Update' : 'Create',
+			},
+		})
+		if (!result) {
+			duplicatingFromId = null
+			return
+		}
+		await handleSaveTemplate(template, result.request)
+	}
+
 	function openCreateDialog() {
-		editingTemplate.value = null
-		dialog.value = true
+		duplicatingFromId = null
+		openTemplateDialog(null)
 	}
 
 	function openEditDialog(template: TaskPlannerDayTemplate) {
-		editingTemplate.value = template
-		dialog.value = true
-	}
-
-	function closeDialog() {
-		dialog.value = false
-		editingTemplate.value = null
-		duplicateDefaultValues.value = null
-		duplicatingFromId.value = null
+		duplicatingFromId = null
+		openTemplateDialog(template)
 	}
 
 	function duplicateTemplate(template: TaskPlannerDayTemplate) {
 		const defaults = TaskPlannerDayTemplateRequest.fromEntity(template)
 		defaults.name = `${template.name} (copy)`
-		duplicateDefaultValues.value = defaults
-		duplicatingFromId.value = template.id
-		editingTemplate.value = null
-		dialog.value = true
+		duplicatingFromId = template.id
+		openTemplateDialog(null, defaults)
 	}
 
-	async function handleSaveTemplate(request: TaskPlannerDayTemplateRequest) {
-		if (editingTemplate.value) {
-			await update(editingTemplate.value.id, request)
+	async function handleSaveTemplate(
+		editingTemplate: TaskPlannerDayTemplate | null,
+		request: TaskPlannerDayTemplateRequest,
+	) {
+		if (editingTemplate) {
+			await update(editingTemplate.id, request)
 			await loadTemplates()
-			closeDialog()
 			showSuccessSnackbar('Template updated')
 		} else {
 			const newId = await create(request)
 
 			// If duplicating, copy all tasks from the original template
-			if (duplicatingFromId.value) {
+			if (duplicatingFromId) {
 				const originalTasks = await fetchFilteredTasks(
-					new TemplatePlannerTaskFilter(duplicatingFromId.value, new Time(0, 0), new Time(23, 50)),
+					new TemplatePlannerTaskFilter(duplicatingFromId, new Time(0, 0), new Time(23, 50)),
 				)
 				await Promise.all(
 					originalTasks.map(task => {
@@ -476,7 +479,7 @@
 				)
 			}
 
-			closeDialog()
+			duplicatingFromId = null
 			await router.push({
 				name: 'dayPlannerTemplate',
 				params: { templateId: newId },

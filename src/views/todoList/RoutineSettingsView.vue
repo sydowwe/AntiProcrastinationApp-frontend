@@ -5,7 +5,7 @@
 			<VBtn
 				color="primary"
 				prependIcon="plus"
-				@click="timePeriodDialog?.openAddDialog()"
+				@click="openAddDialog"
 			>
 				Add
 			</VBtn>
@@ -22,7 +22,7 @@
 			:showSelect="false"
 			:showActionsHeader="false"
 			@onLoadItems="loadItems"
-			@onEdit="timePeriodDialog?.openEditDialog($event)"
+			@onEdit="openEditDialog"
 			@onDelete="onDelete"
 		>
 			<template #formattedColumn="{ id, key, value }">
@@ -63,11 +63,6 @@
 			</template>
 		</BasicTable>
 	</div>
-	<TimePeriodDialog
-		ref="timePeriodDialog"
-		@created="onCreated"
-		@updated="onUpdated"
-	></TimePeriodDialog>
 </template>
 
 <script setup lang="ts">
@@ -79,14 +74,18 @@
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
-	import TimePeriodDialog from '@/components/toDoList/routine/dialog/TimePeriodDialog.vue'
+	import TimePeriodForm from '@/components/toDoList/routine/dialog/TimePeriodForm.vue'
 	import PersonalBestsPanel from '@/components/toDoList/routine/PersonalBestsPanel.vue'
+	import { useI18n } from 'vue-i18n'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
-	const { fetchAll, deleteEntity, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
+	const { fetchAll, createWithResponse, update, deleteEntity, changeTimePeriodVisibility } =
+		useRoutineTimePeriodCrud()
 	const { getBgColor } = useColor()
+	const { openDialog } = useDialog()
+	const { t } = useI18n()
 
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
-	const timePeriodDialog = ref<InstanceType<typeof TimePeriodDialog>>()
 	const itemsPerPage = ref(25)
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([new VSortItem('lengthInDays', 'asc')])
@@ -125,14 +124,33 @@
 		return `${value}th`
 	}
 
-	function onCreated(created: RoutineTimePeriodEntity) {
+	async function openAddDialog() {
+		const result = await openDialog<{ idToEdit: number | null; request: TimePeriodRequest }>({
+			component: TimePeriodForm,
+			dialogProps: {
+				title: 'Add time period',
+				confirmBtnLabel: t('general.create'),
+			},
+		})
+		if (!result) return
+		const created = await createWithResponse(result.request)
 		timePeriods.value.push(created)
 	}
 
-	function onUpdated(updatedId: number, updatedRequest: TimePeriodRequest) {
-		const index = timePeriods.value.findIndex(p => p.id === updatedId)
+	async function openEditDialog(entityToEdit: RoutineTimePeriodEntity) {
+		const result = await openDialog<{ idToEdit: number | null; request: TimePeriodRequest }>({
+			component: TimePeriodForm,
+			componentProps: { entityToEdit },
+			dialogProps: {
+				title: 'Edit time period',
+				confirmBtnLabel: t('general.save'),
+			},
+		})
+		if (!result || result.idToEdit === null) return
+		await update(result.idToEdit, result.request)
+		const index = timePeriods.value.findIndex(p => p.id === result.idToEdit)
 		if (index !== -1) {
-			timePeriods.value[index] = { ...timePeriods.value[index], ...updatedRequest }
+			timePeriods.value[index] = { ...timePeriods.value[index], ...result.request }
 		}
 	}
 

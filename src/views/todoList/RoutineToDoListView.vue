@@ -30,7 +30,7 @@
 					color="primary"
 					prependIcon="plus"
 					:disabled="isInChangeOrderMode"
-					@click="toDoListDialog?.openCreate()"
+					@click="openCreateDialog"
 				>
 					{{ $t('toDoList.add') }}
 				</VBtn>
@@ -73,7 +73,7 @@
 					@logTime="openLogTime"
 					@addToPlanner="openAddToPlanner"
 					@delete="onDelete"
-					@edit="toDoListDialog?.openEdit"
+					@edit="openEditDialog"
 					@isDoneChanged="handleIsDoneChange"
 					@stepToggled="onItemsChanged"
 					@uncheckAll="(doneIds: number[]) => handleUncheckAll(doneIds, group.timePeriod.id as number)"
@@ -87,12 +87,6 @@
 			</VCol>
 		</VRow>
 	</div>
-	<RoutineToDoListDialog
-		ref="toDoListDialog"
-		@add="add"
-		@edit="edit"
-	/>
-	<RoutineGroupHistoryDialog ref="historyDialog" />
 	<PlannerTaskDialog
 		showDatePicker
 		@create="createPlannerTask"
@@ -109,9 +103,9 @@
 	/>
 </template>
 <script setup lang="ts">
-	import RoutineToDoListDialog from '@/components/toDoList/routine/dialog/RoutineToDoListDialog.vue'
+	import RoutineToDoListForm from '@/components/toDoList/routine/dialog/RoutineToDoListForm.vue'
 	import RoutineConfetti from '@/components/toDoList/routine/RoutineConfetti.vue'
-	import RoutineGroupHistoryDialog from '@/components/toDoList/routine/dialog/RoutineGroupHistoryDialog.vue'
+	import RoutineGroupHistoryBody from '@/components/toDoList/routine/dialog/RoutineGroupHistoryBody.vue'
 	import RoutineGroupCard from '@/components/toDoList/routine/RoutineGroupCard.vue'
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 	import BaseTodoListLogTimeController from '@/components/toDoList/BaseTodoListLogTimeController.vue'
@@ -127,6 +121,7 @@
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
 	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useTodoListUndo } from '@/composables/todoList/useTodoListUndo.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/dtos/request/activityPlanning/PlannerTaskRequest.ts'
@@ -152,6 +147,7 @@
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
+	const { openDialog } = useDialog()
 	const plannerStore = useDayPlannerStore()
 
 	const {
@@ -167,8 +163,6 @@
 	} = useTodoListUndo()
 
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
-	const toDoListDialog = ref<InstanceType<typeof RoutineToDoListDialog>>()
-	const historyDialog = ref<InstanceType<typeof RoutineGroupHistoryDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const isInChangeOrderMode = ref(false)
 
@@ -245,7 +239,50 @@
 	}
 
 	function openHistoryDialog(timePeriod: RoutineTimePeriodEntity) {
-		historyDialog.value?.open(timePeriod)
+		const name = timePeriod.text ?? 'History'
+		openDialog({
+			component: RoutineGroupHistoryBody,
+			componentProps: { timePeriod },
+			dialogProps: {
+				title: `${name} · ${timePeriod.lengthInDays}-day periods`,
+				hasConfirmBtn: false,
+				closeBtnText: 'Close',
+				isSmall: false,
+			},
+		})
+	}
+
+	async function openCreateDialog() {
+		const result = await openDialog<{
+			entity: RoutineTodoListItemEntity | null
+			request: RoutineTodoListItemRequest
+		}>({
+			component: RoutineToDoListForm,
+			dialogProps: {
+				title: t('general.add') + ' to routine to-do list',
+				confirmBtnLabel: t('general.add'),
+			},
+		})
+		if (result) {
+			await add(result.request)
+		}
+	}
+
+	async function openEditDialog(entityToEdit: RoutineTodoListItemEntity) {
+		const result = await openDialog<{
+			entity: RoutineTodoListItemEntity | null
+			request: RoutineTodoListItemRequest
+		}>({
+			component: RoutineToDoListForm,
+			componentProps: { entityToEdit },
+			dialogProps: {
+				title: t('general.edit'),
+				confirmBtnLabel: t('general.edit'),
+			},
+		})
+		if (result?.entity) {
+			await edit(result.entity, result.request)
+		}
 	}
 
 	function getAllRecords() {

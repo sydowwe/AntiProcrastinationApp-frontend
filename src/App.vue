@@ -11,6 +11,7 @@
 		</VMain>
 		<Snackbar></Snackbar>
 		<LoadingFullscreen></LoadingFullscreen>
+		<DialogHost></DialogHost>
 	</VApp>
 </template>
 <script setup lang="ts">
@@ -19,6 +20,7 @@
 	import { useI18n } from 'vue-i18n'
 	import Snackbar from '@/components/general/feedback/Snackbar.vue'
 	import LoadingFullscreen from '@/components/general/dialogs/LoadingFullscreen.vue'
+	import DialogHost from '@/components/general/dialogs/DialogHost.vue'
 	import Navbar from '@/components/nav/Navbar.vue'
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
 	import { useUserStore } from '@/stores/userStore.ts'

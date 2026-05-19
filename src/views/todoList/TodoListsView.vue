@@ -21,8 +21,8 @@
 					:selectedCategoryId
 					:categorySortAsc
 					@selectCategory="onMobileSelectCategory"
-					@openCreate="categoryDialog?.openCreate()"
-					@openEdit="categoryDialog?.openEdit"
+					@openCreate="openCategoryCreateDialog"
+					@openEdit="openCategoryEditDialog"
 					@confirmDelete="confirmDeleteCategory"
 					@toggleSort="toggleCategorySort"
 					@closeDialog="categoryDrawerOpen = false"
@@ -53,8 +53,8 @@
 						:selectedCategoryId
 						:categorySortAsc
 						@selectCategory="selectCategory"
-						@openCreate="categoryDialog?.openCreate()"
-						@openEdit="categoryDialog?.openEdit"
+						@openCreate="openCategoryCreateDialog"
+						@openEdit="openCategoryEditDialog"
 						@confirmDelete="confirmDeleteCategory"
 						@toggleSort="toggleCategorySort"
 					/>
@@ -86,11 +86,7 @@
 							color="primary"
 							appendIcon="plus"
 							class="flex-grow-1 flex-md-grow-0"
-							@click="
-								dialog?.openCreate(
-									selectedCategoryId !== null && selectedCategoryId > 0 ? selectedCategoryId : null,
-								)
-							"
+							@click="openListCreateDialog"
 						>
 							{{ $t('toDoList.namedList.add') }}
 						</VBtn>
@@ -141,7 +137,7 @@
 								v-for="list in lists"
 								:key="list.id"
 								:list
-								@openEdit="dialog?.openEdit(list)"
+								@openEdit="openListEditDialog(list)"
 								@confirmDelete="confirmDelete(list)"
 							/>
 						</TransitionGroup>
@@ -177,16 +173,6 @@
 			</VCol>
 		</VRow>
 
-		<TodoListDialog
-			ref="dialog"
-			@add="add"
-			@edit="edit"
-		/>
-		<TodoListCategoryDialog
-			ref="categoryDialog"
-			@add="addCategory"
-			@edit="editCategory"
-		/>
 		<MyDialog
 			v-model="deleteDialog"
 			:title="$t('toDoList.namedList.deleteConfirm')"
@@ -215,24 +201,26 @@
 	import { useTodoListCategories } from '@/composables/todoList/useTodoListCategories.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
+	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
+	import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TodoListCategoryPanel from '@/components/toDoList/normal/TodoListCategoryPanel.vue'
-	import TodoListDialog from '@/components/toDoList/normal/TodoListDialog.vue'
-	import TodoListCategoryDialog from '@/components/toDoList/normal/TodoListCategoryDialog.vue'
+	import TodoListForm from '@/components/toDoList/normal/TodoListForm.vue'
+	import TodoListCategoryForm from '@/components/toDoList/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/components/toDoList/normal/TodoListCard.vue'
 	import { useUserStore } from '@/stores/userStore.ts'
+	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
+	const { openDialog } = useDialog()
 
 	const lists = ref<TodoListEntity[]>([])
 	const loading = ref(false)
 	const listFilterName = ref<string | null>(null)
 	const listSortAsc = ref(true)
-	const dialog = ref<InstanceType<typeof TodoListDialog>>()
-	const categoryDialog = ref<InstanceType<typeof TodoListCategoryDialog>>()
 	const deleteDialog = ref(false)
 	const listToDelete = ref<TodoListEntity | null>(null)
 
@@ -279,16 +267,47 @@
 		listSortAsc.value = !listSortAsc.value
 	}
 
-	async function add(request: TodoListRequest) {
-		await createWithResponse(request)
+	async function openListCreateDialog() {
+		const result = await openDialog<{ idToEdit: number | null; request: TodoListRequest }>({
+			component: TodoListForm,
+			componentProps: { initialCategoryId: selectedCategoryId.value },
+			dialogProps: { title: i18n.t('toDoList.namedList.add'), confirmBtnLabel: i18n.t('general.add') },
+		})
+		if (!result) return
+		await createWithResponse(result.request)
 		await Promise.all([loadCategories(), loadLists()])
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
 	}
 
-	async function edit(id: number, request: TodoListRequest) {
-		await update(id, request)
+	async function openListEditDialog(entity: TodoListEntity) {
+		const result = await openDialog<{ idToEdit: number | null; request: TodoListRequest }>({
+			component: TodoListForm,
+			componentProps: { entityToEdit: entity },
+			dialogProps: { title: i18n.t('general.edit'), confirmBtnLabel: i18n.t('general.edit') },
+		})
+		if (!result || result.idToEdit === null) return
+		await update(result.idToEdit, result.request)
 		await Promise.all([loadCategories(), loadLists()])
 		showSuccessSnackbar(i18n.t('successFeedback.edited'))
+	}
+
+	async function openCategoryCreateDialog() {
+		const result = await openDialog<{ idToEdit: number | null; request: TodoListCategoryRequest }>({
+			component: TodoListCategoryForm,
+			dialogProps: { title: i18n.t('toDoList.category.add'), confirmBtnLabel: i18n.t('general.add') },
+		})
+		if (!result) return
+		await addCategory(result.request)
+	}
+
+	async function openCategoryEditDialog(entity: TodoListCategoryEntity) {
+		const result = await openDialog<{ idToEdit: number | null; request: TodoListCategoryRequest }>({
+			component: TodoListCategoryForm,
+			componentProps: { entityToEdit: entity },
+			dialogProps: { title: i18n.t('general.edit'), confirmBtnLabel: i18n.t('general.edit') },
+		})
+		if (!result || result.idToEdit === null) return
+		await editCategory(result.idToEdit, result.request)
 	}
 
 	async function confirmDelete(list: TodoListEntity) {
