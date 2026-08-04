@@ -5,6 +5,11 @@ import { createPinia } from 'pinia'
 import { createPersistedState } from 'pinia-plugin-persistedstate'
 // ROUTER
 import router from './plugins/router.js'
+import { setAxiosRouter } from './_common/axiosConfig.ts'
+// FRAMEWORK ↔ APP WIRING
+// `src/_common` is app-agnostic: it reaches this app only through the registrations below.
+import { setAuthAdapter } from './_common/auth/authAdapter.ts'
+import { createAuthAdapter } from './core/user/authAdapter.ts'
 // AXIOS
 // I18N INTERNATIONALIZATION
 import { createI18n, useI18n } from 'vue-i18n'
@@ -56,7 +61,14 @@ pinia.use(context => {
 // });
 app.use(pinia)
 
+// Hand the framework its app-specific collaborators. Must run before the router resolves the
+// first navigation, since the axios interceptor reads both on the very first request.
+setAuthAdapter(createAuthAdapter())
+
 app.use(router)
+// The interceptor needs the router to redirect to login on an unrecoverable 401. Without this
+// it dereferences a null router and throws inside the error handler, masking the real failure.
+setAxiosRouter(router)
 
 const i18n = createI18n({
 	locale: 'SK',

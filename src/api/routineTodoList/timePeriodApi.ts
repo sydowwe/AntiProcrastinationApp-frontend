@@ -2,7 +2,7 @@ import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/Routin
 import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useRoutineTimePeriodCrud() {
 	const url = 'routine-time-period'

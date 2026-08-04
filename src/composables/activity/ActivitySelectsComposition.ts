@@ -1,6 +1,6 @@
 // useSelectOptions.ts
 import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import type { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 import { ActivitySelectOptionCombination } from '@/dtos/response/activity/ActivitySelectOptionCombination.ts'
 import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'

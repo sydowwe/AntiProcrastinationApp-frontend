@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import { UserSession } from '@/dtos/response/user/UserSession.ts'
 
 export function useSessionsApi() {

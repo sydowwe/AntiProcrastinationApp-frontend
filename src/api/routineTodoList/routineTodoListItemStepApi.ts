@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useRoutineTodoListItemStepApi() {
 	async function toggleStep(itemId: number, stepId: number): Promise<void> {

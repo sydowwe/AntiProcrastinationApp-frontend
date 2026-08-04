@@ -9,7 +9,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'

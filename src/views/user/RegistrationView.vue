@@ -74,7 +74,7 @@
 	import { useDialog } from '@/composables/general/useDialog.ts'
 	import router from '@/plugins/router.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { useRecaptcha } from '@/composables/UseRecaptchaHandler.ts'
 	import { useI18n } from 'vue-i18n'
 	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'

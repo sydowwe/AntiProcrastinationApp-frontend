@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import { UserPlannerSettings } from '@/dtos/response/UserPlannerSettings.ts'
 import type { UserPlannerSettingsRequest } from '@/dtos/request/UserPlannerSettingsRequest.ts'
 

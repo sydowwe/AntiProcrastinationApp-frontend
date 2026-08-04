@@ -32,7 +32,7 @@
 
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useI18n } from 'vue-i18n'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/plugins/router.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { VOtpInput } from 'vuetify/components'

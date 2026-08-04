@@ -1,5 +1,7 @@
 import type { AuthAdapter } from '@/_common/auth/authAdapter.ts'
-import { useAuthStore } from '@/core/user/store/authStore.ts'
+// Points at the store's current location. Step 9 moves it to
+// @/core/user/store/authStore.ts, at which point this import is the only thing that changes.
+import { useUserStore } from '@/stores/userStore.ts'
 
 // Binds this app's Pinia auth store to the framework's AuthAdapter contract.
 //
@@ -10,14 +12,14 @@ import { useAuthStore } from '@/core/user/store/authStore.ts'
 export function createAuthAdapter(): AuthAdapter {
 	return {
 		get isAuthenticated() {
-			return useAuthStore().isAuthenticated
+			return useUserStore().isAuthenticated
 		},
 		get displayName() {
 			// This app's User carries no name fields — e-mail is the only human-readable identity.
-			return useAuthStore().loggedInUser?.email
+			return useUserStore().currentUser.email
 		},
 		logout() {
-			useAuthStore().logout()
+			useUserStore().logout()
 		},
 		// This is a single-user productivity app with no role model: there is nothing to gate and
 		// nobody to gate it from. The framework's RequiredRole vocabulary ('hr' | 'admin' |

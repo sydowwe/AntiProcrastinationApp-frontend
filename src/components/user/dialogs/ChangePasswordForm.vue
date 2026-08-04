@@ -27,7 +27,7 @@
 	import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 
 	const dialogApi = useDialogApi<boolean>()
 	const { showSuccessSnackbar } = useSnackbar()

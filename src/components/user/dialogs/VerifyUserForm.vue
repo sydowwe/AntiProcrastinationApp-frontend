@@ -21,7 +21,7 @@
 	import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 
 	const { url = '/user/verify' } = defineProps<{ url?: string }>()
 

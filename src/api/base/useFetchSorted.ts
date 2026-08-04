@@ -1,7 +1,7 @@
 import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 import { ref } from 'vue'
 import type { SortRequest } from '@/dtos/request/base/SortRequest.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useFetchSorted<TResponse extends IMyResponse>(
 	tableResponseClass: IMyResponse & { fromJson(json: any): TResponse },

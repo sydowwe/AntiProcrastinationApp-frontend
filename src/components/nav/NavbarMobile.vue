@@ -102,7 +102,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/plugins/router.ts'
 	import { useNavItems } from '@/components/nav/useNavItems.ts'
 

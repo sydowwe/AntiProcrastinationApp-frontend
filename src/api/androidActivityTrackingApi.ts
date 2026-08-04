@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig'
+import { API } from '@/_common/axiosConfig.ts'
 import { AndroidStackedBarsWindow } from '@/dtos/response/activityTracking/android/AndroidStackedBarsWindow.ts'
 import { AndroidTimelineResponse } from '@/dtos/response/activityTracking/android/AndroidTimelineResponse.ts'
 import { AndroidAppSummaryDto } from '@/dtos/response/activityTracking/android/AndroidAppSummaryDto.ts'

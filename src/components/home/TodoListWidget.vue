@@ -58,7 +58,7 @@
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import NormalTodoListItem from '@/components/toDoList/normal/NormalTodoListItem.vue'

@@ -48,7 +48,7 @@
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 
 	const { emailRules } = useUserDetailsValidation()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()

@@ -5,7 +5,7 @@ import { MemoryAnchor } from '@/dtos/response/leisure/MemoryAnchor.ts'
 import { MemoryAnchorRequest } from '@/dtos/request/leisure/MemoryAnchorRequest.ts'
 import type { MemoryAnchorFilter } from '@/dtos/request/leisure/MemoryAnchorFilter.ts'
 import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useMemoryAnchorCrud() {
 	const url = 'memory-anchor'

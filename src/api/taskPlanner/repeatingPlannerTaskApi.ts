@@ -3,7 +3,7 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
 import { RepeatingPlannerTaskRequest } from '@/dtos/request/activityPlanning/RepeatingPlannerTaskRequest.ts'
 import { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useRepeatingPlannerTaskApi() {
 	const url = 'repeating-planner-task'

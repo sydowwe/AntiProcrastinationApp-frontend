@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 
 	const isTwoFactorAuthError = defineModel<boolean>('isTwoFactorAuthError', { required: true })
 	const token = defineModel<string | undefined>({ required: true })

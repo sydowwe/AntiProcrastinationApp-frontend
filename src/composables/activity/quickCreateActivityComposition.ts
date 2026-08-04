@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { Role } from '@/dtos/response/activity/Role.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import { useActivityCrud } from '@/api/activity/activityApi.ts'
 import { QuickActivityToolsDto } from '@/dtos/response/activity/QuickActivityToolsDto.ts'
 import { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'

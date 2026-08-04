@@ -3,7 +3,7 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 import { ToDoListItemRequest } from '@/dtos/request/todoList/ToDoListItemRequest.ts'
 import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export async function fetchTodoListItems(todoListId?: number | null): Promise<TodoListItemEntity[]> {
 	const response = await API.get('todo-list-item', { params: todoListId != null ? { todoListId } : {} })

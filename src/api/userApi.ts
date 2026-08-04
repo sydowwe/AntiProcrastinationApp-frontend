@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import { User } from '@/dtos/response/user/User.ts'
 import type { UserPreferencesRequest } from '@/dtos/request/user/UserPreferencesRequest.ts'
 

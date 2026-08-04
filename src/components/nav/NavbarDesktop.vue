@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 	import { useTheme } from 'vuetify/framework'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/plugins/router.ts'
 	import { useNavItems } from '@/components/nav/useNavItems.ts'
 

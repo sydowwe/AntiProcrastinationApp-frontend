@@ -106,7 +106,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
 	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/plugins/router.ts'
 	import ChangeEmailForm from '@/components/user/dialogs/ChangeEmailForm.vue'
 	import ChangePasswordForm from '@/components/user/dialogs/ChangePasswordForm.vue'

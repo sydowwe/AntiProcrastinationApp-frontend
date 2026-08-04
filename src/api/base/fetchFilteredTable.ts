@@ -1,7 +1,7 @@
 import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
 import { ref } from 'vue'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import type { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
 
 export function useFetchFilteredTable<TTableResponse extends IMyResponse, TFilter extends IFilterRequest>(

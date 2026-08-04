@@ -20,7 +20,7 @@
 	import { ref } from 'vue'
 	import { GoogleSignInRequest } from '@/dtos/request/user/GoogleSignInRequest.ts'
 	import { googleSdkLoaded } from 'vue3-google-login'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { useRecaptcha } from '@/composables/UseRecaptchaHandler.ts'
 
 	const { isStayLoggedIn } = defineProps<{

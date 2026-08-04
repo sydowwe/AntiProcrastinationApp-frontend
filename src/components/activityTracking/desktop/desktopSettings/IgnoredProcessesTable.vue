@@ -141,7 +141,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import type { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'

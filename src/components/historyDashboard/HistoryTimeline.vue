@@ -94,7 +94,7 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { DetailTimelineRequest } from '@/dtos/request/activityHistory/historyDetail/DetailTimelineRequest.ts'
 	import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'

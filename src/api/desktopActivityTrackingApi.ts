@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig'
+import { API } from '@/_common/axiosConfig.ts'
 import { DesktopStackedBarsWindow } from '@/dtos/response/activityTracking/desktop/DesktopStackedBarsWindow.ts'
 import { DesktopTimelineResponse } from '@/dtos/response/activityTracking/desktop/DesktopTimelineResponse.ts'
 import { DesktopProcessSummaryDto } from '@/dtos/response/activityTracking/desktop/DesktopProcessSummaryDto.ts'

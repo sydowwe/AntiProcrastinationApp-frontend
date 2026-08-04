@@ -122,7 +122,7 @@
 	import type { RoutineTodoListGroupedList } from '@/dtos/response/todoList/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import RoutineTodoListItem from '@/components/toDoList/routine/RoutineTodoListItem.vue'
 

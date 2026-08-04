@@ -29,7 +29,7 @@
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useUserDetailsValidation } from '@/utils/UserAuthUtils.ts'
-	import { API } from '@/plugins/axiosConfig.ts'
+	import { API } from '@/_common/axiosConfig.ts'
 
 	const { currentEmail } = defineProps<{ currentEmail: string }>()
 

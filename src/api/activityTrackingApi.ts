@@ -1,4 +1,4 @@
-import { API } from '@/plugins/axiosConfig'
+import { API } from '@/_common/axiosConfig.ts'
 import { ActivityWindow } from '@/dtos/response/activityTracking/stackedBars/ActivityWindow.ts'
 import { TimelineResponse } from '@/dtos/response/activityTracking/timeline/TimelineResponse.ts'
 import { DomainDetailsResponse } from '@/dtos/response/activityTracking/DomainDetailsResponse'

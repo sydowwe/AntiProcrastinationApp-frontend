@@ -3,7 +3,7 @@ import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
 import { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 import { TemplateSuggestionResponse } from '@/dtos/response/activityPlanning/template/TemplateSuggestionResponse.ts'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 
 export function useTaskPlannerDayTemplateTaskCrud() {
 	const url = 'task-planner-day-template'

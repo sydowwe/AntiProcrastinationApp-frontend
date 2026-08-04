@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { API } from '@/plugins/axiosConfig.ts'
+import { API } from '@/_common/axiosConfig.ts'
 import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 
