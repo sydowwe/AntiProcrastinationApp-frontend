@@ -10,6 +10,7 @@ import router from './plugins/router.js'
 import { createI18n, useI18n } from 'vue-i18n'
 import EN from './locales/EN'
 import SK from './locales/SK'
+import { setTranslator } from './_common/i18n/translator.ts'
 // FONT-AWESOME
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -66,6 +67,10 @@ const i18n = createI18n({
 	},
 })
 app.use(i18n)
+// Framework code that runs outside a component (http interceptor, error handling, undo stack)
+// can't call useI18n(), and _common must not import this app's i18n instance — so hand it the
+// translate function once here. Without this, `t()` logs and echoes the raw key.
+setTranslator((key, named) => (named === undefined ? i18n.global.t(key) : i18n.global.t(key, named)))
 
 library.add(fas)
 library.add(far)

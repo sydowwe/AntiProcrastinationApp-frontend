@@ -1,4 +1,19 @@
 const EN = {
+	// Mirrors `httpErrors` from @/_common/_locales/common.sk.ts, which the framework http
+	// interceptor resolves through `t()`. The framework ships Slovak only, so without an English
+	// copy here EN users would see raw keys where they currently get hardcoded English strings.
+	httpErrors: {
+		badRequest: `The request contains invalid data.`,
+		unauthorized: `You need to sign in to perform this action.`,
+		forbidden: `You don't have permission to perform this action.`,
+		notFound: `The requested item was not found.`,
+		conflict: `This record was changed by someone else. Refresh the page and try again.`,
+		internalServerError: `A server error occurred. Please try again later.`,
+		serviceUnavailable: `The service is temporarily unavailable. Please try again later.`,
+		gatewayTimeout: `The server is not responding in time. Please try again later.`,
+		unexpected: `An unexpected error occurred.`,
+		unknown: `An unknown error occurred. Please contact support.`,
+	},
 	$vuetify: {
 		badge: 'Badge',
 		open: 'Open',

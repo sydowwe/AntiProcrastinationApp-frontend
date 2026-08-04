@@ -1,4 +1,14 @@
+import common from '@/_common/_locales/common.sk.ts'
+
+// Interim shape on the way to the aggregator described in MIGRATION-PLAN.md step 11.
+// `common` is spread FIRST so this app's own keys still win every collision — the two files
+// share six top-level namespaces (navigation, general, dateTime, controls, authorization,
+// user) and object spread is shallow, so a colliding namespace is replaced wholesale, not
+// merged. Keeping the app's version preserves current behaviour exactly; reconciling those
+// six properly is step 11's job. What this buys today is `httpErrors.*`, which the framework
+// http interceptor calls through `t()`.
 const SK = {
+	...common,
 	$vuetify: {
 		badge: 'Odznak',
 		open: 'Otvoriť',
