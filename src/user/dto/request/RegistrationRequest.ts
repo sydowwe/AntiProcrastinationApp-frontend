@@ -1,0 +1,20 @@
+import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
+import { EmailRequest } from './EmailRequest.ts'
+
+export class RegistrationRequest extends EmailRequest {
+	constructor(
+		email: string = '',
+		public twoFactorEnabled: boolean = false,
+		public password: string = '',
+		public recaptchaToken: string = '',
+		public currentLocale: AvailableLocales = AvailableLocales.SK,
+		public timezone: string = '',
+	) {
+		super(email)
+	}
+
+	static fromJson(obj: any): RegistrationRequest {
+		const { email, twoFactorEnabled, password, recaptchaToken, currentLocale, timezone } = obj
+		return new RegistrationRequest(email, twoFactorEnabled, password, recaptchaToken, currentLocale, timezone)
+	}
+}
