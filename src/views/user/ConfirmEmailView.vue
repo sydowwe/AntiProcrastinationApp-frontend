@@ -30,8 +30,8 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { onMounted, ref } from 'vue'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
-	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import router from '@/plugins/router.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 

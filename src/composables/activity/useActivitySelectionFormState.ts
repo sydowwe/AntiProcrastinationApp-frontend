@@ -7,7 +7,7 @@ import {
 	filterActivityFormSelectOptions,
 	getAllActivityFormSelectOptionsCombinations,
 } from '@/composables/activity/ActivitySelectsComposition.ts'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 import { ActivityFormSelectOptions } from '@/dtos/response/activity/ActivityFormSelectOptions.ts'
 import type { ActivitySelectOptionCombination } from '@/dtos/response/activity/ActivitySelectOptionCombination.ts'

@@ -103,7 +103,7 @@
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/stores/userStore.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
 	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
 	import { API } from '@/plugins/axiosConfig.ts'

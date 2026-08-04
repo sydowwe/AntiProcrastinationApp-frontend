@@ -27,7 +27,7 @@
 	import MyTwoFactorAuthInput from '@/components/user/MyTwoFactorAuthInput.vue'
 	import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useUserDetailsValidation } from '@/utils/UserAuthUtils.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 

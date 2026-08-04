@@ -1,6 +1,6 @@
 import { computed, onMounted, onUnmounted, ref, type Ref } from 'vue'
 import { useAutoScroll } from '@/composables/general/useAutoScroll.ts'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 import { CreationPreviewType, SLOT_HEIGHT } from '@/components/dayPlanner/DayPlannerTypes.ts'
 import { type IBasePlannerTask, TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'

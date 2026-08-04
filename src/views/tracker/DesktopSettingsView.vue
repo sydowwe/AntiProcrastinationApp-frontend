@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingRequest } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import { useTrackerDesktopMappingCrud } from '@/api/desktopActivityTrackingApi.ts'

@@ -2,7 +2,7 @@ import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePla
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { Time } from '@/dtos/dto/Time.ts'
 
 export function usePlannerCrud<

@@ -18,7 +18,7 @@
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/stores/userStore.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'
 
 	const i18n = useI18n()

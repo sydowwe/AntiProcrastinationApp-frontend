@@ -11,7 +11,7 @@
 	import LogTimeController from '@/components/dayPlanner/normal/LogTimeController.vue'
 	import { API } from '@/plugins/axiosConfig.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { Time } from '@/dtos/dto/Time.ts'
 

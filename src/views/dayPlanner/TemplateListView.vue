@@ -272,7 +272,7 @@
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import TemplateCard from '@/components/dayPlanner/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/components/dayPlanner/template/TemplateComparisonDialog.vue'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
@@ -283,7 +283,7 @@
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 
 	import { useDisplay } from 'vuetify'
-	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useTemplateCardDragAndDrop } from '@/composables/dayPlanner/useTemplateCardDragAndDrop.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()

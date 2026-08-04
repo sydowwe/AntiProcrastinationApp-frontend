@@ -68,7 +68,7 @@
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 	import { useTodoListItemStepApi } from '@/api/todoList/todoListItemStepApi.ts'
 	import { useRoutineTodoListItemStepApi } from '@/api/routineTodoList/routineTodoListItemStepApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const {
 		steps,

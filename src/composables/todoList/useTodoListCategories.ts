@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useTodoListCategoryCrud } from '@/api/todoList/todoListCategoryApi.ts'
 import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'

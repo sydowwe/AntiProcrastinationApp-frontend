@@ -134,7 +134,7 @@
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
 	import { useRoute } from 'vue-router'
 	import TemplatePlannerPanel from '@/components/dayPlanner/template/TemplatePlannerPanel.vue'
-	import { useLoading } from '@/composables/general/LoadingComposable.ts'
+	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 
 	const { storeId = 'main', isSplitView = false } = defineProps<{
 		storeId?: 'main' | 'secondary'

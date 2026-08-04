@@ -16,7 +16,7 @@ import RoutineToDoListView from '@/views/todoList/RoutineToDoListView.vue'
 import ConfirmEmailView from '@/views/user/ConfirmEmailView.vue'
 import ConfirmEmailChangeView from '@/views/user/ConfirmEmailChangeView.vue'
 import { useUserStore } from '@/stores/userStore'
-import { useLoading } from '@/composables/general/LoadingComposable.ts'
+import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 // import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue';
 import DayPlannerView from '@/views/dayPlanner/DayPlannerView.vue'
 import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue'

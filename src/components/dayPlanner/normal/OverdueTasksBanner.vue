@@ -49,7 +49,7 @@
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 

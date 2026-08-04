@@ -1,6 +1,6 @@
 <template>
 	<VBtn
-		v-if="!store.isTemplateInPreview && calendarId != null"
+		v-if="!store.isTemplateInPreview && calendarId !== undefined"
 		:loading="loading"
 		color="secondaryOutline"
 		variant="tonal"
@@ -18,7 +18,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useI18n } from 'vue-i18n'
 

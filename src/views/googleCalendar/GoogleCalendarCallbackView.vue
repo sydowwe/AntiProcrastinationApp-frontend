@@ -6,7 +6,7 @@
 	import { onMounted } from 'vue'
 	import { useRoute } from 'vue-router'
 	import { useGoogleCalendarApi } from '@/api/googleCalendarApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
 	import router from '@/plugins/router.ts'
 

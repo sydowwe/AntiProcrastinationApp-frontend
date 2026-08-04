@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 interface UndoEntry {
 	description: string

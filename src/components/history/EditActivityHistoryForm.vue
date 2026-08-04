@@ -26,7 +26,7 @@
 	import type { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
 	import { Time } from '@/dtos/dto/Time.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'

@@ -79,7 +79,7 @@
 		hintDismissed.value = true
 		localStorage.setItem(HINT_KEY, 'true')
 	}
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 	import { TrackerAndroidMappingRequest } from '@/dtos/request/activityTracking/android/settings/TrackerAndroidMappingRequest.ts'
 	import { useTrackerAndroidMappingCrud } from '@/api/androidActivityTrackingApi.ts'

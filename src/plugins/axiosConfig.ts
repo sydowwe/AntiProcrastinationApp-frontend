@@ -1,7 +1,7 @@
 import axios, { HttpStatusCode } from 'axios'
 import router from '@/plugins/router'
-import { useLoading } from '@/composables/general/LoadingComposable.ts'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useUserStore } from '@/stores/userStore.ts'
 
 export const API = axios.create({

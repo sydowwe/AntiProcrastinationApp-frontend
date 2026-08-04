@@ -83,7 +83,7 @@
 	import { Location } from '@/dtos/enum/Location.ts'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const props = defineProps<{
 		calendar?: Calendar

@@ -8,7 +8,7 @@
 		<MyVerifyPasswordInput v-model="password" />
 		<MyNewPasswordInput
 			v-model="newPassword"
-			:isNew="true"
+			isNew
 		/>
 		<MyTwoFactorAuthInput
 			ref="twoFactorAuthInput"
@@ -26,7 +26,7 @@
 	import MyVerifyPasswordInput from '@/components/user/MyVerifyPasswordInput.vue'
 	import MyNewPasswordInput from '@/components/user/MyNewPasswordInput.vue'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { API } from '@/plugins/axiosConfig.ts'
 
 	const dialogApi = useDialogApi<boolean>()

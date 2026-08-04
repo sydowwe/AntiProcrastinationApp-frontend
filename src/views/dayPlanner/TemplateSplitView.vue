@@ -85,7 +85,7 @@
 		useTemplateDayPlannerStore,
 	} from '@/stores/dayPlanner/templateDayPlannerStore.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import TemplateDayPlannerView from '@/views/dayPlanner/TemplateDayPlannerView.vue'
 
 	const router = useRouter()

@@ -75,7 +75,7 @@
 	import { useI18n } from 'vue-i18n'
 	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
-	import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'
 	import { QuickActivityToolsDto } from '@/dtos/response/activity/QuickActivityToolsDto.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'

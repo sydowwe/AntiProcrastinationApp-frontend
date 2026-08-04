@@ -1,6 +1,6 @@
 import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
 import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useSnackbar } from '@/composables/general/SnackbarComposable.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
 import type { ChangeDisplayOrderRequest } from '@/dtos/request/todoList/ChangeDisplayOrderRequest.ts'
 import { API } from '@/plugins/axiosConfig.ts'
