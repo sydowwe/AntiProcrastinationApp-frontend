@@ -60,11 +60,9 @@
 	const chipFormatters: ChipFormatters<MemoryAnchorFilter> = {
 		activityName: v =>
 			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		year: v =>
-			v != null ? { label: `${i18n.t('leisure.fields.anchorYear')}: ${v}`, icon: 'calendar' } : null,
+		year: v => (v != null ? { label: `${i18n.t('leisure.fields.anchorYear')}: ${v}`, icon: 'calendar' } : null),
 		month: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.anchorMonth')}: ${v}`, icon: 'calendar-days' } : null,
-		minRating: v =>
-			v != null ? { label: `${i18n.t('leisure.fields.rating')} ≥ ${v}`, icon: 'star' } : null,
+		minRating: v => (v != null ? { label: `${i18n.t('leisure.fields.rating')} ≥ ${v}`, icon: 'star' } : null),
 	}
 </script>

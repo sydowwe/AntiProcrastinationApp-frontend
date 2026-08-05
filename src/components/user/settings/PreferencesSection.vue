@@ -19,7 +19,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'
+	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()

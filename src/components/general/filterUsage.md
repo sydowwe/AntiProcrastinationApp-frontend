@@ -23,12 +23,12 @@ DTO, a default-factory, chip formatters, and the input fields via slot.
 
 ### Emits
 
-- `apply` â€” fired after the user clicks Apply, after Reset, and after closing a chip. Parent should call `loadItems()` in this handler.
-- `reset` â€” fired in addition to `apply` when the Reset button is pressed.
+- `apply` — fired after the user clicks Apply, after Reset, and after closing a chip. Parent should call `loadItems()` in this handler.
+- `reset` — fired in addition to `apply` when the Reset button is pressed.
 
 ### Slot
 
-- `#fields="{ draft }"` â€” receives a **draft** copy of the filter (a fresh `cloneFilter(filter.value)` taken on each drawer open). Bind inputs to `draft.*`; the
+- `#fields="{ draft }"` — receives a **draft** copy of the filter (a fresh `cloneFilter(filter.value)` taken on each drawer open). Bind inputs to `draft.*`; the
   draft is committed to `filter` only when the user clicks Apply.
 
 ### Exported types (`import ... from '@/components/general/FilterPanel.vue'`)
@@ -39,7 +39,7 @@ interface ChipInfo<TKey = string> {
 	icon?: string // FontAwesome icon name
 	color?: string // palette color (passed through ChipWithIcon)
 	vColor?: string // raw Vuetify color override
-	resetKeys?: TKey[] // optional â€” close-icon resets these keys instead of just the formatter's own key
+	resetKeys?: TKey[] // optional — close-icon resets these keys instead of just the formatter's own key
 }
 
 type ChipFormatters<T> = { [K in keyof T]?: (value: T[K], filter: T) => ChipInfo<keyof T> | null }
@@ -49,7 +49,7 @@ type ChipFormatters<T> = { [K in keyof T]?: (value: T[K], filter: T) => ChipInfo
 
 ## 2. Step-by-step: add a filter to a new table view
 
-### Step A â€” Define / extend the filter DTO
+### Step A — Define / extend the filter DTO
 
 File: `src/dtos/<entity>/<Entity>.ts`
 
@@ -69,18 +69,18 @@ export class WidgetFilterDto {
 
 Conventions in this codebase:
 
-- Nullable text/date fields â†’ `string | null = null`, `Date | null = null`
-- Range fields â†’ two siblings: `xxxFrom` + `xxxTo`
-- Multi-select â†’ plural `xxxList: ...[] = []`
+- Nullable text/date fields → `string | null = null`, `Date | null = null`
+- Range fields → two siblings: `xxxFrom` + `xxxTo`
+- Multi-select → plural `xxxList: ...[] = []`
 
-### Step B â€” Make sure the backend filter endpoint exists
+### Step B — Make sure the backend filter endpoint exists
 
-The table view uses `useEntityQuery()` â†’ `fetchFilteredTable()` (POST `/{entity}/grid`). If your entity's API composable doesn't expose `fetchFilteredTable` yet, add
+The table view uses `useEntityQuery()` → `fetchFilteredTable()` (POST `/{entity}/filtered-table`). If your entity's API composable doesn't expose `fetchFilteredTable` yet, add
 it:
 
 ```ts
 // src/api/WidgetApi.ts
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { WidgetFilterDto, WidgetResponse } from '@/dtos/widget/Widget.ts'
 
 export function useWidgetQuery() {
@@ -92,7 +92,7 @@ export function useWidgetQuery() {
 }
 ```
 
-### Step C â€” Wire `FilterPanel` into the table view
+### Step C — Wire `FilterPanel` into the table view
 
 In the view's `<template>`, place `<FilterPanel>` **immediately above** `<BasicTable>` so the chips bar and toggle render in their own row:
 
@@ -106,7 +106,7 @@ In the view's `<template>`, place `<FilterPanel>` **immediately above** `<BasicT
 			@apply="loadItems"
 		>
 			<template #fields="{ draft }">
-				<!-- inputs bound to draft.* â€” see field recipes below -->
+				<!-- inputs bound to draft.* — see field recipes below -->
 			</template>
 		</FilterPanel>
 
@@ -142,7 +142,7 @@ const chipFormatters: ChipFormatters<WidgetFilterDto> = {
 }
 
 async function loadItems() {
-	// useFilter MUST be true â€” the request shape carries the filter only when set
+	// useFilter MUST be true — the request shape carries the filter only when set
 	const requestData = new FilteredTableRequest<WidgetFilterDto>(
 		itemsPerPage.value,
 		page.value,
@@ -156,7 +156,7 @@ async function loadItems() {
 }
 ```
 
-### Step D â€” Define `chipFormatters`
+### Step D — Define `chipFormatters`
 
 One entry per filter field that can produce a chip. Return `null` for inactive (default-valued) fields. **Order in the map = order in the bar.**
 
@@ -164,12 +164,12 @@ One entry per filter field that can produce a chip. Return `null` for inactive (
 const chipFormatters: ChipFormatters<WidgetFilterDto> = {
 	nameContains: v => (v ? { label: `${i18n.t('widget.name')}: ${v}`, icon: 'magnifying-glass' } : null),
 
-	// Range collapse â€” produce ONE chip on the "From" key, suppress the "To" key,
+	// Range collapse — produce ONE chip on the "From" key, suppress the "To" key,
 	// and use resetKeys so closing the chip clears both ends at once.
 	createdFrom: (_, f) =>
 		f.createdFrom || f.createdTo
 			? {
-					label: `${i18n.t('widget.created')}: ${f.createdFrom ? formatToDate(f.createdFrom) : 'â€¦'} â€“ ${f.createdTo ? formatToDate(f.createdTo) : 'â€¦'}`,
+					label: `${i18n.t('widget.created')}: ${f.createdFrom ? formatToDate(f.createdFrom) : '…'} – ${f.createdTo ? formatToDate(f.createdTo) : '…'}`,
 					icon: 'calendar',
 					resetKeys: ['createdFrom', 'createdTo'],
 				}
@@ -194,9 +194,9 @@ Rules:
 - The formatter receives the **committed** filter value, not the draft.
 - Use `resetKeys` whenever one chip represents several DTO fields (date ranges, paired filters).
 
-### Step E â€” Field recipes for the slot
+### Step E — Field recipes for the slot
 
-All inputs go inside `<template #fields="{ draft }">`. Bind directly to `draft.*` â€” never to `filter.value.*`.
+All inputs go inside `<template #fields="{ draft }">`. Bind directly to `draft.*` — never to `filter.value.*`.
 
 **Plain text (substring search)**
 
@@ -232,10 +232,10 @@ onMounted(async () => {
 })
 ```
 
-**Enum multi-select** â€” wrap with `getEnumSelectOptions(EnumObj, 'i18n.prefix')` from `@/composable/general/EnumComposable.ts`. The returned items use
+**Enum multi-select** — wrap with `getEnumSelectOptions(EnumObj, 'i18n.prefix')` from `@/composable/general/EnumComposable.ts`. The returned items use
 `{ value, title }`, so use a plain `VSelect`/`VAutocomplete` with `itemValue="value"` and `itemTitle="title"`.
 
-**Date range** â€” use the project's `DateRangePicker`:
+**Date range** — use the project's `DateRangePicker`:
 
 ```vue
 <DateRangePicker
@@ -257,25 +257,25 @@ onMounted(async () => {
 <VDateInput v-model="draft.someDate" :label="..." :displayFormat="formatToDate" hideDetails />
 ```
 
-**Tri-state boolean** â€” use `NullFalseTrueCheckbox` from `src/components/general/inputs/`.
+**Tri-state boolean** — use `NullFalseTrueCheckbox` from `src/components/general/inputs/`.
 
-### Step F â€” i18n
+### Step F — i18n
 
-All labels go in `src/locales/SK.ts` only â€” EN is added manually by the maintainer (see project CLAUDE.md). Place keys under the entity's section:
+All labels go in `src/locales/SK.ts` only — EN is added manually by the maintainer (see project CLAUDE.md). Place keys under the entity's section:
 
 ```ts
 widget: {
 	tableView: {
-		name: 'NÃ¡zov',
+		name: 'Názov',
 			category
 	:
-		'KategÃ³ria',
+		'Kategória',
 			status
 	:
 		'Stav',
 			created
 	:
-		'VytvorenÃ©',
+		'Vytvorené',
 		// ...
 	}
 ,
@@ -283,19 +283,19 @@ widget: {
 ,
 ```
 
-Reuse existing generic keys where possible: `general.filter`, `general.clear`, `general.confirm` â€” already used inside `FilterPanel` itself, no need to redeclare.
+Reuse existing generic keys where possible: `general.filter`, `general.clear`, `general.confirm` — already used inside `FilterPanel` itself, no need to redeclare.
 
 ---
 
 ## 3. Behavior cheatsheet
 
-| User action                   | What happens                                                                             |
-| ----------------------------- | ---------------------------------------------------------------------------------------- |
-| Click **Filter** button       | Drawer slides in. `draft = cloneFilter(filter)`.                                         |
-| Edit field, click **Confirm** | `filter = draft`; emit `apply`; drawer closes.                                           |
-| Click **Clear** (drawer)      | `filter = defaultFactory()`; emit `reset` + `apply`; drawer closes.                      |
-| Click chip close (Ã—)         | Reset just that field (or `resetKeys`); emit `apply` immediately â€” drawer stays as is. |
-| Click backdrop                | Drawer closes, draft discarded.                                                          |
+| User action                   | What happens                                                                           |
+| ----------------------------- | -------------------------------------------------------------------------------------- |
+| Click **Filter** button       | Drawer slides in. `draft = cloneFilter(filter)`.                                       |
+| Edit field, click **Confirm** | `filter = draft`; emit `apply`; drawer closes.                                         |
+| Click **Clear** (drawer)      | `filter = defaultFactory()`; emit `reset` + `apply`; drawer closes.                    |
+| Click chip close (×)          | Reset just that field (or `resetKeys`); emit `apply` immediately — drawer stays as is. |
+| Click backdrop                | Drawer closes, draft discarded.                                                        |
 
 The drawer is `position: fixed; top: 64px; right: 0; bottom: 0` and teleported to `<body>`, so it overlays the table without pushing it and stays below the navbar.
 
@@ -303,16 +303,16 @@ The drawer is `position: fixed; top: 64px; right: 0; bottom: 0` and teleported t
 
 ## 4. Common pitfalls
 
-- **`useFilter` flag must be `true`** in `FilteredTableRequest` â€” passing `false` (default) discards `filter.value` server-side.
+- **`useFilter` flag must be `true`** in `FilteredTableRequest` — passing `false` (default) discards `filter.value` server-side.
 - **DTO no-arg constructor required.** `defaultFactory: () => new XxxFilterDto()` and `cloneFilter` (`Object.assign(defaultFactory(), src)`) both depend on it. If
   you need parameters, give them defaults.
-- **Bind inputs to `draft`**, never to `filter.value` â€” binding to `filter` defeats the Apply step and causes a network round-trip on every keystroke.
-- **Importing types** â€” `ChipFormatters` / `ChipInfo` live in a regular `<script lang="ts">` block inside the SFC. Use
+- **Bind inputs to `draft`**, never to `filter.value` — binding to `filter` defeats the Apply step and causes a network round-trip on every keystroke.
+- **Importing types** — `ChipFormatters` / `ChipInfo` live in a regular `<script lang="ts">` block inside the SFC. Use
   `import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'`.
-- **Range chips** â€” collapse with `resetKeys`. Returning two separate chips for `xxxFrom` and `xxxTo` wastes bar space and forces two clicks to clear.
+- **Range chips** — collapse with `resetKeys`. Returning two separate chips for `xxxFrom` and `xxxTo` wastes bar space and forces two clicks to clear.
 - **PascalCase tags / camelCase props** in templates (`<VTextField hideDetails />`, not `hide-details`). Project rule from CLAUDE.md.
 - **`function` declarations** in `<script setup>`, not `const fn = () => {}`. Project rule from CLAUDE.md.
-- **Initial load** â€” `BasicTable` emits `@on-load-items` on mount, so `loadItems` runs once with the empty default filter. Don't call it manually from `onMounted` as
+- **Initial load** — `BasicTable` emits `@on-load-items` on mount, so `loadItems` runs once with the empty default filter. Don't call it manually from `onMounted` as
   well.
 
 ---
@@ -412,7 +412,7 @@ The drawer is `position: fixed; top: 64px; right: 0; bottom: 0` and teleported t
 		createdFrom: (_, f) =>
 			f.createdFrom || f.createdTo
 				? {
-						label: `${i18n.t('widget.tableView.created')}: ${f.createdFrom ? formatToDate(f.createdFrom) : 'â€¦'} â€“ ${f.createdTo ? formatToDate(f.createdTo) : 'â€¦'}`,
+						label: `${i18n.t('widget.tableView.created')}: ${f.createdFrom ? formatToDate(f.createdFrom) : '…'} – ${f.createdTo ? formatToDate(f.createdTo) : '…'}`,
 						icon: 'calendar',
 						resetKeys: ['createdFrom', 'createdTo'],
 					}

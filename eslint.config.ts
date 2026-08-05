@@ -2,7 +2,9 @@ import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescri
 import vuePrettierConfig from '@vue/eslint-config-prettier'
 
 export default defineConfigWithVueTs(
-	{ ignores: ['dist/**', 'node_modules/**', 'public/**', '*.min.js', 'src/assets/**'] },
+	// `src/_common` is the MDF_framework submodule: a shared repo this app must never write to.
+	// Without this ignore, `eslint src --fix` reformats it and leaves the submodule dirty.
+	{ ignores: ['dist/**', 'node_modules/**', 'public/**', '*.min.js', 'src/assets/**', 'src/_common/**'] },
 
 	vueTsConfigs.recommended,
 

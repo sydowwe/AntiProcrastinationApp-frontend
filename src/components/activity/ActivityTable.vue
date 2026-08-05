@@ -15,7 +15,7 @@
 	>
 		<template #formattedColumn="{ key, value }">
 			<template v-if="key === 'role.name' || key === 'category.name'">
-				<span>{{ value ?? 'â€”' }}</span>
+				<span>{{ value ?? '—' }}</span>
 			</template>
 			<template v-else-if="key === 'isUnavoidable'">
 				<VIcon
@@ -24,7 +24,7 @@
 					size="16"
 				/>
 			</template>
-			<template v-else>{{ value ?? 'â€”' }}</template>
+			<template v-else>{{ value ?? '—' }}</template>
 		</template>
 	</BasicTable>
 </template>

@@ -220,6 +220,9 @@ const SK = {
 		memoryAnchors: `Pamätné momenty`,
 	},
 	general: {
+		// Used by the framework's TableHeaderComposable; the app's `general` namespace replaces the
+		// framework's wholesale (see the note at the top of this file), so it has to be repeated here.
+		actions: `Akcie`,
 		or: `Alebo`,
 		please: `Prosím`,
 		close: `Zavrieť`,

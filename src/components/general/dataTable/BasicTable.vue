@@ -45,9 +45,9 @@
 							:id="item.id"
 							:key="column.key"
 							name="formattedColumn"
-							:value="getNestedValue(item, column.key)"
+							:value="getColumnValue(item, column.key)"
 						>
-							{{ getNestedValue(item, column.key) }}
+							{{ getColumnValue(item, column.key) }}
 						</slot>
 					</template>
 					<template #[`item.actions`]>
@@ -118,7 +118,7 @@
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue'
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
-	import { getNestedValue } from '@/composables/table/TableHeaderComposable.ts'
+	import { getNestedValue } from '@/_common/utils/helperMethods.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 	import { useUserStore } from '@/stores/userStore.ts'
 
@@ -158,6 +158,14 @@
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
 
 	const loading = defineModel<boolean>('loading', { required: true })
+
+	// The framework's getNestedValue returns `unknown` where the old local one returned `any`.
+	// This component's `formattedColumn` slot has no framework counterpart (the framework's
+	// BasicTable forwards `#item.<key>` instead), so keep the slot's value loosely typed until
+	// step 7 reworks these tables.
+	function getColumnValue(item: Record<string, unknown>, key: string): any {
+		return getNestedValue(item, key)
+	}
 
 	const userStore = useUserStore()
 

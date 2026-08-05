@@ -270,4 +270,7 @@ export const useDayPlannerStore = defineStore('dayPlanner', () => {
 		dateTimeFromSlotIndex,
 		datetimeToSlotIndex,
 	}
-}) satisfies () => IDayPlannerStore
+	// Persistence is declared explicitly: the framework's Pinia setup only persists stores that opt
+	// in, where this app's previous hand-rolled plugin persisted everything to sessionStorage by
+	// default. Dropping this would silently stop the planner surviving a reload.
+}, { persist: { storage: sessionStorage } }) satisfies () => IDayPlannerStore

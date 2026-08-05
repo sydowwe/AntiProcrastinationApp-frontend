@@ -1,5 +1,5 @@
 import { watch } from 'vue'
-import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
+import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
 import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'

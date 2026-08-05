@@ -63,4 +63,5 @@ export const useDayPlannerSettingsStore = defineStore('dayPlannerSettings', () =
 		loadSettings,
 		saveSettings,
 	}
-})
+	// Explicit for the same reason as dayPlannerStore — the framework's Pinia setup is opt-in.
+}, { persist: { storage: sessionStorage } })

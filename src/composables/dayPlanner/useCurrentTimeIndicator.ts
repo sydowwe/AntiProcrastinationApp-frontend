@@ -1,6 +1,6 @@
 // composables/useCurrentTimeIndicator.ts
 import { computed } from 'vue'
-import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
+import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { useDateTime } from '@/utils/DateTimeHelper.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'

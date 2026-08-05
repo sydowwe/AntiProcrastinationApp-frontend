@@ -226,6 +226,8 @@ const EN = {
 		memoryAnchors: `Memory anchors`,
 	},
 	general: {
+		// Used by the framework's TableHeaderComposable.
+		actions: `Actions`,
 		or: `Or`,
 		please: `Please`,
 		close: `Close`,

@@ -22,9 +22,9 @@
 					height="24"
 					rounded="circle"
 				/>
-				<span v-else>â€”</span>
+				<span v-else>—</span>
 			</template>
-			<template v-else>{{ value ?? 'â€”' }}</template>
+			<template v-else>{{ value ?? '—' }}</template>
 		</template>
 	</BasicTable>
 </template>

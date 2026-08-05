@@ -55,7 +55,9 @@ export const useTemplateDayPlannerStore = defineStore(
 	'templateDayPlanner',
 	() => templatePlannerSetup('template-planner-clipboard'),
 	{
-		persist: { omit: ['tasks'] },
+		// `storage` is explicit because the framework's Pinia setup leaves the plugin on its
+		// localStorage default; this app has always kept planner state per-tab in sessionStorage.
+		persist: { omit: ['tasks'], storage: sessionStorage },
 	},
 ) satisfies () => ITemplateDayPlannerStore
 

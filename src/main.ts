@@ -1,74 +1,16 @@
 import { createApp } from 'vue'
+import { createI18n } from 'vue-i18n'
+import vue3GoogleLogin from 'vue3-google-login'
 import App from './App.vue'
-// PINIA
-import { createPinia } from 'pinia'
-import { createPersistedState } from 'pinia-plugin-persistedstate'
-// ROUTER
-import router from './plugins/router.js'
-import { setAxiosRouter } from './_common/axiosConfig.ts'
-// FRAMEWORK ↔ APP WIRING
-// `src/_common` is app-agnostic: it reaches this app only through the registrations below.
-import { setAuthAdapter } from './_common/auth/authAdapter.ts'
-import { createAuthAdapter } from './core/user/authAdapter.ts'
-// AXIOS
-// I18N INTERNATIONALIZATION
-import { createI18n, useI18n } from 'vue-i18n'
+import router from './plugins/router.ts'
 import EN from './locales/EN'
 import SK from './locales/SK'
-import { setTranslator } from './_common/i18n/translator.ts'
-// FONT-AWESOME
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { fas } from '@fortawesome/free-solid-svg-icons'
-import { far } from '@fortawesome/free-regular-svg-icons'
-import { fab } from '@fortawesome/free-brands-svg-icons'
-// VUETIFY
-import { createVuetify } from 'vuetify'
-import { VAutocomplete, VBtn, VIcon, VSelect } from 'vuetify/components'
-import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n'
-
-import { aliases, fa } from 'vuetify/iconsets/fa-svg'
+import { installFramework } from './_common/bootstrap/index.ts'
+import { createAuthAdapter } from './core/user/authAdapter.ts'
+import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
 import './assets/main.css'
-import vue3GoogleLogin from 'vue3-google-login'
-import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 
 const app = createApp(App)
-
-const pinia = createPinia()
-pinia.use(context => {
-	// Check if persist was explicitly set to false
-	if (context.options.persist === false) {
-		return
-	}
-
-	// If persist is not defined or is true, apply default persistence
-	const persistedState = createPersistedState({
-		storage: sessionStorage,
-		// Add any other global defaults here
-	})
-
-	if (!context.options.persist) {
-		// Auto-enable if not explicitly configured
-		context.options.persist = true
-	}
-
-	persistedState(context)
-})
-// pinia.use(async context => {
-// 	if (context.store.ensureLoaded) {
-// 		await context.store.ensureLoaded();
-// 	}
-// });
-app.use(pinia)
-
-// Hand the framework its app-specific collaborators. Must run before the router resolves the
-// first navigation, since the axios interceptor reads both on the very first request.
-setAuthAdapter(createAuthAdapter())
-
-app.use(router)
-// The interceptor needs the router to redirect to login on an unrecoverable 401. Without this
-// it dereferences a null router and throws inside the error handler, masking the real failure.
-setAxiosRouter(router)
 
 const i18n = createI18n({
 	locale: 'SK',
@@ -78,178 +20,48 @@ const i18n = createI18n({
 		EN,
 	},
 })
-app.use(i18n)
-// Framework code that runs outside a component (http interceptor, error handling, undo stack)
-// can't call useI18n(), and _common must not import this app's i18n instance — so hand it the
-// translate function once here. Without this, `t()` logs and echoes the raw key.
-setTranslator((key, named) => (named === undefined ? i18n.global.t(key) : i18n.global.t(key, named)))
 
-library.add(fas)
-library.add(far)
-library.add(fab)
-app.component('FontAwesomeIcon', FontAwesomeIcon)
-
-export const vuetify = createVuetify({
-	locale: {
-		adapter: createVueI18nAdapter({ i18n: i18n as any, useI18n }),
-	},
-	icons: {
-		defaultSet: 'fa',
-		aliases,
-		sets: {
-			fa,
-		},
-	},
-	aliases: {
-		VIdSelect: VSelect,
-		VIdAutocomplete: VAutocomplete,
-		VIconBtn: VBtn,
-		VIconSmall: VIcon,
-	},
-	defaults: {
-		VCardActions: {
-			VBtn: { variant: 'elevated' },
-		},
-		VCard: {
-			rounded: 'lg',
-		},
-		VBtn: { variant: 'elevated' },
-		VTextField: { variant: 'outlined', clearable: true, density: 'comfortable' },
-		VIdAutocomplete: {
-			variant: 'outlined',
-			clearable: true,
-			density: 'comfortable',
-			itemValue: 'id',
-			itemTitle: 'text',
-		},
-		VAutocomplete: { variant: 'outlined', density: 'comfortable' },
-		VCombobox: { variant: 'outlined', density: 'comfortable' },
-		VNumberInput: { variant: 'outlined', density: 'comfortable' },
-		VDateInput: { variant: 'outlined', density: 'comfortable', prependIcon: '', prependInnerIcon: 'calendar' },
-
-		VIdSelect: { variant: 'outlined', clearable: true, density: 'comfortable', itemValue: 'id', itemTitle: 'text' },
-		VSelect: { variant: 'outlined', density: 'comfortable' },
-		VTextarea: { variant: 'outlined', clearable: true, density: 'comfortable' },
-		VMaskInput: { variant: 'outlined', clearable: true, density: 'comfortable' },
-		VCheckbox: { density: 'comfortable' },
-		VSwitch: { density: 'comfortable' },
-		VIconBtn: { rounded: '' },
-		VIconSmall: { size: '16' },
-		VForm: { class: 'py-2' },
-		VCol: { class: 'pa-2' },
-	},
-	display: {
-		thresholds: {
-			xs: 0,
-			sm: 600,
-			md: 960,
-			lg: 1280, // starts at 1280, covers up to 1920px (HD)
-			xl: 1921, // 1440p
-			xxl: 2560, // 4K
-		},
-	},
-	theme: {
-		defaultTheme: 'dark',
+// Installs Pinia, Vuetify, FontAwesome and auto-animate, and hands the framework its app-specific
+// collaborators in the one order that works — see src/_common/SETUP.md §5. Two of those orderings
+// fail at runtime rather than compile time, which is why this is a call and not a copy.
+installFramework(app, {
+	router,
+	i18n,
+	authAdapter: createAuthAdapter(),
+	// This app renders its own Navbar (src/components/nav/), so the framework's nav trees stay empty.
+	navTrees: {},
+	notificationTypeMeta,
+	vuetify: {
+		// Only the hexes this app diverges from the shared design system on. The colour *names* are
+		// the framework's and every component references them, so they must not be renamed here.
 		themes: {
 			dark: {
-				dark: true,
 				colors: {
-					// Surface
 					background: '#121212',
 					surface: '#202020',
-					'on-background': '#E5E7EB',
-					'on-surface': '#FFF',
-
-					textMuted: '#a0a6b1',
-
-					// brand
-					primary: '#1D4ED8', // blue-700
-					secondary: '#6D28D9', // purple-700
-					primaryOutline: '#60A5FA',
-					secondaryOutline: '#A78BFA',
-
-					// functional
-					errorDark: '#DC2626', // red-650
-					successDark: '#047857', // emerald-700
-					warningDark: '#CA8A04', // yellow-600
-					//info: '#0369A1', // sky-700
-					// infoOutline: '#38BDF8',
-					error: '#F87171', // red-400 vs surface ≈ 4.8–4.9:1
-					success: '#34D399', // emerald-400 ≈ ~5:1
-					warning: '#FACC15', // darkyellow-400
-
-					// accents for tinted surfaces (not buttons)
-					// use deeper tones (800–900) or transparent tints over surface
-					'primary-accent': '#1E40AF', // blue-800
-					'secondary-accent': '#4C1D95', // purple-800
-					'primary-container': '#1d3257', // subtle blue-tinted surface
-					'secondary-container': '#2A1F46', // subtle purple-tinted surface
-
-					'on-primary-accent': '#FFFFFF',
-					'on-secondary-accent': '#FFFFFF',
+					'secondary-accent': '#4C1D95',
+					'primary-container': '#1d3257',
+					'secondary-container': '#2A1F46',
 					'on-primary-container': '#FFFFFF',
 					'on-secondary-container': '#FFFFFF',
-
-					// Neutral scale (dark enough variants safe with white text)
-					'neutral-0': '#282830',
-					'neutral-50': '#0B1220',
-					'neutral-100': '#111827',
-					'neutral-200': '#1F2937',
-					'neutral-300': '#374151',
-					'neutral-400': '#4B5563',
-					'neutral-500': '#6B7280',
-					'neutral-600': '#9CA3AF',
-					'neutral-700': '#D1D5DB',
-					'neutral-800': '#E5E7EB',
-					'neutral-900': '#F3F4F6',
-				},
-				variables: {
-					'border-color': '#666666',
-					'medium-emphasis-opacity': 0.82,
 				},
 			},
 			light: {
-				dark: false,
 				colors: {
 					background: '#CCC',
 					surface: '#EEE',
-					'on-background': '#111827',
-					'on-surface': '#1F2937',
-
-					primary: '#2563EB',
-					secondary: '#7C3AED',
-					primaryOutline: '#1D4ED8',
-					secondaryOutline: '#6D28D9',
-
-					'primary-accent': '#1E40AF', // blue-800
-					'secondary-accent': '#4C1D95', // purple-800
-					'primary-container': '#1B2A44', // subtle blue-tinted surface
+					'primary-accent': '#1E40AF',
+					'secondary-accent': '#4C1D95',
+					'primary-container': '#1B2A44',
 					'secondary-container': '#2A1F46',
-
-					error: '#DC2626',
-					success: '#059669',
 					warning: '#D97706',
 					info: '#0284C7',
-
-					'neutral-50': '#F9FAFB',
-					'neutral-100': '#F3F4F6',
-					'neutral-200': '#E5E7EB',
-					'neutral-300': '#D1D5DB',
-					'neutral-400': '#9CA3AF',
-					'neutral-500': '#6B7280',
-					'neutral-600': '#4B5563',
-					'neutral-700': '#374151',
-					'neutral-800': '#1F2937',
-					'neutral-900': '#111827',
 				},
 			},
 		},
 	},
 })
-app.use(vuetify)
 
 app.use(vue3GoogleLogin, {})
-
-app.use(autoAnimatePlugin)
 
 router.isReady().then(() => app.mount('#app'))

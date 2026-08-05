@@ -36,7 +36,7 @@
 	import type { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { computed } from 'vue'
 	import { VDataTableServer } from 'vuetify/components'
-	import { useTableHeader } from '@/composables/table/TableHeaderComposable.ts'
+	import { useTableHeader } from '@/_common/composable/table/TableHeaderComposable.ts'
 	import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
 	import type { SortItem } from 'vuetify/lib/components/VDataTable/composables/sort'
 

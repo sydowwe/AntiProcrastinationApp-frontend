@@ -85,7 +85,7 @@
 	import { useSessionsApi } from '@/api/sessionsApi.ts'
 	import type { UserSession } from '@/dtos/response/user/UserSession.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'
+	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
 
 	dayjs.extend(relativeTime)

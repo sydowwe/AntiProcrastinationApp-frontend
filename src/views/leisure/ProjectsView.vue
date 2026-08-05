@@ -82,9 +82,10 @@
 		difficultyLevels: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.difficultyLevel')} (${v.length})`, icon: 'gauge' } : null,
 		readinessStatuses: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.readinessStatus')} (${v.length})`, icon: 'circle-check' } : null,
-		projectArea: v =>
-			v ? { label: `${i18n.t('leisure.fields.projectArea')}: ${v}`, icon: 'map' } : null,
+			v?.length
+				? { label: `${i18n.t('leisure.fields.readinessStatus')} (${v.length})`, icon: 'circle-check' }
+				: null,
+		projectArea: v => (v ? { label: `${i18n.t('leisure.fields.projectArea')}: ${v}`, icon: 'map' } : null),
 		isMessy: v => {
 			if (v == null) return null
 			return {

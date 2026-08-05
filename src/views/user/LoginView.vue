@@ -111,7 +111,7 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import router from '@/plugins/router.ts'
 	import { API } from '@/_common/axiosConfig.ts'
-	import { useRecaptcha } from '@/composables/UseRecaptchaHandler.ts'
+	import { useRecaptcha } from '@/_common/composable/UseRecaptchaHandler.ts'
 	import { PasswordSignInRequest } from '@/dtos/request/user/PasswordSignInRequest.ts'
 	import { VForm } from 'vuetify/components'
 

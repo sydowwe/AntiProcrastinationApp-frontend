@@ -331,4 +331,3 @@
 
 	// Initial load is triggered by the table's @onLoadItems (VDataTableServer emits update:options on mount).
 </script>
-

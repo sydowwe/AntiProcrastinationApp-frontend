@@ -21,7 +21,7 @@
 	import { GoogleSignInRequest } from '@/dtos/request/user/GoogleSignInRequest.ts'
 	import { googleSdkLoaded } from 'vue3-google-login'
 	import { API } from '@/_common/axiosConfig.ts'
-	import { useRecaptcha } from '@/composables/UseRecaptchaHandler.ts'
+	import { useRecaptcha } from '@/_common/composable/UseRecaptchaHandler.ts'
 
 	const { isStayLoggedIn } = defineProps<{
 		isStayLoggedIn: boolean

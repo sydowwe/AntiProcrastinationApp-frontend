@@ -54,7 +54,7 @@
 	import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 	import type { ThemePreference } from '@/dtos/response/user/User.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'
+	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 	import dayjs from 'dayjs'
 	import relativeTime from 'dayjs/plugin/relativeTime'
 
