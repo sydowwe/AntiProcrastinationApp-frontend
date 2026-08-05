@@ -108,7 +108,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'

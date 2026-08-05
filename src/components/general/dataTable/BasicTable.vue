@@ -112,10 +112,10 @@
 </template>
 <script setup lang="ts" generic="TItem extends IIdResponse">
 	import { computed, ref, watch } from 'vue'
-	import { type IIdResponse } from '@/dtos/response/interface/IIdResponse.ts'
-	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import type { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import { type IIdResponse } from '@/_common/dto/response/interface/IIdResponse.ts'
+	import { TableAction } from '@/_common/dto/dto/table/TableAction.ts'
+	import type { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
+	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import MyTableFooter from '@/components/general/dataTable/MyTableFooter.vue'
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { getNestedValue } from '@/composables/table/TableHeaderComposable.ts'

@@ -1,6 +1,6 @@
 import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
 import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { ActivityHistoryRequest } from '@/dtos/request/activityHistory/ActivityHistoryRequest.ts'
 import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
 

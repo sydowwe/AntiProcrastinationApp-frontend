@@ -79,7 +79,7 @@
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import type { VForm } from 'vuetify/components'
 	import { CalendarRequest } from '@/dtos/request/activityPlanning/CalendarRequest.ts'
-	import { DayType } from '@/dtos/enum/DayType.ts'
+	import { DayType } from '@/_common/dto/enum/DayType.ts'
 	import { Location } from '@/dtos/enum/Location.ts'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'

@@ -3,7 +3,7 @@ import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IB
 import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 
 export function usePlannerCrud<
 	TTask extends IBasePlannerTask<TTaskRequest>,

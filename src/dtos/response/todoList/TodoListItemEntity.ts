@@ -1,6 +1,6 @@
 import { Activity } from '@/dtos/response/activity/Activity.ts'
 import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 import { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 

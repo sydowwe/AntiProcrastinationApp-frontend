@@ -98,7 +98,7 @@
 	import { DetailTimelineRequest } from '@/dtos/request/activityHistory/historyDetail/DetailTimelineRequest.ts'
 	import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/components/history/EditActivityHistoryForm.vue'
 	import MyDialog from '@/components/general/dialogs/MyDialog.vue'

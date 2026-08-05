@@ -21,8 +21,8 @@
 </template>
 
 <script setup lang="ts">
-	import type { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
-	import { type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
+	import type { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
+	import { type TimePreciseKeys } from '@/_common/dto/dto/TimePrecise.ts'
 
 	const { timeObject, whatToShow = ['hours', 'minutes', 'seconds'] } = defineProps<{
 		timeObject: TimePrecise

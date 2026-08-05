@@ -1,5 +1,5 @@
-import type { ICreateRequest } from '@/dtos/request/interface/ICreateRequest.ts'
-import type { IUpdateRequest } from '@/dtos/request/interface/IUpdateRequest.ts'
+import type { ICreateRequest } from '@/_common/dto/request/interface/ICreateRequest.ts'
+import type { IUpdateRequest } from '@/_common/dto/request/interface/IUpdateRequest.ts'
 import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 
 export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {

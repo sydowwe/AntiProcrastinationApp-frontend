@@ -92,7 +92,7 @@
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 	import type { HistorySummaryCardsResponse } from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { getDomainColor } from '@/utils/domainColor.ts'
 	import HistoryDateRangeSelector from '@/components/historyDashboard/controls/HistoryDateRangeSelector.vue'
 	import HistoryGroupBySelector from '@/components/historyDashboard/controls/HistoryGroupBySelector.vue'

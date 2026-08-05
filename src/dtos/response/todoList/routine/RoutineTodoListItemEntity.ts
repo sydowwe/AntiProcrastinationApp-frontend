@@ -1,9 +1,9 @@
 import { Activity } from '@/dtos/response/activity/Activity.ts'
 import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 import { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
-import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 
 export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	constructor(

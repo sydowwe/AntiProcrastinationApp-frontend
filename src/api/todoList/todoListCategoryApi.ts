@@ -3,8 +3,8 @@ import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { useFetchFilteredSorted } from '@/_common/api/useFetchFilteredSorted.ts'
 import { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 import { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
-import { FilterSortRequest } from '@/dtos/request/base/FilterSortRequest.ts'
-import { SortByRequest } from '@/dtos/request/base/SortByRequest.ts'
+import { FilterSortRequest } from '@/_common/dto/request/base/FilterSortRequest.ts'
+import { SortByRequest } from '@/_common/dto/request/base/SortByRequest.ts'
 import { TodoListCategoryFilter } from '@/dtos/request/todoList/TodoListCategoryFilter.ts'
 
 export function useTodoListCategoryCrud() {

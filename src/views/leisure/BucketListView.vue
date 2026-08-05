@@ -62,7 +62,7 @@
 	import BucketListTable from '@/components/leisure/bucketList/BucketListTable.vue'
 	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBucketListProfileFilter } from '@/dtos/request/leisure/ActivityBucketListProfileFilter.ts'
-	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import { useActivityExperienceTypeApi } from '@/api/leisure/activityLookupApi.ts'
 
 	const i18n = useI18n()

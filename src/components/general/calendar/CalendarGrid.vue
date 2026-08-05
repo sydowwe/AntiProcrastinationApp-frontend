@@ -109,7 +109,7 @@
 	import CalendarDayCell from '@/components/general/calendar/CalendarDayCell.vue'
 	import { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
-	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
+	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import { allDaysOfWeek, useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useCalendarWeeks } from '@/composables/general/useCalendarWeeks.ts'
 

@@ -181,8 +181,8 @@
 	import { usePomodoroTimerPresetCrud } from '@/api/activityHistory/pomodoroTimerPresetApi.ts'
 	import { VForm } from 'vuetify/components'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
-	import { Time } from '@/dtos/dto/Time.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const emit = defineEmits<{
 		(e: 'created'): void

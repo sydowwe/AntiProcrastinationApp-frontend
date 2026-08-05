@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 
 	const model = defineModel<Time | null>({ default: null })

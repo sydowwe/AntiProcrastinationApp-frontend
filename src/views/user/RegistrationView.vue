@@ -80,7 +80,7 @@
 	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'
 	import { VForm } from 'vuetify/components'
 	import { RegistrationRequest } from '@/dtos/request/user/RegistrationRequest.ts'
-	import { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+	import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 
 	const i18n = useI18n()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()

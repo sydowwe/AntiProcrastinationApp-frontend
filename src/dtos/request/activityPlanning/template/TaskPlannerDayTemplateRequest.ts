@@ -1,6 +1,6 @@
-import type { DayType } from '@/dtos/enum/DayType.ts'
-import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import type { DayType } from '@/_common/dto/enum/DayType.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import type { Location } from '@/dtos/enum/Location.ts'
 

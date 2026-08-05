@@ -51,7 +51,7 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/stores/userStore.ts'
-	import { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+	import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 	import type { ThemePreference } from '@/dtos/response/user/User.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { handleHttpCodes } from '@/composables/general/ErrorHandlingFunctions.ts'

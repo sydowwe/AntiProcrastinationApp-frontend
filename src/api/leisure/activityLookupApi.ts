@@ -1,7 +1,7 @@
 import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
 import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
-import { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 import type { LookupFilter } from '@/dtos/request/general/LookupFilter.ts'
 
 function useLookupApi(entityName: string) {

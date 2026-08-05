@@ -1,6 +1,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import type { Time } from '@/dtos/dto/Time.ts'
+import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 import type { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 import {
@@ -11,7 +11,7 @@ import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 import { ActivityFormSelectOptions } from '@/dtos/response/activity/ActivityFormSelectOptions.ts'
 import type { ActivitySelectOptionCombination } from '@/dtos/response/activity/ActivitySelectOptionCombination.ts'
-import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 
 export function useActivitySelectionFormState(

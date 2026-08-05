@@ -38,7 +38,7 @@
 	import InputWithButton from '@/components/general/InputWithButton.vue'
 	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
 	import { ref } from 'vue'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'

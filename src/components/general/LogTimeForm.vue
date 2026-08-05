@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useI18n } from 'vue-i18n'
 	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'

@@ -123,7 +123,7 @@
 	import { useAutoAnimate } from '@formkit/auto-animate/vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useTodoListDragAndDrop } from '@/composables/todoListDragAndDrop/useTodoListDragAndDrop.ts'
 
 	const { items, isInChangeOrderMode, listId, activityIds, allItems } = defineProps<{

@@ -118,7 +118,7 @@
 	import { computed } from 'vue'
 	import type { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
-	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
+	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 
 	const props = defineProps<{
 		record: ActivityHistory

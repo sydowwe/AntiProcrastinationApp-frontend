@@ -1,4 +1,4 @@
-import type { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import type { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 import { ActivityFilterFormResponse } from '@/dtos/response/activity/ActivityFilterFormResponse.ts'
 
 export class TrackerDesktopMappingResponse {

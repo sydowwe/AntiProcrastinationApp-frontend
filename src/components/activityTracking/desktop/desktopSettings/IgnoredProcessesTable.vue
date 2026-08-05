@@ -143,11 +143,11 @@
 	import { ref } from 'vue'
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import type { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
+	import type { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { TableAction } from '@/dtos/dto/TableAction.ts'
-	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
+	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
+	import { TableAction } from '@/_common/dto/dto/table/TableAction.ts'
+	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 
@@ -184,7 +184,7 @@
 	const sortBy = ref<VSortItem[]>([])
 	const filterProcessKey = ref('')
 
-	const distinctProcesses = ref<TitleValueObject[]>([])
+	const distinctProcesses = ref<ValueTitleDto<string>[]>([])
 	const loadingProcesses = ref(false)
 
 	const formDialog = ref(false)

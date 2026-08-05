@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 	import MergedInputs from '@/components/general/MergedInputs.vue'
-	import { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 
 	const emit = defineEmits<{ filter: [] }>()

@@ -54,7 +54,7 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { VMaskInput } from 'vuetify/labs/components'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 
 	const {
 		color = 'base',

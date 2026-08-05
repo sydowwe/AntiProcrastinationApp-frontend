@@ -73,7 +73,7 @@
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { hasObjectChanged } from '@/utils/helperMethods.ts'

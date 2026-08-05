@@ -1,4 +1,4 @@
-import type { Time } from '@/dtos/dto/Time.ts'
+import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { TaskSpan } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import { type IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'

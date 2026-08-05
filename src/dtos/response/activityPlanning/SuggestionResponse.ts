@@ -1,9 +1,9 @@
 import { Activity } from '@/dtos/response/activity/Activity.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'
 import { RecurrenceType } from '@/dtos/enum/RecurrenceType.ts'
-import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
-import type { DayType } from '@/dtos/enum/DayType.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+import type { DayType } from '@/_common/dto/enum/DayType.ts'
 import { convertToEnum } from '@/composables/general/EnumComposable.ts'
 
 export type SuggestionSourceType = 'UserSet' | 'PlannedPattern' | 'HistoryPattern'

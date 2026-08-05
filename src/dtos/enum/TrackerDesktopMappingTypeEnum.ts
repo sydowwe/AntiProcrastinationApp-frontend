@@ -1,4 +1,4 @@
-import { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
+import { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
 
 export enum TrackerDesktopMappingTypeEnum {
 	Ignored = 'Ignored',
@@ -9,6 +9,6 @@ export enum TrackerDesktopMappingTypeEnum {
 }
 
 export const TrackerDesktopMappingTypeOptions = [
-	new TitleValueObject(TrackerDesktopMappingTypeEnum.Ignored, TrackerDesktopMappingTypeEnum.Ignored),
-	new TitleValueObject(TrackerDesktopMappingTypeEnum.Activity, TrackerDesktopMappingTypeEnum.Activity),
+	new ValueTitleDto(TrackerDesktopMappingTypeEnum.Ignored, TrackerDesktopMappingTypeEnum.Ignored),
+	new ValueTitleDto(TrackerDesktopMappingTypeEnum.Activity, TrackerDesktopMappingTypeEnum.Activity),
 ]

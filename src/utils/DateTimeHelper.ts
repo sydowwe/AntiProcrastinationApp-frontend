@@ -5,7 +5,7 @@ import utc from 'dayjs/plugin/utc'
 import 'dayjs/locale/sk'
 import 'dayjs/locale/cs'
 import { capitalizeString } from '@/utils/helperMethods.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 
 dayjs.extend(customParseFormat)
 dayjs.extend(localizedFormat)

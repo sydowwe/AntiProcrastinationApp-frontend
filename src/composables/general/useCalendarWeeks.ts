@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
-import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
+import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 
 export function useCalendarWeeks(
 	calendarData: Ref<ICalendar[]>,

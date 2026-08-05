@@ -188,7 +188,7 @@
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import type { TemplateSuggestionResponse } from '@/dtos/response/activityPlanning/template/TemplateSuggestionResponse.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'

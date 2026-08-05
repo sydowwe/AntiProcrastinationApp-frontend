@@ -1,6 +1,6 @@
-import { DayType } from '@/dtos/enum/DayType.ts'
+import { DayType } from '@/_common/dto/enum/DayType.ts'
 import { convertToEnum } from '@/composables/general/EnumComposable.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import type { Location } from '@/dtos/enum/Location.ts'
 
 export class Calendar {

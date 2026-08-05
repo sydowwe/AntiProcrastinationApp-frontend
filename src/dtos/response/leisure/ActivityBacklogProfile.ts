@@ -1,8 +1,8 @@
-import type { IIdResponse } from '@/dtos/response/interface/IIdResponse.ts'
+import type { IIdResponse } from '@/_common/dto/response/interface/IIdResponse.ts'
 import { ActivityInfo } from '@/dtos/response/leisure/ActivityInfo.ts'
 import { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 import type { EffortType } from '@/dtos/enum/EffortType.ts'
-import { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 
 export class ActivityBacklogProfile implements IIdResponse {
 	constructor(

@@ -74,7 +74,7 @@
 		getPlannerTaskStatusIcon,
 		PlannerTaskStatus,
 	} from '@/dtos/enum/PlannerTaskStatus.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 
 	const { task } = defineProps<{

@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n'
-import { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
+import { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
 
 export function convertToEnum<TEnum extends Record<string, string>>(enumObject: TEnum, key: string) {
 	return enumObject[key as keyof TEnum]
@@ -14,5 +14,5 @@ export function getEnumSelectOptions<T extends Record<string, string>>(enumObjec
 	const i18 = useI18n()
 	const values = Object.values(enumObject)
 
-	return values.map(value => new TitleValueObject(value, i18.t(`${prefix}.${value}`)))
+	return values.map(value => new ValueTitleDto(value, i18.t(`${prefix}.${value}`)))
 }

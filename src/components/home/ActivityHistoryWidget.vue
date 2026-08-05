@@ -51,7 +51,7 @@
 	import { DetailPieChartRequest } from '@/dtos/request/activityHistory/historyDetail/DetailPieChartRequest.ts'
 	import { HistoryGroupBy } from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDuration } from '@/utils/formatDuration.ts'
 	import HistoryPieChart from '@/components/historyDashboard/pieChart/HistoryPieChart.vue'
 	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'

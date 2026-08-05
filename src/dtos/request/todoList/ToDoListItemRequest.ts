@@ -1,6 +1,6 @@
 import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
 import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
-import type { Time } from '@/dtos/dto/Time.ts'
+import type { Time } from '@/_common/dto/dto/Time.ts'
 import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
 
 export class ToDoListItemRequest extends BaseToDoListItemRequest {

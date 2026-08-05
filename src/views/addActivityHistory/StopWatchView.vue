@@ -51,10 +51,10 @@
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
 	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
-	import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 

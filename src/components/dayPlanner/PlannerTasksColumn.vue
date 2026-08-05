@@ -82,7 +82,7 @@
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import { useCurrentTime } from '@/composables/general/useCurrentTime.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { usePlannerClipboardPreview } from '@/composables/dayPlanner/usePlannerClipboardPreview.ts'
 	import { usePlannerPointerInteractions } from '@/composables/dayPlanner/usePlannerPointerInteractions.ts'
 	import { usePlannerKeyboard } from '@/composables/dayPlanner/usePlannerKeyboard.ts'

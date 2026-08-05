@@ -37,7 +37,7 @@
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useTodoListCategoryCrud } from '@/api/todoList/todoListCategoryApi.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const { entityToEdit = null, initialCategoryId = null } = defineProps<{
 		entityToEdit?: TodoListEntity | null

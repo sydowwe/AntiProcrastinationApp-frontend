@@ -50,7 +50,7 @@
 	import type { MemoryAnchorRequest } from '@/dtos/request/leisure/MemoryAnchorRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useMemoryAnchorCrud } from '@/api/leisure/memoryAnchorApi.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
 	const model = defineModel<MemoryAnchorRequest>({ required: true })

@@ -1,4 +1,4 @@
-import type { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import type { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 import type { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 
 export class TrackerAndroidMappingRequest {

@@ -141,7 +141,7 @@
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import BackgroundTaskBlock from '@/components/dayPlanner/BackgroundTaskBlock.vue'

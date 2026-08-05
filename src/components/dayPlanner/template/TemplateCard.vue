@@ -171,9 +171,9 @@
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 	import MiniTimeline from '@/components/dayPlanner/template/MiniTimeline.vue'
-	import { dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
+	import { dayOfWeekOptions } from '@/dtos/enum/dayOptions.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
 
 	const { tasks } = defineProps<{

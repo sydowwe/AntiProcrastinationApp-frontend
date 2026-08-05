@@ -1,7 +1,7 @@
 import { CalendarActivityRoleSummary } from '@/dtos/response/historyDashboard/CalendarActivityRoleSummary.ts'
-import { DayType } from '@/dtos/enum/DayType.ts'
+import { DayType } from '@/_common/dto/enum/DayType.ts'
 import { convertToEnum } from '@/composables/general/EnumComposable.ts'
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 
 export class CalendarActivityDaySummary {
 	constructor(

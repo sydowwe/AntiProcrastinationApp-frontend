@@ -73,7 +73,7 @@
 	import type { ColumnData } from './dto/ColumnData'
 	import { ProcessedWindow } from './dto/ProcessedWindow'
 	import { getDomainColor } from '@/utils/domainColor'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 
 	const {

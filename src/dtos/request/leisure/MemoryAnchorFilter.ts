@@ -1,4 +1,4 @@
-import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
+import type { IFilterRequest } from '@/_common/dto/request/interface/IFilterRequest.ts'
 
 export class MemoryAnchorFilter implements IFilterRequest {
 	constructor(

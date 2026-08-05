@@ -32,7 +32,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { ITimelineTask } from '@/dtos/dto/ITimelineTask.ts'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 
 	const {
 		tasks,

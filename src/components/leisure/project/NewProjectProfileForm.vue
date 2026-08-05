@@ -65,7 +65,7 @@
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import StringListEditor from '@/components/leisure/project/StringListEditor.vue'
 
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()

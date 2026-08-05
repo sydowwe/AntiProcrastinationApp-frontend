@@ -109,7 +109,7 @@
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
 	import type { VForm } from 'vuetify/components'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useTaskImportanceCrud } from '@/api/taskPlanner/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/dtos/response/activityPlanning/TaskImportance.ts'

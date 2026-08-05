@@ -71,7 +71,7 @@
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import BaseTodoListItem from '@/components/toDoList/BaseTodoListItem.vue'
-	import { DAY_OF_WEEK_SHORT_LABELS } from '@/dtos/enum/DayOfWeek.ts'
+	import { DAY_OF_WEEK_SHORT_LABELS } from '@/_common/dto/enum/DayOfWeek.ts'
 
 	const {
 		toDoListItem,

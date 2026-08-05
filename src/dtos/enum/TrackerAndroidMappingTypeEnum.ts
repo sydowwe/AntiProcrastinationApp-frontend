@@ -1,4 +1,4 @@
-import { TitleValueObject } from '@/dtos/dto/TitleValueObject.ts'
+import { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
 
 export enum TrackerAndroidMappingTypeEnum {
 	Ignored = 'Ignored',
@@ -6,6 +6,6 @@ export enum TrackerAndroidMappingTypeEnum {
 }
 
 export const TrackerAndroidMappingTypeOptions = [
-	new TitleValueObject(TrackerAndroidMappingTypeEnum.Ignored, TrackerAndroidMappingTypeEnum.Ignored),
-	new TitleValueObject(TrackerAndroidMappingTypeEnum.Activity, TrackerAndroidMappingTypeEnum.Activity),
+	new ValueTitleDto(TrackerAndroidMappingTypeEnum.Ignored, TrackerAndroidMappingTypeEnum.Ignored),
+	new ValueTitleDto(TrackerAndroidMappingTypeEnum.Activity, TrackerAndroidMappingTypeEnum.Activity),
 ]

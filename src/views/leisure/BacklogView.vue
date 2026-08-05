@@ -112,7 +112,7 @@
 	import { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 	import { EffortType } from '@/dtos/enum/EffortType.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
-	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import {
 		useActivityLocationTypeApi,
 		useActivityWeatherDependencyApi,
@@ -134,26 +134,30 @@
 	const effortOptions = getEnumSelectOptions(EffortType, 'enums.effortType')
 
 	onMounted(async () => {
-		;[locationTypeOptions.value, weatherDependencyOptions.value, expectedCostTierOptions.value] = await Promise.all([
-			fetchLocationTypes(),
-			fetchWeatherDependencies(),
-			fetchExpectedCostTiers(),
-		])
+		;[locationTypeOptions.value, weatherDependencyOptions.value, expectedCostTierOptions.value] = await Promise.all(
+			[fetchLocationTypes(), fetchWeatherDependencies(), fetchExpectedCostTiers()],
+		)
 	})
 
 	const chipFormatters: ChipFormatters<ActivityBacklogProfileFilter> = {
 		activityName: v =>
 			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
 		locationTypeIds: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.locationType')} (${v.length})`, icon: 'location-dot' } : null,
+			v?.length
+				? { label: `${i18n.t('leisure.fields.locationType')} (${v.length})`, icon: 'location-dot' }
+				: null,
 		weatherDependencyIds: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.weatherDependency')} (${v.length})`, icon: 'cloud-sun' } : null,
+			v?.length
+				? { label: `${i18n.t('leisure.fields.weatherDependency')} (${v.length})`, icon: 'cloud-sun' }
+				: null,
 		energyLevels: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.energyLevel')} (${v.length})`, icon: 'bolt' } : null,
 		effortTypes: v =>
 			v?.length ? { label: `${i18n.t('leisure.fields.effortType')} (${v.length})`, icon: 'dumbbell' } : null,
 		expectedCostTierIds: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.expectedCostTier')} (${v.length})`, icon: 'sack-dollar' } : null,
+			v?.length
+				? { label: `${i18n.t('leisure.fields.expectedCostTier')} (${v.length})`, icon: 'sack-dollar' }
+				: null,
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
 		isOneTime: v => {

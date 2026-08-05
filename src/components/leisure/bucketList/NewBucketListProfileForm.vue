@@ -45,8 +45,8 @@
 	import type { ActivityBucketListProfileRequest } from '@/dtos/request/leisure/ActivityBucketListProfileRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
-	import type { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
+	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import ComfortZoneStepper from '@/components/leisure/bucketList/ComfortZoneStepper.vue'
 	import { useActivityExperienceTypeApi } from '@/api/leisure/activityLookupApi.ts'
 

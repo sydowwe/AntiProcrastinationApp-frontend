@@ -80,8 +80,8 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import { dayTypeOptions } from '@/dtos/enum/DayType.ts'
-	import { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+	import { dayTypeOptions } from '@/dtos/enum/dayOptions.ts'
+	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import { locationOptions } from '@/dtos/enum/Location.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'

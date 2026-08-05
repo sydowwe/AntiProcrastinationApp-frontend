@@ -74,7 +74,7 @@
 	import TimerView from '@/views/addActivityHistory/TimerView.vue'
 	import PomodoroTimerView from '@/views/addActivityHistory/PomodoroTimerView.vue'
 	import { ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
 	import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'

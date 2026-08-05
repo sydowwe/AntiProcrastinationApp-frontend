@@ -25,7 +25,7 @@
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import { useI18n } from 'vue-i18n'
 	import { ref } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 
 	defineProps<{
 		activityId: number

@@ -1,7 +1,7 @@
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { RecurrenceType } from '@/dtos/enum/RecurrenceType.ts'
-import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
-import type { DayType } from '@/dtos/enum/DayType.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+import type { DayType } from '@/_common/dto/enum/DayType.ts'
 import type { RepeatingPlannerTask } from '@/dtos/response/activityPlanning/RepeatingPlannerTask.ts'
 
 export class RepeatingPlannerTaskRequest {

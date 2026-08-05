@@ -1,4 +1,4 @@
-import type { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+import type { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 import type { ThemePreference } from '@/dtos/response/user/User.ts'
 
 export class UserPreferencesRequest {

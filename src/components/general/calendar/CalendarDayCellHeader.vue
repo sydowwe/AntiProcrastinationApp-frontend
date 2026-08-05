@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
-	import { DayType, getDayTypeColor, getDayTypeIcon } from '@/dtos/enum/DayType.ts'
+	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
+	import { DayType, getDayTypeColor, getDayTypeIcon } from '@/_common/dto/enum/DayType.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
 	const { day } = defineProps<{ day: ICalendar }>()

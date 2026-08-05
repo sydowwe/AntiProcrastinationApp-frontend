@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-	import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
-	import { dayOfWeekOptions } from '@/dtos/enum/DayOfWeek.ts'
+	import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+	import { dayOfWeekOptions } from '@/dtos/enum/dayOptions.ts'
 
 	const model = defineModel<DayOfWeek[]>({ default: [] })
 </script>

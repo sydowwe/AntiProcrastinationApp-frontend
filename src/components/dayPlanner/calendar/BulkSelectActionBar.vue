@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-	import { DayType } from '@/dtos/enum/DayType.ts'
+	import { DayType } from '@/_common/dto/enum/DayType.ts'
 	import ActionBar from '@/components/general/ActionBar.vue'
 
 	const { isShown, selectedCount, bulkApplying } = defineProps<{

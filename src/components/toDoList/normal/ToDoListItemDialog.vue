@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { VDateInput } from 'vuetify/labs/components'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
 	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'

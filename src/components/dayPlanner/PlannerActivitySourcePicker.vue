@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import type { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
@@ -111,7 +111,7 @@
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
 	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const {
 		showTodo = false,

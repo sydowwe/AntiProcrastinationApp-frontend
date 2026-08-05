@@ -75,7 +75,7 @@
 
 <script setup lang="ts">
 	import MergedInputs from '@/components/general/MergedInputs.vue'
-	import { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 
 	const emit = defineEmits<{ filter: [] }>()

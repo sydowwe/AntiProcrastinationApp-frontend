@@ -13,7 +13,7 @@
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 
 	const { kind } = defineProps<{ kind: ToDoListKind }>()
 

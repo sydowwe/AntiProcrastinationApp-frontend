@@ -1,4 +1,4 @@
-import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
+import type { IFilterRequest } from '@/_common/dto/request/interface/IFilterRequest.ts'
 import type { DifficultyLevel } from '@/dtos/enum/DifficultyLevel.ts'
 import type { ReadinessStatus } from '@/dtos/enum/ReadinessStatus.ts'
 

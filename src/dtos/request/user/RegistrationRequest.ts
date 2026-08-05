@@ -1,4 +1,4 @@
-import { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 import { EmailRequest } from './EmailRequest.ts'
 
 export class RegistrationRequest extends EmailRequest {

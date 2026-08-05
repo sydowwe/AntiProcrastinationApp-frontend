@@ -1,6 +1,6 @@
 import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
 import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-import { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 
 const DAY_INDEX_TO_DAY_OF_WEEK: Record<number, DayOfWeek> = {
 	1: DayOfWeek.Monday,

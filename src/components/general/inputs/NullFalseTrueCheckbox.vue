@@ -16,7 +16,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { VCheckbox } from 'vuetify/components'
-	import { NullFalseTrueCheckboxStates } from '@/dtos/enum/NullFalseTrueCheckboxStates.ts'
+	import { NullFalseTrueCheckboxStates } from '@/_common/dto/enum/NullFalseTrueCheckboxStates.ts'
 
 	const { label = '', hideDetails = false } = defineProps<{
 		label?: string

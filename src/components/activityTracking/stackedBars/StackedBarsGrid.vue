@@ -169,7 +169,7 @@
 	import StackedBarsTooltip from '@/components/activityTracking/stackedBars/StackedBarsTooltip.vue'
 	import type { TooltipData } from '@/components/activityTracking/stackedBars/dto/TooltipData.ts'
 	import type { Position } from '@/dtos/dto/Position.ts'
-	import type { Time } from '@/dtos/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatYAxisLabel, getYAxisInterval } from './stackedBarsUtils'
 
 	const props = defineProps<{

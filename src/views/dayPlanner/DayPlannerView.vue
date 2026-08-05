@@ -120,7 +120,7 @@
 	import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
 	import { formatDateForApi, isSameDay, useDateTime } from '@/utils/DateTimeHelper.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'

@@ -24,7 +24,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import type { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'

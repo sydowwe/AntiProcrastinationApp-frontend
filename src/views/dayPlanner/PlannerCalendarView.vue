@@ -74,10 +74,10 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref, watch } from 'vue'
-	import type { ICalendar } from '@/dtos/response/activityPlanning/ICalendar.ts'
+	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { CalendarRequest } from '@/dtos/request/activityPlanning/CalendarRequest.ts'
-	import type { DayType } from '@/dtos/enum/DayType.ts'
+	import type { DayType } from '@/_common/dto/enum/DayType.ts'
 	import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
 	import CalendarDayCellContent from '@/components/dayPlanner/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/components/dayPlanner/calendar/CalendarStatsBar.vue'

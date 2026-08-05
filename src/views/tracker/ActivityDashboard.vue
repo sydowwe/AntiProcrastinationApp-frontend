@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
 	import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 	import ActivityTimeline from '@/components/activityTracking/timeline/ActivityTimeline.vue'
@@ -121,7 +121,7 @@
 	import type { PieChartData } from '@/dtos/response/activityTracking/pieChart/PieChartData.ts'
 	import ActivityPieChartSection from '@/components/activityTracking/pieChart/ActivityPieChartSection.vue'
 	import { StackedBarsRequest } from '@/dtos/request/activityTracking/StackedBarsRequest.ts'
-	import { DateAndTimeRangeRequest } from '@/dtos/request/general/DateAndTimeRangeRequest.ts'
+	import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/utils/domainColor'
 	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'

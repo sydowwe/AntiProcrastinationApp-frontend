@@ -1,4 +1,4 @@
-import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 export class ActivitySelectOptionCombination extends SelectOption {
 	constructor(

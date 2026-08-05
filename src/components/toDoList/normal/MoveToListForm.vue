@@ -10,7 +10,7 @@
 	import { onMounted, ref } from 'vue'
 	import { useTodoListCrud } from '@/api/todoList/todoListApi.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
-	import type { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const { currentListId } = defineProps<{ currentListId: number }>()
 

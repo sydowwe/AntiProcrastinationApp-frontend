@@ -1,4 +1,4 @@
-import { AvailableLocales } from '@/dtos/enum/AvailableLocales.ts'
+import { AvailableLocales } from '@/_common/dto/enum/AvailableLocales.ts'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 

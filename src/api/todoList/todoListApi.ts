@@ -4,8 +4,8 @@ import { useFetchFilteredSorted } from '@/_common/api/useFetchFilteredSorted.ts'
 import { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 import { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 import { TodoListFilter } from '@/dtos/request/todoList/TodoListFilter.ts'
-import { FilterSortRequest } from '@/dtos/request/base/FilterSortRequest.ts'
-import { SortByRequest } from '@/dtos/request/base/SortByRequest.ts'
+import { FilterSortRequest } from '@/_common/dto/request/base/FilterSortRequest.ts'
+import { SortByRequest } from '@/_common/dto/request/base/SortByRequest.ts'
 
 export function useTodoListCrud() {
 	const url = 'todo-list'

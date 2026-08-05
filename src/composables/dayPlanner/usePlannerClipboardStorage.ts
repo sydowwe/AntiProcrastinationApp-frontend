@@ -1,4 +1,4 @@
-import { Time } from '@/dtos/dto/Time.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 
 function timeReplacer(_key: string, value: unknown): unknown {
 	if (value instanceof Time) return { __Time__: true, h: value.hours, m: value.minutes }

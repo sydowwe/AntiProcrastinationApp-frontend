@@ -1,8 +1,8 @@
 import { BaseToDoListItemRequest } from './BaseToDoListItemRequest.ts'
 import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
-import type { Time } from '@/dtos/dto/Time.ts'
+import type { Time } from '@/_common/dto/dto/Time.ts'
 import { TodoListItemStepRequest } from '@/dtos/request/todoList/TodoListItemStepRequest.ts'
-import type { DayOfWeek } from '@/dtos/enum/DayOfWeek.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 
 export class RoutineTodoListItemRequest extends BaseToDoListItemRequest {
 	constructor(

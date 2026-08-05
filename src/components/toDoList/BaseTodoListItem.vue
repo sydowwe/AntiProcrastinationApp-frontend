@@ -153,7 +153,7 @@
 	import { useColor } from '@/utils/colorPalette.ts'
 	import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
-	import { MenuItem } from '@/dtos/dto/MenuAction.ts'
+	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 	import type { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import type { TodoListItemStepEntity } from '@/dtos/response/todoList/TodoListItemStepEntity.ts'
 	import BaseTodoListItemSteps from '@/components/toDoList/BaseTodoListItemSteps.vue'

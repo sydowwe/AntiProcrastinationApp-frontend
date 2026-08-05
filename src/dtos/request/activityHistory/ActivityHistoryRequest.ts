@@ -1,5 +1,5 @@
-import type { Time } from '@/dtos/dto/Time.ts'
-import { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
+import type { Time } from '@/_common/dto/dto/Time.ts'
+import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 
 export class ActivityHistoryRequest {
 	constructor(

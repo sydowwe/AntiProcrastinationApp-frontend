@@ -1,4 +1,4 @@
-import type { PatternMatchType } from '@/dtos/enum/PatternMatchType.ts'
+import type { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 import type { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 
 export class TrackerDesktopMappingRequest {

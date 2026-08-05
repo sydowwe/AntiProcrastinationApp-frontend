@@ -25,9 +25,9 @@
 <script setup lang="ts">
 	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
 	import { computed } from 'vue'
-	import type { Time } from '@/dtos/dto/Time.ts'
-	import type { TimePrecise } from '@/dtos/dto/TimePrecise.ts'
-	import { type TimePreciseKeys } from '@/dtos/dto/TimePrecise.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import type { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
+	import { type TimePreciseKeys } from '@/_common/dto/dto/TimePrecise.ts'
 
 	const {
 		title,

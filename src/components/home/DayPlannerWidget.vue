@@ -99,7 +99,7 @@
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,
 	} from '@/dtos/enum/PlannerTaskStatus.ts'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
 	const router = useRouter()

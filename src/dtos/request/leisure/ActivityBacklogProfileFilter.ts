@@ -1,4 +1,4 @@
-import type { IFilterRequest } from '@/dtos/request/interface/IFilterRequest.ts'
+import type { IFilterRequest } from '@/_common/dto/request/interface/IFilterRequest.ts'
 import type { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 import type { EffortType } from '@/dtos/enum/EffortType.ts'
 

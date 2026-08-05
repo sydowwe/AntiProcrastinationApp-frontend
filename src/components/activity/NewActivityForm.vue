@@ -63,7 +63,7 @@
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'
-	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
+	import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/composables/activity/UseActivitySelectOptions.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'

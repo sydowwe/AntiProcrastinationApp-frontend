@@ -44,7 +44,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
-	import { Time } from '@/dtos/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 
 	export type LogTimeResult =
