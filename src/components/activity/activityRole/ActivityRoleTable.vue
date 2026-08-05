@@ -22,9 +22,9 @@
 					height="24"
 					rounded="circle"
 				/>
-				<span v-else>—</span>
+				<span v-else>â€”</span>
 			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+			<template v-else>{{ value ?? 'â€”' }}</template>
 		</template>
 	</BasicTable>
 </template>
@@ -37,7 +37,7 @@
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
 	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
-	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
@@ -46,7 +46,10 @@
 	const props = defineProps<{ filter: NameTextFilter }>()
 
 	const { getBgColor } = useColor()
-	const { fetchFilteredTable, loading } = useFetchFilteredTable<Role, NameTextFilter>(Role, 'activity-role')
+	const { fetchFilteredTable, loading } = useFetchFilteredTable<Role, NameTextFilter>({
+		responseClass: Role,
+		entityName: 'activity-role',
+	})
 	const { deleteEntity } = useActivityRoleCrud()
 	const { openDialog } = useDialog()
 

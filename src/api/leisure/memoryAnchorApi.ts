@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { MemoryAnchor } from '@/dtos/response/leisure/MemoryAnchor.ts'
 import { MemoryAnchorRequest } from '@/dtos/request/leisure/MemoryAnchorRequest.ts'
 import type { MemoryAnchorFilter } from '@/dtos/request/leisure/MemoryAnchorFilter.ts'
@@ -23,7 +23,10 @@ export function useMemoryAnchorCrud() {
 		updateRequestClass: MemoryAnchorRequest,
 		entityName: url,
 	})
-	const { fetchFilteredTable } = useFetchFilteredTable<MemoryAnchor, MemoryAnchorFilter>(MemoryAnchor, url)
+	const { fetchFilteredTable } = useFetchFilteredTable<MemoryAnchor, MemoryAnchorFilter>({
+		responseClass: MemoryAnchor,
+		entityName: url,
+	})
 
 	async function fetchAnchorEligibleActivities(): Promise<SelectOption[]> {
 		const response = await API.get(`${url}/anchor-eligible-activities`)

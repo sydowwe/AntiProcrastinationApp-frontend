@@ -1,6 +1,6 @@
 import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { TimePeriodRequest } from '@/dtos/request/activityRecording/TimePeriodRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
 

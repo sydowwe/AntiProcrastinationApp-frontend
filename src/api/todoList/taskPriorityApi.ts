@@ -1,5 +1,5 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { TaskPriority } from '@/dtos/response/todoList/TaskPriority.ts'
 
 export function useTaskPriorityCrud() {

@@ -1,6 +1,7 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFiltered } from '@/api/base/useFetchFiltered.ts'
+import { API } from '@/_common/axiosConfig.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFiltered } from '@/_common/api/useFetchFiltered.ts'
 import { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 import type { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 import type { PatchPlannerTaskStatusRequest } from '@/dtos/request/activityPlanning/PatchPlannerTaskStatusRequest.ts'
@@ -25,11 +26,15 @@ export function useTaskPlannerCrud() {
 		return await batchedToggle('is-done', ids)
 	}
 
+	// The framework's `patch` targets `/{entity}/{id}` only; this endpoint is a sub-resource patch.
 	async function patchStatus(id: number, request: PatchPlannerTaskStatusRequest): Promise<void> {
-		return await patch(id, request, 'status')
+		await API.patch(`/${url}/${id}/status`, request)
 	}
 
-	const { fetchFiltered } = useFetchFiltered<PlannerTask, PlannerTaskFilter>(PlannerTask, url)
+	const { fetchFiltered } = useFetchFiltered<PlannerTask, PlannerTaskFilter>({
+		responseClass: PlannerTask,
+		entityName: url,
+	})
 	return {
 		fetchById,
 		fetchAll,

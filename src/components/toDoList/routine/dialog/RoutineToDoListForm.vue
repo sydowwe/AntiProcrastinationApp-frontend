@@ -66,7 +66,7 @@
 	import DayOfWeekPicker from '@/components/general/inputs/DayOfWeekPicker.vue'
 	import SuggestedTimeFormField from '@/components/toDoList/SuggestedTimeFormField.vue'
 	import TodoListStepsFormField from '@/components/toDoList/TodoListStepsFormField.vue'
-	import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
+	import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import { RoutineTodoListItemRequest } from '@/dtos/request/todoList/RoutineTodoListItemRequest.ts'
 	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'

@@ -1,5 +1,5 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { Time } from '@/dtos/dto/Time.ts'
 import { ActivityHistoryRequest } from '@/dtos/request/activityHistory/ActivityHistoryRequest.ts'
 import { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'

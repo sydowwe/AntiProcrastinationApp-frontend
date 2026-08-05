@@ -1,4 +1,4 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
 import { Role } from '@/dtos/response/activity/Role.ts'
 import { Category } from '@/dtos/response/activity/Category.ts'
 import { Activity } from '@/dtos/response/activity/Activity.ts'

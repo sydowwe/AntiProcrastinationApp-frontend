@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { ActivityBacklogProfile } from '@/dtos/response/leisure/ActivityBacklogProfile.ts'
 import { ActivityBacklogProfileRequest } from '@/dtos/request/leisure/ActivityBacklogProfileRequest.ts'
 import type { ActivityBacklogProfileFilter } from '@/dtos/request/leisure/ActivityBacklogProfileFilter.ts'
@@ -21,10 +21,10 @@ export function useActivityBacklogProfileCrud() {
 		updateRequestClass: ActivityBacklogProfileRequest,
 		entityName: url,
 	})
-	const { fetchFilteredTable } = useFetchFilteredTable<ActivityBacklogProfile, ActivityBacklogProfileFilter>(
-		ActivityBacklogProfile,
-		url,
-	)
+	const { fetchFilteredTable } = useFetchFilteredTable<ActivityBacklogProfile, ActivityBacklogProfileFilter>({
+		responseClass: ActivityBacklogProfile,
+		entityName: url,
+	})
 
 	return { fetchById, fetchAll, create, createWithResponse, update, deleteEntity, batchDelete, fetchFilteredTable }
 }

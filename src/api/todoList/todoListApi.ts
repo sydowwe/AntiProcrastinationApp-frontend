@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredSorted } from '@/api/base/useFetchFilteredSorted.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredSorted } from '@/_common/api/useFetchFilteredSorted.ts'
 import { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 import { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 import { TodoListFilter } from '@/dtos/request/todoList/TodoListFilter.ts'
@@ -24,10 +24,10 @@ export function useTodoListCrud() {
 		entityName: url,
 	})
 
-	const { fetchFilteredSorted: baseFetchFilteredSorted } = useFetchFilteredSorted<TodoListEntity, TodoListFilter>(
-		TodoListEntity,
-		url,
-	)
+	const { fetchFilteredSorted: baseFetchFilteredSorted } = useFetchFilteredSorted<TodoListEntity, TodoListFilter>({
+		responseClass: TodoListEntity,
+		entityName: url,
+	})
 	const fetchFilteredSorted = async (isDesc: boolean, categoryId: number | null, name: string | null) =>
 		baseFetchFilteredSorted(
 			new FilterSortRequest(true, [new SortByRequest('name', isDesc)], new TodoListFilter(categoryId, name)),

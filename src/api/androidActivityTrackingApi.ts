@@ -7,8 +7,8 @@ import type { AndroidStackedBarsRequest } from '@/dtos/request/activityTracking/
 import type { AndroidTimelineRequest } from '@/dtos/request/activityTracking/android/dashboard/AndroidTimelineRequest.ts'
 import type { AndroidSummaryCardsRequest } from '@/dtos/request/activityTracking/android/dashboard/AndroidSummaryCardsRequest.ts'
 import type { AndroidPieChartRequest } from '@/dtos/request/activityTracking/android/dashboard/AndroidPieChartRequest.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { TrackerAndroidMappingResponse } from '@/dtos/response/activityTracking/android/settings/TrackerAndroidMappingResponse.ts'
 import { TrackerAndroidMappingRequest } from '@/dtos/request/activityTracking/android/settings/TrackerAndroidMappingRequest.ts'
 import type { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
@@ -41,7 +41,7 @@ export function useTrackerAndroidMappingCrud() {
 	const { fetchFilteredTable, loading: tableLoading } = useFetchFilteredTable<
 		TrackerAndroidMappingResponse,
 		AndroidDistinctEntriesFilterRequest
-	>(TrackerAndroidMappingResponse, url)
+	>({ responseClass: TrackerAndroidMappingResponse, entityName: url })
 	const { create, createWithResponse, update, updateWithResponse, deleteEntity } = useEntityCommand<
 		TrackerAndroidMappingResponse,
 		TrackerAndroidMappingRequest,

@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { ActivityBucketListProfile } from '@/dtos/response/leisure/ActivityBucketListProfile.ts'
 import { ActivityBucketListProfileRequest } from '@/dtos/request/leisure/ActivityBucketListProfileRequest.ts'
 import type { ActivityBucketListProfileFilter } from '@/dtos/request/leisure/ActivityBucketListProfileFilter.ts'
@@ -21,10 +21,10 @@ export function useActivityBucketListProfileCrud() {
 		updateRequestClass: ActivityBucketListProfileRequest,
 		entityName: url,
 	})
-	const { fetchFilteredTable } = useFetchFilteredTable<ActivityBucketListProfile, ActivityBucketListProfileFilter>(
-		ActivityBucketListProfile,
-		url,
-	)
+	const { fetchFilteredTable } = useFetchFilteredTable<ActivityBucketListProfile, ActivityBucketListProfileFilter>({
+		responseClass: ActivityBucketListProfile,
+		entityName: url,
+	})
 
 	return { fetchById, fetchAll, create, createWithResponse, update, deleteEntity, batchDelete, fetchFilteredTable }
 }

@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { LookupResponse } from '@/dtos/response/general/LookupResponse.ts'
 import type { LookupFilter } from '@/dtos/request/general/LookupFilter.ts'
 
@@ -13,7 +13,10 @@ function useLookupApi(entityName: string) {
 		responseClass: LookupResponse,
 		entityName,
 	})
-	const { fetchFilteredTable } = useFetchFilteredTable<LookupResponse, LookupFilter>(LookupResponse, entityName)
+	const { fetchFilteredTable } = useFetchFilteredTable<LookupResponse, LookupFilter>({
+		responseClass: LookupResponse,
+		entityName,
+	})
 
 	return { fetchById, fetchAll, create, update, patch, deleteEntity, fetchFilteredTable }
 }

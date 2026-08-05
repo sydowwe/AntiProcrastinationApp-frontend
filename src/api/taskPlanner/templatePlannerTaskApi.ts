@@ -1,6 +1,6 @@
-import { useEntityQuery } from '@/api/base/useEntityQuery.ts'
-import { useEntityCommand } from '@/api/base/useEntityCommand.ts'
-import { useFetchFiltered } from '@/api/base/useFetchFiltered.ts'
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { useFetchFiltered } from '@/_common/api/useFetchFiltered.ts'
 import { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 import type { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
@@ -22,7 +22,10 @@ export function useTemplatePlannerTaskCrud() {
 		entityName: url,
 	})
 
-	const { fetchFiltered } = useFetchFiltered<TemplatePlannerTask, TemplatePlannerTaskFilter>(TemplatePlannerTask, url)
+	const { fetchFiltered } = useFetchFiltered<TemplatePlannerTask, TemplatePlannerTaskFilter>({
+		responseClass: TemplatePlannerTask,
+		entityName: url,
+	})
 
 	return {
 		fetchById,

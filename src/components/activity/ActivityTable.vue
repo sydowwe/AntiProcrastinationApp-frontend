@@ -15,7 +15,7 @@
 	>
 		<template #formattedColumn="{ key, value }">
 			<template v-if="key === 'role.name' || key === 'category.name'">
-				<span>{{ value ?? '—' }}</span>
+				<span>{{ value ?? 'â€”' }}</span>
 			</template>
 			<template v-else-if="key === 'isUnavoidable'">
 				<VIcon
@@ -24,7 +24,7 @@
 					size="16"
 				/>
 			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+			<template v-else>{{ value ?? 'â€”' }}</template>
 		</template>
 	</BasicTable>
 </template>
@@ -38,13 +38,16 @@
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
 	import type { ActivityFilter } from '@/dtos/request/activity/ActivityFilter.ts'
-	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{ filter: ActivityFilter }>()
 
-	const { fetchFilteredTable, loading } = useFetchFilteredTable<Activity, ActivityFilter>(Activity, 'activity')
+	const { fetchFilteredTable, loading } = useFetchFilteredTable<Activity, ActivityFilter>({
+		responseClass: Activity,
+		entityName: 'activity',
+	})
 	const { deleteEntity } = useActivityCrud()
 	const { openDialog } = useDialog()
 

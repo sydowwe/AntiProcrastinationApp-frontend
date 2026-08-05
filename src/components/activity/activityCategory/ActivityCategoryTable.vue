@@ -22,9 +22,9 @@
 					height="24"
 					rounded="circle"
 				/>
-				<span v-else>—</span>
+				<span v-else>â€”</span>
 			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+			<template v-else>{{ value ?? 'â€”' }}</template>
 		</template>
 	</BasicTable>
 </template>
@@ -37,17 +37,17 @@
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { FilteredTableRequest } from '@/dtos/request/base/FilteredTableRequest.ts'
 	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
-	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityCategoryCrud } from '@/api/activity/activityCategoryApi.ts'
 	import ActivityCategoryForm from '@/components/activity/activityCategory/ActivityCategoryForm.vue'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
-	const { fetchFilteredTable, loading } = useFetchFilteredTable<Category, NameTextFilter>(
-		Category,
-		'activity-category',
-	)
+	const { fetchFilteredTable, loading } = useFetchFilteredTable<Category, NameTextFilter>({
+		responseClass: Category,
+		entityName: 'activity-category',
+	})
 	const { deleteEntity } = useActivityCategoryCrud()
 	const { openDialog } = useDialog()
 

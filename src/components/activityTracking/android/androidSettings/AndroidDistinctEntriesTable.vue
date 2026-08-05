@@ -29,7 +29,7 @@
 	import type { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import AndroidDistinctEntriesActions from '@/components/activityTracking/android/androidSettings/AndroidDistinctEntriesActions.vue'
 
@@ -38,10 +38,10 @@
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const { showErrorSnackbar } = useSnackbar()
-	const { loading, fetchFilteredTable } = useFetchFilteredTable(
-		TrackerAndroidDistinctEntriesResponse,
-		'activity-tracking/android',
-	)
+	const { loading, fetchFilteredTable } = useFetchFilteredTable({
+		responseClass: TrackerAndroidDistinctEntriesResponse,
+		entityName: 'activity-tracking/android',
+	})
 
 	const columns = [new TableColumn('appLabel', 'App Label'), new TableColumn('packageName', 'Package Name')]
 

@@ -30,7 +30,7 @@
 	import type { DesktopDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import { TableColumn } from '@/dtos/dto/TableColumn.ts'
-	import { useFetchFilteredTable } from '@/api/base/fetchFilteredTable.ts'
+	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import type { ActivityFormRequest } from '@/dtos/request/activity/ActivityFormRequest.ts'
 	import DesktopDistinctEntriesActions from '@/components/activityTracking/desktop/desktopSettings/DesktopDistinctEntriesActions.vue'
 
@@ -39,10 +39,10 @@
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const { showErrorSnackbar } = useSnackbar()
-	const { loading, fetchFilteredTable } = useFetchFilteredTable(
-		TrackerDesktopDistinctEntriesResponse,
-		'activity-tracking/desktop',
-	)
+	const { loading, fetchFilteredTable } = useFetchFilteredTable({
+		responseClass: TrackerDesktopDistinctEntriesResponse,
+		entityName: 'activity-tracking/desktop',
+	})
 
 	const columns = [
 		new TableColumn('processName', 'Process Name'),
