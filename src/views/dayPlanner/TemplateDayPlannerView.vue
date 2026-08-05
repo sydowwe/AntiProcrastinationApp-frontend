@@ -72,10 +72,9 @@
 								v-if="taskStats.taskCount > 0"
 								class="text-caption text-medium-emphasis"
 							>
-								{{ taskStats.taskCount }} tasks ·
-								{{ timeNiceFromMinutes(taskStats.plannedMinutes) }} planned ·
+								{{ taskStats.taskCount }} tasks · {{ fromMinutes(taskStats.plannedMinutes) }} planned ·
 								<span :class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-warning'">
-									{{ timeNiceFromMinutes(taskStats.freeMinutes) }} free
+									{{ fromMinutes(taskStats.freeMinutes) }} free
 								</span>
 							</span>
 						</template>
@@ -128,7 +127,7 @@
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
 	import type { TemplatePlannerTask } from '@/dtos/response/activityPlanning/template/TemplatePlannerTask.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { fromMinutes } from '@/_common/utils/formatDuration.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 	import { useClipboardHandling } from '@/composables/dayPlanner/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/composables/dayPlanner/usePlannerCrud.ts'
@@ -155,7 +154,6 @@
 	} = useTemplatePlannerTaskCrud()
 
 	const { showFullScreenLoading } = useLoading()
-	const { timeNiceFromMinutes } = useDateTime()
 	const undoStack = useUndoStack()
 
 	const store = storeId === 'secondary' ? useSecondaryTemplateDayPlannerStore() : useTemplateDayPlannerStore()

@@ -48,7 +48,7 @@
 	import { PlannerTaskFilter } from '@/dtos/request/activityPlanning/PlannerTaskFilter.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
@@ -60,7 +60,6 @@
 	const store = useDayPlannerStore()
 	const { createWithResponse, batchDelete, fetchFiltered } = useTaskPlannerCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 	const { showSuccessSnackbar } = useSnackbar()
 
 	const overdueTasks = ref<PlannerTask[]>([])
@@ -83,7 +82,7 @@
 			try {
 				const yesterday = new Date(store.viewedDate)
 				yesterday.setDate(yesterday.getDate() - 1)
-				const prevCalendar = await fetchCalendarByDate(usStringToUrlString(formatToUsString(yesterday)))
+				const prevCalendar = await fetchCalendarByDate(usStringToUrlString(formatDateForApi(yesterday)))
 				const prevTasks = await fetchFiltered(
 					new PlannerTaskFilter(prevCalendar.id, prevCalendar.wakeUpTime, prevCalendar.bedTime),
 				)

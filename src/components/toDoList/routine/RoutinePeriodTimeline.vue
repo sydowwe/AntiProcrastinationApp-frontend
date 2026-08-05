@@ -38,7 +38,7 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 
 	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity; color: string }>()
 

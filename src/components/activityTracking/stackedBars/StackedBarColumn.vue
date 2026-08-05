@@ -23,9 +23,9 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { ColumnData } from '@/components/activityTracking/stackedBars/dto/ColumnData.ts'
-	import { lightenColor } from '@/utils/colorUtils.ts'
+	import { lightenColor } from '@/_common/utils/colorUtils.ts'
 
 	const props = defineProps<{
 		data: ColumnData

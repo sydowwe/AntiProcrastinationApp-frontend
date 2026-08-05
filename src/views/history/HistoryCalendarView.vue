@@ -79,7 +79,7 @@
 	import type { CalendarActivityDaySummary } from '@/dtos/response/historyDashboard/CalendarActivityDaySummary.ts'
 	import type { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { CalendarActivityRequest } from '@/dtos/request/activityHistory/CalendarActivityRequest.ts'
-	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	function formatDuration(totalSeconds: number): string {
 		const hours = Math.floor(totalSeconds / 3600)

@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 
 	defineProps<{
 		categories: TodoListCategoryEntity[]

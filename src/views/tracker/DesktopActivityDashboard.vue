@@ -119,7 +119,7 @@
 	import { SummaryCardsData } from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		getDesktopPieChart,
 		getDesktopStackedBars,

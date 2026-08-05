@@ -11,9 +11,9 @@
 	>
 		<div class="d-flex align-center ga-1">
 			<span class="text-high-emphasis font-weight-medium">Period total:</span>
-			<span>{{ formatDuration(comparison.currentPeriodTotalSeconds) }}</span>
+			<span>{{ fromSeconds(comparison.currentPeriodTotalSeconds) }}</span>
 			<span class="ml-2 text-medium-emphasis">vs previous:</span>
-			<span class="mr-2">{{ formatDuration(comparison.previousPeriodTotalSeconds) }}</span>
+			<span class="mr-2">{{ fromSeconds(comparison.previousPeriodTotalSeconds) }}</span>
 			<VChip
 				v-if="comparison.percentChange !== null"
 				size="small"
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { HistoryPeriodComparison } from '@/dtos/response/historyDashboard/HistoryPeriodComparison.ts'
-	import { formatDuration } from '@/utils/formatDuration.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
 		comparison: HistoryPeriodComparison | null

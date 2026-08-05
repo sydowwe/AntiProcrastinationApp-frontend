@@ -123,9 +123,9 @@
 	import { StackedBarsRequest } from '@/dtos/request/activityTracking/StackedBarsRequest.ts'
 	import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	// --- Date & Time State ---
 	const today = new Date()

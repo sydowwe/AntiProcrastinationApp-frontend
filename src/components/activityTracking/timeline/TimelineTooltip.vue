@@ -15,11 +15,11 @@
 		</div>
 		<div class="tooltip-row">
 			<span>Duration:</span>
-			<span>{{ formatDuration(data.durationSeconds) }}</span>
+			<span>{{ fromSeconds(data.durationSeconds) }}</span>
 		</div>
 		<div class="tooltip-row">
 			<span>Active time:</span>
-			<span>{{ formatDuration(data.totalSeconds) }}</span>
+			<span>{{ fromSeconds(data.totalSeconds) }}</span>
 		</div>
 		<template v-if="data.url">
 			<VDivider class="my-1" />
@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 
 	const props = defineProps<{

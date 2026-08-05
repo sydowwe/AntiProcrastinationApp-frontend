@@ -17,26 +17,26 @@
 			<div class="details-grid">
 				<div class="detail-row">
 					<span class="text-medium-emphasis">Total:</span>
-					<span class="font-weight-medium">{{ formatDuration(details.totalSeconds) }}</span>
+					<span class="font-weight-medium">{{ fromSeconds(details.totalSeconds) }}</span>
 				</div>
 				<div class="detail-row">
 					<span class="text-medium-emphasis">Active:</span>
-					<span>{{ formatDuration(details.activeSeconds) }}</span>
+					<span>{{ fromSeconds(details.activeSeconds) }}</span>
 				</div>
 				<div class="detail-row">
 					<span class="text-medium-emphasis">Background:</span>
-					<span>{{ formatDuration(details.backgroundSeconds) }}</span>
+					<span>{{ fromSeconds(details.backgroundSeconds) }}</span>
 				</div>
 				<template v-if="details.fullscreenSeconds > 0">
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Fullscreen:</span>
-						<span>{{ formatDuration(details.fullscreenSeconds) }}</span>
+						<span>{{ fromSeconds(details.fullscreenSeconds) }}</span>
 					</div>
 				</template>
 				<template v-if="details.soundSeconds > 0">
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Playing sound:</span>
-						<span>{{ formatDuration(details.soundSeconds) }}</span>
+						<span>{{ fromSeconds(details.soundSeconds) }}</span>
 					</div>
 				</template>
 				<div class="detail-row">
@@ -55,7 +55,7 @@
 						class="detail-row"
 					>
 						<span class="text-medium-emphasis">Monitor {{ m.monitor }}:</span>
-						<span>{{ formatDuration(m.activeSeconds) }}</span>
+						<span>{{ fromSeconds(m.activeSeconds) }}</span>
 					</div>
 				</div>
 			</template>
@@ -76,7 +76,7 @@
 							<div class="d-flex justify-space-between align-center ga-2">
 								<span class="window-title-text">{{ wt.windowTitle }}</span>
 								<span class="text-medium-emphasis text-caption flex-shrink-0">
-									{{ formatDuration(wt.totalSeconds) }}
+									{{ fromSeconds(wt.totalSeconds) }}
 								</span>
 							</div>
 						</template>
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { DesktopProcessDetailsResponse } from '@/dtos/response/activityTracking/desktop/DesktopProcessDetailsResponse.ts'
 
 	const props = defineProps<{

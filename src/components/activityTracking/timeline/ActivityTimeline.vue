@@ -94,7 +94,7 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import TimelineGrid from './TimelineGrid.vue'
 	import { calculateWaterfallStack } from './timelineUtils'
 	import type { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'

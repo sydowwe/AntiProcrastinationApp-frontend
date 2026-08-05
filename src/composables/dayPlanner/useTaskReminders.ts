@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
-import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
+import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 import { PlannerTaskStatus } from '@/dtos/enum/PlannerTaskStatus.ts'
 import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 
@@ -13,7 +13,7 @@ export function useTaskReminders(
 	const { currentTime } = useCurrentTime()
 	const notifiedTaskIds = new Set<number>()
 
-	checkNotificationPermission()
+	void requestNotificationPermission()
 
 	watch(getViewedDate, () => notifiedTaskIds.clear())
 
@@ -41,7 +41,7 @@ export function useTaskReminders(
 				const diff = task.startTime.getInMinutes - nowMinutes
 				if (diff > 0 && diff <= getMinutesBefore()) {
 					notifiedTaskIds.add(task.id)
-					showNotification(task.activity.name, `Starts in ${diff} minute${diff !== 1 ? 's' : ''}`)
+					void showNotification(task.activity.name, `Starts in ${diff} minute${diff !== 1 ? 's' : ''}`)
 				}
 			}
 		},

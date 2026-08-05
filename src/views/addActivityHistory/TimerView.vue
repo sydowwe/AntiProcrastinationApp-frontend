@@ -62,7 +62,7 @@
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
 	import TimerPresetsSection from '../../components/addActivityToHistory/TimerPresetsSection.vue'
-	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
+	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { computed, onUnmounted, ref } from 'vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
@@ -127,7 +127,7 @@
 		return TimePrecise.fromSeconds(timeRemaining.value)
 	})
 
-	checkNotificationPermission()
+	void requestNotificationPermission()
 
 	async function start() {
 		if (paused.value) {
@@ -208,7 +208,7 @@
 		timeInputVisible.value = true
 		if (automatic) {
 			triggerTimerEndNotification('Timer ended!', name)
-			showNotification('Timer ended', `Your timer for ${name} ended it ran for ${timePassed().getNice}`)
+			void showNotification('Timer ended', `Your timer for ${name} ended it ran for ${timePassed().getNice}`)
 		}
 		if (timePassed().getInMinutes > 0) {
 			if (!activityId) {

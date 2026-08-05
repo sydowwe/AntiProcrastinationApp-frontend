@@ -21,18 +21,18 @@
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Total time:</span>
 						<span class="text-high-emphasis font-weight-medium">
-							{{ formatDuration(dayTotals.totalSeconds) }}
+							{{ fromSeconds(dayTotals.totalSeconds) }}
 						</span>
 					</div>
 
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Active:</span>
-						<span>{{ formatDuration(dayTotals.activeSeconds) }}</span>
+						<span>{{ fromSeconds(dayTotals.activeSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Background:</span>
-						<span>{{ formatDuration(dayTotals.backgroundSeconds) }}</span>
+						<span>{{ fromSeconds(dayTotals.backgroundSeconds) }}</span>
 					</div>
 
 					<VDivider class="my-3" />
@@ -59,18 +59,18 @@
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Total:</span>
 						<span class="text-high-emphasis font-weight-medium">
-							{{ formatDuration(domainDetails.totalSeconds) }}
+							{{ fromSeconds(domainDetails.totalSeconds) }}
 						</span>
 					</div>
 
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Active:</span>
-						<span>{{ formatDuration(domainDetails.activeSeconds) }}</span>
+						<span>{{ fromSeconds(domainDetails.activeSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
 						<span class="text-medium-emphasis">Background:</span>
-						<span>{{ formatDuration(domainDetails.backgroundSeconds) }}</span>
+						<span>{{ fromSeconds(domainDetails.backgroundSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import DomainDetailsList from './DomainDetailsList.vue'
 	import type { DayTotals } from '@/dtos/response/activityTracking/pieChart/DayTotals.ts'
 	import type { DomainPieData } from '@/dtos/response/activityTracking/pieChart/DomainPieData.ts'

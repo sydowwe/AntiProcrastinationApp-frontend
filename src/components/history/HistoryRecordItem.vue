@@ -117,7 +117,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { ActivityHistory } from '@/dtos/response/activityHistory/ActivityHistory.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToTime } from '@/_common/utils/DateTimeHelper.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 
 	const props = defineProps<{
@@ -125,8 +125,6 @@
 	}>()
 
 	const emit = defineEmits<{ edit: [record: ActivityHistory]; delete: [id: number] }>()
-
-	const { formatToTime } = useDateTime()
 
 	const actions = [
 		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', () => emit('edit', props.record)),

@@ -136,7 +136,7 @@
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi, formatToDateWithDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import DayPlannerProgressBlock from '@/components/dayPlanner/normal/DayPlannerProgressBlock.vue'
 	import GoogleCalendarSyncBtn from '@/components/dayPlanner/normal/GoogleCalendarSyncBtn.vue'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
@@ -155,7 +155,6 @@
 	const panelOpen = defineModel<boolean>('panelOpen', { required: true })
 	const store = useDayPlannerStore()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
-	const { formatToDateWithDay, formatToUsString, usStringToUrlString } = useDateTime()
 	const { fetchByDate } = useCalendarQuery()
 	const { fetchFiltered } = useTaskPlannerCrud()
 
@@ -163,7 +162,7 @@
 	const nextDayCount = ref<number | null>(null)
 
 	async function fetchCountForDate(date: Date): Promise<number> {
-		const cal = await fetchByDate(usStringToUrlString(formatToUsString(date)))
+		const cal = await fetchByDate(usStringToUrlString(formatDateForApi(date)))
 		const tasks = await fetchFiltered(new PlannerTaskFilter(cal.id, store.viewStartTime, store.viewEndTime))
 		return tasks.filter(t => !t.isBackground).length
 	}

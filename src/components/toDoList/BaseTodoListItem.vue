@@ -150,7 +150,7 @@
 <script setup lang="ts" generic="TItem extends IBaseToDoListItem">
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import DraggedItemPreview from '@/components/toDoList/dragAndDrop/DraggedItemPreview.vue'
 	import type { IBaseToDoListItem } from '@/dtos/response/interface/IBaseToDoListItem.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'

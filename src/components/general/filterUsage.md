@@ -377,12 +377,11 @@ The drawer is `position: fixed; top: 64px; right: 0; bottom: 0` and teleported t
 	import { WidgetFilterDto, WidgetResponse } from '@/dtos/widget/Widget.ts'
 	import { useWidgetQuery, useCategoryQuery } from '@/api/WidgetApi.ts'
 	import { SelectOption } from '@/dtos/response/general/SelectOption.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import type { VSortItem } from '@/dtos/dto/VSortItem.ts'
 	import type { TableColumn } from '@/dtos/dto/TableColumn.ts'
 
 	const i18n = useI18n()
-	const { formatToDate } = useDateTime()
 	const { fetchFilteredTable, loading } = useWidgetQuery()
 	const { fetchSelectOptions: fetchCategoryOptions } = useCategoryQuery()
 

@@ -47,7 +47,7 @@
 	import { computed, ref } from 'vue'
 	import ActivityPieChart from './ActivityPieChart.vue'
 	import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from './PieSegment.ts'
 	import type { DomainPieData } from '@/dtos/response/activityTracking/pieChart/DomainPieData.ts'
 	import type { DayTotals } from '@/dtos/response/activityTracking/pieChart/DayTotals.ts'

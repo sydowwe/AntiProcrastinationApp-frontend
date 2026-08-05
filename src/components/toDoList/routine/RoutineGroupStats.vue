@@ -79,7 +79,7 @@
 </template>
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import type { RoutineTodoListItemEntity } from '@/dtos/response/todoList/routine/RoutineTodoListItemEntity.ts'
 

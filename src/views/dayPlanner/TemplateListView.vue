@@ -275,7 +275,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useUserStore } from '@/stores/userStore.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskFilter.ts'
 	import { TemplatePlannerTaskRequest } from '@/dtos/request/activityPlanning/template/TemplatePlannerTaskRequest.ts'
@@ -295,7 +295,6 @@
 	const { showSuccessSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
 	const userStore = useUserStore()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())
@@ -495,7 +494,7 @@
 	}
 
 	function applyToToday(templateId: number) {
-		const todayUrlDate = usStringToUrlString(formatToUsString(new Date()))
+		const todayUrlDate = usStringToUrlString(formatDateForApi(new Date()))
 		router.push({
 			name: 'dayPlanner',
 			params: { date: todayUrlDate },

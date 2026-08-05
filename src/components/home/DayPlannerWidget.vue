@@ -100,18 +100,17 @@
 		getPlannerTaskStatusIcon,
 	} from '@/dtos/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 
 	const router = useRouter()
 	const { fetchByDate } = useCalendarQuery()
 	const { fetchFiltered, patchStatus } = useTaskPlannerCrud()
-	const { formatToUsString, usStringToUrlString } = useDateTime()
 
 	const calendar = ref<Calendar | null>(null)
 	const tasks = ref<PlannerTask[]>([])
 	const loading = ref(true)
 
-	const todayStr = usStringToUrlString(formatToUsString(new Date()))
+	const todayStr = usStringToUrlString(formatDateForApi(new Date()))
 
 	const nonBackgroundTasks = computed(() => tasks.value.filter(t => !t.isBackground))
 	const sortedTasks = computed(() =>

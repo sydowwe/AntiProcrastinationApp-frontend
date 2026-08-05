@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
 		label: string
@@ -45,7 +45,7 @@
 		isNew: boolean
 	}>()
 
-	const formattedTime = computed(() => formatDuration(props.seconds))
+	const formattedTime = computed(() => fromSeconds(props.seconds))
 
 	const comparisonText = computed(() => {
 		if (props.percentChange === null) return ''

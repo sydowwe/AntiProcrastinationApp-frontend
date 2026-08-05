@@ -20,13 +20,13 @@
 			rounded
 		/>
 		<div class="d-flex ga-2 mt-1 text-caption text-medium-emphasis">
-			<span>{{ timeNiceFromMinutes(taskStats.plannedMinutes) }} planned</span>
+			<span>{{ fromMinutes(taskStats.plannedMinutes) }} planned</span>
 			<span>·</span>
 			<span
 				v-if="taskStats.overMinutes === 0"
 				:class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-medium-emphasis'"
 			>
-				{{ timeNiceFromMinutes(taskStats.freeMinutes) }} free
+				{{ fromMinutes(taskStats.freeMinutes) }} free
 			</span>
 			<span
 				v-else
@@ -37,7 +37,7 @@
 					size="11"
 					class="mr-1"
 				/>
-				{{ timeNiceFromMinutes(taskStats.overMinutes) }} over capacity
+				{{ fromMinutes(taskStats.overMinutes) }} over capacity
 			</span>
 		</div>
 	</div>
@@ -47,14 +47,13 @@
 	import { computed } from 'vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { fromMinutes } from '@/_common/utils/formatDuration.ts'
 
 	const { calendar } = defineProps<{
 		calendar: Calendar
 	}>()
 
 	const store = useDayPlannerStore()
-	const { timeNiceFromMinutes } = useDateTime()
 
 	const progressColorName = computed(() => {
 		const rate = calendar.completionRate

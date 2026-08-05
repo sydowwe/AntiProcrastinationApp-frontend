@@ -24,13 +24,13 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { getDomainColor } from '@/utils/domainColor'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { StackedSession } from '@/components/activityTracking/timeline/dto/StackedSession.ts'
 	import type { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 	import type { SessionPosition } from '@/components/activityTracking/timeline/dto/SessionPosition.ts'
 	import type { LaneType } from '@/components/activityTracking/timeline/dto/LaneType.ts'
-	import { withOpacity } from '@/utils/colorUtils.ts'
+	import { withOpacity } from '@/_common/utils/colorUtils.ts'
 
 	const props = defineProps<{
 		session: TimelineSessionDto | StackedSession
@@ -95,7 +95,7 @@
 	})
 
 	const ariaLabel = computed(() => {
-		return `${props.session.domain} session from ${formatTime(props.session.startedAt)} to ${formatTime(props.session.endedAt)}, duration ${formatDuration(props.session.durationSeconds)}`
+		return `${props.session.domain} session from ${formatTime(props.session.startedAt)} to ${formatTime(props.session.endedAt)}, duration ${fromSeconds(props.session.durationSeconds)}`
 	})
 
 	function formatTime(date: Date): string {

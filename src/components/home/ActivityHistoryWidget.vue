@@ -52,9 +52,9 @@
 	import { HistoryGroupBy } from '@/components/historyDashboard/types/HistoryGroupBy.ts'
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { formatDuration } from '@/utils/formatDuration.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import HistoryPieChart from '@/components/historyDashboard/pieChart/HistoryPieChart.vue'
-	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	const today = formatDateForApi(new Date('2026-04-10'))
 	const router = useRouter()
@@ -65,7 +65,7 @@
 
 	const totalTrackedFormatted = computed(() => {
 		if (!pieData.value) return '0m'
-		return formatDuration(pieData.value.totals.totalSeconds)
+		return fromSeconds(pieData.value.totals.totalSeconds)
 	})
 
 	async function load() {

@@ -72,7 +72,7 @@
 	import type { StackedBarsInputItem, StackedBarsInputWindow } from './dto/StackedBarsInput'
 	import type { ColumnData } from './dto/ColumnData'
 	import { ProcessedWindow } from './dto/ProcessedWindow'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 

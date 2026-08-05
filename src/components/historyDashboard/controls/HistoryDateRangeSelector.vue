@@ -36,15 +36,13 @@
 	import { ref, watch } from 'vue'
 	import { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	const date = defineModel<string>('date', { required: true })
 
 	const rangeType = defineModel<ActivityDateRangeTypeEnum>('rangeType', { required: true })
 
 	const endDate = defineModel<string | undefined>('endDate', { required: true })
-
-	const { formatToUsString } = useDateTime()
 
 	const today = new Date()
 	const selectedRangeType = ref<ActivityDateRangeTypeEnum>(rangeType.value)
@@ -64,7 +62,7 @@
 	const dateTo = ref<Date>(endDate.value ? new Date(endDate.value) : new Date())
 
 	function emitValues() {
-		const todayStr = formatToUsString(dateFrom.value)
+		const todayStr = formatDateForApi(dateFrom.value)
 		rangeType.value = selectedRangeType.value
 
 		console.log(todayStr)
@@ -79,8 +77,8 @@
 				endDate.value = undefined
 				break
 			case ActivityDateRangeTypeEnum.CustomRange:
-				date.value = formatToUsString(dateFrom.value)
-				endDate.value = formatToUsString(dateTo.value)
+				date.value = formatDateForApi(dateFrom.value)
+				endDate.value = formatDateForApi(dateTo.value)
 				break
 		}
 	}

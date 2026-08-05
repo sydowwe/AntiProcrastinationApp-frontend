@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import type { ActivityHistoryFilter } from '@/dtos/request/activityHistory/ActivityHistoryFilter.ts'
 
 	const props = defineProps<{
@@ -137,8 +137,6 @@
 	}>()
 
 	const isFilterExpanded = defineModel<boolean>('isFilterExpanded', { required: true })
-
-	const { formatToDate } = useDateTime()
 
 	const hasDateFilter = computed(() => {
 		return (

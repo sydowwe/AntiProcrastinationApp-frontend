@@ -72,7 +72,7 @@
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { useRoutineTimePeriodCrud } from '@/api/routineTodoList/timePeriodApi.ts'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import type { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'
 	import TimePeriodForm from '@/components/toDoList/routine/dialog/TimePeriodForm.vue'
 	import PersonalBestsPanel from '@/components/toDoList/routine/PersonalBestsPanel.vue'

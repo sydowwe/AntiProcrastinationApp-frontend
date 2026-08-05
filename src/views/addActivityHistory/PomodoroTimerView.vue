@@ -241,7 +241,7 @@
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
-	import { checkNotificationPermission, showNotification } from '@/utils/notifications.ts'
+	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { computed, onUnmounted, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
@@ -345,7 +345,7 @@
 	const focusActivityId = ref<number | null>(activityId)
 	const restActivityId = ref<number | null>(null)
 
-	checkNotificationPermission()
+	void requestNotificationPermission()
 
 	async function start() {
 		if (paused.value) {
@@ -451,18 +451,18 @@
 		switch (currentTimerType.value) {
 			case 'focus':
 				startTitleAnimation(`Focus ended! | ${cycleInfo}`, `Time for a break`)
-				showNotification(
+				void showNotification(
 					'Focus period ended',
 					`${focusActivityName} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
 				)
 				break
 			case 'shortBreak':
 				startTitleAnimation(`Break ended! | ${cycleInfo}`, `Time to focus`)
-				showNotification('Short break ended', `${cycleInfo} - Time to focus on ${focusActivityName}!`)
+				void showNotification('Short break ended', `${cycleInfo} - Time to focus on ${focusActivityName}!`)
 				break
 			case 'longBreak':
 				startTitleAnimation(`Long break ended!`, `Starting cycle ${currentCycle.value + 1}`)
-				showNotification(
+				void showNotification(
 					'Long break ended',
 					`Cycle ${currentCycle.value} complete. Time for cycle ${currentCycle.value + 1}!`,
 				)
@@ -523,7 +523,7 @@
 				`🍅 Pomodoro complete! | ${completedCycles} cycle${completedCycles > 1 ? 's' : ''}`,
 				`${focusActivityName} - ${timeSpent.getNice}`,
 			)
-			showNotification(
+			void showNotification(
 				'Pomodoro complete!',
 				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
 			)

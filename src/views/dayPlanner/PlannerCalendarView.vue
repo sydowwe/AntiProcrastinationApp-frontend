@@ -87,7 +87,7 @@
 	import ApplyTemplateActionBar from '@/components/dayPlanner/calendar/ApplyTemplateActionBar.vue'
 	import BulkSelectActionBar from '@/components/dayPlanner/calendar/BulkSelectActionBar.vue'
 	import router from '@/plugins/router.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToDate, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTaskPlannerCrud } from '@/api/taskPlanner/plannerTaskApi.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/api/taskPlanner/templatePlannerTaskApi.ts'
@@ -106,7 +106,6 @@
 	import { useDialog } from '@/composables/general/useDialog.ts'
 	import { useCalendarModes } from '@/composables/dayPlanner/useCalendarModes.ts'
 
-	const { usStringToUrlString, formatToDate } = useDateTime()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()

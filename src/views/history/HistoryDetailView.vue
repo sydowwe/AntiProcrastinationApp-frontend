@@ -164,7 +164,7 @@
 	import type { HistorySummaryCardsResponse } from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { getDomainColor } from '@/utils/domainColor.ts'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import HistoryGroupBySelector from '@/components/historyDashboard/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 	import HistorySummaryCards from '@/components/historyDashboard/summaryCards/HistorySummaryCards.vue'
@@ -172,7 +172,7 @@
 	import HistoryTimeline from '@/components/historyDashboard/HistoryTimeline.vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	const route = useRoute()
 	const router = useRouter()

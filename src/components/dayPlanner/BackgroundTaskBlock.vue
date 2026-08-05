@@ -27,7 +27,7 @@
 	import { computed } from 'vue'
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 
 	const { task, isPast, marginLeft } = defineProps<{
 		task: IBasePlannerTask<IBasePlannerTaskRequest>

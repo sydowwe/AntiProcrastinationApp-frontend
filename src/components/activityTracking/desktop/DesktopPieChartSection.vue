@@ -48,15 +48,15 @@
 						<div class="details-grid">
 							<div class="detail-row">
 								<span class="text-medium-emphasis">Total time:</span>
-								<span class="font-weight-medium">{{ formatDuration(totals?.totalSeconds ?? 0) }}</span>
+								<span class="font-weight-medium">{{ fromSeconds(totals?.totalSeconds ?? 0) }}</span>
 							</div>
 							<div class="detail-row">
 								<span class="text-medium-emphasis">Active:</span>
-								<span>{{ formatDuration(totals?.activeSeconds ?? 0) }}</span>
+								<span>{{ fromSeconds(totals?.activeSeconds ?? 0) }}</span>
 							</div>
 							<div class="detail-row">
 								<span class="text-medium-emphasis">Background:</span>
-								<span>{{ formatDuration(totals?.backgroundSeconds ?? 0) }}</span>
+								<span>{{ fromSeconds(totals?.backgroundSeconds ?? 0) }}</span>
 							</div>
 							<VDivider class="my-2" />
 							<div class="detail-row">
@@ -83,9 +83,9 @@
 	import { computed, ref, watch } from 'vue'
 	import ActivityPieChart from '@/components/activityTracking/pieChart/ActivityPieChart.vue'
 	import DesktopProcessDetailsPanel from './DesktopProcessDetailsPanel.vue'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from '@/components/activityTracking/pieChart/PieSegment.ts'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { getDesktopProcessDetails } from '@/api/desktopActivityTrackingApi.ts'
 	import type { DesktopProcessPieData } from '@/dtos/response/activityTracking/desktop/DesktopProcessPieData.ts'
 	import type { DesktopPieTotals } from '@/dtos/response/activityTracking/desktop/DesktopPieTotals.ts'

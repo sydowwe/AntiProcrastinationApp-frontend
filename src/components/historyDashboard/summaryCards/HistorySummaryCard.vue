@@ -66,8 +66,8 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { HistorySummaryCard as HistorySummaryCardDto } from '@/dtos/response/historyDashboard/HistorySummaryCard.ts'
-	import { formatDuration } from '@/utils/formatDuration.ts'
-	import { getDomainColor } from '@/utils/domainColor.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 
 	const props = defineProps<{
 		card: HistorySummaryCardDto
@@ -79,7 +79,7 @@
 	}>()
 
 	const resolvedColor = computed(() => props.card.color ?? getDomainColor(props.card.name))
-	const formattedTime = computed(() => formatDuration(props.card.totalSeconds))
+	const formattedTime = computed(() => fromSeconds(props.card.totalSeconds))
 
 	const comparisonText = computed(() => {
 		if (props.card.percentChange === null) return ''

@@ -39,7 +39,7 @@
 						<div class="details-grid">
 							<div class="detail-row">
 								<span class="text-medium-emphasis">Total time:</span>
-								<span class="font-weight-medium">{{ formatDuration(totals?.totalSeconds ?? 0) }}</span>
+								<span class="font-weight-medium">{{ fromSeconds(totals?.totalSeconds ?? 0) }}</span>
 							</div>
 							<VDivider class="my-2" />
 							<div class="detail-row">
@@ -61,9 +61,9 @@
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
 	import ActivityPieChart from '@/components/activityTracking/pieChart/ActivityPieChart.vue'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from '@/components/activityTracking/pieChart/PieSegment.ts'
-	import { formatDuration } from '@/utils/formatDuration'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { AndroidAppPieData } from '@/dtos/response/activityTracking/android/AndroidAppPieData.ts'
 	import type { AndroidPieTotals } from '@/dtos/response/activityTracking/android/AndroidPieTotals.ts'
 

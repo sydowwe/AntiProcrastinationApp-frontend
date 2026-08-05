@@ -93,7 +93,7 @@
 	import type { HistorySummaryCardsResponse } from '@/dtos/response/historyDashboard/HistorySummaryCardsResponse.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { getDomainColor } from '@/utils/domainColor.ts'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import HistoryDateRangeSelector from '@/components/historyDashboard/controls/HistoryDateRangeSelector.vue'
 	import HistoryGroupBySelector from '@/components/historyDashboard/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
@@ -102,10 +102,8 @@
 	import { HistorySummaryStackedBarsRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatTimeDtoToUtcTimeDto } from '@/_common/utils/DateTimeHelper.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
-
-	const { formatTimeDtoToUtcTimeDto } = useDateTime()
 	const route = useRoute()
 	const router = useRouter()
 

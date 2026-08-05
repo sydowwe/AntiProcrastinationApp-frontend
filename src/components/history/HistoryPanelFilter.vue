@@ -134,13 +134,12 @@
 	import { ActivityOptionsSource } from '@/dtos/enum/ActivityOptionsSource.ts'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import { VDateInput } from 'vuetify/labs/components'
-	import { useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import HistoryCurrentFilterInfo from '@/components/history/HistoryCurrentFilterInfo.vue'
 
 	const emit = defineEmits<{
 		filterApplied: [filterData: ActivityHistoryFilter, isDateRange: boolean]
 	}>()
-	const { formatToDate } = useDateTime()
 	const formatToDateTs = formatToDate as (date: unknown) => string
 
 	const MIN_HOURS_BACK = 2

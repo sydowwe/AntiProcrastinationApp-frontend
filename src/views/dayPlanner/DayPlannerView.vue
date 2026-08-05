@@ -119,7 +119,13 @@
 	import PlannerTaskDialog from '@/components/dayPlanner/normal/PlannerTaskDialog.vue'
 	import PlannerTaskBlock from '@/components/dayPlanner/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/components/dayPlanner/normal/CalendarDetailsDialog.vue'
-	import { formatDateForApi, isSameDay, useDateTime } from '@/utils/DateTimeHelper.ts'
+	import {
+		formatDateForApi,
+		formatToDateWithDay,
+		isSameDay,
+		urlStringToUTCDate,
+		usStringToUrlString,
+	} from '@/_common/utils/DateTimeHelper.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
@@ -169,7 +175,6 @@
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
-	const { formatToDateWithDay, urlStringToUTCDate, formatToUsString, usStringToUrlString } = useDateTime()
 	const store = useDayPlannerStore()
 	useTaskReminders(
 		() => store.tasks,
@@ -244,7 +249,7 @@
 		if (!dateParam) {
 			router.replace({
 				name: 'dayPlanner',
-				params: { date: usStringToUrlString(formatToUsString(new Date())) },
+				params: { date: usStringToUrlString(formatDateForApi(new Date())) },
 			})
 			return
 		}
@@ -287,7 +292,7 @@
 
 	function navigateToDate(date: Date | null) {
 		store.viewedDate = date ?? new Date()
-		router.replace({ params: { date: usStringToUrlString(formatToUsString(store.viewedDate)) } })
+		router.replace({ params: { date: usStringToUrlString(formatDateForApi(store.viewedDate)) } })
 	}
 
 	let loadCompleteResolve: (() => void) | null = null
@@ -481,7 +486,7 @@
 	}
 
 	async function handleReschedule(targetDate: Date) {
-		const targetCalendar = await fetchCalendarByDate(usStringToUrlString(formatToUsString(targetDate)))
+		const targetCalendar = await fetchCalendarByDate(usStringToUrlString(formatDateForApi(targetDate)))
 		const ids = Array.from(store.selectedTaskIds)
 		await Promise.all(
 			ids.map(id => {
@@ -518,7 +523,7 @@
 		async () => {
 			showFullScreenLoading()
 			store.resetStore()
-			const dateStr = usStringToUrlString(formatToUsString(new Date(store.viewedDate)))
+			const dateStr = usStringToUrlString(formatDateForApi(new Date(store.viewedDate)))
 			const newCalendar = await fetchCalendarByDate(dateStr)
 			calendar.value = newCalendar
 			store.viewStartTime = newCalendar.wakeUpTime

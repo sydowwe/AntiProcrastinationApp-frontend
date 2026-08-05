@@ -54,7 +54,7 @@
 								<div class="detail-row">
 									<span class="text-medium-emphasis">Total time:</span>
 									<span class="text-high-emphasis font-weight-medium">
-										{{ formatDuration(selectedGroupItem.totalSeconds) }}
+										{{ fromSeconds(selectedGroupItem.totalSeconds) }}
 									</span>
 								</div>
 								<div class="detail-row">
@@ -66,7 +66,7 @@
 								<div class="detail-row">
 									<span class="text-medium-emphasis">Total time:</span>
 									<span class="text-high-emphasis font-weight-medium">
-										{{ formatDuration(data.totals.totalSeconds) }}
+										{{ fromSeconds(data.totals.totalSeconds) }}
 									</span>
 								</div>
 								<div class="detail-row">
@@ -89,7 +89,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import HistoryPieChart from './HistoryPieChart.vue'
-	import { formatDuration } from '@/utils/formatDuration.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { HistoryPieChartResponse } from '@/dtos/response/historyDashboard/HistoryPieChartResponse.ts'
 
 	const props = defineProps<{

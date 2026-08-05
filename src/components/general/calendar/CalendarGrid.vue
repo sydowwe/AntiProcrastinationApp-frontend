@@ -110,7 +110,8 @@
 	import { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
-	import { allDaysOfWeek, useDateTime } from '@/utils/DateTimeHelper.ts'
+	import { formatToDateWithDay } from '@/_common/utils/DateTimeHelper.ts'
+	import { allDaysOfWeek } from '@/utils/daysOfWeek.ts'
 	import { useCalendarWeeks } from '@/composables/general/useCalendarWeeks.ts'
 
 	const {
@@ -135,8 +136,6 @@
 		'day-cell-content'(props: { day: ICalendar }): any
 		'footer-center'(): any
 	}>()
-
-	const { formatToDateWithDay } = useDateTime()
 
 	const { fetchFiltered } = useCalendarQuery()
 

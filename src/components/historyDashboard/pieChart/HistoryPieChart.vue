@@ -16,8 +16,8 @@
 	import { LegendComponent, TooltipComponent } from 'echarts/components'
 	import type { EChartsOption } from 'echarts'
 	import type { HistoryPieChartItem } from '@/dtos/response/historyDashboard/HistoryPieChartItem.ts'
-	import { getDomainColor } from '@/utils/domainColor.ts'
-	import { formatDuration } from '@/utils/formatDuration.ts'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
 		items: HistoryPieChartItem[]
@@ -52,7 +52,7 @@
 					const name = params.name
 					const seconds = params.value
 					const percent = params.percent.toFixed(1)
-					return `<strong>${name}</strong><br/>${formatDuration(seconds)} (${percent}%)`
+					return `<strong>${name}</strong><br/>${fromSeconds(seconds)} (${percent}%)`
 				},
 			},
 			legend: {

@@ -117,7 +117,7 @@
 	import { SummaryCardsData } from '@/dtos/response/activityTracking/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/dtos/response/activityTracking/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
-	import { getDomainColor } from '@/utils/domainColor'
+	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		getAndroidPieChart,
 		getAndroidStackedBars,
@@ -132,7 +132,7 @@
 	import type { AndroidTimelineResponse } from '@/dtos/response/activityTracking/android/AndroidTimelineResponse.ts'
 	import type { AndroidAppSummaryDto } from '@/dtos/response/activityTracking/android/AndroidAppSummaryDto.ts'
 	import type { AndroidPieChartResponse } from '@/dtos/response/activityTracking/android/AndroidPieChartResponse.ts'
-	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	// --- Date & Time State ---
 	const today = new Date()

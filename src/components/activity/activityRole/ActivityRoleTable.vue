@@ -39,7 +39,7 @@
 	import type { NameTextFilter } from '@/dtos/request/activity/NameTextFilter.ts'
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/api/activity/activityRoleApi.ts'
-	import { useColor } from '@/utils/colorPalette.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 
