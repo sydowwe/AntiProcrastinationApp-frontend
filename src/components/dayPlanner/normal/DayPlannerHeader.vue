@@ -132,7 +132,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'

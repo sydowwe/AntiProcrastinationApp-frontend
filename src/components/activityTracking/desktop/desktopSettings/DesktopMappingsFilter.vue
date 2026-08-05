@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import type { TrackerDesktopMappingsFilter } from '@/dtos/request/activityTracking/desktop/settings/TrackerDesktopMappingsFilter.ts'
 	import { TrackerDesktopMappingTypeOptions } from '@/dtos/enum/TrackerDesktopMappingTypeEnum.ts'

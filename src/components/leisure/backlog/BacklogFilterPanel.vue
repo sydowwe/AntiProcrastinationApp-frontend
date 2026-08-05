@@ -99,8 +99,8 @@
 	import { EffortType } from '@/dtos/enum/EffortType.ts'
 	import { ExpectedCostTier } from '@/dtos/enum/ExpectedCostTier.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
-	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 
 	const model = defineModel<ActivityBacklogProfileFilter>({ required: true })
 

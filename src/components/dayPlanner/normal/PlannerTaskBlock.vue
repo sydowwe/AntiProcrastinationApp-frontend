@@ -68,7 +68,7 @@
 	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/dtos/response/activityPlanning/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import {
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,

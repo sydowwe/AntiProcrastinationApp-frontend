@@ -245,13 +245,13 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { computed, onUnmounted, ref } from 'vue'
 	import TimerControls from '@/components/addActivityToHistory/TimerControls.vue'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { useI18n } from 'vue-i18n'
-	import TimeDisplayWithProgress from '@/components/general/dateTime/TimeDisplayWithProgress.vue'
+	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import PomodoroPresetsDialog from '@/components/addActivityToHistory/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/composables/activity/useTimerNotifications.ts'
-	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 
 	const { activityId = null, compact = false } = defineProps<{

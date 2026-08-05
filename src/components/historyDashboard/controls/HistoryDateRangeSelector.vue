@@ -35,7 +35,7 @@
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
 	import { ActivityDateRangeTypeEnum } from '@/dtos/request/activityHistory/ActivityDateRangeTypeEnum.ts'
-	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
+	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 
 	const date = defineModel<string>('date', { required: true })

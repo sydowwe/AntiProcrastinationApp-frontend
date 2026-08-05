@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { ref, watch } from 'vue'
 	import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'

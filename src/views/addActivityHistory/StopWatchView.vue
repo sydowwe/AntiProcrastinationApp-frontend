@@ -49,7 +49,7 @@
 </template>
 <script setup lang="ts">
 	import ActivitySelectionForm from '../../components/ActivitySelectionForm.vue'
-	import TimeDisplay from '@/components/general/dateTime/TimeDisplay.vue'
+	import TimeDisplay from '@/_common/component/dateTime/TimeDisplay.vue'
 	import SaveActivityBody from '@/components/activity/SaveActivityBody.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { computed, ref } from 'vue'

@@ -50,7 +50,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
+	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import MemoryAnchorTable from '@/components/leisure/memoryAnchor/MemoryAnchorTable.vue'
 	import { MemoryAnchorFilter } from '@/dtos/request/leisure/MemoryAnchorFilter.ts'
 

@@ -22,8 +22,8 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import ColorPicker from '@/components/general/ColorPicker.vue'
-	import IconPicker from '@/components/general/inputs/IconPicker.vue'
+	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
+	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
 	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'

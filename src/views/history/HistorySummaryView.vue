@@ -103,7 +103,7 @@
 	import { HistorySummaryPieChartRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/dtos/request/activityHistory/historySummary/HistorySummarySummaryCardsRequest.ts'
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 
 	const { formatTimeDtoToUtcTimeDto } = useDateTime()
 	const route = useRoute()

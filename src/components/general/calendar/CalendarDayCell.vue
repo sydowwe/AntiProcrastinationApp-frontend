@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-	import CalendarDayCellHeader from '@/components/general/calendar/CalendarDayCellHeader.vue'
+	import CalendarDayCellHeader from '@/_common/component/calendar/CalendarDayCellHeader.vue'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 
 	const { dayData = null, selected = false } = defineProps<{

@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import StopWatchView from '@/views/addActivityHistory/StopWatchView.vue'
 	import TimerView from '@/views/addActivityHistory/TimerView.vue'
 	import PomodoroTimerView from '@/views/addActivityHistory/PomodoroTimerView.vue'

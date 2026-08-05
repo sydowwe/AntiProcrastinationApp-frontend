@@ -142,7 +142,7 @@
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { useColor } from '@/utils/colorPalette.ts'
 	import BackgroundTaskBlock from '@/components/dayPlanner/BackgroundTaskBlock.vue'
 	import { useTaskBlockKeyboard } from '@/composables/dayPlanner/useTaskBlockKeyboard.ts'

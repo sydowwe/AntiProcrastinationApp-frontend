@@ -101,7 +101,7 @@
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/components/history/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/components/history/EditActivityHistoryForm.vue'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useUserStore } from '@/stores/userStore.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
 

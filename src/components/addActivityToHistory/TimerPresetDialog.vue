@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import type { TimerPreset } from '@/dtos/response/activityRecording/TimerPreset.ts'
 	import { TimerPresetRequest } from '@/dtos/request/activityRecording/TimerPresetRequest.ts'
@@ -52,7 +52,7 @@
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
 	import { useTimerPresetCrud } from '@/api/activityHistory/timerPresetApi.ts'
 	import { VForm } from 'vuetify/components'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 

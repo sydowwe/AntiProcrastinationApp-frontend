@@ -70,14 +70,55 @@ Six of the ten duplicated composables were adopted. These four were not.
 
 ---
 
-## Deferred at step 7 (components) — noted early
+## Deferred at step 7 (components)
 
-`src/components/general/dataTable/BasicTable.vue` exposes a `formattedColumn` slot that the
-framework's `_common/component/dataTable/BasicTable.vue` does not have — the framework forwards
-per-column `#item.<key>` slots instead. Five app tables consume `formattedColumn`
-(`ActivityCategoryTable`, `ActivityRoleTable`, `BacklogTable`, `BucketListTable`,
-`RoutineSettingsView`). Swapping in the framework component is therefore a rewrite of those five
-call sites, not an import repoint — budget for it.
+21 of the 24 duplicated components were adopted. These stayed local.
+
+### 5. `CalendarGrid` — framework exposes only `dateRange`
+
+- **Local file kept:** `src/components/general/calendar/CalendarGrid.vue`
+- **Framework file:** `_common/component/calendar/CalendarGrid.vue`
+- **Gap:** local does `defineExpose({ calendarData, dateRange, loading, refresh })`; the framework
+  does `defineExpose({ dateRange })`.
+- **Used by:** `src/views/dayPlanner/PlannerCalendarView.vue` calls `refresh()` at 5 sites and reads
+  `calendarData` at 2, through a template ref. `src/views/history/HistoryCalendarView.vue` also
+  imports it.
+- **Upstream ask:** widen the expose to `{ calendarData, dateRange, loading, refresh }`.
+- The local file's internal imports have already been repointed at `_common`
+  (`DateRangePicker`), so only the component itself and the two importers need switching once the
+  expose lands.
+
+### 6. The `dataTable` family — `BasicTable` / `DataTable` / `MyTableFooter`
+
+Held back together; they only make sense as a unit. This is a **rewrite, not an import repoint**.
+
+- **Local files kept:** `src/components/general/dataTable/{BasicTable,DataTable,MyTableFooter}.vue`
+- **Importers:** `BasicTable` 12, `DataTable` 3, `MyTableFooter` 1 (from `BasicTable`)
+
+What differs:
+
+|                      | local `DataTable`           | framework `DataTable`                                                                                    |
+| -------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `items`              | `defineModel` (two-way)     | plain prop                                                                                               |
+| `loading`            | `defineModel`               | plain prop                                                                                               |
+| `showSelect` default | `true`                      | `false`                                                                                                  |
+| generic constraint   | `TItem extends IMyResponse` | `TItem extends IIdResponse` (needs `id`)                                                                 |
+| cell rendering       | passthrough                 | auto-formats by key heuristic — date / datetime / boolean / currency / percent, via `useTableFormatters` |
+| extra models         | —                           | `v-model:expanded`, `v-model:selected`                                                                   |
+| actions column       | rendered by `BasicTable`    | rendered by `DataTable` itself                                                                           |
+| styling              | 2px `#bbb` border           | themed `.my-data-table`, 8px radius, hover rows                                                          |
+
+Every `v-model="items"` / `v-model:loading` call site changes shape, selection checkboxes disappear
+unless `showSelect` is passed explicitly, and cells start auto-formatting based on column-key
+names — a visible change to every table in the app.
+
+Separately, the local `BasicTable` exposes a `formattedColumn` slot the framework's has no
+counterpart for (the framework forwards per-column `#item.<key>` instead). Five app tables consume
+it: `ActivityCategoryTable`, `ActivityRoleTable`, `BacklogTable`, `BucketListTable`,
+`RoutineSettingsView`.
+
+**Recommendation:** do this as its own step with the app running side by side, not folded into a
+mechanical migration commit.
 
 Related: `getNestedValue` moved to `_common/utils/helperMethods.ts` and now returns `unknown` where
 the local one returned `any`. The local `BasicTable` bridges this with a `getColumnValue` wrapper;

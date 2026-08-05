@@ -101,7 +101,7 @@
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
 	import type { SuggestionResponse } from '@/dtos/response/activityPlanning/SuggestionResponse.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
-	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import DayTemplatePicker from '@/components/dayPlanner/normal/DayTemplatePicker.vue'
 	import RepeatingTasksSection from '@/components/dayPlanner/normal/RepeatingTasksSection.vue'
 	import OverdueTasksBanner from '@/components/dayPlanner/normal/OverdueTasksBanner.vue'

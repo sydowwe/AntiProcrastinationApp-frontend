@@ -257,7 +257,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import RepeatingTaskDialog from '@/components/dayPlanner/settings/RepeatingTaskDialog.vue'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { TableAction } from '@/_common/dto/dto/table/TableAction.ts'

@@ -62,9 +62,9 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
+	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import ProjectTable from '@/components/leisure/project/ProjectTable.vue'
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityProjectProfileFilter } from '@/dtos/request/leisure/ActivityProjectProfileFilter.ts'
 	import { DifficultyLevel } from '@/dtos/enum/DifficultyLevel.ts'
 	import { ReadinessStatus } from '@/dtos/enum/ReadinessStatus.ts'

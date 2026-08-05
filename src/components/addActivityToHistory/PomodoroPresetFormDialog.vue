@@ -172,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import type { PomodoroTimerPreset } from '@/dtos/response/activityRecording/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/dtos/request/activityRecording/PomodoroTimerPresetRequest.ts'
@@ -180,7 +180,7 @@
 	import { useActivityCrud } from '@/api/activity/activityApi.ts'
 	import { usePomodoroTimerPresetCrud } from '@/api/activityHistory/pomodoroTimerPresetApi.ts'
 	import { VForm } from 'vuetify/components'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 

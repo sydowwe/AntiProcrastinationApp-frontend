@@ -24,12 +24,12 @@
 
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
-	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
+	import DateTimePicker from '@/_common/component/dateTime/DateTimePicker.vue'
 	import { onMounted, ref } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 
 	const { formDisabled, initialActivityId, initialDateTime, initialLength } = defineProps<{
 		formDisabled?: boolean

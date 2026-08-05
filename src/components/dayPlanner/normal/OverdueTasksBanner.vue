@@ -51,7 +51,7 @@
 	import { useDateTime } from '@/utils/DateTimeHelper.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
-	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 
 	const { calendar } = defineProps<{
 		calendar?: Calendar

@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
-	import DateRangePicker from '@/components/general/dateTime/DateRangePicker.vue'
+	import DateRangePicker from '@/_common/component/dateTime/DateRangePicker.vue'
 	import CalendarDayCell from '@/components/general/calendar/CalendarDayCell.vue'
 	import { CalendarFilter } from '@/dtos/request/activityPlanning/CalendarFilter.ts'
 	import { useCalendarQuery } from '@/api/calendarApi.ts'

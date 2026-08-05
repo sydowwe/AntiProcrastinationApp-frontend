@@ -23,7 +23,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import ColorPicker from '@/components/general/ColorPicker.vue'
+	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import type { Category } from '@/dtos/response/activity/Category.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityCategoryCrud } from '@/api/activity/activityCategoryApi.ts'

@@ -39,7 +39,7 @@
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
 	import { ApplyTemplateConflictResolution } from '@/dtos/enum/ApplyTemplateConflictResolution.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ActionBar from '@/_common/component/ActionBar.vue'
 
 	const { isShown, activeTemplates } = defineProps<{
 		isShown: boolean

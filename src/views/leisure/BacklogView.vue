@@ -105,9 +105,9 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
+	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BacklogTable from '@/components/leisure/backlog/BacklogTable.vue'
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBacklogProfileFilter } from '@/dtos/request/leisure/ActivityBacklogProfileFilter.ts'
 	import { EnergyLevel } from '@/dtos/enum/EnergyLevel.ts'
 	import { EffortType } from '@/dtos/enum/EffortType.ts'

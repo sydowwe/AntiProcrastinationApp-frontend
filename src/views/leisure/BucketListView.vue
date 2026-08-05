@@ -58,9 +58,9 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import FilterPanel, { type ChipFormatters } from '@/components/general/FilterPanel.vue'
+	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BucketListTable from '@/components/leisure/bucketList/BucketListTable.vue'
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBucketListProfileFilter } from '@/dtos/request/leisure/ActivityBucketListProfileFilter.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import { useActivityExperienceTypeApi } from '@/api/leisure/activityLookupApi.ts'

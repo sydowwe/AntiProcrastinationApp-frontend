@@ -77,7 +77,7 @@
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
 	import { inject } from 'vue'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ActionBar from '@/_common/component/ActionBar.vue'
 
 	const store = inject<TStore>('plannerStore')!
 </script>

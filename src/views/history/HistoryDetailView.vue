@@ -170,8 +170,8 @@
 	import HistorySummaryCards from '@/components/historyDashboard/summaryCards/HistorySummaryCards.vue'
 	import HistoryPieChartSection from '@/components/historyDashboard/pieChart/HistoryPieChartSection.vue'
 	import HistoryTimeline from '@/components/historyDashboard/HistoryTimeline.vue'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
-	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
+	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	const route = useRoute()

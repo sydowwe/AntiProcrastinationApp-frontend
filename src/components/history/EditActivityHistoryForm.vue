@@ -28,8 +28,8 @@
 	import { useActivityHistoryCrud } from '@/api/activityHistory/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
-	import DateTimePicker from '@/components/general/dateTime/DateTimePicker.vue'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
+	import DateTimePicker from '@/_common/component/dateTime/DateTimePicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import { ActivityHistoryRequest } from '@/dtos/request/activityHistory/ActivityHistoryRequest.ts'
 

@@ -45,7 +45,7 @@
 	import { useUserDetailsValidation } from '@/utils/UserAuthUtils.ts'
 	import { useI18n } from 'vue-i18n'
 	import { VForm } from 'vuetify/components'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { API } from '@/_common/axiosConfig.ts'

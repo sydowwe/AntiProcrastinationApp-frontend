@@ -31,7 +31,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import IconPicker from '@/components/general/inputs/IconPicker.vue'
+	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 	import type { TodoListEntity } from '@/dtos/response/todoList/TodoListEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'

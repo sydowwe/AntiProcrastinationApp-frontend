@@ -69,7 +69,7 @@
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
-	import ColorPicker from '@/components/general/ColorPicker.vue'
+	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useDialogApi } from '@/composables/general/useDialog.ts'
 	import { RoutineTimePeriodEntity } from '@/dtos/response/todoList/routine/RoutineTimePeriodEntity.ts'

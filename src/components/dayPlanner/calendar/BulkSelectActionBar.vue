@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 	import { DayType } from '@/_common/dto/enum/DayType.ts'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ActionBar from '@/_common/component/ActionBar.vue'
 
 	const { isShown, selectedCount, bulkApplying } = defineProps<{
 		isShown: boolean

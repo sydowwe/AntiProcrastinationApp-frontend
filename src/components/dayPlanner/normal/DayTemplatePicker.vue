@@ -191,7 +191,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/stores/dayPlanner/dayPlannerStore.ts'
 	import DayTypeChip from '@/components/dayPlanner/misc/DayTypeChip.vue'
-	import SubtleCard from '@/components/general/feedback/SubtleCard.vue'
+	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/api/taskPlanner/taskPlannerDayTemplateApi.ts'
 
 	const { calendar } = defineProps<{

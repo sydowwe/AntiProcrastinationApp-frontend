@@ -66,14 +66,14 @@
 	"
 >
 	import { computed, inject, watch } from 'vue'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PlannerTimeColumn from '@/components/dayPlanner/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/components/dayPlanner/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/components/dayPlanner/misc/SelectionActionBar.vue'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import type { IBasePlannerTask } from '@/dtos/response/activityPlanning/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/dtos/request/activityPlanning/IBasePlannerTaskRequest.ts'
-	import ActionBar from '@/components/general/ActionBar.vue'
+	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useUserStore } from '@/stores/userStore.ts'
 
 	const emit = defineEmits<{

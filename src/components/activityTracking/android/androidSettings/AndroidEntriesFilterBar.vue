@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-	import MergedInputs from '@/components/general/MergedInputs.vue'
+	import MergedInputs from '@/_common/component/inputs/MergedInputs.vue'
 	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { AndroidDistinctEntriesFilterRequest } from '@/dtos/request/activityTracking/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 

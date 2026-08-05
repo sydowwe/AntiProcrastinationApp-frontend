@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PomodoroPresetFormDialog from '@/components/addActivityToHistory/PomodoroPresetFormDialog.vue'
 	import { onMounted, ref } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'

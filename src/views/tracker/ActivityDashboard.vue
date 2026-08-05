@@ -106,7 +106,7 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import StackedBarsChart from '@/components/activityTracking/stackedBars/StackedBarsChart.vue'
 	import ActivityTimeline from '@/components/activityTracking/timeline/ActivityTimeline.vue'
 	import { BaselineOption, BaselineType } from '@/components/activityTracking/summaryCards/BaselineOption.ts'
@@ -124,7 +124,7 @@
 	import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 	import type { StackedBarsInputWindow } from '@/components/activityTracking/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/utils/domainColor'
-	import MyDateInput from '@/components/general/dateTime/MyDateInput.vue'
+	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { formatDateForApi } from '@/utils/DateTimeHelper.ts'
 
 	// --- Date & Time State ---

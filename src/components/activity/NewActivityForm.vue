@@ -59,7 +59,7 @@
 	import { VForm } from 'vuetify/components'
 	import ActivityRoleForm from '@/components/activity/activityRole/ActivityRoleForm.vue'
 	import ActivityCategoryForm from '@/components/activity/activityCategory/ActivityCategoryForm.vue'
-	import InputWithButton from '@/components/general/InputWithButton.vue'
+	import InputWithButton from '@/_common/component/inputs/InputWithButton.vue'
 	import type { ActivityRequest } from '@/dtos/request/activity/ActivityRequest.ts'
 	import type { RoleRequest } from '@/dtos/request/activity/RoleRequest.ts'
 	import type { CategoryRequest } from '@/dtos/request/activity/CategoryRequest.ts'

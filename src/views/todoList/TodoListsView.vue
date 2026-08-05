@@ -203,7 +203,7 @@
 	import type { TodoListRequest } from '@/dtos/request/todoList/TodoListRequest.ts'
 	import type { TodoListCategoryEntity } from '@/dtos/response/todoList/TodoListCategoryEntity.ts'
 	import type { TodoListCategoryRequest } from '@/dtos/request/todoList/TodoListCategoryRequest.ts'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import TodoListCategoryPanel from '@/components/toDoList/normal/TodoListCategoryPanel.vue'
 	import TodoListForm from '@/components/toDoList/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/components/toDoList/normal/TodoListCategoryForm.vue'

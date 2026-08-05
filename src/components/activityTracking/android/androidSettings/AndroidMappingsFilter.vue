@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-	import NullFalseTrueCheckbox from '@/components/general/inputs/NullFalseTrueCheckbox.vue'
+	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import ActivitySelectionForm from '@/components/ActivitySelectionForm.vue'
 	import type { TrackerAndroidMappingsFilter } from '@/dtos/request/activityTracking/android/settings/TrackerAndroidMappingsFilter.ts'
 	import { TrackerAndroidMappingTypeOptions } from '@/dtos/enum/TrackerAndroidMappingTypeEnum.ts'

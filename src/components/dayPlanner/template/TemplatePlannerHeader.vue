@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { IBaseDayPlannerStore } from '@/stores/dayPlanner/IBaseDayPlannerStore.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
 

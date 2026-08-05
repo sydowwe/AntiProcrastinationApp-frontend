@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 	import { provide, watch } from 'vue'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import {
 		DIALOG_API_KEY,
 		useDialog,

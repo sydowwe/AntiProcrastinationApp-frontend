@@ -85,8 +85,8 @@
 	import { locationOptions } from '@/dtos/enum/Location.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/dtos/request/activityPlanning/template/TaskPlannerDayTemplateRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/dtos/response/activityPlanning/template/TaskPlannerDayTemplate.ts'
-	import TimePicker from '@/components/general/dateTime/TimePicker.vue'
-	import IconPicker from '@/components/general/inputs/IconPicker.vue'
+	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
+	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import DayOfWeekPicker from '@/components/general/inputs/DayOfWeekPicker.vue'
 	import type { VForm } from 'vuetify/components'
 

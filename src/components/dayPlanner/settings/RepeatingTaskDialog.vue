@@ -218,9 +218,9 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/components/ActivitySelectOrQuickEditFormField.vue'
-	import TimeRangePicker from '@/components/general/dateTime/TimeRangePicker.vue'
+	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import ActiveWindowPicker from '@/components/dayPlanner/settings/ActiveWindowPicker.vue'
 	import type { VForm } from 'vuetify/components'
 	import { VDateInput } from 'vuetify/labs/components'

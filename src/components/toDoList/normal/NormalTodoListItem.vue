@@ -44,7 +44,7 @@
 	import type { TodoListItemEntity } from '@/dtos/response/todoList/TodoListItemEntity.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import BaseTodoListItem from '@/components/toDoList/BaseTodoListItem.vue'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { ToDoListKind } from '@/dtos/enum/ToDoListKind.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 

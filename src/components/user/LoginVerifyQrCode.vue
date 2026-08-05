@@ -30,7 +30,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 
-	import MyDialog from '@/components/general/dialogs/MyDialog.vue'
+	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useI18n } from 'vue-i18n'
 	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/plugins/router.ts'

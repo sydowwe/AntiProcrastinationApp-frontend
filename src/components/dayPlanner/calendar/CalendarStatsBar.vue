@@ -49,7 +49,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { Calendar } from '@/dtos/response/activityPlanning/Calendar.ts'
-	import ChipWithIcon from '@/components/general/ChipWithIcon.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 
 	const props = defineProps<{
 		days: Calendar[]
