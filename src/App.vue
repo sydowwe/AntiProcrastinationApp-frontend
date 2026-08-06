@@ -27,12 +27,14 @@
 	import DialogHost from '@/components/general/dialogs/DialogHost.vue'
 	import Navbar from '@/_common/nav/Navbar.vue'
 	import NotificationBell from '@/_common/modules/notifications/component/NotificationBell.vue'
-	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
+	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import type { ThemePreference } from '@/core/user/dto/response/User.ts'
 
 	const { initPushSupport } = usePushNotifications()
-	initPushSupport()
+	// Async since the framework version took it over: it now registers the service worker before
+	// probing the existing subscription. Push support is optional, so a failure must not break boot.
+	initPushSupport().catch(e => console.error('Push notification init failed:', e))
 
 	const userStore = useUserStore()
 	const theme = useTheme()

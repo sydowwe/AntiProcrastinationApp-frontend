@@ -11,11 +11,12 @@ import { todoListRoutes } from '@/core/todoList/todoList.routes.ts'
 import { leisureRoutes } from '@/core/leisure/leisure.routes.ts'
 import { googleCalendarRoutes } from '@/core/googleCalendar/googleCalendar.routes.ts'
 import { userRoutes } from '@/core/user/user.routes.ts'
-// The framework's UserMenu (adopted with the nav shell) links to `myReminders` and
-// `reminderPreferences` by name, so these have to be registered here or the menu fails to resolve.
-// Their locales and the scheduler module still land in migration step 13.
+// Reminders and notifications ship from the framework submodule; scheduler is this app's own port
+// of the same module. All three carry `meta: { requiredRole: 'admin' }` on their admin routes,
+// which the guard below waves through — see the adapter's role getters.
 import { remindersRoutes } from '@/_common/modules/reminders/reminders.routes.ts'
 import { notificationsRoutes } from '@/_common/modules/notifications/notifications.routes.ts'
+import { schedulerRoutes } from '@/core/scheduler/scheduler.routes.ts'
 
 declare module 'vue-router' {
 	interface RouteMeta {
@@ -55,6 +56,7 @@ const router = createRouter({
 		...googleCalendarRoutes,
 		...remindersRoutes,
 		...notificationsRoutes,
+		...schedulerRoutes,
 	],
 })
 

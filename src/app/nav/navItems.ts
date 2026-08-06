@@ -65,4 +65,23 @@ export const navItems: MenuItem[] = [
 			{ title: 'memoryAnchors', icon: 'anchor', to: '/leisure/memory-anchors' },
 		],
 	},
+	{
+		title: 'reminders',
+		icon: 'bell',
+		children: [
+			// `myReminders` is deliberately absent — the framework's UserMenu already links to it.
+			{ title: 'reminderDefinitions', icon: 'list', to: '/pripomienky/register' },
+			{ title: 'reminderUpcoming', icon: 'calendar-check', to: '/pripomienky/nadchadzajuce' },
+			{ title: 'reminderOverview', icon: 'chart-line', to: '/pripomienky/prehlad' },
+			{ title: 'reminderDispatchHistory', icon: 'clock-rotate-left', to: '/pripomienky/historia' },
+		],
+	},
+	{
+		title: 'scheduler',
+		icon: 'stopwatch',
+		children: [
+			{ title: 'schedulerJobs', icon: 'list-check', to: '/planovac/ulohy' },
+			{ title: 'schedulerNeedsAttention', icon: 'triangle-exclamation', to: '/planovac/pozornost' },
+		],
+	},
 ]

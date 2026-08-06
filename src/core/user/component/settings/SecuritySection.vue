@@ -104,7 +104,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
+	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'
 	import { useGoogleCalendarApi } from '@/core/googleCalendar/api/googleCalendarApi.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 	import router from '@/router.ts'

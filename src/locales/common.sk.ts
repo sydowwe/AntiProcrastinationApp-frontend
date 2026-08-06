@@ -33,6 +33,14 @@ const common = {
 		memoryAnchors: `Pamätné momenty`,
 		// Not a sidebar item — the framework's UserMenu links to it by this key.
 		myReminders: `Moje pripomienky`,
+		reminders: `Pripomienky`,
+		reminderDefinitions: `Register pripomienok`,
+		reminderUpcoming: `Nadchádzajúce`,
+		reminderOverview: `Prehľad`,
+		reminderDispatchHistory: `História odoslaní`,
+		scheduler: `Plánovač úloh`,
+		schedulerJobs: `Naplánované úlohy`,
+		schedulerNeedsAttention: `Vyžaduje pozornosť`,
 	},
 	// Replaces the framework's `app` namespace, which carries the reference app's brand name.
 	// Rendered in the top bar. `brandName` is the framework's only key there, so nothing is lost to
