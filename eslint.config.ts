@@ -2,7 +2,7 @@ import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescri
 import vuePrettierConfig from '@vue/eslint-config-prettier'
 
 export default defineConfigWithVueTs(
-	// `src/_common` is the MDF_framework submodule: a shared repo this app must never write to.
+	// `src/_common` is the vue_framework submodule: a shared repo this app must never write to.
 	// Without this ignore, `eslint src --fix` reformats it and leaves the submodule dirty.
 	{ ignores: ['dist/**', 'node_modules/**', 'public/**', '*.min.js', 'src/assets/**', 'src/_common/**'] },
 
@@ -27,7 +27,9 @@ export default defineConfigWithVueTs(
 			'vue/no-useless-v-bind': 'error',
 			'vue/prefer-true-attribute-shorthand': 'error',
 			'vue/prefer-separate-static-class': 'error',
-			'vue/eqeqeq': 'error',
+			// `smart` mirrors the `eqeqeq` entry below, so templates and script blocks agree: `===` is
+			// required everywhere except `== null`, the null/undefined check CLAUDE.md allows.
+			'vue/eqeqeq': ['error', 'smart'],
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 			'@typescript-eslint/no-unused-expressions': 'warn',

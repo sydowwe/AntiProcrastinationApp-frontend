@@ -1,5 +1,5 @@
 dist
 node_modules
 
-# MDF_framework submodule — shared code, owned upstream. Formatting it here dirties the submodule.
+# vue_framework submodule — shared code, owned upstream. Formatting it here dirties the submodule.
 src/_common

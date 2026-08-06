@@ -7,7 +7,7 @@
 		"build": "npm run type-check && npm run build-only",
 		"preview": "vite preview",
 		"build-only": "vite build",
-		"type-check": "vue-tsc --build",
+		"type-check": "vue-tsc --build --force",
 		"lint": "eslint src --fix",
 		"format": "prettier --write src/",
 		"test:e2e": "npm test --prefix e2e"

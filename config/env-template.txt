@@ -1,7 +1,16 @@
-VITE_RECAPTCHA_V3_SITE_KEY
+# Copy to .env (gitignored). .env.development holds the local-dev values that are safe to commit.
 
-VITE_ENTRA_TENANT_ID
-VITE_ENTRA_CLIENT_ID
-
+# Backend + frontend origins. Consumed by _common/axiosConfig.ts.
 VITE_API_URL
 VITE_APP_URL
+
+# reCAPTCHA v3. Routes opt in via `meta.showRecaptchaBadge`; the badge is toggled in router.ts.
+VITE_RECAPTCHA_SITE_KEY
+
+VITE_GOOGLE_LOGIN_CLIENT_ID
+
+# Web Push VAPID public key, read by _common/modules/notifications/composable/UsePushNotifications.ts.
+# Leave empty to disable push subscription.
+VITE_VAPID_PUBLIC_KEY
+
+VITE_ENABLE_ENCRYPTION

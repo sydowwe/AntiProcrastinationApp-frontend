@@ -20,6 +20,10 @@
 			divided
 			color="secondary"
 		>
+			<!-- Not a boolean prop: `value` is this button's entry in the toggle group, and the group's
+			     model `previewMode` is a boolean. The `value` shorthand would bind the string "" and
+			     the toggle would never match, so the rule does not apply here. -->
+			<!-- eslint-disable-next-line vue/prefer-true-attribute-shorthand -->
 			<VBtn :value="true">Preview</VBtn>
 			<VBtn :value="false">Apply</VBtn>
 		</VBtnToggle>
