@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 	import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { getCalendarActivitySummary } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import type { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 	import type { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'

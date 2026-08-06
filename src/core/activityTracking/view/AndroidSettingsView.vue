@@ -85,7 +85,7 @@
 	import { useTrackerAndroidMappingCrud } from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import type { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import AndroidEntriesFilterBar from '@/core/activityTracking/component/android/androidSettings/AndroidEntriesFilterBar.vue'
 	import AndroidDistinctEntriesTable from '@/core/activityTracking/component/android/androidSettings/AndroidDistinctEntriesTable.vue'
 	import AndroidMappingsTable from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsTable.vue'

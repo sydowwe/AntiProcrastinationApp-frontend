@@ -109,7 +109,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useRecaptcha } from '@/_common/composable/UseRecaptchaHandler.ts'
 	import { PasswordSignInRequest } from '@/core/user/dto/request/PasswordSignInRequest.ts'

@@ -72,7 +72,7 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/composables/general/useDialog.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useRecaptcha } from '@/_common/composable/UseRecaptchaHandler.ts'

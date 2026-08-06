@@ -77,7 +77,7 @@
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import DesktopEntriesFilterBar from '@/core/activityTracking/component/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
 	import DesktopDistinctEntriesTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
 	import DesktopMappingsTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsTable.vue'

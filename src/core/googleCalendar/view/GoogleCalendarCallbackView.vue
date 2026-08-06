@@ -8,7 +8,7 @@
 	import { useGoogleCalendarApi } from '@/core/googleCalendar/api/googleCalendarApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 
 	const route = useRoute()
 	const { connect } = useGoogleCalendarApi()

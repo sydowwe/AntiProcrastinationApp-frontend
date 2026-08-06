@@ -107,7 +107,7 @@
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
 	import { useGoogleCalendarApi } from '@/core/googleCalendar/api/googleCalendarApi.ts'
 	import { API } from '@/_common/axiosConfig.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import ChangeEmailForm from '@/core/user/component/dialogs/ChangeEmailForm.vue'
 	import ChangePasswordForm from '@/core/user/component/dialogs/ChangePasswordForm.vue'
 	import VerifyUserForm from '@/core/user/component/dialogs/VerifyUserForm.vue'

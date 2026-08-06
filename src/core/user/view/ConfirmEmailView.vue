@@ -32,7 +32,7 @@
 	import { onMounted, ref } from 'vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 
 	const i18n = useI18n()

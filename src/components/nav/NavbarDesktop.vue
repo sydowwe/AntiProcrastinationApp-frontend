@@ -126,7 +126,7 @@
 <script setup lang="ts">
 	import { useTheme } from 'vuetify/framework'
 	import { API } from '@/_common/axiosConfig.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { useNavItems } from '@/components/nav/useNavItems.ts'
 
 	const { filteredItems, userStore } = useNavItems()

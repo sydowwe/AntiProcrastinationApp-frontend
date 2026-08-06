@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useUserStore } from '@/core/user/store/authStore.ts'
-import router from '@/plugins/router.ts'
+import router from '@/router.ts'
 
 interface MenuItem {
 	title: string

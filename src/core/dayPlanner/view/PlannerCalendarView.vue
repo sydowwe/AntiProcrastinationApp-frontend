@@ -86,7 +86,7 @@
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
 	import ApplyTemplateActionBar from '@/core/dayPlanner/component/calendar/ApplyTemplateActionBar.vue'
 	import BulkSelectActionBar from '@/core/dayPlanner/component/calendar/BulkSelectActionBar.vue'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { formatToDate, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'

@@ -17,7 +17,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 
 	const store = useDayPlannerStore()

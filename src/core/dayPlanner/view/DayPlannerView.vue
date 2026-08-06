@@ -134,7 +134,7 @@
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
-	import router from '@/plugins/router.ts'
+	import router from '@/router.ts'
 	import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
