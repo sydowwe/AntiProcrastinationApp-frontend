@@ -23,7 +23,7 @@
 	import DialogHost from '@/components/general/dialogs/DialogHost.vue'
 	import Navbar from '@/components/nav/Navbar.vue'
 	import { usePushNotifications } from '@/composables/general/UsePushNotifications.ts'
-	import { useUserStore } from '@/stores/userStore.ts'
+	import { useUserStore } from '@/core/user/store/authStore.ts'
 
 	const { initPushSupport } = usePushNotifications()
 	initPushSupport()

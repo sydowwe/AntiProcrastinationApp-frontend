@@ -1,0 +1,54 @@
+import { Activity } from '@/core/activity/dto/response/Activity.ts'
+import type { IBaseToDoListItem } from '@/core/todoList/dto/response/interface/IBaseToDoListItem.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
+import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
+import { TodoListItemStepEntity } from '@/core/todoList/dto/response/TodoListItemStepEntity.ts'
+import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+
+export class RoutineTodoListItemEntity implements IBaseToDoListItem {
+	constructor(
+		public id: number,
+		public activity: Activity,
+		public isDone: boolean,
+		public doneCount: number | null,
+		public totalCount: number | null,
+		public timePeriod: RoutineTimePeriodEntity,
+		public color: string | null = null,
+		public streak: number = 0,
+		public bestStreak: number = 0,
+		public lastCompletedAt: string | null = null,
+		public note: string | null = null,
+		public suggestedTime: Time | null = null,
+		public suggestedDays: DayOfWeek[] = [],
+		public suggestedDayOfMonth: number | null = null,
+		public steps: TodoListItemStepEntity[] = [],
+	) {}
+
+	get isMultipleCount() {
+		return !!this.totalCount && this.totalCount !== 1
+	}
+
+	static fromJson(json: any) {
+		return new RoutineTodoListItemEntity(
+			json.id,
+			Activity.fromJson(json.activity),
+			json.isDone,
+			json.doneCount,
+			json.totalCount,
+			RoutineTimePeriodEntity.fromJson(json.routineTimePeriod),
+			null,
+			json.streak ?? 0,
+			json.bestStreak ?? 0,
+			json.lastCompletedAt ?? null,
+			json.note ?? null,
+			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
+			json.suggestedDays ?? [],
+			json.suggestedDayOfMonth ?? null,
+			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
+		)
+	}
+
+	static listFromObjects(objects: any[]) {
+		return objects.map((item: object) => this.fromJson(item))
+	}
+}

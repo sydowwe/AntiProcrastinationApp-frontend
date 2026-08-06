@@ -1,0 +1,75 @@
+import type { Time } from '@/_common/dto/dto/Time.ts'
+import type { TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+import { type IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
+import type { StoreGeneric } from 'pinia'
+import type { CreationPreviewType, PlacingItem } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+
+export interface IBaseDayPlannerStore<
+	TTask extends IBasePlannerTask<TTaskRequest>,
+	TTaskRequest extends IBasePlannerTaskRequest,
+> extends StoreGeneric {
+	// Time/Grid configuration
+	timeSlotDuration: number
+	viewStartTime: Time
+	viewEndTime: Time
+	viewedDate?: Date
+	isTemplateInPreview?: boolean
+
+	// Time/Grid computed
+	timeSlots: Time[]
+	totalGridRows: number
+	slotIndexToTime: (index: number) => Time
+	timeToSlotIndex: (time: Time) => number
+
+	// State
+	tasks: TTask[]
+	selectedTaskIds: Set<number>
+	placingItem: PlacingItem | null
+	dialog: boolean
+	editedId: number | undefined
+	creationPreview: CreationPreviewType | undefined
+	deleteDialog: boolean
+	draggingTaskId: number | null
+	resizingTaskId: number | null
+	dragConflict: boolean
+
+	// Computed
+	selectedTasks: TTask[]
+	showActionBar: boolean
+	canCreate: boolean
+	isOverMidnight: boolean
+	isDraggingAny: boolean
+	isResizingAny: boolean
+
+	// Duplicate state
+	isDuplicating: boolean
+
+	// Clipboard state (cut / duplicate-to-slot)
+	pendingClipboard: { tasks: TTask[]; mode: 'cut' | 'duplicate'; sourceContext?: string } | null
+	clipboardPlacementSlot: number | null
+	clipboardConflict: boolean
+	clipboardPreviewTaskIds: Set<number>
+	arrowMoveConflict: boolean
+
+	// Actions
+	openDeleteDialog: () => void
+	openCreateDialog: () => void
+	openEditDialog: () => void
+	openDuplicateDialog: () => void
+	startCut: () => void
+	startDuplicate: () => void
+	toggleTaskSelection: (taskId: number) => void
+	clearSelection: () => void
+
+	setGridPositionFromSpan: (task: TTask) => void
+	checkOverlapsBackground: (task: TTask) => boolean
+	updateIsDuringBackgroundFlags: (task: TTask) => void
+	checkConflict: (task: TTask, currentEventId?: number) => boolean
+	initializeTaskGridPositions: () => void
+	redrawTask: (taskId: number, updates: Partial<TTask>) => void
+
+	updateTaskSpan: (taskId: number, span: TaskSpan) => Promise<void>
+
+	resetStore: () => void
+}

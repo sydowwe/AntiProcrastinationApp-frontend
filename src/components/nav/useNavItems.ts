@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useUserStore } from '@/stores/userStore.ts'
+import { useUserStore } from '@/core/user/store/authStore.ts'
 import router from '@/plugins/router.ts'
 
 interface MenuItem {

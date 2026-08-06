@@ -1,0 +1,31 @@
+import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
+import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
+import { ActivityHistoryRequest } from '@/core/activityHistory/dto/request/ActivityHistoryRequest.ts'
+import { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
+
+export function useActivityHistoryCrud() {
+	const url = 'activity-history'
+	const { fetchById, fetchAll, fetchSelectOptions } = useEntityQuery<ActivityHistory>({
+		responseClass: ActivityHistory,
+		entityName: 'activity',
+	})
+	const {
+		createWithResponse,
+		create: baseCreate,
+		update,
+		deleteEntity,
+	} = useEntityCommand<ActivityHistory, ActivityHistoryRequest, ActivityHistoryRequest>({
+		responseClass: ActivityHistory,
+		createRequestClass: ActivityHistoryRequest,
+		updateRequestClass: ActivityHistoryRequest,
+		entityName: url,
+	})
+
+	async function create(startTimestamp: Date, length?: Time, activityId?: number) {
+		const request = new ActivityHistoryRequest(startTimestamp, length ?? Time.fromMinutes(0), activityId ?? -1)
+		return baseCreate(request)
+	}
+
+	return { fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity }
+}

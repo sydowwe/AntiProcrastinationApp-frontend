@@ -1,7 +1,8 @@
 import type { AuthAdapter } from '@/_common/auth/authAdapter.ts'
-// Points at the store's current location. Step 9 moves it to
-// @/core/user/store/authStore.ts, at which point this import is the only thing that changes.
-import { useUserStore } from '@/stores/userStore.ts'
+// The store file is now authStore.ts, as the framework contract expects. The exported symbol is
+// still `useUserStore` and the store id is still 'user'; renaming those, and adding the
+// `loggedInUser` alias for `currentUser` that MIGRATION-PLAN.md §3 calls for, is step 12 work.
+import { useUserStore } from '@/core/user/store/authStore.ts'
 
 // Binds this app's Pinia auth store to the framework's AuthAdapter contract.
 //

@@ -1,0 +1,129 @@
+<template>
+	<VCard variant="outlined">
+		<VCardTitle class="d-flex align-center justify-space-between">
+			<span>{{ headerText }}</span>
+			<VBtn
+				v-if="mode === 'domain'"
+				icon="mdi-close"
+				variant="text"
+				size="small"
+				density="compact"
+				aria-label="Close domain details"
+				@click="emit('close')"
+			/>
+		</VCardTitle>
+
+		<VDivider />
+
+		<VCardText>
+			<template v-if="mode === 'dayTotal' && dayTotals">
+				<div class="details-grid">
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Total time:</span>
+						<span class="text-high-emphasis font-weight-medium">
+							{{ fromSeconds(dayTotals.totalSeconds) }}
+						</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Active:</span>
+						<span>{{ fromSeconds(dayTotals.activeSeconds) }}</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Background:</span>
+						<span>{{ fromSeconds(dayTotals.backgroundSeconds) }}</span>
+					</div>
+
+					<VDivider class="my-3" />
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Domains:</span>
+						<span>{{ dayTotals.totalDomains }}</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Pages:</span>
+						<span>{{ dayTotals.totalPages }}</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Visits:</span>
+						<span>{{ dayTotals.totalVisits ?? '-' }}</span>
+					</div>
+				</div>
+			</template>
+
+			<template v-else-if="mode === 'domain' && domainDetails">
+				<div class="details-grid">
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Total:</span>
+						<span class="text-high-emphasis font-weight-medium">
+							{{ fromSeconds(domainDetails.totalSeconds) }}
+						</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Active:</span>
+						<span>{{ fromSeconds(domainDetails.activeSeconds) }}</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Background:</span>
+						<span>{{ fromSeconds(domainDetails.backgroundSeconds) }}</span>
+					</div>
+
+					<div class="detail-row">
+						<span class="text-medium-emphasis">Entries:</span>
+						<span>{{ domainDetails.entries }}</span>
+					</div>
+				</div>
+
+				<VDivider class="my-4" />
+
+				<DomainDetailsList :pages="domainDetails.pages" />
+			</template>
+		</VCardText>
+	</VCard>
+</template>
+
+<script setup lang="ts">
+	import { computed } from 'vue'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
+	import DomainDetailsList from './DomainDetailsList.vue'
+	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
+	import type { DomainPieData } from '@/core/activityTracking/dto/response/pieChart/DomainPieData.ts'
+
+	const props = defineProps<{
+		mode: 'dayTotal' | 'domain'
+		dayTotals?: DayTotals
+		domainDetails: DomainPieData | null
+	}>()
+
+	const emit = defineEmits<{
+		(e: 'close'): void
+	}>()
+
+	const headerText = computed(() => {
+		if (props.mode === 'dayTotal') {
+			return 'Day Total'
+		} else if (props.domainDetails) {
+			return props.domainDetails.domain
+		}
+		return 'Details'
+	})
+</script>
+
+<style scoped>
+	.details-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.detail-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+</style>
