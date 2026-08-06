@@ -1,0 +1,28 @@
+const home = {
+	home: {
+		dayPlanner: `Day planner`,
+		routineTodoList: `Routine tasks`,
+		todoList: `Upcoming tasks`,
+		activityHistory: `Today's activity`,
+		quickRecord: `Record activity`,
+		noTasks: `No tasks planned for today`,
+		noCalendar: `No plan for today`,
+		noHistory: `No activity tracked today`,
+		totalTracked: `Total tracked`,
+		hideDone: `Hide done`,
+		showDone: `Show done`,
+		pomodoro: `Pomodoro`,
+		timer: `Timer`,
+		stopwatch: `Stopwatch`,
+		manual: `Manual`,
+		planToday: `Plan today`,
+		streaks: `Streaks`,
+		bestStreak: `Best`,
+		noUpcomingTasks: `No upcoming or overdue tasks`,
+		overdue: `Overdue`,
+		dueToday: `Due today`,
+		dueTomorrow: `Due tomorrow`,
+		dueIn: `Due in {days} days`,
+	},
+}
+export default home

@@ -1,25 +1,14 @@
 import { createApp } from 'vue'
-import { createI18n } from 'vue-i18n'
 import vue3GoogleLogin from 'vue3-google-login'
 import App from './App.vue'
 import router from './router.ts'
-import EN from './locales/EN'
-import SK from './locales/SK'
+import i18n from './i18n.ts'
 import { installFramework } from './_common/bootstrap/index.ts'
 import { createAuthAdapter } from './core/user/authAdapter.ts'
 import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
 import './assets/main.css'
 
 const app = createApp(App)
-
-const i18n = createI18n({
-	locale: 'SK',
-	fallbackLocale: 'EN',
-	messages: {
-		SK,
-		EN,
-	},
-})
 
 // Installs Pinia, Vuetify, FontAwesome and auto-animate, and hands the framework its app-specific
 // collaborators in the one order that works — see src/_common/SETUP.md §5. Two of those orderings

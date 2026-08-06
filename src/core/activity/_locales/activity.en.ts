@@ -1,0 +1,52 @@
+const activity = {
+	alarm: {
+		isActive: `Active`,
+	},
+	activities: {
+		role: `Role`,
+		category: `Category`,
+		activity: `Activity`,
+		activityDescription: `Activity description`,
+		isActivityUnavoidable: `Is activity unavoidable`,
+		placeOnToDoList: `Place on to-do list`,
+		//===============================
+		fromToDoList: `From to-do list`,
+		createNewActivity: `Create new activity`,
+		start: `Start`,
+		pause: `Pause`,
+		stop: `Stop`,
+		saveActivity: `Save activity`,
+		recordNewActivity: `Record new activity`,
+		confirmSaveActivity: `Confirm saving activity "{activity}" - done for {timeSpent}?`,
+		quickEditActivity: `Quick edit activity`,
+		quickCreateActivityWithRole: `Quick create activity with role "{role}"`,
+		quickEditMode: `Quick edit mode`,
+		overwrite: `Overwrite`,
+		clone: `Clone`,
+		pleaseSelectActivity: `Please select an activity`,
+		activityNotFound: `Activity with id {id} not found`,
+		copySuffix: ` - copy`,
+
+		//=========
+		enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,
+	},
+	pomodoroTimer: {
+		hint: ``,
+		focusTime: `Focus time`,
+		shortRestTime: `Short rest time`,
+		longRestTime: `Long rest time`,
+		numberOfCycles: `Number of cycles`,
+		numberOfFocusIntervalsInCycle: `Number of focus interval in cycle`,
+		focus: `Focus`,
+		shortRest: `Short rest`,
+		longRest: `Long rest`,
+		settings: `Settings`,
+		presets: `Presets`,
+		autoStartBreaks: `Auto-start breaks`,
+		autoStartFocus: `Auto-start focus sessions`,
+		soundEnabled: `Sound notifications enabled`,
+		focusActivity: `Focus activity`,
+		restActivity: `Rest activity`,
+	},
+}
+export default activity
