@@ -31,6 +31,14 @@ const common = {
 		projects: `Projekty`,
 		bucketList: `Bucket list`,
 		memoryAnchors: `Pamätné momenty`,
+		// Not a sidebar item — the framework's UserMenu links to it by this key.
+		myReminders: `Moje pripomienky`,
+	},
+	// Replaces the framework's `app` namespace, which carries the reference app's brand name.
+	// Rendered in the top bar. `brandName` is the framework's only key there, so nothing is lost to
+	// the shallow spread in SK.ts.
+	app: {
+		brandName: `Adhd time organizer`,
 	},
 	general: {
 		// Used by the framework's TableHeaderComposable; the app's `general` namespace replaces the

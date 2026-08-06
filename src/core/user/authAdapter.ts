@@ -1,7 +1,7 @@
 import type { AuthAdapter } from '@/_common/auth/authAdapter.ts'
-// The store file is now authStore.ts, as the framework contract expects. The exported symbol is
-// still `useUserStore` and the store id is still 'user'; renaming those, and adding the
-// `loggedInUser` alias for `currentUser` that MIGRATION-PLAN.md §3 calls for, is step 12 work.
+// The store file is now authStore.ts, as the framework contract expects, and it exposes the
+// contract's `loggedInUser` alongside this app's own `currentUser`. The exported symbol is still
+// `useUserStore` and the store id is still 'user' — renaming those buys nothing but churn.
 import { useUserStore } from '@/core/user/store/authStore.ts'
 
 // Binds this app's Pinia auth store to the framework's AuthAdapter contract.
@@ -17,7 +17,7 @@ export function createAuthAdapter(): AuthAdapter {
 		},
 		get displayName() {
 			// This app's User carries no name fields — e-mail is the only human-readable identity.
-			return useUserStore().currentUser.email
+			return useUserStore().loggedInUser.email
 		},
 		logout() {
 			useUserStore().logout()

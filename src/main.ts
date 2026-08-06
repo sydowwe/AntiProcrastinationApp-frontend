@@ -5,6 +5,7 @@ import router from './router.ts'
 import i18n from './i18n.ts'
 import { installFramework } from './_common/bootstrap/index.ts'
 import { createAuthAdapter } from './core/user/authAdapter.ts'
+import { navItems } from './app/nav/navItems.ts'
 import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
 import './assets/main.css'
 
@@ -17,8 +18,9 @@ installFramework(app, {
 	router,
 	i18n,
 	authAdapter: createAuthAdapter(),
-	// This app renders its own Navbar (src/components/nav/), so the framework's nav trees stay empty.
-	navTrees: {},
+	// Only `main` — the `customer` and `system` trees are for multi-tenant/admin apps and stay empty
+	// here, which also keeps their section dividers and subheaders out of the sidebar.
+	navTrees: { main: navItems },
 	notificationTypeMeta,
 	vuetify: {
 		// Only the hexes this app diverges from the shared design system on. The colour *names* are

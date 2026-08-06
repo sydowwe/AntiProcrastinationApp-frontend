@@ -11,6 +11,11 @@ import { todoListRoutes } from '@/core/todoList/todoList.routes.ts'
 import { leisureRoutes } from '@/core/leisure/leisure.routes.ts'
 import { googleCalendarRoutes } from '@/core/googleCalendar/googleCalendar.routes.ts'
 import { userRoutes } from '@/core/user/user.routes.ts'
+// The framework's UserMenu (adopted with the nav shell) links to `myReminders` and
+// `reminderPreferences` by name, so these have to be registered here or the menu fails to resolve.
+// Their locales and the scheduler module still land in migration step 13.
+import { remindersRoutes } from '@/_common/modules/reminders/reminders.routes.ts'
+import { notificationsRoutes } from '@/_common/modules/notifications/notifications.routes.ts'
 
 declare module 'vue-router' {
 	interface RouteMeta {
@@ -48,6 +53,8 @@ const router = createRouter({
 		...todoListRoutes,
 		...leisureRoutes,
 		...googleCalendarRoutes,
+		...remindersRoutes,
+		...notificationsRoutes,
 	],
 })
 

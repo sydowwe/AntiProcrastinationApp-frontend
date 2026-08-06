@@ -66,6 +66,10 @@ const user = {
 	},
 	user: {
 		userSettings: `Uživateľské nastavenia`,
+		// The framework's AppTopBar reads its theme-toggle tooltip from `user.*`; this app's own
+		// screens still use the `theme.*` pair in locales/common.sk.ts.
+		switchToLight: `Prepnúť na svetlý režim`,
+		switchToDark: `Prepnúť na tmavý režim`,
 		changePassword: `Zmeniť heslo`,
 		passwordChange: `Zmena hesla`,
 

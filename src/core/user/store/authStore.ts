@@ -12,6 +12,10 @@ export const useUserStore = defineStore(
 
 		const userName = computed(() => currentUser.value.email)
 
+		// The name the framework's auth contract uses for the signed-in user (see _common/SETUP.md).
+		// Kept as an alias rather than a rename so this app's own 17 `currentUser` call sites stand.
+		const loggedInUser = computed(() => currentUser.value)
+
 		const { fetchUserData, updatePreferences } = useUserApi()
 
 		async function hydrateFromServer(): Promise<void> {
@@ -33,7 +37,16 @@ export const useUserStore = defineStore(
 			isAuthenticated.value = false
 		}
 
-		return { currentUser, isAuthenticated, userName, hydrateFromServer, setPreferences, login, logout }
+		return {
+			currentUser,
+			loggedInUser,
+			isAuthenticated,
+			userName,
+			hydrateFromServer,
+			setPreferences,
+			login,
+			logout,
+		}
 	},
 	{ persist: { storage: localStorage } },
 )

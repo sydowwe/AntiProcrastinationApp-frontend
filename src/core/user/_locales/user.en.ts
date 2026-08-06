@@ -67,6 +67,10 @@ const user = {
 	},
 	user: {
 		userSettings: `User settings`,
+		// The framework's AppTopBar reads its theme-toggle tooltip from `user.*`; this app's own
+		// screens still use the `theme.*` pair in locales/common.en.ts.
+		switchToLight: `Switch to light mode`,
+		switchToDark: `Switch to dark mode`,
 		changePassword: `Change password`,
 		passwordChange: `Password change`,
 		emailChange: `Email change`,
