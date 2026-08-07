@@ -16,7 +16,7 @@ import { userRoutes } from '@/core/user/user.routes.ts'
 // which the guard below waves through — see the adapter's role getters.
 import { remindersRoutes } from '@/_common/modules/reminders/reminders.routes.ts'
 import { notificationsRoutes } from '@/_common/modules/notifications/notifications.routes.ts'
-import { schedulerRoutes } from '@/core/scheduler/scheduler.routes.ts'
+import { schedulerRoutes } from '@/_common/modules/scheduler/scheduler.routes.ts'
 
 declare module 'vue-router' {
 	interface RouteMeta {

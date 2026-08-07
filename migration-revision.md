@@ -135,8 +135,8 @@ the natural
 
 gets `Property 'someField' does not exist on type '{ value: { … } }'`, once per field.
 
-- **Affects:** ~20 errors across the framework's own `reminders` views (already inside the 162-error baseline) and 5 in `core/scheduler` (`JobRunHistory.vue`,
-  `SchedulerJobsView.vue`).
+- **Affects:** ~20 errors across the framework's own `reminders` views (already inside the 162-error baseline) and 5 in `_common/modules/scheduler`
+  (`JobRunHistory.vue`, `SchedulerJobsView.vue`).
 - **Runtime is fine.** Vue unwraps the ref when it passes the slot prop, so `draft.someField` is the correct thing to write — only the *type* is wrong. Rewriting
   call sites to `draft.value.someField`
   would type-check and then break at runtime, which is why nothing here was "fixed".
@@ -145,3 +145,33 @@ gets `Property 'someField' does not exist on type '{ value: { … } }'`, once pe
   while declaring the slot as `{ draft: T }` via `defineSlots`.
 
 Until it lands, `vue-tsc --build --force` reports 166 rather than 162, and the delta is entirely this.
+
+---
+
+## Resolved
+
+### R1. `core/scheduler` → `_common/modules/scheduler` (2026-08-07)
+
+Step 13 landed the scheduler as `src/core/scheduler/`, a port of the reference app's copy with every self-import rewritten to `@/core/scheduler/...`. The framework
+has since published the same module as `_common/modules/scheduler`, so the local port is deleted and its two external importers repointed:
+
+- `src/router.ts` → `import { schedulerRoutes } from '@/_common/modules/scheduler/scheduler.routes.ts'`
+- `src/locales/SK.ts` → `import scheduler from '@/_common/modules/scheduler/_locales/scheduler.sk.ts'`
+
+All 33 files were byte-identical after normalising `@/core/scheduler` → `@/_common/modules/scheduler`, except `JobRunHistory.vue`, where the longer paths push three
+import statements past the print width and Prettier wraps them. Upstream carries the `useAuth()` fix (the reference app's `useAuthStore()` does not exist here), so
+nothing was lost in the swap. The scheduler is now an opt-in framework module like `reminders` and `notifications`, not an app module.
+
+### R2. Setup docs do not mention the notifications module's dev service worker
+
+Both faults behind the "service worker broken in dev" fix were app-side, not framework-side — `_common/utils/serviceWorker.ts` registering `/sw.js` is exactly what
+`vite build` emits:
+
+- **lodash 4.18.0.** The framework ships source, not a bundle, so its transitive deps resolve from the consuming app's `node_modules`. Nothing pinned lodash and it
+  floated onto the broken release. Every consuming app hits this identically.
+- **`/sw.js` in dev.** Pure app-side `vite.config.ts`; `vite-plugin-pwa` needs `devOptions.enabled` for the file to exist before a build.
+
+The runtime code is right, so there is nothing to fix in `_common`. The gap is documentation: nothing in `SETUP.md` says the `notifications` module requires a service
+worker in dev, so the next app rediscovers both from scratch.
+
+- **Upstream ask:** a `SETUP.md` section for the `notifications` module covering the required `vite-plugin-pwa` dev config and a pinned/known-good lodash floor.

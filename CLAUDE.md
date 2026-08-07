@@ -32,7 +32,7 @@ src/
   components/ composables/ dtos/ utils/   ← ONLY the leftovers listed below
 ```
 
-Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`, `user`, `scheduler`.
+Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`, `user`.
 
 **Rules:**
 
@@ -60,7 +60,7 @@ touching `main.ts`.
 
 - `docs/framework/{api,baseDtos,components,composables,utils,filterUsage}.md` — detailed reference for the framework surface summarised below. Ported from the
   reference app; if one contradicts `src/_common`, the code wins and the doc needs fixing.
-- `docs/modules/{scheduler,notifications}.md` — module maps for the two vendored features.
+- `docs/modules/{scheduler,notifications}.md` — module maps for two framework modules.
 - `migration-revision.md` — every framework gap and the local file kept for it.
 - `dialog-system-unification.md` — why this app's dialog system stayed local.
 
@@ -132,8 +132,8 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 
 ### `_common/modules/`
 
-Opt-in shared features that export route tables and never self-register: `reminders`, `notifications` (incl. `reminderPreference`). Both are routed in
-`src/router.ts` and their locales are spread in `SK.ts`. `core/scheduler` is this app's port of the same pattern.
+Opt-in shared features that export route tables and never self-register: `reminders`, `notifications` (incl. `reminderPreference`), `scheduler`. All are routed in
+`src/router.ts` and their locales are spread in `SK.ts`.
 
 ## Coding Standards
 
