@@ -1,15 +1,43 @@
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
 
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { VitePWA } from 'vite-plugin-pwa'
 
+/**
+ * Makes `/sw.js` work in `vite dev`.
+ *
+ * The framework's push composable registers a hardcoded `/sw.js`
+ * (`_common/utils/serviceWorker.ts`), which is right for a production build — `vite build` emits
+ * `dist/sw.js`. In dev, though, vite-plugin-pwa serves the generated worker at `/dev-sw.js?dev-sw`,
+ * so `/sw.js` hit the index.html catch-all and registration died on the resulting `text/html`.
+ *
+ * `src/_common` is a submodule this app must never edit, so the two names are reconciled here
+ * instead: rewrite the request before vite-plugin-pwa's own middleware sees it. This is a rewrite,
+ * not a redirect, on purpose — the service worker spec rejects a script URL that redirects.
+ */
+function devServiceWorkerAlias(): Plugin {
+	return {
+		name: 'dev-service-worker-alias',
+		apply: 'serve',
+		configureServer(server) {
+			server.middlewares.use((req, _res, next) => {
+				if (req.url === '/sw.js' || req.url?.startsWith('/sw.js?')) {
+					req.url = '/dev-sw.js?dev-sw'
+				}
+				next()
+			})
+		},
+	}
+}
+
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
+		devServiceWorkerAlias(),
 		vue({
 			script: {},
 		}),
@@ -18,6 +46,16 @@ export default defineConfig({
 		VitePWA({
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.svg', 'icons/*.png'],
+			// Serve a service worker in `vite dev` too. Without this nothing answers /sw.js, the request
+			// falls through to the index.html catch-all, and the framework's push composable —
+			// `_common/modules/notifications/composable/UsePushNotifications.ts`, which registers the SW
+			// on boot — logs "unsupported MIME type ('text/html')" on every page load. It also means Web
+			// Push cannot be exercised locally at all.
+			devOptions: {
+				enabled: true,
+				// Vite serves ESM in dev, so the dev SW has to be registered as a module.
+				type: 'module',
+			},
 			manifest: {
 				name: 'AntiProcrastination',
 				short_name: 'AntiProc',

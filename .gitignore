@@ -11,6 +11,8 @@ node_modules
 .DS_Store
 dist
 dist-ssr
+# vite-plugin-pwa's dev service worker, regenerated on every `vite dev`.
+dev-dist
 coverage
 *.local
 
