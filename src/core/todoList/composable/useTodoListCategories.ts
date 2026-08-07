@@ -5,7 +5,7 @@ import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useTodoListCategoryCrud } from '@/core/todoList/api/todoListCategoryApi.ts'
 import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
-import { useUserStore } from '@/core/user/store/authStore.ts'
+import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
 export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const i18n = useI18n()

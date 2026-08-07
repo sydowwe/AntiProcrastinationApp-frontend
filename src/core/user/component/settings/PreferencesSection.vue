@@ -17,7 +17,7 @@
 </template>
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 

@@ -102,7 +102,7 @@
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{

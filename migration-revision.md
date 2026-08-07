@@ -175,3 +175,37 @@ The runtime code is right, so there is nothing to fix in `_common`. The gap is d
 worker in dev, so the next app rediscovers both from scratch.
 
 - **Upstream ask:** a `SETUP.md` section for the `notifications` module covering the required `vite-plugin-pwa` dev config and a pinned/known-good lodash floor.
+
+### R3. `composables/general/useDialog.ts` + `DialogHost` / `DialogEntryRenderer` → `_common` (2026-08-07)
+
+Resolved exactly as `dialog-system-unification.md` proposed: this project's working dialog system was upstreamed and the framework's dead
+`CentralDialogComposable.ts` (no renderer, `openDialog()` could never resolve) deleted along with `dto/dto/DialogConfig.ts`, which had no other consumer. All 47 app
+call sites now import `@/_common/composable/general/useDialog.ts`; `App.vue` mounts `@/_common/component/dialog/DialogHost.vue`.
+
+`useConfirmDialog` / `useAlertDialog` were not reimplemented — `useDialog().confirm()` covers the confirm case and nothing used `alert()`.
+
+### R4. `core/user` → `_common/modules/user` (2026-08-07)
+
+Depended on R3: framework code cannot import `@/composables/...`, and five of this module's files use `useDialog`.
+
+36 of the 39 files moved. What stayed app-side, and why:
+
+- `authAdapter.ts` — binds the store to the framework's `AuthAdapter` contract. App glue by definition; the framework must not know about this app's Pinia store.
+- `component/settings/{AboutSection,DataExportSection,PreferencesSection}.vue` — hardcoded support e-mail and `/legal/*` links, an `antiprocrastination-export-*.json`
+  filename, and an `askBeforeDelete` toggle. All render through the framework view's `#append` / `#preferences` slots.
+- `view/UserSettingsView.vue` + `user.routes.ts` — a thin wrapper filling those slots, and the `/user/settings` route for it. The framework's `userRoutes` covers only
+  the five signed-out views.
+- `dto/userAugmentation.ts` — **new.** Merges `askBeforeDelete` / `firstDayOfWeek` into the framework's `User` / `UserPreferencesRequest` via `declare module`.
+
+Three things changed shape rather than moving:
+
+- **`@/router.ts` → `useRouter()`** in six files. Importing the app's router singleton is not something framework code can do.
+- **The Google Calendar card left `SecuritySection`** and became `core/googleCalendar/component/GoogleCalendarCard.vue`, rendered through the new `#integrations`
+  slot. Third-party account links are host-app concerns.
+- **`UserSession implements IMyResponse` dropped the clause.** `IMyResponse` is `export type IMyResponse = object` — a no-op marker with no framework counterpart, so
+  implementing it bought nothing and cost a dependency on `@/dtos/`.
+
+`AppearanceSection`'s `onFirstDayChange` was deleted rather than moved: it was already dead code (the lint baseline's fourth warning) and `firstDayOfWeek` is now
+app-owned. Lint is therefore 0 errors / **3** warnings from here on, not 4.
+
+- **Upstream ask:** none — this landed in the framework.

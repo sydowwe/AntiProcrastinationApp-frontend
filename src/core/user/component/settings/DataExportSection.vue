@@ -17,7 +17,7 @@
 </template>
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
-	import { useUserApi } from '@/core/user/api/userApi.ts'
+	import { useUserApi } from '@/_common/modules/user/api/userApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 

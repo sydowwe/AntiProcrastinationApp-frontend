@@ -10,7 +10,10 @@ import { dayPlannerRoutes } from '@/core/dayPlanner/dayPlanner.routes.ts'
 import { todoListRoutes } from '@/core/todoList/todoList.routes.ts'
 import { leisureRoutes } from '@/core/leisure/leisure.routes.ts'
 import { googleCalendarRoutes } from '@/core/googleCalendar/googleCalendar.routes.ts'
-import { userRoutes } from '@/core/user/user.routes.ts'
+// The signed-out auth views come from the framework; `/user/settings` stays app-side because its
+// view fills the framework settings view's app-specific slots.
+import { userRoutes } from '@/_common/modules/user/user.routes.ts'
+import { appUserRoutes } from '@/core/user/user.routes.ts'
 // Reminders and notifications ship from the framework submodule; scheduler is this app's own port
 // of the same module. All three carry `meta: { requiredRole: 'admin' }` on their admin routes,
 // which the guard below waves through — see the adapter's role getters.
@@ -47,6 +50,7 @@ const router = createRouter({
 	routes: [
 		...commonRoutes,
 		...userRoutes,
+		...appUserRoutes,
 		...activityRoutes,
 		...activityHistoryRoutes,
 		...activityTrackingRoutes,

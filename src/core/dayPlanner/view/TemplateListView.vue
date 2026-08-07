@@ -274,7 +274,7 @@
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'

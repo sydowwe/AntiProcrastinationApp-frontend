@@ -9,7 +9,7 @@ import todoList from '@/core/todoList/_locales/todoList.sk.ts'
 import leisure from '@/core/leisure/_locales/leisure.sk.ts'
 import googleCalendar from '@/core/googleCalendar/_locales/googleCalendar.sk.ts'
 import home from '@/core/home/_locales/home.sk.ts'
-import user from '@/core/user/_locales/user.sk.ts'
+import user from '@/_common/modules/user/_locales/user.sk.ts'
 import scheduler from '@/_common/modules/scheduler/_locales/scheduler.sk.ts'
 // The reminders module ships from the framework submodule, so its strings do too. They are spread
 // here rather than in `common` because the framework leaves module locales for the host to opt into.

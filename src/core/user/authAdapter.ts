@@ -2,7 +2,7 @@ import type { AuthAdapter } from '@/_common/auth/authAdapter.ts'
 // The store file is now authStore.ts, as the framework contract expects, and it exposes the
 // contract's `loggedInUser` alongside this app's own `currentUser`. The exported symbol is still
 // `useUserStore` and the store id is still 'user' — renaming those buys nothing but churn.
-import { useUserStore } from '@/core/user/store/authStore.ts'
+import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
 // Binds this app's Pinia auth store to the framework's AuthAdapter contract.
 //

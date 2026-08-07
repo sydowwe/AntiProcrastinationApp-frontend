@@ -5,6 +5,8 @@ import router from './router.ts'
 import i18n from './i18n.ts'
 import { installFramework } from './_common/bootstrap/index.ts'
 import { createAuthAdapter } from './core/user/authAdapter.ts'
+// Side-effect only: merges this app's preference fields into the framework's User DTOs.
+import './core/user/dto/userAugmentation.ts'
 import { navItems } from './app/nav/navItems.ts'
 import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
 import './assets/main.css'

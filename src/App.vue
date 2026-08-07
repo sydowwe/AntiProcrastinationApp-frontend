@@ -28,8 +28,8 @@
 	import Navbar from '@/_common/nav/Navbar.vue'
 	import NotificationBell from '@/_common/modules/notifications/component/NotificationBell.vue'
 	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
-	import type { ThemePreference } from '@/core/user/dto/response/User.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+	import type { ThemePreference } from '@/_common/modules/user/dto/response/User.ts'
 
 	const { initPushSupport } = usePushNotifications()
 	// Async since the framework version took it over: it now registers the service worker before

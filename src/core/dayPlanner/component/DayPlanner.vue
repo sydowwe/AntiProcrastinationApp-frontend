@@ -74,7 +74,7 @@
 	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
 	const emit = defineEmits<{
 		delete: []

@@ -32,7 +32,11 @@ src/
   components/ composables/ dtos/ utils/   ← ONLY the leftovers listed below
 ```
 
-Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`, `user`.
+Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`.
+
+`user` is now a **framework** module (`@/_common/modules/user/`) — it owns the auth views, the auth store, the user/session APIs and the generic settings sections.
+What is left in `src/core/user/` is only this app's glue: `authAdapter.ts`, `dto/userAugmentation.ts`, the settings wrapper view + its route, and the three
+app-specific settings sections. See `### _common/modules/` below.
 
 **Rules:**
 
@@ -134,8 +138,18 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 
 ### `_common/modules/`
 
-Opt-in shared features that export route tables and never self-register: `reminders`, `notifications` (incl. `reminderPreference`), `scheduler`. All are routed in
-`src/router.ts` and their locales are spread in `SK.ts`.
+Opt-in shared features that export route tables and never self-register: `reminders`, `notifications` (incl. `reminderPreference`), `scheduler`, `user`. All are
+routed in `src/router.ts` and their locales are spread in `SK.ts`.
+
+**`modules/user/`** — auth + account settings. Import the store as
+`import { useUserStore } from '@/_common/modules/user/store/authStore.ts'`; the id is still `'user'` and it still exposes `currentUser`.
+
+- `userRoutes` covers only the five signed-out views (login, registration, forgotten password, both e-mail confirmations). `/user/settings` is **not** in it —
+  `UserSettingsView` exposes slots only the app can fill, so `src/core/user/user.routes.ts` routes a local wrapper around it. Both are spread in `src/router.ts`.
+- `UserSettingsView` slots: `#integrations` (forwarded into `SecuritySection`, for third-party account links), `#preferences`, `#append`.
+- The `User` / `UserPreferencesRequest` DTOs carry only generic fields. This app's `askBeforeDelete` and `firstDayOfWeek` are merged in by
+  `src/core/user/dto/userAugmentation.ts` (imported for side effects in `main.ts`) — `User.fromJson` copies unknown keys through, so they survive hydration and
+  `userStore.currentUser.askBeforeDelete` stays a plain typed read. Add app preference fields there, not to the framework DTO.
 
 ## Coding Standards
 
@@ -223,11 +237,12 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The honest baseline is **166 errors**; 5 of those are the `FilterPanel` framework bug and ~20 more come
+  is incremental and reports an inflated, unstable count. The honest baseline is **163 errors**; 5 of those are the `FilterPanel` framework bug and ~20 more come
   from `_common` itself.
-- **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (4 known unused-variable warnings remain)
-- **Build**: `npx vite build` — bundles clean. The workbox service-worker generation step then fails with `assignWith is not defined`; that is a pre-existing
-  toolchain bug, not your change.
+- **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
+- **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
+  `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over
+  500 kB is expected and not an error.
 
 ## Submodule workflow
 

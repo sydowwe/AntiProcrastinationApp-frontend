@@ -120,7 +120,7 @@
 	import DataTable from '@/components/general/dataTable/DataTable.vue'
 	import { getNestedValue } from '@/_common/utils/helperMethods.ts'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
-	import { useUserStore } from '@/core/user/store/authStore.ts'
+	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
 	const {
 		itemsLength,
