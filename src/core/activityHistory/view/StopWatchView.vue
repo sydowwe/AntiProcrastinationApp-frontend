@@ -55,7 +55,7 @@
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { activityId = null, compact = false } = defineProps<{

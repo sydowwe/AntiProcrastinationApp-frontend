@@ -111,7 +111,7 @@
 	import ChangeEmailForm from '@/core/user/component/dialogs/ChangeEmailForm.vue'
 	import ChangePasswordForm from '@/core/user/component/dialogs/ChangePasswordForm.vue'
 	import VerifyUserForm from '@/core/user/component/dialogs/VerifyUserForm.vue'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()

@@ -40,7 +40,7 @@
 	import type { ActivityFilter } from '@/core/activity/dto/request/ActivityFilter.ts'
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{ filter: ActivityFilter }>()
 

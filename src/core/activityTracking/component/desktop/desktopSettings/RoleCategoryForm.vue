@@ -41,7 +41,7 @@
 	import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { RoleRequest } from '@/core/activity/dto/request/RoleRequest.ts'
 	import type { CategoryRequest } from '@/core/activity/dto/request/CategoryRequest.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const model = defineModel<{ roleId: number | null; categoryId: number | null }>({ required: true })
 	const { openDialog } = useDialog()

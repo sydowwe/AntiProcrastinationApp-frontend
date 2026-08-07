@@ -103,7 +103,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useCalendarModes } from '@/core/dayPlanner/composable/useCalendarModes.ts'
 
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()

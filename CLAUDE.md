@@ -70,8 +70,6 @@ These are the **only** things still living outside `core/`. Do not add to this l
 
 - `components/general/dataTable/{BasicTable,DataTable,MyTableFooter}.vue` — framework versions differ in shape; swap is its own project
 - `components/general/calendar/{CalendarGrid,CalendarDayCell}.vue`, `components/general/inputs/DayOfWeekPicker.vue`
-- `components/general/dialogs/{DialogHost,DialogEntryRenderer}.vue` + `composables/general/useDialog.ts` — this app's dialog system is the working one; the
-  framework's `CentralDialogComposable.ts` is dead code. See `dialog-system-unification.md`.
 - `composables/general/{EnumComposable,useAutoScroll,useUndoStack,useCalendarWeeks}.ts`, `composables/general/rules/RulesComposition.ts`
 - `dtos/{dto,enum,response/interface,type}/*` — app-shared DTOs with no framework counterpart
 - `utils/{classDeserializationHelper,daysOfWeek,helperMethods}.ts`
@@ -107,12 +105,16 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 - `general/rules/RulesComposition.ts`, `general/useColor.ts`, `general/useCurrentTime.ts`, `general/useBreadcrumbs.ts`,
   `general/continuousQuickChangeComposition.ts`,
   `general/PriceFormatComposable.ts`
+- `general/useDialog.ts` — `useDialog()`: `openDialog({ component, componentProps, dialogProps })` → `Promise<TResult | null>`, `confirm({ title, text, ... })` →
+  `Promise<boolean>`. Inside an opened dialog body use `useDialogApi<T>()` for `close(result)`, `onConfirm(handler)`, `setLoading()`, `setDialogProps()`. Dialogs
+  nest. `DialogHost` is mounted once in `App.vue`.
 - `table/` — `TableHeaderComposable.ts`, `UseEditableCell.ts`, `useServerTable.ts`, `useTableFormatters.ts`, `useTableUrlState.ts`
 - `UseRecaptchaHandler.ts`
 
 ### `_common/component/`
 
 `dialog/MyDialog.vue` (base for **all** dialogs), `dialog/{ErrorDialog,LoadingFullscreen,LookupDialog}.vue`,
+`dialog/DialogHost.vue` (mount **once** in `App.vue`; renders the `useDialog()` stack) + `dialog/DialogEntryRenderer.vue` (internal),
 `feedback/{ChipWithIcon,InfoRow,InfoCard,MyCard,SubtleCard,Snackbar,EmailInfoRow}.vue`,
 `inputs/{ColorPicker,IconPicker,IconPickerDialog,InputWithButton,MergedInputs,NullFalseTrueCheckbox}.vue`,
 `dateTime/{DateRangePicker,DateTimePicker,MonthYearPicker,MyDateInput,TimeDisplay,TimeDisplayWithProgress,TimePicker,TimeRangePicker}.vue`,

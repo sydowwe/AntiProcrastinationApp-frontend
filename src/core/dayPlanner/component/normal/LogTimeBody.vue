@@ -45,7 +45,7 @@
 	import { ref } from 'vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	export type LogTimeResult =
 		| { type: 'confirm'; startTime: Time; length: Time }

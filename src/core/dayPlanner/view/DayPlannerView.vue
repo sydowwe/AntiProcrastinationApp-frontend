@@ -149,7 +149,7 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import RescheduleForm from '@/core/dayPlanner/component/normal/RescheduleForm.vue'
 	import SkipReasonForm from '@/core/dayPlanner/component/normal/SkipReasonForm.vue'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import DayPlannerLogTimeController from '@/core/dayPlanner/component/normal/DayPlannerLogTimeController.vue'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'

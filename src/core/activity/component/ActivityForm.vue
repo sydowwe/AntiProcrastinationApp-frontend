@@ -10,7 +10,7 @@
 	import { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import NewActivityForm from '@/core/activity/component/NewActivityForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { Activity } from '@/core/activity/dto/response/Activity.ts'
 
 	const {

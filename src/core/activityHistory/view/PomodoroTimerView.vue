@@ -252,7 +252,7 @@
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null

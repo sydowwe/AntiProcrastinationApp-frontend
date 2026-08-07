@@ -46,7 +46,7 @@
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import type { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { filter } = defineProps<{ filter: ActivityBacklogProfileFilter }>()

@@ -72,7 +72,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const {

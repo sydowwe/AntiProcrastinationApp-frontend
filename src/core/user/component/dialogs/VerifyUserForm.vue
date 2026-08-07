@@ -19,7 +19,7 @@
 	import { useI18n } from 'vue-i18n'
 	import MyTwoFactorAuthInput from '@/core/user/component/MyTwoFactorAuthInput.vue'
 	import MyVerifyPasswordInput from '@/core/user/component/MyVerifyPasswordInput.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 

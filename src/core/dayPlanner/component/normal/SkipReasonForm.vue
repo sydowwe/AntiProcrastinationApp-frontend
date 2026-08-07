@@ -27,7 +27,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const dialogApi = useDialogApi<{ reason: string }>()
 

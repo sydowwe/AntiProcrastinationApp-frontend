@@ -273,7 +273,7 @@
 	import TemplateCard from '@/core/dayPlanner/component/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'

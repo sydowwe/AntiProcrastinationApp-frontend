@@ -11,7 +11,7 @@
 	import { ActivityBucketListProfileRequest } from '@/core/leisure/dto/request/ActivityBucketListProfileRequest.ts'
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import NewBucketListProfileForm from '@/core/leisure/component/bucketList/NewBucketListProfileForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: ActivityBucketListProfile | null }>()

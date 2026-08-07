@@ -58,7 +58,7 @@
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import type { MemoryAnchorFilter } from '@/core/leisure/dto/request/MemoryAnchorFilter.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { filter } = defineProps<{ filter: MemoryAnchorFilter }>()

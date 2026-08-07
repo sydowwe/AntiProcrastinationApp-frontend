@@ -24,7 +24,7 @@
 	import { useI18n } from 'vue-i18n'
 	import Snackbar from '@/_common/component/feedback/Snackbar.vue'
 	import LoadingFullscreen from '@/_common/component/dialog/LoadingFullscreen.vue'
-	import DialogHost from '@/components/general/dialogs/DialogHost.vue'
+	import DialogHost from '@/_common/component/dialog/DialogHost.vue'
 	import Navbar from '@/_common/nav/Navbar.vue'
 	import NotificationBell from '@/_common/modules/notifications/component/NotificationBell.vue'
 	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'

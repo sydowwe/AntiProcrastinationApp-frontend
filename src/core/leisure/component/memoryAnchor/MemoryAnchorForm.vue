@@ -11,7 +11,7 @@
 	import { MemoryAnchorRequest } from '@/core/leisure/dto/request/MemoryAnchorRequest.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import NewMemoryAnchorForm from '@/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: MemoryAnchor | null }>()

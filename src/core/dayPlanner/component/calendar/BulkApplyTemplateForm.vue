@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'

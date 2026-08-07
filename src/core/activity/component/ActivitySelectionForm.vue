@@ -109,7 +109,7 @@
 	import type { VAutocomplete } from 'vuetify/components'
 	import ActivityForm from '@/core/activity/component/ActivityForm.vue'
 	import { useActivitySelectionFormState } from '@/core/activity/composable/useActivitySelectionFormState.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
 
 	const {

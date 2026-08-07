@@ -39,7 +39,7 @@
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import type { ActivityProjectProfileFilter } from '@/core/leisure/dto/request/ActivityProjectProfileFilter.ts'
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { filter } = defineProps<{ filter: ActivityProjectProfileFilter }>()

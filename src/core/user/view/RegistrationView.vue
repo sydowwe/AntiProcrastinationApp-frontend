@@ -71,7 +71,7 @@
 	import { useUserDetailsValidation } from '@/core/user/utils/UserAuthUtils.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import router from '@/router.ts'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
 	import { API } from '@/_common/axiosConfig.ts'

@@ -47,7 +47,7 @@
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import type { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { filter } = defineProps<{ filter: ActivityBucketListProfileFilter }>()

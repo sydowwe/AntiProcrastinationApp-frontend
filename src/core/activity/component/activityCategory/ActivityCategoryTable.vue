@@ -40,7 +40,7 @@
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityCategoryCrud } from '@/core/activity/api/activityCategoryApi.ts'
 	import ActivityCategoryForm from '@/core/activity/component/activityCategory/ActivityCategoryForm.vue'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 

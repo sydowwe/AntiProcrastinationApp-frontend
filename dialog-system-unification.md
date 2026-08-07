@@ -1,5 +1,12 @@
 # Task: unify the dialog system between this project and the framework
 
+> **✅ DONE.** Completed as the prerequisite for moving the `user` module into the framework. The plan below was carried out as written:
+> `composable/general/useDialog.ts` + `component/dialog/{DialogHost,DialogEntryRenderer}.vue` now live in the framework, `CentralDialogComposable.ts` and
+> `dto/dto/DialogConfig.ts` are deleted, and all 47 app call sites import from `@/_common/...`. `useConfirmDialog` / `useAlertDialog` were **not** reimplemented —
+> `useDialog().confirm()` already covers the confirm case and nothing used `alert()`.
+> Typecheck went 166 → 163 errors; lint stayed at 0 errors / 4 known warnings.
+> The rest of this document is kept as the rationale record.
+
 **Deferred out of the architecture-alignment migration** (see `MIGRATION-PLAN.md`, decision #3). The alignment migration leaves this project's dialog system exactly
 where it is; this document is the follow-up that resolves it. Read it in full before touching anything — the obvious answer is wrong.
 

@@ -11,7 +11,7 @@
 	import { ActivityProjectProfileRequest } from '@/core/leisure/dto/request/ActivityProjectProfileRequest.ts'
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import NewProjectProfileForm from '@/core/leisure/component/project/NewProjectProfileForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: ActivityProjectProfile | null }>()

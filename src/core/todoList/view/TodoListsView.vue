@@ -209,7 +209,7 @@
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/core/todoList/component/normal/TodoListCard.vue'
 	import { useUserStore } from '@/core/user/store/authStore.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()

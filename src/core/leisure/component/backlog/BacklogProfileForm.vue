@@ -11,7 +11,7 @@
 	import { ActivityBacklogProfileRequest } from '@/core/leisure/dto/request/ActivityBacklogProfileRequest.ts'
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
 	import NewBacklogProfileForm from '@/core/leisure/component/backlog/NewBacklogProfileForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: ActivityBacklogProfile | null }>()

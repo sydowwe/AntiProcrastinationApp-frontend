@@ -41,7 +41,7 @@
 	import { useActivityRoleCrud } from '@/core/activity/api/activityRoleApi.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import ActivityRoleForm from '@/core/activity/component/activityRole/ActivityRoleForm.vue'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 

@@ -77,7 +77,7 @@
 	import TimePeriodForm from '@/core/todoList/component/routine/dialog/TimePeriodForm.vue'
 	import PersonalBestsPanel from '@/core/todoList/component/routine/PersonalBestsPanel.vue'
 	import { useI18n } from 'vue-i18n'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const { fetchAll, createWithResponse, update, deleteEntity, changeTimePeriodVisibility } =
 		useRoutineTimePeriodCrud()

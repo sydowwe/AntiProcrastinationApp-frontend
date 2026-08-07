@@ -11,7 +11,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const dialogApi = useDialogApi<{ sourceDate: Date }>()
 

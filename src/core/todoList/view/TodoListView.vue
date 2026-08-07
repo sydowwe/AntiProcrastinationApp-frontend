@@ -178,7 +178,7 @@
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
 	import { useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{
 		id: string

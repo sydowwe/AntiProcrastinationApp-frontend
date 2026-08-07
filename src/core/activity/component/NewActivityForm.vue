@@ -66,7 +66,7 @@
 	import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const model = defineModel<ActivityRequest>({ required: true })

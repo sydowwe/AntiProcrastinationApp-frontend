@@ -71,7 +71,7 @@
 	import { VForm } from 'vuetify/components'
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
 

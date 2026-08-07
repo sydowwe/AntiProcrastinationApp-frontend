@@ -67,7 +67,7 @@
 	import SuggestedTimeFormField from '@/core/todoList/component/SuggestedTimeFormField.vue'
 	import TodoListStepsFormField from '@/core/todoList/component/TodoListStepsFormField.vue'
 	import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import { RoutineTodoListItemRequest } from '@/core/todoList/dto/request/RoutineTodoListItemRequest.ts'
 	import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { TodoListItemStepRequest } from '@/core/todoList/dto/request/TodoListItemStepRequest.ts'

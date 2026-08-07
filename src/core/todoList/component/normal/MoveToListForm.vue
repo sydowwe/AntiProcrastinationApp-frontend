@@ -9,7 +9,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import { useTodoListCrud } from '@/core/todoList/api/todoListApi.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const { currentListId } = defineProps<{ currentListId: number }>()

@@ -27,7 +27,7 @@
 	import { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
 	import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const { entityToEdit = null } = defineProps<{
 		entityToEdit?: TodoListCategoryEntity | null

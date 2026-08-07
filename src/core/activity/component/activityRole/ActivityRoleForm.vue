@@ -28,7 +28,7 @@
 	import { RoleRequest } from '@/core/activity/dto/request/RoleRequest.ts'
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityRoleCrud } from '@/core/activity/api/activityRoleApi.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: Role | null }>()
 

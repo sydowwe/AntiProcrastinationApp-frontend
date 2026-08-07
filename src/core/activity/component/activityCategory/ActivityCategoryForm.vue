@@ -28,7 +28,7 @@
 	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
 	import { useActivityCategoryCrud } from '@/core/activity/api/activityCategoryApi.ts'
 	import { CategoryRequest } from '@/core/activity/dto/request/CategoryRequest.ts'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: Category | null }>()
 

@@ -17,7 +17,7 @@
 	import type { LogTimeResult } from '@/core/dayPlanner/component/normal/LogTimeBody.vue'
 	import TrackTimeDialog from '@/core/dayPlanner/component/normal/TrackTimeDialog.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { useDialog } from '@/composables/general/useDialog.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const { plannerTaskId } = defineProps<{ plannerTaskId?: number }>()
 

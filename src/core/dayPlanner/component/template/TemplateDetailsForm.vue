@@ -11,7 +11,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import TaskPlannerDayTemplateDetailsForm from '@/core/dayPlanner/component/template/TaskPlannerDayTemplateDetailsForm.vue'
-	import { useDialogApi } from '@/composables/general/useDialog.ts'
+	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import type { TaskPlannerDayTemplateRequest } from '@/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts'
 
