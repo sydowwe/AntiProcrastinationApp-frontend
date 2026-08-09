@@ -70,7 +70,7 @@
 		useQuickCreateActivity,
 	} from '@/core/activity/composable/quickCreateActivityComposition.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'

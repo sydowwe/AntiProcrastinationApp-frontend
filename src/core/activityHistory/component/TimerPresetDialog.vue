@@ -48,7 +48,7 @@
 	import { computed, onMounted, ref } from 'vue'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 	import { TimerPresetRequest } from '@/core/activityHistory/dto/request/TimerPresetRequest.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import { useTimerPresetCrud } from '@/core/activityHistory/api/timerPresetApi.ts'
 	import { VForm } from 'vuetify/components'

@@ -12,20 +12,7 @@ missing piece, then get repointed.
 
 Six of the ten duplicated composables were adopted. These four were not.
 
-### 1. `useUndoStack` — missing `UndoEntry.date` / `nextUndoDate`
-
-- **Local file kept:** `src/composables/general/useUndoStack.ts`
-- **Framework file:** `_common/composable/general/useUndoStack.ts`
-- **Gap:** the framework's `UndoEntry` has no `date` field and the composable does not expose
-  `nextUndoDate`.
-- **Used by:** `src/components/dayPlanner/normal/DayPlannerHeader.vue` (5 references),
-  `src/views/dayPlanner/DayPlannerView.vue`
-- **Why it matters:** the day planner's undo button shows `Undo: <description> · go to <date>` and navigates the planner to the date the undone action belongs to.
-  Adopting the framework version deletes that navigation.
-- **Also in the framework version, and wanted:** `undo()` wraps the callback in `try/catch` and shows an error snackbar on failure; the success message goes through
-  `t('common.undoSuccess')` instead of a hardcoded English string. Both are improvements — take them when `date` lands.
-- **Upstream ask:** add an optional `date?: Date` to `UndoEntry` and return
-  `nextUndoDate = computed(() => stack.value[0]?.date ?? null)`.
+### 1. `useUndoStack` — ~~missing `UndoEntry.date` / `nextUndoDate`~~ — **resolved, see R6**
 
 ### 2. `EnumComposable` — missing `convertToEnum` / `getEnumKeyByValue`
 
@@ -34,31 +21,9 @@ Six of the ten duplicated composables were adopted. These four were not.
 - **Used by:** `convertToEnum` — 6 files; `getEnumKeyByValue` — 1 file
 - **Upstream ask:** add both functions verbatim from the local file.
 
-### 3. `RulesComposition` — missing `phoneNumberRule`
+### 3. `RulesComposition` — ~~missing `phoneNumberRule`~~ — **resolved, see R5**
 
-- **Local file kept:** `src/composables/general/rules/RulesComposition.ts`
-- **Framework file:** `_common/composable/general/rules/RulesComposition.ts`
-- **Gap:** only `phoneNumberRule` (`/^09\d{8}$/`, Slovak mobile format). Used by 1 file.
-- **Note — MIGRATION-PLAN.md §7 is wrong on this row.** It lists `isOnlyNumbers`,
-  `isLettersAndNumbers`, `isOnlyLettersWithDiacritics`, `isLettersWithDiacriticsAndSpecialChars` and
-  `isLettersWithDiacriticsAndNumbersAndSpecialChars` as missing. They all exist upstream in
-  `_common/utils/validators.ts` and are re-exported from the framework's `RulesComposition`. Only
-  `phoneNumberRule` is genuinely absent.
-- **Extra work when adopting:** the framework's rules take their messages from `t('validation.*')`. Those keys exist in `_common/_locales/common.sk.ts` (already
-  spread into `src/locales/SK.ts`) but **not in `src/locales/EN.ts`**, which has no `validation` namespace. Mirror them before switching, or EN users see raw keys.
-- **Upstream ask:** add `phoneNumberRule` to `useGeneralRules`.
-
-### 4. `useAutoScroll` — the framework version has a bug
-
-- **Local file kept:** `src/composables/general/useAutoScroll.ts`
-- **Framework file:** `_common/composable/general/useAutoScroll.ts`
-- **This one is not a missing capability — the framework version is broken.** It hoists the
-  `setInterval` out of the two edge-proximity branches and guards it with
-  `if (autoScrollSpeed.value !== 0)`. When the pointer moves out of the edge zone neither branch runs, so `autoScrollSpeed` keeps its previous non-zero value, the
-  guard passes, and a fresh interval starts — the container scrolls forever until `stopAutoScroll()` is called explicitly. The local version starts the interval only
-  inside a branch, so leaving the edge zone stops it.
-- **Used by:** 2 files.
-- **Upstream ask:** reset `autoScrollSpeed.value = 0` before the branches (a one-line fix), then this becomes a clean adopt.
+### 4. `useAutoScroll` — ~~the framework version has a bug~~ — **resolved, see R6**
 
 ---
 
@@ -77,37 +42,7 @@ Six of the ten duplicated composables were adopted. These four were not.
 - The local file's internal imports have already been repointed at `_common`
   (`DateRangePicker`), so only the component itself and the two importers need switching once the expose lands.
 
-### 6. The `dataTable` family — `BasicTable` / `DataTable` / `MyTableFooter`
-
-Held back together; they only make sense as a unit. This is a **rewrite, not an import repoint**.
-
-- **Local files kept:** `src/components/general/dataTable/{BasicTable,DataTable,MyTableFooter}.vue`
-- **Importers:** `BasicTable` 12, `DataTable` 3, `MyTableFooter` 1 (from `BasicTable`)
-
-What differs:
-
-|                      | local `DataTable`           | framework `DataTable`                                                                                    |
-|----------------------|-----------------------------|----------------------------------------------------------------------------------------------------------|
-| `items`              | `defineModel` (two-way)     | plain prop                                                                                               |
-| `loading`            | `defineModel`               | plain prop                                                                                               |
-| `showSelect` default | `true`                      | `false`                                                                                                  |
-| generic constraint   | `TItem extends IMyResponse` | `TItem extends IIdResponse` (needs `id`)                                                                 |
-| cell rendering       | passthrough                 | auto-formats by key heuristic — date / datetime / boolean / currency / percent, via `useTableFormatters` |
-| extra models         | —                           | `v-model:expanded`, `v-model:selected`                                                                   |
-| actions column       | rendered by `BasicTable`    | rendered by `DataTable` itself                                                                           |
-| styling              | 2px `#bbb` border           | themed `.my-data-table`, 8px radius, hover rows                                                          |
-
-Every `v-model="items"` / `v-model:loading` call site changes shape, selection checkboxes disappear unless `showSelect` is passed explicitly, and cells start
-auto-formatting based on column-key names — a visible change to every table in the app.
-
-Separately, the local `BasicTable` exposes a `formattedColumn` slot the framework's has no counterpart for (the framework forwards per-column `#item.<key>` instead).
-Five app tables consume it: `ActivityCategoryTable`, `ActivityRoleTable`, `BacklogTable`, `BucketListTable`,
-`RoutineSettingsView`.
-
-**Recommendation:** do this as its own step with the app running side by side, not folded into a mechanical migration commit.
-
-Related: `getNestedValue` moved to `_common/utils/helperMethods.ts` and now returns `unknown` where the local one returned `any`. The local `BasicTable` bridges this
-with a `getColumnValue` wrapper; delete the wrapper when the component goes.
+### 6. The `dataTable` family — `BasicTable` / `DataTable` / `MyTableFooter` — **resolved, see R7**
 
 ---
 
@@ -148,6 +83,27 @@ Until it lands, `vue-tsc --build --force` reports 166 rather than 162, and the d
 
 ---
 
+## Found while rebuilding the home dashboard — a cross-module import to unwind
+
+### 8. `TrackTimeDialog` is shared between `dayPlanner` and `home`
+
+- **Local file kept:** `src/core/dayPlanner/component/normal/TrackTimeDialog.vue` (unchanged, still owned by `dayPlanner`)
+- **New importer:** `src/core/home/component/NowBar.vue`
+
+The now-bar's one-tap "track this block" needs exactly the dialog the planner already has: a stopwatch/timer/pomodoro switch bound to an activity, which patches the
+planner task to `InProgress` on start. Importing it from `core/home` breaks the rule that cross-module imports go through `api/` or `dto/` only.
+
+The alternatives were worse. Duplicating the dialog into `core/home` would fork the status-patch logic (`PatchPlannerTaskStatusRequest` with `actualStartTime`) into
+two places that must stay in step. Reaching for the timer views directly is no cleaner — `TrackTimeDialog` itself already imports
+`@/core/activityHistory/view/{StopWatchView,TimerView,PomodoroTimerView}.vue`, so that pattern is pre-existing in the codebase.
+
+- **Also note:** `core/home/component/DayPlannerWidget.vue` and `NowBar.vue` share `core/home/composable/useTodayPlan.ts`, which is module-local and fine. It is the
+  dialog alone that crosses.
+- **Upstream ask:** none for the framework. Either move `TrackTimeDialog` to a shared location both modules may import, or give `activityHistory` an exported
+  "track time for an activity" dialog that `dayPlanner` and `home` both consume — the timer views it wraps already live there.
+
+---
+
 ## Resolved
 
 ### R1. `core/scheduler` → `_common/modules/scheduler` (2026-08-07)
@@ -171,8 +127,8 @@ Both faults behind the "service worker broken in dev" fix were app-side, not fra
   floated onto the broken release. Every consuming app hits this identically.
 - **`/sw.js` in dev.** Pure app-side `vite.config.ts`; `vite-plugin-pwa` needs `devOptions.enabled` for the file to exist before a build.
 
-The runtime code is right, so there is nothing to fix in `_common`. The gap is documentation: nothing in `SETUP.md` says the `notifications` module requires a service
-worker in dev, so the next app rediscovers both from scratch.
+The runtime code is right, so there is nothing to fix in `_common`. The gap is documentation: nothing in `SETUP.md` says the `notifications` module requires a
+service worker in dev, so the next app rediscovers both from scratch.
 
 - **Upstream ask:** a `SETUP.md` section for the `notifications` module covering the required `vite-plugin-pwa` dev config and a pinned/known-good lodash floor.
 
@@ -191,10 +147,11 @@ Depended on R3: framework code cannot import `@/composables/...`, and five of th
 36 of the 39 files moved. What stayed app-side, and why:
 
 - `authAdapter.ts` — binds the store to the framework's `AuthAdapter` contract. App glue by definition; the framework must not know about this app's Pinia store.
-- `component/settings/{AboutSection,DataExportSection,PreferencesSection}.vue` — hardcoded support e-mail and `/legal/*` links, an `antiprocrastination-export-*.json`
+- `component/settings/{AboutSection,DataExportSection,PreferencesSection}.vue` — hardcoded support e-mail and `/legal/*` links, an
+  `antiprocrastination-export-*.json`
   filename, and an `askBeforeDelete` toggle. All render through the framework view's `#append` / `#preferences` slots.
-- `view/UserSettingsView.vue` + `user.routes.ts` — a thin wrapper filling those slots, and the `/user/settings` route for it. The framework's `userRoutes` covers only
-  the five signed-out views.
+- `view/UserSettingsView.vue` + `user.routes.ts` — a thin wrapper filling those slots, and the `/user/settings` route for it. The framework's `userRoutes` covers
+  only the five signed-out views.
 - `dto/userAugmentation.ts` — **new.** Merges `askBeforeDelete` / `firstDayOfWeek` into the framework's `User` / `UserPreferencesRequest` via `declare module`.
 
 Three things changed shape rather than moving:
@@ -204,6 +161,86 @@ Three things changed shape rather than moving:
   slot. Third-party account links are host-app concerns.
 - **`UserSession implements IMyResponse` dropped the clause.** `IMyResponse` is `export type IMyResponse = object` — a no-op marker with no framework counterpart, so
   implementing it bought nothing and cost a dependency on `@/dtos/`.
+
+### R5. `composables/general/rules/RulesComposition.ts` → `_common` (2026-08-10)
+
+Closed without an upstream change: **`phoneNumberRule` had no call sites left.** It was the only genuine gap (§3's note about the other five validators being missing
+was already corrected — they all live in `_common/utils/validators.ts`), so once the last consumer went, the local file existed to carry a dead function.
+
+All 17 importers now use `@/_common/composable/general/rules/RulesComposition.ts`. Between them they destructure only `requiredRule` and
+`lettersWithDiacriticsAndSpecialCharsRule`, both present upstream.
+
+Two behavioural deltas, both improvements:
+
+- Messages come from `t('validation.*')` instead of hardcoded Slovak. The keys ship in `_common/_locales/common.sk.ts` and were already spread into `SK.ts`; the
+  matching **`validation` namespace is now mirrored into `src/locales/common.en.ts`** (EN.ts does not spread the framework's Slovak-only `common`, same arrangement as
+  `httpErrors`). Without it EN users would have seen raw keys on every failed rule.
+- The framework's `lettersAndNumbersRule` short-circuits on empty input (`!v ||`) where the local one did not. Nothing in this app used it.
+
+`src/composables/general/rules/` is gone entirely. If a phone field ever comes back, add `phoneNumberRule` to the framework rather than reviving the directory.
+
+- **Upstream ask:** none.
+
+### R6. `useUndoStack` + `useAutoScroll` → `_common` (2026-08-10)
+
+Both were genuine framework defects rather than app divergence, so both were fixed upstream and the local copies deleted. Framework commit `93f20ea` on `main`
+(**not yet pushed to `origin` — push before bumping the pointer anywhere else**).
+
+**`useUndoStack`** — `UndoEntry` gained an optional `date`, exposed as `nextUndoDate`; the interface is exported now that consumers build entries against it. This
+restores the planner's `Undo: <description> · go to <date>` button, which navigates to the date the undone action belongs to. Eight `push({ date })` sites across
+`usePlannerCrud`, `useClipboardHandling` and `usePlannerPointerInteractions` feed it.
+
+A **third bug** surfaced while adopting it, not previously recorded: the success snackbar resolved `t('common.undoSuccess')`, but that key lives under `general`, not
+`common` — it rendered as a raw key for every user. Fixed to `general.undoSuccess` in the same commit.
+
+That fix alone was not enough here. This app's `general` namespace **replaces** the framework's wholesale (the shallow-spread rule at the top of `SK.ts`), so the
+framework's own `general.undoSuccess` never reaches i18n. The key is therefore mirrored into `src/locales/common.sk.ts` **and** `common.en.ts`. Any framework string
+under one of the six colliding namespaces needs the same treatment — worth remembering when adopting future framework code.
+
+What the app gains from the framework version: `undo()` now wraps the callback in `try/catch` with an error snackbar, and the message is localized instead of the
+local version's hardcoded `` `${description} undone` ``.
+
+**`useAutoScroll`** — one-line fix, exactly as diagnosed: `autoScrollSpeed.value = 0` now resets before the two edge-proximity branches. Previously, leaving the edge
+zone ran neither branch, the stale speed passed the `!== 0` guard, and a fresh interval scrolled the container forever until `stopAutoScroll()` was called. One
+importer (`usePlannerPointerInteractions.ts`), not the two the old entry claimed.
+
+`src/composables/general/` is now down to `EnumComposable.ts` and `useCalendarWeeks.ts`.
+
+- **Upstream ask:** none — landed in the framework.
+
+### R7. `dataTable` family → `_common` (2026-08-10)
+
+The rewrite from §6 landed: `src/components/general/dataTable/{BasicTable,DataTable,MyTableFooter}.vue` are deleted and every importer now uses
+`@/_common/component/dataTable/{BasicTable,DataTable}.vue`.
+
+The one behavioural gap flagged in §6 — the local `formattedColumn` slot has no framework counterpart — turned out to be silent rather than blocking: the framework
+`BasicTable` simply doesn't forward it, so the ten consumers still writing `<template #formattedColumn="{ key, value }">` were rendering nothing and quietly falling
+back to the framework's key-heuristic auto-formatting. All ten were converted to the framework's real mechanism, one `#item.<key>` slot per branch instead of a single
+key-switch:
+
+`ActivityTable`, `ActivityCategoryTable`, `ActivityRoleTable`, `IgnoredProcessesTable`, `DayPlannerSettingsView`, `BacklogTable`, `BucketListTable`,
+`MemoryAnchorTable`, `ProjectTable`, `RoutineSettingsView`.
+
+Slot content reads `item.<key>` (destructured from the slot scope) rather than the old `value`/`key` pair — `BacklogTable`'s two data-driven column lists
+(`lookupColumns`, `enumColumns`) keep dynamic slot names (`#[`item.${col}`]`) since the key comes from a loop variable, with a small typed accessor to sidestep
+`noImplicitAny` on the index access. Four consumers (`DayPlannerSettingsView`, `RoutineSettingsView`, `MemoryAnchorTable`, and the `RoutineSettingsView` visibility
+switch) previously destructured `id` off the dead slot's scope; those now read `item.id`. `RoutineSettingsView`'s `isHidden` switch also gained a second
+`@update:modelValue` argument (`item.id`) it was never actually receiving before — the slot was dead, so the switch never rendered through this path and the missing
+id went unnoticed.
+
+`getColumnValue` / the local `getNestedValue` wrapper went with the deleted `BasicTable` — the framework's own `getNestedValue` (returns `unknown`) is what the new
+per-column slots key off of implicitly, since the framework component computes `value` itself before invoking the consumer's slot.
+
+**Not part of this fix:** `vue-tsc --build --force` reports 190 errors post-conversion, not the pre-migration 163. The extra ~27 are pre-existing — every one of the
+ten converted files errors identically with the dead `formattedColumn` slot restored (verified by temporarily reverting one file's template while keeping its
+`_common` import), so the cause is the uncommitted `src/_common` submodule bump, not this slot conversion: the framework `BasicTable`'s generic `TItem` now fails to
+infer from `v-model="items"` + `@onEdit`/`@onDelete` on these ten call sites, widening to the `IIdResponse` constraint and breaking every prop that depends on the
+concrete item type. Worth a fresh submodule-pointer investigation, but out of scope here since it predates and is independent of the slot work.
+
+- **Upstream ask:** none for the slot mechanism itself — `#item.<key>` is working as designed. Separately, whatever changed in the `_common` bump that broke generic
+  `TItem` inference for `BasicTable` needs its own look.
+
+### R4 addendum
 
 `AppearanceSection`'s `onFirstDayChange` was deleted rather than moved: it was already dead code (the lint baseline's fourth warning) and `firstDayOfWeek` is now
 app-owned. Lint is therefore 0 errors / **3** warnings from here on, not 4.

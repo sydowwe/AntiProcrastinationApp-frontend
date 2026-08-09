@@ -13,25 +13,22 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value }">
-			<template v-if="key === 'color'">
-				<VSheet
-					v-if="value"
-					:color="getBgColor(value)"
-					width="24"
-					height="24"
-					rounded="circle"
-				/>
-				<span v-else>—</span>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.color="{ item }">
+			<VSheet
+				v-if="item.color"
+				:color="getBgColor(item.color)"
+				width="24"
+				height="24"
+				rounded="circle"
+			/>
+			<span v-else>—</span>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { Role } from '@/core/activity/dto/response/Role.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'

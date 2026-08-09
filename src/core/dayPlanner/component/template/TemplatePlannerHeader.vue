@@ -70,7 +70,7 @@
 	import { computed, inject } from 'vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
-	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 
 	const { title } = defineProps<{
 		title?: string

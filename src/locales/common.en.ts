@@ -17,6 +17,19 @@ const common = {
 		unexpected: `An unexpected error occurred.`,
 		unknown: `An unknown error occurred. Please contact support.`,
 	},
+	// Mirrors `validation` from @/_common/_locales/common.sk.ts, for the same reason as `httpErrors`
+	// above: the framework's `useGeneralRules` resolves every message through `t('validation.*')`
+	// and ships Slovak only, so EN users would see raw keys on every failed form rule.
+	validation: {
+		required: `This field is required`,
+		onlyLetters: `The field may contain letters only`,
+		lettersAndSpecialChars: `The field may contain letters and special characters only`,
+		onlyNumbers: `The field may contain digits only`,
+		lettersAndNumbers: `The field may contain letters and digits only`,
+		ico: `The company ID must be exactly 8 digits`,
+		invalidEmail: `Invalid e-mail format`,
+		houseNumber: `Invalid house number (e.g. 12, 12A or 12/A)`,
+	},
 	$vuetify: {
 		badge: 'Badge',
 		open: 'Open',
@@ -280,6 +293,9 @@ const common = {
 		addToPlanner: `Add to planner`,
 		logTime: `Log time`,
 		moveToList: `Move to list`,
+		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
+		// wholesale, so its copy of this key never reaches i18n.
+		undoSuccess: `{description} was undone`,
 	},
 	dateTime: {
 		when: `When`,

@@ -104,7 +104,7 @@
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import InputWithButton from '@/_common/component/inputs/InputWithButton.vue'
 	import type { VAutocomplete } from 'vuetify/components'
 	import ActivityForm from '@/core/activity/component/ActivityForm.vue'

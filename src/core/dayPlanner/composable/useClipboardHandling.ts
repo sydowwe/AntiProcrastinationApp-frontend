@@ -2,7 +2,7 @@ import { watch } from 'vue'
 import { type IBasePlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
-import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 

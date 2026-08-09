@@ -128,7 +128,7 @@
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import { fromMinutes } from '@/_common/utils/formatDuration.ts'
-	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { useClipboardHandling } from '@/core/dayPlanner/composable/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/core/dayPlanner/composable/usePlannerCrud.ts'
 	import { useRoute } from 'vue-router'

@@ -1,4 +1,4 @@
-import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 
 export function useTodoListUndo() {

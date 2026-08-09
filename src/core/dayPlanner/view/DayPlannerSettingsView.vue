@@ -37,42 +37,39 @@
 					@onAdd="taskDialog?.openAddDialog"
 					@onLoadItems="loadItems"
 				>
-					<template #formattedColumn="{ id, key, value }">
-						<template v-if="key === 'activity'">
-							<div class="d-flex align-center ga-2">
-								<VSheet
-									:color="taskById(id)?.color || 'primary'"
-									width="10"
-									height="10"
-									rounded="circle"
-								/>
-								{{ taskById(id)?.activity.name }}
-							</div>
-						</template>
-						<template v-else-if="key === 'time'">
-							{{ taskById(id)?.startTime.getString() }} – {{ taskById(id)?.endTime.getString() }}
-						</template>
-						<template v-else-if="key === 'recurrenceType'">
-							<VChip
-								size="small"
-								:prependIcon="getRecurrenceTypeIcon(taskById(id)!.recurrenceType)"
-								variant="tonal"
-								color="primaryOutline"
-							>
-								{{ value }}
-							</VChip>
-						</template>
-						<template v-else-if="key === 'isActive'">
-							<VSwitch
-								class="mx-auto pr-4"
-								style="width: fit-content"
-								:modelValue="value"
-								color="successDark"
-								hideDetails
-								@update:modelValue="onToggleActive(taskById(id)!)"
+					<template #item.activity="{ item }">
+						<div class="d-flex align-center ga-2">
+							<VSheet
+								:color="taskById(item.id)?.color || 'primary'"
+								width="10"
+								height="10"
+								rounded="circle"
 							/>
-						</template>
-						<template v-else>{{ value ?? '—' }}</template>
+							{{ taskById(item.id)?.activity.name }}
+						</div>
+					</template>
+					<template #item.time="{ item }">
+						{{ taskById(item.id)?.startTime.getString() }} – {{ taskById(item.id)?.endTime.getString() }}
+					</template>
+					<template #item.recurrenceType="{ item }">
+						<VChip
+							size="small"
+							:prependIcon="getRecurrenceTypeIcon(taskById(item.id)!.recurrenceType)"
+							variant="tonal"
+							color="primaryOutline"
+						>
+							{{ item.recurrenceType }}
+						</VChip>
+					</template>
+					<template #item.isActive="{ item }">
+						<VSwitch
+							class="mx-auto pr-4"
+							style="width: fit-content"
+							:modelValue="item.isActive"
+							color="successDark"
+							hideDetails
+							@update:modelValue="onToggleActive(taskById(item.id)!)"
+						/>
 					</template>
 				</BasicTable>
 			</VTabsWindowItem>
@@ -256,7 +253,7 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import RepeatingTaskDialog from '@/core/dayPlanner/component/settings/RepeatingTaskDialog.vue'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

@@ -34,7 +34,7 @@
 	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import { TodoListRequest } from '@/core/todoList/dto/request/TodoListRequest.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useTodoListCategoryCrud } from '@/core/todoList/api/todoListCategoryApi.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'

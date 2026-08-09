@@ -13,25 +13,25 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value }">
-			<template v-if="key === 'difficultyLevel' || key === 'readinessStatus'">
-				<span>{{ value == null ? '—' : $t(`enums.${key}.${value}`) }}</span>
-			</template>
-			<template v-else-if="key === 'isMessy'">
-				<VIcon
-					:color="value ? 'warningDark' : 'grey'"
-					:icon="value ? 'check' : 'minus'"
-					size="16"
-				/>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.difficultyLevel="{ item }">
+			<span>{{ item.difficultyLevel == null ? '—' : $t(`enums.difficultyLevel.${item.difficultyLevel}`) }}</span>
+		</template>
+		<template #item.readinessStatus="{ item }">
+			<span>{{ item.readinessStatus == null ? '—' : $t(`enums.readinessStatus.${item.readinessStatus}`) }}</span>
+		</template>
+		<template #item.isMessy="{ item }">
+			<VIcon
+				:color="item.isMessy ? 'warningDark' : 'grey'"
+				:icon="item.isMessy ? 'check' : 'minus'"
+				size="16"
+			/>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ProjectProfileForm from '@/core/leisure/component/project/ProjectProfileForm.vue'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

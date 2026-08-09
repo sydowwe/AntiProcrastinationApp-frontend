@@ -13,25 +13,25 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value }">
-			<template v-if="key === 'role.name' || key === 'category.name'">
-				<span>{{ value ?? '—' }}</span>
-			</template>
-			<template v-else-if="key === 'isUnavoidable'">
-				<VIcon
-					:color="value ? 'successDark' : 'grey'"
-					:icon="value ? 'check' : 'xmark'"
-					size="16"
-				/>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.role.name="{ item }">
+			<span>{{ item.role?.name ?? '—' }}</span>
+		</template>
+		<template #item.category.name="{ item }">
+			<span>{{ item.category?.name ?? '—' }}</span>
+		</template>
+		<template #item.isUnavoidable="{ item }">
+			<VIcon
+				:color="item.isUnavoidable ? 'successDark' : 'grey'"
+				:icon="item.isUnavoidable ? 'check' : 'xmark'"
+				size="16"
+			/>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ActivityForm from '@/core/activity/component/ActivityForm.vue'
 	import { Activity } from '@/core/activity/dto/response/Activity.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

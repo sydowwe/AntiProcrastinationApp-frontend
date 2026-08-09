@@ -85,6 +85,9 @@ const common = {
 		addToPlanner: `Pridať do plánovača`,
 		logTime: `Zaznamenať čas`,
 		moveToList: `Presunúť do zoznamu`,
+		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
+		// wholesale (see the note at the top of SK.ts), so its copy of this key never reaches i18n.
+		undoSuccess: `{description} bolo vrátené späť`,
 	},
 	dateTime: {
 		when: `Kedy`,

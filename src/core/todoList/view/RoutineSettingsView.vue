@@ -25,41 +25,38 @@
 			@onEdit="openEditDialog"
 			@onDelete="onDelete"
 		>
-			<template #formattedColumn="{ id, key, value }">
-				<template v-if="key === 'color'">
-					<div class="d-flex justify-center">
-						<VSheet
-							v-if="value"
-							:color="getBgColor(value)"
-							width="22"
-							height="22"
-							rounded="circle"
-						/>
-						<VIcon
-							v-else
-							icon="clock"
-							size="22"
-						/>
-					</div>
-				</template>
-				<template v-else-if="key === 'streakThreshold'">{{ value }}%</template>
-				<template v-else-if="key === 'streakGraceDays'">
-					{{ (value as number) > 0 ? `${value}d` : '—' }}
-				</template>
-				<template v-else-if="key === 'resetAnchorDay'">
-					{{ (value as number) > 0 ? formatAnchorDay(id, value as number) : '—' }}
-				</template>
-				<template v-else-if="key === 'isHidden'">
-					<VSwitch
-						class="mx-auto pr-4"
-						style="width: fit-content"
-						:modelValue="value"
-						color="primaryOutline"
-						@update:modelValue="onVisibilityChange"
-						hideDetails
-					></VSwitch>
-				</template>
-				<template v-else>{{ value ?? '—' }}</template>
+			<template #item.color="{ item }">
+				<div class="d-flex justify-center">
+					<VSheet
+						v-if="item.color"
+						:color="getBgColor(item.color)"
+						width="22"
+						height="22"
+						rounded="circle"
+					/>
+					<VIcon
+						v-else
+						icon="clock"
+						size="22"
+					/>
+				</div>
+			</template>
+			<template #item.streakThreshold="{ item }">{{ item.streakThreshold }}%</template>
+			<template #item.streakGraceDays="{ item }">
+				{{ item.streakGraceDays > 0 ? `${item.streakGraceDays}d` : '—' }}
+			</template>
+			<template #item.resetAnchorDay="{ item }">
+				{{ item.resetAnchorDay > 0 ? formatAnchorDay(item.id, item.resetAnchorDay) : '—' }}
+			</template>
+			<template #item.isHidden="{ item }">
+				<VSwitch
+					class="mx-auto pr-4"
+					style="width: fit-content"
+					:modelValue="item.isHidden"
+					color="primaryOutline"
+					@update:modelValue="onVisibilityChange($event, item.id)"
+					hideDetails
+				></VSwitch>
 			</template>
 		</BasicTable>
 	</div>
@@ -67,7 +64,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import type { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'

@@ -13,19 +13,16 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value, id }">
-			<template v-if="key === 'periodKey'">
-				<span>{{ formatPeriod(id as number) }}</span>
-			</template>
-			<template v-else-if="key === 'rating'">
-				<VChip
-					:color="ratingColor(value as number)"
-					size="small"
-				>
-					{{ value }}/10
-				</VChip>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.periodKey="{ item }">
+			<span>{{ formatPeriod(item.id) }}</span>
+		</template>
+		<template #item.rating="{ item }">
+			<VChip
+				:color="ratingColor(item.rating)"
+				size="small"
+			>
+				{{ item.rating }}/10
+			</VChip>
 		</template>
 		<template #actions="{ item }">
 			<VChip
@@ -49,8 +46,8 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch, computed } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import { computed, ref, watch } from 'vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import MemoryAnchorForm from '@/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

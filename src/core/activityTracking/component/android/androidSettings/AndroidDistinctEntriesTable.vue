@@ -23,7 +23,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import DataTable from '@/components/general/dataTable/DataTable.vue'
+	import DataTable from '@/_common/component/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { TrackerAndroidDistinctEntriesResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidDistinctEntriesResponse.ts'
 	import type { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'

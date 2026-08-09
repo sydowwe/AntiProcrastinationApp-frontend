@@ -30,16 +30,14 @@
 				@onAdd="openCreate"
 				@onLoadItems="loadItems"
 			>
-				<template #formattedColumn="{ key, value }">
+				<template #item.titleContainsToggle="{ item }">
 					<VChip
-						v-if="key === 'titleContainsToggle'"
-						:color="value ? 'success' : 'warning'"
+						:color="item.titleContainsToggle ? 'success' : 'warning'"
 						size="small"
 						variant="tonal"
 					>
-						{{ value ? 'Contains' : 'Not contains' }}
+						{{ item.titleContainsToggle ? 'Contains' : 'Not contains' }}
 					</VChip>
-					<span v-else>{{ value }}</span>
 				</template>
 			</BasicTable>
 		</VCardText>
@@ -144,7 +142,7 @@
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import type { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { TableAction } from '@/_common/dto/dto/table/TableAction.ts'
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'

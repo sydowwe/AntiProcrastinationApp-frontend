@@ -13,33 +13,30 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value }">
-			<template v-if="key === 'experienceType'">
-				<span>{{ value?.text ?? '—' }}</span>
-			</template>
-			<template v-else-if="key === 'requiresTravel'">
-				<VIcon
-					:color="value ? 'primary' : 'grey'"
-					:icon="value ? 'plane' : 'house'"
-					size="16"
-				/>
-			</template>
-			<template v-else-if="key === 'comfortZoneStep'">
-				<VChip
-					:color="stepColor(value as number)"
-					size="small"
-				>
-					{{ value }}/5
-				</VChip>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.experienceType="{ item }">
+			<span>{{ item.experienceType?.text ?? '—' }}</span>
+		</template>
+		<template #item.requiresTravel="{ item }">
+			<VIcon
+				:color="item.requiresTravel ? 'primary' : 'grey'"
+				:icon="item.requiresTravel ? 'plane' : 'house'"
+				size="16"
+			/>
+		</template>
+		<template #item.comfortZoneStep="{ item }">
+			<VChip
+				:color="stepColor(item.comfortZoneStep)"
+				size="small"
+			>
+				{{ item.comfortZoneStep }}/5
+			</VChip>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import BucketListProfileForm from '@/core/leisure/component/bucketList/BucketListProfileForm.vue'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

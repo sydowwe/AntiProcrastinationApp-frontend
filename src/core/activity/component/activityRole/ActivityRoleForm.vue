@@ -26,7 +26,7 @@
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import type { Role } from '@/core/activity/dto/response/Role.ts'
 	import { RoleRequest } from '@/core/activity/dto/request/RoleRequest.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivityRoleCrud } from '@/core/activity/api/activityRoleApi.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 

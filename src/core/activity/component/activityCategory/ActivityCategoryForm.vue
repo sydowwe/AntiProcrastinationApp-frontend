@@ -25,7 +25,7 @@
 	import { VForm } from 'vuetify/components'
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import type { Category } from '@/core/activity/dto/response/Category.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivityCategoryCrud } from '@/core/activity/api/activityCategoryApi.ts'
 	import { CategoryRequest } from '@/core/activity/dto/request/CategoryRequest.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'

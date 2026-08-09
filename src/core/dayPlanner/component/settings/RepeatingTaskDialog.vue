@@ -234,7 +234,7 @@
 	import type { RepeatingPlannerTask } from '@/core/dayPlanner/dto/response/RepeatingPlannerTask.ts'
 	import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 
 	const emit = defineEmits<{
 		create: [req: RepeatingPlannerTaskRequest]

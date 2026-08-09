@@ -24,7 +24,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import DataTable from '@/components/general/dataTable/DataTable.vue'
+	import DataTable from '@/_common/component/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { TrackerDesktopDistinctEntriesResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopDistinctEntriesResponse.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'

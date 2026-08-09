@@ -14,31 +14,36 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
-		<template #formattedColumn="{ key, value }">
-			<template v-if="key === 'activity.name'">
-				<span>{{ value ?? '—' }}</span>
-			</template>
-			<template v-else-if="key === 'isOneTime'">
-				<VIcon
-					:color="value ? 'primary' : 'grey'"
-					:icon="value ? 'star' : 'rotate'"
-					size="16"
-				/>
-			</template>
-			<template v-else-if="lookupColumns.includes(key)">
-				<span>{{ value?.text ?? '—' }}</span>
-			</template>
-			<template v-else-if="enumColumns.includes(key)">
-				<span>{{ value == null ? '—' : $t(`enums.${key}.${value}`) }}</span>
-			</template>
-			<template v-else>{{ value ?? '—' }}</template>
+		<template #item.activity.name="{ item }">
+			<span>{{ item.activity.name ?? '—' }}</span>
+		</template>
+		<template #item.isOneTime="{ item }">
+			<VIcon
+				:color="item.isOneTime ? 'primary' : 'grey'"
+				:icon="item.isOneTime ? 'star' : 'rotate'"
+				size="16"
+			/>
+		</template>
+		<template
+			v-for="col in lookupColumns"
+			:key="col"
+			#[`item.${col}`]="{ item }"
+		>
+			<span>{{ getLookupValue(item, col)?.text ?? '—' }}</span>
+		</template>
+		<template
+			v-for="col in enumColumns"
+			:key="col"
+			#[`item.${col}`]="{ item }"
+		>
+			<span>{{ getEnumValue(item, col) == null ? '—' : $t(`enums.${col}.${getEnumValue(item, col)}`) }}</span>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import BacklogProfileForm from '@/core/leisure/component/backlog/BacklogProfileForm.vue'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -48,6 +53,7 @@
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
+	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 
 	const { filter } = defineProps<{ filter: ActivityBacklogProfileFilter }>()
 
@@ -64,6 +70,14 @@
 
 	const lookupColumns = ['locationType', 'weatherDependency', 'expectedCostTier']
 	const enumColumns = ['energyLevel', 'effortType']
+
+	function getLookupValue(item: ActivityBacklogProfile, col: string) {
+		return (item as unknown as Record<string, LookupResponse>)[col]
+	}
+
+	function getEnumValue(item: ActivityBacklogProfile, col: string) {
+		return (item as unknown as Record<string, unknown>)[col]
+	}
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),

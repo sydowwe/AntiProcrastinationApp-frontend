@@ -1,5 +1,5 @@
 <template>
-	<VCard style="height: 450px; display: flex; flex-direction: column">
+	<VCard style="display: flex; flex-direction: column; overflow: hidden">
 		<VCardTitle
 			class="d-flex align-center px-4 pt-4 pb-2"
 			style="height: 64px"
@@ -9,68 +9,32 @@
 			</span>
 		</VCardTitle>
 		<VDivider />
-		<VCardText
-			class="pa-5 d-flex align-center justify-center"
-			style="flex: 1"
-		>
-			<VRow>
-				<VCol cols="6">
-					<VBtn
-						block
-						variant="tonal"
-						height="110"
-						color="primaryOutline"
-						prependIcon="fas fa-circle-half-stroke"
-						class="d-flex flex-column"
-						style="font-size: 14px"
-						@click="router.push({ name: 'pomodoroTimer' })"
-					>
-						{{ $t('home.pomodoro') }}
-					</VBtn>
-				</VCol>
-				<VCol cols="6">
-					<VBtn
-						block
-						variant="tonal"
-						height="110"
-						color="primaryOutline"
-						prependIcon="fas fa-hourglass-half"
-						class="d-flex flex-column"
-						style="font-size: 14px"
-						@click="router.push({ name: 'timer' })"
-					>
-						{{ $t('home.timer') }}
-					</VBtn>
-				</VCol>
-				<VCol cols="6">
-					<VBtn
-						block
-						variant="tonal"
-						height="110"
-						color="secondaryOutline"
-						prependIcon="fas fa-stopwatch"
-						class="d-flex flex-column"
-						style="font-size: 14px"
-						@click="router.push({ name: 'stopwatch' })"
-					>
-						{{ $t('home.stopwatch') }}
-					</VBtn>
-				</VCol>
-				<VCol cols="6">
-					<VBtn
-						block
-						variant="tonal"
-						height="110"
-						color="secondaryOutline"
-						prependIcon="fas fa-pen"
-						class="d-flex flex-column"
-						style="font-size: 14px"
-						@click="router.push({ name: 'activityHistoryManual' })"
-					>
-						{{ $t('home.manual') }}
-					</VBtn>
-				</VCol>
-			</VRow>
+		<VCardText class="quick pa-4">
+			<!-- one reflex, not four equal choices -->
+			<VBtn
+				class="quick__primary text-none"
+				color="primary"
+				stacked
+				prependIcon="fas fa-circle-half-stroke"
+				@click="router.push({ name: 'pomodoroTimer' })"
+			>
+				<span class="text-subtitle-1 font-weight-bold">{{ $t('home.pomodoro') }}</span>
+				<span class="text-caption">{{ $t('home.pomodoroHint') }}</span>
+			</VBtn>
+			<div class="quick__secondary">
+				<VBtn
+					v-for="option in secondaryOptions"
+					:key="option.route"
+					variant="tonal"
+					color="secondaryOutline"
+					stacked
+					class="text-none"
+					:prependIcon="option.icon"
+					@click="router.push({ name: option.route })"
+				>
+					{{ $t(option.label) }}
+				</VBtn>
+			</div>
 		</VCardText>
 	</VCard>
 </template>
@@ -79,4 +43,53 @@
 	import { useRouter } from 'vue-router'
 
 	const router = useRouter()
+
+	const secondaryOptions = [
+		{ route: 'timer', icon: 'fas fa-hourglass-half', label: 'home.timer' },
+		{ route: 'stopwatch', icon: 'fas fa-stopwatch', label: 'home.stopwatch' },
+		{ route: 'activityHistoryManual', icon: 'fas fa-pen', label: 'home.manual' },
+	]
 </script>
+
+<style scoped>
+	.quick {
+		flex: 1 1 0;
+		min-height: 0;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	/*
+	 * Both rows are `flex: <n> 1 0`: they split whatever height the card has and shrink with it, so
+	 * the widget fills its column exactly and can never demand more room than it is given. Avoid
+	 * `block` + `height` here — `.v-btn--block` is `flex: 1 0 auto`, which in a column parent grows
+	 * on the main axis, ignores `height` and pushes the row below out of the card.
+	 */
+	.quick__primary {
+		flex: 1.4 1 0;
+		width: 100%;
+		min-height: 56px;
+	}
+
+	.quick__secondary {
+		flex: 1 1 0;
+		display: flex;
+		align-items: stretch;
+		gap: 8px;
+		min-height: 0;
+	}
+
+	/*
+	 * `flex` sizes these on the row's main axis (width). Their height comes from `align-items:
+	 * stretch`, which needs an `auto` cross-size — so Vuetify's explicit `.v-btn` height has to be
+	 * cleared, or the buttons keep their intrinsic ~40px and leave dead space under them.
+	 */
+	.quick .quick__secondary > * {
+		flex: 1 1 0;
+		min-width: 0;
+		height: auto;
+		min-height: 44px;
+	}
+</style>

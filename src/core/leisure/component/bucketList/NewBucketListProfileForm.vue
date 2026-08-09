@@ -43,7 +43,7 @@
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { ActivityBucketListProfileRequest } from '@/core/leisure/dto/request/ActivityBucketListProfileRequest.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'

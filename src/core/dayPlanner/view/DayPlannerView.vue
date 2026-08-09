@@ -133,7 +133,7 @@
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { useUndoStack } from '@/composables/general/useUndoStack.ts'
+	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import router from '@/router.ts'
 	import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'

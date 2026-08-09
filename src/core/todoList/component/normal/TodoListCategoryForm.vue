@@ -26,7 +26,7 @@
 	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
 	import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 
 	const { entityToEdit = null } = defineProps<{

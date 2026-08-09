@@ -65,7 +65,7 @@
 	import type { CategoryRequest } from '@/core/activity/dto/request/CategoryRequest.ts'
 	import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 

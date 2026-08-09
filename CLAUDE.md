@@ -72,9 +72,8 @@ touching `main.ts`.
 
 These are the **only** things still living outside `core/`. Do not add to this list without a `migration-revision.md` entry:
 
-- `components/general/dataTable/{BasicTable,DataTable,MyTableFooter}.vue` — framework versions differ in shape; swap is its own project
 - `components/general/calendar/{CalendarGrid,CalendarDayCell}.vue`, `components/general/inputs/DayOfWeekPicker.vue`
-- `composables/general/{EnumComposable,useAutoScroll,useUndoStack,useCalendarWeeks}.ts`, `composables/general/rules/RulesComposition.ts`
+- `composables/general/{EnumComposable,useCalendarWeeks}.ts`
 - `dtos/{dto,enum,response/interface,type}/*` — app-shared DTOs with no framework counterpart
 - `utils/{classDeserializationHelper,daysOfWeek,helperMethods}.ts`
 
@@ -241,8 +240,8 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
   from `_common` itself.
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
-  `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over
-  500 kB is expected and not an error.
+  `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB
+  is expected and not an error.
 
 ## Submodule workflow
 

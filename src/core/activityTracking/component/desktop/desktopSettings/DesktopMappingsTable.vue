@@ -22,7 +22,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import BasicTable from '@/components/general/dataTable/BasicTable.vue'
+	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'

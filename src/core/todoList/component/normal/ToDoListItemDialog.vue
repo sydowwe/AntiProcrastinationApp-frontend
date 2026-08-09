@@ -90,7 +90,7 @@
 	import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'

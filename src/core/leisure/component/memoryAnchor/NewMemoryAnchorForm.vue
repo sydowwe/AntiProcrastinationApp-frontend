@@ -48,7 +48,7 @@
 	import { onMounted, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { MemoryAnchorRequest } from '@/core/leisure/dto/request/MemoryAnchorRequest.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 

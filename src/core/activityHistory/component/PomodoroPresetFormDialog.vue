@@ -176,7 +176,7 @@
 	import { computed, onMounted, ref } from 'vue'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/core/activityHistory/dto/request/PomodoroTimerPresetRequest.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import { usePomodoroTimerPresetCrud } from '@/core/activityHistory/api/pomodoroTimerPresetApi.ts'
 	import { VForm } from 'vuetify/components'

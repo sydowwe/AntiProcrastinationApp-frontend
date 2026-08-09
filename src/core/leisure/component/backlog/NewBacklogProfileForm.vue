@@ -85,7 +85,7 @@
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
 	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
-	import { useGeneralRules } from '@/composables/general/rules/RulesComposition.ts'
+	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
