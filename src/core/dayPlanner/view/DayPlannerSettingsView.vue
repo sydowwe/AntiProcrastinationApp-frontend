@@ -267,7 +267,7 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const { fetchAll, fetchById, createWithResponse, update, deleteEntity } = useRepeatingPlannerTaskApi()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()

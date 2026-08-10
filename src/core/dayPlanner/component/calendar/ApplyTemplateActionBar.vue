@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'

@@ -68,7 +68,7 @@
 	import { ActivityProjectProfileFilter } from '@/core/leisure/dto/request/ActivityProjectProfileFilter.ts'
 	import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const i18n = useI18n()
 	const filter = ref(new ActivityProjectProfileFilter())

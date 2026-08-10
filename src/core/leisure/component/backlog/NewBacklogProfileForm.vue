@@ -84,7 +84,7 @@
 	import type { ActivityBacklogProfileRequest } from '@/core/leisure/dto/request/ActivityBacklogProfileRequest.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'

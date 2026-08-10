@@ -5,7 +5,7 @@ import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskReq
 import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 import { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
-import { convertToEnum } from '@/composables/general/EnumComposable.ts'
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(

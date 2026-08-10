@@ -111,7 +111,7 @@
 	import { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import {
 		useActivityLocationTypeApi,

@@ -62,7 +62,7 @@
 	import type { ActivityProjectProfileRequest } from '@/core/leisure/dto/request/ActivityProjectProfileRequest.ts'
 	import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'

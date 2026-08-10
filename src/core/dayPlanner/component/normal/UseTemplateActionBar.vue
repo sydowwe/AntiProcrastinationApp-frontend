@@ -64,7 +64,7 @@
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { ref, watch } from 'vue'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const emit = defineEmits<{
 		applyTemplate: [conflictResolution: ApplyTemplateConflictResolution, hourOffset: number]

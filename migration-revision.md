@@ -14,12 +14,7 @@ Six of the ten duplicated composables were adopted. These four were not.
 
 ### 1. `useUndoStack` — ~~missing `UndoEntry.date` / `nextUndoDate`~~ — **resolved, see R6**
 
-### 2. `EnumComposable` — missing `convertToEnum` / `getEnumKeyByValue`
-
-- **Local file kept:** `src/composables/general/EnumComposable.ts`
-- **Framework file:** `_common/composable/general/EnumComposable.ts` (has only `getEnumSelectOptions`, which is identical apart from an explicit return type)
-- **Used by:** `convertToEnum` — 6 files; `getEnumKeyByValue` — 1 file
-- **Upstream ask:** add both functions verbatim from the local file.
+### 2. `EnumComposable` — ~~missing `convertToEnum` / `getEnumKeyByValue`~~ — **resolved, see R8**
 
 ### 3. `RulesComposition` — ~~missing `phoneNumberRule`~~ — **resolved, see R5**
 
@@ -184,7 +179,7 @@ Two behavioural deltas, both improvements:
 ### R6. `useUndoStack` + `useAutoScroll` → `_common` (2026-08-10)
 
 Both were genuine framework defects rather than app divergence, so both were fixed upstream and the local copies deleted. Framework commit `93f20ea` on `main`
-(**not yet pushed to `origin` — push before bumping the pointer anywhere else**).
+(pushed to `origin/main` 2026-08-10).
 
 **`useUndoStack`** — `UndoEntry` gained an optional `date`, exposed as `nextUndoDate`; the interface is exported now that consumers build entries against it. This
 restores the planner's `Undo: <description> · go to <date>` button, which navigates to the date the undone action belongs to. Eight `push({ date })` sites across
@@ -239,6 +234,28 @@ concrete item type. Worth a fresh submodule-pointer investigation, but out of sc
 
 - **Upstream ask:** none for the slot mechanism itself — `#item.<key>` is working as designed. Separately, whatever changed in the `_common` bump that broke generic
   `TItem` inference for `BasicTable` needs its own look.
+
+### R8. `EnumComposable` → `_common` (2026-08-10)
+
+§2's gap closed upstream without anyone noticing: `convertToEnum` and `getEnumKeyByValue` now ship in **`_common/utils/enumHelpers.ts`**, byte-identical to the local
+pair. They landed in `utils/`, not next to `getEnumSelectOptions` in `composable/general/EnumComposable.ts`, which is why the old entry still read as unmet — the
+framework's `EnumComposable.ts` genuinely does still export only `getEnumSelectOptions` (identical to the local one apart from the explicit
+`ValueTitleDto<string>[]` return type).
+
+So the local file's three functions repoint to **two** different framework modules, and all 18 importers were split accordingly:
+
+- `convertToEnum` → `@/_common/utils/enumHelpers.ts` — 5 DTOs (`dayPlanner/dto/response/{Calendar,PlannerTask,RepeatingPlannerTask,SuggestionResponse}.ts`,
+  `historyDashboard/dto/response/CalendarActivityDaySummary.ts`). The old entry's count of 6 was one high.
+- `getEnumSelectOptions` → `@/_common/composable/general/EnumComposable.ts` — 13 views/components across `dayPlanner` and `leisure`.
+- `getEnumKeyByValue` — **no call sites left**, same shape as R5's `phoneNumberRule`. It is present upstream in `enumHelpers.ts` regardless, so nothing was lost.
+
+`src/composables/general/EnumComposable.ts` is deleted; the directory is down to `useCalendarWeeks.ts` alone, which stays until §5's calendar trio moves upstream.
+
+Lint holds at 0 errors / 3 warnings and `vue-tsc --build --force` is unchanged at 190 — the repointing neither fixed nor added an error, as expected for an
+import-path swap between identical implementations.
+
+- **Upstream ask:** none. Optionally, re-export the two helpers from `_common/composable/general/EnumComposable.ts` so enum utilities have one import site instead
+  of two — cosmetic, and not worth a pointer bump on its own.
 
 ### R4 addendum
 

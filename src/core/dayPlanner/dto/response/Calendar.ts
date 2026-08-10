@@ -1,5 +1,5 @@
 import { DayType } from '@/_common/dto/enum/DayType.ts'
-import { convertToEnum } from '@/composables/general/EnumComposable.ts'
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { Location } from '@/dtos/enum/Location.ts'
 

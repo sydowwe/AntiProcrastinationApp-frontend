@@ -43,7 +43,7 @@
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'

@@ -4,7 +4,7 @@ import { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts
 import { RecurrenceType } from '@/core/dayPlanner/dto/enum/RecurrenceType.ts'
 import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 import type { DayType } from '@/_common/dto/enum/DayType.ts'
-import { convertToEnum } from '@/composables/general/EnumComposable.ts'
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 
 export class RepeatingPlannerTask {
 	constructor(

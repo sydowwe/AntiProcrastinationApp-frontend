@@ -98,7 +98,7 @@
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
 	import { ExpectedCostTier } from '@/core/leisure/dto/enum/ExpectedCostTier.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 

@@ -22,7 +22,7 @@
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
-	import { getEnumSelectOptions } from '@/composables/general/EnumComposable.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const { activeTemplates } = defineProps<{
 		activeTemplates: TaskPlannerDayTemplate[]
