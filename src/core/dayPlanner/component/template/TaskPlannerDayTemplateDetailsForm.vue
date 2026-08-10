@@ -80,14 +80,14 @@
 
 <script setup lang="ts">
 	import { ref, watch } from 'vue'
-	import { dayTypeOptions } from '@/dtos/enum/dayOptions.ts'
+	import { dayTypeOptions } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
 	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
-	import { locationOptions } from '@/dtos/enum/Location.ts'
+	import { locationOptions } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
-	import DayOfWeekPicker from '@/components/general/inputs/DayOfWeekPicker.vue'
+	import DayOfWeekPicker from '@/_common/component/inputs/DayOfWeekPicker.vue'
 	import type { VForm } from 'vuetify/components'
 
 	const {

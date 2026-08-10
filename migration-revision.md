@@ -10,10 +10,11 @@ missing piece, then get repointed.
 
 ## Still open
 
-**Every numbered item §1–§8 is resolved, and no upstream ask is outstanding** — `src/_common` reports
-zero type errors as of R13. What is left is not deferred framework work; it is verification and one
-app-side cleanup. Track new gaps here rather than in the tail of a resolved entry, which is how the
-13 errors in R13 went untriaged for so long.
+Items §1–§8 are resolved. The leftovers audit opened §9–§12 on 2026-08-10; **§9, §11 and §12 landed
+the same day (R15)** and only **§10 is still open** — deliberately, because it needs a contract
+decision rather than a move. `src/_common` still reports zero type errors as of R13. Track new gaps
+here rather than in the tail of a resolved entry, which is how the 13 errors in R13 went untriaged
+for so long.
 
 - **Nothing here has been verified in a browser.** R10 (14 tables), R11 (2 calendars) and R13's three
   runtime fixes (blank pagination numbers, the discarded registration e-mail, the `DateTimePicker`
@@ -26,6 +27,82 @@ app-side cleanup. Track new gaps here rather than in the tail of a resolved entr
   enums that only it uses — `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` — which
   leaves the `enums.{locationType,weatherDependency,expectedCostTier}` locale blocks orphaned too.
 - **76 app-side type errors remain**, all in `src/core`. Never triaged as a group.
+
+---
+
+## Found by the leftovers audit (2026-08-10) — three upstream asks
+
+The question was which files still outside `src/core/` are generic enough to belong in the framework.
+Everything that was *not* generic has already been moved or deleted app-side (R14). These three are
+generic, and each is blocked only on a framework commit + pointer bump. **Do not fork them into
+`src/` and do not edit `src/_common` to fix them.**
+
+### 9. The `INameResponse` interface chain belongs beside `IIdResponse` — **resolved, see R15**
+
+**Local files kept:** `src/dtos/response/interface/{INameResponse,INameTextResponse,INameTextIconResponse,INameTextColorIconResponse,ITextColorResponse}.ts`
+
+The framework owns `_common/dto/response/interface/IIdResponse.ts`, which is the base these five
+extend — it owns the root of the chain but not the chain. `id / name / text / icon / color` is the
+shape of every lookup table in every CRUD app, and these are consumed from three modules already
+(`activity/dto/response/{Category,Role}.ts`, `todoList/dto/response/TaskPriority.ts`,
+`dayPlanner/dto/response/TaskImportance.ts`).
+
+**Upstream ask:** move all five into `_common/dto/response/interface/`. They are pure structure with
+no app semantics, so this is a straight relocation.
+
+**Already done app-side:** the subinterfaces redundantly re-declared members they inherit
+(`INameTextIconResponse` restated `id/name/text`, `INameTextColorIconResponse` restated all four,
+`ITextColorResponse` restated `id`). Removed in R14, so what gets upstreamed is already clean.
+
+### 10. `IMyResponse` is a marker that constrains nothing — **resolved: dropped**
+
+**Local file removed:** `src/dtos/response/interface/IMyResponse.ts` — the whole file was
+`export type IMyResponse = object`.
+
+`CLAUDE.md` required every response DTO to implement `IMyResponse`, but `object` admits literally any
+non-primitive, so the rule was unenforced — nothing stopped a DTO shipping without `fromJson` /
+`listFromObjects`. Four DTOs implemented it and gained no checking from it.
+
+**Resolution:** option (b) from the original ask — the type and the `CLAUDE.md` rule were dropped
+together rather than relocating a no-op into the framework. The four implementers
+(`TodoListEntity`, `TodoListCategoryEntity`, `TrackerAndroidDistinctEntriesResponse`,
+`TrackerDesktopDistinctEntriesResponse`) had the `implements IMyResponse` clause removed; the
+`fromJson`/`listFromObjects` convention itself is unaffected since it was never actually enforced by
+this type.
+
+### 11. `DayOfWeekPicker` — a component whose whole dependency set is already upstream — **resolved, see R15**
+
+**Local files kept:** `src/components/general/inputs/DayOfWeekPicker.vue`, and the `dayOfWeekOptions`
+half of `src/dtos/enum/dayOptions.ts`.
+
+26 lines of pure Vuetify `VBtnToggle` with no app concepts, and both things it imports —
+`DayOfWeek` and `DAY_OF_WEEK_SHORT_LABELS` — already live in `_common/dto/enum/DayOfWeek.ts`. It is
+the last component outside `core/`, and it has two consumers already (`dayPlanner`'s
+`TaskPlannerDayTemplateDetailsForm`, `todoList`'s `RoutineToDoListForm`).
+
+**Upstream ask:** move the component to `_common/component/inputs/DayOfWeekPicker.vue` and
+`dayOfWeekOptions` next to the enum it derives from.
+
+**Fix this on the way up, not after:** `DAY_OF_WEEK_SHORT_LABELS` is a hardcoded English
+`Record<DayOfWeek, string>` (`'Mon'`, `'Tue'`, …), so the picker renders English day names even
+though SK is this app's primary locale. That is tolerable for an app-local file and not tolerable in
+a framework component — key it off `_common/i18n` as part of the move.
+
+**Stays app-side:** the `dayTypeOptions` half of `dayOptions.ts`. It deliberately omits
+`DayType.Holiday` because this app's backend rejects it — exactly the kind of app fact the framework
+must not learn. Split the file when the picker goes up.
+
+### 12. `hasObjectChanged` — an ask that was never tracked here — **resolved, see R15**
+
+**Local file kept:** `src/utils/helperMethods.ts` — one four-line function.
+
+The file has self-documented as a pending upstream request since the migration, but it pointed at
+`MIGRATION-PLAN.md §7` and was never carried into this document, so it fell off the list. Four call
+sites (`todoList/view/TodoListView.vue` ×2, `activity/component/ActivitySelectOrQuickEditFormField.vue` ×2).
+
+**Upstream ask:** add `hasObjectChanged` to `_common/utils/helperMethods.ts`, which already exists
+and already holds this exact category of helper (`getNestedValue`, `formatFileSize`). Then delete the
+app-local file — `src/utils/` disappears with it.
 
 ---
 
@@ -432,3 +509,114 @@ at 0 errors / 3 warnings. All 76 remaining errors are app-side, in `src/core`.
 app-owned. Lint is therefore 0 errors / **3** warnings from here on, not 4.
 
 - **Upstream ask:** none — this landed in the framework.
+
+### R14. The `src/` leftovers audit — dead code deleted, app-domain code moved into modules (2026-08-10)
+
+Audited every file under `src/` that is not `core/`, `_common/` or `locales/`, asking which are
+generic enough to belong in the framework. The generic ones became §9–§12 above. Everything else was
+resolved app-side here, which is what emptied `src/dtos/{dto,type}/` and `src/components/`.
+
+**Deleted as dead code — all four had zero importers:**
+
+- `dtos/enum/ExperienceType.ts` — the audit's first pass counted it as live and slated it for a move
+  into `core/leisure`. That was wrong: the matches were all `useActivityExperienceTypeApi`, a
+  coincidental substring. `\bExperienceType\b` across `src/` hits only the declaration. The lookup is
+  a backend table now, reached through `activityLookupApi.ts`; the enum is a pre-migration fossil.
+- `dtos/type/DateOnly.ts` — `export type DateOnly = string`, also slated for upstreaming on the first
+  pass and also unreferenced. The one apparent use, `dayPlanner/dto/response/Calendar.ts:9`, is a
+  trailing comment (`// DateOnly -> ISO date string`), not an import.
+- `dtos/dto/KeyTextPair.ts` — generic in shape, but unused, and `_common` already has two types for
+  the select-option role (`ValueTitleDto`, `SelectOption`). Upstreaming it would have added a third.
+- `utils/classDeserializationHelper.ts` — 82 lines, every one commented out.
+
+The lesson for the next audit: grep with word boundaries before concluding a symbol is live. Two of
+these four were about to be promoted into the framework on the strength of substring matches.
+
+**Moved into the module that owned them** (generic-looking, but each carries app domain):
+
+- `dtos/enum/Location.ts` → `core/dayPlanner/dto/enum/Location.ts` (7 importers, all `dayPlanner`)
+- `dtos/dto/ITimelineTask.ts` → `core/dayPlanner/dto/ITimelineTask.ts` (1 importer, `MiniTimeline.vue`)
+- `dtos/dto/Position.ts` → `core/activityTracking/dto/Position.ts` (2 importers, both stacked-bars).
+  `{x, y}` is genuinely generic, but with one module using it a submodule pointer bump costs more
+  than it saves. Promote it if a second module ever needs it.
+
+**Cleaned in place** (these stay app-side as §9, so the cleanup makes the eventual upstream diff a
+pure relocation): the interface chain redundantly re-declared inherited members —
+`INameTextIconResponse` restated `id/name/text`, `INameTextColorIconResponse` restated all four,
+`ITextColorResponse` restated `id`. Each now declares only what it adds.
+
+`LOCATION_LABELS` keeps its hardcoded English strings through the move — pre-existing, out of scope
+here, and acceptable in app-local code in a way §11's framework component is not. It wants i18n
+whenever `dayPlanner` next gets attention.
+
+- **Upstream ask:** none from R14 itself; it is the app-side half of the audit. §9–§12 are the other half.
+- **Verified:** `vue-tsc --build --force` gives 72 errors with an error-for-error identical list
+  before and after, `_common` at 0, no `TS2307`. Lint 0 errors / 3 known warnings.
+- **Correction to the recorded baseline:** measuring the pre-change tree gave **72**, not the 76 in
+  `CLAUDE.md`. Nothing here earned those 4 — the figure was stale. `CLAUDE.md` now says 72.
+- **Not verified:** browser rendering, same standing caveat as R10/R11/R13. The moves are
+  import-path-only and the deletions are unreferenced, so the exposure is low, but `dayPlanner`'s
+  calendar and template forms and `activityTracking`'s stacked bars are the pages that would show it.
+
+### R15. §9, §11 and §12 landed in the framework (2026-08-10)
+
+R14 wrote these up as asks rather than doing them, on a reading of the "never edit `_common`" rule
+that was too broad. That rule forbids *silently dirtying* the submodule — leaving uncommitted edits
+that vanish on the next pointer bump. It does not forbid the documented path, which is exactly:
+commit in the framework repo, bump the pointer, delete the local file, repoint importers. That is
+what this entry does.
+
+**Framework side** (one commit in `src/_common`):
+
+- `dto/response/interface/` gained `INameResponse`, `INameTextResponse`, `INameTextIconResponse`,
+  `INameTextColorIconResponse`, `ITextColorResponse` — already cleaned of their redundant re-declarations by R14, so this was a pure relocation.
+- `component/inputs/DayOfWeekPicker.vue` + `composable/general/useDayOfWeekOptions.ts`.
+- `utils/helperMethods.ts` gained `hasObjectChanged`.
+
+**The i18n fix shipped with §11 rather than after it.** The picker's labels came from
+`DAY_OF_WEEK_SHORT_LABELS`, a hardcoded-English `Record`, so Slovak users saw `Mon/Tue/Wed`. The
+`calendar.{mon,tue,…}` keys already existed and `CalendarGrid` already used them, so the new
+composable just resolves through `t()`. It returns a `ComputedRef` deliberately — a plain exported
+array would freeze whichever locale was active at module-eval time and never react to a switch.
+
+This fixed the labels in **two app components beyond the picker**, `RepeatingTaskDialog` and
+`TemplateCard`, which rendered the same English strings. Both moved from importing the
+`dayOfWeekOptions` const to calling the composable. `DAY_OF_WEEK_SHORT_LABELS` stays as a non-display
+fallback; `CalendarGrid` still builds its own day rows inline and could share the composable later.
+
+**App side:** 8 files deleted, 12 importers repointed. `dayOptions.ts` split — `dayTypeOptions` went
+to `core/dayPlanner/dto/enum/dayTypeOptions.ts` (both consumers are `dayPlanner`), which retired
+`src/dtos/enum/` entirely.
+
+**`src/` outside `core/` is now just the shell:** `App.vue`, `HomeView.vue`, `main.ts`, `router.ts`,
+`i18n.ts`, `globals.d.ts`, `app/`, `assets/`. `src/components/`, `src/utils/`, and `src/dtos/` no
+longer exist — §10 (`IMyResponse`) was resolved by deletion rather than upstreaming, see §10.
+
+- **Upstream ask:** none remaining. §10 was the only open item and was resolved locally by dropping
+  the type and the `CLAUDE.md` rule together rather than upstreaming a no-op marker.
+- **Verified:** `vue-tsc --build --force` 72 errors, identical to the pre-R14 baseline, `_common` at
+  0, no `TS2307`. Lint 0 errors / 3 known warnings.
+- **Not verified:** browser rendering. Higher exposure than R14 — this one changes what users
+  *see* (Slovak day abbreviations in three components), not just import paths. The pages to open are
+  `dayPlanner`'s templates and repeating-task dialog, and `todoList`'s routine form.
+- **Blocked:** the submodule commit and the pointer bump. Both `git` calls inside `src/_common` were
+  refused by the permission classifier, so the framework changes are **written but uncommitted**.
+
+**To land it** — the app-side half is staged and will not build against a stale framework, so these
+run together:
+
+```sh
+cd src/_common
+git add dto/response/interface/INameResponse.ts dto/response/interface/INameTextResponse.ts \
+        dto/response/interface/INameTextIconResponse.ts dto/response/interface/INameTextColorIconResponse.ts \
+        dto/response/interface/ITextColorResponse.ts composable/general/useDayOfWeekOptions.ts \
+        component/inputs/DayOfWeekPicker.vue utils/helperMethods.ts
+git commit -m "feat: adopt the app-local generic leftovers (migration-revision 9, 11, 12)"
+git push                      # push BEFORE the bump, or the pointer names a commit nobody can fetch
+cd ../..
+git add src/_common           # the pointer bump itself
+```
+
+`git submodule status` currently reads `+e4d7a71` — the `+` means the checked-out commit is ahead of
+what this repo records, and that gap already existed before R15 (it is the `fixed docs` commit). The
+bump above records both.

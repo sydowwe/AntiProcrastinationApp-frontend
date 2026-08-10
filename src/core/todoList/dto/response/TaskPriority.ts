@@ -1,4 +1,4 @@
-import type { ITextColorResponse } from '@/dtos/response/interface/ITextColorResponse.ts'
+import type { ITextColorResponse } from '@/_common/dto/response/interface/ITextColorResponse.ts'
 
 export class TaskPriority implements ITextColorResponse {
 	constructor(

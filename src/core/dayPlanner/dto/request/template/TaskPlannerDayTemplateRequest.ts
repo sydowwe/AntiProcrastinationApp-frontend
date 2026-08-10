@@ -2,7 +2,7 @@ import type { DayType } from '@/_common/dto/enum/DayType.ts'
 import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
-import type { Location } from '@/dtos/enum/Location.ts'
+import type { Location } from '@/core/dayPlanner/dto/enum/Location.ts'
 
 export class TaskPlannerDayTemplateRequest {
 	constructor(

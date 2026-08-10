@@ -1,6 +1,4 @@
-import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
-
-export class TrackerDesktopDistinctEntriesResponse implements IMyResponse {
+export class TrackerDesktopDistinctEntriesResponse {
 	constructor(
 		public id: number,
 		public processName: string,

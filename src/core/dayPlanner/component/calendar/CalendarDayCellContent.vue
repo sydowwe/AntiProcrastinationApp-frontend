@@ -92,7 +92,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
-	import { LOCATION_ICONS, LOCATION_LABELS } from '@/dtos/enum/Location.ts'
+	import { LOCATION_ICONS, LOCATION_LABELS } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/core/dayPlanner/component/calendar/CellTaskProgress.vue'

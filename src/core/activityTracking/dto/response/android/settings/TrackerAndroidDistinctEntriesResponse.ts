@@ -1,6 +1,4 @@
-import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
-
-export class TrackerAndroidDistinctEntriesResponse implements IMyResponse {
+export class TrackerAndroidDistinctEntriesResponse {
 	constructor(
 		public id: number,
 		public appLabel: string,

@@ -168,7 +168,7 @@
 	import { GridConfig } from '@/core/activityTracking/component/stackedBars/dto/GridConfig'
 	import StackedBarsTooltip from '@/core/activityTracking/component/stackedBars/StackedBarsTooltip.vue'
 	import type { TooltipData } from '@/core/activityTracking/component/stackedBars/dto/TooltipData.ts'
-	import type { Position } from '@/dtos/dto/Position.ts'
+	import type { Position } from '@/core/activityTracking/dto/Position.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatYAxisLabel, getYAxisInterval } from './stackedBarsUtils'
 

@@ -62,19 +62,19 @@ touching `main.ts`.
 
 ### Reference docs
 
-- `docs/framework/{api,baseDtos,components,composables,utils,filterUsage}.md` — detailed reference for the framework surface summarised below. Ported from the
-  reference app; if one contradicts `src/_common`, the code wins and the doc needs fixing.
-- `docs/modules/{scheduler,notifications}.md` — module maps for two framework modules.
+- `src/_common/docs/{api,baseDtos,components,composables,utils,filterUsage}.md` — detailed reference for the framework surface summarised below. They now live **in
+  the submodule** (upstreamed; the app's own `docs/` is gone), so they travel with the pointer bump. If one contradicts `src/_common`, the code wins and the doc
+  needs fixing — and the fix is a framework commit, not an app-side copy.
+- `src/_common/docs/modules/{scheduler,notifications,user}.md` — module maps for three framework modules (`reminders` has none yet).
 - `migration-revision.md` — every framework gap and the local file kept for it.
 - `dialog-system-unification.md` — why this app's dialog system stayed local.
 
 ### App-local leftovers (deliberate, documented in `migration-revision.md`)
 
-These are the **only** things still living outside `core/`. Do not add to this list without a `migration-revision.md` entry:
+**This list is now empty** (`migration-revision.md` R14 + R15). `src/components/`, `src/utils/`, and `src/dtos/` no longer exist. The last item, `IMyResponse`
+(`export type IMyResponse = object`, a marker that constrained nothing), was resolved by deletion rather than upstreaming — see `migration-revision.md` §10.
 
-- `components/general/inputs/DayOfWeekPicker.vue`
-- `dtos/{dto,enum,response/interface,type}/*` — app-shared DTOs with no framework counterpart
-- `utils/{classDeserializationHelper,helperMethods}.ts`
+Do not add to this list without a `migration-revision.md` entry.
 
 ## Framework surface — check here before writing anything
 
@@ -94,7 +94,8 @@ Import from `@/_common/...`. This replaced the app's own copies during the align
 
 `DateTimeHelper.ts` (~21 loose functions — `formatToDate`, `formatToTime`, `formatLocalized`, `getISOWeek*`, `combineDateAndTime`, …; there is **no** `useDateTime()`
 façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinutes`, `fromDecimalHours`), `colorPalette.ts`, `colorUtils.ts`, `domainColor.ts`,
-`fontAwesomeIcons.ts`, `helperMethods.ts` (`getNestedValue`, `formatFileSize`), `notifications.ts` (**async**, routed through the service worker),
+`fontAwesomeIcons.ts`, `helperMethods.ts` (`capitalizeString`, `uncapitalizeString`, `openInNewTab`, `getNestedValue`, `formatFileSize`, `hasObjectChanged`),
+`notifications.ts` (**async**, routed through the service worker),
 `serviceWorker.ts`,
 `fileDownload.ts`, `validators.ts`, `enumHelpers.ts`, `buildTree.ts`, `checklistHelpers.ts`, `keyboardUtils.ts`
 
@@ -103,7 +104,10 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 - `general/SnackbarComposable.ts` — `useSnackbar()`: `showSuccessSnackbar`, `showErrorSnackbar`, `showSnackbar(msg, config)`
 - `general/LoadingComposable.ts` — `useLoading()`: `showFullScreenLoading()`, `hideFullScreenLoading()`
 - `general/ErrorHandlingFunctions.ts` — `useErrorHandling()`, maps HTTP codes to localized snackbars
-- `general/EnumComposable.ts` — `getEnumSelectOptions()` (for `convertToEnum` / `getEnumKeyByValue` use the app-local copy)
+- `general/EnumComposable.ts` — `getEnumSelectOptions()` (returns `ValueTitleDto[]`); it also re-exports `convertToEnum` / `getEnumKeyByValue`, whose
+  implementations live in `_common/utils/enumHelpers.ts`. There is no app-local copy any more.
+- `general/useDayOfWeekOptions.ts` — `useDayOfWeekOptions()` → `ComputedRef<{value: DayOfWeek, label: string}[]>`, labels localized via `calendar.*`. Prefer it over
+  the `DAY_OF_WEEK_SHORT_LABELS` constant in `dto/enum/DayOfWeek.ts`, which is hardcoded English and is only a non-display fallback.
 - `general/rules/RulesComposition.ts`, `general/useColor.ts`, `general/useCurrentTime.ts`, `general/useBreadcrumbs.ts`,
   `general/continuousQuickChangeComposition.ts`,
   `general/PriceFormatComposable.ts`
@@ -118,7 +122,7 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 `dialog/MyDialog.vue` (base for **all** dialogs), `dialog/{ErrorDialog,LoadingFullscreen,LookupDialog}.vue`,
 `dialog/DialogHost.vue` (mount **once** in `App.vue`; renders the `useDialog()` stack) + `dialog/DialogEntryRenderer.vue` (internal),
 `feedback/{ChipWithIcon,InfoRow,InfoCard,MyCard,SubtleCard,Snackbar,EmailInfoRow}.vue`,
-`inputs/{ColorPicker,IconPicker,IconPickerDialog,InputWithButton,MergedInputs,NullFalseTrueCheckbox}.vue`,
+`inputs/{ColorPicker,DayOfWeekPicker,IconPicker,IconPickerDialog,InputWithButton,MergedInputs,NullFalseTrueCheckbox}.vue`,
 `dateTime/{DateRangePicker,DateTimePicker,MonthYearPicker,MyDateInput,TimeDisplay,TimeDisplayWithProgress,TimePicker,TimeRangePicker}.vue`,
 `dataTable/{AdminTableCell,TableGrid,inlineEditTable/TableCellEditor}.vue`, `ActionBar.vue`, `FilterPanel.vue`, `ExportMenu.vue`, `HierarchyTree.vue`,
 `LookupEditTable.vue`, `TabsLayout.vue`, `MyImg.vue`, `MyPdfViewer.vue`, `form/{AddressFormField,LogTimeForm}.vue`, `calendar/CalendarGrid.vue`
@@ -184,8 +188,8 @@ routed in `src/router.ts` and their locales are spread in `SK.ts`.
 - **URL State**: Store filterable/bookmarkable state (filters, tabs, search queries, pagination) in URL query params so users can share/bookmark/navigate back. Use
   `vue-router` query params for this.
 - **DTOs**: A module's DTOs live in `src/core/<module>/dto/{request,response,enum}/`; base classes and interfaces come from `@/_common/dto/`. Response DTOs must
-  implement `IMyResponse` and have `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have
-  constructors with default params and `static fromJson()`.
+  have `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default
+  params and `static fromJson()`.
     - The select-option shape is `ValueTitleDto` (it was `TitleValueObject` before the migration).
 
 ## Routing
@@ -238,8 +242,9 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The honest baseline is **76 errors, all of them app-side in `src/core`** — `src/_common` is clean as of
+  is incremental and reports an inflated, unstable count. The honest baseline is **72 errors, all of them app-side in `src/core`** — `src/_common` is clean as of
   `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
+  (The figure read 76 until 2026-08-10; measuring it before and after R14 gave 72 both times, so 76 was simply stale — no change earned the difference.)
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB

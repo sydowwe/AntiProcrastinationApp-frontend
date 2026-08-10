@@ -171,7 +171,7 @@
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
-	import { dayOfWeekOptions } from '@/dtos/enum/dayOptions.ts'
+	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
 	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import DayTypeChip from '@/core/dayPlanner/component/misc/DayTypeChip.vue'
@@ -194,6 +194,8 @@
 		applyToday: []
 		toggleCompare: []
 	}>()
+
+	const dayOfWeekOptions = useDayOfWeekOptions()
 </script>
 
 <style scoped>

@@ -167,7 +167,7 @@
 	import { useTodoListItemCrud } from '@/core/todoList/api/todoListItemApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
-	import { hasObjectChanged } from '@/utils/helperMethods.ts'
+	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'

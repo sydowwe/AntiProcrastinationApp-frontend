@@ -63,7 +63,7 @@
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
 	import BaseTodoListRepeatCountFormField from '@/core/todoList/component/BaseTodoListRepeatCountFormField.vue'
-	import DayOfWeekPicker from '@/components/general/inputs/DayOfWeekPicker.vue'
+	import DayOfWeekPicker from '@/_common/component/inputs/DayOfWeekPicker.vue'
 	import SuggestedTimeFormField from '@/core/todoList/component/SuggestedTimeFormField.vue'
 	import TodoListStepsFormField from '@/core/todoList/component/TodoListStepsFormField.vue'
 	import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'

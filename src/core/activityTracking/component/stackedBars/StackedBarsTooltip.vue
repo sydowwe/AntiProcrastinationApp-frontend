@@ -29,7 +29,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { TooltipData } from '@/core/activityTracking/component/stackedBars/dto/TooltipData.ts'
-	import type { Position } from '@/dtos/dto/Position.ts'
+	import type { Position } from '@/core/activityTracking/dto/Position.ts'
 
 	const props = defineProps<{
 		data: TooltipData

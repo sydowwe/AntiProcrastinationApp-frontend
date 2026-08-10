@@ -1,7 +1,7 @@
 import { DayType } from '@/_common/dto/enum/DayType.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
-import type { Location } from '@/dtos/enum/Location.ts'
+import type { Location } from '@/core/dayPlanner/dto/enum/Location.ts'
 
 export class CalendarRequest {
 	constructor(

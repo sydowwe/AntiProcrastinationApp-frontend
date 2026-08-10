@@ -1,6 +1,4 @@
-import type { IMyResponse } from '@/dtos/response/interface/IMyResponse.ts'
-
-export class TodoListCategoryEntity implements IMyResponse {
+export class TodoListCategoryEntity {
 	constructor(
 		public id: number,
 		public name: string,

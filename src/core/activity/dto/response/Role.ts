@@ -1,4 +1,4 @@
-import type { INameTextColorIconResponse } from '@/dtos/response/interface/INameTextColorIconResponse.ts'
+import type { INameTextColorIconResponse } from '@/_common/dto/response/interface/INameTextColorIconResponse.ts'
 
 export class Role implements INameTextColorIconResponse {
 	constructor(

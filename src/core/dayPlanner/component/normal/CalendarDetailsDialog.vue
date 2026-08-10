@@ -80,7 +80,7 @@
 	import type { VForm } from 'vuetify/components'
 	import { CalendarRequest } from '@/core/dayPlanner/dto/request/CalendarRequest.ts'
 	import { DayType } from '@/_common/dto/enum/DayType.ts'
-	import { Location } from '@/dtos/enum/Location.ts'
+	import { Location } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'

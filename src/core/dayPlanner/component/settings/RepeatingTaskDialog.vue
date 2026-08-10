@@ -226,10 +226,10 @@
 	import { VDateInput } from 'vuetify/labs/components'
 	import { getRecurrenceTypeIcon, RecurrenceType } from '@/core/dayPlanner/dto/enum/RecurrenceType.ts'
 	import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
-	import { dayOfWeekOptions } from '@/dtos/enum/dayOptions.ts'
+	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
 	import type { DayType } from '@/_common/dto/enum/DayType.ts'
 	import { getDayTypeColor, getDayTypeIcon } from '@/_common/dto/enum/DayType.ts'
-	import { dayTypeOptions } from '@/dtos/enum/dayOptions.ts'
+	import { dayTypeOptions } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
 	import { RepeatingPlannerTaskRequest } from '@/core/dayPlanner/dto/request/RepeatingPlannerTaskRequest.ts'
 	import type { RepeatingPlannerTask } from '@/core/dayPlanner/dto/response/RepeatingPlannerTask.ts'
 	import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
@@ -243,6 +243,7 @@
 
 	const { fetchAll: fetchImportanceOptions } = useTaskImportanceCrud()
 	const { requiredRule } = useGeneralRules()
+	const dayOfWeekOptions = useDayOfWeekOptions()
 
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()

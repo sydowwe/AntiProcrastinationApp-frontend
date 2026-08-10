@@ -76,7 +76,7 @@
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { hasObjectChanged } from '@/utils/helperMethods.ts'
+	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
 	import { QuickActivityToolsDto } from '@/core/activity/dto/response/QuickActivityToolsDto.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 
