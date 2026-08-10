@@ -143,9 +143,9 @@
 			v-model="trackerOpen"
 			:activityId="trackedTask.activity.id"
 			:activityName="trackedTask.activity.name"
-			:plannerTaskId="trackedTask.id"
 			initialMethod="timer"
 			:initialLength="remainingLength(trackedTask)"
+			@started="handleTrackingStarted"
 			@done="reload"
 		/>
 	</VCard>
@@ -155,8 +155,9 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
-	import TrackTimeDialog from '@/core/dayPlanner/component/normal/TrackTimeDialog.vue'
+	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
@@ -191,6 +192,7 @@
 
 	const trackerOpen = ref(false)
 	const trackedTask = ref<PlannerTask | null>(null)
+	const { markInProgress } = useTaskPlannerCrud()
 
 	const dateLocale = computed(() => (locale.value === 'EN' ? 'en-GB' : 'sk-SK'))
 	const weekdayLabel = computed(() => now.value.toLocaleDateString(dateLocale.value, { weekday: 'long' }))
@@ -245,6 +247,12 @@
 
 	async function finish(task: PlannerTask) {
 		await finishTask(task)
+	}
+
+	function handleTrackingStarted(actualStartTime: Time) {
+		if (trackedTask.value) {
+			void markInProgress(trackedTask.value.id, actualStartTime)
+		}
 	}
 
 	function openTracker(task: PlannerTask) {

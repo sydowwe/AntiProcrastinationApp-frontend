@@ -4,9 +4,9 @@
 		v-model="trackTimeDialog"
 		:activityId="activityId!"
 		:activityName
-		:plannerTaskId
 		:initialMethod="trackTimeMethod"
 		:initialLength
+		@started="handleStarted"
 		@done="handleDone"
 	/>
 </template>
@@ -15,9 +15,10 @@
 	import { ref } from 'vue'
 	import LogTimeBody from '@/core/dayPlanner/component/normal/LogTimeBody.vue'
 	import type { LogTimeResult } from '@/core/dayPlanner/component/normal/LogTimeBody.vue'
-	import TrackTimeDialog from '@/core/dayPlanner/component/normal/TrackTimeDialog.vue'
+	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 
 	const { plannerTaskId } = defineProps<{ plannerTaskId?: number }>()
 
@@ -27,6 +28,7 @@
 	}>()
 
 	const { openDialog } = useDialog()
+	const { markInProgress } = useTaskPlannerCrud()
 
 	const activityId = ref<number | null>(null)
 	const activityName = ref('')
@@ -60,6 +62,12 @@
 		} else if (result.type === 'selectTimer') {
 			trackTimeMethod.value = result.timerType as 'stopwatch' | 'timer' | 'pomodoro'
 			trackTimeDialog.value = true
+		}
+	}
+
+	function handleStarted(actualStartTime: Time) {
+		if (plannerTaskId) {
+			void markInProgress(plannerTaskId, actualStartTime)
 		}
 	}
 

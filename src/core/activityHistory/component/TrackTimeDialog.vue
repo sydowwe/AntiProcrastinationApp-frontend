@@ -75,33 +75,27 @@
 	import PomodoroTimerView from '@/core/activityHistory/view/PomodoroTimerView.vue'
 	import { ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
-	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
-	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 
 	type Method = 'stopwatch' | 'timer' | 'pomodoro'
 
 	const {
 		activityId,
 		activityName,
-		plannerTaskId,
 		initialMethod = 'stopwatch',
 		initialLength,
 	} = defineProps<{
 		activityId: number
 		activityName: string
-		plannerTaskId?: number
 		initialMethod?: Method
 		initialLength?: Time
 	}>()
 
 	const emit = defineEmits<{
+		started: [actualStartTime: Time]
 		done: [{ startTimestamp: Date; length: Time }]
 	}>()
 
 	const model = defineModel<boolean>({ default: false })
-
-	const { patchStatus } = useTaskPlannerCrud()
 
 	const selectedMethod = ref<Method>(initialMethod)
 	const isRunning = ref(false)
@@ -120,9 +114,7 @@
 
 	function handleStarted(actualStartTime: Time) {
 		isRunning.value = true
-		if (plannerTaskId) {
-			patchStatus(plannerTaskId, new PatchPlannerTaskStatusRequest(PlannerTaskStatus.InProgress, actualStartTime))
-		}
+		emit('started', actualStartTime)
 	}
 
 	function handleDone(startTimestamp: Date, length: Time) {

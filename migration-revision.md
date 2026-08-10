@@ -80,22 +80,7 @@ Until it lands, `vue-tsc --build --force` reports 166 rather than 162, and the d
 
 ## Found while rebuilding the home dashboard — a cross-module import to unwind
 
-### 8. `TrackTimeDialog` is shared between `dayPlanner` and `home`
-
-- **Local file kept:** `src/core/dayPlanner/component/normal/TrackTimeDialog.vue` (unchanged, still owned by `dayPlanner`)
-- **New importer:** `src/core/home/component/NowBar.vue`
-
-The now-bar's one-tap "track this block" needs exactly the dialog the planner already has: a stopwatch/timer/pomodoro switch bound to an activity, which patches the
-planner task to `InProgress` on start. Importing it from `core/home` breaks the rule that cross-module imports go through `api/` or `dto/` only.
-
-The alternatives were worse. Duplicating the dialog into `core/home` would fork the status-patch logic (`PatchPlannerTaskStatusRequest` with `actualStartTime`) into
-two places that must stay in step. Reaching for the timer views directly is no cleaner — `TrackTimeDialog` itself already imports
-`@/core/activityHistory/view/{StopWatchView,TimerView,PomodoroTimerView}.vue`, so that pattern is pre-existing in the codebase.
-
-- **Also note:** `core/home/component/DayPlannerWidget.vue` and `NowBar.vue` share `core/home/composable/useTodayPlan.ts`, which is module-local and fine. It is the
-  dialog alone that crosses.
-- **Upstream ask:** none for the framework. Either move `TrackTimeDialog` to a shared location both modules may import, or give `activityHistory` an exported
-  "track time for an activity" dialog that `dayPlanner` and `home` both consume — the timer views it wraps already live there.
+### 8. `TrackTimeDialog` is shared between `dayPlanner` and `home` — **resolved, see R9**
 
 ---
 
@@ -226,14 +211,37 @@ id went unnoticed.
 `getColumnValue` / the local `getNestedValue` wrapper went with the deleted `BasicTable` — the framework's own `getNestedValue` (returns `unknown`) is what the new
 per-column slots key off of implicitly, since the framework component computes `value` itself before invoking the consumer's slot.
 
-**Not part of this fix:** `vue-tsc --build --force` reports 190 errors post-conversion, not the pre-migration 163. The extra ~27 are pre-existing — every one of the
-ten converted files errors identically with the dead `formattedColumn` slot restored (verified by temporarily reverting one file's template while keeping its
-`_common` import), so the cause is the uncommitted `src/_common` submodule bump, not this slot conversion: the framework `BasicTable`'s generic `TItem` now fails to
-infer from `v-model="items"` + `@onEdit`/`@onDelete` on these ten call sites, widening to the `IIdResponse` constraint and breaking every prop that depends on the
-concrete item type. Worth a fresh submodule-pointer investigation, but out of scope here since it predates and is independent of the slot work.
+**Not part of this fix:** `vue-tsc --build --force` reports 190 errors post-conversion, not the pre-migration 163. The extra ~27 are unrelated to the slot work and
+have since been diagnosed — see §9.
 
-- **Upstream ask:** none for the slot mechanism itself — `#item.<key>` is working as designed. Separately, whatever changed in the `_common` bump that broke generic
-  `TItem` inference for `BasicTable` needs its own look.
+- **Upstream ask:** none for the slot mechanism itself — `#item.<key>` is working as designed.
+
+---
+
+## Found while investigating R7's error delta — an unconverted prop contract
+
+### 9. The ten `BasicTable` call sites still bind `v-model="items"`
+
+R7 guessed the 27-error delta was a generic-inference regression from the submodule bump. It is not. The two `BasicTable`s have **different prop contracts**, and the
+call sites were never converted:
+
+| | deleted local `BasicTable` | framework `BasicTable` |
+| --- | --- | --- |
+| `items` | `defineModel<TItem[]>({ required: true })` | plain required prop `items: TItem[]` |
+| `loading` | `defineModel<boolean>('loading', …)` | plain required prop `loading: boolean` |
+
+So `v-model="items"` sends `modelValue`, which the framework component does not declare — it lands in attrs, and the required `items` prop **is never passed**.
+`TItem` therefore has nothing to infer from and widens to its `IIdResponse` constraint, which is what produces the whole cascade (`items: IIdResponse[]`,
+`(item: IIdResponse) => any` for `onEdit`/`onDelete`, …) across the ten files.
+
+- **This is a runtime bug, not just a type error.** `items` is `undefined` inside the component, so these tables render no rows. `v-model:loading` is harmless by
+  luck — it still passes `loading` by name and merely adds an ignored `onUpdate:loading`.
+- **Fix (app-side, no framework change):** at each of the ten call sites, `v-model="items"` → `:items` and `v-model:loading="loading"` → `:loading`. If any of them
+  genuinely needs the table to write back into `items`, that is a separate conversation — the framework component has no such channel.
+- **Affected:** the same ten from R7 — `ActivityTable`, `ActivityCategoryTable`, `ActivityRoleTable`, `IgnoredProcessesTable`, `DayPlannerSettingsView`,
+  `BacklogTable`, `BucketListTable`, `MemoryAnchorTable`, `ProjectTable`, `RoutineSettingsView`.
+- **Separately:** 9 of the 190 errors are internal to `_common/component/dataTable/TableGrid.vue` (`UnwrapRefSimple<TItem>` vs `TItem` around lines 289–398) and are
+  a genuine framework typing bug, independent of the call sites. **Upstream ask:** fix those nine.
 
 ### R8. `EnumComposable` → `_common` (2026-08-10)
 
@@ -256,6 +264,26 @@ import-path swap between identical implementations.
 
 - **Upstream ask:** none. Optionally, re-export the two helpers from `_common/composable/general/EnumComposable.ts` so enum utilities have one import site instead
   of two — cosmetic, and not worth a pointer bump on its own.
+
+### R9. `TrackTimeDialog` → `activityHistory` (2026-08-10)
+
+§8 closed by the second of the two options it proposed: the dialog now belongs to `activityHistory`, alongside the three timer views it was already wrapping.
+
+- **Moved:** `core/dayPlanner/component/normal/TrackTimeDialog.vue` → `core/activityHistory/component/TrackTimeDialog.vue`
+- **Dropped from the dialog:** the `plannerTaskId` prop and the `useTaskPlannerCrud` / `PatchPlannerTaskStatusRequest` / `PlannerTaskStatus` imports. It now emits
+  `started: [actualStartTime: Time]` and knows nothing about the planner. Its remaining imports are `_common` plus its own module.
+- **New in `dayPlanner/api/plannerTaskApi.ts`:** `markInProgress(id, actualStartTime)`, wrapping the existing `patchStatus` with the `InProgress` request. This is
+  what keeps the patch from forking — the concern that made §8 pick the cross-import in the first place. It lives in `api/`, which is one of the two directories the
+  architecture rule lets other modules import.
+- **Both consumers now own the patch:** `dayPlanner/component/normal/LogTimeController.vue` (guarded by its optional `plannerTaskId` prop) and
+  `home/component/NowBar.vue` (guarded by `trackedTask`), each handling `@started` with a `markInProgress` call.
+
+The cross-module import is gone in the sense that mattered: `core/home` still reaches into `core/dayPlanner`, but now only through `api/` and `dto/`, which is
+allowed. `DayPlannerLogTimeController.vue` is untouched — it passes `plannerTaskId` to `LogTimeController`, which still takes it.
+
+Lint 0 errors / 3 warnings and `vue-tsc --build --force` 190, both unchanged.
+
+- **Upstream ask:** none.
 
 ### R4 addendum
 
