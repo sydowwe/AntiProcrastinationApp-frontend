@@ -12,11 +12,11 @@
 		</div>
 		<PersonalBestsPanel :timePeriods="timePeriods" />
 		<BasicTable
-			v-model="timePeriods"
+			:items="timePeriods"
 			v-model:itemsPerPage="itemsPerPage"
 			v-model:page="page"
 			v-model:sortBy="sortBy"
-			v-model:loading="loading"
+			:loading
 			:columns
 			:itemsLength="timePeriods.length"
 			:showSelect="false"

@@ -8,6 +8,27 @@ missing piece, then get repointed.
 
 ---
 
+## Still open
+
+**Every numbered item §1–§8 is resolved, and no upstream ask is outstanding** — `src/_common` reports
+zero type errors as of R13. What is left is not deferred framework work; it is verification and one
+app-side cleanup. Track new gaps here rather than in the tail of a resolved entry, which is how the
+13 errors in R13 went untriaged for so long.
+
+- **Nothing here has been verified in a browser.** R10 (14 tables), R11 (2 calendars) and R13's three
+  runtime fixes (blank pagination numbers, the discarded registration e-mail, the `DateTimePicker`
+  label) are all correct by construction and none has been loaded. R10 is the argument for caring:
+  the bug it fixed shipped precisely because nobody opened the page.
+- **`core/leisure/component/backlog/BacklogFilterPanel.vue` is dead code awaiting deletion.** Zero
+  importers; it is a pre-migration duplicate of the `FilterPanel` now inlined in `BacklogView.vue`,
+  from when `locationType` / `weatherDependency` / `expectedCostTier` were enums rather than lookup
+  tables. Its 4 type errors are that staleness, not a live bug. Delete it together with the three
+  enums that only it uses — `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` — which
+  leaves the `enums.{locationType,weatherDependency,expectedCostTier}` locale blocks orphaned too.
+- **76 app-side type errors remain**, all in `src/core`. Never triaged as a group.
+
+---
+
 ## Deferred at step 6 (composables)
 
 Six of the ten duplicated composables were adopted. These four were not.
@@ -26,16 +47,7 @@ Six of the ten duplicated composables were adopted. These four were not.
 
 21 of the 24 duplicated components were adopted. These stayed local.
 
-### 5. `CalendarGrid` — framework exposes only `dateRange`
-
-- **Local file kept:** `src/components/general/calendar/CalendarGrid.vue`
-- **Framework file:** `_common/component/calendar/CalendarGrid.vue`
-- **Gap:** local does `defineExpose({ calendarData, dateRange, loading, refresh })`; the framework does `defineExpose({ dateRange })`.
-- **Used by:** `src/views/dayPlanner/PlannerCalendarView.vue` calls `refresh()` at 5 sites and reads
-  `calendarData` at 2, through a template ref. `src/views/history/HistoryCalendarView.vue` also imports it.
-- **Upstream ask:** widen the expose to `{ calendarData, dateRange, loading, refresh }`.
-- The local file's internal imports have already been repointed at `_common`
-  (`DateRangePicker`), so only the component itself and the two importers need switching once the expose lands.
+### 5. `CalendarGrid` — ~~framework exposes only `dateRange`~~ — **resolved, see R11**
 
 ### 6. The `dataTable` family — `BasicTable` / `DataTable` / `MyTableFooter` — **resolved, see R7**
 
@@ -43,38 +55,7 @@ Six of the ten duplicated composables were adopted. These four were not.
 
 ## Found at step 13 (scheduler + reminders) — a framework bug, nothing kept local
 
-### 7. `FilterPanel` mistypes its `#fields` slot prop
-
-- **Framework file:** `_common/component/FilterPanel.vue`
-- **Nothing is forked for this** — it is listed here only so the type-error count is explainable and the fix has somewhere to be recorded.
-
-`FilterPanel` declares its draft as:
-
-```ts
-const draft = ref<T>(cloneFilter(filter.value)) as { value: T }
-```
-
-The `as { value: T }` cast suppresses a `UnwrapRef` complaint at the definition, but it also becomes the type handed to the `#fields` slot. So every consumer writing
-the natural
-
-```vue
-<template #fields="{ draft }">
-    <VSelect v-model="draft.someField" />
-</template>
-```
-
-gets `Property 'someField' does not exist on type '{ value: { … } }'`, once per field.
-
-- **Affects:** ~20 errors across the framework's own `reminders` views (already inside the 162-error baseline) and 5 in `_common/modules/scheduler`
-  (`JobRunHistory.vue`, `SchedulerJobsView.vue`).
-- **Runtime is fine.** Vue unwraps the ref when it passes the slot prop, so `draft.someField` is the correct thing to write — only the *type* is wrong. Rewriting
-  call sites to `draft.value.someField`
-  would type-check and then break at runtime, which is why nothing here was "fixed".
-- **Upstream ask:** drop the cast and let the slot expose `T`. Either type the binding as
-  `Ref<UnwrapRef<T>>` and expose `draft.value`, or keep `ref` and cast to `{ value: UnwrapRef<T> }`
-  while declaring the slot as `{ draft: T }` via `defineSlots`.
-
-Until it lands, `vue-tsc --build --force` reports 166 rather than 162, and the delta is entirely this.
+### 7. `FilterPanel` mistypes its `#fields` slot prop — ~~one cast, ~25 errors~~ — **resolved, see R12**
 
 ---
 
@@ -211,37 +192,47 @@ id went unnoticed.
 `getColumnValue` / the local `getNestedValue` wrapper went with the deleted `BasicTable` — the framework's own `getNestedValue` (returns `unknown`) is what the new
 per-column slots key off of implicitly, since the framework component computes `value` itself before invoking the consumer's slot.
 
-**Not part of this fix:** `vue-tsc --build --force` reports 190 errors post-conversion, not the pre-migration 163. The extra ~27 are unrelated to the slot work and
-have since been diagnosed — see §9.
+**Not part of this fix:** `vue-tsc --build --force` reports 190 errors post-conversion, not the pre-migration 163. The extra ~27 were unrelated to the slot work and
+have since been diagnosed and fixed — see R10.
 
 - **Upstream ask:** none for the slot mechanism itself — `#item.<key>` is working as designed.
 
----
+### R10. The table call sites bound `v-model="items"` against a plain prop (2026-08-10)
 
-## Found while investigating R7's error delta — an unconverted prop contract
-
-### 9. The ten `BasicTable` call sites still bind `v-model="items"`
-
-R7 guessed the 27-error delta was a generic-inference regression from the submodule bump. It is not. The two `BasicTable`s have **different prop contracts**, and the
-call sites were never converted:
+R7 attributed its 27-error delta to a generic-inference regression from the submodule bump. That was wrong. The two `BasicTable`s have **different prop contracts**,
+and the call sites were never converted:
 
 | | deleted local `BasicTable` | framework `BasicTable` |
 | --- | --- | --- |
 | `items` | `defineModel<TItem[]>({ required: true })` | plain required prop `items: TItem[]` |
 | `loading` | `defineModel<boolean>('loading', …)` | plain required prop `loading: boolean` |
 
-So `v-model="items"` sends `modelValue`, which the framework component does not declare — it lands in attrs, and the required `items` prop **is never passed**.
-`TItem` therefore has nothing to infer from and widens to its `IIdResponse` constraint, which is what produces the whole cascade (`items: IIdResponse[]`,
-`(item: IIdResponse) => any` for `onEdit`/`onDelete`, …) across the ten files.
+`v-model="items"` sends `modelValue`, which the framework component does not declare — it landed in attrs, and the required `items` prop **was never passed**.
+`TItem` then had nothing to infer from and widened to its `IIdResponse` constraint, which is what produced the whole cascade (`items: IIdResponse[]`,
+`(item: IIdResponse) => any` for `onEdit`/`onDelete`, …).
 
-- **This is a runtime bug, not just a type error.** `items` is `undefined` inside the component, so these tables render no rows. `v-model:loading` is harmless by
-  luck — it still passes `loading` by name and merely adds an ignored `onUpdate:loading`.
-- **Fix (app-side, no framework change):** at each of the ten call sites, `v-model="items"` → `:items` and `v-model:loading="loading"` → `:loading`. If any of them
-  genuinely needs the table to write back into `items`, that is a separate conversation — the framework component has no such channel.
-- **Affected:** the same ten from R7 — `ActivityTable`, `ActivityCategoryTable`, `ActivityRoleTable`, `IgnoredProcessesTable`, `DayPlannerSettingsView`,
-  `BacklogTable`, `BucketListTable`, `MemoryAnchorTable`, `ProjectTable`, `RoutineSettingsView`.
-- **Separately:** 9 of the 190 errors are internal to `_common/component/dataTable/TableGrid.vue` (`UnwrapRefSimple<TItem>` vs `TItem` around lines 289–398) and are
-  a genuine framework typing bug, independent of the call sites. **Upstream ask:** fix those nine.
+**This was a runtime bug, not just a type error** — `items` was `undefined` inside the component, so those tables rendered no rows. `v-model:loading` was harmless by
+luck: it still passed `loading` by name and merely added an ignored `onUpdate:loading`.
+
+**It was 14 call sites, not the ten R7 named.** R7's ten came from the `formattedColumn` slot conversion, a different set. The real set is every consumer of
+`BasicTable` (12) plus `DataTable` (2) — `DataTable` declares `items`/`loading` as plain props identically. Four of them bind the array under another name
+(`tasks`, `timePeriods`, `mappings` ×2), which is why a `v-model="items"` grep under-counts:
+
+`ActivityTable`, `ActivityCategoryTable`, `ActivityRoleTable`, `ProjectTable`, `BacklogTable`, `BucketListTable`, `MemoryAnchorTable`, `IgnoredProcessesTable`,
+`DesktopMappingsTable`, `AndroidMappingsTable`, `DayPlannerSettingsView`, `RoutineSettingsView`, and the two `DataTable` ones —
+`DesktopDistinctEntriesTable`, `AndroidDistinctEntriesTable`.
+
+Each became `:items` / `:items="<name>"` and `:loading`. Nothing was lost by dropping the two-way binding: the framework components emit no update for either prop,
+so no consumer could have been receiving write-back in the first place.
+
+**`vue-tsc --build --force` fell 190 → 158**, i.e. below the old 163 baseline, and all fourteen files left the error list outright. What remains is the framework's
+own (`TableGrid.vue` 9, `reminders` ~26, `scheduler` 4 — the §7 `FilterPanel` bug) plus pre-existing view-level errors. Lint holds at 0 errors / 3 warnings.
+`CLAUDE.md`'s stated baseline is updated to 158.
+
+- **Not fixed here:** the 9 errors internal to `_common/component/dataTable/TableGrid.vue` (`UnwrapRefSimple<TItem>` vs `TItem`, lines 289–398) are a genuine
+  framework typing bug, independent of the call sites. **Upstream ask:** fix those nine.
+- **Not verified:** that the fourteen tables now render rows in the browser. The change is correct by construction, but it went untested through the same gap that
+  let the empty tables ship.
 
 ### R8. `EnumComposable` → `_common` (2026-08-10)
 
@@ -284,6 +275,156 @@ allowed. `DayPlannerLogTimeController.vue` is untouched — it passes `plannerTa
 Lint 0 errors / 3 warnings and `vue-tsc --build --force` 190, both unchanged.
 
 - **Upstream ask:** none.
+
+### R11. `CalendarGrid` + `CalendarDayCell` → `_common` (2026-08-10)
+
+§5's stated gap was wrong, which is why it read as unfixable. The framework does not expose less of the same state — it holds **no** state to expose. The two
+components have opposite data ownership:
+
+| | deleted local `CalendarGrid` | framework `CalendarGrid` |
+| --- | --- | --- |
+| data | fetches itself: `useCalendarQuery()` + an optional `fetchFn` prop, into an internal `calendarData` ref | plain `days: ICalendar[]` prop |
+| loading | internal ref | plain `loading: boolean` prop |
+| date range | internal, `watch` → refetch | internal, `watch` → **emits `dateRangeChange`** |
+| expose | `{ calendarData, dateRange, loading, refresh }` | `{ dateRange }` |
+
+So the recorded upstream ask ("widen the expose") could never have landed: there is no `calendarData` or `refresh` upstream to widen to. The framework grid is
+presentational by design, and the fix was app-side only — **no framework change, no submodule bump.** Fetching moved up into the two views:
+
+- **`core/dayPlanner/view/PlannerCalendarView.vue`** — owns `calendarDays` / `loading` / `dateRange` refs and a local `refresh()` that calls
+  `useCalendarQuery().fetchFiltered(new CalendarFilter(...))`. The template ref is gone; the five `calendarGridRef.value?.refresh()` call sites became `refresh()`,
+  and `calendarDays` stopped being a `computed` peeking into the child's expose. The `dayTasksMap` watch now watches the local ref directly and dropped its
+  `{ deep: true }` — the array is replaced wholesale by `refresh()`, so deep tracking only meant re-running the per-day task fetch on any nested mutation.
+- **`core/activityHistory/view/HistoryCalendarView.vue`** — its `fetchFn` prop became a `@dateRangeChange` handler over the same
+  `getCalendarActivitySummary` call, writing `days` / `loading`.
+
+**Also deleted, all only reachable through the local grid:** `components/general/calendar/CalendarDayCell.vue` (the framework inlines the cell and renders
+`CalendarDayCellHeader` directly), `composables/general/useCalendarWeeks.ts`, and `utils/daysOfWeek.ts`. `src/composables/` is gone entirely.
+
+Three behavioural deltas, all improvements:
+
+- **Week bucketing no longer goes through UTC.** `useCalendarWeeks` keyed weeks with `monday.toISOString().slice(0, 10)` on a local-midnight `Date`; east of UTC that
+  shifts to the previous day and days land in the wrong week row. The framework uses `getISOWeekStart` + `formatDateForApi`, both local-time.
+- **The toolbar and day headers are localized.** The local grid hardcoded English (`"Days to Show"`, and `allDaysOfWeek`'s `'Monday'`…). The framework reads
+  `calendar.*`, which ships in `_common/_locales/common.sk.ts`. That namespace is Slovak-only and EN.ts does not spread the framework `common`, so — same treatment
+  as R5's `validation` and R6's `general.undoSuccess` — **`calendar` is mirrored into `src/locales/common.en.ts`**.
+- **"Weekend" now means Sat–Sun.** The local filter was `day.index >= 5`, i.e. Fri–Sat–Sun, under a label that read `Weekend (Fri-Sun)`. The framework filters on
+  `isWeekend` and its label says So–Ne, so the two agree now.
+
+`vue-tsc --build --force` **158 → 155**; lint holds at 0 errors / 3 warnings. The four errors inside `_common/component/calendar/{CalendarGrid,CalendarDayCellHeader}.vue`
+were already in the 158 (verified by stashing) — they are framework typing bugs, not fallout from this change.
+
+- **Upstream ask:** fix those four. `ICalendar` has no `id`, but `CalendarGrid` reads `dayData.id` twice for `selectedIds`; and `formatToDateWithDay` /
+  `CalendarDayCellHeader` are handed `ICalendar.date`, which is a `string`, where they want a `Date`. Either add `id: number` to `ICalendar` and a string overload
+  to `formatToDateWithDay`, or parse at the call site.
+- **Not verified:** that the two calendars render in the browser. Same untested-by-construction caveat as R10.
+
+### R12. `FilterPanel`'s `#fields` slot type → `_common` (2026-08-10)
+
+§7's diagnosis was right and its proposed fixes were both heavier than needed. The cast is one token wrong, not structurally wrong. Framework commit `010c981` on
+`main`:
+
+```diff
+-const draft = ref<T>(cloneFilter(filter.value)) as { value: T }
++const draft = ref(cloneFilter(filter.value)) as Ref<T>
+```
+
+**Why the original cast was reached for, and why it overshot.** `ref<T>()` types as `Ref<UnwrapRef<T>>` — TS's `ref` signature recursively unwraps nested refs in the
+*type*, and for a plain filter DTO that is structurally identical at runtime but a distinct type to the compiler. So both round-trip assignments complain: `onApply`'s
+`filter.value = draft.value` wants `T` and has `UnwrapRef<T>`, and `onReset`'s `draft.value = cloneFilter(fresh)` wants the reverse. `as { value: T }` silences both.
+
+The overshoot is that `draft` has **two** roles — internal state, and the payload of `<slot name="fields" :draft="draft" />`. A cast picked to satisfy the first
+silently redefined the second. `{ value: T }` is not a `Ref`, so vue-tsc applies no template unwrapping and types the slot as `{ draft: { value: T } }`, while at
+runtime `ref()` did create a real ref and Vue unwraps it to `T`. Consumers writing `draft.someField` were correct and errored anyway, once per field.
+
+`Ref<T>` is exactly as dishonest as the cast it replaces — it asserts away the same `UnwrapRef` mismatch — but it preserves the ref-ness the template type-checker
+keys off, so both assignments still compile *and* the slot unwraps to `T`. The `defineSlots<{ fields(props: { draft: T }): any }>()` fallback was not needed.
+Type-only change: no runtime difference, no call site touched.
+
+**`vue-tsc --build --force` 155 → 102.** Verified as a strict subset — the before/after error lists were diffed and nothing new appeared. Lint holds at 0 errors /
+3 warnings. `CLAUDE.md`'s stated baseline is updated to 102.
+
+**§7 under-counted by more than half.** It named ~25 errors in `reminders` (26) and `scheduler` (5); the real total is 53 across ten files, because it never
+looked at this app's own consumers. The four `leisure` views are 22 of them:
+
+| | errors cleared |
+| --- | --- |
+| `_common/modules/reminders/view/{ReminderUpcoming,ReminderDefinitions,ReminderDispatchHistory,MyReminders}View.vue` | 8 + 7 + 6 + 5 |
+| `core/leisure/view/{Backlog,BucketList,Projects,MemoryAnchors}View.vue` | 8 + 5 + 5 + 4 |
+| `_common/modules/scheduler/{component/JobRunHistory,view/SchedulerJobsView}.vue` | 4 + 1 |
+
+- **Not fixed here, and not related:** `core/leisure/component/backlog/BacklogFilterPanel.vue` still has 4 errors. They are pre-existing (present in the 155 baseline) and
+  independent of the slot — that component takes its own `defineModel<ActivityBacklogProfileFilter>`, and three of its `v-model`s name fields the DTO does not have
+  (`locationTypes` / `weatherDependencies` / `expectedCostTiers` vs the DTO's `…Ids`). That looks like a live runtime bug — those three filters cannot be applying —
+  but it is a separate app-side fix.
+- **Upstream ask:** none — landed in the framework.
+
+### R13. The framework's remaining 26 type errors → 0 (2026-08-10)
+
+Framework commit `bc36ba5`. This closes R10's and R11's open upstream asks and the 13 errors no entry
+had ever looked at. **`src/_common` now reports zero type errors, down from 43.**
+
+The reason nobody had triaged the 13 is that `CLAUDE.md`'s baseline note attributed the framework's
+share to three named bugs; with `FilterPanel`'s 53 gone (R12) it became obvious the named bugs did not
+add up to the total.
+
+**Three were live runtime bugs, not typing noise:**
+
+- **`MyTableFooter` rendered blank page numbers.** It destructured `pageLabel` from VPagination's
+  `#item` slot; the slot exposes `{ isActive, key, page, props }` and never had a `pageLabel`
+  (confirmed against the Vuetify API, not guessed). Now reads `page`, aliased — `page` is also a
+  model in that component.
+- **`RegistrationView` never stored the registered e-mail.** `userStore.userName = …` writes to a
+  `computed` over `currentUser.email`; Vue discards writes to a readonly computed and warns. Writes
+  `currentUser.email` instead.
+- **`DateTimePicker` declared `label: string` as required** while its own template does
+  `label ?? $t('dateTime.date')`. `TableCellEditor` was passing `:label="undefined"` to get around it.
+  The prop is optional now and the workaround is gone.
+
+**Typing fixes, grouped by root cause:**
+
+- **The `ref` unwrapping trap again (R12's).** `TableGrid`'s `snapshots` was `ref<Map<number, TItem>>`,
+  typed `Map<number, UnwrapRefSimple<TItem>>`, which produced 5 of its 9. Cast to
+  `Ref<Map<number, TItem>>`, same remedy as `draft`.
+- **Signatures narrower than their implementations.** `getNestedValue` took
+  `Record<string, unknown>`, which no `T extends SomeInterface` can satisfy (interfaces have no
+  implicit index signature) — widened to `object`, fixing 3 in `TableGrid` and unblocking generic
+  callers everywhere. `formatToDateWithDay` / `formatToDateWithoutYear` took `Date | null` though
+  dayjs parses ISO strings natively — widened to accept `string`, which is what `ICalendar.date` is.
+- **`ICalendar` gained `id: number`** — R11 guessed right. `CalendarGrid`'s `selectedIds: number[]`
+  prop already assumed it, and both implementers (`dayPlanner/Calendar`,
+  `historyDashboard/CalendarActivityDaySummary`) already carry one, so nothing had to change to
+  supply it.
+- **One union instead of three.** `EditableTableCell.value`, `.newValue`, `TableCellEditor`'s prop and
+  emit, and `UseEditableCell` each declared their own idea of a cell value (`string | null`,
+  `unknown`, a 5-member union). They are now one exported `EditableCellValue`, which also gained
+  `Date` and `File` — the DATE/DATETIME and IMAGE cell types always produced those, and narrowing the
+  others surfaced the gap immediately.
+- **`TableHeaderComposable` dropped `justify`**, which is not a `DataTableHeader` property and was
+  silently ignored by Vuetify; `cellProps.style.textAlign` is what actually centres cells. `align`
+  gained its literal type.
+- **`HierarchyTree` declares its `node` slot via `defineSlots`.** It recurses and forwards its own
+  slot into itself, so the slot type referenced itself and vue-tsc bailed with TS7022; an explicit
+  annotation breaks the cycle.
+- **`BasicTable`'s `expanded` model is `string[]`**, matching `DataTable` and Vuetify. No consumer
+  bound it, so the wrong type was never exercised.
+- `ReminderDashboardApi` constrains `TFilter` to `object`; `MyPasswordInput` types `rules` as
+  `ValidationRule[]` rather than `unknown[]`.
+
+**R2 is closed too** — `SETUP.md` now has the notifications service-worker section: the
+`vite-plugin-pwa` `devOptions` block (with `type: 'module'`, since Vite serves ESM in dev) and the
+lodash 4.18.0 pin whose broken `_.template` makes workbox emit no `sw.js` at all. **R8's optional
+re-export landed** as well: `EnumComposable.ts` re-exports `convertToEnum` / `getEnumKeyByValue`, so
+enum utilities have one import site.
+
+**`vue-tsc --build --force` 102 → 76**, verified as a strict subset against the 102 list. Lint holds
+at 0 errors / 3 warnings. All 76 remaining errors are app-side, in `src/core`.
+
+- **Upstream ask:** none outstanding. This is the first point in the migration where `_common` is
+  clean.
+- **Not verified:** that any of this renders correctly in the browser — same caveat as R10 and R11,
+  and it now covers the three runtime fixes above, which are exactly the kind that only a real page
+  load confirms.
 
 ### R4 addendum
 

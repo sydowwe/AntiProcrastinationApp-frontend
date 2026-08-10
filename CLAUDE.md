@@ -72,10 +72,9 @@ touching `main.ts`.
 
 These are the **only** things still living outside `core/`. Do not add to this list without a `migration-revision.md` entry:
 
-- `components/general/calendar/{CalendarGrid,CalendarDayCell}.vue`, `components/general/inputs/DayOfWeekPicker.vue`
-- `composables/general/{EnumComposable,useCalendarWeeks}.ts`
+- `components/general/inputs/DayOfWeekPicker.vue`
 - `dtos/{dto,enum,response/interface,type}/*` — app-shared DTOs with no framework counterpart
-- `utils/{classDeserializationHelper,daysOfWeek,helperMethods}.ts`
+- `utils/{classDeserializationHelper,helperMethods}.ts`
 
 ## Framework surface — check here before writing anything
 
@@ -124,8 +123,11 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 `dataTable/{AdminTableCell,TableGrid,inlineEditTable/TableCellEditor}.vue`, `ActionBar.vue`, `FilterPanel.vue`, `ExportMenu.vue`, `HierarchyTree.vue`,
 `LookupEditTable.vue`, `TabsLayout.vue`, `MyImg.vue`, `MyPdfViewer.vue`, `form/{AddressFormField,LogTimeForm}.vue`, `calendar/CalendarGrid.vue`
 
-> `FilterPanel`'s `#fields` slot prop is mistyped as `{ value: T }`. Write `draft.someField` anyway — that is correct at runtime; the type error is a known framework
-> bug (`migration-revision.md` §7). Do **not** "fix" it to `draft.value.someField`.
+> `FilterPanel`'s `#fields` slot prop exposes `T` — write `draft.someField`. It used to be mistyped as `{ value: T }`; that is fixed (`migration-revision.md` R12),
+> so `draft.value.someField` is wrong at both type and runtime level.
+
+> Editable-cell values are the exported `EditableCellValue` union (`dto/dto/table/EditableTableCell.ts`) — use it rather than re-declaring
+> `string | number | boolean | …` inline, which is how the four call sites drifted apart before R13.
 
 ### `_common/nav/`, `_common/auth/`, `_common/store/`
 
@@ -236,8 +238,8 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The honest baseline is **163 errors**; 5 of those are the `FilterPanel` framework bug and ~20 more come
-  from `_common` itself.
+  is incremental and reports an inflated, unstable count. The honest baseline is **76 errors, all of them app-side in `src/core`** — `src/_common` is clean as of
+  `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB

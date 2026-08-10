@@ -5,11 +5,11 @@
 			v-model:formData="formData"
 		/>
 		<BasicTable
-			v-model="mappings"
+			:items="mappings"
 			v-model:itemsPerPage="itemsPerPage"
 			v-model:page="page"
 			v-model:sortBy="sortBy"
-			v-model:loading="loading"
+			:loading
 			:columns="columns"
 			:itemsLength="totalItems"
 			:showActionsHeader="false"

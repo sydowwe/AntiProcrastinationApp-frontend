@@ -7,11 +7,11 @@
 			@save="emit('save')"
 		/>
 		<DataTable
-			v-model="items"
+			:items
 			v-model:itemsPerPage="itemsPerPage"
 			v-model:page="page"
 			v-model:sortBy="sortBy"
-			v-model:loading="loading"
+			:loading
 			:columns="columns"
 			:itemsLength="totalItems"
 			:showActions="false"

@@ -358,5 +358,28 @@ const common = {
 			sun: `Sun`,
 		},
 	},
+	// Mirrors the framework's Slovak-only `calendar` namespace (`_common/_locales/common.sk.ts`),
+	// consumed by `_common/component/calendar/CalendarGrid.vue`. EN.ts does not spread the framework
+	// `common`, so without this EN users see raw keys in the calendar toolbar and day headers.
+	calendar: {
+		daysToShow: `Days to show`,
+		allWeek: `All week`,
+		workdays: `Workdays (Mon-Fri)`,
+		weekend: `Weekend (Sat-Sun)`,
+		monday: `Monday`,
+		tuesday: `Tuesday`,
+		wednesday: `Wednesday`,
+		thursday: `Thursday`,
+		friday: `Friday`,
+		saturday: `Saturday`,
+		sunday: `Sunday`,
+		mon: `Mon`,
+		tue: `Tue`,
+		wed: `Wed`,
+		thu: `Thu`,
+		fri: `Fri`,
+		sat: `Sat`,
+		sun: `Sun`,
+	},
 }
 export default common

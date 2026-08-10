@@ -1,9 +1,11 @@
 <template>
 	<CalendarGrid
-		ref="calendarGridRef"
 		class="py-4"
+		:days="calendarDays"
+		:loading
 		:selectedIds="selectedDayIds"
 		@dayClick="handleDayClick"
+		@dateRangeChange="handleDateRangeChange"
 	>
 		<template #toolbar-end>
 			<VBtn
@@ -68,17 +70,18 @@
 	<CalendarDetailsDialog
 		v-model="detailsDialog"
 		:calendar="editingDay ?? undefined"
-		@updated="calendarGridRef?.refresh()"
+		@updated="refresh()"
 	/>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { onMounted, ref, watch } from 'vue'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { CalendarRequest } from '@/core/dayPlanner/dto/request/CalendarRequest.ts'
+	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
 	import type { DayType } from '@/_common/dto/enum/DayType.ts'
-	import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
+	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import CalendarDayCellContent from '@/core/dayPlanner/component/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/core/dayPlanner/component/calendar/CalendarStatsBar.vue'
 	import BulkApplyTemplateForm from '@/core/dayPlanner/component/calendar/BulkApplyTemplateForm.vue'
@@ -113,7 +116,7 @@
 	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
-	const { updateWithResponse: updateCalendar, fetchByDate } = useCalendarQuery()
+	const { updateWithResponse: updateCalendar, fetchByDate, fetchFiltered: fetchCalendars } = useCalendarQuery()
 
 	const {
 		isBulkSelectMode,
@@ -128,7 +131,9 @@
 		toggleDaySelection,
 	} = useCalendarModes()
 
-	const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
+	const calendarDays = ref<Calendar[]>([])
+	const loading = ref(false)
+	const dateRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
 	const dayTasksMap = ref<Map<number, PlannerTask[]>>(new Map())
 	const activeTemplates = ref<TaskPlannerDayTemplate[]>([])
 	const applyConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
@@ -136,7 +141,25 @@
 	const detailsDialog = ref(false)
 	const editingDay = ref<Calendar | null>(null)
 
-	const calendarDays = computed(() => (calendarGridRef.value?.calendarData ?? []) as Calendar[])
+	function handleDateRangeChange(range: { start: Date | null; end: Date | null }) {
+		dateRange.value = range
+		refresh()
+	}
+
+	async function refresh() {
+		if (!dateRange.value.start || !dateRange.value.end) {
+			calendarDays.value = []
+			return
+		}
+		loading.value = true
+		try {
+			calendarDays.value = await fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end))
+		} catch {
+			calendarDays.value = []
+		} finally {
+			loading.value = false
+		}
+	}
 
 	onMounted(async () => {
 		showFullScreenLoading()
@@ -147,21 +170,16 @@
 		activeTemplates.value = (await fetchAllTemplates()).filter(t => t.isActive)
 	})
 
-	watch(
-		() => calendarGridRef.value?.calendarData,
-		async days => {
-			if (!days) return
-			dayTasksMap.value = new Map()
-			const daysWithTasks = (days as Calendar[]).filter(d => d.totalTasks > 0)
-			await Promise.all(
-				daysWithTasks.map(async d => {
-					const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
-					dayTasksMap.value.set(d.id, tasks)
-				}),
-			)
-		},
-		{ deep: true },
-	)
+	watch(calendarDays, async days => {
+		dayTasksMap.value = new Map()
+		const daysWithTasks = days.filter(d => d.totalTasks > 0)
+		await Promise.all(
+			daysWithTasks.map(async d => {
+				const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
+				dayTasksMap.value.set(d.id, tasks)
+			}),
+		)
+	})
 
 	function asCalendar(day: ICalendar): Calendar {
 		return day as Calendar
@@ -218,7 +236,7 @@
 				'calendar/apply-planner-template',
 				new ApplyTemplateToTaskPlannerRequest(template.id, day.id, applyConflictResolution.value, taskRequests),
 			)
-			calendarGridRef.value?.refresh()
+			refresh()
 			showSuccessSnackbar(`Template applied`)
 		} catch {
 			showErrorSnackbar('Failed to apply template')
@@ -284,7 +302,7 @@
 			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
 			isBulkSelectMode.value = false
-			calendarGridRef.value?.refresh()
+			refresh()
 
 			if (failed > 0)
 				showErrorSnackbar(`Applied to ${days.length - failed}/${days.length} days — ${failed} failed`)
@@ -315,7 +333,7 @@
 
 			selectedDayIds.value = []
 			isBulkSelectMode.value = false
-			calendarGridRef.value?.refresh()
+			refresh()
 			showSuccessSnackbar(`Tasks copied to ${targetDays.length} day(s)`)
 		} catch {
 			showErrorSnackbar('Failed to copy tasks')
@@ -333,7 +351,7 @@
 		)
 		selectedDayIds.value = []
 		isBulkSelectMode.value = false
-		calendarGridRef.value?.refresh()
+		refresh()
 		showSuccessSnackbar(`Day type updated for ${days.length} day(s)`)
 	}
 </script>

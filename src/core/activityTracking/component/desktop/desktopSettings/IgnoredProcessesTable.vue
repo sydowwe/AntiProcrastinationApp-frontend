@@ -18,11 +18,11 @@
 			</div>
 
 			<BasicTable
-				v-model="items"
+				:items
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:page="page"
 				v-model:sortBy="sortBy"
-				v-model:loading="loading"
+				:loading
 				:columns
 				:itemsLength="totalItems"
 				:actions="tableActions"

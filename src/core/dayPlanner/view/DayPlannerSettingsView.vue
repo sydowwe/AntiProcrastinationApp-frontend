@@ -25,11 +25,11 @@
 			>
 				<BasicTable
 					class="flex-fill"
-					v-model="tasks"
+					:items="tasks"
 					v-model:itemsPerPage="itemsPerPage"
 					v-model:page="page"
 					v-model:sortBy="sortBy"
-					v-model:loading="loading"
+					:loading
 					:columns
 					:actions="tableActions"
 					:itemsLength="tasks.length"

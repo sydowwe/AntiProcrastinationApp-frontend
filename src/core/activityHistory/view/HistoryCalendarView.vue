@@ -1,8 +1,10 @@
 <template>
 	<CalendarGrid
 		class="py-4"
-		:fetchFn="fetchCalendarActivity"
+		:days
+		:loading
 		@dayClick="handleDayClick"
+		@dateRangeChange="fetchCalendarActivity"
 	>
 		<template #day-cell-content="{ day }">
 			<div class="cell-content">
@@ -73,13 +75,16 @@
 </template>
 
 <script setup lang="ts">
-	import CalendarGrid from '@/components/general/calendar/CalendarGrid.vue'
+	import { ref } from 'vue'
+	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import router from '@/router.ts'
 	import { getCalendarActivitySummary } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import type { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
-	import type { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
 	import { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+
+	const days = ref<CalendarActivityDaySummary[]>([])
+	const loading = ref(false)
 
 	function formatDuration(totalSeconds: number): string {
 		const hours = Math.floor(totalSeconds / 3600)
@@ -90,9 +95,20 @@
 		return `${minutes}m`
 	}
 
-	async function fetchCalendarActivity(filter: CalendarFilter): Promise<CalendarActivityDaySummary[]> {
-		const request = new CalendarActivityRequest(formatDateForApi(filter.from), formatDateForApi(filter.until), 3)
-		return getCalendarActivitySummary(request)
+	async function fetchCalendarActivity(range: { start: Date | null; end: Date | null }) {
+		if (!range.start || !range.end) {
+			days.value = []
+			return
+		}
+		loading.value = true
+		try {
+			const request = new CalendarActivityRequest(formatDateForApi(range.start), formatDateForApi(range.end), 3)
+			days.value = await getCalendarActivitySummary(request)
+		} catch {
+			days.value = []
+		} finally {
+			loading.value = false
+		}
 	}
 
 	function asDaySummary(day: unknown): CalendarActivityDaySummary {
