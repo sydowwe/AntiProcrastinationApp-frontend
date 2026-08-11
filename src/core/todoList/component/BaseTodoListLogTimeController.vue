@@ -38,10 +38,11 @@
 		initialStartTime?: Time,
 		initialLength?: Time,
 		itemId?: number,
+		autoStart = false,
 	) {
 		currentItemId.value = itemId ?? null
 		currentActivityId.value = activityId
-		inner.value?.open(activityId, activityName, isManual, initialStartTime, initialLength)
+		inner.value?.open(activityId, activityName, isManual, initialStartTime, initialLength, autoStart)
 	}
 
 	async function finalize(startTimestamp: Date, length: Time) {

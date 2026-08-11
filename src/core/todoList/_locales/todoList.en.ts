@@ -32,6 +32,7 @@ const todoList = {
 		destinationList: `Destination list`,
 		notScheduled: `Not scheduled`,
 		notScheduledHint: `Click to pick when you'll do it`,
+		quickStartTimer: `Quick start timer`,
 		// Form order follows the default (English) plural rule: 0 | 1 | many
 		unscheduledTasksCount: `No tasks are missing a time slot | 1 task has no time slot | {count} tasks have no time slot`,
 		scheduleNow: `Schedule`,
@@ -68,6 +69,12 @@ const todoList = {
 		category: {
 			add: `New category`,
 			deleteConfirm: `Delete category?`,
+		},
+		focus: {
+			toggle: `Focus`,
+			mark: `Mark as today's focus`,
+			unmark: `Remove from today's focus`,
+			capReached: `You can only focus on {limit} tasks at once — unmark one first`,
 		},
 	},
 	routineTodoList: {

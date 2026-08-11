@@ -13,9 +13,20 @@
 		@stepToggled="emits('stepToggled')"
 		@addToPlanner="emits('addToPlanner', $event)"
 		@logTime="emits('logTime', $event)"
+		@quickStartTimer="emits('quickStartTimer', $event)"
 		@itemClicked="emits('itemClicked', $event)"
 	>
 		<template #pre-chips>
+			<VIconBtn
+				icon="star"
+				:variant="isFocused ? 'elevated' : 'text'"
+				:color="isFocused ? 'primary' : 'textMuted'"
+				size="x-small"
+				:disabled="isInChangeOrderMode"
+				:title="focusTitle"
+				:aria-label="focusTitle"
+				@click.stop="focusClicked"
+			/>
 			<ChipWithIcon
 				v-if="dueDateChip"
 				:vColor="dueDateChip.color"
@@ -61,11 +72,13 @@
 		toDoListItem,
 		isInChangeOrderMode = false,
 		isDragging = false,
+		isFocused = false,
 	} = defineProps<{
 		toDoListItem: TodoListItemEntity
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
+		isFocused?: boolean
 	}>()
 
 	const emits = defineEmits<{
@@ -75,8 +88,10 @@
 		stepToggled: []
 		addToPlanner: [toDoListItem: TodoListItemEntity]
 		logTime: [toDoListItem: TodoListItemEntity]
+		quickStartTimer: [toDoListItem: TodoListItemEntity]
 		itemClicked: [toDoListItem: TodoListItemEntity]
 		moveToList: [toDoListItem: TodoListItemEntity]
+		toggleFocus: [toDoListItem: TodoListItemEntity]
 	}>()
 
 	const i18n = useI18n()
@@ -95,6 +110,13 @@
 	function scheduleClicked() {
 		if (isInChangeOrderMode) return
 		emits('addToPlanner', toDoListItem)
+	}
+
+	const focusTitle = computed(() => (isFocused ? i18n.t('toDoList.focus.unmark') : i18n.t('toDoList.focus.mark')))
+
+	function focusClicked() {
+		if (isInChangeOrderMode) return
+		emits('toggleFocus', toDoListItem)
 	}
 
 	const dueDateChip = computed(() => {

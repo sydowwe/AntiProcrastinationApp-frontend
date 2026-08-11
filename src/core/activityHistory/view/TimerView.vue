@@ -64,7 +64,7 @@
 	import TimerPresetsSection from '@/core/activityHistory/component/TimerPresetsSection.vue'
 	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { computed, onUnmounted, ref } from 'vue'
+	import { computed, onMounted, onUnmounted, ref } from 'vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
@@ -80,11 +80,13 @@
 		activityName = '',
 		compact = false,
 		initialDuration,
+		autoStart = false,
 	} = defineProps<{
 		activityId?: number | null
 		activityName?: string
 		compact?: boolean
 		initialDuration?: Time
+		autoStart?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -128,6 +130,12 @@
 	})
 
 	void requestNotificationPermission()
+
+	onMounted(() => {
+		if (autoStart && activityId) {
+			void start()
+		}
+	})
 
 	async function start() {
 		if (paused.value) {

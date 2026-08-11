@@ -28,11 +28,20 @@
 				<VBtn
 					:color="isInChangeOrderMode ? 'secondary' : 'secondaryOutline'"
 					:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
-					:disabled="sortMode !== 'custom'"
+					:disabled="sortMode !== 'custom' || focusMode"
 					prependIcon="arrows-up-down"
 					@click="toggleChangeOrderMode"
 				>
 					{{ isInChangeOrderMode ? $t('toDoList.finishReordering') : $t('toDoList.changeOrder') }}
+				</VBtn>
+				<VBtn
+					:color="focusMode ? 'secondary' : 'secondaryOutline'"
+					:variant="focusMode ? 'elevated' : 'outlined'"
+					:disabled="isInChangeOrderMode"
+					prependIcon="star"
+					@click="toggleFocusMode"
+				>
+					{{ $t('toDoList.focus.toggle') }}
 				</VBtn>
 				<TodoListUndoBtn
 					:canUndo
@@ -227,6 +236,7 @@
 							:isInChangeOrderMode
 							:listId="todoListId"
 							:isDragging="isDragging"
+							:isFocused="isFocusItem((item as TodoListItemEntity).id)"
 							@delete="deleteItem"
 							@edit="toDoListDialog?.openEdit"
 							@isDoneChanged="handleIsDoneChange"
@@ -234,7 +244,9 @@
 							@addToPlanner="openAddToPlanner"
 							@moveToList="openMoveToList"
 							@logTime="openLogTime($event, false)"
+							@quickStartTimer="openLogTime($event, false, true)"
 							@itemClicked="openLogTime($event, true)"
+							@toggleFocus="handleToggleFocus"
 						/>
 					</template>
 				</BaseToDoList>
@@ -278,6 +290,7 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
@@ -287,7 +300,7 @@
 	import MoveToListForm from '@/core/todoList/component/normal/MoveToListForm.vue'
 	import TodoListFilters from '@/core/todoList/component/TodoListFilters.vue'
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
-	import { useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
+	import { FOCUS_LIMIT, useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
@@ -331,10 +344,14 @@
 		sortMode,
 		filterPriorityIds,
 		filterDueState,
+		focusMode,
 		availablePriorities,
 		displayedItems,
 		toggleChangeOrderMode,
 		toggleSortMode,
+		toggleFocusMode,
+		isFocusItem,
+		toggleFocusItem,
 	} = useTodoListFilters(items)
 
 	const {
@@ -480,6 +497,13 @@
 		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id, 'todo', item.suggestedTime ?? undefined)
 	}
 
+	function handleToggleFocus(item: TodoListItemEntity) {
+		const succeeded = toggleFocusItem(item.id)
+		if (!succeeded) {
+			showErrorSnackbar(i18n.t('toDoList.focus.capReached', { limit: FOCUS_LIMIT }))
+		}
+	}
+
 	/** Below this a stale date or two is just a stale date; a pile is what people stop opening. */
 	const RENEGOTIATE_THRESHOLD = 3
 
@@ -562,14 +586,15 @@
 		if (firstUnscheduled) openAddToPlanner(firstUnscheduled)
 	}
 
-	function openLogTime(item: TodoListItemEntity, isManual: boolean) {
+	function openLogTime(item: TodoListItemEntity, isManual: boolean, autoStart = false) {
 		logTimeController.value?.open(
 			item.activity.id,
 			item.activity.name,
 			isManual,
 			undefined,
-			item.suggestedTime ?? undefined,
+			autoStart && !item.suggestedTime?.isNotZero() ? Time.fromMinutes(10) : (item.suggestedTime ?? undefined),
 			item.id,
+			autoStart,
 		)
 	}
 

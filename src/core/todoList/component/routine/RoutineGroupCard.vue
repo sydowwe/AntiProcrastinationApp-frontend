@@ -56,6 +56,7 @@
 						@stepToggled="(ids: number[]) => emit('stepToggled', ids)"
 						@addToPlanner="(i: RoutineTodoListItemEntity) => emit('addToPlanner', i)"
 						@logTime="(i: RoutineTodoListItemEntity) => emit('logTime', i, false)"
+						@quickStartTimer="(i: RoutineTodoListItemEntity) => emit('quickStartTimer', i)"
 						@itemClicked="(i: RoutineTodoListItemEntity) => emit('logTime', i, true)"
 					/>
 				</template>
@@ -101,6 +102,7 @@
 
 	const emit = defineEmits<{
 		logTime: [item: RoutineTodoListItemEntity, isManual: boolean]
+		quickStartTimer: [item: RoutineTodoListItemEntity]
 		addToPlanner: [item: RoutineTodoListItemEntity]
 		delete: [id: number]
 		edit: [item: RoutineTodoListItemEntity]

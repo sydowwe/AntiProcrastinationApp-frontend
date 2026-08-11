@@ -74,6 +74,9 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 		today.setHours(0, 0, 0, 0)
 		let result = [...items.value]
 		if (hideDone.value) result = result.filter(item => !item.isDone)
+		if (focusMode.value) {
+			result = result.filter(item => focusItemIds.value.includes(item.id))
+		}
 		if (filterPriorityIds.value.length > 0) {
 			result = result.filter(item => filterPriorityIds.value.includes(item.taskPriority.id))
 		}
@@ -116,16 +119,41 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 		sortMode.value = next
 	}
 
+	function toggleFocusMode() {
+		focusMode.value = !focusMode.value
+	}
+
+	function isFocusItem(id: number) {
+		return focusItemIds.value.includes(id)
+	}
+
+	/** Returns false when the cap is already reached and the item wasn't already focused — the caller shows that plainly rather than swallowing the click. */
+	function toggleFocusItem(id: number): boolean {
+		const current = focusItemIds.value
+		if (current.includes(id)) {
+			focusItemIds.value = current.filter(itemId => itemId !== id)
+			return true
+		}
+		if (current.length >= FOCUS_LIMIT) return false
+		focusItemIds.value = [...current, id]
+		return true
+	}
+
 	return {
 		isInChangeOrderMode,
 		hideDone,
 		sortMode,
 		filterPriorityIds,
 		filterDueState,
+		focusMode,
+		focusItemIds,
 		availablePriorities,
 		displayedItems,
 		toggleChangeOrderMode,
 		clearFilters,
 		toggleSortMode,
+		toggleFocusMode,
+		isFocusItem,
+		toggleFocusItem,
 	}
 }

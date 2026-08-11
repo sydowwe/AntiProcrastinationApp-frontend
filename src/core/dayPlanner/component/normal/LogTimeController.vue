@@ -5,7 +5,8 @@
 		:activityId="activityId!"
 		:activityName
 		:initialMethod="trackTimeMethod"
-		:initialLength
+		:initialLength="dialogInitialLength"
+		:autoStart
 		@started="handleStarted"
 		@done="handleDone"
 	/>
@@ -34,6 +35,8 @@
 	const activityName = ref('')
 	const trackTimeDialog = ref(false)
 	const trackTimeMethod = ref<'stopwatch' | 'timer' | 'pomodoro'>('stopwatch')
+	const dialogInitialLength = ref<Time | undefined>(undefined)
+	const autoStart = ref(false)
 
 	async function open(
 		activityIdVal: number,
@@ -41,9 +44,20 @@
 		isManual = false,
 		startTime?: Time,
 		length?: Time,
+		autoStartTimer = false,
 	) {
 		activityId.value = activityIdVal
 		activityName.value = activityNameVal
+		dialogInitialLength.value = length
+
+		if (autoStartTimer) {
+			autoStart.value = true
+			trackTimeMethod.value = 'timer'
+			trackTimeDialog.value = true
+			return
+		}
+
+		autoStart.value = false
 		const result = await openDialog<LogTimeResult>({
 			component: LogTimeBody,
 			componentProps: {

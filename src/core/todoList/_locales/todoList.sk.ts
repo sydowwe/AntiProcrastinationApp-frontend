@@ -33,6 +33,7 @@ const todoList = {
 		destinationList: `Cieľový zoznam`,
 		notScheduled: `Nenaplánované`,
 		notScheduledHint: `Klikni a vyber, kedy to spravíš`,
+		quickStartTimer: `Rýchlo spustiť časovač`,
 		// Poradie tvarov musí sedieť so slovenským pluralizačným pravidlom v src/i18n.ts: 1 | 2–4 | 0 a 5+
 		unscheduledTasksCount: `1 úloha nemá naplánovaný čas | {count} úlohy nemajú naplánovaný čas | {count} úloh nemá naplánovaný čas`,
 		scheduleNow: `Naplánovať`,
@@ -71,6 +72,12 @@ const todoList = {
 		category: {
 			add: `Nová kategória`,
 			deleteConfirm: `Vymazať kategóriu?`,
+		},
+		focus: {
+			toggle: `Fokus`,
+			mark: `Označiť ako dnešný fokus`,
+			unmark: `Odobrať z dnešného fokusu`,
+			capReached: `Naraz môžeš mať vo fokuse len {limit} úlohy — najprv jednu odober`,
 		},
 	},
 	routineTodoList: {

@@ -90,6 +90,15 @@
 					v-else
 					class="d-flex align-center ga-2"
 				>
+					<VIconBtn
+						icon="stopwatch"
+						color="white"
+						variant="text"
+						size="40"
+						:title="i18n.t('toDoList.quickStartTimer')"
+						:aria-label="i18n.t('toDoList.quickStartTimer')"
+						@click.stop="quickStartTimer"
+					/>
 					<VMenu
 						location="start"
 						transition="slide-y-transition"
@@ -194,6 +203,7 @@
 		stepToggled: []
 		addToPlanner: [toDoListItem: TItem]
 		logTime: [toDoListItem: TItem]
+		quickStartTimer: [toDoListItem: TItem]
 		itemClicked: [toDoListItem: TItem]
 	}>()
 
@@ -329,6 +339,10 @@
 
 	function logTime() {
 		emits('logTime', toDoListItem)
+	}
+
+	function quickStartTimer() {
+		emits('quickStartTimer', toDoListItem)
 	}
 </script>
 

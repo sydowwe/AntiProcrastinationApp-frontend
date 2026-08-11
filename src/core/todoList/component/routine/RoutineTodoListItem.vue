@@ -12,6 +12,7 @@
 		@stepToggled="emits('stepToggled')"
 		@addToPlanner="emits('addToPlanner', $event)"
 		@logTime="emits('logTime', $event)"
+		@quickStartTimer="emits('quickStartTimer', $event)"
 		@itemClicked="emits('itemClicked', $event)"
 	>
 		<template #pre-chips="{ isInChangeOrderMode }">
@@ -93,6 +94,7 @@
 		stepToggled: []
 		addToPlanner: [toDoListItem: RoutineTodoListItemEntity]
 		logTime: [toDoListItem: RoutineTodoListItemEntity]
+		quickStartTimer: [toDoListItem: RoutineTodoListItemEntity]
 		itemClicked: [toDoListItem: RoutineTodoListItemEntity]
 	}>()
 

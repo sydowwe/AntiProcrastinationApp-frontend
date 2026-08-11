@@ -15,7 +15,7 @@
 			class="d-flex flex-column"
 		>
 			<VBtnToggle
-				v-if="!isRunning"
+				v-if="!isRunning && !autoStart"
 				v-model="selectedMethod"
 				mandatory
 				density="comfortable"
@@ -53,6 +53,7 @@
 				:activityId
 				:activityName
 				:initialDuration="initialLength"
+				:autoStart
 				compact
 				@started="handleStarted"
 				@done="handleDone"
@@ -83,11 +84,13 @@
 		activityName,
 		initialMethod = 'stopwatch',
 		initialLength,
+		autoStart = false,
 	} = defineProps<{
 		activityId: number
 		activityName: string
 		initialMethod?: Method
 		initialLength?: Time
+		autoStart?: boolean
 	}>()
 
 	const emit = defineEmits<{

@@ -71,6 +71,7 @@
 					:hideDone="hideDoneGroupIds.includes(group.timePeriod.id as number)"
 					@update:hideDone="(val: boolean) => updateHideDone(group.timePeriod.id as number, val)"
 					@logTime="openLogTime"
+					@quickStartTimer="(item: RoutineTodoListItemEntity) => openLogTime(item, false, true)"
 					@addToPlanner="openAddToPlanner"
 					@delete="onDelete"
 					@edit="openEditDialog"
@@ -114,6 +115,7 @@
 	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { RoutineTodoListItemRequest } from '@/core/todoList/dto/request/RoutineTodoListItemRequest.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
@@ -367,14 +369,15 @@
 		)
 	}
 
-	function openLogTime(item: RoutineTodoListItemEntity, isManual: boolean) {
+	function openLogTime(item: RoutineTodoListItemEntity, isManual: boolean, autoStart = false) {
 		logTimeController.value?.open(
 			item.activity.id,
 			item.activity.name,
 			isManual,
 			undefined,
-			item.suggestedTime ?? undefined,
+			autoStart && !item.suggestedTime?.isNotZero() ? Time.fromMinutes(10) : (item.suggestedTime ?? undefined),
 			item.id,
+			autoStart,
 		)
 	}
 
