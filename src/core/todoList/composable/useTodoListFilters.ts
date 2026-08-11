@@ -6,6 +6,8 @@ import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEnt
 export type SortMode = 'custom' | 'priority' | 'dueDate'
 export type DueFilter = 'overdue' | 'today' | null
 
+export const FOCUS_LIMIT = 3
+
 export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 	const route = useRoute()
 	const router = useRouter()
@@ -37,6 +39,23 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 	const filterDueState = computed({
 		get: () => (route.query.due as DueFilter) ?? null,
 		set: (val: DueFilter) => router.replace({ query: { ...route.query, due: val ?? undefined } }),
+	})
+
+	const focusMode = computed({
+		get: () => route.query.focusMode === 'true',
+		set: (val: boolean) => router.replace({ query: { ...route.query, focusMode: val ? 'true' : undefined } }),
+	})
+
+	const focusItemIds = computed({
+		get: (): number[] => {
+			const val = route.query.focus
+			if (!val) return []
+			return (Array.isArray(val) ? val : [val]).map(Number)
+		},
+		set: (val: number[]) =>
+			router.replace({
+				query: { ...route.query, focus: val.length ? val.map(String) : undefined },
+			}),
 	})
 
 	const availablePriorities = computed(() => {

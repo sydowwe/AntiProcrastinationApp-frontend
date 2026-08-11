@@ -73,8 +73,22 @@
 			</VChip>
 		</VSheet>
 
-		<!-- Right: placeholder for grid alignment -->
-		<div></div>
+		<!-- Right: progress summary -->
+		<div
+			v-if="groupProgress.total > 0"
+			class="d-flex flex-column align-end ga-1"
+		>
+			<span class="text-caption text-medium-emphasis">
+				{{ $t('routineTodoList.progressCount', { done: groupProgress.done, total: groupProgress.total }) }}
+			</span>
+			<VProgressLinear
+				:modelValue="(groupProgress.done / groupProgress.total) * 100"
+				color="secondary"
+				height="3"
+				rounded
+				style="min-width: 60px"
+			/>
+		</div>
 	</div>
 </template>
 <script setup lang="ts">
@@ -94,6 +108,11 @@
 		if (!timePeriod.nextResetAt) return ''
 		return new Date(timePeriod.nextResetAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 	})
+
+	const groupProgress = computed(() => ({
+		done: items.filter(item => item.isDone).length,
+		total: items.length,
+	}))
 
 	const consistencyPct = computed(() => {
 		if (!timePeriod.totalPeriodsElapsed) return 0

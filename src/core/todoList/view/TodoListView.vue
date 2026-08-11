@@ -42,6 +42,96 @@
 				/>
 			</div>
 			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
+				<VRow
+					v-if="overdueItems.length >= RENEGOTIATE_THRESHOLD"
+					class="flex-grow-0"
+				>
+					<VCol cols="12">
+						<VAlert
+							variant="tonal"
+							color="primaryOutline"
+							density="compact"
+							icon="calendar-day"
+						>
+							<div class="d-flex align-center justify-space-between flex-wrap ga-2">
+								<span>
+									{{
+										$t(
+											'toDoList.renegotiate.message',
+											{ count: overdueItems.length },
+											overdueItems.length,
+										)
+									}}
+								</span>
+								<div class="d-flex flex-wrap ga-2">
+									<VBtn
+										size="small"
+										variant="tonal"
+										color="primaryOutline"
+										:loading="isRenegotiating"
+										:disabled="isInChangeOrderMode"
+										@click="rescheduleOverdue(0)"
+									>
+										{{ $t('toDoList.renegotiate.toToday') }}
+									</VBtn>
+									<VBtn
+										size="small"
+										variant="tonal"
+										color="primaryOutline"
+										:loading="isRenegotiating"
+										:disabled="isInChangeOrderMode"
+										@click="rescheduleOverdue(7)"
+									>
+										{{ $t('toDoList.renegotiate.pushWeek') }}
+									</VBtn>
+									<VBtn
+										size="small"
+										variant="text"
+										color="primaryOutline"
+										:disabled="isInChangeOrderMode"
+										@click="reviewOverdueOneByOne"
+									>
+										{{ $t('toDoList.renegotiate.reviewOneByOne') }}
+									</VBtn>
+								</div>
+							</div>
+						</VAlert>
+					</VCol>
+				</VRow>
+				<VRow
+					v-if="showUnscheduledNudge"
+					class="flex-grow-0"
+				>
+					<VCol cols="12">
+						<VAlert
+							variant="tonal"
+							color="warning"
+							density="compact"
+							icon="calendar-xmark"
+							closable
+							@click:close="unscheduledNudgeDismissed = true"
+						>
+							<div class="d-flex align-center justify-space-between flex-wrap ga-2">
+								<span>
+									{{
+										$t(
+											'toDoList.unscheduledTasksCount',
+											{ count: unscheduledItems.length },
+											unscheduledItems.length,
+										)
+									}}
+								</span>
+								<VBtn
+									size="small"
+									color="warningDark"
+									@click="openFirstUnscheduled"
+								>
+									{{ $t('toDoList.scheduleNow') }}
+								</VBtn>
+							</div>
+						</VAlert>
+					</VCol>
+				</VRow>
 				<VRow class="pb-2 flex-grow-0">
 					<VCol
 						cols="6"
@@ -60,7 +150,7 @@
 					<VCol
 						cols="12"
 						lg="4"
-						class="pb-0 pb-md-3 d-flex justify-center"
+						class="pb-0 pb-md-3 d-flex flex-column align-center justify-center"
 					>
 						<VCardTitle class="pa-0 d-flex align-center ga-2">
 							<VIcon
@@ -70,6 +160,26 @@
 							/>
 							<span>{{ listEntity?.name }}</span>
 						</VCardTitle>
+						<div
+							v-if="totalProgress.total > 0"
+							class="d-flex align-center ga-2 w-100"
+							style="max-width: 160px"
+						>
+							<span class="text-caption text-medium-emphasis">
+								{{
+									$t('toDoList.progressCount', {
+										done: totalProgress.done,
+										total: totalProgress.total,
+									})
+								}}
+							</span>
+							<VProgressLinear
+								:modelValue="(totalProgress.done / totalProgress.total) * 100"
+								color="primary"
+								height="3"
+								rounded
+							/>
+						</div>
 					</VCol>
 					<VCol
 						cols="6"
@@ -151,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { computed, onMounted, ref } from 'vue'
 	import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 	import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
@@ -168,6 +278,7 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
@@ -235,6 +346,7 @@
 		pushUncheckAllUndo,
 		pushReorderUndo,
 		pushEditUndo,
+		pushBulkRescheduleUndo,
 		pushLogTimeUndo,
 	} = useTodoListUndo()
 
@@ -243,6 +355,11 @@
 		items.value = await fetchAll()
 		listEntity.value = await fetchByIdNamedList(todoListId)
 	})
+
+	const totalProgress = computed(() => ({
+		done: items.value.filter(item => item.isDone).length,
+		total: items.value.length,
+	}))
 
 	async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
 		const movedItem = items.value[oldIndex]
@@ -363,6 +480,88 @@
 		plannerStore.openCreateDialogWithActivity(item.activity.id, item.id, 'todo', item.suggestedTime ?? undefined)
 	}
 
+	/** Below this a stale date or two is just a stale date; a pile is what people stop opening. */
+	const RENEGOTIATE_THRESHOLD = 3
+
+	const isRenegotiating = ref(false)
+
+	const overdueItems = computed(() => {
+		const today = startOfDayPlus(0)
+		return items.value.filter(item => !item.isDone && item.dueDate && new Date(item.dueDate + 'T00:00:00') < today)
+	})
+
+	function startOfDayPlus(days: number) {
+		const date = new Date()
+		date.setHours(0, 0, 0, 0)
+		date.setDate(date.getDate() + days)
+		return date
+	}
+
+	/**
+	 * Moves every past-due item to today (`days = 0`) or a week out (`days = 7`). Both are measured
+	 * from today rather than from each item's own date, so the pile actually clears instead of
+	 * shifting a month-old task to three weeks old.
+	 */
+	async function rescheduleOverdue(days: number) {
+		const targets = overdueItems.value
+		if (targets.length === 0) return
+		const previous = targets.map(item => ({ id: item.id, request: ToDoListItemRequest.fromEntity(item) }))
+		const newDueDate = formatDateForApi(startOfDayPlus(days))
+		isRenegotiating.value = true
+		try {
+			await Promise.all(
+				targets.map(item => {
+					const request = ToDoListItemRequest.fromEntity(item)
+					request.dueDate = newDueDate
+					return update(item.id, request)
+				}),
+			)
+			showSuccessSnackbar(
+				i18n.t(
+					days === 0 ? 'toDoList.renegotiate.movedToToday' : 'toDoList.renegotiate.movedByWeek',
+					{ count: targets.length },
+					targets.length,
+				),
+			)
+			pushBulkRescheduleUndo(targets.length, async () => {
+				await Promise.all(previous.map(({ id, request }) => update(id, request)))
+				items.value = await fetchAll()
+			})
+		} finally {
+			items.value = await fetchAll()
+			isRenegotiating.value = false
+		}
+	}
+
+	function reviewOverdueOneByOne() {
+		filterDueState.value = 'overdue'
+	}
+
+	// Schedule-first: unscheduled is the incomplete state, so the list says so — but only about the
+	// items the user can actually see (filters and "hide done" apply), and never twice. A banner that
+	// counts invisible items sends you to an item that is not on screen.
+	const unscheduledNudgeDismissed = ref(false)
+
+	const pendingItems = computed(() => displayedItems.value.filter(item => !item.isDone))
+
+	const unscheduledItems = computed(() => pendingItems.value.filter(item => !item.dueDate))
+
+	const showUnscheduledNudge = computed(
+		() =>
+			!unscheduledNudgeDismissed.value &&
+			!isInChangeOrderMode.value &&
+			unscheduledItems.value.length > 0 &&
+			// A short list does not need a banner, and an overdue pile is the more urgent conversation —
+			// two stacked nudges is exactly the nagging this is supposed to avoid.
+			pendingItems.value.length > 2 &&
+			overdueItems.value.length < RENEGOTIATE_THRESHOLD,
+	)
+
+	function openFirstUnscheduled() {
+		const firstUnscheduled = unscheduledItems.value[0]
+		if (firstUnscheduled) openAddToPlanner(firstUnscheduled)
+	}
+
 	function openLogTime(item: TodoListItemEntity, isManual: boolean) {
 		logTimeController.value?.open(
 			item.activity.id,
@@ -399,6 +598,29 @@
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
+		await adoptPlannerSlotAsDueDate(request)
+	}
+
+	/**
+	 * Booking a slot in the planner is what "scheduling" means to the user, but the list reads
+	 * `dueDate` — without this the "not scheduled" chip and the header nudge would survive the very
+	 * action that resolves them, and the count would never drop. An existing due date is left alone:
+	 * that one is a deadline the user chose, not something the planner gets to overwrite.
+	 */
+	async function adoptPlannerSlotAsDueDate(request: PlannerTaskRequest) {
+		const itemId = request.todoListItemId
+		if (itemId == null || !request.date) return
+		const index = items.value.findIndex(item => item.id === itemId)
+		if (index === -1) return
+		// Re-read first: the backend may already stamp the date when a planner task links to an item.
+		const fresh = await fetchById(itemId)
+		items.value[index] = fresh
+		if (fresh.dueDate) return
+		const updateRequest = ToDoListItemRequest.fromEntity(fresh)
+		updateRequest.dueDate = formatDateForApi(request.date)
+		updateRequest.dueTime = request.startTime ?? null
+		await update(itemId, updateRequest)
+		items.value[index] = await fetchById(itemId)
 	}
 
 	async function handleIsDoneChange(id: number, forceValue: boolean) {

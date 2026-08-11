@@ -23,12 +23,35 @@ const todoList = {
 		steps: `Steps`,
 		addStep: `Add step`,
 		stepsProgress: `{done}/{total} steps`,
+		progressCount: `{done} / {total}`,
 		savedToHistory: `Saved {name} to history`,
 		errorSavingToHistory: `Error saving {name} to history`,
 		clearFilters: `Clear filters`,
 		confirmBatchDelete: `Delete {count} selected items?`,
 		moveToList: `Move to list`,
 		destinationList: `Destination list`,
+		notScheduled: `Not scheduled`,
+		notScheduledHint: `Click to pick when you'll do it`,
+		// Form order follows the default (English) plural rule: 0 | 1 | many
+		unscheduledTasksCount: `No tasks are missing a time slot | 1 task has no time slot | {count} tasks have no time slot`,
+		scheduleNow: `Schedule`,
+		dueTimeHint: `A date is a deadline. A date with a time is a plan — and plans get done.`,
+		due: {
+			today: `Today`,
+			tomorrow: `Tomorrow`,
+			yesterday: `Yesterday`,
+			daysAgo: `{days} days ago`,
+			pastDue: `Past due`,
+		},
+		renegotiate: {
+			// English needs one form only; SK carries the three the plural rule expects.
+			message: `{count} tasks have a date that has passed. Pick a new one when you're ready.`,
+			toToday: `Today`,
+			pushWeek: `In a week`,
+			reviewOneByOne: `Review one by one`,
+			movedToToday: `Moved {count} tasks to today`,
+			movedByWeek: `Moved {count} tasks to a week from today`,
+		},
 		namedList: {
 			lists: `To-do lists`,
 			categories: `Categories`,
@@ -72,6 +95,7 @@ const todoList = {
 		sortDoneFirst: `Done first`,
 		personalBests: `Personal Bests`,
 		consistency: `Consistency`,
+		progressCount: `{done} / {total}`,
 	},
 }
 export default todoList

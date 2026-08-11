@@ -4,6 +4,13 @@ import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBas
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
+	/**
+	 * The day the task is created for. Only set when the dialog shows its own date picker (creating
+	 * from outside the viewed day, e.g. from the to-do list); left undefined otherwise, so it stays
+	 * out of the request body. Declared here because `PlannerTaskDialog` assigns it.
+	 */
+	date?: Date
+
 	constructor(
 		public startTime: Time = new Time(7, 0),
 		public endTime: Time = new Time(8, 0),

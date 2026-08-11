@@ -25,12 +25,12 @@
 		>
 			<VChip
 				value="overdue"
-				color="error"
+				color="textMuted"
 				filter
 				size="small"
-				prependIcon="circle-exclamation"
+				prependIcon="calendar"
 			>
-				Overdue
+				{{ $t('toDoList.due.pastDue') }}
 			</VChip>
 			<VChip
 				value="today"
@@ -39,7 +39,7 @@
 				size="small"
 				prependIcon="calendar-day"
 			>
-				Today
+				{{ $t('toDoList.due.today') }}
 			</VChip>
 		</VChipGroup>
 		<VChip

@@ -24,12 +24,37 @@ const todoList = {
 		steps: `Kroky`,
 		addStep: `Pridať krok`,
 		stepsProgress: `{done}/{total} krokov`,
+		progressCount: `{done} / {total}`,
 		savedToHistory: `Uložené {name} do histórie`,
 		errorSavingToHistory: `Chyba pri ukladaní {name} do histórie`,
 		clearFilters: `Vymazať filtre`,
 		confirmBatchDelete: `Vymazať {count} vybraných úloh?`,
 		moveToList: `Presunúť do zoznamu`,
 		destinationList: `Cieľový zoznam`,
+		notScheduled: `Nenaplánované`,
+		notScheduledHint: `Klikni a vyber, kedy to spravíš`,
+		// Poradie tvarov musí sedieť so slovenským pluralizačným pravidlom v src/i18n.ts: 1 | 2–4 | 0 a 5+
+		unscheduledTasksCount: `1 úloha nemá naplánovaný čas | {count} úlohy nemajú naplánovaný čas | {count} úloh nemá naplánovaný čas`,
+		scheduleNow: `Naplánovať`,
+		dueTimeHint: `Dátum je termín. Dátum s časom je plán — a ten sa naozaj spraví.`,
+		// Jediný domov pre označenia termínov — `dueToday`/`dueTomorrow` boli duplicity a sú zrušené.
+		due: {
+			today: `Dnes`,
+			tomorrow: `Zajtra`,
+			yesterday: `Včera`,
+			daysAgo: `pred {days} dňami`,
+			pastDue: `Po termíne`,
+		},
+		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts). Banner sa ukazuje až od 3,
+		// takže tvar „one“ sa nikdy nezobrazí — je tu len kvôli správnemu indexovaniu.
+		renegotiate: {
+			message: `1 úloha má termín v minulosti. Zvoľte nový, keď vám to bude vyhovovať. | {count} úlohy majú termín v minulosti. Zvoľte nový, keď vám to bude vyhovovať. | {count} úloh má termín v minulosti. Zvoľte nový, keď vám to bude vyhovovať.`,
+			toToday: `Dnes`,
+			pushWeek: `O týždeň`,
+			reviewOneByOne: `Prejsť po jednej`,
+			movedToToday: `1 úloha presunutá na dnes | {count} úlohy presunuté na dnes | {count} úloh presunutých na dnes`,
+			movedByWeek: `1 úloha posunutá o týždeň | {count} úlohy posunuté o týždeň | {count} úloh posunutých o týždeň`,
+		},
 		namedList: {
 			lists: `To-do zoznamy`,
 			categories: `Kategórie`,
@@ -73,6 +98,7 @@ const todoList = {
 		sortDoneFirst: `Hotové prvé`,
 		personalBests: `Osobné rekordy`,
 		consistency: `Konzistentnosť`,
+		progressCount: `{done} / {total}`,
 	},
 }
 export default todoList

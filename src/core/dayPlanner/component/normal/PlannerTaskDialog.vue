@@ -57,6 +57,7 @@
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
+	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 
 	const { showDatePicker = false } = defineProps<{
 		showDatePicker?: boolean
@@ -95,7 +96,12 @@
 
 	function handleCreate(request: PlannerTaskRequest) {
 		if (showDatePicker) {
-			fetchByDate(selectedDate.value)
+			// `by-date` takes a DD-MM-YYYY path segment; the raw Date used to be stringified into the
+			// URL, so this lookup failed on every create made from outside the planner (e.g. the to-do
+			// list) and rejected unobserved.
+			fetchByDate(usStringToUrlString(formatDateForApi(selectedDate.value))).catch(() => {
+				// A day that has never been planned has no calendar row yet — not an error here.
+			})
 			request.date = new Date(selectedDate.value)
 		}
 		emit('create', request)

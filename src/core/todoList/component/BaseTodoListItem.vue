@@ -138,6 +138,15 @@
 			@mousedown.stop
 			@stepToggled="emits('stepToggled')"
 		/>
+		<div
+			v-if="itemProgress !== null"
+			class="item-progress-track"
+		>
+			<div
+				class="item-progress-fill"
+				:style="{ width: `${itemProgress * 100}%`, background: accentColor ?? 'rgb(var(--v-theme-primary))' }"
+			/>
+		</div>
 		<!-- Hidden drag preview template -->
 		<DraggedItemPreview
 			ref="dragPreviewRef"
@@ -192,6 +201,16 @@
 	const { getBgColor } = useColor()
 
 	const accentColor = computed(() => (color ? getBgColor(color) : undefined))
+
+	const itemProgress = computed(() => {
+		if (toDoListItem.isMultipleCount && toDoListItem.totalCount) {
+			return doneCount.value !== null ? Math.min(doneCount.value / toDoListItem.totalCount, 1) : null
+		}
+		if (localSteps.value.length > 0) {
+			return localSteps.value.filter(step => step.isDone).length / localSteps.value.length
+		}
+		return null
+	})
 
 	const isDone = ref(toDoListItem.isDone)
 	const doneCount = ref<number | null>(toDoListItem.doneCount)
@@ -375,5 +394,19 @@
 	.listItem:hover .drag-handle {
 		opacity: 1;
 		transform: scale(1.1);
+	}
+
+	.item-progress-track {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 3px;
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.item-progress-fill {
+		height: 100%;
+		transition: width 0.2s ease;
 	}
 </style>

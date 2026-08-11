@@ -40,7 +40,7 @@
 					density="compact"
 					class="text-medium-emphasis flex-grow-0"
 					style="width: 20px; height: 20px; margin-right: 2px; opacity: 0.6"
-					@click.prevent
+					@click.stop.prevent="toggle(step)"
 				/>
 				<div class="flex-fill d-flex flex-column">
 					<span

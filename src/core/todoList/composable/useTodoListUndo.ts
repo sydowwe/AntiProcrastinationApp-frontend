@@ -21,6 +21,10 @@ export function useTodoListUndo() {
 		push({ description: `Edit "${itemName}"`, undo: onRevert })
 	}
 
+	function pushBulkRescheduleUndo(count: number, onRestoreDueDates: () => Promise<void>) {
+		push({ description: `Reschedule (${count})`, undo: onRestoreDueDates })
+	}
+
 	function pushLogTimeUndo(activityName: string, historyRecordId: number, onItemUncheck?: () => Promise<void>) {
 		push({
 			description: `Log time "${activityName}"`,
@@ -40,6 +44,7 @@ export function useTodoListUndo() {
 		pushUncheckAllUndo,
 		pushReorderUndo,
 		pushEditUndo,
+		pushBulkRescheduleUndo,
 		pushLogTimeUndo,
 	}
 }

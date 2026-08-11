@@ -51,6 +51,8 @@
 					:label="$t('toDoList.specificTime')"
 					density="compact"
 					hideDetails
+					color="primary-accent"
+					@update:modelValue="dueTimeTouched = true"
 				/>
 				<TimePicker
 					v-if="dueTimeEnabled"
@@ -59,6 +61,14 @@
 					density="compact"
 					class="flex-grow-1"
 				/>
+			</div>
+			<!-- A date alone is a deadline; the pairing with a time is what the research calls an
+				 implementation intention. Say it once, quietly, instead of forcing the field. -->
+			<div
+				v-if="dueDateValue && !dueTimeEnabled"
+				class="text-caption text-medium-emphasis mt-1"
+			>
+				{{ $t('toDoList.dueTimeHint') }}
 			</div>
 			<SuggestedTimeFormField
 				class="mt-2"
@@ -84,6 +94,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { formatDateForApi, isSameDay, roundToNearestInterval } from '@/_common/utils/DateTimeHelper.ts'
 	import { VDateInput } from 'vuetify/labs/components'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import type { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
@@ -121,9 +132,13 @@
 	const dialogSteps = ref<TodoListItemStepRequest[]>([])
 
 	const isRepeated = ref(false)
-	const dueDateValue = ref<string | null>(null)
+	// VDateInput's model is a Date, not a string — the entity's `dueDate` is a `YYYY-MM-DD` string,
+	// so both directions are converted explicitly. Handing the raw Date to the API would send a UTC
+	// instant and land the task on the previous day for anyone east of Greenwich.
+	const dueDateValue = ref<Date | null>(null)
 	const dueTimeEnabled = ref(false)
-	const dueTimeValue = ref<Time>(new Time(9, 0))
+	const dueTimeTouched = ref(false)
+	const dueTimeValue = ref<Time>(defaultDueTime())
 	const suggestedTime = ref<Time | null>(null)
 	const noteValue = ref('')
 
@@ -133,16 +148,35 @@
 			setDefaultPriority()
 			dueDateValue.value = null
 			dueTimeEnabled.value = false
-			dueTimeValue.value = new Time(9, 0)
+			dueTimeTouched.value = false
+			dueTimeValue.value = defaultDueTime()
 			suggestedTime.value = null
 			noteValue.value = ''
 			dialogSteps.value = []
 		}
 	})
 
-	watch(dueDateValue, newVal => {
-		if (!newVal) dueTimeEnabled.value = false
+	// Schedule-first: on a new task, picking a day arms the time as well, so "Tuesday 09:00" is what
+	// falls out by default instead of a bare deadline. It stays a suggestion — once the user has
+	// touched the switch themselves, their choice is never overridden.
+	watch(dueDateValue, (newVal, oldVal) => {
+		if (!newVal) {
+			dueTimeEnabled.value = false
+			return
+		}
+		if (isEdit.value || dueTimeTouched.value) return
+		if (!oldVal) dueTimeValue.value = defaultDueTime(newVal)
+		dueTimeEnabled.value = true
 	})
+
+	/** 09:00 by default, but never a time that has already passed when the due date is today. */
+	function defaultDueTime(date?: Date | null): Time {
+		const morning = new Time(9, 0)
+		if (!date || !isSameDay(date, new Date())) return morning
+		const now = new Date()
+		const nextQuarter = Time.fromMinutes(roundToNearestInterval(now.getHours() * 60 + now.getMinutes() + 15, 15))
+		return nextQuarter.getInMinutes > morning.getInMinutes && nextQuarter.hours < 24 ? nextQuarter : morning
+	}
 
 	onMounted(async () => {
 		priorityOptions.value = await fetchAll()
@@ -168,7 +202,7 @@
 			}
 		}
 
-		toDoListItem.value.dueDate = dueDateValue.value || null
+		toDoListItem.value.dueDate = dueDateValue.value ? formatDateForApi(dueDateValue.value) : null
 		toDoListItem.value.dueTime = dueDateValue.value && dueTimeEnabled.value ? dueTimeValue.value : null
 		toDoListItem.value.suggestedTime = suggestedTime.value
 		toDoListItem.value.note = noteValue.value || null
@@ -211,9 +245,10 @@
 		activityFormField.value?.onOpenEdit(entityToEdit.activity.id)
 		toDoListItem.value = ToDoListItemRequest.fromEntity(entityToEdit)
 		isRepeated.value = (entityToEdit.totalCount ?? 0) > 1
-		dueDateValue.value = entityToEdit.dueDate ?? null
+		dueDateValue.value = entityToEdit.dueDate ? new Date(entityToEdit.dueDate + 'T00:00:00') : null
 		dueTimeEnabled.value = !!entityToEdit.dueTime
-		dueTimeValue.value = entityToEdit.dueTime ?? new Time(9, 0)
+		dueTimeTouched.value = false
+		dueTimeValue.value = entityToEdit.dueTime ?? defaultDueTime(dueDateValue.value)
 		suggestedTime.value = entityToEdit.suggestedTime ?? null
 		noteValue.value = entityToEdit.note ?? ''
 		dialogSteps.value = entityToEdit.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
