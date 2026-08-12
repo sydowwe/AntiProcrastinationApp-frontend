@@ -90,6 +90,16 @@ const todoList = {
 			unmark: `Odobrať z dnešného fokusu`,
 			capReached: `Naraz môžeš mať vo fokuse len {limit} úlohy — najprv jednu odober`,
 		},
+		// Kalibrácia odhad vs. skutočnosť — čisto informačné, nikdy hodnotiace (planning fallacy, Kahneman
+		// & Tversky). Pozri prompts/todo-motivation/S3-estimate-vs-actual.md.
+		calibration: {
+			usuallyTooltip: `Toto ti zvyčajne trvá {time}`,
+			header: `Tvoje odhady sú približne {ratio}x oproti skutočnému času`,
+		},
+		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
+		recap: {
+			summary: `Dnes si dokončil {count} vec — {time} zaznamenaných | Dnes si dokončil {count} veci — {time} zaznamenaných | Dnes si dokončil {count} vecí — {time} zaznamenaných`,
+		},
 	},
 	routineTodoList: {
 		routineTodoList: 'Routine to-do list',

@@ -85,6 +85,13 @@ const todoList = {
 			unmark: `Remove from today's focus`,
 			capReached: `You can only focus on {limit} tasks at once — unmark one first`,
 		},
+		calibration: {
+			usuallyTooltip: `You usually spend {time} on this`,
+			header: `Your estimates run about {ratio}x actual time`,
+		},
+		recap: {
+			summary: `{count} thing finished today — {time} logged | {count} things finished today — {time} logged`,
+		},
 	},
 	routineTodoList: {
 		add: 'Add',

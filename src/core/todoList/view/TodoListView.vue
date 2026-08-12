@@ -50,6 +50,7 @@
 					@click="undo"
 				/>
 			</div>
+			<DailyRecapCard class="mb-3" />
 			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
 				<VRow
 					v-if="overdueItems.length >= RENEGOTIATE_THRESHOLD"
@@ -169,6 +170,12 @@
 							/>
 							<span>{{ listEntity?.name }}</span>
 						</VCardTitle>
+						<span
+							v-if="calibration"
+							class="text-caption text-medium-emphasis"
+						>
+							{{ $t('toDoList.calibration.header', { ratio: calibration.ratio.toFixed(1) }) }}
+						</span>
 						<div
 							v-if="totalProgress.total > 0"
 							class="d-flex align-center ga-2 w-100"
@@ -296,6 +303,7 @@
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
 	import BaseTodoListLogTimeController from '@/core/todoList/component/BaseTodoListLogTimeController.vue'
+	import DailyRecapCard from '@/core/todoList/component/DailyRecapCard.vue'
 	import ToDoListItemDialog from '@/core/todoList/component/normal/ToDoListItemDialog.vue'
 	import MoveToListForm from '@/core/todoList/component/normal/MoveToListForm.vue'
 	import TodoListFilters from '@/core/todoList/component/TodoListFilters.vue'
@@ -305,6 +313,7 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
+	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 
 	const props = defineProps<{
 		id: string
@@ -335,6 +344,7 @@
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()
+	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
@@ -375,12 +385,21 @@
 		void ensureLeisurePairingLoaded()
 		items.value = await fetchAll()
 		listEntity.value = await fetchByIdNamedList(todoListId)
+		void ensureCalibrationLoaded(items.value.map(item => item.activity.id))
 	})
 
 	const totalProgress = computed(() => ({
 		done: items.value.filter(item => item.isDone).length,
 		total: items.value.length,
 	}))
+
+	const calibration = computed(() =>
+		calibrationRatio(
+			items.value
+				.filter(item => item.suggestedTime?.isNotZero())
+				.map(item => ({ activityId: item.activity.id, suggestedSeconds: item.suggestedTime!.getInSeconds })),
+		),
+	)
 
 	async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
 		const movedItem = items.value[oldIndex]
@@ -402,12 +421,14 @@
 		items.value.push(response)
 		items.value.sort(TodoListItemEntity.frontEndSortFunction())
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
+		void ensureCalibrationLoaded([response.activity.id])
 	}
 
 	async function quickEditedActivity(id: number) {
 		const toDoList = items.value[items.value.findIndex(item => item.id === id)]
 		if (toDoList) {
 			toDoList.activity = await fetchByIdActivity(id)
+			void ensureCalibrationLoaded([toDoList.activity.id])
 		}
 	}
 
@@ -467,6 +488,7 @@
 
 	async function updateAfterEdit(id: number, oldTaskPriorityId?: number) {
 		const updatedItem = await fetchById(id)
+		void ensureCalibrationLoaded([updatedItem.activity.id])
 		const index = items.value.findIndex(item => item.id === id)
 		if (oldTaskPriorityId === updatedItem.taskPriority.id) {
 			items.value[index] = updatedItem

@@ -4,10 +4,29 @@ import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEnt
 import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
+import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 export async function fetchTodoListItems(todoListId?: number | null): Promise<TodoListItemEntity[]> {
 	const response = await API.get('todo-list-item', { params: todoListId != null ? { todoListId } : {} })
 	return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
+}
+
+/**
+ * No backend endpoint exists yet for this (see prompts/todo-motivation/backend/N4-backend.md) — `_silent`
+ * plus the catch mean a 404 today just leaves the recap card unrendered, not an error toast the user did
+ * not ask for.
+ */
+export async function fetchDailyRecap(date: Date): Promise<DailyRecap | null> {
+	try {
+		const { data } = await API.get('todo-list-item/daily-recap', {
+			params: { date: formatDateForApi(date) },
+			_silent: true,
+		})
+		return DailyRecap.fromJson(data)
+	} catch {
+		return null
+	}
 }
 
 export function useTodoListItemCrud(todoListId: number) {
