@@ -48,6 +48,9 @@ const home = {
 		alertStartingSoon: `Starting in {minutes} min`,
 		alertStartNow: `Start now`,
 		alertOverrun: `This task should have ended`,
+		saveStatusFailed: `Could not save the status of "{task}"`,
+		snoozeFailed: `Could not move "{task}"`,
+		extendFailed: `Could not extend "{task}"`,
 	},
 }
 export default home

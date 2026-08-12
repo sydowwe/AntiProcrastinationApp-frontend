@@ -261,7 +261,7 @@
 	}
 
 	function openPlanner() {
-		router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })
+		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
 	}
 
 	onMounted(ensureLoaded)

@@ -48,6 +48,9 @@ const home = {
 		alertStartingSoon: `Za {minutes} min začína`,
 		alertStartNow: `Začni teraz`,
 		alertOverrun: `Táto úloha už mala skončiť`,
+		saveStatusFailed: `Stav úlohy „{task}“ sa nepodarilo uložiť`,
+		snoozeFailed: `Úlohu „{task}“ sa nepodarilo posunúť`,
+		extendFailed: `Úlohu „{task}“ sa nepodarilo predĺžiť`,
 	},
 }
 export default home

@@ -51,7 +51,14 @@
 				@click="openPlanner"
 			/>
 		</VCardTitle>
-		<VDivider />
+		<!-- a background refetch says so in 2px instead of tearing the list down to a spinner -->
+		<VProgressLinear
+			v-if="refreshing"
+			indeterminate
+			color="primary"
+			height="2"
+		/>
+		<VDivider v-else />
 		<VCardText
 			class="pa-0"
 			style="flex: 1; overflow-y: auto; min-height: 0"
@@ -350,6 +357,7 @@
 	const {
 		calendar,
 		loading,
+		refreshing,
 		nowMinutes,
 		sortedTasks,
 		totalCount,
@@ -453,7 +461,7 @@
 	}
 
 	function openPlanner() {
-		router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })
+		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
 	}
 
 	onMounted(ensureLoaded)
