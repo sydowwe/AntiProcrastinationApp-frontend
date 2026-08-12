@@ -124,6 +124,16 @@ const todoList = {
 		heatmapAllDone: `{label} · all done`,
 		heatmapPartial: `{label} · {done} of {total} done`,
 		progressCount: `{done} / {total}`,
+		review: {
+			title: `Weekly routine review`,
+			subtitle: `A quick look at the last period — adjust frequency now instead of failing it again.`,
+			progressLastPeriod: `Last time {done} of {total}`,
+			noDataLastPeriod: `No data yet`,
+			keep: `Keep`,
+			reduceFrequency: `Reduce frequency`,
+			pause: `Pause`,
+			reduceFrequencyDialogTitle: `Reduce frequency`,
+		},
 	},
 }
 export default todoList

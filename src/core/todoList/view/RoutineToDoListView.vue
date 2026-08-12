@@ -50,6 +50,14 @@
 				/>
 			</div>
 		</div>
+		<RoutineWeeklyReviewCard
+			v-if="showWeeklyReview"
+			class="mx-auto w-100 w-lg-66 px-3 pb-3"
+			:groups="reviewEligibleGroups"
+			@pause="handleReviewPause"
+			@reduceFrequency="handleReviewReduceFrequency"
+			@dismissed="dismissForThisWeek"
+		/>
 		<VRow
 			class="flex-grow-1 overflow-hidden ma-0"
 			style="min-height: 0"
@@ -108,6 +116,7 @@
 	import RoutineConfetti from '@/core/todoList/component/routine/RoutineConfetti.vue'
 	import RoutineGroupHistoryBody from '@/core/todoList/component/routine/dialog/RoutineGroupHistoryBody.vue'
 	import RoutineGroupCard from '@/core/todoList/component/routine/RoutineGroupCard.vue'
+	import RoutineWeeklyReviewCard from '@/core/todoList/component/routine/RoutineWeeklyReviewCard.vue'
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
 	import BaseTodoListLogTimeController from '@/core/todoList/component/BaseTodoListLogTimeController.vue'
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
@@ -119,6 +128,7 @@
 	import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
+	import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -126,6 +136,8 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 	import { useRoutineRunLabel } from '@/core/todoList/composable/useRoutineRunLabel.ts'
+	import { useRoutineWeeklyReview } from '@/core/todoList/composable/useRoutineWeeklyReview.ts'
+	import type { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
@@ -147,11 +159,13 @@
 		toggleIsDone,
 		uncheckAll: uncheckAllApi,
 	} = useRoutineTodoListItemCrud()
+	const { update: updateTimePeriod, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { runLabel } = useRoutineRunLabel()
+	const { isNewWeek, dismissForThisWeek } = useRoutineWeeklyReview()
 	const plannerStore = useDayPlannerStore()
 
 	const {
@@ -241,6 +255,23 @@
 	const visibleGroups = computed(() => groupedItems.value.filter(g => !g.timePeriod.isHidden))
 
 	const singleVisibleGroupId = computed(() => visibleGroupIds.value[0] ?? null)
+
+	const reviewEligibleGroups = computed(() =>
+		groupedItems.value.filter(g => !g.timePeriod.isHidden && g.timePeriod.totalPeriodsElapsed > 0),
+	)
+	const showWeeklyReview = computed(() => isNewWeek.value && reviewEligibleGroups.value.length > 0)
+
+	async function handleReviewPause(timePeriodId: number) {
+		await changeTimePeriodVisibility(timePeriodId)
+		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
+		if (group) group.timePeriod.isHidden = true
+	}
+
+	async function handleReviewReduceFrequency(timePeriodId: number, request: TimePeriodRequest) {
+		await updateTimePeriod(timePeriodId, request)
+		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
+		if (group) Object.assign(group.timePeriod, request)
+	}
 
 	async function onGroupSelectUpdate(newVal: number | number[]) {
 		if (smAndDown.value) {

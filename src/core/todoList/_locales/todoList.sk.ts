@@ -127,6 +127,16 @@ const todoList = {
 		heatmapAllDone: `{label} · všetko hotové`,
 		heatmapPartial: `{label} · {done} z {total} hotových`,
 		progressCount: `{done} / {total}`,
+		review: {
+			title: `Týždenné zhodnotenie rutín`,
+			subtitle: `Rýchly pohľad na minulé obdobie — uprav frekvenciu, kým je ešte čas, namiesto opakovaného zlyhávania.`,
+			progressLastPeriod: `Minule {done} z {total}`,
+			noDataLastPeriod: `Zatiaľ žiadne dáta`,
+			keep: `Ponechať`,
+			reduceFrequency: `Znížiť frekvenciu`,
+			pause: `Pozastaviť`,
+			reduceFrequencyDialogTitle: `Znížiť frekvenciu`,
+		},
 	},
 }
 export default todoList
