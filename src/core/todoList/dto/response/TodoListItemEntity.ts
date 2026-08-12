@@ -17,6 +17,12 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
 		public steps: TodoListItemStepEntity[] = [],
+		/**
+		 * Activity id of the paired leisure reward — temptation bundling, see
+		 * `composable/useLeisurePairing.ts`. Backend field; until it ships this stays null and the
+		 * pairing UI simply shows nothing (`prompts/todo-motivation/backend/N5-backend.md`).
+		 */
+		public pairedLeisureActivityId: number | null = null,
 	) {}
 
 	get isMultipleCount() {
@@ -36,6 +42,7 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.note ?? null,
 			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
 			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
+			json.pairedLeisureActivityId ?? null,
 		)
 	}
 

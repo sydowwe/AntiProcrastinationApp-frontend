@@ -15,6 +15,12 @@ export class ToDoListItemRequest extends BaseToDoListItemRequest {
 		public note: string | null = null,
 		public suggestedTime: Time | null = null,
 		public steps: TodoListItemStepRequest[] = [],
+		/**
+		 * Paired leisure reward, by activity id. Deliberately not on `BaseToDoListItemRequest` —
+		 * routine items repeat on their own schedule and have their own reward loop (streaks,
+		 * personal bests), so bundling belongs to the normal list only.
+		 */
+		public pairedLeisureActivityId: number | null = null,
 	) {
 		super(isDone, activityId, doneCount, totalCount, note, suggestedTime, steps)
 	}
@@ -31,6 +37,7 @@ export class ToDoListItemRequest extends BaseToDoListItemRequest {
 			obj.note,
 			obj.suggestedTime,
 			obj.steps.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note)),
+			obj.pairedLeisureActivityId,
 		)
 	}
 

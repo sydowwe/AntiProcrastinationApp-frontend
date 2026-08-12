@@ -73,6 +73,17 @@ const todoList = {
 			add: `Nová kategória`,
 			deleteConfirm: `Vymazať kategóriu?`,
 		},
+		// Spárovanie aktivity zo zásobníka voľného času s úlohou, ktorú treba spraviť. Tón je odmena,
+		// nie podmienka — nikde sa nepíše, že bez úlohy si zábavu nezaslúžiš.
+		pairing: {
+			label: `Odmena po dokončení`,
+			hint: `Vyber si niečo zo zásobníka voľného času — spravíš to hneď po tejto úlohe`,
+			empty: `Zásobník voľného času je zatiaľ prázdny`,
+			chipTitle: `Po dokončení ťa čaká: {name}`,
+			chipTitleDone: `Zaslúžená odmena: {name}`,
+			earned: `Hotovo — teraz {name}`,
+			startNow: `Spustiť`,
+		},
 		focus: {
 			toggle: `Fokus`,
 			mark: `Označiť ako dnešný fokus`,

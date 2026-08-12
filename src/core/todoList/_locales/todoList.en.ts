@@ -70,6 +70,15 @@ const todoList = {
 			add: `New category`,
 			deleteConfirm: `Delete category?`,
 		},
+		pairing: {
+			label: `Reward when done`,
+			hint: `Pick something from your leisure backlog — you get it right after this task`,
+			empty: `Your leisure backlog is empty so far`,
+			chipTitle: `Waiting for you when this is done: {name}`,
+			chipTitleDone: `Earned: {name}`,
+			earned: `Done — now {name}`,
+			startNow: `Start`,
+		},
 		focus: {
 			toggle: `Focus`,
 			mark: `Mark as today's focus`,

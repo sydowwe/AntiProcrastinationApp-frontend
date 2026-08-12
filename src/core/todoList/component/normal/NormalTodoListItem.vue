@@ -53,12 +53,26 @@
 			>
 				{{ $t('toDoList.notScheduled') }}
 			</ChipWithIcon>
+			<ChipWithIcon
+				v-if="pairedLeisure"
+				vColor="secondaryOutline"
+				variant="tonal"
+				size="x-small"
+				icon="gift"
+				:title="
+					toDoListItem.isDone
+						? $t('toDoList.pairing.chipTitleDone', { name: pairedLeisure.activity.name })
+						: $t('toDoList.pairing.chipTitle', { name: pairedLeisure.activity.name })
+				"
+			>
+				{{ pairedLeisure.activity.name }}
+			</ChipWithIcon>
 		</template>
 	</BaseTodoListItem>
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, onMounted } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
@@ -67,6 +81,7 @@
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
+	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 
 	const {
 		toDoListItem,
@@ -95,6 +110,12 @@
 	}>()
 
 	const i18n = useI18n()
+
+	// Every item asks, but the composable shares one in-flight request across the whole list.
+	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()
+	onMounted(ensureLeisurePairingLoaded)
+
+	const pairedLeisure = computed(() => pairingFor(toDoListItem.pairedLeisureActivityId))
 
 	const MS_PER_DAY = 86_400_000
 

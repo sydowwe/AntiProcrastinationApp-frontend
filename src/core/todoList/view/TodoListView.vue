@@ -303,6 +303,8 @@
 	import { FOCUS_LIMIT, useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
+	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 
 	const props = defineProps<{
 		id: string
@@ -329,9 +331,10 @@
 	const plannerStore = useDayPlannerStore()
 
 	const i18n = useI18n()
-	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
+	const { showErrorSnackbar, showSuccessSnackbar, showSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
+	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
@@ -369,6 +372,7 @@
 
 	onMounted(async () => {
 		showFullScreenLoading()
+		void ensureLeisurePairingLoaded()
 		items.value = await fetchAll()
 		listEntity.value = await fetchByIdNamedList(todoListId)
 	})
@@ -598,6 +602,9 @@
 		)
 	}
 
+	/** A claimed reward is logged without an item id, so the undo label has no task to name itself after. */
+	const lastStartedLeisureName = ref<string | null>(null)
+
 	function onLogTimeCreated({
 		historyRecordId,
 		itemId,
@@ -608,8 +615,10 @@
 		itemWasCompleted: boolean
 	}) {
 		const item = itemId !== undefined ? items.value.find(i => i.id === itemId) : undefined
+		const leisureName = lastStartedLeisureName.value
+		lastStartedLeisureName.value = null
 		pushLogTimeUndo(
-			item?.activity.name ?? '',
+			item?.activity.name ?? leisureName ?? '',
 			historyRecordId,
 			itemWasCompleted && itemId !== undefined
 				? async () => {
@@ -651,6 +660,44 @@
 	async function handleIsDoneChange(id: number, forceValue: boolean) {
 		await toggleIsDone(id, forceValue)
 		await itemsChanged([id])
+		offerPairedLeisure(id)
+	}
+
+	/**
+	 * The bundling payoff (Milkman, Minson & Volpp 2014): the reward has to arrive attached to the
+	 * completion, not later. It stays a snackbar — non-blocking, dismissible, and it never claims the
+	 * reward on the user's behalf. Skipping it on an uncheck matters: this fires on the same handler.
+	 */
+	function offerPairedLeisure(id: number) {
+		const item = items.value.find(listItem => listItem.id === id)
+		if (!item?.isDone) return
+		const paired = pairingFor(item.pairedLeisureActivityId)
+		if (!paired) return
+		showSnackbar(i18n.t('toDoList.pairing.earned', { name: paired.activity.name }), {
+			color: 'primary',
+			// Longer than the 3s default: this one carries an action, and an offer that vanishes
+			// before it is read is the same as no offer.
+			timeout: 8000,
+			actionLabel: i18n.t('toDoList.pairing.startNow'),
+			actionCallback: () => startPairedLeisure(paired),
+		})
+	}
+
+	/**
+	 * No `itemId` is passed — the leisure activity is not a todo item, so nothing on the list should
+	 * be toggled by logging it. The backlog profile's own duration prefills the timer.
+	 */
+	function startPairedLeisure(paired: ActivityBacklogProfile) {
+		lastStartedLeisureName.value = paired.activity.name
+		logTimeController.value?.open(
+			paired.activity.id,
+			paired.activity.name,
+			false,
+			undefined,
+			paired.durationMinutes > 0 ? Time.fromMinutes(paired.durationMinutes) : undefined,
+			undefined,
+			true,
+		)
 	}
 
 	async function itemsChanged(changedItems: number[]) {

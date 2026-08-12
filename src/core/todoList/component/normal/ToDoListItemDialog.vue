@@ -74,6 +74,17 @@
 				class="mt-2"
 				v-model="suggestedTime"
 			/>
+			<!-- Temptation bundling. Offered, never required — an empty leisure backlog just means an
+				 empty select, and the hint says what the pairing is for rather than nagging for one. -->
+			<VIdSelect
+				v-model="toDoListItem.pairedLeisureActivityId"
+				class="mt-3"
+				:label="$t('toDoList.pairing.label')"
+				:items="pairingOptions"
+				:hint="$t('toDoList.pairing.hint')"
+				persistentHint
+				:noDataText="$t('toDoList.pairing.empty')"
+			></VIdSelect>
 			<VTextarea
 				v-model="noteValue"
 				:label="$t('toDoList.note')"
@@ -109,6 +120,7 @@
 	import BaseTodoListRepeatCountFormField from '@/core/todoList/component/BaseTodoListRepeatCountFormField.vue'
 	import SuggestedTimeFormField from '@/core/todoList/component/SuggestedTimeFormField.vue'
 	import TodoListStepsFormField from '@/core/todoList/component/TodoListStepsFormField.vue'
+	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 
 	const emit = defineEmits<{
 		(e: 'add', toDoList: ToDoListItemRequest): void
@@ -121,6 +133,7 @@
 	const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>()
 
 	const { fetchAll } = useTaskPriorityCrud()
+	const { ensureLoaded: ensureLeisurePairingLoaded, pairingOptions } = useLeisurePairing()
 
 	const priorityOptions = ref([] as TaskImportance[])
 
@@ -179,6 +192,7 @@
 	}
 
 	onMounted(async () => {
+		void ensureLeisurePairingLoaded()
 		priorityOptions.value = await fetchAll()
 		setDefaultPriority()
 	})
@@ -205,6 +219,9 @@
 		toDoListItem.value.dueDate = dueDateValue.value ? formatDateForApi(dueDateValue.value) : null
 		toDoListItem.value.dueTime = dueDateValue.value && dueTimeEnabled.value ? dueTimeValue.value : null
 		toDoListItem.value.suggestedTime = suggestedTime.value
+		// Clearing the select can hand back `undefined`; the entity side is `null`, and
+		// `hasObjectChanged` in the view compares the two shapes directly.
+		toDoListItem.value.pairedLeisureActivityId = toDoListItem.value.pairedLeisureActivityId ?? null
 		toDoListItem.value.note = noteValue.value || null
 		toDoListItem.value.steps = dialogSteps.value.map((s, i) => new TodoListItemStepRequest(s.name, i + 1, s.note))
 		if (toDoListItem.value.steps.length > 0) toDoListItem.value.totalCount = null
