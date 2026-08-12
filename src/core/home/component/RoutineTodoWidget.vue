@@ -3,8 +3,11 @@
 		:title="$t('home.routineTodoList')"
 		:openRoute="{ name: 'routineToDoList' }"
 		:loading="loading"
+		:error="error"
+		:errorText="$t('home.loadFailedRoutineTodos')"
 		:empty="visibleGroups.length === 0"
 		:emptyText="$t('routineTodoList.allDone')"
+		@retry="load"
 	>
 		<template #headerActions>
 			<VSheet
@@ -91,25 +94,33 @@
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
+	import { useI18n } from 'vue-i18n'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
 	import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
-	import { API } from '@/_common/axiosConfig.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import RoutineTodoListItem from '@/core/todoList/component/routine/RoutineTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
-	const { getAllGrouped } = useRoutineTodoListItemCrud()
+	const { t } = useI18n()
+	const { showErrorSnackbar } = useSnackbar()
+	const { fetchGroupedByTimePeriod, toggleIsDoneOrThrow } = useRoutineTodoListItemCrud()
 	const { fetchAll: fetchAllPeriods } = useRoutineTimePeriodCrud()
 
 	const groupedItems = ref<RoutineTodoListGroupedList[]>([])
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const loading = ref(true)
 	const loadingPeriods = ref(true)
+	const error = ref(false)
 	const hideDone = ref(true)
+	// Guards against an older load's response landing after a newer one — harmless before Retry
+	// existed (only one load could ever be in flight), not harmless now that a load can overlap
+	// the one it is retrying.
+	let loadToken = 0
 
 	const todayDayOfWeek = (() => {
 		const d = new Date().getDay()
@@ -148,21 +159,31 @@
 		return hideDone.value ? items.filter(i => !i.isDone) : items
 	}
 
-	function handleIsDoneChanged(item: RoutineTodoListItemEntity, forceValue?: boolean) {
-		const sourceItem = groupedItems.value.flatMap(g => g.items).find(i => i.id === item.id)
-		if (sourceItem) {
-			sourceItem.isDone = item.isDone
-			sourceItem.doneCount = item.doneCount
-		}
-		API.patch('/routine-todo-list/toggle-is-done', { ids: [item.id], forceValue }).catch(() => load())
+	// `RoutineTodoListItem` emits the item's id, not the entity — BaseTodoListItem.vue:289.
+	function handleIsDoneChanged(id: number, forceValue?: boolean) {
+		const sourceItem = groupedItems.value.flatMap(g => g.items).find(i => i.id === id)
+		if (!sourceItem) return
+		const previousIsDone = sourceItem.isDone
+		sourceItem.isDone = forceValue ?? !previousIsDone
+		toggleIsDoneOrThrow(id, forceValue).catch(() => {
+			sourceItem.isDone = previousIsDone
+			showErrorSnackbar(t('home.toggleTaskFailed', { task: sourceItem.activity.name }))
+		})
 	}
 
 	async function load() {
+		const token = ++loadToken
 		loading.value = true
+		error.value = false
 		try {
-			groupedItems.value = await getAllGrouped()
+			const result = await fetchGroupedByTimePeriod()
+			if (token !== loadToken) return
+			groupedItems.value = result
+		} catch {
+			if (token !== loadToken) return
+			error.value = true
 		} finally {
-			loading.value = false
+			if (token === loadToken) loading.value = false
 		}
 	}
 

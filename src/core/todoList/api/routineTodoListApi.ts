@@ -39,6 +39,15 @@ export function useRoutineTodoListItemCrud() {
 		}
 	}
 
+	/**
+	 * Same request as {@link getAllGrouped}, but rejects instead of swallowing to `[]` plus its own
+	 * snackbar — the home widget needs the rejection to drive its own scoped in-card error state.
+	 */
+	async function fetchGroupedByTimePeriod(): Promise<RoutineTodoListGroupedList[]> {
+		const response = await API.get(url + `/grouped-by-time-period`)
+		return RoutineTodoListGroupedList.listFromObjects(response.data)
+	}
+
 	async function changeDisplayOrder(request: ChangeDisplayOrderRequest) {
 		try {
 			await API.patch(url + `/change-display-order`, request)
@@ -58,6 +67,14 @@ export function useRoutineTodoListItemCrud() {
 		} catch (error) {
 			console.error(error)
 		}
+	}
+
+	/**
+	 * Same request as {@link toggleIsDone}, but rejects on failure instead of swallowing — the home
+	 * widget needs the rejection to drive its own optimistic-revert plus snackbar.
+	 */
+	async function toggleIsDoneOrThrow(id: number, forceValue?: boolean) {
+		await API.patch(`/${url}/toggle-is-done`, { ids: [id], forceValue })
 	}
 
 	async function uncheckAll(doneIds: number[]) {
@@ -90,8 +107,10 @@ export function useRoutineTodoListItemCrud() {
 		updateWithResponse,
 		deleteEntity,
 		getAllGrouped,
+		fetchGroupedByTimePeriod,
 		changeDisplayOrder,
 		toggleIsDone,
+		toggleIsDoneOrThrow,
 		uncheckAll,
 		spendStreakFreeze,
 	}

@@ -12,6 +12,11 @@ export async function fetchTodoListItems(todoListId?: number | null): Promise<To
 	return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
 }
 
+export async function fetchDashboardTodoListItems(): Promise<TodoListItemEntity[]> {
+	const response = await API.get('todo-list-item/dashboard-widget')
+	return TodoListItemEntity.listFromObjects(response.data)
+}
+
 /**
  * No backend endpoint exists yet for this (see prompts/todo-motivation/backend/N4-backend.md) — `_silent`
  * plus the catch mean a 404 today just leaves the recap card unrendered, not an error toast the user did

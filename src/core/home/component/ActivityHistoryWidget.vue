@@ -3,8 +3,11 @@
 		:title="$t('home.activityHistory')"
 		:openRoute="{ name: 'activityHistoryDetail', query: { date: today } }"
 		:loading="loading"
+		:error="error"
+		:errorText="$t('home.loadFailedHistory')"
 		:empty="!pieData || pieData.items.length === 0"
 		:emptyText="$t('home.noHistory')"
+		@retry="load"
 	>
 		<div class="d-flex align-center ga-2 mb-2">
 			<VIcon
@@ -40,7 +43,12 @@
 
 	const pieData = ref<HistoryPieChartResponse | null>(null)
 	const loading = ref(true)
+	const error = ref(false)
 	const selectedGroup = ref<string | null>(null)
+	// Guards against an older load's response landing after a newer one — harmless before Retry
+	// existed (only one load could ever be in flight), not harmless now that a load can overlap
+	// the one it is retrying.
+	let loadToken = 0
 
 	const totalTrackedFormatted = computed(() => {
 		if (!pieData.value) return '0m'
@@ -48,7 +56,9 @@
 	})
 
 	async function load() {
+		const token = ++loadToken
 		loading.value = true
+		error.value = false
 		try {
 			const request = new DetailPieChartRequest(
 				HistoryGroupBy.Activity,
@@ -57,11 +67,14 @@
 				new Time(0, 0),
 				new Time(23, 59),
 			)
-			pieData.value = await getDetailPieChart(request)
+			const result = await getDetailPieChart(request)
+			if (token !== loadToken) return
+			pieData.value = result
 		} catch {
-			pieData.value = null
+			if (token !== loadToken) return
+			error.value = true
 		} finally {
-			loading.value = false
+			if (token === loadToken) loading.value = false
 		}
 	}
 

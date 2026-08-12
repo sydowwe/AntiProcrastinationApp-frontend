@@ -36,6 +36,15 @@ const tasks = ref<PlannerTask[]>([])
 const loading = ref(true)
 /** True during a background refetch, with the previous plan still rendered underneath. */
 const refreshing = ref(false)
+/**
+ * True when the most recent `fetchPlan()` failed. Deliberately a plain ref rather than
+ * `useRequestState()`: that composable ties `loading`/`error` to a raw server message and an
+ * `_silent` flag for suppressing the axios interceptor's snackbar, but here the interceptor's
+ * generic snackbar should keep firing (as it already does for every other request) while this
+ * flag drives its own friendly, localized, per-consumer message — NowBar and DayPlannerWidget
+ * each phrase it differently, which a shared server-text ref can't do.
+ */
+const error = ref(false)
 const now = ref(new Date())
 /** Local ISO date the loaded plan belongs to. Null means "nothing loaded". */
 const planDate = ref<string | null>(null)
@@ -286,6 +295,7 @@ function fireOnce(key: string, action: () => void) {
 async function fetchPlan(): Promise<void> {
 	const token = ++loadToken
 	const isoDate = todayIsoDate.value
+	error.value = false
 	try {
 		const loadedCalendar = await calendarQuery().fetchByDate(usStringToUrlString(isoDate))
 		const loadedTasks = await planner().fetchFiltered(
@@ -298,9 +308,10 @@ async function fetchPlan(): Promise<void> {
 		syncStreak()
 	} catch {
 		if (token !== loadToken) return
-		calendar.value = null
-		tasks.value = []
-		planDate.value = null
+		// Leave calendar/tasks/planDate as they are: on a first load they are already the empty
+		// defaults, and on a failed background refresh the previous good plan stays on screen
+		// instead of being replaced by a lie ("no plan today") or wiped for no reason.
+		error.value = true
 	}
 }
 
@@ -351,6 +362,7 @@ export function resetTodayPlan(): void {
 	planDate.value = null
 	loading.value = true
 	refreshing.value = false
+	error.value = false
 	loadPromise = null
 	firedAlerts.clear()
 }
@@ -410,6 +422,7 @@ export function useTodayPlan() {
 		tasks,
 		loading,
 		refreshing,
+		error,
 		now,
 		nowMinutes,
 		planDate,

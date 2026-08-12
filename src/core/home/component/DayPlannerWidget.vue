@@ -83,6 +83,26 @@
 			</div>
 
 			<div
+				v-else-if="error"
+				class="d-flex flex-column align-center justify-center ga-3 h-100 pa-4 text-center text-medium-emphasis"
+			>
+				<VIcon
+					icon="fa-triangle-exclamation"
+					size="32"
+					style="opacity: 0.4"
+				/>
+				<span>{{ $t('home.loadFailedPlan') }}</span>
+				<VBtn
+					variant="tonal"
+					color="primaryOutline"
+					prependIcon="fa-rotate-right"
+					@click="reload"
+				>
+					{{ $t('home.retry') }}
+				</VBtn>
+			</div>
+
+			<div
 				v-else-if="!calendar"
 				class="d-flex flex-column align-center justify-center ga-3 h-100 pa-4"
 			>
@@ -370,6 +390,7 @@
 		calendar,
 		loading,
 		refreshing,
+		error,
 		nowMinutes,
 		sortedTasks,
 		totalCount,
@@ -397,6 +418,7 @@
 		snoozeTask,
 		extendTask,
 		ensureLoaded,
+		reload,
 	} = useTodayPlan()
 
 	const snoozeOptions = [15, 30, 60]

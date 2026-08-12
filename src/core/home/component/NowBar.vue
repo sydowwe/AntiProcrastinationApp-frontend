@@ -19,113 +19,137 @@
 			</div>
 			<VDivider vertical />
 
-			<VAvatar
-				:color="accentColor"
-				variant="tonal"
-				rounded="lg"
-				size="44"
-			>
+			<template v-if="error && !focusTask">
 				<VIcon
-					:icon="modeIcon"
+					icon="fa-triangle-exclamation"
+					color="error"
 					size="20"
 				/>
-			</VAvatar>
-
-			<div
-				class="flex-grow-1"
-				style="min-width: 0"
-			>
-				<div class="d-flex align-center ga-2">
-					<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
-					<span
-						v-if="countdown"
-						class="text-caption font-weight-bold"
-					>
-						· {{ countdown }}
-					</span>
-					<VChip
-						v-if="overrunMinutes > 0"
-						color="error"
-						variant="flat"
-						size="x-small"
-						prependIcon="fa-hourglass-end"
-					>
-						{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
-					</VChip>
-				</div>
-				<div class="nowbar__title">{{ headline }}</div>
-			</div>
-
-			<template v-if="focusTask">
-				<!-- one tap from "I see the task" to "I am working on it" -->
-				<VBtn
-					v-if="focusMode !== 'now'"
-					color="primary"
-					size="large"
-					prependIcon="fa-play"
-					@click="start(focusTask)"
+				<div
+					class="flex-grow-1 nowbar__title"
+					style="min-width: 0"
 				>
-					{{ $t('home.start') }}
+					{{ $t('home.loadFailedPlan') }}
+				</div>
+				<VBtn
+					variant="tonal"
+					color="primaryOutline"
+					size="large"
+					prependIcon="fa-rotate-right"
+					@click="reload"
+				>
+					{{ $t('home.retry') }}
 				</VBtn>
-				<template v-else>
+			</template>
+			<template v-else>
+				<VAvatar
+					:color="accentColor"
+					variant="tonal"
+					rounded="lg"
+					size="44"
+				>
+					<VIcon
+						:icon="modeIcon"
+						size="20"
+					/>
+				</VAvatar>
+
+				<div
+					class="flex-grow-1"
+					style="min-width: 0"
+				>
+					<div class="d-flex align-center ga-2">
+						<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
+						<span
+							v-if="countdown"
+							class="text-caption font-weight-bold"
+						>
+							· {{ countdown }}
+						</span>
+						<VChip
+							v-if="overrunMinutes > 0"
+							color="error"
+							variant="flat"
+							size="x-small"
+							prependIcon="fa-hourglass-end"
+						>
+							{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
+						</VChip>
+					</div>
+					<div class="nowbar__title">{{ headline }}</div>
+				</div>
+
+				<template v-if="focusTask">
+					<!-- one tap from "I see the task" to "I am working on it" -->
 					<VBtn
-						color="successDark"
+						v-if="focusMode !== 'now'"
+						color="primary"
 						size="large"
-						prependIcon="fa-check"
-						@click="finish(focusTask)"
+						prependIcon="fa-play"
+						@click="start(focusTask)"
 					>
-						{{ $t('home.finish') }}
+						{{ $t('home.start') }}
 					</VBtn>
-					<VBtn
-						variant="tonal"
-						color="primaryOutline"
-						size="large"
-						prependIcon="fa-stopwatch"
-						@click="openTracker(focusTask)"
-					>
-						{{ $t('home.track') }}
-					</VBtn>
+					<template v-else>
+						<VBtn
+							color="successDark"
+							size="large"
+							prependIcon="fa-check"
+							@click="finish(focusTask)"
+						>
+							{{ $t('home.finish') }}
+						</VBtn>
+						<VBtn
+							variant="tonal"
+							color="primaryOutline"
+							size="large"
+							prependIcon="fa-stopwatch"
+							@click="openTracker(focusTask)"
+						>
+							{{ $t('home.track') }}
+						</VBtn>
+					</template>
+
+					<VMenu location="bottom end">
+						<template #activator="{ props: menuProps }">
+							<VIconBtn
+								v-bind="menuProps"
+								icon="fa-ellipsis-vertical"
+								variant="text"
+							/>
+						</template>
+						<VList density="compact">
+							<VListSubheader>{{ $t('home.moveLater') }}</VListSubheader>
+							<VListItem
+								v-for="minutes in snoozeOptions"
+								:key="minutes"
+								:title="`+${minutesLabel(minutes)}`"
+								prependIcon="fa-clock-rotate-left"
+								@click="snoozeTask(focusTask, minutes)"
+							/>
+							<VDivider class="my-1" />
+							<VListSubheader>{{ $t('home.skip') }}</VListSubheader>
+							<VListItem
+								v-for="reason in skipReasons"
+								:key="reason"
+								:title="$t(`home.skipReason.${reason}`)"
+								prependIcon="fa-forward"
+								@click="skipTask(focusTask, $t(`home.skipReason.${reason}`))"
+							/>
+						</VList>
+					</VMenu>
 				</template>
 
-				<VMenu location="bottom end">
-					<template #activator="{ props: menuProps }">
-						<VIconBtn
-							v-bind="menuProps"
-							icon="fa-ellipsis-vertical"
-							variant="text"
-						/>
-					</template>
-					<VList density="compact">
-						<VListSubheader>{{ $t('home.moveLater') }}</VListSubheader>
-						<VListItem
-							v-for="minutes in snoozeOptions"
-							:key="minutes"
-							:title="`+${minutesLabel(minutes)}`"
-							prependIcon="fa-clock-rotate-left"
-							@click="snoozeTask(focusTask, minutes)"
-						/>
-						<VDivider class="my-1" />
-						<VListSubheader>{{ $t('home.skip') }}</VListSubheader>
-						<VListItem
-							v-for="reason in skipReasons"
-							:key="reason"
-							:title="$t(`home.skipReason.${reason}`)"
-							prependIcon="fa-forward"
-							@click="skipTask(focusTask, $t(`home.skipReason.${reason}`))"
-						/>
-					</VList>
-				</VMenu>
+				<VBtn
+					v-else-if="!calendar"
+					color="primary"
+					size="large"
+					prependIcon="fa-wand-magic-sparkles"
+					@click="openPlanner"
+				>
+					{{ $t('home.planToday') }}
+				</VBtn>
 			</template>
-
-			<VBtn
-				v-else-if="!calendar"
-				color="primary"
-				size="large"
-				prependIcon="fa-wand-magic-sparkles"
-				@click="openPlanner"
-			>
-				{{ $t('home.planToday') }}
-			</VBtn>
 
 			<VChip
 				v-if="streakStore.displayedStreak > 0"
@@ -177,6 +201,7 @@
 		nowMinutes,
 		todayUrlDate,
 		streakStore,
+		error,
 		taskColor,
 		minutesLabel,
 		startTask,

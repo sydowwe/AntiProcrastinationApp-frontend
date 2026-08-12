@@ -3,8 +3,11 @@
 		:title="$t('home.todoList')"
 		:openRoute="{ name: 'toDoList' }"
 		:loading="loading"
+		:error="error"
+		:errorText="$t('home.loadFailedTodos')"
 		:empty="visibleItems.length === 0"
 		:emptyText="$t('home.noUpcomingTasks')"
+		@retry="load"
 	>
 		<template #headerActions>
 			<VIconBtn
@@ -40,17 +43,27 @@
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
-	import { API } from '@/_common/axiosConfig.ts'
-	import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
+	import { useI18n } from 'vue-i18n'
+	import { fetchDashboardTodoListItems, useTodoListItemCrud } from '@/core/todoList/api/todoListItemApi.ts'
+	import type { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
+	const { t } = useI18n()
+	const { showErrorSnackbar } = useSnackbar()
+	const { toggleIsDone } = useTodoListItemCrud(0)
 
 	const items = ref<TodoListItemEntity[]>([])
 	const loading = ref(true)
+	const error = ref(false)
 	const hideDone = ref(true)
+	// Guards against an older load's response landing after a newer one — harmless before Retry
+	// existed (only one load could ever be in flight), not harmless now that a load can overlap
+	// the one it is retrying.
+	let loadToken = 0
 
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
@@ -72,18 +85,31 @@
 
 	const visibleItems = computed(() => (hideDone.value ? sortedItems.value.filter(i => !i.isDone) : sortedItems.value))
 
-	function handleIsDoneChanged(item: TodoListItemEntity, forceValue?: boolean) {
-		const request = { ids: [item.id], forceValue }
-		API.patch('todo-list-item/toggle-is-done', request).catch(() => load())
+	// `NormalTodoListItem` emits the item's id, not the entity — BaseTodoListItem.vue:289.
+	function handleIsDoneChanged(id: number, forceValue?: boolean) {
+		const item = items.value.find(i => i.id === id)
+		if (!item) return
+		const previousIsDone = item.isDone
+		item.isDone = forceValue ?? !previousIsDone
+		toggleIsDone(id, forceValue).catch(() => {
+			item.isDone = previousIsDone
+			showErrorSnackbar(t('home.toggleTaskFailed', { task: item.activity.name }))
+		})
 	}
 
 	async function load() {
+		const token = ++loadToken
 		loading.value = true
+		error.value = false
 		try {
-			const response = await API.get('todo-list-item/dashboard-widget')
-			items.value = TodoListItemEntity.listFromObjects(response.data)
+			const result = await fetchDashboardTodoListItems()
+			if (token !== loadToken) return
+			items.value = result
+		} catch {
+			if (token !== loadToken) return
+			error.value = true
 		} finally {
-			loading.value = false
+			if (token === loadToken) loading.value = false
 		}
 	}
 

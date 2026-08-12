@@ -51,6 +51,13 @@ const home = {
 		saveStatusFailed: `Could not save the status of "{task}"`,
 		snoozeFailed: `Could not move "{task}"`,
 		extendFailed: `Could not extend "{task}"`,
+		toggleTaskFailed: `Could not save the status of "{task}"`,
+		retry: `Retry`,
+		loadFailed: `Couldn't load this data`,
+		loadFailedPlan: `Couldn't load today's plan`,
+		loadFailedHistory: `Couldn't load today's activity`,
+		loadFailedRoutineTodos: `Couldn't load routine tasks`,
+		loadFailedTodos: `Couldn't load tasks`,
 	},
 }
 export default home

@@ -51,6 +51,13 @@ const home = {
 		saveStatusFailed: `Stav úlohy „{task}“ sa nepodarilo uložiť`,
 		snoozeFailed: `Úlohu „{task}“ sa nepodarilo posunúť`,
 		extendFailed: `Úlohu „{task}“ sa nepodarilo predĺžiť`,
+		toggleTaskFailed: `Stav úlohy „{task}“ sa nepodarilo uložiť`,
+		retry: `Skúsiť znova`,
+		loadFailed: `Nepodarilo sa načítať dáta`,
+		loadFailedPlan: `Nepodarilo sa načítať dnešný plán`,
+		loadFailedHistory: `Nepodarilo sa načítať dnešnú aktivitu`,
+		loadFailedRoutineTodos: `Nepodarilo sa načítať rutinné úlohy`,
+		loadFailedTodos: `Nepodarilo sa načítať úlohy`,
 	},
 }
 export default home

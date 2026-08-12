@@ -24,6 +24,26 @@
 				<VProgressCircular indeterminate />
 			</div>
 			<div
+				v-else-if="error"
+				class="d-flex flex-column align-center justify-center ga-3 h-100 pa-4 text-center text-medium-emphasis"
+			>
+				<VIcon
+					icon="fa-triangle-exclamation"
+					size="26"
+					style="opacity: 0.5"
+				/>
+				<span>{{ errorText ?? $t('home.loadFailed') }}</span>
+				<VBtn
+					variant="tonal"
+					color="primaryOutline"
+					size="small"
+					prependIcon="fa-rotate-right"
+					@click="emit('retry')"
+				>
+					{{ $t('home.retry') }}
+				</VBtn>
+			</div>
+			<div
 				v-else-if="empty"
 				class="d-flex flex-column align-center justify-center ga-3 h-100 text-center text-medium-emphasis"
 			>
@@ -42,8 +62,10 @@
 		title,
 		openRoute,
 		loading = false,
+		error = false,
 		empty = false,
 		emptyText,
+		errorText,
 		scrollable = true,
 	} = defineProps<{
 		/** Already translated — the shell does no lookups. */
@@ -54,12 +76,18 @@
 		 */
 		openRoute?: RouteLocationRaw
 		loading?: boolean
+		/** Takes priority over `empty` — a failed request must never render as "nothing here". */
+		error?: boolean
 		empty?: boolean
 		/** Simple empty state. Use the `#empty` slot when it needs more than a line of text. */
 		emptyText?: string
+		/** Shown next to the Retry button. Falls back to a generic message when omitted. */
+		errorText?: string
 		/** Off for bodies that size their own content to the card instead of scrolling. */
 		scrollable?: boolean
 	}>()
+
+	const emit = defineEmits<{ retry: [] }>()
 
 	const router = useRouter()
 
