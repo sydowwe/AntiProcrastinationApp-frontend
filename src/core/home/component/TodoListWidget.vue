@@ -1,58 +1,40 @@
 <template>
-	<VCard style="display: flex; flex-direction: column; overflow: hidden">
-		<VCardTitle class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
-			<span class="text-h6">{{ $t('home.todoList') }}</span>
-			<div class="d-flex align-center ga-1">
-				<VIconBtn
-					:icon="hideDone ? 'fa-eye' : 'fa-eye-slash'"
-					variant="text"
-					size="small"
-					:title="hideDone ? $t('home.showDone') : $t('home.hideDone')"
-					@click="hideDone = !hideDone"
-				/>
-				<VIconBtn
-					icon="fa-up-right-from-square"
-					variant="text"
-					size="small"
-					@click="router.push({ name: 'toDoList' })"
-				/>
-			</div>
-		</VCardTitle>
-		<VDivider />
-		<VCardText style="flex: 1; overflow-y: auto; min-height: 0">
-			<div
-				v-if="loading"
-				class="d-flex justify-center align-center h-100"
-			>
-				<VProgressCircular indeterminate />
-			</div>
-			<div
-				v-else-if="visibleItems.length === 0"
-				class="text-center text-medium-emphasis py-4"
-			>
-				{{ $t('home.noUpcomingTasks') }}
-			</div>
-			<VList
-				v-else
-				density="compact"
-				class="pa-0"
-			>
-				<NormalTodoListItem
-					v-for="item in visibleItems"
-					:key="item.id"
-					:toDoListItem="item"
-					:kind="ToDoListKind.NORMAL"
-					:listId="0"
-					class="my-2"
-					@isDoneChanged="handleIsDoneChanged"
-					@stepToggled="load"
-					@edit="router.push({ name: 'toDoList' })"
-					@delete="router.push({ name: 'toDoList' })"
-					@addToPlanner="router.push({ name: 'taskPlanner' })"
-				/>
-			</VList>
-		</VCardText>
-	</VCard>
+	<WidgetCard
+		:title="$t('home.todoList')"
+		:openRoute="{ name: 'toDoList' }"
+		:loading="loading"
+		:empty="visibleItems.length === 0"
+		:emptyText="$t('home.noUpcomingTasks')"
+	>
+		<template #headerActions>
+			<VIconBtn
+				:icon="hideDone ? 'fa-eye' : 'fa-eye-slash'"
+				variant="text"
+				size="small"
+				:title="hideDone ? $t('home.showDone') : $t('home.hideDone')"
+				@click="hideDone = !hideDone"
+			/>
+		</template>
+
+		<VList
+			density="compact"
+			class="pa-0"
+		>
+			<NormalTodoListItem
+				v-for="item in visibleItems"
+				:key="item.id"
+				:toDoListItem="item"
+				:kind="ToDoListKind.NORMAL"
+				:listId="0"
+				class="my-2"
+				@isDoneChanged="handleIsDoneChanged"
+				@stepToggled="load"
+				@edit="router.push({ name: 'toDoList' })"
+				@delete="router.push({ name: 'toDoList' })"
+				@addToPlanner="router.push({ name: 'taskPlanner' })"
+			/>
+		</VList>
+	</WidgetCard>
 </template>
 
 <script setup lang="ts">
@@ -62,6 +44,7 @@
 	import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
+	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 
 	const router = useRouter()
 

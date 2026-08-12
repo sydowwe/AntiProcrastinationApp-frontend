@@ -1,6 +1,18 @@
+<!--
+	Deliberately NOT built on WidgetCard, unlike the other four home widgets.
+
+	Fitting it would have cost the shell three things nothing else needs: a leading-avatar slot, a
+	`refreshing` flag to swap the divider for the 2px bar, and a way to turn the body padding off
+	(everything below manages its own insets). Its empty state is also two different blocks — "no
+	calendar yet, plan one" and "calendar exists but is empty" — where the shell models one.
+
+	Three escape hatches for a single caller is a worse shell than one honest duplicate, so this
+	keeps its own frame. If `refreshing` later lands on the other widgets (H6/H7), revisit: that is
+	the one of the three that is genuinely shell-level.
+-->
 <template>
-	<VCard style="display: flex; flex-direction: column">
-		<VCardTitle class="d-flex align-center ga-3 px-4 pt-4 pb-3">
+	<VCard style="display: flex; flex-direction: column; overflow: hidden">
+		<VCardTitle class="d-flex align-center ga-3 px-4 pt-4 pb-2">
 			<VAvatar
 				color="primary"
 				variant="tonal"

@@ -1,52 +1,31 @@
 <template>
-	<VCard style="height: 450px; display: flex; flex-direction: column">
-		<VCardTitle class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
-			<span class="text-h6">{{ $t('home.activityHistory') }}</span>
-			<VIconBtn
-				icon="fa-up-right-from-square"
-				variant="text"
-				size="small"
-				@click="router.push({ name: 'activityHistoryDetail', query: { date: today } })"
+	<WidgetCard
+		:title="$t('home.activityHistory')"
+		:openRoute="{ name: 'activityHistoryDetail', query: { date: today } }"
+		:loading="loading"
+		:empty="!pieData || pieData.items.length === 0"
+		:emptyText="$t('home.noHistory')"
+	>
+		<div class="d-flex align-center ga-2 mb-2">
+			<VIcon
+				icon="fas fa-clock"
+				color="primary"
+				size="18"
 			/>
-		</VCardTitle>
-		<VDivider />
-		<VCardText style="flex: 1; overflow-y: auto; min-height: 0">
-			<div
-				v-if="loading"
-				class="d-flex justify-center align-center h-100"
-			>
-				<VProgressCircular indeterminate />
-			</div>
-			<div
-				v-else-if="!pieData || pieData.items.length === 0"
-				class="text-center text-medium-emphasis py-4"
-			>
-				{{ $t('home.noHistory') }}
-			</div>
-			<template v-else>
-				<div class="d-flex align-center ga-2 mb-2">
-					<VIcon
-						icon="fas fa-clock"
-						color="primary"
-						size="18"
-					/>
-					<span class="text-body-1 font-weight-medium">{{ $t('home.totalTracked') }}:</span>
-					<span class="text-body-1 text-primary font-weight-bold">{{ totalTrackedFormatted }}</span>
-				</div>
-				<HistoryPieChart
-					:items="pieData.items"
-					:selectedGroup="selectedGroup"
-					@segmentClick="selectedGroup = $event"
-					isNarrow
-				/>
-			</template>
-		</VCardText>
-	</VCard>
+			<span class="text-body-1 font-weight-medium">{{ $t('home.totalTracked') }}:</span>
+			<span class="text-body-1 text-primary font-weight-bold">{{ totalTrackedFormatted }}</span>
+		</div>
+		<HistoryPieChart
+			:items="pieData?.items ?? []"
+			:selectedGroup="selectedGroup"
+			@segmentClick="selectedGroup = $event"
+			isNarrow
+		/>
+	</WidgetCard>
 </template>
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
-	import { useRouter } from 'vue-router'
 	import { getDetailPieChart } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
@@ -54,10 +33,10 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import HistoryPieChart from '@/core/historyDashboard/component/pieChart/HistoryPieChart.vue'
+	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 	const today = formatDateForApi(new Date('2026-04-10'))
-	const router = useRouter()
 
 	const pieData = ref<HistoryPieChartResponse | null>(null)
 	const loading = ref(true)

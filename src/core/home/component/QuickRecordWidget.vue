@@ -1,15 +1,9 @@
 <template>
-	<VCard style="display: flex; flex-direction: column; overflow: hidden">
-		<VCardTitle
-			class="d-flex align-center px-4 pt-4 pb-2"
-			style="height: 64px"
-		>
-			<span class="text-h6">
-				{{ $t('home.quickRecord') }}
-			</span>
-		</VCardTitle>
-		<VDivider />
-		<VCardText class="quick pa-4">
+	<WidgetCard
+		:title="$t('home.quickRecord')"
+		:scrollable="false"
+	>
+		<div class="quick">
 			<!-- one reflex, not four equal choices -->
 			<VBtn
 				class="quick__primary text-none"
@@ -35,12 +29,13 @@
 					{{ $t(option.label) }}
 				</VBtn>
 			</div>
-		</VCardText>
-	</VCard>
+		</div>
+	</WidgetCard>
 </template>
 
 <script setup lang="ts">
 	import { useRouter } from 'vue-router'
+	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 
 	const router = useRouter()
 
@@ -52,8 +47,9 @@
 </script>
 
 <style scoped>
+	/* Fills the non-scrolling body it is handed, rather than deciding its own height. */
 	.quick {
-		flex: 1 1 0;
+		height: 100%;
 		min-height: 0;
 		overflow: hidden;
 		display: flex;
