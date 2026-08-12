@@ -42,15 +42,27 @@
 						name="pre-chips"
 						:isInChangeOrderMode
 					/>
-					<VChip
+					<VTooltip
 						v-if="toDoListItem.suggestedTime?.isNotZero()"
-						size="x-small"
-						variant="tonal"
-						color="neutral-600"
-						prependIcon="clock"
+						:disabled="!averageActual"
+						location="top"
 					>
-						~{{ toDoListItem.suggestedTime!.getNice }}
-					</VChip>
+						<template #activator="{ props: tooltipProps }">
+							<VChip
+								v-bind="tooltipProps"
+								size="x-small"
+								variant="tonal"
+								color="neutral-600"
+								prependIcon="clock"
+							>
+								~{{ toDoListItem.suggestedTime!.getNice }}
+								<template v-if="averageActual">&nbsp;/ {{ averageActual.getNice }}</template>
+							</VChip>
+						</template>
+						<span>
+							{{ i18n.t('toDoList.calibration.usuallyTooltip', { time: averageActual!.getNice }) }}
+						</span>
+					</VTooltip>
 					<slot name="post-chips" />
 					<VListItemTitle
 						class="text-white"
@@ -177,6 +189,7 @@
 	import BaseTodoListItemSteps from '@/core/todoList/component/BaseTodoListItemSteps.vue'
 	import TodoListItemCounter from '@/core/todoList/component/TodoListItemCounter.vue'
 	import { useTodoItemDraggable } from '@/core/todoList/composable/dragAndDrop/useTodoItemDraggable.ts'
+	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 
 	const {
 		toDoListItem,
@@ -211,6 +224,11 @@
 	const { getBgColor } = useColor()
 
 	const accentColor = computed(() => (color ? getBgColor(color) : undefined))
+
+	// The parent list view loads the aggregate for every visible activity in one batched request
+	// (`ensureLoaded`); this only reads the shared cache, so no per-item request is made here.
+	const { averageActualFor } = useEstimateCalibration()
+	const averageActual = computed(() => averageActualFor(toDoListItem.activity.id))
 
 	const itemProgress = computed(() => {
 		if (toDoListItem.isMultipleCount && toDoListItem.totalCount) {
