@@ -31,6 +31,9 @@
 				/>
 				<span class="text-caption text-medium-emphasis">{{ period.bestStreak }}</span>
 			</VSheet>
+			<span class="text-caption text-medium-emphasis">
+				{{ overallProgress.done }}/{{ overallProgress.total }}
+			</span>
 			<VIconBtn
 				:icon="hideDone ? 'fa-eye' : 'fa-eye-slash'"
 				variant="text"
@@ -64,8 +67,15 @@
 				<span class="text-caption text-medium-emphasis">
 					{{ groupProgress(group).done }}/{{ groupProgress(group).total }}
 				</span>
+				<span
+					v-if="notDueTodayCount(group) > 0"
+					class="text-caption text-medium-emphasis"
+				>
+					{{ $t('home.notDueToday', { count: notDueTodayCount(group) }) }}
+				</span>
 			</div>
 			<VList
+				v-if="filteredItems(group).length > 0"
 				density="compact"
 				class="pa-0"
 			>
@@ -95,14 +105,17 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
+	import { storeToRefs } from 'pinia'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
 	import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
+	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import RoutineTodoListItem from '@/core/todoList/component/routine/RoutineTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
+	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
@@ -110,41 +123,72 @@
 	const { showErrorSnackbar } = useSnackbar()
 	const { fetchGroupedByTimePeriod, toggleIsDoneOrThrow } = useRoutineTodoListItemCrud()
 	const { fetchAll: fetchAllPeriods } = useRoutineTimePeriodCrud()
+	const { hideDoneRoutine: hideDone } = storeToRefs(useHomeUiStore())
 
 	const groupedItems = ref<RoutineTodoListGroupedList[]>([])
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const loading = ref(true)
 	const loadingPeriods = ref(true)
 	const error = ref(false)
-	const hideDone = ref(true)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
 	// existed (only one load could ever be in flight), not harmless now that a load can overlap
 	// the one it is retrying.
 	let loadToken = 0
 
-	const todayDayOfWeek = (() => {
-		const d = new Date().getDay()
-		return d === 0 ? 7 : d // ISO: Mon=1 … Sun=7
-	})()
+	// JS Date#getDay() is 0=Sun..6=Sat; DayOfWeek is a string enum with no numeric ordering of its own.
+	const JS_DAY_TO_DAY_OF_WEEK = [
+		DayOfWeek.Sunday,
+		DayOfWeek.Monday,
+		DayOfWeek.Tuesday,
+		DayOfWeek.Wednesday,
+		DayOfWeek.Thursday,
+		DayOfWeek.Friday,
+		DayOfWeek.Saturday,
+	]
+	const todayDayOfWeek = JS_DAY_TO_DAY_OF_WEEK[new Date().getDay()]
 	const todayDayOfMonth = new Date().getDate()
 
+	// Confirmed against RoutineTodoListItemEntity.ts and the edit form (RoutineToDoListForm.vue:34-46):
+	// day-of-week and day-of-month are two separate, already-discriminated fields — `suggestedDays`
+	// and `suggestedDayOfMonth` — not one overloaded value. The form itself switches which one it
+	// shows based on `timePeriod.lengthInDays` (weekly: 1 < lengthInDays <= 14, monthly: > 14), so the
+	// same threshold is used here to pick which field to read.
 	function isSuggestedForToday(item: RoutineTodoListItemEntity): boolean {
 		if (item.timePeriod.lengthInDays === 1) return true
-		if (item.suggestedDay === null) return false
-		return item.suggestedDay <= 7 ? item.suggestedDay === todayDayOfWeek : item.suggestedDay === todayDayOfMonth
+		if (item.timePeriod.lengthInDays > 14) return item.suggestedDayOfMonth === todayDayOfMonth
+		return item.suggestedDays.includes(todayDayOfWeek)
 	}
 
 	function todayItems(group: RoutineTodoListGroupedList): RoutineTodoListItemEntity[] {
 		return group.items.filter(isSuggestedForToday)
 	}
 
+	function notDueTodayCount(group: RoutineTodoListGroupedList): number {
+		return group.items.length - todayItems(group).length
+	}
+
 	const visibleGroups = computed(() =>
 		groupedItems.value.filter(g => {
-			if (g.timePeriod.isHidden) return false
+			if (g.timePeriod.isHidden || g.items.length === 0) return false
 			const items = todayItems(g)
-			if (items.length === 0) return false
+			// Keep the group visible (with a "+N not due today" note) instead of vanishing when
+			// nothing in it happens to be due today.
+			if (items.length === 0) return true
 			return !hideDone.value || items.some(i => !i.isDone)
 		}),
+	)
+
+	const overallProgress = computed(() =>
+		groupedItems.value.reduce(
+			(acc, g) => {
+				if (g.timePeriod.isHidden) return acc
+				const { done, total } = groupProgress(g)
+				acc.done += done
+				acc.total += total
+				return acc
+			},
+			{ done: 0, total: 0 },
+		),
 	)
 
 	function groupProgress(group: RoutineTodoListGroupedList) {

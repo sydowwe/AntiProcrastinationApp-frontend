@@ -10,6 +10,7 @@
 		@retry="load"
 	>
 		<template #headerActions>
+			<span class="text-caption text-medium-emphasis">{{ doneCount }}/{{ items.length }}</span>
 			<VIconBtn
 				:icon="hideDone ? 'fa-eye' : 'fa-eye-slash'"
 				variant="text"
@@ -44,22 +45,24 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
+	import { storeToRefs } from 'pinia'
 	import { fetchDashboardTodoListItems, useTodoListItemCrud } from '@/core/todoList/api/todoListItemApi.ts'
 	import type { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
+	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
 	const { t } = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
 	const { toggleIsDone } = useTodoListItemCrud(0)
+	const { hideDoneTodoList: hideDone } = storeToRefs(useHomeUiStore())
 
 	const items = ref<TodoListItemEntity[]>([])
 	const loading = ref(true)
 	const error = ref(false)
-	const hideDone = ref(true)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
 	// existed (only one load could ever be in flight), not harmless now that a load can overlap
 	// the one it is retrying.
@@ -84,6 +87,7 @@
 	)
 
 	const visibleItems = computed(() => (hideDone.value ? sortedItems.value.filter(i => !i.isDone) : sortedItems.value))
+	const doneCount = computed(() => items.value.filter(i => i.isDone).length)
 
 	// `NormalTodoListItem` emits the item's id, not the entity — BaseTodoListItem.vue:289.
 	function handleIsDoneChanged(id: number, forceValue?: boolean) {
