@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { PeriodCompletion } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 
 	const {
@@ -35,7 +36,11 @@
 		lengthInDays: number
 		clickable?: boolean
 	}>()
+
 	const emit = defineEmits<{ click: [] }>()
+
+	const { t } = useI18n()
+
 	const CELL_SIZE = 13
 	const GAP = 4
 	const ROWS = 2
@@ -114,10 +119,10 @@
 	function tooltipText(p: PeriodCompletion): string {
 		const label =
 			lengthInDays === 1 ? formatDate(p.periodStart) : `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
-		if (p.totalCount === 0) return `${label} · 0 done`
+		if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 		const ratio = p.completedCount / p.totalCount
-		if (ratio >= 1) return `${label} · All done`
-		return `${label} · ${p.completedCount} / ${p.totalCount} done`
+		if (ratio >= 1) return t('routineTodoList.heatmapAllDone', { label })
+		return t('routineTodoList.heatmapPartial', { label, done: p.completedCount, total: p.totalCount })
 	}
 </script>
 

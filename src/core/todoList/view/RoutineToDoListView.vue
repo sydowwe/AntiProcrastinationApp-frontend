@@ -125,6 +125,7 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
+	import { useRoutineRunLabel } from '@/core/todoList/composable/useRoutineRunLabel.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
@@ -150,6 +151,7 @@
 	const { showSuccessSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
+	const { runLabel } = useRoutineRunLabel()
 	const plannerStore = useDayPlannerStore()
 
 	const {
@@ -170,7 +172,10 @@
 
 	const showConfetti = ref(false)
 	const confettiKey = ref(0)
-	const celebratedGroupIds = new Set<number>()
+
+	// Celebration is reserved for genuinely rare events. Firing on every completed group habituates
+	// into meaninglessness within weeks — a daily group would celebrate every single day.
+	const RUN_MILESTONES = [7, 30, 90, 180, 365]
 
 	function triggerConfetti() {
 		confettiKey.value++
@@ -178,6 +183,32 @@
 		setTimeout(() => {
 			showConfetti.value = false
 		}, 2500)
+	}
+
+	function celebrateIfRare(before: RoutineTimePeriodEntity, after: RoutineTimePeriodEntity) {
+		if (after.streak <= before.streak) return
+		const groupName = after.text ?? ''
+		// A new longest run — only once the user has an established record to pass.
+		if (before.bestStreak > 0 && after.streak > before.bestStreak) {
+			triggerConfetti()
+			showSuccessSnackbar(
+				t('routineTodoList.newLongestRun', {
+					group: groupName,
+					run: runLabel(after.streak, after.lengthInDays),
+				}),
+			)
+			return
+		}
+		const milestone = RUN_MILESTONES.find(m => before.streak < m && after.streak >= m)
+		if (milestone !== undefined) {
+			triggerConfetti()
+			showSuccessSnackbar(
+				t('routineTodoList.milestoneReached', {
+					group: groupName,
+					run: runLabel(milestone, after.lengthInDays),
+				}),
+			)
+		}
 	}
 
 	const hideDoneGroupIds = computed({
@@ -531,15 +562,14 @@
 				const index = group.items.findIndex(item => item.id === id)
 				if (index !== -1) {
 					group.items[index] = updatedItem
-					const groupId = group.timePeriod.id as number
-					if (
-						group.items.length > 0 &&
-						group.items.every(item => item.isDone) &&
-						!celebratedGroupIds.has(groupId)
-					) {
-						celebratedGroupIds.add(groupId)
-						triggerConfetti()
-					}
+					// Keep the group's stats (streak, consistency, history) in step with the refetched item,
+					// then judge whether the change was rare enough to celebrate.
+					const previousTimePeriod = group.timePeriod
+					// isHidden is local view state (the group selector mutates it without persisting),
+					// so it must survive the refresh.
+					updatedItem.timePeriod.isHidden = previousTimePeriod.isHidden
+					group.timePeriod = updatedItem.timePeriod
+					celebrateIfRare(previousTimePeriod, updatedItem.timePeriod)
 				}
 			}
 		}

@@ -3,20 +3,33 @@
 		class="mt-2 mb-1"
 		style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px"
 	>
-		<!-- Left: streak + consistency -->
+		<!-- Left: accumulated run + consistency + trend -->
 		<div class="mb-1 d-flex flex-column ga-1">
-			<div
+			<VTooltip
 				v-if="timePeriod.streak > 0"
-				class="d-flex align-center ga-1"
+				:text="
+					$t('routineTodoList.currentRunTooltip', {
+						run: runLabel(timePeriod.streak, timePeriod.lengthInDays),
+						best: countLabel(timePeriod.bestStreak, timePeriod.lengthInDays),
+					})
+				"
+				location="bottom"
 			>
-				<VIcon
-					icon="fire-flame-curved"
-					size="15"
-					:color="timePeriod.streak >= timePeriod.bestStreak ? 'warning' : undefined"
-				/>
-				<span class="text-body-2 font-weight-bold">{{ timePeriod.streak }}</span>
-				<span class="text-caption opacity-60">/ {{ timePeriod.bestStreak }}</span>
-			</div>
+				<template #activator="{ props: tooltipProps }">
+					<div
+						v-bind="tooltipProps"
+						class="d-flex align-center ga-1"
+						style="cursor: default"
+					>
+						<VIcon
+							icon="fire-flame-curved"
+							size="15"
+							:color="timePeriod.streak >= timePeriod.bestStreak ? 'warning' : undefined"
+						/>
+						<span class="text-body-2 font-weight-bold">{{ timePeriod.streak }}</span>
+					</div>
+				</template>
+			</VTooltip>
 			<div class="d-flex align-center ga-2 flex-wrap">
 				<VTooltip
 					v-if="timePeriod.totalPeriodsElapsed > 0"
@@ -35,21 +48,22 @@
 					</template>
 				</VTooltip>
 				<VTooltip
-					v-if="atRisk"
-					:text="timePeriod.nextResetAt ? $t('routineTodoList.resetDate', { date: resetDateLabel }) : ''"
-					:disabled="!timePeriod.nextResetAt"
+					v-if="trend"
+					:text="$t('routineTodoList.trendTooltip', { recent: trend.recent, earlier: trend.earlier })"
 					location="bottom"
 				>
 					<template #activator="{ props: tooltipProps }">
-						<VChip
+						<span
 							v-bind="tooltipProps"
-							color="warning"
-							size="x-small"
-							prependIcon="triangle-exclamation"
-							class="text-black font-weight-bold"
+							class="text-caption d-flex align-center ga-1 text-medium-emphasis"
+							style="cursor: default"
 						>
-							{{ $t('routineTodoList.daysLeft', { days: daysUntilReset }) }}
-						</VChip>
+							<VIcon
+								:icon="trend.icon"
+								size="12"
+							/>
+							{{ $t(trend.labelKey) }}
+						</span>
 					</template>
 				</VTooltip>
 			</div>
@@ -94,7 +108,11 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
-	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
+	import { useRoutineRunLabel } from '@/core/todoList/composable/useRoutineRunLabel.ts'
+	import type {
+		PeriodCompletion,
+		RoutineTimePeriodEntity,
+	} from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 
 	const { timePeriod, items } = defineProps<{
@@ -103,11 +121,7 @@
 	}>()
 
 	const { getBgColor } = useColor()
-
-	const resetDateLabel = computed(() => {
-		if (!timePeriod.nextResetAt) return ''
-		return new Date(timePeriod.nextResetAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-	})
+	const { runLabel, countLabel } = useRoutineRunLabel()
 
 	const groupProgress = computed(() => ({
 		done: items.filter(item => item.isDone).length,
@@ -119,26 +133,27 @@
 		return Math.round((timePeriod.totalPeriodsCompleted / timePeriod.totalPeriodsElapsed) * 100)
 	})
 
-	const consistencyColor = computed(() => {
-		const pct = consistencyPct.value
-		if (pct >= 80) return 'text-success'
-		if (pct >= 50) return 'text-warning'
-		return 'text-error'
-	})
+	// Informational only: high consistency is highlighted, low consistency is stated without a verdict colour.
+	const consistencyColor = computed(() => (consistencyPct.value >= 80 ? 'text-success' : 'text-medium-emphasis'))
 
-	const daysUntilReset = computed(() => {
-		if (!timePeriod.nextResetAt) return Infinity
-		const ms = new Date(timePeriod.nextResetAt).getTime() - Date.now()
-		return Math.ceil(ms / (1000 * 60 * 60 * 24))
-	})
+	function completionRate(periods: PeriodCompletion[]): number | null {
+		const scheduled = periods.filter(p => p.totalCount > 0)
+		if (scheduled.length === 0) return null
+		const sum = scheduled.reduce((total, p) => total + p.completedCount / p.totalCount, 0)
+		return Math.round((sum / scheduled.length) * 100)
+	}
 
-	const atRisk = computed(() => {
-		if (timePeriod.lengthInDays === 1) return false
-		const days = daysUntilReset.value
-		if (days > 1 || days < 0) return false
-		const done = items.reduce((sum, item) => sum + (item.doneCount ?? (item.isDone ? 1 : 0)), 0)
-		const total = items.reduce((sum, item) => sum + (item.totalCount ?? 1), 0)
-		const pct = total ? (done / total) * 100 : 0
-		return pct < timePeriod.streakThreshold
+	// "You're doing this more often than before" — a competence signal from the history the heatmap already shows.
+	const trend = computed(() => {
+		const history = timePeriod.completionHistory
+		if (history.length < 6) return null
+		const half = Math.floor(history.length / 2)
+		const earlier = completionRate(history.slice(0, half))
+		const recent = completionRate(history.slice(half))
+		if (earlier === null || recent === null) return null
+		const delta = recent - earlier
+		if (delta >= 10) return { labelKey: 'routineTodoList.trendUp', icon: 'arrow-trend-up', recent, earlier }
+		if (delta <= -10) return { labelKey: 'routineTodoList.trendDown', icon: 'arrow-trend-down', recent, earlier }
+		return { labelKey: 'routineTodoList.trendSteady', icon: 'arrow-right-long', recent, earlier }
 	})
 </script>
