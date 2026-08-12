@@ -1,8 +1,8 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import HomeView from '@/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/_common/auth/authAdapter.ts'
 import { hasRequiredRole, type RequiredRole } from '@/_common/nav/navTypes.ts'
 import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
+import { homeRoutes } from '@/core/home/home.routes.ts'
 import { activityRoutes } from '@/core/activity/activity.routes.ts'
 import { activityHistoryRoutes } from '@/core/activityHistory/activityHistory.routes.ts'
 import { activityTrackingRoutes } from '@/core/activityTracking/activityTracking.routes.ts'
@@ -36,19 +36,10 @@ declare module 'vue-router' {
 	}
 }
 
-// Routes that belong to no feature module.
-const commonRoutes: RouteRecordRaw[] = [
-	{
-		path: '/',
-		name: 'home',
-		component: HomeView,
-	},
-]
-
 const router = createRouter({
 	history: createWebHistory('/'),
 	routes: [
-		...commonRoutes,
+		...homeRoutes,
 		...userRoutes,
 		...appUserRoutes,
 		...activityRoutes,

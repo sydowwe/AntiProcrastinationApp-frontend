@@ -97,7 +97,7 @@
 					@stepToggled="refreshNow"
 					@edit="router.push({ name: 'routineToDoList' })"
 					@delete="router.push({ name: 'routineToDoList' })"
-					@addToPlanner="router.push({ name: 'taskPlanner' })"
+					@addToPlanner="router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })"
 				/>
 			</VList>
 		</div>
@@ -120,6 +120,9 @@
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
 	import { todayDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
+	// Imported directly, not through `useTodayPlan()` — calling that would register a refresh
+	// consumer this widget does not want. See the note in useTodayPlan.ts.
+	import { todayUrlDate } from '@/core/home/composable/useTodayPlan.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
