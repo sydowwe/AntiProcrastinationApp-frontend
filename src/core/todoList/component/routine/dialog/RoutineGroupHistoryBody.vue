@@ -17,6 +17,7 @@
 	import { CalendarComponent, TooltipComponent, VisualMapComponent } from 'echarts/components'
 	import { CanvasRenderer } from 'echarts/renderers'
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type {
 		PeriodCompletion,
 		RoutineTimePeriodEntity,
@@ -27,6 +28,8 @@
 	}>()
 
 	use([HeatmapChart, CalendarComponent, TooltipComponent, VisualMapComponent, CanvasRenderer])
+
+	const { t } = useI18n()
 
 	const periodByDay = computed(() => {
 		const map = new Map<string, PeriodCompletion>()
@@ -41,12 +44,19 @@
 		return map
 	})
 
-	const expandedDays = computed<[string, number][]>(() => {
-		return Array.from(periodByDay.value.entries()).map(([dateStr, p]) => {
-			const ratio = p.totalCount === 0 ? 0 : p.completedCount / p.totalCount
-			return [dateStr, ratio]
-		})
-	})
+	// Frozen days are a third state, not a ratio — they get their own series so the visual map can't
+	// paint them as a shade of "done".
+	const expandedDays = computed<[string, number][]>(() =>
+		Array.from(periodByDay.value.entries())
+			.filter(([, p]) => !p.isFrozen)
+			.map(([dateStr, p]) => [dateStr, p.totalCount === 0 ? 0 : p.completedCount / p.totalCount]),
+	)
+
+	const frozenDays = computed<[string, number][]>(() =>
+		Array.from(periodByDay.value.entries())
+			.filter(([, p]) => p.isFrozen)
+			.map(([dateStr]) => [dateStr, 1]),
+	)
 
 	const calendarRange = computed<[string, string] | null>(() => {
 		const history = timePeriod.completionHistory
@@ -69,6 +79,7 @@
 
 		const successColor = getThemeColor('--v-theme-success')
 		const neutralColor = getThemeColor('--v-theme-neutral-700')
+		const infoColor = getThemeColor('--v-theme-info')
 
 		return {
 			tooltip: {
@@ -76,18 +87,23 @@
 					const dateStr: string = params.data[0]
 					const p = periodByDay.value.get(dateStr)
 					if (!p) return dateStr
-					const range = `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
-					if (p.totalCount === 0) return range
-					const ratio = p.completedCount / p.totalCount
-					if (ratio >= 1) return `${range}<br/>Completed`
-					if (p.completedCount > 0) return `${range}<br/>${p.completedCount} / ${p.totalCount} done`
-					return `${range}<br/>Not done`
+					const label = `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
+					if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
+					if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
+					if (p.completedCount / p.totalCount >= 1) return t('routineTodoList.heatmapAllDone', { label })
+					return t('routineTodoList.heatmapPartial', {
+						label,
+						done: p.completedCount,
+						total: p.totalCount,
+					})
 				},
 			},
 			visualMap: {
 				show: false,
 				min: 0,
 				max: 1,
+				// Series 0 only — the frozen series carries its own fixed colour.
+				seriesIndex: 0,
 				inRange: {
 					color: [neutralColor, successColor],
 				},
@@ -120,6 +136,17 @@
 					type: 'heatmap',
 					coordinateSystem: 'calendar',
 					data: expandedDays.value,
+				},
+				{
+					type: 'heatmap',
+					coordinateSystem: 'calendar',
+					data: frozenDays.value,
+					itemStyle: {
+						color: infoColor,
+						opacity: 0.45,
+						borderWidth: 1.5,
+						borderColor: infoColor,
+					},
 				},
 			],
 		}

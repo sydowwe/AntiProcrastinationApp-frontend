@@ -7,6 +7,7 @@
 		<RoutineGroupStats
 			:timePeriod="group.timePeriod"
 			:items="group.items"
+			@freezeSpent="emit('freezeSpent')"
 		/>
 		<div class="h-100">
 			<div
@@ -112,6 +113,7 @@
 		itemsReordered: [oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest]
 		crossListDrop: [sourceListId: number, targetListId: number, itemId: number, dropTarget: any]
 		openHistory: [timePeriod: RoutineTimePeriodEntity]
+		freezeSpent: []
 	}>()
 
 	const hideDone = defineModel<boolean>('hideDone', { default: false })

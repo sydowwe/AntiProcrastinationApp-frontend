@@ -6,6 +6,7 @@ import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/Chan
 import { API } from '@/_common/axiosConfig.ts'
 import { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 import { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
+import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 
 export function useRoutineTodoListItemCrud() {
 	const { showErrorSnackbar } = useSnackbar()
@@ -70,6 +71,16 @@ export function useRoutineTodoListItemCrud() {
 		}
 	}
 
+	/**
+	 * Spend one streak freeze on an already-elapsed period so the run survives the miss.
+	 * The server owns the budget and the recomputed streak; it answers with the updated time period.
+	 * Contract: prompts/todo-motivation/backend/R1-backend.md
+	 */
+	async function spendStreakFreeze(timePeriodId: number, periodStart: string) {
+		const response = await API.post(`/${url}/time-period/${timePeriodId}/streak-freeze`, { periodStart })
+		return RoutineTimePeriodEntity.fromJson(response.data)
+	}
+
 	return {
 		fetchById,
 		fetchAll,
@@ -82,5 +93,6 @@ export function useRoutineTodoListItemCrud() {
 		changeDisplayOrder,
 		toggleIsDone,
 		uncheckAll,
+		spendStreakFreeze,
 	}
 }

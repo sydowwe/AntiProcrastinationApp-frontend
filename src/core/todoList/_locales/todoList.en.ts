@@ -139,7 +139,21 @@ const todoList = {
 		heatmapNothingScheduled: `{label} · nothing scheduled`,
 		heatmapAllDone: `{label} · all done`,
 		heatmapPartial: `{label} · {done} of {total} done`,
+		heatmapFrozen: `{label} · covered by a skip`,
 		progressCount: `{done} / {total}`,
+		freeze: {
+			// Plural forms — `one | other`.
+			remaining: `{count} skip left | {count} skips left`,
+			unit: `{count} skip | {count} skips`,
+			remainingTooltip: `A missed period can be covered by a skip so your run continues — {budget} per period.`,
+			remainingTooltipWithReset: `A missed period can be covered by a skip so your run continues — {budget} per period, refills {date}.`,
+			coverMiss: `Cover the miss`,
+			confirmTitle: `Use a skip?`,
+			confirmText: `Cover {date} with a skip and keep your run going. You'll have {remaining} left afterwards.`,
+			confirmBtn: `Use it`,
+			spent: `Covered — your run continues.`,
+			spendFailed: `Couldn't use the skip. Try again in a moment.`,
+		},
 		review: {
 			title: `Weekly routine review`,
 			subtitle: `A quick look at the last period — adjust frequency now instead of failing it again.`,

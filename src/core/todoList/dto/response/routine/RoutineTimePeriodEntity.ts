@@ -3,6 +3,12 @@ export interface PeriodCompletion {
 	periodEnd: string
 	completedCount: number
 	totalCount: number
+	/**
+	 * A period the user spent a streak freeze on: it did not meet the threshold, but the run continued
+	 * across it anyway. Neither completed nor missed — the heatmap's third state. Server-owned; the
+	 * frontend never sets it locally, because a streak that lies is worse than a strict one.
+	 */
+	isFrozen: boolean
 }
 
 export class RoutineTimePeriodEntity {
@@ -22,7 +28,20 @@ export class RoutineTimePeriodEntity {
 		public nextResetAt: string | null = null,
 		public historyDepth: number = 12,
 		public completionHistory: PeriodCompletion[] = [],
+		/**
+		 * Streak-freeze budget. `null` means the server does not report freezes for this period yet —
+		 * the UI then hides every freeze affordance rather than guessing a number. See
+		 * `prompts/todo-motivation/backend/R1-backend.md`.
+		 */
+		public freezesRemaining: number | null = null,
+		public freezeBudget: number | null = null,
+		public freezeBudgetResetsAt: string | null = null,
 	) {}
+
+	/** Whether the server reports a freeze budget at all. Gates the whole feature client-side. */
+	get supportsFreeze() {
+		return this.freezesRemaining !== null
+	}
 
 	static fromJson(object: any) {
 		const {
@@ -40,10 +59,13 @@ export class RoutineTimePeriodEntity {
 			totalPeriodsElapsed = 0,
 			nextResetAt = null,
 			historyDepth = RoutineTimePeriodEntity.defaultHistoryDepth(lengthInDays),
+			freezesRemaining = null,
+			freezeBudget = null,
+			freezeBudgetResetsAt = null,
 		} = object
 
 		const completionHistory: PeriodCompletion[] = object.completionHistory?.length
-			? object.completionHistory
+			? object.completionHistory.map((p: any): PeriodCompletion => ({ ...p, isFrozen: p.isFrozen ?? false }))
 			: RoutineTimePeriodEntity.mockHistory(
 					totalPeriodsElapsed,
 					streak,
@@ -69,6 +91,9 @@ export class RoutineTimePeriodEntity {
 			nextResetAt,
 			historyDepth,
 			completionHistory,
+			freezesRemaining,
+			freezeBudget,
+			freezeBudgetResetsAt,
 		)
 	}
 
@@ -108,6 +133,8 @@ export class RoutineTimePeriodEntity {
 				periodEnd: periodEnd.toISOString(),
 				completedCount: completed ? 1 : 0,
 				totalCount: 1,
+				// Mock history never invents a freeze — a frozen cell must always come from the server.
+				isFrozen: false,
 			})
 		}
 		return history

@@ -147,7 +147,21 @@ const todoList = {
 		heatmapNothingScheduled: `{label} · nič naplánované`,
 		heatmapAllDone: `{label} · všetko hotové`,
 		heatmapPartial: `{label} · {done} z {total} hotových`,
+		heatmapFrozen: `{label} · pokryté vynechaním`,
 		progressCount: `{done} / {total}`,
+		freeze: {
+			// Tvary množného čísla — `one | few | many` (1 / 2–4 / 5+), pozri slovakPluralRule v src/i18n.ts.
+			remaining: `zostáva {count} vynechanie | zostávajú {count} vynechania | zostáva {count} vynechaní`,
+			unit: `{count} vynechanie | {count} vynechania | {count} vynechaní`,
+			remainingTooltip: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie.`,
+			remainingTooltipWithReset: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie, obnoví sa {date}.`,
+			coverMiss: `Pokryť zmeškané`,
+			confirmTitle: `Použiť vynechanie?`,
+			confirmText: `Pokryť {date} vynechaním a udržať sériu. Potom ti zostane {remaining}.`,
+			confirmBtn: `Použiť`,
+			spent: `Pokryté — séria pokračuje.`,
+			spendFailed: `Vynechanie sa nepodarilo použiť. Skús to o chvíľu znova.`,
+		},
 		review: {
 			title: `Týždenné zhodnotenie rutín`,
 			subtitle: `Rýchly pohľad na minulé obdobie — uprav frekvenciu, kým je ešte čas, namiesto opakovaného zlyhávania.`,

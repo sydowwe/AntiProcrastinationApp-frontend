@@ -98,6 +98,7 @@
 					"
 					@crossListDrop="handleCrossListDrop"
 					@openHistory="openHistoryDialog"
+					@freezeSpent="getAllRecords"
 				/>
 			</VCol>
 		</VRow>

@@ -67,6 +67,10 @@
 					</template>
 				</VTooltip>
 			</div>
+			<RoutineStreakFreeze
+				:timePeriod
+				@freezeSpent="emit('freezeSpent')"
+			/>
 		</div>
 
 		<!-- Center: title -->
@@ -114,11 +118,14 @@
 		RoutineTimePeriodEntity,
 	} from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
+	import RoutineStreakFreeze from '@/core/todoList/component/routine/RoutineStreakFreeze.vue'
 
 	const { timePeriod, items } = defineProps<{
 		timePeriod: RoutineTimePeriodEntity
 		items: RoutineTodoListItemEntity[]
 	}>()
+
+	const emit = defineEmits<{ freezeSpent: [] }>()
 
 	const { getBgColor } = useColor()
 	const { runLabel, countLabel } = useRoutineRunLabel()

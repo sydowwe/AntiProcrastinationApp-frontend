@@ -64,6 +64,7 @@
 					periodEnd: new Date(new Date(last.periodEnd).getTime() + msPerPeriod).toISOString(),
 					completedCount: 0,
 					totalCount: 0,
+					isFrozen: false,
 				})
 			}
 		}
@@ -83,6 +84,7 @@
 				periodEnd: new Date(endMs).toISOString(),
 				completedCount: 0,
 				totalCount: 0,
+				isFrozen: false,
 			}
 		})
 
@@ -103,6 +105,8 @@
 	onBeforeUnmount(() => observer?.disconnect())
 
 	function cellClass(p: PeriodCompletion): string {
+		// Frozen outranks everything: it is a third state, not a shade of done.
+		if (p.isFrozen) return 'cell-frozen'
 		if (p.totalCount === 0) return 'cell-empty'
 		const ratio = p.completedCount / p.totalCount
 		if (ratio === 0) return 'cell-level-0'
@@ -119,6 +123,7 @@
 	function tooltipText(p: PeriodCompletion): string {
 		const label =
 			lengthInDays === 1 ? formatDate(p.periodStart) : `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
+		if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
 		if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 		const ratio = p.completedCount / p.totalCount
 		if (ratio >= 1) return t('routineTodoList.heatmapAllDone', { label })
@@ -151,6 +156,23 @@
 	.cell-empty {
 		background-color: rgba(var(--v-theme-neutral-700), 0.1);
 		border: 1px solid rgba(var(--v-theme-neutral-700), 0.3);
+	}
+
+	/*
+	 * Covered by a streak freeze — the third state. Deliberately not a green shade and not the missed
+	 * grey: a cool hue plus diagonal hatching so it stays distinguishable from both, including for
+	 * red-green colour blindness and at this 13px size.
+	 */
+	.cell-frozen {
+		background-color: rgba(var(--v-theme-info), 0.22);
+		background-image: repeating-linear-gradient(
+			45deg,
+			rgba(var(--v-theme-info), 0.75) 0,
+			rgba(var(--v-theme-info), 0.75) 1.5px,
+			transparent 1.5px,
+			transparent 4px
+		);
+		border: 1px solid rgba(var(--v-theme-info), 0.6);
 	}
 
 	/* Tasks exist but none completed */
