@@ -10,6 +10,7 @@
 		"type-check": "vue-tsc --build --force",
 		"lint": "eslint src --fix",
 		"format": "prettier --write src/",
+		"test:unit": "vitest run",
 		"test:e2e": "npm test --prefix e2e"
 	},
 	"//overrides": "lodash 4.18.0 shipped a broken `_.template`: template.js calls assignWith() and arrayEach() without requiring either, so any call throws 'assignWith is not defined'. workbox-build uses _.template to populate the service-worker template, which made `vite build` fail at the generateSW step and produce no sw.js at all. Pinned to the last good release; remove once lodash patches it.",

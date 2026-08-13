@@ -54,13 +54,21 @@
 			</FilterPanel>
 		</div>
 		<div class="flex-fill">
-			<ProjectTable :filter />
+			<ProjectTable
+				:items
+				:loading
+				:itemsLength
+				v-model:page="page"
+				v-model:itemsPerPage="itemsPerPage"
+				v-model:sortBy="sortBy"
+				@onLoadItems="load"
+				@onReload="reload"
+			/>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import ProjectTable from '@/core/leisure/component/project/ProjectTable.vue'
@@ -69,9 +77,22 @@
 	import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
+	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
+	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
+	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
+	import { projectFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 
 	const i18n = useI18n()
-	const filter = ref(new ActivityProjectProfileFilter())
+
+	const { fetchFilteredTable } = useActivityProjectProfileCrud()
+	// The view owns the table state because FilterPanel needs the same writable filter ref.
+	const { items, itemsLength, loading, page, itemsPerPage, sortBy, filter, load, reload } = useServerTable<
+		ActivityProjectProfile,
+		ActivityProjectProfileFilter
+	>({
+		fetch: fetchFilteredTable,
+		...projectFilterUrlState(),
+	})
 
 	const difficultyOptions = getEnumSelectOptions(DifficultyLevel, 'enums.difficultyLevel')
 	const readinessOptions = getEnumSelectOptions(ReadinessStatus, 'enums.readinessStatus')

@@ -97,7 +97,16 @@
 			</FilterPanel>
 		</div>
 		<div class="flex-fill">
-			<BacklogTable :filter />
+			<BacklogTable
+				:items
+				:loading
+				:itemsLength
+				v-model:page="page"
+				v-model:itemsPerPage="itemsPerPage"
+				v-model:sortBy="sortBy"
+				@onLoadItems="load"
+				@onReload="reload"
+			/>
 		</div>
 	</div>
 </template>
@@ -118,9 +127,22 @@
 		useActivityWeatherDependencyApi,
 		useActivityExpectedCostTierApi,
 	} from '@/core/leisure/api/activityLookupApi.ts'
+	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
+	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
+	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
+	import { backlogFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 
 	const i18n = useI18n()
-	const filter = ref(new ActivityBacklogProfileFilter())
+
+	const { fetchFilteredTable } = useActivityBacklogProfileCrud()
+	// The view owns the table state because FilterPanel needs the same writable filter ref.
+	const { items, itemsLength, loading, page, itemsPerPage, sortBy, filter, load, reload } = useServerTable<
+		ActivityBacklogProfile,
+		ActivityBacklogProfileFilter
+	>({
+		fetch: fetchFilteredTable,
+		...backlogFilterUrlState(),
+	})
 
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
 	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()

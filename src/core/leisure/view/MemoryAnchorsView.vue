@@ -42,20 +42,41 @@
 			</FilterPanel>
 		</div>
 		<div class="flex-fill">
-			<MemoryAnchorTable :filter />
+			<MemoryAnchorTable
+				:items
+				:loading
+				:itemsLength
+				v-model:page="page"
+				v-model:itemsPerPage="itemsPerPage"
+				v-model:sortBy="sortBy"
+				@onLoadItems="load"
+				@onReload="reload"
+			/>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import MemoryAnchorTable from '@/core/leisure/component/memoryAnchor/MemoryAnchorTable.vue'
 	import { MemoryAnchorFilter } from '@/core/leisure/dto/request/MemoryAnchorFilter.ts'
+	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
+	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
+	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
+	import { memoryAnchorFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 
 	const i18n = useI18n()
-	const filter = ref(new MemoryAnchorFilter())
+
+	const { fetchFilteredTable } = useMemoryAnchorCrud()
+	// The view owns the table state because FilterPanel needs the same writable filter ref.
+	const { items, itemsLength, loading, page, itemsPerPage, sortBy, filter, load, reload } = useServerTable<
+		MemoryAnchor,
+		MemoryAnchorFilter
+	>({
+		fetch: fetchFilteredTable,
+		...memoryAnchorFilterUrlState(),
+	})
 
 	const chipFormatters: ChipFormatters<MemoryAnchorFilter> = {
 		activityName: v =>

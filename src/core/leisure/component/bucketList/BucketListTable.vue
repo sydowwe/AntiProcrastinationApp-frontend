@@ -8,7 +8,7 @@
 		:columns
 		:itemsLength
 		showActions
-		@onLoadItems="loadItems"
+		@onLoadItems="emit('onLoadItems')"
 		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
 		@onDelete="onDelete"
@@ -35,30 +35,29 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import BucketListProfileForm from '@/core/leisure/component/bucketList/BucketListProfileForm.vue'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
-	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
-	import type { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
-	const { filter } = defineProps<{ filter: ActivityBucketListProfileFilter }>()
-
-	const { fetchFilteredTable, deleteEntity } = useActivityBucketListProfileCrud()
+	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
+	// renders it and asks for a refetch.
+	defineProps<{
+		items: ActivityBucketListProfile[]
+		loading: boolean
+		itemsLength: number
+	}>()
+	const emit = defineEmits<{ onLoadItems: []; onReload: [] }>()
+	const page = defineModel<number>('page', { required: true })
+	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
+	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
+	const { deleteEntity } = useActivityBucketListProfileCrud()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
-	const loading = ref(false)
-
-	const items = ref<ActivityBucketListProfile[]>([])
-	const itemsLength = ref(0)
-	const itemsPerPage = ref(10)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([])
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),
@@ -75,38 +74,12 @@
 		return 'errorDark'
 	}
 
-	watch(
-		() => filter,
-		() => {
-			page.value = 1
-			loadItems()
-		},
-	)
-
-	async function loadItems() {
-		const request = new FilteredTableRequest<ActivityBucketListProfileFilter>(
-			itemsPerPage.value,
-			page.value,
-			sortBy.value,
-			true,
-			filter,
-		)
-		loading.value = true
-		try {
-			const result = await fetchFilteredTable(request)
-			items.value = result.items
-			itemsLength.value = result.itemsCount
-		} finally {
-			loading.value = false
-		}
-	}
-
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: BucketListProfileForm,
 			dialogProps: { title: t('leisure.bucketList'), confirmBtnLabel: t('general.create') },
 		})
-		if (result) await loadItems()
+		if (result) emit('onReload')
 	}
 
 	async function onEdit(item: ActivityBucketListProfile) {
@@ -115,11 +88,11 @@
 			componentProps: { entityToEdit: item },
 			dialogProps: { title: t('leisure.bucketList'), confirmBtnLabel: t('general.save') },
 		})
-		if (result) await loadItems()
+		if (result) emit('onReload')
 	}
 
 	async function onDelete(item: ActivityBucketListProfile) {
 		await deleteEntity(item.activityId)
-		await loadItems()
+		emit('onReload')
 	}
 </script>

@@ -50,7 +50,16 @@
 			</FilterPanel>
 		</div>
 		<div class="flex-fill">
-			<BucketListTable :filter />
+			<BucketListTable
+				:items
+				:loading
+				:itemsLength
+				v-model:page="page"
+				v-model:itemsPerPage="itemsPerPage"
+				v-model:sortBy="sortBy"
+				@onLoadItems="load"
+				@onReload="reload"
+			/>
 		</div>
 	</div>
 </template>
@@ -64,9 +73,22 @@
 	import { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import { useActivityExperienceTypeApi } from '@/core/leisure/api/activityLookupApi.ts'
+	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
+	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
+	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
+	import { bucketListFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 
 	const i18n = useI18n()
-	const filter = ref(new ActivityBucketListProfileFilter())
+
+	const { fetchFilteredTable } = useActivityBucketListProfileCrud()
+	// The view owns the table state because FilterPanel needs the same writable filter ref.
+	const { items, itemsLength, loading, page, itemsPerPage, sortBy, filter, load, reload } = useServerTable<
+		ActivityBucketListProfile,
+		ActivityBucketListProfileFilter
+	>({
+		fetch: fetchFilteredTable,
+		...bucketListFilterUrlState(),
+	})
 
 	const { fetchAll: fetchExperienceTypes } = useActivityExperienceTypeApi()
 	const experienceTypeOptions = ref<LookupResponse[]>([])

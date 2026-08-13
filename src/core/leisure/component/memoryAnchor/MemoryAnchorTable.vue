@@ -8,7 +8,7 @@
 		:columns
 		:itemsLength
 		showActions
-		@onLoadItems="loadItems"
+		@onLoadItems="emit('onLoadItems')"
 		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
 		@onDelete="onDelete"
@@ -46,30 +46,30 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, ref, watch } from 'vue'
+	import { computed } from 'vue'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import MemoryAnchorForm from '@/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
-	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
-	import type { MemoryAnchorFilter } from '@/core/leisure/dto/request/MemoryAnchorFilter.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
-	const { filter } = defineProps<{ filter: MemoryAnchorFilter }>()
-
-	const { fetchFilteredTable, deleteEntity } = useMemoryAnchorCrud()
+	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
+	// renders it and asks for a refetch.
+	const { items } = defineProps<{
+		items: MemoryAnchor[]
+		loading: boolean
+		itemsLength: number
+	}>()
+	const emit = defineEmits<{ onLoadItems: []; onReload: [] }>()
+	const page = defineModel<number>('page', { required: true })
+	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
+	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
+	const { deleteEntity } = useMemoryAnchorCrud()
 	const { openDialog } = useDialog()
 	const { t, locale } = useI18n()
-	const loading = ref(false)
-
-	const items = ref<MemoryAnchor[]>([])
-	const itemsLength = ref(0)
-	const itemsPerPage = ref(10)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([])
 
 	const monthFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }))
 
@@ -81,7 +81,7 @@
 	]
 
 	function formatPeriod(rowId: number) {
-		const row = items.value.find(i => i.id === rowId)
+		const row = items.find(i => i.id === rowId)
 		if (!row) return '—'
 		return monthFormatter.value.format(new Date(row.anchorYear, row.anchorMonth - 1, 1))
 	}
@@ -92,38 +92,12 @@
 		return 'warning'
 	}
 
-	watch(
-		() => filter,
-		() => {
-			page.value = 1
-			loadItems()
-		},
-	)
-
-	async function loadItems() {
-		const request = new FilteredTableRequest<MemoryAnchorFilter>(
-			itemsPerPage.value,
-			page.value,
-			sortBy.value,
-			true,
-			filter,
-		)
-		loading.value = true
-		try {
-			const result = await fetchFilteredTable(request)
-			items.value = result.items
-			itemsLength.value = result.itemsCount
-		} finally {
-			loading.value = false
-		}
-	}
-
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: MemoryAnchorForm,
 			dialogProps: { title: t('leisure.memoryAnchors'), confirmBtnLabel: t('general.create') },
 		})
-		if (result) await loadItems()
+		if (result) emit('onReload')
 	}
 
 	async function onEdit(item: MemoryAnchor) {
@@ -132,11 +106,11 @@
 			componentProps: { entityToEdit: item },
 			dialogProps: { title: t('leisure.memoryAnchors'), confirmBtnLabel: t('general.save') },
 		})
-		if (result) await loadItems()
+		if (result) emit('onReload')
 	}
 
 	async function onDelete(item: MemoryAnchor) {
 		await deleteEntity(item.id)
-		await loadItems()
+		emit('onReload')
 	}
 </script>
