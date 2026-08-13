@@ -3,6 +3,7 @@
 		:title="$t('home.routineTodoList')"
 		:openRoute="{ name: 'routineToDoList' }"
 		:loading="loading"
+		:refreshing="refreshing"
 		:error="error"
 		:errorText="$t('home.loadFailedRoutineTodos')"
 		:empty="visibleGroups.length === 0"
@@ -91,7 +92,7 @@
 					}"
 					class="my-2"
 					@isDoneChanged="handleIsDoneChanged"
-					@stepToggled="load"
+					@stepToggled="refreshNow"
 					@edit="router.push({ name: 'routineToDoList' })"
 					@delete="router.push({ name: 'routineToDoList' })"
 					@addToPlanner="router.push({ name: 'taskPlanner' })"
@@ -102,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { storeToRefs } from 'pinia'
@@ -116,6 +117,7 @@
 	import RoutineTodoListItem from '@/core/todoList/component/routine/RoutineTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
+	import { todayDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
@@ -128,6 +130,7 @@
 	const groupedItems = ref<RoutineTodoListGroupedList[]>([])
 	const timePeriods = ref<RoutineTimePeriodEntity[]>([])
 	const loading = ref(true)
+	const refreshing = ref(false)
 	const loadingPeriods = ref(true)
 	const error = ref(false)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
@@ -145,8 +148,11 @@
 		DayOfWeek.Friday,
 		DayOfWeek.Saturday,
 	]
-	const todayDayOfWeek = JS_DAY_TO_DAY_OF_WEEK[new Date().getDay()]
-	const todayDayOfMonth = new Date().getDate()
+	// Both from the dashboard-wide date signal, not from a `new Date()` captured at setup. This is a
+	// page people leave open overnight, and `isSuggestedForToday` below reads these on every render:
+	// frozen, the widget spends all of the next day filtering for the previous one.
+	const todayDayOfWeek = computed(() => JS_DAY_TO_DAY_OF_WEEK[todayDate.value.getDay()]!)
+	const todayDayOfMonth = computed(() => todayDate.value.getDate())
 
 	// Confirmed against RoutineTodoListItemEntity.ts and the edit form (RoutineToDoListForm.vue:34-46):
 	// day-of-week and day-of-month are two separate, already-discriminated fields — `suggestedDays`
@@ -155,8 +161,8 @@
 	// same threshold is used here to pick which field to read.
 	function isSuggestedForToday(item: RoutineTodoListItemEntity): boolean {
 		if (item.timePeriod.lengthInDays === 1) return true
-		if (item.timePeriod.lengthInDays > 14) return item.suggestedDayOfMonth === todayDayOfMonth
-		return item.suggestedDays.includes(todayDayOfWeek)
+		if (item.timePeriod.lengthInDays > 14) return item.suggestedDayOfMonth === todayDayOfMonth.value
+		return item.suggestedDays.includes(todayDayOfWeek.value)
 	}
 
 	function todayItems(group: RoutineTodoListGroupedList): RoutineTodoListItemEntity[] {
@@ -215,19 +221,27 @@
 		})
 	}
 
-	async function load() {
+	/**
+	 * `background` is what a dashboard refresh uses: the groups stay on screen instead of collapsing
+	 * to a spinner, and an existing error is left standing until the refetch actually succeeds.
+	 */
+	async function load({ background = false } = {}) {
 		const token = ++loadToken
-		loading.value = true
-		error.value = false
+		if (background) refreshing.value = true
+		else loading.value = true
 		try {
 			const result = await fetchGroupedByTimePeriod()
 			if (token !== loadToken) return
 			groupedItems.value = result
+			error.value = false
 		} catch {
 			if (token !== loadToken) return
 			error.value = true
 		} finally {
-			if (token === loadToken) loading.value = false
+			if (token === loadToken) {
+				loading.value = false
+				refreshing.value = false
+			}
 		}
 	}
 
@@ -240,8 +254,26 @@
 		}
 	}
 
-	onMounted(() => {
-		load()
-		loadPeriods()
+	// The streak counters in the header come from the periods call, and they move whenever an item
+	// is ticked — so a refresh has to bring both back, not just the list.
+	function refresh() {
+		return Promise.all([load({ background: true }), loadPeriods()])
+	}
+
+	// Same reasoning as the plain todo list: these change only through user action, so returning to
+	// the tab is the trigger that matters and a poll would be noise. Rollover is load-bearing here
+	// because `isSuggestedForToday` is a per-day filter, so the visible set changes at midnight even
+	// when the data does not. (Whether the server also resets `isDone` at a period boundary is not
+	// established from this side — the only reset in the API is the manual `uncheckAll`.)
+	// `refreshNow` rather than `refresh` for the in-widget reload after a step is ticked: going
+	// through the coordinator stamps the freshness clock, so returning to the tab a minute later
+	// does not refetch what was just fetched.
+	const { refreshNow } = useDashboardRefresh('home:routineTodoList', {
+		load: () => {
+			void load()
+			void loadPeriods()
+		},
+		refresh,
+		hasError: () => error.value,
 	})
 </script>

@@ -12,7 +12,14 @@
 				@click="open"
 			/>
 		</VCardTitle>
-		<VDivider />
+		<!-- a background refetch says so in 2px instead of tearing the body down to a spinner -->
+		<VProgressLinear
+			v-if="refreshing && !loading"
+			indeterminate
+			color="primary"
+			height="2"
+		/>
+		<VDivider v-else />
 		<VCardText
 			class="widget-card__body"
 			:class="[{ 'widget-card__body--scrollable': scrollable }]"
@@ -62,6 +69,7 @@
 		title,
 		openRoute,
 		loading = false,
+		refreshing = false,
 		error = false,
 		empty = false,
 		emptyText,
@@ -76,6 +84,11 @@
 		 */
 		openRoute?: RouteLocationRaw
 		loading?: boolean
+		/**
+		 * A background refetch with the previous content still on screen. Renders as a 2px bar where
+		 * the header divider sits; it must never be routed into `loading`, which blanks the body.
+		 */
+		refreshing?: boolean
 		/** Takes priority over `empty` — a failed request must never render as "nothing here". */
 		error?: boolean
 		empty?: boolean

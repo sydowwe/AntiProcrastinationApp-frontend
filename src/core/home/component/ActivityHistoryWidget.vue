@@ -1,8 +1,9 @@
 <template>
 	<WidgetCard
 		:title="$t('home.activityHistory')"
-		:openRoute="{ name: 'activityHistoryDetail', query: { date: today } }"
+		:openRoute="{ name: 'activityHistoryDetail', query: { date: todayIsoDate } }"
 		:loading="loading"
+		:refreshing="refreshing"
 		:error="error"
 		:errorText="$t('home.loadFailedHistory')"
 		:empty="!pieData || pieData.items.length === 0"
@@ -28,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { getDetailPieChart } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
@@ -37,12 +38,11 @@
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import HistoryPieChart from '@/core/historyDashboard/component/pieChart/HistoryPieChart.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
-	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
-
-	const today = formatDateForApi(new Date('2026-04-10'))
+	import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 
 	const pieData = ref<HistoryPieChartResponse | null>(null)
 	const loading = ref(true)
+	const refreshing = ref(false)
 	const error = ref(false)
 	const selectedGroup = ref<string | null>(null)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
@@ -55,28 +55,50 @@
 		return fromSeconds(pieData.value.totals.totalSeconds)
 	})
 
-	async function load() {
+	/**
+	 * `background` is what a dashboard refresh uses: the pie stays on screen instead of collapsing
+	 * to a spinner, and an existing error is left standing until the refetch actually succeeds.
+	 */
+	async function load({ background = false } = {}) {
 		const token = ++loadToken
-		loading.value = true
-		error.value = false
+		if (background) refreshing.value = true
+		else loading.value = true
 		try {
 			const request = new DetailPieChartRequest(
 				HistoryGroupBy.Activity,
 				10,
-				today,
+				// Read here rather than captured at setup, so a rollover asks for the new day.
+				todayIsoDate.value,
 				new Time(0, 0),
 				new Time(23, 59),
 			)
 			const result = await getDetailPieChart(request)
 			if (token !== loadToken) return
 			pieData.value = result
+			error.value = false
 		} catch {
 			if (token !== loadToken) return
 			error.value = true
 		} finally {
-			if (token === loadToken) loading.value = false
+			if (token === loadToken) {
+				loading.value = false
+				refreshing.value = false
+			}
 		}
 	}
 
-	onMounted(load)
+	function refresh() {
+		return load({ background: true })
+	}
+
+	// This one moves whenever a timer finishes — anywhere, including the tracking dialog in the now
+	// bar two widgets away, which is why `onTrackingSession` exists. Everything else that writes
+	// history happens in another view or on another phone, so visibility covers it and a poll does
+	// not earn its requests.
+	useDashboardRefresh('home:activityHistory', {
+		load,
+		refresh,
+		hasError: () => error.value,
+		onTrackingSession: true,
+	})
 </script>

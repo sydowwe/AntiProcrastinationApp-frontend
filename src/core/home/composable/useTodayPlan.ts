@@ -9,12 +9,13 @@ import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskReq
 import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
-import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { showNotification } from '@/_common/utils/notifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { usePlannerStreakStore } from '@/core/home/store/plannerStreakStore.ts'
+import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 import i18n from '@/i18n.ts'
 
 export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone'
@@ -69,9 +70,10 @@ function calendarQuery() {
 }
 
 // --- date identity -----------------------------------------------------------
-// Derived from `now`, not captured at setup: this dashboard is left open overnight, and a frozen
-// date sends every "open the planner" link to yesterday.
-const todayIsoDate = computed(() => formatDateForApi(now.value))
+// Not captured at setup: this dashboard is left open overnight, and a frozen date sends every
+// "open the planner" link to yesterday. `todayIsoDate` is the dashboard-wide signal from
+// `useDashboardRefresh`, so the plan, the routine list, the todo list and the history pie all flip
+// to the new day on one edge instead of each noticing separately.
 const todayUrlDate = computed(() => usStringToUrlString(todayIsoDate.value))
 
 // --- derived plan ------------------------------------------------------------
@@ -295,7 +297,6 @@ function fireOnce(key: string, action: () => void) {
 async function fetchPlan(): Promise<void> {
 	const token = ++loadToken
 	const isoDate = todayIsoDate.value
-	error.value = false
 	try {
 		const loadedCalendar = await calendarQuery().fetchByDate(usStringToUrlString(isoDate))
 		const loadedTasks = await planner().fetchFiltered(
@@ -305,6 +306,9 @@ async function fetchPlan(): Promise<void> {
 		calendar.value = loadedCalendar
 		tasks.value = loadedTasks
 		planDate.value = isoDate
+		// Cleared here rather than before the request: a background refresh that fails again must
+		// not blink the error state off and the "no plan for today" state on along the way.
+		error.value = false
 		syncStreak()
 	} catch {
 		if (token !== loadToken) return
@@ -318,6 +322,9 @@ async function fetchPlan(): Promise<void> {
 /** First fetch of a plan: nothing is on screen, so this one owns the spinner. */
 async function load(): Promise<void> {
 	loading.value = true
+	// Safe here, unlike in a background refresh: the spinner has already replaced the error UI, so
+	// there is nothing left on screen for a stale flag to contradict.
+	error.value = false
 	try {
 		await fetchPlan()
 	} finally {
@@ -416,6 +423,26 @@ export function useTodayPlan() {
 	// Called per consumer, not once: the framework clock refcounts its interval by mounted instance.
 	const { currentTime } = useCurrentTime()
 	wireLifecycle(currentTime)
+
+	// The freshness policy lives here rather than in the two widgets, because the plan is one
+	// dataset with one policy — writing it twice is how they drift. The shared key is what keeps a
+	// single visibility change from refetching it once for the now bar and once for the planner.
+	//
+	// This is the staleness-sensitive widget on the page: the plan changes from the day-planner
+	// view, from another device, and from a timer finishing, so it takes the backstop poll that the
+	// todo widgets do not need.
+	//
+	// `onDayChange` is off deliberately — a rollover here is not a refetch, it is a reset: the
+	// loaded plan and every key in `firedAlerts` belong to yesterday. The `todayIsoDate` watcher in
+	// `wireLifecycle` above handles it, off the same signal, so both fire on one edge.
+	useDashboardRefresh('home:todayPlan', {
+		load: ensureLoaded,
+		refresh: reload,
+		hasError: () => error.value,
+		intervalMinutes: 5,
+		onDayChange: false,
+		onTrackingSession: true,
+	})
 
 	return {
 		calendar,

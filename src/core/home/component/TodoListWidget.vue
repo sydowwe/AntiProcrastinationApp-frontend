@@ -3,6 +3,7 @@
 		:title="$t('home.todoList')"
 		:openRoute="{ name: 'toDoList' }"
 		:loading="loading"
+		:refreshing="refreshing"
 		:error="error"
 		:errorText="$t('home.loadFailedTodos')"
 		:empty="visibleItems.length === 0"
@@ -32,7 +33,7 @@
 				:listId="0"
 				class="my-2"
 				@isDoneChanged="handleIsDoneChanged"
-				@stepToggled="load"
+				@stepToggled="refreshNow"
 				@edit="router.push({ name: 'toDoList' })"
 				@delete="router.push({ name: 'toDoList' })"
 				@addToPlanner="router.push({ name: 'taskPlanner' })"
@@ -42,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import { storeToRefs } from 'pinia'
@@ -52,6 +53,7 @@
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
+	import { todayDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const router = useRouter()
@@ -62,19 +64,20 @@
 
 	const items = ref<TodoListItemEntity[]>([])
 	const loading = ref(true)
+	const refreshing = ref(false)
 	const error = ref(false)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
 	// existed (only one load could ever be in flight), not harmless now that a load can overlap
 	// the one it is retrying.
 	let loadToken = 0
 
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-
+	// From the dashboard-wide date signal, not a `new Date()` captured at setup: this list sorts by
+	// how far away the due date is, and on a tab left open overnight a frozen "today" quietly
+	// re-labels everything by one day.
 	function daysDiff(dueDate: string): number {
 		const due = new Date(dueDate)
 		due.setHours(0, 0, 0, 0)
-		return Math.round((due.getTime() - today.getTime()) / 86_400_000)
+		return Math.round((due.getTime() - todayDate.value.getTime()) / 86_400_000)
 	}
 
 	const sortedItems = computed(() =>
@@ -101,21 +104,43 @@
 		})
 	}
 
-	async function load() {
+	/**
+	 * `background` is what a dashboard refresh uses: the list stays on screen instead of collapsing
+	 * to a spinner, and an existing error is left standing until the refetch actually succeeds.
+	 */
+	async function load({ background = false } = {}) {
 		const token = ++loadToken
-		loading.value = true
-		error.value = false
+		if (background) refreshing.value = true
+		else loading.value = true
 		try {
 			const result = await fetchDashboardTodoListItems()
 			if (token !== loadToken) return
 			items.value = result
+			error.value = false
 		} catch {
 			if (token !== loadToken) return
 			error.value = true
 		} finally {
-			if (token === loadToken) loading.value = false
+			if (token === loadToken) {
+				loading.value = false
+				refreshing.value = false
+			}
 		}
 	}
 
-	onMounted(load)
+	function refresh() {
+		return load({ background: true })
+	}
+
+	// These items only change through somebody doing something — here, in the todo view, or on
+	// another device. Coming back to the tab is when that becomes worth checking; a poll would only
+	// add requests to a page nobody is looking at. Due dates are date-scoped, so rollover matters.
+	// `refreshNow` rather than `refresh` for the in-widget reload after a step is ticked: going
+	// through the coordinator stamps the freshness clock, so returning to the tab a minute later
+	// does not refetch what was just fetched.
+	const { refreshNow } = useDashboardRefresh('home:todoList', {
+		load,
+		refresh,
+		hasError: () => error.value,
+	})
 </script>

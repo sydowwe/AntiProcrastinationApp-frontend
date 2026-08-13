@@ -170,13 +170,13 @@
 			initialMethod="timer"
 			:initialLength="remainingLength(trackedTask)"
 			@started="handleTrackingStarted"
-			@done="reload"
+			@done="notifyTrackingSessionFinished"
 		/>
 	</VCard>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
@@ -185,6 +185,9 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
+	// A finished timer changes the plan AND the history pie, which lives in another widget. One
+	// signal, both subscribers — see useDashboardRefresh.
+	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'
 
 	const router = useRouter()
 	const { t, locale } = useI18n()
@@ -208,7 +211,6 @@
 		finishTask,
 		skipTask,
 		snoozeTask,
-		ensureLoaded,
 		reload,
 	} = useTodayPlan()
 
@@ -288,8 +290,6 @@
 	function openPlanner() {
 		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
 	}
-
-	onMounted(ensureLoaded)
 </script>
 
 <style scoped>

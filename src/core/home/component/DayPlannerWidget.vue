@@ -7,8 +7,11 @@
 	calendar yet, plan one" and "calendar exists but is empty" — where the shell models one.
 
 	Three escape hatches for a single caller is a worse shell than one honest duplicate, so this
-	keeps its own frame. If `refreshing` later lands on the other widgets (H6/H7), revisit: that is
-	the one of the three that is genuinely shell-level.
+	keeps its own frame.
+
+	H7 resolved the third of those: `refreshing` is now a WidgetCard prop, rendered there the same
+	way it is rendered here. The other two — the leading avatar and the two-branch empty state — are
+	unchanged, so this still does not fit the shell. Revisit if either of them goes.
 -->
 <template>
 	<VCard style="display: flex; flex-direction: column; overflow: hidden">
@@ -376,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted } from 'vue'
+	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
@@ -417,7 +420,6 @@
 		skipTask,
 		snoozeTask,
 		extendTask,
-		ensureLoaded,
 		reload,
 	} = useTodayPlan()
 
@@ -497,8 +499,6 @@
 	function openPlanner() {
 		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
 	}
-
-	onMounted(ensureLoaded)
 </script>
 
 <style scoped>
