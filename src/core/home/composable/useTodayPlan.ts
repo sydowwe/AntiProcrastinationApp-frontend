@@ -298,6 +298,11 @@ async function fetchPlan(): Promise<void> {
 	const token = ++loadToken
 	const isoDate = todayIsoDate.value
 	try {
+		// TODO(Bn): two serialized round-trips for one screen — the task filter is keyed on
+		// calendarId, so the tasks cannot be asked for until the calendar has come back. H7 turned
+		// this from a once-per-navigation cost into a repeating one. See
+		// prompts/home/backend/B2-plan-by-date.md, which also asks whether an unplanned day 404s
+		// here (which would make the "Plan today" empty state below unreachable).
 		const loadedCalendar = await calendarQuery().fetchByDate(usStringToUrlString(isoDate))
 		const loadedTasks = await planner().fetchFiltered(
 			new PlannerTaskFilter(loadedCalendar.id, new Time(0, 0), new Time(23, 59)),
