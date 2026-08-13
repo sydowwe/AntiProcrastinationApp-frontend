@@ -28,14 +28,14 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.minComfortZoneStep as number | null"
+						v-model="draft.minComfortZoneStep"
 						:label="`${$t('leisure.fields.comfortZoneStep')} (min)`"
 						:min="0"
 						clearable
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.maxComfortZoneStep as number | null"
+						v-model="draft.maxComfortZoneStep"
 						:label="`${$t('leisure.fields.comfortZoneStep')} (max)`"
 						:min="0"
 						clearable

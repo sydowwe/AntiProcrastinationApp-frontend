@@ -14,7 +14,7 @@
 		@onDelete="onDelete"
 	>
 		<template #item.periodKey="{ item }">
-			<span>{{ formatPeriod(item.id) }}</span>
+			<span>{{ formatPeriod(item) }}</span>
 		</template>
 		<template #item.rating="{ item }">
 			<VChip
@@ -80,9 +80,7 @@
 		new TableColumn('highlightNote', t('leisure.fields.highlightNote'), false),
 	]
 
-	function formatPeriod(rowId: number) {
-		const row = items.find(i => i.id === rowId)
-		if (!row) return '—'
+	function formatPeriod(row: MemoryAnchor) {
 		return monthFormatter.value.format(new Date(row.anchorYear, row.anchorMonth - 1, 1))
 	}
 

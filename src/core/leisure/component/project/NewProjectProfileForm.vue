@@ -64,7 +64,7 @@
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
+	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import StringListEditor from '@/core/leisure/component/project/StringListEditor.vue'
 
@@ -72,7 +72,7 @@
 	const model = defineModel<ActivityProjectProfileRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
-	const { fetchActivitySelectOptions } = useActivitySelectOptions()
+	const { fetchSelectOptions: fetchActivitySelectOptions } = useActivityCrud()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const activityOptions = ref<SelectOption[]>([])

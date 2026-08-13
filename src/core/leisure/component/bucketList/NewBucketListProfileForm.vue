@@ -44,7 +44,7 @@
 	import { VForm } from 'vuetify/components'
 	import type { ActivityBucketListProfileRequest } from '@/core/leisure/dto/request/ActivityBucketListProfileRequest.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
+	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import ComfortZoneStepper from '@/core/leisure/component/bucketList/ComfortZoneStepper.vue'
@@ -54,7 +54,7 @@
 	const model = defineModel<ActivityBucketListProfileRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
-	const { fetchActivitySelectOptions } = useActivitySelectOptions()
+	const { fetchSelectOptions: fetchActivitySelectOptions } = useActivityCrud()
 	const { fetchAll: fetchExperienceTypes } = useActivityExperienceTypeApi()
 
 	const form = ref<InstanceType<typeof VForm>>()

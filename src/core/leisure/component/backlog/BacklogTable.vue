@@ -24,19 +24,20 @@
 				size="16"
 			/>
 		</template>
-		<template
-			v-for="col in lookupColumns"
-			:key="col"
-			#[`item.${col}`]="{ item }"
-		>
-			<span>{{ getLookupValue(item, col)?.text ?? '—' }}</span>
+		<template #item.locationType="{ item }">
+			<span>{{ item.locationType?.text ?? '—' }}</span>
 		</template>
-		<template
-			v-for="col in enumColumns"
-			:key="col"
-			#[`item.${col}`]="{ item }"
-		>
-			<span>{{ getEnumValue(item, col) == null ? '—' : $t(`enums.${col}.${getEnumValue(item, col)}`) }}</span>
+		<template #item.weatherDependency="{ item }">
+			<span>{{ item.weatherDependency?.text ?? '—' }}</span>
+		</template>
+		<template #item.expectedCostTier="{ item }">
+			<span>{{ item.expectedCostTier?.text ?? '—' }}</span>
+		</template>
+		<template #item.energyLevel="{ item }">
+			<span>{{ item.energyLevel == null ? '—' : $t(`enums.energyLevel.${item.energyLevel}`) }}</span>
+		</template>
+		<template #item.effortType="{ item }">
+			<span>{{ item.effortType == null ? '—' : $t(`enums.effortType.${item.effortType}`) }}</span>
 		</template>
 	</BasicTable>
 </template>
@@ -50,7 +51,6 @@
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
-	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 
 	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
 	// renders it and asks for a refetch.
@@ -66,17 +66,6 @@
 	const { deleteEntity } = useActivityBacklogProfileCrud()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
-
-	const lookupColumns = ['locationType', 'weatherDependency', 'expectedCostTier']
-	const enumColumns = ['energyLevel', 'effortType']
-
-	function getLookupValue(item: ActivityBacklogProfile, col: string) {
-		return (item as unknown as Record<string, LookupResponse>)[col]
-	}
-
-	function getEnumValue(item: ActivityBacklogProfile, col: string) {
-		return (item as unknown as Record<string, unknown>)[col]
-	}
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),

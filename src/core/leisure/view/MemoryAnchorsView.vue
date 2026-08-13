@@ -15,7 +15,7 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.year as number | null"
+						v-model="draft.year"
 						:label="$t('leisure.fields.anchorYear')"
 						:min="2000"
 						:max="2200"
@@ -23,7 +23,7 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.month as number | null"
+						v-model="draft.month"
 						:label="$t('leisure.fields.anchorMonth')"
 						:min="1"
 						:max="12"
@@ -31,10 +31,10 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.minRating as number | null"
+						v-model="draft.minRating"
 						:label="$t('leisure.fields.rating')"
 						:min="1"
-						:max="5"
+						:max="10"
 						clearable
 						hideDetails
 					/>

@@ -15,7 +15,7 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.difficultyLevels as DifficultyLevel[] | null"
+						v-model="draft.difficultyLevels"
 						:label="$t('leisure.fields.difficultyLevel')"
 						:items="difficultyOptions"
 						itemValue="value"
@@ -28,7 +28,7 @@
 						hideDetails
 					/>
 					<VSelect
-						v-model="draft.readinessStatuses as ReadinessStatus[] | null"
+						v-model="draft.readinessStatuses"
 						:label="$t('leisure.fields.readinessStatus')"
 						:items="readinessOptions"
 						itemValue="value"

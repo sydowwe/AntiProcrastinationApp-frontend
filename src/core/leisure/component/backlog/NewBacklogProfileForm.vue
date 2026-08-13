@@ -55,7 +55,7 @@
 				class="flex-1-1"
 			/>
 			<VNumberInput
-				v-model="model.maxParticipants as number | null"
+				v-model="model.maxParticipants"
 				:label="$t('leisure.fields.maxParticipants')"
 				:min="model.minParticipants"
 				:max="999"
@@ -86,7 +86,7 @@
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
+	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import {
@@ -99,7 +99,7 @@
 	const model = defineModel<ActivityBacklogProfileRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
-	const { fetchActivitySelectOptions } = useActivitySelectOptions()
+	const { fetchSelectOptions: fetchActivitySelectOptions } = useActivityCrud()
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
 	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()
 	const { fetchAll: fetchExpectedCostTiers } = useActivityExpectedCostTierApi()
