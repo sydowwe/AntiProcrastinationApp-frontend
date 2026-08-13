@@ -1,3 +1,20 @@
+<!--
+	NowBar owns the focus task. That is the decision behind this file and DayPlannerWidget, and it was
+	made because the two used to render the focus task twice, ~200px apart, with a duplicated
+	countdown, two mode-icon switches that disagreed, and two different sets of available actions.
+
+	Why this side owns it: the now bar is above the fold and full width, and answering "what do I do
+	right now" is the whole reason the home page opens with it. The planner card is the list view of
+	the same day — a list, a day strip, and per-row actions. So:
+
+	  - the focus task, its countdown, its progress and its actions live here, and only here;
+	  - DayPlannerWidget renders no focus block at all;
+	  - `extendTask`, which used to be reachable only from the planner, is in the shared
+	    TaskActionMenu, as are snooze and skip, which used to be reachable only from here.
+
+	The derivations both sides need (`focusIcon`, `focusCountdown`) sit in useTodayPlan.ts so there is
+	exactly one definition of each.
+-->
 <template>
 	<VCard
 		class="nowbar"
@@ -49,7 +66,7 @@
 					size="44"
 				>
 					<VIcon
-						:icon="modeIcon"
+						:icon="focusIcon"
 						size="20"
 					/>
 				</VAvatar>
@@ -61,10 +78,10 @@
 					<div class="d-flex align-center ga-2">
 						<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
 						<span
-							v-if="countdown"
+							v-if="focusCountdown"
 							class="text-caption font-weight-bold"
 						>
-							· {{ countdown }}
+							· {{ focusCountdown }}
 						</span>
 						<VChip
 							v-if="overrunMinutes > 0"
@@ -77,6 +94,13 @@
 						</VChip>
 					</div>
 					<div class="nowbar__title">{{ headline }}</div>
+					<div
+						v-if="focusTask"
+						class="text-caption text-medium-emphasis"
+					>
+						{{ focusTask.startTime.getString() }} – {{ focusTask.endTime.getString() }} ·
+						{{ durationLabel(focusTask) }}
+					</div>
 				</div>
 
 				<template v-if="focusTask">
@@ -95,7 +119,7 @@
 							color="successDark"
 							size="large"
 							prependIcon="fa-check"
-							@click="finish(focusTask)"
+							@click="finishTask(focusTask)"
 						>
 							{{ $t('home.finish') }}
 						</VBtn>
@@ -110,34 +134,8 @@
 						</VBtn>
 					</template>
 
-					<VMenu location="bottom end">
-						<template #activator="{ props: menuProps }">
-							<VIconBtn
-								v-bind="menuProps"
-								icon="fa-ellipsis-vertical"
-								variant="text"
-							/>
-						</template>
-						<VList density="compact">
-							<VListSubheader>{{ $t('home.moveLater') }}</VListSubheader>
-							<VListItem
-								v-for="minutes in snoozeOptions"
-								:key="minutes"
-								:title="`+${minutesLabel(minutes)}`"
-								prependIcon="fa-clock-rotate-left"
-								@click="snoozeTask(focusTask, minutes)"
-							/>
-							<VDivider class="my-1" />
-							<VListSubheader>{{ $t('home.skip') }}</VListSubheader>
-							<VListItem
-								v-for="reason in skipReasons"
-								:key="reason"
-								:title="$t(`home.skipReason.${reason}`)"
-								prependIcon="fa-forward"
-								@click="skipTask(focusTask, $t(`home.skipReason.${reason}`))"
-							/>
-						</VList>
-					</VMenu>
+					<!-- everything else the task supports, identical to the planner rows' menu -->
+					<TaskActionMenu :task="focusTask" />
 				</template>
 
 				<VBtn
@@ -162,34 +160,20 @@
 				{{ streak.currentStreak }}
 			</VChip>
 		</div>
-
-		<TrackTimeDialog
-			v-if="trackedTask"
-			v-model="trackerOpen"
-			:activityId="trackedTask.activity.id"
-			:activityName="trackedTask.activity.name"
-			initialMethod="timer"
-			:initialLength="remainingLength(trackedTask)"
-			@started="handleTrackingStarted"
-			@done="notifyTrackingSessionFinished"
-		/>
 	</VCard>
 </template>
 
 <script setup lang="ts">
-	import { computed, ref } from 'vue'
+	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
-	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
-	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
-	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
 	import { userTimeZone } from '@/_common/composable/general/useUserClock.ts'
-	// A finished timer changes the plan AND the history pie, which lives in another widget. One
-	// signal, both subscribers — see useDashboardRefresh.
-	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'
+	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
+	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
+	import { localeTag } from '@/i18n.ts'
 
 	const router = useRouter()
 	const { t, locale } = useI18n()
@@ -198,32 +182,23 @@
 		hasPlan,
 		focusTask,
 		focusMode,
-		activeTask,
-		nextTask,
-		lastMissedTask,
-		activeProgress,
+		focusIcon,
+		focusCountdown,
 		overrunMinutes,
-		nowMinutes,
+		activeProgress,
 		todayUrlDate,
 		streak,
 		error,
 		taskColor,
 		minutesLabel,
+		durationLabel,
 		startTask,
 		finishTask,
-		skipTask,
-		snoozeTask,
 		reload,
 	} = useTodayPlan()
+	const { openTracker } = useTaskTracker()
 
-	const snoozeOptions = [15, 30, 60]
-	const skipReasons = ['noTime', 'notRelevant', 'noEnergy'] as const
-
-	const trackerOpen = ref(false)
-	const trackedTask = ref<PlannerTask | null>(null)
-	const { markInProgress } = useTaskPlannerCrud()
-
-	const dateLocale = computed(() => (locale.value === 'EN' ? 'en-GB' : 'sk-SK'))
+	const dateLocale = computed(() => localeTag(locale.value))
 	// `timeZone` matters here for the same reason it does everywhere else on this page: the headline
 	// date must name the day the rest of the bar is describing, not the day the browser is having.
 	const weekdayLabel = computed(() =>
@@ -240,65 +215,23 @@
 	const accentColor = computed(() =>
 		focusMode.value === 'missed' ? 'error' : focusMode.value === 'allDone' ? 'success' : 'primary',
 	)
-	const modeIcon = computed(() => {
-		switch (focusMode.value) {
-			case 'now':
-				return 'fa-play'
-			case 'upNext':
-				return 'fa-forward'
-			case 'missed':
-				return 'fa-triangle-exclamation'
-			default:
-				return 'fa-champagne-glasses'
-		}
-	})
 	const headline = computed(() => {
 		if (focusTask.value) return focusTask.value.activity.name
 		// `hasPlan`, not the calendar: a seeded-but-untouched day has a calendar and no plan, and
 		// would otherwise be congratulated for finishing a day it never started.
 		return hasPlan.value ? t('home.allDoneLong') : t('home.noPlanToday')
 	})
-	const countdown = computed(() => {
-		if (activeTask.value) {
-			return overrunMinutes.value > 0
-				? ''
-				: t('home.endsIn', { time: minutesLabel(activeTask.value.endTime.getInMinutes - nowMinutes.value) })
-		}
-		if (nextTask.value) {
-			return t('home.startsIn', { time: minutesLabel(nextTask.value.startTime.getInMinutes - nowMinutes.value) })
-		}
-		if (lastMissedTask.value) {
-			return t('home.wasDue', {
-				time: minutesLabel(nowMinutes.value - lastMissedTask.value.endTime.getInMinutes),
-			})
-		}
-		return ''
-	})
 
-	function remainingLength(task: PlannerTask): Time {
-		const remaining = task.endTime.getInMinutes - nowMinutes.value
-		return Time.fromMinutes(remaining > 0 ? remaining : task.endTime.getInMinutes - task.startTime.getInMinutes)
-	}
+	// Browsers only grant the permission from a gesture, and only the first ask can be granted — a
+	// repeat request after a decision is a no-op. Guard it anyway so the code does what it says.
+	let permissionAsked = false
 
 	async function start(task: PlannerTask) {
-		// Browsers only grant the permission from a gesture, so ask on the first deliberate start.
-		void requestNotificationPermission()
-		await startTask(task)
-	}
-
-	async function finish(task: PlannerTask) {
-		await finishTask(task)
-	}
-
-	function handleTrackingStarted(actualStartTime: Time) {
-		if (trackedTask.value) {
-			void markInProgress(trackedTask.value.id, actualStartTime)
+		if (!permissionAsked) {
+			permissionAsked = true
+			void requestNotificationPermission()
 		}
-	}
-
-	function openTracker(task: PlannerTask) {
-		trackedTask.value = task
-		trackerOpen.value = true
+		await startTask(task)
 	}
 
 	function openPlanner() {

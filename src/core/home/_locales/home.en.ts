@@ -34,6 +34,7 @@ const home = {
 		start: `Start`,
 		finish: `Done`,
 		track: `Track time`,
+		giveLonger: `Give it longer`,
 		moveLater: `Move later`,
 		skip: `Skip`,
 		skipReason: {

@@ -206,6 +206,43 @@ Six of the ten duplicated composables were adopted. These four were not.
 
 ---
 
+## Found while resolving the NowBar / DayPlannerWidget overlap (H9)
+
+### 13. `DateTimeHelper` formats every date in Slovak, whatever the user's locale (2026-08-13)
+
+**Local file kept:** none. `localeTag()` in `src/i18n.ts`.
+
+Every formatter in `_common/utils/DateTimeHelper.ts` hardcodes dayjs's Slovak locale —
+`formatToDate`, `formatToTime`, `formatToDateWithDay`, `formatWeekLabel` and, despite the name that
+promises otherwise, `formatLocalized(date, format)`:
+
+```ts
+export function formatLocalized(date: Date, format: string) {
+	return dayjs(date).locale('sk').format(format)   // ← 'sk', always
+}
+```
+
+Only `getTranslatedMonths(locale = 'sk')` takes a locale at all. So an `AvailableLocales.EN` or
+`.CZ` user reads Slovak month and weekday names everywhere the framework formats a date, and
+`formatLocalized` cannot be the answer to "format this date in the user's language" that its name
+and signature suggest it is.
+
+`NowBar.vue` was working around this with `locale.value === 'EN' ? 'en-GB' : 'sk-SK'` inlined in a
+computed — two locales hardcoded into a ternary, in a component, in an enum of three. That is now
+`localeTag()` in `src/i18n.ts`, beside the `messages` map that already enumerates the app's
+locales, so adding a language is one edit in one file. It is not a fork of anything: the framework
+exposes no locale→BCP 47 mapping to fork.
+
+**Upstream ask:** make the dayjs locale follow the active i18n locale rather than a literal. The
+shape that costs call sites nothing is a module-level `setDateLocale(code)` the framework's own
+locale switch calls, with the formatters reading it — every existing call site keeps its signature
+and starts being correct. A per-call optional `locale` argument would work too but leaves ~20 call
+sites to update by hand. Either way the framework needs the app-code → dayjs-code mapping
+(`SK`→`sk`, `EN`→`en-gb`, `CZ`→`cs`), at which point `localeTag()` should move up with it and this
+entry resolves.
+
+---
+
 ## Resolved
 
 ### R1. `core/scheduler` → `_common/modules/scheduler` (2026-08-07)

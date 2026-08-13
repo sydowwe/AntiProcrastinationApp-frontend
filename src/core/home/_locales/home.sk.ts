@@ -34,6 +34,7 @@ const home = {
 		start: `Spustiť`,
 		finish: `Hotovo`,
 		track: `Merať čas`,
+		giveLonger: `Predĺžiť`,
 		moveLater: `Posunúť neskôr`,
 		skip: `Preskočiť`,
 		skipReason: {

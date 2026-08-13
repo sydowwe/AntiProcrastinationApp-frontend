@@ -57,14 +57,37 @@
 				</VCol>
 			</VRow>
 		</div>
+
+		<!--
+			One timer for the page. "Track this task" is offered by the now bar and by every planner
+			row through the shared TaskActionMenu; they all drive this instance via `useTaskTracker`,
+			so the action does not belong to whichever widget happens to host a dialog.
+		-->
+		<TrackTimeDialog
+			v-if="trackedTask"
+			v-model="isOpen"
+			:activityId="trackedTask.activity.id"
+			:activityName="trackedTask.activity.name"
+			initialMethod="timer"
+			:initialLength="remainingLength(trackedTask)"
+			@started="handleTrackingStarted"
+			@done="notifyTrackingSessionFinished"
+		/>
 	</div>
 </template>
 
 <script setup lang="ts">
+	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
+	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
+	// A finished timer changes the plan AND the history pie, which lives in another widget. One
+	// signal, both subscribers — see useDashboardRefresh.
+	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'
 	import NowBar from '@/core/home/component/NowBar.vue'
 	import DayPlannerWidget from '@/core/home/component/DayPlannerWidget.vue'
 	import RoutineTodoWidget from '@/core/home/component/RoutineTodoWidget.vue'
 	import ActivityHistoryWidget from '@/core/home/component/ActivityHistoryWidget.vue'
 	import QuickRecordWidget from '@/core/home/component/QuickRecordWidget.vue'
 	import TodoListWidget from '@/core/home/component/TodoListWidget.vue'
+
+	const { isOpen, trackedTask, remainingLength, handleTrackingStarted } = useTaskTracker()
 </script>

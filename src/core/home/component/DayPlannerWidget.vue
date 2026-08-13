@@ -1,4 +1,8 @@
 <!--
+	The day's list, and nothing about "right now". NowBar owns the focus task — see the decision
+	recorded in its header comment. This card used to render a second copy of it, which is why the
+	focus block, its icon switch and its countdown are gone from here rather than merely tidied.
+
 	Deliberately NOT built on WidgetCard, unlike the other four home widgets.
 
 	Fitting it would have cost the shell three things nothing else needs: a leading-avatar slot, a
@@ -141,127 +145,7 @@
 			</div>
 
 			<template v-else>
-				<!-- whole day at a glance, with the part you have already spent greyed out -->
-				<div class="px-4 pt-3">
-					<div class="daystrip">
-						<div
-							class="daystrip__elapsed"
-							:style="{ width: elapsedWidth }"
-						/>
-						<div
-							v-for="task in sortedTasks"
-							:key="task.id"
-							class="daystrip__seg"
-							:class="{ 'daystrip__seg--done': isFinished(task) }"
-							:style="{
-								left: stripLeft(task),
-								width: stripWidth(task),
-								background: taskColor(task),
-							}"
-							:title="`${task.startTime.getString()} ${task.activity.name}`"
-						/>
-						<div
-							v-if="nowInsideDay"
-							class="daystrip__now"
-							:style="{ left: nowLeft }"
-						/>
-					</div>
-					<div class="d-flex justify-space-between mt-1">
-						<span class="text-caption text-medium-emphasis">{{ dayStartLabel }}</span>
-						<span class="text-caption font-weight-medium">{{ remainingLabel }}</span>
-						<span class="text-caption text-medium-emphasis">{{ dayEndLabel }}</span>
-					</div>
-				</div>
-
-				<!-- the one thing to look at -->
-				<div
-					v-if="focusTask"
-					class="focus mx-3 mt-3"
-					:class="{ 'focus--missed': focusMode === 'missed' }"
-					:style="{ '--task-color': taskColor(focusTask) }"
-				>
-					<div class="d-flex align-center ga-2 mb-1">
-						<VIcon
-							:icon="focusIcon"
-							size="11"
-						/>
-						<span class="focus__kicker">{{ $t(`home.${focusMode}`) }}</span>
-						<VSpacer />
-						<span
-							v-if="overrunMinutes > 0"
-							class="text-caption font-weight-bold text-error"
-						>
-							{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
-						</span>
-						<span
-							v-else
-							class="text-caption font-weight-bold"
-						>
-							{{ focusCountdown }}
-						</span>
-					</div>
-					<div class="d-flex align-center ga-3">
-						<button
-							type="button"
-							class="check check--lg"
-							:class="{ 'check--on': isFinished(focusTask) }"
-							@click.stop="toggleTaskStatus(focusTask)"
-						>
-							<VIcon
-								icon="fa-check"
-								size="16"
-							/>
-						</button>
-						<div
-							class="flex-grow-1"
-							style="min-width: 0"
-						>
-							<div class="focus__title">{{ focusTask.activity.name }}</div>
-							<div class="text-caption text-medium-emphasis">
-								{{ focusTask.startTime.getString() }} – {{ focusTask.endTime.getString() }} ·
-								{{ durationLabel(focusTask) }}
-							</div>
-						</div>
-						<VBtn
-							v-if="focusMode === 'now'"
-							variant="tonal"
-							color="primaryOutline"
-							size="small"
-							prependIcon="fa-hourglass-half"
-							@click="extendTask(focusTask, 15)"
-						>
-							+15m
-						</VBtn>
-						<VBtn
-							v-else
-							color="primary"
-							size="small"
-							prependIcon="fa-play"
-							@click="startTask(focusTask)"
-						>
-							{{ $t('home.start') }}
-						</VBtn>
-					</div>
-					<VProgressLinear
-						v-if="focusMode === 'now'"
-						:modelValue="activeProgress"
-						:color="overrunMinutes > 0 ? 'error' : 'var(--task-color)'"
-						height="6"
-						rounded
-						class="mt-2"
-					/>
-				</div>
-				<div
-					v-else
-					class="focus focus--done mx-3 mt-3 d-flex align-center ga-3"
-				>
-					<VIcon
-						icon="fa-champagne-glasses"
-						size="22"
-						color="success"
-					/>
-					<span class="text-body-2 font-weight-medium">{{ $t('home.allDoneLong') }}</span>
-				</div>
+				<DayStrip class="px-4 pt-3" />
 
 				<!-- the rest of the day -->
 				<div
@@ -334,45 +218,10 @@
 							</div>
 							<span class="row__duration text-caption">{{ durationLabel(task) }}</span>
 							<!-- a plan you can repair is a plan you keep using -->
-							<VMenu
-								v-if="!isFinished(task)"
-								location="bottom end"
-							>
-								<template #activator="{ props: menuProps }">
-									<VIconBtn
-										v-bind="menuProps"
-										icon="fa-ellipsis-vertical"
-										variant="text"
-										size="x-small"
-										@click.stop
-									/>
-								</template>
-								<VList density="compact">
-									<VListItem
-										prependIcon="fa-play"
-										:title="$t('home.start')"
-										@click="startTask(task)"
-									/>
-									<VDivider class="my-1" />
-									<VListSubheader>{{ $t('home.moveLater') }}</VListSubheader>
-									<VListItem
-										v-for="minutes in snoozeOptions"
-										:key="minutes"
-										:title="`+${minutesLabel(minutes)}`"
-										prependIcon="fa-clock-rotate-left"
-										@click="snoozeTask(task, minutes)"
-									/>
-									<VDivider class="my-1" />
-									<VListSubheader>{{ $t('home.skip') }}</VListSubheader>
-									<VListItem
-										v-for="reason in skipReasons"
-										:key="reason"
-										:title="$t(`home.skipReason.${reason}`)"
-										prependIcon="fa-forward"
-										@click="skipTask(task, $t(`home.skipReason.${reason}`))"
-									/>
-								</VList>
-							</VMenu>
+							<TaskActionMenu
+								:task
+								size="x-small"
+							/>
 						</div>
 					</template>
 				</div>
@@ -382,34 +231,24 @@
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
-	import { useI18n } from 'vue-i18n'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
-	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
+	import DayStrip from '@/core/home/component/DayStrip.vue'
+	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
 
 	const router = useRouter()
-	const { t } = useI18n()
 	const {
 		hasPlan,
 		loading,
 		refreshing,
 		error,
-		nowMinutes,
 		sortedTasks,
 		totalCount,
 		completedCount,
 		progressPercent,
-		activeTask,
-		nextTask,
-		lastMissedTask,
 		missedTasks,
-		focusTask,
-		focusMode,
-		activeProgress,
-		overrunMinutes,
 		todayUrlDate,
 		streak,
 		isActive,
@@ -419,75 +258,8 @@
 		minutesLabel,
 		durationLabel,
 		toggleTaskStatus,
-		startTask,
-		skipTask,
-		snoozeTask,
-		extendTask,
 		reload,
 	} = useTodayPlan()
-
-	const snoozeOptions = [15, 30, 60]
-	const skipReasons = ['noTime', 'notRelevant', 'noEnergy'] as const
-
-	// --- day strip -------------------------------------------------------------
-	const dayStart = computed(() =>
-		sortedTasks.value.length === 0 ? 0 : Math.floor(sortedTasks.value[0]!.startTime.getInMinutes / 60) * 60,
-	)
-	const dayEnd = computed(() => {
-		const latest = Math.max(...sortedTasks.value.map(task => task.endTime.getInMinutes))
-		return Math.min(Math.ceil(latest / 60) * 60, 24 * 60)
-	})
-	const daySpan = computed(() => Math.max(dayEnd.value - dayStart.value, 1))
-	const dayStartLabel = computed(() => Time.fromMinutes(dayStart.value).getString())
-	const dayEndLabel = computed(() => Time.fromMinutes(dayEnd.value).getString())
-	const nowInsideDay = computed(() => nowMinutes.value >= dayStart.value && nowMinutes.value <= dayEnd.value)
-	const nowLeft = computed(() => percent(nowMinutes.value - dayStart.value))
-	const elapsedWidth = computed(() =>
-		percent(Math.min(Math.max(nowMinutes.value - dayStart.value, 0), daySpan.value)),
-	)
-	// Time blindness: say how much of the plan is left, do not make it be inferred from the clock.
-	const remainingLabel = computed(() => {
-		const left = dayEnd.value - nowMinutes.value
-		return left <= 0 ? t('home.planOver') : t('home.leftOfPlan', { time: minutesLabel(left) })
-	})
-
-	function percent(minutes: number): string {
-		return `${(minutes / daySpan.value) * 100}%`
-	}
-
-	function stripLeft(task: PlannerTask): string {
-		return percent(task.startTime.getInMinutes - dayStart.value)
-	}
-
-	function stripWidth(task: PlannerTask): string {
-		return `max(3px, ${percent(task.endTime.getInMinutes - task.startTime.getInMinutes)})`
-	}
-
-	// --- focus block -----------------------------------------------------------
-	const focusIcon = computed(() => {
-		switch (focusMode.value) {
-			case 'now':
-				return 'fa-play'
-			case 'upNext':
-				return 'fa-forward'
-			default:
-				return 'fa-triangle-exclamation'
-		}
-	})
-	const focusCountdown = computed(() => {
-		if (activeTask.value) {
-			return t('home.endsIn', { time: minutesLabel(activeTask.value.endTime.getInMinutes - nowMinutes.value) })
-		}
-		if (nextTask.value) {
-			return t('home.startsIn', { time: minutesLabel(nextTask.value.startTime.getInMinutes - nowMinutes.value) })
-		}
-		if (lastMissedTask.value) {
-			return t('home.wasDue', {
-				time: minutesLabel(nowMinutes.value - lastMissedTask.value.endTime.getInMinutes),
-			})
-		}
-		return ''
-	})
 
 	function gapBefore(index: number): number {
 		if (index === 0) return 0
@@ -505,83 +277,6 @@
 </script>
 
 <style scoped>
-	/* ---- day at a glance ---- */
-	.daystrip {
-		position: relative;
-		height: 14px;
-		border-radius: 7px;
-		background: rgba(var(--v-theme-on-surface), 0.07);
-		overflow: hidden;
-	}
-
-	.daystrip__elapsed {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		background: rgba(var(--v-theme-on-surface), 0.14);
-	}
-
-	.daystrip__seg {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		border-radius: 7px;
-		opacity: 0.85;
-	}
-
-	.daystrip__seg--done {
-		opacity: 0.3;
-	}
-
-	.daystrip__now {
-		position: absolute;
-		top: -3px;
-		bottom: -3px;
-		width: 2px;
-		background: rgb(var(--v-theme-error));
-		box-shadow: 0 0 6px 1px rgb(var(--v-theme-error));
-	}
-
-	/* ---- focus block ---- */
-	.focus {
-		border-radius: 14px;
-		padding: 12px 14px;
-		border: 1px solid var(--task-color);
-		background: linear-gradient(
-			180deg,
-			rgba(var(--v-theme-on-surface), 0.06),
-			rgba(var(--v-theme-on-surface), 0.02)
-		);
-		color: var(--task-color);
-	}
-
-	.focus--missed {
-		border-color: rgb(var(--v-theme-error));
-		color: rgb(var(--v-theme-error));
-	}
-
-	.focus--done {
-		border-color: rgba(var(--v-theme-success), 0.6);
-		color: rgb(var(--v-theme-on-surface));
-	}
-
-	.focus__kicker {
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-	}
-
-	.focus__title {
-		font-size: 1.05rem;
-		font-weight: 700;
-		color: rgb(var(--v-theme-on-surface));
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
 	/* ---- rows ---- */
 	.row {
 		display: flex;
@@ -672,11 +367,6 @@
 			background-color 0.15s ease,
 			color 0.15s ease,
 			transform 0.12s ease;
-	}
-
-	.check--lg {
-		width: 36px;
-		height: 36px;
 	}
 
 	.check:hover {

@@ -23,6 +23,15 @@ export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone'
 /** Minutes before a task starts that the "get ready" warning fires. */
 export const TRANSITION_WARNING_MINUTES = 10
 
+// The action vocabulary, defined once. Both of these used to be declared verbatim in NowBar and in
+// DayPlannerWidget, which is how the two menus were free to offer different things.
+/** Steps offered by "move later". */
+export const SNOOZE_OPTIONS = [15, 30, 60] as const
+/** Steps offered by "give it longer" — only meaningful on a task that is already running. */
+export const EXTEND_OPTIONS = [15, 30] as const
+/** Suffixes under the `home.skipReason.*` namespace. */
+export const SKIP_REASONS = ['noTime', 'notRelevant', 'noEnergy'] as const
+
 // Module-level state: the now bar and the planner widget are two views of one plan, so they share
 // one fetch and one set of derived values instead of drifting apart.
 //
@@ -90,9 +99,18 @@ function calendarQuery() {
 const todayUrlDate = computed(() => usStringToUrlString(todayIsoDate.value))
 
 // --- derived plan ------------------------------------------------------------
+//
+// A note on the named exports below (`nowMinutes`, the predicates, the commands): everything in this
+// file is module state, so these need nothing from `useTodayPlan()` and are exported directly as
+// well as through it. That is not a style preference. Calling `useTodayPlan()` registers a
+// `useDashboardRefresh` consumer, and registering one resets that entry's `lastRefreshedAt` — fine
+// for the handful of widgets that each own a mount, wrong for a component rendered once per task
+// row, which would keep pushing the staleness deadline out and quietly suppress the refetch on tab
+// return. Per-row consumers (TaskActionMenu) therefore import what they need from here instead.
+//
 // In the user's configured zone, not the browser's — the same clock the plan's task times were
 // written against, and the same one the server resolves "today" in. See `useUserClock`.
-const nowMinutes = computed(() => minutesOfDayInUserZone(now.value))
+export const nowMinutes = computed(() => minutesOfDayInUserZone(now.value))
 
 const nonBackgroundTasks = computed(() => tasks.value.filter(task => !task.isBackground))
 const sortedTasks = computed(() =>
@@ -104,7 +122,7 @@ const completedCount = computed(
 )
 const progressPercent = computed(() => (totalCount.value === 0 ? 0 : (completedCount.value / totalCount.value) * 100))
 
-function isFinished(task: PlannerTask): boolean {
+export function isFinished(task: PlannerTask): boolean {
 	return task.status === PlannerTaskStatus.Completed || task.status === PlannerTaskStatus.Cancelled
 }
 
@@ -118,6 +136,15 @@ function isActive(task: PlannerTask): boolean {
 
 function isMissed(task: PlannerTask): boolean {
 	return !isFinished(task) && task.endTime.getInMinutes <= nowMinutes.value
+}
+
+/**
+ * Under way right now — either explicitly ticked into progress or simply inside its slot. This is
+ * the condition "give it longer" is offered on, and it is deliberately wider than `isActive`: a task
+ * left running past its end time is exactly the one that needs extending.
+ */
+export function isRunning(task: PlannerTask): boolean {
+	return !isFinished(task) && (task.status === PlannerTaskStatus.InProgress || isActive(task))
 }
 
 const activeTask = computed(
@@ -153,11 +180,55 @@ const activeProgress = computed(() => {
 	return Math.min(((nowMinutes.value - task.startTime.getInMinutes) / span) * 100, 100)
 })
 
+// --- focus presentation ------------------------------------------------------
+// The focus task is rendered by exactly one component (NowBar — see the header comment there), but
+// its icon and countdown are derived here rather than in it, because they were derived twice before:
+// NowBar's `modeIcon` and DayPlannerWidget's `focusIcon` were the same switch with different
+// `default` branches (champagne glasses vs a warning triangle), and `countdown` / `focusCountdown`
+// were the same three branches over the same three message keys. Keeping them beside `focusMode`
+// means the next consumer inherits the definition instead of writing a third one.
+const focusIcon = computed(() => {
+	switch (focusMode.value) {
+		case 'now':
+			return 'fa-play'
+		case 'upNext':
+			return 'fa-forward'
+		case 'missed':
+			return 'fa-triangle-exclamation'
+		default:
+			return 'fa-champagne-glasses'
+	}
+})
+
+/**
+ * "Ends in 20m" / "Starts in 5m" / "Was due 10m ago", or `''` when there is nothing to count down —
+ * including a running task that is past its slot, where the overrun chip is the more precise thing
+ * to read.
+ *
+ * Translating outside a component is safe here: `i18n.global.t` forwards to the composer's `t`,
+ * which reads the `locale` ref, so this computed re-runs on a language change like any other.
+ */
+const focusCountdown = computed(() => {
+	const t = i18n.global.t
+	if (activeTask.value !== null) {
+		return overrunMinutes.value > 0
+			? ''
+			: t('home.endsIn', { time: minutesLabel(activeTask.value.endTime.getInMinutes - nowMinutes.value) })
+	}
+	if (nextTask.value !== null) {
+		return t('home.startsIn', { time: minutesLabel(nextTask.value.startTime.getInMinutes - nowMinutes.value) })
+	}
+	if (lastMissedTask.value !== null) {
+		return t('home.wasDue', { time: minutesLabel(nowMinutes.value - lastMissedTask.value.endTime.getInMinutes) })
+	}
+	return ''
+})
+
 function taskColor(task: PlannerTask): string {
 	return task.color || task.activity.category?.color || 'rgb(var(--v-theme-primary))'
 }
 
-function minutesLabel(minutes: number): string {
+export function minutesLabel(minutes: number): string {
 	const safeMinutes = Math.max(minutes, 0)
 	const hours = Math.floor(safeMinutes / 60)
 	const rest = safeMinutes % 60
@@ -209,7 +280,7 @@ async function toggleTaskStatus(task: PlannerTask) {
 	)
 }
 
-async function startTask(task: PlannerTask) {
+export async function startTask(task: PlannerTask) {
 	if (task.status === PlannerTaskStatus.InProgress) return
 	const actualStartTime = timeInUserZone(now.value)
 	task.actualStartTime = actualStartTime
@@ -220,7 +291,7 @@ async function startTask(task: PlannerTask) {
 	)
 }
 
-async function finishTask(task: PlannerTask) {
+export async function finishTask(task: PlannerTask) {
 	await setStatus(
 		task,
 		PlannerTaskStatus.Completed,
@@ -228,7 +299,7 @@ async function finishTask(task: PlannerTask) {
 	)
 }
 
-async function skipTask(task: PlannerTask, reason: string) {
+export async function skipTask(task: PlannerTask, reason: string) {
 	await setStatus(
 		task,
 		PlannerTaskStatus.Cancelled,
@@ -237,7 +308,7 @@ async function skipTask(task: PlannerTask, reason: string) {
 }
 
 /** Move a task later, keeping its length. Clamped so it cannot spill past midnight. */
-async function snoozeTask(task: PlannerTask, minutes: number) {
+export async function snoozeTask(task: PlannerTask, minutes: number) {
 	const span = task.endTime.getInMinutes - task.startTime.getInMinutes
 	const latestStart = 24 * 60 - 1 - span
 	// A missed task snoozes relative to now, an upcoming one relative to its own slot.
@@ -256,7 +327,7 @@ async function snoozeTask(task: PlannerTask, minutes: number) {
 }
 
 /** Give a running task more room instead of letting it silently eat the rest of the plan. */
-async function extendTask(task: PlannerTask, minutes: number) {
+export async function extendTask(task: PlannerTask, minutes: number) {
 	const previousEnd = task.endTime
 	task.endTime = Time.fromMinutes(Math.min(task.endTime.getInMinutes + minutes, 24 * 60 - 1))
 	try {
@@ -496,6 +567,8 @@ export function useTodayPlan() {
 		lastMissedTask,
 		focusTask,
 		focusMode,
+		focusIcon,
+		focusCountdown,
 		minutesUntilNext,
 		overrunMinutes,
 		activeProgress,
@@ -504,6 +577,7 @@ export function useTodayPlan() {
 		isActive,
 		isMissed,
 		isFinished,
+		isRunning,
 		taskColor,
 		minutesLabel,
 		durationLabel,
