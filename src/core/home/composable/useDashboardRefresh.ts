@@ -1,7 +1,7 @@
 import { computed, effectScope, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { EffectScope, Ref } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
-import { isoDateInUserZone, userTimeZone } from '@/core/home/composable/useUserClock.ts'
+import { isoDateInUserZone, userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 
 /**
  * One place that decides WHEN the home dashboard refetches.

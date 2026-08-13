@@ -49,6 +49,7 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
@@ -73,12 +74,8 @@
 			showBanner.value = true
 			overdueTasks.value = []
 			if (!newId) return
-			const today = new Date()
-			const isToday =
-				store.viewedDate.getFullYear() === today.getFullYear() &&
-				store.viewedDate.getMonth() === today.getMonth() &&
-				store.viewedDate.getDate() === today.getDate()
-			if (!isToday) return
+			// A calendar day on the left, "what day is it now" on the right — see `useUserClock`.
+			if (formatDateForApi(store.viewedDate) !== isoDateInUserZone()) return
 			try {
 				const yesterday = new Date(store.viewedDate)
 				yesterday.setDate(yesterday.getDate() - 1)

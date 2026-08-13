@@ -1,4 +1,5 @@
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 
@@ -15,11 +16,12 @@ export class TemplatePlannerTaskRequest implements IBasePlannerTaskRequest {
 	) {}
 
 	static createEmpty(): TemplatePlannerTaskRequest {
-		const now = new Date()
-		const newHours = now.getHours() + 1
-		const newMinutes = Math.ceil(now.getMinutes() / 5) * 5
+		// The user's zone — same reasoning as `PlannerTaskRequest.createEmpty`.
+		const now = timeInUserZone()
+		const newHours = now.hours + 1
+		const newMinutes = Math.ceil(now.minutes / 5) * 5
 		return new TemplatePlannerTaskRequest(
-			new Time(now.getHours(), newMinutes),
+			new Time(now.hours, newMinutes),
 			new Time(newHours === 24 ? 0 : newHours, newMinutes),
 		)
 	}

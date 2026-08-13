@@ -186,7 +186,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
-	import { userTimeZone } from '@/core/home/composable/useUserClock.ts'
+	import { userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 	// A finished timer changes the plan AND the history pie, which lives in another widget. One
 	// signal, both subscribers — see useDashboardRefresh.
 	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'

@@ -14,7 +14,7 @@ import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { showNotification } from '@/_common/utils/notifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { PlannerStreak } from '@/core/dayPlanner/dto/response/PlannerStreak.ts'
-import { minutesOfDayInUserZone, timeInUserZone, userTimeZone } from '@/core/home/composable/useUserClock.ts'
+import { minutesOfDayInUserZone, timeInUserZone, userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 import i18n from '@/i18n.ts'
 

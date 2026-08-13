@@ -126,6 +126,7 @@
 		urlStringToUTCDate,
 		usStringToUrlString,
 	} from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
@@ -249,7 +250,8 @@
 		if (!dateParam) {
 			router.replace({
 				name: 'dayPlanner',
-				params: { date: usStringToUrlString(formatDateForApi(new Date())) },
+				// The user's today, not the browser's — this is the date the planner opens on.
+				params: { date: usStringToUrlString(isoDateInUserZone()) },
 			})
 			return
 		}

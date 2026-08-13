@@ -46,16 +46,36 @@ app-specific settings sections. See `### _common/modules/` below.
 - Always import by `@/` alias, never by relative path across directories.
 - Every module registers itself through `<module>.routes.ts` (exported, spread in `src/router.ts`) and `_locales/` (spread in `src/locales/{SK,EN}.ts`).
 
-### `src/_common` is a submodule — never write to it
+### `src/_common` is a submodule — edit it deliberately, never incidentally
 
-`src/_common` is the `vue_framework` repo mounted as a git submodule. Editing it silently dirties the submodule and the change is lost on the next pointer bump.
-ESLint and Prettier are both configured to ignore it, so tooling will not warn you.
+`src/_common` is the `vue_framework` repo (`github.com/sydowwe/vue_framework`) mounted as a git submodule. **Other apps depend on it.** ESLint and Prettier are both
+configured to ignore it, so tooling will not warn you either way.
 
-If the framework is missing something this app needs:
+Editing it is allowed and often correct. What is not allowed is editing it *by accident* — an uncommitted change there is invisible to `git status` at the app root
+and is lost on the next pointer bump.
 
-1. **Do not fork the file into `src/`**, and do not edit `_common`.
-2. Add an entry to **`migration-revision.md`** describing the gap, the local file kept (if any) and the upstream ask.
-3. The fix lands in the framework repo, the submodule pointer is bumped, then the local file is deleted and its importers repointed.
+**Does the change belong in the framework?** Ask whether another app in the family would want it, as written:
+
+- **Yes — put it in `_common`.** Generic capability, no app domain in it: a composable, a base component, a utility, a bootstrap option. `useUserClock` is the worked
+  example (§13 in `migration-revision.md`): the framework already owned `User.timezone` and `useCurrentTime` and joined neither, so every app reading the clock had
+  the same bug.
+- **No — keep it in `src/core/<module>/`.** Anything naming this app's entities, routes, locale keys or business rules. A second app would have to delete it to use it.
+- **Almost, but it needs something app-specific.** Do not import the app from the framework. Register a collaborator instead, the way `auth/authAdapter.ts` and
+  `installFramework`'s `userTimeZone` option do: the framework declares an interface and a setter, the app supplies the implementation in `main.ts`. Note that
+  `composable/general/` and `utils/` import **nothing** from `modules/` — that boundary is what lets an app opt out of a module, so do not be the first to cross it.
+
+**When you do edit it, the change must be self-contained and generic:**
+
+1. No imports from `@/core/**`, no app locale keys, no assumptions about this app's routes or DTOs.
+2. Default to the current behaviour when a new collaborator is not registered, so existing apps keep working without touching their `main.ts`.
+3. Update the framework's own docs in the same commit — `src/_common/docs/{composables,components,utils,api}.md`. They live in the submodule so they travel with the
+   pointer.
+4. **Commit inside `src/_common` first, then commit the pointer bump in the app.** Two repos, two commits, in that order. A pointer bump without the submodule commit
+   pushed is a broken checkout for everyone else.
+5. Say in the app-side commit message what moved and why, so the next pointer bump is readable.
+
+If you are *not* going to do the framework change now, fall back to the old rule: keep the file app-side, add an entry to **`migration-revision.md`** describing the
+gap and the upstream ask, and repoint importers when it lands. Do not fork a framework file into `src/` and leave it undocumented.
 
 `src/_common/SETUP.md` and `README.md` are the framework's own docs — the mount contract, peer deps, `installFramework` and the registration order. Read those before
 touching `main.ts`.

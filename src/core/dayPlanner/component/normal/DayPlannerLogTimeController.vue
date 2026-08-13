@@ -15,6 +15,7 @@
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 	import router from '@/router.ts'
@@ -111,7 +112,9 @@
 	async function handleTrackingDone({ startTimestamp, length }: { startTimestamp: Date; length: Time }) {
 		const plannerTaskId = currentPlannerTaskId.value
 		if (plannerTaskId !== null) {
-			const actualStartTime = Time.fromDate(startTimestamp)
+			// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
+			// the hour the work actually happened at.
+			const actualStartTime = timeInUserZone(startTimestamp)
 			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
 			await Promise.all([
 				patchStatus(

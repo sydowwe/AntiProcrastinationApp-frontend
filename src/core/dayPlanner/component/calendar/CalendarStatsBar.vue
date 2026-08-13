@@ -50,6 +50,7 @@
 	import { computed } from 'vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 
 	const props = defineProps<{
 		days: Calendar[]
@@ -58,10 +59,12 @@
 	const totalTasks = computed(() => props.days.reduce((s, d) => s + d.totalTasks, 0))
 	const completedTasks = computed(() => props.days.reduce((s, d) => s + d.completedTasks, 0))
 
-	const today = new Date().toISOString().slice(0, 10)
+	// Computed, not captured at setup, and in the user's zone rather than UTC: this bar is on a
+	// month view that stays open, and every stat below is a "up to and including today" cut.
+	const today = computed(() => isoDateInUserZone())
 
-	const pastDays = computed(() => props.days.filter(d => d.date <= today).length)
-	const plannedDays = computed(() => props.days.filter(d => d.date <= today && d.totalTasks > 0).length)
+	const pastDays = computed(() => props.days.filter(d => d.date <= today.value).length)
+	const plannedDays = computed(() => props.days.filter(d => d.date <= today.value && d.totalTasks > 0).length)
 
 	const daysWithTasks = computed(() => props.days.filter(d => d.totalTasks > 0))
 	const avgCompletion = computed(() => {
@@ -71,7 +74,7 @@
 
 	const streak = computed(() => {
 		const sorted = [...props.days]
-			.filter(d => d.date <= today && d.totalTasks > 0)
+			.filter(d => d.date <= today.value && d.totalTasks > 0)
 			.sort((a, b) => b.date.localeCompare(a.date))
 		let count = 0
 		for (const d of sorted) {

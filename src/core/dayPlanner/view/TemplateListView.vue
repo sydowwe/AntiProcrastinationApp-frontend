@@ -275,7 +275,8 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
-	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
@@ -494,7 +495,7 @@
 	}
 
 	function applyToToday(templateId: number) {
-		const todayUrlDate = usStringToUrlString(formatDateForApi(new Date()))
+		const todayUrlDate = usStringToUrlString(isoDateInUserZone())
 		router.push({
 			name: 'dayPlanner',
 			params: { date: todayUrlDate },

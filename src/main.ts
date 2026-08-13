@@ -5,6 +5,7 @@ import router from './router.ts'
 import i18n from './i18n.ts'
 import { installFramework } from './_common/bootstrap/index.ts'
 import { createAuthAdapter } from './core/user/authAdapter.ts'
+import { useUserStore } from './_common/modules/user/store/authStore.ts'
 // Side-effect only: merges this app's preference fields into the framework's User DTOs.
 import './core/user/dto/userAugmentation.ts'
 import { navItems } from './app/nav/navItems.ts'
@@ -20,6 +21,9 @@ installFramework(app, {
 	router,
 	i18n,
 	authAdapter: createAuthAdapter(),
+	// A getter, not a value: editing the timezone in user settings must re-derive every date and
+	// countdown without a reload. The server resolves day boundaries in this same zone.
+	userTimeZone: () => useUserStore().currentUser.timezone,
 	// Only `main` — the `customer` and `system` trees are for multi-tenant/admin apps and stay empty
 	// here, which also keeps their section dividers and subheaders out of the sidebar.
 	navTrees: { main: navItems },

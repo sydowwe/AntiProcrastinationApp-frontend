@@ -27,14 +27,12 @@ for so long.
   enums that only it uses — `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` — which
   leaves the `enums.{locationType,weatherDependency,expectedCostTier}` locale blocks orphaned too.
 - **76 app-side type errors remain**, all in `src/core`. Never triaged as a group.
-- **§13 — `useUserClock` reads a framework concern from an app module.** New gap, opened 2026-08-13;
-  see below.
-
 ---
 
-### 13. The app's wall clock is the user's timezone, and the framework has no way to say so
+### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**
 
-**Local file kept:** `src/core/home/composable/useUserClock.ts`.
+**Local file kept:** none — opened and closed the same day (2026-08-13). The app-local
+`src/core/home/composable/useUserClock.ts` existed for one commit before moving upstream.
 
 `_common` owns both halves of this and joins neither. It owns the setting — `User.timezone`
 (`_common/modules/user/dto/response/User.ts:24`, defaulting to `Europe/Bratislava`, edited through
@@ -65,8 +63,34 @@ app module: `core/dayPlanner` has the same wall-clock reads and the same bug, an
 imports may only go through another module's `api/` or `dto/`, so it cannot be shared from `core/home`
 where it currently sits.
 
-Until it lands, **only `core/home` is timezone-correct.** `core/dayPlanner`, `core/activityHistory`
-and `core/activityTracking` still read the browser's clock.
+---
+
+### R16. `useUserClock` → `_common` (2026-08-13)
+
+Landed as `_common/composable/general/useUserClock.ts` (framework commit `b64390f`), registered
+through a new optional `installFramework({ userTimeZone })` option. The app-local copy is deleted and
+its three `core/home` importers repointed.
+
+Registered rather than imported, because `composable/general/` and `utils/` import **nothing** from
+`modules/` and that boundary is what lets an app opt out of the user module. Same shape as
+`auth/authAdapter.ts`. Unregistered, everything falls back to the browser's zone — which is exactly
+what an unmigrated call site already does — so other apps on this framework need no change.
+
+`core/dayPlanner` was migrated in the same app-side commit: `Calendar.isToday`,
+`CalendarDayCellContent`, `CalendarStatsBar`, `useCurrentTimeIndicator`, `useTaskReminders`,
+`PlannerTasksColumn`, `OverdueTasksBanner`, `DayPlannerLogTimeController`, both
+`*PlannerTaskRequest.createEmpty`, and the two "go to today" links. Three of those were reading
+`toISOString().slice(0, 10)` — **UTC**, not even browser-local — so `isToday` was wrong for everyone
+west of Greenwich in the evening regardless of any timezone setting.
+
+**Still on the browser's clock:** `core/activityHistory` and `core/activityTracking`. Not audited
+here. `dayPlannerStore.datetimeToSlotIndex` was left alone deliberately — it has zero callers and
+takes a `Date` whose instant-vs-calendar-day nature is undetermined.
+
+This also motivated the rewrite of CLAUDE.md's submodule rule, which was "never write to it": the gap
+existed *because* the documented process was to keep a local copy and file an ask, so app after app
+would have carried its own clock. The rule now asks whether the change is generic, and if it is, to
+make it in the submodule and bump the pointer.
 
 ---
 

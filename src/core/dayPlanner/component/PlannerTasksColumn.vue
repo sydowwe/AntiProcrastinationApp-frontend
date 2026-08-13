@@ -83,6 +83,8 @@
 	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { usePlannerClipboardPreview } from '@/core/dayPlanner/composable/usePlannerClipboardPreview.ts'
 	import { usePlannerPointerInteractions } from '@/core/dayPlanner/composable/usePlannerPointerInteractions.ts'
 	import { usePlannerKeyboard } from '@/core/dayPlanner/composable/usePlannerKeyboard.ts'
@@ -105,9 +107,10 @@
 	function scrollToNow(): void {
 		if (!store.viewedDate) return
 		const viewedDate = store.viewedDate instanceof Date ? store.viewedDate : new Date(store.viewedDate)
-		if (viewedDate.toDateString() !== new Date().toDateString()) return
+		// A calendar day on the left, "what day is it now" on the right — see `useUserClock`.
+		if (formatDateForApi(viewedDate) !== isoDateInUserZone()) return
 
-		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
+		const slotIndex = store.timeToSlotIndex(timeInUserZone(currentTime.value))
 		if (slotIndex < 0) return
 
 		const grid = tasksColumnRef.value?.parentElement as HTMLElement

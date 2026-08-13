@@ -1,6 +1,7 @@
 import { DayType } from '@/_common/dto/enum/DayType.ts'
 import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { isTodayInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import type { Location } from '@/core/dayPlanner/dto/enum/Location.ts'
 
 export class Calendar {
@@ -26,8 +27,11 @@ export class Calendar {
 		return this.totalTasks === 0 ? 0 : Math.round((this.completedTasks / this.totalTasks) * 100)
 	}
 
+	// Was `new Date().toISOString().slice(0, 10)`, which answers in UTC: for anyone west of
+	// Greenwich this flipped to tomorrow during the evening, and east of it stayed on yesterday
+	// through the early morning — regardless of their configured timezone.
 	get isToday() {
-		return this.date === new Date().toISOString().slice(0, 10)
+		return isTodayInUserZone(this.date)
 	}
 
 	get isWeekend() {

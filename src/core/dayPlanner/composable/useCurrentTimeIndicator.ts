@@ -1,8 +1,8 @@
 // composables/useCurrentTimeIndicator.ts
 import { computed } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
-import { formatToTime24H } from '@/_common/utils/DateTimeHelper.ts'
-import { Time } from '@/_common/dto/dto/Time.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
@@ -23,13 +23,12 @@ export function useCurrentTimeIndicator<
 		const viewedDateValue = (store as any).viewedDate
 		const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
 
-		// Check if the viewed date is today
-		const today = new Date()
-		const isToday = viewedDate.toDateString() === today.toDateString()
-		if (!isToday) return false
+		// `viewedDate` is a calendar day, so it is read with its browser-local fields; the right-hand
+		// side asks what day it is *now*, which is a question about the user's timezone.
+		if (formatDateForApi(viewedDate) !== isoDateInUserZone()) return false
 
 		// Check if current time is within the view range (handle midnight wrap)
-		const currentTimeObj = Time.fromDate(currentTime.value)
+		const currentTimeObj = timeInUserZone(currentTime.value)
 		const currentMinutes = currentTimeObj.getInMinutes
 		const startMinutes = store.viewStartTime.getInMinutes
 		const endMinutes = store.viewEndTime.getInMinutes
@@ -46,7 +45,7 @@ export function useCurrentTimeIndicator<
 	const gridRowStyle = computed(() => {
 		if (!isVisible.value) return {}
 
-		const slotIndex = store.timeToSlotIndex(new Time(currentTime.value.getHours(), currentTime.value.getMinutes()))
+		const slotIndex = store.timeToSlotIndex(timeInUserZone(currentTime.value))
 
 		const gridRow = slotIndex + 1
 		return {
@@ -54,7 +53,8 @@ export function useCurrentTimeIndicator<
 		}
 	})
 
-	const formattedTime = computed(() => formatToTime24H(currentTime.value))
+	// Same zone as the line's position, or the label would name an hour the line is not drawn at.
+	const formattedTime = computed(() => timeInUserZone(currentTime.value).getString())
 
 	return {
 		formattedTime,

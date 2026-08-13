@@ -1,6 +1,8 @@
 import { watch } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+import { isoDateInUserZone, minutesOfDayInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 
@@ -22,16 +24,12 @@ export function useTaskReminders(
 		now => {
 			if (!getEnabled()) return
 
-			const today = new Date()
+			// `viewedDate` is a calendar day, read with its browser-local fields; the right-hand side
+			// asks what day it is now, which is a question about the user's timezone.
 			const viewedDate = new Date(getViewedDate())
-			if (
-				viewedDate.getFullYear() !== today.getFullYear() ||
-				viewedDate.getMonth() !== today.getMonth() ||
-				viewedDate.getDate() !== today.getDate()
-			)
-				return
+			if (formatDateForApi(viewedDate) !== isoDateInUserZone()) return
 
-			const nowMinutes = now.getHours() * 60 + now.getMinutes()
+			const nowMinutes = minutesOfDayInUserZone(now)
 
 			for (const task of getTasks()) {
 				if (task.id < 0) continue

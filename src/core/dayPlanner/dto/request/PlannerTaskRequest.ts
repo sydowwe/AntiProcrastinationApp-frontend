@@ -1,5 +1,6 @@
 import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 
@@ -28,11 +29,13 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	) {}
 
 	static createEmpty(): PlannerTaskRequest {
-		const now = new Date()
-		const newHours = now.getHours() + 1
-		const newMinutes = Math.ceil(now.getMinutes() / 5) * 5
+		// The user's zone, not the browser's: this prefills the times the user is about to plan
+		// against, and they read the same clock the rest of the planner is drawn on.
+		const now = timeInUserZone()
+		const newHours = now.hours + 1
+		const newMinutes = Math.ceil(now.minutes / 5) * 5
 		return new PlannerTaskRequest(
-			new Time(now.getHours(), newMinutes),
+			new Time(now.hours, newMinutes),
 			new Time(newHours === 24 ? 0 : newHours, newMinutes),
 		)
 	}

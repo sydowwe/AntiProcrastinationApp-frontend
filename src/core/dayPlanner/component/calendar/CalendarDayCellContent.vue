@@ -96,6 +96,7 @@
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/core/dayPlanner/component/calendar/CellTaskProgress.vue'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 
 	const props = defineProps<{
 		day: Calendar
@@ -106,7 +107,9 @@
 	const completionBgStyle = computed(() => {
 		if (props.day.totalTasks === 0) return {}
 		const rate = props.day.completionRate
-		const isPast = props.day.date < new Date().toISOString().slice(0, 10)
+		// Not `toISOString()`, which is UTC: it tinted today's cell as an unfinished past day during
+		// the evening for anyone west of Greenwich.
+		const isPast = props.day.date < isoDateInUserZone()
 		if (rate >= 80) return { backgroundColor: 'rgba(var(--v-theme-success), 0.07)' }
 		if (rate >= 50) return { backgroundColor: 'rgba(var(--v-theme-warning), 0.07)' }
 		return isPast ? { backgroundColor: 'rgba(var(--v-theme-error), 0.07)' } : {}
