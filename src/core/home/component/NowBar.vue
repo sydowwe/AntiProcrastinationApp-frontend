@@ -151,14 +151,15 @@
 				</VBtn>
 			</template>
 
+			<!-- rendered as-is: a broken streak already arrives as 0 -->
 			<VChip
-				v-if="streakStore.displayedStreak > 0"
+				v-if="streak.currentStreak > 0"
 				color="warning"
 				variant="tonal"
 				size="small"
 				prependIcon="fas fa-fire"
 			>
-				{{ streakStore.displayedStreak }}
+				{{ streak.currentStreak }}
 			</VChip>
 		</div>
 
@@ -203,7 +204,7 @@
 		overrunMinutes,
 		nowMinutes,
 		todayUrlDate,
-		streakStore,
+		streak,
 		error,
 		taskColor,
 		minutesLabel,

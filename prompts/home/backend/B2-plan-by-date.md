@@ -10,7 +10,7 @@
 >   make one. `day-plan` answers 200 through it, so it degrades to a permanently empty planner
 >   rather than a visible error. Out of scope for a contract-only ask; wants a rolling seed or lazy
 >   creation on first task. **Still open.**
-> - **The response's top-level `streak` is not consumed yet.** See ruling 5.
+> - **The top-level `streak` is consumed**, and `plannerStreakStore` is deleted. See ruling 5.
 
 **Contract only.** Whether this is a new route, an extra filter field, or an expansion of an existing
 response is the backend's decision; this describes only what the client needs in order to stop paying
@@ -65,15 +65,18 @@ Each of these was a guess on the client. The rulings are recorded inline; the fr
 > detail the client never needs to hold.
 >
 > **5. NOT ASKED, delivered anyway: a top-level `streak`,** hoisted off `CalendarResponse` and
-> nulled there, on the reasoning that home would otherwise lose its flame chip on days where the
-> calendar is null. That reasoning rests on a wrong premise about this codebase: home never read a
-> streak off the calendar — the frontend `Calendar` DTO (`Calendar.ts`) has no `streak` field at
-> all, and the flame chip in `NowBar.vue` and `DayPlannerWidget.vue` comes from
-> `plannerStreakStore` (localStorage). So nothing was lost, but a server-side streak is now
-> *available* for the first time. It is deliberately unconsumed: swapping the local store for it is
-> **B1**'s scope, and B1 is about the streak *rules* (does `Cancelled` break the day, does a day
-> with no plan break it, are there grace days), which are still unsettled. `DayPlan.fromJson`
-> parses everything except `streak` and says so.
+> nulled there, so it survives days with no calendar. The stated reasoning — that home would
+> otherwise *lose* the chip — did not apply: home never read a streak off the calendar, the
+> frontend `Calendar` DTO has no such field, and the chip came from `plannerStreakStore`
+> (localStorage). Nothing was at risk. The hoist is still the right shape, and it made a
+> server-side streak available for the first time.
+>
+> **This closed [B1](B1-planner-streak.md).** `PlannerStreakResponse` settles every rule B1 asked
+> about by moving them server-side: `CurrentStreak` arrives already zeroed when broken, and
+> `IsTodayComplete` carries a completion rule that is deliberately *not* the progress ring's.
+> Consumed as `PlannerStreak`; `plannerStreakStore.ts` is deleted. A status patch now triggers one
+> background re-read, because whether a tick completed the day is not derivable from the counts on
+> this side.
 
 1. **What does the server return for a date with no calendar?** This decides whether a live bug
    exists today. `fetchByField` (`src/_common/api/useEntityQuery.ts:35-46`) rejects on any non-2xx,

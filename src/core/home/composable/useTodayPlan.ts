@@ -13,7 +13,7 @@ import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { showNotification } from '@/_common/utils/notifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
-import { usePlannerStreakStore } from '@/core/home/store/plannerStreakStore.ts'
+import { PlannerStreak } from '@/core/dayPlanner/dto/response/PlannerStreak.ts'
 import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 import i18n from '@/i18n.ts'
 
@@ -40,6 +40,11 @@ const tasks = ref<PlannerTask[]>([])
  * date has one however much was planned. Presence answers "is this date inside the seeded years".
  */
 const hasPlan = ref(false)
+/**
+ * Server-computed, and rendered as-is. A dead streak arrives as 0, so there is no liveness check
+ * left on this side — see `PlannerStreak`, which replaced the localStorage store that had to guess.
+ */
+const streak = ref<PlannerStreak>(PlannerStreak.empty())
 /** True only while nothing is on screen yet — widgets render this as a spinner. */
 const loading = ref(true)
 /** True during a background refetch, with the previous plan still rendered underneath. */
@@ -174,7 +179,12 @@ async function setStatus(task: PlannerTask, status: PlannerTaskStatus, request?:
 	task.status = status
 	try {
 		await planner().patchStatus(task.id, request ?? new PatchPlannerTaskStatusRequest(status))
-		syncStreak()
+		// Re-read the plan so the flame chip is right the moment the day is finished — that instant is
+		// the whole point of the streak. Whether this tick completed the day cannot be worked out
+		// from the counts here: the streak's rule excludes optional and background tasks and keeps
+		// skipped ones in the denominator, so a day reading 4/5 on the ring may well be complete.
+		// One request, and `useDashboardRefresh` collapses it if a refresh is already in flight.
+		if (status !== PlannerTaskStatus.InProgress) void refresh()
 	} catch {
 		task.status = previous
 		reportSaveFailure('home.saveStatusFailed', task)
@@ -255,15 +265,24 @@ async function extendTask(task: PlannerTask, minutes: number) {
 }
 
 // --- streak ------------------------------------------------------------------
-// TODO(Bn): per-device only, and the count drifts — see prompts/home/backend/B1-planner-streak.md.
-function syncStreak() {
-	if (totalCount.value === 0) return
-	const streakStore = usePlannerStreakStore()
-	if (completedCount.value === totalCount.value) {
-		streakStore.registerCompletedDay(now.value)
-	} else if (streakStore.completedToday) {
-		streakStore.revokeCompletedDay(now.value)
-	}
+/**
+ * The server owns the day boundary and computes it in the user's configured `User.Timezone`; this
+ * module computes its own "today" from the browser clock. Those agree for anyone whose profile
+ * timezone matches their browser — which is how it is seeded at sign-in — but the timezone is a
+ * user-editable setting (user settings → appearance), so they can diverge, and the symptom would be
+ * home quietly showing the wrong day's plan.
+ *
+ * Deliberately surfaced rather than silently adopted: `nowMinutes` and every countdown on this page
+ * still read the browser's wall clock, so switching the date alone would trade one incoherence for
+ * a worse one — a plan for one day laid against another day's clock.
+ */
+function assertServerDateAgrees(serverStreak: PlannerStreak, requestedIsoDate: string) {
+	if (serverStreak.today === '' || serverStreak.today === requestedIsoDate) return
+	console.warn(
+		`[home] date disagreement: this browser says ${requestedIsoDate}, the server says ` +
+			`${serverStreak.today} in ${serverStreak.timezone}. The plan shown is for the browser's ` +
+			`date. Check the timezone in user settings.`,
+	)
 }
 
 // --- transition alerts -------------------------------------------------------
@@ -312,11 +331,12 @@ async function fetchPlan(): Promise<void> {
 		calendar.value = dayPlan.calendar
 		tasks.value = dayPlan.tasks
 		hasPlan.value = dayPlan.hasPlan
+		streak.value = dayPlan.streak
 		planDate.value = isoDate
 		// Cleared here rather than before the request: a background refresh that fails again must
 		// not blink the error state off and the "no plan for today" state on along the way.
 		error.value = false
-		syncStreak()
+		assertServerDateAgrees(dayPlan.streak, isoDate)
 	} catch {
 		if (token !== loadToken) return
 		// Leave calendar/tasks/planDate as they are: on a first load they are already the empty
@@ -374,6 +394,7 @@ export function resetTodayPlan(): void {
 	calendar.value = null
 	tasks.value = []
 	hasPlan.value = false
+	streak.value = PlannerStreak.empty()
 	planDate.value = null
 	loading.value = true
 	refreshing.value = false
@@ -476,7 +497,7 @@ export function useTodayPlan() {
 		overrunMinutes,
 		activeProgress,
 		todayUrlDate,
-		streakStore: usePlannerStreakStore(),
+		streak,
 		isActive,
 		isMissed,
 		isFinished,

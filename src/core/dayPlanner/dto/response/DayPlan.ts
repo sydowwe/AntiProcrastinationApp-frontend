@@ -1,5 +1,6 @@
 import { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+import { PlannerStreak } from '@/core/dayPlanner/dto/response/PlannerStreak.ts'
 
 /**
  * One day's plan, from `GET calendar/day-plan/{date}` — see `prompts/home/backend/B2-plan-by-date.md`.
@@ -19,18 +20,22 @@ export class DayPlan {
 		public readonly calendar: Calendar | null,
 		public readonly tasks: PlannerTask[],
 		public readonly hasPlan: boolean,
+		/**
+		 * Top-level rather than on the nested `calendar`, which is what makes it survive the days
+		 * where there is no calendar — the flame chip should not vanish just because nothing was
+		 * planned. `calendar.streak` is nulled by the server on this route for that reason.
+		 */
+		public readonly streak: PlannerStreak,
 	) {}
 
-	// The response also carries a top-level `streak`. It is deliberately not modelled yet: home still
-	// reads its flame chip from `plannerStreakStore` (localStorage), and swapping that for the server
-	// value is B1's scope, not B2's — it needs the streak *rules* settled first.
 	static fromJson(json: any): DayPlan {
-		const { date, calendar = null, tasks = [], hasPlan = false } = json ?? {}
+		const { date, calendar = null, tasks = [], hasPlan = false, streak = null } = json ?? {}
 		return new DayPlan(
 			date,
 			calendar == null ? null : Calendar.fromJson(calendar),
 			PlannerTask.listFromJsonList(tasks),
 			hasPlan,
+			streak == null ? PlannerStreak.empty() : PlannerStreak.fromJson(streak),
 		)
 	}
 }

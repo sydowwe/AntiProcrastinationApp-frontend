@@ -1,5 +1,29 @@
 # B1 · Backend ask — server-side day-plan completion streak
 
+> **RESOLVED — shipped and consumed.** `PlannerStreakResponse` rides on `CalendarResponse` and is
+> hoisted to the top level of `GET /api/calendar/day-plan/{date}` (see
+> [B2](B2-plan-by-date.md)), so it survives the days where there is no calendar.
+>
+> Every rule this ask asked about was answered by being moved server-side into `PlannerStreakService`:
+> the skip rule, the empty-day rule and the grace rule now live there, `CurrentStreak` arrives
+> **already zeroed** when the streak has broken, and `IsTodayComplete` carries the completion
+> judgement. That judgement is deliberately *not* the progress ring's rule — optional and background
+> tasks are excluded and skipped tasks stay in the denominator, so a day reading 4/5 on the ring can
+> still be complete. The client compares no counts.
+>
+> `Today` + `Timezone` report the day boundary the server used, in the user's own `User.Timezone`.
+>
+> **Consumed by:** `PlannerStreak` (`src/core/dayPlanner/dto/response/PlannerStreak.ts`), rendered
+> unconditionally by the flame chip in `NowBar.vue` and `DayPlannerWidget.vue`.
+> **Deleted by:** `src/core/home/store/plannerStreakStore.ts` — all three structural defects below
+> died with it.
+>
+> One follow-up, **still open**: this client still computes its own "today" from the browser clock,
+> and `nowMinutes` and every countdown on the home page read the browser's wall clock. If a user's
+> configured timezone differs from their browser's, those disagree with the server's day boundary.
+> `assertServerDateAgrees` in `useTodayPlan.ts` logs the disagreement rather than papering over it —
+> see the note at the end of this file.
+
 **Contract only.** This states the rules the frontend currently guesses at and the fields it needs back.
 Storage, entities, EF configuration, migrations, indexes, and whether the streak is stored or recomputed
 are the backend agent's decisions, not requests made here.
@@ -107,3 +131,30 @@ carries the change), say so; the frontend currently sends nothing streak-specifi
 - The `TODO(Bn)` at `useTodayPlan.ts:240` is removed.
 - The localStorage keys `plannerStreak` (pre-H2) and `plannerStreak.byUser` stop being written. Neither
   is read by anything else.
+
+---
+
+## Follow-up, still open: the client's day boundary is the browser's, not the user's
+
+`PlannerStreakResponse.Today` / `.Timezone` settled where the boundary lives — the server, in
+`User.Timezone`. The home page has not caught up, and cannot be made to without a wider change than
+this ask covered:
+
+- `useDashboardRefresh.todayIsoDate` derives "today" from `formatDateForApi(new Date())`, i.e. the
+  **browser's** zone. That is what picks which date's plan is fetched, and what fires the midnight
+  rollover.
+- `useTodayPlan.nowMinutes` derives the current wall-clock minute from the same browser `Date`. That
+  is what decides which task is active, what the countdowns say, and what timestamp
+  `Time.fromDate(now)` writes when a task is started or finished.
+
+`User.Timezone` is a real, user-editable setting (`_common/modules/user/.../AppearanceSection.vue`),
+seeded from `Intl.DateTimeFormat().resolvedOptions().timeZone` at sign-in. So the two agree for most
+users and diverge for anyone who travels or edits it.
+
+Fixing only the date would be worse than not fixing it — home would fetch one day's plan and lay it
+against another day's clock. The coherent fix derives **both** the date and the wall-clock minute
+from `User.Timezone`, which touches every countdown on the page, so it wants its own prompt.
+`assertServerDateAgrees` (`useTodayPlan.ts`) logs the disagreement in the meantime; the plan shown
+follows the browser.
+
+Nothing is asked of the backend here — `Today` and `Timezone` are exactly what this needs.

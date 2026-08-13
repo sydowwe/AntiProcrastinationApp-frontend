@@ -31,15 +31,16 @@
 				<span class="text-h6">{{ $t('home.dayPlanner') }}</span>
 			</div>
 			<VSpacer />
+			<!-- rendered as-is: a broken streak already arrives as 0 -->
 			<VChip
-				v-if="streakStore.displayedStreak > 0"
+				v-if="streak.currentStreak > 0"
 				color="warning"
 				variant="tonal"
 				size="small"
 				prependIcon="fas fa-fire"
-				:title="$t('home.bestStreak') + ': ' + streakStore.best"
+				:title="$t('home.bestStreak') + ': ' + streak.bestStreak"
 			>
-				{{ streakStore.displayedStreak }}
+				{{ streak.currentStreak }}
 			</VChip>
 			<VChip
 				v-if="missedTasks.length > 0"
@@ -410,7 +411,7 @@
 		activeProgress,
 		overrunMinutes,
 		todayUrlDate,
-		streakStore,
+		streak,
 		isActive,
 		isMissed,
 		isFinished,
