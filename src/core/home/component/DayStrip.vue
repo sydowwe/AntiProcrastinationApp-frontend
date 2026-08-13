@@ -5,7 +5,16 @@
 -->
 <template>
 	<div>
-		<div class="daystrip">
+		<!--
+			`aria-hidden` rather than an ARIA widget pattern: the bar is a decoration built from
+			positioned divs, every task in it is listed below with its times, and there is no role
+			that describes "proportional coloured segments" without inventing one. The label row under
+			it stays readable — "2h left of plan" is the part worth announcing.
+		-->
+		<div
+			class="daystrip"
+			aria-hidden="true"
+		>
 			<div
 				class="daystrip__elapsed"
 				:style="{ width: elapsedWidth }"

@@ -12,11 +12,15 @@
 		location="bottom end"
 	>
 		<template #activator="{ props: menuProps }">
+			<!-- Named after the task it acts on: several of these are on screen at once, and
+				 "button, button, button" down a list tells a screen-reader user nothing. -->
 			<VIconBtn
 				v-bind="menuProps"
 				icon="fa-ellipsis-vertical"
 				variant="text"
 				:size
+				:title="buttonTitle"
+				:aria-label="actionsLabel"
 				@click.stop
 			/>
 		</template>
@@ -74,6 +78,8 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	// Imported directly rather than via `useTodayPlan()`: this renders once per task row, and each
 	// `useTodayPlan()` call registers a `useDashboardRefresh` consumer that resets the entry's
@@ -93,8 +99,24 @@
 	} from '@/core/home/composable/useTodayPlan.ts'
 	import { openTracker } from '@/core/home/composable/useTaskTracker.ts'
 
-	const { task, size = 'default' } = defineProps<{
+	const {
+		task,
+		size = 'default',
+		shortcutHint,
+	} = defineProps<{
 		task: PlannerTask
 		size?: 'x-small' | 'small' | 'default'
+		/**
+		 * Appended to the button's tooltip, never to its accessible name, and never to the items.
+		 * The home page's keyboard shortcuts act on the focus task only, so the one caller that
+		 * renders this menu for the focus task is the one caller that may advertise them — which
+		 * items the menu shows still depends on the task alone.
+		 */
+		shortcutHint?: string
 	}>()
+
+	const { t } = useI18n()
+
+	const actionsLabel = computed(() => t('home.taskActions', { task: task.activity.name }))
+	const buttonTitle = computed(() => (shortcutHint ? `${actionsLabel.value} — ${shortcutHint}` : actionsLabel.value))
 </script>

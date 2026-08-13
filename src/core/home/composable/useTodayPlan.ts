@@ -96,7 +96,7 @@ function calendarQuery() {
 // "open the planner" link to yesterday. `todayIsoDate` is the dashboard-wide signal from
 // `useDashboardRefresh`, so the plan, the routine list, the todo list and the history pie all flip
 // to the new day on one edge instead of each noticing separately.
-const todayUrlDate = computed(() => usStringToUrlString(todayIsoDate.value))
+export const todayUrlDate = computed(() => usStringToUrlString(todayIsoDate.value))
 
 // --- derived plan ------------------------------------------------------------
 //
@@ -160,8 +160,8 @@ const missedTasks = computed(() => sortedTasks.value.filter(isMissed))
 const lastMissedTask = computed(() => missedTasks.value[missedTasks.value.length - 1] ?? null)
 
 // Never claim the day is done while unticked tasks remain — surface the missed one instead.
-const focusTask = computed(() => activeTask.value ?? nextTask.value ?? lastMissedTask.value)
-const focusMode = computed<FocusMode>(() =>
+export const focusTask = computed(() => activeTask.value ?? nextTask.value ?? lastMissedTask.value)
+export const focusMode = computed<FocusMode>(() =>
 	activeTask.value ? 'now' : nextTask.value ? 'upNext' : lastMissedTask.value ? 'missed' : 'allDone',
 )
 

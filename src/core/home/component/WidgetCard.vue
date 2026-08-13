@@ -4,11 +4,16 @@
 			<span class="widget-card__title text-h6">{{ title }}</span>
 			<VSpacer />
 			<slot name="headerActions" />
+			<!-- Named once here, for every widget: an icon-only button is otherwise announced as
+				 "button" and nothing else. `title` and `aria-label` both, because the sighted
+				 keyboard user needs the tooltip and the screen reader needs the label. -->
 			<VIconBtn
 				v-if="openRoute"
 				icon="fa-up-right-from-square"
 				variant="text"
 				size="small"
+				:title="openLabel"
+				:aria-label="openLabel"
 				@click="open"
 			/>
 		</VCardTitle>
@@ -62,8 +67,10 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import type { RouteLocationRaw } from 'vue-router'
+	import { useI18n } from 'vue-i18n'
 
 	const {
 		title,
@@ -103,6 +110,9 @@
 	const emit = defineEmits<{ retry: [] }>()
 
 	const router = useRouter()
+	const { t } = useI18n()
+
+	const openLabel = computed(() => t('home.openFullView', { widget: title }))
 
 	function open() {
 		if (openRoute) router.push(openRoute)
@@ -123,10 +133,23 @@
 	/*
 	 * One height for every widget header, so cards sitting side by side line up by construction
 	 * rather than by their contents happening to measure the same.
+	 *
+	 * The header wraps below `md` and only there: on a phone the action side of a header (the routine
+	 * widget carries a sheet per time period) is wider than the whole card, and a non-wrapping row
+	 * inside an `overflow: hidden` card is a row that gets cut off. Above `md` the cards are side by
+	 * side and the equal-height invariant above is what matters, so nothing wraps there.
 	 */
 	.widget-card__header {
 		flex: 0 0 auto;
 		min-height: 64px;
+		flex-wrap: wrap;
+		row-gap: 8px;
+	}
+
+	@media (min-width: 960px) {
+		.widget-card__header {
+			flex-wrap: nowrap;
+		}
 	}
 
 	/* Truncating rather than wrapping is what keeps that height honest. */
@@ -138,18 +161,37 @@
 	}
 
 	/*
-	 * `flex: 1 1 0` + `min-height: 0` is the pair that lets the body shrink below its content and
-	 * hand the overflow to its own scrollbar instead of pushing the card past the card frame.
-	 * Deliberately not a flex container: children keep normal block flow, so an element with its
-	 * own height (the pie chart) cannot be squashed by flex shrinking.
+	 * Below `md` the card has no definite height to divide — HomeView stops handing one down so that
+	 * the page can scroll instead of each card scrolling inside itself. `flex: 1 1 0` here would
+	 * therefore collapse the body to nothing (a zero basis, and `min-height: 0` removes the
+	 * content-based floor that would otherwise save it), leaving a header and no widget. So the body
+	 * takes its content height and the document does the scrolling.
+	 *
+	 * `min-height` is for the states that centre themselves in the body — spinner, error, empty —
+	 * which are a couple of lines tall and would otherwise sit in a sliver of a card.
 	 */
 	.widget-card__body {
-		flex: 1 1 0;
-		min-height: 0;
-		overflow: hidden;
+		flex: 0 0 auto;
+		min-height: 7rem;
+		overflow: visible;
 	}
 
-	.widget-card__body--scrollable {
-		overflow-y: auto;
+	/*
+	 * From `md` up the card is inside a fixed-height band. `flex: 1 1 0` + `min-height: 0` is the
+	 * pair that lets the body shrink below its content and hand the overflow to its own scrollbar
+	 * instead of pushing the card past the card frame. Deliberately not a flex container: children
+	 * keep normal block flow, so an element with its own height (the pie chart) cannot be squashed by
+	 * flex shrinking.
+	 */
+	@media (min-width: 960px) {
+		.widget-card__body {
+			flex: 1 1 0;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.widget-card__body--scrollable {
+			overflow-y: auto;
+		}
 	}
 </style>

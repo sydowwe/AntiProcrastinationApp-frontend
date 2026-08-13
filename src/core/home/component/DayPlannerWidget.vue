@@ -18,8 +18,8 @@
 	unchanged, so this still does not fit the shell. Revisit if either of them goes.
 -->
 <template>
-	<VCard style="display: flex; flex-direction: column; overflow: hidden">
-		<VCardTitle class="d-flex align-center ga-3 px-4 pt-4 pb-2">
+	<VCard class="planner-card">
+		<VCardTitle class="planner-card__header d-flex align-center ga-3 px-4 pt-4 pb-2">
 			<VAvatar
 				color="primary"
 				variant="tonal"
@@ -64,10 +64,14 @@
 			>
 				<span class="text-caption font-weight-bold">{{ completedCount }}/{{ totalCount }}</span>
 			</VProgressCircular>
+			<!-- Same accessible name the shell renders for the other four widgets; this one keeps its
+				 own frame (see the note at the top), so it repeats the two attributes. -->
 			<VIconBtn
 				icon="fa-up-right-from-square"
 				variant="text"
 				size="small"
+				:title="openTitle"
+				:aria-label="openLabel"
 				@click="openPlanner"
 			/>
 		</VCardTitle>
@@ -79,10 +83,7 @@
 			height="2"
 		/>
 		<VDivider v-else />
-		<VCardText
-			class="pa-0"
-			style="flex: 1; overflow-y: auto; min-height: 0"
-		>
+		<VCardText class="planner-card__body pa-0">
 			<div
 				v-if="loading"
 				class="d-flex justify-center align-center h-100"
@@ -173,10 +174,14 @@
 							}"
 							:style="{ '--task-color': taskColor(task) }"
 						>
+							<!-- A bare `<button>` with an icon inside is announced as "button" and nothing
+								 else. `aria-pressed` carries the state the fill colour carries visually. -->
 							<button
 								type="button"
 								class="check"
 								:class="{ 'check--on': isFinished(task) }"
+								:aria-label="$t('home.markDone', { task: task.activity.name })"
+								:aria-pressed="isFinished(task)"
 								@click.stop="toggleTaskStatus(task)"
 							>
 								<VIcon
@@ -191,7 +196,7 @@
 							<div class="row__body">
 								<span class="row__title">{{ task.activity.name }}</span>
 								<div
-									v-if="task.activity.category || showStatusChip(task)"
+									v-if="task.activity.category || showStatusChip(task) || isMissed(task)"
 									class="d-flex align-center ga-2 mt-1"
 								>
 									<!-- colour here means "which category", never "how urgent" -->
@@ -204,6 +209,19 @@
 										:prependIcon="task.activity.category.icon ?? undefined"
 									>
 										{{ task.activity.category.name }}
+									</VChip>
+									<!-- Missed is otherwise a red tint on the row and nothing else — meaning
+										 carried by colour alone, which a screen reader and a good share of
+										 colour-blind users never receive. -->
+									<VChip
+										v-if="isMissed(task)"
+										size="x-small"
+										density="compact"
+										variant="tonal"
+										color="error"
+										prependIcon="fa-triangle-exclamation"
+									>
+										{{ $t('home.missed') }}
 									</VChip>
 									<VChip
 										v-if="showStatusChip(task)"
@@ -231,14 +249,18 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
+	import { useI18n } from 'vue-i18n'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
+	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import DayStrip from '@/core/home/component/DayStrip.vue'
 	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
 
 	const router = useRouter()
+	const { t } = useI18n()
 	const {
 		hasPlan,
 		loading,
@@ -261,6 +283,11 @@
 		reload,
 	} = useTodayPlan()
 
+	const openLabel = computed(() => t('home.openFullView', { widget: t('home.dayPlanner') }))
+	// The keyboard shortcut goes in the tooltip, not in the accessible name: the name should say what
+	// the button does, and a screen-reader user is told the key once, not on every focus.
+	const openTitle = computed(() => withShortcut(openLabel.value, HOME_SHORTCUT_KEYS.planner))
+
 	function gapBefore(index: number): number {
 		if (index === 0) return 0
 		return sortedTasks.value[index]!.startTime.getInMinutes - sortedTasks.value[index - 1]!.endTime.getInMinutes
@@ -277,6 +304,45 @@
 </script>
 
 <style scoped>
+	/*
+	 * ---- the frame ----
+	 *
+	 * The same two-breakpoint story as WidgetCard, which this card deliberately does not use (see the
+	 * note at the top of the file). Below `md` the card has no definite height to divide — HomeView
+	 * stops handing one down so the page can scroll instead of every card scrolling inside itself —
+	 * so the body takes its content height. `flex: 1` here would collapse it to a header and nothing.
+	 */
+	.planner-card {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	/* Wraps below `md` only: above it, cards side by side keep their headers the same height. */
+	.planner-card__header {
+		flex: 0 0 auto;
+		flex-wrap: wrap;
+		row-gap: 8px;
+	}
+
+	.planner-card__body {
+		flex: 0 0 auto;
+		min-height: 7rem;
+		overflow: visible;
+	}
+
+	@media (min-width: 960px) {
+		.planner-card__header {
+			flex-wrap: nowrap;
+		}
+
+		.planner-card__body {
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+		}
+	}
+
 	/* ---- rows ---- */
 	.row {
 		display: flex;
@@ -303,8 +369,13 @@
 		background: rgba(var(--v-theme-error), 0.1);
 	}
 
+	/*
+	 * 0.45 put the row's own 0.68rem text below AA. 0.6 still reads as "handled, stop looking at it"
+	 * — the line-through is what actually says done — while keeping the text legible for anyone who
+	 * does want to re-read it.
+	 */
 	.row--done {
-		opacity: 0.45;
+		opacity: 0.6;
 	}
 
 	.row--done .row__title {
@@ -374,28 +445,45 @@
 		color: var(--task-color);
 	}
 
+	/*
+	 * A custom-styled `<button>` keeps the UA focus ring only until something sets `border` or
+	 * `background` on it — which the rules above do. Restated explicitly, in the page's text colour rather
+	 * than the task's own, so it stays visible on a tinted row and on a pale task colour.
+	 */
+	.check:focus-visible {
+		outline: 2px solid rgb(var(--v-theme-on-surface));
+		outline-offset: 2px;
+	}
+
 	.check--on {
 		background: var(--task-color);
 		color: rgb(var(--v-theme-surface));
 	}
 
-	/* ---- free time between tasks ---- */
+	/*
+	 * ---- free time between tasks ----
+	 *
+	 * The opacity used to be on the whole row, which took 0.68rem text down to 0.35 — nowhere near
+	 * AA. The dashes may be that faint (they are decoration and carry no information the label does
+	 * not), the label may not: it is the only place the length of the gap is written.
+	 */
 	.gap {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		padding: 0 12px;
 		margin-bottom: 6px;
-		opacity: 0.35;
 	}
 
 	.gap__dash {
 		flex: 1;
 		border-top: 2px dashed currentColor;
+		opacity: 0.35;
 	}
 
 	.gap__label {
-		font-size: 0.68rem;
+		font-size: 0.72rem;
 		font-variant-numeric: tabular-nums;
+		opacity: 0.75;
 	}
 </style>

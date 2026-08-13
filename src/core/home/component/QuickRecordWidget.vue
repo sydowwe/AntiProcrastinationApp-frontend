@@ -88,4 +88,30 @@
 		height: auto;
 		min-height: 44px;
 	}
+
+	/*
+	 * Below `md` there is no card height to divide: the body sizes to its content, so a zero
+	 * flex-basis would shrink both rows to their `min-height` and the stacked label would spill out
+	 * of the button. Sizing to content is the whole mobile layout — the page scrolls, the card does
+	 * not — and the taller floors keep the three secondary buttons above the 44 px touch target once
+	 * they are sharing a phone's width.
+	 */
+	@media (max-width: 959.98px) {
+		.quick {
+			height: auto;
+		}
+
+		.quick__primary {
+			flex: 0 0 auto;
+			min-height: 72px;
+		}
+
+		.quick__secondary {
+			flex: 0 0 auto;
+		}
+
+		.quick .quick__secondary > * {
+			min-height: 64px;
+		}
+	}
 </style>

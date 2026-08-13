@@ -17,6 +17,8 @@
 				variant="text"
 				size="small"
 				:title="hideDone ? $t('home.showDone') : $t('home.hideDone')"
+				:aria-label="hideDone ? $t('home.showDone') : $t('home.hideDone')"
+				:aria-pressed="hideDone"
 				@click="hideDone = !hideDone"
 			/>
 		</template>

@@ -29,105 +29,143 @@
 			class="nowbar__progress"
 		/>
 
-		<div class="d-flex align-center ga-4 px-4 py-3">
-			<div class="nowbar__date">
-				<span class="nowbar__weekday">{{ weekdayLabel }}</span>
-				<span class="nowbar__day">{{ dateLabel }}</span>
-			</div>
-			<VDivider vertical />
-
-			<template v-if="error && !focusTask">
-				<VIcon
-					icon="fa-triangle-exclamation"
-					color="error"
-					size="20"
-				/>
-				<div
-					class="flex-grow-1 nowbar__title"
-					style="min-width: 0"
-				>
-					{{ $t('home.loadFailedPlan') }}
+		<!--
+			Two blocks, not one row of nine children: from `md` up they sit side by side and read as the
+			single row this has always been, and below it they stack — the state on top, the actions
+			under it at full width. A phone cannot show a date, an avatar, a headline, three buttons and
+			a menu on one line, and shrinking them until it fits is how the headline ended up as an
+			ellipsis next to three `size="large"` buttons.
+		-->
+		<div class="nowbar__inner px-4 py-3">
+			<div class="nowbar__state">
+				<div class="nowbar__date">
+					<span class="nowbar__weekday">{{ weekdayLabel }}</span>
+					<span class="nowbar__day">{{ dateLabel }}</span>
 				</div>
+				<VDivider
+					vertical
+					class="nowbar__divider"
+				/>
+
+				<template v-if="showError">
+					<VIcon
+						icon="fa-triangle-exclamation"
+						color="error"
+						size="20"
+					/>
+					<div
+						class="flex-grow-1 nowbar__title"
+						style="min-width: 0"
+					>
+						{{ $t('home.loadFailedPlan') }}
+					</div>
+				</template>
+				<template v-else>
+					<VAvatar
+						:color="accentColor"
+						variant="tonal"
+						rounded="lg"
+						size="44"
+					>
+						<VIcon
+							:icon="focusIcon"
+							size="20"
+						/>
+					</VAvatar>
+
+					<div
+						class="flex-grow-1"
+						style="min-width: 0"
+					>
+						<div class="d-flex align-center flex-wrap ga-2">
+							<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
+							<span
+								v-if="focusCountdown"
+								class="text-caption font-weight-bold"
+							>
+								· {{ focusCountdown }}
+							</span>
+							<VChip
+								v-if="overrunMinutes > 0"
+								color="error"
+								variant="flat"
+								size="x-small"
+								prependIcon="fa-hourglass-end"
+							>
+								{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
+							</VChip>
+						</div>
+						<div class="nowbar__title">{{ headline }}</div>
+						<div
+							v-if="focusTask"
+							class="text-caption text-medium-emphasis"
+						>
+							{{ focusTask.startTime.getString() }} – {{ focusTask.endTime.getString() }} ·
+							{{ durationLabel(focusTask) }}
+						</div>
+					</div>
+				</template>
+
+				<!-- rendered as-is: a broken streak already arrives as 0 -->
+				<VChip
+					v-if="streak.currentStreak > 0"
+					color="warning"
+					variant="tonal"
+					size="small"
+					prependIcon="fas fa-fire"
+					:title="streakLabel"
+					:aria-label="streakLabel"
+				>
+					{{ streak.currentStreak }}
+				</VChip>
+			</div>
+
+			<div
+				v-if="showError || focusTask || !hasPlan"
+				class="nowbar__actions"
+			>
 				<VBtn
+					v-if="showError"
+					class="nowbar__action"
 					variant="tonal"
 					color="primaryOutline"
-					size="large"
+					:size="buttonSize"
 					prependIcon="fa-rotate-right"
 					@click="reload"
 				>
 					{{ $t('home.retry') }}
 				</VBtn>
-			</template>
-			<template v-else>
-				<VAvatar
-					:color="accentColor"
-					variant="tonal"
-					rounded="lg"
-					size="44"
-				>
-					<VIcon
-						:icon="focusIcon"
-						size="20"
-					/>
-				</VAvatar>
-
-				<div
-					class="flex-grow-1"
-					style="min-width: 0"
-				>
-					<div class="d-flex align-center ga-2">
-						<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
-						<span
-							v-if="focusCountdown"
-							class="text-caption font-weight-bold"
-						>
-							· {{ focusCountdown }}
-						</span>
-						<VChip
-							v-if="overrunMinutes > 0"
-							color="error"
-							variant="flat"
-							size="x-small"
-							prependIcon="fa-hourglass-end"
-						>
-							{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
-						</VChip>
-					</div>
-					<div class="nowbar__title">{{ headline }}</div>
-					<div
-						v-if="focusTask"
-						class="text-caption text-medium-emphasis"
-					>
-						{{ focusTask.startTime.getString() }} – {{ focusTask.endTime.getString() }} ·
-						{{ durationLabel(focusTask) }}
-					</div>
-				</div>
-
-				<template v-if="focusTask">
+				<template v-else-if="focusTask">
 					<!-- one tap from "I see the task" to "I am working on it" -->
 					<VBtn
 						v-if="focusMode !== 'now'"
+						class="nowbar__action"
 						color="primary"
-						size="large"
+						:size="buttonSize"
 						prependIcon="fa-play"
+						:title="withShortcut($t('home.start'), HOME_SHORTCUT_KEYS.start)"
 						@click="start(focusTask)"
 					>
 						{{ $t('home.start') }}
 					</VBtn>
 					<template v-else>
 						<VBtn
+							class="nowbar__action"
 							color="successDark"
-							size="large"
+							:size="buttonSize"
 							prependIcon="fa-check"
+							:title="withShortcut($t('home.finish'), HOME_SHORTCUT_KEYS.finish)"
 							@click="finishTask(focusTask)"
 						>
 							{{ $t('home.finish') }}
 						</VBtn>
 						<VBtn
+							class="nowbar__action"
 							variant="tonal"
 							color="primaryOutline"
-							size="large"
+							:size="buttonSize"
 							prependIcon="fa-stopwatch"
+							:title="withShortcut($t('home.track'), HOME_SHORTCUT_KEYS.track)"
 							@click="openTracker(focusTask)"
 						>
 							{{ $t('home.track') }}
@@ -135,30 +173,24 @@
 					</template>
 
 					<!-- everything else the task supports, identical to the planner rows' menu -->
-					<TaskActionMenu :task="focusTask" />
+					<TaskActionMenu
+						:task="focusTask"
+						:shortcutHint="withShortcut($t('home.moveLater'), HOME_SHORTCUT_KEYS.snooze)"
+					/>
 				</template>
 
 				<VBtn
 					v-else-if="!hasPlan"
+					class="nowbar__action"
 					color="primary"
-					size="large"
+					:size="buttonSize"
 					prependIcon="fa-wand-magic-sparkles"
+					:title="withShortcut($t('home.planToday'), HOME_SHORTCUT_KEYS.planner)"
 					@click="openPlanner"
 				>
 					{{ $t('home.planToday') }}
 				</VBtn>
-			</template>
-
-			<!-- rendered as-is: a broken streak already arrives as 0 -->
-			<VChip
-				v-if="streak.currentStreak > 0"
-				color="warning"
-				variant="tonal"
-				size="small"
-				prependIcon="fas fa-fire"
-			>
-				{{ streak.currentStreak }}
-			</VChip>
+			</div>
 		</div>
 	</VCard>
 </template>
@@ -167,16 +199,19 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
+	import { useDisplay } from 'vuetify/framework'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
 	import { userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
+	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
 	import { localeTag } from '@/i18n.ts'
 
 	const router = useRouter()
 	const { t, locale } = useI18n()
+	const { mdAndUp } = useDisplay()
 	const {
 		now,
 		hasPlan,
@@ -211,6 +246,14 @@
 			timeZone: userTimeZone.value,
 		}),
 	)
+
+	// Stacked and full width, the buttons no longer need the extra height to be easy to hit; `large`
+	// on a phone just costs the two lines above them their room.
+	const buttonSize = computed(() => (mdAndUp.value ? 'large' : 'default'))
+	// One condition, read twice — the state block and the action block are separate elements now, and
+	// both branch on it.
+	const showError = computed(() => error.value && !focusTask.value)
+	const streakLabel = computed(() => `${t('home.streaks')}: ${streak.value.currentStreak}`)
 
 	const accentColor = computed(() =>
 		focusMode.value === 'missed' ? 'error' : focusMode.value === 'allDone' ? 'success' : 'primary',
@@ -256,6 +299,40 @@
 		right: 0;
 	}
 
+	/*
+	 * Mobile first: state on one line-group, actions stacked under it at full width. The `md` block at
+	 * the bottom of this file folds the two back into the single row the bar is on a desktop.
+	 */
+	.nowbar__inner {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.nowbar__state {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	/* Nothing to separate once the date is one compact line — it is only clutter at this width. */
+	.nowbar__divider {
+		display: none;
+	}
+
+	.nowbar__actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	/* Share the width evenly; the action menu keeps its intrinsic width beside them. */
+	.nowbar__action {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
 	.nowbar__kicker {
 		font-size: 0.7rem;
 		font-weight: 800;
@@ -264,31 +341,91 @@
 		opacity: 0.75;
 	}
 
+	/*
+	 * One line on a phone — "Thursday 13 August" reads the same and costs a third of the height. The
+	 * `md` block turns it back into the two-line date block that anchors the desktop bar.
+	 */
 	.nowbar__date {
 		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		flex-shrink: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 6px;
+		/* Shrinkable, so on a narrow phone it folds back to two lines rather than squeezing the
+		   headline next to it down to nothing. */
+		flex-shrink: 1;
 		line-height: 1.15;
 	}
 
 	.nowbar__weekday {
-		font-size: 1.5rem;
+		font-size: 1.05rem;
 		font-weight: 700;
 		text-transform: capitalize;
 	}
 
 	.nowbar__day {
-		font-size: 0.95rem;
+		font-size: 0.85rem;
 		opacity: 0.65;
 	}
 
+	/*
+	 * Wraps to two lines on a phone rather than ellipsising at ~10 characters. It is the task's name:
+	 * the one thing on this bar that must be readable, and the widest thing on it.
+	 */
 	.nowbar__title {
-		font-size: 1.35rem;
+		font-size: 1.1rem;
 		font-weight: 700;
 		line-height: 1.2;
 		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+	}
+
+	@media (min-width: 960px) {
+		.nowbar__inner {
+			flex-direction: row;
+			align-items: center;
+			gap: 16px;
+		}
+
+		.nowbar__state {
+			flex: 1 1 auto;
+			gap: 16px;
+		}
+
+		.nowbar__actions {
+			flex: 0 0 auto;
+		}
+
+		.nowbar__action {
+			flex: 0 0 auto;
+		}
+
+		.nowbar__divider {
+			display: block;
+		}
+
+		.nowbar__date {
+			flex-direction: column;
+			flex-wrap: nowrap;
+			align-items: flex-start;
+			flex-shrink: 0;
+		}
+
+		.nowbar__weekday {
+			font-size: 1.5rem;
+		}
+
+		.nowbar__day {
+			font-size: 0.95rem;
+		}
+
+		.nowbar__title {
+			font-size: 1.35rem;
+			display: block;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 	}
 </style>
