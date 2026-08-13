@@ -186,6 +186,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
+	import { userTimeZone } from '@/core/home/composable/useUserClock.ts'
 	// A finished timer changes the plan AND the history pie, which lives in another widget. One
 	// signal, both subscribers — see useDashboardRefresh.
 	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'
@@ -223,8 +224,18 @@
 	const { markInProgress } = useTaskPlannerCrud()
 
 	const dateLocale = computed(() => (locale.value === 'EN' ? 'en-GB' : 'sk-SK'))
-	const weekdayLabel = computed(() => now.value.toLocaleDateString(dateLocale.value, { weekday: 'long' }))
-	const dateLabel = computed(() => now.value.toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'long' }))
+	// `timeZone` matters here for the same reason it does everywhere else on this page: the headline
+	// date must name the day the rest of the bar is describing, not the day the browser is having.
+	const weekdayLabel = computed(() =>
+		now.value.toLocaleDateString(dateLocale.value, { weekday: 'long', timeZone: userTimeZone.value }),
+	)
+	const dateLabel = computed(() =>
+		now.value.toLocaleDateString(dateLocale.value, {
+			day: 'numeric',
+			month: 'long',
+			timeZone: userTimeZone.value,
+		}),
+	)
 
 	const accentColor = computed(() =>
 		focusMode.value === 'missed' ? 'error' : focusMode.value === 'allDone' ? 'success' : 'primary',

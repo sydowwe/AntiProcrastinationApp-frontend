@@ -14,6 +14,7 @@ import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { showNotification } from '@/_common/utils/notifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { PlannerStreak } from '@/core/dayPlanner/dto/response/PlannerStreak.ts'
+import { minutesOfDayInUserZone, timeInUserZone, userTimeZone } from '@/core/home/composable/useUserClock.ts'
 import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 import i18n from '@/i18n.ts'
 
@@ -89,7 +90,9 @@ function calendarQuery() {
 const todayUrlDate = computed(() => usStringToUrlString(todayIsoDate.value))
 
 // --- derived plan ------------------------------------------------------------
-const nowMinutes = computed(() => now.value.getHours() * 60 + now.value.getMinutes())
+// In the user's configured zone, not the browser's — the same clock the plan's task times were
+// written against, and the same one the server resolves "today" in. See `useUserClock`.
+const nowMinutes = computed(() => minutesOfDayInUserZone(now.value))
 
 const nonBackgroundTasks = computed(() => tasks.value.filter(task => !task.isBackground))
 const sortedTasks = computed(() =>
@@ -201,14 +204,14 @@ async function toggleTaskStatus(task: PlannerTask) {
 			: new PatchPlannerTaskStatusRequest(
 					PlannerTaskStatus.Completed,
 					task.actualStartTime,
-					Time.fromDate(now.value),
+					timeInUserZone(now.value),
 				),
 	)
 }
 
 async function startTask(task: PlannerTask) {
 	if (task.status === PlannerTaskStatus.InProgress) return
-	const actualStartTime = Time.fromDate(now.value)
+	const actualStartTime = timeInUserZone(now.value)
 	task.actualStartTime = actualStartTime
 	await setStatus(
 		task,
@@ -221,7 +224,7 @@ async function finishTask(task: PlannerTask) {
 	await setStatus(
 		task,
 		PlannerTaskStatus.Completed,
-		new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, task.actualStartTime, Time.fromDate(now.value)),
+		new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, task.actualStartTime, timeInUserZone(now.value)),
 	)
 }
 
@@ -266,22 +269,22 @@ async function extendTask(task: PlannerTask, minutes: number) {
 
 // --- streak ------------------------------------------------------------------
 /**
- * The server owns the day boundary and computes it in the user's configured `User.Timezone`; this
- * module computes its own "today" from the browser clock. Those agree for anyone whose profile
- * timezone matches their browser — which is how it is seeded at sign-in — but the timezone is a
- * user-editable setting (user settings → appearance), so they can diverge, and the symptom would be
- * home quietly showing the wrong day's plan.
+ * Both sides now resolve "today" in the user's configured zone — the server in `User.Timezone`, this
+ * client through `useUserClock` — so this should never fire. It is kept as a cheap tripwire for the
+ * ways they can still come apart: a zone this browser's ICU data does not know (the client falls
+ * back to the browser's zone, the server does not), a profile change that reached one side and not
+ * the other, or a stale `currentUser` after a session restore.
  *
- * Deliberately surfaced rather than silently adopted: `nowMinutes` and every countdown on this page
- * still read the browser's wall clock, so switching the date alone would trade one incoherence for
- * a worse one — a plan for one day laid against another day's clock.
+ * It only warns. The plan on screen follows the client's date, because that is also the date the
+ * clock and every countdown are resolved in, and a plan laid against another day's clock is worse
+ * than a plan for the wrong day.
  */
 function assertServerDateAgrees(serverStreak: PlannerStreak, requestedIsoDate: string) {
 	if (serverStreak.today === '' || serverStreak.today === requestedIsoDate) return
 	console.warn(
-		`[home] date disagreement: this browser says ${requestedIsoDate}, the server says ` +
-			`${serverStreak.today} in ${serverStreak.timezone}. The plan shown is for the browser's ` +
-			`date. Check the timezone in user settings.`,
+		`[home] day-boundary disagreement: this client resolved ${requestedIsoDate} in ` +
+			`${userTimeZone.value}, the server resolved ${serverStreak.today} in ` +
+			`${serverStreak.timezone}. The plan shown is the client's date.`,
 	)
 }
 

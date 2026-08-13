@@ -18,11 +18,9 @@
 > **Deleted by:** `src/core/home/store/plannerStreakStore.ts` — all three structural defects below
 > died with it.
 >
-> One follow-up, **still open**: this client still computes its own "today" from the browser clock,
-> and `nowMinutes` and every countdown on the home page read the browser's wall clock. If a user's
-> configured timezone differs from their browser's, those disagree with the server's day boundary.
-> `assertServerDateAgrees` in `useTodayPlan.ts` logs the disagreement rather than papering over it —
-> see the note at the end of this file.
+> The follow-up this opened — the client resolving its day boundary in the browser's zone rather
+> than the user's — is **fixed**; see the note at the end of this file. `assertServerDateAgrees` in
+> `useTodayPlan.ts` remains as a tripwire for the ways the two sides can still come apart.
 
 **Contract only.** This states the rules the frontend currently guesses at and the fields it needs back.
 Storage, entities, EF configuration, migrations, indexes, and whether the streak is stored or recomputed
@@ -134,27 +132,37 @@ carries the change), say so; the frontend currently sends nothing streak-specifi
 
 ---
 
-## Follow-up, still open: the client's day boundary is the browser's, not the user's
+## Follow-up: the client's day boundary — FIXED
 
-`PlannerStreakResponse.Today` / `.Timezone` settled where the boundary lives — the server, in
-`User.Timezone`. The home page has not caught up, and cannot be made to without a wider change than
-this ask covered:
+`PlannerStreakResponse.Today` / `.Timezone` settled where the boundary lives: the server, in
+`User.Timezone`. The client now resolves it the same way, through
+`src/core/home/composable/useUserClock.ts`.
 
-- `useDashboardRefresh.todayIsoDate` derives "today" from `formatDateForApi(new Date())`, i.e. the
-  **browser's** zone. That is what picks which date's plan is fetched, and what fires the midnight
-  rollover.
-- `useTodayPlan.nowMinutes` derives the current wall-clock minute from the same browser `Date`. That
-  is what decides which task is active, what the countdowns say, and what timestamp
-  `Time.fromDate(now)` writes when a task is started or finished.
+What was wrong, and why fixing half of it would have been worse than fixing none:
 
-`User.Timezone` is a real, user-editable setting (`_common/modules/user/.../AppearanceSection.vue`),
-seeded from `Intl.DateTimeFormat().resolvedOptions().timeZone` at sign-in. So the two agree for most
-users and diverge for anyone who travels or edits it.
+- `useDashboardRefresh.todayIsoDate` derived "today" from `formatDateForApi(new Date())` — the
+  **browser's** zone. That picks which date's plan is fetched and fires the midnight rollover.
+- `useTodayPlan.nowMinutes` derived the current wall-clock minute from the same browser `Date`. That
+  decides which task is active, what every countdown says, and what `Time.fromDate(now)` wrote to
+  the server as a task's actual start and end time — so in a mismatched zone the app recorded work
+  at hours it did not happen.
 
-Fixing only the date would be worse than not fixing it — home would fetch one day's plan and lay it
-against another day's clock. The coherent fix derives **both** the date and the wall-clock minute
-from `User.Timezone`, which touches every countdown on the page, so it wants its own prompt.
-`assertServerDateAgrees` (`useTodayPlan.ts`) logs the disagreement in the meantime; the plan shown
-follows the browser.
+Move only the date and home fetches one day's plan and lays it against another day's clock. So both
+moved together: `isoDateInUserZone`, `minutesOfDayInUserZone` and `timeInUserZone` replace every
+wall-clock read in `core/home`, and `NowBar`'s date labels pass `timeZone` too. Changing the setting
+re-derives everything without a reload (`watch(userTimeZone, syncDate)`).
 
-Nothing is asked of the backend here — `Today` and `Timezone` are exactly what this needs.
+Verified against real `Intl` behaviour rather than by inspection: date and minute move together
+across zones for one instant, midnight reads `00:00` and never `24:00` under `hourCycle: 'h23'`,
+DST spring-forward and half-hour-offset zones resolve correctly, and unsupported zone names throw
+`RangeError` so the browser-zone fallback fires.
+
+Two things this did **not** fix, both recorded as `migration-revision.md` §13:
+
+- `useUserClock` sits in `core/home` because there is nowhere else it can go — the framework owns
+  `User.timezone` and owns `useCurrentTime`, and joins neither. It belongs beside `useCurrentTime`.
+- Until it moves, **only `core/home` is timezone-correct.** `core/dayPlanner`,
+  `core/activityHistory` and `core/activityTracking` still read the browser's clock and have the
+  same latent bug.
+
+Nothing is asked of the backend here — `Today` and `Timezone` were exactly what this needed.

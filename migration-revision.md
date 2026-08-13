@@ -27,6 +27,46 @@ for so long.
   enums that only it uses — `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` — which
   leaves the `enums.{locationType,weatherDependency,expectedCostTier}` locale blocks orphaned too.
 - **76 app-side type errors remain**, all in `src/core`. Never triaged as a group.
+- **§13 — `useUserClock` reads a framework concern from an app module.** New gap, opened 2026-08-13;
+  see below.
+
+---
+
+### 13. The app's wall clock is the user's timezone, and the framework has no way to say so
+
+**Local file kept:** `src/core/home/composable/useUserClock.ts`.
+
+`_common` owns both halves of this and joins neither. It owns the setting — `User.timezone`
+(`_common/modules/user/dto/response/User.ts:24`, defaulting to `Europe/Bratislava`, edited through
+`AppearanceSection.vue` and seeded from `Intl.DateTimeFormat().resolvedOptions().timeZone` at
+sign-in). It owns the clock — `_common/composable/general/useCurrentTime.ts`, a shared `Date` ref
+ticking every 60 s. But `useCurrentTime` hands out an **instant**, and every consumer in this
+codebase reads wall-clock fields off it with `getHours()` / `getMinutes()` / `getDay()`, which are
+the *browser's* zone. So the setting exists, is editable, is sent to the server — and changes
+nothing about what the client believes the time is.
+
+`_common/utils/DateTimeHelper.ts` has the same shape: `formatDateForApi` is `getFullYear()` /
+`getMonth()` / `getDate()`, i.e. browser-zone. There is no zone-aware reader anywhere in the
+framework.
+
+The concrete failure this fixed, in `core/home`: the server resolves the day boundary in
+`User.Timezone` (`PlannerStreakResponse.Today` / `.Timezone`, see
+`prompts/home/backend/B1-planner-streak.md`), while the client resolved both the date it asked
+`day-plan` for and the `nowMinutes` driving every countdown in the browser's zone. For anyone whose
+profile zone differs from their device — travel, or just editing the setting — home fetched one
+day's plan and laid it against another day's clock, and wrote task start/end times at hours the work
+did not happen at.
+
+**The upstream ask:** a zone-aware reading of the shared clock, resolved against `User.timezone`.
+Roughly what the local file exposes — `userTimeZone` (a computed falling back to the browser's zone
+when the configured one is unsupported), plus `isoDateInUserZone` / `minutesOfDayInUserZone` /
+`timeInUserZone` over a cached `Intl.DateTimeFormat`. It belongs beside `useCurrentTime`, not in an
+app module: `core/dayPlanner` has the same wall-clock reads and the same bug, and cross-module
+imports may only go through another module's `api/` or `dto/`, so it cannot be shared from `core/home`
+where it currently sits.
+
+Until it lands, **only `core/home` is timezone-correct.** `core/dayPlanner`, `core/activityHistory`
+and `core/activityTracking` still read the browser's clock.
 
 ---
 

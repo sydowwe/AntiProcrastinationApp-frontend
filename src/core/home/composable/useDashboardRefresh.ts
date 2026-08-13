@@ -1,7 +1,7 @@
 import { computed, effectScope, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { EffectScope, Ref } from 'vue'
-import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
+import { isoDateInUserZone, userTimeZone } from '@/core/home/composable/useUserClock.ts'
 
 /**
  * One place that decides WHEN the home dashboard refetches.
@@ -75,10 +75,19 @@ const entries = new Map<string, RefreshEntry>()
 // Every date-scoped value on this page reads from here. A widget that captures `new Date()` at
 // setup is wrong by morning: the routine list filters for yesterday's weekday and the history
 // request asks for yesterday's date.
-const todayIso = ref(formatDateForApi(new Date()))
-/** Local `YYYY-MM-DD`, kept current for as long as the dashboard is mounted. */
+const todayIso = ref(isoDateInUserZone())
+/**
+ * `YYYY-MM-DD` in the user's configured zone, kept current for as long as the dashboard is mounted.
+ * The zone matters: this is the date sent to `day-plan`, and the server resolves its own "today" in
+ * `User.Timezone` rather than in whatever zone this browser is sitting in.
+ */
 export const todayIsoDate = computed(() => todayIso.value)
-/** The same day as a local-midnight `Date`, for day-of-week / day-of-month / day-diff maths. */
+/**
+ * The same day as a browser-local-midnight `Date`, for day-of-week / day-of-month / day-diff maths.
+ *
+ * Built from the zone-correct string above, so its `getDay()` / `getDate()` read back the intended
+ * calendar day whatever zone the browser is in — the construction and the reading cancel out.
+ */
 export const todayDate = computed(() => {
 	const [year, month, day] = todayIso.value.split('-').map(Number)
 	return new Date(year!, month! - 1, day!)
@@ -122,7 +131,7 @@ function fanOutDayChange() {
 }
 
 function syncDate() {
-	const iso = formatDateForApi(new Date())
+	const iso = isoDateInUserZone()
 	if (iso === todayIso.value) return
 	// Set first, fan out second: the loaders read date-derived computeds and must see the new day.
 	todayIso.value = iso
@@ -183,11 +192,16 @@ function wire(currentTime: Ref<Date>) {
 	if (scope) return
 	// Silent: the caller is the first subscriber and is loading fresh data right now anyway, so a
 	// date that moved while the dashboard was unmounted is not a rollover anyone needs refetched.
-	todayIso.value = formatDateForApi(new Date())
+	todayIso.value = isoDateInUserZone()
 	dayChangePending = false
 
 	scope = effectScope(true)
-	scope.run(() => watch(currentTime, handleTick))
+	scope.run(() => {
+		watch(currentTime, handleTick)
+		// Editing the timezone in user settings can move what "today" is. Without this the change
+		// would sit unnoticed until the next minute tick, on a page whose whole subject is today.
+		watch(userTimeZone, syncDate)
+	})
 	document.addEventListener('visibilitychange', handleVisibilityChange)
 	window.addEventListener('online', handleOnline)
 }
