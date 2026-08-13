@@ -4,7 +4,6 @@ import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
-import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
@@ -33,6 +32,14 @@ export const TRANSITION_WARNING_MINUTES = 10
 // call first dies when that widget unmounts while the module state lives on.
 const calendar = ref<Calendar | null>(null)
 const tasks = ref<PlannerTask[]>([])
+/**
+ * Did the user actually plan this day — the only honest answer to that question.
+ *
+ * Not `calendar !== null`, which is what the widgets used to branch on. Calendars are bulk-seeded
+ * for whole years, so inside the seeded window every date has an untouched row and outside it no
+ * date has one however much was planned. Presence answers "is this date inside the seeded years".
+ */
+const hasPlan = ref(false)
 /** True only while nothing is on screen yet — widgets render this as a spinner. */
 const loading = ref(true)
 /** True during a background refetch, with the previous plan still rendered underneath. */
@@ -298,18 +305,13 @@ async function fetchPlan(): Promise<void> {
 	const token = ++loadToken
 	const isoDate = todayIsoDate.value
 	try {
-		// TODO(Bn): two serialized round-trips for one screen — the task filter is keyed on
-		// calendarId, so the tasks cannot be asked for until the calendar has come back. H7 turned
-		// this from a once-per-navigation cost into a repeating one. See
-		// prompts/home/backend/B2-plan-by-date.md, which also asks whether an unplanned day 404s
-		// here (which would make the "Plan today" empty state below unreachable).
-		const loadedCalendar = await calendarQuery().fetchByDate(usStringToUrlString(isoDate))
-		const loadedTasks = await planner().fetchFiltered(
-			new PlannerTaskFilter(loadedCalendar.id, new Time(0, 0), new Time(23, 59)),
-		)
+		// One request, and a day with nothing planned comes back as a normal 200 rather than the 404
+		// that used to render as "could not load your plan". See B2-plan-by-date.md.
+		const dayPlan = await calendarQuery().fetchDayPlan(isoDate)
 		if (token !== loadToken) return
-		calendar.value = loadedCalendar
-		tasks.value = loadedTasks
+		calendar.value = dayPlan.calendar
+		tasks.value = dayPlan.tasks
+		hasPlan.value = dayPlan.hasPlan
 		planDate.value = isoDate
 		// Cleared here rather than before the request: a background refresh that fails again must
 		// not blink the error state off and the "no plan for today" state on along the way.
@@ -371,6 +373,7 @@ export function resetTodayPlan(): void {
 	loadToken++
 	calendar.value = null
 	tasks.value = []
+	hasPlan.value = false
 	planDate.value = null
 	loading.value = true
 	refreshing.value = false
@@ -452,6 +455,7 @@ export function useTodayPlan() {
 	return {
 		calendar,
 		tasks,
+		hasPlan,
 		loading,
 		refreshing,
 		error,

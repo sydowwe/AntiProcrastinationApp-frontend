@@ -141,7 +141,7 @@
 				</template>
 
 				<VBtn
-					v-else-if="!calendar"
+					v-else-if="!hasPlan"
 					color="primary"
 					size="large"
 					prependIcon="fa-wand-magic-sparkles"
@@ -193,7 +193,7 @@
 	const { t, locale } = useI18n()
 	const {
 		now,
-		calendar,
+		hasPlan,
 		focusTask,
 		focusMode,
 		activeTask,
@@ -242,7 +242,9 @@
 	})
 	const headline = computed(() => {
 		if (focusTask.value) return focusTask.value.activity.name
-		return calendar.value ? t('home.allDoneLong') : t('home.noCalendar')
+		// `hasPlan`, not the calendar: a seeded-but-untouched day has a calendar and no plan, and
+		// would otherwise be congratulated for finishing a day it never started.
+		return hasPlan.value ? t('home.allDoneLong') : t('home.noPlanToday')
 	})
 	const countdown = computed(() => {
 		if (activeTask.value) {

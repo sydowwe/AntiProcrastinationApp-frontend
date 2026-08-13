@@ -51,7 +51,7 @@
 				{{ missedTasks.length }}
 			</VChip>
 			<VProgressCircular
-				v-if="calendar && totalCount > 0"
+				v-if="hasPlan && totalCount > 0"
 				:modelValue="progressPercent"
 				:color="progressPercent === 100 ? 'success' : 'primary'"
 				:size="42"
@@ -105,8 +105,10 @@
 				</VBtn>
 			</div>
 
+			<!-- `hasPlan`, not the calendar: calendars are seeded for whole years, so its presence
+				 answers "is this date inside the seeded window", never "did the user plan this day". -->
 			<div
-				v-else-if="!calendar"
+				v-else-if="!hasPlan"
 				class="d-flex flex-column align-center justify-center ga-3 h-100 pa-4"
 			>
 				<VIcon
@@ -115,7 +117,7 @@
 					class="text-medium-emphasis"
 					style="opacity: 0.4"
 				/>
-				<span class="text-medium-emphasis">{{ $t('home.noCalendar') }}</span>
+				<span class="text-medium-emphasis">{{ $t('home.noPlanToday') }}</span>
 				<VBtn
 					color="primary"
 					prependIcon="fa-wand-magic-sparkles"
@@ -390,7 +392,7 @@
 	const router = useRouter()
 	const { t } = useI18n()
 	const {
-		calendar,
+		hasPlan,
 		loading,
 		refreshing,
 		error,

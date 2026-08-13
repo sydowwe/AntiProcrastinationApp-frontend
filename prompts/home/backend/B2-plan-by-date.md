@@ -1,5 +1,17 @@
 # B2 · Backend ask — a day's plan in one request instead of two serialized ones
 
+> **RESOLVED — shipped and consumed.** `GET /api/calendar/day-plan/{date}` returns
+> `{ date, calendar: CalendarResponse | null, tasks: PlannerTaskResponse[], streak, hasPlan }`.
+> Consumed by `useTodayPlan.fetchPlan()` via `useCalendarQuery().fetchDayPlan()`.
+> The rulings are recorded under each question below. Two follow-ups came out of it:
+>
+> - **The seeded-calendar horizon runs out at the end of 2026** and there is no create-calendar
+>   endpoint, so from 2027-01-01 every day resolves to a null calendar and nothing in the app can
+>   make one. `day-plan` answers 200 through it, so it degrades to a permanently empty planner
+>   rather than a visible error. Out of scope for a contract-only ask; wants a rolling seed or lazy
+>   creation on first task. **Still open.**
+> - **The response's top-level `streak` is not consumed yet.** See ruling 5.
+
 **Contract only.** Whether this is a new route, an extra filter field, or an expansion of an existing
 response is the backend's decision; this describes only what the client needs in order to stop paying
 two round-trips for one screen, and asks for a ruling on what "no plan for this day" means.
@@ -30,9 +42,38 @@ else on the page (routine list, todo list, history pie) resolves in one.
 five-minute backstop poll, all day, for a page people leave open in a pinned tab. The same two
 serialized hops, dozens of times per session instead of once.
 
-## The business rules
+## The business rules — asked, and the rulings
 
-Each of these is currently a guess on the client. The frontend will follow whatever the server says.
+Each of these was a guess on the client. The rulings are recorded inline; the frontend followed them.
+
+> **1. RULED: a 404.** `GetByDateCalendarEndpoint:34` calls `Send.NotFoundAsync`, so the bug
+> described below was real — an unplanned day rendered the retry banner and the *Plan today* state
+> was unreachable. `day-plan` models absence as a 200 with `calendar: null, tasks: []`; `by-date`
+> keeps its 404, being a lookup rather than a page load.
+>
+> **2. RULED, and worse than this ask assumed: calendars are neither lazy nor guaranteed — they are
+> bulk-seeded** for every date of 2025 and 2026 at user setup. So presence answers "is this date
+> inside the seeded years", never "did the user plan this day": inside the window every date has an
+> untouched row, outside it none does however much was planned. Branching on presence is wrong in
+> **both** directions. The response therefore carries `hasPlan` (`tasks.length > 0`), which is what
+> the widgets now branch on. This also produced the open horizon follow-up at the top of this file.
+>
+> **3. RULED: an artefact.** Home only ever passed `00:00`–`23:59`, so `day-plan` has no window at
+> all. `PlannerTaskFilter` is unchanged and the day-planner view keeps using it.
+>
+> **4. RULED: no.** `PlannerTask.CalendarId` is non-nullable; the calendar id is an implementation
+> detail the client never needs to hold.
+>
+> **5. NOT ASKED, delivered anyway: a top-level `streak`,** hoisted off `CalendarResponse` and
+> nulled there, on the reasoning that home would otherwise lose its flame chip on days where the
+> calendar is null. That reasoning rests on a wrong premise about this codebase: home never read a
+> streak off the calendar — the frontend `Calendar` DTO (`Calendar.ts`) has no `streak` field at
+> all, and the flame chip in `NowBar.vue` and `DayPlannerWidget.vue` comes from
+> `plannerStreakStore` (localStorage). So nothing was lost, but a server-side streak is now
+> *available* for the first time. It is deliberately unconsumed: swapping the local store for it is
+> **B1**'s scope, and B1 is about the streak *rules* (does `Cancelled` break the day, does a day
+> with no plan break it, are there grace days), which are still unsettled. `DayPlan.fromJson`
+> parses everything except `streak` and says so.
 
 1. **What does the server return for a date with no calendar?** This decides whether a live bug
    exists today. `fetchByField` (`src/_common/api/useEntityQuery.ts:35-46`) rejects on any non-2xx,

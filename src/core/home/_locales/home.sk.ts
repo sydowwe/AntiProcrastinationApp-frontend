@@ -6,7 +6,7 @@ const home = {
 		activityHistory: `Dnešná aktivita`,
 		quickRecord: `Zaznamenať aktivitu`,
 		noTasks: `Žiadne úlohy naplánované na dnes`,
-		noCalendar: `Žiadny plán na dnes`,
+		noPlanToday: `Žiadny plán na dnes`,
 		noHistory: `Dnes žiadna aktivita zaznamenaná`,
 		totalTracked: `Celkový čas`,
 		hideDone: `Skryť hotové`,

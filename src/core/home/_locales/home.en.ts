@@ -6,7 +6,7 @@ const home = {
 		activityHistory: `Today's activity`,
 		quickRecord: `Record activity`,
 		noTasks: `No tasks planned for today`,
-		noCalendar: `No plan for today`,
+		noPlanToday: `No plan for today`,
 		noHistory: `No activity tracked today`,
 		totalTracked: `Total tracked`,
 		hideDone: `Hide done`,
