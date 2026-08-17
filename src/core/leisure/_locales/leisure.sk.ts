@@ -36,10 +36,23 @@ const leisure = {
 		viewMode: {
 			board: `Nástenka`,
 			table: `Tabuľka`,
+			ladder: `Rebrík`,
 		},
 		readinessBoard: {
 			empty: `Žiadne projekty`,
 			moreCount: `+{count} ďalších`,
+		},
+		ladder: {
+			nextRung: `Ďalší krok`,
+			nextRungHint: `Najmenší krok, ktorý ste si ešte nevyskúšali.`,
+			rungEmpty: `Zatiaľ nič na tomto kroku`,
+			rungLabels: {
+				1: `Sotva výzva`,
+				2: `Malý krok von`,
+				3: `Poriadny kus mimo pohodlia`,
+				4: `Veľká výzva`,
+				5: `Vec, ktorú stále odkladám`,
+			},
 		},
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,

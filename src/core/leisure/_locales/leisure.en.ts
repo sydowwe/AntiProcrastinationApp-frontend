@@ -36,10 +36,23 @@ const leisure = {
 		viewMode: {
 			board: `Board`,
 			table: `Table`,
+			ladder: `Ladder`,
 		},
 		readinessBoard: {
 			empty: `No projects`,
 			moreCount: `+{count} more`,
+		},
+		ladder: {
+			nextRung: `Your next rung`,
+			nextRungHint: `The smallest step you haven't tried yet.`,
+			rungEmpty: `Nothing on this rung yet`,
+			rungLabels: {
+				1: `Barely a stretch`,
+				2: `A small step out`,
+				3: `Solidly outside comfort`,
+				4: `A big stretch`,
+				5: `The thing I keep not doing`,
+			},
 		},
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,
