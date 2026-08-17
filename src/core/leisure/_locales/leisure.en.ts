@@ -48,6 +48,7 @@ const leisure = {
 			board: `Board`,
 			table: `Table`,
 			ladder: `Ladder`,
+			timeline: `Timeline`,
 		},
 		readinessBoard: {
 			empty: `No projects`,
@@ -64,6 +65,15 @@ const leisure = {
 				4: `A big stretch`,
 				5: `The thing I keep not doing`,
 			},
+		},
+		timeline: {
+			previousYear: `Previous year`,
+			nextYear: `Next year`,
+			chooseYear: `Pick a year`,
+			memoriesCount: `Memories: {count}`,
+			emptyYear: `Nothing written down in {year} yet.`,
+			monthNone: `{month} — nothing`,
+			monthBest: `{month} — {count}, best {best}/10`,
 		},
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,

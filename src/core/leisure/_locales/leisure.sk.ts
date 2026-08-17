@@ -48,6 +48,7 @@ const leisure = {
 			board: `Nástenka`,
 			table: `Tabuľka`,
 			ladder: `Rebrík`,
+			timeline: `Časová os`,
 		},
 		readinessBoard: {
 			empty: `Žiadne projekty`,
@@ -64,6 +65,15 @@ const leisure = {
 				4: `Veľká výzva`,
 				5: `Vec, ktorú stále odkladám`,
 			},
+		},
+		timeline: {
+			previousYear: `Predchádzajúci rok`,
+			nextYear: `Nasledujúci rok`,
+			chooseYear: `Vybrať rok`,
+			memoriesCount: `Momenty: {count}`,
+			emptyYear: `V roku {year} zatiaľ nemáte zapísaný žiadny moment.`,
+			monthNone: `{month} — nič`,
+			monthBest: `{month} — {count}, najlepšie {best}/10`,
 		},
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,
