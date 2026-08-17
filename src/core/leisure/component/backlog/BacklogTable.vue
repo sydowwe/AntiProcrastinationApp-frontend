@@ -41,7 +41,17 @@
 			<span>{{ item.locationType?.text ?? '—' }}</span>
 		</template>
 		<template #item.weatherDependency="{ item }">
-			<span>{{ item.weatherDependency?.text ?? '—' }}</span>
+			<div class="d-flex align-center ga-2">
+				<span>{{ item.weatherDependency?.text ?? '—' }}</span>
+				<ChipWithIcon
+					v-if="isGoodToday(item)"
+					icon="cloud-sun"
+					color="success"
+					size="small"
+				>
+					{{ $t('leisure.weatherFit.goodToday') }}
+				</ChipWithIcon>
+			</div>
 		</template>
 		<template #item.expectedCostTier="{ item }">
 			<span>{{ item.expectedCostTier?.text ?? '—' }}</span>
@@ -76,6 +86,7 @@
 
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import ExperiencedCell from '@/core/leisure/component/ExperiencedCell.vue'
 	import BacklogProfileForm from '@/core/leisure/component/backlog/BacklogProfileForm.vue'
@@ -84,6 +95,7 @@
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useWeatherFit, fitsToday } from '@/core/leisure/composable/useWeatherFit.ts'
 	import { useI18n } from 'vue-i18n'
 
 	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
@@ -100,6 +112,11 @@
 	const { deleteEntity } = useActivityBacklogProfileCrud()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
+	const weatherFit = useWeatherFit()
+
+	function isGoodToday(item: ActivityBacklogProfile): boolean {
+		return fitsToday(item.weatherDependency?.id, weatherFit.value)
+	}
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),

@@ -88,6 +88,9 @@ const leisure = {
 			projects: `Toto sú veci, ktoré práve budujete alebo tvoríte. Zatiaľ tu nemáte žiadny projekt.`,
 			memoryAnchors: `Toto sú zážitky, ktoré ste zažili a chcete si ich pripomenúť. Zatiaľ tu nemáte žiadny pamätný moment.`,
 		},
+		weatherFit: {
+			goodToday: `Vhodné na dnes`,
+		},
 		picker: {
 			title: `Čo mám teraz robiť?`,
 			subtitle: `Povedzte, koľko máte času a energie — vyberieme tri možnosti.`,
@@ -110,6 +113,7 @@ const leisure = {
 			reasonEnergy: `Energia: {energy}`,
 			reasonEnergyDerived: `Energia: ~{energy} (odhad)`,
 			reasonComfortStep: `Krok zo zóny pohodlia: {step}`,
+			reasonWeatherFit: `Dnešné počasie tomu vyhovuje`,
 			doItNow: `Ideme na to`,
 			planLater: `Naplánovať`,
 			addToPlan: `Pridať do plánu`,

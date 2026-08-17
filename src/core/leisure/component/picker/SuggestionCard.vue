@@ -114,15 +114,20 @@
 	import type { LeisureSuggestion } from '@/core/leisure/composable/useLeisurePicker.ts'
 	import { usePickerLabels } from '@/core/leisure/composable/usePickerLabels.ts'
 	import { todayPlannerRoute } from '@/core/leisure/composable/useLeisureCommitment.ts'
+	import { fitsToday } from '@/core/leisure/composable/useWeatherFit.ts'
+	import type { WeatherFit } from '@/core/leisure/dto/response/WeatherFit.ts'
 
 	const {
 		suggestion,
 		constraints,
+		weatherFit = null,
 		busy = false,
 		plannedSlot = null,
 	} = defineProps<{
 		suggestion: LeisureSuggestion
 		constraints: PickerConstraints
+		/** `null` while unresolved or unavailable — the card must render exactly as it would without it. */
+		weatherFit?: WeatherFit | null
 		busy?: boolean
 		/** Set once this card has been committed to; the actions become a confirmation. */
 		plannedSlot?: { startTime: Time; endTime: Time } | null
@@ -174,6 +179,9 @@
 				icon: 'fas fa-shoe-prints',
 				label: i18n.t('leisure.picker.reasonComfortStep', { step: suggestion.comfortZoneStep }),
 			})
+		}
+		if (fitsToday(suggestion.weatherDependencyId, weatherFit)) {
+			list.push({ icon: 'fas fa-cloud-sun', label: i18n.t('leisure.picker.reasonWeatherFit') })
 		}
 		return list
 	})

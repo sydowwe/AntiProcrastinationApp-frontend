@@ -26,6 +26,7 @@ function facts(overrides: Partial<CandidateFacts> = {}): CandidateFacts {
 		effortType: null,
 		minParticipants: 1,
 		statedDurationMinutes: 30,
+		weatherDependencyId: null,
 		readinessStatus: null,
 		comfortZoneStep: null,
 		requiresTravel: false,
@@ -51,6 +52,7 @@ function context(overrides: Partial<RankingContext> = {}): RankingContext {
 		lastCommittedEffort: null,
 		now: new Date('2026-08-17T18:00:00.000Z'),
 		seed: 1,
+		weatherMatchIds: null,
 		...overrides,
 	}
 }
@@ -85,6 +87,18 @@ describe('hard constraints', () => {
 		})
 		expect(isEligible(longProject, constraints({ minutes: 120 }))).toBe(true)
 		expect(isEligible(longProject, constraints({ minutes: 30 }))).toBe(false)
+	})
+
+	it('excludes a backlog activity whose weather dependency does not fit today, only when the signal is known', () => {
+		const snowy = facts({ weatherDependencyId: 7 })
+		expect(isEligible(snowy, constraints(), [1, 2])).toBe(false)
+		expect(isEligible(snowy, constraints(), [7])).toBe(true)
+		// Unavailable data must never read as a mismatch.
+		expect(isEligible(snowy, constraints(), null)).toBe(true)
+	})
+
+	it('never excludes on weather for a backlog entry with no stated dependency', () => {
+		expect(isEligible(facts({ weatherDependencyId: null }), constraints(), [1, 2])).toBe(true)
 	})
 
 	it('excludes bucket-list entries below the time floor, and travel ones below the higher floor', () => {
@@ -148,6 +162,19 @@ describe('soft signals', () => {
 		const ready = facts({ source: 'project', readinessStatus: ReadinessStatus.ReadyToStart })
 		const planning = facts({ source: 'project', readinessStatus: ReadinessStatus.Planning })
 		expect(scoreCandidate(ready, ctx)).toBeGreaterThan(scoreCandidate(planning, ctx))
+	})
+
+	it('ranks a backlog activity up when its weather dependency matches today', () => {
+		const ctx = context({ weatherMatchIds: [3] })
+		const matching = scoreCandidate(facts({ weatherDependencyId: 3 }), ctx)
+		const notMatching = scoreCandidate(facts({ weatherDependencyId: 9 }), ctx)
+		expect(matching).toBeGreaterThan(notMatching)
+	})
+
+	it('gives no weather bonus when the signal is unavailable', () => {
+		const withSignal = scoreCandidate(facts({ weatherDependencyId: 3 }), context({ weatherMatchIds: [3] }))
+		const withoutSignal = scoreCandidate(facts({ weatherDependencyId: 3 }), context({ weatherMatchIds: null }))
+		expect(withoutSignal).toBeLessThan(withSignal)
 	})
 
 	it('prefers the smallest untried comfort-zone step', () => {

@@ -88,6 +88,9 @@ const leisure = {
 			projects: `These are things you're building or making. You don't have any projects here yet.`,
 			memoryAnchors: `These are experiences you've had and want to remember. You don't have any memory anchors here yet.`,
 		},
+		weatherFit: {
+			goodToday: `Good for today`,
+		},
 		picker: {
 			title: `What should I do right now?`,
 			subtitle: `Tell us how much time and energy you have — we'll pick three.`,
@@ -110,6 +113,7 @@ const leisure = {
 			reasonEnergy: `Energy: {energy}`,
 			reasonEnergyDerived: `Energy: ~{energy} (estimated)`,
 			reasonComfortStep: `Comfort zone step {step}`,
+			reasonWeatherFit: `Good weather for this today`,
 			doItNow: `Do it now`,
 			planLater: `Plan for later`,
 			addToPlan: `Add to plan`,

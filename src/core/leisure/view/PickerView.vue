@@ -33,6 +33,7 @@
 					<SuggestionCard
 						:suggestion
 						:constraints
+						:weatherFit
 						:busy="busyKey === suggestion.key"
 						:plannedSlot="plannedSlots[suggestion.key] ?? null"
 						@commit="startTime => handleCommit(suggestion, startTime)"
@@ -129,10 +130,8 @@
 	const { durationLabel } = usePickerLabels()
 
 	const { constraints, seed, reroll } = usePickerUrlState()
-	const { suggestions, loading, poolCount, loadFailed, costTierOptions, locationTypeOptions } = useLeisurePicker(
-		constraints,
-		seed,
-	)
+	const { suggestions, loading, poolCount, loadFailed, costTierOptions, locationTypeOptions, weatherFit } =
+		useLeisurePicker(constraints, seed)
 	const { commit } = useLeisureCommitment()
 
 	/** Key of the card whose commit is in flight, so only that card shows a spinner. */

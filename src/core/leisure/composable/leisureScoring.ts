@@ -22,7 +22,10 @@ import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
  * - **Backlog**: a stated `durationMinutes` longer than the time available; a `minParticipants`
  *   above the people available. Cost tier and location type are excluded server-side by the filter
  *   (see `useLeisurePicker`), because the filter can express them and the client should not download
- *   rows only to drop them.
+ *   rows only to drop them. When today's weather fit is known (`weatherMatchIds` is non-null), a
+ *   `weatherDependencyId` outside it is excluded too — an activity that needs snow in July is not a
+ *   suggestion, it is a taunt, same as one that needs three hours nobody has. Unknown weather excludes
+ *   nothing: absence of the signal must never read as a mismatch.
  * - **Project**: `NeedsShopping` is not a suggestion, it is an errand. And a project session needs a
  *   real block of time — under `PROJECT_MIN_MINUTES` there is no point starting one. `estimatedHours`
  *   is deliberately NOT a hard constraint: it is the estimate for the whole project, not for one
@@ -44,6 +47,7 @@ import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
  * |-----------------|-------------|--------------------------------------------------------------|
  * | energy fit      | all         | asymmetric: too demanding is worse than too easy              |
  * | duration fit    | backlog     | using most of the free time beats a 5-minute filler           |
+ * | weather fit     | backlog     | a match against today's actual conditions is a happy coincidence, worth surfacing |
  * | effort variety  | all         | a different effort type from the last thing committed to      |
  * | staleness       | all         | the same three every visit is the failure mode of a top-3     |
  * | source weight   | all         | bucket list is a rare treat, not the daily driver             |
@@ -115,6 +119,8 @@ export interface CandidateFacts {
 	minParticipants: number | null
 	/** Backlog only — the duration the user committed to when they filed the activity. */
 	statedDurationMinutes: number | null
+	/** Backlog only — the `activity-weather-dependency` lookup id the entry was filed under. */
+	weatherDependencyId: number | null
 	/** Project only. */
 	readinessStatus: ReadinessStatus | null
 	/** Bucket list only, 1–5. */
@@ -133,6 +139,11 @@ export interface RankingContext {
 	now: Date
 	/** The draw. Same seed + same pool + same history ⇒ same three cards. */
 	seed: number
+	/**
+	 * `activity-weather-dependency` lookup ids that fit today's actual conditions, or `null` when the
+	 * signal is unavailable. `null` must never be treated as "nothing matches" — see `useWeatherFit`.
+	 */
+	weatherMatchIds: readonly number[] | null
 }
 
 // --- weights -----------------------------------------------------------------
@@ -148,6 +159,8 @@ const ENERGY_TOO_EASY_PER_STEP = -0.75
 const DURATION_FIT_MAX = 2
 /** Sources that state no duration sit at the middle of that range rather than losing to it. */
 const DURATION_FIT_NEUTRAL = 1
+/** A backlog entry whose stated dependency matches today's actual conditions — a happy coincidence. */
+const WEATHER_MATCH_BONUS = 1.5
 const EFFORT_VARIETY_BONUS = 1
 const STALENESS_NEVER_SUGGESTED = 3
 const STALENESS_FLOOR = -4
@@ -221,12 +234,23 @@ function jitterFor(key: string, seed: number): number {
  * Hard constraints. A candidate that fails one is not shown at all, however well it would score:
  * an activity that does not fit the time available is not a suggestion, it is a taunt.
  */
-export function isEligible(candidate: CandidateFacts, constraints: PickerConstraints): boolean {
+export function isEligible(
+	candidate: CandidateFacts,
+	constraints: PickerConstraints,
+	weatherMatchIds: readonly number[] | null = null,
+): boolean {
 	if (candidate.minParticipants !== null && candidate.minParticipants > constraints.people) {
 		return false
 	}
 	switch (candidate.source) {
 		case 'backlog':
+			if (
+				candidate.weatherDependencyId !== null &&
+				weatherMatchIds !== null &&
+				!weatherMatchIds.includes(candidate.weatherDependencyId)
+			) {
+				return false
+			}
 			return candidate.statedDurationMinutes === null || candidate.statedDurationMinutes <= constraints.minutes
 		case 'project':
 			return (
@@ -288,6 +312,13 @@ export function scoreCandidate(candidate: CandidateFacts, ctx: RankingContext): 
 	score += SOURCE_WEIGHT[candidate.source]
 
 	if (
+		candidate.weatherDependencyId !== null &&
+		ctx.weatherMatchIds !== null &&
+		ctx.weatherMatchIds.includes(candidate.weatherDependencyId)
+	) {
+		score += WEATHER_MATCH_BONUS
+	}
+	if (
 		candidate.effortType !== null &&
 		ctx.lastCommittedEffort !== null &&
 		candidate.effortType !== ctx.lastCommittedEffort
@@ -310,7 +341,7 @@ export function scoreCandidate(candidate: CandidateFacts, ctx: RankingContext): 
  */
 export function pickSuggestions<T extends CandidateFacts>(candidates: readonly T[], ctx: RankingContext): T[] {
 	const ranked = candidates
-		.filter(candidate => isEligible(candidate, ctx.constraints))
+		.filter(candidate => isEligible(candidate, ctx.constraints, ctx.weatherMatchIds))
 		.map(candidate => ({ candidate, score: scoreCandidate(candidate, ctx) }))
 		.sort((a, b) => b.score - a.score)
 

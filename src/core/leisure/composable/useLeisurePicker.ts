@@ -23,6 +23,8 @@ import {
 	type PickerConstraints,
 } from '@/core/leisure/composable/leisureScoring.ts'
 import { readSuggestionHistory } from '@/core/leisure/composable/suggestionHistory.ts'
+import { useWeatherFit } from '@/core/leisure/composable/useWeatherFit.ts'
+import type { WeatherFit } from '@/core/leisure/dto/response/WeatherFit.ts'
 
 /**
  * Turns the three profile tables into three suggestions.
@@ -67,6 +69,7 @@ function backlogSuggestion(profile: ActivityBacklogProfile): LeisureSuggestion {
 		effortType: profile.effortType,
 		minParticipants: profile.minParticipants,
 		statedDurationMinutes: duration,
+		weatherDependencyId: profile.weatherDependency.id ?? null,
 		readinessStatus: null,
 		comfortZoneStep: null,
 		requiresTravel: false,
@@ -86,6 +89,7 @@ function projectSuggestion(profile: ActivityProjectProfile): LeisureSuggestion {
 		effortType: null,
 		minParticipants: null,
 		statedDurationMinutes: null,
+		weatherDependencyId: null,
 		readinessStatus: profile.readinessStatus,
 		comfortZoneStep: null,
 		requiresTravel: false,
@@ -105,6 +109,7 @@ function bucketListSuggestion(profile: ActivityBucketListProfile): LeisureSugges
 		effortType: null,
 		minParticipants: null,
 		statedDurationMinutes: null,
+		weatherDependencyId: null,
 		readinessStatus: null,
 		comfortZoneStep: profile.comfortZoneStep,
 		requiresTravel: profile.requiresTravel,
@@ -142,6 +147,8 @@ export interface LeisurePicker {
 	loadFailed: Ref<boolean>
 	costTierOptions: Ref<LookupResponse[]>
 	locationTypeOptions: Ref<LookupResponse[]>
+	/** Today's weather fit, forwarded so a card can say *why* it matched — see `SuggestionCard`. */
+	weatherFit: Ref<WeatherFit | null>
 }
 
 export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<number>): LeisurePicker {
@@ -150,6 +157,7 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 	const { fetchFilteredTable: fetchBucketList } = useActivityBucketListProfileCrud()
 	const { fetchAll: fetchCostTiers } = useActivityExpectedCostTierApi()
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
+	const weatherFit = useWeatherFit()
 
 	const suggestions = ref<LeisureSuggestion[]>([])
 	const loading = ref(true)
@@ -239,6 +247,7 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 			lastCommittedEffort: history.lastCommittedEffort,
 			now: new Date(),
 			seed: seed.value,
+			weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null,
 		}
 		poolCount.value = pool.value.length
 		suggestions.value = pickSuggestions(pool.value, context)
@@ -277,6 +286,9 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 		{ deep: true },
 	)
 	watch(seed, redraw)
+	// The weather fetch resolves independently of the pool fetch — redraw again once (or if) it lands,
+	// rather than gating the first draw on a call that may never come back.
+	watch(weatherFit, redraw)
 
 	return {
 		suggestions,
@@ -285,5 +297,6 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 		loadFailed,
 		costTierOptions,
 		locationTypeOptions,
+		weatherFit,
 	}
 }
