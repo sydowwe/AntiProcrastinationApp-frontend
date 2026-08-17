@@ -65,8 +65,10 @@
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
 	import { memoryAnchorFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
+	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 
 	const i18n = useI18n()
+	const { textChip } = useLeisureFilterChips()
 
 	const { fetchFilteredTable } = useMemoryAnchorCrud()
 	// The view owns the table state because FilterPanel needs the same writable filter ref.
@@ -79,11 +81,9 @@
 	})
 
 	const chipFormatters: ChipFormatters<MemoryAnchorFilter> = {
-		activityName: v =>
-			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		year: v => (v != null ? { label: `${i18n.t('leisure.fields.anchorYear')}: ${v}`, icon: 'calendar' } : null),
-		month: v =>
-			v != null ? { label: `${i18n.t('leisure.fields.anchorMonth')}: ${v}`, icon: 'calendar-days' } : null,
+		activityName: textChip('leisure.fields.activity', 'magnifying-glass'),
+		year: textChip('leisure.fields.anchorYear', 'calendar'),
+		month: textChip('leisure.fields.anchorMonth', 'calendar-days'),
 		minRating: v => (v != null ? { label: `${i18n.t('leisure.fields.rating')} ≥ ${v}`, icon: 'star' } : null),
 	}
 </script>

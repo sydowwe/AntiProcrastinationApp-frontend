@@ -36,9 +36,20 @@ const leisure = {
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,
 		anchorSourceBucketList: `Bucket list`,
+		createActivity: `Vytvoriť novú aktivitu`,
+		createActivityNamed: `Vytvoriť aktivitu „{name}“`,
+		activityRole: `Rola`,
+		activityCategory: `Kategória`,
+		emptyStates: {
+			backlog: `Toto sú aktivity, ktoré by ste mohli kedykoľvek spraviť. Zatiaľ tu nemáte žiadnu.`,
+			bucketList: `Toto sú zážitky, ktoré chcete raz zažiť. Zatiaľ tu nemáte žiadny.`,
+			projects: `Toto sú veci, ktoré práve budujete alebo tvoríte. Zatiaľ tu nemáte žiadny projekt.`,
+			memoryAnchors: `Toto sú zážitky, ktoré ste zažili a chcete si ich pripomenúť. Zatiaľ tu nemáte žiadny pamätný moment.`,
+		},
 		errors: {
 			notEligible: `Aktivita musí mať jednorazový Backlog alebo Bucket list profil aby mohla byť zakotvená.`,
 			duplicate: `Táto aktivita je už zakotvená pre daný mesiac.`,
+			noEligibleActivities: `Zatiaľ nemáte žiadnu aktivitu, ktorú by ste mohli zakotviť — na to potrebuje jednorazový Backlog alebo Bucket list profil. Vytvorte si ho tu:`,
 		},
 	},
 	enums: {

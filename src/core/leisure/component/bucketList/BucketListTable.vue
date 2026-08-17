@@ -13,6 +13,9 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
+		<template #item.activity.name="{ item }">
+			<ActivityNameCell :activity="item.activity" />
+		</template>
 		<template #item.experienceType="{ item }">
 			<span>{{ item.experienceType?.text ?? '—' }}</span>
 		</template>
@@ -25,17 +28,38 @@
 		</template>
 		<template #item.comfortZoneStep="{ item }">
 			<VChip
-				:color="stepColor(item.comfortZoneStep)"
+				:color="comfortZoneColor(item.comfortZoneStep)"
 				size="small"
 			>
 				{{ item.comfortZoneStep }}/5
 			</VChip>
+		</template>
+		<template #noData>
+			<div class="empty-state">
+				<VIcon
+					icon="star"
+					size="40"
+					class="mb-3"
+					style="opacity: 0.3"
+				/>
+				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.bucketList') }}</p>
+				<VBtn
+					color="success"
+					variant="tonal"
+					prependIcon="plus"
+					@click="openCreateDialog"
+				>
+					{{ $t('general.add') }}
+				</VBtn>
+			</div>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
+	import { comfortZoneColor } from '@/core/leisure/component/bucketList/comfortZoneColor.ts'
 	import BucketListProfileForm from '@/core/leisure/component/bucketList/BucketListProfileForm.vue'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -68,12 +92,6 @@
 		new TableColumn('inspirationSource', t('leisure.fields.inspirationSource'), false),
 	]
 
-	function stepColor(step: number): string {
-		if (step <= 1) return 'success'
-		if (step <= 3) return 'warning'
-		return 'errorDark'
-	}
-
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: BucketListProfileForm,
@@ -96,3 +114,14 @@
 		emit('onReload')
 	}
 </script>
+
+<style scoped>
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 48px 24px;
+		text-align: center;
+		color: rgba(var(--v-theme-on-surface), 0.5);
+	}
+</style>

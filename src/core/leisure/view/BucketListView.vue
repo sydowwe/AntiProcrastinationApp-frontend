@@ -14,16 +14,12 @@
 						:label="$t('leisure.fields.activity')"
 						hideDetails
 					/>
-					<VSelect
+					<VIdSelect
 						v-model="draft.experienceTypeIds"
 						:label="$t('leisure.fields.experienceType')"
 						:items="experienceTypeOptions"
-						itemValue="id"
-						itemTitle="text"
 						multiple
 						chips
-						clearable
-						variant="outlined"
 						density="compact"
 						hideDetails
 					/>
@@ -77,8 +73,10 @@
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { bucketListFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
+	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 
 	const i18n = useI18n()
+	const { textChip, countChip, boolChip } = useLeisureFilterChips()
 
 	const { fetchFilteredTable } = useActivityBucketListProfileCrud()
 	// The view owns the table state because FilterPanel needs the same writable filter ref.
@@ -98,10 +96,8 @@
 	})
 
 	const chipFormatters: ChipFormatters<ActivityBucketListProfileFilter> = {
-		activityName: v =>
-			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		experienceTypeIds: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.experienceType')} (${v.length})`, icon: 'star' } : null,
+		activityName: textChip('leisure.fields.activity', 'magnifying-glass'),
+		experienceTypeIds: countChip('leisure.fields.experienceType', 'star'),
 		minComfortZoneStep: (_, f) =>
 			f.minComfortZoneStep != null || f.maxComfortZoneStep != null
 				? {
@@ -111,12 +107,6 @@
 					}
 				: null,
 		maxComfortZoneStep: () => null,
-		requiresTravel: v => {
-			if (v == null) return null
-			return {
-				label: `${i18n.t('leisure.fields.requiresTravel')}: ${v ? '✓' : '✗'}`,
-				icon: 'plane',
-			}
-		},
+		requiresTravel: boolChip('leisure.fields.requiresTravel', 'plane'),
 	}
 </script>

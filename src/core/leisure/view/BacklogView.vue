@@ -14,68 +14,40 @@
 						:label="$t('leisure.fields.activity')"
 						hideDetails
 					/>
-					<VSelect
+					<VIdSelect
 						v-model="draft.locationTypeIds"
 						:label="$t('leisure.fields.locationType')"
 						:items="locationTypeOptions"
-						itemValue="id"
-						itemTitle="text"
 						multiple
 						chips
-						clearable
-						variant="outlined"
 						density="compact"
 						hideDetails
 					/>
-					<VSelect
+					<VIdSelect
 						v-model="draft.weatherDependencyIds"
 						:label="$t('leisure.fields.weatherDependency')"
 						:items="weatherDependencyOptions"
-						itemValue="id"
-						itemTitle="text"
 						multiple
 						chips
-						clearable
-						variant="outlined"
 						density="compact"
 						hideDetails
 					/>
-					<VSelect
+					<EnumMultiSelect
 						v-model="draft.energyLevels"
 						:label="$t('leisure.fields.energyLevel')"
 						:items="energyOptions"
-						itemValue="value"
-						itemTitle="title"
-						multiple
-						chips
-						clearable
-						variant="outlined"
-						density="compact"
-						hideDetails
 					/>
-					<VSelect
+					<EnumMultiSelect
 						v-model="draft.effortTypes"
 						:label="$t('leisure.fields.effortType')"
 						:items="effortOptions"
-						itemValue="value"
-						itemTitle="title"
-						multiple
-						chips
-						clearable
-						variant="outlined"
-						density="compact"
-						hideDetails
 					/>
-					<VSelect
+					<VIdSelect
 						v-model="draft.expectedCostTierIds"
 						:label="$t('leisure.fields.expectedCostTier')"
 						:items="expectedCostTierOptions"
-						itemValue="id"
-						itemTitle="text"
 						multiple
 						chips
-						clearable
-						variant="outlined"
 						density="compact"
 						hideDetails
 					/>
@@ -116,6 +88,7 @@
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BacklogTable from '@/core/leisure/component/backlog/BacklogTable.vue'
+	import EnumMultiSelect from '@/core/leisure/component/EnumMultiSelect.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
@@ -131,8 +104,10 @@
 	import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { backlogFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
+	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 
 	const i18n = useI18n()
+	const { textChip, countChip, boolChip } = useLeisureFilterChips()
 
 	const { fetchFilteredTable } = useActivityBacklogProfileCrud()
 	// The view owns the table state because FilterPanel needs the same writable filter ref.
@@ -162,32 +137,14 @@
 	})
 
 	const chipFormatters: ChipFormatters<ActivityBacklogProfileFilter> = {
-		activityName: v =>
-			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		locationTypeIds: v =>
-			v?.length
-				? { label: `${i18n.t('leisure.fields.locationType')} (${v.length})`, icon: 'location-dot' }
-				: null,
-		weatherDependencyIds: v =>
-			v?.length
-				? { label: `${i18n.t('leisure.fields.weatherDependency')} (${v.length})`, icon: 'cloud-sun' }
-				: null,
-		energyLevels: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.energyLevel')} (${v.length})`, icon: 'bolt' } : null,
-		effortTypes: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.effortType')} (${v.length})`, icon: 'dumbbell' } : null,
-		expectedCostTierIds: v =>
-			v?.length
-				? { label: `${i18n.t('leisure.fields.expectedCostTier')} (${v.length})`, icon: 'sack-dollar' }
-				: null,
+		activityName: textChip('leisure.fields.activity', 'magnifying-glass'),
+		locationTypeIds: countChip('leisure.fields.locationType', 'location-dot'),
+		weatherDependencyIds: countChip('leisure.fields.weatherDependency', 'cloud-sun'),
+		energyLevels: countChip('leisure.fields.energyLevel', 'bolt'),
+		effortTypes: countChip('leisure.fields.effortType', 'dumbbell'),
+		expectedCostTierIds: countChip('leisure.fields.expectedCostTier', 'sack-dollar'),
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
-		isOneTime: v => {
-			if (v == null) return null
-			return {
-				label: `${i18n.t('leisure.fields.isOneTime')}: ${v ? '✓' : '✗'}`,
-				icon: v ? 'star' : 'rotate',
-			}
-		},
+		isOneTime: boolChip('leisure.fields.isOneTime', 'star', 'rotate'),
 	}
 </script>

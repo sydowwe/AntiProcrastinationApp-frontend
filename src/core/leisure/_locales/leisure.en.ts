@@ -36,9 +36,20 @@ const leisure = {
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,
 		anchorSourceBucketList: `Bucket List`,
+		createActivity: `Create a new activity`,
+		createActivityNamed: `Create activity "{name}"`,
+		activityRole: `Role`,
+		activityCategory: `Category`,
+		emptyStates: {
+			backlog: `These are things you could do. You don't have any here yet.`,
+			bucketList: `These are experiences you want to have once. You don't have any here yet.`,
+			projects: `These are things you're building or making. You don't have any projects here yet.`,
+			memoryAnchors: `These are experiences you've had and want to remember. You don't have any memory anchors here yet.`,
+		},
 		errors: {
 			notEligible: `Activity must have a one-time Backlog or Bucket List profile to be anchored.`,
 			duplicate: `This activity is already anchored for that month.`,
+			noEligibleActivities: `You don't have any activity eligible for anchoring yet — it needs a one-time Backlog or Bucket List profile. Create one here:`,
 		},
 	},
 	enums: {

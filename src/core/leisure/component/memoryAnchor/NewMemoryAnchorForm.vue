@@ -4,11 +4,37 @@
 		class="d-flex flex-column ga-3"
 		@submit.prevent="validate"
 	>
+		<VAlert
+			v-if="!loading && eligibleActivities.length === 0"
+			type="info"
+			variant="tonal"
+			density="comfortable"
+		>
+			{{ $t('leisure.errors.noEligibleActivities') }}
+			<div class="d-flex ga-2 mt-2">
+				<VBtn
+					size="small"
+					variant="tonal"
+					:to="{ name: 'leisureBacklog' }"
+				>
+					{{ $t('leisure.backlog') }}
+				</VBtn>
+				<VBtn
+					size="small"
+					variant="tonal"
+					:to="{ name: 'leisureBucketList' }"
+				>
+					{{ $t('leisure.bucketList') }}
+				</VBtn>
+			</div>
+		</VAlert>
 		<VIdAutocomplete
+			v-else
 			v-model="model.activityId"
 			:label="$t('leisure.fields.activity')"
 			:placeholder="$t('leisure.memoryAnchorPlaceholder')"
 			:items="eligibleActivities"
+			:loading
 			required
 			:rules="[requiredRule]"
 			:disabled="lockActivity"
@@ -60,9 +86,11 @@
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const eligibleActivities = ref<SelectOption[]>([])
+	const loading = ref(true)
 
 	onMounted(async () => {
 		eligibleActivities.value = await fetchAnchorEligibleActivities()
+		loading.value = false
 	})
 
 	async function validate() {

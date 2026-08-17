@@ -14,31 +14,15 @@
 						:label="$t('leisure.fields.activity')"
 						hideDetails
 					/>
-					<VSelect
+					<EnumMultiSelect
 						v-model="draft.difficultyLevels"
 						:label="$t('leisure.fields.difficultyLevel')"
 						:items="difficultyOptions"
-						itemValue="value"
-						itemTitle="title"
-						multiple
-						chips
-						clearable
-						variant="outlined"
-						density="compact"
-						hideDetails
 					/>
-					<VSelect
+					<EnumMultiSelect
 						v-model="draft.readinessStatuses"
 						:label="$t('leisure.fields.readinessStatus')"
 						:items="readinessOptions"
-						itemValue="value"
-						itemTitle="title"
-						multiple
-						chips
-						clearable
-						variant="outlined"
-						density="compact"
-						hideDetails
 					/>
 					<VTextField
 						v-model="draft.projectArea"
@@ -69,9 +53,9 @@
 </template>
 
 <script setup lang="ts">
-	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import ProjectTable from '@/core/leisure/component/project/ProjectTable.vue'
+	import EnumMultiSelect from '@/core/leisure/component/EnumMultiSelect.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityProjectProfileFilter } from '@/core/leisure/dto/request/ActivityProjectProfileFilter.ts'
 	import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
@@ -81,8 +65,9 @@
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 	import { projectFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
+	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 
-	const i18n = useI18n()
+	const { textChip, countChip, boolChip } = useLeisureFilterChips()
 
 	const { fetchFilteredTable } = useActivityProjectProfileCrud()
 	// The view owns the table state because FilterPanel needs the same writable filter ref.
@@ -98,21 +83,10 @@
 	const readinessOptions = getEnumSelectOptions(ReadinessStatus, 'enums.readinessStatus')
 
 	const chipFormatters: ChipFormatters<ActivityProjectProfileFilter> = {
-		activityName: v =>
-			v ? { label: `${i18n.t('leisure.fields.activity')}: ${v}`, icon: 'magnifying-glass' } : null,
-		difficultyLevels: v =>
-			v?.length ? { label: `${i18n.t('leisure.fields.difficultyLevel')} (${v.length})`, icon: 'gauge' } : null,
-		readinessStatuses: v =>
-			v?.length
-				? { label: `${i18n.t('leisure.fields.readinessStatus')} (${v.length})`, icon: 'circle-check' }
-				: null,
-		projectArea: v => (v ? { label: `${i18n.t('leisure.fields.projectArea')}: ${v}`, icon: 'map' } : null),
-		isMessy: v => {
-			if (v == null) return null
-			return {
-				label: `${i18n.t('leisure.fields.isMessy')}: ${v ? '✓' : '✗'}`,
-				icon: 'broom',
-			}
-		},
+		activityName: textChip('leisure.fields.activity', 'magnifying-glass'),
+		difficultyLevels: countChip('leisure.fields.difficultyLevel', 'gauge'),
+		readinessStatuses: countChip('leisure.fields.readinessStatus', 'circle-check'),
+		projectArea: textChip('leisure.fields.projectArea', 'map'),
+		isMessy: boolChip('leisure.fields.isMessy', 'broom'),
 	}
 </script>

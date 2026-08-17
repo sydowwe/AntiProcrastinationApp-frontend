@@ -5,7 +5,7 @@
 			<VBtn
 				v-for="step in 5"
 				:key="step"
-				:color="step <= model ? activeColor(step) : 'grey-lighten-2'"
+				:color="step <= model ? comfortZoneColor(step) : 'grey-lighten-2'"
 				:variant="step <= model ? 'elevated' : 'tonal'"
 				size="small"
 				icon
@@ -18,12 +18,8 @@
 </template>
 
 <script setup lang="ts">
+	import { comfortZoneColor } from '@/core/leisure/component/bucketList/comfortZoneColor.ts'
+
 	const { label = '' } = defineProps<{ label?: string }>()
 	const model = defineModel<number>({ required: true })
-
-	function activeColor(step: number): string {
-		if (step <= 1) return 'success'
-		if (step <= 3) return 'warning'
-		return 'errorDark'
-	}
 </script>

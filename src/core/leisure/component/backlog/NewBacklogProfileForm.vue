@@ -4,12 +4,9 @@
 		class="d-flex flex-column ga-3"
 		@submit.prevent="validate"
 	>
-		<VIdAutocomplete
+		<ActivityAutocompleteWithCreate
 			v-model="model.activityId"
 			:label="$t('leisure.fields.activity')"
-			:items="activityOptions"
-			required
-			:rules="[requiredRule]"
 			:disabled="lockActivity"
 		/>
 		<VIdSelect
@@ -85,9 +82,7 @@
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 	import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
-	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
-	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
+	import ActivityAutocompleteWithCreate from '@/core/leisure/component/ActivityAutocompleteWithCreate.vue'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import {
 		useActivityLocationTypeApi,
@@ -98,14 +93,11 @@
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
 	const model = defineModel<ActivityBacklogProfileRequest>({ required: true })
 
-	const { requiredRule } = useGeneralRules()
-	const { fetchSelectOptions: fetchActivitySelectOptions } = useActivityCrud()
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
 	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()
 	const { fetchAll: fetchExpectedCostTiers } = useActivityExpectedCostTierApi()
 
 	const form = ref<InstanceType<typeof VForm>>()
-	const activityOptions = ref<SelectOption[]>([])
 	const locationTypeOptions = ref<LookupResponse[]>([])
 	const weatherDependencyOptions = ref<LookupResponse[]>([])
 	const expectedCostTierOptions = ref<LookupResponse[]>([])
@@ -114,17 +106,9 @@
 	const effortOptions = getEnumSelectOptions(EffortType, 'enums.effortType')
 
 	onMounted(async () => {
-		;[
-			activityOptions.value,
-			locationTypeOptions.value,
-			weatherDependencyOptions.value,
-			expectedCostTierOptions.value,
-		] = await Promise.all([
-			fetchActivitySelectOptions(),
-			fetchLocationTypes(),
-			fetchWeatherDependencies(),
-			fetchExpectedCostTiers(),
-		])
+		;[locationTypeOptions.value, weatherDependencyOptions.value, expectedCostTierOptions.value] = await Promise.all(
+			[fetchLocationTypes(), fetchWeatherDependencies(), fetchExpectedCostTiers()],
+		)
 	})
 
 	async function validate() {

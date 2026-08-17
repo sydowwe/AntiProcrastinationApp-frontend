@@ -4,12 +4,9 @@
 		class="d-flex flex-column ga-3"
 		@submit.prevent="validate"
 	>
-		<VIdAutocomplete
+		<ActivityAutocompleteWithCreate
 			v-model="model.activityId"
 			:label="$t('leisure.fields.activity')"
-			:items="activityOptions"
-			required
-			:rules="[requiredRule]"
 			:disabled="lockActivity"
 		/>
 		<VSelect
@@ -57,32 +54,22 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { ActivityProjectProfileRequest } from '@/core/leisure/dto/request/ActivityProjectProfileRequest.ts'
 	import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
-	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
-	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
+	import ActivityAutocompleteWithCreate from '@/core/leisure/component/ActivityAutocompleteWithCreate.vue'
 	import StringListEditor from '@/core/leisure/component/project/StringListEditor.vue'
 
 	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
 	const model = defineModel<ActivityProjectProfileRequest>({ required: true })
 
-	const { requiredRule } = useGeneralRules()
-	const { fetchSelectOptions: fetchActivitySelectOptions } = useActivityCrud()
-
 	const form = ref<InstanceType<typeof VForm>>()
-	const activityOptions = ref<SelectOption[]>([])
 
 	const difficultyOptions = getEnumSelectOptions(DifficultyLevel, 'enums.difficultyLevel')
 	const readinessOptions = getEnumSelectOptions(ReadinessStatus, 'enums.readinessStatus')
-
-	onMounted(async () => {
-		activityOptions.value = await fetchActivitySelectOptions()
-	})
 
 	async function validate() {
 		return form.value!.validate()

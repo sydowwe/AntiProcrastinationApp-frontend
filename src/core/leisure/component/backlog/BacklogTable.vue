@@ -15,7 +15,7 @@
 		@onDelete="onDelete"
 	>
 		<template #item.activity.name="{ item }">
-			<span>{{ item.activity.name ?? '—' }}</span>
+			<ActivityNameCell :activity="item.activity" />
 		</template>
 		<template #item.isOneTime="{ item }">
 			<VIcon
@@ -39,11 +39,31 @@
 		<template #item.effortType="{ item }">
 			<span>{{ item.effortType == null ? '—' : $t(`enums.effortType.${item.effortType}`) }}</span>
 		</template>
+		<template #noData>
+			<div class="empty-state">
+				<VIcon
+					icon="box-archive"
+					size="40"
+					class="mb-3"
+					style="opacity: 0.3"
+				/>
+				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.backlog') }}</p>
+				<VBtn
+					color="success"
+					variant="tonal"
+					prependIcon="plus"
+					@click="openCreateDialog"
+				>
+					{{ $t('general.add') }}
+				</VBtn>
+			</div>
+		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import BacklogProfileForm from '@/core/leisure/component/backlog/BacklogProfileForm.vue'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -99,3 +119,14 @@
 		emit('onReload')
 	}
 </script>
+
+<style scoped>
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 48px 24px;
+		text-align: center;
+		color: rgba(var(--v-theme-on-surface), 0.5);
+	}
+</style>
