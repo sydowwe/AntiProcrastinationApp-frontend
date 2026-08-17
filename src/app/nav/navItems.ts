@@ -59,6 +59,7 @@ export const navItems: MenuItem[] = [
 		title: 'leisure',
 		icon: 'umbrella-beach',
 		children: [
+			{ title: 'leisurePicker', icon: 'wand-magic-sparkles', to: '/leisure/pick' },
 			{ title: 'backlog', icon: 'box-archive', to: '/leisure/backlog' },
 			{ title: 'projects', icon: 'screwdriver-wrench', to: '/leisure/projects' },
 			{ title: 'bucketList', icon: 'star', to: '/leisure/bucket-list' },

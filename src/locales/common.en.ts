@@ -236,6 +236,7 @@ const common = {
 		androidSettings: `Android settings`,
 		activitySettings: `Activity settings`,
 		leisure: `Leisure`,
+		leisurePicker: `What should I do?`,
 		backlog: `Backlog`,
 		projects: `Projects`,
 		bucketList: `Bucket list`,

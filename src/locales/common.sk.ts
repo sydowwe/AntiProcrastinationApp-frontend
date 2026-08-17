@@ -27,6 +27,7 @@ const common = {
 		androidSettings: `Nastavenia androidu`,
 		activitySettings: `Nastavenia aktivít`,
 		leisure: `Voľný čas`,
+		leisurePicker: `Čo mám robiť?`,
 		backlog: `Zásobník`,
 		projects: `Projekty`,
 		bucketList: `Bucket list`,
