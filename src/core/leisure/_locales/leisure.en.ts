@@ -33,6 +33,14 @@ const leisure = {
 			activity: `Activity`,
 			source: `Source`,
 		},
+		viewMode: {
+			board: `Board`,
+			table: `Table`,
+		},
+		readinessBoard: {
+			empty: `No projects`,
+			moreCount: `+{count} more`,
+		},
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,
 		anchorSourceBucketList: `Bucket List`,

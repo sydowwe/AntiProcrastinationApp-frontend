@@ -33,6 +33,14 @@ const leisure = {
 			activity: `Aktivita`,
 			source: `Zdroj`,
 		},
+		viewMode: {
+			board: `Nástenka`,
+			table: `Tabuľka`,
+		},
+		readinessBoard: {
+			empty: `Žiadne projekty`,
+			moreCount: `+{count} ďalších`,
+		},
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,
 		anchorSourceBucketList: `Bucket list`,

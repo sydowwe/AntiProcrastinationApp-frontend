@@ -21,18 +21,7 @@
 
 	const formRef = ref<InstanceType<typeof NewProjectProfileForm>>()
 	const request = ref(
-		entityToEdit
-			? new ActivityProjectProfileRequest(
-					entityToEdit.activityId,
-					entityToEdit.difficultyLevel,
-					entityToEdit.projectArea,
-					entityToEdit.estimatedHours,
-					entityToEdit.isMessy,
-					[...entityToEdit.materialsNeeded],
-					[...entityToEdit.requiredTools],
-					entityToEdit.readinessStatus,
-				)
-			: new ActivityProjectProfileRequest(),
+		entityToEdit ? ActivityProjectProfileRequest.fromProfile(entityToEdit) : new ActivityProjectProfileRequest(),
 	)
 
 	dialogApi.onConfirm(onConfirm)
