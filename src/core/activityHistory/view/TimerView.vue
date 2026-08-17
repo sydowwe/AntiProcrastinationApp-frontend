@@ -64,6 +64,7 @@
 	import TimerPresetsSection from '@/core/activityHistory/component/TimerPresetsSection.vue'
 	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { computed, onMounted, onUnmounted, ref } from 'vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
@@ -158,7 +159,9 @@
 				endsAt.value = currentTime + durationMs
 				startUpdateInterval()
 				scheduleNotificationTimeout()
-				emit('started', Time.fromDate(startTimestamp.value))
+				// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
+				// the hour the work actually happened at.
+				emit('started', timeInUserZone(startTimestamp.value))
 			}
 		}
 	}

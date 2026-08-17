@@ -151,7 +151,14 @@
 	// Minimum activity duration to show individually (below this → merge into Other)
 	const minActivityMinutes = computed(() => getYAxisInterval(displayMaxMinutes.value))
 
-	// Build a lookup of API windows by their start time
+	// Build a lookup of API windows by their start time.
+	//
+	// Deliberately browser-zone (C1 clock audit): `d` is an instant, but the slot Dates it is matched
+	// against are *synthetic* browser-local encodings of a minute-of-day (`slotStart.setHours(...)`
+	// below), and `StackedBarsGrid` renders both through the same browser-zone `formatTime`. Reading
+	// only this one in the user's zone would place a window in a slot whose printed label disagrees
+	// with it. The whole pipeline reads on one clock; migrating it means carrying minute-of-day
+	// integers through `ProcessedWindow` instead of `Date`s, not changing this line.
 	function dateToMinutesKey(d: Date): number {
 		return d.getHours() * 60 + d.getMinutes()
 	}

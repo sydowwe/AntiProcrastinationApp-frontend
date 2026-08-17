@@ -243,6 +243,7 @@
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
 	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { computed, onUnmounted, ref } from 'vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
@@ -357,7 +358,9 @@
 				startTimestamp.value = new Date()
 				timeInputVisible.value = false
 				startPhase(focusInitialTime.value.getInSeconds)
-				emit('started', Time.fromDate(startTimestamp.value))
+				// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
+				// the hour the work actually happened at.
+				emit('started', timeInUserZone(startTimestamp.value))
 			}
 		}
 	}

@@ -82,6 +82,7 @@
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
+	import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
 
 	const {
 		toDoListItem,
@@ -143,8 +144,10 @@
 	const dueDateChip = computed(() => {
 		const { dueDate, dueTime } = toDoListItem
 		if (!dueDate) return null
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
+		// Local midnight of the *user's* today: "which day is it now" is an instant read, while
+		// `dueDate` is a calendar day parsed at browser-local midnight — both are browser-local-field
+		// Dates, so the day-offset subtraction below stays exact.
+		const today = startOfUserDayPlus(0)
 		const due = new Date(dueDate + 'T00:00:00')
 		const dayOffset = Math.round((due.getTime() - today.getTime()) / MS_PER_DAY)
 		const overdue = dayOffset < 0 && !toDoListItem.isDone

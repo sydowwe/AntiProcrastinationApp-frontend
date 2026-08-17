@@ -20,6 +20,7 @@
 	import { useUserApi } from '@/_common/modules/user/api/userApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 
 	const i18n = useI18n()
 	const { exportData } = useUserApi()
@@ -33,7 +34,9 @@
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url
-			a.download = `antiprocrastination-export-${new Date().toISOString().slice(0, 10)}.json`
+			// "Today" is an instant read: `toISOString()` names the UTC day, which is the wrong date in
+			// the filename for anyone west of Greenwich in the evening. Cosmetic, but a one-word fix.
+			a.download = `antiprocrastination-export-${isoDateInUserZone()}.json`
 			a.click()
 			URL.revokeObjectURL(url)
 			showSuccessSnackbar(i18n.t('user.exportSuccess'))

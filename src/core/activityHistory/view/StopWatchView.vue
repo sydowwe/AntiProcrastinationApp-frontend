@@ -51,7 +51,8 @@
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import TimeDisplay from '@/_common/component/dateTime/TimeDisplay.vue'
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
-	import { Time } from '@/_common/dto/dto/Time.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { computed, ref } from 'vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
@@ -106,7 +107,9 @@
 			startTimestamp.value = new Date()
 			startedAt.value = Date.now()
 			intervalId.value = setInterval(updateTimeDisplay, 1000)
-			emit('started', Time.fromDate(startTimestamp.value))
+			// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
+			// the hour the work actually happened at.
+			emit('started', timeInUserZone(startTimestamp.value))
 		}
 	}
 

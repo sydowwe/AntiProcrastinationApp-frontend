@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import { fetchDailyRecap } from '@/core/todoList/api/todoListItemApi.ts'
 import type { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 
@@ -14,9 +14,12 @@ let loadPromise: Promise<void> | null = null
 
 export function useDailyRecap() {
 	function ensureLoadedForToday(): Promise<void> {
-		const today = formatDateForApi(new Date())
+		// "What day is it now" is an instant read, so it resolves in the user's zone — the server
+		// resolves the recap's day boundary in the same zone, and this is both the request parameter
+		// and the once-per-day cache key.
+		const today = isoDateInUserZone()
 		if (loadedForDate === today) return loadPromise ?? Promise.resolve()
-		loadPromise = fetchDailyRecap(new Date()).then(result => {
+		loadPromise = fetchDailyRecap(today).then(result => {
 			recap.value = result
 			loadedForDate = today
 		})

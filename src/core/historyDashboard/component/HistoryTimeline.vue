@@ -117,6 +117,10 @@
 	const firstHalf = computed(() => historyList.value.slice(0, Math.ceil(historyList.value.length / 2)))
 	const secondHalf = computed(() => historyList.value.slice(Math.ceil(historyList.value.length / 2)))
 
+	// `startTimestamp` is an instant, so these day comparisons are browser-zone (C1 clock audit).
+	// Deliberately left that way: the clock printed on each row next to the separator comes from
+	// `formatToTime` (dayjs, browser-zone, no timezone plugin loaded), and a user-zone separator over
+	// browser-zone times is worse than both being wrong together. Migrate the pair, or neither.
 	const hasMultipleDays = computed(() => {
 		if (historyList.value.length < 2) return false
 		const first = historyList.value[0]!.startTimestamp

@@ -22,6 +22,12 @@
 	import { computed } from 'vue'
 	import { TimeMarker } from './dto/TimeMarker'
 
+	// `from`/`to` are calendar-day values, not instants (C1 clock audit): the dashboards build them as
+	// `new Date(pickedDay); setHours(timeFrom.hours, ...)`, so their browser-local fields ARE the value
+	// and `getMinutes()` / `toLocaleTimeString()` round-trip exactly what was stamped in. Routing them
+	// through `useUserClock` would shift the axis by the zone offset. The real gap is upstream, where
+	// those Dates are built on the browser's clock while the sessions plotted against them are server
+	// instants — fixing that needs a wall-clock-in-zone → instant helper the framework does not have.
 	const props = defineProps<{
 		from: Date
 		to: Date

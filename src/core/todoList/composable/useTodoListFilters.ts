@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Ref } from 'vue'
 import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
+import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
 
 export type SortMode = 'custom' | 'priority' | 'dueDate'
 export type DueFilter = 'overdue' | 'today' | null
@@ -70,8 +71,10 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 
 	const displayedItems = computed(() => {
 		if (isInChangeOrderMode.value) return items.value
-		const today = new Date()
-		today.setHours(0, 0, 0, 0)
+		// Local midnight of the *user's* today: "which day is it now" is an instant read, while
+		// `item.dueDate + 'T00:00:00'` below is a calendar day — both are browser-local-field Dates
+		// once built, so they compare directly.
+		const today = startOfUserDayPlus(0)
 		let result = [...items.value]
 		if (hideDone.value) result = result.filter(item => !item.isDone)
 		if (focusMode.value) {

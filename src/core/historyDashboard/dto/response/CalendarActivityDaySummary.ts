@@ -2,6 +2,7 @@ import { CalendarActivityRoleSummary } from '@/core/historyDashboard/dto/respons
 import { DayType } from '@/_common/dto/enum/DayType.ts'
 import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { isTodayInUserZone } from '@/_common/composable/general/useUserClock.ts'
 
 export class CalendarActivityDaySummary {
 	constructor(
@@ -19,7 +20,9 @@ export class CalendarActivityDaySummary {
 	) {}
 
 	get isToday() {
-		return this.date === new Date().toISOString().slice(0, 10)
+		// `date` is a calendar day (`YYYY-MM-DD` off the server), compared against what day it is
+		// *now* — an instant read, so it must resolve in the user's zone, not UTC.
+		return isTodayInUserZone(this.date)
 	}
 
 	get isWeekend() {

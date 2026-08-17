@@ -452,6 +452,10 @@
 		return groups
 	})
 
+	// Deliberately browser-zone (C1 clock audit): these render `ProcessedWindow` Dates, which are a
+	// *mix* of real API instants and synthetic browser-local slot Dates built by `StackedBarsChart`.
+	// One clock for both is what keeps a column's label agreeing with its position; see the note on
+	// `dateToMinutesKey` there.
 	function formatDate(date: Date): string {
 		return `${date.getDate()} ${date.toLocaleString('en', { month: 'short' })}`
 	}

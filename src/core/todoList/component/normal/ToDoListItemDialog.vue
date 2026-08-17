@@ -105,7 +105,8 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { formatDateForApi, isSameDay, roundToNearestInterval } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatDateForApi, roundToNearestInterval } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone, minutesOfDayInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { VDateInput } from 'vuetify/labs/components'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import type { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
@@ -185,9 +186,12 @@
 	/** 09:00 by default, but never a time that has already passed when the due date is today. */
 	function defaultDueTime(date?: Date | null): Time {
 		const morning = new Time(9, 0)
-		if (!date || !isSameDay(date, new Date())) return morning
-		const now = new Date()
-		const nextQuarter = Time.fromMinutes(roundToNearestInterval(now.getHours() * 60 + now.getMinutes() + 15, 15))
+		// `date` is a calendar day out of the picker (browser-local fields ARE the value, so read it
+		// with `formatDateForApi`); "today" is an instant question, so it resolves in the user's zone.
+		if (!date || formatDateForApi(date) !== isoDateInUserZone()) return morning
+		// `now` is an instant: the suggested time is one the user silently accepts and we then persist,
+		// so it has to be the hour on the user's clock, not the browser's.
+		const nextQuarter = Time.fromMinutes(roundToNearestInterval(minutesOfDayInUserZone() + 15, 15))
 		return nextQuarter.getInMinutes > morning.getInMinutes && nextQuarter.hours < 24 ? nextQuarter : morning
 	}
 

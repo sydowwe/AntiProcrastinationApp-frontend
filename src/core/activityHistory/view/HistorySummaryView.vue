@@ -102,7 +102,7 @@
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
-	import { formatTimeDtoToUtcTimeDto } from '@/_common/utils/DateTimeHelper.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	const route = useRoute()
 	const router = useRouter()
@@ -191,18 +191,18 @@
 	const windowSizeOptionsMinutes = computed(() => windowSizeOptions.value.map(h => h * 60))
 
 	// --- Time from/to for chart: derived from stacked bars response ---
+	// `windowStart`/`windowEnd` are instants (B3 confirmed: the server always sends a `Z`-qualified
+	// UTC timestamp here), so the wall-clock hour they display has to be read in the user's zone.
 	const chartTimeFrom = computed(() => {
 		if (!stackedBarsData.value || stackedBarsData.value.windows.length === 0) return new Time(0, 0)
 		const first = stackedBarsData.value.windows[0]!
-		const d = parseDate(first.windowStart)
-		return Time.fromDate(d)
+		return timeInUserZone(parseDate(first.windowStart))
 	})
 
 	const chartTimeTo = computed(() => {
 		if (!stackedBarsData.value || stackedBarsData.value.windows.length === 0) return new Time(23, 59)
 		const last = stackedBarsData.value.windows[stackedBarsData.value.windows.length - 1]!
-		const d = parseDate(last.windowEnd)
-		return Time.fromDate(d)
+		return timeInUserZone(parseDate(last.windowEnd))
 	})
 
 	// --- Data ---
@@ -216,10 +216,10 @@
 	const summaryCardsLoading = ref(false)
 
 	// --- Map HistoryWindow[] → StackedBarsInputWindow[] ---
+	// windowStart/windowEnd always carry a `Z` (B3 confirmed) — the old `replace(' ', 'T')` fallback
+	// was never what made this parse; it was masking that assumption rather than proving it.
 	function parseDate(dateStr: string): Date {
-		const d = new Date(dateStr)
-		if (!isNaN(d.getTime())) return d
-		return new Date(dateStr.replace(' ', 'T'))
+		return new Date(dateStr)
 	}
 
 	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() => {
@@ -245,8 +245,10 @@
 					date.value,
 					rangeType.value,
 					selectedWindowSize.value,
-					formatTimeDtoToUtcTimeDto(windowStartTime.value),
-					formatTimeDtoToUtcTimeDto(windowEndTime.value),
+					// B3 confirmed: user-zone wall clock, both this endpoint and its `detail/` sibling
+					// (HistoryDetailView.vue:234) — sent as-is, no client-side UTC conversion.
+					windowStartTime.value,
+					windowEndTime.value,
 					endDate.value,
 					groupBy.value,
 				),

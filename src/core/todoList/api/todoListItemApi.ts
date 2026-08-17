@@ -5,7 +5,6 @@ import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemReq
 import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
 import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
-import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 export async function fetchTodoListItems(todoListId?: number | null): Promise<TodoListItemEntity[]> {
 	const response = await API.get('todo-list-item', { params: todoListId != null ? { todoListId } : {} })
@@ -22,10 +21,13 @@ export async function fetchDashboardTodoListItems(): Promise<TodoListItemEntity[
  * plus the catch mean a 404 today just leaves the recap card unrendered, not an error toast the user did
  * not ask for.
  */
-export async function fetchDailyRecap(date: Date): Promise<DailyRecap | null> {
+export async function fetchDailyRecap(isoDate: string): Promise<DailyRecap | null> {
 	try {
 		const { data } = await API.get('todo-list-item/daily-recap', {
-			params: { date: formatDateForApi(date) },
+			// Takes the `YYYY-MM-DD` calendar day already resolved by the caller, rather than a `Date`:
+			// "which day's recap" is an instant question and must be answered in the user's zone, and
+			// a `Date` parameter here invites `formatDateForApi(new Date())`, which answers it in the browser's.
+			params: { date: isoDate },
 			_silent: true,
 		})
 		return DailyRecap.fromJson(data)

@@ -299,6 +299,7 @@
 	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
@@ -536,16 +537,12 @@
 	const isRenegotiating = ref(false)
 
 	const overdueItems = computed(() => {
-		const today = startOfDayPlus(0)
+		// Local midnight of the *user's* today: "which day is it now" is an instant read, while
+		// `item.dueDate + 'T00:00:00'` is a calendar day — both end up as browser-local-field Dates,
+		// so they compare directly.
+		const today = startOfUserDayPlus(0)
 		return items.value.filter(item => !item.isDone && item.dueDate && new Date(item.dueDate + 'T00:00:00') < today)
 	})
-
-	function startOfDayPlus(days: number) {
-		const date = new Date()
-		date.setHours(0, 0, 0, 0)
-		date.setDate(date.getDate() + days)
-		return date
-	}
 
 	/**
 	 * Moves every past-due item to today (`days = 0`) or a week out (`days = 7`). Both are measured
@@ -556,7 +553,9 @@
 		const targets = overdueItems.value
 		if (targets.length === 0) return
 		const previous = targets.map(item => ({ id: item.id, request: ToDoListItemRequest.fromEntity(item) }))
-		const newDueDate = formatDateForApi(startOfDayPlus(days))
+		// Measured from the *user's* today, and persisted — a browser-zone midnight here writes the
+		// wrong due date for anyone whose profile zone differs from their device's.
+		const newDueDate = formatDateForApi(startOfUserDayPlus(days))
 		isRenegotiating.value = true
 		try {
 			await Promise.all(
