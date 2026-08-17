@@ -27,23 +27,36 @@
 				{{ item.rating }}/10
 			</VChip>
 		</template>
-		<template #actions="{ item }">
+		<!-- The source chip used to live in #actions, which overrode BasicTable's own edit/delete buttons
+		     and hid them. As a column it keeps those, and it can be clicked back to the row it came
+		     from — the same relationship the bucket list's "experienced" chip navigates in reverse. -->
+		<template #item.source="{ item }">
 			<VChip
-				v-if="(item as MemoryAnchor).hasBucketList"
+				v-if="item.hasBucketList"
 				size="x-small"
 				color="primaryOutline"
-				class="mr-1"
+				link
+				:title="$t('leisure.experienced.openSourceHint')"
+				@click="openSource(item, 'leisureBucketList')"
 			>
 				{{ $t('leisure.anchorSourceBucketList') }}
 			</VChip>
 			<VChip
-				v-else-if="(item as MemoryAnchor).hasBacklog && (item as MemoryAnchor).backlogIsOneTime"
+				v-else-if="item.hasBacklog && item.backlogIsOneTime"
 				size="x-small"
 				color="secondaryOutline"
-				class="mr-1"
+				link
+				:title="$t('leisure.experienced.openSourceHint')"
+				@click="openSource(item, 'leisureBacklog')"
 			>
 				{{ $t('leisure.anchorSourceBacklog') }}
 			</VChip>
+			<span
+				v-else
+				class="text-medium-emphasis"
+			>
+				—
+			</span>
 		</template>
 		<template #noData>
 			<div class="empty-state">
@@ -69,6 +82,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useRouter } from 'vue-router'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import MemoryAnchorForm from '@/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue'
@@ -93,6 +107,7 @@
 	const { deleteEntity } = useMemoryAnchorCrud()
 	const { openDialog } = useDialog()
 	const { t, locale } = useI18n()
+	const router = useRouter()
 
 	const monthFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }))
 
@@ -100,8 +115,14 @@
 		new TableColumn('periodKey', t('leisure.fields.anchorMonth')),
 		new TableColumn('activity.name', t('leisure.fields.activity')),
 		new TableColumn('rating', t('leisure.fields.rating')),
+		new TableColumn('source', t('leisure.fields.source'), false),
 		new TableColumn('highlightNote', t('leisure.fields.highlightNote'), false),
 	]
+
+	// Both destinations filter by activity name, which is the handle the two tables already share.
+	function openSource(row: MemoryAnchor, routeName: 'leisureBucketList' | 'leisureBacklog') {
+		void router.push({ name: routeName, query: { activityName: row.activity.name } })
+	}
 
 	function formatPeriod(row: MemoryAnchor) {
 		return monthFormatter.value.format(new Date(row.anchorYear, row.anchorMonth - 1, 1))

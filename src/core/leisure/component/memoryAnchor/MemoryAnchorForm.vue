@@ -2,7 +2,8 @@
 	<NewMemoryAnchorForm
 		ref="formRef"
 		v-model="request"
-		:lockActivity="!!entityToEdit"
+		:lockActivity="!!entityToEdit || presetActivityId != null"
+		:lockedActivityName="entityToEdit?.activity.name ?? presetActivityName"
 	/>
 </template>
 
@@ -14,7 +15,18 @@
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
 
-	const { entityToEdit = null } = defineProps<{ entityToEdit?: MemoryAnchor | null }>()
+	// `presetActivityId` is the "I did this" entry point: the activity is already known, so the only
+	// thing left between doing a thing and having recorded it is the rating and the note. The month and
+	// year come from MemoryAnchorRequest's own defaults, which are already "now".
+	const {
+		entityToEdit = null,
+		presetActivityId = null,
+		presetActivityName = '',
+	} = defineProps<{
+		entityToEdit?: MemoryAnchor | null
+		presetActivityId?: number | null
+		presetActivityName?: string
+	}>()
 
 	const dialogApi = useDialogApi<{ request: MemoryAnchorRequest; createdId?: number; idToEdit?: number }>()
 	const { create, update } = useMemoryAnchorCrud()
@@ -29,7 +41,7 @@
 					entityToEdit.highlightNote,
 					entityToEdit.rating,
 				)
-			: new MemoryAnchorRequest(),
+			: new MemoryAnchorRequest(presetActivityId ?? 0),
 	)
 
 	dialogApi.onConfirm(onConfirm)

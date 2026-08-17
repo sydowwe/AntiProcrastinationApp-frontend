@@ -4,8 +4,21 @@
 		class="d-flex flex-column ga-3"
 		@submit.prevent="validate"
 	>
+		<!-- Locked means the activity is already decided (an "I did this" click, or an edit). Showing it
+		     as a read-only field rather than a disabled autocomplete is not cosmetic: the eligible-activity
+		     list is not guaranteed to contain it — an already-anchored activity may well be excluded — and
+		     a disabled autocomplete with an unmatched id renders blank, leaving the user rating an
+		     experience the form never names. It also drops a round trip that decides nothing. -->
+		<VTextField
+			v-if="lockActivity"
+			:modelValue="lockedActivityName"
+			:label="$t('leisure.fields.activity')"
+			readonly
+			hideDetails
+			:clearable="false"
+		/>
 		<VAlert
-			v-if="!loading && eligibleActivities.length === 0"
+			v-else-if="!loading && eligibleActivities.length === 0"
 			type="info"
 			variant="tonal"
 			density="comfortable"
@@ -37,7 +50,6 @@
 			:loading
 			required
 			:rules="[requiredRule]"
-			:disabled="lockActivity"
 		/>
 		<div class="d-flex ga-3">
 			<VNumberInput
@@ -78,7 +90,11 @@
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
-	const { lockActivity = false } = defineProps<{ lockActivity?: boolean }>()
+	const { lockActivity = false, lockedActivityName = '' } = defineProps<{
+		lockActivity?: boolean
+		/** Shown instead of the picker when locked. */
+		lockedActivityName?: string
+	}>()
 	const model = defineModel<MemoryAnchorRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
@@ -86,9 +102,11 @@
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const eligibleActivities = ref<SelectOption[]>([])
-	const loading = ref(true)
+	const loading = ref(!lockActivity)
 
 	onMounted(async () => {
+		// Nothing to choose from when the activity is already decided.
+		if (lockActivity) return
 		eligibleActivities.value = await fetchAnchorEligibleActivities()
 		loading.value = false
 	})

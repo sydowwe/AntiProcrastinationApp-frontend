@@ -62,15 +62,25 @@
 						:label="$t('leisure.fields.requiresTravel')"
 						hideDetails
 					/>
+					<NullFalseTrueCheckbox
+						v-model="draft.isAnchored"
+						:label="$t('leisure.fields.experienced')"
+						hideDetails
+					/>
 				</template>
 			</FilterPanel>
 		</div>
+		<ExperiencedProgress
+			:done="experiencedDone"
+			:total="experiencedTotal"
+			:visible="experiencedVisible"
+		/>
 		<div class="flex-fill">
 			<BucketListLadder
 				v-if="viewMode === 'ladder'"
 				:items="ladderItems"
 				:loading="ladderLoading"
-				@onReload="loadLadder"
+				@onReload="reloadLadder"
 			/>
 			<BucketListTable
 				v-else
@@ -81,19 +91,20 @@
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
-				@onReload="reload"
+				@onReload="reloadAll"
 			/>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BucketListTable from '@/core/leisure/component/bucketList/BucketListTable.vue'
 	import BucketListLadder from '@/core/leisure/component/bucketList/BucketListLadder.vue'
+	import ExperiencedProgress from '@/core/leisure/component/ExperiencedProgress.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
@@ -104,6 +115,7 @@
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { bucketListFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
+	import { useExperiencedProgress } from '@/core/leisure/composable/useExperiencedProgress.ts'
 
 	const i18n = useI18n()
 	const { textChip, countChip, boolChip } = useLeisureFilterChips()
@@ -151,6 +163,37 @@
 		}
 	}
 
+	// Declared after the ladder state on purpose: the composable reads `items` immediately, so a
+	// computed closing over `ladderItems` has to be built once that ref exists.
+	//
+	// Its own crud instance, also on purpose: `useFetchFilteredTable` aborts its previous request, so
+	// sharing the table's instance would have the counts cancel the table's own fetch.
+	const { fetchFilteredTable: fetchCount } = useActivityBucketListProfileCrud()
+	const visibleRows = computed(() => (viewMode.value === 'ladder' ? ladderItems.value : items.value))
+	const {
+		done: experiencedDone,
+		total: experiencedTotal,
+		visible: experiencedVisible,
+		recount,
+	} = useExperiencedProgress({
+		fetch: fetchCount,
+		filter,
+		items: visibleRows,
+		cloneFilter: base => Object.assign(new ActivityBucketListProfileFilter(), base),
+	})
+
+	// Every reload is a change to the set the fraction is over — a new anchor, a new entry, a deleted
+	// one. The filter has not moved, so nothing else would trigger the recount.
+	function reloadAll() {
+		reload()
+		recount()
+	}
+
+	function reloadLadder() {
+		void loadLadder()
+		recount()
+	}
+
 	watch(viewMode, value => router.replace({ query: { ...route.query, view: value } }))
 	watch(
 		[viewMode, filter],
@@ -173,5 +216,6 @@
 				: null,
 		maxComfortZoneStep: () => null,
 		requiresTravel: boolChip('leisure.fields.requiresTravel', 'plane'),
+		isAnchored: boolChip('leisure.fields.experienced', 'circle-check'),
 	}
 </script>

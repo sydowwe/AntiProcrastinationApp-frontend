@@ -7,6 +7,7 @@ export class ActivityBucketListProfileFilter implements IFilterRequest {
 		public minComfortZoneStep: number | null = null,
 		public maxComfortZoneStep: number | null = null,
 		public requiresTravel: boolean | null = null,
+		public isAnchored: boolean | null = null,
 	) {}
 
 	hasAny(): boolean {
@@ -15,7 +16,8 @@ export class ActivityBucketListProfileFilter implements IFilterRequest {
 			!!this.experienceTypeIds?.length ||
 			this.minComfortZoneStep != null ||
 			this.maxComfortZoneStep != null ||
-			this.requiresTravel != null
+			this.requiresTravel != null ||
+			this.isAnchored != null
 		)
 	}
 }

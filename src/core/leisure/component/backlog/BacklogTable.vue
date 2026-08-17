@@ -15,7 +15,20 @@
 		@onDelete="onDelete"
 	>
 		<template #item.activity.name="{ item }">
-			<ActivityNameCell :activity="item.activity" />
+			<ActivityNameCell
+				:activity="item.activity"
+				:class="{ experienced: item.isAnchored === true }"
+			/>
+		</template>
+		<!-- Only a one-time entry can ever be "done"; a repeatable one shows an em dash, not a button. -->
+		<template #item.isAnchored="{ item }">
+			<ExperiencedCell
+				:activityId="item.activityId"
+				:activityName="item.activity.name"
+				:isAnchored="item.isAnchored"
+				:eligible="item.isOneTime"
+				@anchored="emit('onReload')"
+			/>
 		</template>
 		<template #item.isOneTime="{ item }">
 			<VIcon
@@ -64,6 +77,7 @@
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
+	import ExperiencedCell from '@/core/leisure/component/ExperiencedCell.vue'
 	import BacklogProfileForm from '@/core/leisure/component/backlog/BacklogProfileForm.vue'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -95,6 +109,8 @@
 		new TableColumn('expectedCostTier', t('leisure.fields.expectedCostTier'), false),
 		new TableColumn('durationMinutes', t('leisure.fields.durationMinutes')),
 		new TableColumn('isOneTime', t('leisure.fields.isOneTime'), false),
+		// Not sortable until the API accepts `isAnchored` as a sort key — see BucketListTable.
+		new TableColumn('isAnchored', t('leisure.fields.experienced'), false),
 	]
 
 	async function openCreateDialog() {
@@ -121,6 +137,10 @@
 </script>
 
 <style scoped>
+	.experienced {
+		opacity: 0.6;
+	}
+
 	.empty-state {
 		display: flex;
 		flex-direction: column;

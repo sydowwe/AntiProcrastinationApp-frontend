@@ -11,6 +11,11 @@ export class ActivityBucketListProfile implements IIdResponse {
 		public requiresTravel: boolean,
 		public financialGoal: number | null,
 		public inspirationSource: string,
+		// Completion, i.e. "this experience has been had and anchored". `null` means the API does not
+		// carry the field yet (see prompts/leisure/backend/B1-backend.md) — every completion affordance
+		// treats null as "unknown" and stays out of the way rather than claiming the item is undone.
+		public isAnchored: boolean | null,
+		public memoryAnchorId: number | null,
 	) {}
 
 	get id(): number {
@@ -26,6 +31,8 @@ export class ActivityBucketListProfile implements IIdResponse {
 			requiresTravel = false,
 			financialGoal = null,
 			inspirationSource = '',
+			isAnchored = null,
+			memoryAnchorId = null,
 		} = object
 		return new ActivityBucketListProfile(
 			activityId,
@@ -35,6 +42,8 @@ export class ActivityBucketListProfile implements IIdResponse {
 			requiresTravel,
 			financialGoal,
 			inspirationSource,
+			isAnchored,
+			memoryAnchorId,
 		)
 	}
 

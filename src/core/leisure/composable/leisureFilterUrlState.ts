@@ -41,6 +41,7 @@ export function backlogFilterUrlState(): TableUrlStateOptions<ActivityBacklogPro
 			minParticipants: encodeNumber(filter.minParticipants),
 			maxParticipants: encodeNumber(filter.maxParticipants),
 			isOneTime: encodeTriState(filter.isOneTime),
+			isAnchored: encodeTriState(filter.isAnchored),
 		}),
 		paramsToFilter: params =>
 			new ActivityBacklogProfileFilter(
@@ -54,6 +55,7 @@ export function backlogFilterUrlState(): TableUrlStateOptions<ActivityBacklogPro
 				decodeNumber(params.minParticipants),
 				decodeNumber(params.maxParticipants),
 				decodeTriState(params.isOneTime),
+				decodeTriState(params.isAnchored),
 			),
 	}
 }
@@ -67,6 +69,7 @@ export function bucketListFilterUrlState(): TableUrlStateOptions<ActivityBucketL
 			minComfortZoneStep: encodeNumber(filter.minComfortZoneStep),
 			maxComfortZoneStep: encodeNumber(filter.maxComfortZoneStep),
 			requiresTravel: encodeTriState(filter.requiresTravel),
+			isAnchored: encodeTriState(filter.isAnchored),
 		}),
 		paramsToFilter: params =>
 			new ActivityBucketListProfileFilter(
@@ -75,6 +78,7 @@ export function bucketListFilterUrlState(): TableUrlStateOptions<ActivityBucketL
 				decodeNumber(params.minComfortZoneStep),
 				decodeNumber(params.maxComfortZoneStep),
 				decodeTriState(params.requiresTravel),
+				decodeTriState(params.isAnchored),
 			),
 	}
 }

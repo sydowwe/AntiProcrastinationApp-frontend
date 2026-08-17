@@ -98,6 +98,7 @@
 								:key="item.activityId"
 								variant="outlined"
 								class="rung-card"
+								:class="{ experienced: item.isAnchored === true }"
 								@click="onEdit(item)"
 							>
 								<VCardText class="d-flex justify-space-between align-center ga-2 py-2">
@@ -108,6 +109,16 @@
 											class="text-caption text-medium-emphasis"
 										>
 											{{ item.experienceType.text }}
+										</span>
+										<!-- The card itself opens the edit form, so the completion affordance must not
+										     bubble into it. -->
+										<span @click.stop>
+											<ExperiencedCell
+												:activityId="item.activityId"
+												:activityName="item.activity.name"
+												:isAnchored="item.isAnchored"
+												@anchored="emit('onReload')"
+											/>
 										</span>
 										<VIconBtn
 											icon="trash"
@@ -140,6 +151,7 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
+	import ExperiencedCell from '@/core/leisure/component/ExperiencedCell.vue'
 	import { comfortZoneColor } from '@/core/leisure/component/bucketList/comfortZoneColor.ts'
 	import BucketListProfileForm from '@/core/leisure/component/bucketList/BucketListProfileForm.vue'
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
@@ -162,14 +174,20 @@
 		for (const item of items) {
 			map.get(item.comfortZoneStep)?.push(item)
 		}
+		// Done entries settle to the bottom of their rung rather than being removed — the list's value is
+		// that it accumulates evidence. Safe to sort here and nowhere else: the ladder holds every
+		// filtered row at once, so unlike the paged table it is not sorting a window.
+		for (const rung of map.values()) {
+			rung.sort((a, b) => Number(a.isAnchored === true) - Number(b.isAnchored === true))
+		}
 		return map
 	})
 
-	// No "experienced" field exists on this DTO yet (that lands with the bucket-list -> memory-anchor
-	// loop), so every item counts as not-yet-had — the lowest rung with anything on it is the next step.
+	// The lowest rung still holding something undone is the next step. `isAnchored === null` means the
+	// API does not carry completion yet, so it counts as undone and the nudge behaves as it always did.
 	const nudgeItem = computed<ActivityBucketListProfile | null>(() => {
 		for (const step of RUNG_ORDER) {
-			const first = grouped.value.get(step)?.[0]
+			const first = grouped.value.get(step)?.find(item => item.isAnchored !== true)
 			if (first) return first
 		}
 		return null
@@ -263,6 +281,10 @@
 
 	.rung-card {
 		cursor: pointer;
+	}
+
+	.rung-card.experienced :deep(.v-card-text) {
+		opacity: 0.7;
 	}
 
 	.rung-empty {

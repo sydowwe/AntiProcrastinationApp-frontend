@@ -32,6 +32,17 @@ const leisure = {
 			rating: `Rating`,
 			activity: `Activity`,
 			source: `Source`,
+			experienced: `Experienced`,
+		},
+		experienced: {
+			iDidThis: `I did this`,
+			done: `Experienced`,
+			progress: `{done} of {total} experienced`,
+			progressOneTime: `{done} of {total} one-time things experienced`,
+			captureTitle: `Write it down`,
+			captureConfirm: `Save the moment`,
+			openAnchorHint: `Open the memory anchor`,
+			openSourceHint: `Open where this came from`,
 		},
 		viewMode: {
 			board: `Board`,

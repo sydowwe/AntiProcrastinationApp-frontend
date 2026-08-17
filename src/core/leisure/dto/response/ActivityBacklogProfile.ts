@@ -17,6 +17,10 @@ export class ActivityBacklogProfile implements IIdResponse {
 		public expectedCostTier: LookupResponse,
 		public durationMinutes: number,
 		public isOneTime: boolean,
+		// Only meaningful while `isOneTime` — a repeatable activity is never "done". `null` means the
+		// API does not carry the field yet (see prompts/leisure/backend/B1-backend.md).
+		public isAnchored: boolean | null,
+		public memoryAnchorId: number | null,
 	) {}
 
 	get id(): number {
@@ -36,6 +40,8 @@ export class ActivityBacklogProfile implements IIdResponse {
 			expectedCostTier = {},
 			durationMinutes = 0,
 			isOneTime = false,
+			isAnchored = null,
+			memoryAnchorId = null,
 		} = object
 		return new ActivityBacklogProfile(
 			activityId,
@@ -49,6 +55,8 @@ export class ActivityBacklogProfile implements IIdResponse {
 			LookupResponse.fromJson(expectedCostTier),
 			durationMinutes,
 			isOneTime,
+			isAnchored,
+			memoryAnchorId,
 		)
 	}
 

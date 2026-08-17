@@ -13,8 +13,13 @@
 		@onEdit="onEdit"
 		@onDelete="onDelete"
 	>
+		<!-- An experienced row reads as settled rather than struck through: this list's value is that it
+		     accumulates evidence, so a done entry is an achievement, not a deletion. -->
 		<template #item.activity.name="{ item }">
-			<ActivityNameCell :activity="item.activity" />
+			<ActivityNameCell
+				:activity="item.activity"
+				:class="{ experienced: item.isAnchored === true }"
+			/>
 		</template>
 		<template #item.experienceType="{ item }">
 			<span>{{ item.experienceType?.text ?? '—' }}</span>
@@ -33,6 +38,14 @@
 			>
 				{{ item.comfortZoneStep }}/5
 			</VChip>
+		</template>
+		<template #item.isAnchored="{ item }">
+			<ExperiencedCell
+				:activityId="item.activityId"
+				:activityName="item.activity.name"
+				:isAnchored="item.isAnchored"
+				@anchored="emit('onReload')"
+			/>
 		</template>
 		<template #noData>
 			<div class="empty-state">
@@ -59,6 +72,7 @@
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
+	import ExperiencedCell from '@/core/leisure/component/ExperiencedCell.vue'
 	import { comfortZoneColor } from '@/core/leisure/component/bucketList/comfortZoneColor.ts'
 	import BucketListProfileForm from '@/core/leisure/component/bucketList/BucketListProfileForm.vue'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
@@ -85,6 +99,11 @@
 
 	const columns: TableColumn[] = [
 		new TableColumn('activity.name', t('leisure.fields.activity')),
+		// Not sortable yet, on purpose. `isAnchored` is not a sort key the API accepts until the B1
+		// backend ask lands, and an unknown key can fail the whole page rather than degrade — a clickable
+		// header would hand the user that failure. Flip this to sortable, and make `isAnchored asc` the
+		// default, in the same change that turns the key on.
+		new TableColumn('isAnchored', t('leisure.fields.experienced'), false),
 		new TableColumn('experienceType', t('leisure.fields.experienceType'), false),
 		new TableColumn('comfortZoneStep', t('leisure.fields.comfortZoneStep')),
 		new TableColumn('requiresTravel', t('leisure.fields.requiresTravel'), false),
@@ -116,6 +135,10 @@
 </script>
 
 <style scoped>
+	.experienced {
+		opacity: 0.6;
+	}
+
 	.empty-state {
 		display: flex;
 		flex-direction: column;

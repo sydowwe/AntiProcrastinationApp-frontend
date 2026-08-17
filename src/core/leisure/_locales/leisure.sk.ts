@@ -32,6 +32,17 @@ const leisure = {
 			rating: `Hodnotenie`,
 			activity: `Aktivita`,
 			source: `Zdroj`,
+			experienced: `Zažité`,
+		},
+		experienced: {
+			iDidThis: `Zažil som to`,
+			done: `Zažité`,
+			progress: `Zažité: {done} zo {total}`,
+			progressOneTime: `Zažité: {done} z {total} jednorazových`,
+			captureTitle: `Zapíšte si to`,
+			captureConfirm: `Uložiť moment`,
+			openAnchorHint: `Zobraziť pamätný moment`,
+			openSourceHint: `Zobraziť, odkiaľ to prišlo`,
 		},
 		viewMode: {
 			board: `Nástenka`,

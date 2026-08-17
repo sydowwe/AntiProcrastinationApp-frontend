@@ -37,6 +37,7 @@ describe('leisure filter URL round-trip', () => {
 			2,
 			6,
 			true,
+			false,
 		)
 		const query = toQuery(filterToParams(filter))
 		expect(query).toEqual({
@@ -50,6 +51,7 @@ describe('leisure filter URL round-trip', () => {
 			minParticipants: '2',
 			maxParticipants: '6',
 			isOneTime: 'true',
+			isAnchored: 'false',
 		})
 		expect(paramsToFilter(query)).toEqual(filter)
 	})
@@ -90,7 +92,7 @@ describe('leisure filter URL round-trip', () => {
 
 	it('bucket list: min/max and tri-state', () => {
 		const { filterToParams, paramsToFilter } = bucketListFilterUrlState()
-		const filter = new ActivityBucketListProfileFilter('surf', [4], 1, 5, false)
+		const filter = new ActivityBucketListProfileFilter('surf', [4], 1, 5, false, true)
 		const query = toQuery(filterToParams(filter))
 		expect(query).toEqual({
 			activityName: 'surf',
@@ -98,12 +100,24 @@ describe('leisure filter URL round-trip', () => {
 			minComfortZoneStep: '1',
 			maxComfortZoneStep: '5',
 			requiresTravel: 'false',
+			isAnchored: 'true',
 		})
 		expect(paramsToFilter(query)).toEqual(filter)
 		// 0 is a real bound, not "absent"
 		expect(toQuery(filterToParams(new ActivityBucketListProfileFilter(null, null, 0, null, null)))).toEqual({
 			minComfortZoneStep: '0',
 		})
+	})
+
+	it('bucket list: completion is tri-state, and "not filtered" stays out of the URL', () => {
+		const { filterToParams, paramsToFilter } = bucketListFilterUrlState()
+		// `false` is the useful half — "what have I not done yet" — so it must survive a reload.
+		const undone = new ActivityBucketListProfileFilter()
+		undone.isAnchored = false
+		expect(toQuery(filterToParams(undone))).toEqual({ isAnchored: 'false' })
+		expect(paramsToFilter({ isAnchored: 'false' }).isAnchored).toBe(false)
+		expect(paramsToFilter({}).isAnchored).toBeNull()
+		expect(filterToParams(new ActivityBucketListProfileFilter()).isAnchored).toBe('')
 	})
 
 	it('project: two enum arrays plus tri-state', () => {

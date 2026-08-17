@@ -65,9 +65,22 @@
 						:label="$t('leisure.fields.isOneTime')"
 						hideDetails
 					/>
+					<NullFalseTrueCheckbox
+						v-model="draft.isAnchored"
+						:label="$t('leisure.fields.experienced')"
+						hideDetails
+					/>
 				</template>
 			</FilterPanel>
 		</div>
+		<!-- Scoped to one-time entries: a repeatable activity is never "done", so counting it would make
+		     the denominator meaningless. -->
+		<ExperiencedProgress
+			:done="experiencedDone"
+			:total="experiencedTotal"
+			:visible="experiencedVisible"
+			labelKey="leisure.experienced.progressOneTime"
+		/>
 		<div class="flex-fill">
 			<BacklogTable
 				:items
@@ -77,7 +90,7 @@
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
-				@onReload="reload"
+				@onReload="reloadAll"
 			/>
 		</div>
 	</div>
@@ -89,6 +102,7 @@
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BacklogTable from '@/core/leisure/component/backlog/BacklogTable.vue'
 	import EnumMultiSelect from '@/core/leisure/component/EnumMultiSelect.vue'
+	import ExperiencedProgress from '@/core/leisure/component/ExperiencedProgress.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
@@ -105,6 +119,7 @@
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { backlogFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
+	import { useExperiencedProgress } from '@/core/leisure/composable/useExperiencedProgress.ts'
 
 	const i18n = useI18n()
 	const { textChip, countChip, boolChip } = useLeisureFilterChips()
@@ -118,6 +133,34 @@
 		fetch: fetchFilteredTable,
 		...backlogFilterUrlState(),
 	})
+
+	// Its own crud instance on purpose: `useFetchFilteredTable` aborts its previous request, so sharing
+	// the table's instance would have the counts cancel the table's own fetch.
+	const { fetchFilteredTable: fetchCount } = useActivityBacklogProfileCrud()
+	const {
+		done: experiencedDone,
+		total: experiencedTotal,
+		visible: experiencedVisible,
+		recount,
+	} = useExperiencedProgress({
+		fetch: fetchCount,
+		filter,
+		items,
+		cloneFilter: base => Object.assign(new ActivityBacklogProfileFilter(), base),
+		scopeFilter: copy => {
+			copy.isOneTime = true
+		},
+		// Forcing `isOneTime` onto the copy would contradict a user who asked for the repeatable half,
+		// so the readout stands down instead of reporting a fraction of a set they are not looking at.
+		applicable: current => current.isAnchored == null && current.isOneTime !== false,
+	})
+
+	// Every reload is a change to the set the fraction is over — a new anchor, a new entry, a deleted
+	// one. The filter has not moved, so nothing else would trigger the recount.
+	function reloadAll() {
+		reload()
+		recount()
+	}
 
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
 	const { fetchAll: fetchWeatherDependencies } = useActivityWeatherDependencyApi()
@@ -146,5 +189,6 @@
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
 		isOneTime: boolChip('leisure.fields.isOneTime', 'star', 'rotate'),
+		isAnchored: boolChip('leisure.fields.experienced', 'circle-check'),
 	}
 </script>
