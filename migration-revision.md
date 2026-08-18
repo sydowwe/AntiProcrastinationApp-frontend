@@ -30,6 +30,13 @@ for so long.
   2026-08-18. This line read 76 and CLAUDE.md still says 72; both were stale — re-measure before
   quoting it.)
 - ~~**The framework never hydrates the user on the login path**~~ — **resolved, see R18.**
+- **The framework's registration form links the terms to a path nothing routes.**
+  `_common/modules/user/view/RegistrationView.vue:41` hardcodes `to="/terms-and-conditions"`, which
+  is in neither the framework's `userRoutes` nor any app route table — the framework's own
+  `TermsAndConditionsView` is deliberately unrouted. The link was dead on the one screen that asks
+  the user to *agree* to the document, and it links no privacy policy at all. Workaround kept here:
+  `src/core/user/user.routes.ts` gives `/legal/terms` an `alias: '/terms-and-conditions'`. Ask:
+  `prompts/user/framework/F4-registration-terms-link.md`.
 ---
 
 ### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**

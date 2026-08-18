@@ -5,8 +5,8 @@
 			<VChip size="small">v{{ appVersion }}</VChip>
 		</div>
 		<div class="d-flex ga-3 flex-wrap">
-			<a href="/legal/terms">{{ i18n.t('user.termsOfService') }}</a>
-			<a href="/legal/privacy">{{ i18n.t('user.privacyPolicy') }}</a>
+			<RouterLink :to="{ name: LEGAL_ROUTE_NAMES.terms }">{{ i18n.t('user.termsOfService') }}</RouterLink>
+			<RouterLink :to="{ name: LEGAL_ROUTE_NAMES.privacy }">{{ i18n.t('user.privacyPolicy') }}</RouterLink>
 			<a :href="supportMailto">{{ i18n.t('user.contactSupport') }}</a>
 		</div>
 	</SettingsSection>
@@ -15,14 +15,14 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import SettingsSection from '@/core/user/component/settings/SettingsSection.vue'
+	import { LEGAL_ROUTE_NAMES } from '@/core/user/component/legal/legalDocuments.ts'
+	import { useSupportContact } from '@/core/user/composable/useSupportContact.ts'
 
 	const i18n = useI18n()
+	const { buildMailto } = useSupportContact()
 	const appVersion = import.meta.env.VITE_APP_VERSION
-	const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || 'support@antiprocrastinationapp.dev'
 
-	const supportMailto = computed(() => {
-		const subject = i18n.t('user.contactSupportSubject', { version: appVersion })
-		const body = i18n.t('user.contactSupportBody')
-		return `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-	})
+	const supportMailto = computed(() =>
+		buildMailto(i18n.t('user.contactSupportSubject', { version: appVersion }), i18n.t('user.contactSupportBody')),
+	)
 </script>

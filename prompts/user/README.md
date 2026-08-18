@@ -44,7 +44,8 @@ Plus two framework asks that no prompt will reach, written up front:
 [F1 — 2FA recovery codes are discarded ⭐](framework/F1-2fa-recovery-codes.md) and
 [F2 — the timezone setting does nothing](framework/F2-timezone-preference.md).
 [F3 — signing in does not fetch the user](framework/F3-hydrate-on-login.md) was written by U1, as
-planned.
+planned, and [F4 — the registration form's terms link is dead](framework/F4-registration-terms-link.md)
+by U5, which walked into it.
 
 ## The state of things
 
