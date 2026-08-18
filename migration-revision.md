@@ -34,6 +34,7 @@ for so long.
   see R19.**
 - ~~**`CalendarGrid` ignores `firstDayOfWeek` and stays hardcoded to ISO/Monday weeks**~~ —
   **resolved, see R20.**
+- ~~**Account deletion confirms identity, never intent**~~ — **resolved, see R21.**
 ---
 
 ### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**
@@ -898,3 +899,49 @@ from `isoDateInUserZone()`, and walking back to the week start is zone-independe
 **Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
 touched file), `npm run lint` 0 errors / 3 known warnings. **Not verified at runtime** — neither
 calendar was opened in a browser with the preference set to Sunday.
+
+---
+
+### R21. Account deletion asks for intent before identity (2026-08-18)
+
+Closes **F6** (`prompts/user/framework/F6-delete-account-consent.md`). The framework's
+`deleteAccount()` went straight to `VerifyUserForm`, so the only question ever asked was "are you
+you" — an autofilled password or a live 2FA session let a mis-click delete the account outright,
+with nothing said about what it destroys. Every other consequential delete in this app confirms
+(`useDeleteConfirmation.ts`); the least reversible one did not.
+
+Framework change, made in `src/_common`, defaulting so no other consumer has to act:
+
+- `_common/modules/user/component/settings/SecuritySection.vue` — `deleteAccount()` is now `async`
+  and awaits `useDialog().confirm()` before `openVerifyDialog('/user/delete-account')`. New optional
+  prop `deleteAccountWarning?: string` supplies the text; unset it falls back to the new generic
+  `user.deleteAccountWarning` locale string. The 2FA toggle, the QR reset and the e-mail change keep
+  their single-step flow — only the irreversible path gained a step.
+- `_common/modules/user/view/UserSettingsView.vue` — forwards the same optional prop, so a host app
+  sets it once on the view rather than reaching into the section.
+- `_common/modules/user/_locales/user.{sk,en}.ts` — `deleteAccountWarning`, framework-generic
+  wording with no app vocabulary in it.
+- `docs/modules/user.md` — new "Account deletion asks twice" section, updated in the same submodule
+  commit.
+
+A **prop, not a slot**: the confirm dialog renders `text` as a plain centered span (`MyDialog.vue`),
+so markup would not survive anyway. The itemised list of what is destroyed — and the deletion
+summary counts from B6 — stay on `DangerZoneSection`, which is the richer, scrollable version of the
+same warning.
+
+**App-side wiring:** `core/user/view/UserSettingsView.vue` passes
+`user.dangerZone.deleteWarning` (new key in both locale files) — one paragraph naming the same
+categories the card itemises. The duplication is deliberate: the card can be scrolled past, the
+dialog cannot.
+
+**Deleted here:** nothing. F6 predicted `DangerZoneSection` would shrink to the export
+recommendation; it has since grown the B6 deletion summary and is now the on-page counterpart to the
+dialog rather than a stand-in for it. `useDataExport.ts` stays, shared with `DataExportSection`.
+
+**No backend change.**
+
+**Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
+touched file — the one `core/user` error is `PreferencesSection.vue`, untouched and pre-existing),
+`npm run lint` 0 errors / 3 known warnings. **Not verified at runtime** — the delete flow was not
+exercised in a browser, for obvious reasons; the confirm-cancel path in particular has not been
+clicked.

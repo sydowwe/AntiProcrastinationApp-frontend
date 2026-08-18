@@ -23,6 +23,44 @@ const user = {
 		exportDataDescription: `Stiahnuť dáta účtu vo formáte JSON. Export obsahuje vaše zoznamy, plány, šablóny a záznamy o aktivite.`,
 		exportSuccess: `Export úspešne stiahnutý`,
 		exportFailed: `Export dát zlyhal`,
+		// Danger zone — the app's own warning in front of the framework's delete-account flow, which
+		// asks only for identity, not for consent. See `prompts/user/A2-deletion-cliff.md`.
+		dangerZone: {
+			title: `Nebezpečná zóna`,
+			intro: `Vymazanie účtu natrvalo odstráni všetky vaše dáta v tejto aplikácii, vrátane:`,
+			destroys: [
+				`histórie aktivít a odsledovaného času`,
+				`plánov dní a šablón`,
+				`zoznamov úloh a ich položiek`,
+				`voľnočasových položiek — zoznamu túžob, projektov a spomienok`,
+				`prepojenia s Google Calendar`,
+			],
+			irreversible: `Táto operácia sa nedá vrátiť späť.`,
+			exportFirst: `Kým vymažete účet, stiahnite si kópiu svojich dát.`,
+			whereToDelete: `Účet vymažete tlačidlom „Vymazať účet“ v karte Bezpečnosť vyššie.`,
+			// Odovzdáva sa frameworku ako `deleteAccountWarning` — text potvrdenia zámeru, ktoré sa
+			// pýta pred overením identity. Dialóg ho vykresľuje ako obyčajný text, takže žiadny
+			// zoznam ani formátovanie; zoznam zostáva na karte vyššie.
+			deleteWarning: `Vymazanie účtu je nezvratné. Natrvalo sa odstráni celá história aktivít a odsledovaný čas, plány dní a šablóny, zoznamy úloh a rutiny, voľnočasové položky aj prepojenie s Google Calendar. Dáta sa nedajú obnoviť — ak si ich chcete nechať, najprv si ich vyexportujte.`,
+			// Counts from GET /user/account-deletion-summary — read outside a transaction on the
+			// server, so it is a warning, not a receipt. See `prompts/user/backend/B6-account-summary.md`.
+			summary: {
+				showNumbers: `Zobraziť presné čísla`,
+				hideNumbers: `Skryť presné čísla`,
+				loadFailed: `Prehľad sa nepodarilo načítať.`,
+				automaticTracking: `{count} záznamov automatického sledovania aktivity (počítač, telefón, prehliadač)`,
+				trackedSessions: `{count} ručne sledovaných sedení`,
+				trackedSpan: `od {from} do {to} ({days} dní)`,
+				dayPlans: `{count} plánov dní s {taskCount} úlohami spolu`,
+				dayTemplates: `{count} šablón dní`,
+				todoLists: `{count} zoznamov úloh s {itemCount} položkami spolu`,
+				routines: `{count} rutín`,
+				leisureItems: `{count} voľnočasových položiek`,
+				memoryAnchors: `{count} spomienok`,
+				activities: `{count} definovaných aktivít`,
+				googleCalendarLinked: `Prepojenie s Google Calendar`,
+			},
+		},
 		// About
 		about: `O aplikácii`,
 		appVersion: `Verzia aplikácie`,

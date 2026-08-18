@@ -18,6 +18,44 @@ const user = {
 		exportDataDescription: `Download your account data as JSON. The export covers your lists, plans, templates and activity records.`,
 		exportSuccess: `Export downloaded successfully`,
 		exportFailed: `Failed to export data`,
+		// Danger zone — the app's own warning in front of the framework's delete-account flow, which
+		// asks only for identity, not for consent. See `prompts/user/A2-deletion-cliff.md`.
+		dangerZone: {
+			title: `Danger zone`,
+			intro: `Deleting your account permanently removes all your data in this app, including:`,
+			destroys: [
+				`activity history and tracked time`,
+				`day plans and templates`,
+				`to-do lists and their items`,
+				`leisure items — your bucket list, projects and memories`,
+				`the Google Calendar connection`,
+			],
+			irreversible: `This action cannot be undone.`,
+			exportFirst: `Before you delete your account, download a copy of your data.`,
+			whereToDelete: `Delete your account with the "Delete account" button in the Security card above.`,
+			// Passed to the framework as `deleteAccountWarning` — the intent confirmation shown ahead
+			// of the identity check. The dialog renders it as plain text, so no list and no markup;
+			// the itemised list stays on the card above.
+			deleteWarning: `Deleting your account is irreversible. It permanently removes your whole activity history and tracked time, day plans and templates, to-do lists and routines, leisure items, and the Google Calendar connection. The data cannot be restored — export it first if you want to keep it.`,
+			// Counts from GET /user/account-deletion-summary — read outside a transaction on the
+			// server, so it is a warning, not a receipt. See `prompts/user/backend/B6-account-summary.md`.
+			summary: {
+				showNumbers: `Show exact numbers`,
+				hideNumbers: `Hide exact numbers`,
+				loadFailed: `Could not load the summary.`,
+				automaticTracking: `{count} automatic activity-tracking entries (desktop, mobile, browser)`,
+				trackedSessions: `{count} manually tracked sessions`,
+				trackedSpan: `from {from} to {to} ({days} days)`,
+				dayPlans: `{count} day plans with {taskCount} tasks total`,
+				dayTemplates: `{count} day templates`,
+				todoLists: `{count} to-do lists with {itemCount} items total`,
+				routines: `{count} routines`,
+				leisureItems: `{count} leisure items`,
+				memoryAnchors: `{count} memories`,
+				activities: `{count} defined activities`,
+				googleCalendarLinked: `Google Calendar connection`,
+			},
+		},
 		// About
 		about: `About`,
 		appVersion: `App version`,
