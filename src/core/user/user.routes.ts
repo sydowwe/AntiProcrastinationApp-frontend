@@ -11,6 +11,10 @@ import PrivacyPolicyView from '@/core/user/view/PrivacyPolicyView.vue'
 // `TermsAndConditionsView` — that view's copy is placeholder text baked into its template (not
 // locale-driven), so it cannot be reused without editing the submodule. Both are `public` so they
 // are reachable before registration.
+//
+// The framework's registration checkbox links to both by route *name*, which `main.ts` hands it
+// through `installFramework({ legalRoutes })` — so renaming a route here breaks that link, while
+// changing a path does not.
 export const appUserRoutes: RouteRecordRaw[] = [
 	{
 		path: '/user/settings',
@@ -21,13 +25,6 @@ export const appUserRoutes: RouteRecordRaw[] = [
 		path: '/legal/terms',
 		name: 'legalTerms',
 		component: TermsView,
-		// The framework's `RegistrationView.vue:41` hardcodes `<RouterLink to="/terms-and-conditions">`
-		// on the "I agree to the terms" checkbox, and nothing routes that path — the framework's own
-		// `TermsAndConditionsView` is deliberately unrouted. The link was therefore dead on the one
-		// screen where the terms legally have to be readable *before* the user agrees to them. The
-		// alias makes it resolve here without touching the submodule; see
-		// `prompts/user/framework/F4-registration-terms-link.md` for the upstream ask.
-		alias: '/terms-and-conditions',
 		meta: { public: true },
 	},
 	{

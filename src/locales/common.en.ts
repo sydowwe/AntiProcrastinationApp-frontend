@@ -262,6 +262,8 @@ const common = {
 		// Used by the framework's TableHeaderComposable.
 		actions: `Actions`,
 		or: `Or`,
+		// Joins the two legal links in the framework's registration checkbox.
+		and: `and`,
 		please: `Please`,
 		close: `Close`,
 		create: `Create`,

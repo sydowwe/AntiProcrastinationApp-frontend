@@ -34,6 +34,12 @@ installFramework(app, {
 	// user whose persisted store says authenticated. Without it their preferences are a session old
 	// — and on a first load in a new browser profile, constructor defaults.
 	hydrateOnBoot: true,
+	// The framework's registration checkbox links these; the routes are this app's (see
+	// `core/user/user.routes.ts`). By name, not by path, so the paths stay free to change.
+	legalRoutes: {
+		terms: { name: 'legalTerms' },
+		privacy: { name: 'legalPrivacy' },
+	},
 	// Only `main` — the `customer` and `system` trees are for multi-tenant/admin apps and stay empty
 	// here, which also keeps their section dividers and subheaders out of the sidebar.
 	navTrees: { main: navItems },

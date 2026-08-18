@@ -30,13 +30,14 @@ for so long.
   2026-08-18. This line read 76 and CLAUDE.md still says 72; both were stale — re-measure before
   quoting it.)
 - ~~**The framework never hydrates the user on the login path**~~ — **resolved, see R18.**
-- **The framework's registration form links the terms to a path nothing routes.**
-  `_common/modules/user/view/RegistrationView.vue:41` hardcodes `to="/terms-and-conditions"`, which
-  is in neither the framework's `userRoutes` nor any app route table — the framework's own
-  `TermsAndConditionsView` is deliberately unrouted. The link was dead on the one screen that asks
-  the user to *agree* to the document, and it links no privacy policy at all. Workaround kept here:
-  `src/core/user/user.routes.ts` gives `/legal/terms` an `alias: '/terms-and-conditions'`. Ask:
-  `prompts/user/framework/F4-registration-terms-link.md`.
+- ~~**The framework's registration form links the terms to a path nothing routes**~~ — **resolved,
+  see R19.**
+- **`CalendarGrid` ignores `firstDayOfWeek` and stays hardcoded to ISO/Monday weeks.** The
+  preference now has a working control (`prompts/user/P2-first-day-of-week.md`), but
+  `_common/component/calendar/CalendarGrid.vue` computes rows with `getISOWeekStart` /
+  `getISOWeekEnd`, which have no non-ISO variant. Workaround kept here:
+  `core/todoList/composable/useRoutineWeeklyReview.ts` hand-rolls its own week-start arithmetic
+  rather than using `DateTimeHelper`. Ask: `prompts/user/framework/F5-calendar-week-start.md`.
 ---
 
 ### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**
@@ -831,3 +832,38 @@ settings page has always populated them.
 touched file), `npm run lint` 0 errors / 3 known warnings, `npx vite build` clean. **Not verified at
 runtime** — hydration
 needs a backend and nothing here was observed in a browser.
+
+---
+
+### R19. Registration links terms and privacy through app-registered routes (2026-08-18)
+
+Resolves `prompts/user/framework/F4-registration-terms-link.md`. Framework change, made in
+`src/_common`.
+
+**The gap.** `RegistrationView.vue:41` hardcoded `<RouterLink to="/terms-and-conditions">`, a path in
+neither the framework's `userRoutes` nor any app route table — the framework's own
+`TermsAndConditionsView` is deliberately unrouted. The link was dead on the one screen that asks the
+user to *agree* to the document, and it linked no privacy policy at all.
+
+**What landed in the framework:** `modules/user/utils/legalRoutes.ts` — a `setLegalRoutes` /
+`getLegalRoutes` collaborator, the same shape as `authAdapter` and `userTimeZone`.
+`installFramework({ legalRoutes })` registers it before the router resolves its first navigation, so
+`/registration` (public) can be the very first route rendered. `terms` defaults to the historical
+`/terms-and-conditions` literal when unregistered — byte-for-byte today's behaviour for an app that
+opts out, dead link included. `privacy` has no default; `RegistrationView.vue` renders its link (and
+the joining `general.and`) only when an app registers one. `authorization.privacyPolicyConsent` is a
+new key (SK declines it in the "I agree to …" sentence; EN is identical to `privacyPolicy`).
+
+**App-side wiring:** `main.ts` registers `legalRoutes: { terms: { name: 'legalTerms' }, privacy: {
+name: 'legalPrivacy' } }` — by route name, so the paths in `core/user/user.routes.ts` stay free to
+change. `common.{sk,en}.ts` gained `general.and`, since the app's `common` namespace replaces the
+framework's wholesale (see the note at the top of `SK.ts`).
+
+**Deleted here:** the `alias: '/terms-and-conditions'` on `core/user/user.routes.ts`'s `legalTerms`
+route, and the comment explaining it.
+
+**No backend change.**
+
+**Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
+touched file), `npm run lint` 0 errors / 3 known warnings, `npx vite build` clean. **Not verified at
+runtime** — the registration screen was not opened in a browser.

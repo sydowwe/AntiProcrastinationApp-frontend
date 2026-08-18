@@ -19,6 +19,12 @@ import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 // the alternative is each module re-deriving the defaults, which is exactly the drift this fixes.
 // `prompts/user/P1-two-settings-systems.md` owns the boundary decision; revisit it there.
 
+// TODO(B3): both defaults below are the client's own choice, and neither has been confirmed against
+// the server's. Whether `POST /user/data` even echoes these two fields back is also unverified —
+// see `prompts/user/backend/B3-app-preference-round-trip.md`, which explains why the obvious
+// "set it, reload, see if it sticks" check reports a false pass here (localStorage persistence plus
+// an optimistic `Object.assign` in the store both mask a server that drops the key).
+
 /** Absent means *ask*. An unknown preference must never be the reason a delete skips its dialog. */
 export const ASK_BEFORE_DELETE_DEFAULT = true
 /** Monday, matching `getISOWeekStart` in `_common/utils/DateTimeHelper.ts`. */

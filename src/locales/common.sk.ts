@@ -54,6 +54,9 @@ const common = {
 		// framework's wholesale (see the note at the top of SK.ts), so it has to be repeated here.
 		actions: `Akcie`,
 		or: `Alebo`,
+		// Joins the two legal links in the framework's registration checkbox — same reason as
+		// `actions` above: this namespace replaces the framework's wholesale.
+		and: `a`,
 		please: `Prosím`,
 		close: `Zavrieť`,
 		create: `Vytvoriť`,

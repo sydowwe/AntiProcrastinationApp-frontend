@@ -3,10 +3,12 @@
 // The framework owns the generic identity and preference surface (e-mail, 2FA, theme, locale,
 // timezone). These two flags are ours: `askBeforeDelete` gates the delete-confirmation dialog at
 // five call sites (todo lists, todo-list categories, plan templates, planner tasks, history
-// entries), and `firstDayOfWeek` is read by `useRoutineWeeklyReview.ts` alone — it does *not* feed
-// the planner calendar, which is `_common/component/calendar/CalendarGrid.vue` and is hardcoded to
-// ISO weeks via `getISOWeekStart`. `User.fromJson` copies unknown keys through untouched, so both
-// survive hydration without the framework knowing they exist.
+// entries), and `firstDayOfWeek` is set from `PreferencesSection.vue` and read by
+// `useRoutineWeeklyReview.ts`. It does *not* feed the planner calendar, which is
+// `_common/component/calendar/CalendarGrid.vue` and is hardcoded to ISO weeks via
+// `getISOWeekStart` — see `prompts/user/framework/F5-calendar-week-start.md`. `User.fromJson`
+// copies unknown keys through untouched, so both survive hydration without the framework knowing
+// they exist.
 //
 // Both are **optional on the response side**, and that is load-bearing rather than defensive.
 // Interface merging declares a type; it cannot create a value, so neither field exists on a fresh

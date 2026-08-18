@@ -1,5 +1,10 @@
 # F4 · The registration checkbox links the terms to a path the framework never routes
 
+**Resolved 2026-08-18 — `migration-revision.md` R19.** Landed as an `installFramework({ legalRoutes })`
+collaborator rather than the props proposed below: `RegistrationView` is routed by the framework's own
+`userRoutes`, so an app spreading that table has no seam to pass props through. Everything below is
+kept as the record of the gap.
+
 **Framework ask.** `src/_common` is a submodule; this describes a change to make in the
 `vue_framework` repo, not here.
 
