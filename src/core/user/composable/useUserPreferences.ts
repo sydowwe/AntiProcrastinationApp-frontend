@@ -27,7 +27,7 @@ import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
 /** Absent means *ask*. An unknown preference must never be the reason a delete skips its dialog. */
 export const ASK_BEFORE_DELETE_DEFAULT = true
-/** Monday, matching `getISOWeekStart` in `_common/utils/DateTimeHelper.ts`. */
+/** Monday, matching `getWeekStart`'s own default in `_common/utils/DateTimeHelper.ts`. */
 export const FIRST_DAY_OF_WEEK_DEFAULT: 0 | 1 = 1
 
 export function useUserPreferences(): {

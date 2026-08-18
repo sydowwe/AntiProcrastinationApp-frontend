@@ -1,5 +1,10 @@
 # F5 · `CalendarGrid` ignores the user's `firstDayOfWeek` preference
 
+**RESOLVED 2026-08-18 — see `migration-revision.md` R20.** Landed as written: `getWeekStart` /
+`getWeekEnd` in `DateTimeHelper.ts` and an optional `firstDayOfWeek?: 0 | 1` prop (default `1`) on
+`CalendarGrid`, plus a day-header rotation the ask did not anticipate. The rest of this file is kept
+as the original ask.
+
 **Framework ask.** `src/_common` is a submodule; this describes a change to make in the
 `vue_framework` repo, not here.
 

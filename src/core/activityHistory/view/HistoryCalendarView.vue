@@ -3,6 +3,7 @@
 		class="py-4"
 		:days
 		:loading
+		:firstDayOfWeek
 		@dayClick="handleDayClick"
 		@dateRangeChange="fetchCalendarActivity"
 	>
@@ -82,9 +83,11 @@
 	import type { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 	import { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 
 	const days = ref<CalendarActivityDaySummary[]>([])
 	const loading = ref(false)
+	const { firstDayOfWeek } = useUserPreferences()
 
 	function formatDuration(totalSeconds: number): string {
 		const hours = Math.floor(totalSeconds / 3600)

@@ -212,7 +212,7 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
 
 | Composable | Imported by | Why it cannot live per-module |
 |---|---|---|
-| `useUserPreferences.ts` | `todoList`, `dayPlanner`, `historyDashboard` | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the *same* one. |
+| `useUserPreferences.ts` | `todoList`, `dayPlanner`, `historyDashboard`, `activityHistory` | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the *same* one. |
 | `useDeleteConfirmation.ts` | the five delete sites in `todoList`, `dayPlanner`, `historyDashboard` | Decides whether a delete confirms, from the delete's **consequence** rather than the preference alone. A delete that **cascades** always confirms and must say how many children go with it — that is the one place the user's preference is overruled, and it only holds if all five sites ask the same question. Reading `askBeforeDelete` directly at a delete site is now a bug. |
 | `useUserScopedStorage.ts` | `dayPlanner`, `todoList`, `activityTracking`, `leisure` | Namespaces every `localStorage` key by account id, and migrates the pre-namespacing key on first read. Without it, two accounts on one browser share pinned templates, dismissed reviews and dismissed hints. Never write a raw `localStorage` key for per-user state — route it through `readUserScoped` / `writeUserScoped`, or `userScopedKey` for a Pinia `persist.key` function. |
 

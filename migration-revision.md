@@ -32,12 +32,8 @@ for so long.
 - ~~**The framework never hydrates the user on the login path**~~ — **resolved, see R18.**
 - ~~**The framework's registration form links the terms to a path nothing routes**~~ — **resolved,
   see R19.**
-- **`CalendarGrid` ignores `firstDayOfWeek` and stays hardcoded to ISO/Monday weeks.** The
-  preference now has a working control (`prompts/user/P2-first-day-of-week.md`), but
-  `_common/component/calendar/CalendarGrid.vue` computes rows with `getISOWeekStart` /
-  `getISOWeekEnd`, which have no non-ISO variant. Workaround kept here:
-  `core/todoList/composable/useRoutineWeeklyReview.ts` hand-rolls its own week-start arithmetic
-  rather than using `DateTimeHelper`. Ask: `prompts/user/framework/F5-calendar-week-start.md`.
+- ~~**`CalendarGrid` ignores `firstDayOfWeek` and stays hardcoded to ISO/Monday weeks**~~ —
+  **resolved, see R20.**
 ---
 
 ### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**
@@ -867,3 +863,38 @@ route, and the comment explaining it.
 **Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
 touched file), `npm run lint` 0 errors / 3 known warnings, `npx vite build` clean. **Not verified at
 runtime** — the registration screen was not opened in a browser.
+
+---
+
+### R20. `CalendarGrid` honours `firstDayOfWeek` (2026-08-18)
+
+Closes **F5** (`prompts/user/framework/F5-calendar-week-start.md`). Two framework changes, both
+defaulting to today's behaviour:
+
+- `_common/utils/DateTimeHelper.ts` — new `FirstDayOfWeek` type (`0` Sunday | `1` Monday) plus
+  `getWeekStart(date, firstDayOfWeek = 1)` / `getWeekEnd(date, firstDayOfWeek = 1)`. With `1` they
+  are identical to `getISOWeekStart` / `getISOWeekEnd`, which stay as they are — week *numbers*
+  (`getISOWeekNumber`, `formatWeekLabel`) remain ISO by definition and were not touched.
+- `_common/component/calendar/CalendarGrid.vue` — new optional `firstDayOfWeek?: 0 | 1` prop,
+  default `1`. It feeds the three week-boundary computations (row range, week bucketing key, initial
+  `dateRange`) and rotates the day-header columns so Sunday leads when it is `0`. `allDays[].index`
+  stays the ISO day number because it keys `ICalendar.dayIndex`; only the column order rotates, so
+  the backend contract is unchanged and the workdays/weekend filter still works.
+
+Framework docs updated in the same submodule commit (`docs/utils.md`, `docs/components.md`).
+
+**App-side wiring:** `core/dayPlanner/view/PlannerCalendarView.vue` and
+`core/activityHistory/view/HistoryCalendarView.vue` now read `useUserPreferences().firstDayOfWeek`
+and pass it to `CalendarGrid`. That makes `activityHistory` the fourth importer of
+`core/user/composable/useUserPreferences.ts` — same sanctioned exception, CLAUDE.md's table updated.
+
+**Deleted here:** `useRoutineWeeklyReview.ts`'s hand-rolled week-start arithmetic (the
+`getDay()`/`setDate()` offset block) — replaced by one `getWeekStart(today, firstDayOfWeek.value)`
+call. The zone reasoning above it is unchanged and still applies: the `Date` is a calendar day built
+from `isoDateInUserZone()`, and walking back to the week start is zone-independent.
+
+**No backend change.**
+
+**Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
+touched file), `npm run lint` 0 errors / 3 known warnings. **Not verified at runtime** — neither
+calendar was opened in a browser with the preference set to Sunday.

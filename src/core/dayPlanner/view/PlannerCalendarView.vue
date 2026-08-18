@@ -4,6 +4,7 @@
 		:days="calendarDays"
 		:loading
 		:selectedIds="selectedDayIds"
+		:firstDayOfWeek
 		@dayClick="handleDayClick"
 		@dateRangeChange="handleDateRangeChange"
 	>
@@ -95,6 +96,7 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import { ApplyTemplateToTaskPlannerRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerRequest.ts'
@@ -112,6 +114,7 @@
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { showFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
+	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
 	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
