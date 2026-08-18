@@ -47,6 +47,16 @@ export const useDayPlannerSettingsStore = defineStore(
 			loaded.value = true
 		}
 
+		/**
+		 * Forces the next `loadSettings()` call to fetch again, instead of short-circuiting on the
+		 * previous account's cached values. Does not reset the field values themselves — every reader
+		 * awaits `loadSettings()` before using them, so the fetch overwrites them before anything reads
+		 * the stale copy.
+		 */
+		function resetSettings() {
+			loaded.value = false
+		}
+
 		async function saveSettings() {
 			await updateSettings(
 				new UserPlannerSettingsRequest(
@@ -76,6 +86,7 @@ export const useDayPlannerSettingsStore = defineStore(
 			loaded,
 			loadSettings,
 			saveSettings,
+			resetSettings,
 		}
 		// Explicit for the same reason as dayPlannerStore — the framework's Pinia setup is opt-in.
 	},
@@ -86,7 +97,7 @@ export const useDayPlannerSettingsStore = defineStore(
 	//      re-fetched for the rest of its session — a preference changed anywhere else never arrived.
 	//   2. sessionStorage is per-tab, so a second tab fetched fresh while the first served a copy
 	//      frozen at its own first load.
-	//   3. Nothing clears it on logout (`_common/nav/useLogout.ts` only resets the user store), so a
+	//   3. Nothing cleared it on logout (`_common/nav/useLogout.ts` only resets the user store), so a
 	//      second sign-in in the same tab read the *previous* user's planner settings — and the
 	//      debounced watcher in `DayPlannerSettingsView.vue` would then write all nine fields back to
 	//      the new user's account, `defaultApplyTemplateId` included: an FK to a template they do not

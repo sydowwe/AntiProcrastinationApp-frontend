@@ -30,6 +30,7 @@
 	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import type { ThemePreference } from '@/_common/modules/user/dto/response/User.ts'
+	import { resetAppState } from '@/core/user/composable/useSessionReset.ts'
 
 	const { initPushSupport } = usePushNotifications()
 	// Async since the framework version took it over: it now registers the service worker before
@@ -58,6 +59,18 @@
 	}
 
 	applyPreferencesToUi()
+
+	// The catch-all: every logout path ends here, including the one `authAdapter.logout()` cannot
+	// see — `SecuritySection.vue` calls the framework store's `logout()` directly on e-mail change and
+	// account deletion — and the axios interceptor's 401 handling. `authAdapter.logout()` also calls
+	// `resetAppState()` directly (see its own comment); this watcher is what makes that redundant
+	// rather than load-bearing.
+	watch(
+		() => userStore.isAuthenticated,
+		(isAuthenticated, wasAuthenticated) => {
+			if (wasAuthenticated && !isAuthenticated) resetAppState()
+		},
+	)
 
 	watch(
 		() => userStore.currentUser,

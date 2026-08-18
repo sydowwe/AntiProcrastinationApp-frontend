@@ -24,7 +24,14 @@ export const useRoutineReviewStore = defineStore(
 			lastDismissedWeekStart.value = weekStartIso
 		}
 
-		return { lastDismissedWeekStart, dismissForWeek }
+		// The localStorage key is already namespaced by account (`userScopedKey`), but this ref itself
+		// is not — it stays in memory across a logout, so without this a same-tab sign-in as someone
+		// else would render the previous account's dismissal until they dismissed one of their own.
+		function resetStore() {
+			lastDismissedWeekStart.value = null
+		}
+
+		return { lastDismissedWeekStart, dismissForWeek, resetStore }
 	},
 	{
 		persist: {

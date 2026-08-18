@@ -3,6 +3,7 @@ import type { AuthAdapter } from '@/_common/auth/authAdapter.ts'
 // contract's `loggedInUser` alongside this app's own `currentUser`. The exported symbol is still
 // `useUserStore` and the store id is still 'user' — renaming those buys nothing but churn.
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+import { logoutAndResetAppState } from '@/core/user/composable/useSessionReset.ts'
 
 // Binds this app's Pinia auth store to the framework's AuthAdapter contract.
 //
@@ -20,7 +21,10 @@ export function createAuthAdapter(): AuthAdapter {
 			return useUserStore().loggedInUser.email
 		},
 		logout() {
-			useUserStore().logout()
+			// Not every logout path goes through this adapter (`SecuritySection.vue` calls the store
+			// directly) — the app-wide catch-all is the `isAuthenticated` watcher in `App.vue`. This call
+			// makes the two agree rather than relying on the watcher alone.
+			logoutAndResetAppState()
 		},
 		// This is a single-user productivity app with no role model: there is nothing to gate and
 		// nobody to gate it from. The framework's RequiredRole vocabulary ('hr' | 'admin' |

@@ -176,6 +176,12 @@ export function usePlannerStoreCore<
 	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks, timeSlotDuration)
 
 	function resetStore() {
+		// Reset task state. Every call site (mid-session template switch, date navigation, and the
+		// account-level session reset) reassigns or refetches `tasks` immediately after calling this,
+		// so clearing it here cannot strand a view without data — it only closes the window where a
+		// previous date's, template's, or account's tasks would otherwise still be on screen.
+		tasks.value = []
+
 		// Reset selection state
 		selectedTaskIds.clear()
 

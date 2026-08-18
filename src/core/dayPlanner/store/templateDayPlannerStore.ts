@@ -42,12 +42,19 @@ function templatePlannerSetup(storageKey: string) {
 		else sessionStorage.removeItem(storageKey)
 	})
 
+	function resetStore() {
+		core.resetStore()
+		currentTemplateId.value = null
+		templateName.value = ''
+	}
+
 	return {
 		...core,
 		startCut,
 		updateTaskSpan,
 		currentTemplateId,
 		templateName,
+		resetStore,
 	}
 }
 
