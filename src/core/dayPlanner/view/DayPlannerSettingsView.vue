@@ -18,7 +18,7 @@
 			color="primaryOutline"
 		>
 			<VTab value="repeating">Repeating Tasks</VTab>
-			<VTab value="reminders">Reminders</VTab>
+			<VTab value="reminders">{{ $t('planner.nudges.tab') }}</VTab>
 			<VTab value="viewDefaults">View Defaults</VTab>
 			<VTab value="skipReasons">Skip Reasons</VTab>
 			<VTab value="calendarView">Calendar View</VTab>
@@ -95,7 +95,7 @@
 				>
 					<VSwitch
 						v-model="settingsStore.remindersEnabled"
-						label="Enable task reminders"
+						:label="$t('planner.nudges.enable')"
 						color="successDark"
 						hideDetails
 					/>
@@ -104,24 +104,34 @@
 							class="text-body-2"
 							:class="{ 'text-disabled': !settingsStore.remindersEnabled }"
 						>
-							Remind me
+							{{ $t('planner.nudges.leadLabel') }}
 						</span>
 						<VNumberInput
 							v-model="settingsStore.reminderMinutesBefore"
 							:min="1"
 							:max="60"
+							:suffix="$t('planner.nudges.minutesSuffix')"
 							:disabled="!settingsStore.remindersEnabled"
 							hideDetails
-							style="width: 140px"
+							style="width: 160px"
 							density="comfortable"
 						/>
-						<span
-							class="text-body-2"
-							:class="{ 'text-disabled': !settingsStore.remindersEnabled }"
-						>
-							minutes before each task
-						</span>
 					</div>
+					<!-- B2: this switch is NOT a kill switch for reminders, and used to read like one. It
+					     drives the in-tab nudge in `useTaskReminders` and — server-side — only prefills the
+					     default lead time when a task-linked reminder is created without one. The single
+					     switch that stops a reminder from being delivered is the ("Portal",
+					     "PersonalReminder") row on the reminder preferences page, linked below by route
+					     name. See `prompts/user/backend/B2-preference-ownership.md`. -->
+					<p class="text-body-2 text-medium-emphasis">
+						{{ $t('planner.nudges.explainer') }}
+					</p>
+					<p class="text-body-2 text-medium-emphasis">
+						{{ $t('planner.nudges.realRemindersHint') }}
+						<RouterLink :to="{ name: 'reminderPreferences' }">
+							{{ $t('planner.nudges.reminderPreferencesLink') }}
+						</RouterLink>
+					</p>
 				</VCard>
 			</VTabsWindowItem>
 

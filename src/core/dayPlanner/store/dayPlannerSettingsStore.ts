@@ -9,11 +9,16 @@ export const useDayPlannerSettingsStore = defineStore(
 	() => {
 		const { fetchSettings, updateSettings } = usePlannerSettingsApi()
 
-		// TODO(B2): these two are the only fields here that fail CLAUDE.md's "Where a preference lives"
-		// rule. `remindersEnabled` duplicates the framework's per-`(ownerModule, kind)` `enabled` row
-		// (`_common/modules/notifications/reminderPreference/`), so planner reminders currently have two
-		// independent off switches that disagree. Moving them is a contract change, not a refactor —
-		// see `prompts/user/backend/B2-preference-ownership.md`.
+		// B2, answered: these two stay here, and they are NOT a duplicate off switch. The dispatcher
+		// (`ReminderScanJobHandler`) reads reminder preferences only; it never reads planner settings.
+		// Server-side, `remindersEnabled` + `reminderMinutesBefore` do exactly one thing — prefill the
+		// lead time when a task-linked reminder is created without one — so `remindersEnabled: false`
+		// suppresses the prefill, never the reminder. Client-side they also gate `useTaskReminders`,
+		// the in-tab nudge, which is the only thing most users see them do. The only kill switch for
+		// delivery is the ("Portal", "PersonalReminder") row on the reminder preferences page, and it
+		// covers every personal reminder, not just planner ones. Lead time deliberately does not move:
+		// it is already per-reminder (`Reminder.leadOffsetsMinutes`) one level down.
+		// See `prompts/user/backend/B2-preference-ownership.md` for the full answer.
 		const remindersEnabled = ref(true)
 		const reminderMinutesBefore = ref(10)
 		const detailsPanelExpandedByDefault = ref(true)

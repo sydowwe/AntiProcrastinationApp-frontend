@@ -104,3 +104,69 @@ was always meant to have. Nine fields become seven, and the answer to "where do 
 reminders off" stops depending on which page the user found first.
 
 If it does not move, nothing changes structurally and we add copy to both pages naming the other.
+
+---
+
+## ANSWERED — 2026-08-18. Nothing moves; the copy was the bug.
+
+The premise of the ask was wrong in the frontend's favour: the two switches never overlapped, so
+neither is a placebo. Verbatim answers, condensed:
+
+1. **Does the dispatcher consult `/reminder-preference` or `planner/settings`?** `/reminder-preference`
+   only. `ReminderScanJobHandler` is the single dispatch engine and its only preference read is the
+   `ReminderKindPreference` opt-out. It never touches `UserPlannerSettings`.
+2. **The pair is `ownerModule = "Portal"`, `kind = "PersonalReminder"`.** The kind covers *every*
+   personal reminder, standalone and task-linked alike — deliberately, so detaching a reminder does not
+   change its key. Label it "personal reminders", never "planner reminders". `GET /reminder-preference`
+   returns only rows that exist, so `json.enabled ?? true` is right and the row is absent for anyone who
+   has never toggled it.
+3. **Retire `remindersEnabled`?** No. It was never delivery. `RemindersEnabled` + `ReminderMinutesBefore`
+   are read in exactly one place — `ReminderRegistrationService.ApplyUserDefaultsAsync`, on create/update
+   of a reminder that omitted `leadOffsetsMinutes` and is attached to a planner task. So
+   `remindersEnabled: false` **suppresses the prefill, never the reminder**: the reminder still fires, at
+   the task's start instant instead of ahead of it. Pinned by a test. Retiring it would delete the only
+   per-user lead-time default; folding it into the `("Portal", "PersonalReminder")` row would silently
+   apply it to standalone reminders too.
+4. **Does lead time travel?** No, and it must not become a per-kind attribute: it is already modelled one
+   level down, per reminder, as `Reminder.leadOffsetsMinutes` (offsets ≤ 0; `[-10, 0]` = ten minutes
+   before, then again at the time). `planner/settings` supplies only the default for the omitted case. A
+   per-kind field would be a third place expressing the same value, and less expressive than the
+   existing one. Do **not** add it to `UpsertReminderKindRequest`.
+5. **Quiet hours.** The window is half-open `[start, end)`, so the 06:10 example is outside a 22:00–06:00
+   window and dispatches normally. Generally: an occurrence is deferred only if *every* recipient is
+   inside their window (one recipient for a personal reminder), nothing is written, and `NextOccurrenceAt`
+   stays put — so it fires within one scan tick (5 min) of the window ending. Never dropped. In-app
+   delivery goes out immediately regardless; only push and e-mail are deferred.
+
+Also confirmed: **there are no automatic planner-task reminders.** A `Reminder` row exists only because
+the user created one via `POST /reminder`; creating a planner task never creates one. Worth stating on
+our side that this frontend has no `POST /reminder` call site inside `core/dayPlanner` at all — the only
+thing a planner user experiences from these two fields today is `useTaskReminders`, the client-side
+in-tab nudge. The prefill path is reachable only from the framework's generic reminders UI.
+
+The remaining seven fields: confirmed module-owned, nothing else in the solution reads them.
+
+### What we changed (this commit)
+
+No DTO, store field, endpoint or tab was removed — nine fields stay nine. Copy only:
+
+- `DayPlannerSettingsView.vue`'s reminders tab is now **"In-app nudges" / "Upozornenia v aplikácii"**,
+  with the switch reading "nudge me before a task starts", the number input labelled as a lead time, an
+  explainer that the nudge needs the planner open, and a `RouterLink` (route name `reminderPreferences`,
+  no import) to the page that owns actual delivery.
+- Strings added under `planner.nudges.*` in `dayPlanner.{sk,en}.ts`.
+- `reminderPreference.ownerModule.Portal` (`Aplikácia`) and `reminderPreference.kindName.PersonalReminder`
+  (`Osobné pripomienky`) added to the framework locale, so `ReminderKindRow.vue` stops falling back to the
+  raw identifiers. SK only — the framework ships no EN `common`.
+- The `TODO(B2)` in `dayPlannerSettingsStore.ts` replaced with the answer.
+
+### Left open — raised separately
+
+Three things the answer surfaced that are not this ask: quiet hours evaluated in the deployment timezone
+rather than the user's, reminders held all night and delivered stale after the window ends, and
+`ChannelHint` being stored but not enforced while the UI presents it as a choice. See
+`prompts/_common/notifications/backend/B1-quiet-hours-fidelity.md`.
+
+The optional collapse of the two planner fields into one nullable `defaultReminderLeadMinutes` (null = no
+prefill) was offered and is **not** taken up for now — it is a request/response shape change for a pair
+whose copy now explains itself, and the frontend gains nothing from it today.
