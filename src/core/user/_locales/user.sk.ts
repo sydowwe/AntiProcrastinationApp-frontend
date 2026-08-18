@@ -4,6 +4,14 @@ const user = {
 		preferences: `Predvoľby`,
 		askBeforeDelete: `Pýtať sa pred vymazaním`,
 		firstDayOfWeek: `Prvý deň týždňa`,
+		// Module settings — links out to preference pages other modules own
+		moduleSettings: {
+			title: `Nastavenia jednotlivých častí`,
+			description: `Ďalšie predvoľby, ktoré patria konkrétnym častiam aplikácie.`,
+			planner: `Nastavenia plánovača dňa`,
+			reminders: `Predvoľby pripomienok`,
+		},
+		backToSettings: `Späť na nastavenia účtu`,
 		// Export
 		exportData: `Exportovať moje dáta`,
 		exportDataDescription: `Stiahnuť úplnú zálohu dát účtu vo formáte JSON.`,

@@ -2,6 +2,15 @@
 	<div class="py-4 h-100 w-100 d-flex flex-column">
 		<div class="d-flex align-center ga-3">
 			<h2>Day Planner Settings</h2>
+			<!-- The only edit this module took from P1: a link back to /user/settings, so the two
+			     settings pages form a pair instead of two dead ends. A route name, not an import —
+			     nothing here depends on `core/user`. -->
+			<RouterLink
+				class="text-body-2"
+				:to="{ name: 'userSettings' }"
+			>
+				{{ $t('user.backToSettings') }}
+			</RouterLink>
 		</div>
 
 		<VTabs

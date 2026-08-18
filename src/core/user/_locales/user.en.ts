@@ -4,6 +4,14 @@ const user = {
 		preferences: `Preferences`,
 		askBeforeDelete: `Ask before deleting items`,
 		firstDayOfWeek: `First day of week`,
+		// Module settings — links out to preference pages other modules own
+		moduleSettings: {
+			title: `Per-module settings`,
+			description: `Further preferences that belong to specific parts of the app.`,
+			planner: `Day planner settings`,
+			reminders: `Reminder preferences`,
+		},
+		backToSettings: `Back to account settings`,
 		// Export
 		exportData: `Export my data`,
 		exportDataDescription: `Download a full JSON backup of your account data.`,

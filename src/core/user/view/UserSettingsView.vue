@@ -9,6 +9,9 @@
 		</template>
 		<template #preferences>
 			<PreferencesSection />
+			<!-- Directly under the app's own preferences: the other pages that hold the rest of them.
+			     See `moduleSettingsLinks.ts` — route names only, no cross-module imports. -->
+			<ModuleSettingsSection />
 		</template>
 		<template #append>
 			<DataExportSection />
@@ -20,6 +23,7 @@
 	import FrameworkUserSettingsView from '@/_common/modules/user/view/UserSettingsView.vue'
 	import GoogleCalendarCard from '@/core/googleCalendar/component/GoogleCalendarCard.vue'
 	import PreferencesSection from '@/core/user/component/settings/PreferencesSection.vue'
+	import ModuleSettingsSection from '@/core/user/component/settings/ModuleSettingsSection.vue'
 	import DataExportSection from '@/core/user/component/settings/DataExportSection.vue'
 	import AboutSection from '@/core/user/component/settings/AboutSection.vue'
 </script>

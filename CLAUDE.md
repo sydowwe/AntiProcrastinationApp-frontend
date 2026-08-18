@@ -175,8 +175,41 @@ routed in `src/router.ts` and their locales are spread in `SK.ts`.
   `UserSettingsView` exposes slots only the app can fill, so `src/core/user/user.routes.ts` routes a local wrapper around it. Both are spread in `src/router.ts`.
 - `UserSettingsView` slots: `#integrations` (forwarded into `SecuritySection`, for third-party account links), `#preferences`, `#append`.
 - The `User` / `UserPreferencesRequest` DTOs carry only generic fields. This app's `askBeforeDelete` and `firstDayOfWeek` are merged in by
-  `src/core/user/dto/userAugmentation.ts` (imported for side effects in `main.ts`) — `User.fromJson` copies unknown keys through, so they survive hydration and
-  `userStore.currentUser.askBeforeDelete` stays a plain typed read. Add app preference fields there, not to the framework DTO.
+  `src/core/user/dto/userAugmentation.ts` (imported for side effects in `main.ts`) — `User.fromJson` copies unknown keys through, so they survive hydration. Add
+  app preference fields there, not to the framework DTO. Both are **optional**, so never read them off `currentUser` directly; go through
+  `src/core/user/composable/useUserPreferences.ts`, which owns the defaults (see the preference-ownership rules below).
+
+### Where a preference lives
+
+There are **three** per-user preference systems in this app, not two. Before adding a preference, decide which one owns it — the answer is not "whichever module I
+happen to be editing".
+
+| System | Endpoint | Owns |
+|---|---|---|
+| User preferences | `PUT /user/preferences` (`_common/modules/user/api/userApi.ts`) | Preferences that cut **across** modules, or that describe the **person** |
+| Reminder preferences | `PUT /reminder-preference/*` (`_common/modules/notifications/reminderPreference/`) | Anything about **whether, when and how a notification reaches the user** |
+| A module's own settings | e.g. `PUT planner/settings` (`core/dayPlanner/api/plannerSettingsApi.ts`) | Preferences meaningful **only inside that module** |
+
+Applied in that order — the first match wins:
+
+1. **Is it about notification delivery?** Then it belongs to reminder preferences, keyed by `(ownerModule, kind)`, even though it is "about" one module. Quiet
+   hours, per-kind muting and channel choice are already modelled there; a module re-implementing any of them is a duplicate, not a module preference.
+2. **Does more than one module read it, or would a second module read it if it existed?** Then `/user/preferences`. Theme, locale, timezone, `firstDayOfWeek`,
+   `askBeforeDelete` — all of these describe the person, not a screen.
+3. **Otherwise** it is the module's own. Grid granularity, panel defaults, keyboard-nav toggles, per-module vocabulary lists, and anything whose value is a **foreign
+   key to that module's entities** (a default template id cannot live anywhere else).
+
+Two consequences worth stating outright, because both have already been got wrong once:
+
+- **Moving a field across the boundary is a backend change, not a frontend refactor.** The client cannot see whether the two endpoints are two tables, two columns
+  on one row, or one thing behind two routes. Write the ask (`prompts/user/backend/README.md`) instead of shimming it.
+- **Every settings page must be reachable from `/user/settings`.** A module settings page links back to it, and `ModuleSettingsSection.vue` links out to each of
+  them by **route name only**. A route name is a string, so this crosses no module boundary — never import another module's view or store to build a settings link.
+
+**The one sanctioned cross-module import** is `src/core/user/composable/useUserPreferences.ts`, imported today by `todoList`, `dayPlanner` and `historyDashboard`.
+It is a deliberate exception to the "only via `api/` or `dto/`" rule: `core/user` is not a peer feature module but this app's account layer, and the alternative —
+each module re-deriving `askBeforeDelete`'s default — is the exact drift that shipped a delete path with no confirmation dialog. Read preferences through it; do not
+add a second such exception without an entry here.
 
 ## Coding Standards
 
