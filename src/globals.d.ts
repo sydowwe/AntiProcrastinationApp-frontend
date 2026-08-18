@@ -11,6 +11,7 @@ declare global {
 		readonly VITE_API_URL: string
 		readonly VITE_APP_URL: string
 		readonly VITE_APP_VERSION: string
+		readonly VITE_SUPPORT_EMAIL: string
 		readonly VITE_RECAPTCHA_SITE_KEY: string
 		readonly VITE_GOOGLE_LOGIN_CLIENT_ID: string
 		readonly VITE_ENABLE_ENCRYPTION: string

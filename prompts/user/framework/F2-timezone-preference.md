@@ -1,85 +1,82 @@
-# F2 · The timezone preference is editable and read by nothing
+# F2 · The timezone preference is editable and read by nothing — **resolved, see `migration-revision.md` R17**
 
-**Framework ask.** `src/_common` is a submodule; this describes a change to make in the
-`vue_framework` repo, not here.
+**Framework ask.** Landed directly in the `vue_framework` submodule on 2026-08-18 rather than being
+filed upstream, under the standing approval to edit `src/_common` in place. Commit inside the
+submodule first, then the app-side pointer bump.
 
-## The gap
+---
 
-`src/_common/modules/user/component/settings/AppearanceSection.vue:29-34` renders a full timezone
-autocomplete over `Intl.supportedValuesOf('timeZone')`, saves the choice through
-`PUT /user/preferences`, and confirms it with a success snackbar.
+## Correction: this ask's premise was stale when it was read
 
-`User.timezone` (`dto/response/User.ts:24`, defaulting to `'Europe/Bratislava'`) is then read in
-exactly one place in this repository — the autocomplete that sets it:
+F2 was pre-written (see this directory's README — nothing in the `U`/`P`/`A` series touches this code,
+so it was written speculatively rather than by an agent that hit it). By the time it was picked up,
+half of it was already false:
 
-```
-src/_common/modules/user/component/settings/AppearanceSection.vue:30    :modelValue="currentUser.timezone"
-```
+- "`User.timezone` is read in exactly one place — the autocomplete that sets it" — **no longer true.**
+  R16 (2026-08-13) landed `_common/composable/general/useUserClock.ts` and the
+  `installFramework({ userTimeZone })` seam; this app registers it at `main.ts:26`, and commit
+  `3770be7` migrated the rest of `src/core` onto it.
+- "the smallest change that works is a single seam: teach `DateTimeHelper` to format in a configured
+  zone" — **rejected.** See below. This part of the ask was wrong, not merely stale.
 
-Grep across `src/` finds no other consumer. Not in `_common/utils/DateTimeHelper.ts`, which is where
-every date in both the framework and this app is formatted, and which uses plain `dayjs(...)` — local
-browser time throughout. Not in any chart axis, not in any "today" boundary, not in any date sent to
-an endpoint.
+Read the resolution as the correction to F2, not as its implementation.
 
-Its two neighbours in the same card behave correctly, which is what makes this one misleading: theme
-is applied by `src/App.vue:51-52` and locale by `App.vue:57`. A user reasonably concludes the third
-control in the row works the same way.
+## Why the proposed fix was rejected
 
-The user-visible consequence: someone travelling, or working across a timezone boundary from where
-their account was created, sets their timezone, gets a green "preference saved" snackbar, and every
-date and time in the app continues to render in browser-local time. There is no error and no clue.
-For an app whose entire subject matter is *when* things happened, that is a bad thing to be quietly
-wrong about.
+**1. It was not the feature.** `User.timezone` is a **server-side** field. It exists so the backend
+can localize what it sends — day boundaries, streak windows, reminder fire times. The browser is
+already in the zone the user is standing in, so browser-local rendering is correct, and a user has no
+reason to want the UI drawn in a zone they are not in. F2 framed a decorative control as a missing
+display feature; the actual answer to "display preference or input preference?" is **neither** — it is
+a day-boundary agreement between client and server, which is exactly what `useUserClock` already is.
 
-Note the contrast with theme: `App.vue:53-56` goes to real trouble to keep a stale localStorage value
-from overriding the server-side theme preference. That care is absent here because nothing consumes
-the value at all.
+**2. It would have shipped a worse bug than the one it fixed.** `DateTimeHelper`'s `format*` family is
+fed two different kinds of `Date`: instants, and **calendar days** built as browser-local midnight
+(`store.viewedDate`, picker values, route params). Zone-converting a calendar day shifts it by a day.
+Roughly half of the ~30 call sites are calendar days, so "format everything in the configured zone"
+would have scattered off-by-one-day bugs across the repo while reading like a correctness fix. The
+taxonomy that makes this visible is in `prompts/_done/clock/C1-clock-audit.md`, which had already
+ruled `DateTimeHelper`'s primitives correct and said not to route them through `useUserClock`.
 
-## Why it cannot be fixed app-side
+## The gap that was actually there
 
-The control and the DTO field are both in `src/_common`. A host app could read
-`currentUser.timezone` and apply it in its own formatting layer, but every date in the app is
-formatted through `_common/utils/DateTimeHelper.ts` and the framework's own components
-(`TimeDisplay`, `CalendarGrid`, `MyDateInput`, the scheduler and reminders views), none of which the
-app can reach into. Fixing it app-side would mean a parallel formatting layer that the framework's
-own components bypass — worse than the bug.
+Nothing kept `User.timezone` **accurate**.
 
-## The app-side workaround kept in the meantime
+It is captured from `Intl.DateTimeFormat().resolvedOptions().timeZone` at sign-in only —
+`LoginView.vue:145`, `RegistrationView.vue:131`, `GoogleSignIn.vue:66` — and nothing revisits it. A
+stay-logged-in session refreshes tokens for weeks without passing back through any of those three, so
+after travel or a move to another device the server keeps localizing in a stale zone. No error, no
+clue, and the only repair was the manual picker — which is the control whose existence prompted this
+ask in the first place.
 
-None. This app formats in browser-local time everywhere, which is correct for the common case (the
-user is where they are) and silently wrong for the travelling case.
+## What landed
 
-## What the framework should expose
+In the submodule:
 
-Either make it real or take it away. Both are acceptable answers and the framework should pick one
-deliberately rather than leaving a control that does nothing.
+| File | Change |
+| --- | --- |
+| `modules/user/utils/timeZoneSync.ts` | **new** — owns the opt-in flag, the browser-zone read, the comparison and the best-effort push |
+| `modules/user/store/authStore.ts` | `hydrateFromServer()` runs the sync after `fetchUserData()` |
+| `bootstrap/installFramework.ts` | new `syncBrowserTimeZone?: boolean` option, **default `false`** |
+| `modules/user/component/settings/AppearanceSection.vue` | zone renders read-only **when the flag is on**; apps that have not opted in keep the autocomplete |
+| `docs/modules/user.md` | new "What `User.timezone` is for" section — the contract this ask asked for |
+| `docs/composables.md` | `useUserClock` entry cross-references it and says what it is *not* for |
 
-**If timezone is meant to be honoured**, the smallest change that works is a single seam: teach
-`_common/utils/DateTimeHelper.ts` to format in a configured zone (dayjs already ships `utc` and
-`timezone` plugins; `DateTimeHelper.ts:5,14` shows the extend pattern already in use for `isoWeek`),
-and have the framework's bootstrap set that zone from `User.timezone` on hydration, defaulting to the
-browser zone so no existing consumer changes behaviour. Every framework component and every app that
-formats through the helper then follows automatically, with no call-site edits.
+App-side: `main.ts` passes `syncBrowserTimeZone: true`.
 
-The harder half is a decision, not code, and the framework should state it in
-`docs/modules/user.md`: is `timezone` a *display* preference (render server timestamps in this zone)
-or an *input* preference (interpret dates the user types as being in this zone)? They are different
-features and the second one affects what gets sent to endpoints. Pick one, document it, and say what
-the other is not.
+Defaulting to `false` is what keeps this cheap — every other app on this framework is bit-for-bit
+unaffected until it opts in, per this directory's scope rules.
 
-**If it is not meant to be honoured**, remove the control from `AppearanceSection` and the field from
-`User` / `UserPreferencesRequest`, and say in the module doc that the framework formats in browser
-time. A missing setting is honest; a decorative one is not.
+## What gets deleted here
 
-Either way, no existing consumer's behaviour should change without opting in.
+Nothing. This app never had a workaround, which F2 got right.
 
-## What gets deleted here when it lands
+In any app that opts in, `AppearanceSection`'s `onTimezoneChange` handler and its
+`Intl.supportedValuesOf('timeZone')` list become dead code. They are deliberately kept, because apps
+that have not opted in still use them.
 
-Nothing app-side either way — this app has no workaround to remove.
+## Verification
 
-If the "make it real" path is taken, this repo gains correct behaviour for free through
-`DateTimeHelper`, and the `prompts/user/` series should revisit whether the day-boundary questions in
-`P4` and the history modules' "today" logic need to follow the configured zone rather than the
-browser's.
-
-Add the `migration-revision.md` entry under "Still open" when this ask is filed.
+`npm run type-check` 65 errors (unchanged baseline; `src/_common` at 0), `npm run lint` 0 errors,
+`npx vite build` clean. **Reasoned, not observed** — the sync fires on hydration and needs a backend;
+none of this was exercised in a browser.

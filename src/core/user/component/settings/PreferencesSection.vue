@@ -14,7 +14,6 @@
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import SettingsSection from '@/core/user/component/settings/SettingsSection.vue'
 
@@ -29,8 +28,8 @@
 		try {
 			await userStore.setPreferences({ askBeforeDelete: v })
 			showSuccessSnackbar(i18n.t('user.preferenceSaved'))
-		} catch (e: any) {
-			handleHttpCodes(e.response?.status)
+		} catch {
+			// Failures already surface as a snackbar from the axios interceptor.
 		}
 	}
 </script>

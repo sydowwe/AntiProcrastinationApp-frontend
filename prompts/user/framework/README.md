@@ -20,6 +20,14 @@ The split is therefore about who will encounter it:
 
 - **F1 and F2 are pre-written.** Nothing in the `U`, `P` or `A` series touches the code they concern,
   so no implementing agent will ever hit them. If they are not written here they are never written.
+
+  **The cost of that, learned from F2 (resolved 2026-08-18, `migration-revision.md` R17):** a
+  pre-written ask is written without hitting the code, so it can be wrong as well as stale. F2's
+  stated gap was closed by R16 five days after it was written, and its proposed fix — zone-aware
+  `DateTimeHelper` formatting — would have introduced off-by-one-day bugs at every calendar-day call
+  site. **Re-verify a pre-written ask's "The gap" section against the code before implementing it,
+  and treat its "What the framework should expose" as a suggestion rather than a spec.** An ask
+  written by the agent that hit the wall does not have this failure mode.
 - **Everything else is written by the agent that reaches it.** `U1` will write `F3`
   (hydration belongs on the login path). `P2` and `A2` each end by telling you to write one. Number
   from the highest `F<n>` already in this directory.
