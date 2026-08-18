@@ -1,4 +1,5 @@
 import type { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
+import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 
 /**
  * What the picker remembers between draws: which candidates it has already put in front of the user,
@@ -14,6 +15,11 @@ import type { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
  * on a phone does not stop the laptop offering the same three. Moving the record server-side is the
  * headline ask in that file; nothing else in the module has to change when it lands, because
  * `RankingContext.lastSuggestedAt` is where it enters the rule either way.
+ *
+ * P4 found this key un-namespaced and scoped it by account. That does not make it cross-device — it
+ * stops two accounts on one browser from suppressing each other's suggestions, which was the more
+ * embarrassing half of the same bug. The server ask stays where it already is (`D1`); P4's own ask
+ * deliberately does not repeat it.
  */
 
 const STORAGE_KEY = 'leisure.picker.history'
@@ -45,7 +51,7 @@ function prune(suggestedAt: Record<string, string>, now: Date): Record<string, s
 /** Storage can be unavailable (private mode, disabled cookies) or hold something else's key. */
 export function readSuggestionHistory(now: Date = new Date()): SuggestionHistory {
 	try {
-		const raw = window.localStorage.getItem(STORAGE_KEY)
+		const raw = readUserScoped(STORAGE_KEY)
 		if (raw === null) return emptyHistory()
 		const parsed: unknown = JSON.parse(raw)
 		if (parsed === null || typeof parsed !== 'object') return emptyHistory()
@@ -61,7 +67,7 @@ export function readSuggestionHistory(now: Date = new Date()): SuggestionHistory
 
 function writeSuggestionHistory(history: SuggestionHistory): void {
 	try {
-		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+		writeUserScoped(STORAGE_KEY, JSON.stringify(history))
 	} catch {
 		// A full or unavailable quota costs the user variety, not the feature — stay quiet.
 	}

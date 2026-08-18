@@ -102,7 +102,7 @@
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
-	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{
@@ -167,11 +167,15 @@
 	const { deleteEntity } = useActivityHistoryCrud()
 	const deleteDialog = ref(false)
 	const deleteTargetId = ref<number | null>(null)
-	const { askBeforeDelete } = useUserPreferences()
+	const { shouldConfirm } = useDeleteConfirmation()
 
+	// A leaf — one record, nothing hangs off it — but a record of something that actually happened,
+	// and there is no undo path in this module today, so switching the preference off really does
+	// delete it with no way back. See the P3 summary: this is the site that would most benefit from
+	// an undo entry, and the only one where adding it is not a `core/todoList` refactor.
 	async function handleDeleteRequest(id: number) {
 		deleteTargetId.value = id
-		if (askBeforeDelete.value) {
+		if (shouldConfirm({ cascades: false, undoable: false })) {
 			deleteDialog.value = true
 		} else {
 			await confirmDelete()

@@ -2,7 +2,8 @@ const user = {
 	user: {
 		// Preferences
 		preferences: `Preferences`,
-		askBeforeDelete: `Ask before deleting items`,
+		askBeforeDelete: `Ask before deleting single items`,
+		askBeforeDeleteHint: `Deletions that also remove their contents always ask.`,
 		firstDayOfWeek: `First day of week`,
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
@@ -14,7 +15,7 @@ const user = {
 		backToSettings: `Back to account settings`,
 		// Export
 		exportData: `Export my data`,
-		exportDataDescription: `Download a full JSON backup of your account data.`,
+		exportDataDescription: `Download your account data as JSON. The export covers your lists, plans, templates and activity records.`,
 		exportSuccess: `Export downloaded successfully`,
 		exportFailed: `Failed to export data`,
 		// About

@@ -1,17 +1,17 @@
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useTodoListCategoryCrud } from '@/core/todoList/api/todoListCategoryApi.ts'
 import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
-import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const i18n = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { fetchFilteredSorted, createWithResponse, update, deleteEntity } = useTodoListCategoryCrud()
-	const { askBeforeDelete } = useUserPreferences()
+	const { shouldConfirm } = useDeleteConfirmation()
 
 	const categories = ref<TodoListCategoryEntity[]>([])
 	const selectedCategoryId = ref<number | null>(null)
@@ -61,9 +61,20 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		showSuccessSnackbar(i18n.t('successFeedback.edited'))
 	}
 
+	// A category with lists in it is treated as consequential and always confirms, showing the count.
+	// What the server actually does to those lists — delete them or orphan them — is not visible from
+	// here (`DELETE todo-list-category/{id}` takes no reassignment argument), which is why the copy
+	// states the count and stops there rather than promising a specific outcome. Pinning that down is
+	// TODO(B4): `prompts/user/backend/B4-delete-cascade-semantics.md` — tighten the wording, or drop
+	// the forced confirm entirely, once the server's answer is in.
+	const deleteCategoryCascade = computed(() => {
+		const listCount = categoryToDelete.value?.listCount ?? 0
+		return listCount > 0 ? i18n.t('toDoList.category.deleteCascade', { count: listCount }) : null
+	})
+
 	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
 		categoryToDelete.value = category
-		if (askBeforeDelete.value) {
+		if (shouldConfirm({ cascades: (category.listCount ?? 0) > 0, undoable: false })) {
 			deleteCategoryDialog.value = true
 		} else {
 			await deleteCategoryConfirmed()
@@ -90,6 +101,7 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		categoryDrawerOpen,
 		deleteCategoryDialog,
 		categoryToDelete,
+		deleteCategoryCascade,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,

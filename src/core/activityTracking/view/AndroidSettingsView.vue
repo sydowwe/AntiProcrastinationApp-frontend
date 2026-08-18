@@ -71,13 +71,15 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
+	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 
+	// Device-local ON PURPOSE — same reasoning as `DesktopSettingsView.vue`'s hint.
 	const HINT_KEY = 'androidSettingsHintDismissed'
-	const hintDismissed = ref(localStorage.getItem(HINT_KEY) === 'true')
+	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
 
 	function dismissHint() {
 		hintDismissed.value = true
-		localStorage.setItem(HINT_KEY, 'true')
+		writeUserScoped(HINT_KEY, 'true')
 	}
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'

@@ -2,7 +2,11 @@ const user = {
 	user: {
 		// Preferences
 		preferences: `Predvoľby`,
-		askBeforeDelete: `Pýtať sa pred vymazaním`,
+		// Presný rozsah: týka sa len mazania jednotlivých položiek. Mazanie, ktoré odstráni aj obsah,
+		// sa pýta vždy — pozri `useDeleteConfirmation.ts`. Pôvodný text „Pýtať sa pred vymazaním“
+		// sľuboval viac, než prepínač robí.
+		askBeforeDelete: `Pýtať sa pred vymazaním jednotlivých položiek`,
+		askBeforeDeleteHint: `Mazanie, ktoré odstráni aj obsah, sa potvrdzuje vždy.`,
 		firstDayOfWeek: `Prvý deň týždňa`,
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
@@ -14,7 +18,9 @@ const user = {
 		backToSettings: `Späť na nastavenia účtu`,
 		// Export
 		exportData: `Exportovať moje dáta`,
-		exportDataDescription: `Stiahnuť úplnú zálohu dát účtu vo formáte JSON.`,
+		// Nie „úplná záloha“: export je výber deviatich entít v skrátenej podobe a neobsahuje
+		// číselníky, na ktoré sa odkazuje — pozri `prompts/user/backend/B1-export-filename.md` §4.
+		exportDataDescription: `Stiahnuť dáta účtu vo formáte JSON. Export obsahuje vaše zoznamy, plány, šablóny a záznamy o aktivite.`,
 		exportSuccess: `Export úspešne stiahnutý`,
 		exportFailed: `Export dát zlyhal`,
 		// About

@@ -74,14 +74,14 @@
 	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
-	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 	const emit = defineEmits<{
 		delete: []
 	}>()
 
 	const store = inject<TStore>('plannerStore')!
-	const { askBeforeDelete } = useUserPreferences()
+	const { shouldConfirm } = useDeleteConfirmation()
 
 	const deleteDialogVisible = computed({
 		get: () => store.deleteDialog,
@@ -90,8 +90,12 @@
 
 	// Inverted against the other four call sites because the store opens this dialog, not a handler:
 	// the only thing left to do here is close it again when the user has opted out of confirming.
+	//
+	// This is the one delete of the five that is genuinely a leaf AND undoable — `usePlannerCrud`
+	// pushes a "Task deleted" entry that recreates the tasks — so skipping the dialog still leaves
+	// the user a way back. That is why it is the site the preference should have most say over.
 	watch(deleteDialogVisible, val => {
-		if (val && !askBeforeDelete.value) {
+		if (val && !shouldConfirm({ cascades: false, undoable: true })) {
 			deleteDialogVisible.value = false
 			emit('delete')
 		}

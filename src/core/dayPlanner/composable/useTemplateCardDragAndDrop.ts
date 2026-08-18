@@ -1,14 +1,19 @@
 import { onBeforeUnmount, ref } from 'vue'
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 
 type Section = 'pinned' | 'active' | 'inactive'
 
+// Device-local ON PURPOSE — this is how the cards are arranged on this screen, and a phone's order
+// is not a laptop's. It is user-scoped so two accounts on one browser do not shuffle each other's
+// cards; it is not a candidate for the server. Reordering happens against server-owned templates,
+// so a stale id in here is simply skipped by `applyOrder`.
 const TEMPLATE_ORDER_KEY = 'templateSectionOrder'
 type SectionOrder = { pinned: number[]; active: number[]; inactive: number[] }
 
 function loadOrder(): SectionOrder {
 	try {
-		const stored = JSON.parse(localStorage.getItem(TEMPLATE_ORDER_KEY) || '{}')
+		const stored = JSON.parse(readUserScoped(TEMPLATE_ORDER_KEY) || '{}')
 		return {
 			pinned: stored.pinned ?? [],
 			active: stored.active ?? [],
@@ -25,7 +30,7 @@ export function useTemplateCardDragAndDrop() {
 	const dragOverState = ref<{ templateId: number; position: 'before' | 'after' } | null>(null)
 
 	function saveOrder() {
-		localStorage.setItem(TEMPLATE_ORDER_KEY, JSON.stringify(sectionOrder.value))
+		writeUserScoped(TEMPLATE_ORDER_KEY, JSON.stringify(sectionOrder.value))
 	}
 
 	function applyOrder<T extends { id: number }>(list: T[], section: Section): T[] {

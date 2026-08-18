@@ -3,8 +3,9 @@
 		<VSwitch
 			:modelValue="askBeforeDelete"
 			:label="i18n.t('user.askBeforeDelete')"
+			:hint="i18n.t('user.askBeforeDeleteHint')"
+			persistentHint
 			color="primary"
-			hideDetails
 			density="compact"
 			@update:modelValue="onAskBeforeDeleteChange"
 		/>

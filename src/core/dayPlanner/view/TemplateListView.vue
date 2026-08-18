@@ -246,12 +246,20 @@
 		<!-- Delete Confirmation Dialog -->
 		<MyDialog
 			v-model="deleteDialog"
-			title="Confirm Delete"
+			:title="$t('planner.templateDelete.title')"
 			confirmBtnColor="errorDark"
-			confirmBtnLabel="Delete"
+			:confirmBtnLabel="$t('general.delete')"
 			@confirmed="deleteTemplate"
 		>
-			Are you sure you want to delete "{{ templateToDelete?.name }}"? This action cannot be undone.
+			<div class="px-6 py-4 text-center">
+				<div>{{ $t('planner.templateDelete.body', { name: templateToDelete?.name ?? '' }) }}</div>
+				<div
+					v-if="deleteTemplateCascade"
+					class="mt-2 font-weight-medium"
+				>
+					{{ deleteTemplateCascade }}
+				</div>
+			</div>
 		</MyDialog>
 
 		<!-- Comparison Dialog -->
@@ -274,7 +282,9 @@
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
-	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useI18n } from 'vue-i18n'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
+	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 	import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -295,7 +305,8 @@
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
-	const { askBeforeDelete } = useUserPreferences()
+	const { shouldConfirm } = useDeleteConfirmation()
+	const i18n = useI18n()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())
@@ -332,9 +343,15 @@
 		}
 	})
 
+	// Curation of server-owned rows, kept per-device for now. It is the item on the P4 list with the
+	// clearest case for moving to the server — pinning on the laptop and finding nothing pinned on the
+	// phone is the whole complaint — but that needs an endpoint, so see
+	// `prompts/user/backend/B5-account-scoped-state.md`. User-scoped here so two accounts on one
+	// browser at least stop overwriting each other.
+	// TODO(B5): move to the server with the templates.
 	const PINNED_KEY = 'pinnedTemplateIds'
-	const pinnedIds = ref<Set<number>>(new Set(JSON.parse(localStorage.getItem(PINNED_KEY) || '[]')))
-	watch(pinnedIds, val => localStorage.setItem(PINNED_KEY, JSON.stringify([...val])), { deep: true })
+	const pinnedIds = ref<Set<number>>(new Set(JSON.parse(readUserScoped(PINNED_KEY) || '[]')))
+	watch(pinnedIds, val => writeUserScoped(PINNED_KEY, JSON.stringify([...val])), { deep: true })
 
 	const { applyOrder, registerCard, dragOverState } = useTemplateCardDragAndDrop()
 
@@ -503,9 +520,23 @@
 		})
 	}
 
+	// A template carries its own tasks — `templateTasksMap` is already loaded for the cards, so the
+	// count is free. Reconstructing a template by hand is real work, so a non-empty one always
+	// confirms regardless of the preference.
+	function templateTaskCount(template: TaskPlannerDayTemplate) {
+		return templateTasksMap.value.get(template.id)?.length ?? 0
+	}
+
+	const deleteTemplateCascade = computed(() => {
+		const template = templateToDelete.value
+		if (!template) return null
+		const count = templateTaskCount(template)
+		return count > 0 ? i18n.t('planner.templateDelete.cascade', { count }) : null
+	})
+
 	async function confirmDelete(template: TaskPlannerDayTemplate) {
 		templateToDelete.value = template
-		if (askBeforeDelete.value) {
+		if (shouldConfirm({ cascades: templateTaskCount(template) > 0, undoable: false })) {
 			deleteDialog.value = true
 		} else {
 			await deleteTemplate()

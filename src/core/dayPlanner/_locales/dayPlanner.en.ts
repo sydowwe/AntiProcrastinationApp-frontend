@@ -30,6 +30,11 @@ const dayPlanner = {
 			usedOn: `Used on {label}s`,
 			timesCount: `{count}×`,
 		},
+		templateDelete: {
+			title: `Delete template?`,
+			body: `"{name}" cannot be restored.`,
+			cascade: `Tasks in this template: {count}. They will be deleted with it.`,
+		},
 	},
 }
 export default dayPlanner

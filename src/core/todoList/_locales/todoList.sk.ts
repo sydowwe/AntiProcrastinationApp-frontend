@@ -67,11 +67,14 @@ const todoList = {
 			emptyFilter: `Žiadne zoznamy nezodpovedajú vyhľadávaniu`,
 			emptyCategory: `Táto kategória nemá žiadne zoznamy`,
 			deleteConfirm: `Vymazať zoznam?`,
+			// Formulované tak, aby veta sedela pri akomkoľvek počte — bez množných tvarov.
+			deleteCascade: `Počet položiek v zozname: {count}. Vymažú sa spolu s ním.`,
 			selectCategory: `Vyberte kategóriu`,
 		},
 		category: {
 			add: `Nová kategória`,
 			deleteConfirm: `Vymazať kategóriu?`,
+			deleteCascade: `Do tejto kategórie patrí zoznamov: {count}.`,
 		},
 		// Spárovanie aktivity zo zásobníka voľného času s úlohou, ktorú treba spraviť. Tón je odmena,
 		// nie podmienka — nikde sa nepíše, že bez úlohy si zábavu nezaslúžiš.

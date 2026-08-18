@@ -64,11 +64,13 @@ const todoList = {
 			emptyFilter: `No lists match your search`,
 			emptyCategory: `No lists in this category`,
 			deleteConfirm: `Delete list?`,
+			deleteCascade: `Items in this list: {count}. They will be deleted with it.`,
 			selectCategory: `Select a category`,
 		},
 		category: {
 			add: `New category`,
 			deleteConfirm: `Delete category?`,
+			deleteCascade: `Lists in this category: {count}.`,
 		},
 		pairing: {
 			label: `Reward when done`,

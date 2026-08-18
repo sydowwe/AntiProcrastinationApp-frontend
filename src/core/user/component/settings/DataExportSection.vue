@@ -27,12 +27,10 @@
 	async function onExport() {
 		showFullScreenLoading()
 		try {
-			const blob = await exportData()
-			// `useUserApi().exportData()` returns a bare Blob and discards response headers (framework
-			// code, not editable here), so the server's Content-Disposition filename never reaches us —
-			// this is always the fallback name, not a fallback for a missing header.
-			// TODO(B1): prompts/user/backend/B1-export-filename.md
-			downloadBlob(blob, `antiprocrastination-export-${isoDateInUserZone()}.json`)
+			// The server names the file itself, stamping the date in the account's own timezone; the
+			// fallback below is the same shape, so the two agree even if the header goes missing.
+			const { blob, fileName } = await exportData(`antiprocrastination-export-${isoDateInUserZone()}.json`)
+			downloadBlob(blob, fileName)
 			showSuccessSnackbar(i18n.t('user.exportSuccess'))
 		} catch {
 			showErrorSnackbar(i18n.t('user.exportFailed'))

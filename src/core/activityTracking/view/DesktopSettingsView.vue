@@ -81,13 +81,17 @@
 	import DesktopEntriesFilterBar from '@/core/activityTracking/component/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
 	import DesktopDistinctEntriesTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
 	import DesktopMappingsTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsTable.vue'
+	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 
+	// Device-local ON PURPOSE. Triaged in P4 and deliberately left here: a hint you already dismissed
+	// reappearing once on a new device costs two seconds, which does not buy an endpoint. Scoped by
+	// user only so a second account on the same browser gets the hint it has never seen.
 	const HINT_KEY = 'desktopSettingsHintDismissed'
-	const hintDismissed = ref(localStorage.getItem(HINT_KEY) === 'true')
+	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
 
 	function dismissHint() {
 		hintDismissed.value = true
-		localStorage.setItem(HINT_KEY, 'true')
+		writeUserScoped(HINT_KEY, 'true')
 	}
 
 	const { showErrorSnackbar } = useSnackbar()

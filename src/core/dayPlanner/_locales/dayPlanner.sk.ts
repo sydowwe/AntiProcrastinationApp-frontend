@@ -32,6 +32,13 @@ const dayPlanner = {
 			usedOn: `Použité v {label}`,
 			timesCount: `{count}×`,
 		},
+		// Zvyšok `TemplateListView.vue` je zatiaľ natvrdo po anglicky; localizované sú len tieto
+		// kľúče, lebo mazanie šablóny je nevratné a text musí byť presný.
+		templateDelete: {
+			title: `Vymazať šablónu?`,
+			body: `Šablónu „{name}“ nebude možné obnoviť.`,
+			cascade: `Počet úloh v šablóne: {count}. Vymažú sa spolu s ňou.`,
+		},
 	},
 }
 export default dayPlanner

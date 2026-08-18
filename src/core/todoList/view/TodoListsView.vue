@@ -176,24 +176,44 @@
 		<MyDialog
 			v-model="deleteDialog"
 			:title="$t('toDoList.namedList.deleteConfirm')"
-			:text="listToDelete?.name"
 			confirmBtnColor="error"
 			:confirmBtnLabel="$t('general.delete')"
 			@confirmed="deleteConfirmed"
-		/>
+		>
+			<!-- Slot rather than the `text` prop: a cascading delete adds a second line naming how many
+			     children go with it, and the prop renders a single run of text. -->
+			<div class="px-6 py-4 text-center">
+				<div>{{ listToDelete?.name }}</div>
+				<div
+					v-if="deleteListCascade"
+					class="mt-2 font-weight-medium"
+				>
+					{{ deleteListCascade }}
+				</div>
+			</div>
+		</MyDialog>
 		<MyDialog
 			v-model="deleteCategoryDialog"
 			:title="$t('toDoList.category.deleteConfirm')"
-			:text="categoryToDelete?.name"
 			confirmBtnColor="error"
 			:confirmBtnLabel="$t('general.delete')"
 			@confirmed="deleteCategoryConfirmed"
-		/>
+		>
+			<div class="px-6 py-4 text-center">
+				<div>{{ categoryToDelete?.name }}</div>
+				<div
+					v-if="deleteCategoryCascade"
+					class="mt-2 font-weight-medium"
+				>
+					{{ deleteCategoryCascade }}
+				</div>
+			</div>
+		</MyDialog>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced } from '@vueuse/core'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -208,11 +228,11 @@
 	import TodoListForm from '@/core/todoList/component/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/core/todoList/component/normal/TodoListCard.vue'
-	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const i18n = useI18n()
-	const { askBeforeDelete } = useUserPreferences()
+	const { shouldConfirm } = useDeleteConfirmation()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
 	const { openDialog } = useDialog()
@@ -233,6 +253,7 @@
 		categoryDrawerOpen,
 		deleteCategoryDialog,
 		categoryToDelete,
+		deleteCategoryCascade,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,
@@ -310,9 +331,16 @@
 		await editCategory(result.idToEdit, result.request)
 	}
 
+	// A list takes its items with it, so a non-empty list always confirms and the dialog says how
+	// many — the preference does not get a vote on that. An empty list is a leaf.
+	const deleteListCascade = computed(() => {
+		const itemCount = listToDelete.value?.itemCount ?? 0
+		return itemCount > 0 ? i18n.t('toDoList.namedList.deleteCascade', { count: itemCount }) : null
+	})
+
 	async function confirmDelete(list: TodoListEntity) {
 		listToDelete.value = list
-		if (askBeforeDelete.value) {
+		if (shouldConfirm({ cascades: (list.itemCount ?? 0) > 0, undoable: false })) {
 			deleteDialog.value = true
 		} else {
 			await deleteConfirmed()
