@@ -5,13 +5,13 @@ import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useTodoListCategoryCrud } from '@/core/todoList/api/todoListCategoryApi.ts'
 import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
-import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 
 export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const i18n = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { fetchFilteredSorted, createWithResponse, update, deleteEntity } = useTodoListCategoryCrud()
-	const userStore = useUserStore()
+	const { askBeforeDelete } = useUserPreferences()
 
 	const categories = ref<TodoListCategoryEntity[]>([])
 	const selectedCategoryId = ref<number | null>(null)
@@ -63,10 +63,10 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 
 	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
 		categoryToDelete.value = category
-		if (!userStore.currentUser.askBeforeDelete) {
-			await deleteCategoryConfirmed()
-		} else {
+		if (askBeforeDelete.value) {
 			deleteCategoryDialog.value = true
+		} else {
+			await deleteCategoryConfirmed()
 		}
 	}
 

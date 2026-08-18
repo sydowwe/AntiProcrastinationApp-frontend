@@ -74,22 +74,24 @@
 	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
-	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 
 	const emit = defineEmits<{
 		delete: []
 	}>()
 
 	const store = inject<TStore>('plannerStore')!
-	const userStore = useUserStore()
+	const { askBeforeDelete } = useUserPreferences()
 
 	const deleteDialogVisible = computed({
 		get: () => store.deleteDialog,
 		set: value => store.$patch({ deleteDialog: value }),
 	})
 
+	// Inverted against the other four call sites because the store opens this dialog, not a handler:
+	// the only thing left to do here is close it again when the user has opted out of confirming.
 	watch(deleteDialogVisible, val => {
-		if (val && !userStore.currentUser.askBeforeDelete) {
+		if (val && !askBeforeDelete.value) {
 			deleteDialogVisible.value = false
 			emit('delete')
 		}

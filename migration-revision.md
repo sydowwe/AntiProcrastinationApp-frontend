@@ -26,7 +26,10 @@ for so long.
   tables. Its 4 type errors are that staleness, not a live bug. Delete it together with the three
   enums that only it uses — `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` — which
   leaves the `enums.{locationType,weatherDependency,expectedCostTier}` locale blocks orphaned too.
-- **76 app-side type errors remain**, all in `src/core`. Never triaged as a group.
+- **65 app-side type errors remain**, all in `src/core`. Never triaged as a group. (Measured
+  2026-08-18. This line read 76 and CLAUDE.md still says 72; both were stale — re-measure before
+  quoting it.)
+- ~~**The framework never hydrates the user on the login path**~~ — **resolved, see R18.**
 ---
 
 ### 13. The app's wall clock is the user's timezone, and the framework had no way to say so — **resolved, see R16**
@@ -721,3 +724,103 @@ git add src/_common           # the pointer bump itself
 `git submodule status` currently reads `+e4d7a71` — the `+` means the checked-out commit is ahead of
 what this repo records, and that gap already existed before R15 (it is the `fixed docs` commit). The
 bump above records both.
+
+---
+
+### R17. `User.timezone` is kept equal to the browser's zone, and the contract is written down (2026-08-18)
+
+Closes `prompts/user/framework/F2-timezone-preference.md`, whose premise was already stale: F2 said
+the timezone preference was "read by nothing", but R16 had given it a consumer (`useUserClock`,
+registered from `main.ts:26`) five days earlier.
+
+F2's proposed fix — teach `DateTimeHelper` to *format* in the configured zone — was **rejected, and
+should not be revived.** Two reasons:
+
+1. It is not the feature. `User.timezone` is a **server-side** field: it exists so the backend can
+   localize what it sends. The browser is already in the zone the user is standing in, so rendering
+   browser-local is correct, and a user has no reason to want the UI in a zone they are not in.
+2. It would have been an active regression. `DateTimeHelper`'s `format*` family is fed both instants
+   and **calendar-day** `Date`s (browser-local midnight — `store.viewedDate`, picker values, route
+   params; see the class-1/2/3 taxonomy in `prompts/_done/clock/C1-clock-audit.md`). Zone-converting
+   a calendar day shifts it by a day. Roughly half of the ~30 call sites are class 2, so a blanket
+   change would have introduced off-by-one-day bugs across the repo while looking like a fix.
+
+**What was actually missing** was that nothing kept the field *accurate*. It is captured from
+`Intl.DateTimeFormat().resolvedOptions().timeZone` at sign-in only — `LoginView.vue:145`,
+`RegistrationView.vue:131`, `GoogleSignIn.vue:66` — and a stay-logged-in session refreshing tokens for
+weeks never passes back through any of them. After travel or a device change the server localizes in a
+stale zone, silently, and the only repair was the manual picker.
+
+Landed in the submodule:
+
+- **New** `_common/modules/user/utils/timeZoneSync.ts` — owns the opt-in flag, the browser-zone read
+  and the comparison. Best-effort: a failed push does not break hydration, the next one retries.
+- `authStore.hydrateFromServer()` calls it after `fetchUserData()`.
+- `installFramework({ syncBrowserTimeZone })` — **defaults to `false`**, so every other app on this
+  framework keeps seed-at-sign-in plus the manual picker until it opts in. This app opts in
+  (`main.ts`).
+- `AppearanceSection.vue` renders the zone as a read-only row **when the flag is on**. It has to: an
+  editable control would be overwritten on the next hydration. Apps that have not opted in keep the
+  autocomplete unchanged.
+- `docs/modules/user.md` gained a "What `User.timezone` is for" section stating the contract F2 asked
+  for and never got — **not a display preference, not an input preference, a day-boundary agreement**
+  — plus a cross-reference from `docs/composables.md`'s `useUserClock` entry.
+
+**Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0),
+`npm run lint` 0 errors / 3 known warnings, `npx vite build` clean. **Not verified at runtime** — the
+sync fires on hydration and needs a backend; nothing here was observed in a browser.
+
+**Still open from this:** nothing in the framework. Worth knowing that `AppearanceSection`'s
+`onTimezoneChange` and the `timezones` list are now dead code in any app that opts in; they are kept
+for the apps that have not.
+
+
+---
+
+### R18. Hydration moved onto the login path, and onto boot (2026-08-18)
+
+Resolves `prompts/user/framework/F3-hydrate-on-login.md`. Framework change, made in `src/_common`.
+
+**The gap.** `authStore.login()` set `isAuthenticated` and the e-mail and stopped; the only
+`hydrateFromServer()` call anywhere in the framework was `UserSettingsView.vue`'s `onMounted`. From
+sign-in until someone happened to open the settings page the store held a bare `new User()` —
+constructor defaults for theme/locale/timezone, and **nothing at all** for fields a host app merges
+in through the augmentation seam, because interface merging declares a type and cannot create a
+value. That shipped here as a destructive bug: `askBeforeDelete` was `undefined`, five delete paths
+read it as `if (!askBeforeDelete) deleteNow()`, and a user on a new device or a new browser profile
+got no delete confirmation anywhere in the app. The store persists to `localStorage`, so the value
+stuck as soon as anyone opened settings and the bug went quiet — which is why it survived.
+
+**What landed in the framework:**
+
+- `modules/user/store/authStore.ts` — `login()` is now `async` and awaits `hydrateFromServer()`. It
+  **never rejects**: sign-in has already succeeded server-side, so a failed `POST /user/data` leaves
+  the user signed in on defaults rather than bounced back to the form (the axios interceptor has
+  already shown the snackbar). The three existing call sites (`LoginView.vue` x2,
+  `LoginVerifyQrCode.vue`) ignore the returned promise, so no app's redirect timing changes; awaiting
+  it is opt-in per call site.
+- `installFramework({ hydrateOnBoot })` — **defaults to `false`**, so no existing consumer changes
+  behaviour. Reload is the other half of the same gap: the persisted store boots `isAuthenticated`
+  with no request ever having been made. With the flag on, bootstrap re-fetches when the restored
+  state says authenticated. Started, not awaited — apps mount behind `router.isReady()`, so awaiting
+  would hold the first paint behind `POST /user/data`. This app opts in (`main.ts`).
+- Docs: `docs/modules/user.md` gained a "When the user record is fetched" section (the two entry
+  points, and the rule that preferences are read through a computed with a safe default, never a bare
+  property read); `SETUP.md` §5 gained a `hydrateOnBoot` subsection.
+
+**Deleted here:** `core/user/composable/useUserHydration.ts` (48 lines — the idempotence latch, the
+sign-out watcher, the swallow-and-retry) and the `void ensureUserHydrated()` block plus its import in
+`router.ts`, which is a synchronous guard again.
+
+**Kept:** `core/user/composable/useUserPreferences.ts`. It stops being load-bearing — the window
+where a preference is absent is now short — but it is not zero (neither hydration call is awaited,
+and a failed fetch leaves the defaults standing for the session), so the safe defaults and the
+reactive computeds stay. Its comments no longer describe hydration timing as the reason it exists.
+
+**No backend change.** `POST /user/data` already returns the app's augmented fields — that is how the
+settings page has always populated them.
+
+**Verified:** `npm run type-check` 65 errors (unchanged baseline, `src/_common` at 0, none in any
+touched file), `npm run lint` 0 errors / 3 known warnings, `npx vite build` clean. **Not verified at
+runtime** — hydration
+needs a backend and nothing here was observed in a browser.

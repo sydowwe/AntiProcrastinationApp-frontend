@@ -21,9 +21,19 @@ installFramework(app, {
 	router,
 	i18n,
 	authAdapter: createAuthAdapter(),
-	// A getter, not a value: editing the timezone in user settings must re-derive every date and
-	// countdown without a reload. The server resolves day boundaries in this same zone.
+	// A getter, not a value: the zone can change under a live session (see `syncBrowserTimeZone`
+	// below), and every date and countdown must re-derive without a reload when it does. The server
+	// resolves day boundaries in this same zone — that agreement is the whole point of reading it.
 	userTimeZone: () => useUserStore().currentUser.timezone,
+	// The zone is detected from the browser, never chosen: the user is where they are, and the UI
+	// renders browser-local everywhere. `User.timezone` exists so the *server* can localize what it
+	// sends, so its only job here is to stay equal to the device — re-checked on every hydration,
+	// not just at sign-in.
+	syncBrowserTimeZone: true,
+	// `login()` fetches the user's record itself, so this covers only the other half: a returning
+	// user whose persisted store says authenticated. Without it their preferences are a session old
+	// — and on a first load in a new browser profile, constructor defaults.
+	hydrateOnBoot: true,
 	// Only `main` — the `customer` and `system` trees are for multi-tenant/admin apps and stay empty
 	// here, which also keeps their section dividers and subheaders out of the sidebar.
 	navTrees: { main: navItems },

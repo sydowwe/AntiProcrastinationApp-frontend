@@ -102,7 +102,7 @@
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
-	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const props = defineProps<{
@@ -167,14 +167,14 @@
 	const { deleteEntity } = useActivityHistoryCrud()
 	const deleteDialog = ref(false)
 	const deleteTargetId = ref<number | null>(null)
-	const userStore = useUserStore()
+	const { askBeforeDelete } = useUserPreferences()
 
 	async function handleDeleteRequest(id: number) {
 		deleteTargetId.value = id
-		if (!userStore.currentUser.askBeforeDelete) {
-			await confirmDelete()
-		} else {
+		if (askBeforeDelete.value) {
 			deleteDialog.value = true
+		} else {
+			await confirmDelete()
 		}
 	}
 

@@ -274,7 +274,7 @@
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
-	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -295,7 +295,7 @@
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
-	const userStore = useUserStore()
+	const { askBeforeDelete } = useUserPreferences()
 
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())
@@ -505,10 +505,10 @@
 
 	async function confirmDelete(template: TaskPlannerDayTemplate) {
 		templateToDelete.value = template
-		if (!userStore.currentUser.askBeforeDelete) {
-			await deleteTemplate()
-		} else {
+		if (askBeforeDelete.value) {
 			deleteDialog.value = true
+		} else {
+			await deleteTemplate()
 		}
 	}
 

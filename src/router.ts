@@ -65,6 +65,7 @@ router.beforeEach(to => {
 
 	const auth = useAuth()
 	if (!auth.isAuthenticated) return { name: 'login' }
+
 	// Degrades to a no-op in this app (see the adapter's role getters); kept so route tables coming
 	// from the framework keep their gating semantics.
 	if (!hasRequiredRole(auth, to.meta.requiredRole)) return { name: 'home' }

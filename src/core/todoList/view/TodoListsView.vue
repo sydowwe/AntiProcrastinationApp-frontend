@@ -208,11 +208,11 @@
 	import TodoListForm from '@/core/todoList/component/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/core/todoList/component/normal/TodoListCard.vue'
-	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const i18n = useI18n()
-	const userStore = useUserStore()
+	const { askBeforeDelete } = useUserPreferences()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
 	const { openDialog } = useDialog()
@@ -312,10 +312,10 @@
 
 	async function confirmDelete(list: TodoListEntity) {
 		listToDelete.value = list
-		if (!userStore.currentUser.askBeforeDelete) {
-			await deleteConfirmed()
-		} else {
+		if (askBeforeDelete.value) {
 			deleteDialog.value = true
+		} else {
+			await deleteConfirmed()
 		}
 	}
 
