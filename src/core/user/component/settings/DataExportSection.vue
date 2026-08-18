@@ -1,10 +1,5 @@
 <template>
-	<VCard
-		elevation="2"
-		color="surface"
-		class="pa-4 d-flex flex-column ga-3"
-	>
-		<h3>{{ i18n.t('user.exportData') }}</h3>
+	<SettingsSection :title="i18n.t('user.exportData')">
 		<p class="text-medium-emphasis text-body-2 ma-0">{{ i18n.t('user.exportDataDescription') }}</p>
 		<VBtn
 			color="primary"
@@ -13,7 +8,7 @@
 		>
 			{{ i18n.t('user.exportData') }}
 		</VBtn>
-	</VCard>
+	</SettingsSection>
 </template>
 <script setup lang="ts">
 	import { useI18n } from 'vue-i18n'
@@ -21,6 +16,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import SettingsSection from '@/core/user/component/settings/SettingsSection.vue'
 
 	const i18n = useI18n()
 	const { exportData } = useUserApi()

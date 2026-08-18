@@ -35,8 +35,10 @@ src/
 Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`.
 
 `user` is now a **framework** module (`@/_common/modules/user/`) — it owns the auth views, the auth store, the user/session APIs and the generic settings sections.
-What is left in `src/core/user/` is only this app's glue: `authAdapter.ts`, `dto/userAugmentation.ts`, the settings wrapper view + its route, and the three
-app-specific settings sections. See `### _common/modules/` below.
+`src/core/user/` is this app's glue around it, shaped like every other module: `authAdapter.ts`, `dto/userAugmentation.ts`, `composable/` (app preference reads),
+`_locales/user.{sk,en}.ts` (this app's own settings/about strings, merged into the `user` namespace alongside the framework's — see the comment in
+`src/locales/SK.ts`), `component/settings/` (the settings-card shell `SettingsSection.vue` plus the three app-specific cards), and `view/` + `user.routes.ts` for
+the settings wrapper. See `### _common/modules/` below.
 
 **Rules:**
 

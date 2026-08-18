@@ -7,11 +7,14 @@ import todoList from '@/core/todoList/_locales/todoList.en.ts'
 import leisure from '@/core/leisure/_locales/leisure.en.ts'
 import googleCalendar from '@/core/googleCalendar/_locales/googleCalendar.en.ts'
 import home from '@/core/home/_locales/home.en.ts'
-import user from '@/_common/modules/user/_locales/user.en.ts'
+import frameworkUser from '@/_common/modules/user/_locales/user.en.ts'
+import appUser from '@/core/user/_locales/user.en.ts'
 
 // The framework ships a Slovak-only `common`, so unlike SK.ts this aggregator has nothing to
 // spread from @/_common/_locales — `appCommon` carries the EN `$vuetify` and `httpErrors`
 // translations that stand in for it (see its top-of-file comment).
+//
+// `user` is merged rather than spread, mirroring SK.ts — see the comment there for why.
 const EN = {
 	...appCommon,
 	...activity,
@@ -22,6 +25,7 @@ const EN = {
 	...leisure,
 	...googleCalendar,
 	...home,
-	...user,
+	...frameworkUser,
+	user: { ...frameworkUser.user, ...appUser.user },
 }
 export default EN
