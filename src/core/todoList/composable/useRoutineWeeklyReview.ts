@@ -24,11 +24,13 @@ export function useRoutineWeeklyReview() {
 		return formatDateForApi(getWeekStart(today, firstDayOfWeek.value))
 	})
 
-	const isNewWeek = computed(() => reviewStore.lastDismissedWeekStart !== weekStartIso.value)
+	// False until the dismissal has been read from the server (B5), so a user who already dismissed
+	// this week never sees the card flash in before the answer arrives.
+	const isNewWeek = computed(() => reviewStore.isLoaded && reviewStore.lastDismissedWeekStart !== weekStartIso.value)
 
-	function dismissForThisWeek() {
-		reviewStore.dismissForWeek(weekStartIso.value)
+	async function dismissForThisWeek() {
+		await reviewStore.dismissForWeek(weekStartIso.value)
 	}
 
-	return { weekStartIso, isNewWeek, dismissForThisWeek }
+	return { weekStartIso, isNewWeek, ensureLoaded: reviewStore.ensureLoaded, dismissForThisWeek }
 }

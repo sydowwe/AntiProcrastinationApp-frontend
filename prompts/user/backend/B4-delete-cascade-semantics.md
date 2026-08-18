@@ -1,5 +1,30 @@
 # B4 · Backend ask — what a to-do list category delete actually destroys
 
+> **ANSWERED (2026-08-19) — closed, no contract change. Frontend applied.**
+>
+> 1. **Category delete does not cascade.** The category row goes; every list that pointed at it gets
+>    `category_id = NULL`. No list is deleted, no item is deleted, nothing is refused — always 204
+>    (404 for an unknown id). The category itself is a hard delete and is not recoverable; that is
+>    the only thing lost.
+> 2. **That is the intended product rule, not an FK artefact.** The orphaning is a deliberate
+>    `DeleteBehavior.SetNull` sitting next to the list→items edge, which is an explicit
+>    `DeleteBehavior.Cascade`. The two edges were chosen separately. A category is a label.
+> 3. **No reassignment step and no rejection status** — neither is needed.
+> 4. **Template delete: assumption confirmed.** `DELETE task-planner-day-template/{id}` cascade-deletes
+>    the template's `TemplatePlannerTask` rows. The existing dialog copy is correct as written.
+>    *Additional consequence not in the ask:* it also nulls `user_planner_settings.default_apply_template_id`
+>    if it pointed there, silently clearing the user's default-apply template. Warning about that
+>    needs a flag on the template response and was **not** taken — left as a possible follow-up.
+> 5. **Loose end for us:** `TodoListCategoryResponse` projects only `Id, Name, Text, Color, Icon` —
+>    `listCount` has never been on the wire from this endpoint. It is therefore null in practice, so
+>    the count badge in `TodoListCategoryPanel.vue` and the reassurance line in the delete dialog do
+>    not render. Harmless now that the delete is a leaf, but it is a real gap if either is wanted.
+>
+> **Applied:** `useTodoListCategories.ts` — `cascades: false`, so a category delete honours
+> `askBeforeDelete` like the other leaf deletes; the `TODO(B4)` is gone; the locale key
+> `toDoList.category.deleteCascade` became `deleteKeepsLists` and now says the lists are kept and
+> only lose their category.
+
 **Contract only.** Nothing below implies a table, an FK rule, or where the cascade is implemented.
 
 ## The problem

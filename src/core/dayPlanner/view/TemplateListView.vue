@@ -271,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
@@ -284,7 +284,7 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
-	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
+	import { readUserScoped, userScopedKey } from '@/core/user/composable/useUserScopedStorage.ts'
 	import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -300,7 +300,7 @@
 	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()
 	const { mdAndUp } = useDisplay()
 	const router = useRouter()
-	const { fetchAll, create, update, deleteEntity } = useTaskPlannerDayTemplateTaskCrud()
+	const { fetchAll, create, update, deleteEntity, setPinned } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
@@ -343,25 +343,19 @@
 		}
 	})
 
-	// Curation of server-owned rows, kept per-device for now. It is the item on the P4 list with the
-	// clearest case for moving to the server — pinning on the laptop and finding nothing pinned on the
-	// phone is the whole complaint — but that needs an endpoint, so see
-	// `prompts/user/backend/B5-account-scoped-state.md`. User-scoped here so two accounts on one
-	// browser at least stop overwriting each other.
-	// TODO(B5): move to the server with the templates.
-	const PINNED_KEY = 'pinnedTemplateIds'
-	const pinnedIds = ref<Set<number>>(new Set(JSON.parse(readUserScoped(PINNED_KEY) || '[]')))
-	watch(pinnedIds, val => writeUserScoped(PINNED_KEY, JSON.stringify([...val])), { deep: true })
-
+	// B5 answered: pinned-ness is now a property of the template itself (`isPinned`, set through
+	// `PATCH task-planner-day-template/{id}/pinned`), so it follows the account to every device.
+	// The old per-device `localStorage` set is gone; `migrateLegacyPins` below carries any pins a
+	// user made before the cutover up to the server, once.
 	const { applyOrder, registerCard, dragOverState } = useTemplateCardDragAndDrop()
 
 	const pinnedTemplates = computed(() =>
 		applyOrder(
-			sortedTemplates.value.filter(t => pinnedIds.value.has(t.id)),
+			sortedTemplates.value.filter(t => t.isPinned),
 			'pinned',
 		),
 	)
-	const unpinnedTemplates = computed(() => sortedTemplates.value.filter(t => !pinnedIds.value.has(t.id)))
+	const unpinnedTemplates = computed(() => sortedTemplates.value.filter(t => !t.isPinned))
 	const activeUnpinnedTemplates = computed(() =>
 		applyOrder(
 			unpinnedTemplates.value.filter(t => t.isActive),
@@ -375,11 +369,17 @@
 		),
 	)
 
-	function togglePin(templateId: number) {
-		if (pinnedIds.value.has(templateId)) {
-			pinnedIds.value.delete(templateId)
-		} else {
-			pinnedIds.value.add(templateId)
+	async function togglePin(templateId: number) {
+		const template = templates.value.find(t => t.id === templateId)
+		if (!template) return
+		const next = !template.isPinned
+		// Optimistic: the card should not lag a round trip. On failure the interceptor shows the
+		// snackbar and we put the card back where it was rather than leaving a lie on screen.
+		template.isPinned = next
+		try {
+			await setPinned(templateId, next)
+		} catch {
+			template.isPinned = !next
 		}
 	}
 
@@ -553,8 +553,31 @@
 		}
 	}
 
+	/**
+	 * One-time carry-over of the pre-B5 per-device pin set. Runs before the first load, pushes each
+	 * locally pinned id that the server does not already have, then drops the key so it never runs
+	 * again. Losing someone's pins to the cutover would be a self-inflicted version of the bug B5
+	 * fixed, so this is worth the one extra pass; a failure is swallowed because the key is only
+	 * removed after the writes land, so the next visit retries.
+	 */
+	const LEGACY_PINNED_KEY = 'pinnedTemplateIds'
+	async function migrateLegacyPins() {
+		const raw = readUserScoped(LEGACY_PINNED_KEY)
+		if (!raw) return
+		try {
+			const legacyIds: number[] = JSON.parse(raw)
+			const stillUnpinned = templates.value.filter(t => !t.isPinned && legacyIds.includes(t.id))
+			await Promise.all(stillUnpinned.map(t => setPinned(t.id, true)))
+			localStorage.removeItem(userScopedKey(LEGACY_PINNED_KEY))
+			if (stillUnpinned.length) await loadTemplates()
+		} catch {
+			// Unparseable JSON or a failed write: leave the key in place and try again next visit.
+		}
+	}
+
 	onMounted(async () => {
 		await loadTemplates()
+		await migrateLegacyPins()
 	})
 </script>
 <style scoped>

@@ -70,7 +70,7 @@ const todoList = {
 		category: {
 			add: `New category`,
 			deleteConfirm: `Delete category?`,
-			deleteCascade: `Lists in this category: {count}.`,
+			deleteKeepsLists: `Lists in this category: {count}. They are kept — they only lose their category.`,
 		},
 		pairing: {
 			label: `Reward when done`,

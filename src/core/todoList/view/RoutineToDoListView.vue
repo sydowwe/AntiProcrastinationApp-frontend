@@ -173,7 +173,7 @@
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { runLabel } = useRoutineRunLabel()
-	const { isNewWeek, dismissForThisWeek } = useRoutineWeeklyReview()
+	const { isNewWeek, ensureLoaded: ensureReviewDismissalLoaded, dismissForThisWeek } = useRoutineWeeklyReview()
 	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
 	const plannerStore = useDayPlannerStore()
 
@@ -305,6 +305,7 @@
 
 	onMounted(() => {
 		getAllRecords()
+		ensureReviewDismissalLoaded()
 	})
 
 	function toggleChangeOrderMode() {

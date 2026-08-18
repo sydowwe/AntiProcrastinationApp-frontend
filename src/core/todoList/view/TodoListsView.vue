@@ -202,10 +202,10 @@
 			<div class="px-6 py-4 text-center">
 				<div>{{ categoryToDelete?.name }}</div>
 				<div
-					v-if="deleteCategoryCascade"
+					v-if="deleteCategoryKeepsLists"
 					class="mt-2 font-weight-medium"
 				>
-					{{ deleteCategoryCascade }}
+					{{ deleteCategoryKeepsLists }}
 				</div>
 			</div>
 		</MyDialog>
@@ -253,7 +253,7 @@
 		categoryDrawerOpen,
 		deleteCategoryDialog,
 		categoryToDelete,
-		deleteCategoryCascade,
+		deleteCategoryKeepsLists,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,

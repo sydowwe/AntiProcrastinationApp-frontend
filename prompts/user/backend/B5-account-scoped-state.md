@@ -1,5 +1,41 @@
 # B5 · Backend ask — per-user state that currently exists only in one browser
 
+> **ANSWERED (2026-08-19) — both items shipped server-side. Frontend applied.**
+>
+> **1. Pinned templates — a flag on the template, exactly the shape asked for.**
+> `GET task-planner-day-template` (unchanged call) now returns `isPinned: boolean` on every
+> `TaskPlannerDayTemplateResponse`, and the server sorts pinned first, then the existing
+> `lastUsedAt`/name order. Write is `PATCH task-planner-day-template/{id}/pinned` with
+> `{ "isPinned": true|false }` → 204. It **sets, never toggles**, so two devices pinning the same
+> template converge; another user's id is a 404. `isPinned` is deliberately **not** in the
+> create/update body, so an edit submitted from a form opened before the pin cannot silently unpin.
+>
+> **2. Weekly routine review dismissal — a routine-module setting**, not a reminder preference
+> (it is neither a reminder nor a notification). `GET routine/settings` →
+> `{ "routineReviewDismissedForWeekStart": "2026-08-17" | null }`; a user who never dismissed gets
+> `null`, not a 404, and the read creates no row. `PUT routine/settings` with the same field; `null`
+> clears; 204 on success. Accepts either `"2026-08-17"` or a full instant (read as UTC), because a
+> value round-tripped through a JS `Date` arrives as the latter. The week comparison stays entirely
+> client-side, as asked — nothing server-side reads the field.
+>
+> On the open rule: **the dismissal is for the week**, i.e. current behaviour was kept, because
+> changing it to "until the routines change" is a product decision the client cannot take
+> unilaterally. If it changes, the value stops being a date and that is a contract change.
+>
+> **Applied on the frontend:**
+> - `TaskPlannerDayTemplate` gained `isPinned`; `taskPlannerDayTemplateApi.ts` gained `setPinned`.
+> - `TemplateListView.vue` — `PINNED_KEY`, its `readUserScoped`/`writeUserScoped` pair and the
+>   `TODO(B5)` are gone; `pinnedTemplates` reads the flag. `togglePin` writes optimistically and
+>   reverts on failure. A one-time `migrateLegacyPins()` pushes any pre-cutover local pins to the
+>   server and then drops the key, so nobody loses their pins to the migration.
+> - New `routine/settings` API + `UserRoutineSettings{,Request}` DTOs under `core/todoList`.
+>   `routineReviewStore.ts` is no longer persisted: it loads from the server via `ensureLoaded()`
+>   (called from `RoutineToDoListView`'s `onMounted`) and writes on dismiss. `isNewWeek` is false
+>   until that read resolves, so the card cannot flash in for someone who already dismissed it.
+>
+> **Not done, deliberately:** the `UserRoutineSettings` export gap the backend flagged in its GDPR
+> ledger is a product/legal call, not a frontend one.
+
 **Contract only.** Nothing below implies a table, a column, or where any of this is stored.
 
 Two items, batched, from `P4`'s triage. The frontend work that could be done without you is already

@@ -26,6 +26,15 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 		return await fetchByField('name', name)
 	}
 
+	/**
+	 * Sets (never toggles) the pinned flag, so two devices pinning the same template converge.
+	 * `isPinned` is deliberately absent from the create/update request body, so an edit submitted
+	 * from a form opened before the pin cannot silently unpin.
+	 */
+	async function setPinned(id: number, isPinned: boolean): Promise<void> {
+		await API.patch(`${url}/${id}/pinned`, { isPinned })
+	}
+
 	async function fetchSuggestions(date: string): Promise<TemplateSuggestionResponse[]> {
 		const response = await API.get(`${url}/suggestions`, { params: { date } })
 		return TemplateSuggestionResponse.listFromObjects(response.data)
@@ -40,6 +49,7 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 		create,
 		update,
 		deleteEntity,
+		setPinned,
 		fetchSuggestions,
 	}
 }

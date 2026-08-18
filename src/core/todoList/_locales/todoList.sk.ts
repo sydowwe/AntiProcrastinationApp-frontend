@@ -74,7 +74,8 @@ const todoList = {
 		category: {
 			add: `Nová kategória`,
 			deleteConfirm: `Vymazať kategóriu?`,
-			deleteCascade: `Do tejto kategórie patrí zoznamov: {count}.`,
+			// Kategória je iba označenie — zoznamy sa nemažú, len prídu o zaradenie (B4).
+			deleteKeepsLists: `Počet zoznamov v kategórii: {count}. Ostanú zachované, iba prídu o zaradenie.`,
 		},
 		// Spárovanie aktivity zo zásobníka voľného času s úlohou, ktorú treba spraviť. Tón je odmena,
 		// nie podmienka — nikde sa nepíše, že bez úlohy si zábavu nezaslúžiš.

@@ -59,9 +59,12 @@
 			})),
 	)
 
-	async function onAskBeforeDeleteChange(v: boolean) {
+	// VSwitch types its update event as `boolean | null`. This switch is never indeterminate, but the
+	// handler has to accept the null or the template does not typecheck — and a null must land on
+	// `false` rather than being forwarded, since the server field is a plain boolean.
+	async function onAskBeforeDeleteChange(v: boolean | null) {
 		try {
-			await userStore.setPreferences({ askBeforeDelete: v })
+			await userStore.setPreferences({ askBeforeDelete: v === true })
 			showSuccessSnackbar(i18n.t('user.preferenceSaved'))
 		} catch {
 			// Failures already surface as a snackbar from the axios interceptor.

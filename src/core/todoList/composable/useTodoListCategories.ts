@@ -61,20 +61,22 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		showSuccessSnackbar(i18n.t('successFeedback.edited'))
 	}
 
-	// A category with lists in it is treated as consequential and always confirms, showing the count.
-	// What the server actually does to those lists — delete them or orphan them — is not visible from
-	// here (`DELETE todo-list-category/{id}` takes no reassignment argument), which is why the copy
-	// states the count and stops there rather than promising a specific outcome. Pinning that down is
-	// TODO(B4): `prompts/user/backend/B4-delete-cascade-semantics.md` — tighten the wording, or drop
-	// the forced confirm entirely, once the server's answer is in.
-	const deleteCategoryCascade = computed(() => {
+	// B4 answered: a category delete does NOT cascade. The lists that pointed at it are orphaned —
+	// their `categoryId` is set to null — and neither they nor their items are touched. That is a
+	// deliberate product rule, not an FK artefact (the sibling list→items edge is explicitly a
+	// cascade). So a category is a leaf delete and honours `askBeforeDelete` like the others; the
+	// copy below only reassures, it does not warn.
+	//
+	// Note the count rarely renders: the category response does not currently carry `listCount`, so
+	// it is null in practice. Left conditional so the line appears if the server ever sends it.
+	const deleteCategoryKeepsLists = computed(() => {
 		const listCount = categoryToDelete.value?.listCount ?? 0
-		return listCount > 0 ? i18n.t('toDoList.category.deleteCascade', { count: listCount }) : null
+		return listCount > 0 ? i18n.t('toDoList.category.deleteKeepsLists', { count: listCount }) : null
 	})
 
 	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
 		categoryToDelete.value = category
-		if (shouldConfirm({ cascades: (category.listCount ?? 0) > 0, undoable: false })) {
+		if (shouldConfirm({ cascades: false, undoable: false })) {
 			deleteCategoryDialog.value = true
 		} else {
 			await deleteCategoryConfirmed()
@@ -101,7 +103,7 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		categoryDrawerOpen,
 		deleteCategoryDialog,
 		categoryToDelete,
-		deleteCategoryCascade,
+		deleteCategoryKeepsLists,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,

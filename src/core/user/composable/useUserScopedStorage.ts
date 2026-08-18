@@ -1,10 +1,13 @@
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 
-// Seven pieces of per-user state live in this browser and nowhere else, and every one of them was
-// written under a global key. Two accounts on one machine therefore share them: sign out, sign in as
-// someone else, and you inherit their pinned templates, their dismissed weekly review and their
-// dismissed onboarding hints. Nothing here moves state to the server — that needs a backend change
-// and is what `prompts/user/backend/B5-account-scoped-state.md` asks for. This only stops the bleed.
+// Per-user state that lives in this browser and nowhere else was originally written under global
+// keys, so two accounts on one machine shared it: sign out, sign in as someone else, and you
+// inherited their dismissed onboarding hints and their template ordering. This stops that bleed.
+//
+// It does not move anything to the server. B5 has since moved the two items that needed it —
+// pinned templates and the weekly routine review dismissal now round-trip through the API — and the
+// remainder (template card ordering, the two onboarding hints, leisure suggestion history, which is
+// deferred to `prompts/leisure/backend/D1-backend.md`) are staying local on purpose.
 //
 // `prompts/user/P4-device-local-state.md` owns the triage; the inventory it produced is in the
 // summary of that work, not duplicated here.

@@ -1,51 +1,74 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
-import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
+import { useRoutineSettingsApi } from '@/core/todoList/api/routineSettingsApi.ts'
+import { UserRoutineSettingsRequest } from '@/core/todoList/dto/request/UserRoutineSettingsRequest.ts'
 
 /**
- * Tracks which calendar week (per the user's firstDayOfWeek preference) the fresh-start weekly
- * review was last dismissed for. Local-only and persisted to localStorage (not the app default
- * sessionStorage) so the dismissal survives closing the browser — otherwise the card would
- * reappear on every new tab within the same week.
+ * Which calendar week (per the user's firstDayOfWeek preference) the fresh-start weekly review was
+ * last dismissed for.
  *
- * P4 triage: this is a real per-user decision, not a device fact — dismissing on the laptop and
- * seeing the card again on the desktop is the user-visible consequence — so it is in the batched
- * ask, `prompts/user/backend/B5-account-scoped-state.md`. Until that lands it is at least scoped by
- * account, so two people sharing a browser do not dismiss each other's review.
- * TODO(B5): move the dismissal to the server.
+ * B5 answered: this now lives on the server, at `GET`/`PUT routine/settings`, because "I have
+ * already dealt with this week" is a fact about the person and the week, not about a browser —
+ * dismissing on the laptop used to leave the card waiting on the desktop and again on the phone.
+ * The dismissal is still for the WEEK rather than "until the routines change"; if that rule ever
+ * changes, the value stops being a date and the contract changes with it.
  *
- * Deliberately NOT using Pinia's declarative `persist: { key: () => ... }` (as this store did until
- * A1): that key function only runs once, when the store is first created, and a Pinia store is a
- * singleton for the tab's lifetime. Sign out and sign in as someone else in the same tab, and every
- * write after that would still land on the FIRST account's storage key — silently overwriting their
- * dismissal with the second account's, not just misreading it. Reading and writing through
- * `readUserScoped`/`writeUserScoped` instead re-resolves the key on every call, which is what
- * `useUserScopedStorage.ts` and every other consumer of it already do.
+ * The week comparison stays entirely client-side (`useRoutineWeeklyReview.ts`) — the client is the
+ * only side that knows which week the user is currently looking at.
+ *
+ * Not persisted: the server is the source of truth and `ensureLoaded` runs on every visit to the
+ * routine view. Persisting would only reintroduce the stale per-device copy this replaced.
  */
-const STORE_KEY = 'routineReview'
-export const useRoutineReviewStore = defineStore('routineReview', () => {
-	const lastDismissedWeekStart = ref<string | null>(readUserScoped(STORE_KEY))
+export const useRoutineReviewStore = defineStore(
+	'routineReview',
+	() => {
+		const { fetchSettings, updateSettings } = useRoutineSettingsApi()
 
-	function dismissForWeek(weekStartIso: string) {
-		lastDismissedWeekStart.value = weekStartIso
-		writeUserScoped(STORE_KEY, weekStartIso)
-	}
+		const lastDismissedWeekStart = ref<string | null>(null)
+		const isLoaded = ref(false)
+		let inFlight: Promise<void> | null = null
 
-	function resetStore() {
-		lastDismissedWeekStart.value = null
-	}
+		/** Idempotent and de-duplicated: several mounts in one visit share the single GET. */
+		async function ensureLoaded(): Promise<void> {
+			if (isLoaded.value) return
+			inFlight ??= fetchSettings()
+				.then(settings => {
+					lastDismissedWeekStart.value = settings.routineReviewDismissedForWeekStart
+					isLoaded.value = true
+				})
+				.finally(() => {
+					inFlight = null
+				})
+			await inFlight
+		}
 
-	// Covers sign-in, not just sign-out: `resetStore` (called on logout, see `useSessionReset.ts`)
-	// leaves this at `null` until someone is signed in again, and the next account's dismissal — or
-	// lack of one — has to be re-read from ITS key, not inherited from whoever was signed in when
-	// this store was first created.
-	watch(
-		() => useUserStore().currentUser.id,
-		() => {
-			lastDismissedWeekStart.value = readUserScoped(STORE_KEY)
-		},
-	)
+		async function dismissForWeek(weekStartIso: string): Promise<void> {
+			const previous = lastDismissedWeekStart.value
+			// Optimistic: the card must disappear on the click, not a round trip later.
+			lastDismissedWeekStart.value = weekStartIso
+			try {
+				await updateSettings(new UserRoutineSettingsRequest(weekStartIso))
+			} catch {
+				lastDismissedWeekStart.value = previous
+			}
+		}
 
-	return { lastDismissedWeekStart, dismissForWeek, resetStore }
-})
+		function resetStore() {
+			lastDismissedWeekStart.value = null
+			isLoaded.value = false
+			inFlight = null
+		}
+
+		// Covers sign-in, not just sign-out. A Pinia store is a singleton for the tab's lifetime, so
+		// signing in as someone else in the same tab would otherwise keep the first account's
+		// dismissal — and, worse, keep `isLoaded` true so it is never re-read.
+		watch(
+			() => useUserStore().currentUser.id,
+			() => resetStore(),
+		)
+
+		return { lastDismissedWeekStart, isLoaded, ensureLoaded, dismissForWeek, resetStore }
+	},
+	{ persist: false },
+)
