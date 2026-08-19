@@ -156,11 +156,14 @@
 			oldActivity.category?.id ?? null,
 		)
 
-		activityFormFieldData.value = JSON.parse(JSON.stringify(activityBeforeEdit.value))
+		activityFormFieldData.value = new QuickActivityToolsDto(
+			activityBeforeEdit.value.id,
+			activityBeforeEdit.value.name,
+			activityBeforeEdit.value.text,
+			activityBeforeEdit.value.categoryId,
+		)
 
 		selectedActivityId.value = activityId
-
-		console.log(selectedActivityId.value)
 	}
 
 	function reset() {

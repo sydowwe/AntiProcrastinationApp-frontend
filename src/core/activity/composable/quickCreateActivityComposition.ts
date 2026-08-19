@@ -19,7 +19,6 @@ export function useQuickCreateActivity(viewName: string) {
 
 	async function getQuickCreateActivityRoleIdByView() {
 		return await API.get('/activity-role/by-name/' + viewName).then(response => {
-			console.log(response.data)
 			return Role.fromJson(response.data).id
 		})
 	}
@@ -36,7 +35,7 @@ export function useQuickCreateActivity(viewName: string) {
 			`/activity/${activityId}/${quickEditMode}`,
 			new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId),
 		)
-		return response.data ? parseInt(response.data) : null
+		return response.data != null ? Number(response.data) : null
 	}
 
 	return {

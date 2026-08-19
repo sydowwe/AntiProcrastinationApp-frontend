@@ -6,7 +6,7 @@
 				class="flex-1-1 d-flex flex-column flex-md-row ga-3"
 			>
 				<NullFalseTrueCheckbox
-					v-model="formData!.isFromToDoList"
+					v-model="formData.isFromToDoList"
 					label="From to-do list"
 					:disabled="formDisabled"
 					hideDetails
@@ -14,7 +14,7 @@
 				></NullFalseTrueCheckbox>
 				<VIdSelect
 					v-if="formData?.isFromToDoList"
-					v-model="formData!.taskPriorityId"
+					v-model="formData.taskPriorityId"
 					class="flex-1-1"
 					:items="filteredOptions.taskPriorityOptions"
 					hideDetails
@@ -26,15 +26,15 @@
 				class="flex-1-1 d-flex flex-column flex-md-row ga-3"
 			>
 				<NullFalseTrueCheckbox
-					v-model="formData!.isFromRoutineToDoList"
+					v-model="formData.isFromRoutineToDoList"
 					label="From routine to-do list"
 					:disabled="formDisabled"
 					hideDetails
 					density="compact"
 				></NullFalseTrueCheckbox>
 				<VIdSelect
-					v-if="formData!.isFromRoutineToDoList"
-					v-model="formData!.routineTimePeriodId"
+					v-if="formData.isFromRoutineToDoList"
+					v-model="formData.routineTimePeriodId"
 					class="flex-1-1"
 					:items="filteredOptions.routineTimePeriodOptions"
 					hideDetails
@@ -49,7 +49,7 @@
 				class="py-4"
 			>
 				<VIdAutocomplete
-					v-model="formData!.roleId"
+					v-model="formData.roleId"
 					label="Role"
 					:items="filteredOptions.roleOptions"
 					:disabled="formDisabled"
@@ -63,7 +63,7 @@
 				class="py-4"
 			>
 				<VIdAutocomplete
-					v-model="formData!.categoryId"
+					v-model="formData.categoryId"
 					label="Category"
 					:items="filteredOptions.categoryOptions"
 					:disabled="formDisabled"

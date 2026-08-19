@@ -5,7 +5,7 @@ import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFo
 import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 import {
 	filterActivityFormSelectOptions,
-	getAllActivityFormSelectOptionsCombinations,
+	useActivityFormSelectOptions,
 } from '@/core/activity/composable/ActivitySelectsComposition.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
@@ -22,6 +22,7 @@ export function useActivitySelectionFormState(
 ) {
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const { create } = useActivityHistoryCrud()
+	const { getAllActivityFormSelectOptionsCombinations } = useActivityFormSelectOptions()
 
 	const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([])
 	const filteredOptions = ref(new ActivityFormSelectOptions())
@@ -57,22 +58,44 @@ export function useActivitySelectionFormState(
 	const getSelectedActivityName = computed(
 		() => filteredOptions.value.activityOptions.find(item => item.id === activityIdModel.value)?.text ?? '',
 	)
-	const getSelectedActivityId = computed(() => formData.value.activityId)
-
 	onMounted(async () => {
 		loading.value = true
-		allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(selectOptionsSource)
-		formData.value.activityId = formData.value.activityId ?? null
-		filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
-		loading.value = false
+		try {
+			allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(selectOptionsSource)
+			formData.value.activityId = formData.value.activityId ?? null
+			filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
+		} catch {
+			allOptionsCombinations.value = []
+			filteredOptions.value = new ActivityFormSelectOptions()
+		} finally {
+			loading.value = false
+		}
 	})
 
 	watch(
 		formData,
 		newValue => {
+			filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
 			if (isFilter) {
-				filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
 				activityIdModel.value = newValue.activityId
+			}
+			if (
+				activityIdModel.value != null &&
+				!filteredOptions.value.activityOptions.some(option => option.id === activityIdModel.value)
+			) {
+				activityIdModel.value = null
+			}
+			if (
+				formData.value.roleId != null &&
+				!filteredOptions.value.roleOptions.some(option => option.id === formData.value.roleId)
+			) {
+				formData.value.roleId = null
+			}
+			if (
+				formData.value.categoryId != null &&
+				!filteredOptions.value.categoryOptions.some(option => option.id === formData.value.categoryId)
+			) {
+				formData.value.categoryId = null
 			}
 		},
 		{ deep: true, immediate: true },
@@ -93,7 +116,7 @@ export function useActivitySelectionFormState(
 	)
 
 	async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
-		if (!activityIdModel.value) {
+		if (activityIdModel.value == null) {
 			showErrorSnackbar('Please select an activity')
 			return null
 		}
@@ -116,7 +139,6 @@ export function useActivitySelectionFormState(
 		filteredOptions,
 		activityIdModel,
 		getSelectedActivityName,
-		getSelectedActivityId,
 		getSelectedRoleName,
 		getSelectedCategoryName,
 		getSelectedTaskPriorityName,

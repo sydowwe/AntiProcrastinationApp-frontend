@@ -5,28 +5,24 @@ import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOpt
 import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 import { ActivityFormSelectOptions } from '@/core/activity/dto/response/ActivityFormSelectOptions.ts'
-
-export enum EntityWithSelectOptions {
-	Role = 'role',
-	Category = 'category',
-	TaskPriority = 'task-priority',
-	TimePeriod = 'routine-time-period',
-}
+import { useRequestState } from '@/_common/api/useRequestState.ts'
 
 export function uniqueOptions(options: SelectOption[]) {
 	return Array.from(new Map(options.map(option => [option.id, option])).values())
 }
 
-export async function getAllActivityFormSelectOptionsCombinations(activitySource: ActivityOptionsSource) {
-	const url = `${activitySource}/form-select-options`
-	return await API.get(url)
-		.then(response => {
-			return ActivitySelectOptionCombination.listFromJsonList(response.data)
-		})
-		.catch(error => {
-			console.error('Error fetching options:', error)
-			return []
-		})
+export function useActivityFormSelectOptions() {
+	const { loading, run } = useRequestState()
+
+	async function getAllActivityFormSelectOptionsCombinations(activitySource: ActivityOptionsSource) {
+		const url = `${activitySource}/form-select-options`
+		return await run(async () => {
+			const response = await API.get(url)
+			return ActivitySelectOptionCombination.listFromObjects(response.data)
+		}, 'Error fetching activity select options')
+	}
+
+	return { loading, getAllActivityFormSelectOptionsCombinations }
 }
 
 export function filterActivityFormSelectOptions(

@@ -13,14 +13,13 @@ export class ActivitySelectOptionCombination extends SelectOption {
 	}
 
 	static fromJson(object: any) {
-		const {
-			id = 0,
-			text = '',
-			roleOption = SelectOption.fromJson(object.roleOption),
-			categoryOption = SelectOption.fromJson(object.categoryOption),
-			taskPriorityOption = SelectOption.fromJson(object.taskPriorityOption),
-			routineTimePeriodOption = SelectOption.fromJson(object.routineTimePeriodOption),
-		} = object
+		const { id = 0, text = '' } = object
+		const roleOption = SelectOption.fromJson(object.roleOption)
+		const categoryOption = object.categoryOption ? SelectOption.fromJson(object.categoryOption) : null
+		const taskPriorityOption = object.taskPriorityOption ? SelectOption.fromJson(object.taskPriorityOption) : null
+		const routineTimePeriodOption = object.routineTimePeriodOption
+			? SelectOption.fromJson(object.routineTimePeriodOption)
+			: null
 		return new ActivitySelectOptionCombination(
 			id,
 			text,
@@ -31,7 +30,7 @@ export class ActivitySelectOptionCombination extends SelectOption {
 		)
 	}
 
-	static listFromJsonList(objects: any[]) {
+	static listFromObjects(objects: any[]) {
 		return objects.map((item: object) => this.fromJson(item))
 	}
 }

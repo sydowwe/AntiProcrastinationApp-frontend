@@ -26,7 +26,7 @@
 						density="compact"
 					/>
 					<VCombobox
-						v-model="roleCombobox as any"
+						v-model="roleCombobox"
 						label="Roles"
 						:items="roleOptions"
 						itemValue="id"
@@ -38,7 +38,7 @@
 						density="compact"
 					/>
 					<VCombobox
-						v-model="categoryCombobox as any"
+						v-model="categoryCombobox"
 						label="Categories"
 						:items="categoryOptions"
 						itemValue="id"
@@ -112,8 +112,8 @@
 	const activeTab = ref((route.params.tab as string) || 'activities')
 	const nameTextFilter = ref(new NameTextFilter())
 	const activityFilter = ref(new ActivityFilter())
-	const roleCombobox = ref<any[]>([])
-	const categoryCombobox = ref<any[]>([])
+	const roleCombobox = ref<(SelectOption | string)[]>([])
+	const categoryCombobox = ref<(SelectOption | string)[]>([])
 	const roleOptions = ref<SelectOption[]>([])
 	const categoryOptions = ref<SelectOption[]>([])
 
@@ -151,8 +151,8 @@
 	watch(
 		roleCombobox,
 		vals => {
-			activityFilter.value.roleIds = vals.filter(v => typeof v === 'number') as number[]
-			const strings = vals.filter(v => typeof v === 'string') as string[]
+			activityFilter.value.roleIds = vals.filter((v): v is SelectOption => typeof v !== 'string').map(v => v.id)
+			const strings = vals.filter((v): v is string => typeof v === 'string')
 			activityFilter.value.roleName = strings.length ? strings.join(' ') : null
 		},
 		{ deep: true },
@@ -161,8 +161,10 @@
 	watch(
 		categoryCombobox,
 		vals => {
-			activityFilter.value.categoryIds = vals.filter(v => typeof v === 'number') as number[]
-			const strings = vals.filter(v => typeof v === 'string') as string[]
+			activityFilter.value.categoryIds = vals
+				.filter((v): v is SelectOption => typeof v !== 'string')
+				.map(v => v.id)
+			const strings = vals.filter((v): v is string => typeof v === 'string')
 			activityFilter.value.categoryName = strings.length ? strings.join(' ') : null
 		},
 		{ deep: true },

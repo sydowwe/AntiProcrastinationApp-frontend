@@ -1,15 +1,19 @@
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, getCurrentInstance } from 'vue'
 
-const originalTitle = document.title
 const titleIntervalId = ref<number | undefined>(undefined)
 const soundIntervalId = ref<number | undefined>(undefined)
 
 let audioContext: AudioContext | null = null
+let originalTitle: string | null = null
+let listenerCount = 0
 
-function playNotificationSound() {
+async function playNotificationSound() {
 	try {
 		if (!audioContext) {
 			audioContext = new AudioContext()
+		}
+		if (audioContext.state === 'suspended') {
+			await audioContext.resume()
 		}
 
 		const playTone = (frequency: number, startTime: number, duration: number) => {
@@ -40,8 +44,8 @@ function playNotificationSound() {
 }
 
 function startSoundLoop() {
-	playNotificationSound()
-	soundIntervalId.value = setInterval(playNotificationSound, 4000)
+	void playNotificationSound()
+	soundIntervalId.value = setInterval(() => void playNotificationSound(), 4000)
 }
 
 function stopSoundLoop() {
@@ -52,6 +56,9 @@ function stopSoundLoop() {
 }
 
 function startTitleAnimation(message: string, alternateMessage?: string) {
+	if (originalTitle === null) {
+		originalTitle = document.title
+	}
 	const messages = alternateMessage ? [`⏰ ${message}`, `✅ ${alternateMessage}`] : [`⏰ ${message}`]
 	let index = 0
 
@@ -69,7 +76,10 @@ function stopTitleAnimation() {
 		clearInterval(titleIntervalId.value)
 		titleIntervalId.value = undefined
 	}
-	document.title = originalTitle
+	if (originalTitle !== null) {
+		document.title = originalTitle
+		originalTitle = null
+	}
 }
 
 function handleVisibilityChange() {
@@ -80,7 +90,10 @@ function handleVisibilityChange() {
 }
 
 export function useTimerNotifications() {
-	document.addEventListener('visibilitychange', handleVisibilityChange)
+	if (listenerCount === 0) {
+		document.addEventListener('visibilitychange', handleVisibilityChange)
+	}
+	listenerCount++
 
 	function triggerTimerEndNotification(title: string, activityName?: string) {
 		startSoundLoop()
@@ -92,12 +105,23 @@ export function useTimerNotifications() {
 		stopSoundLoop()
 	}
 
-	function cleanup() {
-		stopAllNotifications()
-		document.removeEventListener('visibilitychange', handleVisibilityChange)
+	function removeListener() {
+		listenerCount--
+		if (listenerCount === 0) {
+			document.removeEventListener('visibilitychange', handleVisibilityChange)
+		}
 	}
 
-	onUnmounted(cleanup)
+	function cleanup() {
+		stopAllNotifications()
+		removeListener()
+	}
+
+	// Unmounting this consumer must not silence another live consumer's alarm — only drop
+	// this consumer's share of the listener refcount, not the shared sound/title state.
+	if (getCurrentInstance()) {
+		onUnmounted(removeListener)
+	}
 
 	return {
 		playNotificationSound,

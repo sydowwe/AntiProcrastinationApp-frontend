@@ -12,15 +12,15 @@ export class Activity {
 	) {}
 
 	static fromJson(object: any) {
-		const {
-			id = 0,
-			name = '',
-			text = '',
-			isUnavoidable = false,
-			role = new Role(),
-			category = new Category(),
-		} = object
-		return new Activity(id, name, text, isUnavoidable, role, category)
+		const { id = 0, name = '', text = null, isUnavoidable = false } = object
+		return new Activity(
+			id,
+			name,
+			text,
+			isUnavoidable,
+			Role.fromJson(object.role),
+			object.category ? Category.fromJson(object.category) : null,
+		)
 	}
 
 	static listFromObjects(objects: any[]) {
