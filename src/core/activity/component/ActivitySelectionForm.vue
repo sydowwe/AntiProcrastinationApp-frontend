@@ -169,6 +169,7 @@
 		formDisabled = false,
 		showFromToDoListField = true,
 		selectOptionsSource = ActivityOptionsSource.ALL,
+		includeArchived = false,
 	} = defineProps<{
 		/**
 		 * How the three lookups are arranged. `stacked` is the default two-per-row form, `row` squeezes
@@ -184,6 +185,15 @@
 		formDisabled?: boolean
 		showFromToDoListField?: boolean
 		selectOptionsSource?: ActivityOptionsSource
+		/**
+		 * Whether archived activities may be picked. **Leave this off for anything that creates or edits a
+		 * record** — archiving exists precisely so a retired activity stops being offered.
+		 *
+		 * The one case for turning it on is a form that filters over *existing* records: those records stay
+		 * visible after their activity is archived and keep showing its name, so a filter that cannot name
+		 * it can no longer reach them. `HistoryPanelFilter.vue` is the only such caller today.
+		 */
+		includeArchived?: boolean
 	}>()
 
 	const formData = defineModel<ActivityFormRequest>({
@@ -224,6 +234,7 @@
 		loading,
 		selectOptionsSource,
 		showFromToDoListField,
+		includeArchived,
 	)
 
 	type ActivityPickerItem = SelectOption | { type: 'subheader'; text: string }

@@ -27,6 +27,11 @@ export function useActivitySelectionFormState(
 	 * to-do and planner dialogs at the single combination request A7 got them down to.
 	 */
 	includeToDoListFields = true,
+	/**
+	 * Whether the picker may offer archived activities. Off everywhere except the history filter panel —
+	 * see the prop of the same name on `ActivitySelectionForm.vue`.
+	 */
+	includeArchived = false,
 ) {
 	const optionsStore = useActivityOptionsStore()
 
@@ -167,7 +172,7 @@ export function useActivitySelectionFormState(
 			// In parallel, and all cached: the priority/period lookups are small and shared, so the extra
 			// two requests happen at most once a session.
 			const [combinations] = await Promise.all([
-				optionsStore.ensureCombinations(selectOptionsSource),
+				optionsStore.ensureCombinations(selectOptionsSource, includeArchived),
 				ensureSecondaryOptions('taskPriority'),
 				ensureSecondaryOptions('routineTimePeriod'),
 			])

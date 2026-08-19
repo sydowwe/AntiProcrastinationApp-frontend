@@ -49,6 +49,19 @@
 						hideDetails
 						density="compact"
 					/>
+					<VBtnToggle
+						v-model="archivedView"
+						mandatory
+						divided
+						density="compact"
+						variant="outlined"
+						color="primaryOutline"
+						class="flex-0-0"
+					>
+						<VBtn value="active">{{ t('activities.archive.viewActive') }}</VBtn>
+						<VBtn value="archived">{{ t('activities.archive.viewArchived') }}</VBtn>
+						<VBtn value="all">{{ t('activities.archive.viewAll') }}</VBtn>
+					</VBtnToggle>
 				</template>
 				<template v-else>
 					<VTextField
@@ -134,6 +147,30 @@
 		return ids.length > 0 ? ids : null
 	}
 
+	/**
+	 * Which lifecycle state the activities tab is showing. Three named views rather than a raw boolean
+	 * because the URL has to say which one it is, and `archived=false` vs. `archived=` vs. absent is not
+	 * a distinction a query string carries legibly.
+	 */
+	type ArchivedView = 'active' | 'archived' | 'all'
+
+	const ARCHIVED_VIEW_FILTER: Record<ArchivedView, boolean | null> = {
+		active: false,
+		archived: true,
+		all: null,
+	}
+
+	function parseArchivedView(value: unknown): ArchivedView {
+		const raw = firstQueryString(value)
+		return raw === 'archived' || raw === 'all' ? raw : 'active'
+	}
+
+	function archivedViewOf(isArchived: boolean | null): ArchivedView {
+		if (isArchived === true) return 'archived'
+		if (isArchived === null) return 'all'
+		return 'active'
+	}
+
 	function paramsToActivityFilter(query: LocationQuery): ActivityFilter {
 		return new ActivityFilter(
 			firstQueryString(query.name) ?? null,
@@ -142,6 +179,7 @@
 			parseIdList(query.roleIds),
 			firstQueryString(query.categoryName) ?? null,
 			parseIdList(query.categoryIds),
+			ARCHIVED_VIEW_FILTER[parseArchivedView(query.archived)],
 		)
 	}
 
@@ -153,6 +191,9 @@
 		if (filter.roleName) params.roleName = filter.roleName
 		if (filter.categoryIds?.length) params.categoryIds = filter.categoryIds.join(',')
 		if (filter.categoryName) params.categoryName = filter.categoryName
+		// The default view stays out of the URL, so a shared link to an unfiltered table is still bare.
+		const view = archivedViewOf(filter.isArchived)
+		if (view !== 'active') params.archived = view
 		return params
 	}
 
@@ -188,6 +229,7 @@
 	const roleCombobox = ref<(SelectOption | string)[]>([])
 	const categoryCombobox = ref<(SelectOption | string)[]>([])
 
+	const archivedView = ref<ArchivedView>('active')
 	const activityNameDraft = ref('')
 	const activityTextDraft = ref('')
 	const sharedNameDraft = ref('')
@@ -200,6 +242,7 @@
 	function syncDraftsFromState() {
 		activityNameDraft.value = activitiesFilter.value.name ?? ''
 		activityTextDraft.value = activitiesFilter.value.text ?? ''
+		archivedView.value = archivedViewOf(activitiesFilter.value.isArchived)
 		const shared = currentSharedFilter()
 		sharedNameDraft.value = shared.name ?? ''
 		sharedTextDraft.value = shared.text ?? ''
@@ -293,6 +336,13 @@
 		},
 		{ debounce: 300 },
 	)
+	// Not debounced: it is a three-way toggle, not typing, and one click should reload the table once.
+	watch(archivedView, view => {
+		const isArchived = ARCHIVED_VIEW_FILTER[view]
+		if (activitiesFilter.value.isArchived === isArchived) return
+		activitiesFilter.value.isArchived = isArchived
+	})
+
 	watchDebounced(
 		sharedNameDraft,
 		val => {

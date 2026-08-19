@@ -48,10 +48,16 @@
 					<VCardText class="flex-fill overflow-y-auto filter-card-text">
 						<!-- Activity Selection -->
 						<div>
+							<!--
+								The one picker in the app that keeps archived activities. This filters over history
+								that already exists: those records stay visible after their activity is retired and
+								keep showing its name, so dropping it from the filter would make them unreachable.
+							-->
 							<ActivitySelectionForm
 								v-model="filterData.activityFilter"
 								v-model:selection="selection"
 								mode="optional"
+								includeArchived
 								:selectOptionsSource="ActivityOptionsSource.ACTIVITY_HISTORY"
 							></ActivitySelectionForm>
 						</div>

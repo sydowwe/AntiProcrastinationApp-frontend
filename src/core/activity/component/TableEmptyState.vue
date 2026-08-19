@@ -1,7 +1,7 @@
 <template>
 	<div class="d-flex flex-column align-center justify-center ga-3 py-8 px-4 text-center">
 		<span class="text-body-2 text-textMuted">
-			{{ isFiltered ? t('activities.noResultsForFilter') : explanation }}
+			{{ isFiltered ? (filteredExplanation ?? t('activities.noResultsForFilter')) : explanation }}
 		</span>
 		<VBtn
 			v-if="!isFiltered"
@@ -31,6 +31,12 @@
 		explanation: string
 		isFiltered: boolean
 		createLabel: string
+		/**
+		 * Replaces the generic "nothing matches the filter" line for a filter that deserves its own
+		 * answer — the archived view, where "no results" is true but the useful sentence is that nothing
+		 * has been archived yet.
+		 */
+		filteredExplanation?: string
 	}>()
 
 	const emit = defineEmits<{

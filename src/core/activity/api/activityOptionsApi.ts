@@ -53,8 +53,13 @@ export function fetchActivityOptions(kind: ActivityOptionKind): Promise<SelectOp
  */
 export function fetchActivityFormSelectOptionCombinations(
 	source: ActivityOptionsSource,
+	includeArchived = false,
 ): Promise<ActivitySelectOptionCombination[]> {
-	return API.get(`/${source}/form-select-options`).then(response =>
+	// The parameter is omitted rather than sent as `false`, so every picker's request stays byte-identical
+	// to what it sent before archiving existed. Only the surfaces that must still *name* an archived
+	// activity opt in — see the doc comment on `includeArchived` in `ActivitySelectionForm.vue`.
+	const query = includeArchived ? '?includeArchived=true' : ''
+	return API.get(`/${source}/form-select-options${query}`).then(response =>
 		ActivitySelectOptionCombination.listFromObjects(response.data),
 	)
 }

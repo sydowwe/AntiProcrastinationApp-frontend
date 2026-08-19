@@ -15,10 +15,17 @@ import {
 
 export type { ActivityOptionKind }
 
-/** One cache slot: the plain lists, the combination matrix per source, and each system role's id. */
+/**
+ * Whether a cached matrix includes archived activities. Two slots per source rather than one, because
+ * the history filter panel and a record-creating form ask the same endpoint for genuinely different
+ * answers and neither may serve the other's copy.
+ */
+type CombinationScope = 'active' | 'withArchived'
+
+/** One cache slot: the plain lists, the combination matrix per source and scope, and each system role's id. */
 export type ActivityOptionsCacheKey =
 	| ActivityOptionKind
-	| `combinations:${ActivityOptionsSource}`
+	| `combinations:${ActivityOptionsSource}:${CombinationScope}`
 	| `systemRole:${SystemActivityRole}`
 
 /**
@@ -27,8 +34,8 @@ export type ActivityOptionsCacheKey =
  */
 const MATRIX_KINDS: readonly ActivityOptionKind[] = ['role', 'category', 'activity']
 
-function combinationsKey(source: ActivityOptionsSource): ActivityOptionsCacheKey {
-	return `combinations:${source}`
+function combinationsKey(source: ActivityOptionsSource, includeArchived: boolean): ActivityOptionsCacheKey {
+	return `combinations:${source}:${includeArchived ? 'withArchived' : 'active'}`
 }
 
 function systemRoleKey(role: SystemActivityRole): ActivityOptionsCacheKey {
@@ -76,8 +83,11 @@ export const useActivityOptionsStore = defineStore(
 			routineTimePeriod: routineTimePeriodOptions,
 		}
 
-		const combinationsBySource = ref(new Map<ActivityOptionsSource, ActivitySelectOptionCombination[]>()) as Ref<
-			Map<ActivityOptionsSource, ActivitySelectOptionCombination[]>
+		// Keyed by the cache key, not by source: a source has one slot per scope and they hold different
+		// rows, so a single per-source map would let the history filter's archived-inclusive copy answer a
+		// to-do dialog's request for the active-only one.
+		const combinationsByKey = ref(new Map<ActivityOptionsCacheKey, ActivitySelectOptionCombination[]>()) as Ref<
+			Map<ActivityOptionsCacheKey, ActivitySelectOptionCombination[]>
 		>
 
 		// Which role a quick-created activity lands under. A per-session constant that quick-create used
@@ -153,14 +163,24 @@ export const useActivityOptionsStore = defineStore(
 			})
 		}
 
-		/** The cached matrix for `source`, or the single shared request that is fetching it. Also a copy. */
-		function ensureCombinations(source: ActivityOptionsSource): Promise<ActivitySelectOptionCombination[]> {
-			const key = combinationsKey(source)
-			if (loadedKeys.value.has(key)) return Promise.resolve([...(combinationsBySource.value.get(source) ?? [])])
+		/**
+		 * The cached matrix for `source`, or the single shared request that is fetching it. Also a copy.
+		 *
+		 * `includeArchived` is a separate cache slot rather than a filter over one: the server decides what
+		 * an archived activity means to each source, and the archived-inclusive answer is a superset only
+		 * by convention. Almost nothing passes `true` — the history *filter* panel does, because the
+		 * records it filters over stay visible after their activity is archived.
+		 */
+		function ensureCombinations(
+			source: ActivityOptionsSource,
+			includeArchived = false,
+		): Promise<ActivitySelectOptionCombination[]> {
+			const key = combinationsKey(source, includeArchived)
+			if (loadedKeys.value.has(key)) return Promise.resolve([...(combinationsByKey.value.get(key) ?? [])])
 			return share(key, async isCurrent => {
-				const combinations = await fetchActivityFormSelectOptionCombinations(source)
-				if (!isCurrent()) return [...(combinationsBySource.value.get(source) ?? combinations)]
-				combinationsBySource.value.set(source, combinations)
+				const combinations = await fetchActivityFormSelectOptionCombinations(source, includeArchived)
+				if (!isCurrent()) return [...(combinationsByKey.value.get(key) ?? combinations)]
+				combinationsByKey.value.set(key, combinations)
 				loadedKeys.value.add(key)
 				return [...combinations]
 			})
@@ -213,12 +233,15 @@ export const useActivityOptionsStore = defineStore(
 		 * so dropping the cache never blanks a form that is already open — the next mount refetches.
 		 */
 		function invalidateCombinations() {
-			// Every source, not just the ones with an entry: one may be in flight and have nothing
-			// cached yet, and that request needs discarding too.
+			// Every source and both scopes, not just the ones with an entry: one may be in flight and have
+			// nothing cached yet, and that request needs discarding too. Archiving an activity changes both
+			// scopes at once — it leaves the active matrix and enters the archived-inclusive one — so
+			// bumping only the scope the mutation "belongs to" would leave the other stale.
 			for (const source of Object.values(ActivityOptionsSource)) {
-				bumpGeneration(combinationsKey(source))
+				bumpGeneration(combinationsKey(source, false))
+				bumpGeneration(combinationsKey(source, true))
 			}
-			combinationsBySource.value.clear()
+			combinationsByKey.value.clear()
 		}
 
 		/**
@@ -248,7 +271,7 @@ export const useActivityOptionsStore = defineStore(
 
 		function resetStore() {
 			for (const list of Object.values(optionRefs)) list.value = []
-			combinationsBySource.value.clear()
+			combinationsByKey.value.clear()
 			systemRoleIds.value.clear()
 			for (const key of loadedKeys.value) generations.set(key, generationOf(key) + 1)
 			for (const key of loadingKeys.value) generations.set(key, generationOf(key) + 1)
@@ -271,7 +294,7 @@ export const useActivityOptionsStore = defineStore(
 			activityOptions,
 			taskPriorityOptions,
 			routineTimePeriodOptions,
-			combinationsBySource,
+			combinationsByKey,
 			systemRoleIds,
 			loadingKeys,
 			isLoading,

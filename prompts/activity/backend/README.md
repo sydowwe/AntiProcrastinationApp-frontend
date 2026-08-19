@@ -13,7 +13,7 @@ Expected to appear here:
 | From | When | Subject |
 |------|------|---------|
 | [A8](../A8-quick-create-role-lookup.md) | always | a stable system key on activity roles, so quick-create stops resolving its role by English display name |
-| [A9](../A9-archive-and-merge.md) | always | archive semantics, merge semantics, and the reference rules only the backend knows |
+| [A9](../A9-archive-and-merge.md) | ✍️ **written, blocking** — [`A9-backend.md`](A9-backend.md) | archive semantics, merge semantics, and the reference rules only the backend knows. The frontend is built and every part of it is dead until these routes answer — unlike A8 there is no fallback |
 | [A7](../A7-select-options-cache.md) | ✅ **answered** — [`A7-backend.md`](A7-backend.md) | `roleOption` nullability on `{source}/form-select-options`. All non-null, no backend change needed. Surfaced two frontend bugs: a wrong route in `ActivityOptionsSource` (fixed) and the always-empty priority/period dropdowns (open) |
 | [A2](../A2-delete-dead-code.md) | only if the backend rejects the field | `icon` on the role/category create/update requests |
 

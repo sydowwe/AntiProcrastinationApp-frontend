@@ -92,6 +92,12 @@ const common = {
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale (see the note at the top of SK.ts), so its copy of this key never reaches i18n.
 		undoSuccess: `{description} bolo vrátené späť`,
+		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
+		// every app-side `useDialog().confirm` for a delete. Without the mirror they render the raw key —
+		// which is what every table in the app did until this was noticed (migration-revision.md R5/R6/R11
+		// are the same defect three times over).
+		deleteConfirmationTitle: `Potvrdenie vymazania`,
+		deleteConfirmationText: `Ste si istý, že chcete vymazať {name}?`,
 	},
 	dateTime: {
 		when: `Kedy`,

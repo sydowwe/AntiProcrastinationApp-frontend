@@ -53,6 +53,35 @@ const activity = {
 		noResultsForFilter: `Nothing matches the current filter.`,
 
 		//=========
+		archive: {
+			archive: `Archive`,
+			unarchive: `Restore`,
+			archived: `"{name}" is archived.`,
+			unarchived: `"{name}" is active again.`,
+			archivedRow: `Archived — not offered when recording.`,
+			deleteBlocked: `Only an activity nothing refers to can be deleted. Archive this one instead.`,
+			usageCount: `Records`,
+			noneArchived: `Nothing has been archived yet.`,
+			viewActive: `Active`,
+			viewArchived: `Archived`,
+			viewAll: `All`,
+		},
+		merge: {
+			title: `Merge activities`,
+			action: `Merge`,
+			confirmTitle: `Merge confirmation`,
+			selectedCount: `Selected: {count}`,
+			needsTwo: `Merging takes at least two activities.`,
+			explanation: `Pick the activity that stays. Everything pointing at the others — history, to-do items, planner tasks and tracking mappings — is repointed to it, and the other activities are gone.`,
+			collapseNote: `Where one row points at two of the merged activities it keeps a single reference, so fewer records may move than the total suggests.`,
+			activityCount: `{count} activity | {count} activities`,
+			recordCount: `{count} record | {count} records`,
+			outcome: `{activities} and {records} will be merged into "{survivor}".`,
+			irreversible: `This cannot be undone.`,
+			success: `{activities} and {records} merged into "{survivor}".`,
+		},
+
+		//=========
 		roles: `Roles`,
 		categories: `Categories`,
 		activitiesTab: `Activities`,

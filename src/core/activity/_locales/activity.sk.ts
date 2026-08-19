@@ -56,6 +56,42 @@ const activity = {
 		noResultsForFilter: `Filtru nezodpovedá žiadny záznam.`,
 
 		//=========
+		// Archivácia namiesto mazania. Archivovaná aktivita si necháva celú históriu, zmizne z ponúk
+		// aktivít a v nastaveniach ju vidno po prepnutí filtra.
+		archive: {
+			archive: `Archivovať`,
+			unarchive: `Vrátiť z archívu`,
+			archived: `Aktivita „{name}“ je archivovaná.`,
+			unarchived: `Aktivita „{name}“ je späť medzi aktívnymi.`,
+			archivedRow: `Archivovaná — neponúka sa pri zaznamenávaní.`,
+			// Prečo je kôš neaktívny. Mazanie je povolené iba pri aktivite, na ktorú nič neodkazuje.
+			deleteBlocked: `Vymazať sa dá len aktivita, na ktorú nič neodkazuje. Túto archivujte.`,
+			usageCount: `Záznamy`,
+			noneArchived: `Zatiaľ nie je archivovaná žiadna aktivita.`,
+			viewActive: `Aktívne`,
+			viewArchived: `Archivované`,
+			viewAll: `Všetky`,
+		},
+		// Zlúčenie duplicitných aktivít. Nezvratné — potvrdenie je jediná poistka.
+		merge: {
+			title: `Zlúčiť aktivity`,
+			action: `Zlúčiť`,
+			confirmTitle: `Potvrdenie zlúčenia`,
+			selectedCount: `Vybrané: {count}`,
+			needsTwo: `Zlúčiť sa dajú aspoň dve aktivity.`,
+			explanation: `Vyberte aktivitu, ktorá zostane. Všetko, čo odkazuje na ostatné — história, úlohy z to-do listu, úlohy v plánovači aj priradenia zo sledovania — sa prepojí na ňu a ostatné aktivity zaniknú.`,
+			// Ak ten istý riadok odkazuje na dve zlučované aktivity, zostane z toho jeden odkaz. Číslo nižšie
+			// je preto horná hranica a snackbar po zlúčení môže hlásiť menej — bez tejto vety to vyzerá ako chyba.
+			collapseNote: `Ak na dve zlučované aktivity odkazuje ten istý riadok, zostane z toho jediný odkaz — prenesených záznamov tak môže byť menej.`,
+			// Tvary sú v genitíve, lebo vetu uvádza „Zlúčenie …“ — poradie je jednotné | 2–4 | 5+.
+			activityCount: `{count} aktivity | {count} aktivít | {count} aktivít`,
+			recordCount: `{count} záznamu | {count} záznamov | {count} záznamov`,
+			outcome: `Zlúčenie do aktivity „{survivor}“ — {activities} a {records}.`,
+			irreversible: `Túto akciu nemožno vrátiť späť.`,
+			success: `Zlúčenie do aktivity „{survivor}“ prebehlo — {activities} a {records}.`,
+		},
+
+		//=========
 		roles: `Role`,
 		categories: `Kategórie`,
 		activitiesTab: `Aktivity`,

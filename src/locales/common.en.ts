@@ -299,6 +299,11 @@ const common = {
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale, so its copy of this key never reaches i18n.
 		undoSuccess: `{description} was undone`,
+		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
+		// every app-side `useDialog().confirm` for a delete. EN never had them at all — `EN.ts` does not
+		// spread the framework's Slovak-only `common`.
+		deleteConfirmationTitle: `Delete confirmation`,
+		deleteConfirmationText: `Are you sure you want to delete {name}?`,
 	},
 	dateTime: {
 		when: `When`,
