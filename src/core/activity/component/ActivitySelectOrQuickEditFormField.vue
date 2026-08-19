@@ -8,7 +8,7 @@
 				:label="
 					isEdit
 						? $t('activities.quickEditActivity')
-						: $t('activities.quickCreateActivityWithRole', { role: viewName })
+						: $t('activities.quickCreateActivityWithRole', { role: systemRoleLabel })
 				"
 				density="comfortable"
 				hideDetails
@@ -64,11 +64,10 @@
 
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
-	import {
-		type QuickCreateActivityRoleName,
-		useQuickCreateActivity,
-	} from '@/core/activity/composable/quickCreateActivityComposition.ts'
+	import { useQuickCreateActivity } from '@/core/activity/composable/quickCreateActivityComposition.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
+	import { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
+	import type { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref, watchEffect } from 'vue'
 	import { useI18n } from 'vue-i18n'
@@ -78,8 +77,9 @@
 	import { QuickActivityToolsDto } from '@/core/activity/dto/response/QuickActivityToolsDto.ts'
 	import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 
-	const { viewName } = defineProps<{
-		viewName: QuickCreateActivityRoleName
+	const { systemRole } = defineProps<{
+		/** Which role a quick-created activity lands under. An identity — the label comes from i18n. */
+		systemRole: SystemActivityRole
 	}>()
 	// Loading goes out through a model rather than defineExpose, and it is this field's own fetch plus
 	// the selection form's — a parent should not have to know there are two.
@@ -94,7 +94,9 @@
 	const activityForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
 	const { activityFormFieldData, isActivityFormHidden, quickCreateActivity, quickEditActivity } =
-		useQuickCreateActivity(viewName)
+		useQuickCreateActivity(systemRole)
+
+	const systemRoleLabel = computed(() => i18n.t(`activities.systemRole.${systemRole}`))
 
 	const selectedActivityId = ref<number | undefined>(undefined)
 
@@ -106,13 +108,13 @@
 	})
 
 	const quickEditModeItems = computed(() => [
-		{ title: i18n.t('activities.overwrite'), value: 'Overwrite' },
-		{ title: i18n.t('activities.clone'), value: 'Clone' },
+		{ title: i18n.t('activities.overwrite'), value: QuickEditMode.OVERWRITE },
+		{ title: i18n.t('activities.clone'), value: QuickEditMode.CLONE },
 	])
 
 	const isEdit = ref(false)
 	const activityBeforeEdit = ref<QuickActivityToolsDto | null>(null)
-	const quickEditMode = ref<'Overwrite' | 'Clone'>('Overwrite')
+	const quickEditMode = ref<QuickEditMode>(QuickEditMode.OVERWRITE)
 
 	onMounted(async () => {
 		ownLoading.value = true
@@ -130,7 +132,7 @@
 			if (isEdit.value && activityBeforeEdit.value?.id) {
 				if (hasObjectChanged(activityBeforeEdit.value, activityFormFieldData.value)) {
 					const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
-					if (cloneId && quickEditMode.value === 'Clone') {
+					if (cloneId && quickEditMode.value === QuickEditMode.CLONE) {
 						return { activityId: cloneId, status: 'edit' }
 					}
 					return { activityId: activityBeforeEdit.value.id, status: 'edit' }
@@ -138,6 +140,9 @@
 				return { activityId: activityBeforeEdit.value.id, status: 'noChange' }
 			} else {
 				const newId = await quickCreateActivity()
+				// The role could not be resolved and nothing was created; `quickCreateActivity` has already
+				// said so. Returning undefined keeps the dialog open, so the user can fix the role and retry.
+				if (newId == null) return
 				return { activityId: newId, status: 'create' }
 			}
 		}
@@ -159,7 +164,7 @@
 		isEdit.value = true
 		isActivityFormHidden.value = true
 
-		quickEditMode.value = 'Overwrite'
+		quickEditMode.value = QuickEditMode.OVERWRITE
 
 		activityBeforeEdit.value = new QuickActivityToolsDto(
 			oldActivity.id,

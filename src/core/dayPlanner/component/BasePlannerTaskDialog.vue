@@ -46,7 +46,7 @@
 				<ActivitySelectOrQuickEditFormField
 					v-show="!hideActivitySelector"
 					ref="activityFormField"
-					viewName="Planner task"
+					:systemRole="SystemActivityRole.PLANNER_TASK"
 					:isEdit
 				></ActivitySelectOrQuickEditFormField>
 			</VCard>
@@ -107,6 +107,7 @@
 	import { computed, nextTick, onMounted, ref, watch } from 'vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
+	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import type { VForm } from 'vuetify/components'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'

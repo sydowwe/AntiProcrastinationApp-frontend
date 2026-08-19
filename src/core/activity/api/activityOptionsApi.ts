@@ -1,7 +1,9 @@
 import { API } from '@/_common/axiosConfig.ts'
 import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
+import type { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
+import { Role } from '@/core/activity/dto/response/Role.ts'
 import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
 import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 
@@ -55,4 +57,30 @@ export function fetchActivityFormSelectOptionCombinations(
 	return API.get(`/${source}/form-select-options`).then(response =>
 		ActivitySelectOptionCombination.listFromObjects(response.data),
 	)
+}
+
+/**
+ * The id of one of the three system roles, or `null` when it cannot be resolved.
+ *
+ * Looks the role up by its stable `systemKey`, never by display name — renaming a role in
+ * `/activity-settings/roles` is fully permitted and used to break quick-create from four dialogs.
+ * `SystemActivityRole`'s values are the wire keys verbatim (the server parses them case-insensitively
+ * and its C# enum carries `[JsonStringEnumMemberName]`), so there is no mapping table here any more.
+ *
+ * Resolves to `null` rather than rejecting, and goes out `_silent` so the interceptor stays quiet: the
+ * caller shows `activities.systemRoleMissing`, which says what actually happened, instead of the generic
+ * error snackbar a rejection produced before.
+ *
+ * The 404 is now only reachable by accounts that renamed one of the three *before* the backend's
+ * name-based backfill ran — those rows kept `systemKey: null` and cannot be identified automatically
+ * (see `prompts/activity/backend/A8-backend.md`). Deleting a keyed role is refused server-side and a
+ * rename preserves the key, so nothing else produces it.
+ */
+export function fetchSystemActivityRoleId(role: SystemActivityRole): Promise<number | null> {
+	return API.get(`/activity-role/by-system-key/${role}`, { _silent: true })
+		.then(response => {
+			const id = response.data != null ? Role.fromJson(response.data).id : 0
+			return id > 0 ? id : null
+		})
+		.catch(() => null)
 }

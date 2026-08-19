@@ -14,7 +14,7 @@
 		>
 			<ActivitySelectOrQuickEditFormField
 				ref="activityFormField"
-				viewName="To-do list task"
+				:systemRole="SystemActivityRole.TODO_LIST_TASK"
 				:isEdit
 			></ActivitySelectOrQuickEditFormField>
 			<BaseTodoListRepeatCountFormField
@@ -116,6 +116,7 @@
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
+	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
 	import { TodoListItemStepRequest } from '@/core/todoList/dto/request/TodoListItemStepRequest.ts'
 	import BaseTodoListRepeatCountFormField from '@/core/todoList/component/BaseTodoListRepeatCountFormField.vue'

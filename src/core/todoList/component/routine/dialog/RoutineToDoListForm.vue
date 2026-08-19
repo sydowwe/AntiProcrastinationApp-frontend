@@ -8,7 +8,7 @@
 		<ActivitySelectOrQuickEditFormField
 			ref="activityFormField"
 			v-model:loading="loadingActivityField"
-			viewName="Routine task"
+			:systemRole="SystemActivityRole.ROUTINE_TASK"
 			:oldActivityId="entityToEdit?.activity.id"
 			:oldActivityName="entityToEdit?.activity.name"
 			:oldActivityText="entityToEdit?.activity.name"
@@ -63,6 +63,7 @@
 	import { computed, onMounted, ref, watch } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
+	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import BaseTodoListRepeatCountFormField from '@/core/todoList/component/BaseTodoListRepeatCountFormField.vue'
 	import DayOfWeekPicker from '@/_common/component/inputs/DayOfWeekPicker.vue'
 	import SuggestedTimeFormField from '@/core/todoList/component/SuggestedTimeFormField.vue'

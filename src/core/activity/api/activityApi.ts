@@ -4,6 +4,7 @@ import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { Activity } from '@/core/activity/dto/response/Activity.ts'
 import { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
 import type { QuickEditActivityRequest } from '@/core/activity/dto/request/QuickEditActivityRequest.ts'
+import type { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
 import { invalidatingActivityOptions, useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
 
 export function useActivityCrud() {
@@ -31,7 +32,7 @@ export function useActivityCrud() {
 	 */
 	function quickEdit(
 		activityId: number,
-		mode: 'Overwrite' | 'Clone',
+		mode: QuickEditMode,
 		request: QuickEditActivityRequest,
 	): Promise<number | null> {
 		return API.patch(`/${url}/${activityId}/${mode}`, request).then(response =>

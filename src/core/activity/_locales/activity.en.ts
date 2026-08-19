@@ -29,6 +29,12 @@ const activity = {
 		clone: `Clone`,
 		pleaseSelectActivity: `Please select an activity`,
 		activityNotFound: `Activity with id {id} not found`,
+		systemRole: {
+			routineTask: `Routine task`,
+			todoListTask: `To-do list task`,
+			plannerTask: `Planner task`,
+		},
+		systemRoleMissing: `The "{role}" role could not be found, so the activity was not created. Check it in the role settings.`,
 		copySuffix: ` - copy`,
 
 		//=========

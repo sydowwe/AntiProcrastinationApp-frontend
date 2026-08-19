@@ -4,17 +4,22 @@ import { defineStore } from 'pinia'
 import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
+import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 import type { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
 import {
 	fetchActivityFormSelectOptionCombinations,
 	fetchActivityOptions,
+	fetchSystemActivityRoleId,
 	type ActivityOptionKind,
 } from '@/core/activity/api/activityOptionsApi.ts'
 
 export type { ActivityOptionKind }
 
-/** One cache slot: the plain lists, plus the combination matrix once per source. */
-export type ActivityOptionsCacheKey = ActivityOptionKind | `combinations:${ActivityOptionsSource}`
+/** One cache slot: the plain lists, the combination matrix per source, and each system role's id. */
+export type ActivityOptionsCacheKey =
+	| ActivityOptionKind
+	| `combinations:${ActivityOptionsSource}`
+	| `systemRole:${SystemActivityRole}`
 
 /**
  * The kinds the combination matrix is derived from. Changing one of these stales it; the two
@@ -24,6 +29,10 @@ const MATRIX_KINDS: readonly ActivityOptionKind[] = ['role', 'category', 'activi
 
 function combinationsKey(source: ActivityOptionsSource): ActivityOptionsCacheKey {
 	return `combinations:${source}`
+}
+
+function systemRoleKey(role: SystemActivityRole): ActivityOptionsCacheKey {
+	return `systemRole:${role}`
 }
 
 /**
@@ -70,6 +79,10 @@ export const useActivityOptionsStore = defineStore(
 		const combinationsBySource = ref(new Map<ActivityOptionsSource, ActivitySelectOptionCombination[]>()) as Ref<
 			Map<ActivityOptionsSource, ActivitySelectOptionCombination[]>
 		>
+
+		// Which role a quick-created activity lands under. A per-session constant that quick-create used
+		// to re-fetch on every single create.
+		const systemRoleIds = ref(new Map<SystemActivityRole, number>()) as Ref<Map<SystemActivityRole, number>>
 
 		const loadedKeys = ref(new Set<ActivityOptionsCacheKey>())
 		const loadingKeys = ref(new Set<ActivityOptionsCacheKey>())
@@ -154,6 +167,35 @@ export const useActivityOptionsStore = defineStore(
 		}
 
 		/**
+		 * The cached id of a system role, or the single shared request resolving it. `null` means it could
+		 * not be resolved — the seeded role was renamed or deleted, or the request failed.
+		 *
+		 * A miss is deliberately **not** cached: the user can go and fix the role in
+		 * `/activity-settings/roles`, and a cached `null` would keep quick-create broken for the rest of
+		 * the session. A hit is cached until any role mutation invalidates it (see `invalidate`).
+		 */
+		function ensureSystemRoleId(role: SystemActivityRole): Promise<number | null> {
+			const key = systemRoleKey(role)
+			if (loadedKeys.value.has(key)) return Promise.resolve(systemRoleIds.value.get(role) ?? null)
+			return share(key, async isCurrent => {
+				const id = await fetchSystemActivityRoleId(role)
+				if (!isCurrent()) return systemRoleIds.value.get(role) ?? null
+				if (id == null) return null
+				systemRoleIds.value.set(role, id)
+				loadedKeys.value.add(key)
+				return id
+			})
+		}
+
+		/** Every system-role slot is stale — a role was created, renamed or deleted. */
+		function invalidateSystemRoleIds() {
+			for (const role of Object.values(SystemActivityRole)) {
+				bumpGeneration(systemRoleKey(role))
+			}
+			systemRoleIds.value.clear()
+		}
+
+		/**
 		 * Add an option the user has just created, without waiting for a round trip. Consumers used to
 		 * push into their own local array, so only the component that opened the create dialog saw the
 		 * new role; going through the store means every mounted picker sees it.
@@ -187,11 +229,16 @@ export const useActivityOptionsStore = defineStore(
 		 *
 		 * Any of the three matrix kinds changing stales the matrix, so it goes with them; the two
 		 * `todoList` lookups are not in the matrix and leave it alone.
+		 *
+		 * A role mutation additionally stales the system-role ids. That is not optional while the lookup
+		 * still goes through the display name: renaming "To-do list task" changes the answer without
+		 * changing the id, which is the exact failure this prompt exists to fix.
 		 */
 		function invalidate(kind: ActivityOptionKind) {
 			const wasLoaded = loadedKeys.value.has(kind)
 			bumpGeneration(kind)
 			if (MATRIX_KINDS.includes(kind)) invalidateCombinations()
+			if (kind === 'role') invalidateSystemRoleIds()
 
 			// Nothing has asked for this list yet, so there is nothing on screen to refresh.
 			if (!wasLoaded) return
@@ -202,6 +249,7 @@ export const useActivityOptionsStore = defineStore(
 		function resetStore() {
 			for (const list of Object.values(optionRefs)) list.value = []
 			combinationsBySource.value.clear()
+			systemRoleIds.value.clear()
 			for (const key of loadedKeys.value) generations.set(key, generationOf(key) + 1)
 			for (const key of loadingKeys.value) generations.set(key, generationOf(key) + 1)
 			loadedKeys.value.clear()
@@ -224,13 +272,16 @@ export const useActivityOptionsStore = defineStore(
 			taskPriorityOptions,
 			routineTimePeriodOptions,
 			combinationsBySource,
+			systemRoleIds,
 			loadingKeys,
 			isLoading,
 			ensureOptions,
 			ensureCombinations,
+			ensureSystemRoleId,
 			addOption,
 			invalidate,
 			invalidateCombinations,
+			invalidateSystemRoleIds,
 			resetStore,
 		}
 	},

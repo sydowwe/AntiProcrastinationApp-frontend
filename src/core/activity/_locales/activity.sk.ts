@@ -30,6 +30,14 @@ const activity = {
 		clone: `Klonovať`,
 		pleaseSelectActivity: `Prosím vyberte aktivitu`,
 		activityNotFound: `Aktivita s id {id} sa nenašla`,
+		// Názvy troch systémových rolí, pod ktoré padne rýchlo vytvorená aktivita. Kľúče sú hodnoty
+		// SystemActivityRole — samotná roľa sa v databáze môže volať akokoľvek, tu je len jej označenie.
+		systemRole: {
+			routineTask: `Rutinná úloha`,
+			todoListTask: `Úloha z to-do listu`,
+			plannerTask: `Úloha z plánovača`,
+		},
+		systemRoleMissing: `Roľa „{role}“ sa nenašla, takže aktivita nebola vytvorená. Skontrolujte ju v nastaveniach rolí.`,
 		copySuffix: ` - kópia`,
 
 		//=========

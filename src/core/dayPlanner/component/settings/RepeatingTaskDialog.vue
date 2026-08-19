@@ -19,7 +19,7 @@
 			>
 				<ActivitySelectOrQuickEditFormField
 					ref="activityFormField"
-					viewName="Planner task"
+					:systemRole="SystemActivityRole.PLANNER_TASK"
 					:isEdit="!!editedId"
 				/>
 			</VCard>
@@ -220,6 +220,7 @@
 	import { computed, onMounted, ref } from 'vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
+	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import ActiveWindowPicker from '@/core/dayPlanner/component/settings/ActiveWindowPicker.vue'
 	import type { VForm } from 'vuetify/components'
