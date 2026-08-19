@@ -52,6 +52,7 @@
 					v-if="!activityId"
 					ref="activitySelectionForm"
 					v-model:activityId="selectedActivityId"
+					v-model:selection="selection"
 					:formDisabled="formDisabled"
 				></ActivitySelectionForm>
 			</template>
@@ -73,6 +74,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
+	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
@@ -109,6 +111,9 @@
 	const startTimestamp = ref(new Date())
 	const formDisabled = ref(false)
 	const selectedActivityId = ref<number | null>(activityId)
+	const selection = ref<ActivitySelection | null>(null)
+	// Frozen at start: the selection form is hidden while the timer runs, and the name has to survive
+	// until the save dialog.
 	const selectedActivityName = ref<string>('')
 
 	const endsAt = ref<number | null>(null)
@@ -150,8 +155,7 @@
 			if (!validationResult || validationResult.length === 0) {
 				formDisabled.value = true
 				startTimestamp.value = new Date()
-				selectedActivityName.value =
-					(activitySelectionForm.value?.getSelectedActivityName as string) ?? activityName
+				selectedActivityName.value = selection.value?.activityName || activityName
 				timeInputVisible.value = false
 				const durationMs = initialTime.value.getInSeconds * 1000
 				const currentTime = Date.now()

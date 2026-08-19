@@ -61,6 +61,7 @@
 			<PomodoroTimerView
 				v-else-if="selectedMethod === 'pomodoro'"
 				:activityId
+				:activityName
 				compact
 				@started="handleStarted"
 				@done="handleDone"

@@ -100,7 +100,8 @@
 </template>
 
 <script setup lang="ts">
-	import { reactive, ref, watch } from 'vue'
+	import { reactive, ref } from 'vue'
+	import type { Ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
@@ -112,6 +113,7 @@
 	import { useActivitySelectionFormState } from '@/core/activity/composable/useActivitySelectionFormState.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
+	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 
 	const {
 		isFilter = false,
@@ -129,10 +131,6 @@
 		selectOptionsSource?: ActivityOptionsSource
 	}>()
 
-	const emit = defineEmits<{
-		(e: 'activityIdChanged', activityId: number | null): void
-	}>()
-
 	const formData = defineModel<ActivityFormRequest>({
 		required: false,
 		default: () => reactive(new ActivityFormRequest()),
@@ -140,27 +138,26 @@
 
 	const selectedActivityId = defineModel<number | null>('activityId', { default: null })
 
+	/**
+	 * What is currently selected, names included — null until the option lists have loaded. Bind
+	 * `v-model:selection` instead of reaching into this component for a name.
+	 */
+	const selection = defineModel<ActivitySelection | null>('selection', { default: null })
+	const loading = defineModel<boolean>('loading', { default: false })
+
 	const { t } = useI18n()
 	const { requiredRule } = useGeneralRules()
 	const { openDialog } = useDialog()
 	const activityField = ref<InstanceType<typeof VAutocomplete>>()
 
-	const {
-		loading,
-		filteredOptions,
-		activityIdModel,
-		getSelectedActivityName,
-		getSelectedRoleName,
-		getSelectedCategoryName,
-		getSelectedTaskPriorityName,
-		getSelectedRoutineTimePeriodName,
-		saveActivityToHistory,
-		onActivityCreated,
-	} = useActivitySelectionFormState(formData, selectedActivityId, isFilter, selectOptionsSource)
-
-	watch(activityIdModel, newValue => {
-		emit('activityIdChanged', newValue)
-	})
+	const { filteredOptions, activityIdModel, saveActivityToHistory, onActivityCreated } =
+		useActivitySelectionFormState(
+			formData,
+			selectedActivityId,
+			selection as Ref<ActivitySelection | null>,
+			loading,
+			selectOptionsSource,
+		)
 
 	async function validate() {
 		return await activityField.value?.validate()
@@ -183,14 +180,11 @@
 		onActivityCreated(result.request, result.createdId)
 	}
 
+	// `validate()` is the only thing left that a parent has to reach in for: it is a genuine imperative
+	// action with no data-flow equivalent. Everything else this component knows now leaves through a
+	// model.
 	defineExpose({
-		loading,
 		validate,
-		getSelectedActivityName,
-		getSelectedRoleName,
-		getSelectedCategoryName,
-		getSelectedTaskPriorityName,
-		getSelectedRoutineTimePeriodName,
 		saveActivityToHistory,
 	})
 </script>

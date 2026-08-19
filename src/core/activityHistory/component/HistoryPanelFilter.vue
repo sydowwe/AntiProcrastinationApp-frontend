@@ -49,8 +49,8 @@
 						<!-- Activity Selection -->
 						<div>
 							<ActivitySelectionForm
-								ref="activitySelectionFormRef"
 								v-model="filterData.activityFilter"
+								v-model:selection="selection"
 								:selectOptionsSource="ActivityOptionsSource.ACTIVITY_HISTORY"
 							></ActivitySelectionForm>
 						</div>
@@ -136,6 +136,7 @@
 	import { VDateInput } from 'vuetify/labs/components'
 	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import HistoryCurrentFilterInfo from '@/core/activityHistory/component/HistoryCurrentFilterInfo.vue'
+	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 
 	const emit = defineEmits<{
 		filterApplied: [filterData: ActivityHistoryFilter, isDateRange: boolean]
@@ -161,8 +162,8 @@
 		routineTimePeriodName?: string
 	}>({})
 
-	// Ref for the activity selection form
-	const activitySelectionFormRef = ref<InstanceType<typeof ActivitySelectionForm>>()
+	// What the activity selection form currently has picked, names included
+	const selection = ref<ActivitySelection | null>(null)
 
 	onMounted(() => {
 		applyFilter()
@@ -175,11 +176,11 @@
 
 		// Capture filter names at the moment of applying
 		appliedFilterNames.value = {
-			activityName: activitySelectionFormRef.value?.getSelectedActivityName,
-			roleName: activitySelectionFormRef.value?.getSelectedRoleName,
-			categoryName: activitySelectionFormRef.value?.getSelectedCategoryName,
-			taskPriorityName: activitySelectionFormRef.value?.getSelectedTaskPriorityName,
-			routineTimePeriodName: activitySelectionFormRef.value?.getSelectedRoutineTimePeriodName,
+			activityName: selection.value?.activityName,
+			roleName: selection.value?.roleName,
+			categoryName: selection.value?.categoryName,
+			taskPriorityName: selection.value?.taskPriorityName,
+			routineTimePeriodName: selection.value?.routineTimePeriodName,
 		}
 
 		emit('filterApplied', filterData.value, isDateRange.value)

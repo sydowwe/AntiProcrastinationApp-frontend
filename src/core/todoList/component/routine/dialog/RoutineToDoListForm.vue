@@ -7,6 +7,7 @@
 	>
 		<ActivitySelectOrQuickEditFormField
 			ref="activityFormField"
+			v-model:loading="loadingActivityField"
 			viewName="Routine task"
 			:oldActivityId="entityToEdit?.activity.id"
 			:oldActivityName="entityToEdit?.activity.name"
@@ -96,6 +97,7 @@
 	const isRepeated = ref(false)
 	const suggestedTime = ref<Time | null>(null)
 	const loadingTimePeriods = ref(false)
+	const loadingActivityField = ref(false)
 	const timePeriodOptions = ref<RoutineTimePeriodEntity[]>([])
 
 	const isEdit = computed(() => entityToEdit !== null)
@@ -104,7 +106,7 @@
 	dialogApi.onConfirm(onConfirm)
 
 	watch(
-		() => loadingTimePeriods.value || (activityFormField.value?.loading ?? false),
+		() => loadingTimePeriods.value || loadingActivityField.value,
 		loading => dialogApi.setLoading(loading),
 	)
 

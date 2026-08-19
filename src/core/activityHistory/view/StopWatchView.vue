@@ -42,6 +42,7 @@
 				v-if="!activityId"
 				ref="activitySelectionForm"
 				v-model:activityId="selectedActivityId"
+				v-model:selection="selection"
 				:formDisabled
 			></ActivitySelectionForm>
 		</VCol>
@@ -58,6 +59,7 @@
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
+	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null
@@ -80,6 +82,7 @@
 	const startTimestamp = ref(new Date())
 	const formDisabled = ref(false)
 	const selectedActivityId = ref<number | null>(activityId)
+	const selection = ref<ActivitySelection | null>(null)
 
 	const startedAt = ref<number | null>(null)
 	const pausedElapsed = ref(0)
@@ -130,12 +133,12 @@
 			startedAt.value = null
 		}
 		updateTimeDisplay()
-		const name = activitySelectionForm.value?.getSelectedActivityName
+		const name = selection.value?.activityName ?? ''
 		if (!activityId) {
 			const timeLength = time.value.toTimeLength
 			const result = await openDialog<boolean>({
 				component: SaveActivityBody,
-				componentProps: { activity: name!, timeSpent: timeLength },
+				componentProps: { activity: name, timeSpent: timeLength },
 				dialogProps: { title: t('activities.recordNewActivity') },
 			})
 			if (result) {

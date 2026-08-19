@@ -30,6 +30,7 @@
 			v-if="!isActivityFormHidden"
 			ref="activityForm"
 			v-model:activityId="selectedActivityId"
+			v-model:loading="selectionFormLoading"
 			:showFromToDoListField="false"
 			:formDisabled="false"
 			:isFilter="false"
@@ -71,7 +72,7 @@
 	} from '@/core/activity/composable/quickCreateActivityComposition.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, onMounted, ref, watchEffect } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
@@ -83,6 +84,9 @@
 	const { viewName } = defineProps<{
 		viewName: QuickCreateActivityRoleName
 	}>()
+	// Loading goes out through a model rather than defineExpose, and it is this field's own fetch plus
+	// the selection form's — a parent should not have to know there are two.
+	const loading = defineModel<boolean>('loading', { default: false })
 	const i18n = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
 	const { requiredRule } = useGeneralRules()
@@ -96,7 +100,13 @@
 
 	const selectedActivityId = ref<number | undefined>(undefined)
 	const categoryOptions = ref<SelectOption[]>([])
-	const loading = ref(false)
+
+	const ownLoading = ref(false)
+	const selectionFormLoading = ref(false)
+
+	watchEffect(() => {
+		loading.value = ownLoading.value || (!isActivityFormHidden.value && selectionFormLoading.value)
+	})
 
 	const quickEditModeItems = computed(() => [
 		{ title: i18n.t('activities.overwrite'), value: 'Overwrite' },
@@ -108,9 +118,9 @@
 	const quickEditMode = ref<'Overwrite' | 'Clone'>('Overwrite')
 
 	onMounted(async () => {
-		loading.value = true
+		ownLoading.value = true
 		categoryOptions.value = await fetchCategorySelectOptions()
-		loading.value = false
+		ownLoading.value = false
 	})
 
 	async function execAndReturnStatus() {
@@ -137,9 +147,9 @@
 	}
 
 	async function onOpenEdit(activityId: number) {
-		loading.value = true
+		ownLoading.value = true
 		const oldActivity = await fetchById(activityId)
-		loading.value = false
+		ownLoading.value = false
 		if (!oldActivity) {
 			showErrorSnackbar(i18n.t('activities.activityNotFound', { id: activityId }))
 			return
@@ -177,6 +187,5 @@
 		execAndReturnStatus,
 		reset,
 		onOpenEdit,
-		loading,
 	})
 </script>

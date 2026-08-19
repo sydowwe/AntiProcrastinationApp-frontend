@@ -177,6 +177,7 @@
 							v-if="!activityId"
 							ref="mainActivitySelectionForm"
 							v-model:activityId="focusActivityId"
+							v-model:selection="focusSelection"
 							:formDisabled="formDisabled"
 						></ActivitySelectionForm>
 					</VCol>
@@ -196,6 +197,7 @@
 						<ActivitySelectionForm
 							ref="restActivitySelectionForm"
 							v-model:activityId="restActivityId"
+							v-model:selection="restSelection"
 							:formDisabled="formDisabled"
 							isFilter
 						></ActivitySelectionForm>
@@ -215,10 +217,10 @@
 							icon="fas fa-bullseye"
 							start
 						></VIcon>
-						{{ activityName ?? mainActivitySelectionForm?.getSelectedActivityName }}
+						{{ focusActivityName }}
 					</VChip>
 					<VChip
-						v-if="restActivitySelectionForm?.getSelectedActivityName"
+						v-if="restSelection?.activityName"
 						color="secondary"
 						variant="tonal"
 						size="large"
@@ -227,7 +229,7 @@
 							icon="fas fa-mug-hot"
 							start
 						></VIcon>
-						{{ restActivitySelectionForm?.getSelectedActivityName }}
+						{{ restSelection?.activityName }}
 					</VChip>
 				</div>
 				<PomodoroPresetsDialog
@@ -252,11 +254,20 @@
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
+	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
-	const { activityId = null, compact = false } = defineProps<{
+	const {
+		activityId = null,
+		activityName = '',
+		compact = false,
+	} = defineProps<{
 		activityId?: number | null
+		// When the caller pins the activity (`activityId`), it is also the only one who knows its name —
+		// the selection form is not rendered at all in that case. The template used to read an
+		// `activityName` that was never declared.
+		activityName?: string
 		compact?: boolean
 	}>()
 	const emit = defineEmits<{
@@ -345,6 +356,10 @@
 
 	const focusActivityId = ref<number | null>(activityId)
 	const restActivityId = ref<number | null>(null)
+	const focusSelection = ref<ActivitySelection | null>(null)
+	const restSelection = ref<ActivitySelection | null>(null)
+
+	const focusActivityName = computed(() => (activityId ? activityName : (focusSelection.value?.activityName ?? '')))
 
 	void requestNotificationPermission()
 
@@ -446,7 +461,6 @@
 		}
 
 		// Show notification for phase end with context
-		const focusActivityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
 		const cycleInfo = `Cycle ${currentCycle.value}/${numberOfCycles.value}`
 		const focusInfo = `Focus ${currentFocusPeriod.value}/${numberOfFocusPeriodsInCycle.value}`
 
@@ -456,12 +470,15 @@
 				startTitleAnimation(`Focus ended! | ${cycleInfo}`, `Time for a break`)
 				void showNotification(
 					'Focus period ended',
-					`${focusActivityName} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
+					`${focusActivityName.value} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
 				)
 				break
 			case 'shortBreak':
 				startTitleAnimation(`Break ended! | ${cycleInfo}`, `Time to focus`)
-				void showNotification('Short break ended', `${cycleInfo} - Time to focus on ${focusActivityName}!`)
+				void showNotification(
+					'Short break ended',
+					`${cycleInfo} - Time to focus on ${focusActivityName.value}!`,
+				)
 				break
 			case 'longBreak':
 				startTitleAnimation(`Long break ended!`, `Starting cycle ${currentCycle.value + 1}`)
@@ -517,25 +534,24 @@
 
 		const timeSpent = Time.fromSeconds(focusTimeElapsed.value)
 		const restTime = Time.fromSeconds(restTimeElapsed.value)
-		const focusActivityName = mainActivitySelectionForm.value?.getSelectedActivityName as string
-		const restActivityName = restActivitySelectionForm.value?.getSelectedActivityName as string
+		const restActivityName = restSelection.value?.activityName ?? ''
 
 		if (automatic) {
 			const completedCycles = currentCycle.value
 			triggerTimerEndNotification(
 				`🍅 Pomodoro complete! | ${completedCycles} cycle${completedCycles > 1 ? 's' : ''}`,
-				`${focusActivityName} - ${timeSpent.getNice}`,
+				`${focusActivityName.value} - ${timeSpent.getNice}`,
 			)
 			void showNotification(
 				'Pomodoro complete!',
-				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
+				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName.value} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
 			)
 		}
 
 		if (!activityId) {
 			const result = await openDialog<boolean>({
 				component: SaveActivityBody,
-				componentProps: { activity: focusActivityName, timeSpent },
+				componentProps: { activity: focusActivityName.value, timeSpent },
 				dialogProps: { title: i18n.t('activities.recordNewActivity') },
 			})
 			if (result) {
@@ -579,8 +595,8 @@
 				Time.fromSeconds(focusTimeElapsed.value),
 			)
 		}
-		if (restActivitySelectionForm.value?.getSelectedActivityName && restTimeElapsed.value > 0) {
-			restActivitySelectionForm.value.saveActivityToHistory(
+		if (restSelection.value?.activityId != null && restTimeElapsed.value > 0) {
+			restActivitySelectionForm.value?.saveActivityToHistory(
 				startTimestamp.value,
 				Time.fromSeconds(restTimeElapsed.value),
 			)
