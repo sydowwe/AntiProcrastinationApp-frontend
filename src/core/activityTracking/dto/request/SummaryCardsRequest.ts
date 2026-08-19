@@ -1,6 +1,6 @@
 import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 import type { Time } from '@/_common/dto/dto/Time.ts'
-import type { BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+import type { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 
 export class SummaryCardsRequest extends DateAndTimeRangeRequest {
 	constructor(

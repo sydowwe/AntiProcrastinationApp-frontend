@@ -85,7 +85,7 @@
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { useDisplay } from 'vuetify'
 	import { useResizeObserver } from '@vueuse/core'
-	import { BaselineOption, BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+	import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
 	import type { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
 	import HistorySummaryCard from './HistorySummaryCard.vue'

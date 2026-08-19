@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-	import type { BaselineOption, BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+	import type { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import { computed } from 'vue'
 	import ActivityDomainCard from '@/core/activityTracking/component/summaryCards/ActivityDomainCard.vue'
 	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'

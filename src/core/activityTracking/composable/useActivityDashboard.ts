@@ -1,7 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
-import { BaselineOption, BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 import type { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'

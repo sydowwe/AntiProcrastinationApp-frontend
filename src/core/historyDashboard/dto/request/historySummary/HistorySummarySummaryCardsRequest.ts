@@ -1,7 +1,7 @@
 import { ActivityDateRangeRequest } from '@/core/activityHistory/dto/request/ActivityDateRangeRequest.ts'
 import type { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 import type { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
-import type { BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+import type { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 
 export class HistorySummarySummaryCardsRequest extends ActivityDateRangeRequest {
 	constructor(

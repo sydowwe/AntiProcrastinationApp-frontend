@@ -82,7 +82,7 @@
 	import { useRoute, useRouter } from 'vue-router'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
-	import { BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import {
 		getSummaryPieChart,
 		getSummaryStackedBars,

@@ -150,7 +150,7 @@
 	import { computed, ref, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
-	import { BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import { DetailStackedBarsRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailStackedBarsRequest.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
 	import { DetailSummaryCardsRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailSummaryCardsRequest.ts'
