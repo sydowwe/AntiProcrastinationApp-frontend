@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import type { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
@@ -30,6 +30,10 @@ export function useLookupTable<TItem extends IIdResponse, TFilter extends IFilte
 	const itemsPerPage = ref(10)
 	const page = ref(1)
 	const sortBy = ref<VSortItem[]>([])
+
+	// An empty table means two different things and the copy has to differ: "you have not created one
+	// of these yet" is worth explaining, "your filter matched nothing" is worth saying and nothing more.
+	const isFiltered = computed(() => config.hasFilter(config.filter.value))
 
 	watch(
 		config.filter,
@@ -67,6 +71,7 @@ export function useLookupTable<TItem extends IIdResponse, TFilter extends IFilte
 		page,
 		sortBy,
 		loading,
+		isFiltered,
 		columns: config.columns,
 		loadItems,
 		onDelete,

@@ -75,24 +75,70 @@
 				:cols="isRow ? 6 : 12"
 				class="pt-4 pb-0"
 			>
+				<!--
+					In the narrow embeddings the role and category fields are off to the side or wrapped
+					out of view, so a short activity list looks like a bug rather than a filter. These
+					chips name the narrowing that caused it, and clear it.
+				-->
+				<div
+					v-if="narrowingChips.length > 0"
+					v-auto-animate
+					class="d-flex flex-wrap align-center ga-2 mb-2"
+				>
+					<span class="text-caption text-textMuted">{{ t('activities.narrowedBy') }}</span>
+					<ChipWithIcon
+						v-for="chip in narrowingChips"
+						:key="chip.key"
+						:icon="chip.icon"
+						size="small"
+						link
+						:title="t('activities.clearNarrowing', { name: chip.label })"
+						@click="chip.clear()"
+					>
+						{{ chip.label }}
+						<VIcon
+							icon="xmark"
+							size="10"
+							class="ml-2"
+						/>
+					</ChipWithIcon>
+				</div>
 				<InputWithButton
 					:showBtn="activityRequired"
 					icon="plus"
 					color="success"
+					:label="t('activities.createNewActivity')"
 					:density="fieldDensity"
-					@create="createNewActivity"
+					@create="createNewActivity()"
 				>
 					<VIdAutocomplete
 						ref="activityField"
 						v-model="activityIdModel"
 						:label="activityRequired ? t('activities.activityRequired') : t('activities.activity')"
-						:items="filteredOptions.activityOptions"
+						:items="activityPickerItems"
 						:disabled="formDisabled"
 						:density="fieldDensity"
 						:hideDetails="isRow"
 						:required="activityRequired"
 						:rules="activityRequired ? [requiredRule] : []"
-					></VIdAutocomplete>
+						@update:search="activitySearch = $event ?? ''"
+						@update:menu="onMenuToggle"
+						@update:modelValue="commitActivitySelection"
+					>
+						<template #no-data>
+							<VListItem>
+								<VListItemTitle class="text-wrap text-body-2 text-textMuted">
+									{{ noDataText }}
+								</VListItemTitle>
+							</VListItem>
+							<VListItem
+								v-if="canCreateTypedActivity"
+								prependIcon="plus"
+								:title="t('activities.createNamedActivity', { name: trimmedSearch })"
+								@click="createNewActivity(trimmedSearch)"
+							></VListItem>
+						</template>
+					</VIdAutocomplete>
 				</InputWithButton>
 			</VCol>
 		</VRow>
@@ -100,12 +146,13 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, reactive, ref } from 'vue'
+	import { computed, nextTick, reactive, ref } from 'vue'
 	import type { Ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
+	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import InputWithButton from '@/_common/component/inputs/InputWithButton.vue'
 	import type { VAutocomplete } from 'vuetify/components'
@@ -114,6 +161,7 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import type { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
+	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	const {
 		layout = 'stacked',
@@ -158,8 +206,18 @@
 	const { requiredRule } = useGeneralRules()
 	const { openDialog } = useDialog()
 	const activityField = ref<InstanceType<typeof VAutocomplete>>()
+	/** What the user has typed into the activity field, mirrored so the empty states can quote it. */
+	const activitySearch = ref('')
+	const trimmedSearch = computed(() => activitySearch.value.trim())
 
-	const { filteredOptions, activityIdModel, onActivityCreated } = useActivitySelectionFormState(
+	const {
+		filteredOptions,
+		activityIdModel,
+		recentActivityCount,
+		hasAnyActivities,
+		commitActivitySelection,
+		onActivityCreated,
+	} = useActivitySelectionFormState(
 		formData,
 		selectedActivityId,
 		selection as Ref<ActivitySelection | null>,
@@ -168,16 +226,106 @@
 		showFromToDoListField,
 	)
 
+	type ActivityPickerItem = SelectOption | { type: 'subheader'; text: string }
+
+	/**
+	 * The activity options with the recent block called out. Reordering a list silently is worse than
+	 * not reordering it — someone who has learned where an item sits alphabetically reads its absence
+	 * from that spot as the item being gone — so the two groups get headings.
+	 *
+	 * Vuetify keeps `subheader` entries out of the value handling, and its filter holds them back until
+	 * something under them survives the search, so a heading never strands itself over an empty group.
+	 */
+	const activityPickerItems = computed<ActivityPickerItem[]>(() => {
+		const options = filteredOptions.value.activityOptions
+		const recentCount = recentActivityCount.value
+		if (recentCount === 0) return options
+		const items: ActivityPickerItem[] = [
+			{ type: 'subheader', text: t('activities.recentlyUsed') },
+			...options.slice(0, recentCount),
+		]
+		if (recentCount < options.length) {
+			items.push({ type: 'subheader', text: t('activities.allActivities') }, ...options.slice(recentCount))
+		}
+		return items
+	})
+
+	interface NarrowingChip {
+		key: string
+		icon: string
+		label: string
+		clear: () => void
+	}
+
+	const narrowingChips = computed<NarrowingChip[]>(() => {
+		const current = selection.value
+		if (!current) return []
+		const chips: NarrowingChip[] = []
+		if (current.roleId != null && current.roleName) {
+			chips.push({
+				key: 'role',
+				icon: 'user-tag',
+				label: current.roleName,
+				clear: () => {
+					formData.value.roleId = null
+				},
+			})
+		}
+		if (current.categoryId != null && current.categoryName) {
+			chips.push({
+				key: 'category',
+				icon: 'folder',
+				label: current.categoryName,
+				clear: () => {
+					formData.value.categoryId = null
+				},
+			})
+		}
+		return chips
+	})
+
+	/**
+	 * Three different reasons the dropdown can be empty, and the user can act on a different thing in
+	 * each: nothing exists yet, nothing survives the current narrowing, or nothing matches what was
+	 * typed. The generic "no data available" answered none of them.
+	 */
+	const noDataText = computed(() => {
+		// Only the `required` layout carries the '+' button, so only it may point at one.
+		const nothingYet = activityRequired.value
+			? t('activities.noActivitiesYetCreatable')
+			: t('activities.noActivitiesYet')
+		if (!hasAnyActivities.value) return nothingYet
+		if (trimmedSearch.value) return t('activities.noActivityMatches', { name: trimmedSearch.value })
+		if (narrowingChips.value.length > 0) return t('activities.noActivitiesForNarrowing')
+		return nothingYet
+	})
+
+	/**
+	 * Offering to create what was typed only makes sense where creating is on the table at all —
+	 * a filter panel narrowing a list of records is not the place to add a new activity.
+	 */
+	const canCreateTypedActivity = computed(() => activityRequired.value && trimmedSearch.value.length > 0)
+
+	/**
+	 * Vuetify seeds the search with the current selection's title when the menu opens, so a closed
+	 * field's `search` is not something the user typed. Dropping it on close keeps the empty-state copy
+	 * from quoting a name back at the user that they never entered.
+	 */
+	function onMenuToggle(isOpen: boolean) {
+		if (!isOpen) activitySearch.value = ''
+	}
+
 	async function validate() {
 		return await activityField.value?.validate()
 	}
 
-	async function createNewActivity() {
+	async function createNewActivity(prefillName?: string) {
 		const result = await openDialog<{ request: ActivityRequest; createdId?: number }>({
 			component: ActivityForm,
 			componentProps: {
 				initialRoleId: formData.value.roleId ?? undefined,
 				initialCategoryId: formData.value.categoryId ?? undefined,
+				initialName: prefillName,
 			},
 			dialogProps: {
 				title: t('activities.createNewActivity'),
@@ -185,8 +333,24 @@
 				isSmall: false,
 			},
 		})
+		await restoreFocusToActivityField()
 		if (!result?.createdId) return
 		onActivityCreated(result.request, result.createdId)
+	}
+
+	/**
+	 * The dialog returns focus to whatever opened it, which is right for the '+' button but impossible
+	 * for the "create '<typed text>'" row — that row lives in the dropdown and is gone by the time the
+	 * dialog closes, so focus lands on `<body>` and the keyboard path dead-ends. Only step in when that
+	 * has actually happened, and only after the dialog has had its turn.
+	 */
+	async function restoreFocusToActivityField() {
+		await nextTick()
+		setTimeout(() => {
+			const active = document.activeElement
+			if (active && active !== document.body) return
+			activityField.value?.focus()
+		}, 0)
 	}
 
 	// `validate()` is the only thing left that a parent has to reach in for: it is a genuine imperative

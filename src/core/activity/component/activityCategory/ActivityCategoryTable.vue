@@ -23,6 +23,14 @@
 			/>
 			<span v-else>—</span>
 		</template>
+		<template #noData>
+			<TableEmptyState
+				:explanation="t('activities.noCategoriesInTable')"
+				:isFiltered
+				:createLabel="t('activities.addNewCategory')"
+				@create="openCreateDialog"
+			/>
+		</template>
 	</BasicTable>
 </template>
 
@@ -30,6 +38,7 @@
 	import { computed, toRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import TableEmptyState from '@/core/activity/component/TableEmptyState.vue'
 	import { Category } from '@/core/activity/dto/response/Category.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import type { NameTextFilter } from '@/core/activity/dto/request/NameTextFilter.ts'
@@ -53,7 +62,7 @@
 		new TableColumn('color', t('activities.color'), false),
 	])
 
-	const { items, itemsLength, itemsPerPage, page, sortBy, loading, loadItems, onDelete } = useLookupTable<
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, isFiltered, loadItems, onDelete } = useLookupTable<
 		Category,
 		NameTextFilter
 	>({

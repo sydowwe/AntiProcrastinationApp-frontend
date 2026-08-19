@@ -17,10 +17,13 @@
 		entityToEdit = null,
 		initialRoleId,
 		initialCategoryId,
+		initialName,
 	} = defineProps<{
 		entityToEdit?: Activity | null
 		initialRoleId?: number
 		initialCategoryId?: number
+		/** Prefills the name field — the picker passes what the user had already typed into it. */
+		initialName?: string
 	}>()
 
 	const dialogApi = useDialogApi<{ request: ActivityRequest; createdId?: number; idToEdit?: number }>()
@@ -42,6 +45,7 @@
 	if (!entityToEdit) {
 		if (initialRoleId !== undefined) request.value.roleId = initialRoleId
 		if (initialCategoryId !== undefined) request.value.categoryId = initialCategoryId
+		if (initialName) request.value.name = initialName
 	}
 
 	dialogApi.onConfirm(onConfirm)

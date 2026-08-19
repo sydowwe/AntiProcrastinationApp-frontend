@@ -4,9 +4,16 @@
 		class="d-flex flex-column ga-3"
 		@submit.prevent="validate"
 	>
+		<!--
+			`showBtn` has no default, so leaving it off hid both '+' buttons: the dialog a first-run
+			account is sent to in order to create its first activity offered no way to create the role
+			that activity requires.
+		-->
 		<InputWithButton
+			showBtn
 			icon="plus"
 			color="success"
+			:label="$t('activities.addNewRole')"
 			@create="openAddRoleDialog"
 		>
 			<VIdAutocomplete
@@ -18,8 +25,10 @@
 			/>
 		</InputWithButton>
 		<InputWithButton
+			showBtn
 			icon="plus"
 			color="success"
+			:label="$t('activities.addNewCategory')"
 			@create="openAddCategoryDialog"
 		>
 			<VIdAutocomplete
@@ -28,17 +37,16 @@
 				:items="categoryOptions"
 			/>
 		</InputWithButton>
-		<InputWithButton
-			icon="info"
-			color="secondaryOutline"
-		>
-			<VTextField
-				v-model="model.name"
-				:label="$t('activities.activity')"
-				:rules="[requiredRule]"
-				required
-			/>
-		</InputWithButton>
+		<!--
+			Plain field: the `InputWithButton` that used to wrap this carried an `info` icon with no
+			handler behind it, and no `showBtn`, so it has never rendered anything but the text field.
+		-->
+		<VTextField
+			v-model="model.name"
+			:label="$t('activities.activity')"
+			:rules="[requiredRule]"
+			required
+		/>
 		<VTextarea
 			v-model="model.text"
 			:label="$t('activities.activityDescription')"

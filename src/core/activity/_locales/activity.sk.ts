@@ -33,6 +33,21 @@ const activity = {
 		copySuffix: ` - kópia`,
 
 		//=========
+		recentlyUsed: `Naposledy použité`,
+		allActivities: `Všetky aktivity`,
+		narrowedBy: `Zúžené na:`,
+		clearNarrowing: `Zrušiť zúženie „{name}“`,
+		createNamedActivity: `Vytvoriť aktivitu „{name}“`,
+		noActivitiesYet: `Aktivity sa vytvárajú v nastaveniach aktivít.`,
+		noActivitiesYetCreatable: `Aktivity sa vytvárajú v nastaveniach aktivít alebo tlačidlom + vedľa tohto poľa.`,
+		noActivityMatches: `Žiadna aktivita sa nevolá „{name}“.`,
+		noActivitiesForNarrowing: `Zvolená roľa a kategória nemajú spoločnú žiadnu aktivitu.`,
+		noActivitiesInTable: `Aktivita je to, čo si zaznamenávate — jedna položka, ktorú robíte opakovane.`,
+		noRolesInTable: `Roľa je oblasť života, do ktorej aktivita patrí — napríklad práca, domácnosť alebo štúdium.`,
+		noCategoriesInTable: `Kategória zoskupuje príbuzné aktivity v rámci jednej role.`,
+		noResultsForFilter: `Filtru nezodpovedá žiadny záznam.`,
+
+		//=========
 		roles: `Role`,
 		categories: `Kategórie`,
 		activitiesTab: `Aktivity`,

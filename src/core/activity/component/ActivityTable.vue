@@ -26,6 +26,14 @@
 				size="16"
 			/>
 		</template>
+		<template #noData>
+			<TableEmptyState
+				:explanation="t('activities.noActivitiesInTable')"
+				:isFiltered
+				:createLabel="t('activities.createNewActivity')"
+				@create="openCreateDialog"
+			/>
+		</template>
 	</BasicTable>
 </template>
 
@@ -33,6 +41,7 @@
 	import { computed, toRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import TableEmptyState from '@/core/activity/component/TableEmptyState.vue'
 	import ActivityForm from '@/core/activity/component/ActivityForm.vue'
 	import { Activity } from '@/core/activity/dto/response/Activity.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -55,7 +64,7 @@
 		new TableColumn('isUnavoidable', t('activities.unavoidable'), false),
 	])
 
-	const { items, itemsLength, itemsPerPage, page, sortBy, loading, loadItems, onDelete } = useLookupTable<
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, isFiltered, loadItems, onDelete } = useLookupTable<
 		Activity,
 		ActivityFilter
 	>({

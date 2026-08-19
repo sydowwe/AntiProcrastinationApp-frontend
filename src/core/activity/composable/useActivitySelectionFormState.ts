@@ -1,8 +1,13 @@
 import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { Ref } from 'vue'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
-import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
+import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 import { filterActivityFormSelectOptions } from '@/core/activity/composable/ActivitySelectsComposition.ts'
+import {
+	orderActivityOptionsByRecency,
+	pruneRecencyToKnownActivities,
+	recordActivitySelection,
+} from '@/core/activity/composable/useActivityRecency.ts'
 import { useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
 import { ActivityFormSelectOptions } from '@/core/activity/dto/response/ActivityFormSelectOptions.ts'
 import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
@@ -31,6 +36,11 @@ export function useActivitySelectionFormState(
 	const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([])
 	const filteredOptions = ref(new ActivityFormSelectOptions())
 	const optionsLoaded = ref(false)
+	// How many of the leading `filteredOptions.activityOptions` came from the recency list. The picker
+	// draws its group heading from this; 0 means the list is in plain alphabetical order.
+	const recentActivityCount = ref(0)
+	/** Whether this source knows of any activity at all, before the role/category narrowing. */
+	const hasAnyActivities = computed(() => allOptionsCombinations.value.length > 0)
 
 	// `formData.activityId` is the single source of truth for the selected activity; the `activityId`
 	// model mirrors it so a call site can bind whichever of the two it owns. The storage used to be
@@ -90,6 +100,12 @@ export function useActivitySelectionFormState(
 
 	function refreshOptions() {
 		const options = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
+		// Recency ordering is applied after the narrowing, not before: a recent activity that the
+		// selected role or category excludes must not reappear at the top of a list it is filtered out
+		// of. The role scope is the one the form currently has selected.
+		const ordered = orderActivityOptionsByRecency(options.activityOptions, formData.value.roleId)
+		options.activityOptions = ordered.options
+		recentActivityCount.value = ordered.recentCount
 		// These two are plain lookups rather than anything the matrix narrows — they used to be read off
 		// `taskPriorityOption` / `routineTimePeriodOption`, which the backend has always sent as null, so
 		// both dropdowns were permanently empty and both names in `selection` permanently ''.
@@ -101,6 +117,17 @@ export function useActivitySelectionFormState(
 		// match.
 		if (!optionsLoaded.value) return
 		pruneSelectionsMissingFromOptions()
+	}
+
+	/**
+	 * The user chose an activity, as opposed to the form adopting one. Only user choices feed the
+	 * recency list — a preselection restored from an edited record or a timer preset is not a pick,
+	 * and pruning writing `null` is not one either.
+	 */
+	function commitActivitySelection(activityId: number | null) {
+		if (activityId == null) return
+		recordActivitySelection(activityId, formData.value.roleId)
+		refreshOptions()
 	}
 
 	function pruneSelectionsMissingFromOptions() {
@@ -146,6 +173,11 @@ export function useActivitySelectionFormState(
 			])
 			allOptionsCombinations.value = combinations
 			optionsLoaded.value = true
+			// Only `ALL` sees every activity. The narrower sources are subsets, so pruning against one
+			// of them would delete recency entries that are still valid everywhere else.
+			if (selectOptionsSource === ActivityOptionsSource.ALL) {
+				pruneRecencyToKnownActivities(allOptionsCombinations.value.map(combination => combination.id))
+			}
 		} catch {
 			allOptionsCombinations.value = []
 		} finally {
@@ -194,12 +226,16 @@ export function useActivitySelectionFormState(
 			),
 		)
 		activityIdModel.value = createdId
-		refreshOptions()
+		// Creating an activity from the picker is a pick — the user wanted this one, right now.
+		commitActivitySelection(createdId)
 	}
 
 	return {
 		filteredOptions,
 		activityIdModel,
+		recentActivityCount,
+		hasAnyActivities,
+		commitActivitySelection,
 		onActivityCreated,
 	}
 }

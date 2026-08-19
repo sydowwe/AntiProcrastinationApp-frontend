@@ -32,6 +32,21 @@ const activity = {
 		copySuffix: ` - copy`,
 
 		//=========
+		recentlyUsed: `Recently used`,
+		allActivities: `All activities`,
+		narrowedBy: `Narrowed to:`,
+		clearNarrowing: `Clear the "{name}" narrowing`,
+		createNamedActivity: `Create activity "{name}"`,
+		noActivitiesYet: `Activities are created in activity settings.`,
+		noActivitiesYetCreatable: `Activities are created in activity settings, or with the + button next to this field.`,
+		noActivityMatches: `No activity is called "{name}".`,
+		noActivitiesForNarrowing: `The selected role and category have no activity in common.`,
+		noActivitiesInTable: `An activity is the thing you record — one entry for something you do repeatedly.`,
+		noRolesInTable: `A role is the area of life an activity belongs to — work, home or study, for example.`,
+		noCategoriesInTable: `A category groups related activities within one role.`,
+		noResultsForFilter: `Nothing matches the current filter.`,
+
+		//=========
 		roles: `Roles`,
 		categories: `Categories`,
 		activitiesTab: `Activities`,
