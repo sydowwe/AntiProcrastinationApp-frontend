@@ -5,29 +5,29 @@
 				v-model="activeTab"
 				color="primaryOutline"
 			>
-				<VTab value="activities">Activities</VTab>
-				<VTab value="roles">Roles</VTab>
-				<VTab value="categories">Categories</VTab>
+				<VTab value="activities">{{ t('activities.activitiesTab') }}</VTab>
+				<VTab value="roles">{{ t('activities.roles') }}</VTab>
+				<VTab value="categories">{{ t('activities.categories') }}</VTab>
 			</VTabs>
 			<div class="d-flex ga-2 ml-14 flex-1-1">
 				<template v-if="activeTab === 'activities'">
 					<VTextField
 						v-model="activityFilter.name"
-						label="Name"
+						:label="t('general.name')"
 						clearable
 						hideDetails
 						density="compact"
 					/>
 					<VTextField
 						v-model="activityFilter.text"
-						label="Text"
+						:label="t('general.text')"
 						clearable
 						hideDetails
 						density="compact"
 					/>
 					<VCombobox
 						v-model="roleCombobox"
-						label="Roles"
+						:label="t('activities.roles')"
 						:items="roleOptions"
 						itemValue="id"
 						itemTitle="text"
@@ -39,7 +39,7 @@
 					/>
 					<VCombobox
 						v-model="categoryCombobox"
-						label="Categories"
+						:label="t('activities.categories')"
 						:items="categoryOptions"
 						itemValue="id"
 						itemTitle="text"
@@ -53,14 +53,14 @@
 				<template v-else>
 					<VTextField
 						v-model="nameTextFilter.name"
-						label="Name"
+						:label="t('general.name')"
 						clearable
 						hideDetails
 						density="compact"
 					/>
 					<VTextField
 						v-model="nameTextFilter.text"
-						label="Text"
+						:label="t('general.text')"
 						clearable
 						hideDetails
 						density="compact"
@@ -97,6 +97,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
+	import { useI18n } from 'vue-i18n'
 	import ActivityTable from '@/core/activity/component/ActivityTable.vue'
 	import RoleTable from '@/core/activity/component/activityRole/ActivityRoleTable.vue'
 	import CategoryTable from '@/core/activity/component/activityCategory/ActivityCategoryTable.vue'
@@ -105,6 +106,7 @@
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
+	const { t } = useI18n()
 	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
 	const route = useRoute()
 	const router = useRouter()

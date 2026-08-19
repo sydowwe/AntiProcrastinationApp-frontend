@@ -96,7 +96,7 @@
 	async function openAddRoleDialog() {
 		const result = await openDialog<{ request: RoleRequest; createdId?: number }>({
 			component: ActivityRoleForm,
-			dialogProps: { title: 'Add new role', confirmBtnLabel: t('general.create') },
+			dialogProps: { title: t('activities.addNewRole'), confirmBtnLabel: t('general.create') },
 		})
 		if (!result?.createdId) return
 		roleOptions.value.push(new SelectOption(result.createdId, result.request.name))
@@ -106,7 +106,7 @@
 	async function openAddCategoryDialog() {
 		const result = await openDialog<{ request: CategoryRequest; createdId?: number }>({
 			component: ActivityCategoryForm,
-			dialogProps: { title: 'Add new category', confirmBtnLabel: t('general.create') },
+			dialogProps: { title: t('activities.addNewCategory'), confirmBtnLabel: t('general.create') },
 		})
 		if (!result?.createdId) return
 		categoryOptions.value.push(new SelectOption(result.createdId, result.request.name))

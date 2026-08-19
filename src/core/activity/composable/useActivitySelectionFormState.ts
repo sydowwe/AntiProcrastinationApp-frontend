@@ -1,5 +1,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
@@ -20,6 +21,7 @@ export function useActivitySelectionFormState(
 	isFilter: boolean,
 	selectOptionsSource: ActivityOptionsSource,
 ) {
+	const { t } = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const { create } = useActivityHistoryCrud()
 	const { getAllActivityFormSelectOptionsCombinations } = useActivityFormSelectOptions()
@@ -117,15 +119,15 @@ export function useActivitySelectionFormState(
 
 	async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
 		if (activityIdModel.value == null) {
-			showErrorSnackbar('Please select an activity')
+			showErrorSnackbar(t('activities.pleaseSelectActivity'))
 			return null
 		}
 		const newId = await create(startTimestamp, activityLength, activityIdModel.value)
 		if (newId) {
-			showSuccessSnackbar(`Added record of activity ${getSelectedActivityName.value} to history`)
+			showSuccessSnackbar(t('activities.addedToHistory', { activity: getSelectedActivityName.value }))
 			return newId
 		}
-		showErrorSnackbar(`Error saving record of activity ${getSelectedActivityName.value} to history`)
+		showErrorSnackbar(t('activities.errorSavingToHistory', { activity: getSelectedActivityName.value }))
 		return null
 	}
 

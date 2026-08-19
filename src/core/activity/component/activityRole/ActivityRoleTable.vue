@@ -27,7 +27,8 @@
 </template>
 
 <script setup lang="ts">
-	import { toRef } from 'vue'
+	import { computed, toRef } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { Role } from '@/core/activity/dto/response/Role.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -40,11 +41,18 @@
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
+	const { t } = useI18n()
 	const { getBgColor } = useColor()
 	const { deleteEntity } = useActivityRoleCrud()
 	const { openDialog } = useDialog()
 
-	const { items, itemsLength, itemsPerPage, page, sortBy, loading, columns, loadItems, onDelete } = useLookupTable<
+	const columns = computed(() => [
+		new TableColumn('name', t('general.name')),
+		new TableColumn('text', t('general.text'), false),
+		new TableColumn('color', t('activities.color'), false),
+	])
+
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, loadItems, onDelete } = useLookupTable<
 		Role,
 		NameTextFilter
 	>({
@@ -52,18 +60,14 @@
 		responseClass: Role,
 		entityName: 'activity-role',
 		deleteEntity,
-		columns: [
-			new TableColumn('name', 'Name'),
-			new TableColumn('text', 'Text', false),
-			new TableColumn('color', 'Color', false),
-		],
+		columns,
 		hasFilter: f => !!f.name || !!f.text,
 	})
 
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: ActivityRoleForm,
-			dialogProps: { title: 'Add new role', confirmBtnLabel: 'Create' },
+			dialogProps: { title: t('activities.addNewRole'), confirmBtnLabel: t('general.create') },
 		})
 		if (result) await loadItems()
 	}
@@ -72,7 +76,7 @@
 		const result = await openDialog({
 			component: ActivityRoleForm,
 			componentProps: { entityToEdit: item },
-			dialogProps: { title: 'Edit role', confirmBtnLabel: 'Save' },
+			dialogProps: { title: t('activities.editRole'), confirmBtnLabel: t('general.save') },
 		})
 		if (result) await loadItems()
 	}

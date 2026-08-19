@@ -6,26 +6,27 @@
 	>
 		<VTextField
 			v-model="request.name"
-			label="Name"
+			:label="t('general.name')"
 			:rules="[requiredRule, lettersWithDiacriticsAndSpecialCharsRule]"
 		/>
 		<VTextarea
 			v-model="request.text"
-			label="Text"
+			:label="t('general.text')"
 		/>
 		<ColorPicker
 			v-model="request.color"
-			label="Color"
+			:label="t('activities.color')"
 		/>
 		<IconPicker
 			v-model="request.icon"
-			label="Icon"
+			:label="t('activities.icon')"
 		/>
 	</VForm>
 </template>
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { VForm } from 'vuetify/components'
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
 	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
@@ -37,6 +38,7 @@
 
 	const { entityToEdit = null } = defineProps<{ entityToEdit?: Category | null }>()
 
+	const { t } = useI18n()
 	const dialogApi = useDialogApi<{ request: CategoryRequest; createdId?: number; idToEdit?: number }>()
 	const { create, update } = useActivityCategoryCrud()
 	const { lettersWithDiacriticsAndSpecialCharsRule, requiredRule } = useGeneralRules()

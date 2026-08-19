@@ -7,7 +7,7 @@
 			>
 				<NullFalseTrueCheckbox
 					v-model="formData.isFromToDoList"
-					label="From to-do list"
+					:label="t('activities.fromToDoList')"
 					:disabled="formDisabled"
 					hideDetails
 					density="compact"
@@ -27,7 +27,7 @@
 			>
 				<NullFalseTrueCheckbox
 					v-model="formData.isFromRoutineToDoList"
-					label="From routine to-do list"
+					:label="t('activities.fromRoutineToDoList')"
 					:disabled="formDisabled"
 					hideDetails
 					density="compact"
@@ -50,7 +50,7 @@
 			>
 				<VIdAutocomplete
 					v-model="formData.roleId"
-					label="Role"
+					:label="t('activities.role')"
 					:items="filteredOptions.roleOptions"
 					:disabled="formDisabled"
 					hideDetails
@@ -64,7 +64,7 @@
 			>
 				<VIdAutocomplete
 					v-model="formData.categoryId"
-					label="Category"
+					:label="t('activities.category')"
 					:items="filteredOptions.categoryOptions"
 					:disabled="formDisabled"
 					hideDetails
@@ -85,7 +85,7 @@
 					<VIdAutocomplete
 						ref="activityField"
 						v-model="activityIdModel"
-						:label="(isFilter ? '' : '*') + 'Activity'"
+						:label="isFilter ? t('activities.activity') : t('activities.activityRequired')"
 						:items="filteredOptions.activityOptions"
 						:disabled="formDisabled"
 						:density="isInRow ? 'compact' : 'comfortable'"
@@ -101,6 +101,7 @@
 
 <script setup lang="ts">
 	import { reactive, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
@@ -139,6 +140,7 @@
 
 	const selectedActivityId = defineModel<number | null>('activityId', { default: null })
 
+	const { t } = useI18n()
 	const { requiredRule } = useGeneralRules()
 	const { openDialog } = useDialog()
 	const activityField = ref<InstanceType<typeof VAutocomplete>>()
@@ -171,7 +173,11 @@
 				initialRoleId: formData.value.roleId ?? undefined,
 				initialCategoryId: formData.value.categoryId ?? undefined,
 			},
-			dialogProps: { title: 'Create Activity', confirmBtnLabel: 'Create', isSmall: false },
+			dialogProps: {
+				title: t('activities.createNewActivity'),
+				confirmBtnLabel: t('general.create'),
+				isSmall: false,
+			},
 		})
 		if (!result?.createdId) return
 		onActivityCreated(result.request, result.createdId)

@@ -6,12 +6,16 @@ const activity = {
 		role: `Role`,
 		category: `Category`,
 		activity: `Activity`,
+		activityRequired: `* Activity`,
 		activityDescription: `Activity description`,
 		isActivityUnavoidable: `Is activity unavoidable`,
+		unavoidable: `Unavoidable`,
 		placeOnToDoList: `Place on to-do list`,
 		//===============================
 		fromToDoList: `From to-do list`,
+		fromRoutineToDoList: `From routine to-do list`,
 		createNewActivity: `Create new activity`,
+		editActivity: `Edit Activity`,
 		start: `Start`,
 		pause: `Pause`,
 		stop: `Stop`,
@@ -25,7 +29,21 @@ const activity = {
 		clone: `Clone`,
 		pleaseSelectActivity: `Please select an activity`,
 		activityNotFound: `Activity with id {id} not found`,
+		addedToHistory: `Added record of activity "{activity}" to history`,
+		errorSavingToHistory: `Error saving record of activity "{activity}" to history`,
 		copySuffix: ` - copy`,
+
+		//=========
+		roles: `Roles`,
+		categories: `Categories`,
+		activitiesTab: `Activities`,
+		color: `Color`,
+		icon: `Icon`,
+		nameRequired: `* Name`,
+		editRole: `Edit role`,
+		addNewRole: `Add new role`,
+		editCategory: `Edit category`,
+		addNewCategory: `Add new category`,
 
 		//=========
 		enableNotificationsInWindows: `In windows, go to Settings > System > Notifications & Actions > In Get notification and actions from these sender section select Google chrome.`,

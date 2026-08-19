@@ -30,7 +30,8 @@
 </template>
 
 <script setup lang="ts">
-	import { toRef } from 'vue'
+	import { computed, toRef } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import ActivityForm from '@/core/activity/component/ActivityForm.vue'
 	import { Activity } from '@/core/activity/dto/response/Activity.ts'
@@ -42,10 +43,19 @@
 
 	const props = defineProps<{ filter: ActivityFilter }>()
 
+	const { t } = useI18n()
 	const { deleteEntity } = useActivityCrud()
 	const { openDialog } = useDialog()
 
-	const { items, itemsLength, itemsPerPage, page, sortBy, loading, columns, loadItems, onDelete } = useLookupTable<
+	const columns = computed(() => [
+		new TableColumn('name', t('general.name')),
+		new TableColumn('role.name', t('activities.role'), false),
+		new TableColumn('category.name', t('activities.category'), false),
+		new TableColumn('text', t('general.text'), false),
+		new TableColumn('isUnavoidable', t('activities.unavoidable'), false),
+	])
+
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, loadItems, onDelete } = useLookupTable<
 		Activity,
 		ActivityFilter
 	>({
@@ -53,13 +63,7 @@
 		responseClass: Activity,
 		entityName: 'activity',
 		deleteEntity,
-		columns: [
-			new TableColumn('name', 'Name'),
-			new TableColumn('role.name', 'Role', false),
-			new TableColumn('category.name', 'Category', false),
-			new TableColumn('text', 'Text', false),
-			new TableColumn('isUnavoidable', 'Unavoidable', false),
-		],
+		columns,
 		hasFilter: f =>
 			!!f.name || !!f.text || !!f.roleName || !!f.roleIds?.length || !!f.categoryName || !!f.categoryIds?.length,
 	})
@@ -67,7 +71,11 @@
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: ActivityForm,
-			dialogProps: { title: 'Create Activity', confirmBtnLabel: 'Create', isSmall: false },
+			dialogProps: {
+				title: t('activities.createNewActivity'),
+				confirmBtnLabel: t('general.create'),
+				isSmall: false,
+			},
 		})
 		if (result) await loadItems()
 	}
@@ -76,7 +84,7 @@
 		const result = await openDialog({
 			component: ActivityForm,
 			componentProps: { entityToEdit: item },
-			dialogProps: { title: 'Edit Activity', confirmBtnLabel: 'Save', isSmall: false },
+			dialogProps: { title: t('activities.editActivity'), confirmBtnLabel: t('general.save'), isSmall: false },
 		})
 		if (result) await loadItems()
 	}

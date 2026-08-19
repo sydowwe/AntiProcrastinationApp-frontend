@@ -42,7 +42,7 @@
 		>
 			<VTextField
 				v-model="activityFormFieldData.name"
-				:label="$t('general.name') + '*'"
+				:label="$t('activities.nameRequired')"
 				required
 				:rules="[requiredRule]"
 			></VTextField>

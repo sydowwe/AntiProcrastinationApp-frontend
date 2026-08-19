@@ -27,7 +27,8 @@
 </template>
 
 <script setup lang="ts">
-	import { toRef } from 'vue'
+	import { computed, toRef } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { Category } from '@/core/activity/dto/response/Category.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
@@ -40,11 +41,19 @@
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
+	const { t } = useI18n()
 	const { getBgColor } = useColor()
 	const { deleteEntity } = useActivityCategoryCrud()
 	const { openDialog } = useDialog()
 
-	const { items, itemsLength, itemsPerPage, page, sortBy, loading, columns, loadItems, onDelete } = useLookupTable<
+	const columns = computed(() => [
+		new TableColumn('role', t('activities.role')),
+		new TableColumn('name', t('general.name')),
+		new TableColumn('text', t('general.text'), false),
+		new TableColumn('color', t('activities.color'), false),
+	])
+
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, loadItems, onDelete } = useLookupTable<
 		Category,
 		NameTextFilter
 	>({
@@ -52,19 +61,14 @@
 		responseClass: Category,
 		entityName: 'activity-category',
 		deleteEntity,
-		columns: [
-			new TableColumn('role', 'Role'),
-			new TableColumn('name', 'Name'),
-			new TableColumn('text', 'Text', false),
-			new TableColumn('color', 'Color', false),
-		],
+		columns,
 		hasFilter: f => !!f.name || !!f.text,
 	})
 
 	async function openCreateDialog() {
 		const result = await openDialog({
 			component: ActivityCategoryForm,
-			dialogProps: { title: 'Add new category', confirmBtnLabel: 'Create' },
+			dialogProps: { title: t('activities.addNewCategory'), confirmBtnLabel: t('general.create') },
 		})
 		if (result) await loadItems()
 	}
@@ -73,7 +77,7 @@
 		const result = await openDialog({
 			component: ActivityCategoryForm,
 			componentProps: { entityToEdit: item },
-			dialogProps: { title: 'Edit category', confirmBtnLabel: 'Save' },
+			dialogProps: { title: t('activities.editCategory'), confirmBtnLabel: t('general.save') },
 		})
 		if (result) await loadItems()
 	}

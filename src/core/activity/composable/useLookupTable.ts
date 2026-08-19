@@ -12,7 +12,7 @@ export interface UseLookupTableConfig<TItem extends IIdResponse, TFilter extends
 	filter: Ref<TFilter>
 	responseClass: ResponseClass<TItem>
 	entityName: string
-	columns: TableColumn[]
+	columns: Ref<TableColumn[]>
 	hasFilter: (filter: TFilter) => boolean
 	deleteEntity: (id: number) => Promise<void>
 }
