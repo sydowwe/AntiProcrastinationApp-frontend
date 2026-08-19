@@ -7,7 +7,7 @@
 			<ActivitySelectionForm
 				v-model="formData"
 				:showFromToDoListField="false"
-				isInRow
+				layout="row"
 			/>
 		</div>
 		<VBtn

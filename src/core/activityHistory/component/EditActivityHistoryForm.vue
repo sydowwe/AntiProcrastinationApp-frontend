@@ -15,7 +15,7 @@
 		/>
 		<ActivitySelectionForm
 			v-model:activityId="activityId"
-			isInDialog
+			layout="dialog"
 			:showFromToDoListField="false"
 		/>
 	</div>

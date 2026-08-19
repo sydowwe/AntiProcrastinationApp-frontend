@@ -51,6 +51,7 @@
 							<ActivitySelectionForm
 								v-model="filterData.activityFilter"
 								v-model:selection="selection"
+								mode="optional"
 								:selectOptionsSource="ActivityOptionsSource.ACTIVITY_HISTORY"
 							></ActivitySelectionForm>
 						</div>

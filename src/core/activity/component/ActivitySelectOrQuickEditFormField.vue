@@ -32,9 +32,7 @@
 			v-model:activityId="selectedActivityId"
 			v-model:loading="selectionFormLoading"
 			:showFromToDoListField="false"
-			:formDisabled="false"
-			:isFilter="false"
-			isInDialog
+			layout="dialog"
 			:selectOptionsSource="ActivityOptionsSource.ALL"
 		></ActivitySelectionForm>
 		<div

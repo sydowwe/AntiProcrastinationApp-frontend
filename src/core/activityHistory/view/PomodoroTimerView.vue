@@ -198,7 +198,7 @@
 							v-model:activityId="restActivityId"
 							v-model:selection="restSelection"
 							:formDisabled="formDisabled"
-							isFilter
+							mode="optional"
 						></ActivitySelectionForm>
 					</VCol>
 				</VRow>

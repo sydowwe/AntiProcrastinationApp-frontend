@@ -24,8 +24,8 @@
 			v-model="formData"
 			class="flex-fill"
 			:showFromToDoListField="false"
-			isInRow
-			isFilter
+			layout="row"
+			mode="optional"
 		/>
 	</div>
 </template>

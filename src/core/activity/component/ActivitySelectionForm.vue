@@ -45,7 +45,7 @@
 		<VRow class="my-0">
 			<VCol
 				cols="12"
-				:lg="isInDialog ? 12 : isInRow ? 3 : 6"
+				:lg="lookupColumns"
 				class="py-4"
 			>
 				<VIdAutocomplete
@@ -59,7 +59,7 @@
 			</VCol>
 			<VCol
 				cols="12"
-				:lg="isInDialog ? 12 : isInRow ? 3 : 6"
+				:lg="lookupColumns"
 				class="py-4"
 			>
 				<VIdAutocomplete
@@ -72,26 +72,26 @@
 				></VIdAutocomplete>
 			</VCol>
 			<VCol
-				:cols="isInRow ? 6 : 12"
+				:cols="isRow ? 6 : 12"
 				class="pt-4 pb-0"
 			>
 				<InputWithButton
-					:showBtn="!isFilter"
+					:showBtn="activityRequired"
 					icon="plus"
 					color="success"
-					:density="isInRow ? 'compact' : 'comfortable'"
+					:density="fieldDensity"
 					@create="createNewActivity"
 				>
 					<VIdAutocomplete
 						ref="activityField"
 						v-model="activityIdModel"
-						:label="isFilter ? t('activities.activity') : t('activities.activityRequired')"
+						:label="activityRequired ? t('activities.activityRequired') : t('activities.activity')"
 						:items="filteredOptions.activityOptions"
 						:disabled="formDisabled"
-						:density="isInRow ? 'compact' : 'comfortable'"
-						:hideDetails="isInRow"
-						:required="!isFilter"
-						:rules="!isFilter ? [requiredRule] : []"
+						:density="fieldDensity"
+						:hideDetails="isRow"
+						:required="activityRequired"
+						:rules="activityRequired ? [requiredRule] : []"
 					></VIdAutocomplete>
 				</InputWithButton>
 			</VCol>
@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-	import { reactive, ref } from 'vue'
+	import { computed, reactive, ref } from 'vue'
 	import type { Ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
@@ -116,18 +116,25 @@
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 
 	const {
-		isFilter = false,
+		layout = 'stacked',
+		mode = 'required',
 		formDisabled = false,
 		showFromToDoListField = true,
-		isInDialog = false,
-		isInRow = false,
 		selectOptionsSource = ActivityOptionsSource.ALL,
 	} = defineProps<{
-		isFilter?: boolean
+		/**
+		 * How the three lookups are arranged. `stacked` is the default two-per-row form, `row` squeezes
+		 * them into a single dense toolbar line, `dialog` puts each on its own full-width row.
+		 */
+		layout?: 'stacked' | 'row' | 'dialog'
+		/**
+		 * Whether picking an activity is the point of this form (`required`: the field is required and
+		 * offers inline activity creation) or merely one way to narrow something down (`optional`: no
+		 * rule, no create button). Filter panels and the pomodoro rest activity are `optional`.
+		 */
+		mode?: 'required' | 'optional'
 		formDisabled?: boolean
 		showFromToDoListField?: boolean
-		isInDialog?: boolean
-		isInRow?: boolean
 		selectOptionsSource?: ActivityOptionsSource
 	}>()
 
@@ -135,15 +142,17 @@
 		required: false,
 		default: () => reactive(new ActivityFormRequest()),
 	})
-
 	const selectedActivityId = defineModel<number | null>('activityId', { default: null })
-
 	/**
 	 * What is currently selected, names included — null until the option lists have loaded. Bind
 	 * `v-model:selection` instead of reaching into this component for a name.
 	 */
 	const selection = defineModel<ActivitySelection | null>('selection', { default: null })
 	const loading = defineModel<boolean>('loading', { default: false })
+	const isRow = computed(() => layout === 'row')
+	const lookupColumns = computed(() => (layout === 'dialog' ? 12 : layout === 'row' ? 3 : 6))
+	const fieldDensity = computed(() => (isRow.value ? 'compact' : 'comfortable'))
+	const activityRequired = computed(() => mode === 'required')
 
 	const { t } = useI18n()
 	const { requiredRule } = useGeneralRules()
