@@ -12,14 +12,14 @@
 			<div class="d-flex ga-2 ml-14 flex-1-1">
 				<template v-if="activeTab === 'activities'">
 					<VTextField
-						v-model="activityFilter.name"
+						v-model="activityNameDraft"
 						:label="t('general.name')"
 						clearable
 						hideDetails
 						density="compact"
 					/>
 					<VTextField
-						v-model="activityFilter.text"
+						v-model="activityTextDraft"
 						:label="t('general.text')"
 						clearable
 						hideDetails
@@ -52,14 +52,14 @@
 				</template>
 				<template v-else>
 					<VTextField
-						v-model="nameTextFilter.name"
+						v-model="sharedNameDraft"
 						:label="t('general.name')"
 						clearable
 						hideDetails
 						density="compact"
 					/>
 					<VTextField
-						v-model="nameTextFilter.text"
+						v-model="sharedTextDraft"
 						:label="t('general.text')"
 						clearable
 						hideDetails
@@ -76,19 +76,19 @@
 				value="activities"
 				class="flex-fill"
 			>
-				<ActivityTable :filter="activityFilter" />
+				<ActivityTable :filter="activitiesFilter" />
 			</VTabsWindowItem>
 			<VTabsWindowItem
 				value="roles"
 				class="flex-fill"
 			>
-				<RoleTable :filter="nameTextFilter" />
+				<RoleTable :filter="rolesFilter" />
 			</VTabsWindowItem>
 			<VTabsWindowItem
 				value="categories"
 				class="flex-fill"
 			>
-				<CategoryTable :filter="nameTextFilter" />
+				<CategoryTable :filter="categoriesFilter" />
 			</VTabsWindowItem>
 		</VTabsWindow>
 	</div>
@@ -96,7 +96,8 @@
 
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
-	import { useRoute, useRouter } from 'vue-router'
+	import { watchDebounced } from '@vueuse/core'
+	import { useRoute, useRouter, type LocationQuery } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import ActivityTable from '@/core/activity/component/ActivityTable.vue'
 	import RoleTable from '@/core/activity/component/activityRole/ActivityRoleTable.vue'
@@ -106,56 +107,223 @@
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
+	type ActivitySettingsTab = 'activities' | 'roles' | 'categories'
+
+	const { tab } = defineProps<{ tab: ActivitySettingsTab }>()
+
 	const { t } = useI18n()
 	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
 	const route = useRoute()
 	const router = useRouter()
 
-	const activeTab = ref((route.params.tab as string) || 'activities')
-	const nameTextFilter = ref(new NameTextFilter())
-	const activityFilter = ref(new ActivityFilter())
+	function firstQueryString(value: unknown): string | undefined {
+		const raw = Array.isArray(value) ? value.find(v => typeof v === 'string') : value
+		return typeof raw === 'string' && raw !== '' ? raw : undefined
+	}
+
+	function parseIdList(value: unknown): number[] | null {
+		const raw = firstQueryString(value)
+		if (!raw) return null
+		const ids = raw
+			.split(',')
+			.map(part => Number(part))
+			.filter(n => Number.isInteger(n))
+		return ids.length > 0 ? ids : null
+	}
+
+	function paramsToActivityFilter(query: LocationQuery): ActivityFilter {
+		return new ActivityFilter(
+			firstQueryString(query.name) ?? null,
+			firstQueryString(query.text) ?? null,
+			firstQueryString(query.roleName) ?? null,
+			parseIdList(query.roleIds),
+			firstQueryString(query.categoryName) ?? null,
+			parseIdList(query.categoryIds),
+		)
+	}
+
+	function activityFilterToParams(filter: ActivityFilter): Record<string, string> {
+		const params: Record<string, string> = {}
+		if (filter.name) params.name = filter.name
+		if (filter.text) params.text = filter.text
+		if (filter.roleIds?.length) params.roleIds = filter.roleIds.join(',')
+		if (filter.roleName) params.roleName = filter.roleName
+		if (filter.categoryIds?.length) params.categoryIds = filter.categoryIds.join(',')
+		if (filter.categoryName) params.categoryName = filter.categoryName
+		return params
+	}
+
+	function paramsToNameTextFilter(query: LocationQuery): NameTextFilter {
+		return new NameTextFilter(firstQueryString(query.name) ?? null, firstQueryString(query.text) ?? null)
+	}
+
+	function nameTextFilterToParams(filter: NameTextFilter): Record<string, string> {
+		const params: Record<string, string> = {}
+		if (filter.name) params.name = filter.name
+		if (filter.text) params.text = filter.text
+		return params
+	}
+
+	function buildCombobox(
+		ids: number[] | null,
+		freeText: string | null,
+		options: SelectOption[],
+	): (SelectOption | string)[] {
+		const result: (SelectOption | string)[] = []
+		for (const id of ids ?? []) {
+			const match = options.find(o => o.id === id)
+			if (match) result.push(match)
+		}
+		if (freeText) result.push(freeText)
+		return result
+	}
+
+	const activeTab = ref<ActivitySettingsTab>(tab)
+	const activitiesFilter = ref(new ActivityFilter())
+	const rolesFilter = ref(new NameTextFilter())
+	const categoriesFilter = ref(new NameTextFilter())
 	const roleCombobox = ref<(SelectOption | string)[]>([])
 	const categoryCombobox = ref<(SelectOption | string)[]>([])
 	const roleOptions = ref<SelectOption[]>([])
 	const categoryOptions = ref<SelectOption[]>([])
 
+	const activityNameDraft = ref('')
+	const activityTextDraft = ref('')
+	const sharedNameDraft = ref('')
+	const sharedTextDraft = ref('')
+
+	function currentSharedFilter(): NameTextFilter {
+		return activeTab.value === 'roles' ? rolesFilter.value : categoriesFilter.value
+	}
+
+	function syncDraftsFromState() {
+		activityNameDraft.value = activitiesFilter.value.name ?? ''
+		activityTextDraft.value = activitiesFilter.value.text ?? ''
+		const shared = currentSharedFilter()
+		sharedNameDraft.value = shared.name ?? ''
+		sharedTextDraft.value = shared.text ?? ''
+	}
+
+	function refreshActivityCombos() {
+		roleCombobox.value = buildCombobox(
+			activitiesFilter.value.roleIds,
+			activitiesFilter.value.roleName,
+			roleOptions.value,
+		)
+		categoryCombobox.value = buildCombobox(
+			activitiesFilter.value.categoryIds,
+			activitiesFilter.value.categoryName,
+			categoryOptions.value,
+		)
+	}
+
+	function hydrateTabFromQuery(forTab: ActivitySettingsTab) {
+		if (forTab === 'activities') {
+			activitiesFilter.value = paramsToActivityFilter(route.query)
+		} else if (forTab === 'roles') {
+			rolesFilter.value = paramsToNameTextFilter(route.query)
+		} else {
+			categoriesFilter.value = paramsToNameTextFilter(route.query)
+		}
+	}
+
+	async function syncUrl() {
+		const params =
+			activeTab.value === 'activities'
+				? activityFilterToParams(activitiesFilter.value)
+				: nameTextFilterToParams(activeTab.value === 'roles' ? rolesFilter.value : categoriesFilter.value)
+		try {
+			await router.replace({ name: 'activitySettings', params: { tab: activeTab.value }, query: params })
+		} catch {
+			// navigation duplication is non-fatal for state sync
+		}
+	}
+
+	hydrateTabFromQuery(activeTab.value)
+	syncDraftsFromState()
+
 	onMounted(async () => {
 		roleOptions.value = await fetchRoleSelectOptions()
 		categoryOptions.value = await fetchCategorySelectOptions()
+		if (activeTab.value === 'activities') refreshActivityCombos()
 	})
 
-	watch(activeTab, newTab => {
-		if (route.params.tab !== newTab) {
-			router.replace({ name: 'activitySettings', params: { tab: newTab } })
-		}
-	})
-
+	// route -> state: external navigation (browser back/forward, a direct link) changes the tab
 	watch(
-		activeTab,
-		() => {
-			nameTextFilter.value = new NameTextFilter()
-			activityFilter.value = new ActivityFilter()
-			roleCombobox.value = []
-			categoryCombobox.value = []
+		() => tab,
+		newTab => {
+			if (newTab === activeTab.value) return
+			activeTab.value = newTab
+			hydrateTabFromQuery(newTab)
+			syncDraftsFromState()
+			if (newTab === 'activities') refreshActivityCombos()
 		},
-		{ immediate: false },
+	)
+
+	// user-initiated tab click: push the new tab's own (already in-memory) filter state into the URL
+	watch(activeTab, newTab => {
+		if (newTab === tab) return
+		syncDraftsFromState()
+		syncUrl()
+	})
+
+	watchDebounced(
+		activityNameDraft,
+		val => {
+			activitiesFilter.value.name = val || null
+		},
+		{ debounce: 300 },
+	)
+	watchDebounced(
+		activityTextDraft,
+		val => {
+			activitiesFilter.value.text = val || null
+		},
+		{ debounce: 300 },
+	)
+	watchDebounced(
+		sharedNameDraft,
+		val => {
+			currentSharedFilter().name = val || null
+		},
+		{ debounce: 300 },
+	)
+	watchDebounced(
+		sharedTextDraft,
+		val => {
+			currentSharedFilter().text = val || null
+		},
+		{ debounce: 300 },
 	)
 
 	watch(
-		() => route.params.tab,
-		newTab => {
-			if (newTab && newTab !== activeTab.value) {
-				activeTab.value = newTab as string
-			}
+		activitiesFilter,
+		() => {
+			if (activeTab.value === 'activities') syncUrl()
 		},
+		{ deep: true },
+	)
+	watch(
+		rolesFilter,
+		() => {
+			if (activeTab.value === 'roles') syncUrl()
+		},
+		{ deep: true },
+	)
+	watch(
+		categoriesFilter,
+		() => {
+			if (activeTab.value === 'categories') syncUrl()
+		},
+		{ deep: true },
 	)
 
 	watch(
 		roleCombobox,
 		vals => {
-			activityFilter.value.roleIds = vals.filter((v): v is SelectOption => typeof v !== 'string').map(v => v.id)
+			activitiesFilter.value.roleIds = vals.filter((v): v is SelectOption => typeof v !== 'string').map(v => v.id)
 			const strings = vals.filter((v): v is string => typeof v === 'string')
-			activityFilter.value.roleName = strings.length ? strings.join(' ') : null
+			activitiesFilter.value.roleName = strings.length ? strings.join(' ') : null
 		},
 		{ deep: true },
 	)
@@ -163,11 +331,11 @@
 	watch(
 		categoryCombobox,
 		vals => {
-			activityFilter.value.categoryIds = vals
+			activitiesFilter.value.categoryIds = vals
 				.filter((v): v is SelectOption => typeof v !== 'string')
 				.map(v => v.id)
 			const strings = vals.filter((v): v is string => typeof v === 'string')
-			activityFilter.value.categoryName = strings.length ? strings.join(' ') : null
+			activitiesFilter.value.categoryName = strings.length ? strings.join(' ') : null
 		},
 		{ deep: true },
 	)
