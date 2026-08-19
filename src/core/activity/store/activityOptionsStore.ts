@@ -13,8 +13,14 @@ import {
 
 export type { ActivityOptionKind }
 
-/** One cache slot: the three plain lists, plus the combination matrix once per source. */
+/** One cache slot: the plain lists, plus the combination matrix once per source. */
 export type ActivityOptionsCacheKey = ActivityOptionKind | `combinations:${ActivityOptionsSource}`
+
+/**
+ * The kinds the combination matrix is derived from. Changing one of these stales it; the two
+ * `todoList` lookups do not appear in the matrix at all, so they leave it alone.
+ */
+const MATRIX_KINDS: readonly ActivityOptionKind[] = ['role', 'category', 'activity']
 
 function combinationsKey(source: ActivityOptionsSource): ActivityOptionsCacheKey {
 	return `combinations:${source}`
@@ -45,11 +51,20 @@ export const useActivityOptionsStore = defineStore(
 		const roleOptions = ref<SelectOption[]>([])
 		const categoryOptions = ref<SelectOption[]>([])
 		const activityOptions = ref<SelectOption[]>([])
+		// Owned by `todoList`, cached here because the activity selection form is what renders them.
+		// Nothing invalidates these two: `todoList`'s crud composables are not wrapped, so editing a
+		// priority or a time period there leaves this copy stale until the next reload. They change
+		// about as often as the enum they replaced, so that trade is deliberate — wire them up the same
+		// way as the other three if that stops being true.
+		const taskPriorityOptions = ref<SelectOption[]>([])
+		const routineTimePeriodOptions = ref<SelectOption[]>([])
 
 		const optionRefs: Record<ActivityOptionKind, Ref<SelectOption[]>> = {
 			role: roleOptions,
 			category: categoryOptions,
 			activity: activityOptions,
+			taskPriority: taskPriorityOptions,
+			routineTimePeriod: routineTimePeriodOptions,
 		}
 
 		const combinationsBySource = ref(new Map<ActivityOptionsSource, ActivitySelectOptionCombination[]>()) as Ref<
@@ -170,12 +185,13 @@ export const useActivityOptionsStore = defineStore(
 		 * in the roles tab) have no reason to re-run `ensureOptions`, so a stale mark would never reach
 		 * them. Values are kept until the replacement lands, so nothing blanks mid-flight.
 		 *
-		 * Any of the three changing stales the matrix, so it always goes with them.
+		 * Any of the three matrix kinds changing stales the matrix, so it goes with them; the two
+		 * `todoList` lookups are not in the matrix and leave it alone.
 		 */
 		function invalidate(kind: ActivityOptionKind) {
 			const wasLoaded = loadedKeys.value.has(kind)
 			bumpGeneration(kind)
-			invalidateCombinations()
+			if (MATRIX_KINDS.includes(kind)) invalidateCombinations()
 
 			// Nothing has asked for this list yet, so there is nothing on screen to refresh.
 			if (!wasLoaded) return
@@ -184,9 +200,7 @@ export const useActivityOptionsStore = defineStore(
 		}
 
 		function resetStore() {
-			roleOptions.value = []
-			categoryOptions.value = []
-			activityOptions.value = []
+			for (const list of Object.values(optionRefs)) list.value = []
 			combinationsBySource.value.clear()
 			for (const key of loadedKeys.value) generations.set(key, generationOf(key) + 1)
 			for (const key of loadingKeys.value) generations.set(key, generationOf(key) + 1)
@@ -207,6 +221,8 @@ export const useActivityOptionsStore = defineStore(
 			roleOptions,
 			categoryOptions,
 			activityOptions,
+			taskPriorityOptions,
+			routineTimePeriodOptions,
 			combinationsBySource,
 			loadingKeys,
 			isLoading,

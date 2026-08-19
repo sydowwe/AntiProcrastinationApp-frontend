@@ -1,75 +1,96 @@
-# A7 · Backend ask — is `roleOption` ever absent on `{source}/form-select-options`?
+# A7 · Backend ask — `{source}/form-select-options` nullability — **ANSWERED**
 
-**Contract only.** This asks for a statement of fact about an existing response. No storage, entity or
-computation decisions are requested. Mostly a written answer; at most one response-shape change.
+Asked after building the A7 cache; answered from the .NET solution. Nothing further is needed from the
+backend. Two of the answers change frontend work and are carried forward below.
 
-Small ask — batch it with A8 and A9 rather than opening a session for it.
+## Answers
 
-## Context
+**1. Can `roleOption` be null or omitted? No — on none of the three sources.**
 
-`GET /{source}/form-select-options`, where `{source}` is one of `activity`, `activity-history`,
-`task-planner`, returns the combination matrix behind every activity picker in the app. A7 put it
-behind a shared per-source cache (`src/core/activity/store/activityOptionsStore.ts`) so it is fetched
-once per session instead of once per component mount.
+`ActivityFormSelectOptionsResponse.RoleOption` is a required `SelectOptionResponse`; the other three
+are `SelectOptionResponse?`. The nullability split the frontend inferred from the JSON is exactly the
+split in the C# type. The handler builds it unconditionally
+(`BaseActivityFormSelectOptionsEndpoint.cs:58`), with no path that omits it.
 
-The frontend reads each row as
-(`src/core/activity/dto/response/ActivitySelectOptionCombination.ts`):
+The "role was deleted" hypothesis is structurally impossible: `Activity.RoleId` is `long`, not
+`long?`, and `ActivityConfiguration` declares `HasOne(e => e.Role) … .IsRequired()` with
+`OnDelete(DeleteBehavior.Cascade)` — deleting a role deletes its activities, so there is no orphaned
+activity to leak a null through. `Activity` is not soft-deletable either.
 
-| JSON field                | Read as                | What the frontend does with it                              |
-| ------------------------- | ---------------------- | ----------------------------------------------------------- |
-| `id`, `text`              | the activity itself    | the activity dropdown's option                               |
-| `roleOption`              | **non-nullable**       | the role dropdown, and the filter key for cascading          |
-| `categoryOption`          | `SelectOption \| null` | the category dropdown, and the filter key for cascading      |
-| `taskPriorityOption`      | `SelectOption \| null` | the priority dropdown, shown only when "from to-do list"     |
-| `routineTimePeriodOption` | `SelectOption \| null` | the period dropdown, shown only when "from routine to-do"    |
+→ **Frontend action: none.** `roleOption` stays non-nullable and both read sites stay unguarded.
 
-## The live consequence
+**2. Can `id` or `text` be null on a nested option? No.**
 
-`SelectOption.fromJson` (`src/_common/dto/response/general/SelectOption.ts:7`) destructures its
-argument, so **`SelectOption.fromJson(null)` throws a TypeError**. `roleOption` is the one field read
-without a guard:
+`Id` is `long`. `Text` comes from `Activity.Name` / `ActivityRole.Name` / `ActivityCategory.Name`, all
+required `string` through `BaseNameTextEntityConfigure()` (`.HasMaxLength(100).IsUnicode().IsRequired()`),
+so NOT NULL at the column. `CategoryOption` is only constructed when `CategoryName != null`, so even
+the nullable one cannot carry a null text.
+
+Caveat the schema does not forbid: **empty string**. Write validators use `NotEmpty()` (e.g.
+`QuickEditActivityValidator.cs:11`), but that is a validator, not a constraint, and not every create
+path was audited. A null-text entry cannot happen; a `""`-text one is merely unknown.
+
+→ **Frontend action: none required.** Optional cheap insurance is `text || '—'` at render time — not a
+nullable declaration.
+
+**3. Is `activity` a strict superset of the other two? Yes — but it does not buy the fetch saving.**
+
+`activity` returns every `Activity` for the user, unfiltered. `activity-history` and `planner-task`
+return `Distinct()` activities referenced by the user's history / planner rows; both dependents inherit
+`BaseEntityWithActivity` with a non-nullable required FK, and both are user-scoped, so every row in the
+narrow responses is a row in the wide one with identical field values.
+
+But the subsets are defined by *which activities are referenced*, and the wide response carries no
+marker of that — the subsets cannot be reconstructed from it. Collapsing to one fetch would mean
+deciding that the history and planner forms may offer every activity rather than only previously-used
+ones. That is a product call, not a caching optimisation.
+
+→ **Frontend action: none. Keep the per-source cache entries.** Deliberate, not an oversight.
+
+## Two things the answer surfaced that the ask did not
+
+**A. The third route is `planner-task`, not `task-planner`.** `EntityRoute => "planner-task"`
+(`FormSelectOptionsPlannerTaskEndpoint.cs:11`), matching `dayPlanner/api/plannerTaskApi.ts`. The enum
+value is interpolated straight into the URL, so `ActivityOptionsSource.TASK_PLANNER = 'task-planner'`
+would have 404'd. Latent only because nothing passes that member as a `selectOptionsSource` yet — it
+would have fired the first time the planner picker was wired, which is A8/A9 territory.
+
+→ **Fixed.** The member is now `PLANNER_TASK = 'planner-task'`, with a comment saying why.
+
+**B. `taskPriorityOption` and `routineTimePeriodOption` are hard-coded `null` on all three sources**
+(`BaseActivityFormSelectOptionsEndpoint.cs:62-63`) — literally `= null` in the object initializer, with
+no subclass hook to fill them.
+
+Confirmed live from the frontend side: the matrix is the **only** feed for both dropdowns.
+`filterActivityFormSelectOptions` derives `taskPriorityOptions` / `routineTimePeriodOptions` from
+nothing else, and no consumer populates them separately. So:
+
+- the priority select revealed by "from to-do list" is **always empty**;
+- the period select revealed by "from routine to-do" is **always empty**;
+- `ActivitySelection.taskPriorityName` and `routineTimePeriodName` (the names A6 started exporting
+  through the `selection` model) are **always `''`**, because `nameOf` looks them up in those lists.
+
+A preselected `taskPriorityId` / `routineTimePeriodId` is not lost — `pruneSelectionsMissingFromOptions`
+deliberately does not prune those two — but the user can neither see nor change it.
+
+There was a **second, worse half** the ask did not anticipate. `filterActivityFormSelectOptions` also
+filtered on those two fields when narrowing the role, category and activity lists:
 
 ```ts
-const roleOption = SelectOption.fromJson(object.roleOption) // throws if null or omitted
+(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId)
 ```
 
-One such row aborts `listFromObjects`, which rejects the whole request. The caller
-(`useActivitySelectionFormState.ts`) catches it and falls back to an empty matrix, so **every dropdown
-in the form goes blank with no error shown** — the user sees a form with nothing to pick, not a
-failure. `filterActivityFormSelectOptions` then reads `combination.roleOption.id` unguarded too, so a
-present-but-empty `roleOption` object silently matches nothing instead of throwing.
+With a priority selected and `taskPriorityOption` always null, that reads `undefined === 3` — false for
+every row. So a form arriving with a preset `taskPriorityId` (an edited history record from a to-do
+task) emptied **all three** dropdowns at once, not just the priority one.
 
-The caching does not create this, but it does widen the blast radius: consumers that used to each fail
-on their own now all await the same request, so they fail together.
+**Neither half needs a backend change.** `/task-priority/all-options` and `/routine-time-period/all-options`
+already exist and already have frontend API composables (`todoList/api/taskPriorityApi.ts`,
+`todoList/api/timePeriodApi.ts`).
 
-## The question that matters
-
-1. **Can `roleOption` ever be null, or the property omitted, on any of the three sources?**
-   If it can, say under which condition (an activity whose role was deleted? a source that joins
-   loosely?). The frontend then declares it `SelectOption | null`, guards both read sites, and drops
-   the row from the role dropdown rather than blanking the form. That is app-side work and needs no
-   backend change — but the guard has to be written for the real case, not a hypothetical one, because
-   "drop the row" and "keep the row with no role" are different products.
-   If it cannot, say so plainly and the frontend leaves it non-nullable.
-
-2. **Can `id` or `text` be null on any nested option object?** Same reason: `fromJson` copies them
-   through without a default, so a null `text` renders an empty dropdown entry that is selectable.
-
-## One thing that does *not* need answering
-
-A1 flagged the null-vs-omitted question for `categoryOption`, `taskPriorityOption` and
-`routineTimePeriodOption`. Building the cache resolved it: `fromJson` tests those three for
-truthiness, so `null` and "absent" produce identical results and no code depends on which one you
-send. **Do not spend time on it.** Only `roleOption` is unguarded, and only because it is declared
-non-nullable.
-
-## One question about the shape, worth a sentence
-
-3. Are the three sources **nested** — is `activity/form-select-options` a superset of what
-   `activity-history` and `task-planner` return, or are they independently filtered sets that can each
-   contain rows the others do not?
-
-   The cache currently keeps one entry per source, because the frontend cannot tell. If `activity` is
-   a strict superset, the cache can hold one matrix and derive the other two, which removes up to two
-   of the three fetches per session on the largest response the app makes. Not worth changing the
-   endpoint over — just say which it is.
+→ **Fixed.** Both lists are now their own cache kinds in `activityOptionsStore`, fetched through
+todoList's `api/` composables (cross-module via `api/`, the sanctioned direction). The two dead filter
+predicates are gone, and `ActivitySelectOptionCombination` documents why the two fields must never be
+filtered on again. The lookups are skipped entirely when `showFromToDoListField` is false, so the
+to-do and planner dialogs stay at the single request A7 got them down to. Nothing invalidates them —
+todoList's crud is not wrapped — which is noted in the store as a deliberate trade.

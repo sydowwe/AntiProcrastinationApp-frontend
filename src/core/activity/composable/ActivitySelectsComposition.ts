@@ -9,6 +9,17 @@ export function uniqueOptions(options: SelectOption[]) {
 	return Array.from(new Map(options.map(option => [option.id, option])).values())
 }
 
+/**
+ * Narrows the matrix down to the options each dropdown should offer, by filtering on every *other*
+ * field's current value.
+ *
+ * Only role, category and activity participate. The matrix's `taskPriorityOption` and
+ * `routineTimePeriodOption` are a hard-coded null on every source the backend serves, so a predicate
+ * on either could only ever be false: with a priority selected, `null?.id === 3` excluded every row
+ * and all three dropdowns emptied at once. Those two lists are their own lookups now and
+ * `useActivitySelectionFormState` fills them in — they never narrowed anything anyway, since they were
+ * derived from the unfiltered matrix.
+ */
 export function filterActivityFormSelectOptions(
 	allOptionsCombinations: ActivitySelectOptionCombination[],
 	formData: ActivityFormRequest,
@@ -17,25 +28,19 @@ export function filterActivityFormSelectOptions(
 	const combinationsForRole = allOptionsCombinations.filter(
 		combination =>
 			(!formData.activityId || combination.id === formData.activityId) &&
-			(!formData.categoryId || combination.categoryOption?.id === formData.categoryId) &&
-			(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
-			(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId),
+			(!formData.categoryId || combination.categoryOption?.id === formData.categoryId),
 	)
 
 	const combinationsForCategory = allOptionsCombinations.filter(
 		combination =>
 			(!formData.activityId || combination.id === formData.activityId) &&
-			(!formData.roleId || combination.roleOption.id === formData.roleId) &&
-			(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
-			(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId),
+			(!formData.roleId || combination.roleOption.id === formData.roleId),
 	)
 
 	const combinationsForActivity = allOptionsCombinations.filter(
 		combination =>
 			(!formData.roleId || combination.roleOption.id === formData.roleId) &&
-			(!formData.categoryId || combination.categoryOption?.id === formData.categoryId) &&
-			(!formData.taskPriorityId || combination.taskPriorityOption?.id === formData.taskPriorityId) &&
-			(!formData.routineTimePeriodId || combination.routineTimePeriodOption?.id === formData.routineTimePeriodId),
+			(!formData.categoryId || combination.categoryOption?.id === formData.categoryId),
 	)
 
 	const filteredOptions = new ActivityFormSelectOptions()
@@ -46,16 +51,6 @@ export function filterActivityFormSelectOptions(
 	filteredOptions.categoryOptions = uniqueOptions(
 		combinationsForCategory
 			.map(combination => combination.categoryOption)
-			.filter((option): option is SelectOption => option !== null),
-	)
-	filteredOptions.taskPriorityOptions = uniqueOptions(
-		allOptionsCombinations
-			.map(combination => combination.taskPriorityOption)
-			.filter((option): option is SelectOption => option !== null),
-	)
-	filteredOptions.routineTimePeriodOptions = uniqueOptions(
-		allOptionsCombinations
-			.map(combination => combination.routineTimePeriodOption)
 			.filter((option): option is SelectOption => option !== null),
 	)
 	return filteredOptions

@@ -165,6 +165,7 @@
 		selection as Ref<ActivitySelection | null>,
 		loading,
 		selectOptionsSource,
+		showFromToDoListField,
 	)
 
 	async function validate() {

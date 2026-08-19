@@ -16,6 +16,12 @@ export function useActivitySelectionFormState(
 	selection: Ref<ActivitySelection | null>,
 	loading: Ref<boolean>,
 	selectOptionsSource: ActivityOptionsSource,
+	/**
+	 * Whether the caller renders the "from to-do list" / "from routine to-do" fields. When it does not,
+	 * the priority and period lookups are never displayed, so they are not fetched — that keeps the
+	 * to-do and planner dialogs at the single combination request A7 got them down to.
+	 */
+	includeToDoListFields = true,
 ) {
 	const optionsStore = useActivityOptionsStore()
 
@@ -83,7 +89,13 @@ export function useActivitySelectionFormState(
 	})
 
 	function refreshOptions() {
-		filteredOptions.value = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
+		const options = filterActivityFormSelectOptions(allOptionsCombinations.value, formData.value)
+		// These two are plain lookups rather than anything the matrix narrows — they used to be read off
+		// `taskPriorityOption` / `routineTimePeriodOption`, which the backend has always sent as null, so
+		// both dropdowns were permanently empty and both names in `selection` permanently ''.
+		options.taskPriorityOptions = optionsStore.taskPriorityOptions
+		options.routineTimePeriodOptions = optionsStore.routineTimePeriodOptions
+		filteredOptions.value = options
 		// Before the options are in, every list is empty and pruning would clear a preselection the
 		// parent passed in (an edited history record, a timer preset) before it ever had a chance to
 		// match.
@@ -112,10 +124,27 @@ export function useActivitySelectionFormState(
 		}
 	}
 
+	/**
+	 * A secondary lookup: skipped when its field is not rendered, and its failure is swallowed. Losing
+	 * the priority list must not empty the role, category and activity pickers alongside it — that is
+	 * the failure mode the matrix's dead priority predicates already had.
+	 */
+	function ensureSecondaryOptions(kind: 'taskPriority' | 'routineTimePeriod'): Promise<SelectOption[]> {
+		if (!includeToDoListFields) return Promise.resolve([])
+		return optionsStore.ensureOptions(kind).catch(() => [])
+	}
+
 	onMounted(async () => {
 		loading.value = true
 		try {
-			allOptionsCombinations.value = await optionsStore.ensureCombinations(selectOptionsSource)
+			// In parallel, and all cached: the priority/period lookups are small and shared, so the extra
+			// two requests happen at most once a session.
+			const [combinations] = await Promise.all([
+				optionsStore.ensureCombinations(selectOptionsSource),
+				ensureSecondaryOptions('taskPriority'),
+				ensureSecondaryOptions('routineTimePeriod'),
+			])
+			allOptionsCombinations.value = combinations
 			optionsLoaded.value = true
 		} catch {
 			allOptionsCombinations.value = []

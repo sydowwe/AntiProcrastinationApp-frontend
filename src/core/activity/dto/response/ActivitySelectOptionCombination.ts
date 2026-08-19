@@ -1,5 +1,14 @@
 import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
+/**
+ * One row of `{source}/form-select-options`.
+ *
+ * `taskPriorityOption` and `routineTimePeriodOption` are kept because the endpoint sends the keys, but
+ * the backend hard-codes both to null on all three sources with no path that fills them, so nothing
+ * reads them. The priority and period dropdowns are fed from `/task-priority/all-options` and
+ * `/routine-time-period/all-options` instead — see `activityOptionsApi.ts`. Do not reintroduce a
+ * filter predicate on either: it can only ever be false.
+ */
 export class ActivitySelectOptionCombination extends SelectOption {
 	constructor(
 		public id: number,
