@@ -7,7 +7,7 @@
 			<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
 				<VCardTitle class="pa-0">Distinct Process Entries</VCardTitle>
 				<VBtnToggle
-					v-model="tableView"
+					:modelValue="tableView"
 					mandatory
 					density="compact"
 					color="primaryOutline"
@@ -35,21 +35,7 @@
 				/>
 			</div>
 			<VCardText class="pt-1 flex-fill d-flex flex-column ga-2">
-				<VAlert
-					v-if="!hintDismissed"
-					type="info"
-					variant="tonal"
-					closable
-					@click:close="dismissHint"
-				>
-					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and
-					click
-					<strong>Save</strong>
-					. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an
-					existing rule, open the
-					<strong>Mappings</strong>
-					tab and click edit.
-				</VAlert>
+				<DismissibleMappingHint storageKey="desktopSettingsHintDismissed" />
 				<DesktopDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"
 					ref="distinctEntriesTable"
@@ -70,54 +56,34 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
-	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { computed, ref } from 'vue'
+	import { useRoute } from 'vue-router'
 	import { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
-	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
 	import router from '@/router.ts'
 	import DesktopEntriesFilterBar from '@/core/activityTracking/component/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
 	import DesktopDistinctEntriesTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
 	import DesktopMappingsTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsTable.vue'
-	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
+	import DismissibleMappingHint from '@/core/activityTracking/component/settings/DismissibleMappingHint.vue'
+	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
 
-	// Device-local ON PURPOSE. Triaged in P4 and deliberately left here: a hint you already dismissed
-	// reappearing once on a new device costs two seconds, which does not buy an endpoint. Scoped by
-	// user only so a second account on the same browser gets the hint it has never seen.
-	const HINT_KEY = 'desktopSettingsHintDismissed'
-	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
-
-	function dismissHint() {
-		hintDismissed.value = true
-		writeUserScoped(HINT_KEY, 'true')
-	}
-
-	const { showErrorSnackbar } = useSnackbar()
 	const { create, update } = useTrackerDesktopMappingCrud()
+	const { filter, formData, mode, editedId, request, saved, clear } = useMappingSettings({
+		filterFactory: () => new DesktopDistinctEntriesFilterRequest(),
+		requestFactory: () => new TrackerDesktopMappingRequest(),
+		create,
+		update,
+	})
 
-	const tableView = ref<'distinctEntries' | 'mappings'>('distinctEntries')
-	const filter = ref(new DesktopDistinctEntriesFilterRequest())
-	const formData = ref(new ActivityFormRequest())
-	const mode = ref<'toActivity' | 'toIgnored'>('toActivity')
-	const editedId = ref<number | null>(null)
-	const request = ref(new TrackerDesktopMappingRequest())
+	const route = useRoute()
+	const tableView = computed<'distinctEntries' | 'mappings'>(() =>
+		route.params.tableView === 'mappings' ? 'mappings' : 'distinctEntries',
+	)
 
 	const distinctEntriesTable = ref<InstanceType<typeof DesktopDistinctEntriesTable> | null>(null)
 	const mappingsTable = ref<InstanceType<typeof DesktopMappingsTable> | null>(null)
-
-	onMounted(() => {
-		tableView.value = router.currentRoute.value.params.tableView as 'distinctEntries' | 'mappings'
-	})
-
-	watch(
-		formData,
-		newValue => {
-			request.value.activityId = newValue.activityId
-		},
-		{ deep: true },
-	)
 
 	function edit(item: TrackerDesktopMappingResponse) {
 		editedId.value = item.id
@@ -136,29 +102,6 @@
 		} else {
 			mode.value = 'toIgnored'
 		}
-		tableView.value = 'distinctEntries'
 		router.push({ name: 'desktopSettings', params: { tableView: 'distinctEntries' } })
-	}
-
-	async function saved() {
-		request.value.updatePattern(filter.value)
-		try {
-			if (editedId.value) {
-				await update(editedId.value, request.value)
-			} else {
-				await create(request.value)
-			}
-			request.value = new TrackerDesktopMappingRequest()
-		} catch {
-			showErrorSnackbar('Failed to save mapping')
-		}
-	}
-
-	function clear() {
-		editedId.value = null
-		filter.value = new DesktopDistinctEntriesFilterRequest()
-		mode.value = 'toActivity'
-		request.value = new TrackerDesktopMappingRequest()
-		formData.value = new ActivityFormRequest()
 	}
 </script>

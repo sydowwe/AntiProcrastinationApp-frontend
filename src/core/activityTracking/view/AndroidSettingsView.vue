@@ -7,7 +7,7 @@
 			<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
 				<VCardTitle class="pa-0">Distinct App Entries</VCardTitle>
 				<VBtnToggle
-					v-model="tableView"
+					:modelValue="tableView"
 					mandatory
 					density="compact"
 					color="primaryOutline"
@@ -35,21 +35,7 @@
 				/>
 			</div>
 			<VCardText class="pt-1 d-flex flex-column ga-2">
-				<VAlert
-					v-if="!hintDismissed"
-					type="info"
-					variant="tonal"
-					closable
-					@click:close="dismissHint"
-				>
-					Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and
-					click
-					<strong>Save</strong>
-					. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an
-					existing rule, open the
-					<strong>Mappings</strong>
-					tab and click edit.
-				</VAlert>
+				<DismissibleMappingHint storageKey="androidSettingsHintDismissed" />
 				<AndroidDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"
 					ref="distinctEntriesTable"
@@ -70,44 +56,34 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
-	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
-	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { computed, ref } from 'vue'
+	import { useRoute } from 'vue-router'
 	import { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 	import { TrackerAndroidMappingRequest } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingRequest.ts'
 	import { useTrackerAndroidMappingCrud } from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
-	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import type { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
 	import router from '@/router.ts'
 	import AndroidEntriesFilterBar from '@/core/activityTracking/component/android/androidSettings/AndroidEntriesFilterBar.vue'
 	import AndroidDistinctEntriesTable from '@/core/activityTracking/component/android/androidSettings/AndroidDistinctEntriesTable.vue'
 	import AndroidMappingsTable from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsTable.vue'
+	import DismissibleMappingHint from '@/core/activityTracking/component/settings/DismissibleMappingHint.vue'
+	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
 
-	// Device-local ON PURPOSE — same reasoning as `DesktopSettingsView.vue`'s hint.
-	const HINT_KEY = 'androidSettingsHintDismissed'
-	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
-
-	function dismissHint() {
-		hintDismissed.value = true
-		writeUserScoped(HINT_KEY, 'true')
-	}
-
-	const { showErrorSnackbar } = useSnackbar()
 	const { create, update } = useTrackerAndroidMappingCrud()
+	const { filter, formData, mode, editedId, request, saved, clear } = useMappingSettings({
+		filterFactory: () => new AndroidDistinctEntriesFilterRequest(),
+		requestFactory: () => new TrackerAndroidMappingRequest(),
+		create,
+		update,
+	})
 
-	const tableView = ref<'distinctEntries' | 'mappings'>('distinctEntries')
-	const filter = ref(new AndroidDistinctEntriesFilterRequest())
-	const formData = ref(new ActivityFormRequest())
-	const mode = ref<'toActivity' | 'toIgnored'>('toActivity')
-	const editedId = ref<number | null>(null)
-	const request = ref(new TrackerAndroidMappingRequest())
+	const route = useRoute()
+	const tableView = computed<'distinctEntries' | 'mappings'>(() =>
+		route.params.tableView === 'mappings' ? 'mappings' : 'distinctEntries',
+	)
 
 	const distinctEntriesTable = ref<InstanceType<typeof AndroidDistinctEntriesTable> | null>(null)
 	const mappingsTable = ref<InstanceType<typeof AndroidMappingsTable> | null>(null)
-
-	onMounted(() => {
-		tableView.value = router.currentRoute.value.params.tableView as 'distinctEntries' | 'mappings'
-	})
 
 	function edit(item: TrackerAndroidMappingResponse) {
 		editedId.value = item.id
@@ -124,32 +100,6 @@
 		} else {
 			mode.value = 'toIgnored'
 		}
-		tableView.value = 'distinctEntries'
 		router.push({ name: 'androidSettings', params: { tableView: 'distinctEntries' } })
-	}
-
-	async function saved() {
-		request.value.updatePattern(filter.value)
-		request.value.activityId = formData.value.activityId
-		request.value.roleId = formData.value.roleId
-		request.value.categoryId = formData.value.categoryId
-		try {
-			if (editedId.value) {
-				await update(editedId.value, request.value)
-			} else {
-				await create(request.value)
-			}
-			request.value = new TrackerAndroidMappingRequest()
-		} catch {
-			showErrorSnackbar('Failed to save mapping')
-		}
-	}
-
-	function clear() {
-		editedId.value = null
-		filter.value = new AndroidDistinctEntriesFilterRequest()
-		mode.value = 'toActivity'
-		request.value = new TrackerAndroidMappingRequest()
-		formData.value = new ActivityFormRequest()
 	}
 </script>
