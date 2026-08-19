@@ -29,10 +29,7 @@ export async function getStackedBarsData(request: StackedBarsRequest): Promise<A
 
 export async function getTimeline(request: DateAndTimeRangeRequest): Promise<TimelineResponse> {
 	const { data } = await API.post(`${BASE_URL}/timeline`, request)
-	console.log('[DEBUG] Timeline raw API response:', JSON.stringify(data, null, 2))
-	const parsed = TimelineResponse.fromJson(data)
-	console.log('[DEBUG] Timeline parsed:', parsed)
-	return parsed
+	return TimelineResponse.fromJson(data)
 }
 
 export async function getDomainDetails(

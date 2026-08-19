@@ -72,15 +72,6 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
-
-	// Device-local ON PURPOSE — same reasoning as `DesktopSettingsView.vue`'s hint.
-	const HINT_KEY = 'androidSettingsHintDismissed'
-	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
-
-	function dismissHint() {
-		hintDismissed.value = true
-		writeUserScoped(HINT_KEY, 'true')
-	}
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 	import { TrackerAndroidMappingRequest } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingRequest.ts'
@@ -91,6 +82,15 @@
 	import AndroidEntriesFilterBar from '@/core/activityTracking/component/android/androidSettings/AndroidEntriesFilterBar.vue'
 	import AndroidDistinctEntriesTable from '@/core/activityTracking/component/android/androidSettings/AndroidDistinctEntriesTable.vue'
 	import AndroidMappingsTable from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsTable.vue'
+
+	// Device-local ON PURPOSE — same reasoning as `DesktopSettingsView.vue`'s hint.
+	const HINT_KEY = 'androidSettingsHintDismissed'
+	const hintDismissed = ref(readUserScoped(HINT_KEY) === 'true')
+
+	function dismissHint() {
+		hintDismissed.value = true
+		writeUserScoped(HINT_KEY, 'true')
+	}
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { create, update } = useTrackerAndroidMappingCrud()

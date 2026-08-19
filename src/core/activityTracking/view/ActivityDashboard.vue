@@ -95,7 +95,7 @@
 						v-model:selectedDomain="selectedDomain"
 						:domains="pieChartData?.domains ?? []"
 						:dayTotals="pieChartData?.totals"
-						:loading="topDomainsLoading"
+						:loading="pieChartLoading"
 					/>
 				</VCol>
 			</VRow>
@@ -134,7 +134,7 @@
 
 	// --- Date & Time State ---
 	const today = new Date()
-	const date = ref<Date>(new Date('02-08-2026'))
+	const date = ref<Date>(new Date())
 	const timeFrom = ref(new Time(7, 0))
 	const timeTo = ref(new Time(0, 0))
 

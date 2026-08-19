@@ -120,6 +120,7 @@
 	import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import {
 		getDesktopPieChart,
 		getDesktopStackedBars,
@@ -258,14 +259,6 @@
 		}
 		return d
 	})
-
-	// --- Helpers ---
-	function formatDateForApi(d: Date): string {
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
 
 	// --- Fetch Functions ---
 	async function fetchSummaryCards() {
