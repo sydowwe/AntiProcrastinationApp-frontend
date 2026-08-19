@@ -37,8 +37,8 @@ Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, 
 `user` is now a **framework** module (`@/_common/modules/user/`) — it owns the auth views, the auth store, the user/session APIs and the generic settings sections.
 `src/core/user/` is this app's glue around it, shaped like every other module: `authAdapter.ts`, `dto/userAugmentation.ts`, `composable/` (app preference reads),
 `_locales/user.{sk,en}.ts` (this app's own settings/about strings, merged into the `user` namespace alongside the framework's — see the comment in
-`src/locales/SK.ts`), `component/settings/` (the settings-card shell `SettingsSection.vue` plus the three app-specific cards), and `view/` + `user.routes.ts` for
-the settings wrapper. See `### _common/modules/` below.
+`src/locales/SK.ts`), `component/settings/` (the settings-card shell `SettingsSection.vue` plus the three app-specific cards), and `view/` + `user.routes.ts` for the
+settings wrapper. See `### _common/modules/` below.
 
 **Rules:**
 
@@ -53,7 +53,7 @@ the settings wrapper. See `### _common/modules/` below.
 `src/_common` is the `vue_framework` repo (`github.com/sydowwe/vue_framework`) mounted as a git submodule. **Other apps depend on it.** ESLint and Prettier are both
 configured to ignore it, so tooling will not warn you either way.
 
-Editing it is allowed and often correct. What is not allowed is editing it *by accident* — an uncommitted change there is invisible to `git status` at the app root
+Editing it is allowed and often correct. What is not allowed is editing it _by accident_ — an uncommitted change there is invisible to `git status` at the app root
 and is lost on the next pointer bump.
 
 **Does the change belong in the framework?** Ask whether another app in the family would want it, as written:
@@ -61,7 +61,8 @@ and is lost on the next pointer bump.
 - **Yes — put it in `_common`.** Generic capability, no app domain in it: a composable, a base component, a utility, a bootstrap option. `useUserClock` is the worked
   example (§13 in `migration-revision.md`): the framework already owned `User.timezone` and `useCurrentTime` and joined neither, so every app reading the clock had
   the same bug.
-- **No — keep it in `src/core/<module>/`.** Anything naming this app's entities, routes, locale keys or business rules. A second app would have to delete it to use it.
+- **No — keep it in `src/core/<module>/`.** Anything naming this app's entities, routes, locale keys or business rules. A second app would have to delete it to use
+  it.
 - **Almost, but it needs something app-specific.** Do not import the app from the framework. Register a collaborator instead, the way `auth/authAdapter.ts` and
   `installFramework`'s `userTimeZone` option do: the framework declares an interface and a setter, the app supplies the implementation in `main.ts`. Note that
   `composable/general/` and `utils/` import **nothing** from `modules/` — that boundary is what lets an app opt out of a module, so do not be the first to cross it.
@@ -76,7 +77,7 @@ and is lost on the next pointer bump.
    pushed is a broken checkout for everyone else.
 5. Say in the app-side commit message what moved and why, so the next pointer bump is readable.
 
-If you are *not* going to do the framework change now, fall back to the old rule: keep the file app-side, add an entry to **`migration-revision.md`** describing the
+If you are _not_ going to do the framework change now, fall back to the old rule: keep the file app-side, add an entry to **`migration-revision.md`** describing the
 gap and the upstream ask, and repoint importers when it lands. Do not fork a framework file into `src/` and leave it undocumented.
 
 `src/_common/SETUP.md` and `README.md` are the framework's own docs — the mount contract, peer deps, `installFramework` and the registration order. Read those before
@@ -126,8 +127,8 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 - `general/SnackbarComposable.ts` — `useSnackbar()`: `showSuccessSnackbar`, `showErrorSnackbar`, `showSnackbar(msg, config)`
 - `general/LoadingComposable.ts` — `useLoading()`: `showFullScreenLoading()`, `hideFullScreenLoading()`
 - `general/ErrorHandlingFunctions.ts` — `useErrorHandling()`, maps HTTP codes to localized snackbars
-- `general/EnumComposable.ts` — `getEnumSelectOptions()` (returns `ValueTitleDto[]`); it also re-exports `convertToEnum` / `getEnumKeyByValue`, whose
-  implementations live in `_common/utils/enumHelpers.ts`. There is no app-local copy any more.
+- `general/EnumComposable.ts` — `getEnumSelectOptions()` (returns `ValueTitleDto[]`); it also re-exports `convertToEnum` / `getEnumKeyByValue`, whose implementations
+  live in `_common/utils/enumHelpers.ts`. There is no app-local copy any more.
 - `general/useDayOfWeekOptions.ts` — `useDayOfWeekOptions()` → `ComputedRef<{value: DayOfWeek, label: string}[]>`, labels localized via `calendar.*`. Prefer it over
   the `DAY_OF_WEEK_SHORT_LABELS` constant in `dto/enum/DayOfWeek.ts`, which is hardcoded English and is only a non-display fallback.
 - `general/rules/RulesComposition.ts`, `general/useColor.ts`, `general/useCurrentTime.ts`, `general/useBreadcrumbs.ts`,
@@ -155,6 +156,13 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 > Editable-cell values are the exported `EditableCellValue` union (`dto/dto/table/EditableTableCell.ts`) — use it rather than re-declaring
 > `string | number | boolean | …` inline, which is how the four call sites drifted apart before R13.
 
+> `BasicTable` / `DataTable` take `items` and `loading` as **plain props**, not models — write `:items` / `:loading`, never `v-model="items"`. They emit no update
+> for either, so nothing is lost. `v-model` sends `modelValue`, which lands in attrs while the required `items` prop goes unpassed: the table renders **no rows**
+> and `TItem` widens to its constraint, cascading type errors through every row callback (`migration-revision.md` R10 — it shipped that way across 14 tables).
+
+> When a `ref` needs a cast to silence `UnwrapRef` noise, cast to `as Ref<T>` — never `as { value: T }`. The latter is not a `Ref`, so vue-tsc applies no template
+> unwrapping and any slot carrying it types one error per field access while working fine at runtime (R12, R13).
+
 ### `_common/nav/`, `_common/auth/`, `_common/store/`
 
 - The whole app shell (`Navbar.vue` = top bar + collapsible sidebar, `UserMenu`, `AppBreadcrumbs`) is the framework's. `App.vue` only supplies the `#actions` slot.
@@ -175,8 +183,8 @@ routed in `src/router.ts` and their locales are spread in `SK.ts`.
   `UserSettingsView` exposes slots only the app can fill, so `src/core/user/user.routes.ts` routes a local wrapper around it. Both are spread in `src/router.ts`.
 - `UserSettingsView` slots: `#integrations` (forwarded into `SecuritySection`, for third-party account links), `#preferences`, `#append`.
 - The `User` / `UserPreferencesRequest` DTOs carry only generic fields. This app's `askBeforeDelete` and `firstDayOfWeek` are merged in by
-  `src/core/user/dto/userAugmentation.ts` (imported for side effects in `main.ts`) — `User.fromJson` copies unknown keys through, so they survive hydration. Add
-  app preference fields there, not to the framework DTO. Both are **optional**, so never read them off `currentUser` directly; go through
+  `src/core/user/dto/userAugmentation.ts` (imported for side effects in `main.ts`) — `User.fromJson` copies unknown keys through, so they survive hydration. Add app
+  preference fields there, not to the framework DTO. Both are **optional**, so never read them off `currentUser` directly; go through
   `src/core/user/composable/useUserPreferences.ts`, which owns the defaults (see the preference-ownership rules below).
 
 ### Where a preference lives
@@ -184,16 +192,16 @@ routed in `src/router.ts` and their locales are spread in `SK.ts`.
 There are **three** per-user preference systems in this app, not two. Before adding a preference, decide which one owns it — the answer is not "whichever module I
 happen to be editing".
 
-| System | Endpoint | Owns |
-|---|---|---|
-| User preferences | `PUT /user/preferences` (`_common/modules/user/api/userApi.ts`) | Preferences that cut **across** modules, or that describe the **person** |
-| Reminder preferences | `PUT /reminder-preference/*` (`_common/modules/notifications/reminderPreference/`) | Anything about **whether, when and how a notification reaches the user** |
-| A module's own settings | e.g. `PUT planner/settings` (`core/dayPlanner/api/plannerSettingsApi.ts`) | Preferences meaningful **only inside that module** |
+| System                  | Endpoint                                                                           | Owns                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| User preferences        | `PUT /user/preferences` (`_common/modules/user/api/userApi.ts`)                    | Preferences that cut **across** modules, or that describe the **person** |
+| Reminder preferences    | `PUT /reminder-preference/*` (`_common/modules/notifications/reminderPreference/`) | Anything about **whether, when and how a notification reaches the user** |
+| A module's own settings | e.g. `PUT planner/settings` (`core/dayPlanner/api/plannerSettingsApi.ts`)          | Preferences meaningful **only inside that module**                       |
 
 Applied in that order — the first match wins:
 
-1. **Is it about notification delivery?** Then it belongs to reminder preferences, keyed by `(ownerModule, kind)`, even though it is "about" one module. Quiet
-   hours, per-kind muting and channel choice are already modelled there; a module re-implementing any of them is a duplicate, not a module preference.
+1. **Is it about notification delivery?** Then it belongs to reminder preferences, keyed by `(ownerModule, kind)`, even though it is "about" one module. Quiet hours,
+   per-kind muting and channel choice are already modelled there; a module re-implementing any of them is a duplicate, not a module preference.
 2. **Does more than one module read it, or would a second module read it if it existed?** Then `/user/preferences`. Theme, locale, timezone, `firstDayOfWeek`,
    `askBeforeDelete` — all of these describe the person, not a screen.
 3. **Otherwise** it is the module's own. Grid granularity, panel defaults, keyboard-nav toggles, per-module vocabulary lists, and anything whose value is a **foreign
@@ -201,20 +209,20 @@ Applied in that order — the first match wins:
 
 Two consequences worth stating outright, because both have already been got wrong once:
 
-- **Moving a field across the boundary is a backend change, not a frontend refactor.** The client cannot see whether the two endpoints are two tables, two columns
-  on one row, or one thing behind two routes. Write the ask (`prompts/user/backend/README.md`) instead of shimming it.
-- **Every settings page must be reachable from `/user/settings`.** A module settings page links back to it, and `ModuleSettingsSection.vue` links out to each of
-  them by **route name only**. A route name is a string, so this crosses no module boundary — never import another module's view or store to build a settings link.
+- **Moving a field across the boundary is a backend change, not a frontend refactor.** The client cannot see whether the two endpoints are two tables, two columns on
+  one row, or one thing behind two routes. Write the ask (`prompts/_done/user/backend/README.md`) instead of shimming it.
+- **Every settings page must be reachable from `/user/settings`.** A module settings page links back to it, and `ModuleSettingsSection.vue` links out to each of them
+  by **route name only**. A route name is a string, so this crosses no module boundary — never import another module's view or store to build a settings link.
 
 **The sanctioned cross-module imports** are the three composables in `src/core/user/composable/`. They are a deliberate exception to the "only via `api/` or `dto/`"
 rule: `core/user` is not a peer feature module but this app's account layer, and the alternative — each module re-deriving the same default — is the exact drift that
 shipped a delete path with no confirmation dialog. Do not add a fourth without an entry here.
 
-| Composable | Imported by | Why it cannot live per-module |
-|---|---|---|
-| `useUserPreferences.ts` | `todoList`, `dayPlanner`, `historyDashboard`, `activityHistory` | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the *same* one. |
-| `useDeleteConfirmation.ts` | the five delete sites in `todoList`, `dayPlanner`, `historyDashboard` | Decides whether a delete confirms, from the delete's **consequence** rather than the preference alone. A delete that **cascades** always confirms and must say how many children go with it — that is the one place the user's preference is overruled, and it only holds if all five sites ask the same question. Reading `askBeforeDelete` directly at a delete site is now a bug. |
-| `useUserScopedStorage.ts` | `dayPlanner`, `todoList`, `activityTracking`, `leisure` | Namespaces every `localStorage` key by account id, and migrates the pre-namespacing key on first read. Without it, two accounts on one browser share pinned templates, dismissed reviews and dismissed hints. Never write a raw `localStorage` key for per-user state — route it through `readUserScoped` / `writeUserScoped`, or `userScopedKey` for a Pinia `persist.key` function. |
+| Composable                 | Imported by                                                           | Why it cannot live per-module                                                                                                                                                                                                                                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useUserPreferences.ts`    | `todoList`, `dayPlanner`, `historyDashboard`, `activityHistory`       | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the _same_ one.                                                                                                                                                                                                            |
+| `useDeleteConfirmation.ts` | the five delete sites in `todoList`, `dayPlanner`, `historyDashboard` | Decides whether a delete confirms, from the delete's **consequence** rather than the preference alone. A delete that **cascades** always confirms and must say how many children go with it — that is the one place the user's preference is overruled, and it only holds if all five sites ask the same question. Reading `askBeforeDelete` directly at a delete site is now a bug.  |
+| `useUserScopedStorage.ts`  | `dayPlanner`, `todoList`, `activityTracking`, `leisure`               | Namespaces every `localStorage` key by account id, and migrates the pre-namespacing key on first read. Without it, two accounts on one browser share pinned templates, dismissed reviews and dismissed hints. Never write a raw `localStorage` key for per-user state — route it through `readUserScoped` / `writeUserScoped`, or `userScopedKey` for a Pinia `persist.key` function. |
 
 ## Coding Standards
 
@@ -244,12 +252,16 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
   `src/locales/{SK,EN}.ts`. App-wide strings not owned by a module go in `src/locales/common.{sk,en}.ts`. SK is primary, EN is the fallback.
     - The aggregator spread is **shallow**: a colliding top-level namespace is replaced wholesale, not merged. The app's own namespaces are spread after the
       framework's `common` so they win. Read the comment at the top of `SK.ts` before adding a namespace.
+    - **Consequence when adopting framework code:** a framework component resolving `t('general.foo')` renders the raw key here, because this app's `general`
+      replaces the framework's. Mirror the key into `src/locales/common.{sk,en}.ts` by hand as part of the adoption. This has been missed three times
+      (`validation`, `general.undoSuccess`, `calendar` — `migration-revision.md` R5/R6/R11). EN needs the mirror too: `EN.ts` does not spread the framework's
+      Slovak-only `common` at all.
 - **Pinia Stores**: Use Composition API (Setup Stores) pattern: `defineStore('name', () => { ... })`. Stores live in their module's `store/` directory.
 - **URL State**: Store filterable/bookmarkable state (filters, tabs, search queries, pagination) in URL query params so users can share/bookmark/navigate back. Use
   `vue-router` query params for this.
-- **DTOs**: A module's DTOs live in `src/core/<module>/dto/{request,response,enum}/`; base classes and interfaces come from `@/_common/dto/`. Response DTOs must
-  have `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default
-  params and `static fromJson()`.
+- **DTOs**: A module's DTOs live in `src/core/<module>/dto/{request,response,enum}/`; base classes and interfaces come from `@/_common/dto/`. Response DTOs must have
+  `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default params and
+  `static fromJson()`.
     - The select-option shape is `ValueTitleDto` (it was `TitleValueObject` before the migration).
 
 ## Routing
@@ -286,8 +298,8 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
     2. For layout/spacing: use Vuetify utility classes (`d-flex`, `pa-2`, `ga-2`, `text-primary`, etc.)
     3. Use custom CSS only when no Vuetify prop or helper class exists
     4. For 1-2 simple property changes on a single element, use inline `style=""` to keep it close to the markup
-
     - Don't mix Vuetify classes and custom CSS for the same element - pick one approach per element.
+
 - **Number Inputs**: **Always** use `VNumberInput` instead of `VTextField` with `type="number"`.
     - VNumberInput provides built-in increment/decrement buttons and better number handling.
     - No need for `.number` modifier on v-model.
@@ -302,9 +314,10 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The honest baseline is **72 errors, all of them app-side in `src/core`** — `src/_common` is clean as of
-  `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
-  (The figure read 76 until 2026-08-10; measuring it before and after R14 gave 72 both times, so 76 was simply stale — no change earned the difference.)
+  is incremental and reports an inflated, unstable count. The baseline is **64 errors, all of them app-side in `src/core`** (measured 2026-08-19) — `src/_common`
+  is clean as of `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise. **This number has been stale
+  every time anyone checked** (76 → 72 → 65 → 64, drifting down as unrelated work touched files): re-measure on a clean tree before quoting it, and don't treat a
+  small delta as a finding.
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB
