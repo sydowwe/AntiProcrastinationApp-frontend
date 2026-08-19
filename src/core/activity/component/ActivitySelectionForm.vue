@@ -150,14 +150,13 @@
 	const { openDialog } = useDialog()
 	const activityField = ref<InstanceType<typeof VAutocomplete>>()
 
-	const { filteredOptions, activityIdModel, saveActivityToHistory, onActivityCreated } =
-		useActivitySelectionFormState(
-			formData,
-			selectedActivityId,
-			selection as Ref<ActivitySelection | null>,
-			loading,
-			selectOptionsSource,
-		)
+	const { filteredOptions, activityIdModel, onActivityCreated } = useActivitySelectionFormState(
+		formData,
+		selectedActivityId,
+		selection as Ref<ActivitySelection | null>,
+		loading,
+		selectOptionsSource,
+	)
 
 	async function validate() {
 		return await activityField.value?.validate()
@@ -185,6 +184,5 @@
 	// model.
 	defineExpose({
 		validate,
-		saveActivityToHistory,
 	})
 </script>

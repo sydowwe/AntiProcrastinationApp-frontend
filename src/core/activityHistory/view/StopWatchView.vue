@@ -60,6 +60,7 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
+	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null
@@ -73,6 +74,7 @@
 
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
+	const { saveActivityToHistory } = useSaveActivityToHistory()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
@@ -142,7 +144,7 @@
 				dialogProps: { title: t('activities.recordNewActivity') },
 			})
 			if (result) {
-				await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timeLength)
+				await saveActivityToHistory(selectedActivityId.value, name, startTimestamp.value, timeLength)
 			}
 			resetTime()
 		} else {

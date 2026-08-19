@@ -29,8 +29,6 @@ const activity = {
 		clone: `Clone`,
 		pleaseSelectActivity: `Please select an activity`,
 		activityNotFound: `Activity with id {id} not found`,
-		addedToHistory: `Added record of activity "{activity}" to history`,
-		errorSavingToHistory: `Error saving record of activity "{activity}" to history`,
 		copySuffix: ` - copy`,
 
 		//=========

@@ -30,8 +30,6 @@ const activity = {
 		clone: `Klonovať`,
 		pleaseSelectActivity: `Prosím vyberte aktivitu`,
 		activityNotFound: `Aktivita s id {id} sa nenašla`,
-		addedToHistory: `Záznam aktivity "{activity}" bol pridaný do histórie`,
-		errorSavingToHistory: `Chyba pri ukladaní záznamu aktivity "{activity}" do histórie`,
 		copySuffix: ` - kópia`,
 
 		//=========

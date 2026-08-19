@@ -75,6 +75,7 @@
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
+	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
@@ -101,6 +102,7 @@
 	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
+	const { saveActivityToHistory } = useSaveActivityToHistory()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
@@ -234,7 +236,11 @@
 					dialogProps: { title: t('activities.recordNewActivity') },
 				})
 				if (result) {
-					await activitySelectionForm.value!.saveActivityToHistory(startTimestamp.value, timeLength)
+					// `selectedActivityId`, not `selection`: `stop()` puts the time input back, which
+					// remounts the selection form, and a freshly mounted form reports a null selection
+					// until its options are back. The id ref survives the remount; the name was frozen
+					// at start for the same reason.
+					await saveActivityToHistory(selectedActivityId.value, name, startTimestamp.value, timeLength)
 				}
 				resetTimer()
 			} else {

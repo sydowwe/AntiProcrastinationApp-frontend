@@ -1,9 +1,5 @@
 import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { Ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import type { Time } from '@/_common/dto/dto/Time.ts'
-import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
 import {
@@ -23,9 +19,6 @@ export function useActivitySelectionFormState(
 	loading: Ref<boolean>,
 	selectOptionsSource: ActivityOptionsSource,
 ) {
-	const { t } = useI18n()
-	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
-	const { create } = useActivityHistoryCrud()
 	const { getAllActivityFormSelectOptionsCombinations } = useActivityFormSelectOptions()
 
 	const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([])
@@ -156,23 +149,6 @@ export function useActivitySelectionFormState(
 		},
 	)
 
-	// Belongs in activityHistory, not here — moved out in the next commit. Left in place for now so
-	// this commit is only about how the selection leaves the component.
-	async function saveActivityToHistory(startTimestamp: Date, activityLength: Time) {
-		const activityName = selection.value?.activityName ?? ''
-		if (activityIdModel.value == null) {
-			showErrorSnackbar(t('activities.pleaseSelectActivity'))
-			return null
-		}
-		const newId = await create(startTimestamp, activityLength, activityIdModel.value)
-		if (newId) {
-			showSuccessSnackbar(t('activities.addedToHistory', { activity: activityName }))
-			return newId
-		}
-		showErrorSnackbar(t('activities.errorSavingToHistory', { activity: activityName }))
-		return null
-	}
-
 	function onActivityCreated(request: ActivityRequest, createdId: number) {
 		// Push the new activity into the *unfiltered* combinations, not into the filtered list: any later
 		// change to the form re-derives the filtered list from these, and an option that only ever
@@ -194,7 +170,6 @@ export function useActivitySelectionFormState(
 	return {
 		filteredOptions,
 		activityIdModel,
-		saveActivityToHistory,
 		onActivityCreated,
 	}
 }

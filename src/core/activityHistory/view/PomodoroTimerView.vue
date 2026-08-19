@@ -195,7 +195,6 @@
 							</h3>
 						</div>
 						<ActivitySelectionForm
-							ref="restActivitySelectionForm"
 							v-model:activityId="restActivityId"
 							v-model:selection="restSelection"
 							:formDisabled="formDisabled"
@@ -255,6 +254,7 @@
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
 	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
+	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
@@ -278,9 +278,11 @@
 	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
 		useTimerNotifications()
 	const { openDialog } = useDialog()
+	const { saveActivityToHistory } = useSaveActivityToHistory()
 
+	// Only the focus form is still reached into, and only for `validate()` — the rest activity is
+	// optional, so there is nothing to validate on it.
 	const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
-	const restActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
 
 	const focusInitialTime = ref(new Time(0, 25))
@@ -588,15 +590,21 @@
 		longRestInitialTime.value = new Time(0, 10)
 	}
 
+	// Two records, one per activity form: the focus activity for the time actually focused, and — only
+	// if one was picked and any rest time accrued — the rest activity for the rest.
 	function saveActivity() {
 		if (!activityId) {
-			mainActivitySelectionForm.value?.saveActivityToHistory(
+			void saveActivityToHistory(
+				focusActivityId.value,
+				focusActivityName.value,
 				startTimestamp.value,
 				Time.fromSeconds(focusTimeElapsed.value),
 			)
 		}
-		if (restSelection.value?.activityId != null && restTimeElapsed.value > 0) {
-			restActivitySelectionForm.value?.saveActivityToHistory(
+		if (restActivityId.value != null && restTimeElapsed.value > 0) {
+			void saveActivityToHistory(
+				restActivityId.value,
+				restSelection.value?.activityName ?? '',
 				startTimestamp.value,
 				Time.fromSeconds(restTimeElapsed.value),
 			)
