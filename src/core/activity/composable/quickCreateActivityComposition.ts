@@ -11,7 +11,7 @@ export type QuickCreateActivityRoleName = 'Routine task' | 'To-do list task' | '
 export type ActivityFormFieldResultStatus = 'edit' | 'create' | 'noChange' | 'fromExisting'
 
 export function useQuickCreateActivity(viewName: string) {
-	const { create } = useActivityCrud()
+	const { create, quickEdit } = useActivityCrud()
 
 	const isActivityFormHidden = ref(false)
 
@@ -29,13 +29,15 @@ export function useQuickCreateActivity(viewName: string) {
 		return await create(activityRequest)
 	}
 
-	//TODO needs refresh to other activities that are using this activity
+	// Renaming an activity changes what every other picker shows for it; `quickEdit` invalidates the
+	// shared option cache, which is what the old `//TODO needs refresh to other activities that are
+	// using this activity` was asking for.
 	async function quickEditActivity(activityId: number, quickEditMode: 'Overwrite' | 'Clone') {
-		const response = await API.patch(
-			`/activity/${activityId}/${quickEditMode}`,
+		return await quickEdit(
+			activityId,
+			quickEditMode,
 			new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId),
 		)
-		return response.data != null ? Number(response.data) : null
 	}
 
 	return {

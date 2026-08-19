@@ -112,7 +112,10 @@
 	const { tab } = defineProps<{ tab: ActivitySettingsTab }>()
 
 	const { t } = useI18n()
-	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
+	// The shared cache's own refs: creating a role in the roles tab refreshes them, so the activities
+	// tab's filter offers it without a reload.
+	const { roleOptions, categoryOptions, fetchRoleSelectOptions, fetchCategorySelectOptions } =
+		useActivitySelectOptions()
 	const route = useRoute()
 	const router = useRouter()
 
@@ -184,8 +187,6 @@
 	const categoriesFilter = ref(new NameTextFilter())
 	const roleCombobox = ref<(SelectOption | string)[]>([])
 	const categoryCombobox = ref<(SelectOption | string)[]>([])
-	const roleOptions = ref<SelectOption[]>([])
-	const categoryOptions = ref<SelectOption[]>([])
 
 	const activityNameDraft = ref('')
 	const activityTextDraft = ref('')
@@ -243,8 +244,19 @@
 	syncDraftsFromState()
 
 	onMounted(async () => {
-		roleOptions.value = await fetchRoleSelectOptions()
-		categoryOptions.value = await fetchCategorySelectOptions()
+		try {
+			await Promise.all([fetchRoleSelectOptions(), fetchCategorySelectOptions()])
+		} catch {
+			// The axios interceptor already reported it; the comboboxes fall back to free text.
+		}
+		// Explicit, because a cache hit resolves without changing the refs and the watch below never
+		// fires.
+		if (activeTab.value === 'activities') refreshActivityCombos()
+	})
+
+	// A role or category created or deleted in the other tabs refreshes the shared lists; the chips
+	// shown for the id filters are derived from them and have to follow.
+	watch([roleOptions, categoryOptions], () => {
 		if (activeTab.value === 'activities') refreshActivityCombos()
 	})
 

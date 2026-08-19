@@ -2,10 +2,8 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { Ref } from 'vue'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
-import {
-	filterActivityFormSelectOptions,
-	useActivityFormSelectOptions,
-} from '@/core/activity/composable/ActivitySelectsComposition.ts'
+import { filterActivityFormSelectOptions } from '@/core/activity/composable/ActivitySelectsComposition.ts'
+import { useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
 import { ActivityFormSelectOptions } from '@/core/activity/dto/response/ActivityFormSelectOptions.ts'
 import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
 import { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
@@ -19,8 +17,11 @@ export function useActivitySelectionFormState(
 	loading: Ref<boolean>,
 	selectOptionsSource: ActivityOptionsSource,
 ) {
-	const { getAllActivityFormSelectOptionsCombinations } = useActivityFormSelectOptions()
+	const optionsStore = useActivityOptionsStore()
 
+	// `ensureCombinations` hands back a copy, which matters here: `onActivityCreated` pushes a row it
+	// synthesises from what the form knows, and that row must not leak into the shared cache — the
+	// server decides which combinations actually exist.
 	const allOptionsCombinations = ref<ActivitySelectOptionCombination[]>([])
 	const filteredOptions = ref(new ActivityFormSelectOptions())
 	const optionsLoaded = ref(false)
@@ -114,7 +115,7 @@ export function useActivitySelectionFormState(
 	onMounted(async () => {
 		loading.value = true
 		try {
-			allOptionsCombinations.value = await getAllActivityFormSelectOptionsCombinations(selectOptionsSource)
+			allOptionsCombinations.value = await optionsStore.ensureCombinations(selectOptionsSource)
 			optionsLoaded.value = true
 		} catch {
 			allOptionsCombinations.value = []

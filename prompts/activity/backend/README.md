@@ -14,7 +14,7 @@ Expected to appear here:
 |------|------|---------|
 | [A8](../A8-quick-create-role-lookup.md) | always | a stable system key on activity roles, so quick-create stops resolving its role by English display name |
 | [A9](../A9-archive-and-merge.md) | always | archive semantics, merge semantics, and the reference rules only the backend knows |
-| [A7](../A7-select-options-cache.md) | only if still ambiguous after building the cache | nullability of `{source}/form-select-options` |
+| [A7](../A7-select-options-cache.md) | ✅ written — [`A7-backend.md`](A7-backend.md) | `roleOption` nullability on `{source}/form-select-options` (the other three fields turned out not to matter) |
 | [A2](../A2-delete-dead-code.md) | only if the backend rejects the field | `icon` on the role/category create/update requests |
 
 Name emitted files `A<n>-backend.md`, matching `prompts/activity-history/backend/H9-backend.md`.

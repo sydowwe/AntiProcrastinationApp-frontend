@@ -71,18 +71,26 @@
 
 	const model = defineModel<ActivityRequest>({ required: true })
 
-	const { fetchRoleSelectOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
+	// `roleOptions` / `categoryOptions` are the shared cache's own refs — bound straight into the
+	// template so an option created anywhere else shows up here without a refetch.
+	const {
+		roleOptions,
+		categoryOptions,
+		fetchRoleSelectOptions,
+		fetchCategorySelectOptions,
+		addRoleOption,
+		addCategoryOption,
+	} = useActivitySelectOptions()
 	const { requiredRule } = useGeneralRules()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
 
 	const form = ref<InstanceType<typeof VForm>>()
-	const roleOptions = ref<SelectOption[]>([])
-	const categoryOptions = ref<SelectOption[]>([])
 
-	onMounted(async () => {
-		roleOptions.value = await fetchRoleSelectOptions()
-		categoryOptions.value = await fetchCategorySelectOptions()
+	onMounted(() => {
+		void Promise.all([fetchRoleSelectOptions(), fetchCategorySelectOptions()]).catch(() => {
+			// The axios interceptor already reported it; the pickers stay empty.
+		})
 	})
 
 	async function validate() {
@@ -99,7 +107,7 @@
 			dialogProps: { title: t('activities.addNewRole'), confirmBtnLabel: t('general.create') },
 		})
 		if (!result?.createdId) return
-		roleOptions.value.push(new SelectOption(result.createdId, result.request.name))
+		addRoleOption(new SelectOption(result.createdId, result.request.name))
 		model.value.roleId = result.createdId
 	}
 
@@ -109,7 +117,7 @@
 			dialogProps: { title: t('activities.addNewCategory'), confirmBtnLabel: t('general.create') },
 		})
 		if (!result?.createdId) return
-		categoryOptions.value.push(new SelectOption(result.createdId, result.request.name))
+		addCategoryOption(new SelectOption(result.createdId, result.request.name))
 		model.value.categoryId = result.createdId
 	}
 

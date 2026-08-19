@@ -72,7 +72,6 @@
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { computed, onMounted, ref, watchEffect } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
@@ -88,7 +87,8 @@
 	const i18n = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
 	const { requiredRule } = useGeneralRules()
-	const { fetchCategorySelectOptions } = useActivitySelectOptions()
+	// The store's own ref, so a category created elsewhere in this dialog stack shows up here too.
+	const { categoryOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
 	const { fetchById } = useActivityCrud()
 
 	const activityForm = ref<InstanceType<typeof ActivitySelectionForm>>()
@@ -97,7 +97,6 @@
 		useQuickCreateActivity(viewName)
 
 	const selectedActivityId = ref<number | undefined>(undefined)
-	const categoryOptions = ref<SelectOption[]>([])
 
 	const ownLoading = ref(false)
 	const selectionFormLoading = ref(false)
@@ -117,8 +116,13 @@
 
 	onMounted(async () => {
 		ownLoading.value = true
-		categoryOptions.value = await fetchCategorySelectOptions()
-		ownLoading.value = false
+		try {
+			await fetchCategorySelectOptions()
+		} catch {
+			// The axios interceptor already reported it; the picker stays empty.
+		} finally {
+			ownLoading.value = false
+		}
 	})
 
 	async function execAndReturnStatus() {
