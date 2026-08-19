@@ -1,5 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
@@ -45,6 +46,66 @@ function emptyTimelineSessions(): ActivityTimelineSessions {
 	return { primarySessions: [], detailSessions: [], backgroundSessions: [] }
 }
 
+// --- URL query-state (defaults, encode/parse) ---
+
+const DATE_PARAM = 'date'
+const FROM_PARAM = 'from'
+const TO_PARAM = 'to'
+const VIEW_PARAM = 'view'
+const BASELINE_PARAM = 'baseline'
+const WINDOW_PARAM = 'window'
+const SELECTED_PARAM = 'selected'
+
+const DEFAULT_TIME_FROM = new Time(7, 0)
+const DEFAULT_TIME_TO = new Time(0, 0)
+const DEFAULT_VISUALIZATION: ActivityVisualization = 'timeline'
+const DEFAULT_BASELINE = BaselineType.Last7Days
+const DEFAULT_WINDOW_SIZE = 30
+
+function firstQueryValue(value: unknown): string | undefined {
+	if (Array.isArray(value)) {
+		return typeof value[0] === 'string' ? value[0] : undefined
+	}
+	return typeof value === 'string' ? value : undefined
+}
+
+/** Strict yyyy-MM-dd parse — rejects anything dayjs-free `new Date(str)` would silently coerce. */
+function parseIsoDate(value: string | undefined): Date | null {
+	if (value === undefined || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return null
+	}
+	const [year, month, day] = value.split('-').map(Number)
+	const date = new Date(year, month - 1, day)
+	if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+		return null
+	}
+	return date
+}
+
+function parseTime(value: string | undefined): Time | null {
+	if (value === undefined || !/^\d{2}:\d{2}$/.test(value)) {
+		return null
+	}
+	const time = Time.fromString(value)
+	if (time.hours < 0 || time.hours > 23 || time.minutes < 0 || time.minutes > 59) {
+		return null
+	}
+	return time
+}
+
+function parseVisualization(value: string | undefined): ActivityVisualization | null {
+	return value === 'stackedBars' || value === 'timeline' ? value : null
+}
+
+function parseBaseline(value: string | undefined): BaselineType | null {
+	return (Object.values(BaselineType) as string[]).includes(value ?? '') ? (value as BaselineType) : null
+}
+
+function parseWindowSize(value: string | undefined): number | null {
+	const parsed = Number(value)
+	return activityWindowSizeOptions.includes(parsed) ? parsed : null
+}
+
 /**
  * State, fetch orchestration and event handling shared by the web-extension, desktop and android
  * dashboards. It knows nothing about any one source — everything source-specific arrives through
@@ -52,6 +113,8 @@ function emptyTimelineSessions(): ActivityTimelineSessions {
  */
 export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetchers<TPieChart>) {
 	const { t } = useI18n()
+	const route = useRoute()
+	const router = useRouter()
 
 	/** Baselines the summary cards compare the selected day against. */
 	const baselineOptions = computed<BaselineOption[]>(() => [
@@ -61,16 +124,20 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		new BaselineOption(BaselineType.AllTime, t('activityTracking.baseline.allTime')),
 	])
 
-	// --- Date & Time State ---
-	const date = ref<Date>(new Date())
-	const timeFrom = ref(new Time(7, 0))
-	const timeTo = ref(new Time(0, 0))
+	// --- Date & Time State, seeded from the URL where present and valid ---
+	const date = ref<Date>(parseIsoDate(firstQueryValue(route.query[DATE_PARAM])) ?? new Date())
+	const timeFrom = ref(parseTime(firstQueryValue(route.query[FROM_PARAM])) ?? DEFAULT_TIME_FROM)
+	const timeTo = ref(parseTime(firstQueryValue(route.query[TO_PARAM])) ?? DEFAULT_TIME_TO)
 
-	// --- Shared State ---
-	const selectedItem = ref<string | null>(null)
-	const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
-	const selectedVisualization = ref<ActivityVisualization>('timeline')
-	const selectedWindowSize = ref(30)
+	// --- Shared State, also seeded from the URL ---
+	const selectedItem = ref<string | null>(firstQueryValue(route.query[SELECTED_PARAM]) ?? null)
+	const selectedBaseline = ref<BaselineType>(
+		parseBaseline(firstQueryValue(route.query[BASELINE_PARAM])) ?? DEFAULT_BASELINE,
+	)
+	const selectedVisualization = ref<ActivityVisualization>(
+		parseVisualization(firstQueryValue(route.query[VIEW_PARAM])) ?? DEFAULT_VISUALIZATION,
+	)
+	const selectedWindowSize = ref(parseWindowSize(firstQueryValue(route.query[WINDOW_PARAM])) ?? DEFAULT_WINDOW_SIZE)
 
 	// --- View Models ---
 	const summaryCardsData = ref<SummaryCardsData[] | null>(null) as Ref<SummaryCardsData[] | null>
@@ -147,10 +214,17 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		}
 	}
 
+	// The initial run must keep a `selected` value that arrived via the URL rather than wipe it.
+	let isInitialRun = true
+
 	watch(
 		[date, timeFrom, timeTo],
 		() => {
-			selectedItem.value = null
+			if (isInitialRun) {
+				isInitialRun = false
+			} else {
+				selectedItem.value = null
+			}
 			fetchSummaryCards()
 			fetchPieChart()
 			fetchStackedBars()
@@ -162,6 +236,63 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	watch(selectedBaseline, () => {
 		fetchSummaryCards()
 	})
+
+	// --- URL sync: reflect bookmarkable state, omitting anything at its default ---
+	function syncQueryToUrl() {
+		const query: LocationQueryRaw = { ...route.query }
+
+		const dateStr = formatDateForApi(date.value)
+		if (dateStr === formatDateForApi(new Date())) {
+			delete query[DATE_PARAM]
+		} else {
+			query[DATE_PARAM] = dateStr
+		}
+
+		if (timeFrom.value.getInMinutes === DEFAULT_TIME_FROM.getInMinutes) {
+			delete query[FROM_PARAM]
+		} else {
+			query[FROM_PARAM] = timeFrom.value.getString()
+		}
+
+		if (timeTo.value.getInMinutes === DEFAULT_TIME_TO.getInMinutes) {
+			delete query[TO_PARAM]
+		} else {
+			query[TO_PARAM] = timeTo.value.getString()
+		}
+
+		if (selectedVisualization.value === DEFAULT_VISUALIZATION) {
+			delete query[VIEW_PARAM]
+		} else {
+			query[VIEW_PARAM] = selectedVisualization.value
+		}
+
+		if (selectedBaseline.value === DEFAULT_BASELINE) {
+			delete query[BASELINE_PARAM]
+		} else {
+			query[BASELINE_PARAM] = selectedBaseline.value
+		}
+
+		if (selectedWindowSize.value === DEFAULT_WINDOW_SIZE) {
+			delete query[WINDOW_PARAM]
+		} else {
+			query[WINDOW_PARAM] = String(selectedWindowSize.value)
+		}
+
+		if (selectedItem.value === null) {
+			delete query[SELECTED_PARAM]
+		} else {
+			query[SELECTED_PARAM] = selectedItem.value
+		}
+
+		router.replace({ query }).catch(() => {
+			// navigation duplication / redirection errors are non-fatal for state sync
+		})
+	}
+
+	watch(
+		[date, timeFrom, timeTo, selectedVisualization, selectedBaseline, selectedWindowSize, selectedItem],
+		syncQueryToUrl,
+	)
 
 	// --- Event Handlers ---
 	function handleBaselineChange(value: BaselineType) {
