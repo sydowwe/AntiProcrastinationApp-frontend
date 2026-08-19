@@ -27,63 +27,38 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
+	import { toRef } from 'vue'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { Role } from '@/core/activity/dto/response/Role.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
-	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
-	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import type { NameTextFilter } from '@/core/activity/dto/request/NameTextFilter.ts'
-	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import { useActivityRoleCrud } from '@/core/activity/api/activityRoleApi.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import ActivityRoleForm from '@/core/activity/component/activityRole/ActivityRoleForm.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useLookupTable } from '@/core/activity/composable/useLookupTable.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
 	const { getBgColor } = useColor()
-	const { fetchFilteredTable, loading } = useFetchFilteredTable<Role, NameTextFilter>({
-		responseClass: Role,
-		entityName: 'activity-role',
-	})
 	const { deleteEntity } = useActivityRoleCrud()
 	const { openDialog } = useDialog()
 
-	const items = ref<Role[]>([])
-	const itemsLength = ref(0)
-	const itemsPerPage = ref(10)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([])
-
-	const columns: TableColumn[] = [
-		new TableColumn('name', 'Name'),
-		new TableColumn('text', 'Text', false),
-		new TableColumn('color', 'Color', false),
-	]
-
-	watch(
-		() => props.filter,
-		() => {
-			page.value = 1
-			loadItems()
-		},
-		{ deep: true },
-	)
-
-	async function loadItems() {
-		const hasFilter = !!props.filter.name || !!props.filter.text
-		const request = new FilteredTableRequest<NameTextFilter>(
-			itemsPerPage.value,
-			page.value,
-			sortBy.value,
-			hasFilter,
-			hasFilter ? props.filter : null,
-		)
-		const result = await fetchFilteredTable(request)
-		items.value = result.items
-		itemsLength.value = result.itemsCount
-	}
+	const { items, itemsLength, itemsPerPage, page, sortBy, loading, columns, loadItems, onDelete } = useLookupTable<
+		Role,
+		NameTextFilter
+	>({
+		filter: toRef(props, 'filter'),
+		responseClass: Role,
+		entityName: 'activity-role',
+		deleteEntity,
+		columns: [
+			new TableColumn('name', 'Name'),
+			new TableColumn('text', 'Text', false),
+			new TableColumn('color', 'Color', false),
+		],
+		hasFilter: f => !!f.name || !!f.text,
+	})
 
 	async function openCreateDialog() {
 		const result = await openDialog({
@@ -100,10 +75,5 @@
 			dialogProps: { title: 'Edit role', confirmBtnLabel: 'Save' },
 		})
 		if (result) await loadItems()
-	}
-
-	async function onDelete(item: Role) {
-		await deleteEntity(item.id)
-		await loadItems()
 	}
 </script>
