@@ -1,46 +1,12 @@
 <template>
 	<div class="py-5 w-100 h-100 d-flex flex-column">
-		<!-- Header -->
-		<div
-			class="w-100 mb-3 d-flex align-center ga-6 flex-wrap bg-background"
-			style="position: sticky; top: 0; z-index: 1000"
-		>
-			<h1 class="text-h4">Activity Dashboard</h1>
-			<div class="d-flex align-center ga-5 flex-wrap">
-				<MyDateInput
-					v-model="date"
-					label="Date"
-					hideDetails
-					:max="today"
-					density="compact"
-				/>
-				<TimeRangePicker
-					v-model:start="timeFrom"
-					v-model:end="timeTo"
-					density="compact"
-				/>
-				<VBtnToggle
-					v-model="selectedVisualization"
-					mandatory
-					variant="outlined"
-					color="secondaryOutline"
-					style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px"
-				>
-					<VBtn
-						value="stackedBars"
-						height="40px"
-					>
-						{{ $t('tracker.stackedBars') }}
-					</VBtn>
-					<VBtn
-						value="timeline"
-						height="40px"
-					>
-						{{ $t('tracker.timeline') }}
-					</VBtn>
-				</VBtnToggle>
-			</div>
-		</div>
+		<ActivityDashboardHeader
+			v-model:date="date"
+			v-model:timeFrom="timeFrom"
+			v-model:timeTo="timeTo"
+			v-model:selectedVisualization="selectedVisualization"
+			title="Activity Dashboard"
+		/>
 
 		<!-- Visualization Content -->
 		<div class="flex-fill">
@@ -78,12 +44,12 @@
 				>
 					<ActivitySummaryCards
 						:domains="summaryCardsData"
-						:baselineOptions="baselineOptions"
-						:selectedBaseline="selectedBaseline"
-						:selectedDomain="selectedDomain"
-						:loading="topDomainsLoading"
+						:baselineOptions
+						:selectedBaseline
+						:selectedDomain="selectedItem"
+						:loading="summaryCardsLoading"
 						@update:selectedBaseline="handleBaselineChange"
-						@domainClick="handleDomainSelect"
+						@domainClick="handleItemSelect"
 					/>
 				</VCol>
 				<VCol
@@ -92,7 +58,7 @@
 					class="pb-3"
 				>
 					<ActivityPieChartSection
-						v-model:selectedDomain="selectedDomain"
+						v-model:selectedDomain="selectedItem"
 						:domains="pieChartData?.domains ?? []"
 						:dayTotals="pieChartData?.totals"
 						:loading="pieChartLoading"
@@ -104,195 +70,94 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, ref, watch } from 'vue'
-	import { Time } from '@/_common/dto/dto/Time.ts'
-	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
 	import ActivityTimeline from '@/core/activityTracking/component/timeline/ActivityTimeline.vue'
-	import { BaselineOption, BaselineType } from '@/core/activityTracking/component/summaryCards/BaselineOption.ts'
+	import ActivitySummaryCards from '@/core/activityTracking/component/summaryCards/ActivitySummaryCards.vue'
+	import ActivityPieChartSection from '@/core/activityTracking/component/pieChart/ActivityPieChartSection.vue'
+	import ActivityDashboardHeader from '@/core/activityTracking/component/ActivityDashboardHeader.vue'
 	import type { ActivityWindow } from '@/core/activityTracking/dto/response/stackedBars/ActivityWindow.ts'
-	import type { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
-	import type { TimelineResponse } from '@/core/activityTracking/dto/response/timeline/TimelineResponse.ts'
+	import type { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import {
 		getPieChart,
 		getStackedBarsData,
 		getSummaryCards,
 		getTimeline,
 	} from '@/core/activityTracking/api/activityTrackingApi'
-	import ActivitySummaryCards from '@/core/activityTracking/component/summaryCards/ActivitySummaryCards.vue'
-	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import { SummaryCardsRequest } from '@/core/activityTracking/dto/request/SummaryCardsRequest.ts'
 	import { PieChartRequest } from '@/core/activityTracking/dto/request/PieChartRequest.ts'
-	import type { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
-	import ActivityPieChartSection from '@/core/activityTracking/component/pieChart/ActivityPieChartSection.vue'
 	import { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
 	import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
-	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import {
+		type ActivityDashboardFetchers,
+		useActivityDashboard,
+	} from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
-	// --- Date & Time State ---
-	const today = new Date()
-	const date = ref<Date>(new Date())
-	const timeFrom = ref(new Time(7, 0))
-	const timeTo = ref(new Time(0, 0))
-
-	// --- Shared State ---
-	const selectedDomain = ref<string | null>(null)
-	const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
-	const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')
-	const selectedWindowSize = ref(30)
-
-	// --- Window size options for single day ---
-	const activityWindowSizeOptions = [15, 20, 30, 60, 90, 120]
-
-	// --- Baseline Options ---
-	const baselineOptions: BaselineOption[] = [
-		new BaselineOption(BaselineType.Last7Days, 'Last 7 days'),
-		new BaselineOption(BaselineType.Last30Days, 'Last 30 days'),
-		new BaselineOption(BaselineType.SameWeekday, 'Same weekday'),
-		new BaselineOption(BaselineType.AllTime, 'All time'),
-	]
-
-	const summaryCardsData = ref<SummaryCardsData[] | null>(null)
-	const pieChartData = ref<PieChartData | null>(null)
-	const stackedBarsData = ref<ActivityWindow[]>([])
-	const timelineData = ref<TimelineResponse | null>(null)
-
-	// --- Loading States ---
-	const topDomainsLoading = ref(false)
-	const pieChartLoading = ref(false)
-	const stackedBarsLoading = ref(false)
-	const timelineLoading = ref(false)
-
-	const primarySessions = computed(() => timelineData.value?.primarySessions ?? [])
-	const detailSessions = computed(() => timelineData.value?.detailSessions ?? [])
-	const backgroundSessions = computed(() => timelineData.value?.backgroundSessions ?? [])
-
-	const timelineFrom = computed(() => {
-		const d = new Date(date.value)
-		d.setHours(timeFrom.value.hours, timeFrom.value.minutes, 0, 0)
-		return d
-	})
-
-	const timelineTo = computed(() => {
-		const d = new Date(date.value)
-		d.setHours(timeTo.value.hours, timeTo.value.minutes, 0, 0)
-		if (d <= timelineFrom.value) {
-			d.setDate(d.getDate() + 1)
-		}
-		return d
-	})
-
-	// --- Map ActivityWindow[] → StackedBarsInputWindow[] ---
-	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() => {
-		return stackedBarsData.value.map(w => ({
-			windowStart: w.windowStart,
-			windowEnd: w.windowEnd,
-			items: w.activities.map(a => ({
+	// --- Response → view-model mapping ---
+	function toStackedBarsWindow(window: ActivityWindow): StackedBarsInputWindow {
+		return {
+			windowStart: window.windowStart,
+			windowEnd: window.windowEnd,
+			items: window.activities.map(a => ({
 				name: a.domain,
 				activeSeconds: a.activeSeconds,
 				backgroundSeconds: a.backgroundSeconds,
 				color: getDomainColor(a.domain),
 				url: a.url,
 			})),
-		}))
-	})
-
-	// --- Formatting helpers ---
-
-	// --- Fetch Functions ---
-	async function fetchSummaryCardsData() {
-		topDomainsLoading.value = true
-		try {
-			summaryCardsData.value = await getSummaryCards(
-				new SummaryCardsRequest(
-					formatDateForApi(date.value),
-					timeFrom.value,
-					timeTo.value,
-					selectedBaseline.value,
-					4,
-				),
-			)
-		} finally {
-			topDomainsLoading.value = false
 		}
 	}
 
-	async function fetchPieChart() {
-		pieChartLoading.value = true
-		try {
-			pieChartData.value = await getPieChart(
-				new PieChartRequest(formatDateForApi(date.value), timeFrom.value, timeTo.value, 1),
-			)
-		} finally {
-			pieChartLoading.value = false
-		}
-	}
-
-	async function fetchStackedBarsData() {
-		stackedBarsLoading.value = true
-		try {
-			stackedBarsData.value = await getStackedBarsData(
-				new StackedBarsRequest(
-					formatDateForApi(date.value),
-					timeFrom.value,
-					timeTo.value,
-					selectedWindowSize.value,
-				),
-			)
-		} finally {
-			stackedBarsLoading.value = false
-		}
-	}
-
-	async function fetchTimeline() {
-		timelineLoading.value = true
-		try {
-			timelineData.value = await getTimeline(
-				new DateAndTimeRangeRequest(formatDateForApi(date.value), timeFrom.value, timeTo.value),
-			)
-		} finally {
-			timelineLoading.value = false
-		}
-	}
-
-	watch(
-		[date, timeFrom, timeTo],
-		() => {
-			selectedDomain.value = null
-			fetchSummaryCardsData()
-			fetchPieChart()
-			fetchStackedBarsData()
-			fetchTimeline()
+	const fetchers: ActivityDashboardFetchers<PieChartData> = {
+		fetchSummaryCards(range, baseline) {
+			return getSummaryCards(new SummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4))
 		},
-		{ immediate: true },
-	)
-
-	watch(selectedBaseline, () => {
-		fetchSummaryCardsData()
-	})
-
-	// --- Event Handlers ---
-	function handleBaselineChange(value: BaselineType) {
-		selectedBaseline.value = value
+		fetchPieChart(range) {
+			return getPieChart(new PieChartRequest(range.date, range.timeFrom, range.timeTo, 1))
+		},
+		async fetchStackedBars(range, windowSize) {
+			const windows = await getStackedBarsData(
+				new StackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+			)
+			return windows.map(toStackedBarsWindow)
+		},
+		async fetchTimeline(range) {
+			const timeline = await getTimeline(new DateAndTimeRangeRequest(range.date, range.timeFrom, range.timeTo))
+			return {
+				primarySessions: timeline.primarySessions,
+				detailSessions: timeline.detailSessions,
+				backgroundSessions: timeline.backgroundSessions,
+			}
+		},
 	}
 
-	function handleDomainSelect(domain: string) {
-		selectedDomain.value = selectedDomain.value === domain ? null : domain
-	}
-
-	function handleWindowSizeChange(size: number) {
-		selectedWindowSize.value = size
-		fetchStackedBarsData()
-	}
-
-	function handleActivityClick(_window: StackedBarsInputWindow, name: string) {
-		selectedDomain.value = name
-	}
-
-	function handleSessionClick(session: TimelineSessionDto) {
-		selectedDomain.value = session.domain
-	}
+	const {
+		date,
+		timeFrom,
+		timeTo,
+		selectedItem,
+		selectedBaseline,
+		selectedVisualization,
+		selectedWindowSize,
+		activityWindowSizeOptions,
+		baselineOptions,
+		summaryCardsData,
+		pieChartData,
+		stackedBarsWindows,
+		primarySessions,
+		detailSessions,
+		backgroundSessions,
+		timelineFrom,
+		timelineTo,
+		summaryCardsLoading,
+		pieChartLoading,
+		stackedBarsLoading,
+		timelineLoading,
+		handleBaselineChange,
+		handleItemSelect,
+		handleWindowSizeChange,
+		handleActivityClick,
+		handleSessionClick,
+	} = useActivityDashboard(fetchers)
 </script>
