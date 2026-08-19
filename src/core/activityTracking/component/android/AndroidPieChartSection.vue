@@ -16,7 +16,7 @@
 				variant="outlined"
 				class="pa-8 text-center"
 			>
-				<div class="text-h6 text-medium-emphasis">No activity recorded for this period</div>
+				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
 			</VCard>
 		</template>
 
@@ -38,16 +38,16 @@
 					>
 						<div class="details-grid">
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Total time:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.common.totalTime') }}</span>
 								<span class="font-weight-medium">{{ fromSeconds(totals?.totalSeconds ?? 0) }}</span>
 							</div>
 							<VDivider class="my-2" />
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Apps:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.apps') }}</span>
 								<span>{{ totals?.totalApps ?? 0 }}</span>
 							</div>
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Sessions:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.sessions') }}</span>
 								<span>{{ totals?.totalSessions ?? 0 }}</span>
 							</div>
 						</div>

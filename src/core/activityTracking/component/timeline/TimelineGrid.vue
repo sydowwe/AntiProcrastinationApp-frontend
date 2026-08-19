@@ -90,7 +90,7 @@
 							</div>
 						</div>
 						<div class="gap-body">
-							<span class="gap-label-vertical">No activity</span>
+							<span class="gap-label-vertical">{{ $t('activityTracking.common.noActivity') }}</span>
 						</div>
 					</div>
 				</template>

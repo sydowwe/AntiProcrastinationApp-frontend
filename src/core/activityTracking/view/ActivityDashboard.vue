@@ -5,7 +5,7 @@
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
-			title="Activity Dashboard"
+			:title="$t('activityTracking.dashboard.title')"
 		/>
 
 		<!-- Visualization Content -->

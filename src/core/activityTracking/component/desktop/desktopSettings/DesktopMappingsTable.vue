@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
@@ -35,18 +36,19 @@
 	const emit = defineEmits<{ edit: [item: TrackerDesktopMappingResponse] }>()
 
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 	const { fetchFilteredTable: fetchFilteredTableMappings, tableLoading: loading } = useTrackerDesktopMappingCrud()
 
 	const columns = [
-		new TableColumn('isActive', 'Is active'),
-		new TableColumn('processName', 'Process Name'),
-		new TableColumn('processNameMatchType', 'Match type'),
-		new TableColumn('productName', 'Product Name'),
-		new TableColumn('productNameMatchType', 'Match type'),
-		new TableColumn('windowTitle', 'Window Title'),
-		new TableColumn('windowTitleMatchType', 'Match type'),
-		new TableColumn('activity.text', 'Activity'),
-		new TableColumn('isIgnored', 'Is ignored'),
+		new TableColumn('isActive', t('activityTracking.settings.isActive')),
+		new TableColumn('processName', t('activityTracking.settings.processName')),
+		new TableColumn('processNameMatchType', t('activityTracking.settings.matchType')),
+		new TableColumn('productName', t('activityTracking.settings.productName')),
+		new TableColumn('productNameMatchType', t('activityTracking.settings.matchType')),
+		new TableColumn('windowTitle', t('activityTracking.settings.windowTitle')),
+		new TableColumn('windowTitleMatchType', t('activityTracking.settings.matchType')),
+		new TableColumn('activity.text', t('activities.activity')),
+		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
 	]
 
 	const mappings = ref<TrackerDesktopMappingResponse[]>([])
@@ -70,7 +72,7 @@
 			mappings.value = result.items
 			totalItems.value = result.itemsCount
 		} catch {
-			showErrorSnackbar('Failed to load mappings')
+			showErrorSnackbar(t('activityTracking.settings.failedToLoadMappings'))
 		}
 	}
 

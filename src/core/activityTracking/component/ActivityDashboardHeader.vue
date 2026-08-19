@@ -7,7 +7,7 @@
 		<div class="d-flex align-center ga-5 flex-wrap">
 			<MyDateInput
 				v-model="date"
-				label="Date"
+				:label="$t('dateTime.date')"
 				hideDetails
 				:max="today"
 				density="compact"

@@ -14,7 +14,7 @@
 				variant="flat"
 				style="font-size: 0.7rem !important"
 			>
-				NEW
+				{{ $t('activityTracking.statColumn.new') }}
 			</VChip>
 			<div
 				v-else-if="percentChange !== null"
@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
@@ -44,6 +45,8 @@
 		percentChange: number | null
 		isNew: boolean
 	}>()
+
+	const { t } = useI18n()
 
 	const formattedTime = computed(() => fromSeconds(props.seconds))
 
@@ -63,11 +66,11 @@
 
 	const comparisonAriaLabel = computed(() => {
 		if (props.percentChange === null) return ''
-		if (props.percentChange === 0) return 'No change from average'
+		if (props.percentChange === 0) return t('activityTracking.statColumn.noChange')
 		if (props.percentChange > 0) {
-			return `${Math.abs(props.percentChange)}% above average`
+			return t('activityTracking.statColumn.aboveAverage', { percent: Math.abs(props.percentChange) })
 		}
-		return `${Math.abs(props.percentChange)}% below average`
+		return t('activityTracking.statColumn.belowAverage', { percent: Math.abs(props.percentChange) })
 	})
 </script>
 

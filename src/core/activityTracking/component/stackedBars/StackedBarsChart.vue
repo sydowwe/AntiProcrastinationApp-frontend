@@ -4,7 +4,7 @@
 			<!--		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>-->
 			<VSelect
 				v-model="selectedWindowSize"
-				label="Window"
+				:label="$t('activityTracking.stackedBars.windowLabel')"
 				:items="formattedOptions"
 				density="compact"
 				hideDetails
@@ -45,7 +45,7 @@
 					size="64"
 					class="text-disabled mb-4"
 				/>
-				<p class="text-body-1 text-medium-emphasis">No data for this period</p>
+				<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noDataForPeriod') }}</p>
 			</div>
 		</template>
 
@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import StackedBarsGrid from './StackedBarsGrid.vue'
 	import type { StackedBarsInputItem, StackedBarsInputWindow } from './dto/StackedBarsInput'
 	import type { ColumnData } from './dto/ColumnData'
@@ -96,6 +97,8 @@
 		windowSizeChange: [size: number]
 		activityClick: [window: StackedBarsInputWindow, name: string]
 	}>()
+
+	const { t } = useI18n()
 
 	// Selected window size
 	const selectedWindowSize = ref(initialWindowSize)
@@ -397,7 +400,7 @@
 				if (col.domain === '_other' && !nameMap.has('_other')) {
 					nameMap.set('_other', {
 						name: '_other',
-						label: 'Other',
+						label: t('activityTracking.common.other'),
 						color: getDomainColor('_other'),
 					})
 				}

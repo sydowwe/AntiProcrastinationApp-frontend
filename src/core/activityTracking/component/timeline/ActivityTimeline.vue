@@ -2,16 +2,16 @@
 	<VCard class="pa-4 pb-3">
 		<div class="header">
 			<div class="d-flex ga-4 align-center">
-				<h3 class="text-subtitle-1 font-weight-medium">Activity Timeline</h3>
+				<h3 class="text-subtitle-1 font-weight-medium">{{ $t('activityTracking.timeline.title') }}</h3>
 				<!-- Lane type legend -->
 				<div class="legend">
 					<div class="legend-item">
 						<div class="legend-color legend-active" />
-						<span>Active</span>
+						<span>{{ $t('activityTracking.viewMode.active') }}</span>
 					</div>
 					<div class="legend-item">
 						<div class="legend-color legend-background" />
-						<span>Background</span>
+						<span>{{ $t('activityTracking.viewMode.background') }}</span>
 					</div>
 				</div>
 			</div>
@@ -27,13 +27,13 @@
 					value="single"
 					size="small"
 				>
-					Single
+					{{ $t('activityTracking.timeline.single') }}
 				</VBtn>
 				<VBtn
 					value="split"
 					size="small"
 				>
-					Split
+					{{ $t('activityTracking.timeline.split') }}
 				</VBtn>
 			</VBtnToggle>
 		</div>
@@ -57,7 +57,7 @@
 				>
 					timeline
 				</VIcon>
-				<p class="text-grey mt-2">No activity recorded for this period</p>
+				<p class="text-grey mt-2">{{ $t('activityTracking.common.noActivityRecorded') }}</p>
 			</div>
 		</template>
 

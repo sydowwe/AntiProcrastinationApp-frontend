@@ -5,7 +5,7 @@
 			class="h-100 d-flex flex-column"
 		>
 			<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
-				<VCardTitle class="pa-0">Distinct Process Entries</VCardTitle>
+				<VCardTitle class="pa-0">{{ $t('activityTracking.settings.desktopTitle') }}</VCardTitle>
 				<VBtnToggle
 					:modelValue="tableView"
 					mandatory
@@ -19,14 +19,14 @@
 						height="40"
 						to="distinctEntries"
 					>
-						Distinct entries
+						{{ $t('activityTracking.settings.distinctEntries') }}
 					</VBtn>
 					<VBtn
 						value="mappings"
 						height="40"
 						to="mappings"
 					>
-						Mappings
+						{{ $t('activityTracking.settings.mappings') }}
 					</VBtn>
 				</VBtnToggle>
 				<DesktopEntriesFilterBar

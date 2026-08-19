@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<div class="text-subtitle-2 text-medium-emphasis mb-2">Pages:</div>
+		<div class="text-subtitle-2 text-medium-emphasis mb-2">{{ $t('activityTracking.pieChart.pages') }}</div>
 
 		<VList
 			density="compact"
@@ -31,7 +31,11 @@
 			class="mt-2"
 			@click="toggleExpanded"
 		>
-			{{ expanded ? '- Show less' : `+ ${remainingCount} more` }}
+			{{
+				expanded
+					? $t('activityTracking.common.showLess')
+					: $t('activityTracking.common.showMore', { count: remainingCount })
+			}}
 		</VBtn>
 	</div>
 </template>

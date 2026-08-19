@@ -5,7 +5,7 @@
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"
-		:aria-label="`View details for ${domain.domain}`"
+		:aria-label="$t('activityTracking.statColumn.viewDetails', { domain: domain.domain })"
 		@click="handleClick"
 		@keydown.enter="handleClick"
 		@keydown.space.prevent="handleClick"
@@ -32,14 +32,14 @@
 			<div class="stat-columns">
 				<template v-if="showActive && showBackground">
 					<ActivityStatColumn
-						label="Active"
+						:label="$t('activityTracking.viewMode.active')"
 						:seconds="domain.active!.seconds"
 						:percentChange="domain.active!.percentChange"
 						:isNew="domain.isNew"
 					/>
 					<VDivider vertical />
 					<ActivityStatColumn
-						label="Background"
+						:label="$t('activityTracking.viewMode.background')"
 						:seconds="domain.background!.seconds"
 						:percentChange="domain.background!.percentChange"
 						:isNew="domain.isNew"
@@ -47,7 +47,7 @@
 				</template>
 				<template v-else-if="showActive">
 					<ActivityStatColumn
-						label="Active"
+						:label="$t('activityTracking.viewMode.active')"
 						:seconds="domain.active!.seconds"
 						:percentChange="domain.active!.percentChange"
 						:isNew="domain.isNew"
@@ -56,7 +56,7 @@
 				</template>
 				<template v-else-if="showBackground">
 					<ActivityStatColumn
-						label="Background"
+						:label="$t('activityTracking.viewMode.background')"
 						:seconds="domain.background!.seconds"
 						:percentChange="domain.background!.percentChange"
 						:isNew="domain.isNew"

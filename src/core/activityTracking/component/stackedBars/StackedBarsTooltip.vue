@@ -7,11 +7,11 @@
 		<div class="tooltip-timespan">{{ formatMinutes(data.totalMinutes) }}</div>
 		<VDivider class="my-1" />
 		<div class="tooltip-row">
-			<span>Active</span>
+			<span>{{ $t('activityTracking.viewMode.active') }}</span>
 			<span>{{ formatMinutes(data.activeMinutes) }}</span>
 		</div>
 		<div class="tooltip-row">
-			<span>Background</span>
+			<span>{{ $t('activityTracking.viewMode.background') }}</span>
 			<span>{{ formatMinutes(data.backgroundMinutes) }}</span>
 		</div>
 		<template v-if="data.url">
@@ -28,6 +28,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { TooltipData } from '@/core/activityTracking/component/stackedBars/dto/TooltipData.ts'
 	import type { Position } from '@/core/activityTracking/dto/Position.ts'
 
@@ -36,8 +37,10 @@
 		position: Position
 	}>()
 
+	const { t } = useI18n()
+
 	const displayDomain = computed(() => {
-		return props.data.domain === '_other' ? 'Other' : props.data.domain
+		return props.data.domain === '_other' ? t('activityTracking.common.other') : props.data.domain
 	})
 
 	const truncatedUrl = computed(() => {

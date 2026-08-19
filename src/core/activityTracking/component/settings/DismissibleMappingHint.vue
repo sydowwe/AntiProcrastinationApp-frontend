@@ -6,12 +6,18 @@
 		closable
 		@click:close="dismiss"
 	>
-		Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click
-		<strong>Save</strong>
-		. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an existing
-		rule, open the
-		<strong>Mappings</strong>
-		tab and click edit.
+		<i18n-t
+			keypath="activityTracking.settings.hintText"
+			tag="span"
+			scope="global"
+		>
+			<template #save>
+				<strong>{{ $t('general.save') }}</strong>
+			</template>
+			<template #mappingsTab>
+				<strong>{{ $t('activityTracking.settings.mappings') }}</strong>
+			</template>
+		</i18n-t>
 	</VAlert>
 </template>
 

@@ -16,7 +16,7 @@
 				variant="outlined"
 				class="pa-8 text-center"
 			>
-				<div class="text-h6 text-medium-emphasis">No activity recorded for this period</div>
+				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
 			</VCard>
 		</template>
 
@@ -47,28 +47,32 @@
 					>
 						<div class="details-grid">
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Total time:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.common.totalTime') }}</span>
 								<span class="font-weight-medium">{{ fromSeconds(totals?.totalSeconds ?? 0) }}</span>
 							</div>
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Active:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.common.active') }}</span>
 								<span>{{ fromSeconds(totals?.activeSeconds ?? 0) }}</span>
 							</div>
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Background:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.common.background') }}</span>
 								<span>{{ fromSeconds(totals?.backgroundSeconds ?? 0) }}</span>
 							</div>
 							<VDivider class="my-2" />
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Processes:</span>
+								<span class="text-medium-emphasis">
+									{{ $t('activityTracking.pieChart.processes') }}
+								</span>
 								<span>{{ totals?.totalProcesses ?? 0 }}</span>
 							</div>
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Window titles:</span>
+								<span class="text-medium-emphasis">
+									{{ $t('activityTracking.pieChart.windowTitles') }}
+								</span>
 								<span>{{ totals?.totalWindowTitles ?? 0 }}</span>
 							</div>
 							<div class="detail-row">
-								<span class="text-medium-emphasis">Entries:</span>
+								<span class="text-medium-emphasis">{{ $t('activityTracking.common.entries') }}</span>
 								<span>{{ totals?.totalEntries ?? 0 }}</span>
 							</div>
 						</div>

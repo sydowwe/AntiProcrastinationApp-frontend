@@ -8,7 +8,7 @@
 				variant="text"
 				size="small"
 				density="compact"
-				aria-label="Close domain details"
+				:aria-label="$t('activityTracking.pieChart.closeDomainDetails')"
 				@click="emit('close')"
 			/>
 		</VCardTitle>
@@ -19,36 +19,36 @@
 			<template v-if="mode === 'dayTotal' && dayTotals">
 				<div class="details-grid">
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Total time:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.totalTime') }}</span>
 						<span class="text-high-emphasis font-weight-medium">
 							{{ fromSeconds(dayTotals.totalSeconds) }}
 						</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Active:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.active') }}</span>
 						<span>{{ fromSeconds(dayTotals.activeSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Background:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.background') }}</span>
 						<span>{{ fromSeconds(dayTotals.backgroundSeconds) }}</span>
 					</div>
 
 					<VDivider class="my-3" />
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Domains:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.domains') }}</span>
 						<span>{{ dayTotals.totalDomains }}</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Pages:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.pages') }}</span>
 						<span>{{ dayTotals.totalPages }}</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Visits:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.visits') }}</span>
 						<span>{{ dayTotals.totalVisits ?? '-' }}</span>
 					</div>
 				</div>
@@ -57,24 +57,24 @@
 			<template v-else-if="mode === 'domain' && domainDetails">
 				<div class="details-grid">
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Total:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.total') }}</span>
 						<span class="text-high-emphasis font-weight-medium">
 							{{ fromSeconds(domainDetails.totalSeconds) }}
 						</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Active:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.active') }}</span>
 						<span>{{ fromSeconds(domainDetails.activeSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Background:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.background') }}</span>
 						<span>{{ fromSeconds(domainDetails.backgroundSeconds) }}</span>
 					</div>
 
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Entries:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.common.entries') }}</span>
 						<span>{{ domainDetails.entries }}</span>
 					</div>
 				</div>
@@ -89,6 +89,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import DomainDetailsList from './DomainDetailsList.vue'
 	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
@@ -104,13 +105,15 @@
 		(e: 'close'): void
 	}>()
 
+	const { t } = useI18n()
+
 	const headerText = computed(() => {
 		if (props.mode === 'dayTotal') {
-			return 'Day Total'
+			return t('activityTracking.pieChart.dayTotal')
 		} else if (props.domainDetails) {
 			return props.domainDetails.domain
 		}
-		return 'Details'
+		return t('activityTracking.pieChart.details')
 	})
 </script>
 

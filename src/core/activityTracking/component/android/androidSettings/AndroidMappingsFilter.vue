@@ -2,12 +2,12 @@
 	<div class="d-flex flex-column flex-md-row align-md-center ga-3 ga-md-4">
 		<NullFalseTrueCheckbox
 			v-model="mappingFilter.isActive"
-			label="Is active"
+			:label="$t('activityTracking.settings.isActive')"
 			hideDetails
 		/>
 		<VSelect
 			v-model="mappingFilter.type"
-			label="Type"
+			:label="$t('activityTracking.settings.type')"
 			:items="TrackerAndroidMappingTypeOptions"
 			density="compact"
 			hideDetails
@@ -16,7 +16,7 @@
 		<NullFalseTrueCheckbox
 			v-if="mappingFilter.type === 'Ignored'"
 			v-model="mappingFilter.isIgnored"
-			label="Is ignored"
+			:label="$t('activityTracking.settings.isIgnored')"
 			hideDetails
 		/>
 		<ActivitySelectionForm

@@ -5,7 +5,7 @@
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
-			title="Android Activity"
+			:title="$t('activityTracking.dashboard.androidTitle')"
 		/>
 
 		<!-- Visualization Content -->
@@ -43,7 +43,7 @@
 					class="pr-8 pb-3"
 				>
 					<ActivitySummaryCards
-						title="Top Apps"
+						:title="$t('activityTracking.dashboard.topApps')"
 						:domains="summaryCardsData"
 						:baselineOptions
 						:selectedBaseline

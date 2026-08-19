@@ -1,4 +1,5 @@
 import { computed, ref, watch, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
@@ -10,14 +11,6 @@ export type ActivityVisualization = 'stackedBars' | 'timeline'
 
 /** Window sizes offered by the stacked-bars chart, in minutes. Single definition for all dashboards. */
 export const activityWindowSizeOptions = [15, 20, 30, 60, 90, 120]
-
-/** Baselines the summary cards compare the selected day against. Single definition for all dashboards. */
-export const baselineOptions: BaselineOption[] = [
-	new BaselineOption(BaselineType.Last7Days, 'Last 7 days'),
-	new BaselineOption(BaselineType.Last30Days, 'Last 30 days'),
-	new BaselineOption(BaselineType.SameWeekday, 'Same weekday'),
-	new BaselineOption(BaselineType.AllTime, 'All time'),
-]
 
 /** The day + time window every dashboard request is scoped to. `date` is already formatted for the API. */
 export interface ActivityDashboardRange {
@@ -58,6 +51,16 @@ function emptyTimelineSessions(): ActivityTimelineSessions {
  * `fetchers` and everything source-specific about rendering stays in the view.
  */
 export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetchers<TPieChart>) {
+	const { t } = useI18n()
+
+	/** Baselines the summary cards compare the selected day against. */
+	const baselineOptions = computed<BaselineOption[]>(() => [
+		new BaselineOption(BaselineType.Last7Days, t('activityTracking.baseline.last7Days')),
+		new BaselineOption(BaselineType.Last30Days, t('activityTracking.baseline.last30Days')),
+		new BaselineOption(BaselineType.SameWeekday, t('activityTracking.baseline.sameWeekday')),
+		new BaselineOption(BaselineType.AllTime, t('activityTracking.baseline.allTime')),
+	])
+
 	// --- Date & Time State ---
 	const date = ref<Date>(new Date())
 	const timeFrom = ref(new Time(7, 0))

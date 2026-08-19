@@ -143,7 +143,7 @@
 						gridColumn: `${window.gridColumnStart} / ${window.gridColumnEnd}`,
 					}"
 				>
-					<span class="empty-label">No activity</span>
+					<span class="empty-label">{{ $t('activityTracking.common.noActivity') }}</span>
 				</div>
 			</template>
 		</div>

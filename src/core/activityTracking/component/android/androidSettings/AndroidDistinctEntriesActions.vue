@@ -16,7 +16,7 @@
 			variant="tonal"
 			@click="emit('clear')"
 		>
-			Clear
+			{{ $t('general.clear') }}
 		</VBtn>
 		<VBtnToggle
 			v-model="mode"
@@ -31,13 +31,13 @@
 				value="toActivity"
 				height="40"
 			>
-				To activity
+				{{ $t('activityTracking.settings.toActivity') }}
 			</VBtn>
 			<VBtn
 				value="toIgnored"
 				height="40"
 			>
-				To ignored
+				{{ $t('activityTracking.settings.toIgnored') }}
 			</VBtn>
 		</VBtnToggle>
 		<VBtn
@@ -45,7 +45,7 @@
 			prependIcon="check"
 			@click="emit('save')"
 		>
-			Save
+			{{ $t('general.save') }}
 		</VBtn>
 	</div>
 </template>

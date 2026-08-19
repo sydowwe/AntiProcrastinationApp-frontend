@@ -16,7 +16,7 @@
 				variant="outlined"
 				class="h-100 pa-8 text-center"
 			>
-				<div class="text-h6 text-medium-emphasis">No activity recorded for this period</div>
+				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
 			</VCard>
 		</template>
 

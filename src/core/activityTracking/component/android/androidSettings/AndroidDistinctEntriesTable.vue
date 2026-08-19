@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import DataTable from '@/_common/component/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
@@ -38,12 +39,16 @@
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 	const { loading, fetchFilteredTable } = useFetchFilteredTable({
 		responseClass: TrackerAndroidDistinctEntriesResponse,
 		entityName: 'activity-tracking/android',
 	})
 
-	const columns = [new TableColumn('appLabel', 'App Label'), new TableColumn('packageName', 'Package Name')]
+	const columns = [
+		new TableColumn('appLabel', t('activityTracking.settings.appLabel')),
+		new TableColumn('packageName', t('activityTracking.settings.packageName')),
+	]
 
 	const items = ref<TrackerAndroidDistinctEntriesResponse[]>([])
 	const totalItems = ref(0)
@@ -64,7 +69,7 @@
 			items.value = result.items
 			totalItems.value = result.itemsCount
 		} catch {
-			showErrorSnackbar('Failed to load distinct entries')
+			showErrorSnackbar(t('activityTracking.settings.failedToLoadDistinctEntries'))
 		}
 	}
 

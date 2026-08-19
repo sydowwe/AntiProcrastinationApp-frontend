@@ -16,45 +16,49 @@
 		<VCardText>
 			<div class="details-grid">
 				<div class="detail-row">
-					<span class="text-medium-emphasis">Total:</span>
+					<span class="text-medium-emphasis">{{ $t('activityTracking.common.total') }}</span>
 					<span class="font-weight-medium">{{ fromSeconds(details.totalSeconds) }}</span>
 				</div>
 				<div class="detail-row">
-					<span class="text-medium-emphasis">Active:</span>
+					<span class="text-medium-emphasis">{{ $t('activityTracking.common.active') }}</span>
 					<span>{{ fromSeconds(details.activeSeconds) }}</span>
 				</div>
 				<div class="detail-row">
-					<span class="text-medium-emphasis">Background:</span>
+					<span class="text-medium-emphasis">{{ $t('activityTracking.common.background') }}</span>
 					<span>{{ fromSeconds(details.backgroundSeconds) }}</span>
 				</div>
 				<template v-if="details.fullscreenSeconds > 0">
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Fullscreen:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.fullscreen') }}</span>
 						<span>{{ fromSeconds(details.fullscreenSeconds) }}</span>
 					</div>
 				</template>
 				<template v-if="details.soundSeconds > 0">
 					<div class="detail-row">
-						<span class="text-medium-emphasis">Playing sound:</span>
+						<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.playingSound') }}</span>
 						<span>{{ fromSeconds(details.soundSeconds) }}</span>
 					</div>
 				</template>
 				<div class="detail-row">
-					<span class="text-medium-emphasis">Entries:</span>
+					<span class="text-medium-emphasis">{{ $t('activityTracking.common.entries') }}</span>
 					<span>{{ details.entries }}</span>
 				</div>
 			</div>
 
 			<template v-if="details.monitorBreakdown.length > 1">
 				<VDivider class="my-3" />
-				<div class="text-subtitle-2 text-medium-emphasis mb-2">Monitor breakdown:</div>
+				<div class="text-subtitle-2 text-medium-emphasis mb-2">
+					{{ $t('activityTracking.pieChart.monitorBreakdown') }}
+				</div>
 				<div class="details-grid">
 					<div
 						v-for="m in details.monitorBreakdown"
 						:key="m.monitor"
 						class="detail-row"
 					>
-						<span class="text-medium-emphasis">Monitor {{ m.monitor }}:</span>
+						<span class="text-medium-emphasis">
+							{{ $t('activityTracking.pieChart.monitor', { n: m.monitor }) }}
+						</span>
 						<span>{{ fromSeconds(m.activeSeconds) }}</span>
 					</div>
 				</div>
@@ -62,7 +66,9 @@
 
 			<template v-if="details.windowTitles.length > 0">
 				<VDivider class="my-3" />
-				<div class="text-subtitle-2 text-medium-emphasis mb-2">Window titles:</div>
+				<div class="text-subtitle-2 text-medium-emphasis mb-2">
+					{{ $t('activityTracking.pieChart.windowTitles') }}
+				</div>
 				<VList
 					density="compact"
 					class="py-0"
@@ -89,7 +95,13 @@
 					class="mt-1"
 					@click="expanded = !expanded"
 				>
-					{{ expanded ? '- Show less' : `+ ${details.windowTitles.length - maxVisible} more` }}
+					{{
+						expanded
+							? $t('activityTracking.common.showLess')
+							: $t('activityTracking.common.showMore', {
+									count: details.windowTitles.length - maxVisible,
+								})
+					}}
 				</VBtn>
 			</template>
 		</VCardText>

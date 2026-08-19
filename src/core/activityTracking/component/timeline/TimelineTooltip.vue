@@ -6,19 +6,19 @@
 		<div class="tooltip-domain">{{ data.domain }}</div>
 		<VDivider class="my-1" />
 		<div class="tooltip-row">
-			<span>Start:</span>
+			<span>{{ $t('activityTracking.timeline.start') }}</span>
 			<span>{{ formatTime(data.startedAt) }}</span>
 		</div>
 		<div class="tooltip-row">
-			<span>End:</span>
+			<span>{{ $t('activityTracking.timeline.end') }}</span>
 			<span>{{ formatTime(data.endedAt) }}</span>
 		</div>
 		<div class="tooltip-row">
-			<span>Duration:</span>
+			<span>{{ $t('activityTracking.timeline.duration') }}</span>
 			<span>{{ fromSeconds(data.durationSeconds) }}</span>
 		</div>
 		<div class="tooltip-row">
-			<span>Active time:</span>
+			<span>{{ $t('activityTracking.timeline.activeTime') }}</span>
 			<span>{{ fromSeconds(data.totalSeconds) }}</span>
 		</div>
 		<template v-if="data.url">

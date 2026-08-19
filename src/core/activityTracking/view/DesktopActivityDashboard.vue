@@ -5,7 +5,7 @@
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
-			title="Desktop Activity"
+			:title="$t('activityTracking.dashboard.desktopTitle')"
 		/>
 
 		<!-- Visualization Content -->
@@ -43,7 +43,7 @@
 					class="pr-8 pb-3"
 				>
 					<ActivitySummaryCards
-						title="Top Processes"
+						:title="$t('activityTracking.dashboard.topProcesses')"
 						:domains="summaryCardsData"
 						:baselineOptions
 						:selectedBaseline

@@ -4,7 +4,7 @@
 			<template #first>
 				<VTextField
 					v-model="filter.appLabel"
-					label="App Label"
+					:label="$t('activityTracking.settings.appLabel')"
 					density="compact"
 					hideDetails
 					clearable
@@ -25,7 +25,7 @@
 			<template #first>
 				<VTextField
 					v-model="filter.packageName"
-					label="Package Name"
+					:label="$t('activityTracking.settings.packageName')"
 					density="compact"
 					hideDetails
 					clearable
@@ -47,7 +47,7 @@
 			prependIcon="magnifying-glass"
 			@click="emit('filter')"
 		>
-			Filter
+			{{ $t('general.filter') }}
 		</VBtn>
 	</div>
 </template>

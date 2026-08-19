@@ -4,7 +4,7 @@
 			<template #first>
 				<VTextField
 					v-model="filter.processName"
-					label="Process Name"
+					:label="$t('activityTracking.settings.processName')"
 					density="compact"
 					hideDetails
 					clearable
@@ -25,7 +25,7 @@
 			<template #first>
 				<VTextField
 					v-model="filter.productName"
-					label="Product Name"
+					:label="$t('activityTracking.settings.productName')"
 					density="compact"
 					hideDetails
 					clearable
@@ -46,7 +46,7 @@
 			<template #first>
 				<VTextField
 					v-model="filter.windowTitle"
-					label="Window Title"
+					:label="$t('activityTracking.settings.windowTitle')"
 					density="compact"
 					hideDetails
 					clearable
@@ -68,7 +68,7 @@
 			prependIcon="magnifying-glass"
 			@click="emit('filter')"
 		>
-			Filter
+			{{ $t('general.filter') }}
 		</VBtn>
 	</div>
 </template>

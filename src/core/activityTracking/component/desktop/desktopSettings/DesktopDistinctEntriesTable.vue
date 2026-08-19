@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import DataTable from '@/_common/component/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
@@ -39,15 +40,16 @@
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 	const { loading, fetchFilteredTable } = useFetchFilteredTable({
 		responseClass: TrackerDesktopDistinctEntriesResponse,
 		entityName: 'activity-tracking/desktop',
 	})
 
 	const columns = [
-		new TableColumn('processName', 'Process Name'),
-		new TableColumn('productName', 'Product Name'),
-		new TableColumn('windowTitle', 'Window Title'),
+		new TableColumn('processName', t('activityTracking.settings.processName')),
+		new TableColumn('productName', t('activityTracking.settings.productName')),
+		new TableColumn('windowTitle', t('activityTracking.settings.windowTitle')),
 	]
 
 	const items = ref<TrackerDesktopDistinctEntriesResponse[]>([])
@@ -69,7 +71,7 @@
 			items.value = result.items
 			totalItems.value = result.itemsCount
 		} catch {
-			showErrorSnackbar('Failed to load distinct entries')
+			showErrorSnackbar(t('activityTracking.settings.failedToLoadDistinctEntries'))
 		}
 	}
 

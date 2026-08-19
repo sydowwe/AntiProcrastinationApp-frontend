@@ -14,15 +14,15 @@
 			color="primaryOutline"
 		>
 			<VRadio
-				label="Total"
+				:label="$t('activityTracking.viewMode.total')"
 				value="total"
 			/>
 			<VRadio
-				label="Active"
+				:label="$t('activityTracking.viewMode.active')"
 				value="active"
 			/>
 			<VRadio
-				label="Background"
+				:label="$t('activityTracking.viewMode.background')"
 				value="background"
 			/>
 		</VRadioGroup>
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import VChart from 'vue-echarts'
 	import { use } from 'echarts/core'
 	import { CanvasRenderer } from 'echarts/renderers'
@@ -51,12 +52,14 @@
 
 	const viewMode = defineModel<'total' | 'active' | 'background'>({ required: true })
 
+	const { t } = useI18n()
+
 	// Register ECharts components
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
 	const chartOption = computed<EChartsOption>(() => {
 		const data = props.domains.map(segment => ({
-			name: segment.domain === '_other' ? 'Other' : segment.domain,
+			name: segment.domain === '_other' ? t('activityTracking.common.other') : segment.domain,
 			value: segment.seconds,
 			itemStyle: {
 				color: segment.color,
@@ -89,7 +92,9 @@
 					fontWeight: 300,
 				},
 				formatter: (name: string) => {
-					const segment = props.domains.find(d => (d.domain === '_other' ? 'Other' : d.domain) === name)
+					const segment = props.domains.find(
+						d => (d.domain === '_other' ? t('activityTracking.common.other') : d.domain) === name,
+					)
 					if (segment) {
 						const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name
 						return `${displayName} (${segment.percent.toFixed(1)}%)`
@@ -135,7 +140,9 @@
 	function handleChartClick(params: any) {
 		if (!params.data) return
 
-		const clickedDomain = props.domains.find(d => (d.domain === '_other' ? 'Other' : d.domain) === params.data.name)
+		const clickedDomain = props.domains.find(
+			d => (d.domain === '_other' ? t('activityTracking.common.other') : d.domain) === params.data.name,
+		)
 
 		if (!clickedDomain) return
 

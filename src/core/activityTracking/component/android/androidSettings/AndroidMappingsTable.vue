@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
@@ -35,16 +36,17 @@
 	const emit = defineEmits<{ edit: [item: TrackerAndroidMappingResponse] }>()
 
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 	const { fetchFilteredTable: fetchFilteredTableMappings, tableLoading: loading } = useTrackerAndroidMappingCrud()
 
 	const columns = [
-		new TableColumn('isActive', 'Is active'),
-		new TableColumn('appLabel', 'App Label'),
-		new TableColumn('appLabelMatchType', 'Match type'),
-		new TableColumn('packageName', 'Package Name'),
-		new TableColumn('packageNameMatchType', 'Match type'),
-		new TableColumn('activity.text', 'Activity'),
-		new TableColumn('isIgnored', 'Is ignored'),
+		new TableColumn('isActive', t('activityTracking.settings.isActive')),
+		new TableColumn('appLabel', t('activityTracking.settings.appLabel')),
+		new TableColumn('appLabelMatchType', t('activityTracking.settings.matchType')),
+		new TableColumn('packageName', t('activityTracking.settings.packageName')),
+		new TableColumn('packageNameMatchType', t('activityTracking.settings.matchType')),
+		new TableColumn('activity.text', t('activities.activity')),
+		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
 	]
 
 	const mappings = ref<TrackerAndroidMappingResponse[]>([])
@@ -68,7 +70,7 @@
 			mappings.value = result.items
 			totalItems.value = result.itemsCount
 		} catch {
-			showErrorSnackbar('Failed to load mappings')
+			showErrorSnackbar(t('activityTracking.settings.failedToLoadMappings'))
 		}
 	}
 

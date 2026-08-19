@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 
@@ -27,6 +28,7 @@ export function useMappingSettings<TFilter, TRequest extends MappingRequestBase<
 	config: MappingSettingsConfig<TFilter, TRequest>,
 ) {
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const filter = ref(config.filterFactory()) as Ref<TFilter>
 	const formData = ref(new ActivityFormRequest())
@@ -47,7 +49,7 @@ export function useMappingSettings<TFilter, TRequest extends MappingRequestBase<
 			}
 			request.value = config.requestFactory()
 		} catch {
-			showErrorSnackbar('Failed to save mapping')
+			showErrorSnackbar(t('activityTracking.settings.failedToSaveMapping'))
 		}
 	}
 

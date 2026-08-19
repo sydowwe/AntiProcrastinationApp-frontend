@@ -5,7 +5,7 @@
 			<h2 class="text-h5">{{ title }}</h2>
 			<!-- Baseline Selector -->
 			<VSelect
-				label="Compared to"
+				:label="$t('activityTracking.dashboard.comparedTo')"
 				:modelValue="selectedBaseline"
 				:items="baselineOptions"
 				density="compact"
@@ -41,7 +41,7 @@
 				size="64"
 				class="text-disabled mb-4"
 			/>
-			<p class="text-body-1 text-medium-emphasis">No activity recorded for this period</p>
+			<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</p>
 		</div>
 
 		<!-- Domain Cards -->
@@ -65,6 +65,7 @@
 	import { computed } from 'vue'
 	import ActivityDomainCard from '@/core/activityTracking/component/summaryCards/ActivityDomainCard.vue'
 	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
+	import i18n from '@/i18n.ts'
 
 	const {
 		domains,
@@ -72,7 +73,7 @@
 		selectedBaseline,
 		selectedDomain = null,
 		loading = false,
-		title = 'Top Domains',
+		title = i18n.global.t('activityTracking.dashboard.topDomains'),
 	} = defineProps<{
 		domains: SummaryCardsData[] | null
 		baselineOptions: BaselineOption[]
