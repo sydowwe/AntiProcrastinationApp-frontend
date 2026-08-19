@@ -17,6 +17,10 @@
 			v-model="request.color"
 			label="Color"
 		/>
+		<IconPicker
+			v-model="request.icon"
+			label="Icon"
+		/>
 	</VForm>
 </template>
 
@@ -24,6 +28,7 @@
 	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
+	import IconPicker from '@/_common/component/inputs/IconPicker.vue'
 	import type { Role } from '@/core/activity/dto/response/Role.ts'
 	import { RoleRequest } from '@/core/activity/dto/request/RoleRequest.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'

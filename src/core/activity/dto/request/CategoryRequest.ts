@@ -5,10 +5,10 @@ export class CategoryRequest {
 		public name: string = '',
 		public text: string | null = null,
 		public color: string | null = null,
-		// public icon: string | null = null,
+		public icon: string | null = null,
 	) {}
 
 	static fromEntity(entity: Category) {
-		return new CategoryRequest(entity.name, entity.text, entity.color)
+		return new CategoryRequest(entity.name, entity.text, entity.color, entity.icon)
 	}
 }
