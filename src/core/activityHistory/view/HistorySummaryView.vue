@@ -81,20 +81,14 @@
 	import { computed, ref, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
-	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import {
 		getSummaryPieChart,
 		getSummaryStackedBars,
 		getSummarySummaryCards,
 	} from '@/core/historyDashboard/api/historyDashboardApi.ts'
-	import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
-	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
-	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
-	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 	import HistoryDateRangeSelector from '@/core/historyDashboard/component/controls/HistoryDateRangeSelector.vue'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
@@ -103,8 +97,10 @@
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
+	import { parseWindowInstant, useHistoryDashboard } from '@/core/activityHistory/composable/useHistoryDashboard.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
+
 	const route = useRoute()
 	const router = useRouter()
 
@@ -147,17 +143,75 @@
 		return val ? Time.fromString(val) : fallback
 	}
 
-	// --- State ---
+	// --- State: the multi-day range this view asks its questions over ---
 	const date = ref((route.query.date as string) || '')
 	const rangeType = ref<ActivityDateRangeTypeEnum>(initRangeType())
 	const endDate = ref<string | undefined>((route.query.endDate as string) || undefined)
 	const groupBy = ref<HistoryGroupBy>(initGroupBy())
-	const selectedGroup = ref<HistoryGroupKey | null>(null)
-	const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
-	const topN = ref(4)
-	const selectedWindowSize = ref(initWindowSize())
 	const windowStartTime = ref(initTime('timeFrom', new Time(8, 0)))
 	const windowEndTime = ref(initTime('timeTo', new Time(1, 0)))
+
+	// --- Shared dashboard machinery ---
+	// Everything range-shaped stays here in the fetchers; the composable never names a `HistorySummary*`
+	// request class. `windowStartTime`/`windowEndTime` are user-zone wall clocks and are sent as-is —
+	// B3 confirmed no client-side UTC conversion, for this endpoint and its `detail/` sibling alike.
+	const {
+		selectedGroup,
+		selectedBaseline,
+		topN,
+		selectedWindowSize,
+		stackedBarsData,
+		pieChartData,
+		summaryCardsData,
+		stackedBarsWindows,
+		stackedBarsLoading,
+		pieChartLoading,
+		summaryCardsLoading,
+		fetchStackedBars,
+		fetchAll,
+		handleBaselineChange,
+		handleTopNChange,
+		handleGroupSelect,
+		handleWindowSizeChange,
+	} = useHistoryDashboard(
+		{
+			fetchStackedBars(windowSize) {
+				return getSummaryStackedBars(
+					new HistorySummaryStackedBarsRequest(
+						date.value,
+						rangeType.value,
+						windowSize,
+						windowStartTime.value,
+						windowEndTime.value,
+						endDate.value,
+						groupBy.value,
+					),
+				)
+			},
+			fetchPieChart() {
+				return getSummaryPieChart(
+					new HistorySummaryPieChartRequest(groupBy.value, 20, date.value, rangeType.value, endDate.value),
+				)
+			},
+			fetchSummaryCards(baseline, topNValue) {
+				return getSummarySummaryCards(
+					new HistorySummarySummaryCardsRequest(
+						date.value,
+						rangeType.value,
+						groupBy.value,
+						baseline,
+						topNValue,
+						endDate.value,
+					),
+				)
+			},
+		},
+		{
+			defaultBaseline: BaselineType.Last7Days,
+			initialWindowSize: initWindowSize(),
+			canFetch: () => date.value !== '',
+		},
+	)
 
 	// --- Window size options based on range type ---
 	const weekOptions = [1, 2, 3, 4, 5, 8, 10, 12, 16]
@@ -197,114 +251,17 @@
 	const chartTimeFrom = computed(() => {
 		if (!stackedBarsData.value || stackedBarsData.value.windows.length === 0) return new Time(0, 0)
 		const first = stackedBarsData.value.windows[0]!
-		return timeInUserZone(parseDate(first.windowStart))
+		return timeInUserZone(parseWindowInstant(first.windowStart))
 	})
 
 	const chartTimeTo = computed(() => {
 		if (!stackedBarsData.value || stackedBarsData.value.windows.length === 0) return new Time(23, 59)
 		const last = stackedBarsData.value.windows[stackedBarsData.value.windows.length - 1]!
-		return timeInUserZone(parseDate(last.windowEnd))
+		return timeInUserZone(parseWindowInstant(last.windowEnd))
 	})
-
-	// --- Data ---
-	const stackedBarsData = ref<HistoryStackedBarsResponse | null>(null)
-	const pieChartData = ref<HistoryPieChartResponse | null>(null)
-	const summaryCardsData = ref<HistorySummaryCardsResponse | null>(null)
-
-	// --- Loading States ---
-	const stackedBarsLoading = ref(false)
-	const pieChartLoading = ref(false)
-	const summaryCardsLoading = ref(false)
-
-	// --- Map HistoryWindow[] → StackedBarsInputWindow[] ---
-	// windowStart/windowEnd always carry a `Z` (B3 confirmed) — the old `replace(' ', 'T')` fallback
-	// was never what made this parse; it was masking that assumption rather than proving it.
-	function parseDate(dateStr: string): Date {
-		return new Date(dateStr)
-	}
-
-	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() => {
-		if (!stackedBarsData.value) return []
-		return stackedBarsData.value.windows.map(w => ({
-			windowStart: parseDate(w.windowStart),
-			windowEnd: parseDate(w.windowEnd),
-			items: w.items.map(item => ({
-				name: item.name,
-				activeSeconds: item.totalSeconds,
-				backgroundSeconds: 0,
-				color: resolveHistoryGroupColor(item),
-			})),
-		}))
-	})
-
-	// --- Fetch Functions ---
-	async function fetchStackedBars() {
-		stackedBarsLoading.value = true
-		try {
-			stackedBarsData.value = await getSummaryStackedBars(
-				new HistorySummaryStackedBarsRequest(
-					date.value,
-					rangeType.value,
-					selectedWindowSize.value,
-					// B3 confirmed: user-zone wall clock, both this endpoint and its `detail/` sibling
-					// (HistoryDetailView.vue:234) — sent as-is, no client-side UTC conversion.
-					windowStartTime.value,
-					windowEndTime.value,
-					endDate.value,
-					groupBy.value,
-				),
-			)
-		} catch {
-			stackedBarsData.value = null
-		} finally {
-			stackedBarsLoading.value = false
-		}
-	}
-
-	async function fetchPieChart() {
-		pieChartLoading.value = true
-		try {
-			pieChartData.value = await getSummaryPieChart(
-				new HistorySummaryPieChartRequest(groupBy.value, 20, date.value, rangeType.value, endDate.value),
-			)
-		} catch {
-			pieChartData.value = null
-		} finally {
-			pieChartLoading.value = false
-		}
-	}
-
-	async function fetchSummaryCards() {
-		summaryCardsLoading.value = true
-		try {
-			summaryCardsData.value = await getSummarySummaryCards(
-				new HistorySummarySummaryCardsRequest(
-					date.value,
-					rangeType.value,
-					groupBy.value,
-					selectedBaseline.value,
-					topN.value,
-					endDate.value,
-				),
-			)
-		} catch {
-			summaryCardsData.value = null
-		} finally {
-			summaryCardsLoading.value = false
-		}
-	}
-
-	function fetchAll() {
-		if (!date.value) return
-		selectedGroup.value = null
-		fetchStackedBars()
-		fetchPieChart()
-		fetchSummaryCards()
-	}
 
 	watch([date, rangeType, endDate, groupBy], () => fetchAll(), { immediate: true })
 	watch([windowStartTime, windowEndTime], () => fetchStackedBars())
-	watch(selectedBaseline, () => fetchSummaryCards())
 
 	// --- Sync state to URL ---
 	watch([date, rangeType, endDate, groupBy, selectedWindowSize, windowStartTime, windowEndTime], () => {
@@ -320,23 +277,4 @@
 			},
 		})
 	})
-
-	// --- Event Handlers ---
-	function handleBaselineChange(value: BaselineType) {
-		selectedBaseline.value = value
-	}
-
-	function handleTopNChange(value: number) {
-		topN.value = value
-		fetchSummaryCards()
-	}
-
-	function handleGroupSelect(group: HistoryGroupKey) {
-		selectedGroup.value = isSameHistoryGroup(selectedGroup.value, group) ? null : group
-	}
-
-	function handleWindowSizeChange(size: number) {
-		selectedWindowSize.value = size
-		fetchStackedBars()
-	}
 </script>

@@ -149,7 +149,7 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
-	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import { DetailStackedBarsRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailStackedBarsRequest.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
@@ -159,13 +159,8 @@
 		getDetailStackedBars,
 		getDetailSummaryCards,
 	} from '@/core/historyDashboard/api/historyDashboardApi.ts'
-	import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
-	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
-	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
-	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
+	import type { HistoryWindow } from '@/core/historyDashboard/dto/response/HistoryWindow.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
@@ -174,20 +169,17 @@
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { parseWindowInstant, useHistoryDashboard } from '@/core/activityHistory/composable/useHistoryDashboard.ts'
 
 	const route = useRoute()
 	const router = useRouter()
 
-	// --- State ---
+	// --- State: the single day and time-of-day window this view asks its questions over ---
 	const today = new Date()
 	const dateModel = ref<Date>(route.query.date ? new Date(route.query.date as string) : new Date())
 	const timeFrom = ref(new Time(8, 0))
 	const timeTo = ref(new Time(23, 59))
 	const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
-	const selectedGroup = ref<HistoryGroupKey | null>(null)
-	const selectedBaseline = ref<BaselineType>(BaselineType.SameWeekday)
-	const topN = ref(4)
-	const selectedWindowSize = ref(30)
 	const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')
 
 	const isStackedBars = computed(() => selectedVisualization.value === 'stackedBars')
@@ -195,23 +187,6 @@
 	const windowSizeOptions = [15, 20, 30, 60]
 
 	const date = computed(() => formatDateForApi(dateModel.value))
-
-	// --- Data ---
-	const stackedBarsData = ref<HistoryStackedBarsResponse | null>(null)
-	const pieChartData = ref<HistoryPieChartResponse | null>(null)
-	const summaryCardsData = ref<HistorySummaryCardsResponse | null>(null)
-
-	// --- Loading States ---
-	const stackedBarsLoading = ref(false)
-	const pieChartLoading = ref(false)
-	const summaryCardsLoading = ref(false)
-
-	// --- Map HistoryWindow[] → StackedBarsInputWindow[] ---
-	// B3 confirmed `windowStart`/`windowEnd` are always ISO 8601 with a `Z`; the old
-	// `replace(' ', 'T')` fallback hedged against a serialization that never occurs.
-	function parseDate(dateStr: string): Date {
-		return new Date(dateStr)
-	}
 
 	/**
 	 * B2 §4: `detail/stacked-bars` emits exactly 24 one-hour windows starting at the range's `from` and
@@ -221,114 +196,74 @@
 	 *
 	 * Clamping is done against the first window's start (which the backend does honour) plus the
 	 * requested duration, so it holds whatever window size the server actually used.
+	 *
+	 * This is the one piece of the stacked-bars pipeline the summary view has no equivalent of, which is
+	 * why the shared composable takes it as `selectWindows` rather than owning it.
 	 */
 	const requestedDurationMinutes = computed(() => {
 		const span = (timeTo.value.getInMinutes - timeFrom.value.getInMinutes + 1440) % 1440
 		return span === 0 ? 1440 : span
 	})
 
-	const clampedWindows = computed(() => {
-		const windows = stackedBarsData.value?.windows ?? []
+	function clampWindowsToRequestedRange(windows: HistoryWindow[]): HistoryWindow[] {
 		const first = windows[0]
 		if (!first) return []
-		const cutoff = parseDate(first.windowStart).getTime() + requestedDurationMinutes.value * 60_000
-		return windows.filter(w => parseDate(w.windowStart).getTime() < cutoff)
-	})
+		const cutoff = parseWindowInstant(first.windowStart).getTime() + requestedDurationMinutes.value * 60_000
+		return windows.filter(w => parseWindowInstant(w.windowStart).getTime() < cutoff)
+	}
 
-	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() =>
-		clampedWindows.value.map(w => ({
-			windowStart: parseDate(w.windowStart),
-			windowEnd: parseDate(w.windowEnd),
-			items: w.items.map(item => ({
-				name: item.name,
-				activeSeconds: item.totalSeconds,
-				backgroundSeconds: 0,
-				color: resolveHistoryGroupColor(item),
-			})),
-		})),
+	// --- Shared dashboard machinery ---
+	// Everything single-day-shaped stays here in the fetchers; the composable never names a `Detail*`
+	// request class.
+	const {
+		selectedGroup,
+		selectedBaseline,
+		topN,
+		selectedWindowSize,
+		pieChartData,
+		summaryCardsData,
+		stackedBarsWindows,
+		stackedBarsLoading,
+		pieChartLoading,
+		summaryCardsLoading,
+		fetchAll,
+		handleBaselineChange,
+		handleTopNChange,
+		handleGroupSelect,
+		handleWindowSizeChange,
+	} = useHistoryDashboard(
+		{
+			fetchStackedBars(windowSize) {
+				return getDetailStackedBars(
+					new DetailStackedBarsRequest(date.value, timeFrom.value, timeTo.value, windowSize, groupBy.value),
+				)
+			},
+			fetchPieChart() {
+				return getDetailPieChart(
+					new DetailPieChartRequest(groupBy.value, 20, date.value, timeFrom.value, timeTo.value),
+				)
+			},
+			fetchSummaryCards(baseline, topNValue) {
+				return getDetailSummaryCards(
+					new DetailSummaryCardsRequest(
+						date.value,
+						timeFrom.value,
+						timeTo.value,
+						groupBy.value,
+						baseline,
+						topNValue,
+					),
+				)
+			},
+		},
+		{
+			defaultBaseline: BaselineType.SameWeekday,
+			initialWindowSize: 30,
+			canFetch: () => date.value !== '',
+			selectWindows: clampWindowsToRequestedRange,
+		},
 	)
 
-	// --- Fetch Functions ---
-	async function fetchStackedBars() {
-		stackedBarsLoading.value = true
-		try {
-			stackedBarsData.value = await getDetailStackedBars(
-				new DetailStackedBarsRequest(
-					date.value,
-					timeFrom.value,
-					timeTo.value,
-					selectedWindowSize.value,
-					groupBy.value,
-				),
-			)
-		} catch {
-			stackedBarsData.value = null
-		} finally {
-			stackedBarsLoading.value = false
-		}
-	}
-
-	async function fetchPieChart() {
-		pieChartLoading.value = true
-		try {
-			pieChartData.value = await getDetailPieChart(
-				new DetailPieChartRequest(groupBy.value, 20, date.value, timeFrom.value, timeTo.value),
-			)
-		} catch {
-			pieChartData.value = null
-		} finally {
-			pieChartLoading.value = false
-		}
-	}
-
-	async function fetchSummaryCards() {
-		summaryCardsLoading.value = true
-		try {
-			summaryCardsData.value = await getDetailSummaryCards(
-				new DetailSummaryCardsRequest(
-					date.value,
-					timeFrom.value,
-					timeTo.value,
-					groupBy.value,
-					selectedBaseline.value,
-					topN.value,
-				),
-			)
-		} catch {
-			summaryCardsData.value = null
-		} finally {
-			summaryCardsLoading.value = false
-		}
-	}
-
-	function fetchAll() {
-		if (!date.value) return
-		selectedGroup.value = null
-		fetchStackedBars()
-		fetchPieChart()
-		fetchSummaryCards()
-	}
-
 	watch([dateModel, timeFrom, timeTo, groupBy], () => fetchAll(), { immediate: true })
-	watch(selectedBaseline, () => fetchSummaryCards())
 	watch(date, newDate => router.replace({ query: { ...route.query, date: newDate } }))
-
-	// --- Event Handlers ---
-	function handleBaselineChange(value: BaselineType) {
-		selectedBaseline.value = value
-	}
-
-	function handleTopNChange(value: number) {
-		topN.value = value
-		fetchSummaryCards()
-	}
-
-	function handleGroupSelect(group: HistoryGroupKey) {
-		selectedGroup.value = isSameHistoryGroup(selectedGroup.value, group) ? null : group
-	}
-
-	function handleWindowSizeChange(size: number) {
-		selectedWindowSize.value = size
-		fetchStackedBars()
-	}
 </script>

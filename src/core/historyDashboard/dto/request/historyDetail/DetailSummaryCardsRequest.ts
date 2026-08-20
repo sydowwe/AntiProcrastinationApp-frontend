@@ -1,6 +1,6 @@
 import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 import type { Time } from '@/_common/dto/dto/Time.ts'
-import type { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+import type { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 import type { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 
 export class DetailSummaryCardsRequest extends DateAndTimeRangeRequest {

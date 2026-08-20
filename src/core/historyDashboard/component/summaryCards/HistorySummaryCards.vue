@@ -87,7 +87,7 @@
 	import { useResizeObserver } from '@vueuse/core'
 	import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
-	import type { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import type { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 	import {
 		historyGroupKey,
 		isSameHistoryGroup,

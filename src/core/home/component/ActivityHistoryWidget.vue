@@ -32,7 +32,7 @@
 	import { computed, ref } from 'vue'
 	import { getDetailPieChart } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
-	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import type { HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'

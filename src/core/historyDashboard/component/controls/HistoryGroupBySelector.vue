@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 
 	const model = defineModel<HistoryGroupBy>({ required: true })
 </script>
