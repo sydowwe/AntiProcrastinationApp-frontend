@@ -1,5 +1,6 @@
 export class HistorySummaryCard {
 	constructor(
+		public groupId: number | null,
 		public name: string,
 		public color: string | null,
 		public totalSeconds: number,
@@ -10,6 +11,7 @@ export class HistorySummaryCard {
 
 	static fromJson(json: any): HistorySummaryCard {
 		return new HistorySummaryCard(
+			json.groupId ?? null,
 			json.name,
 			json.color ?? null,
 			json.totalSeconds,

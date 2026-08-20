@@ -1,5 +1,6 @@
 export class HistoryPieChartItem {
 	constructor(
+		public groupId: number | null,
 		public name: string,
 		public totalSeconds: number,
 		public color: string | null,
@@ -7,6 +8,12 @@ export class HistoryPieChartItem {
 	) {}
 
 	static fromJson(json: any): HistoryPieChartItem {
-		return new HistoryPieChartItem(json.name, json.totalSeconds, json.color ?? null, json.entries)
+		return new HistoryPieChartItem(
+			json.groupId ?? null,
+			json.name,
+			json.totalSeconds,
+			json.color ?? null,
+			json.entries,
+		)
 	}
 }

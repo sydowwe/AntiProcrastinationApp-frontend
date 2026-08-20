@@ -91,6 +91,7 @@
 	import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
+	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
@@ -151,7 +152,7 @@
 	const rangeType = ref<ActivityDateRangeTypeEnum>(initRangeType())
 	const endDate = ref<string | undefined>((route.query.endDate as string) || undefined)
 	const groupBy = ref<HistoryGroupBy>(initGroupBy())
-	const selectedGroup = ref<string | null>(null)
+	const selectedGroup = ref<HistoryGroupKey | null>(null)
 	const selectedBaseline = ref<BaselineType>(BaselineType.Last7Days)
 	const topN = ref(4)
 	const selectedWindowSize = ref(initWindowSize())
@@ -330,8 +331,8 @@
 		fetchSummaryCards()
 	}
 
-	function handleGroupSelect(name: string) {
-		selectedGroup.value = selectedGroup.value === name ? null : name
+	function handleGroupSelect(group: HistoryGroupKey) {
+		selectedGroup.value = isSameHistoryGroup(selectedGroup.value, group) ? null : group
 	}
 
 	function handleWindowSizeChange(size: number) {

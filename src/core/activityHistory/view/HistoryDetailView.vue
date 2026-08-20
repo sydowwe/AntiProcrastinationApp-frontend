@@ -162,6 +162,7 @@
 	import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
+	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
@@ -183,7 +184,7 @@
 	const timeFrom = ref(new Time(8, 0))
 	const timeTo = ref(new Time(23, 59))
 	const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
-	const selectedGroup = ref<string | null>(null)
+	const selectedGroup = ref<HistoryGroupKey | null>(null)
 	const selectedBaseline = ref<BaselineType>(BaselineType.SameWeekday)
 	const topN = ref(4)
 	const selectedWindowSize = ref(30)
@@ -301,8 +302,8 @@
 		fetchSummaryCards()
 	}
 
-	function handleGroupSelect(name: string) {
-		selectedGroup.value = selectedGroup.value === name ? null : name
+	function handleGroupSelect(group: HistoryGroupKey) {
+		selectedGroup.value = isSameHistoryGroup(selectedGroup.value, group) ? null : group
 	}
 
 	function handleWindowSizeChange(size: number) {

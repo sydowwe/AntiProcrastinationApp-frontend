@@ -16,17 +16,22 @@
 	import { LegendComponent, TooltipComponent } from 'echarts/components'
 	import type { EChartsOption } from 'echarts'
 	import type { HistoryPieChartItem } from '@/core/historyDashboard/dto/response/HistoryPieChartItem.ts'
+	import {
+		historyGroupKey,
+		isSameHistoryGroup,
+		type HistoryGroupKey,
+	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
 		items: HistoryPieChartItem[]
-		selectedGroup: string | null
+		selectedGroup: HistoryGroupKey | null
 		isNarrow?: boolean
 	}>()
 
 	const emit = defineEmits<{
-		segmentClick: [name: string | null]
+		segmentClick: [group: HistoryGroupKey | null]
 	}>()
 
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
@@ -42,7 +47,7 @@
 			itemStyle: {
 				color: resolveColor(item.name, item.color),
 			},
-			selected: props.selectedGroup === item.name,
+			selected: isSameHistoryGroup(props.selectedGroup, historyGroupKey(item)),
 		}))
 
 		return {
@@ -111,12 +116,12 @@
 
 	function handleChartClick(params: any) {
 		if (!params.data) return
-		const clickedName = params.data.name as string
-		if (props.selectedGroup === clickedName) {
-			emit('segmentClick', null)
-		} else {
-			emit('segmentClick', clickedName)
-		}
+		// Resolve through the index, not `params.data.name` — the echarts datum only carries the display
+		// name, and the id is what identifies the group.
+		const item = props.items[params.dataIndex]
+		if (!item) return
+		const clicked = historyGroupKey(item)
+		emit('segmentClick', isSameHistoryGroup(props.selectedGroup, clicked) ? null : clicked)
 	}
 </script>
 

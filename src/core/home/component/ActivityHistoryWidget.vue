@@ -34,6 +34,7 @@
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
+	import type { HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import HistoryPieChart from '@/core/historyDashboard/component/pieChart/HistoryPieChart.vue'
@@ -44,7 +45,7 @@
 	const loading = ref(true)
 	const refreshing = ref(false)
 	const error = ref(false)
-	const selectedGroup = ref<string | null>(null)
+	const selectedGroup = ref<HistoryGroupKey | null>(null)
 	// Guards against an older load's response landing after a newer one — harmless before Retry
 	// existed (only one load could ever be in flight), not harmless now that a load can overlap
 	// the one it is retrying.

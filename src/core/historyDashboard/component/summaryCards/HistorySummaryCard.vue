@@ -6,7 +6,7 @@
 		tabindex="0"
 		role="button"
 		:aria-label="`View details for ${card.name}`"
-		@click="emit('click', card.name)"
+		@click="emit('click', historyGroupKey(card))"
 	>
 		<VCardTitle class="text-center pb-2">
 			<VTooltip
@@ -66,6 +66,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { HistorySummaryCard as HistorySummaryCardDto } from '@/core/historyDashboard/dto/response/HistorySummaryCard.ts'
+	import { historyGroupKey, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 
@@ -75,7 +76,7 @@
 	}>()
 
 	const emit = defineEmits<{
-		click: [name: string]
+		click: [group: HistoryGroupKey]
 	}>()
 
 	const resolvedColor = computed(() => props.card.color ?? getDomainColor(props.card.name))

@@ -91,23 +91,28 @@
 	import HistoryPieChart from './HistoryPieChart.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
+	import {
+		historyGroupKey,
+		isSameHistoryGroup,
+		type HistoryGroupKey,
+	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 
 	const props = defineProps<{
 		data: HistoryPieChartResponse | null
 		loading?: boolean
 	}>()
 
-	const selectedGroup = defineModel<string | null>('selectedGroup', { default: null })
+	const selectedGroup = defineModel<HistoryGroupKey | null>('selectedGroup', { default: null })
 
 	const selectedGroupItem = computed(() => {
 		if (!selectedGroup.value || !props.data) return null
-		return props.data.items.find(i => i.name === selectedGroup.value) ?? null
+		return props.data.items.find(i => isSameHistoryGroup(historyGroupKey(i), selectedGroup.value)) ?? null
 	})
 
-	const detailsHeader = computed(() => selectedGroup.value ?? 'Period Totals')
+	const detailsHeader = computed(() => selectedGroup.value?.name ?? 'Period Totals')
 
-	function handleSegmentClick(name: string | null) {
-		selectedGroup.value = name
+	function handleSegmentClick(group: HistoryGroupKey | null) {
+		selectedGroup.value = group
 	}
 </script>
 

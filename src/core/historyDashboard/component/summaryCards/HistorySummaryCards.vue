@@ -71,9 +71,9 @@
 			>
 				<HistorySummaryCard
 					v-for="card in data.cards"
-					:key="card.name"
+					:key="card.groupId ?? card.name"
 					:card="card"
-					:selected="card.name === selectedGroup"
+					:selected="isSameHistoryGroup(selectedGroup, historyGroupKey(card))"
 					@click="handleCardClick"
 				/>
 			</div>
@@ -88,13 +88,18 @@
 	import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
 	import type { HistoryGroupBy } from '@/core/historyDashboard/component/types/HistoryGroupBy.ts'
+	import {
+		historyGroupKey,
+		isSameHistoryGroup,
+		type HistoryGroupKey,
+	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import HistorySummaryCard from './HistorySummaryCard.vue'
 	import HistoryPeriodBanner from './HistoryPeriodBanner.vue'
 
 	const props = defineProps<{
 		data: HistorySummaryCardsResponse | null
 		groupBy: HistoryGroupBy
-		selectedGroup: string | null
+		selectedGroup: HistoryGroupKey | null
 		selectedBaseline: BaselineType
 		topN: number
 		loading?: boolean
@@ -103,7 +108,7 @@
 	const emit = defineEmits<{
 		'update:selectedBaseline': [value: BaselineType]
 		'update:topN': [value: number]
-		groupClick: [name: string]
+		groupClick: [group: HistoryGroupKey]
 	}>()
 
 	const { lgAndUp, xlAndUp } = useDisplay()
@@ -212,8 +217,8 @@
 		},
 	)
 
-	function handleCardClick(name: string) {
-		emit('groupClick', name)
+	function handleCardClick(group: HistoryGroupKey) {
+		emit('groupClick', group)
 	}
 </script>
 
