@@ -22,9 +22,12 @@ const activityHistory = {
 		summary: {
 			title: `Activity History`,
 			dayFrom: `Day from`,
+			openCalendar: `Open calendar`,
 		},
 		detail: {
 			title: `History Detail`,
+			openCalendar: `Open calendar`,
+			openSummary: `Back to summary for this week`,
 		},
 		calendar: {
 			sessions: `{count} session | {count} sessions`,

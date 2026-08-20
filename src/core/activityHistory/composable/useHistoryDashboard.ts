@@ -9,7 +9,7 @@ import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboar
 import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 
 /** Both dashboards open on the same number of summary cards; neither exposes it as a preference. */
-const DEFAULT_TOP_N = 4
+export const DEFAULT_TOP_N = 4
 
 /**
  * `windowStart`/`windowEnd` are ISO 8601 with a `Z` (B2/B3) — UTC *instants*, not wall clocks — so a
@@ -52,6 +52,10 @@ export interface HistoryDashboardOptions {
 	 * around `detail/stacked-bars` ignoring the requested `to` (B2 §4).
 	 */
 	selectWindows?(windows: HistoryWindow[]): HistoryWindow[]
+	/** URL-seeded starting value (H6). Defaults to `defaultBaseline` when the view has no query param yet. */
+	initialBaseline?: BaselineType
+	/** URL-seeded starting value (H6). Defaults to `DEFAULT_TOP_N` when the view has no query param yet. */
+	initialTopN?: number
 }
 
 /**
@@ -67,12 +71,12 @@ export interface HistoryDashboardOptions {
  * nothing in common. Where a choice was arbitrary, it was made the same way there.
  */
 export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options: HistoryDashboardOptions) {
-	const { defaultBaseline, initialWindowSize, canFetch, selectWindows } = options
+	const { defaultBaseline, initialWindowSize, canFetch, selectWindows, initialBaseline, initialTopN } = options
 
 	// --- Shared State ---
 	const selectedGroup = ref<HistoryGroupKey | null>(null)
-	const selectedBaseline = ref<BaselineType>(defaultBaseline)
-	const topN = ref(DEFAULT_TOP_N)
+	const selectedBaseline = ref<BaselineType>(initialBaseline ?? defaultBaseline)
+	const topN = ref(initialTopN ?? DEFAULT_TOP_N)
 	const selectedWindowSize = ref(initialWindowSize)
 
 	// --- Data ---

@@ -7,7 +7,27 @@
 				variant="tonal"
 				style="margin-right: -12px"
 				@click="router.push({ name: 'activityHistoryCalendar' })"
-			></VIconBtn>
+			>
+				<VTooltip
+					activator="parent"
+					location="bottom"
+				>
+					{{ $t('history.detail.openCalendar') }}
+				</VTooltip>
+			</VIconBtn>
+			<VIconBtn
+				icon="chart-line"
+				variant="tonal"
+				style="margin-right: -12px"
+				@click="goToSummaryForWeek"
+			>
+				<VTooltip
+					activator="parent"
+					location="bottom"
+				>
+					{{ $t('history.detail.openSummary') }}
+				</VTooltip>
+			</VIconBtn>
 			<h1 class="text-h4">{{ $t('history.detail.title') }}</h1>
 			<VBtnToggle
 				v-model="selectedVisualization"
@@ -168,19 +188,38 @@
 	import HistoryTimeline from '@/core/historyDashboard/component/HistoryTimeline.vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
-	import { parseWindowInstant, useHistoryDashboard } from '@/core/activityHistory/composable/useHistoryDashboard.ts'
+	import { formatDateForApi, getWeekStart } from '@/_common/utils/DateTimeHelper.ts'
+	import {
+		DEFAULT_TOP_N,
+		parseWindowInstant,
+		useHistoryDashboard,
+	} from '@/core/activityHistory/composable/useHistoryDashboard.ts'
+	import {
+		parseEnumParam,
+		parseTimeParam,
+		parseTopN,
+		parseWindowSize,
+		serializeWindowSize,
+	} from '@/core/activityHistory/composable/historyUrlParams.ts'
+	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+
+	const VISUALIZATIONS = ['stackedBars', 'timeline'] as const
+	type Visualization = (typeof VISUALIZATIONS)[number]
 
 	const route = useRoute()
 	const router = useRouter()
+	const { firstDayOfWeek } = useUserPreferences()
 
 	// --- State: the single day and time-of-day window this view asks its questions over ---
 	const today = new Date()
 	const dateModel = ref<Date>(route.query.date ? new Date(route.query.date as string) : new Date())
-	const timeFrom = ref(new Time(8, 0))
-	const timeTo = ref(new Time(23, 59))
-	const groupBy = ref<HistoryGroupBy>(HistoryGroupBy.Activity)
-	const selectedVisualization = ref<'stackedBars' | 'timeline'>('timeline')
+	const timeFrom = ref(parseTimeParam(route.query.timeFrom, new Time(8, 0)))
+	const timeTo = ref(parseTimeParam(route.query.timeTo, new Time(23, 59)))
+	const groupBy = ref<HistoryGroupBy>(
+		parseEnumParam(route.query.groupBy, Object.values(HistoryGroupBy), HistoryGroupBy.Activity),
+	)
+	const selectedVisualization = ref<Visualization>(parseEnumParam(route.query.view, VISUALIZATIONS, 'timeline'))
 
 	const isStackedBars = computed(() => selectedVisualization.value === 'stackedBars')
 	// --- Window size options for single day ---
@@ -258,12 +297,45 @@
 		},
 		{
 			defaultBaseline: BaselineType.SameWeekday,
-			initialWindowSize: 30,
+			initialWindowSize: parseWindowSize(route.query.windowSize, 30),
+			initialBaseline: parseEnumParam(
+				route.query.baseline,
+				Object.values(BaselineType),
+				BaselineType.SameWeekday,
+			),
+			initialTopN: parseTopN(route.query.topN, DEFAULT_TOP_N),
 			canFetch: () => date.value !== '',
 			selectWindows: clampWindowsToRequestedRange,
 		},
 	)
 
 	watch([dateModel, timeFrom, timeTo, groupBy], () => fetchAll(), { immediate: true })
-	watch(date, newDate => router.replace({ query: { ...route.query, date: newDate } }))
+
+	// --- Back to the summary view for the week containing this day. ---
+	function goToSummaryForWeek() {
+		router.push({
+			name: 'activityHistory',
+			query: {
+				date: formatDateForApi(getWeekStart(dateModel.value, firstDayOfWeek.value)),
+				range: ActivityDateRangeTypeEnum.Week,
+				groupBy: groupBy.value,
+			},
+		})
+	}
+
+	// --- Sync state to URL ---
+	watch([date, selectedVisualization, timeFrom, timeTo, groupBy, selectedWindowSize, selectedBaseline, topN], () => {
+		router.replace({
+			query: {
+				date: date.value,
+				view: selectedVisualization.value,
+				timeFrom: timeFrom.value.getString(),
+				timeTo: timeTo.value.getString(),
+				groupBy: groupBy.value,
+				windowSize: serializeWindowSize(selectedWindowSize.value),
+				baseline: selectedBaseline.value,
+				topN: String(topN.value),
+			},
+		})
+	})
 </script>

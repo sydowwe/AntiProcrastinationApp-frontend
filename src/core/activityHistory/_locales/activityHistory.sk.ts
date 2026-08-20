@@ -23,9 +23,12 @@ const activityHistory = {
 		summary: {
 			title: `História aktivít`,
 			dayFrom: `Deň od`,
+			openCalendar: `Otvoriť kalendár`,
 		},
 		detail: {
 			title: `Detail histórie`,
+			openCalendar: `Otvoriť kalendár`,
+			openSummary: `Späť na súhrn za tento týždeň`,
 		},
 		calendar: {
 			sessions: `{count} relácia | {count} relácie | {count} relácií`,

@@ -2,6 +2,19 @@
 	<div class="py-6 w-100 h-100 d-flex flex-column">
 		<!-- Header -->
 		<div class="mb-4 w-100 d-flex align-center ga-6 flex-wrap">
+			<VIconBtn
+				icon="calendar-days"
+				variant="tonal"
+				style="margin-right: -12px"
+				@click="router.push({ name: 'activityHistoryCalendar' })"
+			>
+				<VTooltip
+					activator="parent"
+					location="bottom"
+				>
+					{{ $t('history.summary.openCalendar') }}
+				</VTooltip>
+			</VIconBtn>
 			<h1 class="text-h4">{{ $t('history.summary.title') }}</h1>
 			<HistoryDateRangeSelector
 				v-model:date="date"
@@ -27,6 +40,7 @@
 				:windowSizeOptions="windowSizeOptionsMinutes"
 				:initialWindowSize="selectedWindowSize"
 				@windowSizeChange="handleWindowSizeChange"
+				@activityClick="handleActivityClick"
 			>
 				<template #header-right>
 					<TimeRangePicker
@@ -97,59 +111,36 @@
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
-	import { parseWindowInstant, useHistoryDashboard } from '@/core/activityHistory/composable/useHistoryDashboard.ts'
-	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import {
+		DEFAULT_TOP_N,
+		parseWindowInstant,
+		useHistoryDashboard,
+	} from '@/core/activityHistory/composable/useHistoryDashboard.ts'
+	import {
+		parseEnumParam,
+		parseTimeParam,
+		parseTopN,
+		parseWindowSize,
+		serializeWindowSize,
+	} from '@/core/activityHistory/composable/historyUrlParams.ts'
+	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 
 	const route = useRoute()
 	const router = useRouter()
 
-	// --- URL param init helpers ---
-	function initRangeType(): ActivityDateRangeTypeEnum {
-		const val = route.query.range as string
-		return (Object.values(ActivityDateRangeTypeEnum) as string[]).includes(val)
-			? (val as ActivityDateRangeTypeEnum)
-			: ActivityDateRangeTypeEnum.Week
-	}
-
-	function initGroupBy(): HistoryGroupBy {
-		const val = route.query.groupBy as string
-		return (Object.values(HistoryGroupBy) as string[]).includes(val)
-			? (val as HistoryGroupBy)
-			: HistoryGroupBy.Activity
-	}
-
-	function serializeWindowSize(minutes: number): string {
-		const t = Time.fromMinutes(minutes)
-		if (t.hours === 0) return `${t.minutes}m`
-		if (t.minutes === 0) return `${t.hours}h`
-		return `${t.hours}h${t.minutes}m`
-	}
-
-	function parseWindowSize(val: string): number {
-		const match = val.match(/^(?:(\d+)h)?(?:(\d+)m)?$/)
-		if (!match) return 240
-		const total = parseInt(match[1] ?? '0') * 60 + parseInt(match[2] ?? '0')
-		return total > 0 ? total : 240
-	}
-
-	function initWindowSize(): number {
-		const val = route.query.windowSize as string
-		return val ? parseWindowSize(val) : 240
-	}
-
-	function initTime(param: string, fallback: Time): Time {
-		const val = route.query[param] as string
-		return val ? Time.fromString(val) : fallback
-	}
-
 	// --- State: the multi-day range this view asks its questions over ---
 	const date = ref((route.query.date as string) || '')
-	const rangeType = ref<ActivityDateRangeTypeEnum>(initRangeType())
+	const rangeType = ref<ActivityDateRangeTypeEnum>(
+		parseEnumParam(route.query.range, Object.values(ActivityDateRangeTypeEnum), ActivityDateRangeTypeEnum.Week),
+	)
 	const endDate = ref<string | undefined>((route.query.endDate as string) || undefined)
-	const groupBy = ref<HistoryGroupBy>(initGroupBy())
-	const windowStartTime = ref(initTime('timeFrom', new Time(8, 0)))
-	const windowEndTime = ref(initTime('timeTo', new Time(1, 0)))
+	const groupBy = ref<HistoryGroupBy>(
+		parseEnumParam(route.query.groupBy, Object.values(HistoryGroupBy), HistoryGroupBy.Activity),
+	)
+	const windowStartTime = ref(parseTimeParam(route.query.timeFrom, new Time(8, 0)))
+	const windowEndTime = ref(parseTimeParam(route.query.timeTo, new Time(1, 0)))
 
 	// --- Shared dashboard machinery ---
 	// Everything range-shaped stays here in the fetchers; the composable never names a `HistorySummary*`
@@ -208,7 +199,9 @@
 		},
 		{
 			defaultBaseline: BaselineType.Last7Days,
-			initialWindowSize: initWindowSize(),
+			initialWindowSize: parseWindowSize(route.query.windowSize, 240),
+			initialBaseline: parseEnumParam(route.query.baseline, Object.values(BaselineType), BaselineType.Last7Days),
+			initialTopN: parseTopN(route.query.topN, DEFAULT_TOP_N),
 			canFetch: () => date.value !== '',
 		},
 	)
@@ -263,18 +256,33 @@
 	watch([date, rangeType, endDate, groupBy], () => fetchAll(), { immediate: true })
 	watch([windowStartTime, windowEndTime], () => fetchStackedBars())
 
-	// --- Sync state to URL ---
-	watch([date, rangeType, endDate, groupBy, selectedWindowSize, windowStartTime, windowEndTime], () => {
-		router.replace({
-			query: {
-				range: rangeType.value,
-				date: date.value || undefined,
-				endDate: endDate.value || undefined,
-				groupBy: groupBy.value,
-				windowSize: serializeWindowSize(selectedWindowSize.value),
-				timeFrom: windowStartTime.value.getString(),
-				timeTo: windowEndTime.value.getString(),
-			},
+	// --- Drill-through: clicking a bar opens the detail view for the day that window starts on. ---
+	// `window.windowStart` is a UTC instant (see parseWindowInstant); read the calendar day it falls on
+	// in the user's zone, not the browser's, so the two agree with the rest of the dashboard's clock.
+	function handleActivityClick(window: StackedBarsInputWindow) {
+		router.push({
+			name: 'activityHistoryDetail',
+			query: { date: isoDateInUserZone(window.windowStart), groupBy: groupBy.value },
 		})
-	})
+	}
+
+	// --- Sync state to URL ---
+	watch(
+		[date, rangeType, endDate, groupBy, selectedWindowSize, windowStartTime, windowEndTime, selectedBaseline, topN],
+		() => {
+			router.replace({
+				query: {
+					range: rangeType.value,
+					date: date.value || undefined,
+					endDate: endDate.value || undefined,
+					groupBy: groupBy.value,
+					windowSize: serializeWindowSize(selectedWindowSize.value),
+					timeFrom: windowStartTime.value.getString(),
+					timeTo: windowEndTime.value.getString(),
+					baseline: selectedBaseline.value,
+					topN: String(topN.value),
+				},
+			})
+		},
+	)
 </script>
