@@ -108,7 +108,7 @@
 	import ActivityFocusStrip from '@/core/activityTracking/component/focusMetrics/ActivityFocusStrip.vue'
 	import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		getDesktopFocusMetrics,

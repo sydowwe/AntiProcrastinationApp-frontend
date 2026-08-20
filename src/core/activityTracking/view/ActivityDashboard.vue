@@ -102,7 +102,7 @@
 	import ActivityFocusStrip from '@/core/activityTracking/component/focusMetrics/ActivityFocusStrip.vue'
 	import type { ActivityWindow } from '@/core/activityTracking/dto/response/stackedBars/ActivityWindow.ts'
 	import type { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 	import {
 		getFocusMetrics,
 		getPieChart,

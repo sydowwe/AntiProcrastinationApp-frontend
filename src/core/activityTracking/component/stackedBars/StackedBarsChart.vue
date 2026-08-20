@@ -89,7 +89,7 @@
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import StackedBarsGrid from './StackedBarsGrid.vue'
-	import type { StackedBarsInputItem, StackedBarsInputWindow } from './dto/StackedBarsInput'
+	import type { StackedBarsInputItem, StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 	import type { ColumnData } from './dto/ColumnData'
 	import { ProcessedWindow } from './dto/ProcessedWindow'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'

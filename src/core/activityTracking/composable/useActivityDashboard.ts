@@ -8,7 +8,7 @@ import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 import type { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
-import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
+import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 import {
 	SINGLE_DAY_WINDOW_SIZES,
 	windowSizeOptionsForSpan,

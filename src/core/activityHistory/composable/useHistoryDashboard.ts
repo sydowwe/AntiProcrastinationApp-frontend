@@ -1,6 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
-import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
+import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
 import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'

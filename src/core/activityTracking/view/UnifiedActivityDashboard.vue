@@ -115,7 +115,7 @@
 	import ActivitySourceFilter from '@/core/activityTracking/component/unified/ActivitySourceFilter.vue'
 	import UnifiedPieChartSection from '@/core/activityTracking/component/unified/UnifiedPieChartSection.vue'
 	import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
-	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 	import type { UnifiedStackedBarsWindow } from '@/core/activityTracking/dto/response/unified/UnifiedStackedBarsWindow.ts'
 	import type { UnifiedSummaryItem } from '@/core/activityTracking/dto/response/unified/UnifiedSummaryItem.ts'
 	import type { UnifiedPieChartResponse } from '@/core/activityTracking/dto/response/unified/UnifiedPieChartResponse.ts'

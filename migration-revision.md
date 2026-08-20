@@ -103,6 +103,60 @@ expectedCostTier}` blocks in `_locales/leisure.{sk,en}.ts` (around lines 142/147
 Cosmetic; delete them next time the file is open. Note that the _column-header_ keys of the same names (lines 8/9/14) are live and must stay — the lookup tables that
 replaced the enums kept the names.
 
+### 7. `StackedBarsChart` and `BaselineOption` are shared presentation owned by a feature module
+
+**Local files kept:** `src/core/activityTracking/component/stackedBars/**` (6 files: `StackedBarsChart.vue`, `StackedBarsGrid.vue`, `StackedBarColumn.vue`,
+`StackedBarsTooltip.vue`, `stackedBarsUtils.ts`, and `dto/{BarGridSpan,ColumnData,GridConfig,GuideLine,ProcessedWindow,TooltipData}.ts`),
+`src/core/activityTracking/dto/StackedBarsInput.ts`, `src/core/activityTracking/dto/enum/BaselineOption.ts`.
+
+**The gap.** Two presentational units live inside `activityTracking` while three modules consume them:
+
+| Unit                                          | Consumers                                                                                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `StackedBarsChart.vue` + `StackedBarsInput.ts` | `activityTracking` (4 dashboards + `useActivityDashboard.ts`), `activityHistory` (`HistorySummaryView.vue`, `HistoryDetailView.vue`, `useHistoryDashboard.ts`) |
+| `BaselineOption.ts` (`BaselineType` + `BaselineOption`) | `activityTracking` (6 request DTOs, `useActivityDashboard.ts`, `ActivitySummaryCards.vue`), `historyDashboard` (2 request DTOs, `HistorySummaryCards.vue`), `activityHistory` (2 views + `useHistoryDashboard.ts`) |
+
+Neither names an app entity. `StackedBarsInputWindow` is `{windowStart, windowEnd, items: {name, activeSeconds, backgroundSeconds, color?, url?}[]}` — a chart
+contract, not a tracker contract; the four `toStackedBarsWindow` adapters in `activityTracking/view/` are exactly the seam that proves it. `BaselineOption` is a
+two-field value class over a four-value enum (`last7days` / `last30days` / `sameWeekday` / `allTime`) — a generic "compare this period against" vocabulary.
+
+**Decision: option (a) — both belong in the framework.** Proposed paths: `_common/component/chart/StackedBars*` (+ `_common/dto/dto/chart/StackedBarsInput.ts`) and
+`_common/dto/enum/BaselineOption.ts`. The prompt's option (b) — hand `StackedBarsChart` to one app module instead — was considered and rejected on the evidence
+above: the chart is large (1,074 lines across the grid/column/tooltip split) but it is not app-specific, and size is not what the ownership rule is about. Nothing in
+it would have to be deleted by a second app to reuse it.
+
+**Why nothing moved today.** `src/_common` is a submodule this work could not touch, so both stay app-side until the pointer bump. The interim owner of the
+`stackedBars` tree stays `activityTracking`: it is where the code originated and where 5 of the 8 consuming files live, so relocating it to `historyDashboard` would
+create five new boundary crossings to remove three — and would be undone at the pointer bump anyway. `BaselineOption` is already single-owner and already reached
+through a legal `dto/` path from all three modules (R5 moved it out of `component/summaryCards/`); it needs no interim action at all.
+
+**What did land.** `StackedBarsInput.ts` moved from `component/stackedBars/dto/` to `activityTracking/dto/`. It is the chart's public prop contract, so every
+cross-module consumer of the *type* was previously forced through a `component/` path — illegal by construction even though the file is a pure DTO. After the move,
+the only remaining illegal import of this pair is the `.vue` component itself, from two `activityHistory` views. Seven importers repointed; `StackedBarsChart.vue`'s
+relative `./dto/StackedBarsInput` became an `@/` path while it was open.
+
+**When the pointer bumps:** move the six `stackedBars` files and `StackedBarsInput.ts` to `_common`, move `BaselineOption.ts`, repoint the 11 importers, and delete
+this entry. `BaselineOption`'s display strings are built at the call site (`useActivityDashboard.ts` via `t('activityTracking.baseline.*')`), so the framework file
+carries no locale keys and the shallow-spread trap in §5 does not apply.
+
+### 7a. `historyDashboard` is a component library for `activityHistory` — a documented exception, not a violation
+
+`historyDashboard` has no routes, no views and no locale file. It is `api/` + `dto/` + `component/`, and every one of its components is mounted by another module.
+That is deliberate: it is the presentation layer for `activityHistory`'s two dashboard views, split out so the views stay readable. Recorded here so the next reader
+does not re-litigate it.
+
+The consequence for CLAUDE.md's "never reach into another module's `component/`" rule, stated exactly:
+
+- **`historyDashboard/component/**` is importable by other `core` modules.** Today that is `activityHistory` (5 components across the two views) and `home`
+  (`HistoryPieChart.vue` in `ActivityHistoryWidget.vue`). This is the sanctioned direction — a library exists to be consumed.
+- **`historyDashboard` may import back into `activityHistory/component/`.** Today that is `HistoryTimeline.vue` → `EditActivityHistoryForm.vue`,
+  `HistoryRecordItem.vue`. This is the narrower carve-out: the pair `activityHistory` + `historyDashboard` is one boundary unit, not two peers. Do not extend it to
+  a third module — `historyDashboard` importing any other module's `component/` is a real violation.
+- Everything else is unchanged. `historyDashboard`'s reads of `activityHistory/{api,dto}/` were always legal and stay legal.
+
+This does **not** dissolve the rule for the `stackedBars` case in §7: `activityTracking` is a peer feature module with its own routes and views, so
+`activityHistory` importing its `component/` is still the framework gap described above.
+
 ---
 
 ## Lessons kept

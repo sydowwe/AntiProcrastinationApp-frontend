@@ -34,6 +34,11 @@ src/
 
 Modules: `activity`, `activityHistory`, `activityTracking`, `historyDashboard`, `dayPlanner`, `todoList`, `leisure`, `googleCalendar`, `home`.
 
+`historyDashboard` is not a feature module — it is a **component library** for `activityHistory`. It has no routes, no views and no locale file, and every component
+in it is mounted by another module. Its `component/` directory is therefore importable by other `core` modules, and it may import back into
+`activityHistory/component/`; the pair is one boundary unit. This is the one standing exception to the cross-module rule below — see `migration-revision.md` §7a for
+its exact limits before relying on it.
+
 `user` is now a **framework** module (`@/_common/modules/user/`) — it owns the auth views, the auth store, the user/session APIs and the generic settings sections.
 `src/core/user/` is this app's glue around it, shaped like every other module: `authAdapter.ts`, `dto/userAugmentation.ts`, `composable/` (app preference reads),
 `_locales/user.{sk,en}.ts` (this app's own settings/about strings, merged into the `user` namespace alongside the framework's — see the comment in
@@ -43,7 +48,8 @@ settings wrapper. See `### _common/modules/` below.
 **Rules:**
 
 - New feature code goes in `src/core/<module>/`, never at `src/` root.
-- Cross-module imports are allowed **only** via another module's `api/` or `dto/`. Never reach into another module's `component/`, `composable/` or `store/`. If two
+- Cross-module imports are allowed **only** via another module's `api/` or `dto/` (the `historyDashboard` library above is the one exception). Never reach into
+  another module's `component/`, `composable/` or `store/`. If two
   modules need to share a component, it belongs in the framework — raise it rather than cross-importing.
 - Always import by `@/` alias, never by relative path across directories.
 - Every module registers itself through `<module>.routes.ts` (exported, spread in `src/router.ts`) and `_locales/` (spread in `src/locales/{SK,EN}.ts`).
