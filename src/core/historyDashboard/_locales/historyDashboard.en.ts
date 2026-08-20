@@ -36,6 +36,12 @@ const messages = {
 	timeline: {
 		editTitle: `Edit Activity History`,
 	},
+	emptyState: {
+		firstRunTitle: `No activity recorded yet`,
+		firstRunMessage: `Log something you already did, or start a timer for what you're doing now.`,
+		logManually: `Log manually`,
+		startTimer: `Start a timer`,
+	},
 }
 /** One root namespace — see the comment on the SK file, which carries the reasoning. */
 const historyDashboard = { historyDashboard: messages }

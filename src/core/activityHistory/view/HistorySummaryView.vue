@@ -29,64 +29,72 @@
 			class="flex-fill d-flex flex-column ga-4"
 			style="min-height: 0"
 		>
-			<!-- Stacked Bars -->
-			<StackedBarsChart
-				class="flex-fill"
-				style="min-height: 200px"
-				:windows="stackedBarsWindows"
-				:loading="stackedBarsLoading"
-				:timeFrom="chartTimeFrom"
-				:timeTo="chartTimeTo"
-				:windowSizeOptions="windowSizeOptionsMinutes"
-				:initialWindowSize="selectedWindowSize"
-				@windowSizeChange="handleWindowSizeChange"
-				@activityClick="handleActivityClick"
-			>
-				<template #header-right>
-					<TimeRangePicker
-						v-model:start="windowStartTime"
-						v-model:end="windowEndTime"
-						class="flex-shrink-0"
-						:label="$t('history.summary.dayFrom')"
-						density="compact"
-						hideDetails
-						allowedMinutesSelected="30"
-					/>
-				</template>
-			</StackedBarsChart>
+			<!-- First run: never recorded anything, anywhere — one onboarding block instead of three
+			     empty charts (H7). -->
+			<HistoryFirstRunState v-if="hasAnyHistoryEver === false" />
 
-			<!-- Summary Cards + Pie Chart -->
-			<VRow class="flex-shrink-0 flex-grow-0">
-				<VCol
-					cols="12"
-					lg="6"
-					class="pr-lg-8 pb-3"
+			<template v-else>
+				<!-- Stacked Bars -->
+				<StackedBarsChart
+					class="flex-fill"
+					style="min-height: 200px"
+					:windows="stackedBarsWindows"
+					:loading="stackedBarsLoading"
+					:timeFrom="chartTimeFrom"
+					:timeTo="chartTimeTo"
+					:windowSizeOptions="windowSizeOptionsMinutes"
+					:initialWindowSize="selectedWindowSize"
+					@windowSizeChange="handleWindowSizeChange"
+					@activityClick="handleActivityClick"
 				>
-					<HistorySummaryCards
-						class="h-100"
-						:data="summaryCardsData"
-						:groupBy="groupBy"
-						:selectedGroup="selectedGroup"
-						:selectedBaseline="selectedBaseline"
-						:topN="topN"
-						:loading="summaryCardsLoading"
-						@update:selectedBaseline="handleBaselineChange"
-						@update:topN="handleTopNChange"
-						@groupClick="handleGroupSelect"
-					/>
-				</VCol>
-				<VCol
-					cols="12"
-					lg="6"
-					class="pb-3"
-				>
-					<HistoryPieChartSection
-						v-model:selectedGroup="selectedGroup"
-						:data="pieChartData"
-						:loading="pieChartLoading"
-					/>
-				</VCol>
-			</VRow>
+					<template #header-right>
+						<TimeRangePicker
+							v-model:start="windowStartTime"
+							v-model:end="windowEndTime"
+							class="flex-shrink-0"
+							:label="$t('history.summary.dayFrom')"
+							density="compact"
+							hideDetails
+							allowedMinutesSelected="30"
+						/>
+					</template>
+				</StackedBarsChart>
+
+				<!-- Summary Cards + Pie Chart -->
+				<VRow class="flex-shrink-0 flex-grow-0">
+					<VCol
+						cols="12"
+						lg="6"
+						class="pr-lg-8 pb-3"
+					>
+						<HistorySummaryCards
+							class="h-100"
+							:data="summaryCardsData"
+							:groupBy="groupBy"
+							:selectedGroup="selectedGroup"
+							:selectedBaseline="selectedBaseline"
+							:topN="topN"
+							:loading="summaryCardsLoading"
+							:periodLabel
+							@update:selectedBaseline="handleBaselineChange"
+							@update:topN="handleTopNChange"
+							@groupClick="handleGroupSelect"
+						/>
+					</VCol>
+					<VCol
+						cols="12"
+						lg="6"
+						class="pb-3"
+					>
+						<HistoryPieChartSection
+							v-model:selectedGroup="selectedGroup"
+							:data="pieChartData"
+							:loading="pieChartLoading"
+							:periodLabel
+						/>
+					</VCol>
+				</VRow>
+			</template>
 		</div>
 	</div>
 </template>
@@ -108,6 +116,7 @@
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
 	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
+	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
@@ -124,6 +133,7 @@
 		serializeWindowSize,
 	} from '@/core/activityHistory/composable/historyUrlParams.ts'
 	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 
@@ -158,6 +168,7 @@
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		hasAnyHistoryEver,
 		fetchStackedBars,
 		fetchAll,
 		handleBaselineChange,
@@ -237,6 +248,17 @@
 		}
 	})
 	const windowSizeOptionsMinutes = computed(() => windowSizeOptions.value.map(h => h * 60))
+
+	// --- Empty-state period label (H7): names the range an empty result came back for, so a user who
+	// lands on a window with no data can tell it apart from data having been lost. Only the bound the
+	// backend's range-type semantics leave unambiguous is shown — the start date always, the end date
+	// only when the user picked it explicitly (custom range).
+	const periodLabel = computed(() => {
+		if (!date.value) return undefined
+		const start = formatToDate(new Date(date.value))
+		if (!endDate.value) return start
+		return `${start} – ${formatToDate(new Date(endDate.value))}`
+	})
 
 	// --- Time from/to for chart: derived from stacked bars response ---
 	// `windowStart`/`windowEnd` are instants (B3 confirmed: the server always sends a `Z`-qualified

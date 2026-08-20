@@ -45,17 +45,12 @@
 		</div>
 
 		<!-- Empty State -->
-		<div
+		<HistoryEmptyState
 			v-else-if="!data || data.cards.length === 0"
-			class="empty-state"
-		>
-			<VIcon
-				icon="fas fa-chart-column"
-				size="64"
-				class="text-disabled mb-4"
-			/>
-			<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noDataForPeriod') }}</p>
-		</div>
+			icon="fas fa-chart-column"
+			:message="$t('activityTracking.common.noDataForPeriod')"
+			:periodLabel
+		/>
 
 		<!-- Cards -->
 		<div
@@ -96,6 +91,7 @@
 	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import HistorySummaryCard from './HistorySummaryCard.vue'
 	import HistoryPeriodBanner from './HistoryPeriodBanner.vue'
+	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 
 	const props = defineProps<{
 		data: HistorySummaryCardsResponse | null
@@ -104,6 +100,8 @@
 		selectedBaseline: BaselineType
 		topN: number
 		loading?: boolean
+		/** Formatted date/range the empty state should name — see H7. */
+		periodLabel?: string
 	}>()
 
 	const emit = defineEmits<{
@@ -249,14 +247,5 @@
 	.skeleton-card {
 		min-width: 160px;
 		height: 160px;
-	}
-
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 48px 16px;
-		text-align: center;
 	}
 </style>

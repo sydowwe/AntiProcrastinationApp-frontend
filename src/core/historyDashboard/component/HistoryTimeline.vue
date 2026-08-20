@@ -7,6 +7,12 @@
 			v-if="loading"
 			type="list-item-two-line@4"
 		/>
+		<HistoryEmptyState
+			v-else-if="historyList.length === 0"
+			icon="fas fa-list"
+			:message="$t('activityTracking.common.noDataForPeriod')"
+			:periodLabel="formatToDate(new Date(date))"
+		/>
 		<VRow
 			v-else
 			justify="start"
@@ -91,13 +97,14 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { formatLocalized } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatLocalized, formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 	import { getDetailTimeline } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
+	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'

@@ -12,14 +12,11 @@
 		</template>
 
 		<template v-else-if="!data || data.items.length === 0">
-			<div class="d-flex flex-column align-center justify-center pa-8">
-				<VIcon
-					icon="fas fa-chart-pie"
-					size="64"
-					class="text-disabled mb-4"
-				/>
-				<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noDataForPeriod') }}</p>
-			</div>
+			<HistoryEmptyState
+				icon="fas fa-chart-pie"
+				:message="$t('activityTracking.common.noDataForPeriod')"
+				:periodLabel
+			/>
 		</template>
 
 		<template v-else>
@@ -100,6 +97,7 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import HistoryPieChart from './HistoryPieChart.vue'
+	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import {
@@ -111,6 +109,8 @@
 	const props = defineProps<{
 		data: HistoryPieChartResponse | null
 		loading?: boolean
+		/** Formatted date/range the empty state should name — see H7. */
+		periodLabel?: string
 	}>()
 
 	const selectedGroup = defineModel<HistoryGroupKey | null>('selectedGroup', { default: null })

@@ -33,6 +33,7 @@ const activityHistory = {
 			sessions: `{count} session | {count} sessions`,
 			noActivity: `No activity`,
 			notRecorded: `Not recorded`,
+			noActivityInRange: `No activity recorded in the visible range.`,
 		},
 		timer: {
 			setDurationFirst: `Please set a timer duration`,

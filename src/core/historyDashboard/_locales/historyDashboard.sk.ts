@@ -36,6 +36,12 @@ const messages = {
 	timeline: {
 		editTitle: `Upraviť záznam histórie`,
 	},
+	emptyState: {
+		firstRunTitle: `Zatiaľ nemáte žiadne záznamy`,
+		firstRunMessage: `Zaznamenajte aktivitu, ktorú ste už urobili, alebo spustite časovač pre to, čo robíte práve teraz.`,
+		logManually: `Zaznamenať ručne`,
+		startTimer: `Spustiť časovač`,
+	},
 }
 /**
  * ONE root namespace, mirroring `activityTracking` — `src/locales/SK.ts` spreads this object's

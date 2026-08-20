@@ -34,6 +34,7 @@ const activityHistory = {
 			sessions: `{count} relácia | {count} relácie | {count} relácií`,
 			noActivity: `Žiadna aktivita`,
 			notRecorded: `Nezaznamenané`,
+			noActivityInRange: `V zobrazenom rozsahu nie je zaznamenaná žiadna aktivita.`,
 		},
 		timer: {
 			setDurationFirst: `Prosím nastavte dĺžku časovača`,

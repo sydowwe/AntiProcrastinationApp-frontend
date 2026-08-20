@@ -1,4 +1,16 @@
 <template>
+	<!-- Empty range: explain rather than show a grid of identical grey cells with no context (H7). -->
+	<HistoryFirstRunState
+		v-if="!loading && allDaysEmpty && hasAnyHistoryEver === false"
+		compact
+		class="mb-2"
+	/>
+	<HistoryEmptyState
+		v-else-if="!loading && allDaysEmpty"
+		icon="fas fa-calendar"
+		:message="$t('history.calendar.noActivityInRange')"
+		class="mb-2"
+	/>
 	<CalendarGrid
 		class="py-4"
 		:days
@@ -96,19 +108,30 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import router from '@/router.ts'
-	import { getCalendarActivitySummary } from '@/core/historyDashboard/api/historyDashboardApi.ts'
+	import {
+		getCalendarActivitySummary,
+		getHasAnyHistoryEver,
+	} from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 	import { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
+	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 
 	const days = ref<CalendarActivityDaySummary[]>([])
 	const loading = ref(false)
 	const { firstDayOfWeek } = useUserPreferences()
+
+	// H7: distinguishes "nothing in this month" from "never recorded anything" — see the composable
+	// version of this check in useHistoryDashboard.ts for the reasoning; the calendar view has no
+	// composable of its own, so it re-fetches this small existence check directly.
+	const hasAnyHistoryEver = ref<boolean | null>(null)
+	const allDaysEmpty = computed(() => days.value.length > 0 && days.value.every(d => d.totalSeconds === 0))
 
 	async function fetchCalendarActivity(range: { start: Date | null; end: Date | null }) {
 		if (!range.start || !range.end) {
@@ -121,6 +144,9 @@
 			days.value = fillMissingDays(await getCalendarActivitySummary(request), range.start, range.end)
 		} finally {
 			loading.value = false
+		}
+		if (allDaysEmpty.value && hasAnyHistoryEver.value === null) {
+			hasAnyHistoryEver.value = await getHasAnyHistoryEver()
 		}
 	}
 

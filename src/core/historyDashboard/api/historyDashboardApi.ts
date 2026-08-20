@@ -11,7 +11,11 @@ import type { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/
 import { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 import type { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 import type { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
-import type { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
+import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
+import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
+import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
+import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 const SUMMARY_URL = '/activity-history/dashboard/summary'
 const DETAIL_URL = '/activity-history/dashboard/detail'
@@ -68,4 +72,25 @@ export async function getCalendarActivitySummary(
 export async function getDetailTimeline(request: DetailTimelineRequest): Promise<ActivityHistory[]> {
 	const { data } = await API.post('/activity-history/filter', request)
 	return ActivityHistory.listFromObjects(data)
+}
+
+// --- First-run detection (H7) ---
+
+/**
+ * Whether the user has ever recorded anything, anywhere — the cheapest existence check available
+ * without a dedicated endpoint. Fired only when the current period's own fetch comes back empty
+ * (see `useHistoryDashboard.ts`), never on the common path. `groupBy`/`topN` are irrelevant to the
+ * yes/no answer, so they're fixed to the cheapest values.
+ */
+export async function getHasAnyHistoryEver(): Promise<boolean> {
+	const request = new HistorySummarySummaryCardsRequest(
+		'2000-01-01',
+		ActivityDateRangeTypeEnum.CustomRange,
+		HistoryGroupBy.Activity,
+		BaselineType.AllTime,
+		1,
+		formatDateForApi(new Date()),
+	)
+	const response = await getSummarySummaryCards(request)
+	return response.cards.length > 0
 }

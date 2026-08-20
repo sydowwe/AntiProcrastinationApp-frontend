@@ -7,6 +7,7 @@ import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/re
 import type { HistoryWindow } from '@/core/historyDashboard/dto/response/HistoryWindow.ts'
 import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
+import { getHasAnyHistoryEver } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 
 /** Both dashboards open on the same number of summary cards; neither exposes it as a preference. */
 export const DEFAULT_TOP_N = 4
@@ -91,6 +92,12 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	const pieChartLoading = ref(false)
 	const summaryCardsLoading = ref(false)
 
+	// --- First-run detection (H7) ---
+	// `null` = not yet known, `true`/`false` = resolved for this session. Once resolved it is never
+	// re-checked: a non-empty period is proof enough of `true`, and a `false` only flips back to `true`
+	// the same way (the next period that actually has data), never by re-asking the same question.
+	const hasAnyHistoryEver = ref<boolean | null>(null)
+
 	// --- Map HistoryWindow[] → StackedBarsInputWindow[] ---
 	// `backgroundSeconds` is always 0: the history endpoints report logged time only, with no notion of
 	// the foreground/background split the activity-tracking sources carry.
@@ -154,12 +161,29 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	 * `HistoryGroupKey` is only comparable within the `groupBy` it was made under (see
 	 * `HistoryGroupKey.ts`) — carrying it across would silently highlight a different group.
 	 */
-	function fetchAll() {
+	async function fetchAll() {
 		if (!canFetch()) return
 		selectedGroup.value = null
-		fetchStackedBars()
-		fetchPieChart()
-		fetchSummaryCards()
+		await Promise.all([fetchStackedBars(), fetchPieChart(), fetchSummaryCards()])
+		await checkFirstRunIfEmpty()
+	}
+
+	/**
+	 * The one extra request H7 allows: fired only when every panel came back empty for the period just
+	 * fetched, to tell "nothing in this window" apart from "nothing ever". A non-empty panel already
+	 * answers the question for free.
+	 */
+	async function checkFirstRunIfEmpty() {
+		const isEmpty =
+			stackedBarsWindows.value.length === 0 &&
+			(pieChartData.value?.items.length ?? 0) === 0 &&
+			(summaryCardsData.value?.cards.length ?? 0) === 0
+		if (!isEmpty) {
+			hasAnyHistoryEver.value = true
+			return
+		}
+		if (hasAnyHistoryEver.value !== null) return
+		hasAnyHistoryEver.value = await getHasAnyHistoryEver()
 	}
 
 	// The cards carry a comparison against the selected baseline, so the selector has to re-fetch them.
@@ -199,6 +223,7 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		hasAnyHistoryEver,
 		fetchStackedBars,
 		fetchPieChart,
 		fetchSummaryCards,

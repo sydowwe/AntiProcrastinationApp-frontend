@@ -67,102 +67,115 @@
 			<HistoryGroupBySelector v-model="groupBy" />
 		</div>
 
-		<!-- Visualization Toggle -->
-		<div
-			v-if="isStackedBars"
+		<!-- First run: never recorded anything, anywhere — one onboarding block instead of the usual
+		     panels (H7). -->
+		<HistoryFirstRunState
+			v-if="hasAnyHistoryEver === false"
 			class="flex-fill"
-			style="min-height: 200px"
-		>
-			<StackedBarsChart
-				class="w-100"
-				:windows="stackedBarsWindows"
-				:loading="stackedBarsLoading"
-				:timeFrom
-				:timeTo
-				:windowSizeOptions="windowSizeOptions"
-				:initialWindowSize="selectedWindowSize"
-				@windowSizeChange="handleWindowSizeChange"
-			/>
-		</div>
+		/>
 
-		<!-- Summary Cards + Pie Chart -->
-		<div
-			v-if="isStackedBars"
-			class="mt-6"
-		>
-			<VRow>
+		<template v-else>
+			<!-- Visualization Toggle -->
+			<div
+				v-if="isStackedBars"
+				class="flex-fill"
+				style="min-height: 200px"
+			>
+				<StackedBarsChart
+					class="w-100"
+					:windows="stackedBarsWindows"
+					:loading="stackedBarsLoading"
+					:timeFrom
+					:timeTo
+					:windowSizeOptions="windowSizeOptions"
+					:initialWindowSize="selectedWindowSize"
+					@windowSizeChange="handleWindowSizeChange"
+				/>
+			</div>
+
+			<!-- Summary Cards + Pie Chart -->
+			<div
+				v-if="isStackedBars"
+				class="mt-6"
+			>
+				<VRow>
+					<VCol
+						cols="12"
+						lg="6"
+						class="pr-lg-8 pb-3"
+					>
+						<HistorySummaryCards
+							:data="summaryCardsData"
+							:groupBy="groupBy"
+							:selectedGroup="selectedGroup"
+							:selectedBaseline="selectedBaseline"
+							:topN="topN"
+							:loading="summaryCardsLoading"
+							:periodLabel
+							@update:selectedBaseline="handleBaselineChange"
+							@update:topN="handleTopNChange"
+							@groupClick="handleGroupSelect"
+						/>
+					</VCol>
+					<VCol
+						cols="12"
+						lg="6"
+						class="pb-3"
+					>
+						<HistoryPieChartSection
+							v-model:selectedGroup="selectedGroup"
+							:data="pieChartData"
+							:loading="pieChartLoading"
+							:periodLabel
+						/>
+					</VCol>
+				</VRow>
+			</div>
+
+			<!-- Timeline + Context Panel -->
+			<VRow
+				v-if="!isStackedBars"
+				class="flex-fill mt-0"
+				style="min-height: 0"
+			>
 				<VCol
 					cols="12"
-					lg="6"
-					class="pr-lg-8 pb-3"
+					lg="7"
+					class="d-flex flex-column overflow-hidden h-100"
 				>
-					<HistorySummaryCards
-						:data="summaryCardsData"
-						:groupBy="groupBy"
-						:selectedGroup="selectedGroup"
-						:selectedBaseline="selectedBaseline"
-						:topN="topN"
-						:loading="summaryCardsLoading"
-						@update:selectedBaseline="handleBaselineChange"
-						@update:topN="handleTopNChange"
-						@groupClick="handleGroupSelect"
+					<HistoryTimeline
+						:date="date"
+						:timeFrom
+						:timeTo
+						singleColumn
 					/>
 				</VCol>
 				<VCol
 					cols="12"
-					lg="6"
-					class="pb-3"
+					lg="5"
+					class="d-flex flex-column ga-4 overflow-y-auto"
 				>
 					<HistoryPieChartSection
 						v-model:selectedGroup="selectedGroup"
 						:data="pieChartData"
 						:loading="pieChartLoading"
+						:periodLabel
+					/>
+					<HistorySummaryCards
+						:data="summaryCardsData"
+						:groupBy
+						:selectedGroup
+						:selectedBaseline
+						:topN
+						:loading="summaryCardsLoading"
+						:periodLabel
+						@update:selectedBaseline="handleBaselineChange"
+						@update:topN="handleTopNChange"
+						@groupClick="handleGroupSelect"
 					/>
 				</VCol>
 			</VRow>
-		</div>
-
-		<!-- Timeline + Context Panel -->
-		<VRow
-			v-if="!isStackedBars"
-			class="flex-fill mt-0"
-			style="min-height: 0"
-		>
-			<VCol
-				cols="12"
-				lg="7"
-				class="d-flex flex-column overflow-hidden h-100"
-			>
-				<HistoryTimeline
-					:date="date"
-					:timeFrom
-					:timeTo
-					singleColumn
-				/>
-			</VCol>
-			<VCol
-				cols="12"
-				lg="5"
-				class="d-flex flex-column ga-4 overflow-y-auto"
-			>
-				<HistoryPieChartSection
-					v-model:selectedGroup="selectedGroup"
-					:data="pieChartData"
-					:loading="pieChartLoading"
-				/>
-				<HistorySummaryCards
-					:data="summaryCardsData"
-					:groupBy
-					:selectedGroup
-					:selectedBaseline
-					:topN
-					:loading="summaryCardsLoading"
-					@update:selectedBaseline="handleBaselineChange"
-					@update:topN="handleTopNChange"
-					@groupClick="handleGroupSelect"
-				/>
-			</VCol>
-		</VRow>
+		</template>
 	</div>
 </template>
 
@@ -186,9 +199,10 @@
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
 	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
 	import HistoryTimeline from '@/core/historyDashboard/component/HistoryTimeline.vue'
+	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
-	import { formatDateForApi, getWeekStart } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatDateForApi, formatToDate, getWeekStart } from '@/_common/utils/DateTimeHelper.ts'
 	import {
 		DEFAULT_TOP_N,
 		parseWindowInstant,
@@ -265,6 +279,7 @@
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		hasAnyHistoryEver,
 		fetchAll,
 		handleBaselineChange,
 		handleTopNChange,
@@ -310,6 +325,9 @@
 	)
 
 	watch([dateModel, timeFrom, timeTo, groupBy], () => fetchAll(), { immediate: true })
+
+	// Empty-state period label (H7) — a single day, so no range math needed.
+	const periodLabel = computed(() => formatToDate(dateModel.value))
 
 	// --- Back to the summary view for the week containing this day. ---
 	function goToSummaryForWeek() {
