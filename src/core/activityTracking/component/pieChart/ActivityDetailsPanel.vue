@@ -99,6 +99,9 @@
 		mode: 'dayTotal' | 'domain'
 		dayTotals?: DayTotals
 		domainDetails: DomainPieData | null
+		// The totals themselves aggregate over whatever span was requested; only the heading has to
+		// stop calling a week "the day".
+		isRangeMode?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -109,7 +112,9 @@
 
 	const headerText = computed(() => {
 		if (props.mode === 'dayTotal') {
-			return t('activityTracking.pieChart.dayTotal')
+			return props.isRangeMode
+				? t('activityTracking.pieChart.rangeTotal')
+				: t('activityTracking.pieChart.dayTotal')
 		} else if (props.domainDetails) {
 			return props.domainDetails.domain
 		}

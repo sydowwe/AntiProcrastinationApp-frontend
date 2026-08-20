@@ -1,14 +1,15 @@
 import type { Time } from '@/_common/dto/dto/Time.ts'
-import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
+import { ActivityRangeRequest } from '@/core/activityTracking/dto/request/ActivityRangeRequest.ts'
 
-export class DesktopStackedBarsRequest extends DateAndTimeRangeRequest {
+export class DesktopStackedBarsRequest extends ActivityRangeRequest {
 	constructor(
-		public date: string,
-		public from: Time,
-		public to: Time,
+		dateFrom: string,
+		dateTo: string,
+		from: Time,
+		to: Time,
 		public windowMinutes: number,
 		public minSeconds?: number,
 	) {
-		super(date, from, to)
+		super(dateFrom, dateTo, from, to)
 	}
 }

@@ -120,6 +120,38 @@ const common = {
 		dateRange: `Rozmedzie dátumov`,
 		hoursBack: `Hodín späť`,
 		today: `Dnes`,
+		// --- Mirrored from `_common/_locales/common.sk.ts` ---
+		// `SK.ts` spreads this app's `dateTime` AFTER the framework's, and the spread is shallow, so
+		// this namespace replaces the framework's wholesale rather than merging with it. Every key
+		// below is one the framework's own `DateRangePicker` / `MonthYearPicker` resolve; without the
+		// mirror they render as raw `dateTime.mode` strings in this app. Adopting either component was
+		// what surfaced it (activityTracking U3) — the same omission as `migration-revision.md` R5/R6/R11.
+		mode: `Režim`,
+		range: `Rozsah`,
+		duration: `Trvanie`,
+		anchor: `Kotviaci bod`,
+		unit: `Jednotka`,
+		quantity: `Počet`,
+		fromStart: `Od začiatku`,
+		toEnd: `Do konca`,
+		daysPlural: `Dni`,
+		weeksPlural: `Týždne`,
+		// Deliberately not the framework's wording, which hardcodes "31 dní" — `maxDays` is a prop and
+		// this app passes 366 for the activity dashboards.
+		dateRangeExceedsLimit: `Zvolený rozsah dátumov je príliš dlhý`,
+		startDateBeforeEndDate: `Dátum od musí byť pred dátumom do`,
+		january: `Január`,
+		february: `Február`,
+		march: `Marec`,
+		april: `Apríl`,
+		may: `Máj`,
+		june: `Jún`,
+		july: `Júl`,
+		august: `August`,
+		september: `September`,
+		october: `Október`,
+		november: `November`,
+		december: `December`,
 	},
 	controls: {
 		start: `Štart`,

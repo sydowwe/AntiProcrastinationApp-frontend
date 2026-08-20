@@ -39,6 +39,7 @@
 			>
 				<ActivityEmptyState
 					:probeState="emptyProbeState"
+					:isRangeMode
 					@widenWindow="emit('widenWindow')"
 				/>
 			</VCard>
@@ -59,6 +60,7 @@
 					class="flex-fill"
 					:mode="detailsMode"
 					:dayTotals="dayTotals"
+					:isRangeMode
 					:domainDetails="selectedDomainDetails"
 					@close="onDetailsClose"
 				/>
@@ -85,6 +87,7 @@
 		error?: boolean
 		otherThresholdPercent?: number
 		emptyProbeState?: ActivityEmptyProbeState
+		isRangeMode?: boolean
 	}>()
 
 	const emit = defineEmits<{

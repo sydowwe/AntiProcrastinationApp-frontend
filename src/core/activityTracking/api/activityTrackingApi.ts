@@ -7,7 +7,7 @@ import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomain
 import type { PieChartRequest } from '@/core/activityTracking/dto/request/PieChartRequest.ts'
 import { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
 import type { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
-import type { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
+import type { TimelineRequest } from '@/core/activityTracking/dto/request/TimelineRequest.ts'
 
 const BASE_URL = '/activity-tracking/web-extension'
 
@@ -27,7 +27,7 @@ export async function getStackedBarsData(request: StackedBarsRequest, signal?: A
 	return data.map((w: any) => ActivityWindow.fromJson(w))
 }
 
-export async function getTimeline(request: DateAndTimeRangeRequest, signal?: AbortSignal): Promise<TimelineResponse> {
+export async function getTimeline(request: TimelineRequest, signal?: AbortSignal): Promise<TimelineResponse> {
 	const { data } = await API.post(`${BASE_URL}/timeline`, request, { signal, _silent: true })
 	return TimelineResponse.fromJson(data)
 }

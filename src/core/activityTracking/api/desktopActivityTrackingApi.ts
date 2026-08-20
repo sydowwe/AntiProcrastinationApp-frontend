@@ -48,13 +48,30 @@ export async function getDesktopPieChart(
 	return DesktopPieChartResponse.fromJson(data)
 }
 
+/**
+ * `from`/`to` are the outer envelope of the selected span as instants — `dateFrom` at the window's
+ * start time through `dateTo` at its end.
+ *
+ * `dailyWindow` narrows that envelope back down to the repeating time-of-day window the dashboard is
+ * actually showing, in minutes past midnight (both values or neither). Without it the endpoint counts
+ * the whole envelope, which over a multi-day span includes every night the daily window excludes — the
+ * panel would then over-count relative to the pie slice it was opened from. Harmless but pointless on
+ * a single day, where the envelope and the window are the same thing.
+ */
 export async function getDesktopProcessDetails(
 	processName: string,
 	from: string,
 	to: string,
+	dailyWindow?: { startMinutes: number; endMinutes: number },
 ): Promise<DesktopProcessDetailsResponse> {
 	const { data } = await API.get(`${BASE_URL}/process-details`, {
-		params: { processName, from, to },
+		params: {
+			processName,
+			from,
+			to,
+			windowStartMinutes: dailyWindow?.startMinutes,
+			windowEndMinutes: dailyWindow?.endMinutes,
+		},
 	})
 	return DesktopProcessDetailsResponse.fromJson(data)
 }

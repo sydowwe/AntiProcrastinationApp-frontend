@@ -80,7 +80,23 @@ on whether either module compares a client-derived day against a server-derived 
 `dayPlannerStore.datetimeToSlotIndex` was left alone deliberately and stays that way: zero callers, and it takes a `Date` whose instant-vs-calendar-day nature is
 undetermined. Resolve the ambiguity before giving it a caller, not after.
 
-### 5. Orphaned enum locale blocks in `leisure`
+### 5. `dateTime` mirror — a fourth instance of the shallow-spread trap, mirrored not fixed
+
+`activityTracking` U3 adopted `_common/component/dateTime/DateRangePicker.vue` (and through it `MonthYearPicker.vue`) for the dashboards' custom range. Both resolve
+~24 keys under `dateTime` — `mode`, `range`, `duration`, `anchor`, `unit`, `quantity`, `fromStart`, `toEnd`, `daysPlural`, `weeksPlural`, `dateRangeExceedsLimit`,
+`startDateBeforeEndDate` and the twelve month names — **none** of which this app had. `src/locales/common.{sk,en}.ts` owns the `dateTime` namespace and is spread after
+the framework's, so its `dateTime` replaced the framework's wholesale: every one of those keys rendered as a raw `dateTime.mode` string in this app, and had done since
+before U3 — nobody had mounted either component here.
+
+Mirrored by hand into `src/locales/common.{sk,en}.ts` (EN needs it independently: `EN.ts` does not spread the framework's Slovak-only `common` at all). Two knowing
+divergences from the framework text: `dateRangeExceedsLimit` drops the hardcoded "31 dní" because `maxDays` is a prop and this module passes 366.
+
+**The real fix is not a mirror.** Six namespaces collide between `common.sk.ts` and `_common/_locales/common.sk.ts`, and every framework component adopted from now on
+pays this tax again. The options are a deep merge in `SK.ts`/`EN.ts` (the `user` namespace already does exactly this, explicitly, at the bottom of `SK.ts`), or moving
+this app's colliding keys out of the framework-owned namespaces. Either is a contained change to two files and would close this permanently; it was out of scope for U3
+and is not urgent, but it is now the fourth time this has cost someone an afternoon.
+
+### 6. Orphaned enum locale blocks in `leisure`
 
 `BacklogFilterPanel.vue` and `dto/enum/{LocationType,WeatherDependency,ExpectedCostTier}.ts` are gone, but the `enums.{locationType,weatherDependency,
 expectedCostTier}` blocks in `_locales/leisure.{sk,en}.ts` (around lines 142/147/162) went with neither. Zero references anywhere in `src/` — verified 2026-08-19.
@@ -103,8 +119,8 @@ Five things the resolved entries taught that are not obvious from the code, and 
   (5). (R12, R13.)
 - **Framework strings under a colliding namespace never reach i18n.** `src/locales/{SK,EN}.ts` spread shallowly, so this app's `common`, `general`, `validation` and
   three others _replace_ the framework's wholesale. Adopting framework code that resolves `t('general.something')` means mirroring that key into
-  `src/locales/common.{sk,en}.ts` by hand, or users see the raw key. Caught three times (`validation`, `general.undoSuccess`, `calendar`) and it will happen again.
-  (R5, R6, R11.)
+  `src/locales/common.{sk,en}.ts` by hand, or users see the raw key. Caught **four** times (`validation`, `general.undoSuccess`, `calendar`, and now the whole
+  `dateTime` picker vocabulary) and it will happen again. (R5, R6, R11, U3.)
 - **Grep with word boundaries before declaring a symbol dead — or live.** Two files in the leftovers audit were about to be promoted into the framework on the
   strength of substring matches (`ExperienceType` matching `useActivityExperienceTypeApi`; `DateOnly` matching a trailing comment). Both were unreferenced. (R14.)
 - **An entry's stated diagnosis can be wrong in a way that makes it look unfixable.** §5 recorded "the framework exposes only `dateRange`, widen the expose" — but

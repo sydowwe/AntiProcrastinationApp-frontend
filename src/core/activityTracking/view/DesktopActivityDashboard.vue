@@ -1,17 +1,20 @@
 <template>
 	<div class="py-5 w-100 h-100 d-flex flex-column">
 		<ActivityDashboardHeader
-			v-model:date="date"
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
+			:dateFrom
+			:dateTo
+			:isTimelineAvailable
 			:title="$t('activityTracking.dashboard.desktopTitle')"
+			@changeDateSpan="setDateSpan"
 		/>
 
 		<!-- Visualization Content -->
 		<div class="flex-fill">
 			<StackedBarsChart
-				v-if="selectedVisualization === 'stackedBars'"
+				v-if="effectiveVisualization === 'stackedBars'"
 				class="w-100"
 				:windows="stackedBarsWindows"
 				:loading="stackedBarsLoading"
@@ -19,7 +22,7 @@
 				:initialWindowSize="selectedWindowSize"
 				:timeFrom
 				:timeTo
-				:windowSizeOptions="activityWindowSizeOptions"
+				:windowSizeOptions
 				@windowSizeChange="handleWindowSizeChange"
 				@activityClick="handleActivityClick"
 				@retry="fetchStackedBars"
@@ -55,6 +58,7 @@
 						:loading="summaryCardsLoading"
 						:error="summaryCardsError"
 						:emptyProbeState
+						:isRangeMode
 						settingsRouteName="desktopSettings"
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
@@ -75,7 +79,10 @@
 						:error="pieChartError"
 						:from="timelineFrom"
 						:to="timelineTo"
+						:timeFrom
+						:timeTo
 						:emptyProbeState
+						:isRangeMode
 						@retry="fetchPieChart"
 						@widenWindow="widenToFullDay"
 					/>
@@ -152,24 +159,27 @@
 	const fetchers: ActivityDashboardFetchers<DesktopPieChartResponse> = {
 		async fetchSummaryCards(range, baseline, signal) {
 			const processes = await getDesktopSummaryCards(
-				new DesktopSummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4),
+				new DesktopSummaryCardsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, baseline, 4),
 				signal,
 			)
 			return processes.map(toSummaryCardsData)
 		},
 		fetchPieChart(range, signal) {
-			return getDesktopPieChart(new DesktopPieChartRequest(range.date, range.timeFrom, range.timeTo, 1), signal)
+			return getDesktopPieChart(
+				new DesktopPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				signal,
+			)
 		},
 		async fetchStackedBars(range, windowSize, signal) {
 			const windows = await getDesktopStackedBars(
-				new DesktopStackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+				new DesktopStackedBarsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, windowSize),
 				signal,
 			)
 			return windows.map(toStackedBarsWindow)
 		},
 		async fetchTimeline(range, signal) {
 			const timeline = await getDesktopTimeline(
-				new DesktopTimelineRequest(range.date, range.timeFrom, range.timeTo),
+				new DesktopTimelineRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 			return {
@@ -181,14 +191,18 @@
 	}
 
 	const {
-		date,
+		dateFrom,
+		dateTo,
 		timeFrom,
 		timeTo,
+		isRangeMode,
+		isTimelineAvailable,
 		selectedItem,
 		selectedBaseline,
 		selectedVisualization,
+		effectiveVisualization,
 		selectedWindowSize,
-		activityWindowSizeOptions,
+		windowSizeOptions,
 		baselineOptions,
 		summaryCardsData,
 		pieChartData,
@@ -211,6 +225,7 @@
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,

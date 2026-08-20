@@ -153,10 +153,25 @@
 		emit('windowSizeChange', newSize)
 	})
 
+	// The offered sizes now change with the dashboard's date span (15-120 minutes over a day, hours to
+	// weeks over a range), and the dashboard corrects its own selection when a span change invalidates
+	// it. Adopt that value rather than re-deriving one, so the size shown in the select is always the
+	// size the data was fetched with. The emit this triggers is a no-op on the dashboard side.
+	watch(
+		() => initialWindowSize,
+		size => {
+			selectedWindowSize.value = size
+		},
+	)
+
+	// Belt and braces for a span change that somehow leaves the selection off the list — falling back
+	// to the finest option beats rendering a select with no matching item.
 	watch(
 		() => windowSizeOptions,
 		options => {
-			selectedWindowSize.value = options[0]!
+			if (!options.includes(selectedWindowSize.value)) {
+				selectedWindowSize.value = options[0]!
+			}
 		},
 	)
 
@@ -268,13 +283,16 @@
 			apiMap.set(dateToMinutesKey(w.windowStart), w)
 		}
 
-		// Generate all slots
+		// Generate all slots, tiling from `from` — the same alignment the endpoint tiles on, so a
+		// returned window always lands on a generated slot even when `from` is not a multiple of the
+		// window size (07:00 at 90 minutes opens at 07:00, not 06:00).
 		const allSlots: ProcessedWindow[] = []
 		for (let min = fromMin; min < toMin; min += windowSize) {
 			const normalizedMin = min % (24 * 60)
 			const slotStart = new Date(0)
 			slotStart.setHours(Math.floor(normalizedMin / 60), normalizedMin % 60, 0, 0)
-			const endMin = (min + windowSize) % (24 * 60)
+			// Truncated at `to` rather than spilling past it, matching the endpoint's own last band.
+			const endMin = Math.min(min + windowSize, toMin) % (24 * 60)
 			const slotEnd = new Date(0)
 			slotEnd.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0)
 

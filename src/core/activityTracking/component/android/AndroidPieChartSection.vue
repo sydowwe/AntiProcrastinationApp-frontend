@@ -36,6 +36,7 @@
 			<VCard variant="outlined">
 				<ActivityEmptyState
 					:probeState="emptyProbeState"
+					:isRangeMode
 					settingsRouteName="androidSettings"
 					@widenWindow="emit('widenWindow')"
 				/>
@@ -97,6 +98,7 @@
 		loading?: boolean
 		error?: boolean
 		emptyProbeState?: ActivityEmptyProbeState
+		isRangeMode?: boolean
 	}>()
 
 	const emit = defineEmits<{

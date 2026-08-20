@@ -1,13 +1,15 @@
 import type { Time } from '@/_common/dto/dto/Time.ts'
-import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
+import { ActivityRangeRequest } from '@/core/activityTracking/dto/request/ActivityRangeRequest.ts'
 
-export class AndroidTimelineRequest extends DateAndTimeRangeRequest {
+/** Single-day only — see `TimelineRequest` for why the timeline is not requested over a range. */
+export class AndroidTimelineRequest extends ActivityRangeRequest {
 	constructor(
-		public date: string,
-		public from: Time,
-		public to: Time,
+		dateFrom: string,
+		dateTo: string,
+		from: Time,
+		to: Time,
 		public minSeconds?: number,
 	) {
-		super(date, from, to)
+		super(dateFrom, dateTo, from, to)
 	}
 }

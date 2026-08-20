@@ -1,17 +1,20 @@
 <template>
 	<div class="py-5 w-100 h-100 d-flex flex-column">
 		<ActivityDashboardHeader
-			v-model:date="date"
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
+			:dateFrom
+			:dateTo
+			:isTimelineAvailable
 			:title="$t('activityTracking.dashboard.androidTitle')"
+			@changeDateSpan="setDateSpan"
 		/>
 
 		<!-- Visualization Content -->
 		<div class="flex-fill">
 			<StackedBarsChart
-				v-if="selectedVisualization === 'stackedBars'"
+				v-if="effectiveVisualization === 'stackedBars'"
 				class="w-100"
 				:windows="stackedBarsWindows"
 				:loading="stackedBarsLoading"
@@ -19,7 +22,7 @@
 				:initialWindowSize="selectedWindowSize"
 				:timeFrom
 				:timeTo
-				:windowSizeOptions="activityWindowSizeOptions"
+				:windowSizeOptions
 				@windowSizeChange="handleWindowSizeChange"
 				@activityClick="handleActivityClick"
 				@retry="fetchStackedBars"
@@ -55,6 +58,7 @@
 						:loading="summaryCardsLoading"
 						:error="summaryCardsError"
 						:emptyProbeState
+						:isRangeMode
 						settingsRouteName="androidSettings"
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
@@ -74,6 +78,7 @@
 						:loading="pieChartLoading"
 						:error="pieChartError"
 						:emptyProbeState
+						:isRangeMode
 						@retry="fetchPieChart"
 						@widenWindow="widenToFullDay"
 					/>
@@ -144,24 +149,27 @@
 	const fetchers: ActivityDashboardFetchers<AndroidPieChartResponse> = {
 		async fetchSummaryCards(range, baseline, signal) {
 			const apps = await getAndroidSummaryCards(
-				new AndroidSummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4),
+				new AndroidSummaryCardsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, baseline, 4),
 				signal,
 			)
 			return apps.map(toSummaryCardsData)
 		},
 		fetchPieChart(range, signal) {
-			return getAndroidPieChart(new AndroidPieChartRequest(range.date, range.timeFrom, range.timeTo, 1), signal)
+			return getAndroidPieChart(
+				new AndroidPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				signal,
+			)
 		},
 		async fetchStackedBars(range, windowSize, signal) {
 			const windows = await getAndroidStackedBars(
-				new AndroidStackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+				new AndroidStackedBarsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, windowSize),
 				signal,
 			)
 			return windows.map(toStackedBarsWindow)
 		},
 		async fetchTimeline(range, signal) {
 			const timeline = await getAndroidTimeline(
-				new AndroidTimelineRequest(range.date, range.timeFrom, range.timeTo),
+				new AndroidTimelineRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 			// Android reports a single lane — it has no detail or background sessions.
@@ -174,14 +182,18 @@
 	}
 
 	const {
-		date,
+		dateFrom,
+		dateTo,
 		timeFrom,
 		timeTo,
+		isRangeMode,
+		isTimelineAvailable,
 		selectedItem,
 		selectedBaseline,
 		selectedVisualization,
+		effectiveVisualization,
 		selectedWindowSize,
-		activityWindowSizeOptions,
+		windowSizeOptions,
 		baselineOptions,
 		summaryCardsData,
 		pieChartData,
@@ -204,6 +216,7 @@
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,

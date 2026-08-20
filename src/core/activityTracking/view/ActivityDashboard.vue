@@ -1,17 +1,20 @@
 <template>
 	<div class="py-5 w-100 h-100 d-flex flex-column">
 		<ActivityDashboardHeader
-			v-model:date="date"
 			v-model:timeFrom="timeFrom"
 			v-model:timeTo="timeTo"
 			v-model:selectedVisualization="selectedVisualization"
+			:dateFrom
+			:dateTo
+			:isTimelineAvailable
 			:title="$t('activityTracking.dashboard.title')"
+			@changeDateSpan="setDateSpan"
 		/>
 
 		<!-- Visualization Content -->
 		<div class="flex-fill">
 			<StackedBarsChart
-				v-if="selectedVisualization === 'stackedBars'"
+				v-if="effectiveVisualization === 'stackedBars'"
 				class="w-100"
 				:windows="stackedBarsWindows"
 				:loading="stackedBarsLoading"
@@ -19,7 +22,7 @@
 				:initialWindowSize="selectedWindowSize"
 				:timeFrom
 				:timeTo
-				:windowSizeOptions="activityWindowSizeOptions"
+				:windowSizeOptions
 				@windowSizeChange="handleWindowSizeChange"
 				@activityClick="handleActivityClick"
 				@retry="fetchStackedBars"
@@ -54,6 +57,7 @@
 						:loading="summaryCardsLoading"
 						:error="summaryCardsError"
 						:emptyProbeState
+						:isRangeMode
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
 						@retry="fetchSummaryCards"
@@ -72,6 +76,7 @@
 						:loading="pieChartLoading"
 						:error="pieChartError"
 						:emptyProbeState
+						:isRangeMode
 						@retry="fetchPieChart"
 						@widenWindow="widenToFullDay"
 					/>
@@ -99,7 +104,7 @@
 	import { SummaryCardsRequest } from '@/core/activityTracking/dto/request/SummaryCardsRequest.ts'
 	import { PieChartRequest } from '@/core/activityTracking/dto/request/PieChartRequest.ts'
 	import { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
-	import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
+	import { TimelineRequest } from '@/core/activityTracking/dto/request/TimelineRequest.ts'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		type ActivityDashboardFetchers,
@@ -124,23 +129,26 @@
 	const fetchers: ActivityDashboardFetchers<PieChartData> = {
 		fetchSummaryCards(range, baseline, signal) {
 			return getSummaryCards(
-				new SummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4),
+				new SummaryCardsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, baseline, 4),
 				signal,
 			)
 		},
 		fetchPieChart(range, signal) {
-			return getPieChart(new PieChartRequest(range.date, range.timeFrom, range.timeTo, 1), signal)
+			return getPieChart(
+				new PieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				signal,
+			)
 		},
 		async fetchStackedBars(range, windowSize, signal) {
 			const windows = await getStackedBarsData(
-				new StackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+				new StackedBarsRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, windowSize),
 				signal,
 			)
 			return windows.map(toStackedBarsWindow)
 		},
 		async fetchTimeline(range, signal) {
 			const timeline = await getTimeline(
-				new DateAndTimeRangeRequest(range.date, range.timeFrom, range.timeTo),
+				new TimelineRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 			return {
@@ -152,14 +160,18 @@
 	}
 
 	const {
-		date,
+		dateFrom,
+		dateTo,
 		timeFrom,
 		timeTo,
+		isRangeMode,
+		isTimelineAvailable,
 		selectedItem,
 		selectedBaseline,
 		selectedVisualization,
+		effectiveVisualization,
 		selectedWindowSize,
-		activityWindowSizeOptions,
+		windowSizeOptions,
 		baselineOptions,
 		summaryCardsData,
 		pieChartData,
@@ -182,6 +194,7 @@
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,

@@ -220,7 +220,7 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
 
 | Composable                 | Imported by                                                           | Why it cannot live per-module                                                                                                                                                                                                                                                                                                                                                         |
 | -------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useUserPreferences.ts`    | `todoList`, `dayPlanner`, `historyDashboard`, `activityHistory`       | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the _same_ one.                                                                                                                                                                                                            |
+| `useUserPreferences.ts`    | `todoList`, `dayPlanner`, `historyDashboard`, `activityHistory`, `activityTracking` | Owns the defaults for `askBeforeDelete` and `firstDayOfWeek`. Both fields are optional on `User`, so every consumer needs a fallback and they must all use the _same_ one.                                                                                                                                                                                                            |
 | `useDeleteConfirmation.ts` | the five delete sites in `todoList`, `dayPlanner`, `historyDashboard` | Decides whether a delete confirms, from the delete's **consequence** rather than the preference alone. A delete that **cascades** always confirms and must say how many children go with it — that is the one place the user's preference is overruled, and it only holds if all five sites ask the same question. Reading `askBeforeDelete` directly at a delete site is now a bug.  |
 | `useUserScopedStorage.ts`  | `dayPlanner`, `todoList`, `activityTracking`, `leisure`               | Namespaces every `localStorage` key by account id, and migrates the pre-namespacing key on first read. Without it, two accounts on one browser share pinned templates, dismissed reviews and dismissed hints. Never write a raw `localStorage` key for per-user state — route it through `readUserScoped` / `writeUserScoped`, or `userScopedKey` for a Pinia `persist.key` function. |
 
@@ -314,10 +314,10 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The baseline is **64 errors, all of them app-side in `src/core`** (measured 2026-08-19) — `src/_common`
-  is clean as of `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise. **This number has been stale
-  every time anyone checked** (76 → 72 → 65 → 64, drifting down as unrelated work touched files): re-measure on a clean tree before quoting it, and don't treat a
-  small delta as a finding.
+  is incremental and reports an inflated, unstable count. The baseline is **58 errors, all of them app-side in `src/core`** (measured 2026-08-20 by stashing to a
+  clean tree) — `src/_common` is clean as of `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
+  **This number has been stale every time anyone checked** (76 → 72 → 65 → 64 → 58, drifting down as unrelated work touched files): re-measure on a clean tree
+  before quoting it, and don't treat a small delta as a finding.
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB

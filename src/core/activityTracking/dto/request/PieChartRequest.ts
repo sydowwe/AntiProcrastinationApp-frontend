@@ -1,13 +1,14 @@
-import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
 import type { Time } from '@/_common/dto/dto/Time.ts'
+import { ActivityRangeRequest } from '@/core/activityTracking/dto/request/ActivityRangeRequest.ts'
 
-export class PieChartRequest extends DateAndTimeRangeRequest {
+export class PieChartRequest extends ActivityRangeRequest {
 	constructor(
-		public readonly date: string,
-		public readonly from: Time,
-		public readonly to: Time,
+		dateFrom: string,
+		dateTo: string,
+		from: Time,
+		to: Time,
 		public minPercent: number,
 	) {
-		super(date, from, to)
+		super(dateFrom, dateTo, from, to)
 	}
 }

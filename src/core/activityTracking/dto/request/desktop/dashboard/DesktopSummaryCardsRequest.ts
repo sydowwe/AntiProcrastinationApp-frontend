@@ -1,15 +1,16 @@
 import type { Time } from '@/_common/dto/dto/Time.ts'
-import { DateAndTimeRangeRequest } from '@/_common/dto/request/general/DateAndTimeRangeRequest.ts'
+import { ActivityRangeRequest } from '@/core/activityTracking/dto/request/ActivityRangeRequest.ts'
 import type { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 
-export class DesktopSummaryCardsRequest extends DateAndTimeRangeRequest {
+export class DesktopSummaryCardsRequest extends ActivityRangeRequest {
 	constructor(
-		public date: string,
-		public from: Time,
-		public to: Time,
+		dateFrom: string,
+		dateTo: string,
+		from: Time,
+		to: Time,
 		public baseline: BaselineType,
 		public topN?: number,
 	) {
-		super(date, from, to)
+		super(dateFrom, dateTo, from, to)
 	}
 }

@@ -36,6 +36,7 @@
 			<VCard variant="outlined">
 				<ActivityEmptyState
 					:probeState="emptyProbeState"
+					:isRangeMode
 					settingsRouteName="desktopSettings"
 					@widenWindow="emit('widenWindow')"
 				/>
@@ -118,6 +119,7 @@
 	import type { DesktopPieTotals } from '@/core/activityTracking/dto/response/desktop/DesktopPieTotals.ts'
 	import type { DesktopProcessDetailsResponse } from '@/core/activityTracking/dto/response/desktop/DesktopProcessDetailsResponse.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 
 	const props = defineProps<{
 		processes: DesktopProcessPieData[]
@@ -126,7 +128,12 @@
 		error?: boolean
 		from: Date
 		to: Date
+		// The time-of-day window behind `from`/`to`. The envelope alone cannot express it, and the
+		// details lookup needs it to count the same seconds the slice it was opened from counts.
+		timeFrom: Time
+		timeTo: Time
 		emptyProbeState?: ActivityEmptyProbeState
+		isRangeMode?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -173,6 +180,7 @@
 				proc.processName,
 				props.from.toISOString(),
 				props.to.toISOString(),
+				{ startMinutes: props.timeFrom.getInMinutes, endMinutes: props.timeTo.getInMinutes },
 			)
 		} finally {
 			detailsLoading.value = false

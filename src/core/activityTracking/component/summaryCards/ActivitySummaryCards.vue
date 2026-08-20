@@ -56,6 +56,7 @@
 			v-else-if="(visibleDomains?.length ?? 0) === 0"
 			:probeState="emptyProbeState"
 			:settingsRouteName="settingsRouteName"
+			:isRangeMode
 			@widenWindow="emit('widenWindow')"
 		/>
 
@@ -94,6 +95,7 @@
 		title = i18n.global.t('activityTracking.dashboard.topDomains'),
 		emptyProbeState = 'idle',
 		settingsRouteName = null,
+		isRangeMode = false,
 	} = defineProps<{
 		domains: SummaryCardsData[] | null
 		baselineOptions: BaselineOption[]
@@ -104,6 +106,7 @@
 		title?: string
 		emptyProbeState?: ActivityEmptyProbeState
 		settingsRouteName?: 'desktopSettings' | 'androidSettings' | null
+		isRangeMode?: boolean
 	}>()
 
 	const emit = defineEmits<{

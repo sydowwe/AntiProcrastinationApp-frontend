@@ -9,23 +9,35 @@ import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/B
 import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 import type { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
+import {
+	SINGLE_DAY_WINDOW_SIZES,
+	windowSizeOptionsForSpan,
+} from '@/core/activityTracking/component/stackedBars/stackedBarsUtils.ts'
+import { clampSpanEnd, daySpanCount, isSameDay } from '@/core/activityTracking/composable/useActivityRangePresets.ts'
 
 export type ActivityVisualization = 'stackedBars' | 'timeline'
 
 /**
  * `idle` — not empty, or not checked yet.
  * `checking` — the full-day probe is in flight.
- * `hasDataOutsideWindow` — the day has data, just not inside the selected time window.
- * `emptyFullDay` — the day has no data even over the full 00:00-24:00 range.
+ * `hasDataOutsideWindow` — the range has data, just not inside the selected time-of-day window.
+ * `emptyFullDay` — the range has no data even over the full 00:00-24:00 window.
  */
 export type ActivityEmptyProbeState = 'idle' | 'checking' | 'hasDataOutsideWindow' | 'emptyFullDay'
 
-/** Window sizes offered by the stacked-bars chart, in minutes. Single definition for all dashboards. */
-export const activityWindowSizeOptions = [15, 20, 30, 60, 90, 120]
+/** Kept as a named export: the single-day ladder is still the default and several call sites read it. */
+export const activityWindowSizeOptions = SINGLE_DAY_WINDOW_SIZES
 
-/** The day + time window every dashboard request is scoped to. `date` is already formatted for the API. */
+/**
+ * The scope every dashboard request is made against. `dateFrom`/`dateTo` are inclusive and already
+ * formatted for the API; a single day is `dateFrom === dateTo`.
+ *
+ * `timeFrom`/`timeTo` are a TIME-OF-DAY window applied to EACH day in the span, not the endpoints of
+ * the span — see `ActivityRangeRequest` and the backend contract.
+ */
 export interface ActivityDashboardRange {
-	date: string
+	dateFrom: string
+	dateTo: string
 	timeFrom: Time
 	timeTo: Time
 }
@@ -72,6 +84,7 @@ function isAbortError(error: unknown): boolean {
 // --- URL query-state (defaults, encode/parse) ---
 
 const DATE_PARAM = 'date'
+const DATE_TO_PARAM = 'dateTo'
 const FROM_PARAM = 'from'
 const TO_PARAM = 'to'
 const VIEW_PARAM = 'view'
@@ -124,9 +137,13 @@ function parseBaseline(value: string | undefined): BaselineType | null {
 	return (Object.values(BaselineType) as string[]).includes(value ?? '') ? (value as BaselineType) : null
 }
 
+/**
+ * Any positive integer is accepted rather than a fixed list — the valid set now depends on the span,
+ * and a value that no longer fits is corrected by `windowSizeOptions` below rather than dropped here.
+ */
 function parseWindowSize(value: string | undefined): number | null {
 	const parsed = Number(value)
-	return activityWindowSizeOptions.includes(parsed) ? parsed : null
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : null
 }
 
 /**
@@ -139,7 +156,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const route = useRoute()
 	const router = useRouter()
 
-	/** Baselines the summary cards compare the selected day against. */
+	/** Baselines the summary cards compare the selected span against. */
 	const baselineOptions = computed<BaselineOption[]>(() => [
 		new BaselineOption(BaselineType.Last7Days, t('activityTracking.baseline.last7Days')),
 		new BaselineOption(BaselineType.Last30Days, t('activityTracking.baseline.last30Days')),
@@ -148,9 +165,23 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	])
 
 	// --- Date & Time State, seeded from the URL where present and valid ---
-	const date = ref<Date>(parseIsoDate(firstQueryValue(route.query[DATE_PARAM])) ?? new Date())
+	const dateFrom = ref<Date>(parseIsoDate(firstQueryValue(route.query[DATE_PARAM])) ?? new Date())
+	const dateTo = ref<Date>(seedDateTo())
 	const timeFrom = ref(parseTime(firstQueryValue(route.query[FROM_PARAM])) ?? DEFAULT_TIME_FROM)
 	const timeTo = ref(parseTime(firstQueryValue(route.query[TO_PARAM])) ?? DEFAULT_TIME_TO)
+
+	/**
+	 * An absent, malformed or backwards `dateTo` collapses to a single day rather than erroring — a
+	 * hand-edited or truncated URL should land on today's dashboard, not a broken one. Every pre-range
+	 * URL, which carries no `dateTo` at all, therefore still opens on exactly the day it named.
+	 */
+	function seedDateTo(): Date {
+		const parsed = parseIsoDate(firstQueryValue(route.query[DATE_TO_PARAM]))
+		if (parsed === null || parsed < dateFrom.value) {
+			return dateFrom.value
+		}
+		return clampSpanEnd(dateFrom.value, parsed)
+	}
 
 	// --- Shared State, also seeded from the URL ---
 	const selectedItem = ref<string | null>(firstQueryValue(route.query[SELECTED_PARAM]) ?? null)
@@ -160,7 +191,55 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const selectedVisualization = ref<ActivityVisualization>(
 		parseVisualization(firstQueryValue(route.query[VIEW_PARAM])) ?? DEFAULT_VISUALIZATION,
 	)
-	const selectedWindowSize = ref(parseWindowSize(firstQueryValue(route.query[WINDOW_PARAM])) ?? DEFAULT_WINDOW_SIZE)
+
+	// --- Span-derived state ---
+	// Declared before `selectedWindowSize` because seeding that ref needs the option list: `parseWindowSize`
+	// can no longer validate against a fixed ladder (the valid set depends on the span), so the URL value
+	// has to be checked against the options for the span actually being opened.
+	const dayCount = computed(() => daySpanCount(dateFrom.value, dateTo.value))
+	const isRangeMode = computed(() => dayCount.value > 1)
+
+	/** Length of the time-of-day window, carrying the past-midnight rule. 07:00-00:00 → 1020 minutes. */
+	const dailyWindowMinutes = computed(() => {
+		const fromMinutes = timeFrom.value.getInMinutes
+		const toMinutes = timeTo.value.getInMinutes
+		return toMinutes > fromMinutes ? toMinutes - fromMinutes : toMinutes + 24 * 60 - fromMinutes
+	})
+
+	/**
+	 * The stacked-bars window unit is adaptive rather than fixed: the same 15-120 minute ladder over a
+	 * week is 400-plus columns of unreadable slivers. A day keeps the historical ladder exactly; longer
+	 * spans get whatever sizes land inside the chart's column budget, finest first.
+	 *
+	 * The alternative — forcing one column per day — was rejected because it throws away the chart's
+	 * only distinctive axis. Time-of-day structure ("I lose the morning to mail") is the question the
+	 * stacked bars answer and the summary cards cannot; at 4h windows over a week that survives.
+	 */
+	const windowSizeOptions = computed(() => windowSizeOptionsForSpan(dayCount.value, dailyWindowMinutes.value))
+
+	/**
+	 * Clamped at seed time rather than by the watcher below, which is not `immediate` — an unclamped
+	 * value would otherwise reach the first fetch and leave the chart's select showing no matching item.
+	 * `?window=999` has to land somewhere sane on the very first render, not one span change later.
+	 */
+	const selectedWindowSize = ref(clampWindowSize(parseWindowSize(firstQueryValue(route.query[WINDOW_PARAM]))))
+
+	function clampWindowSize(size: number | null): number {
+		const options = windowSizeOptions.value
+		if (size !== null && options.includes(size)) return size
+		return options.includes(DEFAULT_WINDOW_SIZE) ? DEFAULT_WINDOW_SIZE : options[0]!
+	}
+
+	/**
+	 * The timeline is not range-capable, so a range forces stacked bars while leaving the user's own
+	 * choice untouched — going back to a single day restores it. `TimelineTimeAxis` emits a tick every
+	 * five minutes across from→to (8,640 positioned nodes over 30 days) and a continuous axis would
+	 * also render each night's untracked gap as if it were tracked-and-idle, which is a different claim.
+	 */
+	const isTimelineAvailable = computed(() => !isRangeMode.value)
+	const effectiveVisualization = computed<ActivityVisualization>(() =>
+		isTimelineAvailable.value ? selectedVisualization.value : 'stackedBars',
+	)
 
 	// --- View Models ---
 	const summaryCardsData = ref<SummaryCardsData[] | null>(null) as Ref<SummaryCardsData[] | null>
@@ -186,22 +265,27 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const backgroundSessions = computed(() => timelineSessions.value.backgroundSessions)
 
 	const range = computed<ActivityDashboardRange>(() => ({
-		date: formatDateForApi(date.value),
+		dateFrom: formatDateForApi(dateFrom.value),
+		dateTo: formatDateForApi(dateTo.value),
 		timeFrom: timeFrom.value,
 		timeTo: timeTo.value,
 	}))
 
-	// --- Timeline from/to as full Date objects ---
+	/**
+	 * The outer envelope of the selected span, used by the timeline and by the pie chart's
+	 * process-details lookup. The past-midnight rule is read off the *times*, not off the resulting
+	 * Dates, so it behaves identically whether the span is one day or thirty.
+	 */
 	const timelineFrom = computed(() => {
-		const d = new Date(date.value)
+		const d = new Date(dateFrom.value)
 		d.setHours(timeFrom.value.hours, timeFrom.value.minutes, 0, 0)
 		return d
 	})
 
 	const timelineTo = computed(() => {
-		const d = new Date(date.value)
+		const d = new Date(dateTo.value)
 		d.setHours(timeTo.value.hours, timeTo.value.minutes, 0, 0)
-		if (d <= timelineFrom.value) {
+		if (timeTo.value.getInMinutes <= timeFrom.value.getInMinutes) {
 			d.setDate(d.getDate() + 1)
 		}
 		return d
@@ -284,6 +368,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		}
 	}
 
+	/** Never called in range mode — see `isTimelineAvailable`. `clearTimeline` is the range-mode path. */
 	async function fetchTimeline() {
 		timelineController?.abort()
 		const controller = new AbortController()
@@ -305,7 +390,27 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		}
 	}
 
-	/** True once every panel has settled without an error and none of them has anything to show. */
+	/**
+	 * Drops the timeline instead of requesting it. Not just a rendering concern: a month of sessions
+	 * is the largest response the module can ask for and nothing would display it.
+	 */
+	function clearTimeline() {
+		timelineController?.abort()
+		timelineController = null
+		timelineSessions.value = emptyTimelineSessions()
+		timelineLoading.value = false
+		timelineError.value = false
+	}
+
+	/**
+	 * True once every panel has settled without an error and none of them has anything to show.
+	 *
+	 * Deliberately does NOT consider `stackedBarsWindows`, even though it is one of the four panels: the
+	 * endpoints may return windows whose `activities` array is empty, so a non-zero window count is not
+	 * evidence of activity. Adding a `stackedBarsWindows.length === 0` term would make this return false
+	 * on a genuinely empty span and suppress the empty state that explains why. If that ever changes,
+	 * check the emptiness of the *items* inside the windows, never the window count.
+	 */
 	function isRoundEmpty(): boolean {
 		return (
 			!summaryCardsError.value &&
@@ -324,8 +429,8 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	}
 
 	/**
-	 * Fires only on an empty result, never speculatively. Re-requests the same date over 00:00-24:00
-	 * to tell "nothing happened this day" apart from "something happened outside the selected window".
+	 * Fires only on an empty result, never speculatively. Re-requests the same span over 00:00-24:00
+	 * to tell "nothing happened here" apart from "something happened outside the selected window".
 	 */
 	async function probeFullDayIfEmpty() {
 		emptyProbeController?.abort()
@@ -345,7 +450,8 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		emptyProbeController = controller
 		try {
 			const fullDayRange: ActivityDashboardRange = {
-				date: range.value.date,
+				dateFrom: range.value.dateFrom,
+				dateTo: range.value.dateTo,
 				timeFrom: new Time(0, 0),
 				timeTo: new Time(0, 0),
 			}
@@ -366,16 +472,30 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		timeTo.value = new Time(0, 0)
 	}
 
+	/**
+	 * The single write path for the span — the picker emits both dates at once, never one at a time.
+	 * Clamped to the contract's 366-day cap here as well as in the picker, since this is also what a
+	 * URL-seeded span and any future programmatic caller go through.
+	 */
+	function setDateSpan(from: Date, to: Date) {
+		const end = to < from ? from : clampSpanEnd(from, to)
+		if (isSameDay(dateFrom.value, from) && isSameDay(dateTo.value, end)) {
+			return
+		}
+		dateFrom.value = from
+		dateTo.value = end
+	}
+
 	// The initial run must keep a `selected` value that arrived via the URL rather than wipe it.
 	let isInitialRun = true
 
 	// `timeFrom`/`timeTo` come from a range-picker that scrubs continuously, so debounce the whole
-	// round; `date` changes are discrete but share the same watcher, and one uniform debounce is
-	// simpler than splitting it. The four fetches are independent — fire them in parallel, not awaited
-	// in sequence, so one slow or failing endpoint never blocks the other three. Only once all four
+	// round; date changes are discrete but share the same watcher, and one uniform debounce is
+	// simpler than splitting it. The fetches are independent — fire them in parallel, not awaited
+	// in sequence, so one slow or failing endpoint never blocks the others. Only once all of them
 	// have settled do we know whether the round was empty and the full-day probe should fire.
 	watchDebounced(
-		[date, timeFrom, timeTo],
+		[dateFrom, dateTo, timeFrom, timeTo],
 		async () => {
 			if (isInitialRun) {
 				isInitialRun = false
@@ -383,7 +503,14 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 				selectedItem.value = null
 			}
 			emptyProbeState.value = 'idle'
-			await Promise.all([fetchSummaryCards(), fetchPieChart(), fetchStackedBars(), fetchTimeline()])
+
+			const rounds = [fetchSummaryCards(), fetchPieChart(), fetchStackedBars()]
+			if (isTimelineAvailable.value) {
+				rounds.push(fetchTimeline())
+			} else {
+				clearTimeline()
+			}
+			await Promise.all(rounds)
 			await probeFullDayIfEmpty()
 		},
 		{ immediate: true, debounce: 300 },
@@ -393,15 +520,37 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		fetchSummaryCards()
 	})
 
+	// A span change can invalidate the selected window size (30 minutes is not on offer for a month).
+	// This is the only place that decides the replacement — the chart adopts it through
+	// `initialWindowSize` — so the two cannot disagree about which size the next fetch used.
+	//
+	// Coming back to a single day prefers the historical default over the finest option, so a detour
+	// through a range does not silently leave the day view on 15-minute windows.
+	watch(windowSizeOptions, () => {
+		selectedWindowSize.value = clampWindowSize(selectedWindowSize.value)
+	})
+
 	// --- URL sync: reflect bookmarkable state, omitting anything at its default ---
 	function syncQueryToUrl() {
 		const query: LocationQueryRaw = { ...route.query }
 
-		const dateStr = formatDateForApi(date.value)
-		if (dateStr === formatDateForApi(new Date())) {
+		const dateFromStr = formatDateForApi(dateFrom.value)
+		if (dateFromStr === formatDateForApi(new Date())) {
 			delete query[DATE_PARAM]
 		} else {
-			query[DATE_PARAM] = dateStr
+			query[DATE_PARAM] = dateFromStr
+		}
+
+		// Omitted for a single day, which keeps every pre-range URL byte-identical to what it was.
+		//
+		// Known cosmetic gap: this watcher is not `immediate`, so opening a `?dateTo=…` link while range
+		// mode is off leaves the now-ignored param sitting in the address bar until the first interaction
+		// clears it. Making the sync immediate would fire a `router.replace` on every mount, which the
+		// pre-range code deliberately avoided — not worth trading for this.
+		if (isRangeMode.value) {
+			query[DATE_TO_PARAM] = formatDateForApi(dateTo.value)
+		} else {
+			delete query[DATE_TO_PARAM]
 		}
 
 		if (timeFrom.value.getInMinutes === DEFAULT_TIME_FROM.getInMinutes) {
@@ -416,6 +565,8 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 			query[TO_PARAM] = timeTo.value.getString()
 		}
 
+		// The user's own choice, not the effective one: a range forces stacked bars, and writing that
+		// to the URL would silently discard a timeline preference the moment a range is picked.
 		if (selectedVisualization.value === DEFAULT_VISUALIZATION) {
 			delete query[VIEW_PARAM]
 		} else {
@@ -446,7 +597,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	}
 
 	watch(
-		[date, timeFrom, timeTo, selectedVisualization, selectedBaseline, selectedWindowSize, selectedItem],
+		[dateFrom, dateTo, timeFrom, timeTo, selectedVisualization, selectedBaseline, selectedWindowSize, selectedItem],
 		syncQueryToUrl,
 	)
 
@@ -461,6 +612,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	}
 
 	function handleWindowSizeChange(size: number) {
+		if (selectedWindowSize.value === size) return
 		selectedWindowSize.value = size
 		fetchStackedBars()
 	}
@@ -474,14 +626,19 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	}
 
 	return {
-		date,
+		dateFrom,
+		dateTo,
 		timeFrom,
 		timeTo,
+		dayCount,
+		isRangeMode,
+		isTimelineAvailable,
 		selectedItem,
 		selectedBaseline,
 		selectedVisualization,
+		effectiveVisualization,
 		selectedWindowSize,
-		activityWindowSizeOptions,
+		windowSizeOptions,
 		baselineOptions,
 		summaryCardsData,
 		pieChartData,
@@ -504,6 +661,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,
