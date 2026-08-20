@@ -1,6 +1,6 @@
 # A3 · One lookup table instead of three (activity)
 
-- **Scope:** `src/core/activity/component/`, `src/core/activity/view/`
+- **Scope:** `../../../src/core/activity/component`, `../../../src/core/activity/view`
 - **Backend:** none
 - **Model / effort:** Sonnet 5, medium — the seam is obvious and stated below; the risk is only in not noticing the three places the tables genuinely differ.
 - **Depends on:** A1 (item 5 rewrites the settings view's filter bindings)

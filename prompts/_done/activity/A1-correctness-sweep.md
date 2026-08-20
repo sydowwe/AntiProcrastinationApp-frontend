@@ -1,6 +1,6 @@
 # A1 · Correctness sweep (activity)
 
-- **Scope:** `src/core/activity/`
+- **Scope:** `../../../src/core/activity`
 - **Backend:** none
 - **Model / effort:** Sonnet 5, medium — every item is located and diagnosed below; the work is applying fixes carefully, not finding them.
 - **Depends on:** nothing

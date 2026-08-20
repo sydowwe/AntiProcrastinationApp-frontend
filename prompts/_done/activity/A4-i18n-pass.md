@@ -1,6 +1,6 @@
 # A4 · i18n pass (activity)
 
-- **Scope:** `src/core/activity/`
+- **Scope:** `../../../src/core/activity`
 - **Backend:** none
 - **Model / effort:** Sonnet 5, medium-high — mechanical extraction, but the Slovak has to read like the existing Slovak, not like a translation.
 - **Depends on:** A3 (deduplicating first means writing each key once)

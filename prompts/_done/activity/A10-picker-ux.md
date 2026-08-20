@@ -1,6 +1,6 @@
 # A10 · The activity picker's daily surface
 
-- **Scope:** `src/core/activity/component/ActivitySelectionForm.vue`, `composable/`, `view/`
+- **Scope:** `../../../src/core/activity/component/ActivitySelectionForm.vue`, `composable/`, `view/`
 - **Backend:** none (deliberately — see below)
 - **Model / effort:** Sonnet 5, medium
 - **Depends on:** A6 (the API it builds on), A7 (the store it stores recency in)

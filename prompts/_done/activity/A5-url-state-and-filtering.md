@@ -1,6 +1,6 @@
 # A5 · URL state and filter behaviour (activity settings)
 
-- **Scope:** `src/core/activity/view/ActivitySettingsView.vue`, `src/core/activity/activity.routes.ts`
+- **Scope:** `../../../src/core/activity/view/ActivitySettingsView.vue`, `../../../src/core/activity/activity.routes.ts`
 - **Backend:** none
 - **Model / effort:** Sonnet 5, medium
 - **Depends on:** A1 (item 5 fixes the combobox bindings this prompt then persists), A3 (fewer places to wire)

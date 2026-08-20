@@ -1,8 +1,9 @@
 # A6 · Reshape ActivitySelectionForm's public API
 
-- **Scope:** `src/core/activity/`, plus 10 consumer files in `activityHistory` and `activityTracking`
+- **Scope:** `../../../src/core/activity`, plus 10 consumer files in `activityHistory` and `activityTracking`
 - **Backend:** none
-- **Model / effort:** **Opus 5**, high — this is a "where does the seam go" problem across five modules. A wrong answer gets torn out later, and the compiler will not catch a missed `defineExpose` consumer in a template.
+- **Model / effort:** **Opus 5**, high — this is a "where does the seam go" problem across five modules. A wrong answer gets torn out later, and the compiler will
+  not catch a missed `defineExpose` consumer in a template.
 - **Depends on:** A1 (items 6 and 8 change the same component), A2 (deletes one of the exposed members)
 - **Unblocks:** nothing, but everything downstream is cheaper afterwards
 

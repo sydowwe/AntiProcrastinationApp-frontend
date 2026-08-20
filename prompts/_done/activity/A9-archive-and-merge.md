@@ -1,7 +1,8 @@
 # A9 · Archive instead of delete, and merge duplicates
 
-- **Scope:** `src/core/activity/`
-- **Backend:** yes, substantially — **this prompt designs the contract and writes it up itself**. The frontend cannot go live until the server side lands, so the deliverable is a working frontend against the contract you define, plus the contract.
+- **Scope:** `../../../src/core/activity`
+- **Backend:** yes, substantially — **this prompt designs the contract and writes it up itself**. The frontend cannot go live until the server side lands, so the
+  deliverable is a working frontend against the contract you define, plus the contract.
 - **Model / effort:** **Opus 5**, high — product design with an implementation attached, and the destructive path has to be right.
 - **Depends on:** A3 (the table it changes), A7 (cache invalidation on merge)
 - **Unblocks:** nothing

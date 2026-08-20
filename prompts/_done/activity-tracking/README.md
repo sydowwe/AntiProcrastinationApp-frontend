@@ -1,37 +1,38 @@
 # Activity tracking prompts
 
-Improvements to `src/core/activityTracking/`, one self-contained prompt per file. Each is written to be pasted into a fresh session in this repo — `CLAUDE.md`
+Improvements to `../../../src/core/activityTracking`, one self-contained prompt per file. Each is written to be pasted into a fresh session in this repo —
+`../../../CLAUDE.md`
 auto-loads there, so the prompts carry only task-specific facts (file paths, line numbers, the actual duplicated code) rather than restating conventions.
 
-Two series. **R** is health: the module has real defects and the worst duplication in `src/core/`. **U** is capability: it can only answer "what did I do on this one
-day, on this one device", which is a narrower question than the data supports.
+Two series. **R** is health: the module has real defects and the worst duplication in `../../../src/core`. **U** is capability: it can only answer "what did I do on
+this one day, on this one device", which is a narrower question than the data supports.
 
 ## The premise
 
 The module is 7,478 lines across 118 files, and three of its five views — `ActivityDashboard.vue`, `DesktopActivityDashboard.vue`, `AndroidActivityDashboard.vue` —
 are ~85% the same file. The DTO tree is tripled behind them: three `PieChartRequest`s, three `StackedBarsWindow`s, three timeline responses, differing in one label
-field (`domain` / `productName` / `appLabel`). It is also the only module in `src/core/` with no `composable/` and no `store/` — every piece of logic lives inline in
-a view.
+field (`domain` / `productName` / `appLabel`). It is also the only module in `../../../src/core` with no `composable/` and no `store/` — every piece of logic lives
+inline in a view.
 
 **The three views stay three views.** They are expected to diverge, so R2 extracts the shared machinery behind them rather than merging them. The convergence, where
 it happens, is in the *contract* — see U4.
 
 ## Index
 
-| #  | Prompt                                                          | Kind      | Backend | Model      | Effort   |
-|----|-----------------------------------------------------------------|-----------|---------|------------|----------|
-| R1 | [Correctness sweep ⭐](R1-correctness-sweep.md)                 | health    | —       | Sonnet 5   | low      |
-| R2 | [Share the dashboard machinery ⭐](R2-share-dashboard-machinery.md) | health | —       | **Opus 5** | high     |
-| R5 | [Fix the cross-module import](R5-baseline-boundary.md)          | health    | —       | Sonnet 5   | low      |
-| R4 | [Settings views](R4-settings-views.md)                          | health    | maybe   | Sonnet 5   | medium   |
-| R3 | [Localize the module](R3-i18n-pass.md)                          | health    | —       | Sonnet 5   | medium   |
-| U1 | [URL state](U1-url-state.md)                                    | capability| —       | Sonnet 5   | medium   |
-| U2 | [Request lifecycle](U2-request-lifecycle.md)                    | capability| —       | Sonnet 5   | medium   |
-| U6 | [Empty states that say something](U6-empty-and-first-run.md)    | capability| —       | Sonnet 5   | low–med  |
-| U3 | [Break the single-day ceiling ⭐](U3-date-range.md)             | capability| yes     | **Opus 5** | high     |
-| U5 | [Fragmentation metrics](U5-fragmentation-metrics.md)            | capability| partly  | **Opus 5** | high     |
-| U5b| [Adopt the focus-metrics endpoint](U5b-adopt-focus-metrics-endpoint.md) | capability| landed | Sonnet 5 | medium |
-| U4 | [One picture of the day ⭐](U4-unified-source.md)               | capability| yes     | **Opus 5** | high     |
+| #   | Prompt                                                                  | Kind       | Backend | Model      | Effort  |
+|-----|-------------------------------------------------------------------------|------------|---------|------------|---------|
+| R1  | [Correctness sweep ⭐](R1-correctness-sweep.md)                         | health     | —       | Sonnet 5   | low     |
+| R2  | [Share the dashboard machinery ⭐](R2-share-dashboard-machinery.md)     | health     | —       | **Opus 5** | high    |
+| R5  | [Fix the cross-module import](R5-baseline-boundary.md)                  | health     | —       | Sonnet 5   | low     |
+| R4  | [Settings views](R4-settings-views.md)                                  | health     | maybe   | Sonnet 5   | medium  |
+| R3  | [Localize the module](R3-i18n-pass.md)                                  | health     | —       | Sonnet 5   | medium  |
+| U1  | [URL state](U1-url-state.md)                                            | capability | —       | Sonnet 5   | medium  |
+| U2  | [Request lifecycle](U2-request-lifecycle.md)                            | capability | —       | Sonnet 5   | medium  |
+| U6  | [Empty states that say something](U6-empty-and-first-run.md)            | capability | —       | Sonnet 5   | low–med |
+| U3  | [Break the single-day ceiling ⭐](U3-date-range.md)                     | capability | yes     | **Opus 5** | high    |
+| U5  | [Fragmentation metrics](U5-fragmentation-metrics.md)                    | capability | partly  | **Opus 5** | high    |
+| U5b | [Adopt the focus-metrics endpoint](U5b-adopt-focus-metrics-endpoint.md) | capability | landed  | Sonnet 5   | medium  |
+| U4  | [One picture of the day ⭐](U4-unified-source.md)                       | capability | yes     | **Opus 5** | high    |
 
 ## What R1 fixes, so you know the state of things
 
@@ -51,10 +52,10 @@ English-only — R3.
 **R1 → R2 → (R5 ∥ R4) → R3**, then **U1 → U2 → U6**, then the backend-dependent **U3 → U5 → U4**.
 
 R2 is the hinge. U1 and U2 both edit state and fetch orchestration that R2 moves into one composable; running either first means doing it three times and then
-undoing it. R5 and R4 touch disjoint files and can run in parallel with each other. R3 goes after R2 for the same reason U1 does — the header it would localize
-three times becomes one component.
+undoing it. R5 and R4 touch disjoint files and can run in parallel with each other. R3 goes after R2 for the same reason U1 does — the header it would localize three
+times becomes one component.
 
-U3, U5 and U4 all hit the same endpoints. Run them in that order and have each read the `backend/` files the previous one left, so the three asks compose instead of
+U3, U5 and U4 all hit the same endpoints. Run them in that order and have each read the `backend` files the previous one left, so the three asks compose instead of
 contradicting.
 
 ## Backend-dependent prompts

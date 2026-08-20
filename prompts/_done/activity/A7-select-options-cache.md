@@ -1,6 +1,6 @@
 # A7 · Stop refetching the same select options on every mount
 
-- **Scope:** `src/core/activity/composable/`, `src/core/activity/store/` (new), consumers across 5 modules
+- **Scope:** `../../../src/core/activity/composable`, `../../../src/core/activity/store` (new), consumers across 5 modules
 - **Backend:** none required to ship; may emit one contract ask at the end (see below)
 - **Model / effort:** **Opus 5**, high — cache invalidation, and the invalidation points are spread across five modules.
 - **Depends on:** A1 (item 4 fixes the fetch's error handling first)

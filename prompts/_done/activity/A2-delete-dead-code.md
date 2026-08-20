@@ -1,6 +1,6 @@
 # A2 · Delete dead code (activity)
 
-- **Scope:** `src/core/activity/`
+- **Scope:** `../../../src/core/activity`
 - **Backend:** none
 - **Model / effort:** Sonnet 5, low — mechanical, with a verification step per item.
 - **Depends on:** nothing (runs in parallel with A1; they touch different lines)

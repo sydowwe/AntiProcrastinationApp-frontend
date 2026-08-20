@@ -1,8 +1,9 @@
 # U5b · Adopt the focus-metrics endpoint
 
-- **Scope:** `src/core/activityTracking/` — 3 API modules, 2 new DTO files, `useActivityDashboard`, `ActivityFocusStrip`, both locale files
-- **Backend:** already built and merged. `prompts/activity-tracking/backend/U5-backend.md` is the contract and it is now implemented, not proposed.
-- **Model / effort:** Sonnet 5, medium — the contract is written and the pattern to copy is four functions away in the same file. The one place judgment is needed is how the baseline reads, and that decision is made below.
+- **Scope:** `../../../src/core/activityTracking` — 3 API modules, 2 new DTO files, `useActivityDashboard`, `ActivityFocusStrip`, both locale files
+- **Backend:** already built and merged. `backend/U5-backend.md` is the contract and it is now implemented, not proposed.
+- **Model / effort:** Sonnet 5, medium — the contract is written and the pattern to copy is four functions away in the same file. The one place judgment is needed is
+  how the baseline reads, and that decision is made below.
 - **Depends on:** U5 (shipped)
 
 ---

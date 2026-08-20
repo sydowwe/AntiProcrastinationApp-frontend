@@ -1,6 +1,6 @@
 # A8 · Quick-create resolves its role by English display name
 
-- **Scope:** `src/core/activity/composable/quickCreateActivityComposition.ts`, its 4 consumers
+- **Scope:** `../../../src/core/activity/composable/quickCreateActivityComposition.ts`, its 4 consumers
 - **Backend:** yes — **this prompt writes its own contract ask** as its last step (see the end)
 - **Model / effort:** Sonnet 5, medium — small surface, but it is a live time bomb and the fix has a server-side half.
 - **Depends on:** A1 (item 8 cleans two lines in this file)
