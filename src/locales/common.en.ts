@@ -366,10 +366,6 @@ const common = {
 		settings: `Settings`,
 		edit: `Edit`,
 	},
-	filter: {
-		title: `Filter`,
-		apply: `Apply Filter`,
-	},
 	successFeedback: {
 		added: `Added`,
 		edited: `Edited`,

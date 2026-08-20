@@ -164,10 +164,6 @@ const common = {
 		settings: `Nastavenia`,
 		edit: `Upraviť`,
 	},
-	filter: {
-		title: `Filter`,
-		apply: `Použiť filter`,
-	},
 	successFeedback: {
 		added: `Pridané`,
 		edited: `Upravené`,
