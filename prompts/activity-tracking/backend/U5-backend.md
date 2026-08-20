@@ -5,6 +5,18 @@ consume. It says nothing about entities, EF, migrations, indexes or how any valu
 stored — this repo cannot see the .NET solution, and a frontend guess about someone else's schema is
 worse than no input.
 
+> **Frontend status: implemented and consumed.** Both halves of §1 shipped server-side, and the
+> frontend now reads all four measures from `POST /activity-tracking/{source}/focus-metrics` on every
+> span, single-day included. The client-side `computeFocusMetrics` described in §0 is **gone** — it
+> keyed on the session label, which merged the desktop processes the server's `processName` keying
+> separates, and two definitions of one number on one screen is worse than one extra request.
+> `FOCUS_BLOCK_TOLERANCE_SECONDS` survives as the value sent in `focusGapSeconds` (§3). The baseline
+> is rendered per §5: a bare secondary figure, no percentage, no arrow, no colour — and because
+> `longestBlockSeconds` / `longestGapSeconds` are per-day means, their comparison is omitted over a
+> multi-day span rather than printed beside a span maximum. §6 was answered: `durationSeconds` is
+> wall-clock on all three sources, so the median stays on it and nothing changed here. The contract
+> below is kept as written.
+
 Read `backend/U3-backend.md` first. This document reuses its request base verbatim and depends on one
 decision it left open (§5 there, §4 here).
 

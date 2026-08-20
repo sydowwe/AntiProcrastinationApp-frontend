@@ -30,6 +30,7 @@ it happens, is in the *contract* — see U4.
 | U6 | [Empty states that say something](U6-empty-and-first-run.md)    | capability| —       | Sonnet 5   | low–med  |
 | U3 | [Break the single-day ceiling ⭐](U3-date-range.md)             | capability| yes     | **Opus 5** | high     |
 | U5 | [Fragmentation metrics](U5-fragmentation-metrics.md)            | capability| partly  | **Opus 5** | high     |
+| U5b| [Adopt the focus-metrics endpoint](U5b-adopt-focus-metrics-endpoint.md) | capability| landed | Sonnet 5 | medium |
 | U4 | [One picture of the day ⭐](U4-unified-source.md)               | capability| yes     | **Opus 5** | high     |
 
 ## What R1 fixes, so you know the state of things

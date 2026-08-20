@@ -14,7 +14,7 @@ import {
 	windowSizeOptionsForSpan,
 } from '@/core/activityTracking/component/stackedBars/stackedBarsUtils.ts'
 import { clampSpanEnd, daySpanCount, isSameDay } from '@/core/activityTracking/composable/useActivityRangePresets.ts'
-import { computeFocusMetrics, type FocusMetrics } from '@/core/activityTracking/composable/focusMetrics.ts'
+import type { FocusMetricsResponse } from '@/core/activityTracking/dto/response/focusMetrics/FocusMetricsResponse.ts'
 
 export type ActivityVisualization = 'stackedBars' | 'timeline'
 
@@ -51,7 +51,7 @@ export interface ActivityTimelineSessions {
 }
 
 /**
- * The per-source half of a dashboard: four functions that each close over their own API module and
+ * The per-source half of a dashboard: five functions that each close over their own API module and
  * request class and return the shared view-model type. The pie chart is the one shape that is not
  * shared, so it stays generic and is handed back to the view untouched.
  */
@@ -71,6 +71,17 @@ export interface ActivityDashboardFetchers<TPieChart> {
 	): Promise<StackedBarsInputWindow[]>
 
 	fetchTimeline(range: ActivityDashboardRange, signal: AbortSignal): Promise<ActivityTimelineSessions>
+
+	/**
+	 * The tolerance the metrics are computed against is the frontend's decision, so the implementation
+	 * sends `FOCUS_BLOCK_TOLERANCE_SECONDS` as the request's `focusGapSeconds` rather than letting the
+	 * server pick one — see the constant's own comment.
+	 */
+	fetchFocusMetrics(
+		range: ActivityDashboardRange,
+		baseline: BaselineType,
+		signal: AbortSignal,
+	): Promise<FocusMetricsResponse | null>
 }
 
 function emptyTimelineSessions(): ActivityTimelineSessions {
@@ -248,11 +259,22 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const stackedBarsWindows = ref<StackedBarsInputWindow[]>([]) as Ref<StackedBarsInputWindow[]>
 	const timelineSessions = ref<ActivityTimelineSessions>(emptyTimelineSessions()) as Ref<ActivityTimelineSessions>
 
+	/**
+	 * Fragmentation: how the span's attention was shaped, as opposed to how much of it there was.
+	 *
+	 * Server-computed, on its own round. It used to be derived client-side from the timeline sessions,
+	 * which cost no request but only worked on a single day — the timeline is not fetched over a range —
+	 * and disagreed with the server on desktop, where the client keyed on the product label and the
+	 * server keys on the process name. One definition, one source (U5b).
+	 */
+	const focusMetrics = ref<FocusMetricsResponse | null>(null) as Ref<FocusMetricsResponse | null>
+
 	// --- Loading States ---
 	const summaryCardsLoading = ref(false)
 	const pieChartLoading = ref(false)
 	const stackedBarsLoading = ref(false)
 	const timelineLoading = ref(false)
+	const focusMetricsLoading = ref(false)
 
 	// --- Error States: quiet, per-panel — the axios interceptor's snackbar is suppressed for these
 	// requests (`_silent: true`) so a failure surfaces only as this panel's own retry state. ---
@@ -260,21 +282,11 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const pieChartError = ref(false)
 	const stackedBarsError = ref(false)
 	const timelineError = ref(false)
+	const focusMetricsError = ref(false)
 
 	const primarySessions = computed(() => timelineSessions.value.primarySessions)
 	const detailSessions = computed(() => timelineSessions.value.detailSessions)
 	const backgroundSessions = computed(() => timelineSessions.value.backgroundSessions)
-
-	/**
-	 * Fragmentation, derived from sessions the timeline round already fetched — no extra request, and
-	 * available whichever visualization is on screen, since the timeline is fetched for the whole span
-	 * regardless of what is being rendered.
-	 *
-	 * `null` over a multi-day range, because `clearTimeline` empties the sessions there. That is a real
-	 * ceiling rather than an oversight: a month of sessions is the largest response the module can ask
-	 * for and nothing renders it, so the range case needs the numbers computed server-side.
-	 */
-	const focusMetrics = computed<FocusMetrics | null>(() => computeFocusMetrics(primarySessions.value))
 
 	const range = computed<ActivityDashboardRange>(() => ({
 		dateFrom: formatDateForApi(dateFrom.value),
@@ -312,6 +324,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	let pieChartController: AbortController | null = null
 	let stackedBarsController: AbortController | null = null
 	let timelineController: AbortController | null = null
+	let focusMetricsController: AbortController | null = null
 
 	// --- Empty-state probe: fired only after a round comes back empty on all four panels ---
 	const emptyProbeState = ref<ActivityEmptyProbeState>('idle')
@@ -398,6 +411,31 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		} finally {
 			if (timelineController === controller) {
 				timelineLoading.value = false
+			}
+		}
+	}
+
+	/**
+	 * Unlike the timeline, this runs over a range too — working over a multi-day span is half of why
+	 * the endpoint exists, and its response is four numbers rather than a month of sessions.
+	 */
+	async function fetchFocusMetrics() {
+		focusMetricsController?.abort()
+		const controller = new AbortController()
+		focusMetricsController = controller
+		focusMetricsLoading.value = true
+		focusMetricsError.value = false
+		try {
+			const data = await fetchers.fetchFocusMetrics(range.value, selectedBaseline.value, controller.signal)
+			if (focusMetricsController === controller) {
+				focusMetrics.value = data
+			}
+		} catch (error) {
+			if (isAbortError(error)) return
+			focusMetricsError.value = true
+		} finally {
+			if (focusMetricsController === controller) {
+				focusMetricsLoading.value = false
 			}
 		}
 	}
@@ -516,7 +554,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 			}
 			emptyProbeState.value = 'idle'
 
-			const rounds = [fetchSummaryCards(), fetchPieChart(), fetchStackedBars()]
+			const rounds = [fetchSummaryCards(), fetchPieChart(), fetchStackedBars(), fetchFocusMetrics()]
 			if (isTimelineAvailable.value) {
 				rounds.push(fetchTimeline())
 			} else {
@@ -528,8 +566,11 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		{ immediate: true, debounce: 300 },
 	)
 
+	// Both panels carry a comparison against the selected baseline, so both have to re-fetch — leaving
+	// the strip out would let its "typically …" figures go stale the moment the selector changes.
 	watch(selectedBaseline, () => {
 		fetchSummaryCards()
+		fetchFocusMetrics()
 	})
 
 	// A span change can invalidate the selected window size (30 minutes is not on offer for a month).
@@ -665,15 +706,18 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		focusMetricsLoading,
 		summaryCardsError,
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		focusMetricsError,
 		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		fetchFocusMetrics,
 		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,

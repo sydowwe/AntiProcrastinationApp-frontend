@@ -7,6 +7,8 @@ import type { AndroidStackedBarsRequest } from '@/core/activityTracking/dto/requ
 import type { AndroidTimelineRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidTimelineRequest.ts'
 import type { AndroidSummaryCardsRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidSummaryCardsRequest.ts'
 import type { AndroidPieChartRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidPieChartRequest.ts'
+import type { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+import { FocusMetricsResponse } from '@/core/activityTracking/dto/response/focusMetrics/FocusMetricsResponse.ts'
 import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
@@ -45,6 +47,14 @@ export async function getAndroidPieChart(
 ): Promise<AndroidPieChartResponse> {
 	const { data } = await API.post(`${BASE_URL}/pie-chart`, request, { signal, _silent: true })
 	return AndroidPieChartResponse.fromJson(data)
+}
+
+export async function getAndroidFocusMetrics(
+	request: FocusMetricsRequest,
+	signal?: AbortSignal,
+): Promise<FocusMetricsResponse> {
+	const { data } = await API.post(`${BASE_URL}/focus-metrics`, request, { signal, _silent: true })
+	return FocusMetricsResponse.fromJson(data)
 }
 
 export function useTrackerAndroidMappingCrud() {

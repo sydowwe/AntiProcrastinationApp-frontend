@@ -8,6 +8,8 @@ import type { DesktopStackedBarsRequest } from '@/core/activityTracking/dto/requ
 import type { DesktopTimelineRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopTimelineRequest.ts'
 import type { DesktopSummaryCardsRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopSummaryCardsRequest.ts'
 import type { DesktopPieChartRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopPieChartRequest.ts'
+import type { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+import { FocusMetricsResponse } from '@/core/activityTracking/dto/response/focusMetrics/FocusMetricsResponse.ts'
 import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
@@ -46,6 +48,18 @@ export async function getDesktopPieChart(
 ): Promise<DesktopPieChartResponse> {
 	const { data } = await API.post(`${BASE_URL}/pie-chart`, request, { signal, _silent: true })
 	return DesktopPieChartResponse.fromJson(data)
+}
+
+/**
+ * The server groups by `processName` and labels with `productName`, so `longestBlock.label` may read
+ * the same as a sibling process of the same suite while still being a different item.
+ */
+export async function getDesktopFocusMetrics(
+	request: FocusMetricsRequest,
+	signal?: AbortSignal,
+): Promise<FocusMetricsResponse> {
+	const { data } = await API.post(`${BASE_URL}/focus-metrics`, request, { signal, _silent: true })
+	return FocusMetricsResponse.fromJson(data)
 }
 
 /**

@@ -8,6 +8,8 @@ import type { PieChartRequest } from '@/core/activityTracking/dto/request/PieCha
 import { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
 import type { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
 import type { TimelineRequest } from '@/core/activityTracking/dto/request/TimelineRequest.ts'
+import type { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+import { FocusMetricsResponse } from '@/core/activityTracking/dto/response/focusMetrics/FocusMetricsResponse.ts'
 
 const BASE_URL = '/activity-tracking/web-extension'
 
@@ -30,6 +32,14 @@ export async function getStackedBarsData(request: StackedBarsRequest, signal?: A
 export async function getTimeline(request: TimelineRequest, signal?: AbortSignal): Promise<TimelineResponse> {
 	const { data } = await API.post(`${BASE_URL}/timeline`, request, { signal, _silent: true })
 	return TimelineResponse.fromJson(data)
+}
+
+export async function getFocusMetrics(
+	request: FocusMetricsRequest,
+	signal?: AbortSignal,
+): Promise<FocusMetricsResponse> {
+	const { data } = await API.post(`${BASE_URL}/focus-metrics`, request, { signal, _silent: true })
+	return FocusMetricsResponse.fromJson(data)
 }
 
 export async function getDomainDetails(

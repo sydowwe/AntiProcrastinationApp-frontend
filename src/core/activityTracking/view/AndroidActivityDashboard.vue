@@ -46,7 +46,9 @@
 			<ActivityFocusStrip
 				class="mb-4"
 				:metrics="focusMetrics"
-				:loading="timelineLoading"
+				:loading="focusMetricsLoading"
+				:error="focusMetricsError"
+				@retry="fetchFocusMetrics"
 			/>
 			<VRow>
 				<VCol
@@ -105,11 +107,14 @@
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
+		getAndroidFocusMetrics,
 		getAndroidPieChart,
 		getAndroidStackedBars,
 		getAndroidSummaryCards,
 		getAndroidTimeline,
 	} from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
+	import { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+	import { FOCUS_BLOCK_TOLERANCE_SECONDS } from '@/core/activityTracking/composable/focusMetrics.ts'
 	import { AndroidStackedBarsRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidStackedBarsRequest.ts'
 	import { AndroidTimelineRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidTimelineRequest.ts'
 	import { AndroidSummaryCardsRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidSummaryCardsRequest.ts'
@@ -185,6 +190,19 @@
 				backgroundSessions: [],
 			}
 		},
+		fetchFocusMetrics(range, baseline, signal) {
+			return getAndroidFocusMetrics(
+				new FocusMetricsRequest(
+					range.dateFrom,
+					range.dateTo,
+					range.timeFrom,
+					range.timeTo,
+					baseline,
+					FOCUS_BLOCK_TOLERANCE_SECONDS,
+				),
+				signal,
+			)
+		},
 	}
 
 	const {
@@ -214,15 +232,18 @@
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		focusMetricsLoading,
 		summaryCardsError,
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		focusMetricsError,
 		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		fetchFocusMetrics,
 		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,

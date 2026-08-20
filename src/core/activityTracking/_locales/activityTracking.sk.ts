@@ -95,6 +95,11 @@ const activityTracking = {
 		sessionCount: `Relácie: {count}`,
 		longestBreak: `Najdlhšia pauza`,
 		longestBreakHint: `Najdlhší úsek medzi dvoma reláciami bez zaznamenanej aktivity.`,
+		// Porovnanie s vlastnou nedávnou históriou používateľa — zámerne bez percent, šípky a farby.
+		// Je to opis, nie hodnotenie dňa.
+		comparison: `zvyčajne {value}`,
+		// Rovnaký tvar ako pri sessionCount vyššie: hodnota na deň bez skloňovaného počítaného slova.
+		perDay: `{value} / deň`,
 	},
 	timeline: {
 		title: `Časová os aktivity`,

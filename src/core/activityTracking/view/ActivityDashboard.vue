@@ -46,7 +46,9 @@
 			<ActivityFocusStrip
 				class="mb-4"
 				:metrics="focusMetrics"
-				:loading="timelineLoading"
+				:loading="focusMetricsLoading"
+				:error="focusMetricsError"
+				@retry="fetchFocusMetrics"
 			/>
 			<VRow>
 				<VCol
@@ -102,12 +104,15 @@
 	import type { PieChartData } from '@/core/activityTracking/dto/response/pieChart/PieChartData.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import {
+		getFocusMetrics,
 		getPieChart,
 		getStackedBarsData,
 		getSummaryCards,
 		getTimeline,
 	} from '@/core/activityTracking/api/activityTrackingApi'
 	import { SummaryCardsRequest } from '@/core/activityTracking/dto/request/SummaryCardsRequest.ts'
+	import { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+	import { FOCUS_BLOCK_TOLERANCE_SECONDS } from '@/core/activityTracking/composable/focusMetrics.ts'
 	import { PieChartRequest } from '@/core/activityTracking/dto/request/PieChartRequest.ts'
 	import { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
 	import { TimelineRequest } from '@/core/activityTracking/dto/request/TimelineRequest.ts'
@@ -163,6 +168,19 @@
 				backgroundSessions: timeline.backgroundSessions,
 			}
 		},
+		fetchFocusMetrics(range, baseline, signal) {
+			return getFocusMetrics(
+				new FocusMetricsRequest(
+					range.dateFrom,
+					range.dateTo,
+					range.timeFrom,
+					range.timeTo,
+					baseline,
+					FOCUS_BLOCK_TOLERANCE_SECONDS,
+				),
+				signal,
+			)
+		},
 	}
 
 	const {
@@ -192,15 +210,18 @@
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		focusMetricsLoading,
 		summaryCardsError,
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		focusMetricsError,
 		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		fetchFocusMetrics,
 		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,

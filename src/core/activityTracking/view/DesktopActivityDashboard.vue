@@ -46,7 +46,9 @@
 			<ActivityFocusStrip
 				class="mb-4"
 				:metrics="focusMetrics"
-				:loading="timelineLoading"
+				:loading="focusMetricsLoading"
+				:error="focusMetricsError"
+				@retry="fetchFocusMetrics"
 			/>
 			<VRow>
 				<VCol
@@ -109,11 +111,14 @@
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
+		getDesktopFocusMetrics,
 		getDesktopPieChart,
 		getDesktopStackedBars,
 		getDesktopSummaryCards,
 		getDesktopTimeline,
 	} from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
+	import { FocusMetricsRequest } from '@/core/activityTracking/dto/request/FocusMetricsRequest.ts'
+	import { FOCUS_BLOCK_TOLERANCE_SECONDS } from '@/core/activityTracking/composable/focusMetrics.ts'
 	import { DesktopStackedBarsRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopStackedBarsRequest.ts'
 	import { DesktopTimelineRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopTimelineRequest.ts'
 	import { DesktopSummaryCardsRequest } from '@/core/activityTracking/dto/request/desktop/dashboard/DesktopSummaryCardsRequest.ts'
@@ -194,6 +199,21 @@
 				backgroundSessions: timeline.backgroundSessions.map(toTimelineSession),
 			}
 		},
+		// No `toTimelineSession`-style mapping here: the server groups by `processName` and labels with
+		// `productName`, so `longestBlock.label` is already the display name the summary cards use.
+		fetchFocusMetrics(range, baseline, signal) {
+			return getDesktopFocusMetrics(
+				new FocusMetricsRequest(
+					range.dateFrom,
+					range.dateTo,
+					range.timeFrom,
+					range.timeTo,
+					baseline,
+					FOCUS_BLOCK_TOLERANCE_SECONDS,
+				),
+				signal,
+			)
+		},
 	}
 
 	const {
@@ -223,15 +243,18 @@
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		focusMetricsLoading,
 		summaryCardsError,
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		focusMetricsError,
 		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
 		fetchTimeline,
+		fetchFocusMetrics,
 		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,

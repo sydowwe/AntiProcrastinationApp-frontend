@@ -94,6 +94,10 @@ const activityTracking = {
 		sessionCount: `Sessions: {count}`,
 		longestBreak: `Longest break`,
 		longestBreakHint: `The longest stretch between two sessions with no recorded activity.`,
+		// The comparison against the user's own recent history — deliberately no percentage, no arrow
+		// and no colour. It describes, it does not grade the day.
+		comparison: `typically {value}`,
+		perDay: `{value} / day`,
 	},
 	timeline: {
 		title: `Activity Timeline`,
