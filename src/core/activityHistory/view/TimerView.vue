@@ -31,8 +31,8 @@
 
 			<TimerControls
 				class="my-7"
-				:intervalId="intervalId"
-				:paused="paused"
+				:running
+				:paused
 				@start="start"
 				@pause="pause"
 				@stop="stop"
@@ -63,21 +63,22 @@
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
 	import TimerPresetsSection from '@/core/activityHistory/component/TimerPresetsSection.vue'
-	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
+	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
-	import { computed, onMounted, onUnmounted, ref } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
+	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
+	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 
 	const {
 		activityId = null,
@@ -99,172 +100,144 @@
 	}>()
 
 	const { showErrorSnackbar } = useSnackbar()
-	const { triggerTimerEndNotification, stopAllNotifications } = useTimerNotifications()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
 	const { saveActivityToHistory } = useSaveActivityToHistory()
+	const store = useRunningTimerStore()
+	const { ensureFreeToStart } = useTimerSessionGuard()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
-	const timeInputVisible = ref(true)
 	const initialTime = ref(initialDuration ? new Time(initialDuration.hours, initialDuration.minutes) : new Time())
-	const paused = ref(false)
-	const intervalId = ref<number | undefined>(undefined)
-	const startTimestamp = ref(new Date())
-	const formDisabled = ref(false)
 	const selectedActivityId = ref<number | null>(activityId)
 	const selection = ref<ActivitySelection | null>(null)
-	// Frozen at start: the selection form is hidden while the timer runs, and the name has to survive
-	// until the save dialog.
-	const selectedActivityName = ref<string>('')
 
-	const endsAt = ref<number | null>(null)
-	const pausedRemaining = ref<number | null>(null)
-	const notificationTimeoutId = ref<number | undefined>(undefined)
-	const now = ref(Date.now())
+	/**
+	 * The countdown this instance owns, or null. The whole state machine — `endsAt`, the paused
+	 * remainder, the alarm — lives in the store, so it survives navigation, reload and the dialog
+	 * being closed, and it keeps counting down (and still rings) while no timer view is mounted.
+	 */
+	const pinnedActivityId = computed(() => activityId ?? null)
+	const session = computed(() => store.sessionFor('timer', pinnedActivityId.value))
 
-	const timeRemaining = computed(() => {
-		if (endsAt.value !== null) {
-			return Math.max(0, Math.ceil((endsAt.value - now.value) / 1000))
-		}
-		if (pausedRemaining.value !== null) {
-			return Math.max(0, Math.ceil(pausedRemaining.value / 1000))
-		}
-		return 0
-	})
+	const running = computed(() => session.value !== null && !session.value.ended)
+	const paused = computed(() => session.value?.paused === true)
+	// The duration picker is the idle face of this view; a session of any kind — running, paused or
+	// waiting to be logged — replaces it with the countdown.
+	const timeInputVisible = computed(() => session.value === null)
+	const formDisabled = computed(() => session.value !== null)
 
-	const timeRemainingObject = computed(() => {
-		return TimePrecise.fromSeconds(timeRemaining.value)
-	})
+	const timeRemaining = computed(() => (session.value === null ? 0 : Math.ceil(store.remainingMs / 1000)))
+	const timeRemainingObject = computed(() => TimePrecise.fromSeconds(timeRemaining.value))
+	const selectedActivityName = computed(() => session.value?.activityName ?? '')
 
 	void requestNotificationPermission()
 
+	// Adopting a session means adopting the numbers it was started with: the progress ring is drawn
+	// against `initialTime`, and the activity it logs against has to be the one it was started for.
+	watch(
+		session,
+		current => {
+			if (current === null) return
+			initialTime.value = Time.fromMinutes(Math.round(current.durationMs / 60_000))
+			if (current.activityId !== null) selectedActivityId.value = current.activityId
+		},
+		{ immediate: true },
+	)
+
+	/**
+	 * An ended session is not a finished one — it still has to be written down. This fires for the
+	 * Stop button, for the countdown reaching zero with the view on screen, and for a mount that
+	 * finds a session that ran out (or was stopped) while the app was away.
+	 */
+	let finishing = false
+	watch(
+		() => session.value?.ended === true,
+		ended => {
+			if (ended) void finishSession()
+		},
+		{ immediate: true },
+	)
+
 	onMounted(() => {
-		if (autoStart && activityId) {
+		// Not when a session is already here: `autoStart` means "the caller opened this to start
+		// timing", and a dialog reopened over a running timer has already had its start.
+		if (autoStart && activityId && session.value === null) {
 			void start()
 		}
 	})
 
 	async function start() {
 		if (paused.value) {
-			resume()
-		} else {
-			if (initialTime.value.getInSeconds === 0) {
-				showErrorSnackbar(t('history.timer.setDurationFirst'))
-				return
-			}
-			const validationResult = await activitySelectionForm.value?.validate()
-			if (!validationResult || validationResult.length === 0) {
-				formDisabled.value = true
-				startTimestamp.value = new Date()
-				selectedActivityName.value = selection.value?.activityName || activityName
-				timeInputVisible.value = false
-				const durationMs = initialTime.value.getInSeconds * 1000
-				const currentTime = Date.now()
-				now.value = currentTime
-				endsAt.value = currentTime + durationMs
-				startUpdateInterval()
-				scheduleNotificationTimeout()
-				// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
-				// the hour the work actually happened at.
-				emit('started', timeInUserZone(startTimestamp.value))
-			}
+			store.resumeSession()
+			return
+		}
+		if (initialTime.value.getInSeconds === 0) {
+			showErrorSnackbar(t('history.timer.setDurationFirst'))
+			return
+		}
+		const validationResult = await activitySelectionForm.value?.validate()
+		if (!validationResult || validationResult.length === 0) {
+			// Last, and after validation on purpose: this prompt discards somebody else's session, so
+			// it must not be asked for a start that is then going to fail anyway.
+			if (!(await ensureFreeToStart('timer', pinnedActivityId.value))) return
+			const started = store.startCountdown({
+				pinnedActivityId: pinnedActivityId.value,
+				activityId: activityId ?? selectedActivityId.value,
+				activityName: selection.value?.activityName || activityName,
+				durationMs: initialTime.value.getInSeconds * 1000,
+			})
+			// `startedAtEpoch` is an instant. Read in the user's zone, because this is persisted as
+			// the hour the work actually happened at.
+			emit('started', timeInUserZone(new Date(started.startedAtEpoch)))
 		}
 	}
 
 	function pause() {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-		if (endsAt.value !== null) {
-			pausedRemaining.value = endsAt.value - Date.now()
-			endsAt.value = null
-		}
-		paused.value = true
+		store.pauseSession()
 	}
 
-	function resume() {
-		paused.value = false
-		if (pausedRemaining.value !== null) {
-			endsAt.value = Date.now() + pausedRemaining.value
-			pausedRemaining.value = null
-		}
-		startUpdateInterval()
-		scheduleNotificationTimeout()
+	function stop() {
+		store.endSession(false)
 	}
 
-	function startUpdateInterval() {
-		intervalId.value = setInterval(() => {
-			now.value = Date.now()
-			if (timeRemaining.value === 0) {
-				stop(true)
+	async function finishSession() {
+		const current = session.value
+		if (current === null || !current.ended || finishing) return
+		finishing = true
+		try {
+			const length = timePassed()
+			const startTimestamp = new Date(current.startedAtEpoch)
+			const name = current.activityName
+			// `activityId` off the session, not `selection`: the selection form is unmounted while the
+			// countdown runs and a freshly mounted one reports null until its options are back. The
+			// session has carried both the id and the name since the moment Start was pressed.
+			const targetActivityId = current.activityId
+			if (length.getInMinutes <= 0) {
+				store.clearSession()
+				return
 			}
-		}, 250)
-	}
-
-	function scheduleNotificationTimeout() {
-		if (endsAt.value === null) return
-		const delay = endsAt.value - Date.now()
-		if (delay > 0) {
-			notificationTimeoutId.value = setTimeout(() => {
-				if (endsAt.value !== null && timeRemaining.value === 0) {
-					stop(true)
-				}
-			}, delay)
-		}
-	}
-
-	async function stop(automatic = false) {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-
-		const name = selectedActivityName.value
-		timeInputVisible.value = true
-		if (automatic) {
-			triggerTimerEndNotification(t('history.timer.endedTitleAnim'), name)
-			void showNotification(
-				t('history.timer.endedNotifTitle'),
-				t('history.timer.endedNotifBody', { activity: name, duration: timePassed().getNice }),
-			)
-		}
-		if (timePassed().getInMinutes > 0) {
-			if (!activityId) {
-				const timeLength = timePassed()
-				const result = await openDialog<boolean>({
-					component: SaveActivityBody,
-					componentProps: { activity: name, timeSpent: timeLength },
-					dialogProps: { title: t('activities.recordNewActivity') },
-				})
-				if (result) {
-					// `selectedActivityId`, not `selection`: `stop()` puts the time input back, which
-					// remounts the selection form, and a freshly mounted form reports a null selection
-					// until its options are back. The id ref survives the remount; the name was frozen
-					// at start for the same reason.
-					await saveActivityToHistory(selectedActivityId.value, name, startTimestamp.value, timeLength)
-				}
-				resetTimer()
-			} else {
-				emit('done', startTimestamp.value, timePassed())
+			if (activityId) {
+				store.clearSession()
+				emit('done', startTimestamp, length)
+				return
 			}
-		} else {
-			resetTimer()
+			const result = await openDialog<boolean>({
+				component: SaveActivityBody,
+				componentProps: { activity: name, timeSpent: length },
+				dialogProps: { title: t('activities.recordNewActivity') },
+			})
+			if (result) {
+				await saveActivityToHistory(targetActivityId, name, startTimestamp, length)
+			}
+			// Only now: a reload while the save dialog is open should find the session still there.
+			store.clearSession()
+		} finally {
+			finishing = false
 		}
 	}
 
-	function resetTimer() {
-		paused.value = false
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-		formDisabled.value = false
-		timeInputVisible.value = true
-		endsAt.value = null
-		pausedRemaining.value = null
-		stopAllNotifications()
-	}
-
+	/** How much of the set duration was actually used — the whole of it once it has run out. */
 	function timePassed() {
 		return timeRemaining.value === 0
 			? initialTime.value
@@ -277,9 +250,4 @@
 			selectedActivityId.value = preset.activity.id
 		}
 	}
-
-	onUnmounted(() => {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-	})
 </script>

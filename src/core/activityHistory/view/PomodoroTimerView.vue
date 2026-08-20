@@ -148,8 +148,8 @@
 				</div>
 				<TimerControls
 					class="mt-4 mb-5"
-					:paused="paused"
-					:intervalId="intervalId"
+					:running
+					:paused
 					@start="start"
 					@pause="pause"
 					@stop="stop"
@@ -219,7 +219,7 @@
 						{{ focusActivityName }}
 					</VChip>
 					<VChip
-						v-if="restSelection?.activityName"
+						v-if="restActivityName"
 						color="secondary"
 						variant="tonal"
 						size="large"
@@ -228,7 +228,7 @@
 							icon="fas fa-mug-hot"
 							start
 						></VIcon>
-						{{ restSelection?.activityName }}
+						{{ restActivityName }}
 					</VChip>
 				</div>
 				<PomodoroPresetsDialog
@@ -242,21 +242,26 @@
 <script setup lang="ts">
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
-	import { requestNotificationPermission, showNotification } from '@/_common/utils/notifications.ts'
+	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
-	import { computed, onUnmounted, ref } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { useI18n } from 'vue-i18n'
 	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
-	import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import {
+		pomodoroPhaseOf,
+		useRunningTimerStore,
+		type PomodoroSession,
+	} from '@/core/activityHistory/store/runningTimerStore.ts'
+	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 
 	const {
 		activityId = null,
@@ -279,55 +284,44 @@
 	const DEFAULT_LONG_REST_TIME = new Time(0, 15)
 
 	const i18n = useI18n()
-	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
-		useTimerNotifications()
 	const { openDialog } = useDialog()
 	const { saveActivityToHistory } = useSaveActivityToHistory()
+	const store = useRunningTimerStore()
+	const { ensureFreeToStart } = useTimerSessionGuard()
 
 	// Only the focus form is still reached into, and only for `validate()` — the rest activity is
 	// optional, so there is nothing to validate on it.
 	const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
 
+	// The pickers. Pre-start settings only: once a session exists these are seeded from it and the
+	// inputs are off screen, because the running cycle's durations are the ones it was started with.
 	const focusInitialTime = ref(new Time(DEFAULT_FOCUS_TIME.hours, DEFAULT_FOCUS_TIME.minutes))
 	const shortRestInitialTime = ref(new Time(DEFAULT_SHORT_REST_TIME.hours, DEFAULT_SHORT_REST_TIME.minutes))
 	const longRestInitialTime = ref(new Time(DEFAULT_LONG_REST_TIME.hours, DEFAULT_LONG_REST_TIME.minutes))
-	const focusTimeElapsed = ref(0)
-	const restTimeElapsed = ref(0)
-
 	const numberOfCycles = ref(2)
-	const currentCycle = ref(1)
 	const numberOfFocusPeriodsInCycle = ref(4)
-	const currentFocusPeriod = ref(1)
-	const isFocus = ref(true)
-	const isEndOfCycle = computed(() => currentFocusPeriod.value === numberOfFocusPeriodsInCycle.value)
 
-	// Timestamp-based timer state
-	const endsAt = ref<number | null>(null)
-	const pausedRemaining = ref<number | null>(null)
-	const phaseStartedAt = ref<number | null>(null)
-	const notificationTimeoutId = ref<number | undefined>(undefined)
-	const now = ref(Date.now())
+	const focusActivityId = ref<number | null>(activityId)
+	const restActivityId = ref<number | null>(null)
+	const focusSelection = ref<ActivitySelection | null>(null)
+	const restSelection = ref<ActivitySelection | null>(null)
 
-	const timeRemaining = computed(() => {
-		if (endsAt.value !== null) {
-			return Math.max(0, Math.ceil((endsAt.value - now.value) / 1000))
-		}
-		if (pausedRemaining.value !== null) {
-			return Math.max(0, Math.ceil(pausedRemaining.value / 1000))
-		}
-		return 0
-	})
+	/**
+	 * The pomodoro this instance owns, or null. Every part of the cycle that used to be a local ref —
+	 * the phase, the counters, the two elapsed totals — is in the store, so the cycle keeps advancing
+	 * and keeps ringing while this view is not mounted, and comes back intact after a reload.
+	 */
+	const pinnedActivityId = computed(() => activityId ?? null)
+	const session = computed(() => store.sessionFor('pomodoro', pinnedActivityId.value))
 
-	const currentTimerType = computed(() => {
-		if (isFocus.value) {
-			return 'focus'
-		} else if (isEndOfCycle.value) {
-			return 'longBreak'
-		} else {
-			return 'shortBreak'
-		}
-	})
+	const running = computed(() => session.value !== null && !session.value.ended)
+	const paused = computed(() => session.value?.paused === true)
+	const timeInputVisible = computed(() => session.value === null)
+	const formDisabled = computed(() => session.value !== null)
+
+	const timeRemaining = computed(() => (session.value === null ? 0 : Math.ceil(store.remainingMs / 1000)))
+	const currentTimerType = computed(() => (session.value === null ? 'focus' : pomodoroPhaseOf(session.value)))
 
 	const timeDisplayObject = computed(() => {
 		let timeInitialObject: Time
@@ -354,299 +348,130 @@
 		return { timeRemainingObject, timeInitialObject, color, title }
 	})
 
-	const startTimestamp = ref(new Date())
-	const timeInputVisible = ref(true)
-	const paused = ref(false)
-	const intervalId = ref<number | undefined>(undefined)
-	const formDisabled = ref(false)
-
-	const focusActivityId = ref<number | null>(activityId)
-	const restActivityId = ref<number | null>(null)
-	const focusSelection = ref<ActivitySelection | null>(null)
-	const restSelection = ref<ActivitySelection | null>(null)
-
-	const focusActivityName = computed(() => (activityId ? activityName : (focusSelection.value?.activityName ?? '')))
+	const focusActivityName = computed(() => {
+		if (activityId) return activityName
+		return session.value?.activityName || (focusSelection.value?.activityName ?? '')
+	})
+	// Off the session while one runs: the rest form is unmounted then, so its selection is null.
+	const restActivityName = computed(
+		() => session.value?.restActivityName || (restSelection.value?.activityName ?? ''),
+	)
 
 	void requestNotificationPermission()
 
+	// Adopting a session means adopting the cycle it was started with — the progress ring is drawn
+	// against these durations, and the phase colours pick between them.
+	watch(
+		session,
+		current => {
+			if (current === null) return
+			focusInitialTime.value = Time.fromMinutes(Math.round(current.focusMs / 60_000))
+			shortRestInitialTime.value = Time.fromMinutes(Math.round(current.shortRestMs / 60_000))
+			longRestInitialTime.value = Time.fromMinutes(Math.round(current.longRestMs / 60_000))
+			numberOfFocusPeriodsInCycle.value = current.focusPeriodsPerCycle
+			numberOfCycles.value = current.totalCycles
+			if (current.activityId !== null) focusActivityId.value = current.activityId
+			restActivityId.value = current.restActivityId
+		},
+		{ immediate: true },
+	)
+
+	/**
+	 * An ended session is not a finished one — it still has to be written down. This fires for the
+	 * Stop button, for the last cycle completing with the view on screen, and for a mount that finds
+	 * a pomodoro the store ended while the app was away.
+	 */
+	let finishing = false
+	watch(
+		() => session.value?.ended === true,
+		ended => {
+			if (ended) void finishSession()
+		},
+		{ immediate: true },
+	)
+
 	async function start() {
 		if (paused.value) {
-			resume()
-		} else {
-			const validationResult = await mainActivitySelectionForm.value?.validate()
-			if (!validationResult || validationResult.length === 0) {
-				formDisabled.value = true
-				startTimestamp.value = new Date()
-				timeInputVisible.value = false
-				startPhase(focusInitialTime.value.getInSeconds)
-				// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
-				// the hour the work actually happened at.
-				emit('started', timeInUserZone(startTimestamp.value))
-			}
+			store.resumeSession()
+			return
 		}
-	}
-
-	function startPhase(durationSeconds: number) {
-		const currentTime = Date.now()
-		now.value = currentTime
-		phaseStartedAt.value = currentTime
-		endsAt.value = currentTime + durationSeconds * 1000
-		startUpdateInterval()
-		schedulePhaseEndTimeout()
+		const validationResult = await mainActivitySelectionForm.value?.validate()
+		if (!validationResult || validationResult.length === 0) {
+			// Last, and after validation on purpose: this prompt discards somebody else's session, so
+			// it must not be asked for a start that is then going to fail anyway.
+			if (!(await ensureFreeToStart('pomodoro', pinnedActivityId.value))) return
+			const started = store.startPomodoro({
+				pinnedActivityId: pinnedActivityId.value,
+				activityId: activityId ?? focusActivityId.value,
+				activityName: activityId ? activityName : (focusSelection.value?.activityName ?? ''),
+				focusMs: focusInitialTime.value.getInSeconds * 1000,
+				shortRestMs: shortRestInitialTime.value.getInSeconds * 1000,
+				longRestMs: longRestInitialTime.value.getInSeconds * 1000,
+				focusPeriodsPerCycle: numberOfFocusPeriodsInCycle.value,
+				totalCycles: numberOfCycles.value,
+				restActivityId: restActivityId.value,
+				restActivityName: restSelection.value?.activityName ?? '',
+			})
+			// `startedAtEpoch` is an instant. Read in the user's zone, because this is persisted as
+			// the hour the work actually happened at.
+			emit('started', timeInUserZone(new Date(started.startedAtEpoch)))
+		}
 	}
 
 	function pause() {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
+		store.pauseSession()
+	}
 
-		// Save elapsed time for current phase
-		if (phaseStartedAt.value !== null) {
-			const elapsedMs = Date.now() - phaseStartedAt.value
-			if (isFocus.value) {
-				focusTimeElapsed.value += Math.floor(elapsedMs / 1000)
-			} else {
-				restTimeElapsed.value += Math.floor(elapsedMs / 1000)
+	function stop() {
+		store.endSession(false)
+	}
+
+	async function finishSession() {
+		const current = session.value
+		if (current === null || !current.ended || finishing) return
+		finishing = true
+		try {
+			const timeSpent = Time.fromSeconds(Math.floor(current.focusElapsedMs / 1000))
+			const startTimestamp = new Date(current.startedAtEpoch)
+			const name = current.activityName
+			if (activityId) {
+				store.clearSession()
+				emit('done', startTimestamp, timeSpent)
+				return
 			}
-		}
-
-		if (endsAt.value !== null) {
-			pausedRemaining.value = endsAt.value - Date.now()
-			endsAt.value = null
-		}
-		phaseStartedAt.value = null
-		paused.value = true
-	}
-
-	function resume() {
-		paused.value = false
-		const currentTime = Date.now()
-		now.value = currentTime
-		phaseStartedAt.value = currentTime
-
-		if (pausedRemaining.value !== null) {
-			endsAt.value = currentTime + pausedRemaining.value
-			pausedRemaining.value = null
-		}
-		startUpdateInterval()
-		schedulePhaseEndTimeout()
-	}
-
-	function startUpdateInterval() {
-		intervalId.value = setInterval(() => {
-			now.value = Date.now()
-		}, 250)
-	}
-
-	function schedulePhaseEndTimeout() {
-		if (endsAt.value === null) return
-		const delay = endsAt.value - Date.now()
-		if (delay > 0) {
-			notificationTimeoutId.value = setTimeout(() => {
-				onPhaseEnd()
-			}, delay)
-		}
-	}
-
-	function onPhaseEnd() {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-
-		// Save elapsed time for completed phase
-		if (phaseStartedAt.value !== null) {
-			const elapsedMs = Date.now() - phaseStartedAt.value
-			if (isFocus.value) {
-				focusTimeElapsed.value += Math.floor(elapsedMs / 1000)
-			} else {
-				restTimeElapsed.value += Math.floor(elapsedMs / 1000)
-			}
-			phaseStartedAt.value = null
-		}
-
-		// Show notification for phase end with context
-		const cycleInfo = i18n.t('history.pomodoro.cycleProgress', {
-			current: currentCycle.value,
-			total: numberOfCycles.value,
-		})
-		const focusInfo = i18n.t('history.pomodoro.focusProgress', {
-			current: currentFocusPeriod.value,
-			total: numberOfFocusPeriodsInCycle.value,
-		})
-
-		playNotificationSound()
-		switch (currentTimerType.value) {
-			case 'focus':
-				startTitleAnimation(
-					`${i18n.t('history.pomodoro.focusEndedTitleAnim')} · ${cycleInfo}`,
-					i18n.t('history.pomodoro.timeForBreak'),
-				)
-				void showNotification(
-					i18n.t('history.pomodoro.focusPeriodEndedTitle'),
-					i18n.t('history.pomodoro.focusPeriodEndedBody', {
-						activity: focusActivityName.value,
-						focusInfo,
-						cycleInfo,
-					}),
-				)
-				break
-			case 'shortBreak':
-				startTitleAnimation(
-					`${i18n.t('history.pomodoro.breakEndedTitleAnim')} · ${cycleInfo}`,
-					i18n.t('history.pomodoro.timeToFocus'),
-				)
-				void showNotification(
-					i18n.t('history.pomodoro.shortBreakEndedTitle'),
-					i18n.t('history.pomodoro.shortBreakEndedBody', { cycleInfo, activity: focusActivityName.value }),
-				)
-				break
-			case 'longBreak':
-				startTitleAnimation(
-					i18n.t('history.pomodoro.longBreakEndedTitleAnim'),
-					i18n.t('history.pomodoro.startingCycle', { n: currentCycle.value + 1 }),
-				)
-				void showNotification(
-					i18n.t('history.pomodoro.longBreakEndedTitle'),
-					i18n.t('history.pomodoro.longBreakEndedBody', {
-						current: currentCycle.value,
-						next: currentCycle.value + 1,
-					}),
-				)
-				break
-		}
-
-		// Transition to next phase
-		isFocus.value = !isFocus.value
-
-		if (currentCycle.value === numberOfCycles.value && isEndOfCycle.value && !isFocus.value) {
-			stop(true)
-		} else {
-			let nextDuration: number
-			if (isFocus.value) {
-				nextDuration = focusInitialTime.value.getInSeconds
-				if (isEndOfCycle.value) {
-					currentFocusPeriod.value = 1
-				} else {
-					currentFocusPeriod.value++
-				}
-			} else {
-				if (isEndOfCycle.value) {
-					nextDuration = longRestInitialTime.value.getInSeconds
-					currentCycle.value++
-				} else {
-					nextDuration = shortRestInitialTime.value.getInSeconds
-				}
-			}
-			startPhase(nextDuration)
-		}
-	}
-
-	async function stop(automatic = false) {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-
-		// Save any remaining elapsed time
-		if (phaseStartedAt.value !== null) {
-			const elapsedMs = Date.now() - phaseStartedAt.value
-			if (isFocus.value) {
-				focusTimeElapsed.value += Math.floor(elapsedMs / 1000)
-			} else {
-				restTimeElapsed.value += Math.floor(elapsedMs / 1000)
-			}
-			phaseStartedAt.value = null
-		}
-
-		const timeSpent = Time.fromSeconds(focusTimeElapsed.value)
-		const restTime = Time.fromSeconds(restTimeElapsed.value)
-		const restActivityName = restSelection.value?.activityName ?? ''
-
-		if (automatic) {
-			const completedCycles = currentCycle.value
-			const cycleCount = i18n.t(
-				'history.pomodoro.completeCycleCount',
-				{ count: completedCycles },
-				completedCycles,
-			)
-			triggerTimerEndNotification(
-				i18n.t('history.pomodoro.completeTitleAnim', { cycleCount }),
-				i18n.t('history.pomodoro.completeSubtitle', {
-					activity: focusActivityName.value,
-					duration: timeSpent.getNice,
-				}),
-			)
-			void showNotification(
-				i18n.t('history.pomodoro.completeNotifTitle'),
-				i18n.t(
-					'history.pomodoro.doneSummary',
-					{ count: completedCycles, activity: focusActivityName.value, duration: timeSpent.getNice },
-					completedCycles,
-				) +
-					(restActivityName ? i18n.t('history.pomodoro.restedWith', { activity: restActivityName }) : '') +
-					i18n.t('history.pomodoro.forDuration', { duration: restTime.getNice }),
-			)
-		}
-
-		if (!activityId) {
 			const result = await openDialog<boolean>({
 				component: SaveActivityBody,
-				componentProps: { activity: focusActivityName.value, timeSpent },
+				componentProps: { activity: name, timeSpent },
 				dialogProps: { title: i18n.t('activities.recordNewActivity') },
 			})
 			if (result) {
-				saveActivity()
+				saveActivity(current, startTimestamp, timeSpent)
 			}
-			resetTimer()
-		} else {
-			emit('done', startTimestamp.value, Time.fromSeconds(focusTimeElapsed.value))
+			// Only now: a reload while the save dialog is open should find the session still there.
+			store.clearSession()
+		} finally {
+			finishing = false
 		}
 	}
 
-	function resetTimer() {
-		paused.value = false
-		intervalId.value = undefined
-		notificationTimeoutId.value = undefined
-		formDisabled.value = false
-		timeInputVisible.value = true
-		focusTimeElapsed.value = 0
-		restTimeElapsed.value = 0
-		currentCycle.value = 1
-		currentFocusPeriod.value = 1
-		isFocus.value = true
-		endsAt.value = null
-		pausedRemaining.value = null
-		phaseStartedAt.value = null
-		stopAllNotifications()
+	// Two records, one per activity form: the focus activity for the time actually focused, and — only
+	// if one was picked and any rest time accrued — the rest activity for the rest.
+	function saveActivity(current: PomodoroSession, startTimestamp: Date, timeSpent: Time) {
+		void saveActivityToHistory(current.activityId, current.activityName, startTimestamp, timeSpent)
+		if (current.restActivityId != null && current.restElapsedMs > 0) {
+			void saveActivityToHistory(
+				current.restActivityId,
+				current.restActivityName,
+				startTimestamp,
+				Time.fromSeconds(Math.floor(current.restElapsedMs / 1000)),
+			)
+		}
 	}
 
 	function resetPickersToDefault() {
 		focusInitialTime.value = new Time(DEFAULT_FOCUS_TIME.hours, DEFAULT_FOCUS_TIME.minutes)
 		shortRestInitialTime.value = new Time(DEFAULT_SHORT_REST_TIME.hours, DEFAULT_SHORT_REST_TIME.minutes)
 		longRestInitialTime.value = new Time(DEFAULT_LONG_REST_TIME.hours, DEFAULT_LONG_REST_TIME.minutes)
-	}
-
-	// Two records, one per activity form: the focus activity for the time actually focused, and — only
-	// if one was picked and any rest time accrued — the rest activity for the rest.
-	function saveActivity() {
-		if (!activityId) {
-			void saveActivityToHistory(
-				focusActivityId.value,
-				focusActivityName.value,
-				startTimestamp.value,
-				Time.fromSeconds(focusTimeElapsed.value),
-			)
-		}
-		if (restActivityId.value != null && restTimeElapsed.value > 0) {
-			void saveActivityToHistory(
-				restActivityId.value,
-				restSelection.value?.activityName ?? '',
-				startTimestamp.value,
-				Time.fromSeconds(restTimeElapsed.value),
-			)
-		}
 	}
 
 	function openPresets() {
@@ -674,11 +499,6 @@
 			restActivityId.value = preset.restActivityId
 		}
 	}
-
-	onUnmounted(() => {
-		clearInterval(intervalId.value)
-		clearTimeout(notificationTimeoutId.value)
-	})
 </script>
 <style scoped>
 	.borderGrey {

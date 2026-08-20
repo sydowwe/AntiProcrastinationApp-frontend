@@ -4,7 +4,7 @@
 			size="large"
 			prependIcon="play"
 			color="successDark"
-			:disabled="!!intervalId && !paused"
+			:disabled="running && !paused"
 			@click="emit('start')"
 		>
 			{{ $t('controls.start') }}
@@ -13,7 +13,7 @@
 			size="large"
 			prependIcon="pause"
 			color="primary"
-			:disabled="!intervalId || paused"
+			:disabled="!running || paused"
 			@click="emit('pause')"
 		>
 			{{ $t('controls.pause') }}
@@ -22,7 +22,7 @@
 			size="large"
 			prependIcon="stop"
 			color="errorDark"
-			:disabled="!intervalId"
+			:disabled="!running"
 			@click="emit('stop')"
 		>
 			{{ $t('controls.stop') }}
@@ -32,7 +32,13 @@
 </template>
 <script setup lang="ts">
 	defineProps<{
-		intervalId: number | undefined
+		/**
+		 * Whether a session exists at all — paused counts. This used to be the `setInterval` handle
+		 * of whichever view mounted the controls, which meant "is stopping possible" was answered by
+		 * whether a rendering timer happened to be live: pausing the countdown cleared its handle and
+		 * disabled Stop, so a paused timer could not be stopped at all.
+		 */
+		running: boolean
 		paused: boolean
 	}>()
 	const emit = defineEmits<{

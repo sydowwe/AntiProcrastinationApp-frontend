@@ -35,6 +35,17 @@ const activityHistory = {
 			notRecorded: `Not recorded`,
 			noActivityInRange: `No activity recorded in the visible range.`,
 		},
+		// Only one timing session may run at a time; these are what the user is asked when starting a
+		// second one — see useTimerSessionGuard.ts.
+		session: {
+			replaceTitle: `Another timer is running`,
+			replaceText: `{timer} is running for "{activity}". Starting a new session discards it.`,
+			replaceTextNoActivity: `{timer} is running. Starting a new session discards it.`,
+			discardEndedTitle: `An unlogged session is waiting`,
+			discardEndedText: `A finished {timer} session for "{activity}" has not been recorded yet. Starting a new one discards it.`,
+			discardEndedTextNoActivity: `A finished {timer} session has not been recorded yet. Starting a new one discards it.`,
+			replaceConfirm: `Discard and start`,
+		},
 		timer: {
 			setDurationFirst: `Please set a timer duration`,
 			endedTitleAnim: `Timer ended!`,

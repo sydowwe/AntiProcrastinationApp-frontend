@@ -31,6 +31,14 @@
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import type { ThemePreference } from '@/_common/modules/user/dto/response/User.ts'
 	import { resetAppState } from '@/core/user/composable/useSessionReset.ts'
+	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
+
+	// Created at boot rather than by whichever timer view happens to mount, because this store IS the
+	// running timer's clock: it rehydrates the session, keeps counting, advances pomodoro phases and
+	// rings the alarm. A page reloaded onto any other route has to bring a live session back with it,
+	// or the countdown sits frozen until the user thinks to open a timer page and the alarm never
+	// fires. One call — everything else it needs it does itself.
+	useRunningTimerStore()
 
 	const { initPushSupport } = usePushNotifications()
 	// Async since the framework version took it over: it now registers the service worker before

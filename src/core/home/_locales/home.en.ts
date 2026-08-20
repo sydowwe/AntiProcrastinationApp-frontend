@@ -37,6 +37,11 @@ const home = {
 		start: `Start`,
 		finish: `Done`,
 		track: `Track time`,
+		// Label for the running-session badge in NowBar — the only place outside the timer views
+		// themselves that shows a session exists.
+		timerRunning: `Timer running for {activity} — open it`,
+		timerPaused: `Timer paused for {activity} — open it`,
+		timerFinished: `Finished session for {activity} — record it`,
 		giveLonger: `Give it longer`,
 		moveLater: `Move later`,
 		skip: `Skip`,

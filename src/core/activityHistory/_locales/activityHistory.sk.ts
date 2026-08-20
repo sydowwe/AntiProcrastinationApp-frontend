@@ -36,6 +36,17 @@ const activityHistory = {
 			notRecorded: `Nezaznamenané`,
 			noActivityInRange: `V zobrazenom rozsahu nie je zaznamenaná žiadna aktivita.`,
 		},
+		// Naraz môže bežať len jedna relácia merania času. Tieto texty sa zobrazia, keď používateľ
+		// spustí ďalšiu — viď useTimerSessionGuard.ts.
+		session: {
+			replaceTitle: `Beží iný časovač`,
+			replaceText: `{timer} beží pre aktivitu „{activity}“. Spustením novej relácie ho zahodíte.`,
+			replaceTextNoActivity: `{timer} práve beží. Spustením novej relácie ho zahodíte.`,
+			discardEndedTitle: `Čaká nezaznamenaná relácia`,
+			discardEndedText: `Dokončená relácia ({timer}) pre aktivitu „{activity}“ ešte nebola zaznamenaná. Spustením novej ju zahodíte.`,
+			discardEndedTextNoActivity: `Dokončená relácia ({timer}) ešte nebola zaznamenaná. Spustením novej ju zahodíte.`,
+			replaceConfirm: `Zahodiť a spustiť`,
+		},
 		timer: {
 			setDurationFirst: `Prosím nastavte dĺžku časovača`,
 			endedTitleAnim: `Časovač skončil!`,

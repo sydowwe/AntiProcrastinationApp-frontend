@@ -157,6 +157,23 @@ The consequence for CLAUDE.md's "never reach into another module's `component/`"
 This does **not** dissolve the rule for the `stackedBars` case in §7: `activityTracking` is a peer feature module with its own routes and views, so
 `activityHistory` importing its `component/` is still the framework gap described above.
 
+### 8. `useTimerNotifications` is a generic alarm owned by `activity`
+
+**Local file kept:** `src/core/activity/composable/useTimerNotifications.ts`.
+
+**The gap.** It is a beeping alarm and a tab-title animation: an `AudioContext` playing four tones on a loop, `document.title` alternating between two strings, and a
+`visibilitychange` listener that silences both when the user comes back to the tab. Nothing in it names an activity, a history record, a route or a locale key — the
+caller passes the two strings in. It is the "yes, put it in `_common`" case from CLAUDE.md almost word for word, and a second app wanting a timer would copy it
+verbatim.
+
+It sits in `core/activity/composable/`, so every consumer is a cross-module composable import — which the boundary rule forbids. Consumers today, all in
+`activityHistory`: `store/runningTimerStore.ts`. (H9 moved the alarm out of `TimerView.vue` and `PomodoroTimerView.vue` and into the store, so the count went from
+two to one — the coupling narrowed rather than spread, but it did not go away.)
+
+**When the pointer bumps:** move it to `_common/composable/general/useTimerNotifications.ts` and repoint the one importer. It imports nothing but `vue`, so the move
+is a file rename plus one import line; note that `_common/composable/general/` imports nothing from `modules/`, and this file would not change that. Then delete this
+entry.
+
 ---
 
 ## Lessons kept

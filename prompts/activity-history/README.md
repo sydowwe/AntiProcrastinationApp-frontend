@@ -21,8 +21,9 @@ makes that relationship explicit instead of leaving it as an undocumented bounda
 | H6  | [URL state + drill-through](H6-url-state-and-drilldown.md)      | activityHistory | —    | Sonnet 5   | medium   |
 | H7  | [Empty states & first run](H7-empty-states.md)                  | both         | —       | Sonnet 5   | low–med  |
 | H8  | [Export the visible history](H8-export.md)                      | both         | —       | Sonnet 5   | medium   |
-| H9  | [Durable running timers ⭐](H9-durable-timers.md)                | activityHistory | maybe | **Opus 5** | high     |
+| H9  | [Durable running timers ⭐](H9-durable-timers.md)                | activityHistory | —    | **Opus 5** | high     |
 | H10 | [Insights](H10-insights.md)                                     | historyDashboard | yes  | **Opus 5** | high     |
+| H11 | [Alarm with the tab closed](H11-timer-end-notifications.md)     | activityHistory | yes  | Sonnet 5   | med–high |
 
 ⭐ = largest payoff. **H9 is the single most valuable item here** — a running timer is currently destroyed by
 any navigation or reload, silently, with the elapsed time unrecoverable. Everything else is polish by
@@ -50,9 +51,15 @@ Two contract asks are already written, because the gaps were identifiable from t
   answer, not code. It documents the live crash where a null `wakeUpTime` blanks an entire calendar month,
   and asks for authoritative nullability across the dashboard responses. **Cheapest of the two; run it first.**
 
-H10 emits its own `backend/H10-backend.md` as it finishes, and H9 emits `backend/H9-backend.md` only if it
-concludes server-side timer sync is warranted (it should ship the client-side version regardless). Batch
+H10 emits its own `backend/H10-backend.md` as it finishes, and H11 emits `backend/H11-backend.md`. Batch
 whatever exists into one backend session rather than opening a thread per file.
+
+**H9 emitted nothing, deliberately.** It asked whether server-side timer sync was warranted and the answer was
+no: the on-screen countdown has to be client-side either way, and the reconstruction is exact precisely because
+it compares one device's clock against itself — a second authoritative device invents a clock-skew bug class
+for a scenario (start on the phone, watch on the desktop) that barely happens. What H9 *did* leave standing is
+that the alarm only rings if the tab is alive, which is a single-device failure and is what H11 is for. Reopen
+sync only if it turns out someone genuinely bounces between devices on the same tracked task.
 
 Every backend file is **contract only** — endpoint, method, route, request shape, and response fields with
 types and nullability in the JSON casing the frontend `fromJson` reads. No entities, no EF or migrations, no

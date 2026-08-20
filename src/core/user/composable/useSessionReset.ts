@@ -18,6 +18,9 @@ import { useRoutineReviewStore } from '@/core/todoList/store/routineReviewStore.
  *   - `homeUiStore` — dashboard toggles (`hideDoneTodoList`/`hideDoneRoutine`), not account data.
  *   - `useTodayPlan`'s module state (`core/home/composable/useTodayPlan.ts`) — already resets itself
  *     via its own watcher on `currentUser.id`, which fires on this same transition.
+ *   - `runningTimerStore` (`core/activityHistory/store/`) — same reason: its own `currentUser.id`
+ *     watcher re-reads the account-scoped storage key, so the next account sees its own session (in
+ *     practice none) rather than this one's, and this one's stored session is left where it is.
  *   - Component-local refs scoped by `useUserScopedStorage` (pinned templates, template card order,
  *     the two activity-tracking hint dismissals) — they die with their component on navigation to
  *     the login route and are re-read from the (already account-scoped) storage key on remount.

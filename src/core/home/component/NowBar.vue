@@ -106,6 +106,27 @@
 					</div>
 				</template>
 
+				<!--
+					The way back to a timer that is running somewhere else. Timing sessions survive
+					navigation now, which is only half the fix: a session you cannot see is a session
+					you forget to stop. This is the visible half — it sits on the one bar that is
+					above the fold on the page the app opens with, and it is the only place outside
+					the timer views themselves that says a session exists at all.
+				-->
+				<VChip
+					v-if="timerKind"
+					:color="timerChipColor"
+					variant="tonal"
+					size="small"
+					link
+					:prependIcon="timerIcon"
+					:title="timerLabel"
+					:aria-label="timerLabel"
+					@click="openRunningTimer"
+				>
+					{{ timerClock }}
+				</VChip>
+
 				<!-- rendered as-is: a broken streak already arrives as 0 -->
 				<VChip
 					v-if="streak.currentStreak > 0"
@@ -207,6 +228,10 @@
 	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
 	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
+	// A store from another module, which the boundary rule normally forbids — home is the app's
+	// composition layer and is allowed to be coupled to the modules it surfaces (see home.routes.ts).
+	import { TIMER_ROUTE_NAME, useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
+	import { TIMER_KIND_LABEL_KEY } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 	import { localeTag } from '@/i18n.ts'
 
 	const router = useRouter()
@@ -279,6 +304,50 @@
 
 	function openPlanner() {
 		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
+	}
+
+	// ---------------------------------------------------------------- running timer
+
+	const timerStore = useRunningTimerStore()
+
+	const TIMER_ICON: Record<string, string> = {
+		stopwatch: 'fas fa-stopwatch',
+		timer: 'fas fa-hourglass-half',
+		pomodoro: 'fas fa-circle-dot',
+	}
+
+	const timerKind = computed(() => timerStore.activeKind)
+	const timerIcon = computed(() => (timerKind.value ? TIMER_ICON[timerKind.value] : undefined))
+	const timerChipColor = computed(() => {
+		if (timerStore.isEnded) return 'success'
+		return timerStore.isPaused ? 'textMuted' : 'primary'
+	})
+
+	/**
+	 * A digit clock rather than `formatDuration`'s "1h 20m": this one is ticking, and a label that
+	 * rounds away the seconds looks stuck.
+	 */
+	const timerClock = computed(() => {
+		const total = Math.max(0, timerStore.displaySeconds)
+		const hours = Math.floor(total / 3600)
+		const minutes = Math.floor((total % 3600) / 60)
+		const seconds = total % 60
+		const mmss = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+		return hours > 0 ? `${hours}:${mmss}` : mmss
+	})
+
+	const timerLabel = computed(() => {
+		const kind = timerKind.value
+		if (kind === null) return ''
+		const what = timerStore.activityName || t(TIMER_KIND_LABEL_KEY[kind])
+		if (timerStore.isEnded) return t('home.timerFinished', { activity: what })
+		return t(timerStore.isPaused ? 'home.timerPaused' : 'home.timerRunning', { activity: what })
+	})
+
+	function openRunningTimer() {
+		const kind = timerKind.value
+		if (kind === null) return
+		router.push({ name: TIMER_ROUTE_NAME[kind] })
 	}
 </script>
 

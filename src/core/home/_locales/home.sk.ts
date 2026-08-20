@@ -37,6 +37,11 @@ const home = {
 		start: `Spustiť`,
 		finish: `Hotovo`,
 		track: `Merať čas`,
+		// Popis odznaku bežiaceho merania času v NowBar — jediné miesto mimo samotných časovačov,
+		// ktoré ukazuje, že nejaká relácia beží.
+		timerRunning: `Beží meranie času pre {activity} — otvoriť`,
+		timerPaused: `Pozastavené meranie času pre {activity} — otvoriť`,
+		timerFinished: `Dokončená relácia pre {activity} — zaznamenať`,
 		giveLonger: `Predĺžiť`,
 		moveLater: `Posunúť neskôr`,
 		skip: `Preskočiť`,

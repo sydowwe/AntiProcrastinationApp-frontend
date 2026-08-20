@@ -1,13 +1,19 @@
+<!--
+	`persistent` used to be bound to `isRunning`, blocking the backdrop click to protect state that
+	closing the dialog destroyed anyway. The running session is durable now, so closing costs nothing
+	and fighting the user for it is only friction. What is still worth guarding is the *result* panel:
+	an unconfirmed length is the one thing here that is not written down anywhere yet.
+-->
 <template>
 	<MyDialog
 		v-model="model"
 		:title="$t('history.logTaskTitle', { activity: activityName })"
-		:persistent="isRunning"
-		:hasConfirmBtn="!isRunning && lengthData"
-		:isSmall="lengthData && !isRunning"
+		:persistent="showResult"
+		:hasConfirmBtn="showResult"
+		:isSmall="showResult"
 		@confirmed="handleConfirm"
 	>
-		<div v-if="lengthData && !isRunning">
+		<div v-if="lengthData !== null && !isRunning">
 			<h3>{{ $t('history.taskDoneFor', { duration: Time.getString(lengthData.length) }) }}</h3>
 		</div>
 		<div
@@ -75,8 +81,9 @@
 	import StopWatchView from '@/core/activityHistory/view/StopWatchView.vue'
 	import TimerView from '@/core/activityHistory/view/TimerView.vue'
 	import PomodoroTimerView from '@/core/activityHistory/view/PomodoroTimerView.vue'
-	import { ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
 
 	type Method = 'stopwatch' | 'timer' | 'pomodoro'
 
@@ -101,28 +108,43 @@
 
 	const model = defineModel<boolean>({ default: false })
 
-	const selectedMethod = ref<Method>(initialMethod)
-	const isRunning = ref(false)
+	const store = useRunningTimerStore()
+
+	/**
+	 * The session this dialog's task has running, if any. It is read from the store rather than
+	 * latched on the `started` emit: a local flag was reset by every reopen and by every toggle of
+	 * the method buttons, which is how switching method mid-session used to unmount a running child
+	 * and throw its elapsed time away without asking.
+	 */
+	const trackedSession = computed(() => {
+		const current = store.session
+		return current !== null && current.pinnedActivityId === activityId ? current : null
+	})
+	const isRunning = computed(() => trackedSession.value !== null)
+
+	const selectedMethod = ref<Method>(trackedSession.value?.kind ?? initialMethod)
 	const lengthData = ref<{ startTimestamp: Date; length: Time } | null>(null)
+	/** The dialog's second face: a finished length waiting to be confirmed back to the caller. */
+	const showResult = computed(() => lengthData.value !== null && !isRunning.value)
 
 	watch(model, open => {
-		if (open) {
-			selectedMethod.value = initialMethod
-			isRunning.value = false
-		}
+		if (!open) return
+		// Reopening onto a live session shows the timer that is actually running, whatever method the
+		// caller asked for — the toggle is hidden while `isRunning`, so anything else would strand it.
+		selectedMethod.value = trackedSession.value?.kind ?? initialMethod
+		lengthData.value = null
 	})
 
-	watch(selectedMethod, () => {
-		isRunning.value = false
+	// Same reason, for a session that is still running when the dialog is first mounted.
+	watch(trackedSession, current => {
+		if (current !== null) selectedMethod.value = current.kind
 	})
 
 	function handleStarted(actualStartTime: Time) {
-		isRunning.value = true
 		emit('started', actualStartTime)
 	}
 
 	function handleDone(startTimestamp: Date, length: Time) {
-		isRunning.value = false
 		lengthData.value = { startTimestamp, length }
 	}
 
