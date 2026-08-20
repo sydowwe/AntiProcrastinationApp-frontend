@@ -253,6 +253,8 @@
 					groupBy.value,
 				),
 			)
+		} catch {
+			stackedBarsData.value = null
 		} finally {
 			stackedBarsLoading.value = false
 		}
@@ -264,6 +266,8 @@
 			pieChartData.value = await getSummaryPieChart(
 				new HistorySummaryPieChartRequest(groupBy.value, 20, date.value, rangeType.value, endDate.value),
 			)
+		} catch {
+			pieChartData.value = null
 		} finally {
 			pieChartLoading.value = false
 		}
@@ -282,6 +286,8 @@
 					endDate.value,
 				),
 			)
+		} catch {
+			summaryCardsData.value = null
 		} finally {
 			summaryCardsLoading.value = false
 		}

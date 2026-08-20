@@ -82,7 +82,6 @@
 						class="my-auto mr-2"
 						icon="ellipsis-vertical"
 						v-bind="menuProps"
-						color="white"
 						variant="text"
 						size="40"
 						@click.stop=""

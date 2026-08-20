@@ -274,6 +274,10 @@
 		started: [actualStartTime: Time]
 		done: [startTimestamp: Date, length: Time]
 	}>()
+	const DEFAULT_FOCUS_TIME = new Time(0, 25)
+	const DEFAULT_SHORT_REST_TIME = new Time(0, 5)
+	const DEFAULT_LONG_REST_TIME = new Time(0, 15)
+
 	const i18n = useI18n()
 	const { triggerTimerEndNotification, stopAllNotifications, playNotificationSound, startTitleAnimation } =
 		useTimerNotifications()
@@ -285,9 +289,9 @@
 	const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
 
-	const focusInitialTime = ref(new Time(0, 25))
-	const shortRestInitialTime = ref(new Time(0, 5))
-	const longRestInitialTime = ref(new Time(0, 15))
+	const focusInitialTime = ref(new Time(DEFAULT_FOCUS_TIME.hours, DEFAULT_FOCUS_TIME.minutes))
+	const shortRestInitialTime = ref(new Time(DEFAULT_SHORT_REST_TIME.hours, DEFAULT_SHORT_REST_TIME.minutes))
+	const longRestInitialTime = ref(new Time(DEFAULT_LONG_REST_TIME.hours, DEFAULT_LONG_REST_TIME.minutes))
 	const focusTimeElapsed = ref(0)
 	const restTimeElapsed = ref(0)
 
@@ -517,7 +521,7 @@
 		}
 	}
 
-	async function stop(automatic: boolean) {
+	async function stop(automatic = false) {
 		clearInterval(intervalId.value)
 		clearTimeout(notificationTimeoutId.value)
 		intervalId.value = undefined
@@ -573,9 +577,7 @@
 		timeInputVisible.value = true
 		focusTimeElapsed.value = 0
 		restTimeElapsed.value = 0
-		numberOfCycles.value = 2
 		currentCycle.value = 1
-		numberOfFocusPeriodsInCycle.value = 4
 		currentFocusPeriod.value = 1
 		isFocus.value = true
 		endsAt.value = null
@@ -585,9 +587,9 @@
 	}
 
 	function resetPickersToDefault() {
-		focusInitialTime.value = new Time(0, 25)
-		shortRestInitialTime.value = new Time(0, 5)
-		longRestInitialTime.value = new Time(0, 10)
+		focusInitialTime.value = new Time(DEFAULT_FOCUS_TIME.hours, DEFAULT_FOCUS_TIME.minutes)
+		shortRestInitialTime.value = new Time(DEFAULT_SHORT_REST_TIME.hours, DEFAULT_SHORT_REST_TIME.minutes)
+		longRestInitialTime.value = new Time(DEFAULT_LONG_REST_TIME.hours, DEFAULT_LONG_REST_TIME.minutes)
 	}
 
 	// Two records, one per activity form: the focus activity for the time actually focused, and — only

@@ -215,7 +215,7 @@
 		}
 	}
 
-	async function stop(automatic: boolean) {
+	async function stop(automatic = false) {
 		clearInterval(intervalId.value)
 		clearTimeout(notificationTimeoutId.value)
 		intervalId.value = undefined

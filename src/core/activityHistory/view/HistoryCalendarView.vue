@@ -20,7 +20,8 @@
 						class="mr-1"
 					/>
 					<span class="info-text">
-						{{ asDaySummary(day).wakeUpTime.getString() }} - {{ asDaySummary(day).bedTime.getString() }}
+						{{ asDaySummary(day).wakeUpTime?.getString() ?? '-' }} -
+						{{ asDaySummary(day).bedTime?.getString() ?? '-' }}
 					</span>
 				</div>
 
@@ -34,7 +35,7 @@
 						size="small"
 						class="mr-1"
 					/>
-					<span class="info-text font-weight-bold">{{ formatDuration(asDaySummary(day).totalSeconds) }}</span>
+					<span class="info-text font-weight-bold">{{ fromSeconds(asDaySummary(day).totalSeconds) }}</span>
 					<VChip
 						size="x-small"
 						variant="tonal"
@@ -59,13 +60,13 @@
 							:style="{ backgroundColor: role.color ?? 'rgb(var(--v-theme-primary))' }"
 						/>
 						<span class="role-name">{{ role.roleName }}</span>
-						<span class="role-time">{{ formatDuration(role.totalSeconds) }}</span>
+						<span class="role-time">{{ fromSeconds(role.totalSeconds) }}</span>
 					</div>
 				</div>
 
 				<!-- No activity data -->
 				<div
-					v-else-if="asDaySummary(day).totalSeconds === 0"
+					v-if="asDaySummary(day).totalSeconds === 0"
 					class="cell-info no-data"
 				>
 					<span class="info-text opacity-50">No activity</span>
@@ -83,20 +84,12 @@
 	import type { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 	import { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 
 	const days = ref<CalendarActivityDaySummary[]>([])
 	const loading = ref(false)
 	const { firstDayOfWeek } = useUserPreferences()
-
-	function formatDuration(totalSeconds: number): string {
-		const hours = Math.floor(totalSeconds / 3600)
-		const minutes = Math.floor((totalSeconds % 3600) / 60)
-		if (hours > 0) {
-			return `${hours}h ${minutes}m`
-		}
-		return `${minutes}m`
-	}
 
 	async function fetchCalendarActivity(range: { start: Date | null; end: Date | null }) {
 		if (!range.start || !range.end) {
@@ -107,8 +100,6 @@
 		try {
 			const request = new CalendarActivityRequest(formatDateForApi(range.start), formatDateForApi(range.end), 3)
 			days.value = await getCalendarActivitySummary(request)
-		} catch {
-			days.value = []
 		} finally {
 			loading.value = false
 		}

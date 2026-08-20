@@ -7,6 +7,8 @@ import { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/Hi
 import { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
 import { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 import type { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
+import type { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
+import { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 import type { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 import type { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 import type { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
@@ -59,4 +61,11 @@ export async function getCalendarActivitySummary(
 ): Promise<CalendarActivityDaySummary[]> {
 	const { data } = await API.post('/activity-history/dashboard/calendar', request)
 	return data.map((d: any) => CalendarActivityDaySummary.fromJson(d))
+}
+
+// --- Timeline (single-day activity history list) ---
+
+export async function getDetailTimeline(request: DetailTimelineRequest): Promise<ActivityHistory[]> {
+	const { data } = await API.post('/activity-history/filter', request)
+	return ActivityHistory.listFromObjects(data)
 }

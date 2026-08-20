@@ -3,7 +3,12 @@
 		class="flex-fill mx-3 overflow-y-auto"
 		style="min-height: 200px"
 	>
+		<VSkeletonLoader
+			v-if="loading"
+			type="list-item-two-line@4"
+		/>
 		<VRow
+			v-else
 			justify="start"
 			class="my-2 mx-0"
 		>
@@ -94,9 +99,9 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { formatLocalized } from '@/_common/utils/DateTimeHelper.ts'
-	import { API } from '@/_common/axiosConfig.ts'
 	import { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
-	import { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
+	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
+	import { getDetailTimeline } from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
@@ -114,6 +119,7 @@
 
 	// --- Data ---
 	const historyList = ref<ActivityHistory[]>([])
+	const loading = ref(false)
 	const firstHalf = computed(() => historyList.value.slice(0, Math.ceil(historyList.value.length / 2)))
 	const secondHalf = computed(() => historyList.value.slice(Math.ceil(historyList.value.length / 2)))
 
@@ -146,15 +152,14 @@
 	}
 
 	// --- Fetch ---
-	function fetchData() {
-		const request = new DetailTimelineRequest(props.date, props.timeFrom, props.timeTo)
-		API.post('/activity-history/filter', request)
-			.then(response => {
-				historyList.value = ActivityHistory.listFromObjects(response.data)
-			})
-			.catch(error => {
-				console.log(error)
-			})
+	async function fetchData() {
+		loading.value = true
+		try {
+			const request = new DetailTimelineRequest(props.date, props.timeFrom, props.timeTo)
+			historyList.value = await getDetailTimeline(request)
+		} finally {
+			loading.value = false
+		}
 	}
 
 	watch(
@@ -183,7 +188,7 @@
 	}
 
 	async function confirmDelete() {
-		if (!deleteTargetId.value) return
+		if (deleteTargetId.value == null) return
 		await deleteEntity(deleteTargetId.value)
 		historyList.value = historyList.value.filter(r => r.id !== deleteTargetId.value)
 		deleteDialog.value = false

@@ -239,6 +239,8 @@
 					groupBy.value,
 				),
 			)
+		} catch {
+			stackedBarsData.value = null
 		} finally {
 			stackedBarsLoading.value = false
 		}
@@ -250,6 +252,8 @@
 			pieChartData.value = await getDetailPieChart(
 				new DetailPieChartRequest(groupBy.value, 20, date.value, timeFrom.value, timeTo.value),
 			)
+		} catch {
+			pieChartData.value = null
 		} finally {
 			pieChartLoading.value = false
 		}
@@ -268,6 +272,8 @@
 					topN.value,
 				),
 			)
+		} catch {
+			summaryCardsData.value = null
 		} finally {
 			summaryCardsLoading.value = false
 		}

@@ -25,7 +25,7 @@
 		</VCardTitle>
 		<VCardText
 			class="pa-0"
-			style="background-color: rgb(55, 55, 55)"
+			style="background-color: rgba(var(--v-theme-on-surface), 0.05)"
 		>
 			<div class="stat-column">
 				<div class="text-caption text-medium-emphasis mb-1">Total</div>

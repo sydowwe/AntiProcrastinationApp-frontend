@@ -62,10 +62,9 @@
 	const dateTo = ref<Date>(endDate.value ? new Date(endDate.value) : new Date())
 
 	function emitValues() {
-		const todayStr = formatDateForApi(dateFrom.value)
+		const dateFromStr = formatDateForApi(dateFrom.value)
 		rangeType.value = selectedRangeType.value
 
-		console.log(todayStr)
 		switch (selectedRangeType.value) {
 			case ActivityDateRangeTypeEnum.ThreeDays:
 			case ActivityDateRangeTypeEnum.Week:
@@ -73,17 +72,17 @@
 			case ActivityDateRangeTypeEnum.Month:
 			case ActivityDateRangeTypeEnum.ThreeMonths:
 			case ActivityDateRangeTypeEnum.Year:
-				date.value = todayStr
+				date.value = dateFromStr
 				endDate.value = undefined
 				break
 			case ActivityDateRangeTypeEnum.CustomRange:
-				date.value = formatDateForApi(dateFrom.value)
+				date.value = dateFromStr
 				endDate.value = formatDateForApi(dateTo.value)
 				break
 		}
 	}
 
-	watch([selectedRangeType, dateFrom], () => emitValues(), { immediate: true, deep: true })
+	watch([selectedRangeType, dateFrom], () => emitValues(), { immediate: true })
 	watch(
 		dateTo,
 		() => {
