@@ -43,6 +43,11 @@
 
 		<!-- Bottom Section: Summary Cards + Pie Chart -->
 		<div class="mt-6">
+			<ActivityFocusStrip
+				class="mb-4"
+				:metrics="focusMetrics"
+				:loading="timelineLoading"
+			/>
 			<VRow>
 				<VCol
 					cols="12"
@@ -94,6 +99,7 @@
 	import ActivitySummaryCards from '@/core/activityTracking/component/summaryCards/ActivitySummaryCards.vue'
 	import AndroidPieChartSection from '@/core/activityTracking/component/android/AndroidPieChartSection.vue'
 	import ActivityDashboardHeader from '@/core/activityTracking/component/ActivityDashboardHeader.vue'
+	import ActivityFocusStrip from '@/core/activityTracking/component/focusMetrics/ActivityFocusStrip.vue'
 	import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput'
@@ -201,6 +207,7 @@
 		primarySessions,
 		detailSessions,
 		backgroundSessions,
+		focusMetrics,
 		timelineFrom,
 		timelineTo,
 		summaryCardsLoading,

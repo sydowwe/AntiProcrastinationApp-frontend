@@ -82,6 +82,20 @@ const activityTracking = {
 	stackedBars: {
 		windowLabel: `Okno`,
 	},
+	focus: {
+		title: `Priebeh dňa`,
+		switches: `Prepnutia`,
+		switchesHint: `Koľkokrát sa počas dňa zmenilo to, čo bolo v popredí.`,
+		longestBlock: `Najdlhší súvislý blok`,
+		longestBlockHint: `Najdlhší čas strávený na jednej položke. Krátke prerušenia do {minutes} min blok neukončia.`,
+		medianSession: `Typická relácia`,
+		medianSessionHint: `Medián dĺžky relácií. Medián namiesto priemeru — niekoľko dlhých relácií priemer skreslí.`,
+		// Tvar `Relácie: {count}` namiesto `z {count} relácií` — slovenčina má tri tvary množného
+		// čísla a bez pluralizačného pravidla by `z 1 relácií` bolo gramaticky nesprávne.
+		sessionCount: `Relácie: {count}`,
+		longestBreak: `Najdlhšia pauza`,
+		longestBreakHint: `Najdlhší úsek medzi dvoma reláciami bez zaznamenanej aktivity.`,
+	},
 	timeline: {
 		title: `Časová os aktivity`,
 		single: `Jednoduché`,

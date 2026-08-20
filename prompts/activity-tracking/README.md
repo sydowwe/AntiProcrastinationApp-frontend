@@ -29,7 +29,7 @@ it happens, is in the *contract* — see U4.
 | U2 | [Request lifecycle](U2-request-lifecycle.md)                    | capability| —       | Sonnet 5   | medium   |
 | U6 | [Empty states that say something](U6-empty-and-first-run.md)    | capability| —       | Sonnet 5   | low–med  |
 | U3 | [Break the single-day ceiling ⭐](U3-date-range.md)             | capability| yes     | **Opus 5** | high     |
-| U5 | [Fragmentation metrics](U5-fragmentation-metrics.md)            | capability| likely  | **Opus 5** | high     |
+| U5 | [Fragmentation metrics](U5-fragmentation-metrics.md)            | capability| partly  | **Opus 5** | high     |
 | U4 | [One picture of the day ⭐](U4-unified-source.md)               | capability| yes     | **Opus 5** | high     |
 
 ## What R1 fixes, so you know the state of things
@@ -58,8 +58,10 @@ contradicting.
 
 ## Backend-dependent prompts
 
-**U3** and **U4** need data the .NET side does not expose. **U5** probably does not — it is told to derive what it can from the timeline sessions already served and
-to write no backend file if nothing survives that. **R4** carries one open contract *question*, not an ask.
+**U3** and **U4** need data the .NET side does not expose. **U5** turned out to need it only *partly*: the four measures themselves are derived client-side from
+timeline sessions already served and shipped with no contract change, but comparing them against the user's own recent history, and reporting them over a multi-day
+range at all, both need data the client never holds — see `backend/U5-backend.md` §0–1, which says outright that nothing in it blocks the single-day dashboard.
+**R4** carries one open contract *question*, not an ask.
 
 The .NET solution is not in this repo, so none of these can verify a contract from here. Each therefore ends with the same instruction: **do all the frontend work
 that stands on its own first, then write the backend ask** to `prompts/activity-tracking/backend/<ID>-backend.md`.

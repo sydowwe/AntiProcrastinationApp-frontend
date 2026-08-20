@@ -82,6 +82,19 @@ const activityTracking = {
 	stackedBars: {
 		windowLabel: `Window`,
 	},
+	focus: {
+		title: `Shape of the day`,
+		switches: `Switches`,
+		switchesHint: `How many times the thing in the foreground changed during the day.`,
+		longestBlock: `Longest unbroken block`,
+		longestBlockHint: `The longest stretch spent on one item. Interruptions shorter than {minutes} min do not break it.`,
+		medianSession: `Typical session`,
+		medianSessionHint: `The median session length. Median rather than mean — a few long sessions skew the mean.`,
+		// Mirrors the SK phrasing, which avoids a plural form the locale cannot inflect. See there.
+		sessionCount: `Sessions: {count}`,
+		longestBreak: `Longest break`,
+		longestBreakHint: `The longest stretch between two sessions with no recorded activity.`,
+	},
 	timeline: {
 		title: `Activity Timeline`,
 		single: `Single`,

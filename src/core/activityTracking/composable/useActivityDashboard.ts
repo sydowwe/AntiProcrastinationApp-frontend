@@ -14,6 +14,7 @@ import {
 	windowSizeOptionsForSpan,
 } from '@/core/activityTracking/component/stackedBars/stackedBarsUtils.ts'
 import { clampSpanEnd, daySpanCount, isSameDay } from '@/core/activityTracking/composable/useActivityRangePresets.ts'
+import { computeFocusMetrics, type FocusMetrics } from '@/core/activityTracking/composable/focusMetrics.ts'
 
 export type ActivityVisualization = 'stackedBars' | 'timeline'
 
@@ -263,6 +264,17 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const primarySessions = computed(() => timelineSessions.value.primarySessions)
 	const detailSessions = computed(() => timelineSessions.value.detailSessions)
 	const backgroundSessions = computed(() => timelineSessions.value.backgroundSessions)
+
+	/**
+	 * Fragmentation, derived from sessions the timeline round already fetched — no extra request, and
+	 * available whichever visualization is on screen, since the timeline is fetched for the whole span
+	 * regardless of what is being rendered.
+	 *
+	 * `null` over a multi-day range, because `clearTimeline` empties the sessions there. That is a real
+	 * ceiling rather than an oversight: a month of sessions is the largest response the module can ask
+	 * for and nothing renders it, so the range case needs the numbers computed server-side.
+	 */
+	const focusMetrics = computed<FocusMetrics | null>(() => computeFocusMetrics(primarySessions.value))
 
 	const range = computed<ActivityDashboardRange>(() => ({
 		dateFrom: formatDateForApi(dateFrom.value),
@@ -646,6 +658,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		primarySessions,
 		detailSessions,
 		backgroundSessions,
+		focusMetrics,
 		timelineFrom,
 		timelineTo,
 		summaryCardsLoading,
