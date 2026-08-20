@@ -1,4 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
+import { watchDebounced } from '@vueuse/core'
+import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { Time } from '@/_common/dto/dto/Time.ts'
@@ -33,17 +35,30 @@ export interface ActivityTimelineSessions {
  * shared, so it stays generic and is handed back to the view untouched.
  */
 export interface ActivityDashboardFetchers<TPieChart> {
-	fetchSummaryCards(range: ActivityDashboardRange, baseline: BaselineType): Promise<SummaryCardsData[] | null>
+	fetchSummaryCards(
+		range: ActivityDashboardRange,
+		baseline: BaselineType,
+		signal: AbortSignal,
+	): Promise<SummaryCardsData[] | null>
 
-	fetchPieChart(range: ActivityDashboardRange): Promise<TPieChart | null>
+	fetchPieChart(range: ActivityDashboardRange, signal: AbortSignal): Promise<TPieChart | null>
 
-	fetchStackedBars(range: ActivityDashboardRange, windowSize: number): Promise<StackedBarsInputWindow[]>
+	fetchStackedBars(
+		range: ActivityDashboardRange,
+		windowSize: number,
+		signal: AbortSignal,
+	): Promise<StackedBarsInputWindow[]>
 
-	fetchTimeline(range: ActivityDashboardRange): Promise<ActivityTimelineSessions>
+	fetchTimeline(range: ActivityDashboardRange, signal: AbortSignal): Promise<ActivityTimelineSessions>
 }
 
 function emptyTimelineSessions(): ActivityTimelineSessions {
 	return { primarySessions: [], detailSessions: [], backgroundSessions: [] }
+}
+
+/** Axios rejects an aborted request rather than resolving it — this tells that case apart from a real failure. */
+function isAbortError(error: unknown): boolean {
+	return axios.isCancel(error)
 }
 
 // --- URL query-state (defaults, encode/parse) ---
@@ -151,6 +166,13 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	const stackedBarsLoading = ref(false)
 	const timelineLoading = ref(false)
 
+	// --- Error States: quiet, per-panel — the axios interceptor's snackbar is suppressed for these
+	// requests (`_silent: true`) so a failure surfaces only as this panel's own retry state. ---
+	const summaryCardsError = ref(false)
+	const pieChartError = ref(false)
+	const stackedBarsError = ref(false)
+	const timelineError = ref(false)
+
 	const primarySessions = computed(() => timelineSessions.value.primarySessions)
 	const detailSessions = computed(() => timelineSessions.value.detailSessions)
 	const backgroundSessions = computed(() => timelineSessions.value.backgroundSessions)
@@ -178,46 +200,107 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	})
 
 	// --- Fetch Functions ---
+	// Each holds the AbortController of its own in-flight round. A new round aborts the previous
+	// one first, so a stale response can never paint over a newer one. The `finally` only clears
+	// `loading` when this round is still the current one — a round that got superseded must not
+	// clear the flag the newer round owns.
+	let summaryCardsController: AbortController | null = null
+	let pieChartController: AbortController | null = null
+	let stackedBarsController: AbortController | null = null
+	let timelineController: AbortController | null = null
+
 	async function fetchSummaryCards() {
+		summaryCardsController?.abort()
+		const controller = new AbortController()
+		summaryCardsController = controller
 		summaryCardsLoading.value = true
+		summaryCardsError.value = false
 		try {
-			summaryCardsData.value = await fetchers.fetchSummaryCards(range.value, selectedBaseline.value)
+			const data = await fetchers.fetchSummaryCards(range.value, selectedBaseline.value, controller.signal)
+			if (summaryCardsController === controller) {
+				summaryCardsData.value = data
+			}
+		} catch (error) {
+			if (isAbortError(error)) return
+			summaryCardsError.value = true
 		} finally {
-			summaryCardsLoading.value = false
+			if (summaryCardsController === controller) {
+				summaryCardsLoading.value = false
+			}
 		}
 	}
 
 	async function fetchPieChart() {
+		pieChartController?.abort()
+		const controller = new AbortController()
+		pieChartController = controller
 		pieChartLoading.value = true
+		pieChartError.value = false
 		try {
-			pieChartData.value = await fetchers.fetchPieChart(range.value)
+			const data = await fetchers.fetchPieChart(range.value, controller.signal)
+			if (pieChartController === controller) {
+				pieChartData.value = data
+			}
+		} catch (error) {
+			if (isAbortError(error)) return
+			pieChartError.value = true
 		} finally {
-			pieChartLoading.value = false
+			if (pieChartController === controller) {
+				pieChartLoading.value = false
+			}
 		}
 	}
 
 	async function fetchStackedBars() {
+		stackedBarsController?.abort()
+		const controller = new AbortController()
+		stackedBarsController = controller
 		stackedBarsLoading.value = true
+		stackedBarsError.value = false
 		try {
-			stackedBarsWindows.value = await fetchers.fetchStackedBars(range.value, selectedWindowSize.value)
+			const data = await fetchers.fetchStackedBars(range.value, selectedWindowSize.value, controller.signal)
+			if (stackedBarsController === controller) {
+				stackedBarsWindows.value = data
+			}
+		} catch (error) {
+			if (isAbortError(error)) return
+			stackedBarsError.value = true
 		} finally {
-			stackedBarsLoading.value = false
+			if (stackedBarsController === controller) {
+				stackedBarsLoading.value = false
+			}
 		}
 	}
 
 	async function fetchTimeline() {
+		timelineController?.abort()
+		const controller = new AbortController()
+		timelineController = controller
 		timelineLoading.value = true
+		timelineError.value = false
 		try {
-			timelineSessions.value = await fetchers.fetchTimeline(range.value)
+			const data = await fetchers.fetchTimeline(range.value, controller.signal)
+			if (timelineController === controller) {
+				timelineSessions.value = data
+			}
+		} catch (error) {
+			if (isAbortError(error)) return
+			timelineError.value = true
 		} finally {
-			timelineLoading.value = false
+			if (timelineController === controller) {
+				timelineLoading.value = false
+			}
 		}
 	}
 
 	// The initial run must keep a `selected` value that arrived via the URL rather than wipe it.
 	let isInitialRun = true
 
-	watch(
+	// `timeFrom`/`timeTo` come from a range-picker that scrubs continuously, so debounce the whole
+	// round; `date` changes are discrete but share the same watcher, and one uniform debounce is
+	// simpler than splitting it. The four fetches are independent — fire them in parallel, not awaited
+	// in sequence, so one slow or failing endpoint never blocks the other three.
+	watchDebounced(
 		[date, timeFrom, timeTo],
 		() => {
 			if (isInitialRun) {
@@ -230,7 +313,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 			fetchStackedBars()
 			fetchTimeline()
 		},
-		{ immediate: true },
+		{ immediate: true, debounce: 300 },
 	)
 
 	watch(selectedBaseline, () => {
@@ -339,6 +422,10 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		summaryCardsError,
+		pieChartError,
+		stackedBarsError,
+		timelineError,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,

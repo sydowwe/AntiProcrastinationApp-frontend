@@ -37,6 +37,25 @@
 			/>
 		</template>
 
+		<!-- Error state -->
+		<template v-else-if="error">
+			<div class="d-flex flex-column align-center justify-center pa-8">
+				<VIcon
+					icon="fas fa-triangle-exclamation"
+					size="48"
+					class="text-disabled mb-2"
+				/>
+				<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+				<VBtn
+					size="small"
+					variant="outlined"
+					@click="emit('retry')"
+				>
+					{{ $t('activityTracking.common.retry') }}
+				</VBtn>
+			</div>
+		</template>
+
 		<!-- No data -->
 		<template v-else-if="windows.length === 0">
 			<div class="d-flex flex-column align-center justify-center pa-8">
@@ -79,6 +98,7 @@
 
 	const {
 		loading = false,
+		error = false,
 		windows,
 		timeFrom,
 		timeTo,
@@ -87,6 +107,7 @@
 	} = defineProps<{
 		windows: StackedBarsInputWindow[]
 		loading?: boolean
+		error?: boolean
 		timeFrom: Time
 		timeTo: Time
 		windowSizeOptions: number[]
@@ -96,6 +117,7 @@
 	const emit = defineEmits<{
 		windowSizeChange: [size: number]
 		activityClick: [window: StackedBarsInputWindow, name: string]
+		retry: []
 	}>()
 
 	const { t } = useI18n()

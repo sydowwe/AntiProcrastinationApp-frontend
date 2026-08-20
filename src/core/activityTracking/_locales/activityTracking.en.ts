@@ -30,6 +30,8 @@ const activityTracking = {
 		other: `Other`,
 		showLess: `- Show less`,
 		showMore: `+ {count} more`,
+		loadFailed: `Failed to load`,
+		retry: `Retry`,
 	},
 	pieChart: {
 		dayTotal: `Day Total`,

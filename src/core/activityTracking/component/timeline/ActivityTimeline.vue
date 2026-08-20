@@ -46,6 +46,25 @@
 			/>
 		</template>
 
+		<!-- Error state -->
+		<template v-else-if="error">
+			<div class="empty-state">
+				<VIcon
+					icon="fas fa-triangle-exclamation"
+					size="48"
+					class="text-disabled mb-2"
+				/>
+				<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+				<VBtn
+					size="small"
+					variant="outlined"
+					@click="$emit('retry')"
+				>
+					{{ $t('activityTracking.common.retry') }}
+				</VBtn>
+			</div>
+		</template>
+
 		<!-- Empty state -->
 		<template
 			v-else-if="primarySessions.length === 0 && detailSessions.length === 0 && backgroundSessions.length === 0"
@@ -107,10 +126,12 @@
 		from: Date
 		to: Date
 		loading?: boolean
+		error?: boolean
 	}>()
 
 	defineEmits<{
 		sessionClick: [session: TimelineSessionDto]
+		retry: []
 	}>()
 
 	const viewMode = ref<TimelineViewMode>('single')

@@ -16,23 +16,35 @@ import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTrackin
 
 const BASE_URL = '/activity-tracking/desktop'
 
-export async function getDesktopStackedBars(request: DesktopStackedBarsRequest): Promise<DesktopStackedBarsWindow[]> {
-	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request)
+export async function getDesktopStackedBars(
+	request: DesktopStackedBarsRequest,
+	signal?: AbortSignal,
+): Promise<DesktopStackedBarsWindow[]> {
+	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request, { signal, _silent: true })
 	return data.map((w: any) => DesktopStackedBarsWindow.fromJson(w))
 }
 
-export async function getDesktopTimeline(request: DesktopTimelineRequest): Promise<DesktopTimelineResponse> {
-	const { data } = await API.post(`${BASE_URL}/timeline`, request)
+export async function getDesktopTimeline(
+	request: DesktopTimelineRequest,
+	signal?: AbortSignal,
+): Promise<DesktopTimelineResponse> {
+	const { data } = await API.post(`${BASE_URL}/timeline`, request, { signal, _silent: true })
 	return DesktopTimelineResponse.fromJson(data)
 }
 
-export async function getDesktopSummaryCards(request: DesktopSummaryCardsRequest): Promise<DesktopProcessSummaryDto[]> {
-	const { data } = await API.post(`${BASE_URL}/summary-cards`, request)
+export async function getDesktopSummaryCards(
+	request: DesktopSummaryCardsRequest,
+	signal?: AbortSignal,
+): Promise<DesktopProcessSummaryDto[]> {
+	const { data } = await API.post(`${BASE_URL}/summary-cards`, request, { signal, _silent: true })
 	return data.map((d: any) => DesktopProcessSummaryDto.fromJson(d))
 }
 
-export async function getDesktopPieChart(request: DesktopPieChartRequest): Promise<DesktopPieChartResponse> {
-	const { data } = await API.post(`${BASE_URL}/pie-chart`, request)
+export async function getDesktopPieChart(
+	request: DesktopPieChartRequest,
+	signal?: AbortSignal,
+): Promise<DesktopPieChartResponse> {
+	const { data } = await API.post(`${BASE_URL}/pie-chart`, request, { signal, _silent: true })
 	return DesktopPieChartResponse.fromJson(data)
 }
 

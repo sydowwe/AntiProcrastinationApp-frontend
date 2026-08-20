@@ -15,12 +15,14 @@
 				class="w-100"
 				:windows="stackedBarsWindows"
 				:loading="stackedBarsLoading"
+				:error="stackedBarsError"
 				:initialWindowSize="selectedWindowSize"
 				:timeFrom
 				:timeTo
 				:windowSizeOptions="activityWindowSizeOptions"
 				@windowSizeChange="handleWindowSizeChange"
 				@activityClick="handleActivityClick"
+				@retry="fetchStackedBars"
 			/>
 			<ActivityTimeline
 				v-else
@@ -30,7 +32,9 @@
 				:from="timelineFrom"
 				:to="timelineTo"
 				:loading="timelineLoading"
+				:error="timelineError"
 				@sessionClick="handleSessionClick"
+				@retry="fetchTimeline"
 			/>
 		</div>
 
@@ -49,8 +53,10 @@
 						:selectedBaseline
 						:selectedDomain="selectedItem"
 						:loading="summaryCardsLoading"
+						:error="summaryCardsError"
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
+						@retry="fetchSummaryCards"
 					/>
 				</VCol>
 				<VCol
@@ -63,6 +69,8 @@
 						:apps="pieChartData?.apps ?? []"
 						:totals="pieChartData?.totals"
 						:loading="pieChartLoading"
+						:error="pieChartError"
+						@retry="fetchPieChart"
 					/>
 				</VCol>
 			</VRow>
@@ -129,24 +137,27 @@
 	}
 
 	const fetchers: ActivityDashboardFetchers<AndroidPieChartResponse> = {
-		async fetchSummaryCards(range, baseline) {
+		async fetchSummaryCards(range, baseline, signal) {
 			const apps = await getAndroidSummaryCards(
 				new AndroidSummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4),
+				signal,
 			)
 			return apps.map(toSummaryCardsData)
 		},
-		fetchPieChart(range) {
-			return getAndroidPieChart(new AndroidPieChartRequest(range.date, range.timeFrom, range.timeTo, 1))
+		fetchPieChart(range, signal) {
+			return getAndroidPieChart(new AndroidPieChartRequest(range.date, range.timeFrom, range.timeTo, 1), signal)
 		},
-		async fetchStackedBars(range, windowSize) {
+		async fetchStackedBars(range, windowSize, signal) {
 			const windows = await getAndroidStackedBars(
 				new AndroidStackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+				signal,
 			)
 			return windows.map(toStackedBarsWindow)
 		},
-		async fetchTimeline(range) {
+		async fetchTimeline(range, signal) {
 			const timeline = await getAndroidTimeline(
 				new AndroidTimelineRequest(range.date, range.timeFrom, range.timeTo),
+				signal,
 			)
 			// Android reports a single lane — it has no detail or background sessions.
 			return {
@@ -179,6 +190,14 @@
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		summaryCardsError,
+		pieChartError,
+		stackedBarsError,
+		timelineError,
+		fetchSummaryCards,
+		fetchPieChart,
+		fetchStackedBars,
+		fetchTimeline,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,

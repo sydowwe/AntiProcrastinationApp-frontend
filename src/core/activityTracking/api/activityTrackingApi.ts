@@ -11,24 +11,24 @@ import type { DateAndTimeRangeRequest } from '@/_common/dto/request/general/Date
 
 const BASE_URL = '/activity-tracking/web-extension'
 
-export async function getSummaryCards(request: SummaryCardsRequest): Promise<SummaryCardsData[]> {
-	const { data } = await API.post(`${BASE_URL}/summary-cards`, request)
+export async function getSummaryCards(request: SummaryCardsRequest, signal?: AbortSignal): Promise<SummaryCardsData[]> {
+	const { data } = await API.post(`${BASE_URL}/summary-cards`, request, { signal, _silent: true })
 	return data.map((d: any) => SummaryCardsData.fromJson(d))
 }
 
-export async function getPieChart(request: PieChartRequest): Promise<PieChartData> {
-	const { data } = await API.post(`${BASE_URL}/pie-chart`, request)
+export async function getPieChart(request: PieChartRequest, signal?: AbortSignal): Promise<PieChartData> {
+	const { data } = await API.post(`${BASE_URL}/pie-chart`, request, { signal, _silent: true })
 	return PieChartData.fromJson(data)
 }
 
-export async function getStackedBarsData(request: StackedBarsRequest): Promise<ActivityWindow[]> {
-	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request)
+export async function getStackedBarsData(request: StackedBarsRequest, signal?: AbortSignal): Promise<ActivityWindow[]> {
+	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request, { signal, _silent: true })
 
 	return data.map((w: any) => ActivityWindow.fromJson(w))
 }
 
-export async function getTimeline(request: DateAndTimeRangeRequest): Promise<TimelineResponse> {
-	const { data } = await API.post(`${BASE_URL}/timeline`, request)
+export async function getTimeline(request: DateAndTimeRangeRequest, signal?: AbortSignal): Promise<TimelineResponse> {
+	const { data } = await API.post(`${BASE_URL}/timeline`, request, { signal, _silent: true })
 	return TimelineResponse.fromJson(data)
 }
 

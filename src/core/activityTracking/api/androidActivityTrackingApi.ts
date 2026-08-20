@@ -15,23 +15,35 @@ import type { AndroidDistinctEntriesFilterRequest } from '@/core/activityTrackin
 
 const BASE_URL = '/activity-tracking/android'
 
-export async function getAndroidStackedBars(request: AndroidStackedBarsRequest): Promise<AndroidStackedBarsWindow[]> {
-	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request)
+export async function getAndroidStackedBars(
+	request: AndroidStackedBarsRequest,
+	signal?: AbortSignal,
+): Promise<AndroidStackedBarsWindow[]> {
+	const { data } = await API.post(`${BASE_URL}/stacked-bars`, request, { signal, _silent: true })
 	return data.map((w: any) => AndroidStackedBarsWindow.fromJson(w))
 }
 
-export async function getAndroidTimeline(request: AndroidTimelineRequest): Promise<AndroidTimelineResponse> {
-	const { data } = await API.post(`${BASE_URL}/timeline`, request)
+export async function getAndroidTimeline(
+	request: AndroidTimelineRequest,
+	signal?: AbortSignal,
+): Promise<AndroidTimelineResponse> {
+	const { data } = await API.post(`${BASE_URL}/timeline`, request, { signal, _silent: true })
 	return AndroidTimelineResponse.fromJson(data)
 }
 
-export async function getAndroidSummaryCards(request: AndroidSummaryCardsRequest): Promise<AndroidAppSummaryDto[]> {
-	const { data } = await API.post(`${BASE_URL}/summary-cards`, request)
+export async function getAndroidSummaryCards(
+	request: AndroidSummaryCardsRequest,
+	signal?: AbortSignal,
+): Promise<AndroidAppSummaryDto[]> {
+	const { data } = await API.post(`${BASE_URL}/summary-cards`, request, { signal, _silent: true })
 	return data.map((d: any) => AndroidAppSummaryDto.fromJson(d))
 }
 
-export async function getAndroidPieChart(request: AndroidPieChartRequest): Promise<AndroidPieChartResponse> {
-	const { data } = await API.post(`${BASE_URL}/pie-chart`, request)
+export async function getAndroidPieChart(
+	request: AndroidPieChartRequest,
+	signal?: AbortSignal,
+): Promise<AndroidPieChartResponse> {
+	const { data } = await API.post(`${BASE_URL}/pie-chart`, request, { signal, _silent: true })
 	return AndroidPieChartResponse.fromJson(data)
 }
 

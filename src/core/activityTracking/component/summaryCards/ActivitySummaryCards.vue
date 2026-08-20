@@ -31,6 +31,26 @@
 			/>
 		</div>
 
+		<!-- Error State -->
+		<div
+			v-else-if="error"
+			class="empty-state"
+		>
+			<VIcon
+				icon="fas fa-triangle-exclamation"
+				size="48"
+				class="text-disabled mb-2"
+			/>
+			<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+			<VBtn
+				size="small"
+				variant="outlined"
+				@click="emit('retry')"
+			>
+				{{ $t('activityTracking.common.retry') }}
+			</VBtn>
+		</div>
+
 		<!-- Empty State -->
 		<div
 			v-else-if="(visibleDomains?.length ?? 0) === 0"
@@ -73,6 +93,7 @@
 		selectedBaseline,
 		selectedDomain = null,
 		loading = false,
+		error = false,
 		title = i18n.global.t('activityTracking.dashboard.topDomains'),
 	} = defineProps<{
 		domains: SummaryCardsData[] | null
@@ -80,6 +101,7 @@
 		selectedBaseline: BaselineType
 		selectedDomain?: string | null
 		loading?: boolean
+		error?: boolean
 		title?: string
 	}>()
 
@@ -87,6 +109,8 @@
 		(e: 'update:selectedBaseline', value: BaselineType): void
 
 		(e: 'domainClick', domain: string): void
+
+		(e: 'retry'): void
 	}>()
 
 	// Filter out domains with no activity (both active and background are 0 or null)

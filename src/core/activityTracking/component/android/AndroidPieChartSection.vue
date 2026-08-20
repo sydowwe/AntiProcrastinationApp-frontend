@@ -11,6 +11,27 @@
 			</div>
 		</template>
 
+		<template v-else-if="error">
+			<VCard
+				variant="outlined"
+				class="pa-8 d-flex flex-column align-center justify-center"
+			>
+				<VIcon
+					icon="fas fa-triangle-exclamation"
+					size="48"
+					class="text-disabled mb-2"
+				/>
+				<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+				<VBtn
+					size="small"
+					variant="outlined"
+					@click="emit('retry')"
+				>
+					{{ $t('activityTracking.common.retry') }}
+				</VBtn>
+			</VCard>
+		</template>
+
 		<template v-else-if="!apps || apps.length === 0">
 			<VCard
 				variant="outlined"
@@ -71,6 +92,11 @@
 		apps: AndroidAppPieData[]
 		totals?: AndroidPieTotals
 		loading?: boolean
+		error?: boolean
+	}>()
+
+	const emit = defineEmits<{
+		(e: 'retry'): void
 	}>()
 
 	const selectedAppLabel = defineModel<string | null>('selectedAppLabel', { default: null })

@@ -11,6 +11,27 @@
 			</div>
 		</template>
 
+		<template v-else-if="error">
+			<VCard
+				variant="outlined"
+				class="h-100 pa-8 d-flex flex-column align-center justify-center"
+			>
+				<VIcon
+					icon="fas fa-triangle-exclamation"
+					size="48"
+					class="text-disabled mb-2"
+				/>
+				<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+				<VBtn
+					size="small"
+					variant="outlined"
+					@click="emit('retry')"
+				>
+					{{ $t('activityTracking.common.retry') }}
+				</VBtn>
+			</VCard>
+		</template>
+
 		<template v-else-if="!domains || domains.length === 0">
 			<VCard
 				variant="outlined"
@@ -56,11 +77,14 @@
 		domains: DomainPieData[]
 		dayTotals?: DayTotals
 		loading?: boolean
+		error?: boolean
 		otherThresholdPercent?: number
 	}>()
 
 	const emit = defineEmits<{
 		(e: 'domainSelect', domain: string | null): void
+
+		(e: 'retry'): void
 	}>()
 
 	const selectedDomain = defineModel<string | null>('selectedDomain', { default: null })

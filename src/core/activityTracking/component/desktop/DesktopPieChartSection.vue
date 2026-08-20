@@ -11,6 +11,27 @@
 			</div>
 		</template>
 
+		<template v-else-if="error">
+			<VCard
+				variant="outlined"
+				class="pa-8 d-flex flex-column align-center justify-center"
+			>
+				<VIcon
+					icon="fas fa-triangle-exclamation"
+					size="48"
+					class="text-disabled mb-2"
+				/>
+				<p class="text-body-2 text-medium-emphasis mb-3">{{ $t('activityTracking.common.loadFailed') }}</p>
+				<VBtn
+					size="small"
+					variant="outlined"
+					@click="emit('retry')"
+				>
+					{{ $t('activityTracking.common.retry') }}
+				</VBtn>
+			</VCard>
+		</template>
+
 		<template v-else-if="!processes || processes.length === 0">
 			<VCard
 				variant="outlined"
@@ -99,8 +120,13 @@
 		processes: DesktopProcessPieData[]
 		totals?: DesktopPieTotals
 		loading?: boolean
+		error?: boolean
 		from: Date
 		to: Date
+	}>()
+
+	const emit = defineEmits<{
+		(e: 'retry'): void
 	}>()
 
 	const selectedProductName = defineModel<string | null>('selectedProductName', { default: null })

@@ -30,6 +30,8 @@ const activityTracking = {
 		other: `Ostatné`,
 		showLess: `- Zobraziť menej`,
 		showMore: `+ {count} ďalších`,
+		loadFailed: `Načítanie zlyhalo`,
+		retry: `Skúsiť znova`,
 	},
 	pieChart: {
 		dayTotal: `Celkovo za deň`,

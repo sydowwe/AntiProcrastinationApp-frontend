@@ -15,12 +15,14 @@
 				class="w-100"
 				:windows="stackedBarsWindows"
 				:loading="stackedBarsLoading"
+				:error="stackedBarsError"
 				:initialWindowSize="selectedWindowSize"
 				:timeFrom
 				:timeTo
 				:windowSizeOptions="activityWindowSizeOptions"
 				@windowSizeChange="handleWindowSizeChange"
 				@activityClick="handleActivityClick"
+				@retry="fetchStackedBars"
 			/>
 			<ActivityTimeline
 				v-else
@@ -30,7 +32,9 @@
 				:from="timelineFrom"
 				:to="timelineTo"
 				:loading="timelineLoading"
+				:error="timelineError"
 				@sessionClick="handleSessionClick"
+				@retry="fetchTimeline"
 			/>
 		</div>
 
@@ -49,8 +53,10 @@
 						:selectedBaseline
 						:selectedDomain="selectedItem"
 						:loading="summaryCardsLoading"
+						:error="summaryCardsError"
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
+						@retry="fetchSummaryCards"
 					/>
 				</VCol>
 				<VCol
@@ -63,8 +69,10 @@
 						:processes="pieChartData?.processes ?? []"
 						:totals="pieChartData?.totals"
 						:loading="pieChartLoading"
+						:error="pieChartError"
 						:from="timelineFrom"
 						:to="timelineTo"
+						@retry="fetchPieChart"
 					/>
 				</VCol>
 			</VRow>
@@ -137,24 +145,27 @@
 	}
 
 	const fetchers: ActivityDashboardFetchers<DesktopPieChartResponse> = {
-		async fetchSummaryCards(range, baseline) {
+		async fetchSummaryCards(range, baseline, signal) {
 			const processes = await getDesktopSummaryCards(
 				new DesktopSummaryCardsRequest(range.date, range.timeFrom, range.timeTo, baseline, 4),
+				signal,
 			)
 			return processes.map(toSummaryCardsData)
 		},
-		fetchPieChart(range) {
-			return getDesktopPieChart(new DesktopPieChartRequest(range.date, range.timeFrom, range.timeTo, 1))
+		fetchPieChart(range, signal) {
+			return getDesktopPieChart(new DesktopPieChartRequest(range.date, range.timeFrom, range.timeTo, 1), signal)
 		},
-		async fetchStackedBars(range, windowSize) {
+		async fetchStackedBars(range, windowSize, signal) {
 			const windows = await getDesktopStackedBars(
 				new DesktopStackedBarsRequest(range.date, range.timeFrom, range.timeTo, windowSize),
+				signal,
 			)
 			return windows.map(toStackedBarsWindow)
 		},
-		async fetchTimeline(range) {
+		async fetchTimeline(range, signal) {
 			const timeline = await getDesktopTimeline(
 				new DesktopTimelineRequest(range.date, range.timeFrom, range.timeTo),
+				signal,
 			)
 			return {
 				primarySessions: timeline.primarySessions.map(toTimelineSession),
@@ -186,6 +197,14 @@
 		pieChartLoading,
 		stackedBarsLoading,
 		timelineLoading,
+		summaryCardsError,
+		pieChartError,
+		stackedBarsError,
+		timelineError,
+		fetchSummaryCards,
+		fetchPieChart,
+		fetchStackedBars,
+		fetchTimeline,
 		handleBaselineChange,
 		handleItemSelect,
 		handleWindowSizeChange,
