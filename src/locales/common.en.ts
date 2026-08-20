@@ -30,6 +30,13 @@ const common = {
 		invalidEmail: `Invalid e-mail format`,
 		houseNumber: `Invalid house number (e.g. 12, 12A or 12/A)`,
 	},
+	// Mirrors `export` from @/_common/_locales/common.sk.ts, for the same reason as `httpErrors` above:
+	// the framework's ExportMenu.vue resolves these through `t()` and ships Slovak only.
+	export: {
+		button: `Export`,
+		excel: `Excel (.xlsx)`,
+		csv: `CSV (.csv)`,
+	},
 	$vuetify: {
 		badge: 'Badge',
 		open: 'Open',

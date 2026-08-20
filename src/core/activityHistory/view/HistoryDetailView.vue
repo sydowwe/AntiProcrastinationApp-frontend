@@ -65,6 +65,11 @@
 				></TimeRangePicker>
 			</div>
 			<HistoryGroupBySelector v-model="groupBy" />
+			<ExportMenu
+				class="ml-auto"
+				:loading="exporting"
+				@export="exportDetail"
+			/>
 		</div>
 
 		<!-- First run: never recorded anything, anywhere — one onboarding block instead of the usual
@@ -181,18 +186,22 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import { DetailStackedBarsRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailStackedBarsRequest.ts'
 	import { DetailPieChartRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailPieChartRequest.ts'
 	import { DetailSummaryCardsRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailSummaryCardsRequest.ts'
+	import { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
 	import {
 		getDetailPieChart,
 		getDetailStackedBars,
 		getDetailSummaryCards,
+		getDetailTimeline,
 	} from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import type { HistoryWindow } from '@/core/historyDashboard/dto/response/HistoryWindow.ts'
+	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
@@ -200,9 +209,12 @@
 	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
 	import HistoryTimeline from '@/core/historyDashboard/component/HistoryTimeline.vue'
 	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
+	import ExportMenu from '@/_common/component/ExportMenu.vue'
+	import type { ExportFormat } from '@/_common/dto/ExportFormat.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { formatDateForApi, formatToDate, getWeekStart } from '@/_common/utils/DateTimeHelper.ts'
+	import { fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
 	import {
 		DEFAULT_TOP_N,
 		parseWindowInstant,
@@ -215,15 +227,24 @@
 		parseWindowSize,
 		serializeWindowSize,
 	} from '@/core/activityHistory/composable/historyUrlParams.ts'
+	import {
+		buildCsv,
+		buildExportFileName,
+		downloadCsv,
+		formatIsoWithOffset,
+	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const VISUALIZATIONS = ['stackedBars', 'timeline'] as const
 	type Visualization = (typeof VISUALIZATIONS)[number]
 
 	const route = useRoute()
 	const router = useRouter()
+	const i18n = useI18n()
 	const { firstDayOfWeek } = useUserPreferences()
+	const { showErrorSnackbar } = useSnackbar()
 
 	// --- State: the single day and time-of-day window this view asks its questions over ---
 	const today = new Date()
@@ -328,6 +349,70 @@
 
 	// Empty-state period label (H7) — a single day, so no range math needed.
 	const periodLabel = computed(() => formatToDate(dateModel.value))
+
+	// --- Export (H8) ---
+	// The raw record list, fetched independently of `HistoryTimeline` (which only mounts in the
+	// timeline visualization) so export works the same regardless of which view is currently shown.
+	// Same endpoint/request the timeline itself uses, just for the current date/time-of-day window.
+	const exporting = ref(false)
+
+	async function exportDetail(format: ExportFormat) {
+		if (format === 'xlsx') {
+			showErrorSnackbar(i18n.t('historyDashboard.export.xlsxUnavailable'))
+			return
+		}
+		if (exporting.value) return
+		exporting.value = true
+		try {
+			const records = await getDetailTimeline(new DetailTimelineRequest(date.value, timeFrom.value, timeTo.value))
+			const csv = buildCsv<ActivityHistory>(
+				[
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.start'),
+						value: r => formatIsoWithOffset(r.startTimestamp),
+					},
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.end'),
+						value: r =>
+							formatIsoWithOffset(new Date(r.startTimestamp.getTime() + r.length.getInSeconds * 1000)),
+					},
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.durationSeconds'),
+						value: r => r.length.getInSeconds,
+					},
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.duration'),
+						value: r => fromSecondsDetailed(r.length.getInSeconds),
+					},
+					{ header: i18n.t('historyDashboard.export.detail.columns.activity'), value: r => r.activity.name },
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.category'),
+						value: r => r.activity.category?.name ?? '',
+					},
+					{ header: i18n.t('historyDashboard.export.detail.columns.role'), value: r => r.activity.role.name },
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.notes'),
+						value: r => r.activity.text ?? '',
+					},
+				],
+				records,
+			)
+			downloadCsv(
+				csv,
+				buildExportFileName([
+					i18n.t('historyDashboard.export.detail.fileNamePrefix'),
+					date.value,
+					timeFrom.value.getString(),
+					timeTo.value.getString(),
+					groupBy.value,
+				]),
+			)
+		} catch {
+			showErrorSnackbar(i18n.t('historyDashboard.export.error'))
+		} finally {
+			exporting.value = false
+		}
+	}
 
 	// --- Back to the summary view for the week containing this day. ---
 	function goToSummaryForWeek() {

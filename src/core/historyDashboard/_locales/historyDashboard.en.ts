@@ -42,6 +42,33 @@ const messages = {
 		logManually: `Log manually`,
 		startTimer: `Start a timer`,
 	},
+	export: {
+		xlsxUnavailable: `Excel export isn't available yet — please use CSV.`,
+		error: `Could not build the export.`,
+		summary: {
+			fileNamePrefix: `history-summary`,
+			columns: {
+				groupName: `Group`,
+				totalSeconds: `Total time (s)`,
+				totalDuration: `Total time`,
+				entries: `Entry count`,
+				percentChange: `Change vs baseline (%)`,
+			},
+		},
+		detail: {
+			fileNamePrefix: `history-detail`,
+			columns: {
+				start: `Start`,
+				end: `End`,
+				durationSeconds: `Duration (s)`,
+				duration: `Duration`,
+				activity: `Activity`,
+				category: `Category`,
+				role: `Role`,
+				notes: `Notes`,
+			},
+		},
+	},
 }
 /** One root namespace — see the comment on the SK file, which carries the reasoning. */
 const historyDashboard = { historyDashboard: messages }

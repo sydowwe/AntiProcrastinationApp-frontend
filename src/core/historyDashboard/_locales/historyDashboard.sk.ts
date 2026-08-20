@@ -42,6 +42,33 @@ const messages = {
 		logManually: `Zaznamenať ručne`,
 		startTimer: `Spustiť časovač`,
 	},
+	export: {
+		xlsxUnavailable: `Export do Excelu zatiaľ nie je podporovaný — použite prosím CSV.`,
+		error: `Export sa nepodarilo vytvoriť.`,
+		summary: {
+			fileNamePrefix: `historia-suhrn`,
+			columns: {
+				groupName: `Skupina`,
+				totalSeconds: `Celkový čas (s)`,
+				totalDuration: `Celkový čas`,
+				entries: `Počet záznamov`,
+				percentChange: `Zmena oproti porovnaniu (%)`,
+			},
+		},
+		detail: {
+			fileNamePrefix: `historia-detail`,
+			columns: {
+				start: `Začiatok`,
+				end: `Koniec`,
+				durationSeconds: `Trvanie (s)`,
+				duration: `Trvanie`,
+				activity: `Aktivita`,
+				category: `Kategória`,
+				role: `Rola`,
+				notes: `Poznámka`,
+			},
+		},
+	},
 }
 /**
  * ONE root namespace, mirroring `activityTracking` — `src/locales/SK.ts` spreads this object's

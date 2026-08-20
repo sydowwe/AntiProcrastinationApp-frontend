@@ -22,6 +22,11 @@
 				v-model:endDate="endDate"
 			/>
 			<HistoryGroupBySelector v-model="groupBy" />
+			<ExportMenu
+				class="ml-auto"
+				:loading="exporting"
+				@export="exportSummary"
+			/>
 		</div>
 
 		<!-- Body -->
@@ -101,6 +106,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
@@ -117,6 +123,8 @@
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
 	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
 	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
+	import ExportMenu from '@/_common/component/ExportMenu.vue'
+	import type { ExportFormat } from '@/_common/dto/ExportFormat.ts'
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
@@ -132,13 +140,25 @@
 		parseWindowSize,
 		serializeWindowSize,
 	} from '@/core/activityHistory/composable/historyUrlParams.ts'
+	import {
+		buildCsv,
+		buildExportFileName,
+		downloadCsv,
+		EXPORT_GROUP_LIMIT,
+		mergeGroupExportRows,
+		type HistoryGroupExportRow,
+	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
+	import { fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 
 	const route = useRoute()
 	const router = useRouter()
+	const i18n = useI18n()
+	const { showErrorSnackbar } = useSnackbar()
 
 	// --- State: the multi-day range this view asks its questions over ---
 	const date = ref((route.query.date as string) || '')
@@ -216,6 +236,77 @@
 			canFetch: () => date.value !== '',
 		},
 	)
+
+	// --- Export (H8) ---
+	// Reflects exactly the current date/range/groupBy/baseline. The on-screen pie chart and summary
+	// cards are capped (20 items / topN) to stay readable — this refetches both, uncapped, so the
+	// export is never a silent truncation of what the widgets show.
+	const exporting = ref(false)
+
+	async function exportSummary(format: ExportFormat) {
+		if (format === 'xlsx') {
+			showErrorSnackbar(i18n.t('historyDashboard.export.xlsxUnavailable'))
+			return
+		}
+		if (exporting.value || date.value === '') return
+		exporting.value = true
+		try {
+			const [pieChart, summaryCards] = await Promise.all([
+				getSummaryPieChart(
+					new HistorySummaryPieChartRequest(
+						groupBy.value,
+						EXPORT_GROUP_LIMIT,
+						date.value,
+						rangeType.value,
+						endDate.value,
+					),
+				),
+				getSummarySummaryCards(
+					new HistorySummarySummaryCardsRequest(
+						date.value,
+						rangeType.value,
+						groupBy.value,
+						selectedBaseline.value,
+						EXPORT_GROUP_LIMIT,
+						endDate.value,
+					),
+				),
+			])
+			const csv = buildCsv<HistoryGroupExportRow>(
+				[
+					{ header: i18n.t('historyDashboard.export.summary.columns.groupName'), value: r => r.name },
+					{
+						header: i18n.t('historyDashboard.export.summary.columns.totalSeconds'),
+						value: r => r.totalSeconds,
+					},
+					{
+						header: i18n.t('historyDashboard.export.summary.columns.totalDuration'),
+						value: r => fromSecondsDetailed(r.totalSeconds),
+					},
+					{ header: i18n.t('historyDashboard.export.summary.columns.entries'), value: r => r.entries },
+					{
+						header: i18n.t('historyDashboard.export.summary.columns.percentChange'),
+						value: r => r.percentChange ?? '',
+					},
+				],
+				mergeGroupExportRows(pieChart.items, summaryCards.cards),
+			)
+			downloadCsv(
+				csv,
+				buildExportFileName([
+					i18n.t('historyDashboard.export.summary.fileNamePrefix'),
+					rangeType.value,
+					date.value,
+					endDate.value,
+					groupBy.value,
+				]),
+			)
+		} catch {
+			showErrorSnackbar(i18n.t('historyDashboard.export.error'))
+		} finally {
+			exporting.value = false
+		}
+	}
 
 	// --- Window size options based on range type ---
 	const weekOptions = [1, 2, 3, 4, 5, 8, 10, 12, 16]
