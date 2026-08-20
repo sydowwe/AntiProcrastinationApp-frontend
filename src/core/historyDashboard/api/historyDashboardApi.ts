@@ -5,6 +5,8 @@ import type { DetailSummaryCardsRequest } from '@/core/historyDashboard/dto/requ
 import { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
 import { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 import { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
+import { HistoryTimeOfDayResponse } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts'
+import type { HistorySummaryTimeOfDayRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryTimeOfDayRequest.ts'
 import { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 import type { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 import type { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
@@ -39,6 +41,11 @@ export async function getSummarySummaryCards(
 ): Promise<HistorySummaryCardsResponse> {
 	const { data } = await API.post(`${SUMMARY_URL}/summary-cards`, request)
 	return HistorySummaryCardsResponse.fromJson(data)
+}
+
+export async function getSummaryTimeOfDay(request: HistorySummaryTimeOfDayRequest): Promise<HistoryTimeOfDayResponse> {
+	const { data } = await API.post(`${SUMMARY_URL}/time-of-day`, request)
+	return HistoryTimeOfDayResponse.fromJson(data)
 }
 
 // --- Detail (single-day, DateAndTimeRangeRequest based) ---

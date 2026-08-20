@@ -4,6 +4,7 @@ import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/Stacked
 import type { HistoryStackedBarsResponse } from '@/core/historyDashboard/dto/response/HistoryStackedBarsResponse.ts'
 import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
+import type { HistoryTimeOfDayResponse } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts'
 import type { HistoryWindow } from '@/core/historyDashboard/dto/response/HistoryWindow.ts'
 import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
@@ -35,6 +36,15 @@ export interface HistoryDashboardFetchers {
 	fetchPieChart(): Promise<HistoryPieChartResponse>
 
 	fetchSummaryCards(baseline: BaselineType, topN: number): Promise<HistorySummaryCardsResponse>
+
+	/**
+	 * Optional fourth panel-less round: the hour-of-day fold behind the insights surface (H10). Only the
+	 * summary dashboard has an endpoint for it — `summary/time-of-day` takes a date *range*, and the
+	 * detail view's day is not one — so the detail view leaves it out and `timeOfDayData` stays null
+	 * there. It carries no `groupBy`, so a `groupBy` change re-fetches it for nothing; that is one small
+	 * request against keeping every panel on one refresh cycle with one clearing rule.
+	 */
+	fetchTimeOfDay?(): Promise<HistoryTimeOfDayResponse>
 }
 
 export interface HistoryDashboardOptions {
@@ -86,11 +96,13 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	const stackedBarsData = ref<HistoryStackedBarsResponse | null>(null) as Ref<HistoryStackedBarsResponse | null>
 	const pieChartData = ref<HistoryPieChartResponse | null>(null) as Ref<HistoryPieChartResponse | null>
 	const summaryCardsData = ref<HistorySummaryCardsResponse | null>(null) as Ref<HistorySummaryCardsResponse | null>
+	const timeOfDayData = ref<HistoryTimeOfDayResponse | null>(null) as Ref<HistoryTimeOfDayResponse | null>
 
 	// --- Loading States ---
 	const stackedBarsLoading = ref(false)
 	const pieChartLoading = ref(false)
 	const summaryCardsLoading = ref(false)
+	const timeOfDayLoading = ref(false)
 
 	// --- First-run detection (H7) ---
 	// `null` = not yet known, `true`/`false` = resolved for this session. Once resolved it is never
@@ -153,9 +165,25 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 		}
 	}
 
+	/** Resolves to null — never leaving the previous range's fold behind — when the view supplies no fetcher. */
+	async function fetchTimeOfDay() {
+		if (!fetchers.fetchTimeOfDay) {
+			timeOfDayData.value = null
+			return
+		}
+		timeOfDayLoading.value = true
+		try {
+			timeOfDayData.value = await fetchers.fetchTimeOfDay()
+		} catch {
+			timeOfDayData.value = null
+		} finally {
+			timeOfDayLoading.value = false
+		}
+	}
+
 	/**
-	 * One full refresh of all three panels, fired in parallel rather than awaited in sequence so one
-	 * slow endpoint never blocks the others.
+	 * One full refresh of every panel, fired in parallel rather than awaited in sequence so one slow
+	 * endpoint never blocks the others.
 	 *
 	 * The selection is cleared first because a round only ever runs when the scope changed, and a
 	 * `HistoryGroupKey` is only comparable within the `groupBy` it was made under (see
@@ -164,7 +192,7 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	async function fetchAll() {
 		if (!canFetch()) return
 		selectedGroup.value = null
-		await Promise.all([fetchStackedBars(), fetchPieChart(), fetchSummaryCards()])
+		await Promise.all([fetchStackedBars(), fetchPieChart(), fetchSummaryCards(), fetchTimeOfDay()])
 		await checkFirstRunIfEmpty()
 	}
 
@@ -172,6 +200,9 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	 * The one extra request H7 allows: fired only when every panel came back empty for the period just
 	 * fetched, to tell "nothing in this window" apart from "nothing ever". A non-empty panel already
 	 * answers the question for free.
+	 *
+	 * `timeOfDayData` is deliberately not part of the test: it is a fold of the same records the pie
+	 * chart counts, so it is empty exactly when the pie chart is and would cast no independent vote.
 	 */
 	async function checkFirstRunIfEmpty() {
 		const isEmpty =
@@ -219,14 +250,17 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 		stackedBarsData,
 		pieChartData,
 		summaryCardsData,
+		timeOfDayData,
 		stackedBarsWindows,
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		timeOfDayLoading,
 		hasAnyHistoryEver,
 		fetchStackedBars,
 		fetchPieChart,
 		fetchSummaryCards,
+		fetchTimeOfDay,
 		fetchAll,
 		handleBaselineChange,
 		handleTopNChange,

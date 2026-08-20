@@ -65,6 +65,16 @@
 					</template>
 				</StackedBarsChart>
 
+				<!-- Insights (H10): the few conclusions the three panels below do not state. Three come out of
+				     the pie-chart response the view already holds; the time-of-day one is the only reason
+				     this view fires a fourth request. -->
+				<HistoryInsights
+					class="flex-shrink-0"
+					:data="pieChartData"
+					:timeOfDay="timeOfDayData"
+					:loading="pieChartLoading || timeOfDayLoading"
+				/>
+
 				<!-- Summary Cards + Pie Chart -->
 				<VRow class="flex-shrink-0 flex-grow-0">
 					<VCol
@@ -115,6 +125,7 @@
 		getSummaryPieChart,
 		getSummaryStackedBars,
 		getSummarySummaryCards,
+		getSummaryTimeOfDay,
 	} from '@/core/historyDashboard/api/historyDashboardApi.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryDateRangeSelector from '@/core/historyDashboard/component/controls/HistoryDateRangeSelector.vue'
@@ -123,11 +134,13 @@
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
 	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
 	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
+	import HistoryInsights from '@/core/historyDashboard/component/insights/HistoryInsights.vue'
 	import ExportMenu from '@/_common/component/ExportMenu.vue'
 	import type { ExportFormat } from '@/_common/dto/ExportFormat.ts'
 	import { HistorySummaryStackedBarsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryStackedBarsRequest.ts'
 	import { HistorySummaryPieChartRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryPieChartRequest.ts'
 	import { HistorySummarySummaryCardsRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummarySummaryCardsRequest.ts'
+	import { HistorySummaryTimeOfDayRequest } from '@/core/historyDashboard/dto/request/historySummary/HistorySummaryTimeOfDayRequest.ts'
 	import {
 		DEFAULT_TOP_N,
 		parseWindowInstant,
@@ -184,10 +197,12 @@
 		stackedBarsData,
 		pieChartData,
 		summaryCardsData,
+		timeOfDayData,
 		stackedBarsWindows,
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		timeOfDayLoading,
 		hasAnyHistoryEver,
 		fetchStackedBars,
 		fetchAll,
@@ -225,6 +240,11 @@
 						topNValue,
 						endDate.value,
 					),
+				)
+			},
+			fetchTimeOfDay() {
+				return getSummaryTimeOfDay(
+					new HistorySummaryTimeOfDayRequest(date.value, rangeType.value, endDate.value),
 				)
 			},
 		},

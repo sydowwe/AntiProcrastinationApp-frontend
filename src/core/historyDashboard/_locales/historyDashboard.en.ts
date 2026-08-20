@@ -33,6 +33,15 @@ const messages = {
 		uniqueGroups: `Unique groups:`,
 		periodTotals: `Period Totals`,
 	},
+	// H10. One key per whole sentence — the numbers and the group name sit in the middle of these, so
+	// they are interpolated, never concatenated from fragments. Keyed off `HistoryInsightKind`.
+	insights: {
+		title: `Insights`,
+		sessionLength: `You logged {total} across {entries} entries — about {mean} each.`,
+		timeOfDay: `Between {from} and {to} you logged {total} — {share}% of the period.`,
+		mostFragmented: `{name} is the most broken up: {total} across {entries} entries, about {mean} each.`,
+		longestStretches: `{name} comes in your longest stretches: {total} across {entries} entries, about {mean} each.`,
+	},
 	timeline: {
 		editTitle: `Edit Activity History`,
 	},

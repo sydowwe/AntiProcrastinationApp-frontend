@@ -51,8 +51,22 @@ Two contract asks are already written, because the gaps were identifiable from t
   answer, not code. It documents the live crash where a null `wakeUpTime` blanks an entire calendar month,
   and asks for authoritative nullability across the dashboard responses. **Cheapest of the two; run it first.**
 
-H10 emits its own `backend/H10-backend.md` as it finishes, and H11 emits `backend/H11-backend.md`. Batch
-whatever exists into one backend session rather than opening a thread per file.
+Two more have since been written:
+
+- [`backend/H10-backend.md`](backend/H10-backend.md) — **answered and shipped.** Asked for a
+  `summary/time-of-day` endpoint: 24 hour-of-day buckets folded over a date range. It was the one insight H10
+  could not compute honestly on the client, because the only client-side source of time-of-day structure is
+  the stacked-bars response, whose bucket width and daily clipping are both chart controls the user moves.
+  The file now carries the three notes that came back with the implementation, and its worked example — which
+  was an hour short — is corrected in place.
+- [`backend/B3-custom-range.md`](backend/B3-custom-range.md) — **open, and the most valuable one here.**
+  `DateRangeDto.ToDateRange()` never reads `endDate`, so all four `summary/` endpoints answer a *two-day*
+  range for any `CustomRange` request. Three of them have been shipped and rendering that way for months: a
+  user who picks 1–31 March sees March 1–2's numbers under a March header, with nothing erroring and nothing
+  looking empty. Found while wiring H10, unrelated to it.
+
+H11 still emits `backend/H11-backend.md`. Batch whatever exists into one backend session rather than opening
+a thread per file.
 
 **H9 emitted nothing, deliberately.** It asked whether server-side timer sync was warranted and the answer was
 no: the on-screen countdown has to be client-side either way, and the reconstruction is exact precisely because

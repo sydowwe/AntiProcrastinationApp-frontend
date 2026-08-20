@@ -33,6 +33,15 @@ const messages = {
 		uniqueGroups: `Unikátnych skupín:`,
 		periodTotals: `Súčty obdobia`,
 	},
+	// H10. Jeden kľúč = jedna celá veta — čísla a názov skupiny sú v strede vety, takže sa interpolujú,
+	// nikdy neskladajú z častí. Kľúčované podľa hodnôt HistoryInsightKind.
+	insights: {
+		title: `Postrehy`,
+		sessionLength: `Zaznamenali ste {total} v {entries} záznamoch — v priemere {mean} na jeden.`,
+		timeOfDay: `Medzi {from} a {to} ste zaznamenali {total} — {share} % z celého obdobia.`,
+		mostFragmented: `Najviac rozdrobené je {name}: {total} v {entries} záznamoch, teda priemerne {mean} na jeden.`,
+		longestStretches: `Najdlhšie súvislé úseky má {name}: {total} v {entries} záznamoch, teda priemerne {mean} na jeden.`,
+	},
 	timeline: {
 		editTitle: `Upraviť záznam histórie`,
 	},
