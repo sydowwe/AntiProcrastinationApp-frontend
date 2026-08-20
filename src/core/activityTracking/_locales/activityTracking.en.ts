@@ -20,6 +20,11 @@ const activityTracking = {
 	},
 	common: {
 		noActivityRecorded: `No activity recorded for this period`,
+		emptyInWindow: `No activity in this time window`,
+		emptyInWindowHint: `This day has entries outside the selected 07:00-00:00 range`,
+		showWholeDay: `Show the whole day`,
+		emptyDay: `No activity recorded for this day`,
+		checkSourceSettings: `Check this source's connection`,
 		noDataForPeriod: `No data for this period`,
 		noActivity: `No activity`,
 		totalTime: `Total time:`,

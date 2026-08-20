@@ -33,11 +33,12 @@
 		</template>
 
 		<template v-else-if="!processes || processes.length === 0">
-			<VCard
-				variant="outlined"
-				class="pa-8 text-center"
-			>
-				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
+			<VCard variant="outlined">
+				<ActivityEmptyState
+					:probeState="emptyProbeState"
+					settingsRouteName="desktopSettings"
+					@widenWindow="emit('widenWindow')"
+				/>
 			</VCard>
 		</template>
 
@@ -108,6 +109,7 @@
 	import { computed, ref, watch } from 'vue'
 	import ActivityPieChart from '@/core/activityTracking/component/pieChart/ActivityPieChart.vue'
 	import DesktopProcessDetailsPanel from './DesktopProcessDetailsPanel.vue'
+	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
@@ -115,6 +117,7 @@
 	import type { DesktopProcessPieData } from '@/core/activityTracking/dto/response/desktop/DesktopProcessPieData.ts'
 	import type { DesktopPieTotals } from '@/core/activityTracking/dto/response/desktop/DesktopPieTotals.ts'
 	import type { DesktopProcessDetailsResponse } from '@/core/activityTracking/dto/response/desktop/DesktopProcessDetailsResponse.ts'
+	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	const props = defineProps<{
 		processes: DesktopProcessPieData[]
@@ -123,10 +126,13 @@
 		error?: boolean
 		from: Date
 		to: Date
+		emptyProbeState?: ActivityEmptyProbeState
 	}>()
 
 	const emit = defineEmits<{
 		(e: 'retry'): void
+
+		(e: 'widenWindow'): void
 	}>()
 
 	const selectedProductName = defineModel<string | null>('selectedProductName', { default: null })

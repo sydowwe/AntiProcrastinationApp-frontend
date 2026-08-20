@@ -54,9 +54,12 @@
 						:selectedDomain="selectedItem"
 						:loading="summaryCardsLoading"
 						:error="summaryCardsError"
+						:emptyProbeState
+						settingsRouteName="androidSettings"
 						@update:selectedBaseline="handleBaselineChange"
 						@domainClick="handleItemSelect"
 						@retry="fetchSummaryCards"
+						@widenWindow="widenToFullDay"
 					/>
 				</VCol>
 				<VCol
@@ -70,7 +73,9 @@
 						:totals="pieChartData?.totals"
 						:loading="pieChartLoading"
 						:error="pieChartError"
+						:emptyProbeState
 						@retry="fetchPieChart"
+						@widenWindow="widenToFullDay"
 					/>
 				</VCol>
 			</VRow>
@@ -194,6 +199,7 @@
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
@@ -203,5 +209,6 @@
 		handleWindowSizeChange,
 		handleActivityClick,
 		handleSessionClick,
+		widenToFullDay,
 	} = useActivityDashboard(fetchers)
 </script>

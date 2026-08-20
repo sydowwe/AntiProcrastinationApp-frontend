@@ -52,17 +52,12 @@
 		</div>
 
 		<!-- Empty State -->
-		<div
+		<ActivityEmptyState
 			v-else-if="(visibleDomains?.length ?? 0) === 0"
-			class="empty-state"
-		>
-			<VIcon
-				icon="fas fa-chart-column"
-				size="64"
-				class="text-disabled mb-4"
-			/>
-			<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</p>
-		</div>
+			:probeState="emptyProbeState"
+			:settingsRouteName="settingsRouteName"
+			@widenWindow="emit('widenWindow')"
+		/>
 
 		<!-- Domain Cards -->
 		<div
@@ -84,7 +79,9 @@
 	import type { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import { computed } from 'vue'
 	import ActivityDomainCard from '@/core/activityTracking/component/summaryCards/ActivityDomainCard.vue'
+	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
+	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
 	import i18n from '@/i18n.ts'
 
 	const {
@@ -95,6 +92,8 @@
 		loading = false,
 		error = false,
 		title = i18n.global.t('activityTracking.dashboard.topDomains'),
+		emptyProbeState = 'idle',
+		settingsRouteName = null,
 	} = defineProps<{
 		domains: SummaryCardsData[] | null
 		baselineOptions: BaselineOption[]
@@ -103,6 +102,8 @@
 		loading?: boolean
 		error?: boolean
 		title?: string
+		emptyProbeState?: ActivityEmptyProbeState
+		settingsRouteName?: 'desktopSettings' | 'androidSettings' | null
 	}>()
 
 	const emit = defineEmits<{
@@ -111,6 +112,8 @@
 		(e: 'domainClick', domain: string): void
 
 		(e: 'retry'): void
+
+		(e: 'widenWindow'): void
 	}>()
 
 	// Filter out domains with no activity (both active and background are 0 or null)

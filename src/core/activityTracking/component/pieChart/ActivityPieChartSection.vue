@@ -35,9 +35,12 @@
 		<template v-else-if="!domains || domains.length === 0">
 			<VCard
 				variant="outlined"
-				class="h-100 pa-8 text-center"
+				class="h-100"
 			>
-				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
+				<ActivityEmptyState
+					:probeState="emptyProbeState"
+					@widenWindow="emit('widenWindow')"
+				/>
 			</VCard>
 		</template>
 
@@ -68,10 +71,12 @@
 	import { computed, ref } from 'vue'
 	import ActivityPieChart from './ActivityPieChart.vue'
 	import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
+	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from './PieSegment.ts'
 	import type { DomainPieData } from '@/core/activityTracking/dto/response/pieChart/DomainPieData.ts'
 	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
+	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	const props = defineProps<{
 		domains: DomainPieData[]
@@ -79,12 +84,15 @@
 		loading?: boolean
 		error?: boolean
 		otherThresholdPercent?: number
+		emptyProbeState?: ActivityEmptyProbeState
 	}>()
 
 	const emit = defineEmits<{
 		(e: 'domainSelect', domain: string | null): void
 
 		(e: 'retry'): void
+
+		(e: 'widenWindow'): void
 	}>()
 
 	const selectedDomain = defineModel<string | null>('selectedDomain', { default: null })

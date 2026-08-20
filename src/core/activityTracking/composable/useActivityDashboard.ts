@@ -12,6 +12,14 @@ import type { StackedBarsInputWindow } from '@/core/activityTracking/component/s
 
 export type ActivityVisualization = 'stackedBars' | 'timeline'
 
+/**
+ * `idle` — not empty, or not checked yet.
+ * `checking` — the full-day probe is in flight.
+ * `hasDataOutsideWindow` — the day has data, just not inside the selected time window.
+ * `emptyFullDay` — the day has no data even over the full 00:00-24:00 range.
+ */
+export type ActivityEmptyProbeState = 'idle' | 'checking' | 'hasDataOutsideWindow' | 'emptyFullDay'
+
 /** Window sizes offered by the stacked-bars chart, in minutes. Single definition for all dashboards. */
 export const activityWindowSizeOptions = [15, 20, 30, 60, 90, 120]
 
@@ -209,6 +217,10 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	let stackedBarsController: AbortController | null = null
 	let timelineController: AbortController | null = null
 
+	// --- Empty-state probe: fired only after a round comes back empty on all four panels ---
+	const emptyProbeState = ref<ActivityEmptyProbeState>('idle')
+	let emptyProbeController: AbortController | null = null
+
 	async function fetchSummaryCards() {
 		summaryCardsController?.abort()
 		const controller = new AbortController()
@@ -293,25 +305,86 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		}
 	}
 
+	/** True once every panel has settled without an error and none of them has anything to show. */
+	function isRoundEmpty(): boolean {
+		return (
+			!summaryCardsError.value &&
+			!pieChartError.value &&
+			!stackedBarsError.value &&
+			!timelineError.value &&
+			(summaryCardsData.value === null || summaryCardsData.value.length === 0) &&
+			primarySessions.value.length === 0 &&
+			detailSessions.value.length === 0 &&
+			backgroundSessions.value.length === 0
+		)
+	}
+
+	function isFullDayWindow(): boolean {
+		return timeFrom.value.getInMinutes === 0 && timeTo.value.getInMinutes === 0
+	}
+
+	/**
+	 * Fires only on an empty result, never speculatively. Re-requests the same date over 00:00-24:00
+	 * to tell "nothing happened this day" apart from "something happened outside the selected window".
+	 */
+	async function probeFullDayIfEmpty() {
+		emptyProbeController?.abort()
+		emptyProbeController = null
+
+		if (!isRoundEmpty()) {
+			emptyProbeState.value = 'idle'
+			return
+		}
+		if (isFullDayWindow()) {
+			emptyProbeState.value = 'emptyFullDay'
+			return
+		}
+
+		emptyProbeState.value = 'checking'
+		const controller = new AbortController()
+		emptyProbeController = controller
+		try {
+			const fullDayRange: ActivityDashboardRange = {
+				date: range.value.date,
+				timeFrom: new Time(0, 0),
+				timeTo: new Time(0, 0),
+			}
+			const data = await fetchers.fetchSummaryCards(fullDayRange, selectedBaseline.value, controller.signal)
+			if (emptyProbeController !== controller) return
+			emptyProbeState.value = data && data.length > 0 ? 'hasDataOutsideWindow' : 'emptyFullDay'
+		} catch (error) {
+			if (isAbortError(error)) return
+			if (emptyProbeController === controller) {
+				emptyProbeState.value = 'idle'
+			}
+		}
+	}
+
+	/** The one-click affordance offered when the probe finds data outside the current window. */
+	function widenToFullDay() {
+		timeFrom.value = new Time(0, 0)
+		timeTo.value = new Time(0, 0)
+	}
+
 	// The initial run must keep a `selected` value that arrived via the URL rather than wipe it.
 	let isInitialRun = true
 
 	// `timeFrom`/`timeTo` come from a range-picker that scrubs continuously, so debounce the whole
 	// round; `date` changes are discrete but share the same watcher, and one uniform debounce is
 	// simpler than splitting it. The four fetches are independent — fire them in parallel, not awaited
-	// in sequence, so one slow or failing endpoint never blocks the other three.
+	// in sequence, so one slow or failing endpoint never blocks the other three. Only once all four
+	// have settled do we know whether the round was empty and the full-day probe should fire.
 	watchDebounced(
 		[date, timeFrom, timeTo],
-		() => {
+		async () => {
 			if (isInitialRun) {
 				isInitialRun = false
 			} else {
 				selectedItem.value = null
 			}
-			fetchSummaryCards()
-			fetchPieChart()
-			fetchStackedBars()
-			fetchTimeline()
+			emptyProbeState.value = 'idle'
+			await Promise.all([fetchSummaryCards(), fetchPieChart(), fetchStackedBars(), fetchTimeline()])
+			await probeFullDayIfEmpty()
 		},
 		{ immediate: true, debounce: 300 },
 	)
@@ -426,6 +499,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		pieChartError,
 		stackedBarsError,
 		timelineError,
+		emptyProbeState,
 		fetchSummaryCards,
 		fetchPieChart,
 		fetchStackedBars,
@@ -435,5 +509,6 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		handleWindowSizeChange,
 		handleActivityClick,
 		handleSessionClick,
+		widenToFullDay,
 	}
 }

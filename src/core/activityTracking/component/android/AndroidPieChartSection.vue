@@ -33,11 +33,12 @@
 		</template>
 
 		<template v-else-if="!apps || apps.length === 0">
-			<VCard
-				variant="outlined"
-				class="pa-8 text-center"
-			>
-				<div class="text-h6 text-medium-emphasis">{{ $t('activityTracking.common.noActivityRecorded') }}</div>
+			<VCard variant="outlined">
+				<ActivityEmptyState
+					:probeState="emptyProbeState"
+					settingsRouteName="androidSettings"
+					@widenWindow="emit('widenWindow')"
+				/>
 			</VCard>
 		</template>
 
@@ -82,21 +83,26 @@
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
 	import ActivityPieChart from '@/core/activityTracking/component/pieChart/ActivityPieChart.vue'
+	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { AndroidAppPieData } from '@/core/activityTracking/dto/response/android/AndroidAppPieData.ts'
 	import type { AndroidPieTotals } from '@/core/activityTracking/dto/response/android/AndroidPieTotals.ts'
+	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	const props = defineProps<{
 		apps: AndroidAppPieData[]
 		totals?: AndroidPieTotals
 		loading?: boolean
 		error?: boolean
+		emptyProbeState?: ActivityEmptyProbeState
 	}>()
 
 	const emit = defineEmits<{
 		(e: 'retry'): void
+
+		(e: 'widenWindow'): void
 	}>()
 
 	const selectedAppLabel = defineModel<string | null>('selectedAppLabel', { default: null })

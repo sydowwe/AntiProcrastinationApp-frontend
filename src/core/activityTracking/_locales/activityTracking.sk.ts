@@ -20,6 +20,11 @@ const activityTracking = {
 	},
 	common: {
 		noActivityRecorded: `Za toto obdobie nebola zaznamenaná žiadna aktivita`,
+		emptyInWindow: `V tomto časovom okne nie je žiadna aktivita`,
+		emptyInWindowHint: `Tento deň má záznamy mimo zvoleného rozsahu 07:00 – 00:00`,
+		showWholeDay: `Zobraziť celý deň`,
+		emptyDay: `Za tento deň nie sú zaznamenané žiadne dáta`,
+		checkSourceSettings: `Skontrolovať pripojenie zdroja`,
 		noDataForPeriod: `Za toto obdobie nie sú žiadne dáta`,
 		noActivity: `Žiadna aktivita`,
 		totalTime: `Celkový čas:`,
