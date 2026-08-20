@@ -11,7 +11,9 @@ than no input.
 > mode is unconditional — dropped the transitional `date` field, and adopted the answers recorded
 > against §5 and §6 below. The sections are kept as written; the resolutions are marked **Answered**.
 
-There is no `backend/U4-backend.md` in this repo yet. §6 flags the one place U4 will overlap.
+`backend/U4-backend.md` now exists. §6 flags the one place the two overlap — the triplication — and
+U4 §8 takes it up; U4 §7 lists every point of contact between the two documents and confirms none of
+them contradicts what is written here.
 
 ---
 

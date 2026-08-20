@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
@@ -84,6 +84,23 @@ export interface ActivityDashboardFetchers<TPieChart> {
 	): Promise<FocusMetricsResponse | null>
 }
 
+/**
+ * Extra state a view adds to the dashboard's own. Everything here is optional and defaults to the
+ * behaviour the three per-source dashboards have always had.
+ */
+export interface ActivityDashboardOptions {
+	/**
+	 * Bookmarkable state the *view* owns, merged into the query by `syncQueryToUrl` below.
+	 *
+	 * It is routed through the composable rather than written by the view because `syncQueryToUrl`
+	 * spreads `route.query` and then calls `router.replace`: a second writer doing the same thing in
+	 * the same tick reads a pre-replace query and drops whichever param the other one had just added.
+	 * One writer, no race. A key whose value is `undefined` is deleted, which is how a view omits a
+	 * param that is at its default.
+	 */
+	extraQuery?: ComputedRef<LocationQueryRaw>
+}
+
 function emptyTimelineSessions(): ActivityTimelineSessions {
 	return { primarySessions: [], detailSessions: [], backgroundSessions: [] }
 }
@@ -109,6 +126,13 @@ const DEFAULT_TIME_TO = new Time(0, 0)
 const DEFAULT_VISUALIZATION: ActivityVisualization = 'timeline'
 const DEFAULT_BASELINE = BaselineType.Last7Days
 const DEFAULT_WINDOW_SIZE = 30
+
+/**
+ * How long a scrub of the time-range picker settles before a round fires. Exported so a panel a view
+ * adds on top of the shared four — the unified dashboard's source breakdown — settles with them
+ * rather than on its own rhythm.
+ */
+export const ACTIVITY_FETCH_DEBOUNCE_MS = 300
 
 function firstQueryValue(value: unknown): string | undefined {
 	if (Array.isArray(value)) {
@@ -163,7 +187,10 @@ function parseWindowSize(value: string | undefined): number | null {
  * dashboards. It knows nothing about any one source — everything source-specific arrives through
  * `fetchers` and everything source-specific about rendering stays in the view.
  */
-export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetchers<TPieChart>) {
+export function useActivityDashboard<TPieChart>(
+	fetchers: ActivityDashboardFetchers<TPieChart>,
+	options: ActivityDashboardOptions = {},
+) {
 	const { t } = useI18n()
 	const route = useRoute()
 	const router = useRouter()
@@ -539,32 +566,40 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 	// The initial run must keep a `selected` value that arrived via the URL rather than wipe it.
 	let isInitialRun = true
 
+	/**
+	 * One full refresh of every panel. The fetches are independent — fired in parallel, not awaited in
+	 * sequence, so one slow or failing endpoint never blocks the others. Only once all of them have
+	 * settled do we know whether the round was empty and the full-day probe should fire.
+	 *
+	 * Exported because state the *view* owns can invalidate every panel at once: the unified
+	 * dashboard's source selection changes what each endpoint returns, and re-running the five fetches
+	 * by hand at that call site would be the same orchestration written twice.
+	 */
+	async function runRound() {
+		if (isInitialRun) {
+			isInitialRun = false
+		} else {
+			selectedItem.value = null
+		}
+		emptyProbeState.value = 'idle'
+
+		const rounds = [fetchSummaryCards(), fetchPieChart(), fetchStackedBars(), fetchFocusMetrics()]
+		if (isTimelineAvailable.value) {
+			rounds.push(fetchTimeline())
+		} else {
+			clearTimeline()
+		}
+		await Promise.all(rounds)
+		await probeFullDayIfEmpty()
+	}
+
 	// `timeFrom`/`timeTo` come from a range-picker that scrubs continuously, so debounce the whole
 	// round; date changes are discrete but share the same watcher, and one uniform debounce is
-	// simpler than splitting it. The fetches are independent — fire them in parallel, not awaited
-	// in sequence, so one slow or failing endpoint never blocks the others. Only once all of them
-	// have settled do we know whether the round was empty and the full-day probe should fire.
-	watchDebounced(
-		[dateFrom, dateTo, timeFrom, timeTo],
-		async () => {
-			if (isInitialRun) {
-				isInitialRun = false
-			} else {
-				selectedItem.value = null
-			}
-			emptyProbeState.value = 'idle'
-
-			const rounds = [fetchSummaryCards(), fetchPieChart(), fetchStackedBars(), fetchFocusMetrics()]
-			if (isTimelineAvailable.value) {
-				rounds.push(fetchTimeline())
-			} else {
-				clearTimeline()
-			}
-			await Promise.all(rounds)
-			await probeFullDayIfEmpty()
-		},
-		{ immediate: true, debounce: 300 },
-	)
+	// simpler than splitting it.
+	watchDebounced([dateFrom, dateTo, timeFrom, timeTo], runRound, {
+		immediate: true,
+		debounce: ACTIVITY_FETCH_DEBOUNCE_MS,
+	})
 
 	// Both panels carry a comparison against the selected baseline, so both have to re-fetch — leaving
 	// the strip out would let its "typically …" figures go stale the moment the selector changes.
@@ -644,13 +679,34 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 			query[SELECTED_PARAM] = selectedItem.value
 		}
 
+		// The view's own params last, so a view can override a built-in key if it ever needs to.
+		for (const [key, value] of Object.entries(options.extraQuery?.value ?? {})) {
+			if (value === undefined || value === null) {
+				delete query[key]
+			} else {
+				query[key] = value
+			}
+		}
+
 		router.replace({ query }).catch(() => {
 			// navigation duplication / redirection errors are non-fatal for state sync
 		})
 	}
 
 	watch(
-		[dateFrom, dateTo, timeFrom, timeTo, selectedVisualization, selectedBaseline, selectedWindowSize, selectedItem],
+		[
+			dateFrom,
+			dateTo,
+			timeFrom,
+			timeTo,
+			selectedVisualization,
+			selectedBaseline,
+			selectedWindowSize,
+			selectedItem,
+			// A computed rebuilding its object on every dependency change, so reference equality is
+			// enough to notice — no deep watch needed.
+			() => options.extraQuery?.value,
+		],
 		syncQueryToUrl,
 	)
 
@@ -683,6 +739,9 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		dateTo,
 		timeFrom,
 		timeTo,
+		// The formatted scope every request is made against, so a panel a view adds on top of the
+		// shared four asks for the same span rather than re-deriving it from the four refs.
+		range,
 		dayCount,
 		isRangeMode,
 		isTimelineAvailable,
@@ -718,6 +777,7 @@ export function useActivityDashboard<TPieChart>(fetchers: ActivityDashboardFetch
 		fetchStackedBars,
 		fetchTimeline,
 		fetchFocusMetrics,
+		runRound,
 		setDateSpan,
 		handleBaselineChange,
 		handleItemSelect,

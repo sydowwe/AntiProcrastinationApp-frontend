@@ -26,7 +26,7 @@
 					value="stackedBars"
 					height="40px"
 				>
-					{{ $t('tracker.stackedBars') }}
+					{{ $t('activityTracking.tracker.stackedBars') }}
 				</VBtn>
 				<!--
 					Disabled rather than hidden over a range: the button staying visible-but-off is what
@@ -38,7 +38,7 @@
 					height="40px"
 					:disabled="!isTimelineAvailable"
 				>
-					{{ $t('tracker.timeline') }}
+					{{ $t('activityTracking.tracker.timeline') }}
 					<VTooltip
 						v-if="!isTimelineAvailable"
 						activator="parent"

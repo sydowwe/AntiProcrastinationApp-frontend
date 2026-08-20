@@ -10,6 +10,7 @@ const common = {
 		history: `História`,
 		historySummary: `Súhrn`,
 		historyCalendar: `Kalendár`,
+		unifiedActivityTracking: `Všetky zdroje`,
 		activityTracking: `Web tracking`,
 		desktopActivityTracking: `Desktop tracking`,
 		androidActivityTracking: `Android tracking`,

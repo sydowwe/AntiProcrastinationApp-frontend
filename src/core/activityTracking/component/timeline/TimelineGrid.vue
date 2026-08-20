@@ -56,7 +56,7 @@
 							:to="segment.to"
 							:containerWidth="group.widths[si]"
 							:config="config"
-							laneType="background"
+							:laneType="uniformLanes ? 'active' : 'background'"
 							:laneHeight="backgroundLaneHeight"
 							@sessionHover="handleSessionHover"
 							@sessionLeave="handleSessionLeave"
@@ -132,6 +132,13 @@
 		to: Date
 		viewMode: TimelineViewMode
 		splitPoint: Date
+		/**
+		 * Renders the third lane in the same style as the first two rather than as the hatched
+		 * background lane. Set by `ActivityTimeline` when its lanes carry sources instead of one
+		 * source's active/detail/background split — the waterfall stacking that lane gets is still
+		 * wanted there, only the "this was not in the foreground" styling is not.
+		 */
+		uniformLanes?: boolean
 	}>()
 	defineEmits<{
 		sessionClick: [session: TimelineSessionDto]

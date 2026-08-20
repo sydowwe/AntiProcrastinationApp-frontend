@@ -1,4 +1,4 @@
-const activityTracking = {
+const messages = {
 	tracker: {
 		stackedBars: `Stacked bars`,
 		timeline: `Timeline`,
@@ -7,10 +7,29 @@ const activityTracking = {
 		title: `Activity Dashboard`,
 		desktopTitle: `Desktop Activity`,
 		androidTitle: `Android Activity`,
+		unifiedTitle: `The Whole Day`,
 		topProcesses: `Top Processes`,
 		topApps: `Top Apps`,
 		topDomains: `Top Domains`,
+		// The merged view mixes domains, processes and apps, so none of the three titles above fits —
+		// "items" is the only word that covers all three. Mirrors the SK reasoning.
+		topItems: `Top Items`,
 		comparedTo: `Compared to`,
+	},
+	sources: {
+		title: `Sources`,
+		webExtension: `Browser`,
+		desktop: `Desktop`,
+		android: `Phone`,
+		noData: `no data`,
+		include: `Include {source}`,
+		exclude: `Exclude {source}`,
+		keepOne: `At least one source has to stay on`,
+		// The line that stops a merged total from looking like a bug: the time did not disappear and
+		// was not halved, it is counted once.
+		overlapNote: `{value} was recorded by two sources at once and is counted once.`,
+		displaced: `{value} from {source} is credited to {target}`,
+		overlapRule: `Where sources overlap, foreground time beats background time; otherwise the more specific source wins — browser, then desktop, then phone.`,
 	},
 	baseline: {
 		last7Days: `Last 7 days`,
@@ -60,6 +79,8 @@ const activityTracking = {
 		apps: `Apps:`,
 		sessions: `Sessions:`,
 		processes: `Processes:`,
+		items: `Items:`,
+		recordedBy: `Recorded by:`,
 		windowTitles: `Window titles:`,
 		fullscreen: `Fullscreen:`,
 		playingSound: `Playing sound:`,
@@ -130,4 +151,6 @@ const activityTracking = {
 		type: `Type`,
 	},
 }
+/** One root namespace — see the comment on the SK file, which carries the reasoning. */
+const activityTracking = { activityTracking: messages }
 export default activityTracking

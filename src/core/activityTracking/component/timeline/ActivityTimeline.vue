@@ -3,16 +3,40 @@
 		<div class="header">
 			<div class="d-flex ga-4 align-center">
 				<h3 class="text-subtitle-1 font-weight-medium">{{ $t('activityTracking.timeline.title') }}</h3>
-				<!-- Lane type legend -->
+				<!--
+					Lane legend. Two readings of the same three lanes: by default they are the
+					active/detail/background cut of one source, and the legend names the two styles.
+					Given `laneLabels` they are three *sources* instead, and the legend names each one
+					with a marker showing where in the stack it sits — top, middle or bottom.
+				-->
 				<div class="legend">
-					<div class="legend-item">
-						<div class="legend-color legend-active" />
-						<span>{{ $t('activityTracking.viewMode.active') }}</span>
-					</div>
-					<div class="legend-item">
-						<div class="legend-color legend-background" />
-						<span>{{ $t('activityTracking.viewMode.background') }}</span>
-					</div>
+					<template v-if="laneLabels">
+						<div
+							v-for="(laneLabel, laneIndex) in laneLabels"
+							:key="laneLabel"
+							class="legend-item"
+						>
+							<div class="lane-marker">
+								<div
+									v-for="band in 3"
+									:key="band"
+									class="lane-marker-band"
+									:class="{ 'lane-marker-band--on': band - 1 === laneIndex }"
+								/>
+							</div>
+							<span>{{ laneLabel }}</span>
+						</div>
+					</template>
+					<template v-else>
+						<div class="legend-item">
+							<div class="legend-color legend-active" />
+							<span>{{ $t('activityTracking.viewMode.active') }}</span>
+						</div>
+						<div class="legend-item">
+							<div class="legend-color legend-background" />
+							<span>{{ $t('activityTracking.viewMode.background') }}</span>
+						</div>
+					</template>
 				</div>
 			</div>
 
@@ -90,6 +114,7 @@
 				:to="to"
 				:viewMode="viewMode"
 				:splitPoint="splitPoint"
+				:uniformLanes="laneLabels !== undefined"
 				@sessionClick="$emit('sessionClick', $event)"
 			/>
 
@@ -127,6 +152,16 @@
 		to: Date
 		loading?: boolean
 		error?: boolean
+		/**
+		 * Re-labels the three lanes, top to bottom, and drops the active/background styling that goes
+		 * with the default reading. Supply exactly three.
+		 *
+		 * The merged dashboard's lanes are the three trackers, not one tracker's active/detail/
+		 * background split — hatching the third lane there would say "the phone was in the background",
+		 * which is not a claim the android tracker can make. Absent, the component behaves exactly as
+		 * it always has for the three per-source dashboards.
+		 */
+		laneLabels?: string[]
 	}>()
 
 	defineEmits<{
@@ -213,6 +248,26 @@
 			rgba(var(--v-theme-primary), 0.1) 6px
 		);
 		border-left: 2px solid rgb(var(--v-theme-primary));
+	}
+
+	/* Three stacked bands with the lane's own highlighted — says "this one, second from the top"
+	   without needing an ordinal the reader has to map onto the chart themselves. */
+	.lane-marker {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		width: 24px;
+		height: 20px;
+	}
+
+	.lane-marker-band {
+		height: 4px;
+		border-radius: 2px;
+		background-color: rgba(var(--v-theme-on-surface), 0.12);
+	}
+
+	.lane-marker-band--on {
+		background-color: rgb(var(--v-theme-primary));
 	}
 
 	.domain-legend {

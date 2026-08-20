@@ -216,6 +216,7 @@ const common = {
 		history: `History`,
 		historySummary: `Summary`,
 		historyCalendar: `Calendar`,
+		unifiedActivityTracking: `All sources`,
 		activityTracking: `Web tracking`,
 		desktopActivityTracking: `Desktop tracking`,
 		androidActivityTracking: `Android tracking`,

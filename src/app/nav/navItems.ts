@@ -20,6 +20,7 @@ export const navItems: MenuItem[] = [
 		title: 'activityTracking',
 		icon: 'clock-rotate-left',
 		children: [
+			{ title: 'unifiedActivityTracking', icon: 'layer-group', to: '/activity-tracking/unified' },
 			{ title: 'activityTracking', icon: 'globe', to: '/activity-tracking' },
 			{ title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings/distinctEntries' },
 			{ title: 'desktopActivityTracking', icon: 'desktop', to: '/activity-tracking/desktop' },

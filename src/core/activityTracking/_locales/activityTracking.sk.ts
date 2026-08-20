@@ -1,4 +1,4 @@
-const activityTracking = {
+const messages = {
 	tracker: {
 		stackedBars: `Stĺpcový graf`,
 		timeline: `Časová os`,
@@ -7,10 +7,29 @@ const activityTracking = {
 		title: `Prehľad aktivít`,
 		desktopTitle: `Aktivita na počítači`,
 		androidTitle: `Aktivita na Androide`,
+		unifiedTitle: `Celý deň`,
 		topProcesses: `Top procesy`,
 		topApps: `Top aplikácie`,
 		topDomains: `Top domény`,
+		// Zlúčený pohľad mieša domény, procesy aj aplikácie, takže žiadny z troch názvov vyššie
+		// nesedí — „položky“ je jediné slovo, ktoré pokrýva všetky tri.
+		topItems: `Top položky`,
 		comparedTo: `Porovnať s`,
+	},
+	sources: {
+		title: `Zdroje`,
+		webExtension: `Prehliadač`,
+		desktop: `Počítač`,
+		android: `Telefón`,
+		noData: `bez dát`,
+		include: `Pridať zdroj {source}`,
+		exclude: `Odobrať zdroj {source}`,
+		keepOne: `Aspoň jeden zdroj musí zostať zapnutý`,
+		// Text, ktorý zabraňuje tomu, aby zlúčený súčet vyzeral ako chyba: čas nezmizol ani sa
+		// nerozpolil, len je započítaný raz.
+		overlapNote: `{value} zaznamenali dva zdroje naraz a je započítaný raz.`,
+		displaced: `{value} zo zdroja {source} je pripísaných zdroju {target}`,
+		overlapRule: `Pri prekryve má prednosť čas v popredí pred časom na pozadí; inak rozhoduje konkrétnejší zdroj — prehliadač, potom počítač, potom telefón.`,
 	},
 	baseline: {
 		last7Days: `Posledných 7 dní`,
@@ -60,6 +79,8 @@ const activityTracking = {
 		apps: `Aplikácie:`,
 		sessions: `Relácie:`,
 		processes: `Procesy:`,
+		items: `Položky:`,
+		recordedBy: `Zaznamenali:`,
 		windowTitles: `Názvy okien:`,
 		fullscreen: `Na celú obrazovku:`,
 		playingSound: `Prehrávanie zvuku:`,
@@ -132,4 +153,16 @@ const activityTracking = {
 		type: `Typ`,
 	},
 }
+/**
+ * ONE root namespace, like every other module locale file in `src/core` (`planner`, `toDoList`,
+ * `leisure`, `home`, …). `src/locales/SK.ts` spreads this object's **top level** into the root, so
+ * this wrapper is what makes `$t('activityTracking.…')` resolve.
+ *
+ * Without it the twelve groups above each became a root namespace of their own — `tracker`,
+ * `dashboard`, `common`, `settings`, `timeline`, … — and every one of the module's ~34
+ * `$t('activityTracking.*')` call sites rendered its raw key instead of a string. It also put a
+ * bare `common` and a bare `settings` in the app's root namespace, one shallow-spread collision away
+ * from replacing another module's, which is the hazard the comment at the top of `SK.ts` describes.
+ */
+const activityTracking = { activityTracking: messages }
 export default activityTracking
