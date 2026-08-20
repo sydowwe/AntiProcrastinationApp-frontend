@@ -9,9 +9,9 @@
 	>
 		<template #day-cell-content="{ day }">
 			<div class="cell-content">
-				<!-- Wake/Bed Time -->
+				<!-- Wake/Bed Time — always present on a real row (B2); absent days carry no sleep data -->
 				<div
-					v-if="asDaySummary(day).wakeUpTime || asDaySummary(day).bedTime"
+					v-if="asDaySummary(day).hasRecord"
 					class="cell-info"
 				>
 					<VIcon
@@ -20,8 +20,8 @@
 						class="mr-1"
 					/>
 					<span class="info-text">
-						{{ asDaySummary(day).wakeUpTime?.getString() ?? '-' }} -
-						{{ asDaySummary(day).bedTime?.getString() ?? '-' }}
+						{{ asDaySummary(day).wakeUpTime.getString() }} -
+						{{ asDaySummary(day).bedTime.getString() }}
 					</span>
 				</div>
 
@@ -64,9 +64,22 @@
 					</div>
 				</div>
 
+				<!-- No calendar row at all — distinct from a row that simply has no activity -->
+				<div
+					v-if="!asDaySummary(day).hasRecord"
+					class="cell-info no-record"
+				>
+					<VIcon
+						icon="fas fa-circle-question"
+						size="small"
+						class="mr-1"
+					/>
+					<span class="info-text">Not recorded</span>
+				</div>
+
 				<!-- No activity data -->
 				<div
-					v-if="asDaySummary(day).totalSeconds === 0"
+					v-else-if="asDaySummary(day).totalSeconds === 0"
 					class="cell-info no-data"
 				>
 					<span class="info-text opacity-50">No activity</span>
@@ -81,7 +94,7 @@
 	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import router from '@/router.ts'
 	import { getCalendarActivitySummary } from '@/core/historyDashboard/api/historyDashboardApi.ts'
-	import type { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
+	import { CalendarActivityDaySummary } from '@/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts'
 	import { CalendarActivityRequest } from '@/core/activityHistory/dto/request/CalendarActivityRequest.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
@@ -99,10 +112,35 @@
 		loading.value = true
 		try {
 			const request = new CalendarActivityRequest(formatDateForApi(range.start), formatDateForApi(range.end), 3)
-			days.value = await getCalendarActivitySummary(request)
+			days.value = fillMissingDays(await getCalendarActivitySummary(request), range.start, range.end)
 		} finally {
 			loading.value = false
 		}
+	}
+
+	/**
+	 * B2: the response carries one entry per *existing calendar row*, not per day of the requested range,
+	 * and rows are only seeded for the current and next year. A range in a past year therefore comes back
+	 * short or empty — and `CalendarGrid` drops a week whose days are all missing, so the user sees a
+	 * blank month with no explanation rather than a month of unrecorded days.
+	 *
+	 * So build the range here and look each day up by `date`; never assume index alignment or length.
+	 */
+	function fillMissingDays(
+		response: CalendarActivityDaySummary[],
+		start: Date,
+		end: Date,
+	): CalendarActivityDaySummary[] {
+		const byDate = new Map(response.map(day => [day.date, day]))
+		const filled: CalendarActivityDaySummary[] = []
+		const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+		const last = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+		while (cursor <= last) {
+			const date = formatDateForApi(cursor)
+			filled.push(byDate.get(date) ?? CalendarActivityDaySummary.placeholder(date))
+			cursor.setDate(cursor.getDate() + 1)
+		}
+		return filled
 	}
 
 	function asDaySummary(day: unknown): CalendarActivityDaySummary {
@@ -132,6 +170,11 @@
 		color: rgb(var(--v-theme-on-surface));
 		line-height: 1.5;
 		gap: 4px;
+	}
+
+	.cell-info.no-record {
+		font-style: italic;
+		opacity: 0.4;
 	}
 
 	.cell-info.total-time {

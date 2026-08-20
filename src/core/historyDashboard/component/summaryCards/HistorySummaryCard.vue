@@ -68,7 +68,7 @@
 	import type { HistorySummaryCard as HistorySummaryCardDto } from '@/core/historyDashboard/dto/response/HistorySummaryCard.ts'
 	import { historyGroupKey, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 
 	const props = defineProps<{
 		card: HistorySummaryCardDto
@@ -79,7 +79,7 @@
 		click: [group: HistoryGroupKey]
 	}>()
 
-	const resolvedColor = computed(() => props.card.color ?? getDomainColor(props.card.name))
+	const resolvedColor = computed(() => resolveHistoryGroupColor(props.card))
 	const formattedTime = computed(() => fromSeconds(props.card.totalSeconds))
 
 	const comparisonText = computed(() => {

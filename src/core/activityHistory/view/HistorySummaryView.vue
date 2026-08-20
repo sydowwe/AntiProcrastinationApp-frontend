@@ -94,7 +94,7 @@
 	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 	import HistoryDateRangeSelector from '@/core/historyDashboard/component/controls/HistoryDateRangeSelector.vue'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
@@ -232,7 +232,7 @@
 				name: item.name,
 				activeSeconds: item.totalSeconds,
 				backgroundSeconds: 0,
-				color: item.color ?? getDomainColor(item.name),
+				color: resolveHistoryGroupColor(item),
 			})),
 		}))
 	})

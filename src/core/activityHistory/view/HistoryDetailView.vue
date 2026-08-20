@@ -165,7 +165,7 @@
 	import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/component/stackedBars/dto/StackedBarsInput.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
 	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
@@ -207,25 +207,46 @@
 	const summaryCardsLoading = ref(false)
 
 	// --- Map HistoryWindow[] → StackedBarsInputWindow[] ---
+	// B3 confirmed `windowStart`/`windowEnd` are always ISO 8601 with a `Z`; the old
+	// `replace(' ', 'T')` fallback hedged against a serialization that never occurs.
 	function parseDate(dateStr: string): Date {
-		const d = new Date(dateStr)
-		if (!isNaN(d.getTime())) return d
-		return new Date(dateStr.replace(' ', 'T'))
+		return new Date(dateStr)
 	}
 
-	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() => {
-		if (!stackedBarsData.value) return []
-		return stackedBarsData.value.windows.map(w => ({
+	/**
+	 * B2 §4: `detail/stacked-bars` emits exactly 24 one-hour windows starting at the range's `from` and
+	 * ignores `to` entirely, so a requested 08:00–16:00 comes back as 24 bars — 16 of them empty and
+	 * extending past the requested end. Flagged as a backend bug; until it is fixed, clamp here rather
+	 * than render the phantom tail as if it were the requested range.
+	 *
+	 * Clamping is done against the first window's start (which the backend does honour) plus the
+	 * requested duration, so it holds whatever window size the server actually used.
+	 */
+	const requestedDurationMinutes = computed(() => {
+		const span = (timeTo.value.getInMinutes - timeFrom.value.getInMinutes + 1440) % 1440
+		return span === 0 ? 1440 : span
+	})
+
+	const clampedWindows = computed(() => {
+		const windows = stackedBarsData.value?.windows ?? []
+		const first = windows[0]
+		if (!first) return []
+		const cutoff = parseDate(first.windowStart).getTime() + requestedDurationMinutes.value * 60_000
+		return windows.filter(w => parseDate(w.windowStart).getTime() < cutoff)
+	})
+
+	const stackedBarsWindows = computed<StackedBarsInputWindow[]>(() =>
+		clampedWindows.value.map(w => ({
 			windowStart: parseDate(w.windowStart),
 			windowEnd: parseDate(w.windowEnd),
 			items: w.items.map(item => ({
 				name: item.name,
 				activeSeconds: item.totalSeconds,
 				backgroundSeconds: 0,
-				color: item.color ?? getDomainColor(item.name),
+				color: resolveHistoryGroupColor(item),
 			})),
-		}))
-	})
+		})),
+	)
 
 	// --- Fetch Functions ---
 	async function fetchStackedBars() {

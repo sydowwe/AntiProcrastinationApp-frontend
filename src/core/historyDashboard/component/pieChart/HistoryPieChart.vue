@@ -21,7 +21,7 @@
 		isSameHistoryGroup,
 		type HistoryGroupKey,
 	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
+	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
@@ -36,16 +36,12 @@
 
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
-	function resolveColor(name: string, color: string | null): string {
-		return color ?? getDomainColor(name)
-	}
-
 	const chartOption = computed<EChartsOption>(() => {
 		const data = props.items.map(item => ({
 			name: item.name,
 			value: item.totalSeconds,
 			itemStyle: {
-				color: resolveColor(item.name, item.color),
+				color: resolveHistoryGroupColor(item),
 			},
 			selected: isSameHistoryGroup(props.selectedGroup, historyGroupKey(item)),
 		}))

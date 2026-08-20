@@ -22,6 +22,12 @@
 			>
 				{{ changeText }}
 			</VChip>
+			<span
+				v-else
+				class="text-caption text-disabled"
+			>
+				no baseline
+			</span>
 		</div>
 	</VAlert>
 </template>
@@ -35,20 +41,26 @@
 		comparison: HistoryPeriodComparison | null
 	}>()
 
+	// B2: `percentChange` is genuinely nullable — null means the previous period total was 0, i.e. there
+	// is no baseline to compare against. That is a different fact from "changed by 0%", so it must not
+	// collapse into one: the falsy checks these three used to make read a real 0% as "no data" and,
+	// worse, rendered a missing baseline as a neutral 0% badge.
+	const percentChange = computed(() => props.comparison?.percentChange ?? null)
+
 	const alertType = computed(() => {
-		if (!props.comparison?.percentChange) return 'info'
-		return props.comparison.percentChange > 0 ? 'success' : 'warning'
+		if (percentChange.value === null || percentChange.value === 0) return 'info'
+		return percentChange.value > 0 ? 'success' : 'warning'
 	})
 
 	const chipColor = computed(() => {
-		if (!props.comparison?.percentChange) return 'grey'
-		return props.comparison.percentChange > 0 ? 'success' : 'error'
+		if (percentChange.value === null || percentChange.value === 0) return 'grey'
+		return percentChange.value > 0 ? 'success' : 'error'
 	})
 
 	const changeText = computed(() => {
-		if (!props.comparison?.percentChange) return '0%'
-		const sign = props.comparison.percentChange > 0 ? '+' : ''
-		return `${sign}${props.comparison.percentChange}%`
+		if (percentChange.value === null) return ''
+		const sign = percentChange.value > 0 ? '+' : ''
+		return `${sign}${percentChange.value}%`
 	})
 </script>
 
