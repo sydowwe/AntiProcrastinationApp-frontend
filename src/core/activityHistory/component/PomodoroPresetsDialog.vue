@@ -6,14 +6,14 @@
 	>
 		<template #header>
 			<div class="px-6 mt-1 mb-4 d-flex ga-3 align-center">
-				<h3 class="text-h6">Timer {{ $t('pomodoroTimer.presets') }}</h3>
+				<h3 class="text-h6">{{ $t('history.timerPresetsTitle') }}</h3>
 				<VBtn
 					variant="tonal"
 					:color="editMode ? 'secondaryOutline' : 'default'"
 					:prependIcon="editMode ? 'check' : 'pen-to-square'"
 					@click="toggleEditMode"
 				>
-					{{ editMode ? 'Done' : 'Edit' }}
+					{{ editMode ? $t('general.done') : $t('general.edit') }}
 				</VBtn>
 				<VBtn
 					color="successDark"
@@ -106,7 +106,7 @@
 			v-else
 			class="text-center text-textMuted"
 		>
-			No presets yet
+			{{ $t('history.noPresetsYet') }}
 		</div>
 	</MyDialog>
 
@@ -122,9 +122,11 @@
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PomodoroPresetFormDialog from '@/core/activityHistory/component/PomodoroPresetFormDialog.vue'
 	import { onMounted, ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import { usePomodoroTimerPresetCrud } from '@/core/activityHistory/api/pomodoroTimerPresetApi.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const emit = defineEmits<{
 		select: [
@@ -139,6 +141,8 @@
 			},
 		]
 	}>()
+	const { t } = useI18n()
+	const { confirm } = useDialog()
 
 	const { fetchAll, deleteEntity } = usePomodoroTimerPresetCrud()
 
@@ -172,7 +176,10 @@
 	}
 
 	async function deletePreset(preset: PomodoroTimerPreset) {
-		const confirmed = confirm(`Are you sure you want to delete preset "${preset.name}"?`)
+		const confirmed = await confirm({
+			text: t('history.confirmDeleteNamedPreset', { name: preset.name }),
+			confirmBtnColor: 'error',
+		})
 		if (!confirmed) return
 
 		await deleteEntity(preset.id)

@@ -10,19 +10,19 @@
 			:value="HistoryGroupBy.Activity"
 			height="40px"
 		>
-			Activity
+			{{ $t('activities.activity') }}
 		</VBtn>
 		<VBtn
 			:value="HistoryGroupBy.Role"
 			height="40px"
 		>
-			Role
+			{{ $t('activities.role') }}
 		</VBtn>
 		<VBtn
 			:value="HistoryGroupBy.Category"
 			height="40px"
 		>
-			Category
+			{{ $t('activities.category') }}
 		</VBtn>
 	</VBtnToggle>
 </template>

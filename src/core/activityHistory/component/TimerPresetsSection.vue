@@ -1,21 +1,21 @@
 <template>
 	<div class="d-flex flex-column ga-4">
 		<div class="d-flex ga-3 align-center">
-			<h3 class="text-h6">Timer Presets</h3>
+			<h3 class="text-h6">{{ $t('history.timerPresetsTitle') }}</h3>
 			<VBtn
 				variant="tonal"
 				:color="editMode ? 'secondaryOutline' : 'default'"
 				:prependIcon="editMode ? 'check' : 'pen-to-square'"
 				@click="toggleEditMode"
 			>
-				{{ editMode ? 'Done' : 'Edit' }}
+				{{ editMode ? $t('general.done') : $t('general.edit') }}
 			</VBtn>
 		</div>
 
 		<!-- Quick Times Section -->
 		<div class="d-flex flex-column ga-3">
 			<div class="d-flex ga-2 align-center">
-				<h4 class="text-subtitle-1">Quick Times</h4>
+				<h4 class="text-subtitle-1">{{ $t('history.quickTimes') }}</h4>
 				<VIconBtn
 					v-if="editMode"
 					icon="plus"
@@ -55,7 +55,7 @@
 				v-else
 				class="text-textMuted text-body-2"
 			>
-				No presets yet
+				{{ $t('history.noPresetsYet') }}
 			</div>
 		</div>
 
@@ -65,7 +65,7 @@
 			class="d-flex flex-column ga-3"
 		>
 			<div class="d-flex ga-2 align-center">
-				<h4 class="text-subtitle-1">Activity Presets</h4>
+				<h4 class="text-subtitle-1">{{ $t('history.activityPresets') }}</h4>
 				<VIconBtn
 					v-if="editMode"
 					icon="plus"
@@ -104,7 +104,7 @@
 				v-else
 				class="text-textMuted text-body-2"
 			>
-				No presets yet
+				{{ $t('history.noPresetsYet') }}
 			</div>
 		</div>
 	</div>

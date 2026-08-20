@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
-		:title="isEdit ? 'Edit Pomodoro Preset' : 'Add Pomodoro Preset'"
+		:title="isEdit ? $t('history.pomodoroPreset.editTitle') : $t('history.pomodoroPreset.addTitle')"
 		:confirmBtnLabel="isEdit ? $t('general.update') : $t('general.create')"
 		@confirmed="onConfirmed"
 	>
@@ -27,7 +27,7 @@
 						size="small"
 						class="mr-2"
 					></VIcon>
-					Basic
+					{{ $t('history.pomodoroPreset.tabBasic') }}
 				</VBtn>
 				<VBtn
 					value="focus"
@@ -38,7 +38,7 @@
 						size="small"
 						class="mr-2"
 					></VIcon>
-					With Focus Activity
+					{{ $t('history.pomodoroPreset.tabWithFocus') }}
 				</VBtn>
 				<VBtn
 					value="both"
@@ -49,13 +49,13 @@
 						size="small"
 						class="mr-2"
 					></VIcon>
-					With Both Activities
+					{{ $t('history.pomodoroPreset.tabWithBoth') }}
 				</VBtn>
 			</VBtnToggle>
 
 			<VTextField
 				v-model="request.name"
-				label="Preset Name"
+				:label="$t('history.pomodoroPreset.name')"
 				:rules="[requiredRule]"
 				hideDetails
 			></VTextField>
@@ -69,12 +69,12 @@
 						size="small"
 						class="mr-2"
 					></VIcon>
-					Timer Durations
+					{{ $t('history.pomodoroPreset.timerDurations') }}
 				</div>
 				<div class="d-flex flex-column flex-sm-row ga-3">
 					<TimePicker
 						v-model="focusDuration"
-						label="Focus"
+						:label="$t('history.pomodoroPreset.focusLabel')"
 						viewMode="minute"
 						variant="outlined"
 						color="primary"
@@ -83,7 +83,7 @@
 					></TimePicker>
 					<TimePicker
 						v-model="shortBreakDuration"
-						label="Short Break"
+						:label="$t('history.pomodoroPreset.shortBreakLabel')"
 						viewMode="minute"
 						variant="outlined"
 						color="success"
@@ -92,7 +92,7 @@
 					></TimePicker>
 					<TimePicker
 						v-model="longBreakDuration"
-						label="Long Break"
+						:label="$t('history.pomodoroPreset.longBreakLabel')"
 						viewMode="minute"
 						variant="outlined"
 						color="info"
@@ -111,12 +111,12 @@
 						size="small"
 						class="mr-2"
 					></VIcon>
-					Cycle Settings
+					{{ $t('history.pomodoroPreset.cycleSettings') }}
 				</div>
 				<div class="d-flex flex-column flex-sm-row ga-4">
 					<VSelect
 						v-model="request.focusPeriodInCycleCount"
-						label="Focus Periods per Cycle"
+						:label="$t('history.pomodoroPreset.focusPeriodsPerCycle')"
 						class="flex-sm-1-1"
 						:items="[2, 3, 4, 5, 6]"
 						:rules="[requiredRule]"
@@ -125,7 +125,7 @@
 					></VSelect>
 					<VSelect
 						v-model="request.numberOfCycles"
-						label="Number of Cycles"
+						:label="$t('pomodoroTimer.numberOfCycles')"
 						class="flex-sm-1-1"
 						:items="[1, 2, 3, 4, 5, 6]"
 						:rules="[requiredRule]"
@@ -140,7 +140,7 @@
 			<VIdAutocomplete
 				v-if="activeTab === 'focus' || activeTab === 'both'"
 				v-model="request.focusActivityId"
-				label="Focus Activity"
+				:label="$t('pomodoroTimer.focusActivity')"
 				:items="activityOptions"
 				:rules="[requiredRule]"
 				hideDetails
@@ -149,7 +149,7 @@
 			<VIdAutocomplete
 				v-if="activeTab === 'both'"
 				v-model="request.restActivityId"
-				label="Rest Activity"
+				:label="$t('pomodoroTimer.restActivity')"
 				:items="activityOptions"
 				:rules="[requiredRule]"
 				hideDetails
@@ -174,6 +174,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/core/activityHistory/dto/request/PomodoroTimerPresetRequest.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
@@ -183,6 +184,7 @@
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const emit = defineEmits<{
 		(e: 'created'): void
@@ -192,6 +194,8 @@
 	const { create, update, deleteEntity } = usePomodoroTimerPresetCrud()
 	const { fetchSelectOptions } = useActivityCrud()
 	const { requiredRule } = useGeneralRules()
+	const { t } = useI18n()
+	const { confirm } = useDialog()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const dialog = ref(false)
@@ -228,7 +232,7 @@
 
 	function openAddDialog() {
 		request.value = new PomodoroTimerPresetRequest()
-		request.value.name = 'Pomodoro Preset'
+		request.value.name = t('history.pomodoroPreset.defaultName')
 		activeTab.value = 'basic'
 		isEdit.value = false
 		dialog.value = true
@@ -282,7 +286,7 @@
 	async function onDelete() {
 		if (!idToEdit.value) return
 
-		const confirmed = confirm('Are you sure you want to delete this preset?')
+		const confirmed = await confirm({ text: t('history.confirmDeletePreset'), confirmBtnColor: 'error' })
 		if (!confirmed) return
 
 		await deleteEntity(idToEdit.value)

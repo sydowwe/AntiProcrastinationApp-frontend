@@ -10,9 +10,11 @@
 		style="max-width: fit-content"
 	>
 		<div class="d-flex align-center ga-1">
-			<span class="text-high-emphasis font-weight-medium">Period total:</span>
+			<span class="text-high-emphasis font-weight-medium">
+				{{ $t('historyDashboard.periodBanner.periodTotal') }}
+			</span>
 			<span>{{ fromSeconds(comparison.currentPeriodTotalSeconds) }}</span>
-			<span class="ml-2 text-medium-emphasis">vs previous:</span>
+			<span class="ml-2 text-medium-emphasis">{{ $t('historyDashboard.periodBanner.vsPrevious') }}</span>
 			<span class="mr-2">{{ fromSeconds(comparison.previousPeriodTotalSeconds) }}</span>
 			<VChip
 				v-if="comparison.percentChange !== null"
@@ -26,7 +28,7 @@
 				v-else
 				class="text-caption text-disabled"
 			>
-				no baseline
+				{{ $t('historyDashboard.periodBanner.noBaseline') }}
 			</span>
 		</div>
 	</VAlert>

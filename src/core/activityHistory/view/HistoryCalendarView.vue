@@ -41,7 +41,13 @@
 						variant="tonal"
 						class="ml-1"
 					>
-						{{ asDaySummary(day).sessionCount }} sessions
+						{{
+							$t(
+								'history.calendar.sessions',
+								{ count: asDaySummary(day).sessionCount },
+								asDaySummary(day).sessionCount,
+							)
+						}}
 					</VChip>
 				</div>
 
@@ -74,7 +80,7 @@
 						size="small"
 						class="mr-1"
 					/>
-					<span class="info-text">Not recorded</span>
+					<span class="info-text">{{ $t('history.calendar.notRecorded') }}</span>
 				</div>
 
 				<!-- No activity data -->
@@ -82,7 +88,7 @@
 					v-else-if="asDaySummary(day).totalSeconds === 0"
 					class="cell-info no-data"
 				>
-					<span class="info-text opacity-50">No activity</span>
+					<span class="info-text opacity-50">{{ $t('history.calendar.noActivity') }}</span>
 				</div>
 			</div>
 		</template>

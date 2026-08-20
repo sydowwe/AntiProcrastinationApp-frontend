@@ -16,7 +16,7 @@
 				:elevation="compact ? 0 : 3"
 				:class="compact ? 'pa-0' : 'pa-3 pa-md-6'"
 			>
-				<VCardTitle class="text-h5 text-center pb-3">Pomodoro Timer</VCardTitle>
+				<VCardTitle class="text-h5 text-center pb-3">{{ i18n.t('history.pomodoro.title') }}</VCardTitle>
 				<div v-if="timeInputVisible">
 					<div class="d-flex justify-center ga-2 mb-3">
 						<VBtn
@@ -32,7 +32,7 @@
 							prependIcon="clock-rotate-left"
 							@click="resetPickersToDefault"
 						>
-							Defaults
+							{{ i18n.t('history.pomodoro.defaults') }}
 						</VBtn>
 					</div>
 					<div class="d-flex flex-wrap justify-center ga-3">
@@ -467,30 +467,52 @@
 		}
 
 		// Show notification for phase end with context
-		const cycleInfo = `Cycle ${currentCycle.value}/${numberOfCycles.value}`
-		const focusInfo = `Focus ${currentFocusPeriod.value}/${numberOfFocusPeriodsInCycle.value}`
+		const cycleInfo = i18n.t('history.pomodoro.cycleProgress', {
+			current: currentCycle.value,
+			total: numberOfCycles.value,
+		})
+		const focusInfo = i18n.t('history.pomodoro.focusProgress', {
+			current: currentFocusPeriod.value,
+			total: numberOfFocusPeriodsInCycle.value,
+		})
 
 		playNotificationSound()
 		switch (currentTimerType.value) {
 			case 'focus':
-				startTitleAnimation(`Focus ended! | ${cycleInfo}`, `Time for a break`)
+				startTitleAnimation(
+					`${i18n.t('history.pomodoro.focusEndedTitleAnim')} · ${cycleInfo}`,
+					i18n.t('history.pomodoro.timeForBreak'),
+				)
 				void showNotification(
-					'Focus period ended',
-					`${focusActivityName.value} - ${focusInfo} | ${cycleInfo}. Time for a break!`,
+					i18n.t('history.pomodoro.focusPeriodEndedTitle'),
+					i18n.t('history.pomodoro.focusPeriodEndedBody', {
+						activity: focusActivityName.value,
+						focusInfo,
+						cycleInfo,
+					}),
 				)
 				break
 			case 'shortBreak':
-				startTitleAnimation(`Break ended! | ${cycleInfo}`, `Time to focus`)
+				startTitleAnimation(
+					`${i18n.t('history.pomodoro.breakEndedTitleAnim')} · ${cycleInfo}`,
+					i18n.t('history.pomodoro.timeToFocus'),
+				)
 				void showNotification(
-					'Short break ended',
-					`${cycleInfo} - Time to focus on ${focusActivityName.value}!`,
+					i18n.t('history.pomodoro.shortBreakEndedTitle'),
+					i18n.t('history.pomodoro.shortBreakEndedBody', { cycleInfo, activity: focusActivityName.value }),
 				)
 				break
 			case 'longBreak':
-				startTitleAnimation(`Long break ended!`, `Starting cycle ${currentCycle.value + 1}`)
+				startTitleAnimation(
+					i18n.t('history.pomodoro.longBreakEndedTitleAnim'),
+					i18n.t('history.pomodoro.startingCycle', { n: currentCycle.value + 1 }),
+				)
 				void showNotification(
-					'Long break ended',
-					`Cycle ${currentCycle.value} complete. Time for cycle ${currentCycle.value + 1}!`,
+					i18n.t('history.pomodoro.longBreakEndedTitle'),
+					i18n.t('history.pomodoro.longBreakEndedBody', {
+						current: currentCycle.value,
+						next: currentCycle.value + 1,
+					}),
 				)
 				break
 		}
@@ -544,13 +566,27 @@
 
 		if (automatic) {
 			const completedCycles = currentCycle.value
+			const cycleCount = i18n.t(
+				'history.pomodoro.completeCycleCount',
+				{ count: completedCycles },
+				completedCycles,
+			)
 			triggerTimerEndNotification(
-				`🍅 Pomodoro complete! | ${completedCycles} cycle${completedCycles > 1 ? 's' : ''}`,
-				`${focusActivityName.value} - ${timeSpent.getNice}`,
+				i18n.t('history.pomodoro.completeTitleAnim', { cycleCount }),
+				i18n.t('history.pomodoro.completeSubtitle', {
+					activity: focusActivityName.value,
+					duration: timeSpent.getNice,
+				}),
 			)
 			void showNotification(
-				'Pomodoro complete!',
-				`${completedCycles} cycle${completedCycles > 1 ? 's' : ''} done! Focused on ${focusActivityName.value} for ${timeSpent.getNice}${restActivityName ? `, rested with ${restActivityName}` : ''} for ${restTime.getNice}`,
+				i18n.t('history.pomodoro.completeNotifTitle'),
+				i18n.t(
+					'history.pomodoro.doneSummary',
+					{ count: completedCycles, activity: focusActivityName.value, duration: timeSpent.getNice },
+					completedCycles,
+				) +
+					(restActivityName ? i18n.t('history.pomodoro.restedWith', { activity: restActivityName }) : '') +
+					i18n.t('history.pomodoro.forDuration', { duration: restTime.getNice }),
 			)
 		}
 

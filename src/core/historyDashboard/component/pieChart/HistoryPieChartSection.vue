@@ -18,7 +18,7 @@
 					size="64"
 					class="text-disabled mb-4"
 				/>
-				<p class="text-body-1 text-medium-emphasis">No data for this period</p>
+				<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noDataForPeriod') }}</p>
 			</div>
 		</template>
 
@@ -52,29 +52,39 @@
 						<div class="details-grid">
 							<template v-if="selectedGroupItem">
 								<div class="detail-row">
-									<span class="text-medium-emphasis">Total time:</span>
+									<span class="text-medium-emphasis">
+										{{ $t('activityTracking.common.totalTime') }}
+									</span>
 									<span class="text-high-emphasis font-weight-medium">
 										{{ fromSeconds(selectedGroupItem.totalSeconds) }}
 									</span>
 								</div>
 								<div class="detail-row">
-									<span class="text-medium-emphasis">Entries:</span>
+									<span class="text-medium-emphasis">
+										{{ $t('activityTracking.common.entries') }}
+									</span>
 									<span>{{ selectedGroupItem.entries }}</span>
 								</div>
 							</template>
 							<template v-else>
 								<div class="detail-row">
-									<span class="text-medium-emphasis">Total time:</span>
+									<span class="text-medium-emphasis">
+										{{ $t('activityTracking.common.totalTime') }}
+									</span>
 									<span class="text-high-emphasis font-weight-medium">
 										{{ fromSeconds(data.totals.totalSeconds) }}
 									</span>
 								</div>
 								<div class="detail-row">
-									<span class="text-medium-emphasis">Total entries:</span>
+									<span class="text-medium-emphasis">
+										{{ $t('historyDashboard.pieChart.totalEntries') }}
+									</span>
 									<span>{{ data.totals.totalEntries }}</span>
 								</div>
 								<div class="detail-row">
-									<span class="text-medium-emphasis">Unique groups:</span>
+									<span class="text-medium-emphasis">
+										{{ $t('historyDashboard.pieChart.uniqueGroups') }}
+									</span>
 									<span>{{ data.totals.uniqueGroups }}</span>
 								</div>
 							</template>
@@ -88,6 +98,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import HistoryPieChart from './HistoryPieChart.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
@@ -104,12 +115,14 @@
 
 	const selectedGroup = defineModel<HistoryGroupKey | null>('selectedGroup', { default: null })
 
+	const { t } = useI18n()
+
 	const selectedGroupItem = computed(() => {
 		if (!selectedGroup.value || !props.data) return null
 		return props.data.items.find(i => isSameHistoryGroup(historyGroupKey(i), selectedGroup.value)) ?? null
 	})
 
-	const detailsHeader = computed(() => selectedGroup.value?.name ?? 'Period Totals')
+	const detailsHeader = computed(() => selectedGroup.value?.name ?? t('historyDashboard.pieChart.periodTotals'))
 
 	function handleSegmentClick(group: HistoryGroupKey | null) {
 		selectedGroup.value = group

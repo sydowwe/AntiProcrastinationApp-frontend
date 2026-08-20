@@ -2,7 +2,7 @@
 	<div class="d-flex align-center ga-4 flex-wrap">
 		<VSelect
 			v-model="selectedRangeType"
-			label="Range length"
+			:label="$t('historyDashboard.dateRange.rangeLength')"
 			:items="rangeTypeItems"
 			itemTitle="title"
 			itemValue="value"
@@ -14,7 +14,7 @@
 
 		<MyDateInput
 			v-model="dateFrom"
-			label="From"
+			:label="$t('historyDashboard.dateRange.from')"
 			hideDetails
 			:max="dateTo ?? today"
 			density="compact"
@@ -22,7 +22,7 @@
 		<template v-if="selectedRangeType === ActivityDateRangeTypeEnum.CustomRange">
 			<MyDateInput
 				v-model="dateTo"
-				label="To"
+				:label="$t('historyDashboard.dateRange.to')"
 				hideDetails
 				:min="dateFrom"
 				:max="today"
@@ -33,7 +33,8 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
@@ -44,18 +45,19 @@
 
 	const endDate = defineModel<string | undefined>('endDate', { required: true })
 
+	const { t } = useI18n()
 	const today = new Date()
 	const selectedRangeType = ref<ActivityDateRangeTypeEnum>(rangeType.value)
 
-	const rangeTypeItems = [
-		{ title: '3 days', value: ActivityDateRangeTypeEnum.ThreeDays },
-		{ title: '7 days', value: ActivityDateRangeTypeEnum.Week },
-		{ title: '2 weeks', value: ActivityDateRangeTypeEnum.TwoWeeks },
-		{ title: 'Month', value: ActivityDateRangeTypeEnum.Month },
-		{ title: '3 months', value: ActivityDateRangeTypeEnum.ThreeMonths },
-		{ title: 'Year', value: ActivityDateRangeTypeEnum.Year },
-		{ title: 'Custom range', value: ActivityDateRangeTypeEnum.CustomRange },
-	]
+	const rangeTypeItems = computed(() => [
+		{ title: t('historyDashboard.dateRange.threeDays'), value: ActivityDateRangeTypeEnum.ThreeDays },
+		{ title: t('historyDashboard.dateRange.sevenDays'), value: ActivityDateRangeTypeEnum.Week },
+		{ title: t('historyDashboard.dateRange.twoWeeks'), value: ActivityDateRangeTypeEnum.TwoWeeks },
+		{ title: t('historyDashboard.dateRange.month'), value: ActivityDateRangeTypeEnum.Month },
+		{ title: t('historyDashboard.dateRange.threeMonths'), value: ActivityDateRangeTypeEnum.ThreeMonths },
+		{ title: t('historyDashboard.dateRange.year'), value: ActivityDateRangeTypeEnum.Year },
+		{ title: t('historyDashboard.dateRange.customRange'), value: ActivityDateRangeTypeEnum.CustomRange },
+	])
 
 	// --- Custom Range state ---
 	const dateFrom = ref<Date>(date.value ? new Date(date.value) : new Date())

@@ -1,14 +1,14 @@
 <template>
 	<MyDialog
 		v-model="model"
-		:title="'Log task: ' + activityName"
+		:title="$t('history.logTaskTitle', { activity: activityName })"
 		:persistent="isRunning"
 		:hasConfirmBtn="!isRunning && lengthData"
 		:isSmall="lengthData && !isRunning"
 		@confirmed="handleConfirm"
 	>
 		<div v-if="lengthData && !isRunning">
-			<h3>Task done for {{ Time.getString(lengthData.length) }}</h3>
+			<h3>{{ $t('history.taskDoneFor', { duration: Time.getString(lengthData.length) }) }}</h3>
 		</div>
 		<div
 			v-else
@@ -26,19 +26,19 @@
 					value="stopwatch"
 					prependIcon="fas fa-stopwatch"
 				>
-					Stopwatch
+					{{ $t('navigation.stopwatch') }}
 				</VBtn>
 				<VBtn
 					value="timer"
 					prependIcon="fas fa-hourglass-half"
 				>
-					Timer
+					{{ $t('navigation.timer') }}
 				</VBtn>
 				<VBtn
 					value="pomodoro"
 					prependIcon="fas fa-circle-dot"
 				>
-					Pomodoro
+					{{ $t('navigation.pomodoroTimer') }}
 				</VBtn>
 			</VBtnToggle>
 			<StopWatchView

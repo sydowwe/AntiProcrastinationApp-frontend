@@ -2,9 +2,9 @@
 	<div class="history-summary-cards">
 		<!-- Header -->
 		<div class="d-flex ga-4 align-center mb-4 flex-wrap">
-			<h2 class="text-h5">Top {{ groupByLabel }}</h2>
+			<h2 class="text-h5">{{ $t('historyDashboard.summaryCards.topGroup', { group: groupByLabel }) }}</h2>
 			<VSelect
-				label="Compared to"
+				:label="$t('activityTracking.dashboard.comparedTo')"
 				:modelValue="selectedBaseline"
 				:items="baselineOptions"
 				density="compact"
@@ -13,7 +13,7 @@
 				@update:modelValue="emit('update:selectedBaseline', $event)"
 			/>
 			<VSelect
-				label="Show"
+				:label="$t('historyDashboard.summaryCards.show')"
 				:modelValue="topN"
 				:items="topNOptions"
 				density="compact"
@@ -54,7 +54,7 @@
 				size="64"
 				class="text-disabled mb-4"
 			/>
-			<p class="text-body-1 text-medium-emphasis">No data for this period</p>
+			<p class="text-body-1 text-medium-emphasis">{{ $t('activityTracking.common.noDataForPeriod') }}</p>
 		</div>
 
 		<!-- Cards -->
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 	import { computed, nextTick, ref, watch } from 'vue'
 	import { useDisplay } from 'vuetify'
+	import { useI18n } from 'vue-i18n'
 	import { useResizeObserver } from '@vueuse/core'
 	import { BaselineOption, BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import type { HistorySummaryCardsResponse } from '@/core/historyDashboard/dto/response/HistorySummaryCardsResponse.ts'
@@ -112,13 +113,15 @@
 	}>()
 
 	const { lgAndUp, xlAndUp } = useDisplay()
+	const { t } = useI18n()
 
-	const baselineOptions: BaselineOption[] = [
-		new BaselineOption(BaselineType.Last7Days, 'Last 7 days'),
-		new BaselineOption(BaselineType.Last30Days, 'Last 30 days'),
-		new BaselineOption(BaselineType.SameWeekday, 'Same weekday'),
-		new BaselineOption(BaselineType.AllTime, 'All time'),
-	]
+	// Reused from activityTracking, which already localized these four titles (R3) — see H5.
+	const baselineOptions = computed<BaselineOption[]>(() => [
+		new BaselineOption(BaselineType.Last7Days, t('activityTracking.baseline.last7Days')),
+		new BaselineOption(BaselineType.Last30Days, t('activityTracking.baseline.last30Days')),
+		new BaselineOption(BaselineType.SameWeekday, t('activityTracking.baseline.sameWeekday')),
+		new BaselineOption(BaselineType.AllTime, t('activityTracking.baseline.allTime')),
+	])
 
 	const topNOptions = [
 		{ title: '3', value: 3 },
@@ -196,16 +199,7 @@
 
 	const scrollClass = computed(() => (visibleRows.value === 1 ? 'scroll-1-row' : 'scroll-2-rows'))
 
-	const groupByLabel = computed(() => {
-		switch (props.groupBy) {
-			case 'ACTIVITY':
-				return 'Activities'
-			case 'ROLE':
-				return 'Roles'
-			default:
-				return 'Categories'
-		}
-	})
+	const groupByLabel = computed(() => t(`historyDashboard.summaryCards.groupLabel.${props.groupBy}`))
 
 	// Snap scroll to top when data changes
 	watch(

@@ -85,19 +85,12 @@
 				</VCol>
 			</template>
 		</VRow>
-
-		<MyDialog
-			v-model="deleteDialog"
-			title="Delete confirmation"
-			text="Are you sure you want to delete this activity history record?"
-			confirmBtnColor="error"
-			@confirmed="confirmDelete"
-		/>
 	</div>
 </template>
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { formatLocalized } from '@/_common/utils/DateTimeHelper.ts'
 	import { DetailTimelineRequest } from '@/core/historyDashboard/dto/request/historyDetail/DetailTimelineRequest.ts'
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
@@ -106,7 +99,6 @@
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
-	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
@@ -116,6 +108,8 @@
 		timeTo: Time
 		singleColumn?: boolean
 	}>()
+
+	const { t } = useI18n()
 
 	// --- Data ---
 	const historyList = ref<ActivityHistory[]>([])
@@ -170,39 +164,32 @@
 
 	// --- Delete ---
 	const { deleteEntity } = useActivityHistoryCrud()
-	const deleteDialog = ref(false)
-	const deleteTargetId = ref<number | null>(null)
 	const { shouldConfirm } = useDeleteConfirmation()
+	const { openDialog, confirm } = useDialog()
 
 	// A leaf — one record, nothing hangs off it — but a record of something that actually happened,
 	// and there is no undo path in this module today, so switching the preference off really does
 	// delete it with no way back. See the P3 summary: this is the site that would most benefit from
 	// an undo entry, and the only one where adding it is not a `core/todoList` refactor.
 	async function handleDeleteRequest(id: number) {
-		deleteTargetId.value = id
 		if (shouldConfirm({ cascades: false, undoable: false })) {
-			deleteDialog.value = true
-		} else {
-			await confirmDelete()
+			const confirmed = await confirm({
+				title: t('general.deleteConfirmationTitle'),
+				text: t('general.deleteConfirmationText', { name: t('history.recordNounAccusative') }),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
 		}
-	}
-
-	async function confirmDelete() {
-		if (deleteTargetId.value == null) return
-		await deleteEntity(deleteTargetId.value)
-		historyList.value = historyList.value.filter(r => r.id !== deleteTargetId.value)
-		deleteDialog.value = false
-		deleteTargetId.value = null
+		await deleteEntity(id)
+		historyList.value = historyList.value.filter(r => r.id !== id)
 	}
 
 	// --- Edit ---
-	const { openDialog } = useDialog()
-
 	async function handleEdit(record: ActivityHistory) {
 		const result = await openDialog({
 			component: EditActivityHistoryForm,
 			componentProps: { record },
-			dialogProps: { title: 'Edit Activity History', isSmall: false },
+			dialogProps: { title: t('historyDashboard.timeline.editTitle'), isSmall: false },
 		})
 		if (result) fetchData()
 	}

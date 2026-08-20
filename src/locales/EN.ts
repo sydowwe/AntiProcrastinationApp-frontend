@@ -2,6 +2,7 @@ import appCommon from './common.en.ts'
 import activity from '@/core/activity/_locales/activity.en.ts'
 import activityHistory from '@/core/activityHistory/_locales/activityHistory.en.ts'
 import activityTracking from '@/core/activityTracking/_locales/activityTracking.en.ts'
+import historyDashboard from '@/core/historyDashboard/_locales/historyDashboard.en.ts'
 import dayPlanner from '@/core/dayPlanner/_locales/dayPlanner.en.ts'
 import todoList from '@/core/todoList/_locales/todoList.en.ts'
 import leisure from '@/core/leisure/_locales/leisure.en.ts'
@@ -20,6 +21,7 @@ const EN = {
 	...activity,
 	...activityHistory,
 	...activityTracking,
+	...historyDashboard,
 	...dayPlanner,
 	...todoList,
 	...leisure,

@@ -150,7 +150,7 @@
 			resume()
 		} else {
 			if (initialTime.value.getInSeconds === 0) {
-				showErrorSnackbar('Please set a timer duration')
+				showErrorSnackbar(t('history.timer.setDurationFirst'))
 				return
 			}
 			const validationResult = await activitySelectionForm.value?.validate()
@@ -224,8 +224,11 @@
 		const name = selectedActivityName.value
 		timeInputVisible.value = true
 		if (automatic) {
-			triggerTimerEndNotification('Timer ended!', name)
-			void showNotification('Timer ended', `Your timer for ${name} ended it ran for ${timePassed().getNice}`)
+			triggerTimerEndNotification(t('history.timer.endedTitleAnim'), name)
+			void showNotification(
+				t('history.timer.endedNotifTitle'),
+				t('history.timer.endedNotifBody', { activity: name, duration: timePassed().getNice }),
+			)
 		}
 		if (timePassed().getInMinutes > 0) {
 			if (!activityId) {

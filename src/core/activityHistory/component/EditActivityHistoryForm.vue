@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
@@ -38,6 +39,7 @@
 	const dialogApi = useDialogApi<boolean>()
 	const { update } = useActivityHistoryCrud()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const startTimestamp = ref(new Date(record.startTimestamp))
 	const length = ref(new Time(record.length.hours, record.length.minutes))
@@ -50,10 +52,10 @@
 		dialogApi.setLoading(true)
 		try {
 			await update(record.id, new ActivityHistoryRequest(startTimestamp.value, length.value, activityId.value))
-			showSuccessSnackbar('Activity history updated')
+			showSuccessSnackbar(t('history.historyUpdated'))
 			dialogApi.close(true)
 		} catch {
-			showErrorSnackbar('Failed to update activity history')
+			showErrorSnackbar(t('history.historyUpdateFailed'))
 		} finally {
 			dialogApi.setLoading(false)
 		}

@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
-		:title="isEdit ? 'Edit timer preset' : 'Add timer preset'"
+		:title="isEdit ? $t('history.timerPreset.editTitle') : $t('history.timerPreset.addTitle')"
 		:confirmBtnLabel="isEdit ? $t('general.update') : $t('general.create')"
 		closeBtnColor="default"
 		closeBtnVariant="tonal"
@@ -15,7 +15,7 @@
 			<TimePicker
 				v-model="duration"
 				class="mx-auto"
-				label="Duration"
+				:label="$t('dateTime.duration')"
 				viewMode="minute"
 				variant="outlined"
 				style="max-width: 200px"
@@ -23,7 +23,7 @@
 			<VIdAutocomplete
 				v-if="isActivityMode"
 				v-model="request.activityId"
-				label="Activity"
+				:label="$t('activities.activity')"
 				:items="activityOptions"
 				:rules="[requiredRule]"
 			></VIdAutocomplete>
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 	import { TimerPresetRequest } from '@/core/activityHistory/dto/request/TimerPresetRequest.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
@@ -55,12 +56,16 @@
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const emit = defineEmits<{
 		(e: 'created'): void
 		(e: 'updated'): void
 		(e: 'deleted'): void
 	}>()
+	const { t } = useI18n()
+	const { confirm } = useDialog()
+
 	const { create, update, deleteEntity } = useTimerPresetCrud()
 	const { fetchSelectOptions } = useActivityCrud()
 	const { requiredRule } = useGeneralRules()
@@ -121,7 +126,7 @@
 	async function onDelete() {
 		if (!idToEdit.value) return
 
-		const confirmed = confirm('Are you sure you want to delete this preset?')
+		const confirmed = await confirm({ text: t('history.confirmDeletePreset'), confirmBtnColor: 'error' })
 		if (!confirmed) return
 
 		await deleteEntity(idToEdit.value)

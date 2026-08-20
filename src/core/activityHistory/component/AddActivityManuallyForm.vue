@@ -64,7 +64,7 @@
 		const errors = await activitySelectionForm.value?.validate()
 		if (errors && errors.length > 0) return false
 		if (!dateTime.value) {
-			showErrorSnackbar(i18n.t('date.selectDatePlease'))
+			showErrorSnackbar(i18n.t('history.selectDatePlease'))
 			return false
 		}
 		if (!timeLength.value.isNotZero()) {

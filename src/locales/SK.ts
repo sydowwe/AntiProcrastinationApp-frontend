@@ -4,6 +4,7 @@ import appCommon from './common.sk.ts'
 import activity from '@/core/activity/_locales/activity.sk.ts'
 import activityHistory from '@/core/activityHistory/_locales/activityHistory.sk.ts'
 import activityTracking from '@/core/activityTracking/_locales/activityTracking.sk.ts'
+import historyDashboard from '@/core/historyDashboard/_locales/historyDashboard.sk.ts'
 import dayPlanner from '@/core/dayPlanner/_locales/dayPlanner.sk.ts'
 import todoList from '@/core/todoList/_locales/todoList.sk.ts'
 import leisure from '@/core/leisure/_locales/leisure.sk.ts'
@@ -38,6 +39,7 @@ const SK = {
 	...activity,
 	...activityHistory,
 	...activityTracking,
+	...historyDashboard,
 	...dayPlanner,
 	...todoList,
 	...leisure,

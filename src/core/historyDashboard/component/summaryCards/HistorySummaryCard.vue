@@ -5,7 +5,7 @@
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"
-		:aria-label="`View details for ${card.name}`"
+		:aria-label="$t('historyDashboard.summaryCards.viewDetails', { name: card.name })"
 		@click="emit('click', historyGroupKey(card))"
 	>
 		<VCardTitle class="text-center pb-2">
@@ -28,7 +28,9 @@
 			style="background-color: rgba(var(--v-theme-on-surface), 0.05)"
 		>
 			<div class="stat-column">
-				<div class="text-caption text-medium-emphasis mb-1">Total</div>
+				<div class="text-caption text-medium-emphasis mb-1">
+					{{ $t('historyDashboard.summaryCards.total') }}
+				</div>
 				<div class="text-h6 font-weight-bold mb-1">{{ formattedTime }}</div>
 				<div style="font-size: 0.85rem !important">
 					<VChip
@@ -38,7 +40,7 @@
 						variant="flat"
 						style="font-size: 0.7rem !important"
 					>
-						NEW
+						{{ $t('activityTracking.statColumn.new') }}
 					</VChip>
 					<div
 						v-else-if="card.percentChange !== null"

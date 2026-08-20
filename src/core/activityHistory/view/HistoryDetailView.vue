@@ -8,7 +8,7 @@
 				style="margin-right: -12px"
 				@click="router.push({ name: 'activityHistoryCalendar' })"
 			></VIconBtn>
-			<h1 class="text-h4">History Detail</h1>
+			<h1 class="text-h4">{{ $t('history.detail.title') }}</h1>
 			<VBtnToggle
 				v-model="selectedVisualization"
 				mandatory
@@ -20,19 +20,19 @@
 					value="stackedBars"
 					height="40px"
 				>
-					Stacked Bars
+					{{ $t('activityTracking.tracker.stackedBars') }}
 				</VBtn>
 				<VBtn
 					value="timeline"
 					height="40px"
 				>
-					Timeline
+					{{ $t('activityTracking.tracker.timeline') }}
 				</VBtn>
 			</VBtnToggle>
 			<div class="d-flex align-center ga-4 flex-wrap">
 				<MyDateInput
 					v-model="dateModel"
-					label="Date"
+					:label="$t('dateTime.date')"
 					hideDetails
 					:max="today"
 					density="compact"
