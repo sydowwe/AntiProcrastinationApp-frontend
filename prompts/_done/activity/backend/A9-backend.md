@@ -77,7 +77,7 @@ So nobody deletes anything, the activity list grows monotonically, and every dro
 Three mechanisms create near-identical activities with no uniqueness check anywhere: quick-create from four dialogs, quick-edit in **Clone** mode (which ships a
 `copySuffix: ' - kópia'` locale key for the purpose), and inline create from the `+` on the activity picker. "Reading", "reading", "Reading " and
 "Reading - kópia" are four activities with four separate history trails, and every dashboard groups by name — the same collision
-`../../../activity-history/backend/B1-group-ids.md` describes one module over.
+`../../activity-history/backend/B1-group-ids.md` describes one module over.
 
 ## The ask
 

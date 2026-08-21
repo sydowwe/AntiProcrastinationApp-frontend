@@ -21,7 +21,7 @@ If, while implementing a frontend prompt, you conclude that the correct fix requ
 **Contract and business rules only.** Do not prescribe storage, entities, EF configuration, migrations, indexes, or where a computation happens — those are the
 backend agent's decisions. Requesting a specific table or a specific query is out of scope and will be ignored.
 
-Use this structure — the existing asks in `../../../activity-history/backend` and
+Use this structure — the existing asks in `../../activity-history/backend` and
 `../../todo-motivation/backend` are worked examples, read one before writing yours:
 
 ```markdown

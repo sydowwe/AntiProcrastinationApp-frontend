@@ -56,7 +56,7 @@ anything past the contract is a guess dressed as a spec. Business *rules* are in
 *implementation* is not.
 
 Batch whatever exists into one backend session rather than opening a thread per file.
-`../../activity-history/backend` has two worked examples of the format — B1 for a field ask, B2 for a "we need an authoritative answer" ask.
+`../activity-history/backend` has two worked examples of the format — B1 for a field ask, B2 for a "we need an authoritative answer" ask.
 
 ## How the model calls were made
 
