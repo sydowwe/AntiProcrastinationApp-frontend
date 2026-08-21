@@ -120,6 +120,7 @@
 	import { useRoute, useRouter } from 'vue-router'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
+	import { inclusiveDaySpan } from '@/core/historyDashboard/dto/request/customRange.ts'
 	import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 	import {
 		getSummaryPieChart,
@@ -347,9 +348,8 @@
 				return [24, 48, 72, 168, 336, 720]
 			case ActivityDateRangeTypeEnum.CustomRange: {
 				if (!date.value || !endDate.value) return weekOptions
-				const start = new Date(date.value)
-				const end = new Date(endDate.value)
-				const diffDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+				// Inclusive, matching the wire contract (B3 §2): 1–31 March is 31 days, not 30.
+				const diffDays = Math.max(1, inclusiveDaySpan(new Date(date.value), new Date(endDate.value)))
 				if (diffDays <= 7) return weekOptions
 				if (diffDays <= 31) return [1, 2, 4, 8, 12, 24, 168]
 				return [12, 24, 168, 336, 720]

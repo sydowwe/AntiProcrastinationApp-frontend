@@ -18,6 +18,7 @@ import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/Ac
 import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 import { BaselineType } from '@/core/activityTracking/dto/enum/BaselineOption.ts'
 import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+import { MAX_CUSTOM_RANGE_DAYS } from '@/core/historyDashboard/dto/request/customRange.ts'
 
 const SUMMARY_URL = '/activity-history/dashboard/summary'
 const DETAIL_URL = '/activity-history/dashboard/detail'
@@ -84,14 +85,26 @@ export async function getDetailTimeline(request: DetailTimelineRequest): Promise
 // --- First-run detection (H7) ---
 
 /**
- * Whether the user has ever recorded anything, anywhere — the cheapest existence check available
+ * Whether the user has recorded anything at all recently — the cheapest existence check available
  * without a dedicated endpoint. Fired only when the current period's own fetch comes back empty
  * (see `useHistoryDashboard.ts`), never on the common path. `groupBy`/`topN` are irrelevant to the
  * yes/no answer, so they're fixed to the cheapest values.
+ *
+ * **It asks a narrower question than H7 wants.** The intent is "ever", and this asks about the last
+ * `MAX_CUSTOM_RANGE_DAYS` days, because that is the widest window the wire contract allows: B3 caps a
+ * custom range at 366 days inclusive and 400s anything longer. It used to send `2000-01-01 → today`,
+ * roughly 9 700 days, which the cap rejects — so a returning user idle for over a year is now shown
+ * the first-run onboarding block instead of an empty period. That is the wrong answer, but it is a
+ * bounded and rare one, where the un-capped version was a guaranteed 400 for everybody.
+ *
+ * The real fix is a backend existence check that carries no range at all — see the escalation in
+ * `prompts/activity-history/README.md`. Delete this window when it lands.
  */
 export async function getHasAnyHistoryEver(): Promise<boolean> {
+	const from = new Date()
+	from.setDate(from.getDate() - (MAX_CUSTOM_RANGE_DAYS - 1))
 	const request = new HistorySummarySummaryCardsRequest(
-		'2000-01-01',
+		formatDateForApi(from),
 		ActivityDateRangeTypeEnum.CustomRange,
 		HistoryGroupBy.Activity,
 		BaselineType.AllTime,

@@ -214,7 +214,15 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 			return
 		}
 		if (hasAnyHistoryEver.value !== null) return
-		hasAnyHistoryEver.value = await getHasAnyHistoryEver()
+		// Left unresolved on failure, deliberately: `false` would put the first-run onboarding block on
+		// screen on the strength of a request that never answered. The four panel fetches each swallow
+		// their own error, so without this `catch` a failure here is the one that rejects `fetchAll` —
+		// and `fetchAll` is called from a watcher, where the rejection surfaces as an unhandled one.
+		try {
+			hasAnyHistoryEver.value = await getHasAnyHistoryEver()
+		} catch {
+			hasAnyHistoryEver.value = null
+		}
 	}
 
 	// The cards carry a comparison against the selected baseline, so the selector has to re-fetch them.

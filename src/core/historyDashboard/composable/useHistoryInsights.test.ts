@@ -136,8 +136,10 @@ describe('deriveHistoryInsights', () => {
 			expect(deriveHistoryInsights(null, short)).toEqual([])
 		})
 
-		it('ignores daysInRange, which B3 leaves wrong on a custom range', () => {
-			// Same band either way: nothing in the sentence is per-day, so the broken field cannot reach it.
+		it('states a share, so the band does not move with daysInRange', () => {
+			// The insight is scale-free by construction — band seconds over total seconds — so the number
+			// of days those seconds are spread across cannot reach it. Pinned because the response carries
+			// `daysInRange` right next to the data, and a per-day reading of it would be a different claim.
 			const asWeek = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 7))
 			const asCustomRange = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 2))
 			expect(asCustomRange).toEqual(asWeek)

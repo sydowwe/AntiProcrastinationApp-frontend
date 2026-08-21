@@ -10,6 +10,8 @@ const messages = {
 		threeMonths: `3 mesiace`,
 		year: `Rok`,
 		customRange: `Vlastný rozsah`,
+		rangeInverted: `Dátum „Do“ musí byť rovnaký alebo neskorší ako „Od“`,
+		rangeTooLong: `Vlastný rozsah môže mať najviac {max} dní`,
 	},
 	summaryCards: {
 		topGroup: `Top {group}`,

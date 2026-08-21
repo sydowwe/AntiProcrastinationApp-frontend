@@ -10,6 +10,8 @@ const messages = {
 		threeMonths: `3 months`,
 		year: `Year`,
 		customRange: `Custom range`,
+		rangeInverted: `"To" must be the same day as "From" or later`,
+		rangeTooLong: `A custom range may span at most {max} days`,
 	},
 	summaryCards: {
 		topGroup: `Top {group}`,

@@ -48,10 +48,10 @@ export const STRETCH_MIN_RATIO = 1.6
  * Under this many days with something logged, "when in the day you work" is a description of two days,
  * not of a rhythm.
  *
- * It also settles the `CustomRange` question with no special case: B3 has all four `summary/` endpoints
- * answering a two-day range for a custom range whatever `endDate` says, so `daysWithActivity` cannot
- * reach four there and the insight stays off by itself. When the backend fixes `DateRangeDto` the
- * insight starts working with no change here.
+ * It needs no `CustomRange` special case, and never did: the threshold counts days that *have* data,
+ * which the backend reports directly. B3 has since made `CustomRange` honour `endDate` on all four
+ * `summary/` endpoints, so a custom range now reaches four the same way a named range does and the
+ * insight appears there too — with no change here.
  */
 export const MIN_DAYS_WITH_ACTIVITY = 4
 
@@ -225,9 +225,11 @@ function findConcentrationBand(
 /**
  * Where in the day the period's time lands, at hour resolution and independent of every chart control.
  *
- * `daysInRange` is deliberately unused: it is the field a per-day figure would come from, and B3 has it
- * reading `2` for any custom range regardless of what the user picked, so a per-day figure derived from
- * it would be presented as covering a range it does not cover.
+ * `daysInRange` is deliberately unused, and stays unused now that B3 has it reading correctly on a
+ * custom range. The sentence this produces is a *share* — which slice of the clock holds half the
+ * period's time — and a share is scale-free: dividing both the band and the total by the same day
+ * count leaves it unchanged. Reading `daysInRange` here could only turn it into a per-day average,
+ * which is a different claim than the one the surface makes.
  */
 function deriveTimeOfDay(data: HistoryTimeOfDayResponse): HistoryInsight | null {
 	// The contract guarantees 24 ordered elements; this reads them by position and neither sorts nor pads.

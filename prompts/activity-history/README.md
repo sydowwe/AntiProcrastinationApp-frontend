@@ -59,11 +59,36 @@ Two more have since been written:
   the stacked-bars response, whose bucket width and daily clipping are both chart controls the user moves.
   The file now carries the three notes that came back with the implementation, and its worked example — which
   was an hour short — is corrected in place.
-- [`backend/B3-custom-range.md`](backend/B3-custom-range.md) — **open, and the most valuable one here.**
-  `DateRangeDto.ToDateRange()` never reads `endDate`, so all four `summary/` endpoints answer a *two-day*
-  range for any `CustomRange` request. Three of them have been shipped and rendering that way for months: a
-  user who picks 1–31 March sees March 1–2's numbers under a March header, with nothing erroring and nothing
-  looking empty. Found while wiring H10, unrelated to it.
+- [`backend/B3-custom-range.md`](backend/B3-custom-range.md) — **answered and shipped**, and the answer
+  corrected the ask's premise. The ask said all four `summary/` endpoints answered a *two-day* range for a
+  `CustomRange` request; in fact the backend enum had no `CustomRange` member at all, so those requests were
+  rejected at JSON binding with a 400. The two-day fallback was real code on an unreachable branch. The
+  frontend enum has always had the member, so **every custom range a user picked has been failing since the
+  control shipped** — four 400s, four cleared panels and four error snackbars, rather than the quiet wrong
+  numbers the ask described. `CustomRange` is now valid, `endDate` is inclusive, only `CustomRange` reads it,
+  and a range may span at most 366 days inclusive.
+
+  Frontend follow-up landed with the reply: the picker now checks the inverted and over-366-day cases before
+  sending and holds the last valid range behind a field-level message, and the two stale `daysInRange`
+  comments in `useHistoryInsights.ts` (plus the test name that quoted them) are rewritten — the insight's
+  independence from `daysInRange` is a real property, not a workaround, because a share is scale-free.
+
+- **Open ask: a range-free "has any history" existence check.** `getHasAnyHistoryEver()`
+  (`historyDashboard/api/historyDashboardApi.ts`) is H7's first-run probe — it decides whether an empty
+  dashboard means "nothing in this window" or "nothing ever", and it is the only thing standing between a
+  returning user and an onboarding block aimed at someone who has never recorded anything. It has no endpoint
+  of its own, so it fakes one with `summary/summary-cards` over `2000-01-01 → today`.
+
+  That is ~9 700 days, which B3's new 366-day cap rejects — and it was already failing before the cap, on the
+  unknown enum member. So H7's first-run detection has never once worked in production; the 400 additionally
+  rejected `fetchAll()` from inside a watcher as an unhandled rejection. Both are patched app-side (the probe
+  now asks about the last 366 days, and the failure no longer escapes), but the narrowed window answers a
+  narrower question: a user idle for more than a year is now told they are new.
+
+  The ask is a cheap existence check that carries no range — `GET /activity-history/has-any` returning
+  `{ "hasAny": bool }`, or an equivalent. It needs no grouping, no totals and no date arithmetic, and it
+  replaces a full summary-cards aggregation fired on exactly the path where the user has the least patience
+  for one. Write it up before the next backend session.
 
 - [`backend/H11-backend.md`](backend/H11-backend.md) — **answered and shipped**, and the answer moved the design rather
   than filling it in. The ask aimed at the reminders module's `reminder-definition` routes; those turned out to be
