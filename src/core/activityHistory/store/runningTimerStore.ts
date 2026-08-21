@@ -1,8 +1,14 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import i18n from '@/i18n.ts'
-import { Time } from '@/_common/dto/dto/Time.ts'
-import { showNotification } from '@/_common/utils/notifications.ts'
+import { niceDuration, projectBoundaries } from '@/core/activityHistory/store/timerBoundaries.ts'
+import {
+	clampToContract,
+	dropTimerAlarms,
+	newAlarmSessionId,
+	pushTimerAlarms,
+	showTimerAlarmNotification,
+} from '@/core/activityHistory/store/timerAlarmSchedule.ts'
 import { useTimerNotifications } from '@/core/activity/composable/useTimerNotifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
@@ -56,11 +62,26 @@ import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserS
  * happen to it. What the views keep is presentation: the activity forms, the save dialog, the
  * `done` emit, and their own idle state.
  *
+ * ## The alarm, when the tab is not there
+ *
+ * The clock above is still entirely client-side and stays that way. What is *not* client-side is
+ * the alarm: a `setTimeout` cannot fire in a tab that has been closed, so a 25-minute focus phase
+ * started before the laptop lid went down used to end in silence. Every boundary is therefore also
+ * registered as a one-shot server-side notification when it becomes known, and cancelled when it
+ * stops being true — see `timerBoundaries.ts` for what the boundaries are and
+ * `timerAlarmSchedule.ts` for how they are registered. `syncAlarms()` below is the single seam:
+ * it is called after every transition and does nothing when nothing changed.
+ *
+ * Note what this is *not*: the session itself never goes to the server, and nothing about the
+ * countdown is read back from it. The server is told one thing — "ring at this UTC instant with
+ * this text" — and the reconstruction rules above stay a conversation between one device and its
+ * own clock, which is the only reason they are exact.
+ *
  * ## Deliberately not here
  *
- * No server sync, no service worker, no `beforeunload`, no cross-tab `BroadcastChannel`. Two tabs
- * writing the same key is last-writer-wins and is out of scope. The three state machines stay three
- * state machines; this store holds them, it does not merge them.
+ * No server sync of session state, no `beforeunload`, no cross-tab `BroadcastChannel`, no polling
+ * or heartbeat. Two tabs writing the same key is last-writer-wins and is out of scope. The three
+ * state machines stay three state machines; this store holds them, it does not merge them.
  */
 
 export type TimerKind = 'stopwatch' | 'timer' | 'pomodoro'
@@ -84,6 +105,22 @@ interface SessionBase {
 	ended: boolean
 	/** Whether `ended` was reached by the clock rather than by the Stop button. */
 	endedAutomatically: boolean
+	/**
+	 * This session's identity to the alarm scheduler, minted at Start.
+	 *
+	 * Persisted with the session because it is the only way a later page load can *cancel* the
+	 * alarms: the API is keyed by it and nothing else, so an id that goes missing leaves alarms
+	 * that will fire for a session nobody has. Optional so a session stored before this field
+	 * existed still hydrates; `syncAlarms` mints one on demand for those.
+	 */
+	alarmSessionId?: string
+	/**
+	 * The boundary instants last posted to the scheduler.
+	 *
+	 * A memo, not state the server reads back — it is here so that a page load which changes
+	 * nothing sends no request. Without it every reload would re-post the whole set.
+	 */
+	scheduledAlarms?: number[]
 }
 
 export interface StopwatchSession extends SessionBase {
@@ -157,11 +194,6 @@ const STALE_AFTER_MS = 12 * 60 * 60 * 1000
 export function pomodoroPhaseOf(session: PomodoroSession): PomodoroPhase {
 	if (session.isFocus) return 'focus'
 	return session.currentFocusPeriod === session.focusPeriodsPerCycle ? 'longBreak' : 'shortBreak'
-}
-
-/** Whole minutes, for the notification bodies. Sessions are set in minutes, so this is exact. */
-function niceDuration(ms: number): string {
-	return Time.fromMinutes(Math.round(ms / 60_000)).getNice
 }
 
 export const useRunningTimerStore = defineStore(
@@ -311,6 +343,48 @@ export const useRunningTimerStore = defineStore(
 			}
 		}
 
+		// ---------------------------------------------------------------- the alarm schedule
+
+		/**
+		 * Bring the server-side alarms in line with the session, whatever just happened to it.
+		 *
+		 * The counterpart to `syncTimers()` and called in the same places, plus the two it does not
+		 * cover (`endSession`, `reconcile`). It works out what *should* be registered from the
+		 * session alone rather than from the transition, which is what keeps every lifecycle path —
+		 * start, pause, resume, stop, discard-and-replace, clear, and a `reconcile()` that ends a
+		 * restored session — correct without each of them knowing anything about scheduling.
+		 * `projectBoundaries` answers "none" for paused, ended and stopwatch sessions, so those all
+		 * come out as a cancel with no special case here.
+		 *
+		 * Posting is a whole-set replace keyed by `alarmSessionId`, so there is nothing to reconcile
+		 * and no partial state to get wrong: every call here either replaces the set or cancels it.
+		 *
+		 * Fire-and-forget on purpose. Nothing on screen waits for the network, and the failure mode
+		 * is the behaviour that shipped before this existed.
+		 */
+		function syncAlarms(target: TimerSession | null = session.value) {
+			if (target === null) return
+			const previous = target.scheduledAlarms ?? []
+			const wanted = clampToContract(projectBoundaries(target))
+			// The one case that has to send nothing: a reload of a session whose boundaries have not
+			// moved. Posting is a whole-set replace, so re-posting would be harmless but pointless.
+			if (previous.length === wanted.length && wanted.every((boundary, i) => boundary.at === previous[i])) return
+
+			target.scheduledAlarms = wanted.map(boundary => boundary.at)
+			target.alarmSessionId ??= newAlarmSessionId()
+			if (wanted.length === 0) void dropTimerAlarms(target.alarmSessionId)
+			else void pushTimerAlarms(target.alarmSessionId, target.activityId, target.kind, wanted)
+		}
+
+		/** Drop every alarm belonging to a session that is going away. */
+		function releaseAlarms(target: TimerSession | null) {
+			if (target === null) return
+			const previous = target.scheduledAlarms ?? []
+			target.scheduledAlarms = []
+			if (previous.length === 0 || target.alarmSessionId === undefined) return
+			void dropTimerAlarms(target.alarmSessionId)
+		}
+
 		// ---------------------------------------------------------------- transitions
 
 		/**
@@ -342,6 +416,9 @@ export const useRunningTimerStore = defineStore(
 			current.pausedRemainingMs = null
 			nowMs.value = Date.now()
 			syncTimers()
+			// No `syncAlarms()`: the whole cycle's boundaries were registered when Start was pressed
+			// and a phase transition moves none of them. See `timerBoundaries.ts` for why the set is
+			// scheduled up front rather than one phase at a time.
 		}
 
 		/**
@@ -370,13 +447,14 @@ export const useRunningTimerStore = defineStore(
 						`${t('history.pomodoro.focusEndedTitleAnim')} · ${cycleInfo}`,
 						t('history.pomodoro.timeForBreak'),
 					)
-					void showNotification(
+					void showTimerAlarmNotification(
 						t('history.pomodoro.focusPeriodEndedTitle'),
 						t('history.pomodoro.focusPeriodEndedBody', {
 							activity: current.activityName,
 							focusInfo,
 							cycleInfo,
 						}),
+						at,
 					)
 					break
 				case 'shortBreak':
@@ -384,12 +462,13 @@ export const useRunningTimerStore = defineStore(
 						`${t('history.pomodoro.breakEndedTitleAnim')} · ${cycleInfo}`,
 						t('history.pomodoro.timeToFocus'),
 					)
-					void showNotification(
+					void showTimerAlarmNotification(
 						t('history.pomodoro.shortBreakEndedTitle'),
 						t('history.pomodoro.shortBreakEndedBody', {
 							cycleInfo,
 							activity: current.activityName,
 						}),
+						at,
 					)
 					break
 				case 'longBreak':
@@ -397,12 +476,13 @@ export const useRunningTimerStore = defineStore(
 						t('history.pomodoro.longBreakEndedTitleAnim'),
 						t('history.pomodoro.startingCycle', { n: current.currentCycle + 1 }),
 					)
-					void showNotification(
+					void showTimerAlarmNotification(
 						t('history.pomodoro.longBreakEndedTitle'),
 						t('history.pomodoro.longBreakEndedBody', {
 							current: current.currentCycle,
 							next: current.currentCycle + 1,
 						}),
+						at,
 					)
 					break
 			}
@@ -428,16 +508,23 @@ export const useRunningTimerStore = defineStore(
 			startPomodoroPhase(current, nextDuration, at)
 		}
 
-		/** The alarm and the system notification for a session that ran itself out. */
-		function announceEnd(current: TimerSession) {
+		/**
+		 * The alarm and the system notification for a session that ran itself out.
+		 *
+		 * `at` is the boundary instant this end belongs to, and it is only used to tag the
+		 * notification: the scheduled push for the same instant carries the same tag and therefore
+		 * replaces this one instead of stacking on top of it. See `alarmTag`.
+		 */
+		function announceEnd(current: TimerSession, at: number) {
 			if (current.kind === 'timer') {
 				triggerTimerEndNotification(t('history.timer.endedTitleAnim'), current.activityName)
-				void showNotification(
+				void showTimerAlarmNotification(
 					t('history.timer.endedNotifTitle'),
 					t('history.timer.endedNotifBody', {
 						activity: current.activityName,
 						duration: niceDuration(current.durationMs),
 					}),
+					at,
 				)
 				return
 			}
@@ -453,7 +540,7 @@ export const useRunningTimerStore = defineStore(
 					duration: focusDuration,
 				}),
 			)
-			void showNotification(
+			void showTimerAlarmNotification(
 				t('history.pomodoro.completeNotifTitle'),
 				t(
 					'history.pomodoro.doneSummary',
@@ -464,6 +551,7 @@ export const useRunningTimerStore = defineStore(
 						? t('history.pomodoro.restedWith', { activity: current.restActivityName })
 						: '') +
 					t('history.pomodoro.forDuration', { duration: niceDuration(current.restElapsedMs) }),
+				at,
 			)
 		}
 
@@ -483,6 +571,9 @@ export const useRunningTimerStore = defineStore(
 			current.paused = true
 			nowMs.value = at
 			syncTimers()
+			// A paused session has no end instant, so it has no schedule either: this cancels the lot
+			// and `resumeSession` registers a fresh set at the shifted instants.
+			syncAlarms()
 		}
 
 		function resumeSession() {
@@ -499,6 +590,7 @@ export const useRunningTimerStore = defineStore(
 			current.paused = false
 			nowMs.value = at
 			syncTimers()
+			syncAlarms()
 		}
 
 		/**
@@ -518,10 +610,14 @@ export const useRunningTimerStore = defineStore(
 			// on the right number rather than up to one tick short of it.
 			nowMs.value = at
 			stopTimers()
-			if (automatic) announceEnd(current)
+			// Before the announce: a Stop pressed a second before the boundary must not leave a push
+			// behind that rings for a session that is already over.
+			syncAlarms()
+			if (automatic) announceEnd(current, at)
 		}
 
 		function clearSession() {
+			releaseAlarms(session.value)
 			session.value = null
 			stopTimers()
 			stopAllNotifications()
@@ -543,10 +639,18 @@ export const useRunningTimerStore = defineStore(
 				paused: false,
 				ended: false,
 				endedAutomatically: false,
+				// Minted here rather than at the first schedule: it identifies the *session*, and a
+				// session that starts, registers alarms, and has the tab killed before the response
+				// lands still has to be cancellable by the next page load.
+				alarmSessionId: newAlarmSessionId(),
 			}
 		}
 
+		// Every `start*` first releases whatever it is replacing. A start is allowed to discard a
+		// running session (the views confirm that with the user first — see `useTimerSessionGuard`),
+		// and the discarded session's alarms have to go with it or they ring for a timer nobody has.
 		function startStopwatch(init: StartCommon): StopwatchSession {
+			releaseAlarms(session.value)
 			const at = Date.now()
 			const created: StopwatchSession = {
 				...baseSession('stopwatch', init, at),
@@ -556,10 +660,12 @@ export const useRunningTimerStore = defineStore(
 			}
 			session.value = created
 			syncTimers()
+			syncAlarms()
 			return created
 		}
 
 		function startCountdown(init: StartCommon & { durationMs: number }): CountdownSession {
+			releaseAlarms(session.value)
 			const at = Date.now()
 			const created: CountdownSession = {
 				...baseSession('timer', init, at),
@@ -570,6 +676,7 @@ export const useRunningTimerStore = defineStore(
 			}
 			session.value = created
 			syncTimers()
+			syncAlarms()
 			return created
 		}
 
@@ -584,6 +691,7 @@ export const useRunningTimerStore = defineStore(
 				restActivityName: string
 			},
 		): PomodoroSession {
+			releaseAlarms(session.value)
 			const at = Date.now()
 			const created: PomodoroSession = {
 				...baseSession('pomodoro', init, at),
@@ -606,6 +714,7 @@ export const useRunningTimerStore = defineStore(
 			}
 			session.value = created
 			syncTimers()
+			syncAlarms()
 			return created
 		}
 
@@ -636,6 +745,7 @@ export const useRunningTimerStore = defineStore(
 			if (current === null) return
 
 			if (at - current.startedAtEpoch > STALE_AFTER_MS) {
+				releaseAlarms(current)
 				session.value = null
 				return
 			}
@@ -667,6 +777,12 @@ export const useRunningTimerStore = defineStore(
 			session.value = readStored()
 			reconcile()
 			syncTimers()
+			// Ordinarily a no-op: a session that is still running comes back with the same boundaries
+			// it was registered against, so `syncAlarms` sends nothing. It earns its place on the
+			// other path — a session `reconcile()` has just *ended* projects no boundaries, so the
+			// alarm that would have fired for it later is cancelled here, by a page load that never
+			// registered it and knows it only by the id stored with the session.
+			syncAlarms()
 		}
 
 		// `deep`, because everything after `start*` is a field mutation on the one session object.

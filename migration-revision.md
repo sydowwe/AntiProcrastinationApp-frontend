@@ -176,6 +176,41 @@ entry.
 
 ---
 
+### 9. `showNotification` takes no options, so a caller cannot set a notification `tag`
+
+**Local file kept:** the `showTimerAlarmNotification` half of `src/core/activityHistory/store/timerAlarmSchedule.ts`.
+Added by H11.
+
+> **Resolved half, kept as a lesson.** This entry originally had a second gap above this one: the reminders module can
+> pause, resume and cancel a definition but binds nothing that *creates* one, so H11's first cut put a guessed
+> `RegisterTimerAlarmRequest` and two `reminder-definition` routes app-side pending an answer. The answer was that a
+> client may **not** register a reminder definition — `POST /reminder-definition/register` is Admin/Root ad-hoc ops
+> surface — and that the reminders module has no per-reminder trigger at all: everything fires from one sweep whose
+> default five-minute cadence is its firing-precision floor, which is fine for "probation ends in 30 days" and useless
+> for a pomodoro. So there was never a framework gap here, only a wrong guess about which module owned the problem. The
+> timer alarms are now `activity-history` routes carrying a timer-domain fact, and belong app-side permanently rather
+> than pending a pointer bump. The DTO comment in `ScheduleTimerAlarmsRequest.ts` records why. **The lesson:** a doc
+> comment naming an endpoint (`ReminderKeyRequest` says the key goes to "the pause / resume / cancel **(and register)**
+> endpoints") is evidence that the endpoint exists, not that this app's users may call it.
+
+**The gap.** `_common/utils/notifications.ts` exposes `showNotification(title, message)` and hard-codes `{ body: message }`. H11 needs a
+`tag`: the tab's own alarm and the scheduled push for the same boundary are shown with the same tag so the platform
+collapses them into one notification instead of ringing twice (the reasoning is in `timerAlarmSchedule.ts`). That forced a
+near-copy of the function — permission check, registration lookup, one different line.
+
+It is small, generic and obviously right: `showNotification(title, message, options?: NotificationOptions)`, spread
+after `{ body }`, defaulting to today's behaviour when omitted. It is the "yes, put it in `_common`" case with nothing to
+weigh. It was **not** done in H11 for a mechanical reason worth recording: the submodule working tree was already carrying
+an unrelated uncommitted change (`modules/user/api/userApi.ts`), and CLAUDE.md's submodule workflow requires committing
+inside `src/_common` before bumping the pointer — which would have swept somebody else's work-in-progress into an
+`activityHistory` commit.
+
+**When the pointer next bumps from a clean submodule tree:** add the parameter, update `_common/docs/utils.md`, and delete
+`showTimerAlarmNotification`; its three call sites in `runningTimerStore.ts` become `showNotification(title, body, { tag:
+alarmTag(at) })`. `alarmTag` stays app-side — it is the coordination point with this app's own push payload.
+
+---
+
 ## Lessons kept
 
 Five things the resolved entries taught that are not obvious from the code, and that cost real time to relearn.

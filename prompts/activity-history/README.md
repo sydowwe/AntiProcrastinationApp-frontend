@@ -65,8 +65,17 @@ Two more have since been written:
   user who picks 1–31 March sees March 1–2's numbers under a March header, with nothing erroring and nothing
   looking empty. Found while wiring H10, unrelated to it.
 
-H11 still emits `backend/H11-backend.md`. Batch whatever exists into one backend session rather than opening
-a thread per file.
+- [`backend/H11-backend.md`](backend/H11-backend.md) — **answered and shipped**, and the answer moved the design rather
+  than filling it in. The ask aimed at the reminders module's `reminder-definition` routes; those turned out to be
+  Admin/Root ad-hoc ops surface a normal user may not call, and the module has no per-reminder trigger anyway — everything
+  fires from one sweep whose five-minute cadence is its own firing-precision floor. Timer alarms are now
+  `POST api/activity-history/timer-alarm/{schedule,cancel}` on a real one-shot trigger, keyed by a client-generated
+  session uuid. Two arguments made in the ask won outright: quiet hours do not defer a timer alarm the user started
+  themselves, and the spurious alarm after a killed tab is accepted rather than mitigated. **Three items are still
+  open** — the last pomodoro boundary has nothing marking it as the end of the run, `cycleIndex` on a long break is
+  ambiguous, and the background push is hardcoded Slovak while the in-page one follows the user's locale.
+
+Batch whatever is open into one backend session rather than opening a thread per file.
 
 **H9 emitted nothing, deliberately.** It asked whether server-side timer sync was warranted and the answer was
 no: the on-screen countdown has to be client-side either way, and the reconstruction is exact precisely because
