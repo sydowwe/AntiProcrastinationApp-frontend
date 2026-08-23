@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
-		title="Compare Templates"
+		:title="$t('planner.template.compareTemplatesTitle')"
 		maxWidth="1000px"
 		:showConfirmBtn="false"
 	>
@@ -58,7 +58,7 @@
 						{{ side.template?.defaultBedTime?.hours }}:{{
 							String(side.template?.defaultBedTime?.minutes ?? 0).padStart(2, '0')
 						}}
-						· {{ side.tasks.length }} tasks
+						· {{ $t('planner.template.tasksCount', { count: side.tasks.length }, side.tasks.length) }}
 					</div>
 
 					<VDivider class="my-3" />

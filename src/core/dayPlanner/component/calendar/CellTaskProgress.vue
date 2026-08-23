@@ -17,7 +17,15 @@
 					class="flex-grow-1 d-flex flex-column ga-1"
 				>
 					<div class="d-flex align-center ga-2">
-						<span class="text-no-wrap">{{ day.completedTasks }}/{{ day.totalTasks }} tasks</span>
+						<span class="text-no-wrap">
+							{{
+								$t(
+									'planner.calendar.completedOfTotalTasks',
+									{ completed: day.completedTasks, count: day.totalTasks },
+									day.totalTasks,
+								)
+							}}
+						</span>
 						<VProgressLinear
 							v-if="day.totalTasks > 0"
 							:modelValue="day.completionRate"
@@ -59,7 +67,15 @@
 			class="flex-grow-1 d-flex flex-column ga-1"
 		>
 			<div class="tasks-header">
-				<span class="info-text">{{ day.completedTasks }}/{{ day.totalTasks }} tasks</span>
+				<span class="info-text">
+					{{
+						$t(
+							'planner.calendar.completedOfTotalTasks',
+							{ completed: day.completedTasks, count: day.totalTasks },
+							day.totalTasks,
+						)
+					}}
+				</span>
 				<span
 					v-if="day.totalTasks > 0"
 					class="text-caption font-weight-bold text-no-wrap"

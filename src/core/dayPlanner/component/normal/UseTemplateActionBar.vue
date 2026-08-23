@@ -9,14 +9,16 @@
 				class="text-textMuted font-weight-medium selection-count"
 				style="font-size: 1rem; line-height: 1.2rem"
 			>
-				{{ store.selectedTaskIds.size }} selected
+				{{
+					$t('planner.misc.selectedCount', { count: store.selectedTaskIds.size }, store.selectedTaskIds.size)
+				}}
 			</span>
 			<VBtn
 				variant="outlined"
 				color="error"
 				@click="store.openDeleteDialog"
 			>
-				Delete
+				{{ $t('general.delete') }}
 			</VBtn>
 		</template>
 		<template v-else>
@@ -25,7 +27,7 @@
 			</span>
 			<VNumberInput
 				v-model="templateStartOffset"
-				label="Offset (hours)"
+				:label="$t('planner.misc.offsetHoursLabel')"
 				:min="-10"
 				:max="10"
 				:step="0.5"
@@ -41,7 +43,7 @@
 
 		<VSelect
 			v-model="conflictResolution"
-			label="Conflict resolution"
+			:label="$t('planner.misc.conflictResolutionLabel')"
 			:items="conflictResolutionOptions"
 			minWidth="200"
 			density="compact"
@@ -54,7 +56,7 @@
 			color="success"
 			@click="emit('applyTemplate', conflictResolution, templateStartOffset)"
 		>
-			Apply
+			{{ $t('planner.actions.apply') }}
 		</VBtn>
 	</ActionBar>
 </template>

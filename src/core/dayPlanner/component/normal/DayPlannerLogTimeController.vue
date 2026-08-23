@@ -20,11 +20,13 @@
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 	import router from '@/router.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const store = useDayPlannerStore()
 	const { patchStatus, fetchById } = useTaskPlannerCrud()
 	const { create: createActivityHistory } = useActivityHistoryCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const inner = ref<InstanceType<typeof LogTimeController>>()
 	const currentPlannerTaskId = ref<number | null>(null)
@@ -54,7 +56,7 @@
 					;(store.tasks[idx] as PlannerTask).actualStartTime = actualStartTime
 					;(store.tasks[idx] as PlannerTask).actualEndTime = actualEndTime
 				}
-				showSuccessSnackbar('Task marked done')
+				showSuccessSnackbar(t('planner.feedback.taskMarkedDone'))
 				router.replace({ query: {} })
 			},
 			{ immediate: true },
@@ -98,12 +100,12 @@
 				store.tasks[idx].status = PlannerTaskStatus.Completed
 			}
 			store.clearSelection()
-			showSuccessSnackbar('Task marked completed')
+			showSuccessSnackbar(t('planner.feedback.taskMarkedCompleted'))
 		} else {
 			const startTimestamp = new Date()
 			startTimestamp.setHours(actualStartTime.hours, actualStartTime.minutes, 0, 0)
 			await createActivityHistory(startTimestamp, length, currentActivityId.value!)
-			showSuccessSnackbar('Time logged')
+			showSuccessSnackbar(t('planner.feedback.timeLogged'))
 		}
 		currentPlannerTaskId.value = null
 		currentActivityId.value = null
@@ -129,10 +131,10 @@
 				store.tasks[idx] = updated
 			}
 			store.clearSelection()
-			showSuccessSnackbar('Task marked done')
+			showSuccessSnackbar(t('planner.feedback.taskMarkedDone'))
 		} else {
 			await createActivityHistory(startTimestamp, length, currentActivityId.value!)
-			showSuccessSnackbar('Time logged')
+			showSuccessSnackbar(t('planner.feedback.timeLogged'))
 		}
 		currentPlannerTaskId.value = null
 		currentActivityId.value = null

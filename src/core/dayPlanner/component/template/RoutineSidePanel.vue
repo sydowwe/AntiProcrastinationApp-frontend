@@ -14,7 +14,7 @@
 				v-model="selectedPeriodId"
 				class="flex-grow-0"
 				:items="periodSelectItems"
-				label="Period"
+				:label="$t('planner.misc.periodLabel')"
 				density="compact"
 				hideDetails
 			/>
@@ -22,14 +22,24 @@
 				v-if="displayItems.length > 0"
 				class="mt-4 d-flex ga-2 justify-center"
 			>
-				<VChip>{{ inPlanCount }} / {{ totalCount }} tasks</VChip>
-				<VChip>{{ inPlanCountAllPlanned }} / {{ displayItems.length }} fully planned</VChip>
+				<VChip>
+					{{ $t('planner.misc.inPlanOfTotalTasks', { inPlan: inPlanCount, count: totalCount }, totalCount) }}
+				</VChip>
+				<VChip>
+					{{
+						$t(
+							'planner.misc.fullyPlannedOfTotal',
+							{ planned: inPlanCountAllPlanned, count: displayItems.length },
+							displayItems.length,
+						)
+					}}
+				</VChip>
 			</div>
 			<div
 				v-if="displayItems.length === 0"
 				class="text-center text-medium-emphasis py-6 text-caption"
 			>
-				No items in this period
+				{{ $t('planner.misc.noItemsInPeriod') }}
 			</div>
 			<VList
 				v-else

@@ -34,7 +34,9 @@
 					hideDetails
 					density="compact"
 					color="primary"
-					:label="template.isActive ? 'Active' : 'Inactive'"
+					:label="
+						template.isActive ? $t('planner.template.activeLabel') : $t('planner.template.inactiveLabel')
+					"
 					@click.stop
 					@update:modelValue="emit('toggleActive')"
 				></VSwitch>
@@ -53,7 +55,7 @@
 			<MiniTimeline
 				v-if="tasks && tasks.length"
 				class="mb-3"
-				label="Tasks"
+				:label="$t('planner.template.tasksCount', { count: tasks.length }, tasks.length)"
 				:tasks="tasks"
 				:startTime="template.defaultWakeUpTime"
 				:endTime="template.defaultBedTime"
@@ -97,8 +99,10 @@
 
 			<div class="mb-4 d-flex justify-space-between align-center">
 				<div class="d-flex align-center ga-4">
-					<span>Used {{ template.usageCount }} times</span>
-					<span v-if="template.lastUsedAt">Last: {{ formatToDate(new Date(template.lastUsedAt)) }}</span>
+					<span>{{ $t('planner.template.usedTimes', { count: template.usageCount }) }}</span>
+					<span v-if="template.lastUsedAt">
+						{{ $t('planner.template.lastUsed', { date: formatToDate(new Date(template.lastUsedAt)) }) }}
+					</span>
 				</div>
 			</div>
 
@@ -133,7 +137,7 @@
 					color="secondaryOutline"
 					@click.stop="emit('delete')"
 				>
-					Delete
+					{{ $t('general.delete') }}
 				</VBtn>
 				<VDivider vertical />
 				<VBtn
@@ -143,7 +147,7 @@
 					prependIcon="pencil"
 					@click.stop="emit('edit')"
 				>
-					Edit Details
+					{{ $t('planner.template.editDetailsAction') }}
 				</VBtn>
 				<VBtn
 					variant="tonal"
@@ -152,7 +156,7 @@
 					size="small"
 					@click.stop="emit('duplicate')"
 				>
-					Duplicate
+					{{ $t('planner.template.duplicateAction') }}
 				</VBtn>
 			</div>
 
@@ -161,7 +165,7 @@
 				prependIcon="play"
 				@click.stop="emit('applyToday')"
 			>
-				Use Today
+				{{ $t('planner.template.useTodayAction') }}
 			</VBtn>
 		</VCardActions>
 	</VCard>

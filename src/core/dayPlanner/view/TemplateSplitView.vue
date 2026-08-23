@@ -9,7 +9,7 @@
 				size="small"
 				@click="router.push({ name: 'dayPlannerTemplateList' })"
 			/>
-			<span class="text-h5">Compare & Edit Templates</span>
+			<span class="text-h5">{{ $t('planner.template.compareEditTitle') }}</span>
 		</div>
 
 		<div class="split-view-grid">
@@ -22,7 +22,7 @@
 				<VIdSelect
 					v-model="leftTemplateId"
 					:items="templateOptions"
-					label="Left Template"
+					:label="$t('planner.template.leftTemplate')"
 					class="mb-2"
 					hideDetails
 					:loading="templateOptionsLoading"
@@ -37,7 +37,7 @@
 					v-else
 					class="empty-panel d-flex align-center justify-center"
 				>
-					<span class="text-medium-emphasis">Select a template</span>
+					<span class="text-medium-emphasis">{{ $t('planner.template.selectTemplatePlaceholder') }}</span>
 				</div>
 			</div>
 
@@ -52,7 +52,7 @@
 				<VIdSelect
 					v-model="rightTemplateId"
 					:items="templateOptions"
-					label="Right Template"
+					:label="$t('planner.template.rightTemplate')"
 					class="mb-2"
 					hideDetails
 					:loading="templateOptionsLoading"
@@ -67,7 +67,7 @@
 					v-else
 					class="empty-panel d-flex align-center justify-center"
 				>
-					<span class="text-medium-emphasis">Select a template</span>
+					<span class="text-medium-emphasis">{{ $t('planner.template.selectTemplatePlaceholder') }}</span>
 				</div>
 			</div>
 		</div>
@@ -87,8 +87,10 @@
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import TemplateDayPlannerView from '@/core/dayPlanner/view/TemplateDayPlannerView.vue'
+	import { useI18n } from 'vue-i18n'
 
 	const router = useRouter()
+	const { t } = useI18n()
 	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()
 	const { update: updateTask, fetchById: fetchByIdTask } = useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
@@ -198,9 +200,9 @@
 			const movedTask = await fetchByIdTask(taskId)
 			targetStore.setGridPositionFromSpan(movedTask)
 			targetStore.tasks.push(movedTask)
-			showSuccessSnackbar('Task moved to other template')
+			showSuccessSnackbar(t('planner.feedback.taskMovedToOtherTemplate'))
 		} catch {
-			showErrorSnackbar('Failed to move task')
+			showErrorSnackbar(t('planner.feedback.taskMoveFailed'))
 		}
 	}
 </script>

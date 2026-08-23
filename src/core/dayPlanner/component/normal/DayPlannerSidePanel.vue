@@ -9,7 +9,11 @@
 		<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
 			<div class="d-flex justify-space-between align-center">
 				<span class="text-grey-lighten-1">
-					{{ activePanel === 'details' ? 'Day Details' : 'Routine Tasks' }}
+					{{
+						activePanel === 'details'
+							? $t('planner.calendar.dayDetailsTitle')
+							: $t('planner.template.routineTasksPanel')
+					}}
 				</span>
 				<div class="d-flex align-center ga-2">
 					<VBtn
@@ -24,7 +28,7 @@
 							size="14"
 							class="mr-1"
 						/>
-						Edit
+						{{ $t('planner.calendar.editAction') }}
 					</VBtn>
 					<VIconBtn
 						class="d-md-none"
@@ -50,14 +54,14 @@
 					prependIcon="calendar-day"
 					style="flex: 1"
 				>
-					Details
+					{{ $t('planner.template.details') }}
 				</VBtn>
 				<VBtn
 					value="routine"
 					prependIcon="rotate"
 					style="flex: 1"
 				>
-					Routine
+					{{ $t('planner.template.routine') }}
 				</VBtn>
 			</VBtnToggle>
 		</VCardTitle>

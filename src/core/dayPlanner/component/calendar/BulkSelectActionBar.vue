@@ -4,17 +4,17 @@
 		@cancel="emit('cancel')"
 	>
 		<span class="text-textMuted font-weight-medium">
-			{{ selectedCount }} day{{ selectedCount !== 1 ? 's' : '' }} selected
+			{{ $t('planner.calendar.daysSelected', { count: selectedCount }, selectedCount) }}
 		</span>
 		<VBtn
 			variant="outlined"
 			color="secondaryOutline"
 			@click="emit('selectAll')"
 		>
-			Select All
+			{{ $t('planner.calendar.selectAll') }}
 		</VBtn>
 		<VSelect
-			label="Change day type"
+			:label="$t('planner.calendar.changeDayType')"
 			:items="dayTypeOptions"
 			density="compact"
 			minWidth="185"
@@ -27,14 +27,14 @@
 			:loading="bulkApplying"
 			@click="emit('openApplyTemplate')"
 		>
-			Apply Template
+			{{ $t('planner.calendar.applyTemplate') }}
 		</VBtn>
 		<VBtn
 			color="secondary"
 			:disabled="selectedCount === 0"
 			@click="emit('openCopyDay')"
 		>
-			Copy Day
+			{{ $t('planner.calendar.copyDay') }}
 		</VBtn>
 	</ActionBar>
 </template>
@@ -42,6 +42,7 @@
 <script setup lang="ts">
 	import { DayType } from '@/_common/dto/enum/DayType.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
+	import { useI18n } from 'vue-i18n'
 
 	const { isShown, selectedCount, bulkApplying } = defineProps<{
 		isShown: boolean
@@ -57,5 +58,6 @@
 		openCopyDay: []
 	}>()
 
-	const dayTypeOptions = Object.values(DayType).map(v => ({ title: v, value: v }))
+	const { t } = useI18n()
+	const dayTypeOptions = Object.values(DayType).map(v => ({ title: t(`planner.dayType.${v}`), value: v }))
 </script>

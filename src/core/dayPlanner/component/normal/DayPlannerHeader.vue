@@ -17,7 +17,7 @@
 					v-if="prevDayCount !== null"
 					class="text-caption text-no-wrap text-primaryOutline"
 				>
-					{{ prevDayCount }} tasks
+					{{ $t('planner.calendar.tasksCount', { count: prevDayCount }, prevDayCount ?? 0) }}
 				</div>
 				<VIconBtn
 					variant="tonal"
@@ -32,7 +32,7 @@
 					v-if="nextDayCount"
 					class="text-caption text-no-wrap text-primaryOutline"
 				>
-					{{ nextDayCount }} tasks
+					{{ $t('planner.calendar.tasksCount', { count: nextDayCount }, nextDayCount ?? 0) }}
 				</div>
 				<VIconBtn
 					variant="tonal"
@@ -90,7 +90,7 @@
 					size="18"
 					class="mr-2"
 				/>
-				Add Task
+				{{ $t('planner.misc.addTaskAction') }}
 			</VBtn>
 
 			<VBtnToggle
@@ -107,14 +107,14 @@
 					prependIcon="calendar-day"
 					@click="panelOpen = true"
 				>
-					Details
+					{{ $t('planner.template.details') }}
 				</VBtn>
 				<VBtn
 					value="routine"
 					prependIcon="rotate"
 					@click="panelOpen = true"
 				>
-					Routine
+					{{ $t('planner.template.routine') }}
 				</VBtn>
 			</VBtnToggle>
 			<VBtn
@@ -123,7 +123,7 @@
 				to="/day-planner"
 				prependIcon="far fa-calendar"
 			>
-				Calendar
+				{{ $t('planner.misc.calendarLink') }}
 			</VBtn>
 			<GoogleCalendarSyncBtn :calendarId="calendar?.id" />
 		</div>
@@ -142,6 +142,7 @@
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const { title, calendar } = defineProps<{
 		title: string
@@ -157,6 +158,7 @@
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
 	const { fetchByDate } = useCalendarQuery()
 	const { fetchFiltered } = useTaskPlannerCrud()
+	const { t } = useI18n()
 
 	const prevDayCount = ref<number | null>(null)
 	const nextDayCount = ref<number | null>(null)
@@ -187,7 +189,7 @@
 	)
 
 	const undoTooltip = computed(() => {
-		if (!nextUndoDescription.value) return 'Nothing to undo'
+		if (!nextUndoDescription.value) return t('planner.dialog.nothingToUndo')
 		const isOtherDay =
 			nextUndoDate.value &&
 			!(
@@ -196,8 +198,11 @@
 				nextUndoDate.value.getDate() === store.viewedDate.getDate()
 			)
 		return isOtherDay
-			? `Undo: ${nextUndoDescription.value} · go to ${formatToDateWithDay(nextUndoDate.value!)}`
-			: `Undo: ${nextUndoDescription.value}`
+			? t('planner.dialog.undoDescriptionWithDate', {
+					description: nextUndoDescription.value,
+					date: formatToDateWithDay(nextUndoDate.value!),
+				})
+			: t('planner.dialog.undoDescription', { description: nextUndoDescription.value })
 	})
 </script>
 

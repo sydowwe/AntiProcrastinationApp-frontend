@@ -64,7 +64,7 @@
 				<VSwitch
 					class="text-no-wrap"
 					v-model="data.isBackground"
-					label="Is background"
+					:label="$t('planner.settings.isBackgroundLabel')"
 					color="primary"
 					hideDetails
 				/>
@@ -72,7 +72,7 @@
 
 			<VTextField
 				v-model="data.location"
-				label="Location"
+				:label="$t('planner.settings.locationLabel')"
 				prependInnerIcon="location-dot"
 				clearable
 				hideDetails
@@ -85,7 +85,7 @@
 
 			<VTextarea
 				v-model="data.notes"
-				label="Notes"
+				:label="$t('planner.settings.notesLabel')"
 				prependInnerIcon="note-sticky"
 				rows="3"
 				autoGrow

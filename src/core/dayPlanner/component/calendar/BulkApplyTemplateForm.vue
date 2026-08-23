@@ -2,7 +2,7 @@
 	<div class="d-flex flex-column ga-4 pt-2">
 		<VSelect
 			v-model="selectedTemplateId"
-			label="Template"
+			:label="$t('planner.misc.chooseTemplateLabel')"
 			:items="activeTemplates"
 			itemValue="id"
 			itemTitle="name"
@@ -10,7 +10,7 @@
 		/>
 		<VSelect
 			v-model="conflictResolution"
-			label="Conflict resolution"
+			:label="$t('planner.misc.conflictResolutionLabel')"
 			:items="conflictResolutionOptions"
 			hideDetails
 		/>

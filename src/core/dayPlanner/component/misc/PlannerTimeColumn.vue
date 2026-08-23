@@ -16,7 +16,7 @@
 			class="midnight-divider"
 			:style="{ top: `${store.timeToSlotIndex(new Time(0, 0)) * SLOT_HEIGHT}px` }"
 		>
-			<span class="midnight-label">MIDNIGHT</span>
+			<span class="midnight-label">{{ $t('planner.misc.midnightLabel') }}</span>
 		</div>
 
 		<!-- Current time indicator -->

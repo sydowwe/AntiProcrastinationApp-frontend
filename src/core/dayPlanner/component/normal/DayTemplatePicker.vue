@@ -7,7 +7,7 @@
 				size="16"
 				class="text-medium-emphasis"
 			/>
-			<span class="section-label">Day Template</span>
+			<span class="section-label">{{ t('planner.misc.dayTemplateLabel') }}</span>
 		</div>
 
 		<!-- Backend Suggestions -->
@@ -57,7 +57,7 @@
 
 		<VAutocomplete
 			v-model="selectedTemplate"
-			label="Choose template"
+			:label="t('planner.misc.chooseTemplateLabel')"
 			:items="templates"
 			itemTitle="name"
 			itemValue="id"
@@ -145,7 +145,7 @@
 						size="16"
 						class="mr-2"
 					/>
-					Preview Template
+					{{ t('planner.misc.previewTemplate') }}
 				</VBtn>
 				<VChip
 					v-else
@@ -159,7 +159,7 @@
 						size="14"
 						class="mr-1"
 					/>
-					In Preview
+					{{ t('planner.misc.inPreview') }}
 				</VChip>
 			</SubtleCard>
 		</VExpandTransition>
@@ -175,7 +175,7 @@
 				color="success"
 			/>
 			<span>
-				Using:
+				{{ t('planner.misc.usingTemplate') }}
 				<strong>{{ calendar.appliedTemplateName }}</strong>
 			</span>
 		</div>

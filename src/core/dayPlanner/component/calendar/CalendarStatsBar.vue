@@ -12,7 +12,13 @@
 			color="primaryOutline"
 			icon="list-check"
 		>
-			{{ completedTasks }}/{{ totalTasks }} tasks
+			{{
+				$t(
+					'planner.calendar.completedOfTotalTasks',
+					{ completed: completedTasks, count: totalTasks },
+					totalTasks,
+				)
+			}}
 		</ChipWithIcon>
 
 		<ChipWithIcon
@@ -21,7 +27,7 @@
 			:color="avgCompletion >= 80 ? 'success' : avgCompletion >= 50 ? 'warning' : 'error'"
 			icon="chart-simple"
 		>
-			{{ avgCompletion }}% avg
+			{{ $t('planner.calendar.avgCompletion', { percent: avgCompletion }) }}
 		</ChipWithIcon>
 
 		<ChipWithIcon
@@ -31,7 +37,7 @@
 			color="success"
 			icon="fire"
 		>
-			{{ streak }}-day streak
+			{{ $t('planner.calendar.dayStreak', { count: streak }, streak) }}
 		</ChipWithIcon>
 
 		<ChipWithIcon
@@ -41,7 +47,7 @@
 			color="secondaryOutline"
 			icon="calendar-days"
 		>
-			{{ plannedDays }}/{{ pastDays }} days planned
+			{{ $t('planner.calendar.daysPlanned', { planned: plannedDays, past: pastDays }) }}
 		</ChipWithIcon>
 	</VSheet>
 </template>

@@ -2,7 +2,7 @@
 	<div class="pt-2">
 		<MyDateInput
 			v-model="sourceDate"
-			label="Source date"
+			:label="$t('planner.calendar.sourceDateLabel')"
 			:dateShowArrows="false"
 		/>
 	</div>

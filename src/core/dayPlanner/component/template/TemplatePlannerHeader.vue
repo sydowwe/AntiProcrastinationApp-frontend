@@ -33,7 +33,11 @@
 
 		<div class="d-flex ga-2 align-center flex-wrap">
 			<VTooltip
-				:text="nextUndoDescription ? `Undo: ${nextUndoDescription}` : 'Nothing to undo'"
+				:text="
+					nextUndoDescription
+						? $t('planner.dialog.undoDescription', { description: nextUndoDescription })
+						: $t('planner.dialog.nothingToUndo')
+				"
 				location="bottom"
 			>
 				<template #activator="{ props: tooltipProps }">
@@ -60,7 +64,7 @@
 				:disabled="!store.canCreate"
 				@click="store.openCreateDialog"
 			>
-				Add New Task
+				{{ $t('planner.template.addNewTaskAction') }}
 			</VBtn>
 		</div>
 	</VCardTitle>

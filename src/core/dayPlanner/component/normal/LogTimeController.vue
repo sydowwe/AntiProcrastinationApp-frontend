@@ -20,6 +20,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const { plannerTaskId } = defineProps<{ plannerTaskId?: number }>()
 
@@ -30,6 +31,7 @@
 
 	const { openDialog } = useDialog()
 	const { markInProgress } = useTaskPlannerCrud()
+	const { t } = useI18n()
 
 	const activityId = ref<number | null>(null)
 	const activityName = ref('')
@@ -66,7 +68,7 @@
 				initialLength: length ?? new Time(),
 			},
 			dialogProps: {
-				title: isManual ? 'Log time manually' : 'Log time',
+				title: isManual ? t('planner.logTime.logTimeManuallyTitle') : t('general.logTime'),
 				hasConfirmBtn: isManual,
 			},
 		})

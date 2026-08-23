@@ -13,7 +13,7 @@
 				color="primary"
 				@click="updateDetails"
 			>
-				Update details
+				{{ $t('planner.template.updateDetailsAction') }}
 			</VBtn>
 		</div>
 	</div>
@@ -26,6 +26,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { TEMPLATE_PLANNER_STORE_KEY } from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const { templateId } = defineProps<{
 		templateId: number | null
@@ -34,6 +35,7 @@
 	const store = inject(TEMPLATE_PLANNER_STORE_KEY)!
 	const { showSuccessSnackbar } = useSnackbar()
 	const { update, fetchById } = useTaskPlannerDayTemplateTaskCrud()
+	const { t } = useI18n()
 
 	onMounted(() => {
 		loadTemplateDetails()
@@ -58,7 +60,7 @@
 		if (!request || !templateId) return
 		await update(templateId, request)
 		await loadTemplateDetails()
-		showSuccessSnackbar('Template details updated')
+		showSuccessSnackbar(t('planner.template.updateDetailsSuccess'))
 	}
 
 	watch(

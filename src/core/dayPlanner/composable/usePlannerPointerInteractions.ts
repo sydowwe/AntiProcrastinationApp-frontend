@@ -5,6 +5,7 @@ import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { CreationPreviewType, SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 import { type AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import { useI18n } from 'vue-i18n'
 
 const MOVEMENT_THRESHOLD = 5
 const DOUBLE_CLICK_DELAY = 300
@@ -20,6 +21,7 @@ export function usePlannerPointerInteractions(
 ) {
 	const { showErrorSnackbar } = useSnackbar()
 	const undoStack = useUndoStack()
+	const { t } = useI18n()
 	const calendarGrid = computed(() => tasksColumnRef.value?.parentElement as HTMLElement)
 	const { handleAutoScroll, stopAutoScroll } = useAutoScroll(calendarGrid)
 
@@ -251,7 +253,7 @@ export function usePlannerPointerInteractions(
 					(store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows + 1)
 				) {
 					store.redrawTask(store.draggingTaskId, originalTaskState.value)
-					showErrorSnackbar('Task cannot be dragged outside of the grid')
+					showErrorSnackbar(t('planner.feedback.taskDraggedOutsideGrid'))
 				} else {
 					const capturedOriginal = { ...originalTaskState.value }
 					const capturedId = task.id
@@ -260,7 +262,7 @@ export function usePlannerPointerInteractions(
 						.updateTaskSpan(task.id, TaskSpan.fromTask(task))
 						.then(() => {
 							undoStack.push({
-								description: 'Task moved',
+								description: t('planner.undo.taskMoved'),
 								date: moveDate,
 								undo: async () => {
 									store.redrawTask(capturedId, capturedOriginal)
@@ -324,7 +326,7 @@ export function usePlannerPointerInteractions(
 					.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task))
 					.then(() => {
 						undoStack.push({
-							description: 'Task resized',
+							description: t('planner.undo.taskResized'),
 							date: resizeDate,
 							undo: async () => {
 								store.redrawTask(capturedId, capturedOriginal)

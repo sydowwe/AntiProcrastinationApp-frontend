@@ -7,7 +7,7 @@
 				size="16"
 				class="text-medium-emphasis"
 			/>
-			<span class="section-label">Suggestions</span>
+			<span class="section-label">{{ $t('planner.misc.suggestions') }}</span>
 			<VChip
 				size="x-small"
 				color="primaryOutline"
@@ -46,7 +46,7 @@
 								variant="tonal"
 								class="flex-shrink-0"
 							>
-								Auto • Planned
+								{{ $t('planner.misc.autoPlanned') }}
 							</VChip>
 							<VChip
 								v-else-if="task.sourceType === 'HistoryPattern'"
@@ -55,7 +55,7 @@
 								variant="tonal"
 								class="flex-shrink-0"
 							>
-								Auto • Tracked
+								{{ $t('planner.misc.autoTracked') }}
 							</VChip>
 						</div>
 						<div class="text-caption text-medium-emphasis">
@@ -64,7 +64,7 @@
 								v-if="task.occurrenceCount !== null"
 								class="ml-1"
 							>
-								· seen {{ task.occurrenceCount }}×
+								· {{ $t('planner.misc.seenCount', { count: task.occurrenceCount }) }}
 							</span>
 						</div>
 						<VChip

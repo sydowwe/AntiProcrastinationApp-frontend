@@ -1,7 +1,7 @@
 <template>
 	<div class="py-4 h-100 w-100 d-flex flex-column">
 		<div class="d-flex align-center ga-3">
-			<h2>Day Planner Settings</h2>
+			<h2>{{ $t('planner.settings.pageTitle') }}</h2>
 			<!-- The only edit this module took from P1: a link back to /user/settings, so the two
 			     settings pages form a pair instead of two dead ends. A route name, not an import —
 			     nothing here depends on `core/user`. -->
@@ -17,11 +17,11 @@
 			v-model="activeTab"
 			color="primaryOutline"
 		>
-			<VTab value="repeating">Repeating Tasks</VTab>
+			<VTab value="repeating">{{ $t('planner.settings.tabs.repeating') }}</VTab>
 			<VTab value="reminders">{{ $t('planner.nudges.tab') }}</VTab>
-			<VTab value="viewDefaults">View Defaults</VTab>
-			<VTab value="skipReasons">Skip Reasons</VTab>
-			<VTab value="calendarView">Calendar View</VTab>
+			<VTab value="viewDefaults">{{ $t('planner.settings.tabs.viewDefaults') }}</VTab>
+			<VTab value="skipReasons">{{ $t('planner.settings.tabs.skipReasons') }}</VTab>
+			<VTab value="calendarView">{{ $t('planner.settings.tabs.calendarView') }}</VTab>
 		</VTabs>
 
 		<VTabsWindow
@@ -67,7 +67,7 @@
 							variant="tonal"
 							color="primaryOutline"
 						>
-							{{ item.recurrenceType }}
+							{{ $t(`planner.recurrenceType.${item.recurrenceType}`) }}
 						</VChip>
 					</template>
 					<template #item.isActive="{ item }">
@@ -147,28 +147,28 @@
 				>
 					<VSwitch
 						v-model="settingsStore.detailsPanelExpandedByDefault"
-						label="Show details panel by default"
+						:label="$t('planner.settings.detailsPanelDefault')"
 						color="successDark"
 						hideDetails
 					/>
 					<VSwitch
 						v-model="settingsStore.arrowKeyNavEnabled"
-						label="Arrow key date navigation"
+						:label="$t('planner.settings.arrowKeyNav')"
 						color="successDark"
 						hideDetails
 					/>
 					<div class="d-flex align-center ga-3 pt-1">
-						<span class="text-body-2">Time slot size</span>
+						<span class="text-body-2">{{ $t('planner.settings.slotSize') }}</span>
 						<VBtnToggle
 							v-model="settingsStore.slotDurationMinutes"
 							mandatory
 							color="primary"
 							density="compact"
 						>
-							<VBtn :value="5">5 min</VBtn>
-							<VBtn :value="10">10 min</VBtn>
-							<VBtn :value="15">15 min</VBtn>
-							<VBtn :value="30">30 min</VBtn>
+							<VBtn :value="5">{{ $t('planner.settings.minutesValue', { n: 5 }) }}</VBtn>
+							<VBtn :value="10">{{ $t('planner.settings.minutesValue', { n: 10 }) }}</VBtn>
+							<VBtn :value="15">{{ $t('planner.settings.minutesValue', { n: 15 }) }}</VBtn>
+							<VBtn :value="30">{{ $t('planner.settings.minutesValue', { n: 30 }) }}</VBtn>
 						</VBtnToggle>
 					</div>
 				</VCard>
@@ -198,12 +198,12 @@
 					v-else
 					class="text-body-2 text-disabled"
 				>
-					No predefined reasons yet. Add one below.
+					{{ $t('planner.settings.noSkipReasons') }}
 				</p>
 				<div class="d-flex ga-2 align-center">
 					<VTextField
 						v-model="newSkipReason"
-						label="New reason"
+						:label="$t('planner.settings.newReasonLabel')"
 						hideDetails
 						style="max-width: 300px"
 						@keydown.enter="addSkipReason"
@@ -215,7 +215,7 @@
 						"
 						@click="addSkipReason"
 					>
-						Add
+						{{ $t('general.add') }}
 					</VBtn>
 				</div>
 			</VTabsWindowItem>
@@ -233,19 +233,19 @@
 					<VIdAutocomplete
 						v-model="settingsStore.defaultApplyTemplateId"
 						:items="activeTemplates"
-						label="Default template"
+						:label="$t('planner.settings.defaultTemplateLabel')"
 						clearable
 						hideDetails
 					/>
 					<VSelect
 						v-model="settingsStore.defaultConflictResolution"
 						:items="conflictResolutionOptions"
-						label="Default conflict resolution"
+						:label="$t('planner.settings.defaultConflictResolutionLabel')"
 						hideDetails
 					/>
 					<VSwitch
 						v-model="settingsStore.defaultApplyPreviewMode"
-						label="Default to preview mode"
+						:label="$t('planner.settings.defaultPreviewModeLabel')"
 						color="successDark"
 						hideDetails
 					/>
@@ -262,10 +262,10 @@
 
 	<MyDialog
 		v-model="deleteDialog"
-		title="Delete"
-		text="Delete this repeating task?"
+		:title="$t('general.delete')"
+		:text="$t('planner.settings.deleteRepeatingTaskConfirm')"
 		confirmBtnColor="error"
-		confirmBtnLabel="Delete"
+		:confirmBtnLabel="$t('general.delete')"
 		@confirmed="confirmDelete"
 	/>
 </template>
@@ -287,7 +287,9 @@
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
+	import { useI18n } from 'vue-i18n'
 
+	const { t } = useI18n()
 	const { fetchAll, fetchById, createWithResponse, update, deleteEntity } = useRepeatingPlannerTaskApi()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const settingsStore = useDayPlannerSettingsStore()
@@ -339,20 +341,27 @@
 	const pendingDeleteId = ref<number | null>(null)
 
 	const columns: TableColumn[] = [
-		new TableColumn('activity', 'Activity', false),
-		new TableColumn('time', 'Time', false),
-		new TableColumn('recurrenceType', 'Recurrence', false),
-		new TableColumn('isActive', 'Active', false),
+		new TableColumn('activity', t('planner.settings.columns.activity'), false),
+		new TableColumn('time', t('planner.settings.columns.time'), false),
+		new TableColumn('recurrenceType', t('planner.settings.columns.recurrence'), false),
+		new TableColumn('isActive', t('planner.settings.columns.active'), false),
 	]
 
 	const tableActions: TableAction[] = [
-		new TableAction('edit', 'Edit', 'primaryOutline', 'tonal', 'pen', (item: RepeatingPlannerTask) =>
+		new TableAction('edit', t('general.edit'), 'primaryOutline', 'tonal', 'pen', (item: RepeatingPlannerTask) =>
 			taskDialog.value?.openEditDialog(item),
 		),
-		new TableAction('delete', 'Delete', 'secondaryOutline', 'tonal', 'trash', (item: RepeatingPlannerTask) => {
-			pendingDeleteId.value = item.id
-			deleteDialog.value = true
-		}),
+		new TableAction(
+			'delete',
+			t('general.delete'),
+			'secondaryOutline',
+			'tonal',
+			'trash',
+			(item: RepeatingPlannerTask) => {
+				pendingDeleteId.value = item.id
+				deleteDialog.value = true
+			},
+		),
 	]
 
 	function taskById(id: number) {

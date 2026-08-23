@@ -2,7 +2,7 @@
 	<div class="mt-3">
 		<VSwitch
 			v-model="hasWindow"
-			label="Limit to date range"
+			:label="$t('planner.settings.limitToDateRange')"
 			color="primary"
 			density="compact"
 			hideDetails
@@ -14,7 +14,7 @@
 			>
 				<VDateInput
 					v-model="from"
-					label="From"
+					:label="$t('planner.settings.fromLabel')"
 					clearable
 					density="comfortable"
 					:hideDetails="!(showError && windowError)"
@@ -23,7 +23,7 @@
 				/>
 				<VDateInput
 					v-model="to"
-					label="To"
+					:label="$t('planner.settings.toLabel')"
 					clearable
 					density="comfortable"
 					:hideDetails="!(showError && windowError)"
@@ -38,6 +38,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { VDateInput } from 'vuetify/labs/components'
+	import { useI18n } from 'vue-i18n'
 
 	const { showError = false } = defineProps<{ showError?: boolean }>()
 
@@ -45,11 +46,13 @@
 	const from = defineModel<Date | null>('from', { required: true })
 	const to = defineModel<Date | null>('to', { required: true })
 
+	const { t } = useI18n()
+
 	const windowError = computed<string | null>(() => {
 		if (!hasWindow.value) return null
-		if (!from.value && !to.value) return 'Both dates are required'
-		if (!from.value) return 'Start date is required'
-		if (!to.value) return 'End date is required'
+		if (!from.value && !to.value) return t('planner.settings.bothDatesRequired')
+		if (!from.value) return t('planner.settings.startDateRequired')
+		if (!to.value) return t('planner.settings.endDateRequired')
 		return null
 	})
 </script>

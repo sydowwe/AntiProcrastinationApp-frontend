@@ -16,7 +16,7 @@
 	</div>
 	<VTextarea
 		v-model="reason"
-		label="Reason (optional)"
+		:label="$t('planner.settings.reasonOptionalLabel')"
 		rows="3"
 		autoGrow
 		hideDetails

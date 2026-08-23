@@ -34,7 +34,7 @@
 		<!-- Delete Confirmation Dialog -->
 		<MyDialog
 			v-model="deleteDialogVisible"
-			title="Delete confirmation"
+			:title="$t('general.deleteConfirmationTitle')"
 			:text="deleteConfirmationText"
 			confirmBtnColor="error"
 			@confirmed="emit('delete')"
@@ -43,7 +43,7 @@
 			:isShown="!!store.placingItem"
 			@cancel="store.placingItem = null"
 		>
-			<span class="text-body-2 text-medium-emphasis">Placing</span>
+			<span class="text-body-2 text-medium-emphasis">{{ $t('planner.misc.placing') }}</span>
 			<span class="text-body-2 text-high-emphasis">{{ store.placingItem?.name }}</span>
 		</ActionBar>
 		<slot name="action-bar"></slot>
@@ -65,6 +65,7 @@
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const emit = defineEmits<{
 		delete: []
@@ -72,6 +73,7 @@
 
 	const store = inject(PLANNER_STORE_KEY)!
 	const { shouldConfirm } = useDeleteConfirmation()
+	const { t } = useI18n()
 
 	// Written straight onto the store rather than through `$patch`: these are setup stores, so the
 	// field is a plain writable ref, and `$patch` on the injected contract could not be typed at all.
@@ -97,10 +99,10 @@
 		const tasks = store.tasks.filter(e => store.selectedTaskIds.has(e.id))
 		if (store.selectedTaskIds.size > 1) {
 			const count = store.selectedTaskIds.size
-			return `Are you sure you want to delete ${count} selected tasks?`
+			return t('planner.misc.deleteConfirmMultiple', { count })
 		}
-		const taskName = tasks[0]?.activity?.name ?? 'this task'
-		return `Are you sure you want to delete ${taskName}?`
+		const taskName = tasks[0]?.activity?.name ?? t('planner.misc.taskFallbackName')
+		return t('planner.misc.deleteConfirmSingle', { name: taskName })
 	})
 </script>
 

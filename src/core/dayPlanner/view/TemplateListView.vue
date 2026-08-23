@@ -1,7 +1,7 @@
 <template>
 	<div class="py-6 w-100">
 		<div class="mb-5 d-flex justify-space-between align-center">
-			<h1 class="text-h4">Day Templates</h1>
+			<h1 class="text-h4">{{ $t('planner.template.pageTitle') }}</h1>
 			<div class="d-flex align-center ga-3">
 				<template v-if="mdAndUp && templates.length >= 2">
 					<VBtn
@@ -11,7 +11,7 @@
 						prependIcon="columns"
 						@click="compareMode = true"
 					>
-						Compare
+						{{ $t('planner.actions.compare') }}
 					</VBtn>
 					<template v-else>
 						<VBtn
@@ -20,14 +20,14 @@
 							:disabled="compareSelection.length !== 2"
 							@click="openComparison"
 						>
-							Compare ({{ compareSelection.length }}/2)
+							{{ $t('planner.template.compareCount', { count: compareSelection.length }) }}
 						</VBtn>
 						<VBtn
 							color="secondaryOutline"
 							variant="outlined"
 							@click="exitCompareMode"
 						>
-							Cancel
+							{{ $t('general.cancel') }}
 						</VBtn>
 					</template>
 				</template>
@@ -46,14 +46,14 @@
 					prependIcon="code-compare"
 					@click="router.push({ name: 'dayPlannerTemplateSplit' })"
 				>
-					Edit Side by Side
+					{{ $t('planner.template.editSideBySide') }}
 				</VBtn>
 				<VBtn
 					color="primary"
 					prependIcon="plus"
 					@click="openCreateDialog"
 				>
-					Add Template
+					{{ $t('planner.template.addTemplate') }}
 				</VBtn>
 			</div>
 		</div>
@@ -76,12 +76,12 @@
 						size="48"
 						class="mb-4 text-grey"
 					/>
-					<div class="text-h6 mb-2">No templates yet</div>
+					<div class="text-h6 mb-2">{{ $t('planner.template.emptyTitle') }}</div>
 					<VBtn
 						color="primary"
 						@click="openCreateDialog"
 					>
-						Create your first template
+						{{ $t('planner.template.emptyCta') }}
 					</VBtn>
 				</VCard>
 			</VCol>
@@ -96,7 +96,7 @@
 						size="12"
 						class="mr-1"
 					/>
-					Pinned
+					{{ $t('planner.template.pinnedSectionTitle') }}
 				</div>
 				<VRow>
 					<VCol
@@ -189,7 +189,7 @@
 						size="12"
 						class="mr-1"
 					/>
-					Inactive
+					{{ $t('planner.template.inactiveSectionTitle') }}
 				</div>
 				<VRow>
 					<VCol
@@ -306,9 +306,9 @@
 	type SortOption = 'mostUsed' | 'recentlyUsed' | 'alphabetical'
 	const sortBy = ref<SortOption>('mostUsed')
 	const sortOptions = [
-		{ title: 'Most Used', value: 'mostUsed' },
-		{ title: 'Recently Used', value: 'recentlyUsed' },
-		{ title: 'Alphabetical', value: 'alphabetical' },
+		{ title: i18n.t('planner.template.sort.mostUsed'), value: 'mostUsed' },
+		{ title: i18n.t('planner.template.sort.recentlyUsed'), value: 'recentlyUsed' },
+		{ title: i18n.t('planner.template.sort.alphabetical'), value: 'alphabetical' },
 	]
 
 	function activeFirst(a: { isActive: boolean }, b: { isActive: boolean }) {
@@ -435,8 +435,8 @@
 			component: TemplateDetailsForm,
 			componentProps: { template, defaultValues },
 			dialogProps: {
-				title: template ? `Edit template` : `New template`,
-				confirmBtnLabel: template ? 'Update' : 'Create',
+				title: template ? i18n.t('planner.template.editTitle') : i18n.t('planner.template.newTitle'),
+				confirmBtnLabel: template ? i18n.t('general.update') : i18n.t('general.create'),
 			},
 		})
 		if (!result) {
@@ -458,7 +458,7 @@
 
 	function duplicateTemplate(template: TaskPlannerDayTemplate) {
 		const defaults = TaskPlannerDayTemplateRequest.fromEntity(template)
-		defaults.name = `${template.name} (copy)`
+		defaults.name = i18n.t('planner.template.copySuffix', { name: template.name })
 		duplicatingFromId = template.id
 		openTemplateDialog(null, defaults)
 	}
@@ -470,7 +470,7 @@
 		if (editingTemplate) {
 			await update(editingTemplate.id, request)
 			await loadTemplates()
-			showSuccessSnackbar('Template updated')
+			showSuccessSnackbar(i18n.t('planner.feedback.templateUpdated'))
 		} else {
 			const newId = await create(request)
 
@@ -541,7 +541,7 @@
 			await loadTemplates()
 			deleteDialog.value = false
 			templateToDelete.value = null
-			showSuccessSnackbar('Template deleted')
+			showSuccessSnackbar(i18n.t('planner.feedback.templateDeleted'))
 		}
 	}
 

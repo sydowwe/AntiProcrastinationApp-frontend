@@ -6,6 +6,7 @@ import type { PlannerClipboard } from '@/core/dayPlanner/component/DayPlannerTyp
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { useI18n } from 'vue-i18n'
 
 export function useClipboardHandling<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -22,6 +23,7 @@ export function useClipboardHandling<
 ) {
 	const { push } = useUndoStack()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	async function handleClipboardPlace(clipboard: PlannerClipboard<TTask>, startSlot: number) {
 		store.pendingClipboard = null
@@ -50,7 +52,7 @@ export function useClipboardHandling<
 					store.tasks.push(response)
 				}
 				await api.batchDelete(ids)
-				showSuccessSnackbar('Task moved')
+				showSuccessSnackbar(t('planner.feedback.taskMoved'))
 			} else {
 				const originalSpans = sorted.map(t => ({
 					id: t.id,
@@ -68,7 +70,7 @@ export function useClipboardHandling<
 					await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
 				}
 				push({
-					description: 'Task moved',
+					description: t('planner.undo.taskMoved'),
 					date: undoDate,
 					undo: async () => {
 						for (const orig of originalSpans) {
@@ -81,7 +83,7 @@ export function useClipboardHandling<
 						}
 					},
 				})
-				showSuccessSnackbar('Task moved')
+				showSuccessSnackbar(t('planner.feedback.taskMoved'))
 			}
 		}
 
@@ -101,7 +103,7 @@ export function useClipboardHandling<
 				created.push(response)
 			}
 			push({
-				description: 'Tasks duplicated',
+				description: t('planner.undo.tasksDuplicated'),
 				date: undoDate,
 				undo: async () => {
 					const ids = created.map(t => t.id)
@@ -109,7 +111,7 @@ export function useClipboardHandling<
 					store.tasks = store.tasks.filter(t => !ids.includes(t.id))
 				},
 			})
-			showSuccessSnackbar('Tasks duplicated')
+			showSuccessSnackbar(t('planner.feedback.tasksDuplicated'))
 		}
 	}
 

@@ -3,7 +3,7 @@
 	<SubtleCard
 		v-if="overdueTasks.length && showBanner"
 		color="error"
-		title="Not completed yesterday:"
+		:title="$t('planner.calendar.notCompletedYesterday')"
 		closable
 		class="mb-4"
 		@close="showBanner = false"
@@ -32,7 +32,7 @@
 				variant="tonal"
 				@click="copyOverdueTasks"
 			>
-				Copy all
+				{{ $t('planner.calendar.copyAll') }}
 			</VBtn>
 		</div>
 	</SubtleCard>
@@ -53,6 +53,7 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
+	import { useI18n } from 'vue-i18n'
 
 	const { calendar } = defineProps<{
 		calendar?: Calendar
@@ -62,6 +63,7 @@
 	const { createWithResponse, batchDelete, fetchFiltered } = useTaskPlannerCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const overdueTasks = ref<PlannerTask[]>([])
 	const showBanner = ref(true)
@@ -135,6 +137,6 @@
 		for (const task of [...overdueTasks.value]) {
 			await copyOverdueTask(task)
 		}
-		showSuccessSnackbar('Tasks carried over')
+		showSuccessSnackbar(t('planner.feedback.tasksCarriedOver'))
 	}
 </script>

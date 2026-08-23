@@ -15,7 +15,7 @@
 				prependIcon="fas fa-calendar-check"
 				@click="toggleBulkSelectMode"
 			>
-				Select Days
+				{{ $t('planner.calendar.selectDays') }}
 			</VBtn>
 			<VBtn
 				:color="isEditDetailsMode ? 'secondary' : 'secondaryOutline'"
@@ -23,7 +23,7 @@
 				prependIcon="fas fa-pen-to-square"
 				@click="toggleEditDetailsMode"
 			>
-				Edit Details
+				{{ $t('planner.calendar.editDetails') }}
 			</VBtn>
 			<VBtn
 				:color="isApplyTemplateMode ? 'primary' : 'primaryOutline'"
@@ -31,7 +31,7 @@
 				prependIcon="fas fa-wand-magic-sparkles"
 				@click="toggleApplyTemplateMode"
 			>
-				Apply Template
+				{{ $t('planner.calendar.applyTemplate') }}
 			</VBtn>
 		</template>
 
@@ -266,8 +266,12 @@
 			component: BulkApplyTemplateForm,
 			componentProps: { activeTemplates: activeTemplates.value },
 			dialogProps: {
-				title: `Apply Template to ${selectedDayIds.value.length} day(s)`,
-				confirmBtnLabel: 'Apply',
+				title: t(
+					'planner.calendar.applyTemplateToDaysTitle',
+					{ count: selectedDayIds.value.length },
+					selectedDayIds.value.length,
+				),
+				confirmBtnLabel: t('planner.actions.apply'),
 			},
 		})
 		if (!result) return
@@ -279,8 +283,12 @@
 			component: CopyDayForm,
 			componentProps: { selectedCount: selectedDayIds.value.length },
 			dialogProps: {
-				title: `Copy tasks to ${selectedDayIds.value.length} day(s)`,
-				confirmBtnLabel: 'Copy',
+				title: t(
+					'planner.calendar.copyTasksToDaysTitle',
+					{ count: selectedDayIds.value.length },
+					selectedDayIds.value.length,
+				),
+				confirmBtnLabel: t('planner.actions.copy'),
 			},
 		})
 		if (!result) return

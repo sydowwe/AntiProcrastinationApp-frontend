@@ -27,7 +27,7 @@
 					size="small"
 					class="mr-1"
 				/>
-				<span class="info-text">{{ LOCATION_LABELS[day.location] }}</span>
+				<span class="info-text">{{ $t(`planner.location.${day.location}`) }}</span>
 			</div>
 		</div>
 
@@ -92,7 +92,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
-	import { LOCATION_ICONS, LOCATION_LABELS } from '@/core/dayPlanner/dto/enum/Location.ts'
+	import { LOCATION_ICONS } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/core/dayPlanner/component/calendar/CellTaskProgress.vue'

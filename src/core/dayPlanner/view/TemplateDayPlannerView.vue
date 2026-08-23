@@ -10,7 +10,11 @@
 			<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
 				<div class="d-flex justify-space-between align-center">
 					<span class="text-grey-lighten-1">
-						{{ activePanel === 'details' ? 'Template details' : 'Routine Tasks' }}
+						{{
+							activePanel === 'details'
+								? $t('planner.template.detailsPanel')
+								: $t('planner.template.routineTasksPanel')
+						}}
 					</span>
 					<VIconBtn
 						class="d-md-none"
@@ -35,14 +39,14 @@
 						prependIcon="sliders"
 						style="flex: 1"
 					>
-						Details
+						{{ $t('planner.template.details') }}
 					</VBtn>
 					<VBtn
 						value="routine"
 						prependIcon="rotate"
 						style="flex: 1"
 					>
-						Routine
+						{{ $t('planner.template.routine') }}
 					</VBtn>
 				</VBtnToggle>
 			</VCardTitle>
@@ -66,16 +70,23 @@
 				@delete="crud.del"
 			>
 				<template #header>
-					<TemplatePlannerHeader :title="store.templateName || 'Day Template'">
+					<TemplatePlannerHeader :title="store.templateName || $t('planner.template.dayTemplateFallback')">
 						<template #headerPrepend>
 							<span
 								v-if="taskStats.taskCount > 0"
 								class="text-caption text-medium-emphasis"
 							>
-								{{ taskStats.taskCount }} tasks · {{ fromMinutes(taskStats.plannedMinutes) }} planned ·
-								<span :class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-warning'">
-									{{ fromMinutes(taskStats.freeMinutes) }} free
-								</span>
+								{{
+									$t(
+										'planner.template.statsLine',
+										{
+											count: taskStats.taskCount,
+											planned: fromMinutes(taskStats.plannedMinutes),
+											free: fromMinutes(taskStats.freeMinutes),
+										},
+										taskStats.taskCount,
+									)
+								}}
 							</span>
 						</template>
 					</TemplatePlannerHeader>
@@ -95,7 +106,7 @@
 						color="secondaryOutline"
 						@click="crud.splitTask"
 					>
-						Split
+						{{ $t('planner.actions.split') }}
 					</VBtn>
 				</template>
 

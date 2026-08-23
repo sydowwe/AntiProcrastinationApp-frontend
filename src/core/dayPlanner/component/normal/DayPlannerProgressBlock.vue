@@ -5,7 +5,15 @@
 				icon="list-check"
 				size="18"
 			/>
-			<span class="progress-label">{{ calendar.completedTasks }}/{{ calendar.totalTasks }} tasks</span>
+			<span class="progress-label">
+				{{
+					$t(
+						'planner.calendar.completedOfTotalTasks',
+						{ completed: calendar.completedTasks, count: calendar.totalTasks },
+						calendar.totalTasks,
+					)
+				}}
+			</span>
 			<span
 				class="progress-percent"
 				:style="{ color: progressColor }"
@@ -20,13 +28,13 @@
 			rounded
 		/>
 		<div class="d-flex ga-2 mt-1 text-caption text-medium-emphasis">
-			<span>{{ fromMinutes(taskStats.plannedMinutes) }} planned</span>
+			<span>{{ fromMinutes(taskStats.plannedMinutes) }} {{ $t('planner.misc.plannedSuffix') }}</span>
 			<span>·</span>
 			<span
 				v-if="taskStats.overMinutes === 0"
 				:class="taskStats.freeMinutes > 0 ? 'text-success' : 'text-medium-emphasis'"
 			>
-				{{ fromMinutes(taskStats.freeMinutes) }} free
+				{{ fromMinutes(taskStats.freeMinutes) }} {{ $t('planner.misc.freeSuffix') }}
 			</span>
 			<span
 				v-else
@@ -37,7 +45,7 @@
 					size="11"
 					class="mr-1"
 				/>
-				{{ fromMinutes(taskStats.overMinutes) }} over capacity
+				{{ fromMinutes(taskStats.overMinutes) }} {{ $t('planner.misc.overCapacity') }}
 			</span>
 		</div>
 	</div>

@@ -2,7 +2,11 @@
 	<BasePlannerTaskDialog
 		ref="baseDialog"
 		:title="
-			store.isDuplicating ? 'Duplicate Template Task' : !isEdit ? 'Add New Template Task' : 'Edit Template Task'
+			store.isDuplicating
+				? $t('planner.misc.duplicateTemplateTaskTitle')
+				: !isEdit
+					? $t('planner.misc.addNewTemplateTaskTitle')
+					: $t('planner.misc.editTemplateTaskTitle')
 		"
 		:store
 		:createEmptyRequest="() => TemplatePlannerTaskRequest.createEmpty()"

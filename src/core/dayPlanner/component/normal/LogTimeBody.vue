@@ -4,13 +4,13 @@
 			<TimePicker
 				v-model="startTime"
 				icon="clock"
-				label="Start time"
+				:label="$t('planner.logTime.startTimeLabel')"
 				hideDetails
 			/>
 			<TimePicker
 				v-model="length"
 				icon="hourglass-end"
-				label="Length"
+				:label="$t('planner.logTime.lengthLabel')"
 				hideDetails
 			/>
 		</div>
@@ -35,7 +35,7 @@
 				size="large"
 				@click="switchToManual"
 			>
-				Manual entry
+				{{ $t('planner.logTime.manualEntry') }}
 			</VBtn>
 		</div>
 	</template>
@@ -46,6 +46,7 @@
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
+	import { useI18n } from 'vue-i18n'
 
 	export type LogTimeResult =
 		| { type: 'confirm'; startTime: Time; length: Time }
@@ -62,22 +63,23 @@
 	}>()
 
 	const dialogApi = useDialogApi<LogTimeResult>()
+	const { t } = useI18n()
 
 	const isManual = ref(manualMode)
 	const startTime = ref(new Time(initialStartTime.hours, initialStartTime.minutes))
 	const length = ref(new Time(initialLength.hours, initialLength.minutes))
 
 	const timerOptions = [
-		{ label: 'Stopwatch', icon: 'fas fa-stopwatch', type: 'stopwatch' },
-		{ label: 'Timer', icon: 'fas fa-hourglass-half', type: 'timer' },
-		{ label: 'Pomodoro', icon: 'fas fa-circle-dot', type: 'pomodoro' },
+		{ label: t('planner.logTime.stopwatch'), icon: 'fas fa-stopwatch', type: 'stopwatch' },
+		{ label: t('planner.logTime.timer'), icon: 'fas fa-hourglass-half', type: 'timer' },
+		{ label: t('planner.logTime.pomodoro'), icon: 'fas fa-circle-dot', type: 'pomodoro' },
 	]
 
 	dialogApi.onConfirm(onConfirm)
 
 	function switchToManual() {
 		isManual.value = true
-		dialogApi.setDialogProps({ hasConfirmBtn: true, title: 'Log time manually' })
+		dialogApi.setDialogProps({ hasConfirmBtn: true, title: t('planner.logTime.logTimeManuallyTitle') })
 	}
 
 	function selectTimer(type: string) {

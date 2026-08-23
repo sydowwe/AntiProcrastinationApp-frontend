@@ -54,7 +54,7 @@
 							v-bind="menuProps"
 							color="primary"
 						>
-							Change Status
+							{{ $t('planner.actions.changeStatus') }}
 						</VBtn>
 					</template>
 					<VCard>
@@ -75,14 +75,14 @@
 					color="secondary"
 					@click="openRescheduleDialog"
 				>
-					Reschedule
+					{{ $t('planner.actions.reschedule') }}
 				</VBtn>
 				<VBtn
 					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
 					color="primary"
 					@click="logTimeController?.openFromSelection"
 				>
-					Log time
+					{{ $t('general.logTime') }}
 				</VBtn>
 				<VBtn
 					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
@@ -90,7 +90,7 @@
 					color="secondaryOutline"
 					@click="crud.splitTask"
 				>
-					Split
+					{{ $t('planner.actions.split') }}
 				</VBtn>
 			</template>
 
@@ -471,8 +471,8 @@
 		const result = await openDialog<{ reason: string }>({
 			component: SkipReasonForm,
 			dialogProps: {
-				title: 'Skip task',
-				confirmBtnLabel: 'Skip',
+				title: t('planner.dialog.skipTaskTitle'),
+				confirmBtnLabel: t('planner.actions.skip'),
 				confirmBtnColor: 'warning',
 			},
 		})
@@ -485,8 +485,8 @@
 		const result = await openDialog<{ date: Date }>({
 			component: RescheduleForm,
 			dialogProps: {
-				title: 'Reschedule tasks',
-				confirmBtnLabel: 'Reschedule',
+				title: t('planner.dialog.rescheduleTasksTitle'),
+				confirmBtnLabel: t('planner.actions.reschedule'),
 			},
 		})
 		if (result) {

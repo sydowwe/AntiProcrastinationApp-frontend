@@ -9,7 +9,7 @@
 			:icon="getDayTypeIcon(dayType)"
 			class="mr-1"
 		/>
-		{{ dayType }}
+		{{ $t(`planner.dayType.${dayType}`) }}
 	</VChip>
 </template>
 

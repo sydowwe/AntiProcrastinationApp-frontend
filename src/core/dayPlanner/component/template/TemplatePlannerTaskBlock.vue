@@ -10,7 +10,7 @@
 			<div
 				:ref="setupDragHandle"
 				class="split-drag-handle"
-				title="Drag to other template"
+				:title="$t('planner.template.dragToOtherTemplate')"
 				@click.stop
 				@pointerdown.stop
 			>

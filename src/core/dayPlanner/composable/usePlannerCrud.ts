@@ -4,6 +4,7 @@ import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlann
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
+import { useI18n } from 'vue-i18n'
 
 export function usePlannerCrud<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -22,6 +23,7 @@ export function usePlannerCrud<
 ) {
 	const { push } = useUndoStack()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	function undoDate() {
 		return store.viewedDate ? new Date(store.viewedDate) : undefined
@@ -39,19 +41,19 @@ export function usePlannerCrud<
 		store.setGridPositionFromSpan(response)
 		store.tasks.push(response)
 		push({
-			description: 'Task created',
+			description: t('planner.undo.taskCreated'),
 			date: undoDate(),
 			undo: async () => {
 				await api.deleteEntity(response.id)
 				store.tasks = store.tasks.filter(t => t.id !== response.id)
 			},
 		})
-		showSuccessSnackbar('Task created')
+		showSuccessSnackbar(t('planner.feedback.taskCreated'))
 	}
 
 	async function edit(id: number, request: TTaskRequest) {
 		if (!request.startTime || !request.endTime) {
-			showErrorSnackbar('Set start time and end time')
+			showErrorSnackbar(t('planner.feedback.setStartEndTimeError'))
 			return
 		}
 		const index = store.tasks.findIndex(e => e.id === id)
@@ -69,7 +71,7 @@ export function usePlannerCrud<
 			updatedItem.isDuringBackgroundTask = store.checkOverlapsBackground(updatedItem)
 		}
 		push({
-			description: 'Task updated',
+			description: t('planner.undo.taskUpdated'),
 			date: undoDate(),
 			undo: async () => {
 				const undoRequest = api.buildRequestFromEntity(originalTask)
@@ -81,7 +83,7 @@ export function usePlannerCrud<
 				if (idx >= 0) store.tasks[idx] = restored
 			},
 		})
-		showSuccessSnackbar('Task updated')
+		showSuccessSnackbar(t('planner.feedback.taskUpdated'))
 	}
 
 	async function del() {
@@ -107,7 +109,7 @@ export function usePlannerCrud<
 		}
 		store.deleteDialog = false
 		push({
-			description: 'Task deleted',
+			description: t('planner.undo.taskDeleted'),
 			date: undoDate(),
 			undo: async () => {
 				for (const task of deletedTasks) {
@@ -124,7 +126,7 @@ export function usePlannerCrud<
 				}
 			},
 		})
-		showSuccessSnackbar('Task deleted')
+		showSuccessSnackbar(t('planner.feedback.taskDeleted'))
 	}
 
 	async function splitTask() {
@@ -139,7 +141,7 @@ export function usePlannerCrud<
 		const totalDuration = effectiveEndMin - startMin
 
 		if (totalDuration < 2) {
-			showErrorSnackbar('Task is too short to split')
+			showErrorSnackbar(t('planner.feedback.taskTooShortToSplit'))
 			return
 		}
 
@@ -171,7 +173,7 @@ export function usePlannerCrud<
 		store.selectedTaskIds.clear()
 
 		push({
-			description: 'Task split',
+			description: t('planner.undo.taskSplit'),
 			date: undoDate(),
 			undo: async () => {
 				await api.deleteEntity(newTask.id)
@@ -187,7 +189,7 @@ export function usePlannerCrud<
 			},
 		})
 
-		showSuccessSnackbar('Task split')
+		showSuccessSnackbar(t('planner.feedback.taskSplit'))
 	}
 
 	return { create, edit, del, splitTask }

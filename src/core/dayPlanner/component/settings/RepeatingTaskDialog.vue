@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
-		:title="editedId ? 'Edit Repeating Task' : 'New Repeating Task'"
+		:title="editedId ? $t('planner.settings.editRepeatingTaskTitle') : $t('planner.settings.newRepeatingTaskTitle')"
 		:isSmall="false"
 		@confirmed="save"
 		@closed="reset"
@@ -35,7 +35,7 @@
 				<!-- Background toggle -->
 				<VSwitch
 					v-model="data.isBackground"
-					label="Is background"
+					:label="$t('planner.settings.isBackgroundLabel')"
 					color="primary"
 					hideDetails
 				/>
@@ -43,7 +43,7 @@
 				<VSwitch
 					v-if="editedId"
 					v-model="data.isActive"
-					label="Active"
+					:label="$t('planner.settings.activeSwitchLabel')"
 					color="success"
 					hideDetails
 				/>
@@ -52,7 +52,7 @@
 			<!-- Location -->
 			<VTextField
 				v-model="data.location"
-				label="Location"
+				:label="$t('planner.settings.locationLabel')"
 				prependInnerIcon="location-dot"
 				hideDetails
 			/>
@@ -71,7 +71,7 @@
 			<!-- Notes -->
 			<VTextarea
 				v-model="data.notes"
-				label="Notes"
+				:label="$t('planner.settings.notesLabel')"
 				prependInnerIcon="note-sticky"
 				rows="2"
 				autoGrow
@@ -82,7 +82,9 @@
 
 			<!-- Recurrence type -->
 			<div>
-				<div class="text-caption text-medium-emphasis mb-2 text-uppercase font-weight-bold">Recurrence</div>
+				<div class="text-caption text-medium-emphasis mb-2 text-uppercase font-weight-bold">
+					{{ $t('planner.settings.recurrenceLabel') }}
+				</div>
 				<VBtnToggle
 					v-model="data.recurrenceType"
 					mandatory
@@ -105,7 +107,7 @@
 
 			<!-- DayOfWeek detail -->
 			<div v-if="data.recurrenceType === RecurrenceType.DayOfWeek">
-				<div class="text-caption text-medium-emphasis mb-2">Days of week</div>
+				<div class="text-caption text-medium-emphasis mb-2">{{ $t('planner.settings.daysOfWeekLabel') }}</div>
 				<div class="d-flex flex-wrap ga-2">
 					<VChip
 						v-for="day in dayOfWeekOptions"
@@ -134,7 +136,7 @@
 
 			<!-- DayOfMonth detail -->
 			<div v-else-if="data.recurrenceType === RecurrenceType.DayOfMonth">
-				<div class="text-caption text-medium-emphasis mb-2">Days of month</div>
+				<div class="text-caption text-medium-emphasis mb-2">{{ $t('planner.settings.daysOfMonthLabel') }}</div>
 				<div class="d-flex flex-wrap ga-1">
 					<VChip
 						v-for="d in 31"
@@ -164,11 +166,13 @@
 
 			<!-- DateRange detail -->
 			<div v-else-if="data.recurrenceType === RecurrenceType.DateRange">
-				<div class="text-caption text-medium-emphasis mb-2">Active date range</div>
+				<div class="text-caption text-medium-emphasis mb-2">
+					{{ $t('planner.settings.activeDateRangeLabel') }}
+				</div>
 				<div class="d-flex ga-3 flex-wrap">
 					<VDateInput
 						v-model="fromDate"
-						label="From"
+						:label="$t('planner.settings.fromLabel')"
 						clearable
 						density="comfortable"
 						:hideDetails="!(showRecurrenceError && recurrenceError)"
@@ -179,7 +183,7 @@
 					/>
 					<VDateInput
 						v-model="toDate"
-						label="To"
+						:label="$t('planner.settings.toLabel')"
 						clearable
 						density="comfortable"
 						:hideDetails="!(showRecurrenceError && recurrenceError)"
@@ -191,7 +195,7 @@
 
 			<!-- DayType detail -->
 			<div v-else-if="data.recurrenceType === RecurrenceType.DayType">
-				<div class="text-caption text-medium-emphasis mb-2">Day types</div>
+				<div class="text-caption text-medium-emphasis mb-2">{{ $t('planner.settings.dayTypesLabel') }}</div>
 				<div class="d-flex flex-wrap ga-2">
 					<VChip
 						v-for="type in dayTypeOptions"
@@ -202,7 +206,7 @@
 						style="cursor: pointer"
 						@click="toggleDayType(type)"
 					>
-						{{ type }}
+						{{ $t(`planner.dayType.${type}`) }}
 					</VChip>
 				</div>
 				<div
@@ -236,6 +240,7 @@
 	import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const emit = defineEmits<{
 		create: [req: RepeatingPlannerTaskRequest]
@@ -245,6 +250,7 @@
 	const { fetchAll: fetchImportanceOptions } = useTaskImportanceCrud()
 	const { requiredRule } = useGeneralRules()
 	const dayOfWeekOptions = useDayOfWeekOptions()
+	const { t } = useI18n()
 
 	const dialog = ref(false)
 	const editedId = ref<number | undefined>()
@@ -258,22 +264,24 @@
 	const recurrenceError = computed<string | null>(() => {
 		switch (data.value.recurrenceType) {
 			case RecurrenceType.DayOfWeek:
-				if (data.value.scheduledDays.length === 0) return 'Select at least one day'
+				if (data.value.scheduledDays.length === 0) return t('planner.settings.selectAtLeastOneDay')
 				if (hasActiveWindow.value && (!fromDate.value || !toDate.value))
-					return 'Both dates required for active window'
+					return t('planner.settings.bothDatesRequiredForWindow')
 				return null
 			case RecurrenceType.DayOfMonth:
-				if (data.value.scheduledDates.length === 0) return 'Select at least one day of month'
+				if (data.value.scheduledDates.length === 0) return t('planner.settings.selectAtLeastOneDayOfMonth')
 				if (hasActiveWindow.value && (!fromDate.value || !toDate.value))
-					return 'Both dates required for active window'
+					return t('planner.settings.bothDatesRequiredForWindow')
 				return null
 			case RecurrenceType.DateRange:
-				if (!fromDate.value && !toDate.value) return 'Both dates are required'
-				if (!fromDate.value) return 'Start date is required'
-				if (!toDate.value) return 'End date is required'
+				if (!fromDate.value && !toDate.value) return t('planner.settings.bothDatesRequired')
+				if (!fromDate.value) return t('planner.settings.startDateRequired')
+				if (!toDate.value) return t('planner.settings.endDateRequired')
 				return null
 			case RecurrenceType.DayType:
-				return data.value.scheduledForDayTypes.length === 0 ? 'Select at least one day type' : null
+				return data.value.scheduledForDayTypes.length === 0
+					? t('planner.settings.selectAtLeastOneDayType')
+					: null
 		}
 	})
 
@@ -283,7 +291,7 @@
 
 	const recurrenceTypes = Object.values(RecurrenceType).map(v => ({
 		value: v,
-		label: v.replace(/([A-Z])/g, ' $1').trim(),
+		label: t(`planner.recurrenceType.${v}`),
 		icon: getRecurrenceTypeIcon(v),
 	}))
 

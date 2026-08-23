@@ -12,7 +12,7 @@
 				value="all"
 				class="px-1 px-md-2 flex-grow-1"
 			>
-				All activities
+				{{ $t('planner.misc.allActivities') }}
 			</VBtn>
 			<VBtn
 				v-if="showTodo"
@@ -20,7 +20,7 @@
 				prependIcon="list-check"
 				class="px-1 px-md-2 flex-grow-1"
 			>
-				To-do list
+				{{ $t('planner.misc.toDoListMode') }}
 			</VBtn>
 			<VBtn
 				v-if="showRoutine"
@@ -28,7 +28,7 @@
 				prependIcon="rotate"
 				class="px-1 px-md-2 flex-grow-1"
 			>
-				Routine
+				{{ $t('planner.template.routine') }}
 			</VBtn>
 		</VBtnToggle>
 
@@ -39,7 +39,7 @@
 					:items="todoLists"
 					itemValue="id"
 					itemTitle="name"
-					label="List"
+					:label="$t('planner.misc.listLabel')"
 					clearable
 					prependIcon="filter"
 					density="compact"
@@ -49,7 +49,7 @@
 				<VIdAutocomplete
 					v-model="filterPriorityId"
 					:items="priorities"
-					label="Priority"
+					:label="$t('planner.misc.priorityLabel')"
 					clearable
 					density="compact"
 					hideDetails
@@ -61,13 +61,13 @@
 				:items="filteredTodoItems"
 				:itemTitle="(item: TodoListItemEntity) => item.activity.name"
 				itemValue="id"
-				label="Select activity"
+				:label="$t('planner.misc.selectActivityLabel')"
 				clearable
 				density="comfortable"
 				:loading="loadingTodo"
-				noDataText="No tasks found"
+				:noDataText="$t('planner.misc.noTasksFound')"
 				required
-				:rules="[(v: unknown) => v !== null || 'Please select a task']"
+				:rules="[(v: unknown) => v !== null || $t('planner.misc.pleaseSelectTask')]"
 			/>
 		</template>
 
@@ -76,7 +76,7 @@
 				class="mb-2"
 				v-model="filterPeriodId"
 				:items="routinePeriods"
-				label="Period"
+				:label="$t('planner.misc.periodLabel')"
 				clearable
 				prependIcon="filter"
 				density="compact"
@@ -87,13 +87,13 @@
 				:items="filteredRoutineItems"
 				:itemTitle="(item: RoutineTodoListItemEntity) => item.activity.name"
 				itemValue="id"
-				label="Select activity"
+				:label="$t('planner.misc.selectActivityLabel')"
 				clearable
 				density="comfortable"
 				:loading="loadingRoutine"
-				noDataText="No tasks found"
+				:noDataText="$t('planner.misc.noTasksFound')"
 				required
-				:rules="[(v: unknown) => v !== null || 'Please select a task']"
+				:rules="[(v: unknown) => v !== null || $t('planner.misc.pleaseSelectTask')]"
 			/>
 		</template>
 	</div>

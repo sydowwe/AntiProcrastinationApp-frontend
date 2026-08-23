@@ -39,7 +39,7 @@
 
 			<SubtleCard
 				v-if="calendar?.holidayName"
-				title="Holiday name"
+				:title="$t('planner.calendar.holidayNameTitle')"
 				color="error"
 				:text="calendar.holidayName"
 				icon="gift"
@@ -47,7 +47,7 @@
 
 			<SubtleCard
 				v-if="calendar?.weather"
-				title="Weather"
+				:title="$t('planner.calendar.weatherTitle')"
 				color="info"
 				:text="calendar.weather"
 				icon="cloud-sun"
@@ -55,7 +55,7 @@
 
 			<SubtleCard
 				v-if="calendar?.notes"
-				title="Notes"
+				:title="$t('planner.calendar.notesTitle')"
 				color="warning"
 				:text="calendar.notes"
 				icon="note-sticky"

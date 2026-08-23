@@ -1,7 +1,7 @@
 <template>
 	<MyDialog
 		v-model="model"
-		title="Day Details"
+		:title="$t('planner.calendar.dayDetailsTitle')"
 		maxWidth="600px"
 		@confirmed="save"
 	>
@@ -25,9 +25,9 @@
 				<!-- Label -->
 				<VTextField
 					v-model="data.label"
-					label="Day Label"
+					:label="$t('planner.calendar.dayLabelLabel')"
 					prependIcon="tag"
-					placeholder="e.g., Project Deadline, Birthday..."
+					:placeholder="$t('planner.calendar.dayLabelPlaceholder')"
 					clearable
 					hideDetails
 				/>
@@ -36,7 +36,7 @@
 				<div class="d-flex ga-4 flex-wrap">
 					<VSelect
 						v-model="data.dayType"
-						label="Day Type"
+						:label="$t('planner.calendar.dayTypeLabel')"
 						:items="dayTypeOptions"
 						prependIcon="calendar-day"
 						maxWidth="200px"
@@ -44,7 +44,7 @@
 					/>
 					<VSelect
 						v-model="data.location"
-						label="Location"
+						:label="$t('planner.calendar.locationLabel')"
 						:items="locationOptions"
 						prependIcon="location-dot"
 						clearable
@@ -53,20 +53,20 @@
 				</div>
 				<VTextField
 					v-model="data.weather"
-					label="Weather"
+					:label="$t('planner.calendar.weatherLabel')"
 					prependIcon="cloud-sun"
-					placeholder="e.g., Sunny, Rainy..."
+					:placeholder="$t('planner.calendar.weatherPlaceholder')"
 					clearable
 					hideDetails
 				/>
 				<!-- Notes -->
 				<VTextarea
 					v-model="data.notes"
-					label="Notes"
+					:label="$t('planner.calendar.notesLabel')"
 					prependIcon="note-sticky"
 					rows="4"
 					autoGrow
-					placeholder="Add any notes about this day..."
+					:placeholder="$t('planner.calendar.notesPlaceholder')"
 				/>
 			</div>
 		</VForm>
@@ -84,6 +84,7 @@
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const props = defineProps<{
 		calendar?: Calendar
@@ -94,11 +95,12 @@
 	const model = defineModel<boolean>({ required: true })
 	const { updateWithResponse } = useCalendarQuery()
 	const { showErrorSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const data = ref<CalendarRequest>(new CalendarRequest())
 
-	const locationOptions = Object.values(Location).map(v => ({ title: v, value: v }))
+	const locationOptions = Object.values(Location).map(v => ({ title: t(`planner.location.${v}`), value: v }))
 	const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
 	function getNaturalDayType(): DayType {
@@ -112,7 +114,7 @@
 	const dayTypeOptions = computed(() => {
 		const naturalType = getNaturalDayType()
 		// Show natural type + override types (Vacation, SickDay, Special)
-		return [naturalType, ...overrideDayTypes]
+		return [naturalType, ...overrideDayTypes].map(v => ({ title: t(`planner.dayType.${v}`), value: v }))
 	})
 
 	// Watch for calendar changes to populate form
@@ -137,7 +139,7 @@
 				model.value = false
 			})
 			.catch(() => {
-				showErrorSnackbar('Failed to update calendar')
+				showErrorSnackbar(t('planner.feedback.calendarUpdateFailed'))
 			})
 	}
 </script>

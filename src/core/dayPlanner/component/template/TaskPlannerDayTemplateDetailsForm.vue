@@ -5,22 +5,22 @@
 	>
 		<VTextField
 			v-model="formData.name"
-			label="Template Name"
-			placeholder="Enter template name"
+			:label="$t('planner.template.templateNameLabel')"
+			:placeholder="$t('planner.template.templateNamePlaceholder')"
 			hideDetails
 		/>
 
 		<div class="mx-auto d-flex ga-8 ga-xl-4 flex-xl-row">
 			<TimePicker
 				v-model="formData.defaultWakeUpTime"
-				label="Wake Up"
+				:label="$t('planner.template.wakeUpLabel')"
 				icon="alarm-clock"
 				allowedMinutesSelected="10"
 				hideDetails
 			/>
 			<TimePicker
 				v-model="formData.defaultBedTime"
-				label="Bed Time"
+				:label="$t('planner.template.bedTimeLabel')"
 				icon="bed"
 				allowedMinutesSelected="10"
 				hideDetails
@@ -29,8 +29,8 @@
 
 		<VTextarea
 			v-model="formData.description"
-			label="Description"
-			placeholder="Enter template description"
+			:label="$t('planner.template.descriptionLabel')"
+			:placeholder="$t('planner.template.descriptionPlaceholder')"
 			rows="2"
 			hideDetails
 		/>
@@ -38,21 +38,21 @@
 			<VSelect
 				v-model="formData.suggestedForDayType"
 				:items="dayTypeOptions"
-				label="Suggested for Day Type"
+				:label="$t('planner.template.suggestedDayTypeLabel')"
 				hideDetails
 			/>
 			<VSelect
 				v-model="formData.suggestedLocation"
 				:items="locationOptions"
-				label="Suggested Location"
+				:label="$t('planner.template.suggestedLocationLabel')"
 				clearable
 				hideDetails
 			/>
 		</div>
 		<VCombobox
 			v-model="formData.tags"
-			label="Tags"
-			placeholder="Add tags"
+			:label="$t('planner.template.tagsLabel')"
+			:placeholder="$t('planner.template.tagsPlaceholder')"
 			:singleLine="false"
 			chips
 			multiple
@@ -68,10 +68,12 @@
 				class="flex-fill"
 				:class="{ 'w-100': !isDialog }"
 				v-model="formData.icon"
-				label="Icon"
+				:label="$t('planner.template.iconLabel')"
 			/>
 			<div>
-				<label class="text-caption text-medium-emphasis mb-1 d-block">Scheduled Days</label>
+				<label class="text-caption text-medium-emphasis mb-1 d-block">
+					{{ $t('planner.template.scheduledDaysLabel') }}
+				</label>
 				<DayOfWeekPicker v-model="formData.scheduledDays" />
 			</div>
 		</div>
@@ -79,10 +81,11 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
-	import { dayTypeOptions } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
+	import { computed, ref, watch } from 'vue'
+	import { dayTypeOptions as dayTypeValues } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
 	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
-	import { locationOptions } from '@/core/dayPlanner/dto/enum/Location.ts'
+	import { locationOptions as locationValues } from '@/core/dayPlanner/dto/enum/Location.ts'
+	import { useI18n } from 'vue-i18n'
 	import { TaskPlannerDayTemplateRequest } from '@/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
@@ -99,6 +102,12 @@
 		defaultValues?: TaskPlannerDayTemplateRequest | null
 		isDialog?: boolean
 	}>()
+
+	const { t } = useI18n()
+	const dayTypeOptions = computed(() => dayTypeValues.map(v => ({ title: t(`planner.dayType.${v}`), value: v })))
+	const locationOptions = computed(() =>
+		locationValues.map(o => ({ title: t(`planner.location.${o.value}`), value: o.value })),
+	)
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const formData = ref(new TaskPlannerDayTemplateRequest())

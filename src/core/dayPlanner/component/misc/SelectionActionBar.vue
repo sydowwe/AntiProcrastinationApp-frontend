@@ -9,13 +9,13 @@
 				class="text-textMuted d-flex align-center ga-1 font-weight-medium"
 				style="font-size: 0.9rem; line-height: 1.2rem"
 			>
-				{{ store.pendingClipboard.mode === 'cut' ? 'Cut' : 'Duplicating' }}:
+				{{ store.pendingClipboard.mode === 'cut' ? $t('planner.misc.cut') : $t('planner.misc.duplicating') }}:
 				{{
 					store.pendingClipboard.tasks.length === 1
-						? (store.pendingClipboard.tasks[0].activity?.name ?? 'task')
-						: `${store.pendingClipboard.tasks[0].activity?.name ?? 'task'} +${store.pendingClipboard.tasks.length - 1} more`
+						? (store.pendingClipboard.tasks[0].activity?.name ?? $t('planner.misc.taskFallback'))
+						: `${store.pendingClipboard.tasks[0].activity?.name ?? $t('planner.misc.taskFallback')} ${$t('planner.misc.plusMore', { count: store.pendingClipboard.tasks.length - 1 })}`
 				}}
-				— click a slot to place
+				{{ $t('planner.misc.clickSlotToPlace') }}
 			</span>
 		</template>
 
@@ -26,7 +26,13 @@
 					class="font-weight-medium selection-count"
 					style="font-size: 1rem; line-height: 1.2rem"
 				>
-					{{ store.selectedTaskIds.size }} selected
+					{{
+						$t(
+							'planner.misc.selectedCount',
+							{ count: store.selectedTaskIds.size },
+							store.selectedTaskIds.size,
+						)
+					}}
 				</span>
 			</span>
 			<VBtn
@@ -34,7 +40,7 @@
 				color="error"
 				@click="store.openDeleteDialog"
 			>
-				Delete
+				{{ $t('general.delete') }}
 			</VBtn>
 			<VBtn
 				v-if="store.selectedTaskIds.size === 1"
@@ -42,21 +48,21 @@
 				color="primaryOutline"
 				@click="store.openEditDialog"
 			>
-				Edit
+				{{ $t('general.edit') }}
 			</VBtn>
 			<VBtn
 				variant="tonal"
 				color="secondaryOutline"
 				@click="store.startCut"
 			>
-				Cut
+				{{ $t('planner.misc.cut') }}
 			</VBtn>
 			<VBtn
 				variant="tonal"
 				color="secondaryOutline"
 				@click="store.startDuplicate"
 			>
-				Duplicate
+				{{ $t('planner.template.duplicateAction') }}
 			</VBtn>
 
 			<slot :store="store"></slot>

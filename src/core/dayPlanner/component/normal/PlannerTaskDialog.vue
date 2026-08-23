@@ -1,7 +1,13 @@
 <template>
 	<BasePlannerTaskDialog
 		ref="baseDialog"
-		:title="store.isDuplicating ? 'Duplicate Task' : !isEdit ? 'Add New Task' : 'Edit Task'"
+		:title="
+			store.isDuplicating
+				? $t('planner.misc.duplicateTaskTitle')
+				: !isEdit
+					? $t('planner.misc.addNewTaskTitle')
+					: $t('planner.misc.editTaskTitle')
+		"
 		:store
 		:createEmptyRequest="createEmptyRequest"
 		:hideActivitySelector="!isEdit && pickerMode !== 'all'"
@@ -39,7 +45,7 @@
 				:items="statusOptions"
 				itemTitle="title"
 				itemValue="value"
-				label="Status"
+				:label="$t('planner.misc.statusLabel')"
 				class="pt-4"
 			/>
 		</template>
