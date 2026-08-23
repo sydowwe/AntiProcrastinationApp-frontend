@@ -30,7 +30,7 @@
 	import type { Ref } from 'vue'
 	import BasePlannerTaskDialog from '@/core/dayPlanner/component/BasePlannerTaskDialog.vue'
 	import PlannerActivitySourcePicker from '@/core/dayPlanner/component/PlannerActivitySourcePicker.vue'
-	import { useTemplateDayPlannerStore } from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
+	import type { ITemplateDayPlannerStore } from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
@@ -40,7 +40,10 @@
 		(e: 'create', task: TemplatePlannerTaskRequest): void
 	}>()
 
-	const store = useTemplateDayPlannerStore()
+	// The injected store, not `useTemplateDayPlannerStore()`: the split view mounts this dialog twice,
+	// and hardcoding the main store made both copies mirror it — one `n` in the left panel opened two
+	// identical dialogs, while the right panel's own store could never surface one at all.
+	const store = inject<ITemplateDayPlannerStore>('plannerStore')!
 	const baseDialog = ref<InstanceType<typeof BasePlannerTaskDialog>>()
 	const pickerMode = ref<'all' | 'routine'>('all')
 	const selectedRoutineItem = inject<Ref<RoutineTodoListItemEntity | null>>('selectedRoutineItem')

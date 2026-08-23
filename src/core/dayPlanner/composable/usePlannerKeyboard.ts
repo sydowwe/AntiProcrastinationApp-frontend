@@ -1,19 +1,29 @@
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, type Ref } from 'vue'
 import { type IBasePlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
+import { usePlannerKeyboardScope } from '@/core/dayPlanner/composable/usePlannerKeyboardScope.ts'
 
 export function usePlannerKeyboard<
 	TTask extends IBasePlannerTask<TTaskRequest>,
 	TTaskRequest extends IBasePlannerTaskRequest,
->(store: IBaseDayPlannerStore<TTask, TTaskRequest>, removePreviewTasksFromGrid: () => void) {
+>(
+	store: IBaseDayPlannerStore<TTask, TTaskRequest>,
+	rootRef: Ref<HTMLElement | undefined>,
+	removePreviewTasksFromGrid: () => void,
+) {
 	const undoStack = useUndoStack()
+	// The listener stays on `document` — the grid is not focusable and hotkeys must work while the
+	// pointer sits over the side panel — but it only acts for the planner the user is driving.
+	const { isActive, hasOtherInstances } = usePlannerKeyboardScope(rootRef)
 
 	let arrowDebounceTimer: ReturnType<typeof setTimeout> | null = null
 	let arrowOriginals: TTask[] | null = null
 
 	function handleKeyDown(e: KeyboardEvent): void {
+		if (!isActive.value) return
+
 		const target = e.target as HTMLElement
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 
@@ -113,6 +123,9 @@ export function usePlannerKeyboard<
 		document.removeEventListener('keydown', handleKeyDown)
 		if (arrowDebounceTimer !== null) clearTimeout(arrowDebounceTimer)
 		arrowOriginals = null
-		undoStack.clear()
+		// The undo stack is a module-level singleton shared by both split-view panels, so only the
+		// last planner leaving the screen may clear it — otherwise closing one panel throws away the
+		// other panel's still-usable history.
+		if (!hasOtherInstances()) undoStack.clear()
 	})
 }

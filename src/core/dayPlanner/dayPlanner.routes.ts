@@ -37,6 +37,9 @@ export const dayPlannerRoutes: RouteRecordRaw[] = [
 		path: '/day-planner/templates/:templateId',
 		name: 'dayPlannerTemplate',
 		component: TemplateDayPlannerView,
-		props: true,
+		// No `props: true`: the view's `templateId` prop is `number | null` and is how TemplateSplitView
+		// feeds its two panels. Route params arrive as strings, so passing them through here would
+		// shadow the prop with a string and break every numeric consumer downstream. The view reads the
+		// param itself instead.
 	},
 ]

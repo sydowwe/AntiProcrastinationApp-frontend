@@ -102,7 +102,7 @@
 			addPreviewTasksToGrid,
 			removePreviewTasksFromGrid,
 		})
-	usePlannerKeyboard(store, removePreviewTasksFromGrid)
+	usePlannerKeyboard(store, tasksColumnRef, removePreviewTasksFromGrid)
 
 	function scrollToNow(): void {
 		if (!store.viewedDate) return

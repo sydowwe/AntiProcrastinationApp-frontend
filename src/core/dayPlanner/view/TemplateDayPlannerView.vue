@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+	import { computed, onMounted, provide, ref, watch } from 'vue'
 	import { useDisplay } from 'vuetify'
 	import DayPlanner from '@/core/dayPlanner/component/DayPlanner.vue'
 	import TemplatePlannerHeader from '@/core/dayPlanner/component/template/TemplatePlannerHeader.vue'
@@ -134,15 +134,28 @@
 	import { useRoute } from 'vue-router'
 	import TemplatePlannerPanel from '@/core/dayPlanner/component/template/TemplatePlannerPanel.vue'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
+	import { plannerInstancesMounted } from '@/core/dayPlanner/composable/usePlannerKeyboardScope.ts'
 
-	const { storeId = 'main', isSplitView = false } = defineProps<{
+	const {
+		storeId = 'main',
+		isSplitView = false,
+		templateId: templateIdProp = null,
+	} = defineProps<{
 		storeId?: 'main' | 'secondary'
 		isSplitView?: boolean
+		/** Passed by TemplateSplitView, which has no `:templateId` route param to read. */
+		templateId?: number | null
 	}>()
 
 	const route = useRoute()
 	const { mdAndUp } = useDisplay()
-	const templateId = computed(() => (route.params.templateId ? parseInt(route.params.templateId as string) : null))
+
+	// One source of truth for every consumer below: the split view hands the id down as a prop, the
+	// standalone route carries it in the URL. `dayPlannerTemplate` deliberately does not set
+	// `props: true` — that would deliver the param as a string and shadow this.
+	const templateId = computed(
+		() => templateIdProp ?? (route.params.templateId ? parseInt(route.params.templateId as string) : null),
+	)
 
 	const {
 		createWithResponse: createTaskWithResponse,
@@ -223,20 +236,32 @@
 	})
 
 	onMounted(async () => {
-		undoStack.clear()
+		// Children mount first, so this instance is already counted: `<= 1` means this is the only
+		// planner on screen and the stack can only hold entries left behind by an earlier view.
+		// In the split view the second panel must not wipe the first panel's history.
+		if (plannerInstancesMounted() <= 1) undoStack.clear()
 		await loadTasks()
 	})
 
-	onUnmounted(() => {
-		undoStack.clear()
-	})
+	// Clearing on unmount is `usePlannerKeyboard`'s job — it is the one that knows whether the other
+	// split-view panel is still alive.
+
+	// A template switch legitimately fires loadTasks twice: once from the id watcher below, and once
+	// when TemplatePlannerPanel writes the new template's wake/bed times into the store. Both are in
+	// flight at the same time and the first one carries the previous template's view window, so only
+	// the newest response may touch the store.
+	let latestLoadToken = 0
 
 	async function loadTasks() {
-		if (templateId.value == null) return
+		const id = templateId.value
+		if (id == null) return
+		const token = ++latestLoadToken
 		if (!isSplitView) showFullScreenLoading()
-		store.tasks = await fetchFilteredTasks(
-			new TemplatePlannerTaskFilter(templateId.value, store.viewStartTime, store.viewEndTime),
+		const tasks = await fetchFilteredTasks(
+			new TemplatePlannerTaskFilter(id, store.viewStartTime, store.viewEndTime),
 		)
+		if (token !== latestLoadToken) return
+		store.tasks = tasks
 		store.initializeTaskGridPositions()
 	}
 
@@ -248,13 +273,12 @@
 		{ deep: true },
 	)
 
-	watch(
-		() => templateId,
-		async () => {
-			store.resetStore()
-			await loadTasks()
-		},
-	)
+	// Watch the value, not the ref: `() => templateId` returns the computed object, whose identity
+	// never changes, so the previous form fired exactly never.
+	watch(templateId, async () => {
+		store.resetStore()
+		await loadTasks()
+	})
 
 	defineExpose({ store, loadTasks })
 </script>
