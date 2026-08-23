@@ -33,7 +33,7 @@ export class DayPlan {
 		return new DayPlan(
 			date,
 			calendar == null ? null : Calendar.fromJson(calendar),
-			PlannerTask.listFromJsonList(tasks),
+			PlannerTask.listFromObjects(tasks),
 			hasPlan,
 			streak == null ? PlannerStreak.empty() : PlannerStreak.fromJson(streak),
 		)

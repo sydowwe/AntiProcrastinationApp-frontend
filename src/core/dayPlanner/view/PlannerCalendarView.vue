@@ -110,9 +110,11 @@
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useCalendarModes } from '@/core/dayPlanner/composable/useCalendarModes.ts'
+	import { useI18n } from 'vue-i18n'
 
+	const { t } = useI18n()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
-	const { showFullScreenLoading } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
@@ -166,11 +168,15 @@
 
 	onMounted(async () => {
 		showFullScreenLoading()
-		await settingsStore.loadSettings()
-		applyTemplateId.value = settingsStore.defaultApplyTemplateId
-		applyConflictResolution.value = settingsStore.defaultConflictResolution
-		applyPreviewMode.value = settingsStore.defaultApplyPreviewMode
-		activeTemplates.value = (await fetchAllTemplates()).filter(t => t.isActive)
+		try {
+			await settingsStore.loadSettings()
+			applyTemplateId.value = settingsStore.defaultApplyTemplateId
+			applyConflictResolution.value = settingsStore.defaultConflictResolution
+			applyPreviewMode.value = settingsStore.defaultApplyPreviewMode
+			activeTemplates.value = (await fetchAllTemplates()).filter(template => template.isActive)
+		} finally {
+			hideFullScreenLoading()
+		}
 	})
 
 	watch(calendarDays, async days => {
@@ -200,7 +206,7 @@
 		}
 		if (isApplyTemplateMode.value) {
 			if (applyTemplateId.value === null) {
-				showErrorSnackbar('Select a template first')
+				showErrorSnackbar(t('dayPlanner.planner.feedback.selectTemplateFirst'))
 				return
 			}
 			const template = activeTemplates.value.find(t => t.id === applyTemplateId.value)!
@@ -240,9 +246,9 @@
 				new ApplyTemplateToTaskPlannerRequest(template.id, day.id, applyConflictResolution.value, taskRequests),
 			)
 			refresh()
-			showSuccessSnackbar(`Template applied`)
+			showSuccessSnackbar(t('dayPlanner.planner.feedback.templateApplied'))
 		} catch {
-			showErrorSnackbar('Failed to apply template')
+			showErrorSnackbar(t('dayPlanner.planner.feedback.templateApplyFailed'))
 		}
 	}
 
@@ -307,9 +313,19 @@
 			isBulkSelectMode.value = false
 			refresh()
 
-			if (failed > 0)
-				showErrorSnackbar(`Applied to ${days.length - failed}/${days.length} days — ${failed} failed`)
-			else showSuccessSnackbar(`Template applied to ${days.length} day(s)`)
+			if (failed > 0) {
+				showErrorSnackbar(
+					t('dayPlanner.planner.feedback.bulkTemplateApplyPartial', {
+						succeeded: days.length - failed,
+						total: days.length,
+						failed,
+					}),
+				)
+			} else {
+				showSuccessSnackbar(
+					t('dayPlanner.planner.feedback.bulkTemplateApplied', { count: days.length }, days.length),
+				)
+			}
 		} finally {
 			bulkApplying.value = false
 		}
@@ -324,7 +340,7 @@
 			)
 			const targetDays = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
 
-			await Promise.allSettled(
+			const results = await Promise.allSettled(
 				targetDays.flatMap(targetDay =>
 					sourceTasks.map(task => {
 						const req = PlannerTaskRequest.fromEntity(task)
@@ -334,28 +350,54 @@
 				),
 			)
 
+			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
 			isBulkSelectMode.value = false
 			refresh()
-			showSuccessSnackbar(`Tasks copied to ${targetDays.length} day(s)`)
+
+			if (failed > 0) {
+				showErrorSnackbar(
+					t('dayPlanner.planner.feedback.tasksCopyPartial', {
+						succeeded: results.length - failed,
+						total: results.length,
+						failed,
+					}),
+				)
+			} else {
+				showSuccessSnackbar(
+					t('dayPlanner.planner.feedback.tasksCopied', { count: targetDays.length }, targetDays.length),
+				)
+			}
 		} catch {
-			showErrorSnackbar('Failed to copy tasks')
+			showErrorSnackbar(t('dayPlanner.planner.feedback.tasksCopyFailed'))
 		}
 	}
 
 	async function executeBulkDayTypeChange(dayType: DayType) {
 		const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
-		await Promise.allSettled(
+		const results = await Promise.allSettled(
 			days.map(d => {
 				const req = CalendarRequest.fromResponse(d)
 				req.dayType = dayType
 				return updateCalendar(d.id, req)
 			}),
 		)
+		const failed = results.filter(r => r.status === 'rejected').length
 		selectedDayIds.value = []
 		isBulkSelectMode.value = false
 		refresh()
-		showSuccessSnackbar(`Day type updated for ${days.length} day(s)`)
+
+		if (failed > 0) {
+			showErrorSnackbar(
+				t('dayPlanner.planner.feedback.dayTypeUpdatePartial', {
+					succeeded: days.length - failed,
+					total: days.length,
+					failed,
+				}),
+			)
+		} else {
+			showSuccessSnackbar(t('dayPlanner.planner.feedback.dayTypeUpdated', { count: days.length }, days.length))
+		}
 	}
 </script>
 

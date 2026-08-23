@@ -8,6 +8,7 @@ import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/Pat
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
+import type { AxiosRequestConfig } from 'axios'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -29,8 +30,12 @@ export function useTaskPlannerCrud() {
 	}
 
 	// The framework's `patch` targets `/{entity}/{id}` only; this endpoint is a sub-resource patch.
-	async function patchStatus(id: number, request: PatchPlannerTaskStatusRequest): Promise<void> {
-		await API.patch(`/${url}/${id}/status`, request)
+	async function patchStatus(
+		id: number,
+		request: PatchPlannerTaskStatusRequest,
+		requestConfig?: AxiosRequestConfig,
+	): Promise<void> {
+		await API.patch(`/${url}/${id}/status`, request, requestConfig)
 	}
 
 	// Shared by every "start tracking this task" entry point (the planner's own controller and the

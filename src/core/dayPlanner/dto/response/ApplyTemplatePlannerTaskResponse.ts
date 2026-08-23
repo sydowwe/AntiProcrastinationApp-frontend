@@ -10,7 +10,7 @@ export class ApplyTemplatePlannerTaskResponse {
 	public static fromJson(json: any): ApplyTemplatePlannerTaskResponse {
 		return new ApplyTemplatePlannerTaskResponse(
 			Calendar.fromJson(json.calendar),
-			PlannerTask.listFromJsonList(json.tasks),
+			PlannerTask.listFromObjects(json.tasks),
 		)
 	}
 }

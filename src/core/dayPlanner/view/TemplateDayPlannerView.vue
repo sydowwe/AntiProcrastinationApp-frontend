@@ -168,7 +168,7 @@
 		batchDelete: batchDeleteTask,
 	} = useTemplatePlannerTaskCrud()
 
-	const { showFullScreenLoading } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const undoStack = useUndoStack()
 
 	const store = storeId === 'secondary' ? useSecondaryTemplateDayPlannerStore() : useTemplateDayPlannerStore()
@@ -262,12 +262,16 @@
 		if (id == null) return
 		const token = ++latestLoadToken
 		if (!isSplitView) showFullScreenLoading()
-		const tasks = await fetchFilteredTasks(
-			new TemplatePlannerTaskFilter(id, store.viewStartTime, store.viewEndTime),
-		)
-		if (token !== latestLoadToken) return
-		store.tasks = tasks
-		store.initializeTaskGridPositions()
+		try {
+			const tasks = await fetchFilteredTasks(
+				new TemplatePlannerTaskFilter(id, store.viewStartTime, store.viewEndTime),
+			)
+			if (token !== latestLoadToken) return
+			store.tasks = tasks
+			store.initializeTaskGridPositions()
+		} finally {
+			if (!isSplitView) hideFullScreenLoading()
+		}
 	}
 
 	watch(

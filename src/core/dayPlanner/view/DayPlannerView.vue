@@ -167,9 +167,11 @@
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
+	import { useI18n } from 'vue-i18n'
 
+	const { t } = useI18n()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
-	const { showSuccessSnackbar } = useSnackbar()
+	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
 	const settingsStore = useDayPlannerSettingsStore()
 	const undoStack = useUndoStack()
@@ -372,20 +374,26 @@
 			throw new Error('No template selected')
 		}
 		showFullScreenLoading()
-		const tasksIncluded = store.tasks.filter(t => t.id < 0).map(t => PlannerTaskRequest.fromEntity(t))
-		const request = new ApplyTemplateToTaskPlannerRequest(
-			store.templateInPreview.id,
-			calendar.value!.id,
-			conflictResolution,
-			tasksIncluded,
-		)
-		const json = await API.post('calendar/apply-planner-template', request)
-		const response = ApplyTemplatePlannerTaskResponse.fromJson(json.data)
+		try {
+			const tasksIncluded = store.tasks
+				.filter(task => task.id < 0)
+				.map(task => PlannerTaskRequest.fromEntity(task))
+			const request = new ApplyTemplateToTaskPlannerRequest(
+				store.templateInPreview.id,
+				calendar.value!.id,
+				conflictResolution,
+				tasksIncluded,
+			)
+			const json = await API.post('calendar/apply-planner-template', request)
+			const response = ApplyTemplatePlannerTaskResponse.fromJson(json.data)
 
-		store.resetStore()
-		calendar.value = response.calendar
-		store.tasks = response.tasks
-		store.initializeTaskGridPositions()
+			store.resetStore()
+			calendar.value = response.calendar
+			store.tasks = response.tasks
+			store.initializeTaskGridPositions()
+		} finally {
+			hideFullScreenLoading()
+		}
 	}
 
 	async function handleStatusChange(taskId: number, status: PlannerTaskStatus) {
@@ -399,8 +407,9 @@
 				task.actualStartTime = null
 				task.actualEndTime = null
 			}
-			await patchStatus(taskId, request).catch(_error => {
+			await patchStatus(taskId, request, { _silent: true }).catch(() => {
 				task.status = previousStatus
+				showErrorSnackbar(t('dayPlanner.planner.feedback.taskStatusUpdateFailed'))
 			})
 			calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 		} else {
@@ -421,7 +430,7 @@
 			openSkipDialog()
 			return
 		}
-		await Promise.all(
+		const results = await Promise.allSettled(
 			selectedTaskIds.map(async taskId => {
 				const task = store.tasks.find(e => e.id === taskId)
 				if (!task) return
@@ -431,13 +440,31 @@
 					task.actualStartTime = null
 					task.actualEndTime = null
 				}
-				await patchStatus(taskId, new PatchPlannerTaskStatusRequest(status)).catch(() => {
+				try {
+					await patchStatus(taskId, new PatchPlannerTaskStatusRequest(status), { _silent: true })
+				} catch (error) {
 					task.status = previousStatus
-				})
+					throw error
+				}
 			}),
 		)
 		calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 		store.clearSelection()
+
+		const failed = results.filter(r => r.status === 'rejected').length
+		if (failed > 0) {
+			showErrorSnackbar(
+				t('dayPlanner.planner.feedback.statusUpdatePartial', {
+					succeeded: results.length - failed,
+					total: results.length,
+					failed,
+				}),
+			)
+		} else {
+			showSuccessSnackbar(
+				t('dayPlanner.planner.feedback.statusUpdated', { count: results.length }, results.length),
+			)
+		}
 	}
 
 	async function openSkipDialog() {
@@ -469,16 +496,20 @@
 
 	async function handleSkip(reason: string) {
 		const ids = Array.from(store.selectedTaskIds)
-		await Promise.all(
+		const results = await Promise.allSettled(
 			ids.map(async id => {
 				const task = store.tasks.find(t => t.id === id) as PlannerTask
 				if (!task) return
-				await patch(id, {
-					startTime: task.startTime,
-					endTime: task.endTime,
-					status: PlannerTaskStatus.Cancelled,
-					skipReason: reason,
-				})
+				await patch(
+					id,
+					{
+						startTime: task.startTime,
+						endTime: task.endTime,
+						status: PlannerTaskStatus.Cancelled,
+						skipReason: reason,
+					},
+					{ _silent: true },
+				)
 				const idx = store.tasks.findIndex(t => t.id === id)
 				if (idx >= 0) {
 					store.tasks[idx]!.isDone = false
@@ -488,24 +519,57 @@
 			}),
 		)
 		store.clearSelection()
-		showSuccessSnackbar(ids.length > 1 ? 'Tasks skipped' : 'Task skipped')
+
+		const failed = results.filter(r => r.status === 'rejected').length
+		if (failed > 0) {
+			showErrorSnackbar(
+				t('dayPlanner.planner.feedback.taskSkipPartial', {
+					succeeded: results.length - failed,
+					total: results.length,
+					failed,
+				}),
+			)
+		} else {
+			showSuccessSnackbar(t('dayPlanner.planner.feedback.taskSkipped', { count: results.length }, results.length))
+		}
 	}
 
 	async function handleReschedule(targetDate: Date) {
 		const targetCalendar = await fetchCalendarByDate(usStringToUrlString(formatDateForApi(targetDate)))
 		const ids = Array.from(store.selectedTaskIds)
-		await Promise.all(
-			ids.map(id => {
+		const results = await Promise.allSettled(
+			ids.map(async id => {
 				const task = store.tasks.find(t => t.id === id)
 				if (!task) return
 				const request = PlannerTaskRequest.fromEntity(task as PlannerTask)
 				request.calendarId = targetCalendar.id
-				return update(id, request)
+				await update(id, request, { _silent: true })
+				return id
 			}),
 		)
-		store.tasks = store.tasks.filter(t => !store.selectedTaskIds.has(t.id))
+
+		const succeededIds = new Set(
+			results
+				.filter(r => r.status === 'fulfilled')
+				.map(r => (r as PromiseFulfilledResult<number | undefined>).value),
+		)
+		store.tasks = store.tasks.filter(t => !succeededIds.has(t.id))
 		store.clearSelection()
-		showSuccessSnackbar('Tasks rescheduled')
+
+		const failed = results.filter(r => r.status === 'rejected').length
+		if (failed > 0) {
+			showErrorSnackbar(
+				t('dayPlanner.planner.feedback.taskReschedulePartial', {
+					succeeded: results.length - failed,
+					total: results.length,
+					failed,
+				}),
+			)
+		} else {
+			showSuccessSnackbar(
+				t('dayPlanner.planner.feedback.tasksRescheduled', { count: results.length }, results.length),
+			)
+		}
 	}
 
 	async function updatedCalendar(updatedCalendar: Calendar): Promise<void> {

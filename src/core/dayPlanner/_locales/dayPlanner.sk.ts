@@ -39,6 +39,28 @@ const dayPlanner = {
 			body: `Šablónu „{name}“ nebude možné obnoviť.`,
 			cascade: `Počet úloh v šablóne: {count}. Vymažú sa spolu s ňou.`,
 		},
+		// Zámerne bez skloňovania počtu tam, kde ide o hlásenie čiastočného zlyhania (X/Y) — rovnaký
+		// trik ako templateDelete.cascade, aby sa predišlo štvortvarovej skloňovacej zhode s dvomi čísla.
+		feedback: {
+			selectTemplateFirst: `Najprv vyberte šablónu`,
+			templateApplied: `Šablóna použitá`,
+			templateApplyFailed: `Šablónu sa nepodarilo použiť`,
+			// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
+			bulkTemplateApplied: `Šablóna použitá pre {count} deň | Šablóna použitá pre {count} dni | Šablóna použitá pre {count} dní`,
+			bulkTemplateApplyPartial: `Šablóna použitá — úspešných dní: {succeeded}/{total}, zlyhalo: {failed}`,
+			dayTypeUpdated: `Typ dňa aktualizovaný pre {count} deň | Typ dňa aktualizovaný pre {count} dni | Typ dňa aktualizovaný pre {count} dní`,
+			dayTypeUpdatePartial: `Typ dňa aktualizovaný — úspešných dní: {succeeded}/{total}, zlyhalo: {failed}`,
+			tasksCopied: `Úlohy skopírované pre {count} deň | Úlohy skopírované pre {count} dni | Úlohy skopírované pre {count} dní`,
+			tasksCopyPartial: `Skopírovaných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
+			tasksCopyFailed: `Kopírovanie úloh zlyhalo`,
+			taskStatusUpdateFailed: `Zmenu stavu sa nepodarilo uložiť`,
+			statusUpdated: `1 úloha aktualizovaná | {count} úlohy aktualizované | {count} úloh aktualizovaných`,
+			statusUpdatePartial: `Zmena stavu — úspešných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
+			taskSkipped: `1 úloha preskočená | {count} úlohy preskočené | {count} úloh preskočených`,
+			taskSkipPartial: `Preskočených úloh: {succeeded}/{total}, zlyhalo: {failed}`,
+			tasksRescheduled: `1 úloha preplánovaná | {count} úlohy preplánované | {count} úloh preplánovaných`,
+			taskReschedulePartial: `Preplánovaných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
+		},
 	},
 }
 export default dayPlanner
