@@ -128,19 +128,10 @@
 	</VSheet>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts" generic="TTask extends AnyPlannerTask">
 	import { computed, inject } from 'vue'
-	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import type { AnyPlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
@@ -157,7 +148,7 @@
 		(e: 'resizeStart', payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }): void
 	}>()
 
-	const store = inject<TStore>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 	const { getBgColor } = useColor()
 
 	const isSelected = computed(() => store.selectedTaskIds.has(task.id))

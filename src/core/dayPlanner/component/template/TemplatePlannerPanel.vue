@@ -24,14 +24,14 @@
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import { inject, onMounted, ref, watch } from 'vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import type { ITemplateDayPlannerStore } from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
+	import { TEMPLATE_PLANNER_STORE_KEY } from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 
 	const { templateId } = defineProps<{
 		templateId: number | null
 	}>()
 
-	const store = inject<ITemplateDayPlannerStore>('plannerStore')!
+	const store = inject(TEMPLATE_PLANNER_STORE_KEY)!
 	const { showSuccessSnackbar } = useSnackbar()
 	const { update, fetchById } = useTaskPlannerDayTemplateTaskCrud()
 

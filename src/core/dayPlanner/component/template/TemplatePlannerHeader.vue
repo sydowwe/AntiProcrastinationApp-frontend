@@ -69,7 +69,7 @@
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 
 	const { title } = defineProps<{
@@ -78,21 +78,22 @@
 
 	const SNAP_INTERVAL_OPTIONS = [5, 10, 15, 30]
 
-	const store = inject<IBaseDayPlannerStore<any, any>>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 	const { undo, canUndo, stackSize, nextUndoDescription } = useUndoStack()
 
+	// Written straight onto the store rather than through `$patch` — see the note in DayPlanner.vue.
 	const viewStartTime = computed({
 		get: () => store.viewStartTime,
-		set: value => store.$patch({ viewStartTime: value }),
+		set: value => (store.viewStartTime = value),
 	})
 	const viewEndTime = computed({
 		get: () => store.viewEndTime,
-		set: value => store.$patch({ viewEndTime: value }),
+		set: value => (store.viewEndTime = value),
 	})
 	const timeSlotDurationModel = computed({
 		get: () => store.timeSlotDuration,
 		set: value => {
-			store.$patch({ timeSlotDuration: value })
+			store.timeSlotDuration = value
 			store.initializeTaskGridPositions()
 		},
 	})

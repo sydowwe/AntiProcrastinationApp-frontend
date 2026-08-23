@@ -95,15 +95,7 @@
 	</MyDialog>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts" generic="TTaskRequest extends IBasePlannerTaskRequest">
 	import { computed, nextTick, onMounted, ref, watch } from 'vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
@@ -114,13 +106,13 @@
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
-	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import type { PlannerTaskDialogApi } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 
 	const props = defineProps<{
 		title: string
-		store: TStore
+		store: AnyDayPlannerStore
 		createEmptyRequest: (suggestedDurationMinutes?: number) => TTaskRequest
 		hideActivitySelector?: boolean
 		suggestedDurationMinutes?: number
@@ -253,7 +245,7 @@
 		props.store.dialog = false
 	}
 
-	defineExpose({
+	defineExpose<PlannerTaskDialogApi>({
 		prefillActivity: (activityId: number) => activityFormField.value?.onOpenEdit(activityId),
 		resetActivityField: () => activityFormField.value?.reset(),
 		applySuggestedTime: (durationMinutes: number) => setDuration(durationMinutes),

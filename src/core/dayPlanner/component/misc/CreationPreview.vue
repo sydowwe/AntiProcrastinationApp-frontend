@@ -8,26 +8,16 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts">
 	import { computed, inject } from 'vue'
 	import type { CreationPreviewType } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
-	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
 	const { preview } = defineProps<{
 		preview?: CreationPreviewType
 	}>()
 
-	const store = inject<TStore>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 
 	const previewStyle = computed(() => {
 		if (!preview) return

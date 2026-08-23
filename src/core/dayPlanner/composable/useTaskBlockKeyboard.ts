@@ -1,12 +1,7 @@
 import type { ComputedRef } from 'vue'
-import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
-export function useTaskBlockKeyboard<
-	TTask extends IBasePlannerTask<TTaskRequest>,
-	TTaskRequest extends IBasePlannerTaskRequest,
->(store: IBaseDayPlannerStore<TTask, TTaskRequest>, isSelected: ComputedRef<boolean>) {
+export function useTaskBlockKeyboard(store: AnyDayPlannerStore, isSelected: ComputedRef<boolean>) {
 	function handleEnterKey(e: KeyboardEvent): void {
 		e.preventDefault()
 		if (isSelected.value && store.selectedTaskIds.size === 1) {

@@ -128,7 +128,7 @@
 
 	async function save() {
 		const isValid = await form.value?.validate()
-		if (!isValid.valid || !props.calendar!.id) {
+		if (!isValid?.valid || !props.calendar!.id) {
 			return
 		}
 		await updateWithResponse(props.calendar!.id, data.value)

@@ -87,7 +87,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		)
 	}
 
-	static listFromJsonList(objects: any[]) {
+	static listFromObjects(objects: any[]) {
 		return objects.map((item: object) => this.fromJson(item))
 	}
 }

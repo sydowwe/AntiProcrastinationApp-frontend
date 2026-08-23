@@ -56,23 +56,13 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts">
 	import { computed, inject, watch } from 'vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PlannerTimeColumn from '@/core/dayPlanner/component/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/core/dayPlanner/component/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/core/dayPlanner/component/misc/SelectionActionBar.vue'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
-	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
@@ -80,12 +70,14 @@
 		delete: []
 	}>()
 
-	const store = inject<TStore>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 	const { shouldConfirm } = useDeleteConfirmation()
 
+	// Written straight onto the store rather than through `$patch`: these are setup stores, so the
+	// field is a plain writable ref, and `$patch` on the injected contract could not be typed at all.
 	const deleteDialogVisible = computed({
 		get: () => store.deleteDialog,
-		set: value => store.$patch({ deleteDialog: value }),
+		set: value => (store.deleteDialog = value),
 	})
 
 	// Inverted against the other four call sites because the store opens this dialog, not a handler:

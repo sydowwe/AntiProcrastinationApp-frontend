@@ -107,12 +107,7 @@
 						lg="4"
 					>
 						<div
-							:ref="
-								(el: HTMLElement) =>
-									registerCard(el as HTMLElement, template.id, 'pinned', () =>
-										pinnedTemplates.map(t => t.id),
-									)
-							"
+							:ref="el => registerCard(el, template.id, 'pinned', () => pinnedTemplates.map(t => t.id))"
 							:class="{
 								'drag-over-before':
 									dragOverState?.templateId === template.id && dragOverState?.position === 'before',
@@ -156,10 +151,7 @@
 				>
 					<div
 						:ref="
-							(el: HTMLElement) =>
-								registerCard(el as HTMLElement, template.id, 'active', () =>
-									activeUnpinnedTemplates.map(t => t.id),
-								)
+							el => registerCard(el, template.id, 'active', () => activeUnpinnedTemplates.map(t => t.id))
 						"
 						:class="{
 							'drag-over-before':
@@ -209,8 +201,8 @@
 					>
 						<div
 							:ref="
-								(el: HTMLElement) =>
-									registerCard(el as HTMLElement, template.id, 'inactive', () =>
+								el =>
+									registerCard(el, template.id, 'inactive', () =>
 										inactiveUnpinnedTemplates.map(t => t.id),
 									)
 							"

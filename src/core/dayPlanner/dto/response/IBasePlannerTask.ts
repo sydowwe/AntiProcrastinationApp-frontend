@@ -23,13 +23,21 @@ export interface IBasePlannerTask<TRequest extends IBasePlannerTaskRequest> {
 	toRequest(): TRequest
 }
 
+/**
+ * The widest planner task: every concrete task type is assignable to it, because `TRequest` only
+ * ever appears in a return position. Use this wherever code touches the shared task surface and
+ * does not care which planner the task came from — it is what lets one non-generic store contract
+ * serve both planners (see `AnyDayPlannerStore`).
+ */
+export type AnyPlannerTask = IBasePlannerTask<IBasePlannerTaskRequest>
+
 export class TaskSpan {
 	constructor(
 		public startTime: Time,
 		public endTime: Time,
 	) {}
 
-	static fromTask(task: IBasePlannerTask<any>) {
+	static fromTask(task: AnyPlannerTask) {
 		return new TaskSpan(task.startTime, task.endTime)
 	}
 }

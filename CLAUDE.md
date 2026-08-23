@@ -320,10 +320,10 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
 
 - **Dev**: `npm run dev`
 - **Typecheck**: `npm run type-check` (= `vue-tsc --build --force`) — the `--force` matters. `--noEmit` checks nothing in this project setup, and a plain `--build`
-  is incremental and reports an inflated, unstable count. The baseline is **58 errors, all of them app-side in `src/core`** (measured 2026-08-20 by stashing to a
-  clean tree) — `src/_common` is clean as of `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
-  **This number has been stale every time anyone checked** (76 → 72 → 65 → 64 → 58, drifting down as unrelated work touched files): re-measure on a clean tree
-  before quoting it, and don't treat a small delta as a finding.
+  is incremental and reports an inflated, unstable count. The baseline is **33 errors, all of them app-side in `src/core`** (measured 2026-08-24) —
+  `src/_common` is clean as of `migration-revision.md` R13, down from 43. Any new `_common` error is therefore a regression, not baseline noise.
+  **This number has been stale every time anyone checked** (76 → 72 → 65 → 64 → 58 → 53 → 33, drifting down as unrelated work touched files): re-measure on a clean
+  tree before quoting it, and don't treat a small delta as a finding. `src/core/dayPlanner` is at **0** as of P2 and should stay there.
 - **Lint**: `npm run lint` (note: this runs `--fix`) — must stay at **0 errors** (3 known unused-variable warnings remain)
 - **Build**: `npx vite build` — bundles clean, and the workbox service-worker step now succeeds too (`dist/sw.js` + `dist/workbox-*.js`). The old
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB

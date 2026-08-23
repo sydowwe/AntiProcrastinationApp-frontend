@@ -3,24 +3,17 @@ import { computed } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
-import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
-export function useCurrentTimeIndicator<
-	TTask extends IBasePlannerTask<TTaskRequest>,
-	TTaskRequest extends IBasePlannerTaskRequest,
-	TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>,
->(store: TStore) {
+export function useCurrentTimeIndicator(store: AnyDayPlannerStore) {
 	const { currentTime } = useCurrentTime()
 
 	const isVisible = computed(() => {
 		// Only show in normal day planner (with viewedDate), not in template planner
-		const hasViewedDate = 'viewedDate' in store
-		if (!hasViewedDate) return false
+		const viewedDateValue = store.viewedDate
+		if (viewedDateValue === undefined) return false
 
-		// Get viewedDate and ensure it's a Date object (it might be string from persistence)
-		const viewedDateValue = (store as any).viewedDate
+		// Ensure it's a Date object (it might be a string from persistence)
 		const viewedDate = viewedDateValue instanceof Date ? viewedDateValue : new Date(viewedDateValue)
 
 		// `viewedDate` is a calendar day, so it is read with its browser-local fields; the right-hand

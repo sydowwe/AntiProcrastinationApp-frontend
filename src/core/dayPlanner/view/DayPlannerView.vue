@@ -62,10 +62,10 @@
 							<VListItem
 								v-for="option in statusOptions"
 								:key="option.value"
-								:prependIcon="getPlannerTaskStatusIcon(option)"
+								:prependIcon="getPlannerTaskStatusIcon(option.value)"
 								:title="option.title"
 								color="secondaryOutline"
-								@click="handleChangeStatusOnSelected(option.value as PlannerTaskStatus)"
+								@click="handleChangeStatusOnSelected(option.value)"
 							/>
 						</VList>
 					</VCard>
@@ -129,6 +129,7 @@
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -152,8 +153,11 @@
 	import SkipReasonForm from '@/core/dayPlanner/component/normal/SkipReasonForm.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import DayPlannerLogTimeController from '@/core/dayPlanner/component/normal/DayPlannerLogTimeController.vue'
-	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
-	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
+	import {
+		getPlannerTaskStatusIcon,
+		PlannerTaskStatus,
+		usePlannerTaskStatusOptions,
+	} from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import type { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 	import { useClipboardHandling } from '@/core/dayPlanner/composable/useClipboardHandling.ts'
@@ -172,7 +176,7 @@
 	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
 		useTaskPlannerCrud()
 
-	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
+	const statusOptions = usePlannerTaskStatusOptions()
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -212,7 +216,7 @@
 
 	const logTimeController = ref<InstanceType<typeof DayPlannerLogTimeController>>()
 	// Provide the store for slot content (EventBlock components)
-	provide('plannerStore', store)
+	provide(PLANNER_STORE_KEY, store)
 
 	const calendar = ref<Calendar>()
 	const calendarDetailsDialog = ref(false)

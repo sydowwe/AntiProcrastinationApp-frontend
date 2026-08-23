@@ -8,7 +8,7 @@
 			#prepend
 		>
 			<div
-				:ref="(el: HTMLElement) => setupDragHandle(el as HTMLElement | null)"
+				:ref="setupDragHandle"
 				class="split-drag-handle"
 				title="Drag to other template"
 				@click.stop
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-	import { inject, onBeforeUnmount } from 'vue'
+	import { type ComponentPublicInstance, inject, onBeforeUnmount } from 'vue'
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 	import BaseTaskBlock from '@/core/dayPlanner/component/BaseTaskBlock.vue'
 	import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
@@ -43,12 +43,13 @@
 
 	let dragCleanup: (() => void) | null = null
 
-	function setupDragHandle(el: HTMLElement | null) {
+	// Takes what Vue's `VNodeRef` actually passes a function ref, and narrows here.
+	function setupDragHandle(el: Element | ComponentPublicInstance | null) {
 		if (dragCleanup) {
 			dragCleanup()
 			dragCleanup = null
 		}
-		if (!el) return
+		if (!(el instanceof HTMLElement)) return
 
 		dragCleanup = draggable({
 			element: el,

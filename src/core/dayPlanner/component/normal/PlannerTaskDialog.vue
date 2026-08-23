@@ -53,8 +53,8 @@
 	import MyDateInput from '@/_common/component/dateTime/MyDateInput.vue'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
-	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
-	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
+	import { usePlannerTaskStatusOptions } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
+	import type { PlannerTaskDialogApi } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
@@ -70,7 +70,7 @@
 
 	const { fetchByDate } = useCalendarQuery()
 	const store = useDayPlannerStore()
-	const baseDialog = ref<InstanceType<typeof BasePlannerTaskDialog>>()
+	const baseDialog = ref<PlannerTaskDialogApi>()
 	const pickerMode = ref<'all' | 'todo' | 'routine'>('all')
 	const selectedDate = ref(new Date())
 	const initialPickerActivityId = ref<number | undefined>(undefined)
@@ -80,7 +80,7 @@
 		store.pendingSuggestedDuration ? Math.max(10, store.pendingSuggestedDuration.getInMinutes) : undefined,
 	)
 
-	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
+	const statusOptions = usePlannerTaskStatusOptions()
 
 	function createEmptyRequest(suggestedDurationMinutes?: number): PlannerTaskRequest {
 		const req = PlannerTaskRequest.createEmpty()

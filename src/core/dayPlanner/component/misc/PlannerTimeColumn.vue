@@ -42,24 +42,14 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts">
 	import { SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 	import { useCurrentTimeIndicator } from '@/core/dayPlanner/composable/useCurrentTimeIndicator.ts'
-	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { inject } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 
-	const store = inject<TStore>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 
 	const { isVisible, formattedTime, gridRowStyle } = useCurrentTimeIndicator(store)
 </script>

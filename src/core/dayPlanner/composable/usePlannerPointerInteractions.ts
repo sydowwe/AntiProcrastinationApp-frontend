@@ -3,18 +3,14 @@ import { useAutoScroll } from '@/_common/composable/general/useAutoScroll.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { CreationPreviewType, SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
-import { type IBasePlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import { type AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
 const MOVEMENT_THRESHOLD = 5
 const DOUBLE_CLICK_DELAY = 300
 
-export function usePlannerPointerInteractions<
-	TTask extends IBasePlannerTask<TTaskRequest>,
-	TTaskRequest extends IBasePlannerTaskRequest,
->(
-	store: IBaseDayPlannerStore<TTask, TTaskRequest>,
+export function usePlannerPointerInteractions(
+	store: AnyDayPlannerStore,
 	tasksColumnRef: Ref<HTMLElement | undefined>,
 	clipboard: {
 		previewTaskIds: Ref<Set<number>>
@@ -29,7 +25,7 @@ export function usePlannerPointerInteractions<
 
 	const localCreationPreview = ref<CreationPreviewType | undefined>(undefined)
 
-	const originalTaskState = ref<TTask | null>(null)
+	const originalTaskState = ref<AnyPlannerTask | null>(null)
 	const dragOffset = ref<number>(0)
 
 	const resizeDirection = ref<'top' | 'bottom' | null>(null)
@@ -145,7 +141,7 @@ export function usePlannerPointerInteractions<
 					gridRowEnd: Math.max(2, newEndRow),
 					startTime: store.slotIndexToTime(Math.max(0, newStartRow - 1)),
 					endTime: store.slotIndexToTime(Math.max(1, newEndRow - 1)),
-				} as Partial<TTask>)
+				})
 			}
 
 			store.clipboardConflict = anyConflict
@@ -183,7 +179,7 @@ export function usePlannerPointerInteractions<
 				endTime: store.slotIndexToTime(newEndRow - 1),
 				gridRowStart: newStartRow,
 				gridRowEnd: newEndRow,
-			} as Partial<TTask>)
+			})
 			return
 		}
 
@@ -203,7 +199,7 @@ export function usePlannerPointerInteractions<
 					store.redrawTask(store.resizingTaskId, {
 						gridRowStart: newStartRow,
 						startTime: store.slotIndexToTime(newStartRow - 1),
-					} as Partial<TTask>)
+					})
 				}
 			} else {
 				const newEndRow = slotIndex + 2
@@ -214,7 +210,7 @@ export function usePlannerPointerInteractions<
 					store.redrawTask(store.resizingTaskId, {
 						gridRowEnd: newEndRow,
 						endTime: store.slotIndexToTime(newEndRow - 1),
-					} as Partial<TTask>)
+					})
 				}
 			}
 			return
@@ -257,7 +253,7 @@ export function usePlannerPointerInteractions<
 					store.redrawTask(store.draggingTaskId, originalTaskState.value)
 					showErrorSnackbar('Task cannot be dragged outside of the grid')
 				} else {
-					const capturedOriginal = { ...originalTaskState.value } as TTask
+					const capturedOriginal = { ...originalTaskState.value }
 					const capturedId = task.id
 					const moveDate = store.viewedDate ? new Date(store.viewedDate) : undefined
 					store
@@ -311,19 +307,21 @@ export function usePlannerPointerInteractions<
 		if (store.resizingTaskId !== null) {
 			const task = store.tasks.find(ev => ev.id === store.resizingTaskId)
 
+			// Aliased so the `didMove` conjunction narrows both away from null for the block below —
+			// reading `originalTaskState.value` through the ref each time does not.
+			const original = originalTaskState.value
 			const didMove =
 				hasMovedBeyondThreshold.value &&
 				task &&
-				originalTaskState.value &&
-				(task.gridRowStart !== originalTaskState.value.gridRowStart ||
-					task.gridRowEnd !== originalTaskState.value.gridRowEnd)
+				original &&
+				(task.gridRowStart !== original.gridRowStart || task.gridRowEnd !== original.gridRowEnd)
 
 			if (didMove) {
-				const capturedOriginal = { ...originalTaskState.value } as TTask
-				const capturedId = store.resizingTaskId!
+				const capturedOriginal = { ...original }
+				const capturedId = store.resizingTaskId
 				const resizeDate = store.viewedDate ? new Date(store.viewedDate) : undefined
 				store
-					.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task!))
+					.updateTaskSpan(store.resizingTaskId, TaskSpan.fromTask(task))
 					.then(() => {
 						undoStack.push({
 							description: 'Task resized',

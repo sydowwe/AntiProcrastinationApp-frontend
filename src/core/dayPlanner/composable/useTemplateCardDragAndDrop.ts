@@ -1,4 +1,4 @@
-import { onBeforeUnmount, ref } from 'vue'
+import { type ComponentPublicInstance, onBeforeUnmount, ref } from 'vue'
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserScopedStorage.ts'
 
@@ -61,13 +61,20 @@ export function useTemplateCardDragAndDrop() {
 		saveOrder()
 	}
 
-	function registerCard(el: HTMLElement | null, templateId: number, section: Section, getIds: () => number[]) {
+	// Takes what Vue's `VNodeRef` actually hands a function ref — `Element | ComponentPublicInstance |
+	// null` — and narrows here, so call sites can pass the ref through untouched.
+	function registerCard(
+		el: Element | ComponentPublicInstance | null,
+		templateId: number,
+		section: Section,
+		getIds: () => number[],
+	) {
 		const prev = cleanupMap.get(templateId)
 		if (prev) {
 			prev.forEach(c => c())
 			cleanupMap.delete(templateId)
 		}
-		if (!el) return
+		if (!(el instanceof HTMLElement)) return
 
 		const c1 = draggable({
 			element: el,

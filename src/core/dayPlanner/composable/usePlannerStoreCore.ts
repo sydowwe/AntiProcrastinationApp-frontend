@@ -3,7 +3,7 @@ import { Time } from '@/_common/dto/dto/Time.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import { useDayPlannerCommon } from '@/core/dayPlanner/composable/useDayPlannerCommon.ts'
-import type { CreationPreviewType, PlacingItem } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+import type { CreationPreviewType, PlacingItem, PlannerClipboard } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 
 export function usePlannerStoreCore<
 	TTask extends IBasePlannerTask<TTaskRequest>,
@@ -33,7 +33,7 @@ export function usePlannerStoreCore<
 	const isDuplicating = ref(false)
 
 	// Clipboard state (cut / duplicate-to-slot)
-	const pendingClipboard = ref<{ tasks: TTask[]; mode: 'cut' | 'duplicate'; sourceContext?: string } | null>(null)
+	const pendingClipboard = ref<PlannerClipboard<TTask> | null>(null)
 	const clipboardPlacementSlot = ref<number | null>(null)
 	const clipboardConflict = ref(false)
 	const clipboardPreviewTaskIds = reactive<Set<number>>(new Set())

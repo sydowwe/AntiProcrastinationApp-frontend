@@ -1,12 +1,7 @@
 import { ref, watch } from 'vue'
-import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
-export function usePlannerClipboardPreview<
-	TTask extends IBasePlannerTask<TTaskRequest>,
-	TTaskRequest extends IBasePlannerTaskRequest,
->(store: IBaseDayPlannerStore<TTask, TTaskRequest>) {
+export function usePlannerClipboardPreview(store: AnyDayPlannerStore) {
 	const previewTaskIds = ref<Set<number>>(new Set())
 
 	function addPreviewTasksToGrid(): void {
@@ -15,7 +10,7 @@ export function usePlannerClipboardPreview<
 		const ids = new Set<number>()
 		for (const t of clipTasks) {
 			const previewId = mode === 'cut' ? t.id : -t.id
-			const copy = { ...t, id: previewId, gridRowStart: 1, gridRowEnd: 1 } as TTask
+			const copy = { ...t, id: previewId, gridRowStart: 1, gridRowEnd: 1 }
 			store.tasks.push(copy)
 			ids.add(previewId)
 		}

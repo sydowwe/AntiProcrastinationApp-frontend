@@ -1,15 +1,11 @@
 import { onMounted, onUnmounted, type Ref } from 'vue'
-import { type IBasePlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import { type AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { usePlannerKeyboardScope } from '@/core/dayPlanner/composable/usePlannerKeyboardScope.ts'
 
-export function usePlannerKeyboard<
-	TTask extends IBasePlannerTask<TTaskRequest>,
-	TTaskRequest extends IBasePlannerTaskRequest,
->(
-	store: IBaseDayPlannerStore<TTask, TTaskRequest>,
+export function usePlannerKeyboard(
+	store: AnyDayPlannerStore,
 	rootRef: Ref<HTMLElement | undefined>,
 	removePreviewTasksFromGrid: () => void,
 ) {
@@ -19,7 +15,7 @@ export function usePlannerKeyboard<
 	const { isActive, hasOtherInstances } = usePlannerKeyboardScope(rootRef)
 
 	let arrowDebounceTimer: ReturnType<typeof setTimeout> | null = null
-	let arrowOriginals: TTask[] | null = null
+	let arrowOriginals: AnyPlannerTask[] | null = null
 
 	function handleKeyDown(e: KeyboardEvent): void {
 		if (!isActive.value) return
@@ -61,7 +57,7 @@ export function usePlannerKeyboard<
 				}
 			}
 
-			if (!arrowOriginals) arrowOriginals = selectedTasks.map(t => ({ ...t }) as TTask)
+			if (!arrowOriginals) arrowOriginals = selectedTasks.map(t => ({ ...t }))
 
 			store.arrowMoveConflict = hasConflict
 			for (const task of selectedTasks) {
@@ -72,7 +68,7 @@ export function usePlannerKeyboard<
 					endTime: store.slotIndexToTime(newEnd - 1),
 					gridRowStart: newStart,
 					gridRowEnd: newEnd,
-				} as Partial<TTask>)
+				})
 			}
 
 			if (arrowDebounceTimer !== null) clearTimeout(arrowDebounceTimer)

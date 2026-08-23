@@ -120,9 +120,11 @@
 	import RoutineSidePanel from '@/core/dayPlanner/component/template/RoutineSidePanel.vue'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import {
+		TEMPLATE_PLANNER_STORE_KEY,
 		useSecondaryTemplateDayPlannerStore,
 		useTemplateDayPlannerStore,
 	} from '@/core/dayPlanner/store/templateDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
@@ -195,7 +197,10 @@
 		buildRequestFromEntity,
 	})
 
-	provide('plannerStore', store)
+	// Two keys, one store object: the second is for the few template-only components that need
+	// `currentTemplateId` / `templateName`, which the shared contract deliberately does not carry.
+	provide(PLANNER_STORE_KEY, store)
+	provide(TEMPLATE_PLANNER_STORE_KEY, store)
 	provide('isSplitView', isSplitView)
 	provide('splitViewStoreId', storeId)
 

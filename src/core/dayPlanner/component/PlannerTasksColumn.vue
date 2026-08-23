@@ -65,22 +65,12 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
-	generic="
-		TTask extends IBasePlannerTask<TTaskRequest>,
-		TTaskRequest extends IBasePlannerTaskRequest,
-		TStore extends IBaseDayPlannerStore<TTask, TTaskRequest>
-	"
->
+<script setup lang="ts">
 	import { inject, nextTick, onMounted, ref, watch } from 'vue'
 	import CreationPreview from './misc/CreationPreview.vue'
 	import { useCurrentTimeIndicator } from '@/core/dayPlanner/composable/useCurrentTimeIndicator.ts'
 	import { SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
-	import { type IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
-	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
@@ -89,7 +79,7 @@
 	import { usePlannerPointerInteractions } from '@/core/dayPlanner/composable/usePlannerPointerInteractions.ts'
 	import { usePlannerKeyboard } from '@/core/dayPlanner/composable/usePlannerKeyboard.ts'
 
-	const store = inject<TStore>('plannerStore')!
+	const store = inject(PLANNER_STORE_KEY)!
 
 	const tasksColumnRef = ref<HTMLElement | undefined>(undefined)
 	const { isVisible, gridRowStyle } = useCurrentTimeIndicator(store)

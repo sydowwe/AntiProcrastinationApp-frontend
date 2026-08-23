@@ -1,6 +1,6 @@
 import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { ComputedRef, Ref } from 'vue'
-import { type IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+import { type AnyPlannerTask, type IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 
 /**
@@ -10,6 +10,10 @@ import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBas
 /**
  * Shared logic for day planner
  * Handles grid positioning, time calculations, and conflict detection for Date-based tasks
+ *
+ * The returned functions take `AnyPlannerTask`, not `T`: none of them read anything beyond the
+ * shared task surface, and narrowing them to `T` is what made `IBaseDayPlannerStore` invariant in
+ * its task type — see the comment on that interface. `T` still types the `tasks` list itself.
  */
 export function useDayPlannerCommon<
 	T extends IBasePlannerTask<TTaskRequest>,
@@ -46,7 +50,7 @@ export function useDayPlannerCommon<
 	/**
 	 * Check if date ranges overlap with background tasks
 	 */
-	function checkOverlapsBackground(task: T): boolean {
+	function checkOverlapsBackground(task: AnyPlannerTask): boolean {
 		return tasks.value.some(backgroundTask => {
 			if (!backgroundTask.isBackground) return false
 
@@ -59,7 +63,7 @@ export function useDayPlannerCommon<
 	/**
 	 * Check for task conflicts (non-background tasks)
 	 */
-	function checkConflict(taskToCheck: T): boolean {
+	function checkConflict(taskToCheck: AnyPlannerTask): boolean {
 		return tasks.value.some(task => {
 			if ((taskToCheck.id ^ task.id) < 0)
 				// XOR so template doesn't check conflict with normal
@@ -75,7 +79,7 @@ export function useDayPlannerCommon<
 	/**
 	 * Update overlapping background flags for all tasks that overlap with the given background task
 	 */
-	function updateIsDuringBackgroundFlags(backgroundTask: T): void {
+	function updateIsDuringBackgroundFlags(backgroundTask: AnyPlannerTask): void {
 		tasks.value.forEach(task => {
 			if (task.isBackground) return
 
@@ -102,7 +106,7 @@ export function useDayPlannerCommon<
 	/**
 	 * Calculate grid position from time span
 	 */
-	function setGridPositionFromSpan(task: T): void {
+	function setGridPositionFromSpan(task: AnyPlannerTask): void {
 		const viewDurationMinutes = totalGridRows.value * timeSlotDuration.value
 		const viewStartMin = viewStartTime.value.getInMinutes
 		const viewEndMin = (viewStartMin + viewDurationMinutes) % MINUTES_IN_DAY
@@ -141,7 +145,7 @@ export function useDayPlannerCommon<
 	/**
 	 * Handle task span updates
 	 */
-	function redrawTask(taskId: number, updates: Partial<T>): void {
+	function redrawTask(taskId: number, updates: Partial<AnyPlannerTask>): void {
 		const taskIndex = tasks.value.findIndex(e => e.id === taskId)
 		if (taskIndex === -1) return
 

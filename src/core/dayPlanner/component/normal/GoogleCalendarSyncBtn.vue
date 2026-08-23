@@ -44,7 +44,9 @@
 				window.location.href = url
 			} else {
 				const count = await syncDay(calendarId!)
-				showSuccessSnackbar(t('googleCalendar.syncSuccess', count, { n: count }))
+				// Named values first, plural count second — `t(key, plural, named)` is not an overload,
+				// so the interpolated `{n}` was never filled in.
+				showSuccessSnackbar(t('googleCalendar.syncSuccess', { n: count }, count))
 			}
 		} catch {
 			showErrorSnackbar(t('googleCalendar.syncFailed'))

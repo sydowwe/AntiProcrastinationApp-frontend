@@ -61,15 +61,19 @@ fixed — fourteen tables rendering zero rows — shipped precisely because nobo
 | `firstDayOfWeek` honoured (R20)                                          | both calendars, with the preference set to Sunday                                  |
 | account deletion asks intent before identity (R21)                       | settings → security; the **cancel** path in particular has never been clicked      |
 
-### 3. 64 app-side type errors, never triaged as a group
+### 3. 33 app-side type errors, never triaged as a group
 
-Measured 2026-08-19 with `npm run type-check` (= `vue-tsc --build --force`). All 64 are in `src/core`; `src/_common` is at **0** and has been since R13, so any new
+Measured 2026-08-24 with `npm run type-check` (= `vue-tsc --build --force`). All 33 are in `src/core`; `src/_common` is at **0** and has been since R13, so any new
 `_common` error is a regression, not baseline noise.
 
-The count has drifted downward as unrelated work touched files (72 → 65 → 64) and the figure quoted in `CLAUDE.md` has been stale more than once. **Re-measure before
-quoting it.** Concentrations, if someone wants to start: `activityTracking/view/DesktopSettingsView.vue` (6), then `todoList/component/routine/RoutineGroupCard.vue`,
-`activity/component/NewActivityForm.vue`, `dayPlanner/view/TemplateListView.vue`, `dayPlanner/component/template/TemplatePlannerHeader.vue` (3 each). The rest is a
-long tail of 1–2 per file across `todoList` and `dayPlanner`.
+The count has drifted downward as unrelated work touched files (72 → 65 → 64 → 53) and the figure quoted in `CLAUDE.md` has been stale every time anyone checked.
+**Re-measure before quoting it.** The last step down was deliberate: P2 took `dayPlanner` from 20 to **0** by fixing the store contract rather than the 20 errors
+(see the header comment on `IBaseDayPlannerStore`), which is the shape the remaining clusters probably have too.
+
+Concentrations in what is left: `todoList` (~15, mostly one mismatched `toggleCompleted` signature threaded through
+`TodoListView` → `RoutineGroupCard` / `NormalTodoListItem` / `TodoListWidget`), `activityTracking/view/DesktopSettingsView.vue` (6), and
+`activityTracking/component/{stackedBars,timeline}` (4 — all the same `HTMLAttributes` spread). The rest is a long tail of 1–2 per file. Note the pattern: nearly
+every cluster is one contract, not N bugs.
 
 ### 4. `activityHistory` and `activityTracking` still read the browser's clock
 
@@ -208,6 +212,35 @@ inside `src/_common` before bumping the pointer — which would have swept someb
 **When the pointer next bumps from a clean submodule tree:** add the parameter, update `_common/docs/utils.md`, and delete
 `showTimerAlarmNotification`; its three call sites in `runningTimerStore.ts` become `showNotification(title, body, { tag:
 alarmTag(at) })`. `alarmTag` stays app-side — it is the coordination point with this app's own push payload.
+
+---
+
+### 10. `getEnumSelectOptions` throws away the enum type, so every consumer casts its own `option.value`
+
+**Local file kept:** `usePlannerTaskStatusOptions()` in `src/core/dayPlanner/dto/enum/PlannerTaskStatus.ts`. Added by P2.
+
+**The gap.** `_common/composable/general/EnumComposable.ts` declares:
+
+```ts
+export function getEnumSelectOptions<T extends Record<string, string>>(enumObject: T, prefix: string): ValueTitleDto<string>[]
+```
+
+Every option is built from `Object.values(enumObject)`, so the values are exactly `T[keyof T]` — but the return type
+widens them to `string`. The result is that a consumer holding `ValueTitleDto<string>[]` cannot pass `option.value` to
+anything that takes the enum, and casts at each site instead. In `dayPlanner` that had already gone wrong: two of the
+three `PlannerTaskStatus` sites wrote `option.value as PlannerTaskStatus` in the click handler, and both passed the whole
+**option object** to `getPlannerTaskStatusIcon(status: PlannerTaskStatus)` one line above it — a `switch` over an object
+falls through to `undefined`, so the status menus have been rendering with no icons. The cast at one site did not stop the
+mistake at its neighbour; a truthful return type would have.
+
+**The upstream ask:** `ValueTitleDto<T[keyof T]>[]`. That is a pure signature change — the runtime is already correct, and
+every existing caller either ignores the parameter or currently casts it back, so nothing that compiles today stops
+compiling.
+
+**App-side today:** one documented cast, in one place, behind `usePlannerTaskStatusOptions()`. The three call sites
+(`PlannerTaskBlock`, `DayPlannerView`, `PlannerTaskDialog`) now hold `ValueTitleDto<PlannerTaskStatus>[]` and cast
+nothing. **When the framework signature lands:** delete the cast from the helper body — the helper itself is still worth
+keeping, since it also pins the `'planner.status'` locale prefix in one place.
 
 ---
 

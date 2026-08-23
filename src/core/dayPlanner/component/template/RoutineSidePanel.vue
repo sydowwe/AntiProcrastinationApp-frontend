@@ -95,7 +95,7 @@
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
-	import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 
 	const emit = defineEmits<{
 		'update:selectedItem': [item: RoutineTodoListItemEntity | null]
@@ -107,7 +107,7 @@
 	const selectedPeriodId = ref<number | null>(null)
 	const selectedItemId = ref<number | null>(null)
 
-	const plannerStore = inject<IBaseDayPlannerStore<any, any>>('plannerStore')
+	const plannerStore = inject(PLANNER_STORE_KEY)
 
 	const periodSelectItems = computed(() =>
 		groupedItems.value

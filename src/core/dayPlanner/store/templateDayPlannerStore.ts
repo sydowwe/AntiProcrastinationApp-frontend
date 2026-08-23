@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { type InjectionKey, ref, watch } from 'vue'
 import { deserializeClipboard, serializeClipboard } from '@/core/dayPlanner/composable/usePlannerClipboardStorage.ts'
 import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 import { usePlannerStoreCore } from '@/core/dayPlanner/composable/usePlannerStoreCore.ts'
@@ -8,7 +8,20 @@ import type { IBaseDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlann
 import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 import type { TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 
-export type ITemplateDayPlannerStore = IBaseDayPlannerStore<TemplatePlannerTask, TemplatePlannerTaskRequest>
+export interface ITemplateDayPlannerStore extends IBaseDayPlannerStore<
+	TemplatePlannerTask,
+	TemplatePlannerTaskRequest
+> {
+	currentTemplateId: number | null
+	templateName: string
+}
+
+/**
+ * Narrower sibling of `PLANNER_STORE_KEY` for the handful of components that need the template
+ * store's own fields. `TemplateDayPlannerView` provides the same store object under both keys, so
+ * a split-view panel still gets its own store either way.
+ */
+export const TEMPLATE_PLANNER_STORE_KEY = Symbol('templatePlannerStore') as InjectionKey<ITemplateDayPlannerStore>
 
 function templatePlannerSetup(storageKey: string) {
 	const core = usePlannerStoreCore<TemplatePlannerTask, TemplatePlannerTaskRequest>()

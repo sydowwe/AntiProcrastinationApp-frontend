@@ -49,10 +49,10 @@
 							v-show="task.status !== option.value"
 							:key="option.value"
 							:value="option.value"
-							:prependIcon="getPlannerTaskStatusIcon(option)"
+							:prependIcon="getPlannerTaskStatusIcon(option.value)"
 							:title="option.title"
 							color="secondaryOutline"
-							@click="emit('changeStatus', task.id, option.value as PlannerTaskStatus)"
+							@click="emit('changeStatus', task.id, option.value)"
 						></VListItem>
 					</VList>
 				</VCard>
@@ -62,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, inject } from 'vue'
+	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import type { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
+	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import BaseTaskBlock from '../BaseTaskBlock.vue'
@@ -73,9 +73,9 @@
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,
 		PlannerTaskStatus,
+		usePlannerTaskStatusOptions,
 	} from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const { task } = defineProps<{
 		task: PlannerTask
@@ -90,9 +90,12 @@
 
 	const { currentTime } = useCurrentTime()
 
-	const store = inject<ReturnType<typeof useDayPlannerStore>>('plannerStore')!
+	// The concrete store, not the injected contract: this reads `status` off each task and calls
+	// `updateTaskStatus`, neither of which the shared contract carries. Safe to reach for the
+	// singleton here — unlike the template planner, the normal planner is never mounted twice.
+	const store = useDayPlannerStore()
 
-	const statusOptions = getEnumSelectOptions(PlannerTaskStatus, 'planner.status')
+	const statusOptions = usePlannerTaskStatusOptions()
 
 	const formattedTime = computed(() => (startTime: Time, endTime: Time) => {
 		// Default time formatting (can be overridden via slot)
