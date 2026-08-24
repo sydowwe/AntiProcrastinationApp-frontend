@@ -165,7 +165,7 @@
 	import { useTaskReminders } from '@/core/dayPlanner/composable/useTaskReminders.ts'
 	import { useRepeatingPlannerTaskApi } from '@/core/dayPlanner/api/repeatingPlannerTaskApi.ts'
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
-	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
+	import { useRoutinePlacement } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useI18n } from 'vue-i18n'
 
@@ -225,27 +225,9 @@
 
 	const suggestions = ref<SuggestionResponse[]>([])
 	const addedSuggestionIds = ref<Set<string>>(new Set())
-	const activePanel = ref<'details' | 'routine'>('details')
-	const panelOpen = ref(true)
-	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
-	provide('selectedRoutineItem', selectedRoutineItem)
-
-	watch(activePanel, panel => {
-		if (panel !== 'routine') selectedRoutineItem.value = null
-	})
-
-	watch(selectedRoutineItem, item => {
-		store.placingItem = item ? { name: item.activity.name, icon: 'rotate' } : null
-	})
-
-	watch(
-		() => store.placingItem,
-		item => {
-			if (!item) selectedRoutineItem.value = null
-		},
-	)
+	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
 
 	// Lifecycle hooks
 	onMounted(async () => {
@@ -409,7 +391,7 @@
 			}
 			await patchStatus(taskId, request, { _silent: true }).catch(() => {
 				task.status = previousStatus
-				showErrorSnackbar(t('dayPlanner.planner.feedback.taskStatusUpdateFailed'))
+				showErrorSnackbar(t('planner.feedback.taskStatusUpdateFailed'))
 			})
 			calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 		} else {
@@ -454,16 +436,14 @@
 		const failed = results.filter(r => r.status === 'rejected').length
 		if (failed > 0) {
 			showErrorSnackbar(
-				t('dayPlanner.planner.feedback.statusUpdatePartial', {
+				t('planner.feedback.statusUpdatePartial', {
 					succeeded: results.length - failed,
 					total: results.length,
 					failed,
 				}),
 			)
 		} else {
-			showSuccessSnackbar(
-				t('dayPlanner.planner.feedback.statusUpdated', { count: results.length }, results.length),
-			)
+			showSuccessSnackbar(t('planner.feedback.statusUpdated', { count: results.length }, results.length))
 		}
 	}
 
@@ -523,14 +503,14 @@
 		const failed = results.filter(r => r.status === 'rejected').length
 		if (failed > 0) {
 			showErrorSnackbar(
-				t('dayPlanner.planner.feedback.taskSkipPartial', {
+				t('planner.feedback.taskSkipPartial', {
 					succeeded: results.length - failed,
 					total: results.length,
 					failed,
 				}),
 			)
 		} else {
-			showSuccessSnackbar(t('dayPlanner.planner.feedback.taskSkipped', { count: results.length }, results.length))
+			showSuccessSnackbar(t('planner.feedback.taskSkipped', { count: results.length }, results.length))
 		}
 	}
 
@@ -559,16 +539,14 @@
 		const failed = results.filter(r => r.status === 'rejected').length
 		if (failed > 0) {
 			showErrorSnackbar(
-				t('dayPlanner.planner.feedback.taskReschedulePartial', {
+				t('planner.feedback.taskReschedulePartial', {
 					succeeded: results.length - failed,
 					total: results.length,
 					failed,
 				}),
 			)
 		} else {
-			showSuccessSnackbar(
-				t('dayPlanner.planner.feedback.tasksRescheduled', { count: results.length }, results.length),
-			)
+			showSuccessSnackbar(t('planner.feedback.tasksRescheduled', { count: results.length }, results.length))
 		}
 	}
 

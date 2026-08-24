@@ -1,64 +1,21 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
 	<div class="py-4 d-flex flex-column flex-md-row ga-4 w-100 h-100">
-		<VCard
-			v-show="panelOpen || mdAndUp"
-			class="d-flex flex-column"
-			elevation="2"
-			style="width: 400px; min-width: 280px"
+		<PlannerSidePanelShell
+			v-model:panelOpen="panelOpen"
+			v-model:activePanel="activePanel"
+			:detailsTitle="$t('planner.template.detailsPanel')"
+			detailsIcon="sliders"
+			width="400px"
 		>
-			<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
-				<div class="d-flex justify-space-between align-center">
-					<span class="text-grey-lighten-1">
-						{{
-							activePanel === 'details'
-								? $t('planner.template.detailsPanel')
-								: $t('planner.template.routineTasksPanel')
-						}}
-					</span>
-					<VIconBtn
-						class="d-md-none"
-						color="secondaryOutline"
-						icon="xmark"
-						variant="tonal"
-						size="36"
-						@click="panelOpen = false"
-					/>
-				</div>
-				<VBtnToggle
-					v-model="activePanel"
-					mandatory
-					class="d-none d-md-flex"
-					style="width: 100%"
-					density="compact"
-					variant="outlined"
-					color="secondaryOutline"
-				>
-					<VBtn
-						value="details"
-						prependIcon="sliders"
-						style="flex: 1"
-					>
-						{{ $t('planner.template.details') }}
-					</VBtn>
-					<VBtn
-						value="routine"
-						prependIcon="rotate"
-						style="flex: 1"
-					>
-						{{ $t('planner.template.routine') }}
-					</VBtn>
-				</VBtnToggle>
-			</VCardTitle>
-			<TemplatePlannerPanel
-				v-if="activePanel === 'details'"
-				:templateId="templateId"
-			/>
-			<RoutineSidePanel
-				v-else
-				@update:selectedItem="selectedRoutineItem = $event"
-			/>
-		</VCard>
+			<template #details>
+				<TemplatePlannerPanel :templateId />
+			</template>
+
+			<template #routine>
+				<RoutineSidePanel @update:selectedItem="selectedRoutineItem = $event" />
+			</template>
+		</PlannerSidePanelShell>
 
 		<div
 			class="flex-fill d-flex"
@@ -122,14 +79,14 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, provide, ref, watch } from 'vue'
-	import { useDisplay } from 'vuetify'
+	import { computed, onMounted, provide, watch } from 'vue'
 	import DayPlanner from '@/core/dayPlanner/component/DayPlanner.vue'
+	import PlannerSidePanelShell from '@/core/dayPlanner/component/PlannerSidePanelShell.vue'
 	import TemplatePlannerHeader from '@/core/dayPlanner/component/template/TemplatePlannerHeader.vue'
 	import TemplatePlannerTaskDialog from '@/core/dayPlanner/component/template/TemplatePlannerTaskDialog.vue'
 	import TemplatePlannerTaskBlock from '@/core/dayPlanner/component/template/TemplatePlannerTaskBlock.vue'
 	import RoutineSidePanel from '@/core/dayPlanner/component/template/RoutineSidePanel.vue'
-	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
+	import { useRoutinePlacement } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import {
 		TEMPLATE_PLANNER_STORE_KEY,
 		useSecondaryTemplateDayPlannerStore,
@@ -161,7 +118,6 @@
 	}>()
 
 	const route = useRoute()
-	const { mdAndUp } = useDisplay()
 
 	// One source of truth for every consumer below: the split view hands the id down as a prop, the
 	// standalone route carries it in the URL. `dayPlannerTemplate` deliberately does not set
@@ -215,26 +171,7 @@
 	provide('isSplitView', isSplitView)
 	provide('splitViewStoreId', storeId)
 
-	const activePanel = ref<'details' | 'routine'>('details')
-	const panelOpen = ref(true)
-	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
-
-	provide('selectedRoutineItem', selectedRoutineItem)
-
-	watch(activePanel, panel => {
-		if (panel !== 'routine') selectedRoutineItem.value = null
-	})
-
-	watch(selectedRoutineItem, item => {
-		store.placingItem = item ? { name: item.activity.name, icon: 'rotate' } : null
-	})
-
-	watch(
-		() => store.placingItem,
-		item => {
-			if (!item) selectedRoutineItem.value = null
-		},
-	)
+	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
 
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground)

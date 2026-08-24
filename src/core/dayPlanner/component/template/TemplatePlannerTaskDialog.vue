@@ -31,14 +31,13 @@
 
 <script setup lang="ts">
 	import { computed, inject, nextTick, ref, watch } from 'vue'
-	import type { Ref } from 'vue'
 	import BasePlannerTaskDialog from '@/core/dayPlanner/component/BasePlannerTaskDialog.vue'
 	import PlannerActivitySourcePicker from '@/core/dayPlanner/component/PlannerActivitySourcePicker.vue'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import type { PlannerTaskDialogApi } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
+	import { SELECTED_ROUTINE_ITEM_KEY } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 
 	const emit = defineEmits<{
 		(e: 'edit', id: number, task: TemplatePlannerTaskRequest): void
@@ -51,7 +50,7 @@
 	const store = inject(PLANNER_STORE_KEY)!
 	const baseDialog = ref<PlannerTaskDialogApi>()
 	const pickerMode = ref<'all' | 'routine'>('all')
-	const selectedRoutineItem = inject<Ref<RoutineTodoListItemEntity | null>>('selectedRoutineItem')
+	const selectedRoutineItem = inject(SELECTED_ROUTINE_ITEM_KEY)
 
 	const isEdit = computed(() => store.editedId !== undefined)
 

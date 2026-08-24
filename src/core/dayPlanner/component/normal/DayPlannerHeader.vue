@@ -134,6 +134,7 @@
 	import { computed, ref, watch } from 'vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
+	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { formatDateForApi, formatToDateWithDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
@@ -152,7 +153,7 @@
 		navigateDate: [delta: number]
 		undo: []
 	}>()
-	const activePanel = defineModel<'details' | 'routine'>('activePanel', { required: true })
+	const activePanel = defineModel<PlannerSidePanelTab>('activePanel', { required: true })
 	const panelOpen = defineModel<boolean>('panelOpen', { required: true })
 	const store = useDayPlannerStore()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()

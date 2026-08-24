@@ -1,90 +1,50 @@
 <!-- DayPlannerSidePanel.vue -->
 <template>
-	<VCard
-		v-show="panelOpen || mdAndUp"
-		class="d-flex flex-column align-self-stretch"
-		elevation="2"
-		style="width: 380px; min-width: 280px"
+	<PlannerSidePanelShell
+		v-model:panelOpen="panelOpen"
+		v-model:activePanel="activePanel"
+		:detailsTitle="$t('planner.calendar.dayDetailsTitle')"
+		detailsIcon="calendar-day"
 	>
-		<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
-			<div class="d-flex justify-space-between align-center">
-				<span class="text-grey-lighten-1">
-					{{
-						activePanel === 'details'
-							? $t('planner.calendar.dayDetailsTitle')
-							: $t('planner.template.routineTasksPanel')
-					}}
-				</span>
-				<div class="d-flex align-center ga-2">
-					<VBtn
-						v-if="activePanel === 'details'"
-						variant="outlined"
-						color="secondaryOutline"
-						size="small"
-						@click="emit('openEditDialog')"
-					>
-						<VIcon
-							icon="pen-to-square"
-							size="14"
-							class="mr-1"
-						/>
-						{{ $t('planner.calendar.editAction') }}
-					</VBtn>
-					<VIconBtn
-						class="d-md-none"
-						color="secondaryOutline"
-						icon="xmark"
-						variant="tonal"
-						size="36"
-						@click="panelOpen = false"
-					/>
-				</div>
-			</div>
-			<VBtnToggle
-				v-model="activePanel"
-				mandatory
-				class="d-none d-md-flex"
-				style="width: 100%"
-				density="compact"
+		<template #titleActions>
+			<VBtn
+				v-if="activePanel === 'details'"
 				variant="outlined"
 				color="secondaryOutline"
+				size="small"
+				@click="emit('openEditDialog')"
 			>
-				<VBtn
-					value="details"
-					prependIcon="calendar-day"
-					style="flex: 1"
-				>
-					{{ $t('planner.template.details') }}
-				</VBtn>
-				<VBtn
-					value="routine"
-					prependIcon="rotate"
-					style="flex: 1"
-				>
-					{{ $t('planner.template.routine') }}
-				</VBtn>
-			</VBtnToggle>
-		</VCardTitle>
-		<DayDetailsPanel
-			v-if="activePanel === 'details'"
-			:title
-			:calendar
-			:repeatingTasks="suggestions"
-			:addedIds
-			@useTemplate="emit('useTemplate')"
-			@addRepeatingTask="task => emit('addRepeatingTask', task)"
-		/>
-		<RoutineSidePanel
-			v-else
-			@update:selectedItem="item => emit('update:selectedItem', item)"
-		/>
-	</VCard>
+				<VIcon
+					icon="pen-to-square"
+					size="14"
+					class="mr-1"
+				/>
+				{{ $t('planner.calendar.editAction') }}
+			</VBtn>
+		</template>
+
+		<template #details>
+			<DayDetailsPanel
+				:title
+				:calendar
+				:repeatingTasks="suggestions"
+				:addedIds
+				@useTemplate="emit('useTemplate')"
+				@addRepeatingTask="task => emit('addRepeatingTask', task)"
+			/>
+		</template>
+
+		<template #routine>
+			<RoutineSidePanel @update:selectedItem="item => emit('update:selectedItem', item)" />
+		</template>
+	</PlannerSidePanelShell>
 </template>
 
 <script setup lang="ts">
-	import { useDisplay } from 'vuetify'
+	import PlannerSidePanelShell from '@/core/dayPlanner/component/PlannerSidePanelShell.vue'
 	import DayDetailsPanel from '@/core/dayPlanner/component/normal/DayDetailsPanel.vue'
 	import RoutineSidePanel from '@/core/dayPlanner/component/template/RoutineSidePanel.vue'
+	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
@@ -103,7 +63,5 @@
 		'update:selectedItem': [item: RoutineTodoListItemEntity | null]
 	}>()
 	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
-	const activePanel = defineModel<'details' | 'routine'>('activePanel', { default: 'details' })
-
-	const { mdAndUp } = useDisplay()
+	const activePanel = defineModel<PlannerSidePanelTab>('activePanel', { default: 'details' })
 </script>
