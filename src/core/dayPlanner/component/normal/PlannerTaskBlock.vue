@@ -3,8 +3,10 @@
 		:class="classes"
 		:task
 		:isPast
+		:extraLabelParts
+		extraKeyShortcuts="D"
 		@resizeStart="emit('resizeStart', $event)"
-		@keydown.space.prevent="handleToggleStatusSelected"
+		@keydown.d.exact.prevent="handleToggleStatusSelected"
 	>
 		<template #time>
 			<div
@@ -107,6 +109,13 @@
 		dateTime.setHours(task.endTime.hours, task.endTime.minutes)
 		return dateTime < currentTime.value
 	})
+
+	// The status is the one thing on the block that is signalled purely by a coloured chip, and the
+	// base block's `role="button"` keeps that chip out of the accessibility tree entirely. Hand the
+	// localized status down so it lands in the block's accessible name instead.
+	const extraLabelParts = computed(() => [
+		t('planner.a11y.statusPart', { status: t(`planner.status.${task.status}`) }),
+	])
 
 	const classes = computed(() => {
 		return {

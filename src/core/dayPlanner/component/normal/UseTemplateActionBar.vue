@@ -67,6 +67,7 @@
 	import { ref, watch } from 'vue'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
+	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const emit = defineEmits<{
 		applyTemplate: [conflictResolution: ApplyTemplateConflictResolution, hourOffset: number]
@@ -77,6 +78,8 @@
 	const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
 	const conflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
 	const templateStartOffset = ref<number>(0)
+
+	useActionBarFocusReturn(() => store.isTemplateInPreview)
 
 	watch(templateStartOffset, newVal => {
 		if (newVal !== null && newVal !== undefined) {

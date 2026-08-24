@@ -14,9 +14,16 @@
 		<div
 			v-if="store.isOverMidnight"
 			class="midnight-divider"
+			role="separator"
+			:aria-label="$t('planner.a11y.midnight')"
 			:style="{ top: `${store.timeToSlotIndex(new Time(0, 0)) * SLOT_HEIGHT}px` }"
 		>
-			<span class="midnight-label">{{ $t('planner.misc.midnightLabel') }}</span>
+			<span
+				class="midnight-label"
+				aria-hidden="true"
+			>
+				{{ $t('planner.misc.midnightLabel') }}
+			</span>
 		</div>
 
 		<!-- Current time indicator -->
@@ -25,11 +32,24 @@
 			class="current-time-divider"
 			:style="gridRowStyle"
 		>
-			<span class="current-time-label">{{ formattedTime }}</span>
+			<span
+				class="current-time-label"
+				aria-hidden="true"
+			>
+				{{ formattedTime }}
+			</span>
+			<span class="d-sr-only">{{ $t('planner.a11y.currentTime', { time: formattedTime }) }}</span>
 		</div>
 
-		<!-- Time labels overlay -->
-		<div class="time-labels-overlay">
+		<!-- Time labels overlay. Hidden from the accessibility tree on purpose: it is a visual ruler
+		     of ~100 repeated labels whose only job is to say where a block sits, and every block
+		     already carries its own absolute time range in its accessible name. Reading the ruler
+		     linearly would bury the tasks. The range and slot length the ruler encodes are on the
+		     grid container's label and help text instead. -->
+		<div
+			class="time-labels-overlay"
+			aria-hidden="true"
+		>
 			<div
 				v-for="(slot, index) in store.timeSlots"
 				:key="index"

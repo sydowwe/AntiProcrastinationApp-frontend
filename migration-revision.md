@@ -244,6 +244,38 @@ keeping, since it also pins the `'planner.status'` locale prefix in one place.
 
 ---
 
+### 11. `ActionBar` drops focus on the floor when it leaves
+
+**Local file kept:** `src/core/dayPlanner/composable/useActionBarFocusReturn.ts`. Added by P8, used by all four planner
+action bars (`SelectionActionBar`, `BulkSelectActionBar`, `ApplyTemplateActionBar`, `UseTemplateActionBar`).
+
+**The gap.** `_common/component/ActionBar.vue` is a floating bar that appears on a selection and disappears when the
+selection is cleared — and the usual way to clear it is the bar's own Cancel button. When that button unmounts under the
+user's focus the browser parks focus on `<body>`, so a keyboard user is silently thrown back to the top of the document.
+Nothing on screen changes, which is why it survived: with a mouse it is invisible.
+
+Focus belongs to the component that takes it. `ActionBar` knows when it is leaving and knows what had focus when it
+arrived; every consumer re-deriving that is the drift this file exists to record.
+
+**The upstream ask:** `ActionBar` captures `document.activeElement` when `isShown` goes true and restores it when
+`isShown` goes false, if and only if focus is currently inside the bar (or already on `<body>`). An optional
+`focusFallback?: HTMLElement` prop covers the case where the originating element is gone by then — a deleted task block,
+for instance. Default behaviour with no prop is what every app wants already, so nothing needs touching in `main.ts`.
+
+**App-side today:** the composable matches `.action-bar` — the framework's own root class — to answer "is focus inside
+the bar that is about to leave". That is the one piece of coupling worth deleting when this lands: `ActionBar`'s root is
+a `<Transition>`, which renders no element, so a consumer has no ref to test against and no other way to ask.
+
+Two facts that cost time to find and would cost it again:
+
+- The restore must run **synchronously in the watcher**, while the bar is still mounted. `ActionBar` leaves through a
+  0.3s transition, so a `nextTick` after `isShown` flips still sees the Cancel button mounted and focused, and focus only
+  reaches `<body>` long after any tick has run. A `nextTick`-based version looks correct and does nothing.
+- The leave takes noticeably longer than the 0.3s the CSS declares (`transition: all` waits on the longest property).
+  Anything asserting the bar is gone needs a generous window, or it will conclude the element leaked when it has not.
+
+---
+
 ## Lessons kept
 
 Five things the resolved entries taught that are not obvious from the code, and that cost real time to relearn.

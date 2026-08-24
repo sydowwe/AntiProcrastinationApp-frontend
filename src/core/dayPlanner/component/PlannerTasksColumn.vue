@@ -3,6 +3,10 @@
 	<div
 		ref="tasksColumnRef"
 		class="tasks-column"
+		role="group"
+		:tabindex="-1"
+		:aria-label="gridLabel"
+		:aria-describedby="gridHelpId"
 		:class="{
 			'clipboard-mode': store.pendingClipboard !== null,
 			'resizing-mode': store.isResizingAny,
@@ -62,14 +66,35 @@
 			:task="task"
 			:onResizeStart="handleResizeStart"
 		></slot>
+
+		<!-- The keyboard contract of the grid, read out when focus enters a task block. Kept here
+		     rather than on each block so it is announced once, not once per task. -->
+		<p
+			:id="gridHelpId"
+			class="d-sr-only"
+		>
+			{{ gridHelp }}
+		</p>
+
+		<!-- Arrow-key moves are the one keyboard action whose failure is signalled by colour alone
+		     (the block turns red and pulses). Nothing else in the grid changes, so without this the
+		     move looks as if it worked and is then silently rolled back. -->
+		<div
+			class="d-sr-only"
+			role="status"
+			aria-live="polite"
+		>
+			{{ moveStatusMessage }}
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { inject, nextTick, onMounted, ref, watch } from 'vue'
+	import { computed, inject, nextTick, onMounted, ref, useId, watch } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import CreationPreview from './misc/CreationPreview.vue'
 	import { useCurrentTimeIndicator } from '@/core/dayPlanner/composable/useCurrentTimeIndicator.ts'
-	import { SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+	import { PLANNER_GRID_KEY, SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
@@ -79,9 +104,19 @@
 	import { usePlannerPointerInteractions } from '@/core/dayPlanner/composable/usePlannerPointerInteractions.ts'
 	import { usePlannerKeyboard } from '@/core/dayPlanner/composable/usePlannerKeyboard.ts'
 
+	const { helpExtra } = defineProps<{
+		/** A sentence appended to the grid's keyboard help, for keys only one planner binds. */
+		helpExtra?: string
+	}>()
+
 	const store = inject(PLANNER_STORE_KEY)!
+	const gridElement = inject(PLANNER_GRID_KEY, undefined)
+	const { t } = useI18n()
 
 	const tasksColumnRef = ref<HTMLElement | undefined>(undefined)
+	// Per-instance, because the split view mounts two grids and an `aria-describedby` pointing at a
+	// duplicated id resolves to whichever one the browser saw first.
+	const gridHelpId = useId()
 	const { isVisible, gridRowStyle } = useCurrentTimeIndicator(store)
 	const { currentTime } = useCurrentTime()
 
@@ -93,6 +128,27 @@
 			removePreviewTasksFromGrid,
 		})
 	usePlannerKeyboard(store, tasksColumnRef, removePreviewTasksFromGrid)
+
+	const gridLabel = computed(() =>
+		t('planner.a11y.gridLabel', {
+			start: store.viewStartTime.getString(),
+			end: store.viewEndTime.getString(),
+		}),
+	)
+
+	const gridHelp = computed(() => {
+		const help = t('planner.a11y.gridHelp', { minutes: store.timeSlotDuration })
+		return helpExtra ? `${help} ${helpExtra}` : help
+	})
+
+	const moveStatusMessage = ref('')
+	watch(
+		() => store.arrowMoveConflict,
+		(conflict, wasConflict) => {
+			if (conflict) moveStatusMessage.value = t('planner.a11y.moveConflict')
+			else if (wasConflict) moveStatusMessage.value = t('planner.a11y.moveOk')
+		},
+	)
 
 	function scrollToNow(): void {
 		if (!store.viewedDate) return
@@ -115,7 +171,10 @@
 
 	watch(currentTime, scrollToNow)
 
-	onMounted(() => nextTick(scrollToNow))
+	onMounted(() => {
+		if (gridElement) gridElement.value = tasksColumnRef.value
+		return nextTick(scrollToNow)
+	})
 </script>
 
 <style scoped>

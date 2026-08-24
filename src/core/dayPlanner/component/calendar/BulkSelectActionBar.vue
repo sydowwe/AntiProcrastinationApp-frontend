@@ -43,6 +43,7 @@
 	import { DayType } from '@/_common/dto/enum/DayType.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useI18n } from 'vue-i18n'
+	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const { isShown, selectedCount, bulkApplying } = defineProps<{
 		isShown: boolean
@@ -60,4 +61,8 @@
 
 	const { t } = useI18n()
 	const dayTypeOptions = Object.values(DayType).map(v => ({ title: t(`planner.dayType.${v}`), value: v }))
+
+	// Returns focus to the toolbar toggle that opened the bar — it is the element that had focus when
+	// the bar appeared, and unlike a calendar day it is still there after a bulk action.
+	useActionBarFocusReturn(() => isShown)
 </script>

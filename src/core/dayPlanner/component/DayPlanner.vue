@@ -11,7 +11,7 @@
 					<PlannerTimeColumn />
 
 					<!-- Tasks Column with task block slot -->
-					<PlannerTasksColumn>
+					<PlannerTasksColumn :helpExtra="gridHelpExtra">
 						<template #task-block="{ task, onResizeStart }">
 							<!-- Default slot for task blocks - each view provides its own TaskBlock component -->
 							<slot
@@ -57,21 +57,32 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, inject, watch } from 'vue'
+	import { computed, inject, provide, ref, watch } from 'vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PlannerTimeColumn from '@/core/dayPlanner/component/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/core/dayPlanner/component/PlannerTasksColumn.vue'
 	import SelectionActionBar from '@/core/dayPlanner/component/misc/SelectionActionBar.vue'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+	import { PLANNER_GRID_KEY } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useI18n } from 'vue-i18n'
+
+	const { gridHelpExtra } = defineProps<{
+		/** Appended to the grid's screen-reader keyboard help, for keys only this planner binds. */
+		gridHelpExtra?: string
+	}>()
 
 	const emit = defineEmits<{
 		delete: []
 	}>()
 
 	const store = inject(PLANNER_STORE_KEY)!
+
+	// Filled in by `PlannerTasksColumn`; read by `SelectionActionBar`, which is its sibling and has
+	// no other way to hand focus back to the grid. One per planner, so the split view stays honest.
+	const gridElement = ref<HTMLElement | undefined>(undefined)
+	provide(PLANNER_GRID_KEY, gridElement)
 	const { shouldConfirm } = useDeleteConfirmation()
 	const { t } = useI18n()
 

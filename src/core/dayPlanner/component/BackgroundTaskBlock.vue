@@ -6,9 +6,13 @@
 		class="base-task-block background-task-block"
 		:class="[{ 'past-task': isPast }]"
 	>
+		<!-- Sideways text with a colour-coded importance icon: legible on screen, meaningless to a
+		     screen reader, which cannot tell this apart from a normal block. The visible label is
+		     hidden from the accessibility tree and replaced by the sentence below. -->
 		<VSheet
 			class="background-task-label"
 			:color="backgroundColorComp"
+			aria-hidden="true"
 		>
 			{{ task.activity.name }}
 			<VIcon
@@ -20,14 +24,17 @@
 				style="transform: rotate(-90deg)"
 			></VIcon>
 		</VSheet>
+		<span class="d-sr-only">{{ accessibleLabel }}</span>
 	</VSheet>
 </template>
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 
 	const { task, isPast, marginLeft } = defineProps<{
 		task: IBasePlannerTask<IBasePlannerTaskRequest>
@@ -36,8 +43,22 @@
 	}>()
 
 	const { getBgColor } = useColor()
+	const { t } = useI18n()
 
 	const backgroundColorComp = computed(() => getBgColor(task.activity?.role?.color) || '#4287f5')
+
+	const accessibleLabel = computed(() => {
+		const parts = [
+			t('planner.a11y.backgroundTaskLabel', {
+				name: task.activity.name,
+				start: Time.getString(task.startTime),
+				end: Time.getString(task.endTime),
+			}),
+		]
+		if (task.importance?.text) parts.push(t('planner.a11y.importancePart', { importance: task.importance.text }))
+		if (task.location) parts.push(t('planner.a11y.locationPart', { location: task.location }))
+		return parts.join(', ')
+	})
 
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))

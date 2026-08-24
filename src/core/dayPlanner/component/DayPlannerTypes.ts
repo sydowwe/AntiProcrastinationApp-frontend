@@ -1,3 +1,15 @@
+import type { InjectionKey, Ref } from 'vue'
+
+/**
+ * The grid element of one planner, published by `PlannerTasksColumn` and provided by `DayPlanner`.
+ *
+ * It exists for focus management: the floating action bars are siblings of the grid, not children,
+ * so when a bar unmounts and the element that had focus is gone with it, nothing in the bar can
+ * find its way back to the planner. The split view provides one ref per panel, so a bar always
+ * lands in the grid it belongs to.
+ */
+export const PLANNER_GRID_KEY = Symbol('plannerGrid') as InjectionKey<Ref<HTMLElement | undefined>>
+
 export interface PlacingItem {
 	name: string
 	icon: string

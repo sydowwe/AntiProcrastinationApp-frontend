@@ -44,6 +44,7 @@
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
+	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const { isShown, activeTemplates } = defineProps<{
 		isShown: boolean
@@ -57,4 +58,6 @@
 	const conflictResolution = defineModel<ApplyTemplateConflictResolution>('conflictResolution')
 
 	const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
+
+	useActionBarFocusReturn(() => isShown)
 </script>

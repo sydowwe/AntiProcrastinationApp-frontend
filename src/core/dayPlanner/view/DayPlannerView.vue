@@ -16,6 +16,7 @@
 		/>
 		<DayPlanner
 			class="flex-fill"
+			:gridHelpExtra="$t('planner.a11y.toggleDoneShortcut')"
 			@delete="crud.del"
 		>
 			<!-- Header with calendar info -->

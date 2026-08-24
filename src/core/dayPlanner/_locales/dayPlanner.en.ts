@@ -310,6 +310,28 @@ const dayPlanner = {
 			plannedSuffix: `planned`,
 			freeSuffix: `free`,
 		},
+		// Screen-reader-only strings. Task blocks are toggle buttons (role="button" + aria-pressed),
+		// so their contents never reach the accessibility tree — everything that matters has to be in
+		// `taskLabel` and its parts, or it is colour-only information with no text equivalent.
+		a11y: {
+			gridLabel: `Time grid {start} – {end}`,
+			gridHelp: `Tab moves between tasks. Space or Enter selects and deselects a task, E opens it for editing, Delete removes it, Ctrl+D duplicates it, Arrow Up and Arrow Down move the selected tasks by one slot, Escape clears the selection. One slot is {minutes} min.`,
+			taskLabel: `{name}, {start} to {end}`,
+			backgroundTaskLabel: `Background activity: {name}, {start} to {end}`,
+			statusPart: `status: {status}`,
+			rolePart: `role: {role}`,
+			categoryPart: `category: {category}`,
+			importancePart: `importance: {importance}`,
+			locationPart: `location: {location}`,
+			notesPart: `has a note`,
+			conflictPart: `conflicts with another task`,
+			previewPart: `template preview`,
+			moveConflict: `The move conflicts with another task`,
+			moveOk: `The move is free of conflicts`,
+			currentTime: `Current time: {time}`,
+			midnight: `Midnight`,
+			toggleDoneShortcut: `D marks the selected tasks as completed or not started.`,
+		},
 	},
 }
 export default dayPlanner

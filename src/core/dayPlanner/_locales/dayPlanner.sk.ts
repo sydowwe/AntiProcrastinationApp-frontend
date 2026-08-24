@@ -317,6 +317,28 @@ const dayPlanner = {
 			plannedSuffix: `naplánované`,
 			freeSuffix: `voľné`,
 		},
+		// Reťazce, ktoré vidí len čítačka obrazovky. Bloky úloh sú prepínacie tlačidlá (role="button"
+		// + aria-pressed), takže ich obsah sa do prístupnostného stromu nedostane — všetko podstatné
+		// musí byť v `taskLabel` a jeho častiach, inak je to farebná informácia bez textovej náhrady.
+		a11y: {
+			gridLabel: `Časová mriežka {start} – {end}`,
+			gridHelp: `Medzi úlohami sa presúvate tabulátorom. Medzerník alebo Enter vyberie a zruší výber úlohy, E otvorí úpravu, Delete vymaže, Ctrl+D duplikuje, šípka hore a dole posunie vybrané úlohy o jeden časový úsek, Escape zruší výber. Dĺžka jedného úseku je {minutes} min.`,
+			taskLabel: `{name}, {start} až {end}`,
+			backgroundTaskLabel: `Aktivita na pozadí: {name}, {start} až {end}`,
+			statusPart: `stav: {status}`,
+			rolePart: `rola: {role}`,
+			categoryPart: `kategória: {category}`,
+			importancePart: `dôležitosť: {importance}`,
+			locationPart: `miesto: {location}`,
+			notesPart: `má poznámku`,
+			conflictPart: `v konflikte s inou úlohou`,
+			previewPart: `náhľad šablóny`,
+			moveConflict: `Posun je v konflikte s inou úlohou`,
+			moveOk: `Posun je bez konfliktu`,
+			currentTime: `Aktuálny čas: {time}`,
+			midnight: `Polnoc`,
+			toggleDoneShortcut: `D označí vybrané úlohy ako dokončené alebo nezačaté.`,
+		},
 	},
 }
 export default dayPlanner

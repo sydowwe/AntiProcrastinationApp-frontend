@@ -74,8 +74,18 @@
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { inject } from 'vue'
 	import ActionBar from '@/_common/component/ActionBar.vue'
+	import { PLANNER_GRID_KEY } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const store = inject(PLANNER_STORE_KEY)!
+	const gridElement = inject(PLANNER_GRID_KEY, undefined)
+
+	// The task block that opened the bar is normally still on screen to go back to. It is not after
+	// a delete or a cut, which is exactly when the bar closes — hence the grid as the fallback.
+	useActionBarFocusReturn(
+		() => store.showActionBar,
+		() => gridElement?.value,
+	)
 </script>
 
 <style scoped>

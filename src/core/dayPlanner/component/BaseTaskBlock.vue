@@ -1,6 +1,7 @@
 <template>
 	<BackgroundTaskBlock
 		v-if="task.isBackground && !isOutOfView"
+		v-bind="$attrs"
 		:task
 		:isPast
 		:marginLeft
@@ -8,18 +9,24 @@
 
 	<VSheet
 		v-else-if="!isOutOfView"
+		v-bind="$attrs"
 		color="primary-container"
 		:style="style"
 		class="base-task-block task-block"
 		:class="[...blockClasses]"
 		:tabindex="0"
 		:data-task-id="task.id"
-		@keydown.enter="handleEnterKey"
-		@keydown.e="handleEKey"
-		@keydown.delete="handleDeleteKey"
-		@keydown.backspace="handleDeleteKey"
-		@keydown.esc="handleEscapeKey"
-		@keydown.ctrl.d.prevent="handleDuplicateKey"
+		role="button"
+		:aria-pressed="isSelected"
+		:aria-label="accessibleLabel"
+		:aria-keyshortcuts="allKeyShortcuts"
+		@keydown.space.exact.prevent="handleToggleSelectionKey"
+		@keydown.enter.exact="handleToggleSelectionKey"
+		@keydown.e.exact="handleEditKey"
+		@keydown.delete.exact="handleDeleteKey"
+		@keydown.backspace.exact="handleDeleteKey"
+		@keydown.esc.exact="handleEscapeKey"
+		@keydown.ctrl.d.exact.prevent="handleDuplicateKey"
 	>
 		<div
 			class="task-color-accent"
@@ -130,6 +137,7 @@
 
 <script setup lang="ts" generic="TTask extends AnyPlannerTask">
 	import { computed, inject } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { AnyPlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
@@ -138,18 +146,46 @@
 	import BackgroundTaskBlock from '@/core/dayPlanner/component/BackgroundTaskBlock.vue'
 	import { useTaskBlockKeyboard } from '@/core/dayPlanner/composable/useTaskBlockKeyboard.ts'
 
-	const { task, isPast, marginLeft } = defineProps<{
+	const {
+		task,
+		isPast,
+		marginLeft,
+		extraLabelParts = [],
+		extraKeyShortcuts,
+	} = defineProps<{
 		task: TTask
 		isPast?: boolean
 		marginLeft?: string
+		/**
+		 * Localized descriptors only the concrete block knows about — the normal planner's status,
+		 * for instance. They are appended to the accessible name because `role="button"` makes the
+		 * block's contents presentational: nothing rendered inside it reaches a screen reader.
+		 */
+		extraLabelParts?: string[]
+		/** Extra `aria-keyshortcuts` entries for keys the concrete block binds itself. */
+		extraKeyShortcuts?: string
 	}>()
 
 	const emit = defineEmits<{
 		(e: 'resizeStart', payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }): void
 	}>()
 
+	/**
+	 * The `v-if` / `v-else-if` pair above has no `v-else`, so this component is a *fragment* as far as
+	 * Vue is concerned, and fragments drop every fallthrough attribute and listener silently. Three
+	 * things had been broken by that and nobody noticed, because none of them fails loudly:
+	 * `PlannerTaskBlock`'s `:class="classes"` (so the template-preview hatching never rendered), its
+	 * status hotkey, and — until this was found — the accessibility hotkeys added on top of it.
+	 *
+	 * Opting out of implicit inheritance and binding `$attrs` on each branch makes the pass-through
+	 * explicit and survives the fragment. `mergeProps` concatenates listeners, so a `@keydown` bound
+	 * by a wrapper runs alongside the ones bound below, not instead of them.
+	 */
+	defineOptions({ inheritAttrs: false })
+
 	const store = inject(PLANNER_STORE_KEY)!
 	const { getBgColor } = useColor()
+	const { t } = useI18n()
 
 	const isSelected = computed(() => store.selectedTaskIds.has(task.id))
 	const isDragging = computed(() => store.draggingTaskId === task.id)
@@ -192,9 +228,44 @@
 		},
 	])
 
-	const { handleEnterKey, handleEKey, handleDeleteKey, handleEscapeKey, handleDuplicateKey } = useTaskBlockKeyboard(
-		store,
-		isSelected,
+	const { handleToggleSelectionKey, handleEditKey, handleDeleteKey, handleEscapeKey, handleDuplicateKey } =
+		useTaskBlockKeyboard(store, () => task.id, isSelected)
+
+	/**
+	 * The whole accessible name of the block, assembled here rather than left to the markup.
+	 *
+	 * `role="button"` gives the element presentational children, so the title, the time, the role
+	 * chip, the category, the location and the note icon are all invisible to a screen reader — and
+	 * the visible title is truncated with an ellipsis anyway, so reading the DOM text was never the
+	 * right answer. Conflict is the one that matters most: on screen it is signalled by nothing but a
+	 * red tint and a pulse.
+	 */
+	const accessibleLabel = computed(() => {
+		const parts = [
+			t('planner.a11y.taskLabel', {
+				name: task.activity.name,
+				start: Time.getString(task.startTime),
+				end: Time.getString(task.endTime),
+			}),
+			...extraLabelParts,
+		]
+		if (task.activity.role?.name) parts.push(t('planner.a11y.rolePart', { role: task.activity.role.name }))
+		if (task.activity.category?.name) {
+			parts.push(t('planner.a11y.categoryPart', { category: task.activity.category.name }))
+		}
+		if (task.importance?.text) parts.push(t('planner.a11y.importancePart', { importance: task.importance.text }))
+		if (task.location) parts.push(t('planner.a11y.locationPart', { location: task.location }))
+		if (task.notes) parts.push(t('planner.a11y.notesPart'))
+		// Negative ids are the not-yet-committed tasks of a template preview.
+		if (task.id < 0) parts.push(t('planner.a11y.previewPart'))
+		if (isConflict.value) parts.push(t('planner.a11y.conflictPart'))
+		return parts.join(', ')
+	})
+
+	const allKeyShortcuts = computed(() =>
+		['Space', 'Enter', 'E', 'Delete', 'Control+D', 'ArrowUp', 'ArrowDown', extraKeyShortcuts]
+			.filter(Boolean)
+			.join(' '),
 	)
 </script>
 
@@ -236,8 +307,17 @@
 		top: 0;
 	}
 
+	/* Mouse and pointer focus stays unstyled, as before; `:focus-visible` only fires for keyboard
+	   focus, so this is invisible to mouse users and is the only thing telling a keyboard user where
+	   they are. The block clips its content, so the outline is drawn inset. */
 	.task-block:focus {
 		outline: none;
+	}
+
+	.task-block:focus-visible {
+		outline: 3px solid rgb(var(--v-theme-secondary));
+		outline-offset: -3px;
+		z-index: 12;
 	}
 
 	.base-task-block.selected {
