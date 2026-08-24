@@ -93,7 +93,7 @@
 	import { computed } from 'vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { LOCATION_ICONS } from '@/core/dayPlanner/dto/enum/Location.ts'
-	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import type { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/core/dayPlanner/component/calendar/CellTaskProgress.vue'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
@@ -101,7 +101,7 @@
 	const props = defineProps<{
 		day: Calendar
 		selected: boolean
-		tasks: PlannerTask[]
+		tasks: CalendarTaskSummary[]
 	}>()
 
 	const completionBgStyle = computed(() => {

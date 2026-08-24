@@ -1,5 +1,6 @@
 <template>
 	<CalendarGrid
+		ref="calendarGridRef"
 		class="py-4"
 		:days="calendarDays"
 		:loading
@@ -79,7 +80,6 @@
 	import { onMounted, ref, watch } from 'vue'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
-	import { CalendarRequest } from '@/core/dayPlanner/dto/request/CalendarRequest.ts'
 	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
 	import type { DayType } from '@/_common/dto/enum/DayType.ts'
 	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
@@ -91,18 +91,19 @@
 	import ApplyTemplateActionBar from '@/core/dayPlanner/component/calendar/ApplyTemplateActionBar.vue'
 	import BulkSelectActionBar from '@/core/dayPlanner/component/calendar/BulkSelectActionBar.vue'
 	import router from '@/router.ts'
-	import { formatToDate, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatDateForApi, formatToDate, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
-	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import { ApplyTemplateToTaskPlannerRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerRequest.ts'
+	import { ApplyTemplateToTaskPlannerBatchRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerBatchRequest.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
+	import type { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -118,12 +119,19 @@
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
-	const { fetchFiltered: fetchPlannerTasks, createWithResponse: createTaskWithResponse } = useTaskPlannerCrud()
+	const { copyToDays } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
-	const { updateWithResponse: updateCalendar, fetchByDate, fetchFiltered: fetchCalendars } = useCalendarQuery()
+	const {
+		fetchByDate,
+		fetchFiltered: fetchCalendars,
+		fetchTaskSummaries,
+		applyTemplateBatch,
+		changeDayTypeBatch,
+	} = useCalendarQuery()
 
 	const {
+		mode: calendarMode,
 		isBulkSelectMode,
 		isEditDetailsMode,
 		isApplyTemplateMode,
@@ -136,29 +144,94 @@
 		toggleDaySelection,
 	} = useCalendarModes()
 
+	const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
+	// Set while we are writing URL-derived state into the calendar/mode refs, so the write-back
+	// watchers below don't turn our own sync into a spurious history entry.
+	let isApplyingUrlState = false
+
 	const calendarDays = ref<Calendar[]>([])
 	const loading = ref(false)
 	const dateRange = ref<{ start: Date | null; end: Date | null }>({ start: null, end: null })
-	const dayTasksMap = ref<Map<number, PlannerTask[]>>(new Map())
+	const dayTasksMap = ref<Map<number, CalendarTaskSummary[]>>(new Map())
 	const activeTemplates = ref<TaskPlannerDayTemplate[]>([])
 	const applyConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
 	const bulkApplying = ref(false)
 	const detailsDialog = ref(false)
 	const editingDay = ref<Calendar | null>(null)
 
+	// Guards the calendar/filter + calendar/task-summaries pair: both are in flight together for a
+	// date-range change, and a slow response from a month the user has since navigated away from
+	// must not land after a newer, faster month already has.
+	let refreshRequestId = 0
+
+	function monthKeyFromDate(date: Date): string {
+		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+	}
+
+	function parseMonthKey(key: string): { start: Date; end: Date } | null {
+		const match = /^(\d{4})-(\d{2})$/.exec(key)
+		if (!match?.[1] || !match[2]) return null
+		const year = Number(match[1])
+		const month = Number(match[2])
+		return { start: new Date(year, month - 1, 1), end: new Date(year, month, 0) }
+	}
+
 	function handleDateRangeChange(range: { start: Date | null; end: Date | null }) {
 		dateRange.value = range
 		refresh()
+		syncMonthToUrl(range)
 	}
+
+	function syncMonthToUrl(range: { start: Date | null; end: Date | null }) {
+		if (isApplyingUrlState || !range.start) return
+		const key = monthKeyFromDate(range.start)
+		const currentQuery = { ...router.currentRoute.value.query }
+		if (key === monthKeyFromDate(new Date())) {
+			if (currentQuery.month === undefined) return
+			delete currentQuery.month
+		} else {
+			if (currentQuery.month === key) return
+			currentQuery.month = key
+		}
+		router.push({ query: currentQuery })
+	}
+
+	// Mode/template/preview are transient UI state layered on top of whatever month is displayed —
+	// they replace the query so the back button walks months rather than undoing mode toggles.
+	function syncModeToUrl() {
+		if (isApplyingUrlState) return
+		const currentQuery = { ...router.currentRoute.value.query }
+		delete currentQuery.mode
+		delete currentQuery.templateId
+		delete currentQuery.preview
+		if (calendarMode.value !== 'none') {
+			currentQuery.mode = calendarMode.value
+			if (calendarMode.value === 'applyTemplate') {
+				if (applyTemplateId.value !== null) currentQuery.templateId = String(applyTemplateId.value)
+				if (!applyPreviewMode.value) currentQuery.preview = '0'
+			}
+		}
+		router.replace({ query: currentQuery })
+	}
+
+	watch([calendarMode, applyTemplateId, applyPreviewMode], syncModeToUrl)
 
 	async function refresh() {
 		if (!dateRange.value.start || !dateRange.value.end) {
 			calendarDays.value = []
+			dayTasksMap.value = new Map()
 			return
 		}
+		const requestId = ++refreshRequestId
 		loading.value = true
 		try {
-			calendarDays.value = await fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end))
+			const [days, taskSummaries] = await Promise.all([
+				fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end)),
+				fetchTaskSummaries(formatDateForApi(dateRange.value.start), formatDateForApi(dateRange.value.end)),
+			])
+			if (requestId !== refreshRequestId) return
+			calendarDays.value = days
+			dayTasksMap.value = taskSummaries
 		} catch {
 			// Keep whatever days are already on screen — a transient failure should not blank a
 			// month the user was already looking at. Offer a retry instead of silently losing it.
@@ -168,61 +241,41 @@
 				actionCallback: () => refresh(),
 			})
 		} finally {
-			loading.value = false
+			if (requestId === refreshRequestId) loading.value = false
 		}
 	}
-
-	/** Runs `worker` over `items` with at most `limit` in flight, settling like `Promise.allSettled`. */
-	async function settledWithConcurrencyLimit<T>(
-		items: T[],
-		limit: number,
-		worker: (item: T) => Promise<unknown>,
-	): Promise<PromiseSettledResult<unknown>[]> {
-		const results: PromiseSettledResult<unknown>[] = new Array(items.length)
-		let nextIndex = 0
-		async function runNext(): Promise<void> {
-			while (nextIndex < items.length) {
-				const currentIndex = nextIndex++
-				try {
-					results[currentIndex] = { status: 'fulfilled', value: await worker(items[currentIndex]!) }
-				} catch (reason) {
-					results[currentIndex] = { status: 'rejected', reason }
-				}
-			}
-		}
-		await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runNext))
-		return results
-	}
-
-	const CELL_TASKS_CONCURRENCY = 6
-	const BULK_ACTION_CONCURRENCY = 6
-	let cellTasksRequestId = 0
 
 	onMounted(async () => {
+		isApplyingUrlState = true
+		const query = router.currentRoute.value.query
+		const urlMode = query.mode
+		if (urlMode === 'bulkSelect' || urlMode === 'editDetails' || urlMode === 'applyTemplate') {
+			calendarMode.value = urlMode
+		}
+		const urlTemplateId =
+			typeof query.templateId === 'string' && query.templateId !== '' ? Number(query.templateId) : null
+		const urlPreviewMode = query.preview === '0' ? false : null
+		const urlMonth = typeof query.month === 'string' ? query.month : null
+		if (urlMonth) {
+			const parsed = parseMonthKey(urlMonth)
+			if (parsed && calendarGridRef.value) {
+				calendarGridRef.value.dateRange = { start: parsed.start, end: parsed.end }
+			}
+		}
+		isApplyingUrlState = false
+
 		showFullScreenLoading()
 		try {
 			await settingsStore.loadSettings()
-			applyTemplateId.value = settingsStore.defaultApplyTemplateId
+			// A URL param must win over the stored default — settings resolve after an await, so the
+			// URL-derived values captured above (not a re-read of the query) are what wins here.
+			applyTemplateId.value = urlTemplateId ?? settingsStore.defaultApplyTemplateId
 			applyConflictResolution.value = settingsStore.defaultConflictResolution
-			applyPreviewMode.value = settingsStore.defaultApplyPreviewMode
+			applyPreviewMode.value = urlPreviewMode ?? settingsStore.defaultApplyPreviewMode
 			activeTemplates.value = (await fetchAllTemplates()).filter(template => template.isActive)
 		} finally {
 			hideFullScreenLoading()
 		}
-	})
-
-	watch(calendarDays, async days => {
-		// Tracks which watcher firing this is, so a slow response from a month the user has since
-		// navigated away from cannot land in dayTasksMap after a newer, faster month already has.
-		const requestId = ++cellTasksRequestId
-		dayTasksMap.value = new Map()
-		const daysWithTasks = days.filter(d => d.totalTasks > 0)
-		await settledWithConcurrencyLimit(daysWithTasks, CELL_TASKS_CONCURRENCY, async d => {
-			const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
-			if (requestId === cellTasksRequestId) {
-				dayTasksMap.value.set(d.id, tasks)
-			}
-		})
 	})
 
 	function asCalendar(day: ICalendar): Calendar {
@@ -338,28 +391,31 @@
 				new TemplatePlannerTaskFilter(templateId, template.defaultWakeUpTime, template.defaultBedTime),
 			)
 			const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
+			// Per-task calendarId is ignored by the batch endpoint — every selected day comes from
+			// calendarIds below — so the placeholder here never reaches the server.
+			const taskRequests = templateTasks.map(t =>
+				PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(0, t)),
+			)
 
-			const results = await settledWithConcurrencyLimit(days, BULK_ACTION_CONCURRENCY, day => {
-				const taskRequests = templateTasks.map(t =>
-					PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t)),
-				)
-				return API.post(
-					'calendar/apply-planner-template',
-					new ApplyTemplateToTaskPlannerRequest(templateId, day.id, conflictResolution, taskRequests),
-				)
-			})
+			const response = await applyTemplateBatch(
+				new ApplyTemplateToTaskPlannerBatchRequest(
+					templateId,
+					days.map(d => d.id),
+					conflictResolution,
+					taskRequests,
+				),
+			)
 
-			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
-			isBulkSelectMode.value = false
+			calendarMode.value = 'none'
 			refresh()
 
-			if (failed > 0) {
+			if (response.failedCount > 0) {
 				showErrorSnackbar(
 					t('planner.feedback.bulkTemplateApplyPartial', {
-						succeeded: days.length - failed,
-						total: days.length,
-						failed,
+						succeeded: response.succeededCount,
+						total: response.results.length,
+						failed: response.failedCount,
 					}),
 				)
 			} else {
@@ -374,33 +430,23 @@
 		try {
 			const formatted = formatToDate(sourceDate)
 			const sourceCalendar = await fetchByDate(formatted)
-			const sourceTasks = await fetchPlannerTasks(
-				new PlannerTaskFilter(sourceCalendar.id, sourceCalendar.wakeUpTime, sourceCalendar.bedTime),
-			)
 			const targetDays = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
-			const copyOps = targetDays.flatMap(targetDay =>
-				sourceTasks.map(task => {
-					const req = PlannerTaskRequest.fromEntity(task)
-					req.calendarId = targetDay.id
-					return req
-				}),
+
+			const response = await copyToDays(
+				sourceCalendar.id,
+				targetDays.map(d => d.id),
 			)
 
-			const results = await settledWithConcurrencyLimit(copyOps, BULK_ACTION_CONCURRENCY, req =>
-				createTaskWithResponse(req),
-			)
-
-			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
-			isBulkSelectMode.value = false
+			calendarMode.value = 'none'
 			refresh()
 
-			if (failed > 0) {
+			if (response.failedCount > 0) {
 				showErrorSnackbar(
 					t('planner.feedback.tasksCopyPartial', {
-						succeeded: results.length - failed,
-						total: results.length,
-						failed,
+						succeeded: response.succeededCount,
+						total: response.results.length,
+						failed: response.failedCount,
 					}),
 				)
 			} else {
@@ -413,22 +459,20 @@
 
 	async function executeBulkDayTypeChange(dayType: DayType) {
 		const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
-		const results = await settledWithConcurrencyLimit(days, BULK_ACTION_CONCURRENCY, d => {
-			const req = CalendarRequest.fromResponse(d)
-			req.dayType = dayType
-			return updateCalendar(d.id, req)
-		})
-		const failed = results.filter(r => r.status === 'rejected').length
+		const response = await changeDayTypeBatch(
+			days.map(d => d.id),
+			dayType,
+		)
 		selectedDayIds.value = []
-		isBulkSelectMode.value = false
+		calendarMode.value = 'none'
 		refresh()
 
-		if (failed > 0) {
+		if (response.failedCount > 0) {
 			showErrorSnackbar(
 				t('planner.feedback.dayTypeUpdatePartial', {
-					succeeded: days.length - failed,
-					total: days.length,
-					failed,
+					succeeded: response.succeededCount,
+					total: response.results.length,
+					failed: response.failedCount,
 				}),
 			)
 		} else {

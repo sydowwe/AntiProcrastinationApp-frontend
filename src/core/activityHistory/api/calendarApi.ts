@@ -5,6 +5,10 @@ import { useFetchFiltered } from '@/_common/api/useFetchFiltered.ts'
 import { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 import { DayPlan } from '@/core/dayPlanner/dto/response/DayPlan.ts'
 import type { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
+import { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
+import { BatchOperationResponse } from '@/core/dayPlanner/dto/response/BatchOperationResult.ts'
+import type { ApplyTemplateToTaskPlannerBatchRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerBatchRequest.ts'
+import type { DayType } from '@/_common/dto/enum/DayType.ts'
 
 export function useCalendarQuery() {
 	const url = 'calendar'
@@ -38,5 +42,40 @@ export function useCalendarQuery() {
 		return DayPlan.fromJson(data)
 	}
 
-	return { fetchFiltered, fetchById, fetchByDate, fetchDayPlan, updateWithResponse }
+	/**
+	 * Per-day task summaries for the cell content of a calendar-grid month — `from`/`until` as
+	 * `yyyy-MM-dd` (see `formatDateForApi`), capped at 366 days. Days with no tasks are omitted from
+	 * the response, so a missing calendar id means "no tasks", not "not yet loaded".
+	 */
+	async function fetchTaskSummaries(from: string, until: string): Promise<Map<number, CalendarTaskSummary[]>> {
+		const { data } = await API.post(`${url}/task-summaries`, { from, until })
+		const map = new Map<number, CalendarTaskSummary[]>()
+		for (const day of data.days) {
+			map.set(day.calendarId, CalendarTaskSummary.listFromObjects(day.tasks))
+		}
+		return map
+	}
+
+	async function applyTemplateBatch(
+		request: ApplyTemplateToTaskPlannerBatchRequest,
+	): Promise<BatchOperationResponse> {
+		const { data } = await API.post(`${url}/apply-planner-template/batch`, request)
+		return BatchOperationResponse.fromJson(data)
+	}
+
+	async function changeDayTypeBatch(calendarIds: number[], dayType: DayType): Promise<BatchOperationResponse> {
+		const { data } = await API.patch(`${url}/day-type/batch`, { calendarIds, dayType })
+		return BatchOperationResponse.fromJson(data)
+	}
+
+	return {
+		fetchFiltered,
+		fetchById,
+		fetchByDate,
+		fetchDayPlan,
+		updateWithResponse,
+		fetchTaskSummaries,
+		applyTemplateBatch,
+		changeDayTypeBatch,
+	}
 }

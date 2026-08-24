@@ -9,6 +9,7 @@ import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.
 import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import type { AxiosRequestConfig } from 'axios'
+import { BatchOperationResponse } from '@/core/dayPlanner/dto/response/BatchOperationResult.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -48,6 +49,14 @@ export function useTaskPlannerCrud() {
 		responseClass: PlannerTask,
 		entityName: url,
 	})
+
+	// The server re-reads the source day's tasks itself — it copies the plan, not the tasks the
+	// client happens to hold, and status/actual times reset rather than travelling with the copy.
+	async function copyToDays(sourceCalendarId: number, targetCalendarIds: number[]): Promise<BatchOperationResponse> {
+		const { data } = await API.post(`${url}/copy-to-days`, { sourceCalendarId, targetCalendarIds })
+		return BatchOperationResponse.fromJson(data)
+	}
+
 	return {
 		fetchById,
 		fetchAll,
@@ -62,5 +71,6 @@ export function useTaskPlannerCrud() {
 		markInProgress,
 		deleteEntity,
 		batchDelete,
+		copyToDays,
 	}
 }

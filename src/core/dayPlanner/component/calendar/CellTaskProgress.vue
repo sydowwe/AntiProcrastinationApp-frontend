@@ -58,7 +58,7 @@
 					>
 						{{ task.startTime.getString() }}–{{ task.endTime.getString() }}
 					</span>
-					<span>{{ task.activity.name }}</span>
+					<span>{{ task.activityName }}</span>
 				</div>
 			</div>
 		</VTooltip>
@@ -100,11 +100,11 @@
 	import { computed } from 'vue'
 	import { useDisplay } from 'vuetify/framework'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
-	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import type { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
 
 	const props = defineProps<{
 		day: Calendar
-		tasks: PlannerTask[]
+		tasks: CalendarTaskSummary[]
 	}>()
 
 	const { smAndUp } = useDisplay()
