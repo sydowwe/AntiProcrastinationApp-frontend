@@ -317,6 +317,17 @@ const dayPlanner = {
 			plannedSuffix: `naplánované`,
 			freeSuffix: `voľné`,
 		},
+		// Jediný riadok v hlavičke: čo beží teraz a čo nasleduje. Odpočet do hodiny sa skloňuje
+		// (tvary 1 | 2–4 | 0 a 5+, pravidlo v src/i18n.ts), nad hodinu prechádza na `1h 30m`
+		// z `formatDuration.fromMinutes` — jednotkové značky sa neskloňujú a sú kratšie.
+		nowNext: {
+			now: `Teraz: {name}`,
+			next: `Ďalej: {name}`,
+			minutesLeft: `zostáva {count} minúta | zostávajú {count} minúty | zostáva {count} minút`,
+			timeLeft: `zostáva {duration}`,
+			inMinutes: `o {count} minútu | o {count} minúty | o {count} minút`,
+			inTime: `o {duration}`,
+		},
 		// Reťazce, ktoré vidí len čítačka obrazovky. Bloky úloh sú prepínacie tlačidlá (role="button"
 		// + aria-pressed), takže ich obsah sa do prístupnostného stromu nedostane — všetko podstatné
 		// musí byť v `taskLabel` a jeho častiach, inak je to farebná informácia bez textovej náhrady.

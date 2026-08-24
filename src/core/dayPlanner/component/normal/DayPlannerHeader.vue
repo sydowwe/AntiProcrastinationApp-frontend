@@ -45,7 +45,7 @@
 			<DayPlannerProgressBlock :calendar />
 		</div>
 
-		<!-- Center: Progress -->
+		<!-- Center: view range, and — on today only — what is running now -->
 		<div class="center-section">
 			<TimeRangePicker
 				v-model:start="store.viewStartTime"
@@ -53,6 +53,7 @@
 				startIcon="sun"
 				endIcon="moon"
 			/>
+			<NowNextIndicator />
 		</div>
 
 		<!-- Right: Time + Add -->
@@ -139,6 +140,7 @@
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { formatDateForApi, formatToDateWithDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import DayPlannerProgressBlock from '@/core/dayPlanner/component/normal/DayPlannerProgressBlock.vue'
+	import NowNextIndicator from '@/core/dayPlanner/component/normal/NowNextIndicator.vue'
 	import GoogleCalendarSyncBtn from '@/core/dayPlanner/component/normal/GoogleCalendarSyncBtn.vue'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
@@ -220,6 +222,19 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
+	}
+
+	/*
+	 * A column, so the now/next line sits under the range picker instead of competing with it for the
+	 * row. `min-width: 0` is what lets the line ellipsise rather than push the buttons off the header;
+	 * on any day but today it renders nothing and this collapses back to the picker alone.
+	 */
+	.center-section {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
 	}
 
 	.nav-btn-wrap {

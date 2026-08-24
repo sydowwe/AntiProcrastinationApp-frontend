@@ -310,6 +310,16 @@ const dayPlanner = {
 			plannedSuffix: `planned`,
 			freeSuffix: `free`,
 		},
+		// The one header line: what is running now and what is next. `min` is invariant in English, so
+		// these need no plural forms — SK declines the count three ways and does.
+		nowNext: {
+			now: `Now: {name}`,
+			next: `Next: {name}`,
+			minutesLeft: `{count} min left`,
+			timeLeft: `{duration} left`,
+			inMinutes: `in {count} min`,
+			inTime: `in {duration}`,
+		},
 		// Screen-reader-only strings. Task blocks are toggle buttons (role="button" + aria-pressed),
 		// so their contents never reach the accessibility tree — everything that matters has to be in
 		// `taskLabel` and its parts, or it is colour-only information with no text equivalent.
