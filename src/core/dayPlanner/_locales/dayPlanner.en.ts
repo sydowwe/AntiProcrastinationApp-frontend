@@ -46,6 +46,7 @@ const dayPlanner = {
 			tasksCopied: `Tasks copied to {count} day | Tasks copied to {count} days`,
 			tasksCopyPartial: `Tasks copied — {succeeded}/{total} tasks succeeded, {failed} failed`,
 			tasksCopyFailed: `Failed to copy tasks`,
+			calendarLoadFailed: `Failed to load the calendar`,
 			taskStatusUpdateFailed: `Failed to save the status change`,
 			statusUpdated: `{count} task updated | {count} tasks updated`,
 			statusUpdatePartial: `Status change — {succeeded}/{total} tasks succeeded, {failed} failed`,
@@ -80,6 +81,7 @@ const dayPlanner = {
 			apply: `Apply`,
 			copy: `Copy`,
 			compare: `Compare`,
+			retry: `Retry`,
 		},
 		dialog: {
 			skipTaskTitle: `Skip task`,

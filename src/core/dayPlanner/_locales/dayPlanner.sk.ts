@@ -53,6 +53,7 @@ const dayPlanner = {
 			tasksCopied: `Úlohy skopírované pre {count} deň | Úlohy skopírované pre {count} dni | Úlohy skopírované pre {count} dní`,
 			tasksCopyPartial: `Skopírovaných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
 			tasksCopyFailed: `Kopírovanie úloh zlyhalo`,
+			calendarLoadFailed: `Načítanie kalendára zlyhalo`,
 			taskStatusUpdateFailed: `Zmenu stavu sa nepodarilo uložiť`,
 			statusUpdated: `1 úloha aktualizovaná | {count} úlohy aktualizované | {count} úloh aktualizovaných`,
 			statusUpdatePartial: `Zmena stavu — úspešných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
@@ -87,6 +88,7 @@ const dayPlanner = {
 			apply: `Použiť`,
 			copy: `Kopírovať`,
 			compare: `Porovnať`,
+			retry: `Skúsiť znova`,
 		},
 		dialog: {
 			skipTaskTitle: `Preskočiť úlohu`,

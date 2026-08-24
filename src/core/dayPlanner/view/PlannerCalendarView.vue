@@ -113,7 +113,7 @@
 	import { useI18n } from 'vue-i18n'
 
 	const { t } = useI18n()
-	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
+	const { showSuccessSnackbar, showErrorSnackbar, showSnackbar } = useSnackbar()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
@@ -160,11 +160,43 @@
 		try {
 			calendarDays.value = await fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end))
 		} catch {
-			calendarDays.value = []
+			// Keep whatever days are already on screen — a transient failure should not blank a
+			// month the user was already looking at. Offer a retry instead of silently losing it.
+			showSnackbar(t('planner.feedback.calendarLoadFailed'), {
+				color: 'errorDark',
+				actionLabel: t('planner.actions.retry'),
+				actionCallback: () => refresh(),
+			})
 		} finally {
 			loading.value = false
 		}
 	}
+
+	/** Runs `worker` over `items` with at most `limit` in flight, settling like `Promise.allSettled`. */
+	async function settledWithConcurrencyLimit<T>(
+		items: T[],
+		limit: number,
+		worker: (item: T) => Promise<unknown>,
+	): Promise<PromiseSettledResult<unknown>[]> {
+		const results: PromiseSettledResult<unknown>[] = new Array(items.length)
+		let nextIndex = 0
+		async function runNext(): Promise<void> {
+			while (nextIndex < items.length) {
+				const currentIndex = nextIndex++
+				try {
+					results[currentIndex] = { status: 'fulfilled', value: await worker(items[currentIndex]!) }
+				} catch (reason) {
+					results[currentIndex] = { status: 'rejected', reason }
+				}
+			}
+		}
+		await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runNext))
+		return results
+	}
+
+	const CELL_TASKS_CONCURRENCY = 6
+	const BULK_ACTION_CONCURRENCY = 6
+	let cellTasksRequestId = 0
 
 	onMounted(async () => {
 		showFullScreenLoading()
@@ -180,14 +212,17 @@
 	})
 
 	watch(calendarDays, async days => {
+		// Tracks which watcher firing this is, so a slow response from a month the user has since
+		// navigated away from cannot land in dayTasksMap after a newer, faster month already has.
+		const requestId = ++cellTasksRequestId
 		dayTasksMap.value = new Map()
 		const daysWithTasks = days.filter(d => d.totalTasks > 0)
-		await Promise.all(
-			daysWithTasks.map(async d => {
-				const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
+		await settledWithConcurrencyLimit(daysWithTasks, CELL_TASKS_CONCURRENCY, async d => {
+			const tasks = await fetchPlannerTasks(new PlannerTaskFilter(d.id, d.wakeUpTime, d.bedTime))
+			if (requestId === cellTasksRequestId) {
 				dayTasksMap.value.set(d.id, tasks)
-			}),
-		)
+			}
+		})
 	})
 
 	function asCalendar(day: ICalendar): Calendar {
@@ -206,7 +241,7 @@
 		}
 		if (isApplyTemplateMode.value) {
 			if (applyTemplateId.value === null) {
-				showErrorSnackbar(t('dayPlanner.planner.feedback.selectTemplateFirst'))
+				showErrorSnackbar(t('planner.feedback.selectTemplateFirst'))
 				return
 			}
 			const template = activeTemplates.value.find(t => t.id === applyTemplateId.value)!
@@ -246,9 +281,9 @@
 				new ApplyTemplateToTaskPlannerRequest(template.id, day.id, applyConflictResolution.value, taskRequests),
 			)
 			refresh()
-			showSuccessSnackbar(t('dayPlanner.planner.feedback.templateApplied'))
+			showSuccessSnackbar(t('planner.feedback.templateApplied'))
 		} catch {
-			showErrorSnackbar(t('dayPlanner.planner.feedback.templateApplyFailed'))
+			showErrorSnackbar(t('planner.feedback.templateApplyFailed'))
 		}
 	}
 
@@ -304,17 +339,15 @@
 			)
 			const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
 
-			const results = await Promise.allSettled(
-				days.map(day => {
-					const taskRequests = templateTasks.map(t =>
-						PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t)),
-					)
-					return API.post(
-						'calendar/apply-planner-template',
-						new ApplyTemplateToTaskPlannerRequest(templateId, day.id, conflictResolution, taskRequests),
-					)
-				}),
-			)
+			const results = await settledWithConcurrencyLimit(days, BULK_ACTION_CONCURRENCY, day => {
+				const taskRequests = templateTasks.map(t =>
+					PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t)),
+				)
+				return API.post(
+					'calendar/apply-planner-template',
+					new ApplyTemplateToTaskPlannerRequest(templateId, day.id, conflictResolution, taskRequests),
+				)
+			})
 
 			const failed = results.filter(r => r.status === 'rejected').length
 			selectedDayIds.value = []
@@ -323,16 +356,14 @@
 
 			if (failed > 0) {
 				showErrorSnackbar(
-					t('dayPlanner.planner.feedback.bulkTemplateApplyPartial', {
+					t('planner.feedback.bulkTemplateApplyPartial', {
 						succeeded: days.length - failed,
 						total: days.length,
 						failed,
 					}),
 				)
 			} else {
-				showSuccessSnackbar(
-					t('dayPlanner.planner.feedback.bulkTemplateApplied', { count: days.length }, days.length),
-				)
+				showSuccessSnackbar(t('planner.feedback.bulkTemplateApplied', { count: days.length }, days.length))
 			}
 		} finally {
 			bulkApplying.value = false
@@ -347,15 +378,16 @@
 				new PlannerTaskFilter(sourceCalendar.id, sourceCalendar.wakeUpTime, sourceCalendar.bedTime),
 			)
 			const targetDays = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
+			const copyOps = targetDays.flatMap(targetDay =>
+				sourceTasks.map(task => {
+					const req = PlannerTaskRequest.fromEntity(task)
+					req.calendarId = targetDay.id
+					return req
+				}),
+			)
 
-			const results = await Promise.allSettled(
-				targetDays.flatMap(targetDay =>
-					sourceTasks.map(task => {
-						const req = PlannerTaskRequest.fromEntity(task)
-						req.calendarId = targetDay.id
-						return createTaskWithResponse(req)
-					}),
-				),
+			const results = await settledWithConcurrencyLimit(copyOps, BULK_ACTION_CONCURRENCY, req =>
+				createTaskWithResponse(req),
 			)
 
 			const failed = results.filter(r => r.status === 'rejected').length
@@ -365,31 +397,27 @@
 
 			if (failed > 0) {
 				showErrorSnackbar(
-					t('dayPlanner.planner.feedback.tasksCopyPartial', {
+					t('planner.feedback.tasksCopyPartial', {
 						succeeded: results.length - failed,
 						total: results.length,
 						failed,
 					}),
 				)
 			} else {
-				showSuccessSnackbar(
-					t('dayPlanner.planner.feedback.tasksCopied', { count: targetDays.length }, targetDays.length),
-				)
+				showSuccessSnackbar(t('planner.feedback.tasksCopied', { count: targetDays.length }, targetDays.length))
 			}
 		} catch {
-			showErrorSnackbar(t('dayPlanner.planner.feedback.tasksCopyFailed'))
+			showErrorSnackbar(t('planner.feedback.tasksCopyFailed'))
 		}
 	}
 
 	async function executeBulkDayTypeChange(dayType: DayType) {
 		const days = calendarDays.value.filter(d => selectedDayIds.value.includes(d.id))
-		const results = await Promise.allSettled(
-			days.map(d => {
-				const req = CalendarRequest.fromResponse(d)
-				req.dayType = dayType
-				return updateCalendar(d.id, req)
-			}),
-		)
+		const results = await settledWithConcurrencyLimit(days, BULK_ACTION_CONCURRENCY, d => {
+			const req = CalendarRequest.fromResponse(d)
+			req.dayType = dayType
+			return updateCalendar(d.id, req)
+		})
 		const failed = results.filter(r => r.status === 'rejected').length
 		selectedDayIds.value = []
 		isBulkSelectMode.value = false
@@ -397,14 +425,14 @@
 
 		if (failed > 0) {
 			showErrorSnackbar(
-				t('dayPlanner.planner.feedback.dayTypeUpdatePartial', {
+				t('planner.feedback.dayTypeUpdatePartial', {
 					succeeded: days.length - failed,
 					total: days.length,
 					failed,
 				}),
 			)
 		} else {
-			showSuccessSnackbar(t('dayPlanner.planner.feedback.dayTypeUpdated', { count: days.length }, days.length))
+			showSuccessSnackbar(t('planner.feedback.dayTypeUpdated', { count: days.length }, days.length))
 		}
 	}
 </script>
