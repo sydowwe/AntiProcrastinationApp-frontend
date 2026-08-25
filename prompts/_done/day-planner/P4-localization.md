@@ -1,6 +1,6 @@
 # P4 · Localize the module (it is ~95% hardcoded English)
 
-- **Scope:** every `.vue` in `src/core/dayPlanner/`, plus `_locales/dayPlanner.{sk,en}.ts`
+- **Scope:** every `.vue` in `../../../src/core/dayPlanner`, plus `_locales/dayPlanner.{sk,en}.ts`
 - **Backend:** no
 - **Model / effort:** Sonnet 5, medium–high effort — mechanically simple, large in surface, and the SK wording is a judgement call
 - **Run it:** after P1–P3, before P6 (the dedup prompt moves markup between files; localizing first means moving already-keyed strings)

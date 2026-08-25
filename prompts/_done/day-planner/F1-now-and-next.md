@@ -1,9 +1,10 @@
 # F1 · "Now / next" — make the plan answer the only question that matters
 
-- **Scope:** `component/normal/DayPlannerHeader.vue`, one new composable, optionally `src/core/home/`
+- **Scope:** `component/normal/DayPlannerHeader.vue`, one new composable, optionally `../../../src/core/home`
 - **Backend:** no — everything needed is already in `store.tasks`
 - **Model / effort:** **Opus 5**, high effort — small code, and the entire value is in restraint
-- **Research:** Gollwitzer (1999), implementation intentions — specifying *when/where/what* roughly doubles follow-through (meta-analysis d ≈ 0.65). The gain comes from cueing on time, not from having a plan.
+- **Research:** Gollwitzer (1999), implementation intentions — specifying *when/where/what* roughly doubles follow-through (meta-analysis d ≈ 0.65). The gain comes
+  from cueing on time, not from having a plan.
 
 ---
 

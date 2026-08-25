@@ -1,7 +1,7 @@
 # P5 · The calendar view fires one request per day (and per task, per day, on copy)
 
 - **Scope:** `view/PlannerCalendarView.vue`
-- **Backend:** **yes** — emits `prompts/day-planner/backend/P5-backend.md`
+- **Backend:** **yes** — emits `md`
 - **Model / effort:** Sonnet 5, medium effort — the frontend half is bounded; the honest outcome is partly a backend ask
 - **Impact:** a month view is up to 31 parallel requests on every navigation; a bulk copy is *tasks × days* POSTs
 
