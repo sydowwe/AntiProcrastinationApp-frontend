@@ -84,3 +84,48 @@ Neither is hot: quiet hours are fetched once per settings-page visit.
   subtitle keeps its current promise honestly (b), or only copy changes (c).
 - (4) either nothing, or the channel `VSelect` and its enum options come out of `ReminderKindRow.vue`,
   removing a control that currently produces a success snackbar for a no-op.
+
+## ANSWERED — 2026-08-25. All three landed; the frontend side is implemented.
+
+1. **Quiet hours now name their clock.** `GET /reminder-preference` returns
+   `quietHours.timeZone`, always an IANA id normalized server-side (never a Windows id), non-null
+   whenever the window is. There is no zone beside a null window, by design: it describes how to
+   *read* those minutes and is not a standalone setting, so there is deliberately no UI for choosing
+   it — it follows `User.Timezone`, changed in the existing profile surface. `PUT` is **unchanged**
+   and carries no zone: the minutes are a standing wall-clock instruction interpreted at delivery
+   time, so the window follows the user when they travel. Existing rows were reinterpreted, not
+   migrated, and no stored value changed meaning for any current account — so nothing prompts the
+   user that their window "may have shifted".
+
+   DST is pinned, both halves erring toward not waking the user: a boundary in the spring-forward gap
+   moves forward to the first reading that exists (the window ends at the transition); a boundary in
+   the repeated autumn hour resolves to the *later* of the two instants (the window is never cut
+   short). The window is therefore 23 hours long one night a year and 25 another — now stated in the
+   card subtitle, because saying nothing read as "this is exact".
+
+2. **A held delivery says so.** `NotificationDto` gained `originallyDueAt` (UTC ISO-8601) on
+   `GET /notification/mine` and on the SignalR push; the Web Push document carries the same instant
+   inside its existing nested `data` object, leaving the four keys `sw-push.js` reads positionally
+   untouched. It is **omitted entirely** when the delivery was punctual — absent, not null, the way
+   `tag` and `url` are — and the server applies a 30-minute threshold below which it is dropped. So
+   it is absent on the overwhelming majority of notifications: that is the intended state, not a
+   renderer bug. It is an absolute instant and is formatted in the *viewer's* zone, which is the
+   opposite of the quiet-hours minutes; the two go through different formatters on purpose.
+
+   No late marker in e-mail. The mail body is server-rendered and would need the recipient's zone and
+   locale mid-dispatch, so the backend deliberately does not send one — a known, documented gap, not
+   something to work around client-side.
+
+3. **`ChannelHint` is gone**, from the `GET /reminder-preference` rows and from the
+   `PUT /reminder-preference/kind` body alike. It was never enforced, and rather than add a second
+   competing switch beside the real per-type/per-channel control in the notification preferences, the
+   backend removed it. A `channelHint` still present in a request body is ignored server-side, so no
+   deploy coordination was needed.
+
+**Frontend landed 2026-08-25**, in `src/_common`: `QuietHoursWindow` gained `timeZone`;
+`QuietHoursCard` restates the window with its zone whenever that zone differs from the device's and
+its subtitle states the DST rule; `NotificationResponse` gained `originallyDueAt` and
+`NotificationBell` renders a "was due at …" line for it; `ReminderChannel`, the `VSelect`, the field
+on both reminder-kind DTOs, and the `reminderPreference.kind.channelHint` /
+`reminderPreference.channel.*` locale keys are deleted. `sw-push.js` needed no change — it already
+forwards the whole nested `data` object. See `src/_common/docs/modules/notifications.md`.

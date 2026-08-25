@@ -21,6 +21,11 @@ import { useRoutineReviewStore } from '@/core/todoList/store/routineReviewStore.
  *   - `runningTimerStore` (`core/activityHistory/store/`) — same reason: its own `currentUser.id`
  *     watcher re-reads the account-scoped storage key, so the next account sees its own session (in
  *     practice none) rather than this one's, and this one's stored session is left where it is.
+ *   - The notifications module's state (`_common/modules/notifications/composable/useNotifications.ts`)
+ *     — same reason: `startNotificationSession()` watches `isAuthenticated` from a detached effect
+ *     scope and calls the module's own `reset()` (hub, list, error) plus `resetPushState()` on this
+ *     same transition. It is framework state with a framework-owned lifecycle; adding it here would
+ *     be a second owner free to drift from the first.
  *   - Component-local refs scoped by `useUserScopedStorage` (pinned templates, template card order,
  *     the two activity-tracking hint dismissals) — they die with their component on navigation to
  *     the login route and are re-read from the (already account-scoped) storage key on remount.

@@ -1,6 +1,9 @@
 <template>
 	<VApp>
 		<Navbar>
+			<!-- No `v-if` on the bell: `AppTopBar` already renders this slot only when
+				 `auth.isAuthenticated`, so a second guard here would be a copy of the framework's,
+				 free to drift from it, and wrong for every other app in the family. -->
 			<template #actions>
 				<NotificationBell></NotificationBell>
 			</template>
@@ -27,7 +30,7 @@
 	import DialogHost from '@/_common/component/dialog/DialogHost.vue'
 	import Navbar from '@/_common/nav/Navbar.vue'
 	import NotificationBell from '@/_common/modules/notifications/component/NotificationBell.vue'
-	import { usePushNotifications } from '@/_common/modules/notifications/composable/UsePushNotifications.ts'
+	import { startNotificationSession } from '@/_common/modules/notifications/composable/useNotifications.ts'
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import type { ThemePreference } from '@/_common/modules/user/dto/response/User.ts'
 	import { resetAppState } from '@/core/user/composable/useSessionReset.ts'
@@ -40,10 +43,14 @@
 	// fires. One call — everything else it needs it does itself.
 	useRunningTimerStore()
 
-	const { initPushSupport } = usePushNotifications()
-	// Async since the framework version took it over: it now registers the service worker before
-	// probing the existing subscription. Push support is optional, so a failure must not break boot.
-	initPushSupport().catch(e => console.error('Push notification init failed:', e))
+	// Binds the notification hub and the push state to the *session* rather than to the bell's mount,
+	// for the same reason `useRunningTimerStore()` is called here: the state is module-level and
+	// outlives every component that renders it, so something that lives as long as the tab has to
+	// own its lifecycle. One idempotent call — it connects on sign-in, tears everything down on
+	// sign-out, and does nothing at all while signed out. This used to be an unconditional
+	// `initPushSupport()`, which registered the service worker and probed the push subscription for
+	// a visitor sitting on the login screen.
+	startNotificationSession()
 
 	const userStore = useUserStore()
 	const theme = useTheme()
