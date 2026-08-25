@@ -45,7 +45,10 @@
 		</template>
 
 		<template #footer-center>
-			<CalendarStatsBar :days="calendarDays" />
+			<div class="footer-stack">
+				<CalendarStatsBar :days="calendarDays" />
+				<PlanVsActualTrendLine :trend="planVsActualTrend" />
+			</div>
 		</template>
 	</CalendarGrid>
 
@@ -81,10 +84,13 @@
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
+	import { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
+	import { PlanVsActualTrend } from '@/core/dayPlanner/dto/response/PlanVsActualTrend.ts'
 	import type { DayType } from '@/_common/dto/enum/DayType.ts'
 	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import CalendarDayCellContent from '@/core/dayPlanner/component/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/core/dayPlanner/component/calendar/CalendarStatsBar.vue'
+	import PlanVsActualTrendLine from '@/core/dayPlanner/component/calendar/PlanVsActualTrendLine.vue'
 	import BulkApplyTemplateForm from '@/core/dayPlanner/component/calendar/BulkApplyTemplateForm.vue'
 	import CopyDayForm from '@/core/dayPlanner/component/calendar/CopyDayForm.vue'
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
@@ -119,7 +125,7 @@
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
-	const { copyToDays } = useTaskPlannerCrud()
+	const { copyToDays, fetchPlanVsActualTrend } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const {
@@ -158,6 +164,7 @@
 	const bulkApplying = ref(false)
 	const detailsDialog = ref(false)
 	const editingDay = ref<Calendar | null>(null)
+	const planVsActualTrend = ref<PlanVsActualTrend>(PlanVsActualTrend.empty())
 
 	// Guards the calendar/filter + calendar/task-summaries pair: both are in flight together for a
 	// date-range change, and a slow response from a month the user has since navigated away from
@@ -216,14 +223,30 @@
 
 	watch([calendarMode, applyTemplateId, applyPreviewMode], syncModeToUrl)
 
+	// Deliberately alongside `refresh`'s Promise.all rather than inside it: this line is secondary to
+	// the grid, so a failed aggregate must not cost the month its days or raise the retry snackbar.
+	// It shares `refreshRequestId` so a slow month's trend cannot land on a newer one, and falls back
+	// to `empty()` — taskCount 0, which renders nothing — rather than leaving the previous month's
+	// numbers under a different month's grid.
+	async function refreshPlanVsActualTrend(requestId: number, start: Date, end: Date) {
+		try {
+			const trend = await fetchPlanVsActualTrend(PlanVsActualTrendFilter.fromDates(start, end))
+			if (requestId === refreshRequestId) planVsActualTrend.value = trend
+		} catch {
+			if (requestId === refreshRequestId) planVsActualTrend.value = PlanVsActualTrend.empty()
+		}
+	}
+
 	async function refresh() {
 		if (!dateRange.value.start || !dateRange.value.end) {
 			calendarDays.value = []
 			dayTasksMap.value = new Map()
+			planVsActualTrend.value = PlanVsActualTrend.empty()
 			return
 		}
 		const requestId = ++refreshRequestId
 		loading.value = true
+		refreshPlanVsActualTrend(requestId, dateRange.value.start, dateRange.value.end)
 		try {
 			const [days, taskSummaries] = await Promise.all([
 				fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end)),
@@ -481,4 +504,11 @@
 	}
 </script>
 
-<style scoped></style>
+<style scoped>
+	.footer-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		align-items: center;
+	}
+</style>

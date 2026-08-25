@@ -320,6 +320,25 @@ const dayPlanner = {
 		// Jediný riadok v hlavičke: čo beží teraz a čo nasleduje. Odpočet do hodiny sa skloňuje
 		// (tvary 1 | 2–4 | 0 a 5+, pravidlo v src/i18n.ts), nad hodinu prechádza na `1h 30m`
 		// z `formatDuration.fromMinutes` — jednotkové značky sa neskloňujú a sú kratšie.
+		// F2: opísne, nikdy hodnotiace. Žiadna farba, ktorá sa mení, žiadna červená, žiadna séria zlých
+		// dní — cieľom je ukázať vlastnú minulú odchýlku v odhade, nie pripomenúť, že sa nepodarilo.
+		planVsActual: {
+			summary: `Naplánované {planned} · zaznamenané {actual}`,
+			startedLate: `1 úloha začala neskôr | {count} úlohy začali neskôr | {count} úloh začalo neskôr`,
+			ranLonger: `1 úloha trvala dlhšie | {count} úlohy trvali dlhšie | {count} úloh trvalo dlhšie`,
+			neverHappened: `1 úloha sa neuskutočnila | {count} úlohy sa neuskutočnili | {count} úloh sa neuskutočnilo`,
+			// Trend pod kalendárom, za zobrazené obdobie. Server nikdy nezapočíta dnešok (deň sa ráta
+			// až keď je celý za nami, v zóne používateľa), preto je text zámerne vágny — „v tomto
+			// období“, nikdy „vrátane dneška“ ani konkrétny počet dní.
+			// Bez percent: `plannedMinutes` pokrýva všetky úlohy, `actualMinutes` len zaznamenané,
+			// takže ich podiel by podhodnocoval tempo vždy, keď sa niečo neuskutočnilo.
+			trend: {
+				summary: `V tomto období: naplánované {planned} · zaznamenané {actual}`,
+				startedLate: `1 zaznamenaná úloha začala neskôr | {count} zaznamenané úlohy začali neskôr | {count} zaznamenaných úloh začalo neskôr`,
+				ranLonger: `1 zaznamenaná úloha trvala dlhšie | {count} zaznamenané úlohy trvali dlhšie | {count} zaznamenaných úloh trvalo dlhšie`,
+				neverHappened: `1 úloha sa neuskutočnila | {count} úlohy sa neuskutočnili | {count} úloh sa neuskutočnilo`,
+			},
+		},
 		nowNext: {
 			now: `Teraz: {name}`,
 			next: `Ďalej: {name}`,

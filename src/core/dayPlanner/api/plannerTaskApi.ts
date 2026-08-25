@@ -10,6 +10,8 @@ import type { Time } from '@/_common/dto/dto/Time.ts'
 import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import type { AxiosRequestConfig } from 'axios'
 import { BatchOperationResponse } from '@/core/dayPlanner/dto/response/BatchOperationResult.ts'
+import { PlanVsActualTrend } from '@/core/dayPlanner/dto/response/PlanVsActualTrend.ts'
+import type { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -57,10 +59,20 @@ export function useTaskPlannerCrud() {
 		return BatchOperationResponse.fromJson(data)
 	}
 
+	// One call per range the surface shows. There is deliberately no per-day form — fanning out over
+	// days to aggregate client-side is the pattern P5 removed from this module.
+	// `_silent`: this feeds a secondary line under the calendar, and a failed aggregate should not
+	// raise a snackbar over a month grid that loaded fine. The caller falls back to `empty()`.
+	async function fetchPlanVsActualTrend(filter: PlanVsActualTrendFilter): Promise<PlanVsActualTrend> {
+		const { data } = await API.post(`${url}/plan-vs-actual-trend`, filter, { _silent: true })
+		return PlanVsActualTrend.fromJson(data)
+	}
+
 	return {
 		fetchById,
 		fetchAll,
 		fetchFiltered,
+		fetchPlanVsActualTrend,
 		fetchSelectOptions,
 		createWithResponse,
 		create,

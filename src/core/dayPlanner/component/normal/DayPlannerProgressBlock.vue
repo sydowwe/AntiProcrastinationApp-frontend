@@ -56,6 +56,7 @@
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { fromMinutes } from '@/_common/utils/formatDuration.ts'
+	import { getSpanMinutes } from '@/core/dayPlanner/utils/taskDuration.ts'
 
 	const { calendar } = defineProps<{
 		calendar: Calendar
@@ -79,11 +80,7 @@
 
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground && t.id > 0)
-		const plannedMinutes = nonBgTasks.reduce((sum, t) => {
-			const start = t.startTime.getInMinutes
-			const end = t.endTime.getInMinutes
-			return sum + (end > start ? end - start : end + 1440 - start)
-		}, 0)
+		const plannedMinutes = nonBgTasks.reduce((sum, t) => sum + getSpanMinutes(t.startTime, t.endTime), 0)
 		const viewStart = store.viewStartTime.getInMinutes
 		const viewEnd = store.viewEndTime.getInMinutes
 		const totalViewMinutes = viewEnd > viewStart ? viewEnd - viewStart : viewEnd + 1440 - viewStart

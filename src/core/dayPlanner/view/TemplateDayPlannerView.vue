@@ -98,6 +98,7 @@
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import { fromMinutes } from '@/_common/utils/formatDuration.ts'
+	import { getSpanMinutes } from '@/core/dayPlanner/utils/taskDuration.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { useClipboardHandling } from '@/core/dayPlanner/composable/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/core/dayPlanner/composable/usePlannerCrud.ts'
@@ -176,11 +177,7 @@
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground)
 		const taskCount = nonBgTasks.length
-		const plannedMinutes = nonBgTasks.reduce((sum, t) => {
-			const start = t.startTime.getInMinutes
-			const end = t.endTime.getInMinutes
-			return sum + (end > start ? end - start : end + 1440 - start)
-		}, 0)
+		const plannedMinutes = nonBgTasks.reduce((sum, t) => sum + getSpanMinutes(t.startTime, t.endTime), 0)
 		const viewStart = store.viewStartTime.getInMinutes
 		const viewEnd = store.viewEndTime.getInMinutes
 		const totalViewMinutes = viewEnd > viewStart ? viewEnd - viewStart : viewEnd + 1440 - viewStart

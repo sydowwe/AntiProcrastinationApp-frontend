@@ -42,7 +42,10 @@
 				></VIconBtn>
 			</div>
 
-			<DayPlannerProgressBlock :calendar />
+			<div class="progress-stack">
+				<DayPlannerProgressBlock :calendar />
+				<DayPlannerPlanVsActualBlock />
+			</div>
 		</div>
 
 		<!-- Center: view range, and — on today only — what is running now -->
@@ -140,6 +143,7 @@
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { formatDateForApi, formatToDateWithDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 	import DayPlannerProgressBlock from '@/core/dayPlanner/component/normal/DayPlannerProgressBlock.vue'
+	import DayPlannerPlanVsActualBlock from '@/core/dayPlanner/component/normal/DayPlannerPlanVsActualBlock.vue'
 	import NowNextIndicator from '@/core/dayPlanner/component/normal/NowNextIndicator.vue'
 	import GoogleCalendarSyncBtn from '@/core/dayPlanner/component/normal/GoogleCalendarSyncBtn.vue'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
@@ -235,6 +239,12 @@
 		align-items: center;
 		gap: 4px;
 		min-width: 0;
+	}
+
+	.progress-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
 	}
 
 	.nav-btn-wrap {

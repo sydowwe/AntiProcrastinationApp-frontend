@@ -312,6 +312,25 @@ const dayPlanner = {
 		},
 		// The one header line: what is running now and what is next. `min` is invariant in English, so
 		// these need no plural forms — SK declines the count three ways and does.
+		// F2: descriptive, never evaluative. No colour that changes, no red, no streak of bad days —
+		// the point is showing the person their own past estimation error, not reminding them they failed.
+		planVsActual: {
+			summary: `Planned {planned} · logged {actual}`,
+			startedLate: `{count} task started late | {count} tasks started late`,
+			ranLonger: `{count} task ran longer | {count} tasks ran longer`,
+			neverHappened: `{count} task never happened | {count} tasks never happened`,
+			// The trend under the calendar, over the displayed range. The server never counts today
+			// (a day counts only once it is wholly past, in the user's own zone), so the wording stays
+			// vague — "this period", never "including today" and never a day count.
+			// No percentage: `plannedMinutes` spans every task while `actualMinutes` spans only the
+			// logged ones, so their ratio understates the pace whenever anything was abandoned.
+			trend: {
+				summary: `This period: planned {planned} · logged {actual}`,
+				startedLate: `{count} logged task started late | {count} logged tasks started late`,
+				ranLonger: `{count} logged task ran longer | {count} logged tasks ran longer`,
+				neverHappened: `{count} task never happened | {count} tasks never happened`,
+			},
+		},
 		nowNext: {
 			now: `Now: {name}`,
 			next: `Next: {name}`,
