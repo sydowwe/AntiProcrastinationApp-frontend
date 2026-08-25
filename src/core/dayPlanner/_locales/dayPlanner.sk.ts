@@ -350,6 +350,14 @@ const dayPlanner = {
 		// Reťazce, ktoré vidí len čítačka obrazovky. Bloky úloh sú prepínacie tlačidlá (role="button"
 		// + aria-pressed), takže ich obsah sa do prístupnostného stromu nedostane — všetko podstatné
 		// musí byť v `taskLabel` a jeho častiach, inak je to farebná informácia bez textovej náhrady.
+		// The `/day-planner/task/:id` redirect. A dangling reference is expected rather than exceptional:
+		// notification history outlives the tasks it names, and the server does not existence-check a
+		// subject before sending it.
+		taskLink: {
+			notFoundTitle: `Úloha sa nenašla`,
+			notFoundText: `Táto úloha už neexistuje — pravdepodobne bola medzitým vymazaná.`,
+			toCalendar: `Otvoriť kalendár`,
+		},
 		a11y: {
 			gridLabel: `Časová mriežka {start} – {end}`,
 			gridHelp: `Medzi úlohami sa presúvate tabulátorom. Medzerník alebo Enter vyberie a zruší výber úlohy, E otvorí úpravu, Delete vymaže, Ctrl+D duplikuje, šípka hore a dole posunie vybrané úlohy o jeden časový úsek, Escape zruší výber. Dĺžka jedného úseku je {minutes} min.`,

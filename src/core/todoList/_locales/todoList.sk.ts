@@ -115,6 +115,10 @@ const todoList = {
 		settings: `Nastavenia`,
 		groups: `Skupiny`,
 		reorder: `Zmeniť poradie`,
+		// Shown when a deep link (typically a notification) points at a group the user has hidden. The
+		// group is NOT un-hidden automatically — hiding is a persisted choice, and a notification click
+		// must not silently undo it.
+		focusHiddenGroup: `Skupina „{group}“ je skrytá. Zobrazíte ju vo výbere skupín vyššie.`,
 		hideDone: `Skryť hotové`,
 		daysLeft: `{days}d zostáva`,
 		hoursLeft: `{hours}h zostáva`,

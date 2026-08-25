@@ -168,6 +168,7 @@
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
 	import { useRoutinePlacement } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
+	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { t } = useI18n()
@@ -221,6 +222,12 @@
 	// Provide the store for slot content (EventBlock components)
 	provide(PLANNER_STORE_KEY, store)
 
+	// `BaseTaskBlock` already renders `data-task-id` for its own keyboard handling, so the deep link
+	// needs no new markup here.
+	const { reveal: revealFocusedTask } = useQueryFocusTarget({
+		selector: id => `[data-task-id="${CSS.escape(id)}"]`,
+	})
+
 	const calendar = ref<Calendar>()
 	const calendarDetailsDialog = ref(false)
 
@@ -262,6 +269,12 @@
 			}
 			router.replace({ query: {} })
 		}
+
+		// `?focus=<taskId>` — arriving from a notification, or from anything else that knew a task id
+		// but not its date (see PlannerTaskLinkView). Deliberately after `loadTasks()`: the block cannot
+		// be scrolled to before it exists. Not awaited — the reveal polls for the element on its own and
+		// nothing below depends on it.
+		void revealFocusedTask()
 
 		document.addEventListener('keydown', handleArrowKey)
 	})

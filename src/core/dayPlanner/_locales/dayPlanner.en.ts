@@ -342,6 +342,12 @@ const dayPlanner = {
 		// Screen-reader-only strings. Task blocks are toggle buttons (role="button" + aria-pressed),
 		// so their contents never reach the accessibility tree — everything that matters has to be in
 		// `taskLabel` and its parts, or it is colour-only information with no text equivalent.
+		// See the note on the SK keys: a dangling task reference is expected, not exceptional.
+		taskLink: {
+			notFoundTitle: `Task not found`,
+			notFoundText: `This task no longer exists — it was most likely deleted in the meantime.`,
+			toCalendar: `Open the calendar`,
+		},
 		a11y: {
 			gridLabel: `Time grid {start} – {end}`,
 			gridHelp: `Tab moves between tasks. Space or Enter selects and deselects a task, E opens it for editing, Delete removes it, Ctrl+D duplicates it, Arrow Up and Arrow Down move the selected tasks by one slot, Escape clears the selection. One slot is {minutes} min.`,

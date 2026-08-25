@@ -12,6 +12,13 @@
 </head>
 <body>
 <div id="app"></div>
+<!--
+    The kind -> destination map for notification click-through, shared verbatim with the service
+    worker (vite.config.ts imports the same file into the worker). A classic script, not a module,
+    because the worker loads it with importScripts and cannot import from src/. Must run before
+    main.ts, which is why it sits above the module script rather than in <head> with defer.
+-->
+<script src="/notification-subject-routes.js"></script>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

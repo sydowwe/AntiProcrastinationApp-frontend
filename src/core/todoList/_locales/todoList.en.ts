@@ -105,6 +105,8 @@ const todoList = {
 		settings: `Settings`,
 		groups: `Groups`,
 		reorder: `Reorder`,
+		// See the note on the SK key: a deep link never un-hides a group by itself.
+		focusHiddenGroup: `The "{group}" group is hidden. Show it from the group picker above.`,
 		hideDone: `Hide done`,
 		daysLeft: `{days}d left`,
 		hoursLeft: `{hours}h left`,

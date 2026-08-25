@@ -28,7 +28,7 @@ What this means in practice:
 | ✅N2 | [Session lifecycle ⭐](N2-session-lifecycle.md) — **done**            | bug          | none     | **Opus 5** | high    |
 | ✅N3 | [Paging & unread count ⭐](N3-paging-and-unread-count.md) — **done**  | bug / perf   | none     | **Opus 5** | high    |
 | ✅N4 | [Bell states & a11y](N4-bell-states-and-a11y.md)                      | UX           | —        | Sonnet 5   | medium  |
-| N5   | [Deep-linking & the typeMeta seam](N5-deep-linking.md)                | design       | **yes**  | **Opus 5** | high    |
+| ✅N5 | [Deep-linking & the typeMeta seam](N5-deep-linking.md) — **done**     | design       | **yes**  | **Opus 5** | high    |
 | N6   | [Full notifications page](N6-notifications-page.md)                   | feature      | **yes**  | **Opus 5** | high    |
 | N7   | [Snackbar storm & digest grouping](N7-snackbar-storm-and-grouping.md) | UX / feature | possibly | **Opus 5** | high    |
 | N8   | [Push subscription resilience](N8-push-resilience.md)                 | bug          | **yes**  | **Opus 5** | high    |
@@ -41,8 +41,9 @@ What this means in practice:
 Each prompt is independently runnable. `Depends on` in each header is about avoiding merge pain, not correctness. **N1 and N2 have shipped**, which clears the
 ordering constraint that mattered most — N3, N4 and N6 can now be written against the session-owned composable rather than around it, and **each prompt body still
 describes the pre-N1/N2 code**, so re-read the file before trusting a line number in one. **N3 has now shipped too**, so N6 has its paging: build the page on
-`loadMore()`/`hasMore` from `useNotifications`, and do not re-derive the unread badge. Still standing: **N5 before N6/N7** (they both render notifications and want
-the resolved route).
+`loadMore()`/`hasMore` from `useNotifications`, and do not re-derive the unread badge. **N5 has now shipped too**, so N6 and N7 have the resolved route: call
+`notificationRoute(notification)` — it takes the whole notification, not its `type` — and do not re-derive a route from the type yourself. No ordering constraints
+remain.
 
 ⚠️ **Every prompt in this set asserts defects that the tree may have already fixed.** Two of N2's three did not reproduce — see _Fixed_ below. Reproduce each claim
 before implementing it, and say in your final report which held.
@@ -107,6 +108,80 @@ The API project is at `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer` (module c
 `/swagger/v1/swagger.json`. Three of this file's "confirmed defects" survived multiple re-checks only because everyone reading them stayed on the frontend side of
 the wire.
 
+## Fixed by N5 — and the "push already deep-links" premise was wrong
+
+Corrected 2026-08-25, after N5. **Read this before N6/N7.**
+
+- ✅ **Click-through could only ever reach a list.** Accurate as written. `notificationRoute` now takes the **whole notification** rather than its `type`, and
+  `NotificationTypeMeta.route` accepts `(notification) => RouteLocationRaw | undefined` alongside a constant `RouteLocationRaw`. One field carrying a union, not a
+  second `resolveRoute` field — two fields would need a precedence rule nobody reading a meta map can see. Constants are untouched, so another app's map keeps
+  working with no edit. Unit-tested in `utils/notificationTypeMeta.test.ts`, including that a resolver returning `undefined` — or throwing — degrades to "no
+  navigation" exactly as an unmapped type does.
+- ❌ ~~**The push path can already deep-link, the in-app path cannot, from the same server-side event.**~~ **Much narrower than this file claimed, and it inverts the
+  design argument.** `INotificationTextRenderer.RenderPushMeta` defaults to `(null, null)`, and the concrete renderer returns a url for exactly **one** type —
+  `TimerBoundary` — where the url is read off `TimerBoundaryPayload.Url`, i.e. handed in by the *producer*, not decided by the notifications module. For all six
+  types this app maps, `data.url` is absent and `sw-push.js` falls back to `'/'`. So the server does **not** hold a general opinion about app routes, and "the server
+  already emits urls, therefore it should emit them for everything" was never the precedent it looked like.
+- ✅ ~~**The seam is wired but this app's map is still all constants**, with a `TODO(B2)` on it.~~ **Resolved — B2 was answered and the wiring landed the same day; see
+  _Landed with B2_ below.** Kept for the reasoning. Not an oversight: `NotificationDto` is six fields wide (id, type,
+  title, body, createdAt, isRead, plus optional originallyDueAt) and none identifies the subject — confirmed against the **running** server's swagger, not just the
+  source. Faking it by parsing an id out of the server-rendered title was explicitly ruled out.
+
+**The data exists server-side; only the projection is missing.** `Notification.PayloadJson` holds a typed payload per type, and those records carry the ids —
+`PersonalReminderPayload(ReminderId, Title, PlannerTaskId)`, `RoutinePeriodEndingSoonPayload(PeriodId, …)`, and so on. `PersonalReminderPayload`'s own XML doc says
+`PlannerTaskId` is there "so the client can deep-link back to the task". `NotificationDto` simply never projects it. Two exceptions that are genuinely unresolvable:
+`DeadlineApproachingPayload` carries a title and no id at all, and `ReminderDigestPayload` is a count plus a per-kind breakdown by construction — the list *is* its
+target.
+
+**Backend ask written:** `backend/B2-notification-subject-reference.md`. It frames the real question — who owns the notification→UI mapping — rather than asking for
+a field name, and recommends an opaque `subject { kind, id }` over a server-sent url, because the route table is app-owned (`SETUP.md` §5 says so outright) and this
+DTO is shared with an app whose routes are entirely different.
+
+⚠️ **`_common/docs/modules/notifications.md:158-161` is now one line staler than N13 inherited** — it still describes `notificationRoute` as type-keyed. N13 owns that
+file, so N5 deliberately left it alone. Fix it there.
+
+## Landed with B2 — and the gap nobody had checked for
+
+2026-08-25. B2 was answered (Option B: opaque `subject { kind, id }`, routes stay app-owned) and wired the same day. **Read this before N6/N7** — they render
+notifications and will want the resolved route.
+
+**What is wired.** `NotificationResponse.subject` is parsed and validated (absent / null / malformed all collapse to `undefined`, so a drifted shape can never build
+`/planovac/behy/undefined`). The app's `notificationTypeMeta` resolves `subject` first and falls back to the type's constant route — which is what an append-only
+vocabulary requires, since the server will emit kinds this app has never heard of.
+
+**One map, two readers.** `public/notification-subject-routes.js` holds the only `kind → path` mapping, plus the push fallback chain. The bell reads it via the
+`<script>` tag in `index.html`; the service worker reads the *same file* via workbox `importScripts` (`vite.config.ts`, listed before `sw-push.js`). Verified in a real
+`vite build`: `dist/sw.js` contains `importScripts("/notification-subject-routes.js","/sw-push.js")` and the file is precached. It is a classic script in `public/`
+because the worker is loaded by URL and never bundled — which also forces **paths, not named routes**, as the shared currency. That path duplication is guarded by a
+test that reads the route table's own source.
+
+**The destinations.** B2 framed the wiring as "a data change, not a design change" plus one piece of real work (not-found paths). That was not right for this app —
+none of the param-taking routes except the scheduler's fit a subject kind, so three destinations had to be built. Three of four kinds now deep-link:
+
+| kind              | destination                                                                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scheduledJobRun` | ✅ `/planovac/behy/:id` — already existed, and `SchedulerRunDetailView` already rendered a not-found alert                                       |
+| `plannerTask`     | ✅ `/day-planner/task/:id` → resolves task → calendar → date, then `replace`s to `/day-planner/<date>?focus=<id>`                                |
+| `routinePeriod`   | ✅ `/routine-todo-list?focus=<id>` — the card is scrolled to and pulsed                                                                          |
+| `reminder`        | ❌ **not buildable frontend-only** — falls back to the reminders list, as before                                                                 |
+
+**Why `reminder` is different, and not a to-do.** The id is a Planning-module `Reminder` row (`ReminderRegistrationService`:
+`new PersonalReminderPayload(reminder.Id, …)`). This frontend has **no such entity** — no API client, no DTO, no view; reminders are never CRUDed from here. The
+reminders screens it does have belong to the framework module and list `ReminderDefinition`s, a *different id space*, so pointing `reminder` at
+`/pripomienky/register/:id` would deep-link to the wrong row — worse than landing on a list. Closing it means building reminder UI in this app, which is a product
+decision, not wiring. There is deliberately **no map entry**, and a test pins its absence.
+
+**Two design points worth carrying forward.**
+
+- **The planner hop.** The kind→path map must stay a *synchronous string builder*, because the service worker resolves push clicks through it with no app, router or
+  API client in scope. A task id needs two async reads to become a dated URL, so the map points at a thin redirect route (`PlannerTaskLinkView`) and the async half
+  happens once, in the app. Any future kind needing a lookup should copy that shape rather than making the map async.
+- **A deep link never changes persisted state.** A hidden routine group is *not* un-hidden on arrival — hiding is a server-persisted choice and a notification click
+  silently undoing it would be a bug. The view says where to find it instead (`routineTodoList.focusHiddenGroup`).
+
+The scroll-and-pulse behaviour is `_common/composable/general/useQueryFocusTarget.ts` — generic, DOM-based (a `data-*` attribute on the row, no `focusedId` prop
+threaded through every list), and framework-side because a framework view would want it too.
+
 ## The confirmed defects
 
 Still open. Line numbers re-checked 2026-08-25.
@@ -115,11 +190,6 @@ Still open. Line numbers re-checked 2026-08-25.
   `isConnected` (`:41`)
   now distinguishes reconnecting from connected after N2 — **all three are exported and read by nobody**. A failed load still renders as "Žiadne notifikácie", an
   empty *success*, and there is no spinner and no reconnecting state. The gap is now purely in the view. (N4)
-- **Click-through cannot reach the thing the notification is about.** `notificationRoute(type)`
-  (`utils/notificationTypeMeta.ts:28`) is keyed on the type alone, so a `DeadlineApproaching` for one specific task routes to the reminders *list*.
-  `NotificationResponse` (`dto/NotificationResponse.ts`)
-  carries no entity id and no url. Meanwhile `public/sw-push.js:14` already reads `data.url` off the push payload — so the push path can deep-link and the in-app
-  path cannot, from the same server-side event. (N5)
 - **Every incoming notification pops a snackbar, unconditionally.** `useNotifications.ts:88-89`, with no throttle, no grouping, and no check for whether the bell
   menu is already open or the user is already looking at the target page. A `ReminderDigest` fan-out snackbars once per item. (N7)
 - **`public/sw-push.js` has no `pushsubscriptionchange` handler.** Browsers rotate push subscriptions (Chrome does it on its own schedule); when that happens the
@@ -166,7 +236,8 @@ unstated assumption that the server returns newest-first (now finds-and-replaces
 `backend/` started empty on purpose, and holds only what an implementing agent actually hit:
 `B1-quiet-hours-fidelity.md` — **answered and landed on 2026-08-25**; see its `ANSWERED` section for the
 settled contract (quiet-hours `timeZone`, `originallyDueAt`, `ChannelHint` removed) and for what changed
-in `src/_common` as a result. Prompts do not pre-write backend requests — the agent implementing a frontend prompt is the one that discovers exactly which field was
+in `src/_common` as a result. `B2-notification-subject-reference.md` — **answered and landed on 2026-08-25**; see its `ANSWERED` section for the settled contract (opaque `subject { kind, id }`,
+no server-sent URLs, append-only kind vocabulary, dangling references permitted) and _Landed with B2_ above for what shipped and what is still missing. Prompts do not pre-write backend requests — the agent implementing a frontend prompt is the one that discovers exactly which field was
 missing and writes a sharper ask than anyone could from a cold read. N3, N5, N6, N7, N8, N10 and N12 each end with an escalation block telling the agent to finish
 and verify the frontend work first, then write the ask if it actually hit the wall. N2 and N3 both had one and both produced nothing, which is the expected outcome
 when the server behaves — do not write a file to show willing. N3 in particular expected to need three backend changes and found all three already shipped; see

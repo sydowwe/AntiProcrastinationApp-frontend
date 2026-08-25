@@ -105,7 +105,10 @@ export default defineConfig({
 				],
 			},
 			workbox: {
-				importScripts: ['/sw-push.js'],
+				// Order matters: this map defines the globals `sw-push.js` resolves clicks through, so it
+					// is imported first. It is the same map the in-app bell reads via the <script> tag in
+					// index.html — one mapping, two readers.
+					importScripts: ['/notification-subject-routes.js', '/sw-push.js'],
 				maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 				navigateFallback: '/index.html',

@@ -73,6 +73,7 @@
 			<VCol
 				v-for="group in visibleGroups"
 				:key="group.timePeriod.id"
+				:data-routine-period-id="group.timePeriod.id"
 				class="pa-2 h-100"
 				cols="12"
 				:sm="visibleGroups.length >= 2 ? 6 : undefined"
@@ -139,6 +140,7 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
@@ -169,7 +171,11 @@
 	} = useRoutineTodoListItemCrud()
 	const { update: updateTimePeriod, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
-	const { showSuccessSnackbar } = useSnackbar()
+	const { showSuccessSnackbar, showSnackbar } = useSnackbar()
+
+	const focusTarget = useQueryFocusTarget({
+		selector: id => `[data-routine-period-id="${CSS.escape(id)}"]`,
+	})
 	const { showFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { runLabel } = useRoutineRunLabel()
@@ -304,9 +310,38 @@
 	}
 
 	onMounted(() => {
-		getAllRecords()
+		// Not awaited alongside the review load — the two are independent and used to run concurrently.
+		void getAllRecords().then(revealFocusedPeriod)
 		ensureReviewDismissalLoaded()
 	})
+
+	/**
+	 * `?focus=<timePeriodId>` — arriving from a routine notification, which is about one specific
+	 * period ("Weekly ends in 2 days, 3 tasks left").
+	 *
+	 * A hidden group is the interesting case. Hiding is a persisted choice (`changeTimePeriodVisibility`
+	 * writes it server-side), so revealing the group by un-hiding it would let a notification click
+	 * silently undo a setting the user made — and leave it undone. Saying where to find it is the
+	 * honest alternative; without this the user lands on a list that simply does not contain the thing
+	 * they were just told about.
+	 */
+	async function revealFocusedPeriod() {
+		const id = focusTarget.targetId()
+		if (id === null) return
+
+		const group = groupedItems.value.find(g => g.timePeriod.id === Number(id))
+		if (group !== undefined && group.timePeriod.isHidden) {
+			focusTarget.clear()
+			showSnackbar(t('routineTodoList.focusHiddenGroup', { group: group.timePeriod.text ?? '' }), {
+				color: 'warning',
+			})
+			return
+		}
+
+		// Falls through for an unknown id too: the period may have been deleted since the notification
+		// was raised, and `reveal` treats "no such row" as a no-op after clearing the parameter.
+		await focusTarget.reveal()
+	}
 
 	function toggleChangeOrderMode() {
 		isInChangeOrderMode.value = !isInChangeOrderMode.value
@@ -359,9 +394,12 @@
 		}
 	}
 
+	// Returns the promise so a caller can sequence on the loaded groups — the deep-link reveal in
+	// `onMounted` cannot look for a card before the cards exist. Every other call site ignores it and
+	// is unaffected.
 	function getAllRecords() {
 		showFullScreenLoading()
-		getAllGrouped().then(response => {
+		return getAllGrouped().then(response => {
 			groupedItems.value = response
 			void ensureCalibrationLoaded(response.flatMap(group => group.items.map(item => item.activity.id)))
 		})

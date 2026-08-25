@@ -5,6 +5,7 @@ import DayPlannerView from '@/core/dayPlanner/view/DayPlannerView.vue'
 import TemplateListView from '@/core/dayPlanner/view/TemplateListView.vue'
 import TemplateSplitView from '@/core/dayPlanner/view/TemplateSplitView.vue'
 import TemplateDayPlannerView from '@/core/dayPlanner/view/TemplateDayPlannerView.vue'
+import PlannerTaskLinkView from '@/core/dayPlanner/view/PlannerTaskLinkView.vue'
 
 export const dayPlannerRoutes: RouteRecordRaw[] = [
 	{
@@ -16,6 +17,13 @@ export const dayPlannerRoutes: RouteRecordRaw[] = [
 		path: '/day-planner/settings',
 		name: 'dayPlannerSettings',
 		component: DayPlannerSettingsView,
+	},
+	{
+		// Two segments, so it can never be confused with `/day-planner/:date` below. Resolves a bare
+		// task id to the dated planner URL that can show it — see the view for why the hop exists.
+		path: '/day-planner/task/:id(\\d+)',
+		name: 'dayPlannerTask',
+		component: PlannerTaskLinkView,
 	},
 	{
 		path: '/day-planner/:date',
