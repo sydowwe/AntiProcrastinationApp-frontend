@@ -1,3 +1,4 @@
+import common from '@/_common/_locales/common.en.ts'
 import appCommon from './common.en.ts'
 import activity from '@/core/activity/_locales/activity.en.ts'
 import activityHistory from '@/core/activityHistory/_locales/activityHistory.en.ts'
@@ -11,12 +12,16 @@ import home from '@/core/home/_locales/home.en.ts'
 import frameworkUser from '@/_common/modules/user/_locales/user.en.ts'
 import appUser from '@/core/user/_locales/user.en.ts'
 
-// The framework ships a Slovak-only `common`, so unlike SK.ts this aggregator has nothing to
-// spread from @/_common/_locales — `appCommon` carries the EN `$vuetify` and `httpErrors`
-// translations that stand in for it (see its top-of-file comment).
+// The framework's `common` is now PARTIAL in English (N11: only `notifications.*` and
+// `reminderPreference.*` — see the comment atop `@/_common/_locales/common.en.ts` for what is
+// still Slovak-only there). Spread it first, same position as SK.ts's `...common`, so `appCommon`
+// and the app's own modules still win every collision — `appCommon` carries the EN `$vuetify` and
+// `httpErrors` translations that stand in for the framework's still-untranslated namespaces (see
+// its top-of-file comment).
 //
 // `user` is merged rather than spread, mirroring SK.ts — see the comment there for why.
 const EN = {
+	...common,
 	...appCommon,
 	...activity,
 	...activityHistory,

@@ -1,6 +1,8 @@
-// App-wide namespaces not owned by a single core module. The framework ships a Slovak-only
-// `common`, so EN.ts does not spread it (see EN.ts) — this file also carries the `$vuetify` and
-// `httpErrors` translations that would otherwise be missing for English users.
+// App-wide namespaces not owned by a single core module. The framework's `common` is still only
+// PARTIALLY translated to English (N11: `notifications.*` and `reminderPreference.*` only — see
+// `@/_common/_locales/common.en.ts`), so this file carries the `$vuetify`, `httpErrors`,
+// `validation` and `export` translations that would otherwise be missing for English users, for
+// every namespace the framework has not covered itself yet.
 const common = {
 	// Mirrors `httpErrors` from @/_common/_locales/common.sk.ts, which the framework http
 	// interceptor resolves through `t()`. The framework ships Slovak only, so without an English
@@ -36,23 +38,6 @@ const common = {
 		button: `Export`,
 		excel: `Excel (.xlsx)`,
 		csv: `CSV (.csv)`,
-	},
-	// PARTIAL mirror of `notifications` from @/_common/_locales/common.sk.ts — only the keys
-	// `SecuritySection.vue` resolves when Web Push cannot be enabled (N8). The rest of that
-	// namespace (the bell, the inbox, the snackbar policy) is still Slovak-only for EN users; that
-	// is N11's scope, not a decision made here.
-	//
-	// ⚠️ N11: when you add a framework-side `common.en.ts` and spread it in EN.ts, this block will
-	// collide with it. The aggregator spread is SHALLOW, so whichever `notifications` is spread last
-	// replaces the other WHOLE namespace — a partial block winning would silently un-translate the
-	// inbox. Merge the two explicitly (the `user:` key in EN.ts is the worked example) or delete
-	// this block once the framework file covers these five keys.
-	notifications: {
-		pushBlocked: `Notifications are blocked in your browser settings. Allow them and try again.`,
-		pushUnsupported: `This device or browser does not support push notifications`,
-		pushNotConfigured: `Push notifications are not set up on this server`,
-		permissionDenied: `Permission for notifications was not granted`,
-		enableError: `Failed to enable push notifications`,
 	},
 	$vuetify: {
 		badge: 'Badge',

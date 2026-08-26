@@ -10,7 +10,7 @@ const user = {
 			title: `Per-module settings`,
 			description: `Further preferences that belong to specific parts of the app.`,
 			planner: `Day planner settings`,
-			reminders: `Reminder preferences`,
+			reminders: `Notifications & reminders`,
 		},
 		backToSettings: `Back to account settings`,
 		// Export

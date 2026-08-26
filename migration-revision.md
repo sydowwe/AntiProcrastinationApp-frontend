@@ -276,6 +276,37 @@ Two facts that cost time to find and would cost it again:
 
 ---
 
+### 12. `src/_common/_locales/` ships English for only two namespaces
+
+**Local file kept:** none — this is a framework gap that got a first, partial fix (N11), not an app-side workaround.
+
+**The gap.** Before N11, `src/_common/_locales/` had `common.sk.ts` and `vuetifyLocale.sk.ts` and no English file at all.
+Since `EN.ts` therefore had nothing framework-side to spread, and `i18n.ts` sets `fallbackLocale: 'EN'` (not `'SK'`), a
+missing key resolved to **a raw key path**, not Slovak — the fallback chain terminates at EN itself. N11 added
+`src/_common/_locales/common.en.ts`, but it translates only two of the framework's ten-plus `common` namespaces:
+`notifications.*` and `reminderPreference.*`. Still raw-key-on-English-screen today: `navigation.*`, `validation.*`,
+`httpErrors.*`, `general.*`, `dateTime.*`, `export.*`, `controls.*`, `authorization.*`, `user.*`, `calendar.*`,
+`iconPicker.*`, `app.*` — this app's own `src/locales/common.en.ts` happens to mirror several of these already
+(`$vuetify`, `httpErrors`, `validation`, `export`, plus its own `navigation`/`general`/`dateTime`/`controls`/`calendar`
+namespaces, which replace the framework's wholesale rather than filling a gap in them), which is the only reason an
+English user of *this* app doesn't see the raw-key symptom more often. A second app mounting the framework, with a
+thinner `common.en.ts` of its own, would see it everywhere those namespaces aren't locally replaced.
+
+Also untranslated: every framework **module**'s own locale file — `modules/scheduler/_locales/`,
+`modules/reminders/_locales/` (`reminders.sk.ts`, `remindersDashboard.sk.ts`) ship Slovak only. `modules/user/` is the
+one exception; it already has `user.en.ts` alongside `user.sk.ts`.
+
+**The upstream ask:** translate the remaining `common` namespaces and the two reminders/scheduler module files to
+English, the same way N11 did `notifications`/`reminderPreference`, and wire each into `EN.ts` (already spreading
+`common` as of N11 — see `src/locales/EN.ts`).
+
+**App-side today:** nothing to repoint when this lands — `src/locales/common.en.ts` already documents, at each
+namespace it locally covers, that it exists because the framework doesn't yet. Once a namespace is covered upstream,
+delete the matching block from the app file (the app's own values win the shallow spread regardless, so nothing breaks
+if the app-side block is left too long — it just becomes dead weight).
+
+---
+
 ## Lessons kept
 
 Five things the resolved entries taught that are not obvious from the code, and that cost real time to relearn.

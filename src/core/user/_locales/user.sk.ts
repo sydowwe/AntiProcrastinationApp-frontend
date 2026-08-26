@@ -13,7 +13,7 @@ const user = {
 			title: `Nastavenia jednotlivých častí`,
 			description: `Ďalšie predvoľby, ktoré patria konkrétnym častiam aplikácie.`,
 			planner: `Nastavenia plánovača dňa`,
-			reminders: `Predvoľby pripomienok`,
+			reminders: `Notifikácie a pripomienky`,
 		},
 		backToSettings: `Späť na nastavenia účtu`,
 		// Export

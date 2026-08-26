@@ -34,8 +34,8 @@ What this means in practice:
 | ✅N8  | [Push subscription resilience](N8-push-resilience.md) — **done**                 | bug          | none    | **Opus 5** | high    |
 | ✅N9  | [Reminder-kind label seam](N9-reminder-label-seam.md)                            | debt         | —       | Sonnet 5   | low–med |
 | ✅N10 | [Quiet hours correctness & contract](N10-quiet-hours.md) — **done**              | bug          | none    | **Opus 5** | high    |
-| N11   | [EN locale coverage](N11-en-locale.md)                                           | bug / i18n   | —       | Sonnet 5   | low–med |
-| N12   | [Per-type notification settings](N12-notification-type-settings.md)              | feature      | **yes** | **Opus 5** | high    |
+| ✅N11 | [EN locale coverage](N11-en-locale.md)                                           | bug / i18n   | —       | Sonnet 5   | low–med |
+| ✅N12 | [Per-type notification settings](N12-notification-type-settings.md) — **done**   | feature      | **yes** | **Opus 5** | high    |
 | N13   | [Module doc refresh](N13-doc-refresh.md)                                         | debt         | —       | Sonnet 5   | low     |
 
 Each prompt is independently runnable. `Depends on` in each header is about avoiding merge pain, not correctness. **N1 and N2 have shipped**, which clears the
@@ -411,6 +411,119 @@ route move) but the dev server was not, so the behavioural list in the prompt bo
 `vitest run` with no path argument also collects `e2e/**` and reports 3 Playwright failures; that is a pre-existing config gap unrelated to this work
 (`vitest run src` is clean).
 
+## Fixed by N12 — and the "there is no per-type preference API" premise was wrong too
+
+2026-08-26. **Read this before N13.**
+
+**Step 1's answer: two genuinely distinct axes, and the backend states the boundary outright.**
+`ReminderKindPreference`'s XML doc says the reminders module decides *whether a scheduled reminder of a kind may
+fire for a user*, while the notifications module *owns the channel transport and its own per-channel filtering* —
+"which is why this entity carries no channel column". They compose in sequence: `ReminderScanJobHandler` drops
+opted-out recipients **before** `NotifyAsync`, which then filters per `(type, channel)` for every producer.
+Neither is derivable from the other — `ReminderDefinition.NotificationType` is nullable and per-definition, one
+kind can carry any type, and most types (`ScheduledJobFailed`, `RoutinePeriodEnded`, `TimerBoundary`) never touch
+the reminders scan. So the screen was built, not deleted.
+
+- ❌ ~~**There is no per-type preference endpoint** (`api/NotificationApi.ts` has only `fetchMyNotifications` and
+  `markNotificationRead`).~~ **`GET /notification-preference/mine` and `PUT /notification-preference` have existed
+  all along**, with an entity, a validator and a concurrency-safe upsert. The GET returns the **full effective
+  `(type, channel)` matrix** — every pair, resolved to the stored row or the dispatcher's own default — so it also
+  answers step 3's "ask the server for the LIST", which the prompt called "the better answer and belongs in the
+  ask". **That is the sixth and seventh endpoint this set has asked for and found already shipped**, after N3's
+  three and N6's one.
+- ❌ ~~**Channels are in-app and push** (`channel.{InApp,WebPush}`).~~ There are **three**: `NotificationChannel`
+  has `Email`, and it is **default-ON** for `DeadlineApproaching`, `ScheduledJobFailed` and `ScheduledJobOverdue`
+  (`NotificationChannelDefaults`, which carries a legal note about why the default-on set is lawful). Users have
+  been receiving those e-mails with no way to turn them off; the missing `channel.Email` locale entry is why
+  nobody noticed. Verified live: the three boxes come back checked, everything else unchecked.
+- ✅ **Twelve keys, but only eight survived.** Five were already live from N8. `preferences`, `enablePush`,
+  `pushEnabled` and `channel.*` are now live too. The remaining four — `settingsTitle`, `pushSubscribed`,
+  `pushUnsubscribed`, `enableNotificationsInWindows` — had **never** resolved anywhere and were **deleted**, not
+  kept in reserve. Reserved vocabulary outliving the screen it was reserved for is how this block became twelve
+  dead keys in the first place.
+
+**The live defect nobody had looked for: this app never registered `TimerBoundary`.** Its own backend raises it on
+every pomodoro boundary (`TimerBoundaryAlarmJobHandler`), and `notifications.type.TimerBoundary` was sitting in
+both locales — but `src/app/notifications/notificationTypeMeta.ts` had no entry, so the notification the user gets
+most often rendered a grey bell with no click-through and could not be filtered in the inbox. Nothing fails when a
+type is unregistered, which is why it survived N4, N5, N6 and N7. Registered now, deliberately **unrouted**: the
+destination is per-timer and lives in the push payload's producer-supplied `url`, which the in-app path cannot
+read (`RenderSubject` returns null for this type), and guessing one of three timer views would be wrong most of
+the time.
+
+**Three decisions worth carrying forward.**
+
+- **The row list is the server's catalog ∩ the app's registry, and neither side alone would do.** The server
+  enumerates the whole `NotificationType` enum — a **framework contract shared with a business app**, nine of
+  whose nineteen members are HR/inventory kinds this deployment cannot raise and no locale here names. The
+  registry is the opposite failure: it drifts silently, as `TimerBoundary` proves. The screen therefore says out
+  loud that its list is not exhaustive, and **B4 asks for a deployment-scoped catalog**, which is the only fix
+  that closes both directions.
+- **The push master toggle stayed in the security settings and is linked to from here.** `subscribe()` must run
+  inside a user gesture and its five outcomes each have their own message there; a second switch would fork or
+  move that logic. This screen reports the device's state instead — which it must, because a per-type Push
+  preference means nothing on a device that never subscribed.
+- **"Nothing will reach you" counts undeliverable channels, not empty boxes.** With no VAPID configured (still
+  true of this environment — see N8), `WebPush` stays stored as enabled and its column is not writable, so a user
+  who clears every box they *can* touch receives nothing. Folding undeliverable channels into `silenced` is what
+  makes the warning reachable on exactly the deployment where it is most true. The warning is worth having
+  because the server's behaviour there is stronger than "quietly": with no channel enabled it writes **no history
+  row at all**, so the notification never reaches the inbox either.
+
+**Backend ask written:** `backend/B4-deployment-scoped-channel-catalog.md` — and it leads by saying what it is
+*not* asking for, since this file's own "known candidates" entry ("ask whether they are meant to be the same
+registry") was answered by the backend source before the work started. **B4 has since been answered and landed;
+see _Landed with B4_ below.**
+
+## Landed with B4 — the client no longer keeps a list of notification types
+
+2026-08-27. Both halves of the ask came: `GET /notification-preference/mine` is now scoped to the types this
+deployment can raise (10 × 3 = 30 rows, down from 19 × 3 = 57), and `GET /notification-preference/channels`
+answers `[{ channel, configured }]` per channel. Response shape unchanged, so nothing broke while the cleanup
+landed.
+
+**What went away.** `buildNotificationPreferenceMatrix`'s intersection with `notificationTypeMeta` collapsed to a
+pass-through — no `knownTypes`, no `unknownTypeCount` — and the `catalogNote` locale entry (SK + EN) and the
+footnote that rendered it are deleted. Row **order** is now the server's too, for the same reason the row set is:
+any client-side sort needs a client-side list of types to sort by, which is the thing that drifts.
+
+**The rule that replaced it, worth restating because breaking it is how the bug got built:** an unregistered type
+still gets a row, labelled with its raw enum name. `notificationTypeMeta` is back to icon / colour / route /
+optional label and decides nothing about which controls exist. A raw name on that screen is a missing metadata
+entry, never a row to filter out — the one time this client filtered, it hid `TimerBoundary`.
+
+**`disabledChannels` generalised from a Push special case to a lookup**, which is what actually fixes e-mail: it
+used to derive from `usePushNotifications.isSupported`, conflating "this browser has no PushManager" with "this
+server has no VAPID key" and saying nothing at all about SMTP. On a deployment with no SMTP,
+`DeadlineApproaching`, `ScheduledJobFailed` and `ScheduledJobOverdue` rendered as **checked** while nothing was
+delivered. Now any `configured: false` channel gets its column disabled, a header tooltip, and a named line above
+the table.
+
+**Two distinctions kept deliberately separate**, because who has to act differs:
+
+- **Deployment** (`/channels`) → the whole column is disabled. Nothing any user can do, on any device.
+- **Device** (`usePushNotifications.isSubscribed`) → a warning with a link to the account settings, and the
+  column stays **writable**: the preference is stored per account and is meaningful on the user's other devices
+  and the moment this one subscribes. Disabling it here would be the wrong answer to a per-device fact.
+
+`GET /push-subscription/vapid-public-key` is untouched and still owns the subscribe flow — the new endpoint
+answers "is the channel deliverable", not "give me the key", and N8's not-configured-vs-fetch-failed distinction
+lives in the old one.
+
+The `/channels` read is deliberately given **no error state**: an empty list reads as "everything is configured",
+so a failed read costs the disabled columns and their explanation rather than the card. The preferences are still
+correct and editable without it.
+
+Verified: type-check **0 errors** (`--build --force`, exit 0, confirmed non-vacuous by planting a type error,
+seeing it reported, and reverting); lint 0 errors (the 2 known warnings; eslint ignores `src/_common`, so it
+covers almost none of this); **258** unit tests pass, up 11, all in the new pure
+`utils/notificationPreferenceMatrix.ts`. `vite build` clean, service worker included.
+**Verified in a real browser this time** — the API and the dev server were both up, unlike N7/N8/N10: ten rows
+render with the right icons and labels, the e-mail defaults match `NotificationChannelDefaults` exactly, the Push
+column is disabled with `pushNotConfigured` above it, the footnote reads "9 more alert types", a toggle survives a
+full reload, and the silenced hint appears and disappears with the last deliverable channel. The test account was
+returned to its original state.
+
 ## The confirmed defects
 
 Still open. Line numbers re-checked 2026-08-25.
@@ -429,11 +542,11 @@ Still open. Line numbers re-checked 2026-08-25.
 - **`src/_common/_locales/` ships SK only** — there is no `common.en.ts`. `EN` is configured as the *fallback* locale (`i18n.ts:41`), so an English user gets Slovak
   for every `notifications.*`,
   `reminderPreference.*`, `authorization.*` and `controls.*` string, and the fallback chain has nowhere further to go. (N11, scoped to this module's keys)
-- **~~Twelve~~ Seven `notifications.*` locale keys are dead.** `settingsTitle`, `enablePush`, `pushEnabled`,
-  `pushSubscribed`, `pushUnsubscribed`, `preferences`, `channel.*`, `enableNotificationsInWindows` — grepped, zero call sites. They were written for a
-  notification-settings screen that was never built. **N8 took five of the twelve live** — `pushBlocked`, `pushUnsupported`, `permissionDenied`, `enableError` and a
-  new sibling `pushNotConfigured` now render one message per `subscribe()` failure in `SecuritySection`, which is exactly what they were written for; the rest of
-  that component still uses `user.pushNotifications*`. The disposition of what is left is N12's — build the screen or delete the keys.
+- ✅ ~~**~~Twelve~~ Seven `notifications.*` locale keys are dead.**~~ **Closed by N12.** N8 took five live in
+  `SecuritySection`; N12 took `preferences`, `enablePush`, `pushEnabled` and `channel.*` live in the new settings
+  card (adding the missing `channel.Email`), and **deleted** the four that had never resolved anywhere —
+  `settingsTitle`, `pushSubscribed`, `pushUnsubscribed`, `enableNotificationsInWindows`. Nothing is held "in
+  reserve" any more. See _Fixed by N12_ above.
 - **The module doc is stale in six named ways.** `_common/docs/modules/notifications.md` still documents `updateNotificationPreference`,
   `NotificationPreferencePayload`, `NotificationChannel`,
   `listFromJsonList` (the DTO's method is `listFromObjects`), and lists "hardcoded `sk`" and
@@ -463,7 +576,14 @@ _Landed with B2_ above for what shipped and what is still missing.
 `POST /notification/delete-batch` with skip-not-404 semantics, dismiss permanently a hard delete) and _Landed with B3_ above for what shipped. Asking the *rules*
 rather than just the routes is what paid here: it got the retention consequence corrected (the purge keys on `IsRead`, not on the read stamp, so the ask's stated
 mechanism was wrong even though its instinct was right) and got the one case where a dismissed notification **can** reappear enumerated — admin-only
-`ScheduledJobOverdue`, re-raised while still overdue. Prompts do not pre-write backend requests — the agent implementing a frontend prompt is the one that discovers
+`ScheduledJobOverdue`, re-raised while still overdue. `B4-deployment-scoped-channel-catalog.md` — **answered and landed on 2026-08-27**; see _Landed with B4_ above for
+the settled contract (deployment-scoped type catalog, `GET /notification-preference/channels`, `PUT` now `400`s
+for an out-of-list type) and for what the client deleted as a result. Written 2026-08-26 by N12. Not the ask this file's
+"known candidates" list predicted: the per-type registry N12 was told to ask for already existed, so B4 instead
+asks for the one thing that genuinely cannot be answered client-side — which of the framework enum's nineteen
+notification types *this deployment* can actually raise. It leads by saying what it is **not** asking for,
+because the prediction was wrong in a way a cold reader would repeat.
+Prompts do not pre-write backend requests — the agent implementing a frontend prompt is the one that discovers
 exactly which field was missing and writes a sharper ask than anyone could from a cold read. N3, N5, N6, N7, N8, N10 and N12 each end with an escalation block
 telling the agent to finish and verify the frontend work first, then write the ask if it actually hit the wall. N2, N3, N7, N8 and N10 all had one and all five
 produced nothing, which is the expected outcome when the server behaves — do not write a file to show willing. **N8's and N10's blocks were the most confident of the

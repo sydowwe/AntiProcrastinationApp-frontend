@@ -68,5 +68,11 @@ Listed so you recognise the situation, **not** so you write them speculatively �
   transition, is unanswerable from the client. Ask for the rule, not a field.
 - **Push re-registration semantics** (from N8). The client needs to be able to replace a rotated subscription. Whether that is the existing `POST /push-subscription`
   being idempotent, or a distinct call carrying the old endpoint, is a server decision — describe the browser event and let them pick.
-- **Per-notification-type preferences** (from N12). `reminder-preference` covers *reminder kinds*
-  keyed by `(ownerModule, kind)`. Notification `type` is a different axis. Ask whether they are meant to be the same registry before proposing a second one.
+- ~~**Per-notification-type preferences** (from N12).~~ **Resolved with no ask of this shape, 2026-08-26.** They
+  are two distinct axes — the backend's own `ReminderKindPreference` XML doc states the boundary — and the second
+  registry already existed: `GET /notification-preference/mine` + `PUT /notification-preference`, never called by
+  this frontend. What N12 actually hit was far narrower, and is `B4-deployment-scoped-channel-catalog.md`: that
+  endpoint's catalog enumerates the *framework's* whole `NotificationType` enum, nine members of which belong to
+  another app. **Kept here as the worked example of why this list says "recognise the situation, not write it
+  speculatively"** — writing this bullet's ask from a cold read would have requested an endpoint that already
+  exists, which is the exact failure mode N8's and N10's escalation blocks hit.

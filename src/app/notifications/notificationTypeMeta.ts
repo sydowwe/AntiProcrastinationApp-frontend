@@ -81,5 +81,22 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 	// being reported. Stays unrouted.
 	ScheduledJobOverdue: { icon: 'clock', color: 'warning' },
 
+	// A timer phase boundary — a focus period, a break, or a plain countdown finishing. Raised by
+	// `AdhdTimeOrganizer.History`'s one-shot alarm job, i.e. by THIS app, on every pomodoro boundary.
+	//
+	// It was missing from this map entirely until N12, which is why it is worth a note rather than a
+	// line: an unregistered type is not an error — it renders a plain grey bell and cannot be singled
+	// out in the inbox's type filter — so nothing ever failed loudly enough to notice, and the type the
+	// user receives most often was the one type the app said nothing about. Registering it also gives
+	// it a row in the per-type delivery settings, which is what surfaced the gap.
+	//
+	// UNROUTED on purpose, like `ScheduledJobOverdue` above and unlike everything else here. The
+	// destination is genuinely per-timer — the producer hands the server a path (`TimerBoundaryPayload
+	// .Url`, one of the three timer views) and the SERVICE WORKER opens it verbatim on a push click. The
+	// in-app path cannot reach it: `RenderSubject` returns null for this type, so `NotificationResponse`
+	// carries no `subject`, and a constant route here would have to guess one of the three views and be
+	// wrong most of the time. Landing nowhere beats landing on the wrong timer.
+	TimerBoundary: { icon: 'hourglass-end', color: 'primary' },
+
 	Test: { icon: 'flask', color: 'textMuted' },
 }
