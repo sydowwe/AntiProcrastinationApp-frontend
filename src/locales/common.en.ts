@@ -14,6 +14,7 @@ const common = {
 		notFound: `The requested item was not found.`,
 		conflict: `This record was changed by someone else. Refresh the page and try again.`,
 		internalServerError: `A server error occurred. Please try again later.`,
+		errorId: `Error id: {id}`,
 		serviceUnavailable: `The service is temporarily unavailable. Please try again later.`,
 		gatewayTimeout: `The server is not responding in time. Please try again later.`,
 		unexpected: `An unexpected error occurred.`,
