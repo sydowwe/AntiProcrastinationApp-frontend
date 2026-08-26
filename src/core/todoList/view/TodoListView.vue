@@ -247,7 +247,7 @@
 							@delete="deleteItem"
 							@edit="toDoListDialog?.openEdit"
 							@isDoneChanged="handleIsDoneChange"
-							@stepToggled="itemsChanged"
+							@stepToggled="itemsChanged([$event])"
 							@addToPlanner="openAddToPlanner"
 							@moveToList="openMoveToList"
 							@logTime="openLogTime($event, false)"
@@ -678,7 +678,7 @@
 		items.value[index] = await fetchById(itemId)
 	}
 
-	async function handleIsDoneChange(id: number, forceValue: boolean) {
+	async function handleIsDoneChange(id: number, forceValue?: boolean) {
 		await toggleIsDone(id, forceValue)
 		await itemsChanged([id])
 		offerPairedLeisure(id)

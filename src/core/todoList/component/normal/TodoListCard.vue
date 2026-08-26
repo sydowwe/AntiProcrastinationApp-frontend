@@ -85,7 +85,7 @@
 	const router = useRouter()
 
 	const progressPercent = computed(() =>
-		list.itemCount > 0 ? Math.round(((list.completedCount ?? 0) / list.itemCount) * 100) : 0,
+		(list.itemCount ?? 0) > 0 ? Math.round(((list.completedCount ?? 0) / (list.itemCount ?? 1)) * 100) : 0,
 	)
 </script>
 

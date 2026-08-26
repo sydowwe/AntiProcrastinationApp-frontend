@@ -143,7 +143,7 @@
 
 	const emit = defineEmits<{
 		selectCategory: [id: number | null]
-		closeDialog: false
+		closeDialog: []
 		openCreate: []
 		openEdit: [cat: TodoListCategoryEntity]
 		confirmDelete: [cat: TodoListCategoryEntity]

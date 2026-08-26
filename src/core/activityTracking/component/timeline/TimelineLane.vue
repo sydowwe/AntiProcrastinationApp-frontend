@@ -47,7 +47,7 @@
 
 	const laneStyle = computed(() => ({
 		height: `${props.laneHeight ?? props.config.laneHeight}px`,
-		position: 'relative',
+		position: 'relative' as const,
 	}))
 
 	function getSessionPosition(session: TimelineSessionDto | StackedSession): SessionPosition {

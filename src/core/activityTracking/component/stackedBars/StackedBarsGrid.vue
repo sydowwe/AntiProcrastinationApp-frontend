@@ -102,7 +102,7 @@
 					:class="{
 						'x-axis-label-empty-range':
 							window.columns.length === 0 &&
-							window.windowEnd.getTime() - window.windowStart.getTime() >= dayDurationMs.value,
+							window.windowEnd.getTime() - window.windowStart.getTime() >= dayDurationMs,
 					}"
 					:style="{
 						gridRow: totalRows + 1,
@@ -405,7 +405,7 @@
 		gridTemplateColumns: gridTemplateColumns.value,
 		gridTemplateRows: gridTemplateRows.value,
 		gap: '0',
-		position: 'relative',
+		position: 'relative' as const,
 	}))
 
 	// Duration of one configured "day" (timeFrom → timeTo), in milliseconds

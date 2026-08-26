@@ -32,7 +32,7 @@
 			></VIdSelect>
 			<SuggestedTimeFormField v-model="suggestedTime" />
 			<div
-				v-if="timePeriod?.lengthInDays > 1 && timePeriod?.lengthInDays <= 14"
+				v-if="(timePeriod?.lengthInDays ?? 0) > 1 && (timePeriod?.lengthInDays ?? 0) <= 14"
 				class="mb-2"
 			>
 				<label class="text-caption text-medium-emphasis mb-1 d-block">Suggested days</label>

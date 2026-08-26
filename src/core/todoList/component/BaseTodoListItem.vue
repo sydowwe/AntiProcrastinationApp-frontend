@@ -157,7 +157,7 @@
 			:isDone
 			:disabled="isInChangeOrderMode"
 			@mousedown.stop
-			@stepToggled="emits('stepToggled')"
+			@stepToggled="emits('stepToggled', toDoListItem.id)"
 		/>
 		<div
 			v-if="itemProgress !== null"
@@ -172,7 +172,7 @@
 		<DraggedItemPreview
 			ref="dragPreviewRef"
 			:toDoListItem
-			:color
+			:color="color ?? undefined"
 		/>
 	</VListItem>
 </template>
@@ -213,7 +213,7 @@
 		edit: [toDoListItem: TItem]
 		delete: [id: number]
 		isDoneChanged: [id: number, forceValue?: boolean]
-		stepToggled: []
+		stepToggled: [id: number]
 		addToPlanner: [toDoListItem: TItem]
 		logTime: [toDoListItem: TItem]
 		quickStartTimer: [toDoListItem: TItem]

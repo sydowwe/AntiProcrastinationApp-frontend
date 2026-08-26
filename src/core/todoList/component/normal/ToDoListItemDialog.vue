@@ -117,7 +117,7 @@
 	import { VForm } from 'vuetify/components'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
 	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
-	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
+	import type { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'
 	import { TodoListItemStepRequest } from '@/core/todoList/dto/request/TodoListItemStepRequest.ts'
 	import BaseTodoListRepeatCountFormField from '@/core/todoList/component/BaseTodoListRepeatCountFormField.vue'
 	import SuggestedTimeFormField from '@/core/todoList/component/SuggestedTimeFormField.vue'
@@ -137,7 +137,7 @@
 	const { fetchAll } = useTaskPriorityCrud()
 	const { ensureLoaded: ensureLeisurePairingLoaded, pairingOptions } = useLeisurePairing()
 
-	const priorityOptions = ref([] as TaskImportance[])
+	const priorityOptions = ref([] as TaskPriority[])
 
 	const dialog = ref(false)
 	const isEdit = ref(false)

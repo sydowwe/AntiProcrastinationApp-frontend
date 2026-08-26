@@ -62,6 +62,7 @@
 	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
+	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import router from '@/router.ts'
 	import DesktopEntriesFilterBar from '@/core/activityTracking/component/desktop/desktopSettings/DesktopEntriesFilterBar.vue'
 	import DesktopDistinctEntriesTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesTable.vue'
@@ -88,12 +89,12 @@
 	function edit(item: TrackerDesktopMappingResponse) {
 		editedId.value = item.id
 		request.value = new TrackerDesktopMappingRequest()
-		filter.value.processName = item.processName
-		filter.value.processNameMatchType = item.processNameMatchType
-		filter.value.productName = item.productName
-		filter.value.productNameMatchType = item.productNameMatchType
-		filter.value.windowTitle = item.windowTitle
-		filter.value.windowTitleMatchType = item.windowTitleMatchType
+		filter.value.processName = item.processName ?? undefined
+		filter.value.processNameMatchType = item.processNameMatchType ?? PatternMatchType.Contains
+		filter.value.productName = item.productName ?? undefined
+		filter.value.productNameMatchType = item.productNameMatchType ?? PatternMatchType.Contains
+		filter.value.windowTitle = item.windowTitle ?? undefined
+		filter.value.windowTitleMatchType = item.windowTitleMatchType ?? PatternMatchType.Contains
 		if (item.activity) {
 			formData.value.activityId = item.activity.id
 			formData.value.roleId = item.activity.roleId

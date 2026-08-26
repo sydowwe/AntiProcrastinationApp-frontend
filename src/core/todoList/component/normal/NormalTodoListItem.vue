@@ -9,8 +9,8 @@
 		:additionalActions
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
-		@isDoneChanged="(id: number, forceValue: boolean) => emits('isDoneChanged', id, forceValue)"
-		@stepToggled="emits('stepToggled')"
+		@isDoneChanged="(id: number, forceValue?: boolean) => emits('isDoneChanged', id, forceValue)"
+		@stepToggled="emits('stepToggled', $event)"
 		@addToPlanner="emits('addToPlanner', $event)"
 		@logTime="emits('logTime', $event)"
 		@quickStartTimer="emits('quickStartTimer', $event)"
@@ -100,8 +100,8 @@
 	const emits = defineEmits<{
 		edit: [toDoListItem: TodoListItemEntity]
 		delete: [id: number]
-		isDoneChanged: [toDoListItem: TodoListItemEntity, forceValue?: boolean]
-		stepToggled: []
+		isDoneChanged: [id: number, forceValue?: boolean]
+		stepToggled: [id: number]
 		addToPlanner: [toDoListItem: TodoListItemEntity]
 		logTime: [toDoListItem: TodoListItemEntity]
 		quickStartTimer: [toDoListItem: TodoListItemEntity]

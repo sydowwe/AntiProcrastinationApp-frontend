@@ -57,7 +57,7 @@
 				<!-- Drop zone above item (invisible overlay) - only when dragging -->
 				<div
 					v-if="isInChangeOrderMode && isDragging && index === 0"
-					:ref="(el: HTMLElement) => setDropZoneRef(el as HTMLElement, index, 'top')"
+					:ref="el => setDropZoneRef(el as HTMLElement, index, 'top')"
 					class="drop-zone-overlay drop-zone-overlay--top"
 				/>
 
@@ -79,7 +79,7 @@
 				<!-- Drop zone below item (invisible overlay) - only when dragging -->
 				<div
 					v-if="isInChangeOrderMode && isDragging"
-					:ref="(el: HTMLElement) => setDropZoneRef(el as HTMLElement, index, 'bottom')"
+					:ref="el => setDropZoneRef(el as HTMLElement, index, 'bottom')"
 					class="drop-zone-overlay"
 					:class="{ 'drop-zone-overlay--bottom': index === items.length - 1 }"
 				/>

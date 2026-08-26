@@ -48,7 +48,7 @@
 		gridColumn: `${props.gridColumnStart} / ${props.gridColumnEnd}`,
 		gridRow: `${props.gridRowStart} / ${props.gridRowEnd}`,
 		display: 'flex',
-		flexDirection: 'column',
+		flexDirection: 'column' as const,
 	}))
 
 	const activeMinutes = computed(() => props.data.activeMinutes)

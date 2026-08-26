@@ -53,8 +53,8 @@
 						}"
 						@delete="(id: number) => emit('delete', id)"
 						@edit="(i: RoutineTodoListItemEntity) => emit('edit', i)"
-						@isDoneChanged="(id: number, val: boolean) => emit('isDoneChanged', id, val)"
-						@stepToggled="(ids: number[]) => emit('stepToggled', ids)"
+						@isDoneChanged="(id: number, val?: boolean) => emit('isDoneChanged', id, val)"
+						@stepToggled="(id: number) => emit('stepToggled', [id])"
 						@addToPlanner="(i: RoutineTodoListItemEntity) => emit('addToPlanner', i)"
 						@logTime="(i: RoutineTodoListItemEntity) => emit('logTime', i, false)"
 						@quickStartTimer="(i: RoutineTodoListItemEntity) => emit('quickStartTimer', i)"
@@ -107,7 +107,7 @@
 		addToPlanner: [item: RoutineTodoListItemEntity]
 		delete: [id: number]
 		edit: [item: RoutineTodoListItemEntity]
-		isDoneChanged: [id: number, forceValue: boolean]
+		isDoneChanged: [id: number, forceValue?: boolean]
 		stepToggled: [changedItems: number[]]
 		uncheckAll: [doneIds: number[]]
 		itemsReordered: [oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest]

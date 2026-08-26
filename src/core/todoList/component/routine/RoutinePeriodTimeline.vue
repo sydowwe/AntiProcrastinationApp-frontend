@@ -40,7 +40,7 @@
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 
-	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity; color: string }>()
+	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity; color?: string }>()
 
 	const { getBgColor } = useColor()
 	const { t } = useI18n()

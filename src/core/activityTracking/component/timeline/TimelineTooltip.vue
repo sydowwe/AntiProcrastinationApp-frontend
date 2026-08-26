@@ -44,7 +44,7 @@
 	}>()
 
 	const positionStyle = computed(() => ({
-		position: 'fixed',
+		position: 'fixed' as const,
 		left: `${props.position.x + 10}px`,
 		top: `${props.position.y + 10}px`,
 		zIndex: 1000,

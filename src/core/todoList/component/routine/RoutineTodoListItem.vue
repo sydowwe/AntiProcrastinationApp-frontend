@@ -8,8 +8,8 @@
 		:color="toDoListItem.color"
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
-		@isDoneChanged="(id: number, forceValue: boolean) => emits('isDoneChanged', id, forceValue)"
-		@stepToggled="emits('stepToggled')"
+		@isDoneChanged="(id: number, forceValue?: boolean) => emits('isDoneChanged', id, forceValue)"
+		@stepToggled="emits('stepToggled', $event)"
 		@addToPlanner="emits('addToPlanner', $event)"
 		@logTime="emits('logTime', $event)"
 		@quickStartTimer="emits('quickStartTimer', $event)"
@@ -91,7 +91,7 @@
 		edit: [toDoListItem: RoutineTodoListItemEntity]
 		delete: [id: number]
 		isDoneChanged: [id: number, forceValue?: boolean]
-		stepToggled: []
+		stepToggled: [id: number]
 		addToPlanner: [toDoListItem: RoutineTodoListItemEntity]
 		logTime: [toDoListItem: RoutineTodoListItemEntity]
 		quickStartTimer: [toDoListItem: RoutineTodoListItemEntity]

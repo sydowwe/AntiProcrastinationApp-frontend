@@ -538,7 +538,7 @@
 		showSuccessSnackbar(t('successFeedback.added'))
 	}
 
-	async function handleIsDoneChange(id: number, forceValue: boolean) {
+	async function handleIsDoneChange(id: number, forceValue?: boolean) {
 		await toggleIsDone(id, forceValue)
 		await onItemsChanged([id])
 	}
