@@ -1,0 +1,8 @@
+[mcp_servers.vuetify]
+command = "cmd"
+args = [
+    "/c",
+    "npx.cmd",
+    "-y",
+    "@vuetify/mcp",
+]

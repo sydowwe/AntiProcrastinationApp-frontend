@@ -10,6 +10,7 @@ import { useUserStore } from './_common/modules/user/store/authStore.ts'
 import './core/user/dto/userAugmentation.ts'
 import { navItems } from './app/nav/navItems.ts'
 import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
+import { reminderLabels } from './app/notifications/reminderLabels.ts'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -44,6 +45,7 @@ installFramework(app, {
 	// here, which also keeps their section dividers and subheaders out of the sidebar.
 	navTrees: { main: navItems },
 	notificationTypeMeta,
+	reminderLabels,
 	vuetify: {
 		// Only the hexes this app diverges from the shared design system on. The colour *names* are
 		// the framework's and every component references them, so they must not be renamed here.
