@@ -4,30 +4,29 @@ import type { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOpt
 import type { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/ActivitySelectOptionCombination.ts'
 import { Role } from '@/core/activity/dto/response/Role.ts'
-import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
-import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 
 /**
- * The lookup lists behind the activity selection form. The first three are this module's own; the last
- * two belong to `todoList` and are only reachable from the form's "from to-do list" / "from routine
- * to-do" fields.
+ * The lookup lists behind the activity selection form that this module owns — and therefore the only
+ * ones it can keep fresh, since every mutation of them goes through this module's crud composables.
+ *
+ * The form's "from to-do list" / "from routine to-do" fields need two more lists, but those belong to
+ * `todoList` and are edited there. Caching them here made them permanently stale, because invalidating
+ * them would mean `todoList/api/` reaching into this module's `store/` — which the module rules forbid,
+ * and rightly: a cache nobody can invalidate is worse than no cache. `useActivitySelectionFormState`
+ * fetches those two straight from `todoList/api/` instead. They are small and only fetched when those
+ * fields are actually rendered.
  */
-export type ActivityOptionKind = 'role' | 'category' | 'activity' | 'taskPriority' | 'routineTimePeriod'
+export type ActivityOptionKind = 'role' | 'category' | 'activity'
 
 function fetchAllOptions(entityName: string): Promise<SelectOption[]> {
 	return API.get(`/${entityName}/all-options`).then(response => SelectOption.listFromObjects(response.data))
 }
 
 /**
- * Plain request functions rather than `useEntityQuery` wrappers for this module's own three, because
- * `activityOptionsStore` is the only caller and it needs different semantics:
- * `useEntityQuery.fetchSelectOptions` aborts its own previous request, which would reject the shared
- * promise the cache has already handed to every waiting consumer. Deduplication happens in the store
- * instead, so there is nothing left to abort.
- *
- * The two `todoList` lookups go through that module's `api/` composable instead of repeating its
- * routes here — a fresh composable per call, so each has its own abort controller and they never
- * cancel each other. Cross-module via `api/` is the sanctioned direction.
+ * Plain request functions rather than `useEntityQuery` wrappers, because `activityOptionsStore` is the
+ * only caller and it needs different semantics: `useEntityQuery.fetchSelectOptions` aborts its own
+ * previous request, which would reject the shared promise the cache has already handed to every
+ * waiting consumer. Deduplication happens in the store instead, so there is nothing left to abort.
  *
  * Error snackbars still come from the axios interceptor; the store tracks loading and re-throws.
  */
@@ -35,8 +34,6 @@ const OPTION_FETCHERS: Record<ActivityOptionKind, () => Promise<SelectOption[]>>
 	role: () => fetchAllOptions('activity-role'),
 	category: () => fetchAllOptions('activity-category'),
 	activity: () => fetchAllOptions('activity'),
-	taskPriority: () => useTaskPriorityCrud().fetchSelectOptions(),
-	routineTimePeriod: () => useRoutineTimePeriodCrud().fetchSelectOptions(),
 }
 
 export function fetchActivityOptions(kind: ActivityOptionKind): Promise<SelectOption[]> {

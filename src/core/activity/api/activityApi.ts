@@ -60,9 +60,9 @@ export function useActivityCrud() {
 	 * `MergeActivitiesDialog.vue`).
 	 *
 	 * `invalidatingActivityOptions('activity', …)` covers everything the cache holds about activities:
-	 * the plain list *and*, through `MATRIX_KINDS`, the per-source combination matrix. Roles and
-	 * categories are untouched by a merge — no role or category is created or removed by one — so their
-	 * two lists are deliberately left alone.
+	 * the plain list *and* the per-source combination matrix. Roles and categories are untouched by a
+	 * merge — no role or category is created or removed by one — so their two lists are deliberately
+	 * left alone.
 	 */
 	function merge(request: MergeActivitiesRequest): Promise<MergeActivitiesResult> {
 		return API.post(`/${url}/merge`, request).then(response => MergeActivitiesResult.fromJson(response.data))

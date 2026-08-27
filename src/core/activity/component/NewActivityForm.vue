@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import ActivityRoleForm from '@/core/activity/component/activityRole/ActivityRoleForm.vue'
 	import ActivityCategoryForm from '@/core/activity/component/activityCategory/ActivityCategoryForm.vue'
@@ -81,25 +81,13 @@
 
 	// `roleOptions` / `categoryOptions` are the shared cache's own refs — bound straight into the
 	// template so an option created anywhere else shows up here without a refetch.
-	const {
-		roleOptions,
-		categoryOptions,
-		fetchRoleSelectOptions,
-		fetchCategorySelectOptions,
-		addRoleOption,
-		addCategoryOption,
-	} = useActivitySelectOptions()
+	// Loads itself on mount — see `useActivitySelectOptions`.
+	const { roleOptions, categoryOptions, addRoleOption, addCategoryOption } = useActivitySelectOptions()
 	const { requiredRule } = useGeneralRules()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
 
 	const form = ref<InstanceType<typeof VForm>>()
-
-	onMounted(() => {
-		void Promise.all([fetchRoleSelectOptions(), fetchCategorySelectOptions()]).catch(() => {
-			// The axios interceptor already reported it; the pickers stay empty.
-		})
-	})
 
 	async function validate() {
 		return form.value!.validate()

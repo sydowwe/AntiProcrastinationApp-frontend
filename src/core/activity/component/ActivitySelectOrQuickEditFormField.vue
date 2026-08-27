@@ -69,7 +69,7 @@
 	import { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
 	import type { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { computed, onMounted, ref, watchEffect } from 'vue'
+	import { computed, ref, watchEffect } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -87,8 +87,9 @@
 	const i18n = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
 	const { requiredRule } = useGeneralRules()
-	// The store's own ref, so a category created elsewhere in this dialog stack shows up here too.
-	const { categoryOptions, fetchCategorySelectOptions } = useActivitySelectOptions()
+	// The store's own ref, so a category created elsewhere in this dialog stack shows up here too. It
+	// loads itself on mount — see `useActivitySelectOptions`.
+	const { categoryOptions, categoriesLoading } = useActivitySelectOptions()
 	const { fetchById } = useActivityCrud()
 
 	const activityForm = ref<InstanceType<typeof ActivitySelectionForm>>()
@@ -100,11 +101,14 @@
 
 	const selectedActivityId = ref<number | undefined>(undefined)
 
+	// Only this field's *own* work (the quick-edit fetch below). The category list's loading state is
+	// the store's, so it is read from there rather than mirrored into a local flag.
 	const ownLoading = ref(false)
 	const selectionFormLoading = ref(false)
 
 	watchEffect(() => {
-		loading.value = ownLoading.value || (!isActivityFormHidden.value && selectionFormLoading.value)
+		loading.value =
+			ownLoading.value || categoriesLoading.value || (!isActivityFormHidden.value && selectionFormLoading.value)
 	})
 
 	const quickEditModeItems = computed(() => [
@@ -115,17 +119,6 @@
 	const isEdit = ref(false)
 	const activityBeforeEdit = ref<QuickActivityToolsDto | null>(null)
 	const quickEditMode = ref<QuickEditMode>(QuickEditMode.OVERWRITE)
-
-	onMounted(async () => {
-		ownLoading.value = true
-		try {
-			await fetchCategorySelectOptions()
-		} catch {
-			// The axios interceptor already reported it; the picker stays empty.
-		} finally {
-			ownLoading.value = false
-		}
-	})
 
 	async function execAndReturnStatus() {
 		if (isActivityFormHidden.value) {

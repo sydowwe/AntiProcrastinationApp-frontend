@@ -14,6 +14,8 @@ import { ActivitySelectOptionCombination } from '@/core/activity/dto/response/Ac
 import { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 import { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 import type { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
+import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
+import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 
 export function useActivitySelectionFormState(
 	formData: Ref<ActivityFormRequest>,
@@ -34,6 +36,14 @@ export function useActivitySelectionFormState(
 	includeArchived = false,
 ) {
 	const optionsStore = useActivityOptionsStore()
+	// Cross-module via `api/`, the sanctioned direction. These two lists are `todoList`'s and are edited
+	// there, so `activityOptionsStore` deliberately does not cache them — it could never invalidate them
+	// without `todoList` reaching into this module's `store/`. Fetched per mount instead, and only when
+	// the fields that show them are rendered.
+	const { fetchSelectOptions: fetchTaskPriorityOptions } = useTaskPriorityCrud()
+	const { fetchSelectOptions: fetchRoutineTimePeriodOptions } = useRoutineTimePeriodCrud()
+	const taskPriorityOptions = ref<SelectOption[]>([])
+	const routineTimePeriodOptions = ref<SelectOption[]>([])
 
 	// `ensureCombinations` hands back a copy, which matters here: `onActivityCreated` pushes a row it
 	// synthesises from what the form knows, and that row must not leak into the shared cache — the
@@ -114,8 +124,8 @@ export function useActivitySelectionFormState(
 		// These two are plain lookups rather than anything the matrix narrows — they used to be read off
 		// `taskPriorityOption` / `routineTimePeriodOption`, which the backend has always sent as null, so
 		// both dropdowns were permanently empty and both names in `selection` permanently ''.
-		options.taskPriorityOptions = optionsStore.taskPriorityOptions
-		options.routineTimePeriodOptions = optionsStore.routineTimePeriodOptions
+		options.taskPriorityOptions = taskPriorityOptions.value
+		options.routineTimePeriodOptions = routineTimePeriodOptions.value
 		filteredOptions.value = options
 		// Before the options are in, every list is empty and pruning would clear a preselection the
 		// parent passed in (an edited history record, a timer preset) before it ever had a chance to
@@ -157,24 +167,27 @@ export function useActivitySelectionFormState(
 	}
 
 	/**
-	 * A secondary lookup: skipped when its field is not rendered, and its failure is swallowed. Losing
-	 * the priority list must not empty the role, category and activity pickers alongside it — that is
-	 * the failure mode the matrix's dead priority predicates already had.
+	 * The two secondary lookups: skipped when their fields are not rendered, and their failures are
+	 * swallowed. Losing the priority list must not empty the role, category and activity pickers
+	 * alongside it — that is the failure mode the matrix's dead priority predicates already had.
 	 */
-	function ensureSecondaryOptions(kind: 'taskPriority' | 'routineTimePeriod'): Promise<SelectOption[]> {
-		if (!includeToDoListFields) return Promise.resolve([])
-		return optionsStore.ensureOptions(kind).catch(() => [])
+	async function loadSecondaryOptions(): Promise<void> {
+		if (!includeToDoListFields) return
+		const [priorities, periods] = await Promise.all([
+			fetchTaskPriorityOptions().catch(() => []),
+			fetchRoutineTimePeriodOptions().catch(() => []),
+		])
+		taskPriorityOptions.value = priorities
+		routineTimePeriodOptions.value = periods
 	}
 
 	onMounted(async () => {
 		loading.value = true
 		try {
-			// In parallel, and all cached: the priority/period lookups are small and shared, so the extra
-			// two requests happen at most once a session.
+			// In parallel. The matrix is the cached one; the two lookups are small and go out fresh.
 			const [combinations] = await Promise.all([
 				optionsStore.ensureCombinations(selectOptionsSource, includeArchived),
-				ensureSecondaryOptions('taskPriority'),
-				ensureSecondaryOptions('routineTimePeriod'),
+				loadSecondaryOptions(),
 			])
 			allOptionsCombinations.value = combinations
 			optionsLoaded.value = true

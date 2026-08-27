@@ -110,7 +110,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { watchDebounced } from '@vueuse/core'
-	import { useRoute, useRouter, type LocationQuery } from 'vue-router'
+	import { type LocationQuery, useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import ActivityTable from '@/core/activity/component/ActivityTable.vue'
 	import RoleTable from '@/core/activity/component/activityRole/ActivityRoleTable.vue'
@@ -127,8 +127,7 @@
 	const { t } = useI18n()
 	// The shared cache's own refs: creating a role in the roles tab refreshes them, so the activities
 	// tab's filter offers it without a reload.
-	const { roleOptions, categoryOptions, fetchRoleSelectOptions, fetchCategorySelectOptions } =
-		useActivitySelectOptions()
+	const { roleOptions, categoryOptions } = useActivitySelectOptions()
 	const route = useRoute()
 	const router = useRouter()
 
@@ -287,11 +286,6 @@
 	syncDraftsFromState()
 
 	onMounted(async () => {
-		try {
-			await Promise.all([fetchRoleSelectOptions(), fetchCategorySelectOptions()])
-		} catch {
-			// The axios interceptor already reported it; the comboboxes fall back to free text.
-		}
 		// Explicit, because a cache hit resolves without changing the refs and the watch below never
 		// fires.
 		if (activeTab.value === 'activities') refreshActivityCombos()

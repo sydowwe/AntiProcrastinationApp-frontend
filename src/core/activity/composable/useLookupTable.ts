@@ -35,9 +35,16 @@ export function useLookupTable<TItem extends IIdResponse, TFilter extends IFilte
 	// of these yet" is worth explaining, "your filter matched nothing" is worth saying and nothing more.
 	const isFiltered = computed(() => config.hasFilter(config.filter.value))
 
+	// `config.filter` is mutated in place (e.g. a combobox watcher re-deriving ids/name from the same
+	// filter), so Vue's deep watch fires on every write, not just ones that change the request. Compare
+	// the serialized filter so a no-op mutation doesn't reload the table and abort an in-flight request.
+	let lastFilterSnapshot = JSON.stringify(config.filter.value)
 	watch(
 		config.filter,
 		() => {
+			const snapshot = JSON.stringify(config.filter.value)
+			if (snapshot === lastFilterSnapshot) return
+			lastFilterSnapshot = snapshot
 			page.value = 1
 			loadItems()
 		},

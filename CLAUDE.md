@@ -6,7 +6,8 @@
 - **Framework**: Vue 3.5+ (Composition API with `<script setup lang="ts">`)
 - **UI**: Vuetify 3
 - **ICONS** FontAwesome 7
-- **State**: Pinia (Composition API / Setup Stores) — persists to `sessionStorage` by default (set `persist: false` to disable)
+- **State**: Pinia (Composition API / Setup Stores) — persists to `sessionStorage` by default (set `persist: false` to disable), and a store exposing `ensureLoaded()`
+  has it called on creation (see `_common/bootstrap/` below)
 - **Routing**: Vue Router
 - **HTTP**: Axios — dual instances: `API` (main, with interceptors) and `refreshClient` (token refresh only, no interceptors). Never use `refreshClient` directly
   outside auth logic.
@@ -108,6 +109,25 @@ Do not add to this list without a `migration-revision.md` entry.
 ## Framework surface — check here before writing anything
 
 Import from `@/_common/...`. This replaced the app's own copies during the alignment migration.
+
+### `_common/bootstrap/` — app boot, and the two store conventions it installs
+
+`installFramework(app, options)` is the whole of `main.ts`'s framework setup: it installs Pinia and Vuetify, registers the app-specific collaborators (`authAdapter`,
+`navTrees`, `userTimeZone`, `notificationTypeMeta`, `reminderLabels`, `legalRoutes`) and does it **in the one order that works** — read `src/_common/SETUP.md` before
+touching `main.ts`. Also exported: `createAppPinia`, `createAppVuetify` (+ `componentAliases`, `componentDefaults`), `darkTheme` / `lightTheme` /
+`displayThresholds`.
+
+`createAppPinia()` installs two plugins, and **both are conventions your store opts into by its shape, not by anything at the call site**:
+
+1. **Persistence** — `pinia-plugin-persistedstate` with no options, so every store persists to `sessionStorage` unless it declares `persist: false`.
+2. **`ensureLoaded()`** — any store exposing a method by that name has it **called once, on store creation**. That is the sanctioned way to load a store's data:
+   name the method `ensureLoaded`, and creating the store (`useThingStore()` in `App.vue`, or the first consumer to call it) is what triggers the fetch.
+   **Components must not call it in `onMounted`** — that is the duplication the plugin exists to remove, and a composable wrapping the store must not register the
+   hook on their behalf either. Write it idempotent, de-duplicated and non-rejecting: the plugin's call is neither awaited nor caught.
+
+   It fires **once**, at creation, so a store whose data is per-account needs its own `watch(() => useUserStore().currentUser.id, …)` to handle a second sign-in in
+   the same tab — the plugin will not fire again. `activityOptionsStore` is the worked example: the watcher resets *and* re-calls `ensureLoaded()`, and the load
+   itself no-ops while signed out, so booting on the login screen fires no request. (`routineReviewStore` has the reset half of that watcher but not the reload.)
 
 ### `_common/api/` — base API composables
 
@@ -262,7 +282,9 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
       replaces the framework's. Mirror the key into `src/locales/common.{sk,en}.ts` by hand as part of the adoption. This has been missed three times
       (`validation`, `general.undoSuccess`, `calendar` — `migration-revision.md` R5/R6/R11). EN needs the mirror too: `EN.ts` does not spread the framework's
       Slovak-only `common` at all.
-- **Pinia Stores**: Use Composition API (Setup Stores) pattern: `defineStore('name', () => { ... })`. Stores live in their module's `store/` directory.
+- **Pinia Stores**: Use Composition API (Setup Stores) pattern: `defineStore('name', () => { ... })`. Stores live in their module's `store/` directory. Name the
+  load method `ensureLoaded()` and let `createAppPinia`'s plugin call it on creation — never fetch a store's data from a component's `onMounted`. See
+  `### _common/bootstrap/`.
 - **URL State**: Store filterable/bookmarkable state (filters, tabs, search queries, pagination) in URL query params so users can share/bookmark/navigate back. Use
   `vue-router` query params for this.
 - **DTOs**: A module's DTOs live in `src/core/<module>/dto/{request,response,enum}/`; base classes and interfaces come from `@/_common/dto/`. Response DTOs must have

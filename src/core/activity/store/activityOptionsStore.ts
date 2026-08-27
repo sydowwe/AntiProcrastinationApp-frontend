@@ -22,17 +22,14 @@ export type { ActivityOptionKind }
  */
 type CombinationScope = 'active' | 'withArchived'
 
-/** One cache slot: the plain lists, the combination matrix per source and scope, and each system role's id. */
+/** One cache slot: a plain list, a combination matrix per source and scope, or a system role's id. */
 export type ActivityOptionsCacheKey =
 	| ActivityOptionKind
 	| `combinations:${ActivityOptionsSource}:${CombinationScope}`
 	| `systemRole:${SystemActivityRole}`
 
-/**
- * The kinds the combination matrix is derived from. Changing one of these stales it; the two
- * `todoList` lookups do not appear in the matrix at all, so they leave it alone.
- */
-const MATRIX_KINDS: readonly ActivityOptionKind[] = ['role', 'category', 'activity']
+/** Every list the store owns. All three feed the combination matrix, so any of them stales it. */
+const OPTION_KINDS: readonly ActivityOptionKind[] = ['role', 'category', 'activity']
 
 function combinationsKey(source: ActivityOptionsSource, includeArchived: boolean): ActivityOptionsCacheKey {
 	return `combinations:${source}:${includeArchived ? 'withArchived' : 'active'}`
@@ -45,18 +42,16 @@ function systemRoleKey(role: SystemActivityRole): ActivityOptionsCacheKey {
 /**
  * Shared cache for the role/category/activity select options and the per-source combination matrix.
  *
- * Before this store every component that needed a picker fetched its own copy on every mount, so
- * opening a to-do item dialog cost a categories fetch *and* a full combination-matrix fetch each
- * time. The matrix is the expensive one — O(activities) rows with four nested option objects — and it
- * describes data that changes maybe weekly.
+ * The point is less latency than *shared identity*: a role created in one dialog has to appear in
+ * every mounted picker, which needs one list rather than a copy per component whatever the requests
+ * cost. Deduplication comes along with that — several consumers mount in the same tick (a to-do
+ * dialog mounts a category field and a selection form together) and share one request per key.
  *
- * Two things make the cache safe rather than merely fast:
+ * The matrix is the part actually worth caching: O(activities) rows with nested option objects,
+ * describing data that changes maybe weekly.
  *
- * - **One in-flight request per key.** Several consumers mount in the same tick (the dialog case
- *   mounts a category field and a selection form together); they all await the same promise.
- * - **Invalidation lives in `api/`, not in components.** Every mutation goes through the three crud
- *   composables, which wrap their commands in `invalidatingActivityOptions`. There are seven mutation
- *   sites today and adding an eighth requires no cache knowledge at the call site.
+ * Invalidation lives in `api/`, not in components — every mutation goes through the three crud
+ * composables, which wrap their commands in `invalidatingActivityOptions`.
  *
  * Not persisted. These are server-owned lookup values, the matrix is large, and a stale sessionStorage
  * copy surviving a reload is worse than the refetch it saves.
@@ -67,20 +62,11 @@ export const useActivityOptionsStore = defineStore(
 		const roleOptions = ref<SelectOption[]>([])
 		const categoryOptions = ref<SelectOption[]>([])
 		const activityOptions = ref<SelectOption[]>([])
-		// Owned by `todoList`, cached here because the activity selection form is what renders them.
-		// Nothing invalidates these two: `todoList`'s crud composables are not wrapped, so editing a
-		// priority or a time period there leaves this copy stale until the next reload. They change
-		// about as often as the enum they replaced, so that trade is deliberate — wire them up the same
-		// way as the other three if that stops being true.
-		const taskPriorityOptions = ref<SelectOption[]>([])
-		const routineTimePeriodOptions = ref<SelectOption[]>([])
 
 		const optionRefs: Record<ActivityOptionKind, Ref<SelectOption[]>> = {
 			role: roleOptions,
 			category: categoryOptions,
 			activity: activityOptions,
-			taskPriority: taskPriorityOptions,
-			routineTimePeriod: routineTimePeriodOptions,
 		}
 
 		// Keyed by the cache key, not by source: a source has one slot per scope and they hold different
@@ -101,42 +87,42 @@ export const useActivityOptionsStore = defineStore(
 		// promises would make every await a dependency of every consumer.
 		const inFlight = new Map<ActivityOptionsCacheKey, Promise<unknown>>()
 
-		// Bumped whenever a key is invalidated. A request that was already in flight when the data
-		// changed under it must not write its now-stale answer into the cache — without this guard a
-		// mutation landing mid-fetch caches exactly the state it was supposed to replace.
-		const generations = new Map<ActivityOptionsCacheKey, number>()
-
-		function generationOf(key: ActivityOptionsCacheKey) {
-			return generations.get(key) ?? 0
-		}
-
-		function bumpGeneration(key: ActivityOptionsCacheKey) {
-			generations.set(key, generationOf(key) + 1)
-			loadedKeys.value.delete(key)
-			inFlight.delete(key)
-			// A superseded request no longer touches these, so its slot has to be released here.
-			loadingKeys.value.delete(key)
-		}
+		/**
+		 * Bumped by every invalidation and by `resetStore`. A request already in flight when it fires must
+		 * not write its answer into the cache.
+		 *
+		 * One counter for the whole store rather than one per key: after a sign-in as someone else, a
+		 * request still running is carrying the *previous account's* rows and would land in a store that
+		 * was just cleared. That is the case worth guarding. The mid-invalidation race it also covers is
+		 * near-theoretical, since `invalidate` refetches immediately anyway.
+		 */
+		let epoch = 0
 
 		function isLoading(key: ActivityOptionsCacheKey) {
 			return loadingKeys.value.has(key)
 		}
 
+		/** Forget one slot, in-flight request included, without touching the value it holds. */
+		function dropKey(key: ActivityOptionsCacheKey) {
+			loadedKeys.value.delete(key)
+			loadingKeys.value.delete(key)
+			inFlight.delete(key)
+		}
+
 		/**
 		 * Runs `load` unless the same key is already in flight, in which case the existing promise is
-		 * returned. `load` receives a predicate that reports whether its result is still wanted. A
-		 * rejection is not cached — the key simply stays unloaded and the next consumer retries.
+		 * returned. A rejection is not cached — the key simply stays unloaded and the next consumer
+		 * retries.
 		 */
-		function share<T>(key: ActivityOptionsCacheKey, load: (isCurrent: () => boolean) => Promise<T>): Promise<T> {
+		function share<T>(key: ActivityOptionsCacheKey, load: () => Promise<T>): Promise<T> {
 			const existing = inFlight.get(key) as Promise<T> | undefined
 			if (existing) return existing
 
-			const startedAt = generationOf(key)
 			loadingKeys.value.add(key)
-			const promise = load(() => generationOf(key) === startedAt).finally(() => {
-				// Only clear the slot if it is still ours; an invalidation may have replaced it with a
-				// newer request that is still running.
-				if (generationOf(key) !== startedAt) return
+			const promise: Promise<T> = load().finally(() => {
+				// Only clear the slot if it is still ours: an invalidation may have dropped it and a newer
+				// request may already be running under the same key.
+				if (inFlight.get(key) !== promise) return
 				inFlight.delete(key)
 				loadingKeys.value.delete(key)
 			})
@@ -147,16 +133,16 @@ export const useActivityOptionsStore = defineStore(
 		/**
 		 * The cached list, or the single shared request that is fetching it.
 		 *
-		 * Resolves to a shallow copy: several call sites still assign the result into a local `ref`, and
-		 * one of them appending a just-created option would otherwise be writing into the cache every
-		 * other consumer reads. Bind `roleOptions` and friends from `useActivitySelectOptions()` when
-		 * the component wants to keep following the shared list.
+		 * Resolves to a shallow copy so a caller assigning it into a local `ref` cannot mutate the shared
+		 * list every other consumer reads. Bind `roleOptions` and friends from `useActivitySelectOptions()`
+		 * when the component wants to keep following the shared list instead.
 		 */
 		function ensureOptions(kind: ActivityOptionKind): Promise<SelectOption[]> {
 			if (loadedKeys.value.has(kind)) return Promise.resolve([...optionRefs[kind].value])
-			return share(kind, async isCurrent => {
+			return share(kind, async () => {
+				const startedAt = epoch
 				const options = await fetchActivityOptions(kind)
-				if (!isCurrent()) return [...optionRefs[kind].value]
+				if (epoch !== startedAt) return [...optionRefs[kind].value]
 				optionRefs[kind].value = options
 				loadedKeys.value.add(kind)
 				return [...options]
@@ -164,7 +150,28 @@ export const useActivityOptionsStore = defineStore(
 		}
 
 		/**
-		 * The cached matrix for `source`, or the single shared request that is fetching it. Also a copy.
+		 * Warm the three lists. Named for the framework convention: `createAppPinia()` installs a plugin
+		 * that calls `ensureLoaded()` on any store exposing it, at creation, so that no component has to
+		 * call it in `onMounted`. `App.vue` creates this store at boot, which is what triggers it.
+		 *
+		 * Idempotent, de-duplicated and never rejecting, so the plugin's uncaught call is safe and so is
+		 * calling it again by hand.
+		 *
+		 * Does nothing while signed out: the three endpoints are behind the auth guard and a visitor on
+		 * the login screen has no business firing them. Sign-in is covered by the watcher below, not by a
+		 * second plugin call — the plugin only ever fires once, at creation.
+		 */
+		async function ensureLoaded(): Promise<void> {
+			if (!useUserStore().isAuthenticated) return
+			// Swallowed: this is a warm-up with no call site to report to, and the axios interceptor has
+			// already shown a snackbar. A failed list stays unloaded and the next call retries it.
+			await Promise.all(OPTION_KINDS.map(kind => ensureOptions(kind).catch(() => [])))
+		}
+
+		/**
+		 * The cached matrix for `source`, or the single shared request that is fetching it. Also a copy —
+		 * `useActivitySelectionFormState` pushes a locally synthesised row into what it gets back, and that
+		 * row must not reach the shared cache.
 		 *
 		 * `includeArchived` is a separate cache slot rather than a filter over one: the server decides what
 		 * an archived activity means to each source, and the archived-inclusive answer is a superset only
@@ -177,9 +184,10 @@ export const useActivityOptionsStore = defineStore(
 		): Promise<ActivitySelectOptionCombination[]> {
 			const key = combinationsKey(source, includeArchived)
 			if (loadedKeys.value.has(key)) return Promise.resolve([...(combinationsByKey.value.get(key) ?? [])])
-			return share(key, async isCurrent => {
+			return share(key, async () => {
+				const startedAt = epoch
 				const combinations = await fetchActivityFormSelectOptionCombinations(source, includeArchived)
-				if (!isCurrent()) return [...(combinationsByKey.value.get(key) ?? combinations)]
+				if (epoch !== startedAt) return [...(combinationsByKey.value.get(key) ?? combinations)]
 				combinationsByKey.value.set(key, combinations)
 				loadedKeys.value.add(key)
 				return [...combinations]
@@ -197,9 +205,10 @@ export const useActivityOptionsStore = defineStore(
 		function ensureSystemRoleId(role: SystemActivityRole): Promise<number | null> {
 			const key = systemRoleKey(role)
 			if (loadedKeys.value.has(key)) return Promise.resolve(systemRoleIds.value.get(role) ?? null)
-			return share(key, async isCurrent => {
+			return share(key, async () => {
+				const startedAt = epoch
 				const id = await fetchSystemActivityRoleId(role)
-				if (!isCurrent()) return systemRoleIds.value.get(role) ?? null
+				if (epoch !== startedAt) return systemRoleIds.value.get(role) ?? null
 				if (id == null) return null
 				systemRoleIds.value.set(role, id)
 				loadedKeys.value.add(key)
@@ -209,9 +218,8 @@ export const useActivityOptionsStore = defineStore(
 
 		/** Every system-role slot is stale — a role was created, renamed or deleted. */
 		function invalidateSystemRoleIds() {
-			for (const role of Object.values(SystemActivityRole)) {
-				bumpGeneration(systemRoleKey(role))
-			}
+			epoch++
+			for (const role of Object.values(SystemActivityRole)) dropKey(systemRoleKey(role))
 			systemRoleIds.value.clear()
 		}
 
@@ -233,13 +241,14 @@ export const useActivityOptionsStore = defineStore(
 		 * so dropping the cache never blanks a form that is already open — the next mount refetches.
 		 */
 		function invalidateCombinations() {
+			epoch++
 			// Every source and both scopes, not just the ones with an entry: one may be in flight and have
 			// nothing cached yet, and that request needs discarding too. Archiving an activity changes both
 			// scopes at once — it leaves the active matrix and enters the archived-inclusive one — so
-			// bumping only the scope the mutation "belongs to" would leave the other stale.
+			// dropping only the scope the mutation "belongs to" would leave the other stale.
 			for (const source of Object.values(ActivityOptionsSource)) {
-				bumpGeneration(combinationsKey(source, false))
-				bumpGeneration(combinationsKey(source, true))
+				dropKey(combinationsKey(source, false))
+				dropKey(combinationsKey(source, true))
 			}
 			combinationsByKey.value.clear()
 		}
@@ -250,17 +259,15 @@ export const useActivityOptionsStore = defineStore(
 		 * in the roles tab) have no reason to re-run `ensureOptions`, so a stale mark would never reach
 		 * them. Values are kept until the replacement lands, so nothing blanks mid-flight.
 		 *
-		 * Any of the three matrix kinds changing stales the matrix, so it goes with them; the two
-		 * `todoList` lookups are not in the matrix and leave it alone.
-		 *
-		 * A role mutation additionally stales the system-role ids. That is not optional while the lookup
-		 * still goes through the display name: renaming "To-do list task" changes the answer without
-		 * changing the id, which is the exact failure this prompt exists to fix.
+		 * All three kinds feed the matrix, so it always goes with them. A role mutation additionally
+		 * stales the system-role ids — not optional while a rename can change which role a system key
+		 * resolves to.
 		 */
 		function invalidate(kind: ActivityOptionKind) {
+			epoch++
 			const wasLoaded = loadedKeys.value.has(kind)
-			bumpGeneration(kind)
-			if (MATRIX_KINDS.includes(kind)) invalidateCombinations()
+			dropKey(kind)
+			invalidateCombinations()
 			if (kind === 'role') invalidateSystemRoleIds()
 
 			// Nothing has asked for this list yet, so there is nothing on screen to refresh.
@@ -270,11 +277,10 @@ export const useActivityOptionsStore = defineStore(
 		}
 
 		function resetStore() {
+			epoch++
 			for (const list of Object.values(optionRefs)) list.value = []
 			combinationsByKey.value.clear()
 			systemRoleIds.value.clear()
-			for (const key of loadedKeys.value) generations.set(key, generationOf(key) + 1)
-			for (const key of loadingKeys.value) generations.set(key, generationOf(key) + 1)
 			loadedKeys.value.clear()
 			loadingKeys.value.clear()
 			inFlight.clear()
@@ -282,22 +288,25 @@ export const useActivityOptionsStore = defineStore(
 
 		// A Pinia store is a singleton for the tab's lifetime, so signing in as someone else in the same
 		// tab would otherwise show the first account's roles and activities — and keep them marked
-		// loaded, so they would never be re-read.
+		// loaded, so they would never be re-read. Reloading straight away keeps the guarantee `App.vue`'s
+		// boot call gives on a page load: by the time a picker mounts, the lists are on their way.
 		watch(
 			() => useUserStore().currentUser.id,
-			() => resetStore(),
+			() => {
+				resetStore()
+				void ensureLoaded()
+			},
 		)
 
 		return {
 			roleOptions,
 			categoryOptions,
 			activityOptions,
-			taskPriorityOptions,
-			routineTimePeriodOptions,
 			combinationsByKey,
 			systemRoleIds,
 			loadingKeys,
 			isLoading,
+			ensureLoaded,
 			ensureOptions,
 			ensureCombinations,
 			ensureSystemRoleId,

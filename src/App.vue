@@ -35,6 +35,7 @@
 	import type { ThemePreference } from '@/_common/modules/user/dto/response/User.ts'
 	import { resetAppState } from '@/core/user/composable/useSessionReset.ts'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
+	import { useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
 
 	// Created at boot rather than by whichever timer view happens to mount, because this store IS the
 	// running timer's clock: it rehydrates the session, keeps counting, advances pomodoro phases and
@@ -51,6 +52,14 @@
 	// `initPushSupport()`, which registered the service worker and probed the push subscription for
 	// a visitor sitting on the login screen.
 	startNotificationSession()
+
+	// Same reason as the two calls above: created at boot rather than by whichever picker mounts first.
+	// The store exposes `ensureLoaded()`, so `createAppPinia()`'s plugin warms the role/category/activity
+	// lists the moment it is created — they are read by pickers in five modules and change maybe weekly,
+	// so waiting for a dialog to open only ever bought an empty dropdown for the first frame. The load
+	// is a no-op while signed out, and creating the store here is also what arms its sign-in watcher, so
+	// a second account in the same tab reloads rather than inheriting the first one's lists.
+	useActivityOptionsStore()
 
 	const userStore = useUserStore()
 	const theme = useTheme()

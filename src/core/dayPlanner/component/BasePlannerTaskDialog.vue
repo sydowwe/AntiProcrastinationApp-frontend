@@ -103,7 +103,6 @@
 	import type { VForm } from 'vuetify/components'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
 	import type { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
@@ -124,7 +123,6 @@
 	}>()
 
 	const { fetchAll } = useTaskImportanceCrud()
-	const { requiredRule } = useGeneralRules()
 	const form = ref<InstanceType<typeof VForm>>()
 	const activityFormField = ref<InstanceType<typeof ActivitySelectOrQuickEditFormField>>()
 

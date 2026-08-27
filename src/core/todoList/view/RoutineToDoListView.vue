@@ -92,7 +92,7 @@
 					@edit="openEditDialog"
 					@isDoneChanged="handleIsDoneChange"
 					@stepToggled="onItemsChanged"
-					@uncheckAll="(doneIds: number[]) => handleUncheckAll(doneIds, group.timePeriod.id as number)"
+					@uncheckAll="(doneIds: number[]) => handleUncheckAll(doneIds)"
 					@itemsReordered="
 						(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
 							handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)
@@ -572,7 +572,7 @@
 		})
 	}
 
-	async function handleUncheckAll(doneIds: number[], groupId: number) {
+	async function handleUncheckAll(doneIds: number[]) {
 		await uncheckAllApi(doneIds)
 		await onItemsChanged(doneIds)
 		pushUncheckAllUndo(doneIds.length, async () => {

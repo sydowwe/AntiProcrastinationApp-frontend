@@ -59,8 +59,8 @@
 								<template v-if="averageActual">&nbsp;/ {{ averageActual.getNice }}</template>
 							</VChip>
 						</template>
-						<span>
-							{{ i18n.t('toDoList.calibration.usuallyTooltip', { time: averageActual!.getNice }) }}
+						<span v-if="averageActual">
+							{{ i18n.t('toDoList.calibration.usuallyTooltip', { time: averageActual.getNice }) }}
 						</span>
 					</VTooltip>
 					<slot name="post-chips" />
