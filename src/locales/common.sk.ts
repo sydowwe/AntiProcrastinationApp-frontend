@@ -90,6 +90,13 @@ const common = {
 		addToPlanner: `Pridať do plánovača`,
 		logTime: `Zaznamenať čas`,
 		moveToList: `Presunúť do zoznamu`,
+		// Same story as `actions` above: the framework's `general.backToList` (reminders' definition
+		// detail, and now the scheduler's job/run detail views) is wholesale-replaced by this
+		// namespace, so it has to be repeated here too — otherwise it silently falls back to the EN
+		// string via `fallbackLocale`, showing English text on an SK page. Discovered while adding
+		// the scheduler EN locale (S2), which is what first gave this key an EN counterpart to fall
+		// back to.
+		backToList: `Späť na zoznam`,
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale (see the note at the top of SK.ts), so its copy of this key never reaches i18n.
 		undoSuccess: `{description} bolo vrátené späť`,
@@ -99,6 +106,13 @@ const common = {
 		// are the same defect three times over).
 		deleteConfirmationTitle: `Potvrdenie vymazania`,
 		deleteConfirmationText: `Ste si istý, že chcete vymazať {name}?`,
+		// Same story again, with a twist: `general.retry` (the retry button on the scheduler's two
+		// detail pages, S1) and `general.forbidden` (their non-admin card) existed in NO locale at all
+		// — `retry` is only defined under the framework's `notifications` namespace, and the
+		// framework's `general.forbidden` is wholesale-replaced by this one. The retry button has been
+		// rendering the raw key `GENERAL.RETRY` since S1 shipped; found while browser-verifying S4.
+		retry: `Skúsiť znova`,
+		forbidden: `Nemáte oprávnenie na zobrazenie tejto stránky.`,
 	},
 	dateTime: {
 		when: `Kedy`,

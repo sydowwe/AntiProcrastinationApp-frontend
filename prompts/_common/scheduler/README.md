@@ -37,6 +37,7 @@ block, because each is meant to be pasted cold. What that means in practice:
 | S5 | [Freshness](S5-freshness.md)                                  | UX         | likely   | **Opus 5** | high     |
 | S6 | [Operator affordances](S6-operator-affordances.md)            | UX         | likely   | Sonnet 5   | medium   |
 | S7 | [Keyboard, screen readers, narrow screens](S7-a11y.md)        | UX         | —        | **Opus 5** | high     |
+| S8 | [Contract realignment ⭐](S8-contract-realignment.md)          | bug        | yes      | **Opus 5** | high     |
 
 Each prompt is independently runnable. `Depends on` in each header is about avoiding merge pain, not
 correctness. The only ordering that really matters:
@@ -48,7 +49,12 @@ correctness. The only ordering that really matters:
   links have to produce.
 - **S1 before S4** — S4 extracts the detail-page shell whose states S1 fixes.
 
-**Running them in numeric order — S1 → S2 → S3 → S4 → S5 → S6 → S7 — satisfies all four**, and is
+- **S8 last, and it is not optional.** It came out of the B2 sweep, which found that this client was
+  written against an API nobody had checked: every route was wrong, and several response fields still
+  are. S8 finishes that against the real server (`RiderProjects/AdhdTimeOrganizer/framework/Sydowwe.Scheduler`)
+  and is the first prompt that requires actually running the module against a live backend.
+
+**Running them in numeric order — S1 → S2 → S3 → S4 → S5 → S6 → S7 → S8 — satisfies all five**, and is
 the right default. If you want to parallelize, S2 and S5 touch little of what S3/S4 rewrite; S6 and
 S7 are the two that genuinely want to go last.
 

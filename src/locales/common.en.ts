@@ -307,6 +307,11 @@ const common = {
 		addToPlanner: `Add to planner`,
 		logTime: `Log time`,
 		moveToList: `Move to list`,
+		// Same story as `deleteConfirmationTitle` below: the framework's `general.backToList`
+		// (reminders' definition detail, and now the scheduler's job/run detail views) never had an
+		// EN counterpart — this app's `general` replaces the framework's wholesale, so it rendered
+		// the raw key for an EN user. Discovered while verifying the scheduler EN locale (S2).
+		backToList: `Back to list`,
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale, so its copy of this key never reaches i18n.
 		undoSuccess: `{description} was undone`,
@@ -315,6 +320,10 @@ const common = {
 		// spread the framework's Slovak-only `common`.
 		deleteConfirmationTitle: `Delete confirmation`,
 		deleteConfirmationText: `Are you sure you want to delete {name}?`,
+		// `general.retry` (the retry button on the scheduler's two detail pages, S1) and
+		// `general.forbidden` (their non-admin card) existed in no locale at all — see the SK file.
+		retry: `Try again`,
+		forbidden: `You don't have permission to view this page.`,
 	},
 	dateTime: {
 		when: `When`,

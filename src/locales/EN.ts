@@ -11,6 +11,7 @@ import googleCalendar from '@/core/googleCalendar/_locales/googleCalendar.en.ts'
 import home from '@/core/home/_locales/home.en.ts'
 import frameworkUser from '@/_common/modules/user/_locales/user.en.ts'
 import appUser from '@/core/user/_locales/user.en.ts'
+import scheduler from '@/_common/modules/scheduler/_locales/scheduler.en.ts'
 
 // The framework's `common` is now PARTIAL in English (N11: only `notifications.*` and
 // `reminderPreference.*` — see the comment atop `@/_common/_locales/common.en.ts` for what is
@@ -33,6 +34,9 @@ const EN = {
 	...googleCalendar,
 	...home,
 	...frameworkUser,
+	// `scheduler` is a namespace nothing else defines, so its position in this spread is irrelevant —
+	// mirrors SK.ts.
+	...scheduler,
 	user: { ...frameworkUser.user, ...appUser.user },
 }
 export default EN

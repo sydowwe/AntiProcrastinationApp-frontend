@@ -21,6 +21,16 @@ import { remindersRoutes } from '@/_common/modules/reminders/reminders.routes.ts
 import { notificationsRoutes } from '@/_common/modules/notifications/notifications.routes.ts'
 import { schedulerRoutes } from '@/_common/modules/scheduler/scheduler.routes.ts'
 
+// The module's own defaults are English (`/scheduler/...`); this app keeps its pre-existing Slovak
+// URLs by passing them explicitly here. src/app/nav/navItems.ts and both scheduler breadcrumb fixes
+// resolve these routes by NAME, so this is the only place the paths themselves are declared.
+const APP_SCHEDULER_PATHS = {
+	jobs: '/planovac/ulohy',
+	jobDetail: '/planovac/ulohy/:id(\\d+)',
+	runDetail: '/planovac/behy/:id(\\d+)',
+	needsAttention: '/planovac/pozornost',
+}
+
 declare module 'vue-router' {
 	interface RouteMeta {
 		/** Reachable while signed out. Everything else goes through the auth check below. */
@@ -51,7 +61,7 @@ const router = createRouter({
 		...googleCalendarRoutes,
 		...remindersRoutes,
 		...notificationsRoutes,
-		...schedulerRoutes,
+		...schedulerRoutes(APP_SCHEDULER_PATHS),
 	],
 })
 
