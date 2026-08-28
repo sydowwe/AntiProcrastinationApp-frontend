@@ -1,8 +1,7 @@
 # N2 · Bind the hub and the module state to the session, not to a component
 
 - **Scope:** `src/_common/modules/notifications/composable/useNotifications.ts`,
-  `composable/UsePushNotifications.ts`, `component/NotificationBell.vue`, `src/App.vue`;
-  read-only on `src/_common/modules/user/store/authStore.ts`
+  `composable/UsePushNotifications.ts`, `component/NotificationBell.vue`, `../../../../src/App.vue`; read-only on `src/_common/modules/user/store/authStore.ts`
 - **Backend:** possibly — hub auth failure mode; see the escalation block
 - **Model / effort:** Opus 5, high
 - **Depends on:** N1 (touches the same functions)

@@ -1,9 +1,9 @@
 # N6 · A real notifications inbox, not just a dropdown
 
-- **Scope:** new `src/_common/modules/notifications/view/NotificationsView.vue` (+ any components it
-  needs), `notifications.routes.ts`, `composable/useNotifications.ts`,
+- **Scope:** new `src/_common/modules/notifications/view/NotificationsView.vue` (+ any components it needs), `notifications.routes.ts`,
+  `composable/useNotifications.ts`,
   `component/NotificationBell.vue`, `src/_common/_locales/common.sk.ts`,
-  `src/app/nav/navItems.ts` or `_common/nav/UserMenu.vue`
+  `../../../../src/app/nav/navItems.ts` or `_common/nav/UserMenu.vue`
 - **Backend:** **yes** — dismiss/delete has no endpoint. Escalation block at the end
 - **Model / effort:** Opus 5, high
 - **Depends on:** N3 (paging), N5 (route resolution), N4 (state patterns to reuse)

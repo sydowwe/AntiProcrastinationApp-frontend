@@ -1,6 +1,6 @@
 # N8 · Web Push dies silently and nothing notices
 
-- **Scope:** `public/sw-push.js`, `src/_common/modules/notifications/composable/UsePushNotifications.ts`,
+- **Scope:** `../../../../public/sw-push.js`, `src/_common/modules/notifications/composable/UsePushNotifications.ts`,
   `api/PushNotificationsApi.ts`, `src/_common/modules/user/component/settings/SecuritySection.vue`
 - **Backend:** **yes** — re-registration semantics. Escalation block at the end
 - **Model / effort:** Opus 5, high

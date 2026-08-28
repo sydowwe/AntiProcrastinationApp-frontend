@@ -2,7 +2,7 @@
 
 - **Scope:** `src/_common/modules/notifications/utils/notificationTypeMeta.ts`,
   `dto/NotificationResponse.ts`, `component/NotificationBell.vue`,
-  `src/app/notifications/notificationTypeMeta.ts`, `src/_common/bootstrap/installFramework.ts`,
+  `../../../../src/app/notifications/notificationTypeMeta.ts`, `src/_common/bootstrap/installFramework.ts`,
   `src/_common/SETUP.md`
 - **Backend:** **yes** — the notification payload carries no subject. Escalation block at the end
 - **Model / effort:** Opus 5, high

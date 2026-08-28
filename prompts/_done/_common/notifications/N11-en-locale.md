@@ -1,6 +1,6 @@
 # N11 · English falls back to Slovak, because the framework ships no English
 
-- **Scope:** new `src/_common/_locales/common.en.ts`, `src/locales/EN.ts`, `src/_common/SETUP.md`
+- **Scope:** new `src/_common/_locales/common.en.ts`, `../../../../src/locales/EN.ts`, `src/_common/SETUP.md`
 - **Backend:** —
 - **Model / effort:** Sonnet 5, low–medium
 - **Depends on:** nothing — but run it AFTER any prompt that adds locale keys (N6, N7, N9, N12)

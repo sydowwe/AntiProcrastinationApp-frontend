@@ -2,7 +2,7 @@
 
 - **Scope:** `src/_common/modules/notifications/` (new settings component + api + dto),
   `reminderPreference/view/ReminderPreferencesView.vue`, `src/_common/_locales/common.sk.ts`,
-  `src/app/notifications/notificationTypeMeta.ts`
+  `../../../../src/app/notifications/notificationTypeMeta.ts`
 - **Backend:** **yes** — there is no per-type preference endpoint. Escalation block at the end
 - **Model / effort:** Opus 5, high
 - **Depends on:** N9 (the label seam this reuses), N5 (widened typeMeta)

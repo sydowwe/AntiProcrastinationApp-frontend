@@ -10,11 +10,13 @@
 > it) and `ReminderDigest` is N occurrences by construction. Both stay constant routes permanently. `TimerBoundary` keeps its producer-supplied top-level push `url`
 > and emits no subject.
 >
-> Rules 5 and 6 were confirmed as assumed: **the reference may dangle** (no existence check — that would put a per-row read on the bell list) and **is not scrubbed on
+> Rules 5 and 6 were confirmed as assumed: **the reference may dangle** (no existence check — that would put a per-row read on the bell list) and **is not scrubbed
+on
 > erasure**. Destination views need a graceful not-found path.
 >
 > **Frontend state (see the set README's _Landed with B2_ section):** the DTO, both resolvers and the service worker are done, the kind→path map is single-sourced in
-> `public/notification-subject-routes.js`, and **three of the four kinds this app receives now deep-link** — `scheduledJobRun`, `plannerTask` (via a redirect route
+> `../../../../../public/notification-subject-routes.js`, and **three of the four kinds this app receives now deep-link** — `scheduledJobRun`, `plannerTask` (via a
+> redirect route
 > that resolves the task's date) and `routinePeriod`.
 >
 > **`reminder` is the one that does not, and it needs nothing from the backend.** The id is a Planning-module `Reminder` row, and this frontend has no such entity —
@@ -49,7 +51,8 @@ a click that lands one level too high, every time.
   `RoutinePeriodEndedPayload(long PeriodId, …)`, `RoutineStreakGraceExpiringPayload(long PeriodId, …)`, `ScheduledJobFailedPayload(…, long? RunId)`.
 - `PersonalReminderPayload`'s own XML doc says `PlannerTaskId` is there **"so the client can deep-link back to the task"**. The intent is already written down; the
   field just never leaves the server.
-- `NotificationDto` projects `Id, Type, Title, Body, CreatedAt, IsRead, OriginallyDueAt?` and nothing else — so both delivery paths that use it (`GET /notification/mine`
+- `NotificationDto` projects `Id, Type, Title, Body, CreatedAt, IsRead, OriginallyDueAt?` and nothing else — so both delivery paths that use it
+  (`GET /notification/mine`
   and the SignalR `ReceiveNotification`) drop the identity on the floor.
 
 Verified against the running server, not just the source: `/swagger/v1/swagger.json` shows `NotificationDto` with exactly `Id`, `Type`, `Title`, `Body`, `CreatedAt`,
@@ -61,8 +64,9 @@ Previous notes in `prompts/_common/notifications/` claim the push path "already 
 **That is much narrower than believed, and it changes the argument.**
 
 `INotificationTextRenderer.RenderPushMeta` defaults to `(null, null)`, and `NotificationTextRenderer.RenderPushMeta` returns anything non-null for exactly **one**
-type — `TimerBoundary` — where the url is read straight off `TimerBoundaryPayload.Url`, i.e. **supplied by the producer that raised the notification**, not decided by
-the notifications module. For every other type, including all six this app maps, `url` is absent from the push document and `public/sw-push.js` falls back to `'/'`.
+type — `TimerBoundary` — where the url is read straight off `TimerBoundaryPayload.Url`, i.e. **supplied by the producer that raised the notification**, not decided
+by the notifications module. For every other type, including all six this app maps, `url` is absent from the push document and `../../../../../public/sw-push.js`
+falls back to `'/'`.
 
 So: the server does **not** today hold a general opinion about this app's routes. One producer passes a url through for one kind. That is a much weaker precedent for
 "the server should send urls" than the earlier notes assumed, and it is the main reason this ask leans the way §3 does.
@@ -76,8 +80,8 @@ Every one of these is a question. The client currently guesses, and will follow 
 1. **Who owns the notification→UI mapping?** This is the actual decision; the field name is downstream of it. Two coherent designs, §3 covers both.
 
 2. **Is `DeadlineApproaching` meant to be resolvable at all?** `DeadlineApproachingPayload(string? Title = null)` carries a title and *no id* — alone among the types
-   this app renders. Is that deliberate (the type is cross-module, and the producer composes a title precisely because there is no single entity to point at), or is it
-   an omission that predates anyone wanting to click it? The client currently routes it to the reminders list. If it is deliberate, say so and it stays a constant
+   this app renders. Is that deliberate (the type is cross-module, and the producer composes a title precisely because there is no single entity to point at), or is
+   it an omission that predates anyone wanting to click it? The client currently routes it to the reminders list. If it is deliberate, say so and it stays a constant
    route forever, which is a fine answer.
 
 3. **`ReminderDigest` should stay a list — confirm.** `ReminderDigestPayload(int Count, IReadOnlyList<ReminderDigestKindCount>? Kinds)` is about N occurrences by
@@ -95,15 +99,15 @@ Every one of these is a question. The client currently guesses, and will follow 
    decides whether the frontend needs a not-found path on each destination view.
 
 6. **Does the reference survive erasure unchanged?** `NotificationSubjectDataEraser` deletes the recipient's own notification rows and deliberately does *not* scrub
-   payloads of notifications *about* an erased subject sitting in someone else's bell, on the stated grounds that ids degrade on their own. A subject reference on the
-   DTO inherits that: it may point at an anonymized entity. We read that as intended and consistent with rule 5 — flag it if not.
+   payloads of notifications *about* an erased subject sitting in someone else's bell, on the stated grounds that ids degrade on their own. A subject reference on
+   the DTO inherits that: it may point at an anonymized entity. We read that as intended and consistent with rule 5 — flag it if not.
 
 ---
 
 ## The shape the frontend needs
 
-One optional field on `NotificationDto`, reaching both delivery paths (`GET /notification/mine` and the SignalR `ReceiveNotification` — they share the DTO, so this is
-one change). Nullability: **omitted entirely when there is nothing to point at**, matching how `OriginallyDueAt`, `tag` and `url` are already handled, rather than
+One optional field on `NotificationDto`, reaching both delivery paths (`GET /notification/mine` and the SignalR `ReceiveNotification` — they share the DTO, so this
+is one change). Nullability: **omitted entirely when there is nothing to point at**, matching how `OriginallyDueAt`, `tag` and `url` are already handled, rather than
 written as null.
 
 Two designs. They are mutually exclusive and the choice is yours.
@@ -130,8 +134,8 @@ subject?: { kind: string, id: number }
 ```
 
 `kind` is a **server-owned vocabulary term**, not a route and not a path — `"reminder"`, `"plannerTask"`, `"routinePeriod"`, `"scheduledJobRun"`. `id` is that
-entity's id. Each app maps `kind` → its own route in its own registered `notificationTypeMeta`. Flat `subjectKind` / `subjectId` is equally fine if it serializes more
-naturally; the nesting is not the point.
+entity's id. Each app maps `kind` → its own route in its own registered `notificationTypeMeta`. Flat `subjectKind` / `subjectId` is equally fine if it serializes
+more naturally; the nesting is not the point.
 
 **Why this one.** It puts the stable half (what the notification is *about*) on the server, which is the only side that knows it, and the volatile half (where that
 lives in this particular UI) on the client, which is the only side that knows *that*. The other app gets the same field and maps it to its own screens with no
@@ -144,14 +148,14 @@ simply resolving against a DTO that carries nothing. Option B is the only missin
 ### Whichever you pick — please make the two delivery paths agree
 
 The same server-side event is delivered twice (SignalR to an open tab, Web Push to a closed one) and a click on either should land in the same place. Today they
-cannot: push has a url mechanism used by one type, in-app has a route map used by six. Whatever you choose should feed both — for Option B, `RenderPushMeta`'s url and
-the DTO's `subject` should be derived from one source rather than maintained separately. `public/sw-push.js` carries a comment pointing here so the next person does
-not implement a third mapping.
+cannot: push has a url mechanism used by one type, in-app has a route map used by six. Whatever you choose should feed both — for Option B, `RenderPushMeta`'s url
+and the DTO's `subject` should be derived from one source rather than maintained separately. `../../../../../public/sw-push.js` carries a comment pointing here so
+the next person does not implement a third mapping.
 
 ### Cost
 
-Low, and not on a hot path in any new way. `GET /notification/mine` is cursor-paged and clamped to ≤100 rows, and the handler already deserializes every row's payload
-to render title/body — the reference comes out of a document that is being parsed anyway. The SignalR path renders one notification.
+Low, and not on a hot path in any new way. `GET /notification/mine` is cursor-paged and clamped to ≤100 rows, and the handler already deserializes every row's
+payload to render title/body — the reference comes out of a document that is being parsed anyway. The SignalR path renders one notification.
 
 ---
 
@@ -159,14 +163,14 @@ to render title/body — the reference comes out of a document that is being par
 
 Small, because the seam was deliberately built ahead of the data:
 
-- `src/app/notifications/notificationTypeMeta.ts` — the six constant routes become resolvers, and the `TODO(B2)` block at the top of the file is deleted. This is the
-  only file where real behaviour changes.
+- `../../../../../src/app/notifications/notificationTypeMeta.ts` — the six constant routes become resolvers, and the `TODO(B2)` block at the top of the file is
+  deleted. This is the only file where real behaviour changes.
 - `src/_common/modules/notifications/dto/NotificationResponse.ts` — one field added to the constructor and to `fromJson`'s destructure.
-- `public/sw-push.js` — the "two mappings that do not agree" comment collapses to a statement of the settled rule (N8 owns the restructure).
+- `../../../../../public/sw-push.js` — the "two mappings that do not agree" comment collapses to a statement of the settled rule (N8 owns the restructure).
 - `src/_common/SETUP.md` §5 — the resolver example stops needing its "illustrative, the DTO has no such field yet" caveat.
 
 **Nothing else.** `notificationRoute`, `NotificationTypeMeta`, `NotificationBell.vue` and `installFramework` need no further change — they already take the whole
 notification and already accept a resolver. That is the point of having built it now: this ask landing is a data change on the frontend, not a design change.
 
-If the answer is "neither, click-through stays type-level", the seam costs nothing and the `TODO(B2)` comment becomes a permanent note explaining why — say so plainly
-and it will be recorded that way.
+If the answer is "neither, click-through stays type-level", the seam costs nothing and the `TODO(B2)` comment becomes a permanent note explaining why — say so
+plainly and it will be recorded that way.

@@ -2,20 +2,22 @@
 
 Improvements to the framework's notifications module — the bell, the SignalR hub, Web Push, and the reminder-preferences screen — plus the two files outside the
 module that belong to the same surface:
-`public/sw-push.js` and `src/app/notifications/notificationTypeMeta.ts`.
+`../../../../public/sw-push.js` and `../../../../src/app/notifications/notificationTypeMeta.ts`.
 
 One self-contained prompt per file, each written to be pasted into a fresh session in this repo.
-`CLAUDE.md` auto-loads there, so the prompts carry only task-specific facts (paths, line numbers, existing composables) rather than restating conventions.
+`../../../../CLAUDE.md` auto-loads there, so the prompts carry only task-specific facts (paths, line numbers, existing composables) rather than restating
+conventions.
 
 ## ⚠️ The submodule rule is suspended for this set
 
-`CLAUDE.md` says `src/_common` is a git submodule and must never be edited. **The repo owner has authorised editing it in place for this work.** Every prompt below
-repeats that authorisation inside its own body, because a fresh agent reads `CLAUDE.md` and will otherwise refuse or "fix" things app-side instead.
+`../../../../CLAUDE.md` says `src/_common` is a git submodule and must never be edited. **The repo owner has authorised editing it in place for this work.** Every
+prompt below repeats that authorisation inside its own body, because a fresh agent reads `../../../../CLAUDE.md` and will otherwise refuse or "fix" things app-side
+instead.
 
 What this means in practice:
 
-- Edit `src/_common/modules/notifications/` directly. Do not fork files into `src/`.
-- Do not substitute a `migration-revision.md` entry for a fix you were asked to make.
+- Edit `src/_common/modules/notifications/` directly. Do not fork files into `../../../../src`.
+- Do not substitute a `../../../../migration-revision.md` entry for a fix you were asked to make.
 - Do not touch anything under `src/_common` outside `modules/notifications/`, `_locales/common.sk.ts`
   and `docs/modules/notifications.md` without saying so in your final report — the framework serves other apps.
 - The submodule commit/push is the owner's job. Report which `_common` files you touched.
@@ -77,7 +79,7 @@ sign-out — and every async path that writes back into module state is guarded 
 
 The hub's rejection of an unauthenticated handshake was checked while doing this: a clean **HTTP 401 on `POST /hubs/notifications/negotiate`**, no hang and no
 accept. Nothing to escalate, which is why
-`backend/` gained no file from N2.
+`backend` gained no file from N2.
 
 ## Fixed by N3 — and the set's worst wrong premise
 
@@ -149,10 +151,12 @@ notifications and will want the resolved route.
 `/planovac/behy/undefined`). The app's `notificationTypeMeta` resolves `subject` first and falls back to the type's constant route — which is what an append-only
 vocabulary requires, since the server will emit kinds this app has never heard of.
 
-**One map, two readers.** `public/notification-subject-routes.js` holds the only `kind → path` mapping, plus the push fallback chain. The bell reads it via the
-`<script>` tag in `index.html`; the service worker reads the *same file* via workbox `importScripts` (`vite.config.ts`, listed before `sw-push.js`). Verified in a
-real
-`vite build`: `dist/sw.js` contains `importScripts("/notification-subject-routes.js","/sw-push.js")` and the file is precached. It is a classic script in `public/`
+**One map, two readers.** `../../../../public/notification-subject-routes.js` holds the only `kind → path` mapping, plus the push fallback chain. The bell reads it
+via the
+`<script>` tag in `../../../../index.html`; the service worker reads the *same file* via workbox `importScripts` (`../../../../vite.config.ts`, listed before
+`sw-push.js`). Verified in a real
+`vite build`: `../../../../dist/sw.js` contains `importScripts("/notification-subject-routes.js","/sw-push.js")` and the file is precached. It is a classic script in
+`../../../../public`
 because the worker is loaded by URL and never bundled — which also forces **paths, not named routes**, as the shared currency. That path duplication is guarded by a
 test that reads the route table's own source.
 
@@ -232,8 +236,8 @@ beside `markRead`, and `dismissMany` collapsed from an N-request `Promise.allSet
 **Icon semantics, since the next component will copy it:** the envelope names the **action**, not the state — a read row shows a closed envelope because clicking it
 makes the row unread. An icon showing state next to a label describing an action is the combination people misread.
 
-Verified: type-check **0 errors** (the app-side baseline was cleared by the owner mid-session — see `CLAUDE.md`, and note that any error is now a regression); lint 0
-errors; **45** module unit tests pass, including the batch contract's skip/count split and a `markRead`/`markUnread` badge round-trip.
+Verified: type-check **0 errors** (the app-side baseline was cleared by the owner mid-session — see `../../../../CLAUDE.md`, and note that any error is now a
+regression); lint 0 errors; **45** module unit tests pass, including the batch contract's skip/count split and a `markRead`/`markUnread` badge round-trip.
 
 ## Fixed by N7 — and the digest question answered from the server's source, not asked
 
@@ -256,7 +260,7 @@ errors; **45** module unit tests pass, including the batch contract's skip/count
 - ❌ ~~**Severity may be too coarse to derive from the typeMeta colour.**~~ Checked against the registered map and it is not: the one `error` type is a failure and
   all four `warning` types are genuinely time-critical (a deadline, a period closing, a streak lapsing, an overdue job). Nothing lands on the wrong side of the line,
   so **no `severity` field was asked for**. That leaves
-  `backend/` untouched by N7 — the same outcome as N2 and N3, and for the same reason.
+  `backend` untouched by N7 — the same outcome as N2 and N3, and for the same reason.
 
 **Three decisions worth carrying forward.**
 
@@ -290,14 +294,14 @@ live page can show — the expand/collapse animation, and route-target suppressi
 
 2026-08-26. **Read this before N12**, and before anything that touches the push path.
 
-- ✅ **`public/sw-push.js` had no `pushsubscriptionchange` handler.** Accurate as written. There is one now: it rebuilds the subscription from
+- ✅ **`../../../../public/sw-push.js` had no `pushsubscriptionchange` handler.** Accurate as written. There is one now: it rebuilds the subscription from
   `oldSubscription.options.applicationServerKey` (the one thing only that event holds), then `postMessage`s every open client so the app can register it.
 - ✅ **`notificationclick` focused the wrong tab.** Accurate. Matching is now on resolved pathnames: exact path+query wins and is only focused, a same-path tab is
   **navigated** so `?focus=<id>` actually moves, any other tab is navigated rather than merely raised, and `openWindow` is last. One case the prompt did not name and
   that matters more than the rest: **'/' is the resolver saying "nowhere in particular", not "go home"** — a notification with no subject must raise whatever tab the
   user had, never navigate it away from what they were doing.
-- ✅ **Silent failures in `subscribe()`.** Accurate, and live in this repo rather than theoretical: `.env.development` ships `VITE_VAPID_PUBLIC_KEY=` **empty**, so
-  every press produced the generic "could not enable" snackbar. `subscribe()` now returns a discriminated result (`subscribed | unsupported | notConfigured |
+- ✅ **Silent failures in `subscribe()`.** Accurate, and live in this repo rather than theoretical: `../../../../.env.development` ships `VITE_VAPID_PUBLIC_KEY=`
+  **empty**, so every press produced the generic "could not enable" snackbar. `subscribe()` now returns a discriminated result (`subscribed | unsupported | notConfigured |
   blocked | denied | failed`) and `SecuritySection` renders one message per case, using the `notifications.*` keys N1 flagged as dead — five of the twelve are now
   live.
 - ✅ **Unsubscribe ordering.** Accurate, and settled as **browser first, server second**. The two failure modes are not symmetric: revoking server-side first leaves a
@@ -326,18 +330,18 @@ worker provably cannot cover). The worker's message only carries the old endpoin
 
 - **The service worker deliberately does not call the API, and the usual reason is the wrong one.** It is not that it cannot authenticate — auth is cookie-based and
   cookies ride a worker's own `fetch` with `credentials: 'include'`. It is that it cannot know *where the API is*: `VITE_API_URL` is a different origin and is
-  substituted at bundle time, while `sw-push.js` is copied verbatim from `public/` and pulled in with `importScripts`, so nothing in it is ever substituted. (The
-  expired-token/refresh flow living in the axios interceptor is the second reason.) Any future worker-side API call hits the same wall.
+  substituted at bundle time, while `sw-push.js` is copied verbatim from `../../../../public` and pulled in with `importScripts`, so nothing in it is ever
+  substituted. (The expired-token/refresh flow living in the axios interceptor is the second reason.) Any future worker-side API call hits the same wall.
 - **The VAPID key is resolved from the server, with the env var as an override.** `GET /push-subscription/vapid-public-key` has existed all along —
-  `.env.development`'s own comment says the framework composable "reads it from here instead of fetching" it — and it answers `{ publicKey: null }` when the
-  deployment has no credentials, precisely so a client can skip push setup. A **definite** null now hides the switch (`isSupported`), while a key that merely could
-  not be *fetched*
+  `../../../../.env.development`'s own comment says the framework composable "reads it from here instead of fetching" it — and it answers `{ publicKey: null }` when
+  the deployment has no credentials, precisely so a client can skip push setup. A **definite** null now hides the switch (`isSupported`), while a key that merely
+  could not be *fetched*
   leaves it visible and fails at the press with its own message. Those two are different answers and collapsing them is what made a misconfigured deployment look
   like a user saying no.
 
 Verified: type-check **0 errors** (`--build --force`, exit 0), lint 0 errors (the 2 known warnings), **232** unit tests pass — up 35, of which **17 drive the real
-`public/sw-push.js`** with a stubbed `self`, the way workbox loads it. That file is invisible to every other check in this repo (eslint ignores `public/**`, vue-tsc
-never sees plain JS), so it had no coverage at all before. `vite build` clean: `dist/sw.js` + `dist/workbox-*.js`,
+`../../../../public/sw-push.js`** with a stubbed `self`, the way workbox loads it. That file is invisible to every other check in this repo (eslint ignores
+`public/**`, vue-tsc never sees plain JS), so it had no coverage at all before. `vite build` clean: `../../../../dist/sw.js` + `dist/workbox-*.js`,
 `importScripts("/notification-subject-routes.js","/sw-push.js")`
 in that order, both precached.
 
@@ -388,7 +392,8 @@ lives under `general`). The button had been rendering the raw key. Gone with the
   loses data that an explicit one cannot. `onBeforeUnmount` fires the pending write instead of cancelling it.
 - **A framework component must not resolve `general.*` without checking.** The undo action uses `reminderPreference.quietHours.undo`, **not** the framework's
   existing `general.undo`, because this app's `general` namespace replaces the framework's wholesale and has no `undo` — the framework key would render raw here.
-  `reminderPreference` is framework-only and never replaced, so a key defined in it always resolves. This is `migration-revision.md` R5/R6/R11 for the fourth time.
+  `reminderPreference` is framework-only and never replaced, so a key defined in it always resolves. This is `../../../../migration-revision.md` R5/R6/R11 for the
+  fourth time.
 - **Two resources, two error states.** `ReminderPreferencesView` loads the window and the kinds independently and gives each its own inline error with a retry, so a
   failed load can never read as "you have no quiet hours". Both reads pass `_silent` — a screen that renders its own failure must not also let the interceptor
   snackbar it.
@@ -439,11 +444,11 @@ not deleted.
   screen it was reserved for is how this block became twelve dead keys in the first place.
 
 **The live defect nobody had looked for: this app never registered `TimerBoundary`.** Its own backend raises it on every pomodoro boundary
-(`TimerBoundaryAlarmJobHandler`), and `notifications.type.TimerBoundary` was sitting in both locales — but `src/app/notifications/notificationTypeMeta.ts` had no
-entry, so the notification the user gets most often rendered a grey bell with no click-through and could not be filtered in the inbox. Nothing fails when a type is
-unregistered, which is why it survived N4, N5, N6 and N7. Registered now, deliberately **unrouted**: the destination is per-timer and lives in the push payload's
-producer-supplied `url`, which the in-app path cannot read (`RenderSubject` returns null for this type), and guessing one of three timer views would be wrong most of
-the time.
+(`TimerBoundaryAlarmJobHandler`), and `notifications.type.TimerBoundary` was sitting in both locales — but
+`../../../../src/app/notifications/notificationTypeMeta.ts` had no entry, so the notification the user gets most often rendered a grey bell with no click-through and
+could not be filtered in the inbox. Nothing fails when a type is unregistered, which is why it survived N4, N5, N6 and N7. Registered now, deliberately **unrouted**:
+the destination is per-timer and lives in the push payload's producer-supplied `url`, which the in-app path cannot read (`RenderSubject` returns null for this type),
+and guessing one of three timer views would be wrong most of the time.
 
 **Three decisions worth carrying forward.**
 
@@ -543,14 +548,14 @@ Verified fixed on 2026-08-25; kept for the record, not as work. `connect()`'s gu
 `start()` (now a cached
 `connectPromise`, plus N2's session token); `markRead`'s failure path set `isRead = false` rather than restoring the captured prior value (now `previousIsRead`);
 `NotificationResponse.fromJson`
-positional-passed six raw `json.*` values with no destructuring defaults (now destructured with defaults, per `CLAUDE.md`); `handleIncoming` `unshift`ed on the
-unstated assumption that the server returns newest-first (now finds-and-replaces by id, else prepends, with the assumption written down);
+positional-passed six raw `json.*` values with no destructuring defaults (now destructured with defaults, per `../../../../CLAUDE.md`); `handleIncoming` `unshift`ed
+on the unstated assumption that the server returns newest-first (now finds-and-replaces by id, else prepends, with the assumption written down);
 `NotificationBell.vue` rendered `VListItemSubtitle` unconditionally, leaving an empty second line for body-less notifications (now `v-if="notification.body"` with
 `:lines` matched to it).
 
 ## Backend
 
-`backend/` started empty on purpose, and holds only what an implementing agent actually hit:
+`backend` started empty on purpose, and holds only what an implementing agent actually hit:
 `B1-quiet-hours-fidelity.md` — **answered and landed on 2026-08-25**; see its `ANSWERED` section for the settled contract (quiet-hours `timeZone`, `originallyDueAt`,
 `ChannelHint` removed) and for what changed in `src/_common` as a result. `B2-notification-subject-reference.md` — **answered and landed on 2026-08-25**; see its
 `ANSWERED` section for the settled contract (opaque `subject { kind, id }`, no server-sent URLs, append-only kind vocabulary, dangling references permitted) and
