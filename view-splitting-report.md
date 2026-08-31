@@ -165,22 +165,29 @@ Template is exemplary at 80 lines. The script carries two lumps that name nothin
 
 ## Tier 2 — split when next touched
 
-### 7. `HistoryDetailView.vue` (425) + `HistorySummaryView.vue` (403)
+### 7. `HistoryDetailView.vue` (425) + `HistorySummaryView.vue` (403) — DONE
 
 Treat these as one job — they already share `useHistoryDashboard`, and what remains duplicated is the shell around it.
 
-- **Export.** `exportDetail` (L359–415) and `exportSummary` (L267–330) are ~55 lines each; everything except the column array and the file-name parts is identical
+- ~~**Export.** `exportDetail` (L359–415) and `exportSummary` (L267–330) are ~55 lines each; everything except the column array and the file-name parts is identical
   (xlsx guard, `exporting` latch, try/catch, error snackbar,
   `downloadCsv`). Fold the wrapper into `composable/useHistoryExport.ts` as `useCsvExport(buildRows)` — the file already owns `buildCsv` / `buildExportFileName` /
-  `downloadCsv`, so this is finishing an existing abstraction.
+  `downloadCsv`, so this is finishing an existing abstraction.~~
+  Done — `useCsvExport()` owns the xlsx guard, the `exporting` latch and the try/catch/error-snackbar; each view's `export*` now just builds `{ csv, fileName }` (or
+  returns `undefined` to skip, which is how `exportSummary`'s empty-date guard survived the move).
 - ~~**URL sync.** Both files end with the same `watch([...], () => router.replace({ query: {...} }))` (theme **D**).~~
   Done — `useHistoryUrlSync(sources, buildQuery)` owns the watch, and the six params the two views share are serialized once by `sharedHistoryQueryParams()` in
   `historyUrlParams.ts`.
-- **Template, detail view only.** `HistorySummaryCards` + `HistoryPieChartSection` are mounted twice with the same props in two different layouts (L102–138 for
+- ~~**Template, detail view only.** `HistorySummaryCards` + `HistoryPieChartSection` are mounted twice with the same props in two different layouts (L102–138 for
   stacked-bars, L158–182 for timeline, ~75 lines) → one
-  `HistoryInsightsColumn.vue` with a `direction` prop.
+  `HistoryInsightsColumn.vue` with a `direction` prop.~~
+  Done — `historyDashboard/component/HistoryInsightsColumn.vue` takes `direction: 'row' | 'column'`, forwards both panels' props/events and models `selectedGroup`
+  itself so both the pie chart's `v-model` and the summary cards' plain prop stay in sync. `HistorySummaryView.vue` was left untouched — it only ever mounted the
+  pair once, so there was nothing to fold there.
 
 `clampWindowsToRequestedRange` should stay in the detail view — the comment explains exactly why it can't be shared.
+
+Typecheck and lint are both clean afterwards.
 
 ### 8. `DayPlannerSettingsView.vue` — 379 lines, 271 of them template
 

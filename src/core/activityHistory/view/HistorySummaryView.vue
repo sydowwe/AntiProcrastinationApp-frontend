@@ -158,22 +158,20 @@
 	import {
 		buildCsv,
 		buildExportFileName,
-		downloadCsv,
 		EXPORT_GROUP_LIMIT,
 		mergeGroupExportRows,
+		useCsvExport,
 		type HistoryGroupExportRow,
 	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'
 	import { fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
-	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 
 	const route = useRoute()
 	const router = useRouter()
 	const i18n = useI18n()
-	const { showErrorSnackbar } = useSnackbar()
 
 	// --- State: the multi-day range this view asks its questions over ---
 	const date = ref((route.query.date as string) || '')
@@ -263,16 +261,11 @@
 	// Reflects exactly the current date/range/groupBy/baseline. The on-screen pie chart and summary
 	// cards are capped (20 items / topN) to stay readable — this refetches both, uncapped, so the
 	// export is never a silent truncation of what the widgets show.
-	const exporting = ref(false)
+	const { exporting, exportCsv } = useCsvExport()
 
-	async function exportSummary(format: ExportFormat) {
-		if (format === 'xlsx') {
-			showErrorSnackbar(i18n.t('historyDashboard.export.xlsxUnavailable'))
-			return
-		}
-		if (exporting.value || date.value === '') return
-		exporting.value = true
-		try {
+	function exportSummary(format: ExportFormat) {
+		return exportCsv(format, async () => {
+			if (date.value === '') return undefined
 			const [pieChart, summaryCards] = await Promise.all([
 				getSummaryPieChart(
 					new HistorySummaryPieChartRequest(
@@ -313,21 +306,17 @@
 				],
 				mergeGroupExportRows(pieChart.items, summaryCards.cards),
 			)
-			downloadCsv(
+			return {
 				csv,
-				buildExportFileName([
+				fileName: buildExportFileName([
 					i18n.t('historyDashboard.export.summary.fileNamePrefix'),
 					rangeType.value,
 					date.value,
 					endDate.value,
 					groupBy.value,
 				]),
-			)
-		} catch {
-			showErrorSnackbar(i18n.t('historyDashboard.export.error'))
-		} finally {
-			exporting.value = false
-		}
+			}
+		})
 	}
 
 	// --- Window size options based on range type ---

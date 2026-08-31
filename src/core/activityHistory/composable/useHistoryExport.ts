@@ -1,6 +1,10 @@
 import dayjs from 'dayjs'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { downloadBlob } from '@/_common/utils/fileDownload.ts'
 import { historyGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
+import type { ExportFormat } from '@/_common/dto/ExportFormat.ts'
+import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 /**
  * How many groups an export round asks the pie-chart/summary-cards endpoints for, instead of the `20`
@@ -55,6 +59,41 @@ export function buildExportFileName(parts: (string | null | undefined)[]): strin
 		.map(slugify)
 		.join('_')
 	return `${slug}.csv`
+}
+
+/**
+ * Shared guard/error/download plumbing for the detail and summary views' export buttons (H8): both
+ * reject `xlsx` (unsupported), no-op while a previous export is still running, and fall back to the
+ * same error snackbar. `buildRows` does the view-specific fetch + `buildCsv`/`buildExportFileName` call
+ * and returns `undefined` to skip silently (e.g. no date selected yet) rather than throwing.
+ */
+export function useCsvExport() {
+	const i18n = useI18n()
+	const { showErrorSnackbar } = useSnackbar()
+	const exporting = ref(false)
+
+	async function exportCsv(
+		format: ExportFormat,
+		buildRows: () => Promise<{ csv: string; fileName: string } | undefined>,
+	) {
+		if (format === 'xlsx') {
+			showErrorSnackbar(i18n.t('historyDashboard.export.xlsxUnavailable'))
+			return
+		}
+		if (exporting.value) return
+		exporting.value = true
+		try {
+			const result = await buildRows()
+			if (!result) return
+			downloadCsv(result.csv, result.fileName)
+		} catch {
+			showErrorSnackbar(i18n.t('historyDashboard.export.error'))
+		} finally {
+			exporting.value = false
+		}
+	}
+
+	return { exporting, exportCsv }
 }
 
 export interface HistoryGroupExportRow {

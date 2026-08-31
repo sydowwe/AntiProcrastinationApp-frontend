@@ -103,38 +103,21 @@
 				v-if="isStackedBars"
 				class="mt-6"
 			>
-				<VRow>
-					<VCol
-						cols="12"
-						lg="6"
-						class="pr-lg-8 pb-3"
-					>
-						<HistorySummaryCards
-							:data="summaryCardsData"
-							:groupBy="groupBy"
-							:selectedGroup="selectedGroup"
-							:selectedBaseline="selectedBaseline"
-							:topN="topN"
-							:loading="summaryCardsLoading"
-							:periodLabel
-							@update:selectedBaseline="handleBaselineChange"
-							@update:topN="handleTopNChange"
-							@groupClick="handleGroupSelect"
-						/>
-					</VCol>
-					<VCol
-						cols="12"
-						lg="6"
-						class="pb-3"
-					>
-						<HistoryPieChartSection
-							v-model:selectedGroup="selectedGroup"
-							:data="pieChartData"
-							:loading="pieChartLoading"
-							:periodLabel
-						/>
-					</VCol>
-				</VRow>
+				<HistoryInsightsColumn
+					direction="row"
+					v-model:selectedGroup="selectedGroup"
+					:summaryCardsData
+					:pieChartData
+					:groupBy
+					:selectedBaseline
+					:topN
+					:summaryLoading="summaryCardsLoading"
+					:pieLoading="pieChartLoading"
+					:periodLabel
+					@update:selectedBaseline="handleBaselineChange"
+					@update:topN="handleTopNChange"
+					@groupClick="handleGroupSelect"
+				/>
 			</div>
 
 			<!-- Timeline + Context Panel -->
@@ -160,19 +143,16 @@
 					lg="5"
 					class="d-flex flex-column ga-4 overflow-y-auto"
 				>
-					<HistoryPieChartSection
+					<HistoryInsightsColumn
+						direction="column"
 						v-model:selectedGroup="selectedGroup"
-						:data="pieChartData"
-						:loading="pieChartLoading"
-						:periodLabel
-					/>
-					<HistorySummaryCards
-						:data="summaryCardsData"
+						:summaryCardsData
+						:pieChartData
 						:groupBy
-						:selectedGroup
 						:selectedBaseline
 						:topN
-						:loading="summaryCardsLoading"
+						:summaryLoading="summaryCardsLoading"
+						:pieLoading="pieChartLoading"
 						:periodLabel
 						@update:selectedBaseline="handleBaselineChange"
 						@update:topN="handleTopNChange"
@@ -205,8 +185,7 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryGroupBySelector from '@/core/historyDashboard/component/controls/HistoryGroupBySelector.vue'
 	import StackedBarsChart from '@/core/activityTracking/component/stackedBars/StackedBarsChart.vue'
-	import HistorySummaryCards from '@/core/historyDashboard/component/summaryCards/HistorySummaryCards.vue'
-	import HistoryPieChartSection from '@/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue'
+	import HistoryInsightsColumn from '@/core/historyDashboard/component/HistoryInsightsColumn.vue'
 	import HistoryTimeline from '@/core/historyDashboard/component/HistoryTimeline.vue'
 	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
 	import ExportMenu from '@/_common/component/ExportMenu.vue'
@@ -231,12 +210,11 @@
 	import {
 		buildCsv,
 		buildExportFileName,
-		downloadCsv,
 		formatIsoWithOffset,
+		useCsvExport,
 	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
-	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const VISUALIZATIONS = ['stackedBars', 'timeline'] as const
 	type Visualization = (typeof VISUALIZATIONS)[number]
@@ -245,7 +223,6 @@
 	const router = useRouter()
 	const i18n = useI18n()
 	const { firstDayOfWeek } = useUserPreferences()
-	const { showErrorSnackbar } = useSnackbar()
 
 	// --- State: the single day and time-of-day window this view asks its questions over ---
 	const today = new Date()
@@ -355,16 +332,10 @@
 	// The raw record list, fetched independently of `HistoryTimeline` (which only mounts in the
 	// timeline visualization) so export works the same regardless of which view is currently shown.
 	// Same endpoint/request the timeline itself uses, just for the current date/time-of-day window.
-	const exporting = ref(false)
+	const { exporting, exportCsv } = useCsvExport()
 
-	async function exportDetail(format: ExportFormat) {
-		if (format === 'xlsx') {
-			showErrorSnackbar(i18n.t('historyDashboard.export.xlsxUnavailable'))
-			return
-		}
-		if (exporting.value) return
-		exporting.value = true
-		try {
+	function exportDetail(format: ExportFormat) {
+		return exportCsv(format, async () => {
 			const records = await getDetailTimeline(new DetailTimelineRequest(date.value, timeFrom.value, timeTo.value))
 			const csv = buildCsv<ActivityHistory>(
 				[
@@ -398,21 +369,17 @@
 				],
 				records,
 			)
-			downloadCsv(
+			return {
 				csv,
-				buildExportFileName([
+				fileName: buildExportFileName([
 					i18n.t('historyDashboard.export.detail.fileNamePrefix'),
 					date.value,
 					timeFrom.value.getString(),
 					timeTo.value.getString(),
 					groupBy.value,
 				]),
-			)
-		} catch {
-			showErrorSnackbar(i18n.t('historyDashboard.export.error'))
-		} finally {
-			exporting.value = false
-		}
+			}
+		})
 	}
 
 	// --- Back to the summary view for the week containing this day. ---
