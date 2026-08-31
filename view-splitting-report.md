@@ -75,6 +75,12 @@ Template is fine at 121 (`RoutineGroupCard` already carries the weight). The 546
 - `composable/useRoutineItemActions.ts` — `add`/`edit`/`onDelete`/`handleOrderChange`/`handleUncheckAll`/
   `handleCrossListDrop`/`onItemsChanged` (~250 lines). `handleCrossListDrop` alone is 62 lines and takes
   `dropTarget: any` — worth typing while it moves.
+
+  **`handleCrossListDrop` may not fit theme A's composable, and that is an acceptable outcome.** The other six
+  operations are single-call; this one moves an item *between* groups, so it is two calls (`update` with a new
+  `timePeriodId`, then `changeDisplayOrder`) with a compound inverse that has to undo both and splice the item back
+  into its original group at its original index. Forcing it through the generic shape, or leaving a silent fourth
+  copy of undo logic inline next to it, are both worse than keeping it deliberately bespoke and saying so.
 - `composable/useRoutineDialogs.ts` — `openCreateDialog`, `openEditDialog`, `openHistoryDialog` (L350–395, ~45 lines). Note these three build dialog titles from raw
   English strings (`' to routine to-do list'`,
   `'-day periods'`, `'Close'`) rather than `t()`; the move is a good moment to fix that.
@@ -202,7 +208,7 @@ keeps `VTabs`, the store, and the debounced save watcher — about 60 lines.
 
 Precedent: `core/user/component/settings/` already does exactly this for the user settings page.
 
-### 9. `ActivitySettingsView.vue` — 366 lines, 289 of them script
+### 9. `ActivitySettingsView.vue` — 366 lines, 289 of them script — DONE
 
 ~~Roughly 110 lines (L134–222) are pure query-string (de)serialization — `firstQueryString`, `parseIdList`,
 `parseArchivedView`, `archivedViewOf`, `paramsToActivityFilter`, `activityFilterToParams`, `paramsToNameTextFilter`,
@@ -210,8 +216,18 @@ Precedent: `core/user/component/settings/` already does exactly this for the use
 `activity/composable/activitySettingsUrlParams.ts`; `activityHistory/composable/historyUrlParams.ts` is the established pattern (theme **D**).~~ Done — the view is
 down from 366 to 297 lines.
 
-The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining draft↔filter↔URL. Those are
-`composable/useActivityFilterDrafts.ts`. Before writing it, check `_common/composable/table/useTableUrlState.ts` — this may be reinventing it.
+~~The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining draft↔filter↔URL. Those are
+`composable/useActivityFilterDrafts.ts`. Before writing it, check `_common/composable/table/useTableUrlState.ts` — this may be reinventing it.~~ Checked during
+theme **D**: it is a server-table composable, not a general URL-state one, and does not apply here. Done —
+`useActivityFilterDrafts.ts` now owns `activeTab`, all three filters, both comboboxes, every draft ref and the whole
+watcher graph; the view is down from 297 to 145 lines and its `<script setup>` is a single destructured call.
+
+**The watcher graph was the hazard, and it was not a type error.** `currentSharedFilter()` resolves against
+`activeTab`, so the two shared-draft watchers write to the roles filter or the categories filter depending on when
+they fire. The route→state watcher (on `tab`, now a getter) and the state→URL watcher (on `activeTab`) guard each
+other with mirrored `if (newTab === activeTab.value) return` / `if (newTab === tab()) return` early exits, which is
+what stops a tab click and a browser Back from fighting over the query string. Both guards moved into the composable
+unchanged. Typecheck and lint are both clean afterwards.
 
 ### 10. `TodoListsView.vue` — 356 lines, 213 of them template — DONE
 
@@ -305,13 +321,19 @@ Typecheck and lint are both clean afterwards.
 
 ## Suggested order
 
-1. `TemplateCardGrid.vue` — one file, removes 150 duplicated template lines, no logic moves. (#3)
-2. `DayPlannerSettingsView` tab components — mechanical, five files, zero risk. (#8)
-3. ~~Theme **B**~~, the bulk helper — unblocks the script halves of #4 and #6.
-4. ~~Theme **A**~~, the undoable-CRUD composable — unblocks the script halves of #1 and #2.
-5. `PomodoroTimerView` template split, plus the move out of `view/`. (#5)
-6. ~~Theme **D** / `ActivitySettingsView`~~ (done), then #7's shared export wrapper.
-7. The rest opportunistically.
+Themes **A**–**D** are done, and with them the design-heavy work. Everything below is extraction against an
+abstraction that already exists, in three bands:
 
-Steps 1, 2 and 5 are pure template moves and can land independently. Steps 3 and 4 are the ones that change behaviour if done carelessly — both touch undo and error
-paths, and neither has test coverage today.
+1. ~~**Mechanical** — #3, #5, #8, #11.~~ Pure template moves, landed independently.
+2. ~~**Medium** — #4, #7, #9, #10.~~ Each was a move that had to preserve one behaviour rather than invent anything:
+   #4's `loadCompleteResolve` handshake, #9's watcher ordering. Both held.
+3. **The two theme-A consumers** — #1, then #2.
+
+**Do #1 before #2, and inside #1 do the four template components before the script.** The flat list is the gentler
+validation of the adapter shape; the grouped container is the stress test, and `handleCrossListDrop` is the point
+where the shape may not hold (see #2). Keep the two in one sitting rather than a week apart — they are the same
+abstraction consumed twice, and the second one drifting from the first is how the duplication theme **A** removed
+gets rebuilt by hand.
+
+Undo and error paths still have no test coverage, so #1 and #2 are the two items where a wrong result compiles,
+type-checks and looks right.
