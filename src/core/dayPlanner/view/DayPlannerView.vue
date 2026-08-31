@@ -46,53 +46,12 @@
 
 			<!-- Change Status button for selection action bar -->
 			<template #selection-actions>
-				<VMenu
-					v-if="!store.isTemplateInPreview"
-					closeOnContentClick
-				>
-					<template #activator="{ props: menuProps }">
-						<VBtn
-							v-bind="menuProps"
-							color="primary"
-						>
-							{{ $t('planner.actions.changeStatus') }}
-						</VBtn>
-					</template>
-					<VCard>
-						<VList density="compact">
-							<VListItem
-								v-for="option in statusOptions"
-								:key="option.value"
-								:prependIcon="getPlannerTaskStatusIcon(option.value)"
-								:title="option.title"
-								color="secondaryOutline"
-								@click="handleChangeStatusOnSelected(option.value)"
-							/>
-						</VList>
-					</VCard>
-				</VMenu>
-				<VBtn
-					v-if="!store.isTemplateInPreview"
-					color="secondary"
-					@click="openRescheduleDialog"
-				>
-					{{ $t('planner.actions.reschedule') }}
-				</VBtn>
-				<VBtn
-					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
-					color="primary"
-					@click="logTimeController?.openFromSelection"
-				>
-					{{ $t('general.logTime') }}
-				</VBtn>
-				<VBtn
-					v-if="store.selectedTaskIds.size === 1 && !store.isTemplateInPreview"
-					variant="tonal"
-					color="secondaryOutline"
-					@click="crud.splitTask"
-				>
-					{{ $t('planner.actions.split') }}
-				</VBtn>
+				<PlannerSelectionActions
+					@changeStatus="handleChangeStatusOnSelected"
+					@reschedule="openRescheduleDialog"
+					@logTime="logTimeController?.openFromSelection"
+					@split="crud.splitTask"
+				/>
 			</template>
 
 			<!-- Custom dialog for normal planner -->
@@ -114,21 +73,20 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+	import { computed, onMounted, provide, ref, watch } from 'vue'
 	import DayPlanner from '@/core/dayPlanner/component/DayPlanner.vue'
 	import DayPlannerHeader from '@/core/dayPlanner/component/normal/DayPlannerHeader.vue'
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
 	import PlannerTaskBlock from '@/core/dayPlanner/component/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
+	import PlannerSelectionActions from '@/core/dayPlanner/component/normal/PlannerSelectionActions.vue'
 	import {
 		formatDateForApi,
 		formatToDateWithDay,
-		isSameDay,
 		urlStringToUTCDate,
 		usStringToUrlString,
 	} from '@/_common/utils/DateTimeHelper.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
-	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
@@ -136,30 +94,19 @@
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import router from '@/router.ts'
-	import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import DayPlannerSidePanel from '@/core/dayPlanner/component/normal/DayPlannerSidePanel.vue'
-	import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 	import UseTemplateActionBar from '@/core/dayPlanner/component/normal/UseTemplateActionBar.vue'
-	import { ApplyTemplateToTaskPlannerRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerRequest.ts'
-	import { API } from '@/_common/axiosConfig.ts'
-	import { ApplyTemplatePlannerTaskResponse } from '@/core/dayPlanner/dto/response/ApplyTemplatePlannerTaskResponse.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
-	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import RescheduleForm from '@/core/dayPlanner/component/normal/RescheduleForm.vue'
 	import SkipReasonForm from '@/core/dayPlanner/component/normal/SkipReasonForm.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import DayPlannerLogTimeController from '@/core/dayPlanner/component/normal/DayPlannerLogTimeController.vue'
-	import {
-		getPlannerTaskStatusIcon,
-		PlannerTaskStatus,
-		usePlannerTaskStatusOptions,
-	} from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
-	import type { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
+	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 	import { useClipboardHandling } from '@/core/dayPlanner/composable/useClipboardHandling.ts'
 	import { usePlannerCrud } from '@/core/dayPlanner/composable/usePlannerCrud.ts'
@@ -170,19 +117,18 @@
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
 	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
+	import { useTemplatePreview } from '@/core/dayPlanner/composable/useTemplatePreview.ts'
+	import { useDayNavigation } from '@/core/dayPlanner/composable/useDayNavigation.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { t } = useI18n()
 	const { runBulk } = useBulkTaskAction()
-	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { showErrorSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
 	const settingsStore = useDayPlannerSettingsStore()
-	const undoStack = useUndoStack()
 	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
 		useTaskPlannerCrud()
 
-	const statusOptions = usePlannerTaskStatusOptions()
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -239,6 +185,15 @@
 
 	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
 
+	const { templatePreview, applyTemplate } = useTemplatePreview(store, calendar, fetchTemplateTasks)
+	const { navigateDate, handleUndo } = useDayNavigation(
+		store,
+		settingsStore,
+		calendar,
+		loadTasks,
+		fetchCalendarByDate,
+	)
+
 	// Lifecycle hooks
 	onMounted(async () => {
 		await settingsStore.loadSettings()
@@ -277,51 +232,12 @@
 		// be scrolled to before it exists. Not awaited — the reveal polls for the element on its own and
 		// nothing below depends on it.
 		void revealFocusedTask()
-
-		document.addEventListener('keydown', handleArrowKey)
-	})
-
-	onUnmounted(() => {
-		document.removeEventListener('keydown', handleArrowKey)
 	})
 
 	// View-specific computed properties
 	const currentDateFormatted = computed(() => {
 		return formatToDateWithDay(store.viewedDate)
 	})
-
-	function navigateDate(delta: number) {
-		const date = new Date(store.viewedDate)
-		date.setDate(date.getDate() + delta)
-		navigateToDate(date)
-	}
-
-	function navigateToDate(date: Date | null) {
-		store.viewedDate = date ?? new Date()
-		router.replace({ params: { date: usStringToUrlString(formatDateForApi(store.viewedDate)) } })
-	}
-
-	let loadCompleteResolve: (() => void) | null = null
-
-	async function handleUndo() {
-		const nextDate = undoStack.nextUndoDate
-		if (nextDate && !isSameDay(nextDate.value, store.viewedDate)) {
-			const loadDone = new Promise<void>(resolve => {
-				loadCompleteResolve = resolve
-			})
-			navigateToDate(nextDate.value)
-			await loadDone
-		}
-		await undoStack.undo()
-	}
-
-	function handleArrowKey(e: KeyboardEvent) {
-		if (!settingsStore.arrowKeyNavEnabled) return
-		const target = e.target as HTMLElement
-		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
-		if (e.key === 'ArrowLeft') navigateDate(-1)
-		else if (e.key === 'ArrowRight') navigateDate(1)
-	}
 
 	// Load tasks for the current date
 	async function loadTasks() {
@@ -345,53 +261,6 @@
 		req.importanceId = task.importance?.id ?? null
 		await crud.create(req)
 		addedSuggestionIds.value = new Set([...addedSuggestionIds.value, task.key])
-	}
-
-	async function templatePreview() {
-		if (store.templateInPreview) {
-			store.selectedTaskIds.clear()
-			if (!store.previewBaseStartTime) {
-				store.previewBaseStartTime = new Time(store.viewStartTime.hours, store.viewStartTime.minutes)
-				store.previewBaseEndTime = new Time(store.viewEndTime.hours, store.viewEndTime.minutes)
-			}
-			Object.assign(store.viewStartTime, store.templateInPreview.defaultWakeUpTime)
-			Object.assign(store.viewEndTime, store.templateInPreview.defaultBedTime)
-			store.tasksFromTemplate = (
-				await fetchTemplateTasks(
-					new TemplatePlannerTaskFilter(store.templateInPreview.id, store.viewStartTime, store.viewEndTime),
-				)
-			).map(e => PlannerTask.fromTemplateTask(calendar.value!.id, e))
-			store.tasks = store.tasks.filter(t => t.id > 0)
-			store.tasks.push(...store.tasksFromTemplate)
-			store.initializeTaskGridPositions()
-		}
-	}
-
-	async function applyTemplate(conflictResolution: ApplyTemplateConflictResolution) {
-		if (!store.templateInPreview) {
-			throw new Error('No template selected')
-		}
-		showFullScreenLoading()
-		try {
-			const tasksIncluded = store.tasks
-				.filter(task => task.id < 0)
-				.map(task => PlannerTaskRequest.fromEntity(task))
-			const request = new ApplyTemplateToTaskPlannerRequest(
-				store.templateInPreview.id,
-				calendar.value!.id,
-				conflictResolution,
-				tasksIncluded,
-			)
-			const json = await API.post('calendar/apply-planner-template', request)
-			const response = ApplyTemplatePlannerTaskResponse.fromJson(json.data)
-
-			store.resetStore()
-			calendar.value = response.calendar
-			store.tasks = response.tasks
-			store.initializeTaskGridPositions()
-		} finally {
-			hideFullScreenLoading()
-		}
 	}
 
 	async function handleStatusChange(taskId: number, status: PlannerTaskStatus) {
@@ -550,25 +419,6 @@
 		[() => store.viewStartTime, () => store.viewEndTime],
 		() => {
 			store.initializeTaskGridPositions()
-		},
-		{ deep: true },
-	)
-
-	// Watch for date changes to reload tasks
-	watch(
-		() => store.viewedDate,
-		async () => {
-			showFullScreenLoading()
-			store.resetStore()
-			const dateStr = usStringToUrlString(formatDateForApi(new Date(store.viewedDate)))
-			const newCalendar = await fetchCalendarByDate(dateStr)
-			calendar.value = newCalendar
-			store.viewStartTime = newCalendar.wakeUpTime
-			store.viewEndTime = newCalendar.bedTime
-			await loadTasks()
-			loadCompleteResolve?.()
-			loadCompleteResolve = null
-			hideFullScreenLoading()
 		},
 		{ deep: true },
 	)

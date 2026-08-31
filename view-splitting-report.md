@@ -106,7 +106,7 @@ Script side:
 
 Typecheck and lint are both clean afterwards.
 
-### 4. `DayPlannerView.vue` — 558 lines
+### 4. `DayPlannerView.vue` — 558 lines — DONE
 
 Template is already well decomposed (113 lines, everything is a named child component) apart from the
 `#selection-actions` slot (L48–96, ~50 lines of menu + four conditional buttons) → `PlannerSelectionActions.vue`.
@@ -119,15 +119,19 @@ The 485-line script is dominated by three bulk handlers with an **identical** ta
 
 Each is `Promise.allSettled` over selected ids, `clearSelection()`, count rejected, then a two-branch partial/success snackbar. The tails are byte-for-byte the same
 except the message key. See theme **B** — one
-`useBulkTaskAction()` helper removes ~70 lines here and ~60 more in `PlannerCalendarView`.
+`useBulkTaskAction()` helper removes ~70 lines here and ~60 more in `PlannerCalendarView`. (Already landed — this item found it done.)
 
 Also extractable:
 
-- `composable/useTemplatePreview.ts` — `templatePreview()` + `applyTemplate()` (L348–393, ~50 lines), the only two functions that touch `store.templateInPreview` /
-  `tasksFromTemplate`.
-- `composable/useDayNavigation.ts` — `navigateDate`, `navigateToDate`, `handleArrowKey`, `handleUndo` with its
+- ~~`composable/useTemplatePreview.ts` — `templatePreview()` + `applyTemplate()` (L348–393, ~50 lines), the only two functions that touch `store.templateInPreview` /
+  `tasksFromTemplate`.~~ Done — takes `store`, the `calendar` ref and `fetchTemplateTasks` as params.
+- ~~`composable/useDayNavigation.ts` — `navigateDate`, `navigateToDate`, `handleArrowKey`, `handleUndo` with its
   `loadCompleteResolve` handshake, plus the `watch(() => store.viewedDate)` reload (L291–322 + L583–599, ~55 lines). The `loadCompleteResolve` latch is the subtlest
-  thing in the file and is currently a bare module-scope `let`.
+  thing in the file and is currently a bare module-scope `let`.~~ Done — the latch is now a closure variable inside the composable (same shape as
+  `useCalendarUrlState`'s `isApplyingUrlState`), and the composable registers its own `keydown` listener via `onMounted`/`onUnmounted` rather than exposing
+  `handleArrowKey` for the view to wire up.
+
+The view is down from 558 to 429 lines. Typecheck, lint and build are all clean afterwards.
 
 ### 5. `PomodoroTimerView.vue` — 486 lines
 
