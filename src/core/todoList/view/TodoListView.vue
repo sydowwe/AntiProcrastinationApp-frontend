@@ -181,7 +181,7 @@
 							class="d-flex align-center ga-2 w-100"
 							style="max-width: 160px"
 						>
-							<span class="text-caption text-medium-emphasis">
+							<span class="text-caption text-medium-emphasis text-no-wrap">
 								{{
 									$t('toDoList.progressCount', {
 										done: totalProgress.done,
@@ -283,7 +283,6 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
-	import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import BaseToDoList from '@/core/todoList/component/BaseToDoList.vue'
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
@@ -296,7 +295,6 @@
 	import { useTodoListItemCrud } from '@/core/todoList/api/todoListItemApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
-	import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
@@ -311,6 +309,7 @@
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
 	import { FOCUS_LIMIT, useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
+	import { useUndoableListCrud } from '@/core/todoList/composable/useUndoableListCrud.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
@@ -368,18 +367,30 @@
 		toggleFocusItem,
 	} = useTodoListFilters(items)
 
-	const {
-		undo,
-		canUndo,
-		stackSize,
-		nextUndoDescription,
-		pushDeleteUndo,
-		pushUncheckAllUndo,
-		pushReorderUndo,
-		pushEditUndo,
-		pushBulkRescheduleUndo,
-		pushLogTimeUndo,
-	} = useTodoListUndo()
+	const { undo, canUndo, stackSize, nextUndoDescription, pushBulkRescheduleUndo, pushLogTimeUndo } = useTodoListUndo()
+
+	// Flat-list half of the shared undo-wrapped CRUD. The routine list registers the grouped half
+	// against the same operations — see `useUndoableListCrud`.
+	const listCrud = useUndoableListCrud<TodoListItemEntity, ToDoListItemRequest>(
+		{ createWithResponse, update, deleteEntity, changeDisplayOrder, toggleIsDone, uncheckAll: uncheckAllApi },
+		{
+			containerOf: id => (items.value.some(item => item.id === id) ? items.value : undefined),
+			insert(entity) {
+				items.value.push(entity)
+				items.value.sort(TodoListItemEntity.frontEndSortFunction())
+			},
+			// `frontEndSortFunction` orders by priority, not by display order, so it cannot put a
+			// restored item back where it was in custom sort mode. Re-reading is what can.
+			reinsert: async () => {
+				items.value = await fetchAll()
+			},
+			resync: itemsChanged,
+			requestFromEntity: entity => ToDoListItemRequest.fromEntity(entity),
+			labelOf: entity => entity.activity.name,
+		},
+	)
+
+	const { deleteItem, handleOrderChange, handleUncheckAll } = listCrud
 
 	onMounted(async () => {
 		showFullScreenLoading()
@@ -402,27 +413,9 @@
 		),
 	)
 
-	async function handleOrderChange(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) {
-		const movedItem = items.value[oldIndex]
-		if (!movedItem) return
-		const originalPrecedingId = oldIndex > 0 ? (items.value[oldIndex - 1]?.id ?? null) : null
-		const originalFollowingId = oldIndex < items.value.length - 1 ? (items.value[oldIndex + 1]?.id ?? null) : null
-		const [moved] = items.value.splice(oldIndex, 1)
-		items.value.splice(newIndex, 0, moved!)
-		await changeDisplayOrder(request)
-		const reverseRequest = new ChangeDisplayOrderRequest(movedItem.id, originalPrecedingId, originalFollowingId)
-		pushReorderUndo(movedItem.activity.name, async () => {
-			await changeDisplayOrder(reverseRequest)
-			items.value = await fetchAll()
-		})
-	}
-
 	async function add(toDoListItem: ToDoListItemRequest) {
-		const response = await createWithResponse(toDoListItem)
-		items.value.push(response)
-		items.value.sort(TodoListItemEntity.frontEndSortFunction())
-		showSuccessSnackbar(i18n.t('successFeedback.added'))
-		void ensureCalibrationLoaded([response.activity.id])
+		const created = await listCrud.add(toDoListItem)
+		void ensureCalibrationLoaded([created.activity.id])
 	}
 
 	async function quickEditedActivity(id: number) {
@@ -435,19 +428,7 @@
 
 	async function edit(id: number, toDoListItemRequest: ToDoListItemRequest) {
 		const beforeEditEntity = items.value.find(item => item.id === id)
-		if (
-			beforeEditEntity &&
-			hasObjectChanged(ToDoListItemRequest.fromEntity(beforeEditEntity), toDoListItemRequest)
-		) {
-			const savedRequest = ToDoListItemRequest.fromEntity(beforeEditEntity)
-			await update(id, toDoListItemRequest)
-			await updateAfterEdit(id, beforeEditEntity.taskPriority.id)
-			showSuccessSnackbar(i18n.t('successFeedback.edited'))
-			pushEditUndo(beforeEditEntity.activity.name, async () => {
-				await update(id, savedRequest)
-				await updateAfterEdit(id)
-			})
-		}
+		if (beforeEditEntity) await listCrud.edit(beforeEditEntity, toDoListItemRequest)
 	}
 
 	async function onChangedPriority(id: number, taskPriorityId?: number) {
@@ -463,40 +444,15 @@
 		})
 	}
 
-	async function deleteItem(id: number) {
-		const savedItem = items.value.find(item => item.id === id)
-		const savedIndex = items.value.findIndex(item => item.id === id)
-		if (!savedItem || savedIndex === -1) return
-		const precedingId = savedIndex > 0 ? (items.value[savedIndex - 1]?.id ?? null) : null
-		const followingId = savedIndex < items.value.length - 1 ? (items.value[savedIndex + 1]?.id ?? null) : null
-		await deleteEntity(id)
-		items.value.splice(savedIndex, 1)
-		pushDeleteUndo(savedItem.activity.name, async () => {
-			const restored = await createWithResponse(ToDoListItemRequest.fromEntity(savedItem))
-			await changeDisplayOrder(new ChangeDisplayOrderRequest(restored.id, precedingId, followingId))
-			items.value = await fetchAll()
-		})
-	}
-
-	async function handleUncheckAll(doneIds: number[]) {
-		await uncheckAllApi(doneIds)
-		await itemsChanged(doneIds)
-		pushUncheckAllUndo(doneIds.length, async () => {
-			for (const id of doneIds) await toggleIsDone(id, true)
-			items.value = await fetchAll()
-		})
-	}
-
-	async function updateAfterEdit(id: number, oldTaskPriorityId?: number) {
+	async function updateAfterEdit(id: number) {
 		const updatedItem = await fetchById(id)
 		void ensureCalibrationLoaded([updatedItem.activity.id])
 		const index = items.value.findIndex(item => item.id === id)
-		if (oldTaskPriorityId === updatedItem.taskPriority.id) {
-			items.value[index] = updatedItem
-		} else {
-			items.value[index] = updatedItem
-			items.value.sort(TodoListItemEntity.frontEndSortFunction())
-		}
+		if (index === -1) return
+		items.value[index] = updatedItem
+		// Unconditional: the sort is by priority then id, so re-running it on an unchanged priority
+		// is a no-op rather than the reshuffle the old `oldTaskPriorityId` guard was avoiding.
+		items.value.sort(TodoListItemEntity.frontEndSortFunction())
 	}
 
 	async function openMoveToList(item: TodoListItemEntity) {
@@ -679,8 +635,7 @@
 	}
 
 	async function handleIsDoneChange(id: number, forceValue?: boolean) {
-		await toggleIsDone(id, forceValue)
-		await itemsChanged([id])
+		await listCrud.handleIsDoneChange(id, forceValue)
 		offerPairedLeisure(id)
 	}
 

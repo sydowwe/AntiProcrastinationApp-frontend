@@ -88,15 +88,12 @@
 					@logTime="openLogTime"
 					@quickStartTimer="(item: RoutineTodoListItemEntity) => openLogTime(item, false, true)"
 					@addToPlanner="openAddToPlanner"
-					@delete="onDelete"
+					@delete="deleteItem"
 					@edit="openEditDialog"
 					@isDoneChanged="handleIsDoneChange"
 					@stepToggled="onItemsChanged"
-					@uncheckAll="(doneIds: number[]) => handleUncheckAll(doneIds)"
-					@itemsReordered="
-						(oldIndex: number, newIndex: number, request: ChangeDisplayOrderRequest) =>
-							handleOrderChange(oldIndex, newIndex, request, group.timePeriod.id as number)
-					"
+					@uncheckAll="handleUncheckAll"
+					@itemsReordered="handleOrderChange"
 					@crossListDrop="handleCrossListDrop"
 					@openHistory="openHistoryDialog"
 					@freezeSpent="getAllRecords"
@@ -144,6 +141,7 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
+	import { useUndoableListCrud } from '@/core/todoList/composable/useUndoableListCrud.ts'
 	import { useRoutineRunLabel } from '@/core/todoList/composable/useRoutineRunLabel.ts'
 	import { useRoutineWeeklyReview } from '@/core/todoList/composable/useRoutineWeeklyReview.ts'
 	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
@@ -183,21 +181,33 @@
 	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
 	const plannerStore = useDayPlannerStore()
 
-	const {
-		undo,
-		canUndo,
-		stackSize,
-		nextUndoDescription,
-		pushDeleteUndo,
-		pushUncheckAllUndo,
-		pushReorderUndo,
-		pushEditUndo,
-		pushLogTimeUndo,
-	} = useTodoListUndo()
+	const { undo, canUndo, stackSize, nextUndoDescription, pushReorderUndo, pushLogTimeUndo } = useTodoListUndo()
 
 	const groupedItems = ref([] as RoutineTodoListGroupedList[])
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const isInChangeOrderMode = ref(false)
+
+	// Grouped half of the shared undo-wrapped CRUD; the normal list registers the flat half against
+	// the same operations — see `useUndoableListCrud`. Only `handleCrossListDrop` below stays local:
+	// moving an item between time periods has no counterpart on a single-container list.
+	const listCrud = useUndoableListCrud<RoutineTodoListItemEntity, RoutineTodoListItemRequest>(
+		{ createWithResponse, update, deleteEntity, changeDisplayOrder, toggleIsDone, uncheckAll: uncheckAllApi },
+		{
+			containerOf: id => groupedItems.value.find(group => group.items.some(item => item.id === id))?.items,
+			insert(entity) {
+				const targetGroup = groupedItems.value.find(group => group.timePeriod.id === entity.timePeriod.id)
+				if (!targetGroup) return
+				targetGroup.items.push(entity)
+				targetGroup.items.sort((a, b) => a.id - b.id)
+			},
+			resync: onItemsChanged,
+			requestFromEntity: entity => RoutineTodoListItemRequest.fromEntity(entity),
+			labelOf: entity => entity.activity.name,
+		},
+		{ editedMessageKey: 'successFeedback.updated' },
+	)
+
+	const { deleteItem, handleOrderChange, handleUncheckAll, handleIsDoneChange } = listCrud
 
 	const showConfetti = ref(false)
 	const confettiKey = ref(0)
@@ -390,7 +400,7 @@
 			},
 		})
 		if (result?.entity) {
-			await edit(result.entity, result.request)
+			await listCrud.edit(result.entity, result.request)
 		}
 	}
 
@@ -415,70 +425,8 @@
 	)
 
 	async function add(request: RoutineTodoListItemRequest) {
-		const response = await createWithResponse(request)
-		const updatedList = groupedItems.value.find(group => group.timePeriod.id === response.timePeriod.id)?.items
-		if (updatedList) {
-			updatedList.push(response)
-			updatedList.sort((a, b) => a.id - b.id)
-		}
-		showSuccessSnackbar(t('successFeedback.added'))
-		void ensureCalibrationLoaded([response.activity.id])
-	}
-
-	async function edit(beforeEditEntity: RoutineTodoListItemEntity, toDoListItemRequest: RoutineTodoListItemRequest) {
-		const savedRequest = RoutineTodoListItemRequest.fromEntity(beforeEditEntity)
-		await update(beforeEditEntity.id, toDoListItemRequest)
-		const updatedItem = await fetchById(beforeEditEntity.id)
-		const updatedList = groupedItems.value.find(group => group.timePeriod.id === updatedItem.timePeriod.id)?.items
-		if (updatedList) {
-			if (updatedItem.timePeriod.id === beforeEditEntity.timePeriod.id) {
-				updatedList[updatedList.findIndex(item => item.id === updatedItem.id)] = updatedItem
-			} else {
-				const oldGroup = groupedItems.value.find(
-					group => group.timePeriod.id === beforeEditEntity.timePeriod.id,
-				)
-				if (oldGroup) {
-					oldGroup.items = oldGroup.items.filter(item => item.id !== updatedItem.id)
-				}
-				updatedList.push(updatedItem)
-			}
-		}
-		showSuccessSnackbar(t('successFeedback.updated'))
-		pushEditUndo(beforeEditEntity.activity.name, async () => {
-			await update(beforeEditEntity.id, savedRequest)
-			const reverted = await fetchById(beforeEditEntity.id)
-			const targetGroup = groupedItems.value.find(g => g.timePeriod.id === reverted.timePeriod.id)
-			if (targetGroup) {
-				const idx = targetGroup.items.findIndex(i => i.id === reverted.id)
-				if (idx !== -1) targetGroup.items[idx] = reverted
-				else targetGroup.items.push(reverted)
-			}
-			if (reverted.timePeriod.id !== updatedItem.timePeriod.id) {
-				const movedGroup = groupedItems.value.find(g => g.timePeriod.id === updatedItem.timePeriod.id)
-				if (movedGroup) movedGroup.items = movedGroup.items.filter(i => i.id !== reverted.id)
-			}
-		})
-	}
-
-	async function onDelete(id: number) {
-		const group = groupedItems.value.find(g => g.items.some(item => item.id === id))
-		if (!group) return
-		const savedIndex = group.items.findIndex(item => item.id === id)
-		const savedItem = group.items[savedIndex]
-		if (!savedItem) return
-		const precedingId = savedIndex > 0 ? (group.items[savedIndex - 1]?.id ?? null) : null
-		const followingId = savedIndex < group.items.length - 1 ? (group.items[savedIndex + 1]?.id ?? null) : null
-		await deleteEntity(id)
-		group.items = group.items.filter(item => item.id !== id)
-		pushDeleteUndo(savedItem.activity.name, async () => {
-			const restored = await createWithResponse(RoutineTodoListItemRequest.fromEntity(savedItem))
-			await changeDisplayOrder(new ChangeDisplayOrderRequest(restored.id, precedingId, followingId))
-			const targetGroup = groupedItems.value.find(g => g.timePeriod.id === restored.timePeriod.id)
-			if (targetGroup) {
-				targetGroup.items.push(restored)
-				targetGroup.items.sort((a, b) => a.id - b.id)
-			}
-		})
+		const created = await listCrud.add(request)
+		void ensureCalibrationLoaded([created.activity.id])
 	}
 
 	function openAddToPlanner(item: RoutineTodoListItemEntity) {
@@ -536,49 +484,6 @@
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(t('successFeedback.added'))
-	}
-
-	async function handleIsDoneChange(id: number, forceValue?: boolean) {
-		await toggleIsDone(id, forceValue)
-		await onItemsChanged([id])
-	}
-
-	async function handleOrderChange(
-		oldIndex: number,
-		newIndex: number,
-		request: ChangeDisplayOrderRequest,
-		timePeriodId: number,
-	) {
-		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
-		if (!group) return
-		const movedItem = group.items[oldIndex]
-		if (!movedItem) return
-		const originalPrecedingId = oldIndex > 0 ? (group.items[oldIndex - 1]?.id ?? null) : null
-		const originalFollowingId = oldIndex < group.items.length - 1 ? (group.items[oldIndex + 1]?.id ?? null) : null
-		const [moved] = group.items.splice(oldIndex, 1)
-		if (moved) group.items.splice(newIndex, 0, moved)
-		await changeDisplayOrder(request)
-		const reverseRequest = new ChangeDisplayOrderRequest(movedItem.id, originalPrecedingId, originalFollowingId)
-		pushReorderUndo(movedItem.activity.name, async () => {
-			await changeDisplayOrder(reverseRequest)
-			const currentGroup = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
-			if (currentGroup) {
-				const currentIndex = currentGroup.items.findIndex(i => i.id === movedItem.id)
-				if (currentIndex !== -1) {
-					const [movedBack] = currentGroup.items.splice(currentIndex, 1)
-					if (movedBack) currentGroup.items.splice(oldIndex, 0, movedBack)
-				}
-			}
-		})
-	}
-
-	async function handleUncheckAll(doneIds: number[]) {
-		await uncheckAllApi(doneIds)
-		await onItemsChanged(doneIds)
-		pushUncheckAllUndo(doneIds.length, async () => {
-			for (const id of doneIds) await toggleIsDone(id, true)
-			await onItemsChanged(doneIds)
-		})
 	}
 
 	async function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
@@ -644,24 +549,36 @@
 		})
 	}
 
+	/**
+	 * Re-reads the named items and reconciles them into the grouped list — the routine list's half of
+	 * `UndoableListAdapter.resync`, so an edit that changes an item's time period arrives here too.
+	 * That is why the old group is looked up by *where the item currently is* rather than by the time
+	 * period the caller last saw: a moved item has to leave its previous group, or it shows up twice.
+	 */
 	async function onItemsChanged(changedItems: number[]) {
 		for (const id of changedItems) {
 			const updatedItem = await fetchById(id)
+			const previousGroup = groupedItems.value.find(g => g.items.some(item => item.id === id))
 			const group = groupedItems.value.find(g => g.timePeriod.id === updatedItem.timePeriod.id)
-			if (group) {
-				const index = group.items.findIndex(item => item.id === id)
-				if (index !== -1) {
-					group.items[index] = updatedItem
-					// Keep the group's stats (streak, consistency, history) in step with the refetched item,
-					// then judge whether the change was rare enough to celebrate.
-					const previousTimePeriod = group.timePeriod
-					// isHidden is local view state (the group selector mutates it without persisting),
-					// so it must survive the refresh.
-					updatedItem.timePeriod.isHidden = previousTimePeriod.isHidden
-					group.timePeriod = updatedItem.timePeriod
-					celebrateIfRare(previousTimePeriod, updatedItem.timePeriod)
-				}
+			if (previousGroup && previousGroup !== group) {
+				previousGroup.items = previousGroup.items.filter(item => item.id !== id)
 			}
+			if (!group) continue
+			const index = group.items.findIndex(item => item.id === id)
+			if (index !== -1) {
+				group.items[index] = updatedItem
+			} else {
+				group.items.push(updatedItem)
+				group.items.sort((a, b) => a.id - b.id)
+			}
+			// Keep the group's stats (streak, consistency, history) in step with the refetched item,
+			// then judge whether the change was rare enough to celebrate.
+			const previousTimePeriod = group.timePeriod
+			// isHidden is local view state (the group selector mutates it without persisting),
+			// so it must survive the refresh.
+			updatedItem.timePeriod.isHidden = previousTimePeriod.isHidden
+			group.timePeriod = updatedItem.timePeriod
+			celebrateIfRare(previousTimePeriod, updatedItem.timePeriod)
 		}
 	}
 </script>
