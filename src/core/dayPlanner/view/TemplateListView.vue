@@ -235,25 +235,6 @@
 			</template>
 		</template>
 
-		<!-- Delete Confirmation Dialog -->
-		<MyDialog
-			v-model="deleteDialog"
-			:title="$t('planner.templateDelete.title')"
-			confirmBtnColor="errorDark"
-			:confirmBtnLabel="$t('general.delete')"
-			@confirmed="deleteTemplate"
-		>
-			<div class="px-6 py-4 text-center">
-				<div>{{ $t('planner.templateDelete.body', { name: templateToDelete?.name ?? '' }) }}</div>
-				<div
-					v-if="deleteTemplateCascade"
-					class="mt-2 font-weight-medium"
-				>
-					{{ deleteTemplateCascade }}
-				</div>
-			</div>
-		</MyDialog>
-
 		<!-- Comparison Dialog -->
 		<TemplateComparisonDialog
 			v-model="compareDialog"
@@ -269,7 +250,6 @@
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts'
 	import TemplateDetailsForm from '@/core/dayPlanner/component/template/TemplateDetailsForm.vue'
-	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import TemplateCard from '@/core/dayPlanner/component/template/TemplateCard.vue'
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -296,7 +276,7 @@
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
-	const { openDialog } = useDialog()
+	const { openDialog, confirm } = useDialog()
 	const { shouldConfirm } = useDeleteConfirmation()
 	const i18n = useI18n()
 
@@ -382,8 +362,6 @@
 		await loadTemplates()
 	}
 
-	const deleteDialog = ref(false)
-	const templateToDelete = ref<TaskPlannerDayTemplate | null>(null)
 	let duplicatingFromId: number | null = null
 
 	// Comparison mode
@@ -519,30 +497,25 @@
 		return templateTasksMap.value.get(template.id)?.length ?? 0
 	}
 
-	const deleteTemplateCascade = computed(() => {
-		const template = templateToDelete.value
-		if (!template) return null
-		const count = templateTaskCount(template)
-		return count > 0 ? i18n.t('planner.templateDelete.cascade', { count }) : null
-	})
-
 	async function confirmDelete(template: TaskPlannerDayTemplate) {
-		templateToDelete.value = template
-		if (shouldConfirm({ cascades: templateTaskCount(template) > 0, undoable: false })) {
-			deleteDialog.value = true
-		} else {
-			await deleteTemplate()
+		const taskCount = templateTaskCount(template)
+		if (shouldConfirm({ cascades: taskCount > 0, undoable: false })) {
+			const confirmed = await confirm({
+				title: i18n.t('planner.templateDelete.title'),
+				text: i18n.t('planner.templateDelete.body', { name: template.name }),
+				detail: taskCount > 0 ? i18n.t('planner.templateDelete.cascade', { count: taskCount }) : undefined,
+				confirmBtnLabel: i18n.t('general.delete'),
+				confirmBtnColor: 'errorDark',
+			})
+			if (!confirmed) return
 		}
+		await deleteTemplate(template)
 	}
 
-	async function deleteTemplate() {
-		if (templateToDelete.value) {
-			await deleteEntity(templateToDelete.value.id)
-			await loadTemplates()
-			deleteDialog.value = false
-			templateToDelete.value = null
-			showSuccessSnackbar(i18n.t('planner.feedback.templateDeleted'))
-		}
+	async function deleteTemplate(template: TaskPlannerDayTemplate) {
+		await deleteEntity(template.id)
+		await loadTemplates()
+		showSuccessSnackbar(i18n.t('planner.feedback.templateDeleted'))
 	}
 
 	/**

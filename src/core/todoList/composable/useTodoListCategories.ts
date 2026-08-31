@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -6,12 +6,14 @@ import { useTodoListCategoryCrud } from '@/core/todoList/api/todoListCategoryApi
 import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
 import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
+import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const i18n = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { fetchFilteredSorted, createWithResponse, update, deleteEntity } = useTodoListCategoryCrud()
 	const { shouldConfirm } = useDeleteConfirmation()
+	const { confirm } = useDialog()
 
 	const categories = ref<TodoListCategoryEntity[]>([])
 	const selectedCategoryId = ref<number | null>(null)
@@ -19,8 +21,6 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	const hideEmptyCategories = ref(false)
 	const categoryFilterName = ref<string | null>(null)
 	const categoryDrawerOpen = ref(false)
-	const deleteCategoryDialog = ref(false)
-	const categoryToDelete = ref<TodoListCategoryEntity | null>(null)
 
 	watch(hideEmptyCategories, loadCategories)
 	watchDebounced(categoryFilterName, loadCategories, { debounce: 300 })
@@ -69,27 +69,26 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	//
 	// Note the count rarely renders: the category response does not currently carry `listCount`, so
 	// it is null in practice. Left conditional so the line appears if the server ever sends it.
-	const deleteCategoryKeepsLists = computed(() => {
-		const listCount = categoryToDelete.value?.listCount ?? 0
-		return listCount > 0 ? i18n.t('toDoList.category.deleteKeepsLists', { count: listCount }) : null
-	})
-
 	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
-		categoryToDelete.value = category
 		if (shouldConfirm({ cascades: false, undoable: false })) {
-			deleteCategoryDialog.value = true
-		} else {
-			await deleteCategoryConfirmed()
+			const listCount = category.listCount ?? 0
+			const confirmed = await confirm({
+				title: i18n.t('toDoList.category.deleteConfirm'),
+				text: category.name,
+				detail: listCount > 0 ? i18n.t('toDoList.category.deleteKeepsLists', { count: listCount }) : undefined,
+				confirmBtnLabel: i18n.t('general.delete'),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
 		}
+		await deleteCategory(category)
 	}
 
-	async function deleteCategoryConfirmed() {
-		if (!categoryToDelete.value) return
-		await deleteEntity(categoryToDelete.value.id)
-		if (selectedCategoryId.value === categoryToDelete.value.id) {
+	async function deleteCategory(category: TodoListCategoryEntity) {
+		await deleteEntity(category.id)
+		if (selectedCategoryId.value === category.id) {
 			selectedCategoryId.value = null
 		}
-		categoryToDelete.value = null
 		await Promise.all([loadCategories(), reloadLists()])
 		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
 	}
@@ -101,9 +100,6 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		hideEmptyCategories,
 		categoryFilterName,
 		categoryDrawerOpen,
-		deleteCategoryDialog,
-		categoryToDelete,
-		deleteCategoryKeepsLists,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,
@@ -111,6 +107,5 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 		addCategory,
 		editCategory,
 		confirmDeleteCategory,
-		deleteCategoryConfirmed,
 	}
 }

@@ -172,48 +172,11 @@
 				</div>
 			</VCol>
 		</VRow>
-
-		<MyDialog
-			v-model="deleteDialog"
-			:title="$t('toDoList.namedList.deleteConfirm')"
-			confirmBtnColor="error"
-			:confirmBtnLabel="$t('general.delete')"
-			@confirmed="deleteConfirmed"
-		>
-			<!-- Slot rather than the `text` prop: a cascading delete adds a second line naming how many
-			     children go with it, and the prop renders a single run of text. -->
-			<div class="px-6 py-4 text-center">
-				<div>{{ listToDelete?.name }}</div>
-				<div
-					v-if="deleteListCascade"
-					class="mt-2 font-weight-medium"
-				>
-					{{ deleteListCascade }}
-				</div>
-			</div>
-		</MyDialog>
-		<MyDialog
-			v-model="deleteCategoryDialog"
-			:title="$t('toDoList.category.deleteConfirm')"
-			confirmBtnColor="error"
-			:confirmBtnLabel="$t('general.delete')"
-			@confirmed="deleteCategoryConfirmed"
-		>
-			<div class="px-6 py-4 text-center">
-				<div>{{ categoryToDelete?.name }}</div>
-				<div
-					v-if="deleteCategoryKeepsLists"
-					class="mt-2 font-weight-medium"
-				>
-					{{ deleteCategoryKeepsLists }}
-				</div>
-			</div>
-		</MyDialog>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref, watch } from 'vue'
+	import { onMounted, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced } from '@vueuse/core'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
@@ -223,7 +186,6 @@
 	import type { TodoListRequest } from '@/core/todoList/dto/request/TodoListRequest.ts'
 	import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 	import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
-	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import TodoListCategoryPanel from '@/core/todoList/component/normal/TodoListCategoryPanel.vue'
 	import TodoListForm from '@/core/todoList/component/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
@@ -235,14 +197,12 @@
 	const { shouldConfirm } = useDeleteConfirmation()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
-	const { openDialog } = useDialog()
+	const { openDialog, confirm } = useDialog()
 
 	const lists = ref<TodoListEntity[]>([])
 	const loading = ref(false)
 	const listFilterName = ref<string | null>(null)
 	const listSortAsc = ref(true)
-	const deleteDialog = ref(false)
-	const listToDelete = ref<TodoListEntity | null>(null)
 
 	const {
 		categories,
@@ -251,9 +211,6 @@
 		hideEmptyCategories,
 		categoryFilterName,
 		categoryDrawerOpen,
-		deleteCategoryDialog,
-		categoryToDelete,
-		deleteCategoryKeepsLists,
 		loadCategories,
 		selectCategory,
 		onMobileSelectCategory,
@@ -261,7 +218,6 @@
 		addCategory,
 		editCategory,
 		confirmDeleteCategory,
-		deleteCategoryConfirmed,
 	} = useTodoListCategories(loadLists)
 
 	onMounted(async () => {
@@ -333,25 +289,24 @@
 
 	// A list takes its items with it, so a non-empty list always confirms and the dialog says how
 	// many — the preference does not get a vote on that. An empty list is a leaf.
-	const deleteListCascade = computed(() => {
-		const itemCount = listToDelete.value?.itemCount ?? 0
-		return itemCount > 0 ? i18n.t('toDoList.namedList.deleteCascade', { count: itemCount }) : null
-	})
-
 	async function confirmDelete(list: TodoListEntity) {
-		listToDelete.value = list
-		if (shouldConfirm({ cascades: (list.itemCount ?? 0) > 0, undoable: false })) {
-			deleteDialog.value = true
-		} else {
-			await deleteConfirmed()
+		const itemCount = list.itemCount ?? 0
+		if (shouldConfirm({ cascades: itemCount > 0, undoable: false })) {
+			const confirmed = await confirm({
+				title: i18n.t('toDoList.namedList.deleteConfirm'),
+				text: list.name,
+				detail: itemCount > 0 ? i18n.t('toDoList.namedList.deleteCascade', { count: itemCount }) : undefined,
+				confirmBtnLabel: i18n.t('general.delete'),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
 		}
+		await deleteList(list)
 	}
 
-	async function deleteConfirmed() {
-		if (!listToDelete.value) return
-		await deleteEntity(listToDelete.value.id)
-		lists.value = lists.value.filter(l => l.id !== listToDelete.value!.id)
-		listToDelete.value = null
+	async function deleteList(list: TodoListEntity) {
+		await deleteEntity(list.id)
+		lists.value = lists.value.filter(l => l.id !== list.id)
 		await loadCategories()
 		showSuccessSnackbar(i18n.t('successFeedback.deleted'))
 	}

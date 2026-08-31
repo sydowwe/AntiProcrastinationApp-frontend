@@ -1,0 +1,285 @@
+# Views that would benefit from splitting
+
+Scope: every `*.vue` under `src/core/<module>/view/` (35 files). Measured 2026-08-31 on a clean `dev` tree.
+
+The threshold used here is not line count on its own — several 400-line views are fine because the length is one
+irreducible thing. What flags a view is one of three shapes:
+
+- **repeated template blocks** — the same markup pasted 2–3× with one binding different;
+- **script mass that names no template symbol** — URL parsing, CRUD+undo bookkeeping, bulk-operation error handling;
+- **a self-contained panel** that has its own state and could be lifted whole.
+
+## Size table
+
+| Lines | View | Template | Script | Verdict |
+| ----- | ---- | -------- | ------ | ------- |
+| 689 | `todoList/view/TodoListView.vue` | 280 | 450 | **Split — both halves** |
+| 617 | `todoList/view/RoutineToDoListView.vue` | 121 | 546 | **Split — script only** |
+| 565 | `dayPlanner/view/TemplateListView.vue` | 263 | 310 | **Split — highest value/effort ratio** |
+| 558 | `dayPlanner/view/DayPlannerView.vue` | 113 | 485 | **Split — script only** |
+| 486 | `activityHistory/view/PomodoroTimerView.vue` | 241 | 261 | **Split — template; also misplaced** |
+| 474 | `dayPlanner/view/PlannerCalendarView.vue` | 80 | 424 | **Split — script only** |
+| 425 | `activityHistory/view/HistoryDetailView.vue` | 185 | 258 | Split (shared with the next row) |
+| 403 | `activityHistory/view/HistorySummaryView.vue` | 115 | 305 | Split (shared with the previous row) |
+| 379 | `dayPlanner/view/DayPlannerSettingsView.vue` | 271 | 129 | Split — one component per tab |
+| 366 | `activity/view/ActivitySettingsView.vue` | 108 | 289 | Split — script only |
+| 356 | `todoList/view/TodoListsView.vue` | 213 | 144 | Split — duplicated panel + dialogs |
+| 313 | `activityTracking/view/UnifiedActivityDashboard.vue` | 105 | 223 | Leave |
+| 260 | `activityHistory/view/HistoryCalendarView.vue` | 108 | 77 | Optional — cheap consistency win |
+| 258 | `activityTracking/view/DesktopActivityDashboard.vue` | 100 | 165 | Leave |
+| 247 | `activityTracking/view/AndroidActivityDashboard.vue` | 96 | 158 | Leave |
+| 234 | `activityHistory/view/TimerView.vue` | 61 | 192 | Leave |
+| 227 | `activityTracking/view/ActivityDashboard.vue` | 94 | 138 | Leave |
+| ≤214 | 18 remaining views | | | Leave |
+
+---
+
+## Tier 1 — split these
+
+### 1. `TodoListView.vue` — 689 lines
+
+The only view where both halves are oversized independently.
+
+**Template (280).** Four blocks come out cleanly, and the module already has the precedent
+(`TodoListFilters.vue`, `TodoListUndoBtn.vue`, `DailyRecapCard.vue` are all extracted siblings):
+
+| Extract | Lines | Props / emits |
+| ------- | ----- | ------------- |
+| `component/OverdueRenegotiateBanner.vue` (L55–110) | ~55 | `overdueCount`, `isRenegotiating`, `disabled` → `reschedule(days)`, `reviewOneByOne` |
+| `component/UnscheduledNudgeBanner.vue` (L111–144) | ~35 | `count` → `scheduleNow`, `dismiss` |
+| `component/TodoListToolbar.vue` (L13–52) | ~40 | the five-button row; already partly delegated to `TodoListUndoBtn` |
+| `component/TodoListTitleBar.vue` (L145–222) | ~80 | hide-done switch + icon/name + calibration line + progress bar + sort toggle |
+
+That leaves a ~70-line template: toolbar, recap card, banners, filters, `BaseToDoList`, dialogs.
+
+**Script (450).** Three concerns are separable and none of them touch the template:
+
+- `composable/useOverdueRenegotiation.ts` — `RENEGOTIATE_THRESHOLD`, `overdueItems`, `isRenegotiating`,
+  `rescheduleOverdue`, `reviewOverdueOneByOne` (L534–587, ~55 lines). Self-contained: takes `items` and the
+  `update`/`fetchAll` pair, returns the banner's whole contract.
+- `composable/useUnscheduledNudge.ts` — `unscheduledNudgeDismissed`, `pendingItems`, `unscheduledItems`,
+  `showUnscheduledNudge`, `openFirstUnscheduled` (L589–612, ~25 lines).
+- `composable/useTodoListItemActions.ts` — `add`/`edit`/`deleteItem`/`handleOrderChange`/`handleUncheckAll`/
+  `updateAfterEdit`/`moveItemToList`, each of which is a CRUD call wrapped in a `push*Undo` (~200 lines). See
+  cross-cutting theme **A**: `RoutineToDoListView` has the same seven functions in the same shape.
+
+### 2. `RoutineToDoListView.vue` — 617 lines
+
+Template is fine at 121 (`RoutineGroupCard` already carries the weight). The 546-line script is the problem, and it
+holds four unrelated subjects:
+
+- `composable/useRoutineGroups.ts` — `groupedItems`, `visibleGroups`/`visibleGroupIds`/`singleVisibleGroupId`,
+  `groupSelectItems`, `onGroupSelectUpdate`, `hideDoneGroupIds` (a URL-backed computed) and `updateHideDone`
+  (L243–310, ~70 lines).
+- `composable/useRoutineCelebration.ts` — `RUN_MILESTONES`, `showConfetti`/`confettiKey`, `triggerConfetti`,
+  `celebrateIfRare` (L202–241, ~40 lines). Pure, trivially testable, currently mixed into CRUD.
+- `composable/useRoutineItemActions.ts` — `add`/`edit`/`onDelete`/`handleOrderChange`/`handleUncheckAll`/
+  `handleCrossListDrop`/`onItemsChanged` (~250 lines). `handleCrossListDrop` alone is 62 lines and takes
+  `dropTarget: any` — worth typing while it moves.
+- `composable/useRoutineDialogs.ts` — `openCreateDialog`, `openEditDialog`, `openHistoryDialog` (L350–395, ~45
+  lines). Note these three build dialog titles from raw English strings (`' to routine to-do list'`,
+  `'-day periods'`, `'Close'`) rather than `t()`; the move is a good moment to fix that.
+
+The weekly-review handlers (`handleReviewPause`, `handleReviewReduceFrequency`) belong with the groups composable —
+they mutate `groupedItems[].timePeriod`.
+
+### 3. `TemplateListView.vue` — 565 lines
+
+**The single highest-value change in this report.** The template renders the same 30-line block three times —
+pinned (L102–135), active-unpinned (L144–181), inactive-unpinned (L194–234). The three differ only in the source
+list, the `section` key passed to `registerCard`, and the `isPinned` literal. Every one of the eight
+`@edit/@delete/@togglePin/@toggleActive/@applyToday/@duplicate/@toggleCompare/@click` bindings is repeated three
+times, so any new card action is a three-place edit today.
+
+- `component/template/TemplateCardGrid.vue` — props `templates`, `section: 'pinned' | 'active' | 'inactive'`,
+  `isPinned`, `templateTasksMap`, `compareMode`, `compareSelection`; forwards the eight events; owns the
+  `template-drag-wrapper` div, the `drag-over-*` classes and the `<style scoped>` block that goes with them.
+  Template drops from 263 → ~110.
+
+Script side:
+
+- `composable/useTemplateCompare.ts` — `compareMode`, `compareSelection`, `compareDialog`, `toggleCompareSelection`,
+  `openComparison`, `exitCompareMode` (~30 lines, no dependencies on anything else in the view).
+- `migrateLegacyPins()` (L548–568) is a one-shot data migration living in a view. It belongs in
+  `composable/useTemplatePinMigration.ts` or, better, the API layer — it will be deleted outright one day and that
+  should be a one-file change.
+- The delete dialog (L239–255) was theme **C** below — done; it is now a `confirm({ detail })` call.
+
+### 4. `DayPlannerView.vue` — 558 lines
+
+Template is already well decomposed (113 lines, everything is a named child component) apart from the
+`#selection-actions` slot (L48–96, ~50 lines of menu + four conditional buttons) → `PlannerSelectionActions.vue`.
+
+The 485-line script is dominated by three bulk handlers with an **identical** tail:
+
+- `handleChangeStatusOnSelected` (L416–462)
+- `handleSkip` (L491–529)
+- `handleReschedule` (L531–565)
+
+Each is `Promise.allSettled` over selected ids, `clearSelection()`, count rejected, then a two-branch
+partial/success snackbar. The tails are byte-for-byte the same except the message key. See theme **B** — one
+`useBulkTaskAction()` helper removes ~70 lines here and ~60 more in `PlannerCalendarView`.
+
+Also extractable:
+
+- `composable/useTemplatePreview.ts` — `templatePreview()` + `applyTemplate()` (L348–393, ~50 lines), the only two
+  functions that touch `store.templateInPreview` / `tasksFromTemplate`.
+- `composable/useDayNavigation.ts` — `navigateDate`, `navigateToDate`, `handleArrowKey`, `handleUndo` with its
+  `loadCompleteResolve` handshake, plus the `watch(() => store.viewedDate)` reload (L291–322 + L583–599, ~55 lines).
+  The `loadCompleteResolve` latch is the subtlest thing in the file and is currently a bare module-scope `let`.
+
+### 5. `PomodoroTimerView.vue` — 486 lines
+
+Two separate observations.
+
+**It is not a view.** It takes `activityId` / `activityName` / `compact` props and emits `started` / `done`; it is
+mounted as a child, not routed to. It belongs in `activityHistory/component/`, and moving it makes the naming of
+everything else in `view/` honest.
+
+**Template (241) has a 3× repeat.** The focus / short-rest / long-rest cards (L39–107) are the same 23-line
+`SubtleCard` + `VSheet` + label + `TimePicker` block with a different colour, label key and model →
+`component/PomodoroDurationCard.vue` (`color`, `label`, `v-model`). 70 lines → 15.
+
+Then two panels lift out whole:
+
+- `component/PomodoroSetupPanel.vue` — the entire `v-if="timeInputVisible"` block (L20–136) including the
+  cycles/periods selects: five v-models in, two button events out.
+- `component/PomodoroActivityPanel.vue` — the two `ActivitySelectionForm` columns and the two result chips
+  (L158–233, ~75 lines), which are the same two activities shown in two states.
+
+Script is closer to acceptable; `timeDisplayObject` (L326–349) is presentation-only and could go with the display.
+
+### 6. `PlannerCalendarView.vue` — 474 lines
+
+Template is exemplary at 80 lines. The script carries two lumps that name nothing in it:
+
+- `composable/useCalendarUrlState.ts` — `monthKeyFromDate`, `parseMonthKey`, `syncMonthToUrl`, `syncModeToUrl`, the
+  `isApplyingUrlState` guard flag, and the URL-hydration half of `onMounted` (L156–224 + L271–288, ~90 lines).
+  This is theme **D**.
+- The three bulk executors — `executeBulkApply`, `executeCopyDay`, `executeBulkDayTypeChange` (L409–504, ~95 lines)
+  — end in the same partial/success snackbar pair as `DayPlannerView`'s three. Same shared helper (theme **B**).
+
+`refresh()` with its `refreshRequestId` race guard and `refreshPlanVsActualTrend` should stay: they are the view's
+actual job and the guard is load-bearing.
+
+---
+
+## Tier 2 — split when next touched
+
+### 7. `HistoryDetailView.vue` (425) + `HistorySummaryView.vue` (403)
+
+Treat these as one job — they already share `useHistoryDashboard`, and what remains duplicated is the shell around it.
+
+- **Export.** `exportDetail` (L359–415) and `exportSummary` (L267–330) are ~55 lines each; everything except the
+  column array and the file-name parts is identical (xlsx guard, `exporting` latch, try/catch, error snackbar,
+  `downloadCsv`). Fold the wrapper into `composable/useHistoryExport.ts` as `useCsvExport(buildRows)` — the file
+  already owns `buildCsv` / `buildExportFileName` / `downloadCsv`, so this is finishing an existing abstraction.
+- **URL sync.** Both files end with the same `watch([...], () => router.replace({ query: {...} }))` (theme **D**).
+- **Template, detail view only.** `HistorySummaryCards` + `HistoryPieChartSection` are mounted twice with the same
+  props in two different layouts (L102–138 for stacked-bars, L158–182 for timeline, ~75 lines) → one
+  `HistoryInsightsColumn.vue` with a `direction` prop.
+
+`clampWindowsToRequestedRange` should stay in the detail view — the comment explains exactly why it can't be shared.
+
+### 8. `DayPlannerSettingsView.vue` — 379 lines, 271 of them template
+
+Five `VTabsWindowItem`s, four of which are a single self-contained `VCard`. One component per tab:
+`RepeatingTasksTab.vue` (the `BasicTable` + its five cell slots, ~50), `PlannerRemindersTab.vue` (~50),
+`ViewDefaultsTab.vue` (~35), `SkipReasonsTab.vue` (~40, plus `newSkipReason` and `addSkipReason` which only it
+uses), `CalendarViewDefaultsTab.vue` (~30). The view keeps `VTabs`, the store, and the debounced save watcher —
+about 60 lines.
+
+Precedent: `core/user/component/settings/` already does exactly this for the user settings page.
+
+### 9. `ActivitySettingsView.vue` — 366 lines, 289 of them script
+
+Roughly 110 lines (L134–222) are pure query-string (de)serialization — `firstQueryString`, `parseIdList`,
+`parseArchivedView`, `archivedViewOf`, `paramsToActivityFilter`, `activityFilterToParams`, `paramsToNameTextFilter`,
+`nameTextFilterToParams`, `buildCombobox` — none of which reference component state. Move to
+`activity/composable/activitySettingsUrlParams.ts`; `activityHistory/composable/historyUrlParams.ts` is the
+established pattern (theme **D**).
+
+The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining draft↔filter↔URL. Those are
+`composable/useActivityFilterDrafts.ts`. Before writing it, check `_common/composable/table/useTableUrlState.ts` —
+this may be reinventing it.
+
+### 10. `TodoListsView.vue` — 356 lines, 213 of them template
+
+- `TodoListCategoryPanel` is mounted twice (L17–29 mobile dialog, L49–60 desktop column) with a 9-binding prop/event
+  set that differs in exactly one handler (`onMobileSelectCategory` vs `selectCategory`) and one extra
+  `@closeDialog`. Wrap both in `component/normal/TodoListCategoryPane.vue` so the binding list exists once.
+- ~~Two `MyDialog` delete confirmations (L176–211) with the same name-plus-cascade body — theme **C**.~~ Done; both
+  are `confirm({ detail })` calls now, which is where the view's other 36 template lines went.
+
+### 11. `HistoryCalendarView.vue` — 260 lines (optional)
+
+Not oversized, but its `#day-cell-content` slot (L22–106, ~85 lines) plus the 100 lines of scoped CSS that style it
+is precisely what `dayPlanner` extracted into `CalendarDayCellContent.vue`. Extracting
+`historyDashboard/component/HistoryDayCellContent.vue` makes the two `CalendarGrid` consumers symmetrical and takes
+the view to ~70 lines. Cheap; do it when the file is next open.
+
+---
+
+## Leave alone
+
+- **The four `activityTracking` dashboards** (313 / 258 / 247 / 227). All four already delegate to
+  `useActivityDashboard` + components; what remains is the fetcher object and response→view-model mapping, which is
+  the one thing that must stay per-view. `UnifiedActivityDashboard`'s extra 60 lines are the source-filter wiring,
+  which is genuinely unique to it.
+- **`TimerView.vue`** (234) — 192 script lines, but it is one timer's lifecycle end to end.
+- Everything at 214 lines and below.
+
+---
+
+## Cross-cutting themes
+
+These are the reason several of the items above are cheaper done together than separately.
+
+**A. Undo-wrapped CRUD, written twice.** `TodoListView` and `RoutineToDoListView` each carry ~200–250 lines of
+"call the API, splice the local array, push the inverse onto the undo stack". The seven operations are the same
+seven; only the container shape differs (flat list vs grouped). One generic
+`useUndoableListCrud(items, api, { push* })` would collapse ~450 lines to ~150 plus two thin adapters. This is the
+largest single duplication in the view layer.
+
+**B. Partial-failure reporting, written six times.** `DayPlannerView` ×3 and `PlannerCalendarView` ×3 all end with:
+
+```
+const failed = results.filter(r => r.status === 'rejected').length
+if (failed > 0) showErrorSnackbar(t('…Partial', { succeeded, total, failed }))
+else showSuccessSnackbar(t('…', { count }, count))
+```
+
+A `runBulk(ids, op, { partialKey, successKey })` helper in `dayPlanner/composable/` removes ~130 lines and makes the
+six sites impossible to drift apart. (They have already drifted once: three read `response.succeededCount` from a
+batch endpoint, three compute it locally.)
+
+**C. Cascade-delete confirmation, written three times. — DONE.** `TodoListsView` ×2 and `TemplateListView` ×1 each
+rendered `MyDialog` with a slot body of "name" + an optional bold "…and N children go with it" line, because
+`useDialog().confirm()`'s single `text` prop could not express two lines.
+
+Resolved upstream, as the framework test asks: `MyDialog` gained a `detail` prop (second body line, emphasised,
+rendered only when the default slot is unused) and `confirm()` gained a matching `detail` option. Both default to
+the previous rendering, so no other call site changed. The three sites now `await confirm({ title, text, detail })`
+instead of holding a `deleteDialog` ref, a `*ToDelete` ref and a cascade `computed` each — the delete work moved
+into a plain `deleteList` / `deleteCategory` / `deleteTemplate(entity)` taking its argument, so the "stash it in a
+ref, read it back in the handler" pattern is gone from all three. This also fixed an inline-`MyDialog` bug the two
+`TodoListsView` dialogs had: `@confirmed` never set `v-model` back to `false`, so the dialog stayed open after a
+successful delete.
+
+**D. Hand-rolled URL param handling in four views.** `ActivitySettingsView` (~110 lines), `PlannerCalendarView`
+(~90), `HistoryDetailView` + `HistorySummaryView` (~20 each, plus the shared `historyUrlParams.ts` they *did*
+factor out). `historyUrlParams.ts` is the model; the other two should follow it. Check
+`_common/composable/table/useTableUrlState.ts` first — part of this may already exist in the framework.
+
+## Suggested order
+
+1. `TemplateCardGrid.vue` — one file, removes 150 duplicated template lines, no logic moves. (#3)
+2. `DayPlannerSettingsView` tab components — mechanical, five files, zero risk. (#8)
+3. Theme **B**, the bulk helper — unblocks the script halves of #4 and #6.
+4. Theme **A**, the undoable-CRUD composable — unblocks the script halves of #1 and #2.
+5. `PomodoroTimerView` template split, plus the move out of `view/`. (#5)
+6. Theme **D** / `ActivitySettingsView`, then #7's shared export wrapper.
+7. The rest opportunistically.
+
+Steps 1, 2 and 5 are pure template moves and can land independently. Steps 3 and 4 are the ones that change behaviour
+if done carelessly — both touch undo and error paths, and neither has test coverage today.
