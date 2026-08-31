@@ -10,216 +10,43 @@
 			md="8"
 			lg="5"
 		>
-			<div class="d-flex justify-center mb-3 ga-3">
-				<VIconBtn
-					icon="arrow-left"
-					variant="tonal"
-					density="comfortable"
-					:to="{ name: 'toDoList' }"
-				/>
-				<VBtn
-					class="flex-grow-1"
-					color="primary"
-					:disabled="isInChangeOrderMode"
-					@click="toDoListDialog?.openCreate"
-				>
-					{{ $t('toDoList.add') }}
-				</VBtn>
-				<VBtn
-					:color="isInChangeOrderMode ? 'secondary' : 'secondaryOutline'"
-					:variant="isInChangeOrderMode ? 'elevated' : 'outlined'"
-					:disabled="sortMode !== 'custom' || focusMode"
-					prependIcon="arrows-up-down"
-					@click="toggleChangeOrderMode"
-				>
-					{{ isInChangeOrderMode ? $t('toDoList.finishReordering') : $t('toDoList.changeOrder') }}
-				</VBtn>
-				<VBtn
-					:color="focusMode ? 'secondary' : 'secondaryOutline'"
-					:variant="focusMode ? 'elevated' : 'outlined'"
-					:disabled="isInChangeOrderMode"
-					prependIcon="star"
-					@click="toggleFocusMode"
-				>
-					{{ $t('toDoList.focus.toggle') }}
-				</VBtn>
-				<TodoListUndoBtn
-					:canUndo
-					:stackSize
-					:nextUndoDescription
-					@click="undo"
-				/>
-			</div>
+			<TodoListToolbar
+				:isInChangeOrderMode
+				:sortMode
+				:focusMode
+				:canUndo
+				:stackSize
+				:nextUndoDescription
+				@add="toDoListDialog?.openCreate"
+				@toggleChangeOrderMode="toggleChangeOrderMode"
+				@toggleFocusMode="toggleFocusMode"
+				@undo="undo"
+			/>
 			<DailyRecapCard class="mb-3" />
 			<VCard class="rounded-lg flex-fill d-flex flex-column pt-3 pb-2 px-4 px-md-6 px-md-4 px-lg-6">
-				<VRow
+				<OverdueRenegotiateBanner
 					v-if="overdueItems.length >= RENEGOTIATE_THRESHOLD"
-					class="flex-grow-0"
-				>
-					<VCol cols="12">
-						<VAlert
-							variant="tonal"
-							color="primaryOutline"
-							density="compact"
-							icon="calendar-day"
-						>
-							<div class="d-flex align-center justify-space-between flex-wrap ga-2">
-								<span>
-									{{
-										$t(
-											'toDoList.renegotiate.message',
-											{ count: overdueItems.length },
-											overdueItems.length,
-										)
-									}}
-								</span>
-								<div class="d-flex flex-wrap ga-2">
-									<VBtn
-										size="small"
-										variant="tonal"
-										color="primaryOutline"
-										:loading="isRenegotiating"
-										:disabled="isInChangeOrderMode"
-										@click="rescheduleOverdue(0)"
-									>
-										{{ $t('toDoList.renegotiate.toToday') }}
-									</VBtn>
-									<VBtn
-										size="small"
-										variant="tonal"
-										color="primaryOutline"
-										:loading="isRenegotiating"
-										:disabled="isInChangeOrderMode"
-										@click="rescheduleOverdue(7)"
-									>
-										{{ $t('toDoList.renegotiate.pushWeek') }}
-									</VBtn>
-									<VBtn
-										size="small"
-										variant="text"
-										color="primaryOutline"
-										:disabled="isInChangeOrderMode"
-										@click="reviewOverdueOneByOne"
-									>
-										{{ $t('toDoList.renegotiate.reviewOneByOne') }}
-									</VBtn>
-								</div>
-							</div>
-						</VAlert>
-					</VCol>
-				</VRow>
-				<VRow
+					:overdueCount="overdueItems.length"
+					:isRenegotiating
+					:disabled="isInChangeOrderMode"
+					@reschedule="rescheduleOverdue"
+					@reviewOneByOne="reviewOverdueOneByOne"
+				/>
+				<UnscheduledNudgeBanner
 					v-if="showUnscheduledNudge"
-					class="flex-grow-0"
-				>
-					<VCol cols="12">
-						<VAlert
-							variant="tonal"
-							color="warning"
-							density="compact"
-							icon="calendar-xmark"
-							closable
-							@click:close="unscheduledNudgeDismissed = true"
-						>
-							<div class="d-flex align-center justify-space-between flex-wrap ga-2">
-								<span>
-									{{
-										$t(
-											'toDoList.unscheduledTasksCount',
-											{ count: unscheduledItems.length },
-											unscheduledItems.length,
-										)
-									}}
-								</span>
-								<VBtn
-									size="small"
-									color="warningDark"
-									@click="openFirstUnscheduled"
-								>
-									{{ $t('toDoList.scheduleNow') }}
-								</VBtn>
-							</div>
-						</VAlert>
-					</VCol>
-				</VRow>
-				<VRow class="pb-2 flex-grow-0">
-					<VCol
-						cols="6"
-						lg="4"
-					>
-						<VSwitch
-							v-model="hideDone"
-							class="ml-2"
-							:label="$t('toDoList.hideDone')"
-							density="compact"
-							hideDetails
-							color="primary-accent"
-							:disabled="isInChangeOrderMode"
-						/>
-					</VCol>
-					<VCol
-						cols="12"
-						lg="4"
-						class="pb-0 pb-md-3 d-flex flex-column align-center justify-center"
-					>
-						<VCardTitle class="pa-0 d-flex align-center ga-2">
-							<VIcon
-								v-if="listEntity?.icon"
-								:icon="listEntity.icon"
-								color="primary"
-							/>
-							<span>{{ listEntity?.name }}</span>
-						</VCardTitle>
-						<span
-							v-if="calibration"
-							class="text-caption text-medium-emphasis"
-						>
-							{{ $t('toDoList.calibration.header', { ratio: calibration.ratio.toFixed(1) }) }}
-						</span>
-						<div
-							v-if="totalProgress.total > 0"
-							class="d-flex align-center ga-2 w-100"
-							style="max-width: 160px"
-						>
-							<span class="text-caption text-medium-emphasis text-no-wrap">
-								{{
-									$t('toDoList.progressCount', {
-										done: totalProgress.done,
-										total: totalProgress.total,
-									})
-								}}
-							</span>
-							<VProgressLinear
-								:modelValue="(totalProgress.done / totalProgress.total) * 100"
-								color="primary"
-								height="3"
-								rounded
-							/>
-						</div>
-					</VCol>
-					<VCol
-						cols="6"
-						lg="4"
-						class="d-flex align-center justify-end"
-					>
-						<VBtn
-							variant="tonal"
-							density="comfortable"
-							color="primaryOutline"
-							prependIcon="arrow-up-wide-short"
-							:disabled="isInChangeOrderMode"
-							@click="toggleSortMode"
-						>
-							{{
-								sortMode === 'priority'
-									? $t('toDoList.sortByPriority')
-									: sortMode === 'dueDate'
-										? $t('toDoList.sortByDueDate')
-										: $t('toDoList.sortCustom')
-							}}
-						</VBtn>
-					</VCol>
-				</VRow>
+					:count="unscheduledItems.length"
+					@scheduleNow="openFirstUnscheduled"
+					@dismiss="unscheduledNudgeDismissed = true"
+				/>
+				<TodoListTitleBar
+					v-model:hideDone="hideDone"
+					:isInChangeOrderMode
+					:listEntity
+					:calibration
+					:totalProgress
+					:sortMode
+					@toggleSortMode="toggleSortMode"
+				/>
 				<TodoListFilters
 					v-model:filterPriorityIds="filterPriorityIds"
 					v-model:filterDueState="filterDueState"
@@ -297,7 +124,6 @@
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
-	import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
@@ -306,10 +132,15 @@
 	import ToDoListItemDialog from '@/core/todoList/component/normal/ToDoListItemDialog.vue'
 	import MoveToListForm from '@/core/todoList/component/normal/MoveToListForm.vue'
 	import TodoListFilters from '@/core/todoList/component/TodoListFilters.vue'
-	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
+	import TodoListToolbar from '@/core/todoList/component/TodoListToolbar.vue'
+	import OverdueRenegotiateBanner from '@/core/todoList/component/OverdueRenegotiateBanner.vue'
+	import UnscheduledNudgeBanner from '@/core/todoList/component/UnscheduledNudgeBanner.vue'
+	import TodoListTitleBar from '@/core/todoList/component/TodoListTitleBar.vue'
 	import { FOCUS_LIMIT, useTodoListFilters } from '@/core/todoList/composable/useTodoListFilters.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 	import { useUndoableListCrud } from '@/core/todoList/composable/useUndoableListCrud.ts'
+	import { useOverdueRenegotiation } from '@/core/todoList/composable/useOverdueRenegotiation.ts'
+	import { useUnscheduledNudge } from '@/core/todoList/composable/useUnscheduledNudge.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
@@ -367,7 +198,7 @@
 		toggleFocusItem,
 	} = useTodoListFilters(items)
 
-	const { undo, canUndo, stackSize, nextUndoDescription, pushBulkRescheduleUndo, pushLogTimeUndo } = useTodoListUndo()
+	const { undo, canUndo, stackSize, nextUndoDescription, pushLogTimeUndo } = useTodoListUndo()
 
 	// Flat-list half of the shared undo-wrapped CRUD. The routine list registers the grouped half
 	// against the same operations — see `useUndoableListCrud`.
@@ -487,85 +318,16 @@
 		}
 	}
 
-	/** Below this a stale date or two is just a stale date; a pile is what people stop opening. */
-	const RENEGOTIATE_THRESHOLD = 3
+	const { RENEGOTIATE_THRESHOLD, overdueItems, isRenegotiating, rescheduleOverdue, reviewOverdueOneByOne } =
+		useOverdueRenegotiation(items, filterDueState, { update, fetchAll })
 
-	const isRenegotiating = ref(false)
-
-	const overdueItems = computed(() => {
-		// Local midnight of the *user's* today: "which day is it now" is an instant read, while
-		// `item.dueDate + 'T00:00:00'` is a calendar day — both end up as browser-local-field Dates,
-		// so they compare directly.
-		const today = startOfUserDayPlus(0)
-		return items.value.filter(item => !item.isDone && item.dueDate && new Date(item.dueDate + 'T00:00:00') < today)
-	})
-
-	/**
-	 * Moves every past-due item to today (`days = 0`) or a week out (`days = 7`). Both are measured
-	 * from today rather than from each item's own date, so the pile actually clears instead of
-	 * shifting a month-old task to three weeks old.
-	 */
-	async function rescheduleOverdue(days: number) {
-		const targets = overdueItems.value
-		if (targets.length === 0) return
-		const previous = targets.map(item => ({ id: item.id, request: ToDoListItemRequest.fromEntity(item) }))
-		// Measured from the *user's* today, and persisted — a browser-zone midnight here writes the
-		// wrong due date for anyone whose profile zone differs from their device's.
-		const newDueDate = formatDateForApi(startOfUserDayPlus(days))
-		isRenegotiating.value = true
-		try {
-			await Promise.all(
-				targets.map(item => {
-					const request = ToDoListItemRequest.fromEntity(item)
-					request.dueDate = newDueDate
-					return update(item.id, request)
-				}),
-			)
-			showSuccessSnackbar(
-				i18n.t(
-					days === 0 ? 'toDoList.renegotiate.movedToToday' : 'toDoList.renegotiate.movedByWeek',
-					{ count: targets.length },
-					targets.length,
-				),
-			)
-			pushBulkRescheduleUndo(targets.length, async () => {
-				await Promise.all(previous.map(({ id, request }) => update(id, request)))
-				items.value = await fetchAll()
-			})
-		} finally {
-			items.value = await fetchAll()
-			isRenegotiating.value = false
-		}
-	}
-
-	function reviewOverdueOneByOne() {
-		filterDueState.value = 'overdue'
-	}
-
-	// Schedule-first: unscheduled is the incomplete state, so the list says so — but only about the
-	// items the user can actually see (filters and "hide done" apply), and never twice. A banner that
-	// counts invisible items sends you to an item that is not on screen.
-	const unscheduledNudgeDismissed = ref(false)
-
-	const pendingItems = computed(() => displayedItems.value.filter(item => !item.isDone))
-
-	const unscheduledItems = computed(() => pendingItems.value.filter(item => !item.dueDate))
-
-	const showUnscheduledNudge = computed(
-		() =>
-			!unscheduledNudgeDismissed.value &&
-			!isInChangeOrderMode.value &&
-			unscheduledItems.value.length > 0 &&
-			// A short list does not need a banner, and an overdue pile is the more urgent conversation —
-			// two stacked nudges is exactly the nagging this is supposed to avoid.
-			pendingItems.value.length > 2 &&
-			overdueItems.value.length < RENEGOTIATE_THRESHOLD,
-	)
-
-	function openFirstUnscheduled() {
-		const firstUnscheduled = unscheduledItems.value[0]
-		if (firstUnscheduled) openAddToPlanner(firstUnscheduled)
-	}
+	const { unscheduledNudgeDismissed, unscheduledItems, showUnscheduledNudge, openFirstUnscheduled } =
+		useUnscheduledNudge(
+			displayedItems,
+			isInChangeOrderMode,
+			computed(() => overdueItems.value.length),
+			openAddToPlanner,
+		)
 
 	function openLogTime(item: TodoListItemEntity, isManual: boolean, autoStart = false) {
 		logTimeController.value?.open(

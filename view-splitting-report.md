@@ -36,12 +36,12 @@ shapes:
 
 ## Tier 1 — split these
 
-### 1. `TodoListView.vue` — 689 lines
+### 1. `TodoListView.vue` — 689 lines — DONE
 
 The only view where both halves are oversized independently.
 
-**Template (280).** Four blocks come out cleanly, and the module already has the precedent (`TodoListFilters.vue`, `TodoListUndoBtn.vue`, `DailyRecapCard.vue` are
-all extracted siblings):
+**Template (280).** ~~Four blocks come out cleanly, and the module already has the precedent (`TodoListFilters.vue`, `TodoListUndoBtn.vue`, `DailyRecapCard.vue` are
+all extracted siblings):~~
 
 | Extract                                            | Lines | Props / emits                                                                        |
 |----------------------------------------------------|-------|--------------------------------------------------------------------------------------|
@@ -50,18 +50,26 @@ all extracted siblings):
 | `component/TodoListToolbar.vue` (L13–52)           | ~40   | the five-button row; already partly delegated to `TodoListUndoBtn`                   |
 | `component/TodoListTitleBar.vue` (L145–222)        | ~80   | hide-done switch + icon/name + calibration line + progress bar + sort toggle         |
 
-That leaves a ~70-line template: toolbar, recap card, banners, filters, `BaseToDoList`, dialogs.
+Done — all four landed as described. `TodoListTitleBar` takes `v-model:hideDone` plus `listEntity`/`calibration`/`totalProgress`/`sortMode` and emits
+`toggleSortMode`; the other three match the table exactly.
 
-**Script (450).** Three concerns are separable and none of them touch the template:
+**Script (450).** Two of the three planned extractions landed as composables; the third (`useTodoListItemActions.ts`) turned out to already exist under a
+different name — see below.
 
-- `composable/useOverdueRenegotiation.ts` — `RENEGOTIATE_THRESHOLD`, `overdueItems`, `isRenegotiating`,
+- ~~`composable/useOverdueRenegotiation.ts` — `RENEGOTIATE_THRESHOLD`, `overdueItems`, `isRenegotiating`,
   `rescheduleOverdue`, `reviewOverdueOneByOne` (L534–587, ~55 lines). Self-contained: takes `items` and the
-  `update`/`fetchAll` pair, returns the banner's whole contract.
-- `composable/useUnscheduledNudge.ts` — `unscheduledNudgeDismissed`, `pendingItems`, `unscheduledItems`,
-  `showUnscheduledNudge`, `openFirstUnscheduled` (L589–612, ~25 lines).
-- `composable/useTodoListItemActions.ts` — `add`/`edit`/`deleteItem`/`handleOrderChange`/`handleUncheckAll`/
-  `updateAfterEdit`/`moveItemToList`, each of which is a CRUD call wrapped in a `push*Undo` (~200 lines). See cross-cutting theme **A**: `RoutineToDoListView` has
-  the same seven functions in the same shape.
+  `update`/`fetchAll` pair, returns the banner's whole contract.~~ Done, plus `filterDueState` as a third param — `reviewOverdueOneByOne` needs it to switch the
+  due-state filter, which isn't part of the `update`/`fetchAll` pair.
+- ~~`composable/useUnscheduledNudge.ts` — `unscheduledNudgeDismissed`, `pendingItems`, `unscheduledItems`,
+  `showUnscheduledNudge`, `openFirstUnscheduled` (L589–612, ~25 lines).~~ Done — takes `displayedItems`, `isInChangeOrderMode`, an `overdueCount` computed (fed
+  from the composable above) and `openAddToPlanner`. `pendingItems` stayed internal; nothing outside the composable read it.
+- `composable/useTodoListItemActions.ts` — **not written as a separate file.** `add`/`edit`/`deleteItem`/`handleOrderChange`/`handleUncheckAll` were already
+  routed through `composable/useUndoableListCrud.ts` by the time this item was picked up — that generic helper is cross-cutting theme **A**, landed ahead of this
+  item and shared with `RoutineToDoListView` (item **#2**). `updateAfterEdit` and `moveItemToList` stayed in the view: both are called from more than one place
+  (`itemsChanged`, `openMoveToList`) and neither is CRUD-wrapped-in-undo in the shape the other five are, so folding them into a same-named composable would have
+  been organizational only, not a duplication removal.
+
+The view is down from 689 to 448 lines. Typecheck (`vue-tsc --build --force`), lint and `npx vite build` are all clean afterwards.
 
 ### 2. `RoutineToDoListView.vue` — 617 lines
 
@@ -327,7 +335,7 @@ abstraction that already exists, in three bands:
 1. ~~**Mechanical** — #3, #5, #8, #11.~~ Pure template moves, landed independently.
 2. ~~**Medium** — #4, #7, #9, #10.~~ Each was a move that had to preserve one behaviour rather than invent anything:
    #4's `loadCompleteResolve` handshake, #9's watcher ordering. Both held.
-3. **The two theme-A consumers** — #1, then #2.
+3. **The two theme-A consumers** — ~~#1, then #2~~. #1 done; #2 remains.
 
 **Do #1 before #2, and inside #1 do the four template components before the script.** The flat list is the gentler
 validation of the adapter shape; the grouped container is the stress test, and `handleCrossListDrop` is the point
@@ -335,5 +343,9 @@ where the shape may not hold (see #2). Keep the two in one sitting rather than a
 abstraction consumed twice, and the second one drifting from the first is how the duplication theme **A** removed
 gets rebuilt by hand.
 
-Undo and error paths still have no test coverage, so #1 and #2 are the two items where a wrong result compiles,
+#1 confirmed the adapter shape holds: `useUndoableListCrud` was already in place (theme **A**) and needed no changes to
+support the four template extractions or the two new composables. #2 is the stress test — `handleCrossListDrop`'s
+compound undo is where that confirmation could still fail.
+
+Undo and error paths still have no test coverage, so #1 (now landed) and #2 are the two items where a wrong result compiles,
 type-checks and looks right.
