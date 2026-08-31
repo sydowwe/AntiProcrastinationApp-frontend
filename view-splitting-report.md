@@ -209,13 +209,17 @@ down from 366 to 297 lines.
 The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining draft↔filter↔URL. Those are
 `composable/useActivityFilterDrafts.ts`. Before writing it, check `_common/composable/table/useTableUrlState.ts` — this may be reinventing it.
 
-### 10. `TodoListsView.vue` — 356 lines, 213 of them template
+### 10. `TodoListsView.vue` — 356 lines, 213 of them template — DONE
 
-- `TodoListCategoryPanel` is mounted twice (L17–29 mobile dialog, L49–60 desktop column) with a 9-binding prop/event set that differs in exactly one handler
+- ~~`TodoListCategoryPanel` is mounted twice (L17–29 mobile dialog, L49–60 desktop column) with a 9-binding prop/event set that differs in exactly one handler
   (`onMobileSelectCategory` vs `selectCategory`) and one extra
-  `@closeDialog`. Wrap both in `component/normal/TodoListCategoryPane.vue` so the binding list exists once.
+  `@closeDialog`. Wrap both in `component/normal/TodoListCategoryPane.vue` so the binding list exists once.~~ Done — `TodoListCategoryPane.vue` owns the `VCard` +
+  `TodoListCategoryPanel` pair and a `mobile` prop for the fullscreen-dialog styling (`rounded="0"`, no `py-0`); both mount sites now differ only in the
+  `@selectCategory` handler and the mobile one's `@closeDialog`.
 - ~~Two `MyDialog` delete confirmations (L176–211) with the same name-plus-cascade body — theme **C**.~~ Done; both are `confirm({ detail })` calls now, which is
   where the view's other 36 template lines went.
+
+Typecheck and lint are both clean afterwards.
 
 ### 11. `HistoryCalendarView.vue` — 260 lines (optional) — DONE
 

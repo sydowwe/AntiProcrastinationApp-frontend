@@ -10,24 +10,20 @@
 			:scrim="false"
 			style="margin: -12px"
 		>
-			<VCard
-				height="100%"
-				rounded="0"
-			>
-				<TodoListCategoryPanel
-					v-model:hideEmpty="hideEmptyCategories"
-					v-model:filterName="categoryFilterName"
-					:categories
-					:selectedCategoryId
-					:categorySortAsc
-					@selectCategory="onMobileSelectCategory"
-					@openCreate="openCategoryCreateDialog"
-					@openEdit="openCategoryEditDialog"
-					@confirmDelete="confirmDeleteCategory"
-					@toggleSort="toggleCategorySort"
-					@closeDialog="categoryDrawerOpen = false"
-				/>
-			</VCard>
+			<TodoListCategoryPane
+				v-model:hideEmpty="hideEmptyCategories"
+				v-model:filterName="categoryFilterName"
+				:categories
+				:selectedCategoryId
+				:categorySortAsc
+				mobile
+				@selectCategory="onMobileSelectCategory"
+				@openCreate="openCategoryCreateDialog"
+				@openEdit="openCategoryEditDialog"
+				@confirmDelete="confirmDeleteCategory"
+				@toggleSort="toggleCategorySort"
+				@closeDialog="categoryDrawerOpen = false"
+			/>
 		</VDialog>
 
 		<VRow
@@ -42,23 +38,18 @@
 				class="d-none d-md-block"
 				style="height: 100%; overflow: hidden"
 			>
-				<VCard
-					class="py-0"
-					style="height: 100%; overflow: hidden"
-				>
-					<TodoListCategoryPanel
-						v-model:hideEmpty="hideEmptyCategories"
-						v-model:filterName="categoryFilterName"
-						:categories
-						:selectedCategoryId
-						:categorySortAsc
-						@selectCategory="selectCategory"
-						@openCreate="openCategoryCreateDialog"
-						@openEdit="openCategoryEditDialog"
-						@confirmDelete="confirmDeleteCategory"
-						@toggleSort="toggleCategorySort"
-					/>
-				</VCard>
+				<TodoListCategoryPane
+					v-model:hideEmpty="hideEmptyCategories"
+					v-model:filterName="categoryFilterName"
+					:categories
+					:selectedCategoryId
+					:categorySortAsc
+					@selectCategory="selectCategory"
+					@openCreate="openCategoryCreateDialog"
+					@openEdit="openCategoryEditDialog"
+					@confirmDelete="confirmDeleteCategory"
+					@toggleSort="toggleCategorySort"
+				/>
 			</VCol>
 
 			<!-- Right panel: lists -->
@@ -186,7 +177,7 @@
 	import type { TodoListRequest } from '@/core/todoList/dto/request/TodoListRequest.ts'
 	import type { TodoListCategoryEntity } from '@/core/todoList/dto/response/TodoListCategoryEntity.ts'
 	import type { TodoListCategoryRequest } from '@/core/todoList/dto/request/TodoListCategoryRequest.ts'
-	import TodoListCategoryPanel from '@/core/todoList/component/normal/TodoListCategoryPanel.vue'
+	import TodoListCategoryPane from '@/core/todoList/component/normal/TodoListCategoryPane.vue'
 	import TodoListForm from '@/core/todoList/component/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/core/todoList/component/normal/TodoListCard.vue'
