@@ -210,12 +210,11 @@ The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining 
 - ~~Two `MyDialog` delete confirmations (L176–211) with the same name-plus-cascade body — theme **C**.~~ Done; both are `confirm({ detail })` calls now, which is
   where the view's other 36 template lines went.
 
-### 11. `HistoryCalendarView.vue` — 260 lines (optional)
+### 11. `HistoryCalendarView.vue` — 260 lines (optional) — DONE
 
 Not oversized, but its `#day-cell-content` slot (L22–106, ~85 lines) plus the 100 lines of scoped CSS that style it is precisely what `dayPlanner` extracted into
-`CalendarDayCellContent.vue`. Extracting
-`historyDashboard/component/HistoryDayCellContent.vue` makes the two `CalendarGrid` consumers symmetrical and takes the view to ~70 lines. Cheap; do it when the file
-is next open.
+`CalendarDayCellContent.vue`. Extracted into `historyDashboard/component/HistoryDayCellContent.vue` (`day` prop only — no `selected`/`tasks`, this cell has neither
+selection nor a task list), making the two `CalendarGrid` consumers symmetrical. The view is down to 104 lines. Typecheck and lint are both clean afterwards.
 
 ---
 
