@@ -117,9 +117,11 @@
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useCalendarModes } from '@/core/dayPlanner/composable/useCalendarModes.ts'
+	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { t } = useI18n()
+	const { reportBatchOutcome } = useBulkTaskAction()
 	const { showSuccessSnackbar, showErrorSnackbar, showSnackbar } = useSnackbar()
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const settingsStore = useDayPlannerSettingsStore()
@@ -433,17 +435,11 @@
 			calendarMode.value = 'none'
 			refresh()
 
-			if (response.failedCount > 0) {
-				showErrorSnackbar(
-					t('planner.feedback.bulkTemplateApplyPartial', {
-						succeeded: response.succeededCount,
-						total: response.results.length,
-						failed: response.failedCount,
-					}),
-				)
-			} else {
-				showSuccessSnackbar(t('planner.feedback.bulkTemplateApplied', { count: days.length }, days.length))
-			}
+			reportBatchOutcome(response, {
+				partialKey: 'planner.feedback.bulkTemplateApplyPartial',
+				successKey: 'planner.feedback.bulkTemplateApplied',
+				successCount: days.length,
+			})
 		} finally {
 			bulkApplying.value = false
 		}
@@ -464,17 +460,11 @@
 			calendarMode.value = 'none'
 			refresh()
 
-			if (response.failedCount > 0) {
-				showErrorSnackbar(
-					t('planner.feedback.tasksCopyPartial', {
-						succeeded: response.succeededCount,
-						total: response.results.length,
-						failed: response.failedCount,
-					}),
-				)
-			} else {
-				showSuccessSnackbar(t('planner.feedback.tasksCopied', { count: targetDays.length }, targetDays.length))
-			}
+			reportBatchOutcome(response, {
+				partialKey: 'planner.feedback.tasksCopyPartial',
+				successKey: 'planner.feedback.tasksCopied',
+				successCount: targetDays.length,
+			})
 		} catch {
 			showErrorSnackbar(t('planner.feedback.tasksCopyFailed'))
 		}
@@ -490,17 +480,11 @@
 		calendarMode.value = 'none'
 		refresh()
 
-		if (response.failedCount > 0) {
-			showErrorSnackbar(
-				t('planner.feedback.dayTypeUpdatePartial', {
-					succeeded: response.succeededCount,
-					total: response.results.length,
-					failed: response.failedCount,
-				}),
-			)
-		} else {
-			showSuccessSnackbar(t('planner.feedback.dayTypeUpdated', { count: days.length }, days.length))
-		}
+		reportBatchOutcome(response, {
+			partialKey: 'planner.feedback.dayTypeUpdatePartial',
+			successKey: 'planner.feedback.dayTypeUpdated',
+			successCount: days.length,
+		})
 	}
 </script>
 
