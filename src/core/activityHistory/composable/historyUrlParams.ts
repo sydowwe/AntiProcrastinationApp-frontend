@@ -38,3 +38,24 @@ export function parseTopN(val: unknown, fallback: number): number {
 	const n = parseInt(val, 10)
 	return Number.isFinite(n) && n > 0 ? n : fallback
 }
+
+/** The half of the query string both dashboard views carry; each adds its own range params around it. */
+export interface SharedHistoryQueryState {
+	groupBy: string
+	windowSize: number
+	timeFrom: Time
+	timeTo: Time
+	baseline: string
+	topN: number
+}
+
+export function sharedHistoryQueryParams(state: SharedHistoryQueryState): Record<string, string> {
+	return {
+		groupBy: state.groupBy,
+		windowSize: serializeWindowSize(state.windowSize),
+		timeFrom: state.timeFrom.getString(),
+		timeTo: state.timeTo.getString(),
+		baseline: state.baseline,
+		topN: String(state.topN),
+	}
+}

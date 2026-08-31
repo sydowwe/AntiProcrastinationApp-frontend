@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
+	import { onMounted, ref } from 'vue'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
@@ -117,6 +117,7 @@
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useCalendarModes } from '@/core/dayPlanner/composable/useCalendarModes.ts'
+	import { useCalendarUrlState } from '@/core/dayPlanner/composable/useCalendarUrlState.ts'
 	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
 	import { useI18n } from 'vue-i18n'
 
@@ -152,10 +153,13 @@
 		toggleDaySelection,
 	} = useCalendarModes()
 
+	const { hydrateFromUrl, syncMonthToUrl } = useCalendarUrlState({
+		mode: calendarMode,
+		applyTemplateId,
+		applyPreviewMode,
+	})
+
 	const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
-	// Set while we are writing URL-derived state into the calendar/mode refs, so the write-back
-	// watchers below don't turn our own sync into a spurious history entry.
-	let isApplyingUrlState = false
 
 	const calendarDays = ref<Calendar[]>([])
 	const loading = ref(false)
@@ -173,57 +177,11 @@
 	// must not land after a newer, faster month already has.
 	let refreshRequestId = 0
 
-	function monthKeyFromDate(date: Date): string {
-		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-	}
-
-	function parseMonthKey(key: string): { start: Date; end: Date } | null {
-		const match = /^(\d{4})-(\d{2})$/.exec(key)
-		if (!match?.[1] || !match[2]) return null
-		const year = Number(match[1])
-		const month = Number(match[2])
-		return { start: new Date(year, month - 1, 1), end: new Date(year, month, 0) }
-	}
-
 	function handleDateRangeChange(range: { start: Date | null; end: Date | null }) {
 		dateRange.value = range
 		refresh()
 		syncMonthToUrl(range)
 	}
-
-	function syncMonthToUrl(range: { start: Date | null; end: Date | null }) {
-		if (isApplyingUrlState || !range.start) return
-		const key = monthKeyFromDate(range.start)
-		const currentQuery = { ...router.currentRoute.value.query }
-		if (key === monthKeyFromDate(new Date())) {
-			if (currentQuery.month === undefined) return
-			delete currentQuery.month
-		} else {
-			if (currentQuery.month === key) return
-			currentQuery.month = key
-		}
-		router.push({ query: currentQuery })
-	}
-
-	// Mode/template/preview are transient UI state layered on top of whatever month is displayed —
-	// they replace the query so the back button walks months rather than undoing mode toggles.
-	function syncModeToUrl() {
-		if (isApplyingUrlState) return
-		const currentQuery = { ...router.currentRoute.value.query }
-		delete currentQuery.mode
-		delete currentQuery.templateId
-		delete currentQuery.preview
-		if (calendarMode.value !== 'none') {
-			currentQuery.mode = calendarMode.value
-			if (calendarMode.value === 'applyTemplate') {
-				if (applyTemplateId.value !== null) currentQuery.templateId = String(applyTemplateId.value)
-				if (!applyPreviewMode.value) currentQuery.preview = '0'
-			}
-		}
-		router.replace({ query: currentQuery })
-	}
-
-	watch([calendarMode, applyTemplateId, applyPreviewMode], syncModeToUrl)
 
 	// Deliberately alongside `refresh`'s Promise.all rather than inside it: this line is secondary to
 	// the grid, so a failed aggregate must not cost the month its days or raise the retry snackbar.
@@ -271,23 +229,9 @@
 	}
 
 	onMounted(async () => {
-		isApplyingUrlState = true
-		const query = router.currentRoute.value.query
-		const urlMode = query.mode
-		if (urlMode === 'bulkSelect' || urlMode === 'editDetails' || urlMode === 'applyTemplate') {
-			calendarMode.value = urlMode
-		}
-		const urlTemplateId =
-			typeof query.templateId === 'string' && query.templateId !== '' ? Number(query.templateId) : null
-		const urlPreviewMode = query.preview === '0' ? false : null
-		const urlMonth = typeof query.month === 'string' ? query.month : null
-		if (urlMonth) {
-			const parsed = parseMonthKey(urlMonth)
-			if (parsed && calendarGridRef.value) {
-				calendarGridRef.value.dateRange = { start: parsed.start, end: parsed.end }
-			}
-		}
-		isApplyingUrlState = false
+		const { templateId: urlTemplateId, previewMode: urlPreviewMode } = hydrateFromUrl(range => {
+			if (calendarGridRef.value) calendarGridRef.value.dateRange = range
+		})
 
 		showFullScreenLoading()
 		try {

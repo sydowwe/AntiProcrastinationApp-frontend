@@ -110,7 +110,7 @@
 <script setup lang="ts">
 	import { onMounted, ref, watch } from 'vue'
 	import { watchDebounced } from '@vueuse/core'
-	import { type LocationQuery, useRoute, useRouter } from 'vue-router'
+	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
 	import ActivityTable from '@/core/activity/component/ActivityTable.vue'
 	import RoleTable from '@/core/activity/component/activityRole/ActivityRoleTable.vue'
@@ -118,6 +118,16 @@
 	import { NameTextFilter } from '@/core/activity/dto/request/NameTextFilter.ts'
 	import { ActivityFilter } from '@/core/activity/dto/request/ActivityFilter.ts'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
+	import {
+		activityFilterToParams,
+		archivedViewOf,
+		ARCHIVED_VIEW_FILTER,
+		type ArchivedView,
+		buildCombobox,
+		nameTextFilterToParams,
+		paramsToActivityFilter,
+		paramsToNameTextFilter,
+	} from '@/core/activity/composable/activitySettingsUrlParams.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
 	type ActivitySettingsTab = 'activities' | 'roles' | 'categories'
@@ -130,96 +140,6 @@
 	const { roleOptions, categoryOptions } = useActivitySelectOptions()
 	const route = useRoute()
 	const router = useRouter()
-
-	function firstQueryString(value: unknown): string | undefined {
-		const raw = Array.isArray(value) ? value.find(v => typeof v === 'string') : value
-		return typeof raw === 'string' && raw !== '' ? raw : undefined
-	}
-
-	function parseIdList(value: unknown): number[] | null {
-		const raw = firstQueryString(value)
-		if (!raw) return null
-		const ids = raw
-			.split(',')
-			.map(part => Number(part))
-			.filter(n => Number.isInteger(n))
-		return ids.length > 0 ? ids : null
-	}
-
-	/**
-	 * Which lifecycle state the activities tab is showing. Three named views rather than a raw boolean
-	 * because the URL has to say which one it is, and `archived=false` vs. `archived=` vs. absent is not
-	 * a distinction a query string carries legibly.
-	 */
-	type ArchivedView = 'active' | 'archived' | 'all'
-
-	const ARCHIVED_VIEW_FILTER: Record<ArchivedView, boolean | null> = {
-		active: false,
-		archived: true,
-		all: null,
-	}
-
-	function parseArchivedView(value: unknown): ArchivedView {
-		const raw = firstQueryString(value)
-		return raw === 'archived' || raw === 'all' ? raw : 'active'
-	}
-
-	function archivedViewOf(isArchived: boolean | null): ArchivedView {
-		if (isArchived === true) return 'archived'
-		if (isArchived === null) return 'all'
-		return 'active'
-	}
-
-	function paramsToActivityFilter(query: LocationQuery): ActivityFilter {
-		return new ActivityFilter(
-			firstQueryString(query.name) ?? null,
-			firstQueryString(query.text) ?? null,
-			firstQueryString(query.roleName) ?? null,
-			parseIdList(query.roleIds),
-			firstQueryString(query.categoryName) ?? null,
-			parseIdList(query.categoryIds),
-			ARCHIVED_VIEW_FILTER[parseArchivedView(query.archived)],
-		)
-	}
-
-	function activityFilterToParams(filter: ActivityFilter): Record<string, string> {
-		const params: Record<string, string> = {}
-		if (filter.name) params.name = filter.name
-		if (filter.text) params.text = filter.text
-		if (filter.roleIds?.length) params.roleIds = filter.roleIds.join(',')
-		if (filter.roleName) params.roleName = filter.roleName
-		if (filter.categoryIds?.length) params.categoryIds = filter.categoryIds.join(',')
-		if (filter.categoryName) params.categoryName = filter.categoryName
-		// The default view stays out of the URL, so a shared link to an unfiltered table is still bare.
-		const view = archivedViewOf(filter.isArchived)
-		if (view !== 'active') params.archived = view
-		return params
-	}
-
-	function paramsToNameTextFilter(query: LocationQuery): NameTextFilter {
-		return new NameTextFilter(firstQueryString(query.name) ?? null, firstQueryString(query.text) ?? null)
-	}
-
-	function nameTextFilterToParams(filter: NameTextFilter): Record<string, string> {
-		const params: Record<string, string> = {}
-		if (filter.name) params.name = filter.name
-		if (filter.text) params.text = filter.text
-		return params
-	}
-
-	function buildCombobox(
-		ids: number[] | null,
-		freeText: string | null,
-		options: SelectOption[],
-	): (SelectOption | string)[] {
-		const result: (SelectOption | string)[] = []
-		for (const id of ids ?? []) {
-			const match = options.find(o => o.id === id)
-			if (match) result.push(match)
-		}
-		if (freeText) result.push(freeText)
-		return result
-	}
 
 	const activeTab = ref<ActivitySettingsTab>(tab)
 	const activitiesFilter = ref(new ActivityFilter())

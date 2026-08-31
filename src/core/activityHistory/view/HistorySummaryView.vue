@@ -152,8 +152,9 @@
 		parseTimeParam,
 		parseTopN,
 		parseWindowSize,
-		serializeWindowSize,
+		sharedHistoryQueryParams,
 	} from '@/core/activityHistory/composable/historyUrlParams.ts'
+	import { useHistoryUrlSync } from '@/core/activityHistory/composable/useHistoryUrlSync.ts'
 	import {
 		buildCsv,
 		buildExportFileName,
@@ -400,22 +401,20 @@
 	}
 
 	// --- Sync state to URL ---
-	watch(
+	useHistoryUrlSync(
 		[date, rangeType, endDate, groupBy, selectedWindowSize, windowStartTime, windowEndTime, selectedBaseline, topN],
-		() => {
-			router.replace({
-				query: {
-					range: rangeType.value,
-					date: date.value || undefined,
-					endDate: endDate.value || undefined,
-					groupBy: groupBy.value,
-					windowSize: serializeWindowSize(selectedWindowSize.value),
-					timeFrom: windowStartTime.value.getString(),
-					timeTo: windowEndTime.value.getString(),
-					baseline: selectedBaseline.value,
-					topN: String(topN.value),
-				},
-			})
-		},
+		() => ({
+			range: rangeType.value,
+			date: date.value || undefined,
+			endDate: endDate.value || undefined,
+			...sharedHistoryQueryParams({
+				groupBy: groupBy.value,
+				windowSize: selectedWindowSize.value,
+				timeFrom: windowStartTime.value,
+				timeTo: windowEndTime.value,
+				baseline: selectedBaseline.value,
+				topN: topN.value,
+			}),
+		}),
 	)
 </script>

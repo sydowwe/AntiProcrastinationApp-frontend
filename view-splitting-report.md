@@ -153,9 +153,9 @@ Script is closer to acceptable; `timeDisplayObject` (L326–349) is presentation
 
 Template is exemplary at 80 lines. The script carries two lumps that name nothing in it:
 
-- `composable/useCalendarUrlState.ts` — `monthKeyFromDate`, `parseMonthKey`, `syncMonthToUrl`, `syncModeToUrl`, the
-  `isApplyingUrlState` guard flag, and the URL-hydration half of `onMounted` (L156–224 + L271–288, ~90 lines).
-  This is theme **D**.
+- ~~`composable/useCalendarUrlState.ts` — `monthKeyFromDate`, `parseMonthKey`, `syncMonthToUrl`, `syncModeToUrl`, the
+  `isApplyingUrlState` guard flag, and the URL-hydration half of `onMounted` (L156–224 + L271–288, ~90 lines).~~
+  Done — theme **D**. The view is down from 474 to 406 lines; `onMounted`'s URL half is one `hydrateFromUrl` call.
 - The three bulk executors — `executeBulkApply`, `executeCopyDay`, `executeBulkDayTypeChange` (L409–504, ~95 lines)
   — end in the same partial/success snackbar pair as `DayPlannerView`'s three. Same shared helper (theme **B**).
 
@@ -174,7 +174,9 @@ Treat these as one job — they already share `useHistoryDashboard`, and what re
   column array and the file-name parts is identical (xlsx guard, `exporting` latch, try/catch, error snackbar,
   `downloadCsv`). Fold the wrapper into `composable/useHistoryExport.ts` as `useCsvExport(buildRows)` — the file
   already owns `buildCsv` / `buildExportFileName` / `downloadCsv`, so this is finishing an existing abstraction.
-- **URL sync.** Both files end with the same `watch([...], () => router.replace({ query: {...} }))` (theme **D**).
+- ~~**URL sync.** Both files end with the same `watch([...], () => router.replace({ query: {...} }))` (theme **D**).~~
+  Done — `useHistoryUrlSync(sources, buildQuery)` owns the watch, and the six params the two views share are
+  serialized once by `sharedHistoryQueryParams()` in `historyUrlParams.ts`.
 - **Template, detail view only.** `HistorySummaryCards` + `HistoryPieChartSection` are mounted twice with the same
   props in two different layouts (L102–138 for stacked-bars, L158–182 for timeline, ~75 lines) → one
   `HistoryInsightsColumn.vue` with a `direction` prop.
@@ -193,11 +195,11 @@ Precedent: `core/user/component/settings/` already does exactly this for the use
 
 ### 9. `ActivitySettingsView.vue` — 366 lines, 289 of them script
 
-Roughly 110 lines (L134–222) are pure query-string (de)serialization — `firstQueryString`, `parseIdList`,
+~~Roughly 110 lines (L134–222) are pure query-string (de)serialization — `firstQueryString`, `parseIdList`,
 `parseArchivedView`, `archivedViewOf`, `paramsToActivityFilter`, `activityFilterToParams`, `paramsToNameTextFilter`,
 `nameTextFilterToParams`, `buildCombobox` — none of which reference component state. Move to
 `activity/composable/activitySettingsUrlParams.ts`; `activityHistory/composable/historyUrlParams.ts` is the
-established pattern (theme **D**).
+established pattern (theme **D**).~~ Done — the view is down from 366 to 297 lines.
 
 The remaining ~90 lines are eight `watch` / `watchDebounced` blocks maintaining draft↔filter↔URL. Those are
 `composable/useActivityFilterDrafts.ts`. Before writing it, check `_common/composable/table/useTableUrlState.ts` —
@@ -266,10 +268,36 @@ ref, read it back in the handler" pattern is gone from all three. This also fixe
 `TodoListsView` dialogs had: `@confirmed` never set `v-model` back to `false`, so the dialog stayed open after a
 successful delete.
 
-**D. Hand-rolled URL param handling in four views.** `ActivitySettingsView` (~110 lines), `PlannerCalendarView`
-(~90), `HistoryDetailView` + `HistorySummaryView` (~20 each, plus the shared `historyUrlParams.ts` they *did*
-factor out). `historyUrlParams.ts` is the model; the other two should follow it. Check
-`_common/composable/table/useTableUrlState.ts` first — part of this may already exist in the framework.
+**D. Hand-rolled URL param handling in four views. — DONE.** `ActivitySettingsView` (~110 lines),
+`PlannerCalendarView` (~90), `HistoryDetailView` + `HistorySummaryView` (~20 each, plus the shared
+`historyUrlParams.ts` they *did* factor out). `historyUrlParams.ts` was the model and the other two now follow it.
+
+`_common/composable/table/useTableUrlState.ts` was checked first, as the entry asked, and does **not** cover any of
+these: it is built around `page` / `perPage` / `sortBy` plus one flat `Record<string, string>` filter, and it always
+writes those three keys. None of the four views is a server table — a month key, a mode/template/preview trio and two
+`Time` wall clocks are not filter params — so adopting it would have meant three spurious query keys per view. It is
+still the right thing for a paginated table; it is not a general URL-state composable, and nothing here was worth
+upstreaming as one.
+
+What landed, one file per shape rather than one abstraction over all three, because the three views' URL state has
+nothing in common beyond the direction of travel:
+
+- `activity/composable/activitySettingsUrlParams.ts` — the pure half, exactly as the entry describes: the nine
+  parse/serialize functions plus `ArchivedView` / `ARCHIVED_VIEW_FILTER`, none of which reference component state.
+  The view's eight draft↔filter↔URL watchers stay put; they are item **#9**'s `useActivityFilterDrafts.ts`, not this.
+- `dayPlanner/composable/useCalendarUrlState.ts` — the impure half, because the month/mode sync is inseparable from
+  the `isApplyingUrlState` guard it needs. `monthKeyFromDate` / `parseMonthKey` are exported pure; the composable
+  takes the three mode refs, registers the write-back watcher itself, and exposes `syncMonthToUrl(range)` plus
+  `hydrateFromUrl(applyMonth)`. The guard is now a closure variable instead of a bare module-scope `let`, and the
+  hydration returns `{ templateId, previewMode }` as explicit `null`-means-"URL said nothing" values — that ordering
+  (URL beats the store's default, and the values are captured *before* the settings `await`) is the subtle part and
+  is preserved, with the reset moved into a `finally`.
+- `activityHistory/composable/useHistoryUrlSync.ts` + `sharedHistoryQueryParams()` in `historyUrlParams.ts` — the
+  watch itself, and the six keys (`groupBy`, `windowSize`, `timeFrom`, `timeTo`, `baseline`, `topN`) both dashboard
+  views serialize identically. Each view keeps its own range params (`range`/`date`/`endDate` vs `date`/`view`)
+  around the spread. Summary's query key order is unchanged; detail's shifts by two keys, which is cosmetic.
+
+Typecheck and lint are both clean afterwards.
 
 ## Suggested order
 
@@ -278,7 +306,7 @@ factor out). `historyUrlParams.ts` is the model; the other two should follow it.
 3. Theme **B**, the bulk helper — unblocks the script halves of #4 and #6.
 4. Theme **A**, the undoable-CRUD composable — unblocks the script halves of #1 and #2.
 5. `PomodoroTimerView` template split, plus the move out of `view/`. (#5)
-6. Theme **D** / `ActivitySettingsView`, then #7's shared export wrapper.
+6. ~~Theme **D** / `ActivitySettingsView`~~ (done), then #7's shared export wrapper.
 7. The rest opportunistically.
 
 Steps 1, 2 and 5 are pure template moves and can land independently. Steps 3 and 4 are the ones that change behaviour
