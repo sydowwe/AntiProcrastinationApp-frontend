@@ -98,42 +98,24 @@
 					/>
 					{{ $t('planner.template.pinnedSectionTitle') }}
 				</div>
-				<VRow>
-					<VCol
-						v-for="template in pinnedTemplates"
-						:key="template.id"
-						cols="12"
-						md="6"
-						lg="4"
-					>
-						<div
-							:ref="el => registerCard(el, template.id, 'pinned', () => pinnedTemplates.map(t => t.id))"
-							:class="{
-								'drag-over-before':
-									dragOverState?.templateId === template.id && dragOverState?.position === 'before',
-								'drag-over-after':
-									dragOverState?.templateId === template.id && dragOverState?.position === 'after',
-							}"
-							class="template-drag-wrapper"
-						>
-							<TemplateCard
-								:template
-								isPinned
-								:tasks="templateTasksMap.get(template.id)"
-								:compareMode="compareMode"
-								:isCompareSelected="compareSelection.includes(template.id)"
-								@click="openTemplate(template.id)"
-								@edit="openEditDialog(template)"
-								@delete="confirmDelete(template)"
-								@togglePin="togglePin(template.id)"
-								@toggleActive="toggleActive(template)"
-								@applyToday="applyToToday(template.id)"
-								@duplicate="duplicateTemplate(template)"
-								@toggleCompare="toggleCompareSelection(template.id)"
-							/>
-						</div>
-					</VCol>
-				</VRow>
+				<TemplateCardGrid
+					:templates="pinnedTemplates"
+					section="pinned"
+					isPinned
+					:templateTasksMap
+					:compareMode
+					:compareSelection
+					:registerCard
+					:dragOverState
+					@click="openTemplate"
+					@edit="openEditDialog"
+					@delete="confirmDelete"
+					@togglePin="togglePin"
+					@toggleActive="toggleActive"
+					@applyToday="applyToToday"
+					@duplicate="duplicateTemplate"
+					@toggleCompare="toggleCompareSelection"
+				/>
 				<VDivider
 					v-if="unpinnedTemplates.length"
 					class="my-5"
@@ -141,44 +123,25 @@
 			</template>
 
 			<!-- Active unpinned templates -->
-			<VRow v-if="activeUnpinnedTemplates.length">
-				<VCol
-					v-for="template in activeUnpinnedTemplates"
-					:key="template.id"
-					cols="12"
-					md="6"
-					lg="4"
-				>
-					<div
-						:ref="
-							el => registerCard(el, template.id, 'active', () => activeUnpinnedTemplates.map(t => t.id))
-						"
-						:class="{
-							'drag-over-before':
-								dragOverState?.templateId === template.id && dragOverState?.position === 'before',
-							'drag-over-after':
-								dragOverState?.templateId === template.id && dragOverState?.position === 'after',
-						}"
-						class="template-drag-wrapper h-100"
-					>
-						<TemplateCard
-							:template
-							:isPinned="false"
-							:tasks="templateTasksMap.get(template.id)"
-							:compareMode="compareMode"
-							:isCompareSelected="compareSelection.includes(template.id)"
-							@click="openTemplate(template.id)"
-							@edit="openEditDialog(template)"
-							@delete="confirmDelete(template)"
-							@togglePin="togglePin(template.id)"
-							@toggleActive="toggleActive(template)"
-							@applyToday="applyToToday(template.id)"
-							@duplicate="duplicateTemplate(template)"
-							@toggleCompare="toggleCompareSelection(template.id)"
-						/>
-					</div>
-				</VCol>
-			</VRow>
+			<TemplateCardGrid
+				v-if="activeUnpinnedTemplates.length"
+				:templates="activeUnpinnedTemplates"
+				section="active"
+				:isPinned="false"
+				:templateTasksMap
+				:compareMode
+				:compareSelection
+				:registerCard
+				:dragOverState
+				@click="openTemplate"
+				@edit="openEditDialog"
+				@delete="confirmDelete"
+				@togglePin="togglePin"
+				@toggleActive="toggleActive"
+				@applyToday="applyToToday"
+				@duplicate="duplicateTemplate"
+				@toggleCompare="toggleCompareSelection"
+			/>
 
 			<!-- Inactive templates -->
 			<template v-if="inactiveUnpinnedTemplates.length">
@@ -191,47 +154,24 @@
 					/>
 					{{ $t('planner.template.inactiveSectionTitle') }}
 				</div>
-				<VRow>
-					<VCol
-						v-for="template in inactiveUnpinnedTemplates"
-						:key="template.id"
-						cols="12"
-						md="6"
-						lg="4"
-					>
-						<div
-							:ref="
-								el =>
-									registerCard(el, template.id, 'inactive', () =>
-										inactiveUnpinnedTemplates.map(t => t.id),
-									)
-							"
-							:class="{
-								'drag-over-before':
-									dragOverState?.templateId === template.id && dragOverState?.position === 'before',
-								'drag-over-after':
-									dragOverState?.templateId === template.id && dragOverState?.position === 'after',
-							}"
-							class="template-drag-wrapper"
-						>
-							<TemplateCard
-								:template
-								:isPinned="false"
-								:tasks="templateTasksMap.get(template.id)"
-								:compareMode="compareMode"
-								:isCompareSelected="compareSelection.includes(template.id)"
-								@click="openTemplate(template.id)"
-								@edit="openEditDialog(template)"
-								@delete="confirmDelete(template)"
-								@togglePin="togglePin(template.id)"
-								@toggleActive="toggleActive(template)"
-								@applyToday="applyToToday(template.id)"
-								@duplicate="duplicateTemplate(template)"
-								@toggleCompare="toggleCompareSelection(template.id)"
-							/>
-						</div>
-					</VCol>
-				</VRow>
+				<TemplateCardGrid
+					:templates="inactiveUnpinnedTemplates"
+					section="inactive"
+					:isPinned="false"
+					:templateTasksMap
+					:compareMode
+					:compareSelection
+					:registerCard
+					:dragOverState
+					@click="openTemplate"
+					@edit="openEditDialog"
+					@delete="confirmDelete"
+					@togglePin="togglePin"
+					@toggleActive="toggleActive"
+					@applyToday="applyToToday"
+					@duplicate="duplicateTemplate"
+					@toggleCompare="toggleCompareSelection"
+				/>
 			</template>
 		</template>
 
@@ -250,7 +190,7 @@
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { TaskPlannerDayTemplateRequest } from '@/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts'
 	import TemplateDetailsForm from '@/core/dayPlanner/component/template/TemplateDetailsForm.vue'
-	import TemplateCard from '@/core/dayPlanner/component/template/TemplateCard.vue'
+	import TemplateCardGrid from '@/core/dayPlanner/component/template/TemplateCardGrid.vue'
 	import TemplateComparisonDialog from '@/core/dayPlanner/component/template/TemplateComparisonDialog.vue'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
@@ -268,6 +208,7 @@
 	import { useDisplay } from 'vuetify'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useTemplateCardDragAndDrop } from '@/core/dayPlanner/composable/useTemplateCardDragAndDrop.ts'
+	import { useTemplateCompare } from '@/core/dayPlanner/composable/useTemplateCompare.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()
 	const { mdAndUp } = useDisplay()
@@ -364,30 +305,8 @@
 
 	let duplicatingFromId: number | null = null
 
-	// Comparison mode
-	const compareMode = ref(false)
-	const compareSelection = ref<number[]>([])
-	const compareDialog = ref(false)
-
-	function toggleCompareSelection(templateId: number) {
-		const idx = compareSelection.value.indexOf(templateId)
-		if (idx >= 0) {
-			compareSelection.value.splice(idx, 1)
-		} else if (compareSelection.value.length < 2) {
-			compareSelection.value.push(templateId)
-		}
-	}
-
-	function openComparison() {
-		if (compareSelection.value.length === 2) {
-			compareDialog.value = true
-		}
-	}
-
-	function exitCompareMode() {
-		compareMode.value = false
-		compareSelection.value = []
-	}
+	const { compareMode, compareSelection, compareDialog, toggleCompareSelection, openComparison, exitCompareMode } =
+		useTemplateCompare()
 
 	async function loadTemplates() {
 		showFullScreenLoading()
@@ -548,34 +467,5 @@
 <style scoped>
 	.v-col-lg-4 {
 		padding: 10px;
-	}
-
-	.template-drag-wrapper {
-		position: relative;
-		cursor: grab;
-	}
-
-	.template-drag-wrapper:active {
-		cursor: grabbing;
-	}
-
-	.template-drag-wrapper.drag-over-before::before,
-	.template-drag-wrapper.drag-over-after::after {
-		content: '';
-		position: absolute;
-		left: 0;
-		right: 0;
-		height: 3px;
-		background: rgb(var(--v-theme-primary));
-		border-radius: 2px;
-		z-index: 10;
-	}
-
-	.template-drag-wrapper.drag-over-before::before {
-		top: 0;
-	}
-
-	.template-drag-wrapper.drag-over-after::after {
-		bottom: 0;
 	}
 </style>
