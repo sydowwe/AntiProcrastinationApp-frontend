@@ -14,7 +14,7 @@ shapes:
 | Lines | View                                                 | Template | Script | Verdict                                |
 |-------|------------------------------------------------------|----------|--------|----------------------------------------|
 | 689   | `todoList/view/TodoListView.vue`                     | 280      | 450    | **Split — both halves**                |
-| 617   | `todoList/view/RoutineToDoListView.vue`              | 121      | 546    | **Split — script only**                |
+| 617   | `todoList/view/RoutineToDoListView.vue`              | 121      | 546    | **Split — script only** — DONE          |
 | 565   | `dayPlanner/view/TemplateListView.vue`               | 263      | 310    | **Split — highest value/effort ratio** |
 | 558   | `dayPlanner/view/DayPlannerView.vue`                 | 113      | 485    | **Split — script only**                |
 | 486   | `activityHistory/view/PomodoroTimerView.vue`         | 241      | 261    | **Split — template; also misplaced**   |
@@ -71,29 +71,39 @@ different name — see below.
 
 The view is down from 689 to 448 lines. Typecheck (`vue-tsc --build --force`), lint and `npx vite build` are all clean afterwards.
 
-### 2. `RoutineToDoListView.vue` — 617 lines
+### 2. `RoutineToDoListView.vue` — 617 lines — DONE
 
-Template is fine at 121 (`RoutineGroupCard` already carries the weight). The 546-line script is the problem, and it holds four unrelated subjects:
+Template is fine at 121 (`RoutineGroupCard` already carries the weight). The 546-line script was the problem, and it held four unrelated subjects:
 
-- `composable/useRoutineGroups.ts` — `groupedItems`, `visibleGroups`/`visibleGroupIds`/`singleVisibleGroupId`,
+- ~~`composable/useRoutineGroups.ts` — `groupedItems`, `visibleGroups`/`visibleGroupIds`/`singleVisibleGroupId`,
   `groupSelectItems`, `onGroupSelectUpdate`, `hideDoneGroupIds` (a URL-backed computed) and `updateHideDone`
-  (L243–310, ~70 lines).
-- `composable/useRoutineCelebration.ts` — `RUN_MILESTONES`, `showConfetti`/`confettiKey`, `triggerConfetti`,
-  `celebrateIfRare` (L202–241, ~40 lines). Pure, trivially testable, currently mixed into CRUD.
-- `composable/useRoutineItemActions.ts` — `add`/`edit`/`onDelete`/`handleOrderChange`/`handleUncheckAll`/
+  (L243–310, ~70 lines).~~ Done — also owns `handleReviewPause`/`handleReviewReduceFrequency` (they mutate
+  `groupedItems[].timePeriod`) and takes `isNewWeek` as a param so `showWeeklyReview`/`reviewEligibleGroups` can live
+  next to the groups they filter.
+- ~~`composable/useRoutineCelebration.ts` — `RUN_MILESTONES`, `showConfetti`/`confettiKey`, `triggerConfetti`,
+  `celebrateIfRare` (L202–241, ~40 lines). Pure, trivially testable, currently mixed into CRUD.~~ Done, unchanged from
+  the plan.
+- ~~`composable/useRoutineItemActions.ts` — `add`/`edit`/`onDelete`/`handleOrderChange`/`handleUncheckAll`/
   `handleCrossListDrop`/`onItemsChanged` (~250 lines). `handleCrossListDrop` alone is 62 lines and takes
-  `dropTarget: any` — worth typing while it moves.
+  `dropTarget: any` — worth typing while it moves.~~ Done. `dropTarget` is now a local `CrossListDropTarget`
+  interface (`{ data: { type, index, position? } }`, the one shape this call site reads) rather than `any` — the
+  emit itself (`RoutineGroupCard`, `UseDragAndDropMonitor.ts`) stays `any`, since retyping the whole drag-and-drop
+  chain is well outside this item's scope.
 
-  **`handleCrossListDrop` may not fit theme A's composable, and that is an acceptable outcome.** The other six
+  **`handleCrossListDrop` did not fit theme A's composable, and that is an acceptable outcome.** The other six
   operations are single-call; this one moves an item *between* groups, so it is two calls (`update` with a new
   `timePeriodId`, then `changeDisplayOrder`) with a compound inverse that has to undo both and splice the item back
-  into its original group at its original index. Forcing it through the generic shape, or leaving a silent fourth
-  copy of undo logic inline next to it, are both worse than keeping it deliberately bespoke and saying so.
-- `composable/useRoutineDialogs.ts` — `openCreateDialog`, `openEditDialog`, `openHistoryDialog` (L350–395, ~45 lines). Note these three build dialog titles from raw
+  into its original group at its original index. It stayed deliberately bespoke, in the same file as the rest of the
+  CRUD it sits next to.
+- ~~`composable/useRoutineDialogs.ts` — `openCreateDialog`, `openEditDialog`, `openHistoryDialog` (L350–395, ~45 lines). Note these three build dialog titles from raw
   English strings (`' to routine to-do list'`,
-  `'-day periods'`, `'Close'`) rather than `t()`; the move is a good moment to fix that.
+  `'-day periods'`, `'Close'`) rather than `t()`; the move is a good moment to fix that.~~ Done — three new keys
+  (`routineTodoList.addDialogTitle`, `.history`, `.historyDialogTitle`) replace the raw strings, mirrored in both
+  `todoList.sk.ts` and `todoList.en.ts`; `closeBtnText` now resolves `general.close`.
 
-The weekly-review handlers (`handleReviewPause`, `handleReviewReduceFrequency`) belong with the groups composable — they mutate `groupedItems[].timePeriod`.
+The view is down from 617 to 305 lines. `onLogTimeCreated`'s undo callback (`toggleIsDone` + `onItemsChanged`) turned
+out to be exactly `useUndoableListCrud`'s `handleIsDoneChange(itemId, false)` — one fewer bespoke undo path than the
+plan assumed. Typecheck (`vue-tsc --build --force`), lint and `npx vite build` are all clean afterwards.
 
 ### 3. `TemplateListView.vue` — 565 lines — DONE (partial)
 
@@ -335,7 +345,7 @@ abstraction that already exists, in three bands:
 1. ~~**Mechanical** — #3, #5, #8, #11.~~ Pure template moves, landed independently.
 2. ~~**Medium** — #4, #7, #9, #10.~~ Each was a move that had to preserve one behaviour rather than invent anything:
    #4's `loadCompleteResolve` handshake, #9's watcher ordering. Both held.
-3. **The two theme-A consumers** — ~~#1, then #2~~. #1 done; #2 remains.
+3. ~~**The two theme-A consumers** — #1, then #2.~~ Both done.
 
 **Do #1 before #2, and inside #1 do the four template components before the script.** The flat list is the gentler
 validation of the adapter shape; the grouped container is the stress test, and `handleCrossListDrop` is the point
@@ -344,8 +354,9 @@ abstraction consumed twice, and the second one drifting from the first is how th
 gets rebuilt by hand.
 
 #1 confirmed the adapter shape holds: `useUndoableListCrud` was already in place (theme **A**) and needed no changes to
-support the four template extractions or the two new composables. #2 is the stress test — `handleCrossListDrop`'s
-compound undo is where that confirmation could still fail.
+support the four template extractions or the two new composables. #2 was the stress test — `handleCrossListDrop`'s
+compound undo is where that confirmation could still have failed, and it held: the function moved into
+`useRoutineItemActions.ts` unchanged, sitting next to the `useUndoableListCrud` call it deliberately doesn't join.
 
-Undo and error paths still have no test coverage, so #1 (now landed) and #2 are the two items where a wrong result compiles,
-type-checks and looks right.
+Undo and error paths still have no test coverage, so #1 and #2 were the two items where a wrong result would have
+compiled, type-checked and looked right regardless.

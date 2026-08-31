@@ -117,57 +117,35 @@
 	/>
 </template>
 <script setup lang="ts">
-	import RoutineToDoListForm from '@/core/todoList/component/routine/dialog/RoutineToDoListForm.vue'
 	import RoutineConfetti from '@/core/todoList/component/routine/RoutineConfetti.vue'
-	import RoutineGroupHistoryBody from '@/core/todoList/component/routine/dialog/RoutineGroupHistoryBody.vue'
 	import RoutineGroupCard from '@/core/todoList/component/routine/RoutineGroupCard.vue'
 	import RoutineWeeklyReviewCard from '@/core/todoList/component/routine/RoutineWeeklyReviewCard.vue'
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
 	import BaseTodoListLogTimeController from '@/core/todoList/component/BaseTodoListLogTimeController.vue'
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
 	import { computed, onMounted, ref } from 'vue'
-	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
-	import { RoutineTodoListItemRequest } from '@/core/todoList/dto/request/RoutineTodoListItemRequest.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
-	import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
-	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
-	import { useUndoableListCrud } from '@/core/todoList/composable/useUndoableListCrud.ts'
-	import { useRoutineRunLabel } from '@/core/todoList/composable/useRoutineRunLabel.ts'
 	import { useRoutineWeeklyReview } from '@/core/todoList/composable/useRoutineWeeklyReview.ts'
 	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
-	import type { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
-	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
+	import { useRoutineGroups } from '@/core/todoList/composable/useRoutineGroups.ts'
+	import { useRoutineCelebration } from '@/core/todoList/composable/useRoutineCelebration.ts'
+	import { useRoutineItemActions } from '@/core/todoList/composable/useRoutineItemActions.ts'
+	import { useRoutineDialogs } from '@/core/todoList/composable/useRoutineDialogs.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
-	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
-	import { useDisplay } from 'vuetify/framework'
 
-	const route = useRoute()
-	const router = useRouter()
 	const { t } = useI18n()
-	const { smAndDown } = useDisplay()
 
-	const {
-		fetchById,
-		createWithResponse,
-		update,
-		deleteEntity,
-		getAllGrouped,
-		changeDisplayOrder,
-		toggleIsDone,
-		uncheckAll: uncheckAllApi,
-	} = useRoutineTodoListItemCrud()
-	const { update: updateTimePeriod, changeTimePeriodVisibility } = useRoutineTimePeriodCrud()
+	const { getAllGrouped } = useRoutineTodoListItemCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const { showSuccessSnackbar, showSnackbar } = useSnackbar()
 
@@ -175,149 +153,45 @@
 		selector: id => `[data-routine-period-id="${CSS.escape(id)}"]`,
 	})
 	const { showFullScreenLoading } = useLoading()
-	const { openDialog } = useDialog()
-	const { runLabel } = useRoutineRunLabel()
 	const { isNewWeek, ensureLoaded: ensureReviewDismissalLoaded, dismissForThisWeek } = useRoutineWeeklyReview()
 	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
 	const plannerStore = useDayPlannerStore()
 
-	const { undo, canUndo, stackSize, nextUndoDescription, pushReorderUndo, pushLogTimeUndo } = useTodoListUndo()
+	const { undo, canUndo, stackSize, nextUndoDescription, pushLogTimeUndo } = useTodoListUndo()
 
-	const groupedItems = ref([] as RoutineTodoListGroupedList[])
+	const {
+		smAndDown,
+		groupedItems,
+		hideDoneGroupIds,
+		updateHideDone,
+		groupSelectItems,
+		visibleGroupIds,
+		visibleGroups,
+		singleVisibleGroupId,
+		reviewEligibleGroups,
+		showWeeklyReview,
+		handleReviewPause,
+		handleReviewReduceFrequency,
+		onGroupSelectUpdate,
+	} = useRoutineGroups(isNewWeek)
+
+	const { showConfetti, confettiKey, celebrateIfRare } = useRoutineCelebration()
+
+	const {
+		add,
+		edit,
+		deleteItem,
+		handleOrderChange,
+		handleUncheckAll,
+		handleIsDoneChange,
+		handleCrossListDrop,
+		onItemsChanged,
+	} = useRoutineItemActions(groupedItems, celebrateIfRare)
+
+	const { openCreateDialog, openEditDialog, openHistoryDialog } = useRoutineDialogs(add, edit)
+
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const isInChangeOrderMode = ref(false)
-
-	// Grouped half of the shared undo-wrapped CRUD; the normal list registers the flat half against
-	// the same operations — see `useUndoableListCrud`. Only `handleCrossListDrop` below stays local:
-	// moving an item between time periods has no counterpart on a single-container list.
-	const listCrud = useUndoableListCrud<RoutineTodoListItemEntity, RoutineTodoListItemRequest>(
-		{ createWithResponse, update, deleteEntity, changeDisplayOrder, toggleIsDone, uncheckAll: uncheckAllApi },
-		{
-			containerOf: id => groupedItems.value.find(group => group.items.some(item => item.id === id))?.items,
-			insert(entity) {
-				const targetGroup = groupedItems.value.find(group => group.timePeriod.id === entity.timePeriod.id)
-				if (!targetGroup) return
-				targetGroup.items.push(entity)
-				targetGroup.items.sort((a, b) => a.id - b.id)
-			},
-			resync: onItemsChanged,
-			requestFromEntity: entity => RoutineTodoListItemRequest.fromEntity(entity),
-			labelOf: entity => entity.activity.name,
-		},
-		{ editedMessageKey: 'successFeedback.updated' },
-	)
-
-	const { deleteItem, handleOrderChange, handleUncheckAll, handleIsDoneChange } = listCrud
-
-	const showConfetti = ref(false)
-	const confettiKey = ref(0)
-
-	// Celebration is reserved for genuinely rare events. Firing on every completed group habituates
-	// into meaninglessness within weeks — a daily group would celebrate every single day.
-	const RUN_MILESTONES = [7, 30, 90, 180, 365]
-
-	function triggerConfetti() {
-		confettiKey.value++
-		showConfetti.value = true
-		setTimeout(() => {
-			showConfetti.value = false
-		}, 2500)
-	}
-
-	function celebrateIfRare(before: RoutineTimePeriodEntity, after: RoutineTimePeriodEntity) {
-		if (after.streak <= before.streak) return
-		const groupName = after.text ?? ''
-		// A new longest run — only once the user has an established record to pass.
-		if (before.bestStreak > 0 && after.streak > before.bestStreak) {
-			triggerConfetti()
-			showSuccessSnackbar(
-				t('routineTodoList.newLongestRun', {
-					group: groupName,
-					run: runLabel(after.streak, after.lengthInDays),
-				}),
-			)
-			return
-		}
-		const milestone = RUN_MILESTONES.find(m => before.streak < m && after.streak >= m)
-		if (milestone !== undefined) {
-			triggerConfetti()
-			showSuccessSnackbar(
-				t('routineTodoList.milestoneReached', {
-					group: groupName,
-					run: runLabel(milestone, after.lengthInDays),
-				}),
-			)
-		}
-	}
-
-	const hideDoneGroupIds = computed({
-		get: (): number[] => {
-			const val = route.query.hideDone
-			if (!val) return []
-			return (Array.isArray(val) ? val : [val]).map(Number)
-		},
-		set: (val: number[]) =>
-			router.replace({ query: { ...route.query, hideDone: val.length ? val.map(String) : undefined } }),
-	})
-
-	function updateHideDone(groupId: number, val: boolean) {
-		const current = hideDoneGroupIds.value
-		if (val) {
-			hideDoneGroupIds.value = current.includes(groupId) ? current : [...current, groupId]
-		} else {
-			hideDoneGroupIds.value = current.filter(id => id !== groupId)
-		}
-	}
-
-	const groupSelectItems = computed(() =>
-		groupedItems.value.map(g => ({ title: g.timePeriod.text, value: g.timePeriod.id as number })),
-	)
-
-	const visibleGroupIds = computed(() =>
-		groupedItems.value.filter(g => !g.timePeriod.isHidden).map(g => g.timePeriod.id as number),
-	)
-
-	const visibleGroups = computed(() => groupedItems.value.filter(g => !g.timePeriod.isHidden))
-
-	const singleVisibleGroupId = computed(() => visibleGroupIds.value[0] ?? null)
-
-	const reviewEligibleGroups = computed(() =>
-		groupedItems.value.filter(g => !g.timePeriod.isHidden && g.timePeriod.totalPeriodsElapsed > 0),
-	)
-	const showWeeklyReview = computed(() => isNewWeek.value && reviewEligibleGroups.value.length > 0)
-
-	async function handleReviewPause(timePeriodId: number) {
-		await changeTimePeriodVisibility(timePeriodId)
-		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
-		if (group) group.timePeriod.isHidden = true
-	}
-
-	async function handleReviewReduceFrequency(timePeriodId: number, request: TimePeriodRequest) {
-		await updateTimePeriod(timePeriodId, request)
-		const group = groupedItems.value.find(g => g.timePeriod.id === timePeriodId)
-		if (group) Object.assign(group.timePeriod, request)
-	}
-
-	async function onGroupSelectUpdate(newVal: number | number[]) {
-		if (smAndDown.value) {
-			const newId = newVal as number
-			if (newId == null) return
-			for (const group of groupedItems.value) {
-				group.timePeriod.isHidden = group.timePeriod.id !== newId
-			}
-		} else {
-			const newIds = newVal as number[]
-			const currentIds = visibleGroupIds.value
-			const toToggle = [
-				...currentIds.filter(id => !newIds.includes(id)),
-				...newIds.filter(id => !currentIds.includes(id)),
-			]
-			for (const id of toToggle) {
-				const group = groupedItems.value.find(g => g.timePeriod.id === id)
-				if (group) group.timePeriod.isHidden = !group.timePeriod.isHidden
-			}
-		}
-	}
 
 	onMounted(() => {
 		// Not awaited alongside the review load — the two are independent and used to run concurrently.
@@ -357,53 +231,6 @@
 		isInChangeOrderMode.value = !isInChangeOrderMode.value
 	}
 
-	function openHistoryDialog(timePeriod: RoutineTimePeriodEntity) {
-		const name = timePeriod.text ?? 'History'
-		openDialog({
-			component: RoutineGroupHistoryBody,
-			componentProps: { timePeriod },
-			dialogProps: {
-				title: `${name} · ${timePeriod.lengthInDays}-day periods`,
-				hasConfirmBtn: false,
-				closeBtnText: 'Close',
-				isSmall: false,
-			},
-		})
-	}
-
-	async function openCreateDialog() {
-		const result = await openDialog<{
-			entity: RoutineTodoListItemEntity | null
-			request: RoutineTodoListItemRequest
-		}>({
-			component: RoutineToDoListForm,
-			dialogProps: {
-				title: t('general.add') + ' to routine to-do list',
-				confirmBtnLabel: t('general.add'),
-			},
-		})
-		if (result) {
-			await add(result.request)
-		}
-	}
-
-	async function openEditDialog(entityToEdit: RoutineTodoListItemEntity) {
-		const result = await openDialog<{
-			entity: RoutineTodoListItemEntity | null
-			request: RoutineTodoListItemRequest
-		}>({
-			component: RoutineToDoListForm,
-			componentProps: { entityToEdit },
-			dialogProps: {
-				title: t('general.edit'),
-				confirmBtnLabel: t('general.edit'),
-			},
-		})
-		if (result?.entity) {
-			await listCrud.edit(result.entity, result.request)
-		}
-	}
-
 	// Returns the promise so a caller can sequence on the loaded groups — the deep-link reveal in
 	// `onMounted` cannot look for a card before the cards exist. Every other call site ignores it and
 	// is unaffected.
@@ -423,11 +250,6 @@
 				.map(item => ({ activityId: item.activity.id, suggestedSeconds: item.suggestedTime!.getInSeconds })),
 		),
 	)
-
-	async function add(request: RoutineTodoListItemRequest) {
-		const created = await listCrud.add(request)
-		void ensureCalibrationLoaded([created.activity.id])
-	}
 
 	function openAddToPlanner(item: RoutineTodoListItemEntity) {
 		plannerStore.openCreateDialogWithActivity(
@@ -472,113 +294,12 @@
 		pushLogTimeUndo(
 			activityName,
 			historyRecordId,
-			itemWasCompleted && itemId !== undefined
-				? async () => {
-						await toggleIsDone(itemId, false)
-						await onItemsChanged([itemId])
-					}
-				: undefined,
+			itemWasCompleted && itemId !== undefined ? () => handleIsDoneChange(itemId, false) : undefined,
 		)
 	}
 
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(t('successFeedback.added'))
-	}
-
-	async function handleCrossListDrop(sourceListId: number, targetListId: number, itemId: number, dropTarget: any) {
-		const sourceGroup = groupedItems.value.find(g => g.timePeriod.id === sourceListId)
-		const targetGroup = groupedItems.value.find(g => g.timePeriod.id === targetListId)
-
-		if (!sourceGroup || !targetGroup) return
-
-		const sourceIndex = sourceGroup.items.findIndex(item => item.id === itemId)
-		const movedItem = sourceGroup.items[sourceIndex]
-
-		if (!movedItem) return
-
-		const originalPrecedingId = sourceIndex > 0 ? (sourceGroup.items[sourceIndex - 1]?.id ?? null) : null
-		const originalFollowingId =
-			sourceIndex < sourceGroup.items.length - 1 ? (sourceGroup.items[sourceIndex + 1]?.id ?? null) : null
-
-		sourceGroup.items.splice(sourceIndex, 1)
-
-		let targetIndex = 0
-		if (dropTarget.data.type === 'drop-zone') {
-			targetIndex = dropTarget.data.index
-			if (dropTarget.data.position === 'bottom') {
-				targetIndex += 1
-			}
-		}
-		targetGroup.items.splice(targetIndex, 0, movedItem)
-
-		const updateRequest = new RoutineTodoListItemRequest(
-			movedItem.activity.id,
-			targetListId,
-			movedItem.doneCount,
-			movedItem.totalCount,
-			movedItem.isDone,
-		)
-		await update(itemId, updateRequest)
-
-		const precedingItem = targetIndex > 0 ? targetGroup.items[targetIndex - 1] : null
-		const followingItem = targetIndex < targetGroup.items.length - 1 ? targetGroup.items[targetIndex + 1] : null
-		const orderRequest = new ChangeDisplayOrderRequest(itemId, precedingItem?.id ?? null, followingItem?.id ?? null)
-		await changeDisplayOrder(orderRequest)
-
-		const reverseUpdateRequest = new RoutineTodoListItemRequest(
-			movedItem.activity.id,
-			sourceListId,
-			movedItem.doneCount,
-			movedItem.totalCount,
-			movedItem.isDone,
-		)
-		const reverseOrderRequest = new ChangeDisplayOrderRequest(itemId, originalPrecedingId, originalFollowingId)
-		pushReorderUndo(movedItem.activity.name, async () => {
-			await update(itemId, reverseUpdateRequest)
-			await changeDisplayOrder(reverseOrderRequest)
-			const currentTarget = groupedItems.value.find(g => g.timePeriod.id === targetListId)
-			const currentSource = groupedItems.value.find(g => g.timePeriod.id === sourceListId)
-			if (currentTarget && currentSource) {
-				const idx = currentTarget.items.findIndex(i => i.id === itemId)
-				if (idx !== -1) {
-					const [item] = currentTarget.items.splice(idx, 1)
-					if (item) currentSource.items.splice(sourceIndex, 0, item)
-				}
-			}
-		})
-	}
-
-	/**
-	 * Re-reads the named items and reconciles them into the grouped list — the routine list's half of
-	 * `UndoableListAdapter.resync`, so an edit that changes an item's time period arrives here too.
-	 * That is why the old group is looked up by *where the item currently is* rather than by the time
-	 * period the caller last saw: a moved item has to leave its previous group, or it shows up twice.
-	 */
-	async function onItemsChanged(changedItems: number[]) {
-		for (const id of changedItems) {
-			const updatedItem = await fetchById(id)
-			const previousGroup = groupedItems.value.find(g => g.items.some(item => item.id === id))
-			const group = groupedItems.value.find(g => g.timePeriod.id === updatedItem.timePeriod.id)
-			if (previousGroup && previousGroup !== group) {
-				previousGroup.items = previousGroup.items.filter(item => item.id !== id)
-			}
-			if (!group) continue
-			const index = group.items.findIndex(item => item.id === id)
-			if (index !== -1) {
-				group.items[index] = updatedItem
-			} else {
-				group.items.push(updatedItem)
-				group.items.sort((a, b) => a.id - b.id)
-			}
-			// Keep the group's stats (streak, consistency, history) in step with the refetched item,
-			// then judge whether the change was rare enough to celebrate.
-			const previousTimePeriod = group.timePeriod
-			// isHidden is local view state (the group selector mutates it without persisting),
-			// so it must survive the refresh.
-			updatedItem.timePeriod.isHidden = previousTimePeriod.isHidden
-			group.timePeriod = updatedItem.timePeriod
-			celebrateIfRare(previousTimePeriod, updatedItem.timePeriod)
-		}
 	}
 </script>

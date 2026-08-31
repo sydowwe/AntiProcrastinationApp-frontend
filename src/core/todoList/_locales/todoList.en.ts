@@ -105,6 +105,9 @@ const todoList = {
 		settings: `Settings`,
 		groups: `Groups`,
 		reorder: `Reorder`,
+		addDialogTitle: `Add to routine to-do list`,
+		history: `History`,
+		historyDialogTitle: `{group} · {days}-day periods`,
 		// See the note on the SK key: a deep link never un-hides a group by itself.
 		focusHiddenGroup: `The "{group}" group is hidden. Show it from the group picker above.`,
 		hideDone: `Hide done`,
