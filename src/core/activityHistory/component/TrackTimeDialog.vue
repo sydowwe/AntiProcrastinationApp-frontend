@@ -80,7 +80,7 @@
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import StopWatchView from '@/core/activityHistory/view/StopWatchView.vue'
 	import TimerView from '@/core/activityHistory/view/TimerView.vue'
-	import PomodoroTimerView from '@/core/activityHistory/view/PomodoroTimerView.vue'
+	import PomodoroTimerView from '@/core/activityHistory/component/PomodoroTimerView.vue'
 	import { computed, ref, watch } from 'vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'

@@ -17,123 +17,16 @@
 				:class="compact ? 'pa-0' : 'pa-3 pa-md-6'"
 			>
 				<VCardTitle class="text-h5 text-center pb-3">{{ i18n.t('history.pomodoro.title') }}</VCardTitle>
-				<div v-if="timeInputVisible">
-					<div class="d-flex justify-center ga-2 mb-3">
-						<VBtn
-							variant="tonal"
-							prependIcon="sliders"
-							color="secondaryOutline"
-							@click="openPresets"
-						>
-							{{ i18n.t('controls.presets') }}
-						</VBtn>
-						<VBtn
-							variant="tonal"
-							prependIcon="clock-rotate-left"
-							@click="resetPickersToDefault"
-						>
-							{{ i18n.t('history.pomodoro.defaults') }}
-						</VBtn>
-					</div>
-					<div class="d-flex flex-wrap justify-center ga-3">
-						<SubtleCard
-							color="primary-accent"
-							borderOpacity="high"
-							class="d-flex align-center ga-3 pa-3"
-						>
-							<VSheet
-								color="blue"
-								rounded="sm"
-								width="4"
-								height="36"
-								class="flex-shrink-0"
-							></VSheet>
-							<span class="text-body-2 font-weight-medium flex-shrink-0">
-								{{ i18n.t('pomodoroTimer.focus') }}
-							</span>
-							<TimePicker
-								v-model="focusInitialTime"
-								label=""
-								color="primaryOutline"
-								viewMode="minute"
-								hideDetails
-							></TimePicker>
-						</SubtleCard>
-						<SubtleCard
-							color="primary-accent"
-							borderOpacity="high"
-							class="d-flex align-center ga-3 pa-3"
-						>
-							<VSheet
-								color="yellow-lighten-2"
-								rounded="sm"
-								width="4"
-								height="36"
-								class="flex-shrink-0"
-							></VSheet>
-							<span class="text-body-2 font-weight-medium flex-shrink-0">
-								{{ i18n.t('pomodoroTimer.shortRest') }}
-							</span>
-							<TimePicker
-								v-model="shortRestInitialTime"
-								label=""
-								color="primaryOutline"
-								viewMode="minute"
-								hideDetails
-							></TimePicker>
-						</SubtleCard>
-						<SubtleCard
-							color="primary-accent"
-							borderOpacity="high"
-							class="d-flex align-center ga-3 pa-3"
-						>
-							<VSheet
-								color="deep-purple-lighten-1"
-								rounded="sm"
-								width="4"
-								height="36"
-								class="flex-shrink-0"
-							></VSheet>
-							<span class="text-body-2 font-weight-medium flex-shrink-0">
-								{{ i18n.t('pomodoroTimer.longRest') }}
-							</span>
-							<TimePicker
-								v-model="longRestInitialTime"
-								label=""
-								color="primaryOutline"
-								viewMode="minute"
-								hideDetails
-							></TimePicker>
-						</SubtleCard>
-					</div>
-					<SubtleCard
-						color="primary-accent"
-						borderOpacity="high"
-						class="mt-3 d-flex flex-column flex-md-row justify-center ga-2 ga-md-3 pa-2 mx-auto"
-						style="max-width: fit-content !important"
-					>
-						<div class="d-flex ga-3 align-center">
-							<h4>{{ i18n.t('pomodoroTimer.numberOfFocusIntervalsInCycle') }}</h4>
-							<VSelect
-								v-model="numberOfFocusPeriodsInCycle"
-								class="flex-0-1"
-								:items="[2, 3, 4, 5, 6]"
-								hideDetails
-								:clearable="false"
-							></VSelect>
-						</div>
-						<div class="d-flex ga-3 justify-end align-center">
-							<h4>{{ i18n.t('pomodoroTimer.numberOfCycles') }}</h4>
-							<VSelect
-								v-model="numberOfCycles"
-								class="flex-0-1"
-								:items="[1, 2, 3, 4, 5, 6]"
-								hideDetails
-								:clearable="false"
-							></VSelect>
-						</div>
-					</SubtleCard>
-				</div>
+				<PomodoroSetupPanel
+					v-if="timeInputVisible"
+					v-model:focusTime="focusInitialTime"
+					v-model:shortRestTime="shortRestInitialTime"
+					v-model:longRestTime="longRestInitialTime"
+					v-model:numberOfCycles="numberOfCycles"
+					v-model:numberOfFocusPeriodsInCycle="numberOfFocusPeriodsInCycle"
+					@openPresets="openPresets"
+					@resetToDefault="resetPickersToDefault"
+				></PomodoroSetupPanel>
 				<div
 					v-else
 					class="d-flex align-center"
@@ -155,82 +48,18 @@
 					@stop="stop"
 				></TimerControls>
 				<hr />
-				<!-- Activity selection forms (before start) -->
-				<VRow
-					v-show="timeInputVisible"
-					class="mt-1"
-				>
-					<VCol
-						cols="12"
-						sm="6"
-					>
-						<div class="mb-1 d-flex ga-1 align-center">
-							<VIcon
-								icon="fas fa-bullseye"
-								size="20"
-							></VIcon>
-							<h3 class="text-h6">
-								{{ i18n.t('pomodoroTimer.focusActivity') }}
-							</h3>
-						</div>
-						<ActivitySelectionForm
-							v-if="!activityId"
-							ref="mainActivitySelectionForm"
-							v-model:activityId="focusActivityId"
-							v-model:selection="focusSelection"
-							:formDisabled="formDisabled"
-						></ActivitySelectionForm>
-					</VCol>
-					<VCol
-						cols="12"
-						sm="6"
-					>
-						<div class="mb-1 d-flex ga-1 align-center">
-							<VIcon
-								icon="fas fa-mug-hot"
-								size="20"
-							></VIcon>
-							<h3 class="text-h6">
-								{{ i18n.t('pomodoroTimer.restActivity') }} ({{ i18n.t('general.optional') }})
-							</h3>
-						</div>
-						<ActivitySelectionForm
-							v-model:activityId="restActivityId"
-							v-model:selection="restSelection"
-							:formDisabled="formDisabled"
-							mode="optional"
-						></ActivitySelectionForm>
-					</VCol>
-				</VRow>
-				<!-- Activity names display (after start) -->
-				<div
-					v-show="!timeInputVisible"
-					class="d-flex flex-wrap justify-center ga-3 mt-3"
-				>
-					<VChip
-						color="primary"
-						variant="tonal"
-						size="large"
-					>
-						<VIcon
-							icon="fas fa-bullseye"
-							start
-						></VIcon>
-						{{ focusActivityName }}
-					</VChip>
-					<VChip
-						v-if="restActivityName"
-						color="secondary"
-						variant="tonal"
-						size="large"
-					>
-						<VIcon
-							icon="fas fa-mug-hot"
-							start
-						></VIcon>
-						{{ restActivityName }}
-					</VChip>
-				</div>
+				<PomodoroActivityPanel
+					ref="activityPanel"
+					:activityId
+					:formDisabled
+					:timeInputVisible
+					:focusActivityName
+					:restActivityName
+					v-model:focusActivityId="focusActivityId"
+					v-model:focusSelection="focusSelection"
+					v-model:restActivityId="restActivityId"
+					v-model:restSelection="restSelection"
+				></PomodoroActivityPanel>
 				<PomodoroPresetsDialog
 					ref="presetsDialog"
 					@select="selectPreset"
@@ -240,21 +69,20 @@
 	</VRow>
 </template>
 <script setup lang="ts">
-	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { computed, ref, watch } from 'vue'
 	import TimerControls from '@/core/activityHistory/component/TimerControls.vue'
-	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { useI18n } from 'vue-i18n'
 	import TimeDisplayWithProgress from '@/_common/component/dateTime/TimeDisplayWithProgress.vue'
 	import { TimePrecise } from '@/_common/dto/dto/TimePrecise.ts'
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
+	import PomodoroSetupPanel from '@/core/activityHistory/component/PomodoroSetupPanel.vue'
+	import PomodoroActivityPanel from '@/core/activityHistory/component/PomodoroActivityPanel.vue'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
-	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import {
 		pomodoroPhaseOf,
@@ -289,9 +117,7 @@
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
 
-	// Only the focus form is still reached into, and only for `validate()` — the rest activity is
-	// optional, so there is nothing to validate on it.
-	const mainActivitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
+	const activityPanel = ref<InstanceType<typeof PomodoroActivityPanel>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
 
 	// The pickers. Pre-start settings only: once a session exists these are seeded from it and the
@@ -395,7 +221,7 @@
 			store.resumeSession()
 			return
 		}
-		const validationResult = await mainActivitySelectionForm.value?.validate()
+		const validationResult = await activityPanel.value?.validate()
 		if (!validationResult || validationResult.length === 0) {
 			// Last, and after validation on purpose: this prompt discards somebody else's session, so
 			// it must not be asked for a start that is then going to fail anyway.
@@ -500,8 +326,3 @@
 		}
 	}
 </script>
-<style scoped>
-	.borderGrey {
-		border: 1px solid darkgray !important;
-	}
-</style>
