@@ -113,6 +113,7 @@ const common = {
 		// rendering the raw key `GENERAL.RETRY` since S1 shipped; found while browser-verifying S4.
 		retry: `Skúsiť znova`,
 		forbidden: `Nemáte oprávnenie na zobrazenie tejto stránky.`,
+		start: `Začať`,
 	},
 	dateTime: {
 		when: `Kedy`,
@@ -151,6 +152,10 @@ const common = {
 		toEnd: `Do konca`,
 		daysPlural: `Dni`,
 		weeksPlural: `Týždne`,
+		hoursShort: `h`,
+		minutesShort: `min`,
+		switchToTimeRange: `Prepnúť na rozsah času`,
+		switchToDuration: `Prepnúť na dĺžku`,
 		// Deliberately not the framework's wording, which hardcodes "31 dní" — `maxDays` is a prop and
 		// this app passes 366 for the activity dashboards.
 		dateRangeExceedsLimit: `Zvolený rozsah dátumov je príliš dlhý`,

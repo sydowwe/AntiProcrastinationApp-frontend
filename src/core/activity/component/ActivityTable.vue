@@ -12,8 +12,8 @@
 				</span>
 				<VBtn
 					size="small"
-					color="primaryOutline"
-					variant="tonal"
+					color="secondaryOutline"
+					variant="outlined"
 					prependIcon="code-merge"
 					:disabled="selectedActivities.length < 2"
 					@click="openMergeDialog"
@@ -22,7 +22,7 @@
 				</VBtn>
 				<span
 					v-if="selectedActivities.length < 2"
-					class="text-caption text-textMuted"
+					class="text-body-2 text-textMuted"
 				>
 					{{ t('activities.merge.needsTwo') }}
 				</span>
@@ -30,6 +30,7 @@
 				<VBtn
 					size="small"
 					variant="text"
+					prependIcon="xmark"
 					@click="clearSelection"
 				>
 					{{ t('general.unselect') }}
@@ -150,8 +151,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, ref, toRef, watch } from 'vue'
 	import type { Ref } from 'vue'
+	import { computed, ref, toRef, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import TableEmptyState from '@/core/activity/component/TableEmptyState.vue'

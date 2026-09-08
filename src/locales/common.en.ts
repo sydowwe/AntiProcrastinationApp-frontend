@@ -324,6 +324,7 @@ const common = {
 		// `general.forbidden` (their non-admin card) existed in no locale at all — see the SK file.
 		retry: `Try again`,
 		forbidden: `You don't have permission to view this page.`,
+		start: `Start`,
 	},
 	dateTime: {
 		when: `When`,
@@ -360,6 +361,10 @@ const common = {
 		toEnd: `To end`,
 		daysPlural: `Days`,
 		weeksPlural: `Weeks`,
+		hoursShort: `h`,
+		minutesShort: `min`,
+		switchToTimeRange: `Switch to time range`,
+		switchToDuration: `Switch to duration`,
 		dateRangeExceedsLimit: `The selected date range is too long`,
 		startDateBeforeEndDate: `The start date must be before the end date`,
 		january: `January`,

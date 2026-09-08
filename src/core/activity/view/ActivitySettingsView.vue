@@ -54,12 +54,14 @@
 						mandatory
 						divided
 						density="compact"
-						variant="outlined"
+						variant="tonal"
 						color="primaryOutline"
 						class="flex-0-0"
 					>
 						<VBtn value="active">{{ t('activities.archive.viewActive') }}</VBtn>
-						<VBtn value="archived">{{ t('activities.archive.viewArchived') }}</VBtn>
+						<VBtn value="archived">
+							{{ t('activities.archive.viewArchived') }}
+						</VBtn>
 						<VBtn value="all">{{ t('activities.archive.viewAll') }}</VBtn>
 					</VBtnToggle>
 				</template>
@@ -115,8 +117,8 @@
 	import CategoryTable from '@/core/activity/component/activityCategory/ActivityCategoryTable.vue'
 	import { useActivitySelectOptions } from '@/core/activity/composable/UseActivitySelectOptions.ts'
 	import {
-		useActivityFilterDrafts,
 		type ActivitySettingsTab,
+		useActivityFilterDrafts,
 	} from '@/core/activity/composable/useActivityFilterDrafts.ts'
 
 	const { tab } = defineProps<{ tab: ActivitySettingsTab }>()

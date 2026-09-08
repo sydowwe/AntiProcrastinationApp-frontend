@@ -1,7 +1,7 @@
 <template>
 	<SubtleCard
 		v-if="lines.length > 0"
-		color="primary"
+		color="primaryOutline"
 		:title="$t('historyDashboard.insights.title')"
 		shortTitle
 		icon="fas fa-lightbulb"
@@ -60,9 +60,9 @@
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import type { HistoryTimeOfDayResponse } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts'
 	import {
-		useHistoryInsights,
 		type HistoryInsight,
 		type HistoryInsightKind,
+		useHistoryInsights,
 	} from '@/core/historyDashboard/composable/useHistoryInsights.ts'
 	import { fromMinutes, fromSeconds, fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
 

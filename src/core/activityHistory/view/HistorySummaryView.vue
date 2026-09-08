@@ -8,6 +8,7 @@
 				style="margin-right: -12px"
 				@click="router.push({ name: 'activityHistoryCalendar' })"
 			>
+				<VIcon icon="calendar-days" />
 				<VTooltip
 					activator="parent"
 					location="bottom"
@@ -159,9 +160,9 @@
 		buildCsv,
 		buildExportFileName,
 		EXPORT_GROUP_LIMIT,
+		type HistoryGroupExportRow,
 		mergeGroupExportRows,
 		useCsvExport,
-		type HistoryGroupExportRow,
 	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { formatToDate } from '@/_common/utils/DateTimeHelper.ts'

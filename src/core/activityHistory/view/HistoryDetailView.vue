@@ -8,6 +8,7 @@
 				style="margin-right: -12px"
 				@click="router.push({ name: 'activityHistoryCalendar' })"
 			>
+				<VIcon icon="calendar-days" />
 				<VTooltip
 					activator="parent"
 					location="bottom"
@@ -21,6 +22,7 @@
 				style="margin-right: -12px"
 				@click="goToSummaryForWeek"
 			>
+				<VIcon icon="chart-line" />
 				<VTooltip
 					activator="parent"
 					location="bottom"

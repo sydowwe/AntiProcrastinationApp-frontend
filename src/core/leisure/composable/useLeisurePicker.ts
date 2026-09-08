@@ -1,4 +1,4 @@
-import { onMounted, ref, watch, type Ref } from 'vue'
+import { onMounted, ref, type Ref, watch } from 'vue'
 import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
@@ -15,12 +15,12 @@ import type { ActivityInfo } from '@/core/leisure/dto/response/ActivityInfo.ts'
 import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 import {
 	BUCKET_LIST_MIN_MINUTES,
-	PROJECT_MIN_MINUTES,
+	type CandidateFacts,
 	comfortStepAsEnergy,
 	difficultyAsEnergy,
-	pickSuggestions,
-	type CandidateFacts,
 	type PickerConstraints,
+	pickSuggestions,
+	PROJECT_MIN_MINUTES,
 } from '@/core/leisure/composable/leisureScoring.ts'
 import { readSuggestionHistory } from '@/core/leisure/composable/suggestionHistory.ts'
 import { useWeatherFit } from '@/core/leisure/composable/useWeatherFit.ts'
@@ -29,7 +29,7 @@ import type { WeatherFit } from '@/core/leisure/dto/response/WeatherFit.ts'
 /**
  * Turns the three profile tables into three suggestions.
  *
- * The pool is fetched from the endpoints that already exist — `POST /<entity>/filtered-table` — with
+ * The pool is fetched from the endpoints that already exist — `POST /<entity>/grid` — with
  * every hard constraint those filters *can* express pushed down into them (cost tier, location type,
  * readiness). The ranking then happens here, because no existing endpoint can rank across the three
  * sources, and none of them knows what the picker showed yesterday.

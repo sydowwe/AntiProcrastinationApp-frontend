@@ -36,7 +36,7 @@
 					<VChip
 						v-if="card.isNew"
 						size="x-small"
-						color="info"
+						color="primary"
 						variant="flat"
 						style="font-size: 0.7rem !important"
 					>
