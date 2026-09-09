@@ -160,19 +160,28 @@
 		return allRoutineItems.value.filter(item => item.timePeriod.id === filterPeriodId.value)
 	})
 
+	/**
+	 * One request per list: `GET /todo-list-item` requires a `todoListId` and no longer serves every item the
+	 * user owns in one unpaged read (backend PERF-1). The dedupe is by **activity**, not by item — the picker
+	 * offers activities, and the same activity can carry an item on more than one list.
+	 */
+	async function loadTodoItemsFor(listIds: number[]): Promise<TodoListItemEntity[]> {
+		const itemArrays = await Promise.all(listIds.map(id => fetchTodoListItems(id)))
+		const seen = new Set<number>()
+		return itemArrays.flat().filter(item => {
+			if (seen.has(item.activity.id)) return false
+			seen.add(item.activity.id)
+			return true
+		})
+	}
+
 	async function loadTodoData() {
 		loadingTodo.value = true
 		try {
 			const [lists, prioList] = await Promise.all([fetchFilteredSorted(false, null, null), fetchAllPriorities()])
 			todoLists.value = lists
 			priorities.value = prioList
-			const itemArrays = await Promise.all(lists.map(list => fetchTodoListItems(list.id)))
-			const seen = new Set<number>()
-			allTodoItems.value = itemArrays.flat().filter(item => {
-				if (seen.has(item.activity.id)) return false
-				seen.add(item.activity.id)
-				return true
-			})
+			allTodoItems.value = await loadTodoItemsFor(lists.map(list => list.id))
 			if (initialActivityId != null) {
 				const match = allTodoItems.value.find(item => item.activity.id === initialActivityId)
 				if (match) selectedTodoItemId.value = match.id
@@ -205,7 +214,10 @@
 	async function reloadTodoItems() {
 		loadingTodo.value = true
 		try {
-			allTodoItems.value = await fetchTodoListItems(filterListId.value)
+			// Clearing the filter means "all lists", which is now every list asked for by id rather than one
+			// unfiltered call — the same fan-out the initial load already did.
+			const listIds = filterListId.value != null ? [filterListId.value] : todoLists.value.map(list => list.id)
+			allTodoItems.value = await loadTodoItemsFor(listIds)
 		} finally {
 			loadingTodo.value = false
 		}

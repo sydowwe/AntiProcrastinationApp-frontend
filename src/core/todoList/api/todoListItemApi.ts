@@ -6,8 +6,13 @@ import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/Chan
 import { API } from '@/_common/axiosConfig.ts'
 import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 
-export async function fetchTodoListItems(todoListId?: number | null): Promise<TodoListItemEntity[]> {
-	const response = await API.get('todo-list-item', { params: todoListId != null ? { todoListId } : {} })
+/**
+ * `todoListId` is required, and deliberately not optional: the backend rejects the unfiltered call with a 400
+ * rather than serving every item the user owns in one unpaged read (PERF-1). A caller that wants several
+ * lists asks for each of them — see `PlannerActivitySourcePicker.loadTodoItemsFor`.
+ */
+export async function fetchTodoListItems(todoListId: number): Promise<TodoListItemEntity[]> {
+	const response = await API.get('todo-list-item', { params: { todoListId } })
 	return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
 }
 
