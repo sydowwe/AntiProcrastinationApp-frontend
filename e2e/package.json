@@ -4,6 +4,7 @@
 	"private": true,
 	"scripts": {
 		"test": "playwright test",
+		"typecheck": "tsc --noEmit -p .",
 		"test:ui": "playwright test --ui",
 		"test:headed": "playwright test --headed",
 		"codegen": "playwright codegen https://localhost:3000"

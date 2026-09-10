@@ -1,7 +1,7 @@
 import { test as base, expect, type Page } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
-import { readSeed, type SeedResponse, type SeedUser } from './seed'
+import { readSeed, reseed, type SeedResponse, type SeedUser } from './seed'
 
 export { expect }
 export { seedDateParam } from './seed'
@@ -31,10 +31,12 @@ async function signedInPage(browser: import('@playwright/test').Browser, user: S
 	if (!fs.existsSync(authFile)) {
 		await page.goto('/login')
 
-		// Structural locators, not labels. The login screen always renders in SLOVAK regardless of the
-		// account's locale: `src/i18n.ts` sets `locale: 'SK'` and the user's preference is only applied
-		// after a successful sign-in (LoginView sets `i18n.locale` from the response; App.vue from
-		// `currentUser.locale`). So there is no point at which an English label exists to match here.
+		// Structural locators, not labels — deliberately, but no longer for the reason this comment used
+		// to give. `src/i18n.ts` now sets `locale: 'EN'` (flipped 2026-09-10 so the signed-out screens are
+		// English), so `/login` DOES render English labels and `getByLabel('Email')` would in fact resolve.
+		// These stay structural because they are locale-independent and cost nothing: the default locale
+		// is an app-wide decision that has already been reversed once, and a sign-in helper every spec
+		// depends on should not be the thing that breaks when it changes again.
 		const form = page.locator('form')
 		await form.locator('input[type="text"]').first().fill(user.email)
 		await form.locator('input[type="password"]').first().fill(user.password)
@@ -56,19 +58,41 @@ type Fixtures = {
 	seed: SeedResponse
 }
 
-export const test = base.extend<Fixtures>({
-	seed: async ({}, use) => {
-		await use(readSeed())
+type Options = {
+	/**
+	 * Re-run `POST /api/test/seed` before **each** test in scope, instead of reading the state global
+	 * setup left. Off by default; opt a describe block in with `test.use({ freshSeed: true })`.
+	 *
+	 * For specs that mutate rows the fixture pins and other specs read — the counter on
+	 * `todoListItems.multiCountPartial` is the example: assert on it once and it is no longer at 2 of 5
+	 * for anyone, this spec's own re-run included. Pair it with
+	 * `test.describe.configure({ mode: 'serial' })`.
+	 *
+	 * It costs a truncate-and-rebuild (~1.5–2.0 s) per test, so it is the second choice. The first is
+	 * to create whatever you are about to mutate through the app's own API and leave the fixture rows
+	 * read-only — that covers the write path too, which this does not.
+	 */
+	freshSeed: boolean
+}
+
+export const test = base.extend<Fixtures & Options>({
+	freshSeed: [false, { option: true }],
+
+	// Every other fixture reaches the seed through this one, so making it the place the reset happens
+	// is also what orders it: `authenticatedPage` depends on `seed`, so the database is already back in
+	// the fixture state by the time the sign-in runs.
+	seed: async ({ freshSeed }, use) => {
+		await use(freshSeed ? await reseed() : readSeed())
 	},
 
-	authenticatedPage: async ({ browser }, use) => {
-		const page = await signedInPage(browser, readSeed().primaryUser)
+	authenticatedPage: async ({ seed, browser }, use) => {
+		const page = await signedInPage(browser, seed.primaryUser)
 		await use(page)
 		await page.context().close()
 	},
 
-	secondaryPage: async ({ browser }, use) => {
-		const page = await signedInPage(browser, readSeed().secondaryUser)
+	secondaryPage: async ({ seed, browser }, use) => {
+		const page = await signedInPage(browser, seed.secondaryUser)
 		await use(page)
 		await page.context().close()
 	},

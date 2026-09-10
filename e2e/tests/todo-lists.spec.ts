@@ -13,14 +13,20 @@ test.describe('TodoListsView (/todo-list)', () => {
 	})
 
 	test('shows the categories panel and the list panel', async ({ authenticatedPage }) => {
-		await expect(authenticatedPage.getByText('Categories', { exact: true })).toBeVisible()
+		// Scoped to the panel's own heading (`span.text-h6`), not `getByText('Categories', { exact: true })`:
+		// that also matches the mobile "Categories" drawer-toggle button's `v-btn__content` span, which
+		// carries the same exact text and is present (if CSS-hidden) in the DOM at desktop viewport too.
+		await expect(authenticatedPage.locator('span.text-h6', { hasText: 'Categories' })).toBeVisible()
 		await expect(authenticatedPage.getByRole('button', { name: 'New list' })).toBeVisible()
 	})
 
 	test('New list button opens the create dialog', async ({ authenticatedPage }) => {
 		await authenticatedPage.getByRole('button', { name: 'New list' }).click()
 		await expect(authenticatedPage.getByRole('dialog')).toBeVisible()
-		await expect(authenticatedPage.getByLabel('Name')).toBeVisible()
+		// getByLabel('Name') resolves to both the input and Vuetify's default-`clearable` "Clear Name"
+		// icon button, which also carries an `aria-label` containing "Name" — strict mode fails on two
+		// matches. Scope to the textbox role.
+		await expect(authenticatedPage.getByRole('textbox', { name: 'Name' })).toBeVisible()
 	})
 
 	test('create dialog can be cancelled', async ({ authenticatedPage }) => {
@@ -38,6 +44,11 @@ test.describe('TodoListsView (/todo-list)', () => {
 		// Debounced 300ms in useTodoListFilters-equivalent for lists (TodoListsView's own debounce).
 		await authenticatedPage.waitForTimeout(500)
 		await expect(authenticatedPage.getByText(/no lists/i)).toBeVisible()
+	})
+
+	test('empty list renders "No tasks" rather than a loading or error state', async ({ authenticatedPage, seed }) => {
+		await authenticatedPage.goto(`/todo-list/${seed.todoLists.empty}`)
+		await expect(authenticatedPage.getByText('No tasks')).toBeVisible()
 	})
 
 	test.fixme(

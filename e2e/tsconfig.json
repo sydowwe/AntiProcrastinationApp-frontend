@@ -1,0 +1,23 @@
+{
+	// `e2e/` is outside both project references in ../tsconfig.json — tsconfig.app.json covers `src/`
+	// and tsconfig.node.json covers the root config files only — so nothing typechecked this directory
+	// at all. Playwright transpiles specs without checking types, which means a wrong fixture type or a
+	// renamed seed key surfaced as a runtime failure in the middle of a run, if at all.
+	//
+	// Deliberately standalone rather than a third reference from ../tsconfig.json: this is a separate
+	// npm project with its own package.json and its own @playwright/test dependency.
+	"compilerOptions": {
+		"strict": true,
+		"noEmit": true,
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM"],
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["node_modules", "test-results", ".state"]
+}

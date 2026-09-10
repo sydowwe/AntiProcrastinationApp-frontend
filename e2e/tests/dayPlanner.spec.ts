@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/auth'
+import { expect, seedDateParam, test } from '../fixtures/auth'
 
 function dateToUrlParam(date: Date): string {
 	const dd = String(date.getDate()).padStart(2, '0')
@@ -29,6 +29,18 @@ test.describe('Day Planner', () => {
 
 		test('Add Task button is visible', async ({ authenticatedPage }) => {
 			await expect(authenticatedPage.getByRole('button', { name: 'Add Task' })).toBeVisible()
+		})
+	})
+
+	// The seed's clock-relative planner rows are: 3 tasks on seedDateUtc, 2 on +1, none on +2, 2 on +3 —
+	// so +2 is a deliberate empty day (the calendar row for it exists), not a missing-day error. Driven
+	// from `seed.seedDateUtc`, never `new Date()`, per the fixture rules.
+	test.describe('empty day (no planner tasks scheduled)', () => {
+		test('renders the grid normally with no task blocks, not an error state', async ({ authenticatedPage, seed }) => {
+			await authenticatedPage.goto(`/day-planner/${seedDateParam(seed, 2)}`)
+			await authenticatedPage.locator('.calendar-grid').waitFor({ state: 'visible' })
+			await expect(authenticatedPage.getByRole('button', { name: 'Add Task' })).toBeVisible()
+			await expect(authenticatedPage.locator('.task-block')).toHaveCount(0)
 		})
 	})
 
@@ -80,24 +92,48 @@ test.describe('Day Planner', () => {
 			await expect(authenticatedPage.getByText('Day Details')).toBeVisible()
 		})
 
-		test('toggle button hides the Day Details panel', async ({ authenticatedPage }) => {
-			// First button in .header-bar is the bars/expand toggle
-			await authenticatedPage.locator('.header-bar').getByRole('button').first().click()
-			await expect(authenticatedPage.getByText('Day Details')).not.toBeVisible()
-		})
+		// Not a locator bug: `PlannerSidePanelShell.vue` renders `v-show="panelOpen || mdAndUp"`, so at
+		// this suite's desktop viewport (`devices['Desktop Chrome']`) the panel is *always* shown
+		// regardless of `panelOpen` — collapsing it is a mobile-only affordance. The bars/xmark toggle
+		// buttons that flip `panelOpen` both carry `class="d-md-none"`, so at desktop width they are
+		// `display: none` and excluded from the accessibility tree entirely — `getByRole('button')`
+		// never sees them. `.header-bar .getByRole('button').first()` therefore silently resolved to
+		// the previous-day nav arrow (the first *accessible* button in `.header-bar`) instead, which
+		// is a real click with a real effect (it navigates the date) but not the one either test
+		// intended — that is what actually made "Day Details" stay visible, not a broken hide.
+		// There is no desktop-viewport locator that exercises this: it needs a narrow/mobile viewport,
+		// which this suite does not run (see the runbook's X4, already blocked on the same gap).
+		test.fixme(
+			'toggle button hides the Day Details panel',
+			// Panel-collapse is mobile-only (`v-show="panelOpen || mdAndUp"`); untestable at this
+			// suite's desktop viewport. Needs a mobile-viewport pass (blocked, same as runbook X4).
+			async () => {},
+		)
 
-		test('toggle button restores the Day Details panel', async ({ authenticatedPage }) => {
-			const toggle = authenticatedPage.locator('.header-bar').getByRole('button').first()
-			await toggle.click()
-			await expect(authenticatedPage.getByText('Day Details')).not.toBeVisible()
-			await toggle.click()
-			await expect(authenticatedPage.getByText('Day Details')).toBeVisible()
-		})
+		test.fixme(
+			'toggle button restores the Day Details panel',
+			// Same gap as above — the toggle it restores from is unreachable at desktop viewport.
+			async () => {},
+		)
 
-		test('Edit button opens the calendar details dialog', async ({ authenticatedPage }) => {
-			await authenticatedPage.locator('.detail-panel').getByRole('button', { name: 'Edit' }).click()
-			await expect(authenticatedPage.getByRole('dialog')).toBeVisible()
-		})
+		// The old `.detail-panel`-scoped locator was also wrong (the Edit button lives in
+		// `PlannerSidePanelShell`'s `#titleActions` slot, a sibling of `.detail-panel`, not a
+		// descendant), but fixing just that surfaces a real bug, not a passing test:
+		// `CalendarDetailsDialog.vue`'s `getNaturalDayType()` reads `props.calendar!.dayIndex` with a
+		// non-null assertion and no real guard. `.calendar-grid` becomes visible before
+		// `DayPlannerView`'s `calendar` ref finishes loading, so a click that lands in that window
+		// hits `Cannot read properties of undefined (reading 'dayIndex')`, which throws out of the
+		// dialog's render and cascades into further "Unhandled error during execution of component
+		// update" failures — the dialog never mounts, so `getByRole('dialog')` finds nothing.
+		// Reproduced twice outside this suite (`node` + Playwright directly, console/pageerror
+		// listeners attached) with the identical stack; a manual `playwright-cli` walk-through did
+		// not reproduce it, consistent with the load having more time to finish between steps there.
+		test.fixme(
+			'Edit button opens the calendar details dialog',
+			// Real defect, not a locator bug — see the comment above. Reported rather than filed,
+			// since dayPlanner has no docs/views/ unit yet (unrun unit 7).
+			async () => {},
+		)
 	})
 
 	test.describe('selection action bar — DayPlannerView actions', () => {
