@@ -4,7 +4,8 @@
 
 **Tally (round 1, as captured):** blocker 0 · bug 7 · a11y 3 · polish 1 · opportunity 0 · unverified 2
 
-**Tally (after triage + round 2):** blocker 0 · bug 7 (B1, B2, B5, B7, B8 **fixed**; B3, B4, B6 open) ·
+**Tally (after triage + rounds 2/2b):** blocker 0 · bug 7 (B1, B2, B5, B7, B8 **fixed and verified**;
+B3, B4, B6 open) ·
 a11y 1 (A1; A2 re-graded to `unverified`, A3 dropped as already fixed) · polish 1 · opportunity 0 ·
 unverified 3 (U1, U2, A2). B6 is open but halved — its undo-tooltip half was already fixed elsewhere.
 B8 was filed retroactively during triage. See `docs/views/_fix-queue.md` for the reasoning behind every
@@ -16,11 +17,13 @@ re-grade.
 | 1 | 2026-09-10 | `acd7db0d` | initial inventory pass |
 | 1a | 2026-09-10 | `acd7db0d` | **triage** (`docs/views/_fix-queue.md`). A3 dropped and B6 halved — both already fixed in the working tree by the `todo-lists` round-2 pass. A2 re-graded `a11y` → `unverified` (the chevron it names is labelled in source; wrong file, wrong element). B1 scope grown to the multi-count path. New finding **B8** recovered from `inventory.md:98`, which referenced it but where it was never written up. |
 | 2 | 2026-09-10 | working tree | **fix pass** — B1, B2, B5, B7, B8 code-fixed (fix-queue batches F1, F3, F5, F6, F8). `npx vue-tsc --build --force` exit 0, `npm run lint` exit 0. B3/B4/B6 (F4, the i18n batch), P1 (F7) and A1/A2 (F2) untouched. **Not browser-verified** — this session had no browser; every `Verify:` block below is still outstanding. |
+| 2a | 2026-09-10 | 46e4b67e | **browser verification attempt blocked** — the group's open tab and a direct navigation to `/routine-todo-list` both bounced to `https://localhost:3000/login` (Slovak-locale login form, not the expected signed-in English session). Per this round's own instructions, stopped rather than signing in. No `Verify:` block for B1/B2/B5/B7/B8 was executed; no finding status changed below. |
+| 2b | 2026-09-10 | 46e4b67e | **browser verification, all five pass.** Session confirmed signed in as `999gangshit999@gmail.com`, EN locale, landed on `/routine-todo-list` with group cards (no `/login` bounce). **Environment note:** the account's data had been fully reset since the round-1/1a evidence was captured — `grouped-by-time-period` returned `items: []` for all four periods (no "Meditation", no "Meal Preparation", no "Laundry") and `/todo-list` showed "No lists" (list id 1 from earlier evidence 404s). This is a seed/DB reset, not a regression — the four time periods themselves (`Daily`/`Weekly`/`Monthly`/`Yearly`, same ids 1-4, same thresholds/colors) were intact. B7, B8, B5 don't depend on item data and were verified directly. B1 (the important one) and B2's structural check were verified by creating two temporary routine items ("Retest B1 Checkbox" single-count, "Retest B1 Counter" 0/2 multi-count) in the Daily group, exercising every step of the `Verify:` block, then deleting both afterward — board is back to "No tasks" in all four groups, no lasting drift. B2's second half (`/todo-list/1` cross-check) could not run — no normal-list data exists in this account to check. Console showed only the pre-existing B3 warning (`toDoList.timePeriod` not found), nothing new. All five findings pass; no regressions. |
 
 ---
 
 ### B1. Checking off a routine item's checkbox unconditionally opens the "Log time manually" dialog
-- **Status:** fixed (round 2) — **not yet browser-verified**
+- **Status:** fixed and verified (round 2 / 2b) — verified against a substitute item, not the original seed
 - **Severity:** bug
 - **Where:** `/routine-todo-list` and `/todo-list/:id` (shared component) →
   `src/core/todoList/component/BaseTodoListItem.vue:10,27` (`VListItem`'s `@click="itemClicked"` and the
@@ -71,9 +74,26 @@ re-grade.
   reach. That emit moved up into `itemClicked`, so it now fires for a row-body click on a multi-count item
   and not for a counter click. Consumer chain corrected in passing: the routine view reaches this via
   `RoutineGroupCard.vue:61`, not `RoutineToDoListView.vue` as the finding states.
+- **Verified (2b):** "Meditation" no longer exists (account data reset — see round 2b's round-history entry),
+  so verification used a temporary substitute item, "Retest B1 Checkbox" (single-count, Daily group), deleted
+  afterward. Before: `{id:19004, isDone:false, streak:0, lastCompletedAt:"0001-01-01T00:00:00"}`. One checkbox
+  click: item visibly toggled to checked/strikethrough, progress bar to 100%, **no dialog opened**; API
+  confirmed `{isDone:true, streak:1, lastCompletedAt:"2026-09-10T13:20:06.363891Z"}`. Second click: item
+  toggled back to unchecked, still no dialog; API confirmed `{isDone:false, streak:1,
+  lastCompletedAt:"2026-09-10T13:20:06.363891Z"}` — `isDone` reverted, `streak`/`lastCompletedAt` did not
+  (expected, per the finding's own note — no API path to revert them). Both pass conditions A and B hold; **no
+  regression**. The ⋮ overflow menu's "Log time" entry was then opened on the same item and confirmed it still
+  shows the Stopwatch/Timer/Pomodoro/Manual-entry dialog on purpose — closed via Cancel without saving.
+  Multi-count path: created a second temporary item, "Retest B1 Counter" (0/2, Daily group). Clicking the
+  counter chip itself opened no dialog (chip changed to a "—" glyph — the already-known dead-click/hidden
+  minus-button defect, A1/F2, correctly not counted as a B1 failure). Clicking the row body (title text) **did**
+  open the "Log time manually" dialog (Start time / Length fields) and incidentally incremented the counter to
+  1/2 — matches the fix's documented behaviour (`itemClicked` now fires for multi-count row-body clicks and
+  calls `toggleDone()`). Closed via Cancel without saving. Both temporary items deleted afterward; all four
+  group cards back to "No tasks".
 
 ### B2. Two progress indicators in the same routine group card disagree
-- **Status:** fixed (round 2) — **not yet browser-verified**
+- **Status:** fixed and verified (round 2 / 2b) — **half-verified**: the normal-list cross-check could not run
 - **Severity:** bug
 - **Where:** `/routine-todo-list`, Daily group card — `RoutineGroupStats.vue`'s `groupProgress` ("2 / 4") vs
   `BaseToDoList.vue`'s own `progress` bar ("67%"), stacked directly on top of each other in
@@ -112,6 +132,13 @@ re-grade.
 - **Not changed, deliberately:** `BaseToDoList`'s formula. It is what the normal to-do list has always shown;
   re-weighting it to item-counting to match `RoutineGroupStats` would have altered every list in the app to
   close a routine-only finding.
+- **Verified (2b):** Daily group card's header area now shows a single "0%" progress bar with no separate
+  "N / M" text above it (zoomed screenshot of the card header) — the structural pass condition holds regardless
+  of item count, since the removed `RoutineGroupStats` block is gone entirely, not merely empty. The stats
+  row's middle cell (period chip) is still visually centred, third column empty as documented. **Could not
+  verify the second half** — `/todo-list/1` 404s ("This list doesn't exist") and `/todo-list` shows "No lists":
+  the account's normal to-do list data was reset along with the routine data (see round 2b's round-history
+  entry), so there is no normal list left in this account to confirm still shows its one summary unchanged.
 
 ### B3. Routine "Add" dialog's time-period field label renders as the raw key `toDoList.timePeriod`
 - **Status:** open
@@ -172,7 +199,7 @@ re-grade.
   `_locales/todoList.{sk,en}.ts` covering every literal listed above, and wire both files through `$t()`.
 
 ### B5. Time-period delete confirmation shows the raw numeric id instead of the period's name
-- **Status:** fixed (round 2) — **not yet browser-verified**; step 3 (cascade) remains open, see below
+- **Status:** fixed and verified (round 2 / 2b); step 3 (cascade) remains open, see below
 - **Severity:** bug
 - **Where:** `/routine-settings` → delete (trash icon) on any row → `BasicTable.vue:211`'s
   `deleteConfirmationText`, driven by an optional `deleteConfirmationColumn` prop that
@@ -203,6 +230,11 @@ re-grade.
   poor framework-wide default and this is the second call site to hit it, but changing it is a submodule
   commit affecting every table in every app on the framework — its own batch and its own decision, not a
   side effect of an app-side one-liner.
+- **Verified (2b):** Clicked the trash icon on the "Yearly" row (`/routine-settings`) — the dialog title
+  "Delete confirmation" and body read exactly "Are you sure you want to delete Yearly?", not a bare number.
+  Clicked CANCEL (not Confirm); all 4 rows (Daily/Weekly/Monthly/Yearly) still present afterward, id/column data
+  unchanged. The cascade-count half of the `Verify:` block remains unestablished, as already tracked as open in
+  the "Still open" note below — this round did not touch it.
 - **Still open — the cascade half (`Verify:` step 3).** Whether deleting a time period cascades to the routine
   items assigned to it is a server contract this pass never established, and CLAUDE.md requires a cascading
   delete to state how many children go with it. Two consequences if it does cascade: `BasicTable`'s generic
@@ -240,7 +272,7 @@ re-grade.
   interpolated values.
 
 ### B7. Reorder toggle button never changes its label, unlike the normal list's equivalent
-- **Status:** fixed (round 2) — **not yet browser-verified**
+- **Status:** fixed and verified (round 2 / 2b)
 - **Severity:** bug
 - **Where:** `/routine-todo-list` toolbar — `src/core/todoList/view/RoutineToDoListView.vue:37-44`. The
   button's `:color`/`:variant` swap with `isInChangeOrderMode`, but its text is unconditionally
@@ -274,9 +306,12 @@ re-grade.
 - **Note for the retest round:** the unit's own draft spec already asserts this. A passing
   `npx playwright test tests/todo-routine.draft.spec.ts -g "Reorder mode"` *is* the verification — it is
   currently the test that fails on `getByRole('button', { name: /finish reordering/i })`.
+- **Verified (2b):** On `/routine-todo-list`, clicked the toolbar button (accessible name "Reorder") — its name
+  changed to "Finish reordering" (confirmed via `find`). Clicked again — name changed back to "Reorder". Text
+  now correctly tracks `isInChangeOrderMode` in both directions.
 
 ### B8. `/routine-settings` is not listed on `/user/settings`
-- **Status:** fixed (round 2) — **not yet browser-verified**
+- **Status:** fixed and verified (round 2 / 2b)
 - **Severity:** bug
 - **Filed retroactively during triage.** `inventory.md`'s RoutineSettingsView section recorded this defect and
   pointed at "Findings B4", but B4 is the localization finding — the cross-reference was dangling and the
@@ -304,6 +339,9 @@ re-grade.
   screens do *not* belong there, only per-user preference pages, and `/routine-settings` is both: it manages
   time-period entities *and* owns per-user streak preferences. The preference half is what earns it a place;
   the reasoning is in a comment next to the entry so the next reader doesn't relitigate it.
+- **Verified (2b):** `/user/settings`'s "Per-module settings" list shows three rows: "Day planner settings",
+  "Notifications & reminders", "Routine time periods & streaks" — real prose, not a raw key. Clicked it;
+  navigated to `/routine-settings` (confirmed via `window.location.href`).
 
 ### A1. Multi-count item counter (e.g. "0/2") has no accessible name
 - **Status:** open
