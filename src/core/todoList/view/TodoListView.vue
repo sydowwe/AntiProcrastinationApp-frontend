@@ -4,6 +4,32 @@
 		justify="center"
 	>
 		<VCol
+			v-if="loadFailed"
+			class="d-flex justify-center align-start"
+			cols="12"
+			sm="10"
+			md="8"
+			lg="5"
+		>
+			<VAlert
+				type="warning"
+				variant="tonal"
+				maxWidth="520"
+				:title="$t('toDoList.namedList.notFoundTitle')"
+				:text="$t('toDoList.namedList.notFoundText')"
+			>
+				<template #append>
+					<VBtn
+						variant="text"
+						:to="{ name: 'toDoList' }"
+					>
+						{{ $t('toDoList.namedList.toLists') }}
+					</VBtn>
+				</template>
+			</VAlert>
+		</VCol>
+		<VCol
+			v-else
 			class="d-flex flex-column"
 			cols="12"
 			sm="10"
@@ -52,6 +78,8 @@
 					v-model:filterDueState="filterDueState"
 					:isInChangeOrderMode
 					:availablePriorities
+					:hasActiveFilters
+					@clear="clearFilters"
 				/>
 				<BaseToDoList
 					class="flex-fill"
@@ -172,7 +200,7 @@
 
 	const i18n = useI18n()
 	const { showErrorSnackbar, showSuccessSnackbar, showSnackbar } = useSnackbar()
-	const { showFullScreenLoading } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()
 	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
@@ -181,6 +209,13 @@
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const items = ref([] as TodoListItemEntity[])
 	const listEntity = ref<TodoListEntity | null>(null)
+
+	/**
+	 * A `:id` that names no list is a mistyped or stale URL, not an empty list — but the items fetch
+	 * answers `[]` for both, so without this the page rendered the ordinary "No tasks" copy and the
+	 * only tell was an unhandled rejection in the console.
+	 */
+	const loadFailed = ref(!Number.isFinite(todoListId))
 
 	const {
 		isInChangeOrderMode,
@@ -191,6 +226,8 @@
 		focusMode,
 		availablePriorities,
 		displayedItems,
+		hasActiveFilters,
+		clearFilters,
 		toggleChangeOrderMode,
 		toggleSortMode,
 		toggleFocusMode,
@@ -224,11 +261,24 @@
 	const { deleteItem, handleOrderChange, handleUncheckAll } = listCrud
 
 	onMounted(async () => {
+		if (loadFailed.value) return
 		showFullScreenLoading()
 		void ensureLeisurePairingLoaded()
-		items.value = await fetchAll()
-		listEntity.value = await fetchByIdNamedList(todoListId)
-		void ensureCalibrationLoaded(items.value.map(item => item.activity.id))
+		try {
+			// The list before its items: this is the fetch that can 404, and there is nothing worth
+			// loading items for once it has.
+			listEntity.value = await fetchByIdNamedList(todoListId)
+			items.value = await fetchAll()
+			void ensureCalibrationLoaded(items.value.map(item => item.activity.id))
+		} catch {
+			// The axios interceptor has already surfaced the status as a snackbar; this only decides
+			// what stays on screen instead of letting the rejection escape the mounted hook.
+			loadFailed.value = true
+		} finally {
+			// The error branch of the interceptor never hides it, so the overlay would otherwise
+			// outlive the failure.
+			hideFullScreenLoading()
+		}
 	})
 
 	const totalProgress = computed(() => ({

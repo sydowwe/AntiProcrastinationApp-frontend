@@ -71,7 +71,7 @@
 							class="d-md-none"
 							@click="categoryDrawerOpen = true"
 						>
-							Categories
+							{{ $t('toDoList.namedList.categories') }}
 						</VBtn>
 						<VBtn
 							color="primary"
@@ -99,6 +99,8 @@
 							variant="outlined"
 							color="secondaryOutline"
 							style="height: 40px; width: 40px"
+							:title="$t('general.toggleSortDirection')"
+							:aria-label="$t('general.toggleSortDirection')"
 							@click="toggleListSort"
 						/>
 					</div>

@@ -1,0 +1,63 @@
+# Unit 07 — planner-day
+
+Module: `dayPlanner`
+
+Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the
+unit's docs have landed and you have read them.
+
+For the mutation pass, paste the same block with `Pass:` changed to `mutation`.
+
+---
+
+```
+Read prompts/view-docs/PROMPT-TEMPLATE.md in full and follow it exactly. It is the
+specification for this task: the procedure, the hard constraints, the deliverables and
+their exact section headings, the severity and ID rules, and the closing report format.
+
+Fill its Unit block with:
+
+- Unit name: `planner-day`
+- Module: `dayPlanner`
+- Pass: `inventory`
+- Views & routes:
+    `PlannerCalendarView` `/day-planner`
+    `DayPlannerView` `/day-planner/:date`
+    `PlannerTaskLinkView` `/day-planner/task/:id`
+    `DayPlannerSettingsView` `/day-planner/settings`
+- Intent sources: prompts/_done/day-planner/README.md, P3-correctness-sweep.md,
+  P5-calendar-request-storm.md, P7-calendar-url-state.md, F1-now-and-next.md,
+  F2-plan-vs-actual.md, P8-accessibility.md
+
+Environment, already verified — do not re-check:
+- Dev server https://localhost:3000 (this exact origin — the session cookie is bound to
+  it), backend https://localhost:8080, both running and seeded. You are signed in and the
+  account locale is English. If the UI renders Slovak, stop and report.
+
+This is a Windows machine — use the PowerShell tool for shell commands, never Bash.
+
+Invoke the claude-in-chrome skill, then load the Chrome MCP tools in ONE ToolSearch call.
+Call tabs_context_mcp first, then create your own tab. Never reuse a tab from another
+session. Never trigger a browser-native alert/confirm/prompt.
+
+Known for this unit — verify each, do not assume:
+- P5 is literally about a calendar REQUEST STORM. The duplicate-request check the template
+  asks for is the highest-value thing you can do in this unit — watch the network panel
+  while changing dates and ranges, and count requests per interaction.
+- `/day-planner/:date` is declared BEFORE `/day-planner/templates` in the route table, but
+  vue-router ranks static segments above params so `templates` still wins. This is NOT a
+  bug; it is recorded in docs/views/_routes.md because the declaration order invites the
+  opposite conclusion. Do not report it.
+- PlannerTaskLinkView (`/day-planner/task/:id`) is a deep-link hop that resolves a bare
+  task id to the dated planner URL. It is not a screen a user browses to — test it by
+  navigating directly with a real task id, and with an invalid one.
+- DayPlannerSettingsView is in this unit because its settings change how the day view
+  renders — verify a setting end to end, not just that it saves. Note it was recently
+  split into one component per tab (95c7bbf2), so it has several tabs.
+- Existing Playwright coverage: e2e/tests/dayPlanner.spec.ts already asserts arrow-key date
+  navigation and the input-focus guard. Do not duplicate those in your draft spec.
+- Recent commits post-date the intent sources: 5c72fd5a split DayPlannerView, 4e3366ed
+  collapsed six bulk-action tails into useBulkTaskAction, 64ad48c8 replaced the calendar's
+  hand-rolled URL query handling.
+
+Do only this unit. Do not continue to another one.
+```

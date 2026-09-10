@@ -19,6 +19,7 @@
 			:loading
 			:columns
 			:itemsLength="timePeriods.length"
+			deleteConfirmationColumn="text"
 			:showSelect="false"
 			:showActionsHeader="false"
 			@onLoadItems="loadItems"

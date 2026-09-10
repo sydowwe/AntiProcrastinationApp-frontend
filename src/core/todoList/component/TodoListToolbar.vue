@@ -4,6 +4,8 @@
 			icon="arrow-left"
 			variant="tonal"
 			density="comfortable"
+			:title="$t('general.backToList')"
+			:aria-label="$t('general.backToList')"
 			:to="{ name: 'toDoList' }"
 		/>
 		<VBtn

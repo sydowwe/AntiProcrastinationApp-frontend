@@ -111,10 +111,22 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 		isInChangeOrderMode.value = !isInChangeOrderMode.value
 	}
 
+	/**
+	 * Everything that HIDES items, in one call — a control labelled "Clear filters" that leaves
+	 * "Hide done" on has silently kept a filter the user asked it to drop. `sortMode` is deliberately
+	 * not reset: it reorders, it never hides, and its own button always states the mode it is in.
+	 *
+	 * Each setter is a `router.replace` of `{ ...route.query, … }`, so three sequential writes would
+	 * each read the pre-clear query and the last would resurrect the first two. One replace.
+	 */
 	function clearFilters() {
-		filterPriorityIds.value = []
-		filterDueState.value = null
+		router.replace({ query: { ...route.query, priorities: undefined, due: undefined, hideDone: undefined } })
 	}
+
+	/** Drives the "Clear filters" chip's visibility — it has to name everything `clearFilters` resets. */
+	const hasActiveFilters = computed(
+		() => filterPriorityIds.value.length > 0 || filterDueState.value !== null || hideDone.value,
+	)
 
 	function toggleSortMode() {
 		const modes: SortMode[] = ['custom', 'priority', 'dueDate']
@@ -152,6 +164,7 @@ export function useTodoListFilters(items: Ref<TodoListItemEntity[]>) {
 		focusItemIds,
 		availablePriorities,
 		displayedItems,
+		hasActiveFilters,
 		toggleChangeOrderMode,
 		clearFilters,
 		toggleSortMode,

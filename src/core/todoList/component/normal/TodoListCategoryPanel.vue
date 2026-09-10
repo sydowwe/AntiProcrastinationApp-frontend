@@ -7,6 +7,8 @@
 				icon="xmark"
 				size="40"
 				variant="tonal"
+				:title="$t('general.close')"
+				:aria-label="$t('general.close')"
 				@click="emit('closeDialog')"
 			/>
 			<VIconBtn
@@ -15,6 +17,8 @@
 				color="success"
 				size="40"
 				variant="tonal"
+				:title="$t('toDoList.category.add')"
+				:aria-label="$t('toDoList.category.add')"
 				@click="emit('openCreate')"
 			/>
 		</div>
@@ -25,6 +29,8 @@
 				size="40"
 				density="comfortable"
 				variant="tonal"
+				:title="$t('general.toggleSortDirection')"
+				:aria-label="$t('general.toggleSortDirection')"
 				@click="emit('toggleSort')"
 			/>
 			<VTextField
@@ -41,6 +47,8 @@
 				color="success"
 				size="40"
 				variant="tonal"
+				:title="$t('toDoList.category.add')"
+				:aria-label="$t('toDoList.category.add')"
 				@click="emit('openCreate')"
 			/>
 		</div>
@@ -105,6 +113,8 @@
 						size="32"
 						variant="tonal"
 						icon="pen"
+						:title="`${$t('general.edit')}: ${cat.name}`"
+						:aria-label="`${$t('general.edit')}: ${cat.name}`"
 						@click.stop="emit('openEdit', cat)"
 					>
 						<VIcon size="16" />
@@ -113,6 +123,8 @@
 						size="32"
 						variant="tonal"
 						icon="trash"
+						:title="`${$t('general.delete')}: ${cat.name}`"
+						:aria-label="`${$t('general.delete')}: ${cat.name}`"
 						@click.stop="emit('confirmDelete', cat)"
 					>
 						<VIcon size="16" />
@@ -123,7 +135,7 @@
 		<VSwitch
 			v-model="hideEmptyCategories"
 			class="mt-auto ml-auto mr-4 mb-2"
-			label="Hide empty"
+			:label="$t('toDoList.category.hideEmpty')"
 			color="primary"
 			hideDetails
 			density="compact"

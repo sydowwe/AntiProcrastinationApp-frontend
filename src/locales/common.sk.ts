@@ -62,6 +62,9 @@ const common = {
 		close: `Zavrieť`,
 		create: `Vytvoriť`,
 		filter: `Filtrovať`,
+		// Prístupné názvy pre tlačidlá, ktoré nesú iba ikonu.
+		toggleSortDirection: `Zmeniť smer zoradenia`,
+		moreActions: `Ďalšie akcie`,
 		send: `Odoslať`,
 		save: `Uložiť`,
 		cancel: `Zrušiť`,
@@ -82,6 +85,10 @@ const common = {
 		show: `Zobraziť`,
 		confirm: `Potvrdiť`,
 		new: `Nový`,
+		// Rovnaký prípad ako `actions` vyššie: frameworkové `ColorPicker` a `MyPdfViewer` prekladajú
+		// `general.none`, ale tento namespace nahrádza ten frameworkový celý, takže bez tejto kópie
+		// sa vykreslí holý kľúč aj v slovenčine.
+		none: `Žiadne`,
 		update: `Aktualizovať`,
 		optional: `Voliteľné`,
 		search: `Hľadať`,
@@ -100,6 +107,9 @@ const common = {
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale (see the note at the top of SK.ts), so its copy of this key never reaches i18n.
 		undoSuccess: `{description} bolo vrátené späť`,
+		// Tá istá kolízia znova: framework má `general.undo`, ale tento namespace ho nahrádza celý.
+		undo: `Vrátiť späť`,
+		nothingToUndo: `Nie je čo vrátiť späť`,
 		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
 		// every app-side `useDialog().confirm` for a delete. Without the mirror they render the raw key —
 		// which is what every table in the app did until this was noticed (migration-revision.md R5/R6/R11

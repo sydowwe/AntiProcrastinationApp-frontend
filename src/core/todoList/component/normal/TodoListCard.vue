@@ -40,6 +40,8 @@
 						size="40"
 						color="secondaryOutline"
 						variant="tonal"
+						:title="`${$t('general.edit')}: ${list.name}`"
+						:aria-label="`${$t('general.edit')}: ${list.name}`"
 						@click.stop="emit('openEdit', list)"
 					/>
 					<VIconBtn
@@ -47,6 +49,8 @@
 						size="40"
 						color="default"
 						variant="tonal"
+						:title="`${$t('general.delete')}: ${list.name}`"
+						:aria-label="`${$t('general.delete')}: ${list.name}`"
 						@click.stop="emit('confirmDelete', list)"
 					/>
 				</div>
@@ -58,7 +62,12 @@
 			>
 				<div class="d-flex justify-space-between align-center mb-1">
 					<span class="text-caption text-medium-emphasis">
-						{{ list.completedCount ?? 0 }} / {{ list.itemCount }} done
+						{{
+							$t('toDoList.namedList.doneCount', {
+								done: list.completedCount ?? 0,
+								total: list.itemCount,
+							})
+						}}
 					</span>
 					<span class="text-caption font-weight-medium">{{ progressPercent }}%</span>
 				</div>

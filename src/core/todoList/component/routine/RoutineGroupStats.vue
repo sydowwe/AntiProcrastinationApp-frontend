@@ -91,22 +91,10 @@
 			</VChip>
 		</VSheet>
 
-		<!-- Right: progress summary -->
-		<div
-			v-if="groupProgress.total > 0"
-			class="d-flex flex-column align-end ga-1"
-		>
-			<span class="text-caption text-medium-emphasis">
-				{{ $t('routineTodoList.progressCount', { done: groupProgress.done, total: groupProgress.total }) }}
-			</span>
-			<VProgressLinear
-				:modelValue="(groupProgress.done / groupProgress.total) * 100"
-				color="secondary"
-				height="3"
-				rounded
-				style="min-width: 60px"
-			/>
-		</div>
+		<!-- No progress summary here on purpose: `BaseToDoList` renders one directly below this component
+			 inside `RoutineGroupCard`. The two counted differently — items here, sub-task units there — so a
+			 group mixing plain and multi-count items showed two numbers that disagreed. The grid's third
+			 column is left empty so the middle cell stays centred. -->
 	</div>
 </template>
 <script setup lang="ts">
@@ -117,23 +105,16 @@
 		PeriodCompletion,
 		RoutineTimePeriodEntity,
 	} from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
-	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import RoutineStreakFreeze from '@/core/todoList/component/routine/RoutineStreakFreeze.vue'
 
-	const { timePeriod, items } = defineProps<{
+	const { timePeriod } = defineProps<{
 		timePeriod: RoutineTimePeriodEntity
-		items: RoutineTodoListItemEntity[]
 	}>()
 
 	const emit = defineEmits<{ freezeSpent: [] }>()
 
 	const { getBgColor } = useColor()
 	const { runLabel, countLabel } = useRoutineRunLabel()
-
-	const groupProgress = computed(() => ({
-		done: items.filter(item => item.isDone).length,
-		total: items.length,
-	}))
 
 	const consistencyPct = computed(() => {
 		if (!timePeriod.totalPeriodsElapsed) return 0

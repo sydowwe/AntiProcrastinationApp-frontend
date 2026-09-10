@@ -70,9 +70,14 @@ const todoList = {
 			// Formulované tak, aby veta sedela pri akomkoľvek počte — bez množných tvarov.
 			deleteCascade: `Počet položiek v zozname: {count}. Vymažú sa spolu s ním.`,
 			selectCategory: `Vyberte kategóriu`,
+			doneCount: `{done} / {total} hotových`,
+			notFoundTitle: `Tento zoznam neexistuje`,
+			notFoundText: `Odkaz môže byť zastaraný alebo bol zoznam vymazaný.`,
+			toLists: `Na zoznamy`,
 		},
 		category: {
 			add: `Nová kategória`,
+			hideEmpty: `Skryť prázdne`,
 			deleteConfirm: `Vymazať kategóriu?`,
 			// Kategória je iba označenie — zoznamy sa nemažú, len prídu o zaradenie (B4).
 			deleteKeepsLists: `Počet zoznamov v kategórii: {count}. Ostanú zachované, iba prídu o zaradenie.`,
@@ -115,6 +120,7 @@ const todoList = {
 		settings: `Nastavenia`,
 		groups: `Skupiny`,
 		reorder: `Zmeniť poradie`,
+		finishReordering: `Dokončiť zoraďovanie`,
 		addDialogTitle: `Pridať do rutinného zoznamu úloh`,
 		history: `História`,
 		historyDialogTitle: `{group} · {days}-dňové obdobia`,

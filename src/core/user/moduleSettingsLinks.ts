@@ -26,4 +26,9 @@ export const moduleSettingsLinks: ModuleSettingsLink[] = [
 	// UserMenu but was in neither the sidebar nor this page, so quiet hours and per-kind muting were
 	// findable only from a dropdown.
 	{ routeName: 'reminderPreferences', labelKey: 'reminders', icon: 'bell' },
+	// A deliberate borderline case. `/routine-settings` manages time-period *entities* (name, colour,
+	// length), which the rule above excludes — but it also owns per-user streak preferences (threshold,
+	// grace days, reset anchor, history depth), and those were reachable only from an in-page button on
+	// `/routine-todo-list`. The preference half is what earns it a place here.
+	{ routeName: 'routineSettings', labelKey: 'routine', icon: 'repeat' },
 ]

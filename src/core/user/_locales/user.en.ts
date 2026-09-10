@@ -11,6 +11,7 @@ const user = {
 			description: `Further preferences that belong to specific parts of the app.`,
 			planner: `Day planner settings`,
 			reminders: `Notifications & reminders`,
+			routine: `Routine time periods & streaks`,
 		},
 		backToSettings: `Back to account settings`,
 		// Export

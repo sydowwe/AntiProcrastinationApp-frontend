@@ -8,6 +8,9 @@
 				color="white"
 				class="flex-shrink-0"
 				style="opacity: 0.6"
+				:title="collapsed ? $t('general.show') : $t('general.hide')"
+				:aria-label="`${collapsed ? $t('general.show') : $t('general.hide')}: ${$t('toDoList.steps')}`"
+				:aria-expanded="!collapsed"
 				@click.stop="collapsed = !collapsed"
 			/>
 			<span class="text-no-wrap text-caption text-medium-emphasis">

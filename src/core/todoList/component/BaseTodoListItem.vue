@@ -24,7 +24,7 @@
 					color="success"
 					:disabled="isInChangeOrderMode"
 					:style="isInChangeOrderMode ? 'color:white !important' : ''"
-					@click.prevent
+					@click.prevent.stop="checkboxClicked"
 				/>
 				<TodoListItemCounter
 					v-else
@@ -123,6 +123,8 @@
 								color="white"
 								variant="text"
 								size="40"
+								:title="i18n.t('general.moreActions')"
+								:aria-label="`${i18n.t('general.moreActions')}: ${toDoListItem.activity.name}`"
 								@click.stop=""
 							></VIconBtn>
 						</template>
@@ -289,24 +291,40 @@
 		emits('isDoneChanged', toDoListItem.id, forceValue)
 	}
 
+	function toggleDone() {
+		const oldIsDone = isDone.value
+		isDone.value = !isDone.value
+		if (oldIsDone !== isDone.value) {
+			emitChanged()
+		}
+	}
+
+	// The checkbox is `@click.prevent`, which cancels the native toggle — so its `v-model` never fires and
+	// this is the only thing that flips `isDone` for a checkbox click. It must therefore keep doing the
+	// toggle; all it must *not* do is report an `itemClicked`, which every view wires to the manual
+	// log-time dialog. Hence a handler of its own rather than letting the click bubble to `itemClicked`.
+	function checkboxClicked() {
+		if (isInChangeOrderMode) return
+		toggleDone()
+	}
+
 	function itemClicked(event: Event) {
 		if (isInChangeOrderMode) {
 			event.preventDefault()
 			return
 		}
 
+		// `itemClicked` means "the user clicked the row body", which is the gesture the views treat as
+		// "log time against this task". `progressClicked` used to emit it itself, so operating the counter
+		// opened the dialog too — the multi-count twin of the checkbox bug above.
+		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
+
 		if (toDoListItem.isMultipleCount) {
 			progressClicked()
 			return
 		}
 
-		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
-
-		const oldIsDone = isDone.value
-		isDone.value = !isDone.value
-		if (oldIsDone !== isDone.value) {
-			emitChanged()
-		}
+		toggleDone()
 	}
 
 	function minusClicked() {
@@ -324,7 +342,6 @@
 
 	function progressClicked() {
 		if (isInChangeOrderMode) return
-		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 		if (doneCount.value === null || toDoListItem.totalCount === null) return
 		if (doneCount.value >= toDoListItem.totalCount) return
 		doneCount.value++

@@ -40,7 +40,7 @@
 					appendIcon="arrows-up-down"
 					@click="toggleChangeOrderMode"
 				>
-					{{ $t('routineTodoList.reorder') }}
+					{{ isInChangeOrderMode ? $t('routineTodoList.finishReordering') : $t('routineTodoList.reorder') }}
 				</VBtn>
 				<TodoListUndoBtn
 					:canUndo

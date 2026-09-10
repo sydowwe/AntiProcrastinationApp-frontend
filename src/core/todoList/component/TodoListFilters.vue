@@ -43,12 +43,12 @@
 			</VChip>
 		</VChipGroup>
 		<VChip
-			v-if="filterPriorityIds.length > 0 || filterDueState !== null"
+			v-if="hasActiveFilters"
 			size="small"
 			variant="tonal"
 			color="secondaryOutline"
 			prependIcon="xmark"
-			@click="clearFilters"
+			@click="emit('clear')"
 		>
 			{{ $t('toDoList.clearFilters') }}
 		</VChip>
@@ -59,15 +59,17 @@
 	import type { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'
 	import type { DueFilter } from '@/core/todoList/composable/useTodoListFilters.ts'
 
-	const { isInChangeOrderMode, availablePriorities } = defineProps<{
+	// `hasActiveFilters` and the clearing itself both come from `useTodoListFilters` rather than being
+	// re-derived here: this component only sees two of the three filters that "Clear filters" resets
+	// ("Hide done" lives in the title bar), and a local copy is how the two drifted apart before.
+	const { isInChangeOrderMode, availablePriorities, hasActiveFilters } = defineProps<{
 		isInChangeOrderMode: boolean
 		availablePriorities: TaskPriority[]
+		hasActiveFilters: boolean
+	}>()
+	const emit = defineEmits<{
+		clear: []
 	}>()
 	const filterPriorityIds = defineModel<number[]>('filterPriorityIds', { default: [] })
 	const filterDueState = defineModel<DueFilter>('filterDueState', { default: null })
-
-	function clearFilters() {
-		filterPriorityIds.value = []
-		filterDueState.value = null
-	}
 </script>

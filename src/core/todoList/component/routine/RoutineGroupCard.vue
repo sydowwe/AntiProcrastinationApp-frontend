@@ -6,7 +6,6 @@
 		/>
 		<RoutineGroupStats
 			:timePeriod="group.timePeriod"
-			:items="group.items"
 			@freezeSpent="emit('freezeSpent')"
 		/>
 		<div class="h-100">

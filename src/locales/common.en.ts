@@ -279,6 +279,9 @@ const common = {
 		close: `Close`,
 		create: `Create`,
 		filter: `Filter`,
+		// Accessible names for controls that render an icon and nothing else.
+		toggleSortDirection: `Change sort direction`,
+		moreActions: `More actions`,
 		send: `Send`,
 		save: `Save`,
 		cancel: `Cancel`,
@@ -299,6 +302,10 @@ const common = {
 		show: `Show`,
 		confirm: `Confirm`,
 		new: `New`,
+		// Same story as `undoSuccess` below: the framework's `ColorPicker` and `MyPdfViewer` resolve
+		// `general.none`, and this namespace replaces the framework's wholesale — so the key was
+		// missing in EN *and* SK until now.
+		none: `None`,
 		update: `Update`,
 		optional: `Optional`,
 		search: `Search`,
@@ -315,6 +322,9 @@ const common = {
 		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
 		// wholesale, so its copy of this key never reaches i18n.
 		undoSuccess: `{description} was undone`,
+		// Same collision again: the framework has `general.undo`, this namespace replaces it wholesale.
+		undo: `Undo`,
+		nothingToUndo: `Nothing to undo`,
 		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
 		// every app-side `useDialog().confirm` for a delete. EN never had them at all — `EN.ts` does not
 		// spread the framework's Slovak-only `common`.
@@ -437,6 +447,24 @@ const common = {
 		fri: `Fri`,
 		sat: `Sat`,
 		sun: `Sun`,
+	},
+	// Mirrors the framework's Slovak-only `iconPicker` namespace (`_common/_locales/common.sk.ts`),
+	// consumed by `_common/component/inputs/IconPicker.vue` + `IconPickerDialog.vue`. Same story as
+	// `calendar` above: EN.ts does not spread the framework `common`, so without this the icon field
+	// in every create/edit dialog that has one rendered the raw `iconPicker.icon` /
+	// `iconPicker.selectIconPlaceholder` keys for EN users.
+	iconPicker: {
+		selectIcon: `Select an icon`,
+		searchPlaceholder: `Search icons...`,
+		iconsCount: `icons`,
+		noIconsFound: `No icons found`,
+		tryDifferentSearch: `Try a different search term`,
+		selected: `Selected:`,
+		icon: `Icon`,
+		selectIconPlaceholder: `Select an icon`,
+		solid: `Solid`,
+		regular: `Regular`,
+		brands: `Brands`,
 	},
 }
 export default common
