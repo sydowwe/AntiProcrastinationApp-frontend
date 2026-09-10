@@ -122,7 +122,12 @@ Tabbed from a fresh `/` load, starting with focus on the sidebar-toggle button:
 No skip-link was encountered before reaching interactive sidebar/main content — see Findings A2. Order is sensible (top bar left-to-right, then sidebar top-to-bottom, then main content) and matches visual layout. Did not find a focus trap outside the one dialog tested; the user menu and notification panel both closed cleanly on Escape and returned to a sane state.
 
 ## Responsive (narrow viewport)
-**Blocked.** `resize_window` to 390×844 (and a 800×600 attempt) reported success each time, but `window.innerWidth`/`innerHeight` never changed from 1920×889 across three attempts, and screenshots confirmed no layout change. Per the stop-after-3-failed-attempts rule, this section is left unverified rather than guessed at. No `narrow.png` screenshot was produced.
+![](screenshots/narrow.png)
+**Unblocked in round 2** — the round-1 block was a tooling limit (the browser MCP's `resize_window` reported success without resizing anything), not an app behaviour. `playwright-cli resize 390 844` actually applies, confirmed by `window.innerWidth`/`innerHeight` reading 390×844.
+
+At 390×844 the sidebar swaps from a persistent drawer to `v-navigation-drawer--temporary v-navigation-drawer--mobile`, closed by default and opened by the same top-bar hamburger; it overlays the content with a scrim (`.v-navigation-drawer__scrim`) rather than pushing it, and Escape closes it. Drawer width stays 288px. No horizontal overflow: `document.documentElement.scrollWidth` is 390, equal to the viewport.
+
+One layout difference worth recording: the top bar renders a **fifth** button at mobile width — a standalone log-out icon button (`title="Log out"`, no `aria-label`) that is not present at desktop width, where log out lives only inside the user menu. The user-menu button still renders the full account e-mail next to it at 390px.
 
 ## Console & network at boot
 - **errors/warnings:** none at `/` itself on a clean load (only Vite HMR debug messages). App-code errors *were* seen later in the session, but only after navigating to other routes while testing breadcrumbs, not from the shell/boot path itself:
@@ -153,11 +158,12 @@ No skip-link was encountered before reaching interactive sidebar/main content �
 | --- | --- | --- | --- |
 | 1 | 2026-09-09 | `acd7db0d` | initial shell pass |
 | 1a | 2026-09-10 | `acd7db0d` | backfilled `Status:` / `Verify:`; renumbered to the severity-prefix rule (`F1`→`B1`, `F2`→`A1`, old `A1`→`A2`, old `A2`→`A3`). Tally corrected: `F2` was severity `a11y` but counted as a bug. |
+| 2 | 2026-09-10 | `a87a3502` + working tree | re-verified the whole unit through `playwright-cli` against the **EN default locale** (`src/i18n.ts` `locale: 'EN'`, the signed-out guard in `App.vue`, and the filled-in `_common/_locales/common.en.ts`), signed in through the login form as the seed account `test@example.com`. Responsive section unblocked. A1/A2/A3/P1 re-confirmed open; B1 not re-testable on this account. |
 
 ---
 
 ### B1. Notification content ignores the account's English locale preference — renders raw Slovak text
-- **Status:** open
+- **Status:** open — **not re-tested in round 2**: the seed account (`test@example.com`) has zero notifications, so the panel only rendered its "No notifications" empty state. Re-testing needs an account with dispatched notifications, or a dispatch triggered on purpose.
 - **Severity:** bug — **[framework]**
 - **Where:** Notification dropdown panel (`NotificationBell` → its panel) and `/notifikacie`, backed by `src/_common/modules/notifications/`
 - **Expected:** With the account's language preference set to English (confirmed via `/user/settings` → Appearance → Language = "Angličtina"/English, and every other piece of chrome — nav labels, breadcrumbs, dialog buttons — rendering in English), notification titles and bodies should also be in English.

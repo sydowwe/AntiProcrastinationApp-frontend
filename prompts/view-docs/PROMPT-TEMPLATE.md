@@ -35,10 +35,15 @@ You are documenting and auditing. You are **not** fixing anything.
    files in `e2e/`**. The only files you create or modify are the ones listed under *Deliverables*, plus
    screenshots. If you find a one-line fix that is obviously correct, write it in the findings file as a
    suggestion — do not apply it.
-2. **You own the browser exclusively** for this session. Do not assume any tab state from earlier work: call
-   `tabs_context_mcp` first, then create your own tab.
-3. **Never trigger a native dialog** (`alert`/`confirm`/`prompt`). It freezes the extension. App dialogs
-   (`MyDialog` / `DialogHost`) are fine and are part of what you must document — browser-native ones are not.
+2. **Drive the browser with `playwright-cli`** — see CLAUDE.md's *Browser verification* section for the config,
+   the sign-in sequence and the `state-load` shortcut. Use your own session and run `playwright-cli close`
+   when you finish. Sessions are isolated, so you share no state with another agent; do not assume state from
+   earlier work either — `open` fresh and assert `location.pathname` rather than trusting where you think you
+   are.
+3. **App dialogs (`MyDialog` / `DialogHost`) are part of what you must document.** Browser-native
+   `alert`/`confirm`/`prompt` are not — this app should not be using them, so treat one as a finding if you
+   meet it. It will block the page until you clear it with `playwright-cli dialog-accept` or `dialog-dismiss`;
+   unlike the Chrome extension this pass used to run on, that is recoverable rather than fatal.
 4. **Stop after 3 failed attempts** at the same interaction. Write what you know into the findings file with
    `status: blocked`, and end the session with a report. Do not keep retrying or wander into other modules.
 5. **Stay inside your unit.** If a control navigates to a view outside this unit, record the destination and
@@ -83,8 +88,20 @@ Navigate to the route. If it takes params, use a **real seeded id** discovered f
 one deliberately invalid value (`/999999`, a malformed date) to see how it fails. Record both.
 
 ### 2. Screenshot
-Save to `docs/views/{{UNIT_NAME}}/screenshots/<route-slug>.png`. Screenshot every distinct state you reach:
-default, empty (if you can get to it), each dialog, each tab. Name them `<route-slug>--<state>.png`.
+Save to `docs/views/{{UNIT_NAME}}/screenshots/<route-slug>.png` with
+`playwright-cli screenshot --filename <path>` (add `--full-page` where the view scrolls). Screenshot every
+distinct state you reach: default, empty (if you can get to it), each dialog, each tab. Name them
+`<route-slug>--<state>.png`.
+
+**Take them freely, read them back deliberately.** Saving one costs ~85 tokens — it writes a file and prints a
+path, the image never enters context. `Read`ing one back costs ~1 500. So the cost is entirely in the reading,
+and the rule is: **`Read` back exactly one screenshot per view**, as a visual sweep for spacing, alignment,
+colour, contrast and overflow.
+
+That sweep is not optional and it is not padding. The accessibility snapshot you are working from is
+structurally blind to all of those, so without this step `polish` and visual `a11y` findings silently stop
+being filed — not because the views got better, but because nothing was looking. If the sweep finds nothing,
+say so explicitly in `findings.md` rather than omitting it.
 
 ### 3. Inventory every interactive element
 Walk the page systematically — header, filter panel, table/grid, each row, footer, floating buttons, and every
@@ -109,7 +126,19 @@ focus traps in dialogs, and whether arrow keys are correctly ignored while a tex
 Separately from actions, record everything the view *shows*:
 
 - **tables** — column list, which are sortable, filterable, editable inline; server- or client-paged; default sort
-- **charts / graphs** — type, axes, series, what drives the range
+- **charts / graphs** — type, axes, series, what drives the range.
+  **A chart cannot be documented from a snapshot.** This app charts with `echarts` / `vue-echarts`, which
+  renders to a `<canvas>` — so the accessibility tree shows one opaque node with *nothing inside*: no slices,
+  no series, no labels, no legend, no axis ticks. A snapshot will make a fully populated chart look like an
+  empty box, and "chart appears empty" is a false finding you can file in complete good faith. Use one of
+  these instead, and **say in the inventory which one you used**:
+  1. `playwright-cli response-body <n>` on the request that populates it — the most precise of the three, and
+     you are inspecting that response anyway for the `populated by` column;
+  2. `playwright-cli eval` against the chart's own data;
+  3. `playwright-cli screenshot` and `Read` it back — necessary for questions that really are visual (colour
+     mapping, overlap, legend truncation).
+  Affected units are the ones mounting `HistoryPieChart`, `HistoryTimeline` or `HistorySummaryCards`, which
+  includes Home — not just the history and tracking dashboards.
 - **calendars / grids** — granularity, what a cell represents, what the range control does
 - **counters, badges, chips, progress bars, streaks, totals** — what number, computed from what
 - **empty / loading / error states** — the exact copy shown, and how you triggered it
@@ -140,8 +169,13 @@ appears → edit → verify → delete → verify it is gone. While doing so, ch
   state how many children go with them, regardless of the `askBeforeDelete` preference)
 - does a success/error snackbar fire, and does it say something useful
 - do counters, badges and lists elsewhere in the unit update afterwards, or go stale
-- **clean up after yourself**: delete everything you created, and restore anything you edited. Note in the
-  findings file anything you could not clean up.
+- **clean up after yourself.** Preferred: reseed at the end with `POST /api/test/seed` (one idempotent call,
+  ~1.5–2 s, restores the exact known state) — it is strictly more reliable than hand-cleanup, which only has
+  to be got wrong once before every later unit documents your residue as if it were seed data. Two conditions:
+  it **wipes every account**, so never do it while another unit is mid-run, and it invalidates
+  `e2e/.state/auth-*.json`, so say in your report that the next agent must sign in rather than `state-load`.
+  If you cannot reseed, fall back to deleting everything you created and restoring anything you edited, and
+  note in the findings file anything you could not undo.
 
 ## Deliverables
 
@@ -350,7 +384,22 @@ assert that a *value* or a *rule* is correct, which is exactly what a human stil
 Follow the existing conventions exactly: import `{ expect, test }` from `../fixtures/auth`, use the
 `authenticatedPage` fixture, and match the style of `e2e/tests/dayPlanner.spec.ts`. Prefer role+name locators;
 where you had to fall back to a fragile selector, say so in a comment — that comment is the argument for adding
-an `aria-label` later.
+an `aria-label` later. Derive seeded ids and dates from the `seed` fixture (`seed.todoLists.empty`,
+`seedDateParam(seed, 2)`), never `new Date()` and never a hardcoded id the fixture supplies.
+
+**You do not have to transcribe locators by hand.** The crawl you just did already emitted them:
+
+- every command echoes a `### Ran Playwright code` block containing the real call it made
+  (`await page.getByRole('button', { name: 'Today' }).click()`) — that is a spec line, ready to paste;
+- `playwright-cli generate-locator <ref>` turns any snapshot ref into its Playwright locator;
+- `playwright-cli recording-start` / `recording-stop` replays a whole interaction back as Playwright code.
+
+Snapshot nodes map to locators directly: `- button "In a week" [ref=f1e273]` is
+`getByRole('button', { name: 'In a week' })`. **A locator you did not observe resolving is a guess** — the same
+rule as findings. One already-shipped bug came from guessing: a `.header-bar` "first button" locator silently
+resolved to the previous-day nav arrow instead of the panel toggle, because the toggle is `v-show`-mobile-only
+and absent from the tree at desktop viewport. The click worked, the date changed, and the conclusion drawn from
+it was wrong (`e2e/tests/dayPlanner.spec.ts:106`).
 
 Then **run only your own file, once**:
 
@@ -366,10 +415,15 @@ your locator is wrong (fix it) or you found a real defect (log it as a finding a
 - `webServer.ignoreHTTPSErrors: true` is already set in `e2e/playwright.config.ts`. Without it the readiness
   probe cannot see the self-signed-cert dev server and every run stalls to timeout. If you hit that symptom
   anyway, report it — do not "fix" the config.
-- `e2e/global-setup.ts` calls `POST /test/seed` before any test. **If that endpoint does not exist on the
-  backend, every run fails at global setup, before your spec is reached.** That is an environment gap, not a
-  defect in your spec. If it happens: report it plainly, leave the spec file in place unrun, and do **not**
-  edit `global-setup.ts` or the config to work around it. Say "spec written, not run — `/test/seed` missing".
+- `e2e/global-setup.ts` calls `POST /api/test/seed` before any test. **This endpoint now exists and works**
+  (verified 2026-09-10 — 200, fixture `e2e-v1`), so a failure there is news, not the expected state. It is only
+  registered when the API runs in Development *and* points at a local Postgres; against the shared remote
+  database it is refused by design and answers **401**, which for this API means "route not registered", not
+  "log in first". If global setup fails: report it plainly, leave the spec file in place unrun, and do **not**
+  edit `global-setup.ts` or the config to work around it.
+- The seed **resets every account on each run**, so it is called once in `globalSetup` and never per test. If
+  your spec needs data the fixture lacks, do not create it in the test — note it in your report and the fixture
+  gets extended. Per-test creation is the polluted-state problem the seed endpoint exists to remove.
 
 ## When you are done
 

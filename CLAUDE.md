@@ -352,6 +352,128 @@ Adding a module: create `<module>.routes.ts`, import and spread it in `src/route
   `assignWith is not defined` failure was the floating-lodash bug described in `migration-revision.md` §R2 and no longer reproduces. A chunk-size warning over 500 kB
   is expected and not an error.
 
+## Browser verification — drive `playwright-cli`, don't take screenshots
+
+Looking at the running app goes through the **Playwright agent CLI** (`playwright-cli`, installed globally; its skill lives in `~/.claude/skills/playwright-cli`).
+The unit of output is a text accessibility snapshot with element refs, which costs a fraction of a screenshot and can actually be asserted on. Take a screenshot only
+when the question is genuinely visual — spacing, colour, overflow.
+
+**Navigation commands do not print the snapshot — they print a link to it.** `open`, `goto`, `click` and friends write the YAML to `.playwright-cli/page-*.yml` and
+emit a one-line reference (measured on v0.1.19: `goto` ≈ 273 chars, vs ≈ 3 000 for the snapshot file it wrote). So a ten-step walkthrough is nearly free, and you pay
+for a page only when you ask for it. Ask for it with `find` rather than `snapshot` wherever you can — a targeted `find` on the overdue banner came back in 555 chars
+against 2 972 for the whole page. `screenshot` behaves the same way: it prints a path and costs nothing until you `Read` the PNG, which is when it becomes the most
+expensive thing in this section (~1 500 tokens for a 1440×900 viewport).
+
+This does **not** replace `e2e/`. That suite is the regression net; `playwright-cli` is the manual look-at-it loop that used to be a browser MCP plus screenshots.
+
+**Config.** `.playwright/cli.config.json` (committed — it was untracked until 2026-09-10, so a fresh clone had no config at all and *every* command died on the
+self-signed cert) sets `contextOptions.ignoreHTTPSErrors`. That is not optional — the dev server and the API both serve self-signed HTTPS, and there is no CLI flag
+for it, only the config file. Command output lands in `.playwright-cli/`, which is gitignored because it can contain tokens; nothing prunes it, so run
+`npm run playwright:clean` when it gets noisy (it had grown to 130 files before that script existed).
+
+**Signing in.** The CLI drives its own browser, so it does not inherit the session from your Chrome. Sign in through the form — credentials come from
+`e2e/.state/seed.json` (`primaryUser`), never hardcoded here, because the seed owns them:
+
+```
+playwright-cli open https://localhost:3000/login
+playwright-cli fill "getByRole('textbox', { name: 'Email' })" "<primaryUser.email>"
+playwright-cli fill "getByRole('textbox', { name: 'Password' })" "<primaryUser.password>"
+playwright-cli click "getByRole('button', { name: 'Log in' })"
+```
+
+The click returns before the router navigates, so the URL in that command's own output is still `/login`. Check it in a **separate** call
+(`playwright-cli eval "location.pathname"` → `/`, and `POST /api/auth/login` → 200 in `requests`); do not read the click's output and conclude the login failed.
+
+Then save the session so the next agent skips the form: `playwright-cli state-save .playwright-cli/auth.json`. Restoring it takes three commands:
+
+```
+playwright-cli open https://localhost:3000        # bounces to /login — no session yet
+playwright-cli state-load .playwright-cli/auth.json
+playwright-cli reload                             # the guard now sends /login → /
+```
+
+That last step only works because of `SIGNED_OUT_ONLY_ROUTES` in `src/router.ts`: an authenticated user is redirected off `/login`, `/registration` and
+`/forgotten-password`. Before that guard existed, the `reload` left you on `/login` while the top bar rendered the account chip and every `/api/*` call returned 200
+— i.e. signed in, but staring at the sign-in form. Assert `location.pathname` rather than trusting the header either way.
+
+**Do not rely on `e2e/.state/auth-10001.json`.** It is a by-product of `e2e/fixtures/auth.ts`, and `global-setup.ts` deletes the whole `.state/` directory on every
+seed — so it exists only between a signed-in spec and the next `npm run test:e2e`. It is a legitimate shortcut when it happens to be there, but its absence is normal
+and is not a bug to investigate.
+
+**Expect a burst of 401s on the first load, and do not chase it.** The access token in the state file lives ~15 minutes, so any older state file loads, fails every
+request with 401, and then refreshes through the axios interceptor. The `reload` above is enough to clear it — after it the console is clean and every `/api/*` call
+is 200. Confirm with `playwright-cli console error` and `playwright-cli requests` before treating 401s as a defect.
+
+Worth knowing: `playwright-cli find` searches the snapshot instead of dumping it, `playwright-cli request <n>` shows one request in full, and `playwright-cli close`
+ends the session (`playwright-cli list` shows what is still running).
+
+**`--regex` takes the pattern as its value, it is not a boolean flag.** This doc had it the other way round until 2026-09-10 and the documented form simply errors:
+
+```
+playwright-cli find --regex "date that has passed"   # correct
+playwright-cli find "overdue" --regex                # Error: '--regex' option: expected string, received boolean
+```
+
+**Writing a spec? Read the `### Ran Playwright code` block.** Every command echoes the real Playwright call it just made (`await page.goto(...)`,
+`await page.getByRole('button', { name: 'Today' }).click()`), so the browser pass that discovers a locator also emits the line to paste into the spec. Snapshot
+nodes map to locators directly — `- button "In a week" [ref=f1e273]` is `getByRole('button', { name: 'In a week' })`. The pass through Chrome is unavoidable when
+writing specs (that is what `prompts/view-docs/` means by "drive the screen before writing its assertions"), but it costs snapshots, not screenshots.
+
+## Writing e2e specs — the conventions `e2e/` already holds
+
+`e2e/` is a **separate npm project** with its own `package.json`, `node_modules` and `tsconfig.json`. Run it from `e2e/`: `npm test`, and `npm run typecheck`
+(added 2026-09-10 — the directory was outside both project references in the root `tsconfig.json`, so nothing typechecked it and Playwright transpiles specs
+without checking types). The suite is `workers: 1`, `retries: 0`, chromium only.
+
+**Every spec starts `import { expect, test } from '../fixtures/auth'`** — never from `@playwright/test` directly. That module is where the fixtures live, and the
+whole convention hangs off it:
+
+| Fixture | What it gives you |
+|---|---|
+| `authenticatedPage` | a `Page` signed in as the seed's primary user, in its own context |
+| `secondaryPage` | the same for the second account — for per-account `localStorage` / scoping checks |
+| `seed` | the `POST /api/test/seed` response: stable ids, `counts`, `seedDateUtc` |
+| `freshSeed` (option) | `test.use({ freshSeed: true })` re-runs the reset before each test in scope |
+
+- **Read ids off `seed`, do not hardcode them.** The ids *are* a stable cross-repo contract (the API's `docs/e2eTestSeed.md` has the table), so a literal is not
+  wrong — but reading them means a fixture change lands as one failure instead of twenty. Several existing specs still navigate to a literal `/todo-list/13002`;
+  that is the older style, not the target.
+- **Never `new Date()`.** Derive every date from `seed.seedDateUtc` through `seedDateParam(seed, offset)`. The fixture's clock-relative rows were computed once at
+  seed time, so a run straddling midnight UTC otherwise looks for tasks on the wrong day.
+- **Assert against `seed.counts.*`, not a number you counted by hand.** That is why the response carries `overdueTodoListItems` at all — the banner's threshold is
+  a constant in *this* repo that the API cannot see, so the fixture aims well above it and reports the real figure.
+- **Locators: roles and English labels inside the app, structural on `/login`.** The fixture accounts are `locale: 'EN'` precisely so label-based locators work.
+  `/login` renders English too since the default-locale flip (`src/i18n.ts` sets `EN`, not `SK` — the older claim that the sign-in screen is always Slovak is
+  no longer true), so `getByLabel('Email')` *would* resolve there; the structural locators in `fixtures/auth.ts` stay anyway because they are locale-independent and
+  the default locale has already been reversed once. Scope to `#app` when Vuetify teleports an overlay clone of your text outside it, which makes a bare `getByText`
+  resolve to two elements.
+- **Wait on the thing you are about to assert**, not on navigation. `getByText(...).waitFor()` in `beforeEach` — the item fetch resolves after the first paint, and
+  the first snapshot after `goto` can land before `items.value` is populated. That is a real race, not a flake.
+- **A real defect gets `test.fixme` plus a comment naming the finding id and the root cause** — never a weakened assertion that passes. `todo-motivation.spec.ts` is
+  the model: two `test.fixme`s pointing at `docs/views/todo-lists/findings.md` B3/B4, each explaining why it is not a locator problem.
+- **One spec file per view or surface**, `describe` per surface with the route in the title (`Multi-count item counter (/todo-list/:id — "Focus")`).
+- **Drive the screen with `playwright-cli` before writing the assertions** (section above) — its `### Ran Playwright code` block emits the exact locator line to paste.
+
+### Mutating specs
+
+One reset per run plus `workers: 1` means **anything you write to a fixture row stays written** for every spec after it, including a re-run of your own. Order of
+preference:
+
+1. Create the row you are about to mutate **through the app's own API** (a `request` context on the same storage state) and leave the fixture read-only. This also
+   covers the write path, which seeding does not.
+2. If the mutation must be on a fixture-pinned row — the counter on `todoListItems.multiCountPartial` is the case that forced this — opt the block in:
+
+```ts
+test.describe.configure({ mode: 'serial' })
+test.use({ freshSeed: true })
+```
+
+`freshSeed` re-POSTs `/api/test/seed` before each test in scope (~1.5–2.0 s). The endpoint is a reset, not an upsert, so this is safe to repeat; cached auth
+survives it, because the accounts come back with the same ids and a deterministic security stamp and the API installs no `SecurityStampValidator`.
+
+**Do not ask the backend for a seed shape.** A parameterised seed endpoint is a second write API parallel to the real one; the rule for what may go in the fixture
+at all is in the API repo's `docs/e2eTestSeed.md` under "What belongs in the fixture".
+
 ## Submodule workflow
 
 Fresh clones need `git clone --recurse-submodules`, or `git submodule update --init --recursive` after the fact. CI must check out submodules recursively.

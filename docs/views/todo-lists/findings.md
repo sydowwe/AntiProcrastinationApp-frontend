@@ -2,8 +2,8 @@
 
 > Pass: inventory · captured 2026-09-09 · commit `acd7db0d`
 
-**Tally:** blocker 0 · bug 2 (both fixed + verified) · a11y 2 (both fixed + verified) · polish 1 (fixed + verified) ·
-opportunity 1 · unverified 3
+**Tally:** blocker 0 · bug 4 (2 fixed + verified, 2 open — B3, B4) · a11y 2 (both fixed + verified) · polish 1
+(fixed + verified) · opportunity 1 · unverified 2 (U1, U3) · settled 1 (U2 → see B3)
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@ opportunity 1 · unverified 3
 | 1a | 2026-09-10 | `acd7db0d` | backfilled `Status:` / `Verify:` / `Root cause guess:`; renumbered `B3` → `U3` (its severity was `unverified`, which had also double-counted it in the tally as a bug) |
 | 2 | 2026-09-10 | working tree | **fix pass** — B1, B2, A1, A2, P1 code-fixed. `npm run type-check` 0 errors, `npm run lint` 0 errors. O1/U1/U2/U3 untouched (seed-data / mutation-pass work, not code). |
 | 2a | 2026-09-10 | working tree | **browser verification** on `https://localhost:3000`, EN locale, signed in. All five `Verify:` blocks executed — see each finding's *Verified* line. Two follow-ups came out of it: a layout fix to B1's new alert, and **five more nameless icon controls on `/todo-list/:id`** that A1's `/todo-list`-scoped sweep never covered (recorded under A1). |
+| 3 | 2026-09-10 | working tree | **e2e seed-backed pass** (`POST /api/test/seed` now works). Drove the "Focus" (13001) and "Errands" (13002) lists via `playwright-cli` to write Task-3 specs. U1 confirmed working (6 overdue items trip the banner, message and buttons render correctly) but its "Today" action itself is broken — filed as **B4**, a framework-level `Time.fromJson` contract bug that fails every reschedule touching an item with a due time. U2 settled — the click is not dead — but that surfaced **B3**, a new bug: the same click also opens the log-time dialog. O1/U3 still not verifiable: the seed's `withEstimate`/`withEstimateAndSteps` items (ids 14002/14001) return no `suggestedTime` in `GET /api/todo-list-item`, despite being named for it and counted in the seed response's `calibrationTodoListItems: 6` — a fixture/backend gap, reported rather than fixed here. |
 
 ---
 
@@ -234,6 +235,85 @@ opportunity 1 · unverified 3
   `/todo-list/1`, switched "Hide done" off, deselected both chip groups, hid the chip, and brought all 8 items
   back. `sort` was not in play (list was in `custom`), consistent with the exclusion above.
 
+### B3. Multi-count counter click also opens the manual log-time dialog
+- **Status:** open
+- **Severity:** bug
+- **Where:** `/todo-list/:id` — `src/core/todoList/component/BaseTodoListItem.vue`'s `itemClicked()` (around
+  line 311), which backs the `TodoListItemCounter`'s row for multi-count items
+- **Expected:** Per the comment already sitting on lines 302–305 of the same file — documenting the identical
+  bug already fixed for the checkbox by giving it a dedicated `checkboxClicked()` handler that never reaches
+  `itemClicked()` — operating the counter should only change the count, not also open the log-time dialog.
+- **Actual:** `itemClicked()` unconditionally emits `itemClicked` (which every view wires to opening the manual
+  log-time dialog) and only afterwards branches on `toDoListItem.isMultipleCount` to call `progressClicked()`.
+  Both fire from one physical click on the row, so incrementing a multi-count item's counter also pops the
+  "Log time manually" dialog over it every time.
+- **Evidence:** `playwright-cli` snapshot before/after a single click on the "Deep Clean Kitchen" row
+  (`multiCountPartial`, id 14013, "Focus" list 13001, seed `e2e-v1`): before, the counter reads `2 /5`; after
+  one click, it reads `3 /5` **and** a `dialog "Log time manually"` is present in the same snapshot.
+- **Repro:** 1. Sign in, open `/todo-list/13001`. 2. Click anywhere on the "Deep Clean Kitchen" row (the 2/5
+  counter). 3. Observe the count become 3/5 **and** the "Log time manually" dialog open at the same time.
+- **Verify:** 1. Same repro. 2. **Pass condition:** the counter increments but the log-time dialog does not
+  open — matching the checkbox's already-fixed behaviour — or, if opening it is a deliberate design decision,
+  a maintainer says so and this closes as working-as-intended instead.
+- **Root cause guess:** `itemClicked()` needs the same split the checkbox already got: either give the counter
+  its own click handler that calls `progressClicked()` without emitting `itemClicked`, or return immediately
+  after the `isMultipleCount` branch's `progressClicked()` call without having emitted first. The function
+  already returns early after `progressClicked()` (line 324) — the emit above it just needs to move inside the
+  `else` branch, or the multi-count branch needs to run before the emit.
+- **Note:** settles **U2**, which had marked this click's behaviour "inconclusive" — the click was never dead;
+  see U2 for the correction.
+
+### B4. Overdue renegotiation ("Today" / "In a week") always fails for any item with a due time — `Time.fromJson` cannot parse the backend's string shape
+- **Status:** open
+- **Severity:** bug (high — silently breaks the entire bulk-reschedule feature, not just this banner)
+- **Where:** `src/_common/dto/dto/Time.ts`'s `Time.fromJson()`, consumed by
+  `TodoListItemEntity.fromJson` (`dueTime` field) and round-tripped by
+  `ToDoListItemRequest.fromEntity` / `useOverdueRenegotiation.ts`'s `rescheduleOverdue()`
+- **Expected:** Clicking "Today" (or "In a week") on the overdue-renegotiation banner reschedules every
+  overdue item to the target date and shows the "Moved {count} tasks…" success snackbar.
+- **Actual:** Every `PUT /api/todo-list-item/{id}` in the batch fails with **400**:
+  `{"errors":{"dueTime":["Cannot get the value of a token type 'StartObject' as a string."]}}`. Nothing is
+  rescheduled, no success snackbar appears, and the banner stays exactly as it was (confirmed via a
+  `fetchAll()` re-read afterward: `dueDate`/`dueTime` on all 6 items unchanged from the seed).
+- **Root cause:** a client/server contract mismatch on `Time`, not specific to this banner. The backend
+  serializes a due time as a **string**, `"17:00:00"` (confirmed via a direct `fetch` to
+  `GET /api/todo-list-item?todoListId=13002` — e.g. id 14012 "Return Library Book" has `"dueTime":"17:00:00"`).
+  But `Time.fromJson()` (`src/_common/dto/dto/Time.ts:17-20`) is written for an **object** shape:
+  ```ts
+  static fromJson(object: any) {
+      const { hours = 0, minutes = 0 } = object
+      return new Time(hours, minutes)
+  }
+  ```
+  Destructuring `{ hours, minutes }` from a string finds neither property, so **every item with a real due
+  time silently parses as `00:00`** the moment it's read — not just the ones this banner touches. That
+  zeroed `Time` instance then round-trips back out through `ToDoListItemRequest.fromEntity` on any update
+  (not only reschedule — any `update()`/`updateWithResponse()` call that goes through `fromEntity` carries the
+  same wrong `dueTime`), where it serializes to the default `{"hours":0,"minutes":0}` object shape the backend
+  now rejects, because *its* `ToDoListItemRequest.dueTime` also expects the string shape it sent on the way in.
+  `Time` already has a working string parser, `Time.fromString()` (same file, line 50) — `fromJson` just isn't
+  calling it. This is the framework's `Time` DTO (`src/_common`), so the fix is a submodule change, not app-side.
+- **Evidence:** request/response pair captured via `playwright-cli request-body`/`response-body` on the failing
+  `PUT /api/todo-list-item/14012`:
+  - Request body: `{"isDone":false,"activityId":12018,...,"dueDate":"2026-09-10","dueTime":{"hours":0,"minutes":0},...}`
+  - Response body: `{"statusCode":400,"message":"One or more errors occurred!","errors":{"dueTime":["Cannot get the value of a token type 'StartObject' as a string."]}}`
+  All 6 items in the reschedule batch (14007–14012) failed identically. Confirmed `Time.fromJson`'s
+  destructuring-from-a-string behavior by reading the source directly, not just inferring it from the network
+  trace.
+- **Repro:** 1. Sign in, open `/todo-list/13002` ("Errands", seed `e2e-v1`). 2. The renegotiation banner reads
+  "6 tasks have a date that has passed…". 3. Click "Today". 4. Open devtools — 6× `PUT .../todo-list-item/*` →
+  400. 5. Reload — the same 6 items are still overdue with their original due times.
+- **Verify:** 1. Same repro. 2. **Pass condition:** all 6 `PUT` calls return 2xx, the success snackbar
+  ("Moved 6 tasks to today") appears, and the items' `dueDate` becomes today's date while their **time-of-day
+  is preserved** (not silently zeroed to midnight) — the second half matters because a fix that only stops the
+  400 without fixing the parse would still be losing every due time on read.
+- **Suggested fix:** `Time.fromJson()` should handle a string input — either delegate to the existing
+  `Time.fromString()` when `typeof object === 'string'`, or (if the object shape is what other endpoints
+  actually send) confirm with the backend which shape is the real contract and fix whichever side is wrong.
+  Given `Time.fromString()` already exists and correctly parses `"HH:MM"`/`"HH:MM:SS"`, the cheap fix is in
+  `fromJson`. This is a framework file (`src/_common`) — per `CLAUDE.md`'s submodule rules, fix it there first,
+  then bump the pointer.
+
 ### O1. Estimate-vs-actual calibration is fully built but has no seed data to demonstrate it
 - **Status:** open
 - **Severity:** opportunity
@@ -247,6 +327,15 @@ opportunity 1 · unverified 3
 - **What it could feed:** Nothing further on the frontend; this is a seed-data gap, not a product gap. Add ≥5
   items with a non-zero `suggestedTime` **and** matching activity-history entries so the path is exercised.
   Tracked in the runbook's *Test data* section as a seed requirement.
+- **Round 3 update:** the seed (`POST /api/test/seed`, fixture `e2e-v1`) now exists and *names* two items for
+  this (`todoListItems.withEstimate` = id 14002, `withEstimateAndSteps` = id 14001) and reports
+  `counts.calibrationTodoListItems: 6` — but `GET /api/todo-list-item?todoListId=13001` returns **no
+  `suggestedTime` field at all** for either item (confirmed via `page.evaluate(fetch(...))`, not just a UI
+  read — the raw JSON has no key, not a zero value). The chip and header ratio are therefore still not
+  demonstrable, for a different reason than before: the seed claims to have set this up and the count says 6,
+  but the field the frontend actually gates on isn't coming back. Not fixed here — this is a backend/seed
+  question, not a frontend one. No Task 3 spec was written for the estimate chip or header calibration ratio as
+  a result.
 
 ### U1. Overdue-renegotiation banner and bulk-reschedule / one-by-one review flow not exercised
 - **Status:** open
@@ -259,7 +348,7 @@ opportunity 1 · unverified 3
   actions.
 
 ### U2. Multi-count item counter's click behaviour on a fresh (0-progress) item was inconclusive
-- **Status:** open
+- **Status:** settled (round 3) — see **B3** for what's actually wrong
 - **Severity:** unverified
 - **Where:** `/todo-list/1` — `TodoListItemCounter.vue`, the "0/2" counter on the "Online Course" item
 - **What would verify it:** A single click on the counter chip briefly showed a hover/pressed checkbox
@@ -270,6 +359,13 @@ opportunity 1 · unverified 3
   dead click. To verify: confirm via `read_page` exactly which element is hit-tested at that position, click
   precisely on it, and check network traffic immediately after. **The mutation pass should settle this** — it
   is allowed to change item state.
+- **Settled (round 3):** with real seed data (`multiCountPartial`, id 14013, "Deep Clean Kitchen" at 2/5 in the
+  "Focus" list), a single click on the counter row **does** increment it — 2/5 became 3/5, confirmed via
+  `playwright-cli` snapshot diff. So this was never a dead click; the original repro's "no network request"
+  observation was most likely the same loading-state race documented in round 3's investigation elsewhere (a
+  fresh navigation's first snapshot can be taken before the item list finishes loading). The click **does**
+  have a real problem, but a different one — it also opens the "Log time manually" dialog in the same click.
+  Filed separately as **B3**, since that is the actual defect, not an inconclusive one.
 
 ### U3. S3's per-item "usually Nm" chip and header calibration line could not be visually confirmed
 - **Status:** open
@@ -283,3 +379,5 @@ opportunity 1 · unverified 3
   `suggestedTime` and prior logged activity-history entries for the same activity, reload `/todo-list/:id`, and
   confirm both surfaces render with plausible values and neutral (non-scolding) wording.
 - **Note:** the same seed gap as O1; fixing the seed resolves both.
+- **Round 3 update:** still not verifiable — see O1's round 3 update. The seed now names items for this
+  (14001/14002) and counts 6, but the API returns no `suggestedTime` for them.

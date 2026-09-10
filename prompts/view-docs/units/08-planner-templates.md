@@ -33,9 +33,11 @@ Environment, already verified — do not re-check:
 
 This is a Windows machine — use the PowerShell tool for shell commands, never Bash.
 
-Invoke the claude-in-chrome skill, then load the Chrome MCP tools in ONE ToolSearch call.
-Call tabs_context_mcp first, then create your own tab. Never reuse a tab from another
-session. Never trigger a browser-native alert/confirm/prompt.
+Drive the browser with playwright-cli, per CLAUDE.md's "Browser verification" section —
+including its sign-in and state-load sequence. Use your own session and run
+`playwright-cli close` when you finish. Prefer `find` over `snapshot`. Charts are echarts
+on <canvas> and are invisible to the snapshot: read them from the populating response,
+an eval, or a screenshot — never report one as empty on snapshot evidence alone.
 
 Known for this unit — verify each, do not assume:
 - `/day-planner/templates/split` (TemplateSplitView) is an ORPHAN CANDIDATE — no nav entry

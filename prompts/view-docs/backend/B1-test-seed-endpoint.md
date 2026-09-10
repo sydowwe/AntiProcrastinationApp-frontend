@@ -1,5 +1,15 @@
 # B1 — `POST /test/seed`: reset the database to a known fixture
 
+> ✅ **DELIVERED** (verified 2026-09-10). Shipped as **`POST /api/test/seed`** — the prefixed form; the open
+> question at the bottom of this file was answered that way, and the client posts there. Returns 200 with
+> fixture `e2e-v1`. Gated on Development **and** a local database, so against the shared remote DB it is not
+> registered and answers 401. Kept as the record of what was asked and why.
+>
+> **Two follow-ups are outstanding** and are tracked in the runbook's *Before you start a unit* table: the
+> fixture creates **no day-planner templates** (blocks unit 08 and skips all 10 of `templateDayPlanner.spec.ts`),
+> and two profile grid endpoints answer 500 — `activity-backlog-profile` (`errorId 73e7261d482b`) and
+> `activity-bucket-list-profile` (`errorId a2c8d4d3b9cb`), blocking units 11 and 12.
+
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
 **Blocks:** every Playwright spec in `e2e/`, and the mutation half of the view-documentation sweep.
 **Effort:** medium. **Risk if done carelessly: high** — see *Gating*, which is the part to get right first.

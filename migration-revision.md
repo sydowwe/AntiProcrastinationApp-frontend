@@ -305,6 +305,34 @@ namespace it locally covers, that it exists because the framework doesn't yet. O
 delete the matching block from the app file (the app's own values win the shallow spread regardless, so nothing breaks
 if the app-side block is left too long — it just becomes dead weight).
 
+### 13. Framework auth routes carry no "signed-out only" marker, so each app re-derives the list
+
+**Local file kept:** none — a three-name `Set` in `src/router.ts` (`SIGNED_OUT_ONLY_ROUTES`).
+
+**The gap.** `meta.public` answers one question ("reachable while signed out") and gets used for the other
+("shouldn't be seen while signed in"). Those are not the same set. Until now nothing redirected an authenticated user
+off a public route, so a signed-in user opening `/login` got the login form rendered inside a fully signed-in shell —
+top bar with the account chip, sidebar, every `/api/*` call returning 200, `main` showing the sign-in form. It is not
+a hypothetical: it is what a `state-load` + `reload` in `playwright-cli` lands you in, and it reads as "the session
+didn't restore" when the session is in fact perfectly fine.
+
+The redirect cannot be driven off `meta.public` alone, which is exactly why this needs a second marker rather than a
+one-line guard change. Of the seven public routes here, only three should bounce: `/legal/terms` and `/legal/privacy`
+must stay readable while signed in, and `/confirm-email` / `/confirm-email-change` process a token out of an e-mailed
+link — bouncing those would break confirming an e-mail change from the very session that requested it.
+
+**The upstream ask:** add `meta.signedOutOnly?: boolean` to the framework's `RouteMeta` augmentation and set it on
+`login`, `registration` and `forgottenPassword` in `_common/modules/user/user.routes.ts` (deliberately **not** on the
+two confirm-e-mail routes), then document it in the module map at `_common/docs/modules/user.md`. The guard stays the
+host app's — the framework never installs one — but every app would read the same flag instead of hardcoding names the
+framework owns.
+
+**App-side today:** `src/router.ts` matches on route **name**, which is a plain string and therefore crosses no module
+boundary (same rule that lets `ModuleSettingsSection.vue` link by name). When the flag lands, swap the `Set` lookup for
+`to.meta.signedOutOnly === true` and delete the constant. Note the guard reads `isAuthenticated`, which the framework's
+auth store persists to **localStorage** — that is what makes the redirect fire on a cold open of `/login` rather than
+only on an in-app navigation.
+
 ---
 
 ## Lessons kept

@@ -9,10 +9,11 @@ on, and invites it to self-assign the next unit.
 | File | For |
 | --- | --- |
 | [`units/`](units/) | **Start here.** One ready-to-paste prompt per unit, `01`–`19`. Move to `units/_done/` when finished. |
+| [`UNIT-ORDER.md`](UNIT-ORDER.md) | **Which unit to run next, and why.** Seven waves, gated on what each is blocked by. Ten of the eighteen remaining units are runnable with no fix at all; start with `01`. |
 | [`PROMPT-TEMPLATE.md`](PROMPT-TEMPLATE.md) | The spec every unit prompt points at. Edit this to change how *all* units behave. |
 | [`TRIAGE-PROMPT.md`](TRIAGE-PROMPT.md) | Opus, no browser. Turns findings into `_fix-queue.md`, batched by root cause. |
 | [`GENERATE-UNIT-PROMPTS.md`](GENERATE-UNIT-PROMPTS.md) | Regenerates `units/` if the unit definitions change. Already run. |
-| [`E2E-SEED-WIRING.md`](E2E-SEED-WIRING.md) | **Open task.** Finish the Playwright wiring now that `POST /api/test/seed` exists: mirror the `authorization` locale namespace into EN, flip the default locale, get `todo-lists.spec.ts` green, and write specs for the surfaces the old seed could never render. |
+| [`E2E-SEED-WIRING.md`](E2E-SEED-WIRING.md) | **Largely done** (2026-09-10). The locale flip and the EN `authorization` mirror landed, `todo-lists.spec.ts` is green, and specs exist for most Task-3 surfaces. Whole suite: **46 passed · 45 `fixme` · 0 failed**. Kept for its Task-3 table and its rules (never seed per test, always derive dates from `seedDateUtc`). |
 
 Output lands in `docs/views/` — this folder is the instructions, that is the product.
 
@@ -28,7 +29,7 @@ Output lands in `docs/views/` — this folder is the instructions, that is the p
 | `docs/views/<unit>/usecase.md` | per unit | browser agent | What it's for. Survives a redesign. |
 | `docs/views/<unit>/inventory.md` | per unit | browser agent | What's on screen right now. Falsifiable by looking. |
 | `docs/views/<unit>/findings.md` | per unit | browser agent | Every gap, severity-tagged, with evidence, `Status:` and `Verify:`. A living record across rounds, not a one-shot report. |
-| `docs/views/<unit>/screenshots/` | per unit | browser agent | One per view per distinct state. |
+| `docs/views/<unit>/screenshots/` | per unit | browser agent | One per view per distinct state. The agent reads exactly one back per view as a visual sweep — the rest are for **you**, since spacing and colour are yours to judge, not the accessibility snapshot's. |
 | `e2e/tests/<unit>.draft.spec.ts` | per unit, **inventory pass only** | browser agent | Real assertions for the structural tier; named `test.fixme()` stubs for anything semantic. |
 | `docs/data-map.md` | once, **last** | analysis session | Every field: where captured vs where read. The unread ones are your feature backlog. |
 | `docs/opportunities.md` | once, **last** | analysis session | Cross-module synthesis of every `opportunity` finding. |
@@ -39,24 +40,81 @@ writable once every unit is done, because captured-but-unspent data is invisible
 
 ---
 
-## Prerequisites — check all seven before starting
+## Prerequisites — check all six before starting
 
-1. **Backend running**, with the seed data loaded. Confirm the API base URL matches `.env.development`
-   (`https://localhost:8080`). Separately: `e2e/global-setup.ts` posts to `/test/seed` before every Playwright
-   run, so **until that endpoint exists, no spec can execute** — draft specs get written but not run. See
-   *Test data*, below.
+1. **Backend running**, on a **local Postgres**. Confirm the API base URL matches `.env.development`
+   (`https://localhost:8080`). `e2e/global-setup.ts` posts to `POST /api/test/seed` before every Playwright
+   run; that endpoint **exists and works** (verified 2026-09-10 — 200, fixture `e2e-v1`), but it is only
+   registered against a local database. Against the shared remote one it is not registered and answers **401**,
+   which here means "not enabled", never "log in first". See *Test data*, below.
 2. **Dev server on `https://localhost:3000` exactly.** If Vite falls forward to 3001/3002 the session cookie
    doesn't apply, and every guarded route bounces to `/login`. Kill whatever holds 3000 rather than accepting
    the fall-forward.
-3. **Signed in**, and the account's locale preference set to **English** — `/user/settings` → Appearance →
-   Language. This is a persisted per-user field (`App.vue:82` sets `i18n.locale` from `currentUser.locale`);
-   there is no URL override, so it must be set once by hand before any agent runs. English is deliberate: it is
-   easier for the agent, **and** it is the better raw-key detector, because `EN.ts` does not spread the
-   framework's Slovak-only `common` namespace at all.
-4. **Chrome extension has permission for `localhost:3000`**, granted in the extension UI.
-5. **A second throwaway account** exists, for the account-scoped-storage check (unit `X2`).
+3. **Signed in, in English** — no longer anything to set by hand. `src/i18n.ts` now defaults to `EN`, and the
+   seed creates both accounts with `locale: "EN"`, so a seeded run renders English end to end. English is
+   deliberate: it is easier for the agent, **and** it is the better raw-key detector, because `EN.ts` does not
+   spread the framework's Slovak-only `common` namespace at all. If a view renders Slovak anyway, that is now a
+   finding rather than a setup step you forgot.
+4. **`playwright-cli` works** — `playwright-cli --version` resolves, and `.playwright/cli.config.json` is
+   present (it is committed; without its `ignoreHTTPSErrors` every command dies on the self-signed cert).
+   No Chrome extension permission is needed any more: the CLI launches its own Chrome instance and does not
+   use your profile, your tabs or your session.
+5. **A second account** — supplied by the seed as `secondaryUser` (id 10002). Nothing to create by hand.
 6. **Clean git tree**, or at least a known state — the inventory files record the commit sha they describe.
-7. **Nothing else driving Chrome.** See *Do not parallelise*, below.
+
+---
+
+## Before you start a unit — known blockers
+
+Every unit's primary routes were driven on 2026-09-10, signed in, and checked for non-2xx responses and
+unresolved i18n keys. **Seven units cannot currently produce a truthful inventory.** Two failure classes, and
+both produce the same trap: the view renders, so an agent documents it in complete good faith and files
+findings that are really one upstream bug.
+
+**Class 1 — data never arrives** (the paginated grid family):
+
+| Unit | Symptom | Cause | Fix side |
+| --- | --- | --- | --- |
+| **13** leisure-projects | `POST /api/activity-project-profile/grid` → **400** `itemsPerPage: Must not exceed 200` | `BOARD_PAGE_SIZE = 500` in `ProjectsView.vue`, and board is the default view mode | frontend |
+| **02** activity-settings | `POST /api/activity/grid` → **405** | no such route; the server has `/api/activity/filtered-table` | frontend |
+| **12** leisure-bucket-anchors | `memory-anchor/grid` → **405**, `activity-bucket-list-profile/grid` → **500** | 405: route is `/api/memory-anchor/filtered-table`. 500: opaque `errorId a2c8d4d3b9cb` | frontend **+** backend |
+| **11** leisure-backlog-picker | `activity-backlog-profile/grid` → **500** | opaque `errorId 73e7261d482b` | backend |
+| **16** reminders-user | `POST /api/reminder-dashboard/my-upcoming` → **500** | opaque `errorId 590edbaf1ac1` | backend |
+| **08** planner-templates | "No templates yet" | the seed creates no day-planner templates | backend fixture |
+
+The two 405s share one root cause worth knowing before you file it twice: `useFetchFilteredTable.ts:24`
+defaults to `/{entityName}/grid`, but the API uses **both** conventions — `/grid` for the three profile
+entities, `/filtered-table` for `activity` and `memory-anchor`. Each call site needs a `path` override, or the
+backend standardises on one name.
+
+**Class 2 — the page renders raw i18n keys**, because the reminders module ships **Slovak only**:
+`src/_common/modules/reminders/_locales/` contains `reminders.sk.ts` and `remindersDashboard.sk.ts` and no `.en`
+counterparts, and `EN.ts` therefore spreads neither (`SK.ts` spreads both).
+
+| Unit | Raw keys observed |
+| --- | --- |
+| **16** reminders-user | `reminderDashboard.my.title`, `.my.subtitle`, `.a11y.resultCount`, `reminders.key.kind`, `.key.ownerModule`, `.field.scheduleType`, … — the whole view |
+| **17** reminders-admin | `reminders.list.title`, `.key.subject`, `.field.status`, `.field.nextOccurrence`, … — the whole list view |
+| **19** scheduler | `reminders.scan` (one key, same root cause) |
+| **11** leisure-backlog-picker | `enums.energyLevel.Low` — *different* root cause, app-side `enums` namespace |
+
+**This is a regression from the default-locale flip**, not a pre-existing gap: until `src/i18n.ts` moved to
+`locale: 'EN'`, these resolved from SK. `E2E-SEED-WIRING.md` warned about exactly this class and had the agent
+mirror `authorization` — nobody checked what *else* the flip stranded, and the reminders module is the answer.
+`fallbackLocale` is also `EN`, so there is no fallback to catch it. Note that **real Slovak users are
+unaffected** (their `currentUser.locale` still wins), which is why this went unnoticed — but the doc pass runs
+in English by design, so it is fully blocking for 16 and 17.
+
+Deciding where the fix lives is a judgement call, not a mechanical one: per CLAUDE.md's framework decision
+tree these are the framework module's own strings with no app domain in them, so the correct home is a
+submodule commit adding `reminders.en.ts` / `remindersDashboard.en.ts` (plus a pointer bump, in that order) —
+*not* the app-side `common.en.ts` mirror that R5/R6/R11 used for namespace **collisions**, which this is not.
+
+**Every other unit is clear.** Routes for units 01, 03, 04, 05, 06, 07, 10, 14, 18 and the rest of 19 were
+driven and came back with no 4xx/5xx and no raw keys.
+
+Note that only the **paginated grid family** is affected — `GET /api/activity/all-options` and friends return
+200 throughout, so pickers, selects and non-paginated lists render fine even in the blocked units.
 
 ---
 
@@ -79,15 +137,19 @@ failure, not a clicking failure — a miscounted tally, a source-read finding pr
 confident wrong conclusion about a Playwright option that would have blocked all 18 remaining units. The crawl
 dominates the cost; reasoning is the cheap part.
 
-### Do not parallelise
+### Parallelism: inventory passes can, mutation passes cannot
 
-`claude-in-chrome` drives **one** real Chrome instance. Two agents clicking at once will interleave navigations
-and produce garbage inventories, and two mutation passes at once will corrupt each other's seed data. Run
-**one unit at a time**, start to finish.
+This used to read "do not parallelise", because `claude-in-chrome` drove **one** real Chrome instance and two
+agents clicking at once interleaved navigations into garbage inventories. `playwright-cli` removes that
+constraint — sessions are isolated (`isolated: true` in the config) and addressable with `-s=<session>`, so two
+inventory passes can run side by side without touching each other's browser state.
 
-If you later want parallelism, the `agent-browser` skill spins up isolated browsers — but then each agent must
-log in itself, and mutation passes still have to be serial because they share one backend. Not worth it for a
-first run.
+**Mutation passes still have to be serial.** They share one backend and one seeded account, so two at once
+corrupt each other's data — and `POST /api/test/seed` is a *full reset of every account*, so one run reseeding
+mid-flight destroys the other's world. Run mutation units one at a time, start to finish.
+
+If you do parallelise inventory passes, give each agent its own session name and have it `state-load` the auth
+file rather than signing in through the form concurrently.
 
 ---
 
@@ -132,9 +194,17 @@ different kind of split. Run the *same* inventory pass across two sessions, divi
 appending to the same three files. That works because write-as-you-go already makes them append-safe. Splitting
 a unit by view for *verification* would break the unit definition; splitting it only for *writing* does not.
 
-**Do not start Phase 2 until `POST /test/seed` exists** (`backend/B1`). Without a reset, each mutation pass
-leaves residue that the next unit documents as if it were seed data, and by unit 19 nobody can tell which is
-which.
+**Phase 2 is unblocked** — `POST /api/test/seed` landed and the reset it was waiting on exists. That also
+changes how a mutation pass ends: the template's "delete everything you created, restore everything you
+edited" is now the *fallback*, not the primary plan. Reseeding is one idempotent call and strictly more
+reliable than hand-cleanup, which only has to be got wrong once before every later unit documents residue as
+if it were seed data.
+
+Two things to keep straight if you reseed at the end of a pass:
+
+- it **wipes every account**, so never do it while another unit is mid-run (see *Parallelism*, above);
+- it invalidates `e2e/.state/auth-*.json`, so the next agent must sign in again rather than `state-load` a
+  dead token. `global-setup.ts` already clears `.state/` for exactly this reason.
 
 ### Phase 3 — cross-cutting checks
 
@@ -144,8 +214,8 @@ answers to one question. Run each once, after Phase 1.
 
 | # | Check | Status |
 | --- | --- | --- |
-| X2 | **Two-account isolation.** Sign in as A, pin/dismiss things; sign in as B; confirm none of it followed. Covers `dayPlanner`, `todoList`, `activityTracking` and `leisure` in one shot instead of four. Needs the second seeded account (`backend/B1`). | needs seed |
-| X4 | **Narrow viewport.** One pass at mobile width across every unit's primary view. | **blocked** — `resize_window` reported success three times in the shell pass but `window.innerWidth` never changed. Needs a different mechanism (CDP device emulation, or a Playwright-driven pass) before it is worth running. |
+| X2 | **Two-account isolation.** Sign in as A, pin/dismiss things; sign in as B; confirm none of it followed. Covers `dayPlanner`, `todoList`, `activityTracking` and `leisure` in one shot instead of four. | ✅ **done, and now regression-covered.** The seed provides `secondaryUser`, and `e2e/tests/account-isolation.spec.ts` passes via the `secondaryPage` fixture. Extend that spec rather than re-running this by hand. |
+| X4 | **Narrow viewport.** One pass at mobile width across every unit's primary view. | ✅ **unblocked** (2026-09-10). The old blocker was the Chrome extension's `resize_window`, which reported success but never moved `window.innerWidth`. `playwright-cli resize 390 844` genuinely does — verified: `innerWidth` 1440 → 390, below Vuetify's 960 mobile breakpoint. Worth running: at least two `dayPlanner.spec.ts` fixmes are waiting on it (the Day Details toggle is `v-show`-mobile-only and simply absent from the tree at desktop width). |
 
 > There is deliberately **no signed-out sweep.** The guard is a single default-deny in `src/router.ts:74-77` —
 > `public: true` passes, everything else redirects to `login` — and only seven routes carry `public` (the five
@@ -266,12 +336,10 @@ views, a redesign. A bug fix alone does not require it.
 
 ## Test data
 
-`e2e/global-setup.ts` already assumes a `POST /test/seed` endpoint that resets the database to a known state,
-and fails the whole run if it can't reach it. **That endpoint does not exist yet**, which is why unit 9's draft
-spec was written but never executed.
-
-**Built, as `POST /api/test/seed`** (not `/test/seed` — the API prefixes every route). The ask and the
-follow-up are in [`backend/B1-test-seed-endpoint.md`](backend/B1-test-seed-endpoint.md).
+**Built and working, as `POST /api/test/seed`** (not `/test/seed` — the API prefixes every route). The ask and
+the follow-up are in [`backend/B1-test-seed-endpoint.md`](backend/B1-test-seed-endpoint.md). `global-setup.ts`
+calls it once per run and fails the whole run if it can't reach it. Unit 9's draft spec, written before it
+existed, now executes.
 
 **It only exists when the API points at a LOCAL database.** The endpoint is gated on the hosting environment
 *and* on the database host being local. The stock dev config points at the shared remote database, so the
@@ -298,13 +366,13 @@ What it needs to be:
 - **Deterministic fixture data**, with stable ids the specs can reference.
 - **Fast enough to run before every suite**, since `globalSetup` calls it on each run.
 
-Worth seeding deliberately, because unit 9 found both invisible with the current data:
+Both of the surfaces unit 9 found invisible are now seeded and confirmed rendering: **6** items carry a
+non-zero `suggestedTime` with matching history (`counts.calibrationTodoListItems`), and **6** overdue items sit
+well past the renegotiation threshold of 3 — the banner renders with all three actions.
 
-- ≥5 to-do items with a non-zero `suggestedTime` **and** matching activity-history entries, so the
-  estimate-vs-actual calibration surfaces actually render
-- at least one overdue, not-done item past the renegotiation threshold, so the overdue banner appears
-
-Until it exists: draft specs get written and left unrun, and mutation passes must clean up after themselves.
+**Known fixture gap:** the seed creates **no day-planner templates**, so `/day-planner/templates` shows "No
+templates yet" and unit **08** cannot be documented. `templateDayPlanner.spec.ts` skips all 10 of its tests on
+`test.skip(templateUrl === null)`. This needs a fixture extension in the API repo — do not create one per test.
 
 ## What "done" looks like
 
@@ -337,7 +405,8 @@ rather than the decisions alone. Revisit any of these — but knowing what it co
 | **Triage batches by root cause, not one ticket per finding.** | Unit 9 and `_shell` between them found seven unnamed icon buttons. That's one fix. A per-finding queue makes a fixing session open the same files seven times and reach seven slightly different conclusions. |
 | **App-side and `[framework]` findings never share a batch.** | `src/_common` is a submodule other apps depend on: its fixes are a commit in `vue_framework` plus a pointer bump, in that order. The "same" defect in both places is two batches. |
 | **No Phase 4 prompt yet.** | Its shape depends on what the `usecase.md` files actually end up containing. Writing it now means rewriting it later. |
-| **`POST /test/seed` first, before further units.** | Blocks Phase 2, Phase 5 and X2. Ask written up in [`backend/B1-test-seed-endpoint.md`](backend/B1-test-seed-endpoint.md). |
+| **`POST /test/seed` first, before further units.** | Blocked Phase 2, Phase 5 and X2. ✅ **Delivered** — see [`backend/B1-test-seed-endpoint.md`](backend/B1-test-seed-endpoint.md). All three are unblocked. |
+| **Drive the browser with `playwright-cli`, not the Chrome extension.** | Snapshots cost a fraction of a screenshot and can be asserted on; `generate-locator` and the `### Ran Playwright code` echo make the crawl emit its own spec lines; `localstorage-list`, numbered `requests` and `response-body` answer template §5/§6 directly; `route`/`network-state-set` make error states reachable for the first time. Costs: the a11y tree is blind to canvas charts and to visual polish, which §2 and §4 of the template now handle explicitly. |
 
-**Known blocked:** X4 (narrow viewport) — `resize_window` reports success but `window.innerWidth` never changes.
-Needs CDP device emulation or a Playwright-driven pass.
+**Known blocked:** nothing structural. The remaining blockers are data and backend defects, not tooling —
+see *Before you start a unit*, above.
