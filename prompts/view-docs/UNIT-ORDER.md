@@ -82,6 +82,7 @@ All verified clean. Any order; listed smallest-risk first.
 
 | Unit | Views | Notes |
 | --- | --- | --- |
+| **13** leisure-projects | 1 | Promoted from Wave E — fixed and verified. The smallest unit in the set, so a good second run after 01. See Wave E for the two things to let it discover. |
 | **10** todo-routine | 2 | Has an existing `todo-routine.draft.spec.ts` with 6 passing / 5 `fixme` — the fixmes name real bugs (B3–B6: raw `toDoList.timePeriod`, hardcoded English streak tooltip, delete confirmation showing a raw id). Expect to confirm them, not rediscover them. |
 | **06** tracking-settings | 2 | Clean. |
 | **18** notifications | 2 | Clean — and notably *not* affected by the reminders locale gap, because the framework's `common.en.ts` does carry `notifications.*` and `reminderPreference.*`. |
@@ -111,18 +112,22 @@ Leave these until the prompt has settled on Waves A–C.
 
 ---
 
-## Wave E — after the three frontend grid fixes
+## Wave E — 13 is now clear; 02 waits on the backend
 
-One-line changes; see README's blocker table for the exact cause of each.
-
-| Unit | Views | Released by |
+| Unit | Views | State |
 | --- | --- | --- |
-| **13** leisure-projects | 1 | `BOARD_PAGE_SIZE` 500 → 200 in `ProjectsView.vue` |
-| **02** activity-settings | 1 route, 3 tabs | `activity` grid path → `/api/activity/filtered-table` |
+| **13** leisure-projects | 1 | ✅ **fixed and verified — promote it into Wave B.** The board renders `profiles.project` under "Needs shopping" |
+| **02** activity-settings | 1 route, 3 tabs | ⛔ still blocked — the `/grid` rename is unfinished **server-side**, so this is a backend fix, not the frontend one first assumed |
 
-**13 is the smallest unit in the whole set and is one line away from runnable** — worth doing the fix just to
-get it out of the way. Note that the README's original "pick 13 next" advice was written before anyone drove
-it; it renders `0-0 of 0` today.
+**13 is the smallest unit in the set and is now genuinely runnable** — one view, real data. Two things it
+should be left to discover on its own rather than be told, because they are exactly what an inventory pass is
+for:
+
+- the project card shows **"—" where the activity name belongs**. The grid response carries only `activityId`,
+  no `activity` object, so `ActivityInfo.fromJson({})` yields an empty name. Whether the server embeds it or
+  the client resolves it from `/api/activity/all-options` is a contract question.
+- board mode requests **200 rows in one page and never pages**. Fine for a hobby list, and the cap is now the
+  server's, but it is a real ceiling and the view does not say so when it is hit.
 
 ---
 
@@ -178,11 +183,13 @@ Three backend asks total: two opaque 500s and one fixture extension. Worth filin
 | Wave | Units | Gate |
 | --- | --- | --- |
 | A | 01 | none — start here |
-| B | 10, 06, 18 | none |
+| B | 13, 10, 06, 18 | none |
 | C | 03, 14 | none |
 | D | 05, 04, 19, 07, 15 | none |
-| E | 13, 02 | 2 frontend one-liners |
+| E | 02 (13 is done — run it in Wave B) | finish the `/grid` rename server-side |
 | F | 17 (16 also needs G) | reminders EN locale — framework decision first |
 | G | 12, 11, 08 | 2 backend 500s + 1 fixture extension |
 
-**Ten of the eighteen remaining units are runnable right now**, with no fix of any kind.
+**Eleven of the eighteen remaining units are runnable right now.** The remaining seven are held by three
+backend asks (two opaque 500s, one unfinished route rename, one missing fixture) and one framework decision
+(the reminders EN locale files).

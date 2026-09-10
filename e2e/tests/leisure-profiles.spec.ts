@@ -7,26 +7,33 @@ import { test } from '../fixtures/auth'
 //
 // All four leisure list views — and `/activity-settings/activities` (see activity-lifecycle.spec.ts) — POST
 // to a `.../grid` endpoint on load (`useFetchFilteredTable`/`useServerTable`, per CLAUDE.md's `_common/api/`
-// section) to fetch their paginated rows, and every one of those calls fails, each with a different status:
+// section) to fetch their paginated rows.
 //
-// | View                       | Endpoint                                    | Status |
-// | --------------------------- | -------------------------------------------- | ------ |
-// | `/leisure/backlog`          | `POST /api/activity-backlog-profile/grid`   | 500 (opaque `errorId`, no detail) |
-// | `/leisure/bucket-list`      | `POST /api/activity-bucket-list-profile/grid` | 500 (opaque `errorId`, no detail) |
-// | `/leisure/projects`         | `POST /api/activity-project-profile/grid`   | 400 |
-// | `/leisure/memory-anchors`   | `POST /api/memory-anchor/grid`              | 405 Method Not Allowed |
-// | `/activity-settings/activities` | `POST /api/activity/grid`               | 405 Method Not Allowed |
+// **This header used to claim all five were one systemic backend failure. That was wrong**, and it is
+// recorded here because it misdirected the next reader for a week. Diffing the client's paths against the
+// running server's swagger and reading each response body gave three unrelated causes:
 //
-// Five different grid endpoints, three different status codes, reproduced on fresh navigations (and a
-// reload, for the activities one) — this reads as a systemic backend issue with the generic paginated-grid
-// route family on whatever build the dev API is currently running, not five unrelated bugs and not anything
-// the frontend or the seed can work around. Every one of these screens currently shows "0-0 of 0" /
-// "you don't have any here yet" regardless of what the seed actually put in the database — confirmed
-// separately that the data exists: `GET /api/activity-backlog-profile` (the non-paginated list endpoint)
-// does return rows.
+// | View                        | Endpoint                                      | Was  | Cause |
+// | --------------------------- | --------------------------------------------- | ---- | ----- |
+// | `/leisure/projects`         | `POST /api/activity-project-profile/grid`     | 400  | **frontend, FIXED** — `BOARD_PAGE_SIZE` was 500, the server caps `itemsPerPage` at 200 |
+// | `/activity-settings/activities` | `POST /api/activity/grid`                 | 405  | **backend** — no such route; server still serves `/api/activity/filtered-table` |
+// | `/leisure/memory-anchors`   | `POST /api/memory-anchor/grid`                | 405  | **backend** — same; server still serves `/api/memory-anchor/filtered-table` |
+// | `/leisure/backlog`          | `POST /api/activity-backlog-profile/grid`     | 500  | **backend** — opaque `errorId 73e7261d482b` |
+// | `/leisure/bucket-list`      | `POST /api/activity-bucket-list-profile/grid` | 500  | **backend** — opaque `errorId a2c8d4d3b9cb` |
 //
-// Reported rather than worked around. No spec is written for any of the four profile surfaces until the
-// grid endpoints work — there is nothing in the UI to assert against.
+// The two 405s are not a defect in this client: `vue_framework@52ba6a0` deliberately renamed the paged-filter
+// convention from `/{entity}/filtered-table` to `/{entity}/grid` to follow a server-side rename, and the
+// server applied it to the three profile entities but not to `activity` or `memory-anchor`. It is a
+// half-finished rename, so the fix is to finish it server-side, NOT to add per-call-site `path` overrides
+// that re-fork the convention that commit just unified.
+//
+// A 405 rather than a 404 because `POST /api/memory-anchor/grid` falls through to `/api/memory-anchor/{id}`
+// with `id="grid"`, which allows only GET/DELETE/PUT.
+//
+// Still no spec for the three blocked surfaces — there is nothing in the UI to assert against. The projects
+// surface now works and is deliberately left to unit 13's inventory pass, which writes
+// `13-leisure-projects.draft.spec.ts` from a live crawl; a second spec written blind from here would only
+// collide with it.
 
 test.describe('Leisure profiles', () => {
 	test.fixme(
@@ -45,13 +52,21 @@ test.describe('Leisure profiles', () => {
 
 	test.fixme(
 		'project profile (profiles.project) is listed with its activity name and fields',
-		// Blocked: POST /api/activity-project-profile/grid → 400. See file header.
+		// No longer blocked — the grid answers 200 and the board renders `profiles.project` under
+		// "Needs shopping". Left unwritten on purpose: unit 13's inventory pass writes this surface's
+		// spec from a live crawl (see the file header).
+		//
+		// One thing that pass should find rather than be told: the card shows "—" where the activity
+		// name belongs, because the grid response carries no `activity` object at all — only
+		// `activityId`. `ActivityInfo.fromJson({})` then yields an empty name. Whether the server should
+		// embed it or the client should resolve it from `/api/activity/all-options` is a contract
+		// question, not a locator one.
 		async () => {},
 	)
 
 	test.fixme(
 		'memory anchor (profiles.memoryAnchor) is listed and links back to the bucket-list activity',
-		// Blocked: POST /api/memory-anchor/grid → 405. See file header.
+		// Blocked: POST /api/memory-anchor/grid → 405, the half-finished server-side rename. See header.
 		async () => {},
 	)
 })

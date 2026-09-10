@@ -67,7 +67,8 @@ writable once every unit is done, because captured-but-unspent data is invisible
 ## Before you start a unit — known blockers
 
 Every unit's primary routes were driven on 2026-09-10, signed in, and checked for non-2xx responses and
-unresolved i18n keys. **Seven units cannot currently produce a truthful inventory.** Two failure classes, and
+unresolved i18n keys. **Six units cannot currently produce a truthful inventory** (13 was the seventh and is
+now fixed). Two failure classes, and
 both produce the same trap: the view renders, so an agent documents it in complete good faith and files
 findings that are really one upstream bug.
 
@@ -75,17 +76,20 @@ findings that are really one upstream bug.
 
 | Unit | Symptom | Cause | Fix side |
 | --- | --- | --- | --- |
-| **13** leisure-projects | `POST /api/activity-project-profile/grid` → **400** `itemsPerPage: Must not exceed 200` | `BOARD_PAGE_SIZE = 500` in `ProjectsView.vue`, and board is the default view mode | frontend |
-| **02** activity-settings | `POST /api/activity/grid` → **405** | no such route; the server has `/api/activity/filtered-table` | frontend |
-| **12** leisure-bucket-anchors | `memory-anchor/grid` → **405**, `activity-bucket-list-profile/grid` → **500** | 405: route is `/api/memory-anchor/filtered-table`. 500: opaque `errorId a2c8d4d3b9cb` | frontend **+** backend |
+| ~~**13** leisure-projects~~ | ~~`activity-project-profile/grid` → **400**~~ | ✅ **FIXED** — `BOARD_PAGE_SIZE` 500 → 200 (the server's cap), plus an enum-name conversion in `ActivityProjectProfile.fromJson`. Verified rendering | frontend |
+| **02** activity-settings | `POST /api/activity/grid` → **405** | no such route; the server still has `/api/activity/filtered-table` | backend |
+| **12** leisure-bucket-anchors | `memory-anchor/grid` → **405**, `activity-bucket-list-profile/grid` → **500** | 405: server still has `/api/memory-anchor/filtered-table`. 500: opaque `errorId a2c8d4d3b9cb` | backend |
 | **11** leisure-backlog-picker | `activity-backlog-profile/grid` → **500** | opaque `errorId 73e7261d482b` | backend |
 | **16** reminders-user | `POST /api/reminder-dashboard/my-upcoming` → **500** | opaque `errorId 590edbaf1ac1` | backend |
 | **08** planner-templates | "No templates yet" | the seed creates no day-planner templates | backend fixture |
 
-The two 405s share one root cause worth knowing before you file it twice: `useFetchFilteredTable.ts:24`
-defaults to `/{entityName}/grid`, but the API uses **both** conventions — `/grid` for the three profile
-entities, `/filtered-table` for `activity` and `memory-anchor`. Each call site needs a `path` override, or the
-backend standardises on one name.
+The two 405s share one root cause, and it is **not** a client defect: `vue_framework@52ba6a0` deliberately
+renamed the paged-filter convention from `/{entity}/filtered-table` to `/{entity}/grid`, following a
+server-side rename. The server applied it to the three profile entities but **not** to `activity` or
+`memory-anchor`, which still answer only on `/filtered-table`. It is a half-finished rename: finish it
+server-side rather than adding per-call-site `path` overrides, which would re-fork the convention that commit
+just unified. (405 not 404 because `POST /api/memory-anchor/grid` falls through to `/api/memory-anchor/{id}`
+with `id="grid"`, which allows only GET/DELETE/PUT.)
 
 **Class 2 — the page renders raw i18n keys**, because the reminders module ships **Slovak only**:
 `src/_common/modules/reminders/_locales/` contains `reminders.sk.ts` and `remindersDashboard.sk.ts` and no `.en`

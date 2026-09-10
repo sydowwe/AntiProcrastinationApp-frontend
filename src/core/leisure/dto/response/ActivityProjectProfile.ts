@@ -1,4 +1,5 @@
 import type { IIdResponse } from '@/_common/dto/response/interface/IIdResponse.ts'
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { ActivityInfo } from '@/core/leisure/dto/response/ActivityInfo.ts'
 import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
@@ -32,16 +33,22 @@ export class ActivityProjectProfile implements IIdResponse {
 			requiredTools = [],
 			readinessStatus = ReadinessStatus.Planning,
 		} = object
+		// The server sends the enum's NAME (`"NeedsShopping"`, `"Intermediate"`), while these enums
+		// declare camelCase VALUES (`'needsShopping'`) because the `enums.*` locale keys are camelCase.
+		// Passing the raw string through left `readinessStatus` as `"NeedsShopping"`, which matches no
+		// key in `ProjectReadinessBoard`'s grouping map — so every column counted 0 and the board
+		// rendered "No projects" on a list the API had returned in full. `convertToEnum` does the
+		// name -> value lookup; the default catches an unknown name rather than storing it.
 		return new ActivityProjectProfile(
 			activityId,
 			ActivityInfo.fromJson(activity),
-			difficultyLevel,
+			convertToEnum(DifficultyLevel, difficultyLevel) ?? DifficultyLevel.Beginner,
 			projectArea,
 			estimatedHours,
 			isMessy,
 			Array.isArray(materialsNeeded) ? materialsNeeded : [],
 			Array.isArray(requiredTools) ? requiredTools : [],
-			readinessStatus,
+			convertToEnum(ReadinessStatus, readinessStatus) ?? ReadinessStatus.Planning,
 		)
 	}
 

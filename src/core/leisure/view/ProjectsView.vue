@@ -111,9 +111,15 @@
 	})
 
 	// Board mode groups by readinessStatus rather than paging, so it needs every filtered row at
-	// once. A hobby project list is small; a five-figure page size is a generous, simple cap rather
-	// than a real pagination scheme.
-	const BOARD_PAGE_SIZE = 500
+	// once. A hobby project list is small, so one oversized page is a simpler answer than a real
+	// pagination scheme.
+	//
+	// 200 is not a preference — it is the server's cap. `BaseFilterSortPaginateRequest` validates
+	// `itemsPerPage` with "Must not exceed 200.", so the previous 500 made every board load answer
+	// 400 and the view rendered "0-0 of 0" no matter what was in the database. Board is also the
+	// default mode, so this was the whole screen. Raising it means raising the server's validator
+	// first.
+	const BOARD_PAGE_SIZE = 200
 	const route = useRoute()
 	const router = useRouter()
 	const viewMode = ref<'table' | 'board'>(route.query.view === 'table' ? 'table' : 'board')
