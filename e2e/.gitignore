@@ -1,0 +1,10 @@
+# Written by global-setup.ts on every run: the seed response plus cached storage states.
+# Both are per-run artefacts — the seed wipes every account, so a committed auth state would be
+# stale the moment anyone else ran the suite.
+.state/
+
+# Superseded by .state/, kept ignored so old checkouts don't commit one.
+playwright/
+
+test-results/
+playwright-report/
