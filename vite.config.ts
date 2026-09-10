@@ -160,6 +160,8 @@ export default defineConfig({
 		),
 	},
 	server: {
+		// No auto-reload on file change — refresh the browser manually to pick up edits.
+		hmr: false,
 		https: {
 			key: './config/localhost-key.pem',
 			cert: './config/localhost.pem',

@@ -37,7 +37,7 @@ export function localeTag(locale: string): string {
 }
 
 const i18n = createI18n({
-	locale: 'SK',
+	locale: 'EN',
 	fallbackLocale: 'EN',
 	pluralRules: {
 		SK: slovakPluralRule,

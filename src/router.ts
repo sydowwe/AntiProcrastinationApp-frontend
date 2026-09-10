@@ -67,11 +67,32 @@ const router = createRouter({
 
 const { hideFullScreenLoading } = useLoading()
 
+/**
+ * Public routes that a signed-in user has no business seeing, by route name — the framework owns the
+ * route records, and a name is a plain string, so this crosses no module boundary.
+ *
+ * Not every public route belongs here, which is why `meta.public` alone cannot drive the redirect:
+ * `/legal/terms` and `/legal/privacy` must stay readable while signed in, and the two confirm-e-mail
+ * routes process a token out of an e-mailed link — bouncing those would break confirming an e-mail
+ * change from the very session that requested it.
+ */
+const SIGNED_OUT_ONLY_ROUTES = new Set(['login', 'registration', 'forgottenPassword'])
+
 router.beforeEach(to => {
 	// Clear any spinner the outgoing view left behind, so a navigation can never strand the overlay.
 	hideFullScreenLoading()
 
-	if (to.meta.public === true) return true
+	if (to.meta.public === true) {
+		// `isAuthenticated` is persisted to localStorage by the framework's auth store, so it is
+		// already true here on a hard load — this fires before the session is re-hydrated from the
+		// server, which is what makes the redirect work on a cold open of /login rather than only on
+		// an in-app navigation.
+		const auth = useAuth()
+		if (auth.isAuthenticated && typeof to.name === 'string' && SIGNED_OUT_ONLY_ROUTES.has(to.name)) {
+			return { name: 'home' }
+		}
+		return true
+	}
 
 	const auth = useAuth()
 	if (!auth.isAuthenticated) return { name: 'login' }

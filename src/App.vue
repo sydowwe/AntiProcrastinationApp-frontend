@@ -73,6 +73,18 @@
 	}
 
 	function applyPreferencesToUi() {
+		// This runs unconditionally at boot (see the call below) and again on every deep change of
+		// `userStore.currentUser` — including the replacement `hydrateFromServer()` does on sign-in.
+		// Before sign-in, `currentUser` is the placeholder `new User()`, whose framework defaults are
+		// hardcoded: `locale` to `AvailableLocales.SK` and `theme` to `'system'`. Writing either while
+		// signed out stomps the app's own configured defaults before anything renders — SK over
+		// `src/i18n.ts`'s `locale`, and the OS colour-scheme over `createAppVuetify`'s `defaultTheme`
+		// ('dark'). So gate the whole block: once `isAuthenticated` flips true (set before
+		// `hydrateFromServer()` runs), this watcher's next fire applies the real preferences, leaving
+		// the signed-in path unaffected. Signed out, the theme is the Vuetify default unless AppTopBar
+		// restores a deliberate toggle from `localStorage`.
+		if (!userStore.isAuthenticated) return
+
 		const resolved = resolveTheme(userStore.currentUser.theme)
 		theme.change(resolved)
 		// The framework's AppTopBar owns the theme toggle and re-reads this key in its own onMounted,
