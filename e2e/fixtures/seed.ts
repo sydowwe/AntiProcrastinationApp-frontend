@@ -27,6 +27,12 @@ export interface SeedResponse {
 	todoListItems: Record<SeedTodoListItemKey, number>
 	profiles: Record<SeedProfileKey, number>
 	routines: Record<SeedRoutineKey, number>
+	/** Added in `e2e-v2`. `pinned` is the only one with `isPinned` set — see {@link SeedDayPlannerTemplateKey}. */
+	dayPlannerTemplates: Record<SeedDayPlannerTemplateKey, number>
+	/** Added in `e2e-v2`. Existing desktop/Android pattern mappings, for the *Mappings* tab. */
+	trackingMappings: Record<SeedTrackingMappingKey, number>
+	/** Added in `e2e-v2`. */
+	notifications: Record<SeedNotificationKey, number>
 	/** Keys are verbatim English display text, not camelCase. */
 	taskPriorities: Record<string, number>
 	/** Keys are verbatim English display text, not camelCase. */
@@ -64,6 +70,21 @@ export type SeedProfileKey = 'backlog' | 'bucketList' | 'project' | 'memoryAncho
 
 export type SeedRoutineKey = 'daily' | 'weekly' | 'monthly'
 
+/**
+ * `homeOffice` (5 tasks) and `officeDay` (4) are the two the split/compare view needs; `pinned`
+ * (3 tasks, `Relaxed Weekend`) is the only one with `isPinned` set, so it is the only way to reach the
+ * template list's pinned section. None of the twelve seeded tasks is a background task.
+ */
+export type SeedDayPlannerTemplateKey = 'homeOffice' | 'officeDay' | 'pinned'
+
+export type SeedTrackingMappingKey =
+	| 'desktopToActivity'
+	| 'desktopIgnored'
+	| 'androidToActivity'
+	| 'androidIgnored'
+
+export type SeedNotificationKey = 'newestUnread' | 'oldestRead' | 'secondaryNewest'
+
 export type SeedCountKey =
 	| 'activities'
 	| 'todoListItems'
@@ -72,6 +93,18 @@ export type SeedCountKey =
 	| 'activityHistoryEntries'
 	| 'plannerTasks'
 	| 'calendars'
+	// --- added in `e2e-v2` ---
+	| 'dayPlannerTemplates'
+	| 'templatePlannerTasks'
+	| 'webExtensionEntries'
+	| 'desktopEntries'
+	/** `(productName, processName, windowTitle)` groups, NOT the entry count — what the grid paginates. */
+	| 'distinctDesktopEntries'
+	| 'androidSessions'
+	| 'distinctAndroidEntries'
+	| 'notifications'
+	/** Strictly smaller than `notifications`, which is what makes the bell's All/Unread filter testable. */
+	| 'unreadNotifications'
 
 /**
  * The fixture version this suite is written against, checked against `fixture` in the response by
@@ -82,7 +115,7 @@ export type SeedCountKey =
  * it is one failure in global setup that says what actually happened. Bump this only together with
  * reading the API's `docs/e2eTestSeed.md` for what moved.
  */
-export const EXPECTED_FIXTURE_VERSION = 'e2e-v1'
+export const EXPECTED_FIXTURE_VERSION = 'e2e-v2'
 
 /** Every route in the API is under `/api` (FastEndpoints sets `RoutePrefix = "api"` globally). */
 export const SEED_PATH = '/api/test/seed'
