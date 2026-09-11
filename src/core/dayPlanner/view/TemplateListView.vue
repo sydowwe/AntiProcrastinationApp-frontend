@@ -312,12 +312,20 @@
 		showFullScreenLoading()
 		axiosSuccessLoadingHide.value = false
 		templates.value = await fetchAll()
-		// Fetch tasks for mini-timeline previews
+		// Fetch tasks for mini-timeline previews. `requestKey` is not optional here: these calls share
+		// one `useFetchFiltered` instance, which aborts the previous in-flight request under a given key
+		// — so without a key per template every call but the last is cancelled, this `Promise.all`
+		// rejects, and `hideFullScreenLoading()` below never runs. The page then sits behind the loading
+		// overlay with no cards, which is what it did for every list with two or more templates.
 		const taskResults = await Promise.all(
 			templates.value.map(t =>
-				fetchFilteredTasks(new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime)).then(
-					tasks => [t.id, tasks] as const,
-				),
+				fetchFilteredTasks(
+					new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime),
+					undefined,
+					{
+						requestKey: t.id,
+					},
+				).then(tasks => [t.id, tasks] as const),
 			),
 		)
 		templateTasksMap.value = new Map(taskResults)
