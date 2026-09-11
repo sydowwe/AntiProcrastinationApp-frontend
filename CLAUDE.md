@@ -291,6 +291,8 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
   `static fromJson(object: any)` using destructuring with defaults + `static listFromObjects(objects: any[])`. Request DTOs have constructors with default params and
   `static fromJson()`.
     - The select-option shape is `ValueTitleDto` (it was `TitleValueObject` before the migration).
+    - **Enum fields in `fromJson` go through `convertToEnum(TheEnum, raw) ?? TheEnum.Default`** (`@/_common/utils/enumHelpers.ts`) — the server sends the C# member
+      name (`"Low"`), our enums declare camelCase values (`'low'`). Skip it only when the wire spelling already equals the value, or it returns `undefined`.
 
 ## Routing
 

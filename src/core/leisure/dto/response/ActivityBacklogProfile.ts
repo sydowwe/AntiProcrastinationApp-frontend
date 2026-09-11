@@ -1,7 +1,8 @@
 import type { IIdResponse } from '@/_common/dto/response/interface/IIdResponse.ts'
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { ActivityInfo } from '@/core/leisure/dto/response/ActivityInfo.ts'
 import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
-import type { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
+import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
 import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 
 export class ActivityBacklogProfile implements IIdResponse {
@@ -43,13 +44,18 @@ export class ActivityBacklogProfile implements IIdResponse {
 			isAnchored = null,
 			memoryAnchorId = null,
 		} = object
+		// The server sends the enum's NAME (`"Low"`, `"Physical"`) — `JsonStringEnumConverter` with no
+		// naming policy — while these enums declare camelCase VALUES (`'low'`) because the `enums.*`
+		// locale keys are camelCase. Passing the raw string through rendered `enums.energyLevel.Low`
+		// on `/leisure/pick` and made `ENERGY_RANK[candidate.energyLevel]` undefined, so every energy
+		// comparison in `leisureScoring` produced NaN and silently dropped out of the ranking.
 		return new ActivityBacklogProfile(
 			activityId,
 			ActivityInfo.fromJson(activity),
 			LookupResponse.fromJson(locationType),
 			LookupResponse.fromJson(weatherDependency),
-			energyLevel,
-			effortType,
+			convertToEnum(EnergyLevel, energyLevel) ?? EnergyLevel.Medium,
+			effortType == null ? null : (convertToEnum(EffortType, effortType) ?? null),
 			minParticipants,
 			maxParticipants,
 			LookupResponse.fromJson(expectedCostTier),

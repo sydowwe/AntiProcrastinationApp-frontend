@@ -132,6 +132,12 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		await expect(authenticatedPage.getByRole('button', { name: /CHANGE ORDER/i })).toBeEnabled()
 	})
 
+	// KNOWN FLAKE (2026-09-11): this is the one test in the suite that has failed under load. It failed
+	// once in a full run that took 7.2 min against the usual 4.5 (a browser session was competing for the
+	// machine) and passed standalone immediately after, in 13.4 s. Both buttons are plain role+name
+	// locators on a list that is already rendered, so the likely cause is the reorder toggle's re-render
+	// losing the click under contention rather than anything in this spec. If you see it red once, re-run
+	// it alone before investigating; if it fails alone, that is new and worth chasing.
 	test('CHANGE ORDER mode can be entered and exited without reordering', async ({ authenticatedPage }) => {
 		await authenticatedPage.getByRole('button', { name: 'CHANGE ORDER' }).click()
 		await expect(authenticatedPage.getByRole('button', { name: /FINISH REORDERING/i })).toBeVisible()

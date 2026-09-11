@@ -71,6 +71,12 @@ type Options = {
 	 * It costs a truncate-and-rebuild (~1.5–2.0 s) per test, so it is the second choice. The first is
 	 * to create whatever you are about to mutate through the app's own API and leave the fixture rows
 	 * read-only — that covers the write path too, which this does not.
+	 *
+	 * **This is only safe because `playwright.config.ts` sets `workers: 1`.** The endpoint truncates and
+	 * rebuilds the WHOLE database, every account included — so with two workers, one test reseeding
+	 * mid-flight would pull the rows out from under whatever the other is asserting, at a random point,
+	 * with no error that points here. If you ever raise the worker count, this option has to go behind a
+	 * lock or be removed; it is not a "probably fine" the way most order-dependence is.
 	 */
 	freshSeed: boolean
 }
