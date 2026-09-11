@@ -21,7 +21,8 @@ The app is **module-first**, not layer-first. There is no top-level `api/`, `vie
 ```
 src/
   App.vue  HomeView.vue  main.ts  router.ts  i18n.ts  globals.d.ts
-  _common/                        ← the vue_framework git submodule. NEVER EDIT.
+  _common/                        ← the vue_framework git submodule. Edit deliberately, never
+                                    incidentally — see the section below for what qualifies.
   app/
     nav/navItems.ts               ← the sidebar tree (data only)
     notifications/notificationTypeMeta.ts
@@ -134,7 +135,13 @@ touching `main.ts`. Also exported: `createAppPinia`, `createAppVuetify` (+ `comp
 - `useEntityQuery<T>(config)` — `fetchById`, `fetchByField`, `fetchAll`, `fetchSelectOptions`
 - `useEntityCommand<T, TCreate, TUpdate>(config)` — `create`, `createWithResponse`, `update`, `updateWithResponse`, `patch`, `patchWithResponse`, `batchedToggle`,
   `deleteEntity`, `batchDelete`
-- `useFetchFiltered` / `useFetchFilteredSorted` / `useFetchSorted` — POST filter/sort
+- `useFetchFiltered` / `useFetchFilteredSorted` / `useFetchSorted` — POST filter/sort.
+  **These abort their own previous in-flight call.** `useFetchFiltered` scopes that to an optional
+  `{ requestKey }` third argument, so concurrent calls from one instance (a fan-out over ids) must pass
+  one or they cancel each other — the bug that left `/day-planner/templates` blank. The other two, and
+  `useFetchFilteredTable`, still hold a single controller per instance; see
+  `prompts/_common/api/A1-*.md`. A cancellation is not logged and shows no snackbar; use
+  `isRequestCanceled()` from `_common/axiosConfig.ts` to tell it from a failure.
 - `useFetchFilteredTable<T, TFilter>` — paginated, returns `{items, itemsCount}`. **Note the `use` prefix** — it was `fetchFilteredTable` before the migration.
 - `useAttachmentUpload(entity)` — `uploadAttachment(entityId, file)`
 - `useRequestState` / `createRequestState` — shared loading/error state. Pass `_silent: true` on a request config to suppress the interceptor's error snackbar.
