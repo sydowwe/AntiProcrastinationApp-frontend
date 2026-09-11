@@ -48,6 +48,16 @@ Known for this unit — verify each, do not assume:
   from rows persisted in Slovak at creation time. Settle that question here — it is the
   main open thread in this module. Note N11 is literally the "EN locale" prompt, so this
   is either a regression or a prompt that never fully landed.
+  EVIDENCE ADDED 2026-09-11, and it narrows the question: the API repo's
+  `docs/e2eTestSeed.md` now carries its own warning that "the bell's text is Slovak
+  regardless of the account's locale", attributing it to `NotificationTextRenderer` —
+  i.e. the backend documents it as renderer behaviour, not as stale rows. That points at
+  the code-bug branch, so lead with a freshly-arrived notification rather than a seeded
+  one. Treat it as a lead, not a finding: nobody has reproduced it since, and it is a
+  note in another repo's doc. The `e2e-v2` fixture seeds six notifications for the primary
+  account (three unread, three read, six kinds) plus two for the secondary, under
+  `seed.notifications` — so the All/Unread filter is exercisable now, which it was not
+  when B1 was filed.
 - The bell and its dropdown panel are documented in _shell/inventory.md. The FULL page at
   /notifikacie is yours — the bell is only a peek at the top of it.
 - Reminder preferences are keyed by (ownerModule, kind). Per CLAUDE.md's ownership rules,
