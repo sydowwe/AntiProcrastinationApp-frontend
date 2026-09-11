@@ -21,10 +21,10 @@ Fill its Unit block with:
 - Pass: `inventory`
 - Views & routes:
     `ReminderDefinitionsView`   `/pripomienky/register`
-    `ReminderDefinitionDetailView`   `/register/:id`
-    `ReminderUpcomingView`   `/nadchadzajuce`
-    `ReminderDispatchHistoryView`   `/historia`
-    `ReminderOverviewView`   `/prehlad`
+    `ReminderDefinitionDetailView`   `/pripomienky/register/:id`
+    `ReminderUpcomingView`   `/pripomienky/nadchadzajuce`
+    `ReminderDispatchHistoryView`   `/pripomienky/historia`
+    `ReminderOverviewView`   `/pripomienky/prehlad`
 - Intent sources: prompts/_done/_common/reminders/README.md, R1-correctness-sweep.md,
   R9-overview.md, R12-occurrence-preview.md, R5-server-table.md, R7-admin-gating.md
 

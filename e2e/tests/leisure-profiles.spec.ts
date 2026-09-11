@@ -9,26 +9,37 @@ import { test } from '../fixtures/auth'
 // to a `.../grid` endpoint on load (`useFetchFilteredTable`/`useServerTable`, per CLAUDE.md's `_common/api/`
 // section) to fetch their paginated rows.
 //
-// **This header used to claim all five were one systemic backend failure. That was wrong**, and it is
-// recorded here because it misdirected the next reader for a week. Diffing the client's paths against the
-// running server's swagger and reading each response body gave three unrelated causes:
+// **This header has now been wrong twice, in opposite directions.** Both versions are summarised because the
+// pattern is the point: an inference written down as a measurement misdirects the next reader for a week.
 //
-// | View                        | Endpoint                                      | Was  | Cause |
-// | --------------------------- | --------------------------------------------- | ---- | ----- |
-// | `/leisure/projects`         | `POST /api/activity-project-profile/grid`     | 400  | **frontend, FIXED** — `BOARD_PAGE_SIZE` was 500, the server caps `itemsPerPage` at 200 |
-// | `/activity-settings/activities` | `POST /api/activity/grid`                 | 405  | **backend** — no such route; server still serves `/api/activity/filtered-table` |
-// | `/leisure/memory-anchors`   | `POST /api/memory-anchor/grid`                | 405  | **backend** — same; server still serves `/api/memory-anchor/filtered-table` |
-// | `/leisure/backlog`          | `POST /api/activity-backlog-profile/grid`     | 500  | **backend** — opaque `errorId 73e7261d482b` |
-// | `/leisure/bucket-list`      | `POST /api/activity-bucket-list-profile/grid` | 500  | **backend** — opaque `errorId a2c8d4d3b9cb` |
+//   1. It first claimed all five were one systemic backend failure. That was wrong — they were three causes.
+//   2. It then claimed three causes, including a "half-finished `/grid` rename" on the server. **That is now
+//      wrong too**, partly because the server has since changed and partly because two of the three causes
+//      turned out to be the same bug.
 //
-// The two 405s are not a defect in this client: `vue_framework@52ba6a0` deliberately renamed the paged-filter
-// convention from `/{entity}/filtered-table` to `/{entity}/grid` to follow a server-side rename, and the
-// server applied it to the three profile entities but not to `activity` or `memory-anchor`. It is a
-// half-finished rename, so the fix is to finish it server-side, NOT to add per-call-site `path` overrides
-// that re-fork the convention that commit just unified.
+// Re-measured 2026-09-11 (see prompts/view-docs/README.md § *Before you start a unit*):
 //
-// A 405 rather than a 404 because `POST /api/memory-anchor/grid` falls through to `/api/memory-anchor/{id}`
-// with `id="grid"`, which allows only GET/DELETE/PUT.
+// | View                            | Endpoint                                      | Now  | Cause |
+// | ------------------------------- | --------------------------------------------- | ---- | ----- |
+// | `/leisure/projects` (board)     | `POST /api/activity-project-profile/grid`     | 200  | **fixed** — `BOARD_PAGE_SIZE` 500 → 200, the server's cap. Renders |
+// | `/activity-settings/activities` | `POST /api/activity/grid`                     | 200  | **fixed server-side** — the rename is complete. Renders 10 rows |
+// | `/leisure/memory-anchors`       | `POST /api/memory-anchor/grid`                | 500  | **backend** — sorts by `periodKey`, an unmapped key (B2) |
+// | `/leisure/backlog`              | `POST /api/activity-backlog-profile/grid`     | 500  | **backend** — sorts by `activity.name`, an unmapped key (B2) |
+// | `/leisure/bucket-list`          | `POST /api/activity-bucket-list-profile/grid` | 500  | **backend** — same as above (B2) |
+//
+// **The `/grid` rename is finished.** `/api/activity/grid` and `/api/memory-anchor/grid` both answer 200, and
+// `POST /{entity}/filtered-table` now returns 405 on all five entities — the mirror image of the old symptom.
+// Do not add per-call-site `path` overrides; there is nothing left to work around.
+//
+// The three remaining 500s are **one** bug, not three: a grid throws whenever `sortBy` names a key it cannot
+// map to a column. `sortBy: []` returns 200 on every one of these endpoints. A dot is not required — a
+// dot-free non-column key fails identically, so it is not about nested paths. Filed once as
+// prompts/view-docs/backend/B2-grid-500-on-unmapped-sortby.md, which also covers the client-side half (three
+// of these views send keys the server does not have).
+//
+// The failure renders as an **empty state**, not an error, so `/leisure/backlog` says "You don't have any here
+// yet" while the fixture does contain `profiles.backlog`. Never take an empty leisure table at face value here
+// without checking the network log.
 //
 // Still no spec for the three blocked surfaces — there is nothing in the UI to assert against. The projects
 // surface now works and is deliberately left to unit 13's inventory pass, which writes

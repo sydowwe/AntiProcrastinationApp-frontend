@@ -5,10 +5,14 @@
 > fixture `e2e-v1`. Gated on Development **and** a local database, so against the shared remote DB it is not
 > registered and answers 401. Kept as the record of what was asked and why.
 >
-> **Two follow-ups are outstanding** and are tracked in the runbook's *Before you start a unit* table: the
-> fixture creates **no day-planner templates** (blocks unit 08 and skips all 10 of `templateDayPlanner.spec.ts`),
-> and two profile grid endpoints answer 500 — `activity-backlog-profile` (`errorId 73e7261d482b`) and
-> `activity-bucket-list-profile` (`errorId a2c8d4d3b9cb`), blocking units 11 and 12.
+> **The two follow-ups noted here have been re-measured (2026-09-11) and split into their own files:**
+>
+> - the fixture gap grew from one surface to four — now [`B3`](B3-seed-fixture-coverage.md);
+> - the "two profile grid endpoints answer 500" framing was wrong. It is **not** per-endpoint and **not**
+>   limited to the profile grids: any grid 500s when `sortBy` names an unmapped key, including
+>   `reminder-dashboard/my-upcoming`, which is not a grid route. One bug, now
+>   [`B2`](B2-grid-500-on-unmapped-sortby.md). The `errorId`s quoted here (`73e7261d482b`, `a2c8d4d3b9cb`) are
+>   stale; B2 carries fresh ones.
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
 **Blocks:** every Playwright spec in `e2e/`, and the mutation half of the view-documentation sweep.

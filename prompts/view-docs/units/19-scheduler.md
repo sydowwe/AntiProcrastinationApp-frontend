@@ -21,8 +21,8 @@ Fill its Unit block with:
 - Pass: `inventory`
 - Views & routes:
     `SchedulerJobsView`   `/planovac/ulohy`
-    `SchedulerJobDetailView`   `/ulohy/:id`
-    `SchedulerRunDetailView`   `/behy/:id`
+    `SchedulerJobDetailView`   `/planovac/ulohy/:id`
+    `SchedulerRunDetailView`   `/planovac/behy/:id`
     `SchedulerNeedsAttentionView`   `/planovac/pozornost`
 - Intent sources: prompts/_common/scheduler/README.md, S1-correctness-sweep.md,
   S5-freshness.md, S6-operator-affordances.md, S8-contract-realignment.md,

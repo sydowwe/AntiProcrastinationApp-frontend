@@ -9,10 +9,11 @@ on, and invites it to self-assign the next unit.
 | File | For |
 | --- | --- |
 | [`units/`](units/) | **Start here.** One ready-to-paste prompt per unit, `01`–`19`. Move to `units/_done/` when finished. |
-| [`UNIT-ORDER.md`](UNIT-ORDER.md) | **Which unit to run next, and why.** Seven waves, gated on what each is blocked by. Ten of the eighteen remaining units are runnable with no fix at all; start with `01`. |
+| [`UNIT-ORDER.md`](UNIT-ORDER.md) | **Which unit to run next, and why.** Waves, gated on what each is blocked by. **Thirteen** of the eighteen remaining units are runnable with no fix at all (re-measured 2026-09-11); start with `01`. |
 | [`PROMPT-TEMPLATE.md`](PROMPT-TEMPLATE.md) | The spec every unit prompt points at. Edit this to change how *all* units behave. |
 | [`TRIAGE-PROMPT.md`](TRIAGE-PROMPT.md) | Opus, no browser. Turns findings into `_fix-queue.md`, batched by root cause. |
 | [`GENERATE-UNIT-PROMPTS.md`](GENERATE-UNIT-PROMPTS.md) | Regenerates `units/` if the unit definitions change. Already run. |
+| [`E2E-TEMPLATE-SEEDING.md`](E2E-TEMPLATE-SEEDING.md) | **Done, and superseded — do not run.** It was the way to unblock unit **08** without waiting on the backend. [`B3`](backend/B3-seed-fixture-coverage.md) has since landed and the fixture seeds templates itself, so the read-only views are driven from `seed.dayPlannerTemplates` and the helper it describes has narrowed to a single self-cleaning write-path test. Its baseline figures were already stale when it ran. Kept for the reasoning, not the instructions. |
 | [`E2E-SEED-WIRING.md`](E2E-SEED-WIRING.md) | **Largely done** (2026-09-10). The locale flip and the EN `authorization` mirror landed, `todo-lists.spec.ts` is green, and specs exist for most Task-3 surfaces. Whole suite: **46 passed · 45 `fixme` · 0 failed**. Kept for its Task-3 table and its rules (never seed per test, always derive dates from `seedDateUtc`). |
 
 Output lands in `docs/views/` — this folder is the instructions, that is the product.
@@ -59,6 +60,18 @@ writable once every unit is done, because captured-but-unspent data is invisible
    present (it is committed; without its `ignoreHTTPSErrors` every command dies on the self-signed cert).
    No Chrome extension permission is needed any more: the CLI launches its own Chrome instance and does not
    use your profile, your tabs or your session.
+
+   **Expect the very first page load in a fresh browser to fail, and just reload.** A brand-new context hits
+   `net::ERR_CERT_VERIFIER_CHANGED` on the dev server's self-signed cert, every module 404s and the app never
+   mounts — the snapshot shows *only* the devtools toggle and the console carries 40–200 errors. One
+   `playwright-cli reload` clears it completely. This is **separate from** the expected first-load 401 burst
+   in CLAUDE.md's *Browser verification* section, and it is not a defect in the app.
+
+   **It also produces spurious Playwright failures.** On 2026-09-11 `e2e/tests/auth.spec.ts` reported
+   2 failed · 6 passed: the two sign-in tests using the raw `page` fixture — the first navigations of the run —
+   failed, while the six using `authenticatedPage` passed and the storage state was written correctly. Signing
+   in by hand immediately afterwards worked. **Re-run before treating a first-navigation spec failure as a
+   real defect.**
 5. **A second account** — supplied by the seed as `secondaryUser` (id 10002). Nothing to create by hand.
 6. **Clean git tree**, or at least a known state — the inventory files record the commit sha they describe.
 
@@ -66,58 +79,172 @@ writable once every unit is done, because captured-but-unspent data is invisible
 
 ## Before you start a unit — known blockers
 
-Every unit's primary routes were driven on 2026-09-10, signed in, and checked for non-2xx responses and
-unresolved i18n keys. **Six units cannot currently produce a truthful inventory** (13 was the seventh and is
-now fixed). Two failure classes, and
-both produce the same trap: the view renders, so an agent documents it in complete good faith and files
-findings that are really one upstream bug.
+> **Re-measured 2026-09-11**, signed in as the seed's `primaryUser` against a freshly reseeded local API
+> (fixture `e2e-v1`). Every unit's primary routes — all 53 — were driven and checked for non-2xx responses,
+> unresolved i18n keys, and whether the view *actually renders rows*. Statuses below are observed. The previous
+> table (2026-09-10) is superseded; where it was wrong, the correction says so.
+>
+> **Five units cannot currently produce a truthful inventory**, down from six. The headline changes: unit
+> **02** is unblocked, unit **17** turned out to be blocked by more than the locale gap, and the "two or three
+> opaque 500s" are **one** bug.
+>
+> **Updated later the same day**, after two fixes landed: the reminders EN locale files shipped and are
+> verified rendering (Class 2 is **resolved**), and the grid sort-key fix is in the API working tree but **not
+> yet deployed** (Class 1). Once that build is out and re-verified, **16 of the 18 remaining units are
+> runnable** and only **08** and **17** stay blocked. Until then it is 13.
 
-**Class 1 — data never arrives** (the paginated grid family):
+Three failure classes. The first two produce the same trap — the view renders, so an agent documents it in
+good faith and files findings that are really one upstream bug.
 
-| Unit | Symptom | Cause | Fix side |
-| --- | --- | --- | --- |
-| ~~**13** leisure-projects~~ | ~~`activity-project-profile/grid` → **400**~~ | ✅ **FIXED** — `BOARD_PAGE_SIZE` 500 → 200 (the server's cap), plus an enum-name conversion in `ActivityProjectProfile.fromJson`. Verified rendering | frontend |
-| **02** activity-settings | `POST /api/activity/grid` → **405** | no such route; the server still has `/api/activity/filtered-table` | backend |
-| **12** leisure-bucket-anchors | `memory-anchor/grid` → **405**, `activity-bucket-list-profile/grid` → **500** | 405: server still has `/api/memory-anchor/filtered-table`. 500: opaque `errorId a2c8d4d3b9cb` | backend |
-| **11** leisure-backlog-picker | `activity-backlog-profile/grid` → **500** | opaque `errorId 73e7261d482b` | backend |
-| **16** reminders-user | `POST /api/reminder-dashboard/my-upcoming` → **500** | opaque `errorId 590edbaf1ac1` | backend |
-| **08** planner-templates | "No templates yet" | the seed creates no day-planner templates | backend fixture |
+### Class 1 — the grid 500s, and the view renders a false empty state
 
-The two 405s share one root cause, and it is **not** a client defect: `vue_framework@52ba6a0` deliberately
-renamed the paged-filter convention from `/{entity}/filtered-table` to `/{entity}/grid`, following a
-server-side rename. The server applied it to the three profile entities but **not** to `activity` or
-`memory-anchor`, which still answer only on `/filtered-table`. It is a half-finished rename: finish it
-server-side rather than adding per-call-site `path` overrides, which would re-fork the convention that commit
-just unified. (405 not 404 because `POST /api/memory-anchor/grid` falls through to `/api/memory-anchor/{id}`
-with `id="grid"`, which allows only GET/DELETE/PUT.)
+> 🔧 **A fix has landed in the API working tree (2026-09-11) but was not yet deployed when this was written.**
+> The approach is a **remap, not a rejection**: `GridSortKeyExtensions.ExpandSortKey` rewrites the keys the
+> client sends (`activity.name` → `activityName`, `periodKey` → `anchorYear, anchorMonth`) onto members that
+> exist on the projected response. So **no frontend change is needed** — the views should render as soon as
+> the API is rebuilt.
+>
+> Note what the remap does *not* change: an unresolvable key is still an `ArgumentException` out of
+> `SortByMany`, i.e. still a 500. The specific keys are fixed; the general class is not.
+>
+> **Re-verify before running units 11, 12, 16 or 13's table view** — against the still-running old build on
+> 2026-09-11 every case below reproduced unchanged. The check is one request:
+> `POST /api/activity-backlog-profile/grid` with `sortBy: [{"key":"activity.name","isDesc":false}]` should
+> return 200 with rows.
 
-**Class 2 — the page renders raw i18n keys**, because the reminders module ships **Slovak only**:
-`src/_common/modules/reminders/_locales/` contains `reminders.sk.ts` and `remindersDashboard.sk.ts` and no `.en`
-counterparts, and `EN.ts` therefore spreads neither (`SK.ts` spreads both).
+**One root cause, not three.** A paged grid throws whenever `sortBy` names a key it cannot map to a column.
+Same route, same filter, only `sortBy` differs:
 
-| Unit | Raw keys observed |
+| `sortBy` | Result |
 | --- | --- |
-| **16** reminders-user | `reminderDashboard.my.title`, `.my.subtitle`, `.a11y.resultCount`, `reminders.key.kind`, `.key.ownerModule`, `.field.scheduleType`, … — the whole view |
-| **17** reminders-admin | `reminders.list.title`, `.key.subject`, `.field.status`, `.field.nextOccurrence`, … — the whole list view |
-| **19** scheduler | `reminders.scan` (one key, same root cause) |
-| **11** leisure-backlog-picker | `enums.energyLevel.Low` — *different* root cause, app-side `enums` namespace |
+| `[]` | **200** |
+| a mapped column (`id`, `name`, `anchorYear`, `activityName`) | **200** |
+| `activity.name` — nested path | **500** |
+| `zzzNotAColumn` — **no dot**, not a column | **500** |
 
-**This is a regression from the default-locale flip**, not a pre-existing gap: until `src/i18n.ts` moved to
-`locale: 'EN'`, these resolved from SK. `E2E-SEED-WIRING.md` warned about exactly this class and had the agent
-mirror `authorization` — nobody checked what *else* the flip stranded, and the reminders module is the answer.
-`fallbackLocale` is also `EN`, so there is no fallback to catch it. Note that **real Slovak users are
-unaffected** (their `currentUser.locale` still wins), which is why this went unnoticed — but the doc pass runs
-in English by design, so it is fully blocking for 16 and 17.
+Reproduced identically on all five `/grid` endpoints *and* on `reminder-dashboard/my-upcoming`, which is not a
+`/grid` route — so it lives in a shared sorting layer. **The earlier "nested `sortBy`" hypothesis is refuted:**
+a dot-free unmapped key fails the same way, so the trigger is *unmappable*, not *nested*. That distinction is
+what the backend needs, and it is why this is filed once as
+[`backend/B2-grid-500-on-unmapped-sortby.md`](backend/B2-grid-500-on-unmapped-sortby.md) rather than three
+times.
 
-Deciding where the fix lives is a judgement call, not a mechanical one: per CLAUDE.md's framework decision
-tree these are the framework module's own strings with no app domain in them, so the correct home is a
-submodule commit adding `reminders.en.ts` / `remindersDashboard.en.ts` (plus a pointer bump, in that order) —
-*not* the app-side `common.en.ts` mirror that R5/R6/R11 used for namespace **collisions**, which this is not.
+The 500 renders as the table's **empty state**, which is the dangerous part — `/leisure/backlog` says *"You
+don't have any here yet"* while the fixture does contain `profiles.backlog`.
 
-**Every other unit is clear.** Routes for units 01, 03, 04, 05, 06, 07, 10, 14, 18 and the rest of 19 were
-driven and came back with no 4xx/5xx and no raw keys.
+| Unit | Route | Sends | Status |
+| --- | --- | --- | --- |
+| **11** leisure-backlog-picker | `/leisure/backlog` | `activity.name` | **500** — false empty state |
+| **12** leisure-bucket-anchors | `/leisure/bucket-list` | `activity.name` | **500** — false empty state |
+| **12** leisure-bucket-anchors | `/leisure/memory-anchors` | `periodKey` | **500** — false empty state |
+| **16** reminders-user | `/pripomienky/moje` | `nextOccurrence` | **500** — "No data available" |
+| **13** leisure-projects | `/leisure/projects?view=table` | `activity.name` | **500** — board mode is fine, table mode is not |
 
-Note that only the **paginated grid family** is affected — `GET /api/activity/all-options` and friends return
+**Two corrections to the previous table, both now false:**
+
+1. ~~Unit **02** is blocked on `POST /api/activity/grid` → 405.~~ **It is not blocked.** The server has
+   completed the `/grid` rename: `/api/activity/grid` and `/api/memory-anchor/grid` both answer **200**, and
+   `POST /{entity}/filtered-table` now returns **405** on all five entities — the mirror image of the old
+   symptom. `/activity-settings/activities` renders **10 real rows** (Bug Fixing, Build a Bookshelf, Call the
+   Dentist, Code Review, …); the `roles` and `categories` tabs render 16 and 19. It sorts by the flat, mapped
+   column `name`, which is exactly why it escapes Class 1.
+2. ~~The rename is "half-finished server-side".~~ **The rename is complete.** That claim appeared in both this
+   file and the header of `e2e/tests/leisure-profiles.spec.ts`; the spec comment has been corrected in place
+   (comment only, no test change). Do not add per-call-site `path` overrides — there is nothing left to work
+   around.
+
+### Class 2 — the page renders raw i18n keys — ✅ **resolved**
+
+> **Fixed 2026-09-11 and verified in the browser.** `src/_common/modules/reminders/_locales/` now ships
+> `reminders.en.ts` and `remindersDashboard.en.ts` alongside the `.sk` files, and `src/locales/EN.ts` spreads
+> both. Re-driven signed in: `/pripomienky/moje` renders *"My reminders — Upcoming reminders you are a
+> recipient of…"*, `/pripomienky/register` renders *"Reminder register / Owner module / Subject / Kind /
+> Schedule type / Status / Next occurrence"*, and **`reminders.scan` is gone from `/planovac/ulohy` too**.
+> Zero raw keys across all five reminders views and the scheduler.
+>
+> It was resolved the right way — a framework commit adding the two `.en` files, per CLAUDE.md's decision tree —
+> **not** the app-side `common.en.ts` mirror, which is the remedy for namespace *collisions* (R5/R6/R11) and
+> this was not one. Remember the pointer bump if it has not landed yet.
+>
+> **This removes the locale gate from units 16 and 17 entirely.** 17 is still blocked, but now by Class 3's
+> 403 alone.
+
+Two earlier entries in this class also no longer reproduce:
+
+| Was | Now |
+| --- | --- |
+| **19** scheduler — `reminders.scan` on `/planovac/ulohy` | ✅ gone, same fix |
+| **11** leisure-backlog-picker — `enums.energyLevel.Low` on `/leisure/pick` | ✅ gone. Renders "Low / Medium / High" and "Energy: Low". Presumably the `convertToEnum` rule now in CLAUDE.md; `prompts/ENUM-DESERIALIZATION-AUDIT.md` owns the wider sweep |
+
+**One raw key remains**, unrelated to reminders and app-side — it is a finding for the unit, not a blocker:
+
+| Unit | Route | Key |
+| --- | --- | --- |
+| **04** history-capture | `/activity-history/stopwatch` | `dateTime.secondsShort` — renders between the minute and second digits. Confirmed still present 2026-09-11, after the reminders fix |
+
+### Class 3 — 403, and the fixture has no rows
+
+Two failure modes that the previous table did not separate from "clean".
+
+| Unit | Symptom | Ask |
+| --- | --- | --- |
+| **17** reminders-admin | **all four data routes → 403**, empty body, no `WWW-Authenticate`: `reminder-definition/grid`, `reminder-definition/{id}`, `reminder-dashboard/upcoming`, `/dispatch-history`, `/overview` | [`B4`](backend/B4-reminders-admin-403.md) |
+| **08** planner-templates | "No templates yet" — and **two of its three views are unreachable** without a template id | [`B3`](backend/B3-seed-fixture-coverage.md) |
+| **05** tracking-dashboards | all four dashboards render their full chrome over empty payloads (`{"domains":[],"totals":{…0}}`) | [`B3`](backend/B3-seed-fixture-coverage.md) |
+| **06** tracking-settings | both views: "No data available · 0-0 of 0" | [`B3`](backend/B3-seed-fixture-coverage.md) |
+| **18** notifications | `/notifikacie` is empty; its sibling `/nastavenia/pripomienky` renders 10 rows | [`B3`](backend/B3-seed-fixture-coverage.md) |
+
+**The 403 is now 17's only gate.** It was previously listed as released by the EN locale files alone; those
+have since landed (Class 2), and the 403 is what is left. Note the contrast that rules out a session problem: the user-scoped
+`my-upcoming` and *every* scheduler admin route (`scheduler-dashboard/jobs-overview`, `/health`,
+`/run-history`) answer **200** on the same cookie, and `/planovac/ulohy` renders 10 real jobs.
+
+**08 is a hard blocker; 05, 06 and 18 are not.** Those three render their whole control surface and lack only
+rows, so an inventory pass can document the controls — it just must say the data was absent rather than
+describing an empty screen as the feature.
+
+### Backend asks
+
+| Ask | State | Unblocks |
+| --- | --- | --- |
+| [`B2` — grid 500 on an unmapped `sortBy`](backend/B2-grid-500-on-unmapped-sortby.md) | 🔧 fixed in the API tree, **pending redeploy** | 11, 12, 16, and 13's table view |
+| [`B3` — seed fixture coverage](backend/B3-seed-fixture-coverage.md) | open | 08; improves 05, 06, 18 |
+| [`B4` — reminders-admin 403](backend/B4-reminders-admin-403.md) | open — **now 17's only gate** | 17 |
+| [`B5` — `repeating-planner-task/suggestions`](backend/B5-repeating-planner-task-suggestions.md) | ⛔ **withdrawn — not a backend ask** | — |
+| [`B6` — profile grids omit the activity name](backend/B6-profile-grid-activity-name.md) | open, a contract question | affects 12, 13 |
+| [`B7` — grid sort-key audit](backend/B7-grid-sort-key-audit.md) | open — one missed column, plus B6's answer from the client's side | 12; hardens 11, 13 |
+
+**B7 is the exhaustive version of B2's closing warning.** B2 fixed five grids by remapping their keys and said
+so explicitly: *"a new sortable column added to any of these tables can reintroduce it."* B7 reads every column
+definition in the app against every grid response and finds **one sortable column the remap missed** —
+`memory-anchor/grid` also emits `activity.name`, which still 500s on a header click. It also answers B6 from
+the client's side: all four profile DTOs parse a **nested** `activity` object and none reads the flat
+`activityName`, so that field is currently returned and never read.
+
+**B5 was withdrawn before it was sent.** The route exists as
+`GET /repeating-planner-task/suggestions/{calendarId:long}` and returns 200; the client calls it as
+`/suggestions?date=…`, which falls through to `/{id}`. It is a **frontend** bug. The file is kept because how
+it came to be written wrong — probing an endpoint from outside cannot tell "no route" from "right route, wrong
+parameter" — is the more useful part.
+
+### Everything else is clear
+
+Units **01, 03, 04, 07, 09, 10, 13 (board), 14, 15, 19** were driven and render real data with no 4xx/5xx.
+Two things found along the way that are **app-side, not blockers**, recorded so a unit agent recognises them:
+
+- **07** `/day-planner/:date` fires `GET /api/repeating-planner-task/suggestions?date=…` **twice**, and both
+  400. **This is a frontend bug, not a missing route** — the endpoint is
+  `GET /repeating-planner-task/suggestions/{calendarId:long}` and returns 200; the client sends a date query
+  param instead of the calendar id it has already resolved. See
+  [`B5` (withdrawn)](backend/B5-repeating-planner-task-suggestions.md). The
+  day view itself is correct: `/day-planner/11-09-2026` loads calendar 984 and shows "1/3 tasks · 33%".
+  **The `:date` param is `dd-MM-yyyy`, not ISO.** An ISO URL silently renders a *neighbouring* day rather
+  than erroring, which is a robustness finding for the unit, not a backend defect — confirm the format before
+  filing anything about it.
+- **02** `/activity-settings/activities` fires `POST /api/activity/grid` twice on mount; the first is
+  `ERR_ABORTED` and the second returns 200. Superseded duplicate, not a failure.
+
+Only the **paginated grid family** is affected by Class 1 — `GET /api/activity/all-options` and friends return
 200 throughout, so pickers, selects and non-paginated lists render fine even in the blocked units.
 
 ---
@@ -374,9 +501,16 @@ Both of the surfaces unit 9 found invisible are now seeded and confirmed renderi
 non-zero `suggestedTime` with matching history (`counts.calibrationTodoListItems`), and **6** overdue items sit
 well past the renegotiation threshold of 3 — the banner renders with all three actions.
 
-**Known fixture gap:** the seed creates **no day-planner templates**, so `/day-planner/templates` shows "No
-templates yet" and unit **08** cannot be documented. `templateDayPlanner.spec.ts` skips all 10 of its tests on
-`test.skip(templateUrl === null)`. This needs a fixture extension in the API repo — do not create one per test.
+**Known fixture gaps** (re-measured 2026-09-11, filed as [`B3`](backend/B3-seed-fixture-coverage.md) — one ask,
+four surfaces; do not create data per test):
+
+- **no day-planner templates**, so `/day-planner/templates` shows "No templates yet", two of unit **08**'s
+  three views are unreachable, and `templateDayPlanner.spec.ts` skips all 10 of its tests on
+  `test.skip(templateUrl === null)`. This is the only one of the four that blocks a unit outright;
+- **no activity-tracking entries** (browser/desktop/Android), so all four of unit **05**'s dashboards render
+  over empty payloads and there is no chart data for the canvas clause to read;
+- **no distinct tracking entries**, so both of unit **06**'s views show "No data available · 0-0 of 0";
+- **no notifications**, so `/notifikacie` (half of unit **18**) is empty.
 
 ## What "done" looks like
 

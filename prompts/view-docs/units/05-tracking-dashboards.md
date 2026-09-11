@@ -22,8 +22,8 @@ Fill its Unit block with:
 - Views & routes:
     `ActivityDashboard` `/activity-tracking`
     `UnifiedActivityDashboard` `/activity-tracking/unified`
-    `DesktopActivityDashboard` `/desktop`
-    `AndroidActivityDashboard` `/android`
+    `DesktopActivityDashboard` `/activity-tracking/desktop`
+    `AndroidActivityDashboard` `/activity-tracking/android`
 - Intent sources: prompts/_done/activity-tracking/README.md, U4-unified-source.md,
   U5-fragmentation-metrics.md, U5b-adopt-focus-metrics-endpoint.md,
   U6-empty-and-first-run.md, U1-url-state.md
