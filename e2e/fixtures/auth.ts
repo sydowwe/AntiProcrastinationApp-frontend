@@ -42,7 +42,12 @@ async function signedInPage(browser: import('@playwright/test').Browser, user: S
 		await form.locator('input[type="password"]').first().fill(user.password)
 		await form.locator('button[type="submit"]').click()
 
-		await expect(page).toHaveURL('/')
+		// Generous on purpose. This is the one COLD sign-in of the run: `global-setup.ts` has just
+		// cleared `.state/`, so there is no cached session, and Vite is compiling the login and
+		// dashboard routes on demand. At the default 5 s this fails intermittently on the very first
+		// test of a run — and it fails inside a fixture, so it surfaces as an unrelated spec going red
+		// with a `toHaveURL` error that has nothing to do with that spec.
+		await expect(page).toHaveURL('/', { timeout: 20_000 })
 		await context.storageState({ path: authFile })
 	}
 

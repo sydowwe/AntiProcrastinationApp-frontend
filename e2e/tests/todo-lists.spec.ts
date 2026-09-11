@@ -145,9 +145,20 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		await expect(authenticatedPage.getByRole('button', { name: 'CHANGE ORDER' })).toBeVisible()
 	})
 
-	test('invalid id shows an empty state instead of crashing the page', async ({ authenticatedPage }) => {
+	// This asserted `getByText(/no tasks/i)` until 2026-09-11, which was the PRE-FIX behaviour: showing a
+	// missing list as the same generic empty state a legitimately empty list gets was the bug itself
+	// (finding B1 in docs/views/todo-lists/findings.md). B1's fix deliberately replaced that copy with an
+	// explicit not-found alert, so the old assertion could only ever go red once the fix landed. Asserting
+	// the not-found state is the point — "does not crash" is the weaker half.
+	test('invalid id shows an explicit not-found state, not the empty-list copy', async ({ authenticatedPage }) => {
 		await authenticatedPage.goto('/todo-list/999999')
-		await expect(authenticatedPage.getByText(/no tasks/i)).toBeVisible()
+
+		const notFound = authenticatedPage.getByRole('alert')
+		await expect(notFound).toContainText("This list doesn't exist")
+		await expect(notFound.getByRole('link', { name: 'To the lists' })).toHaveAttribute('href', '/todo-list')
+
+		// The distinction B1 is about: a missing list must NOT read as an empty one.
+		await expect(authenticatedPage.getByText(/no tasks/i)).toHaveCount(0)
 	})
 
 	test.fixme(
@@ -168,11 +179,32 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		async () => {},
 	)
 
-	test.fixme(
-		'the invalid-id case should not produce an unhandled console exception',
-		// Logged as bug B1 in todo-lists.findings.md — asserting "no console error" would currently fail.
-		async () => {},
-	)
+	// Was a fixme on the grounds that "asserting no console error would currently fail". Half of that is
+	// still true and always will be, so the assertion is scoped to the half that is actionable.
+	//
+	// What B1 actually fixed is the UNHANDLED rejection: the mount load is now caught, so Vue no longer
+	// logs "Unhandled error during execution of mounted hook at <TodoListView>" and nothing reaches
+	// `pageerror`. What remains on an invalid id is two lines that are not this view's to remove — the
+	// browser's own `Failed to load resource: 404`, and the axios interceptor's deliberate app-wide
+	// `console.error('ERROR: ', error)` at `_common/axiosConfig.ts:118`, which logs EVERY error response,
+	// handled or not. Silencing that is a framework-wide logging decision, so asserting a clean console
+	// here would be asserting something this view cannot deliver.
+	test('invalid id does not produce an unhandled exception', async ({ authenticatedPage }) => {
+		const unhandled: string[] = []
+		// Attached before navigating, so anything the beforeEach load produced is excluded by construction.
+		authenticatedPage.on('pageerror', error => unhandled.push(`pageerror: ${error.message}`))
+		authenticatedPage.on('console', message => {
+			if (message.type() === 'error' && /unhandled|mounted hook/i.test(message.text())) {
+				unhandled.push(message.text())
+			}
+		})
+
+		await authenticatedPage.goto('/todo-list/999999')
+		// Wait on the rendered outcome, not the navigation: the rejection would land after first paint.
+		await expect(authenticatedPage.getByRole('alert')).toContainText("This list doesn't exist")
+
+		expect(unhandled).toEqual([])
+	})
 
 	test.fixme(
 		'"Clear filters" resets hideDone and sort in addition to priority/due filters',
