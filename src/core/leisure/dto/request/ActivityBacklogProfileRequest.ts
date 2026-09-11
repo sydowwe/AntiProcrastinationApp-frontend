@@ -12,7 +12,12 @@ export class ActivityBacklogProfileRequest {
 		public maxParticipants: number | null = null,
 		public expectedCostTierId: number = 0,
 		public durationMinutes: number = 60,
-		public isOneTime: boolean = false,
+		/**
+		 * `isRepeatable` is the entity's column and the one name both sides use. It used to be `isOneTime`
+		 * here, which `POST`/`PUT activity-backlog-profile` does not bind — so `IsRepeatable` stayed at its
+		 * `bool` default and every entry saved as one-time whatever the checkbox said.
+		 */
+		public isRepeatable: boolean = false,
 	) {}
 
 	static fromJson(object: any) {
@@ -26,7 +31,7 @@ export class ActivityBacklogProfileRequest {
 			maxParticipants = null,
 			expectedCostTierId = 0,
 			durationMinutes = 60,
-			isOneTime = false,
+			isRepeatable = false,
 		} = object
 		return new ActivityBacklogProfileRequest(
 			activityId,
@@ -38,7 +43,7 @@ export class ActivityBacklogProfileRequest {
 			maxParticipants,
 			expectedCostTierId,
 			durationMinutes,
-			isOneTime,
+			isRepeatable,
 		)
 	}
 }

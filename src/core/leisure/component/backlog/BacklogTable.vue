@@ -26,14 +26,14 @@
 				:activityId="item.activityId"
 				:activityName="item.activity.name"
 				:isAnchored="item.isAnchored"
-				:eligible="item.isOneTime"
+				:eligible="!item.isRepeatable"
 				@anchored="emit('onReload')"
 			/>
 		</template>
-		<template #item.isOneTime="{ item }">
+		<template #item.isRepeatable="{ item }">
 			<VIcon
-				:color="item.isOneTime ? 'primary' : 'grey'"
-				:icon="item.isOneTime ? 'star' : 'rotate'"
+				:color="item.isRepeatable ? 'primary' : 'grey'"
+				:icon="item.isRepeatable ? 'rotate' : 'star'"
 				size="16"
 			/>
 		</template>
@@ -125,7 +125,7 @@
 		new TableColumn('energyLevel', t('leisure.fields.energyLevel'), false),
 		new TableColumn('expectedCostTier', t('leisure.fields.expectedCostTier'), false),
 		new TableColumn('durationMinutes', t('leisure.fields.durationMinutes')),
-		new TableColumn('isOneTime', t('leisure.fields.isOneTime'), false),
+		new TableColumn('isRepeatable', t('leisure.fields.isRepeatable'), false),
 		// Not sortable until the API accepts `isAnchored` as a sort key — see BucketListTable.
 		new TableColumn('isAnchored', t('leisure.fields.experienced'), false),
 	]

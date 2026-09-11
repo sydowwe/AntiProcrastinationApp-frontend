@@ -13,7 +13,7 @@ const leisure = {
 			maxParticipants: `Max people`,
 			expectedCostTier: `Cost`,
 			durationMinutes: `Duration (min)`,
-			isOneTime: `One-time experience`,
+			isRepeatable: `Repeatable activity`,
 			difficultyLevel: `Difficulty`,
 			projectArea: `Area`,
 			estimatedHours: `Est. hours`,

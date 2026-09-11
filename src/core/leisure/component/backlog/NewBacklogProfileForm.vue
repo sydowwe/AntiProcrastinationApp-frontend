@@ -68,8 +68,8 @@
 			:step="15"
 		/>
 		<VCheckbox
-			v-model="model.isOneTime"
-			:label="$t('leisure.fields.isOneTime')"
+			v-model="model.isRepeatable"
+			:label="$t('leisure.fields.isRepeatable')"
 			hideDetails
 		/>
 	</VForm>

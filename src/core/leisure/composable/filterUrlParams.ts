@@ -1,7 +1,7 @@
 // Primitive encode/decode pairs for putting a filter into the query string.
 //
 // `useTableUrlState` treats an empty string as "delete this param", so every encoder returns '' for
-// a value that is absent. That is what keeps `?locationTypeIds=&isOneTime=` out of the URL — an
+// a value that is absent. That is what keeps `?locationTypeIds=&isRepeatable=` out of the URL — an
 // absent filter field must be absent from the query, not present and empty.
 //
 // Every decoder is total: the query string is user-editable, so garbage decodes to `null` (the

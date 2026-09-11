@@ -13,7 +13,7 @@ export class ActivityBacklogProfileFilter implements IFilterRequest {
 		public maxDurationMinutes: number | null = null,
 		public minParticipants: number | null = null,
 		public maxParticipants: number | null = null,
-		public isOneTime: boolean | null = null,
+		public isRepeatable: boolean | null = null,
 		public isAnchored: boolean | null = null,
 	) {}
 
@@ -28,7 +28,7 @@ export class ActivityBacklogProfileFilter implements IFilterRequest {
 			this.maxDurationMinutes != null ||
 			this.minParticipants != null ||
 			this.maxParticipants != null ||
-			this.isOneTime != null ||
+			this.isRepeatable != null ||
 			this.isAnchored != null
 		)
 	}

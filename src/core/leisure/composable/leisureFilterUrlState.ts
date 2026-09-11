@@ -40,7 +40,7 @@ export function backlogFilterUrlState(): TableUrlStateOptions<ActivityBacklogPro
 			maxDurationMinutes: encodeNumber(filter.maxDurationMinutes),
 			minParticipants: encodeNumber(filter.minParticipants),
 			maxParticipants: encodeNumber(filter.maxParticipants),
-			isOneTime: encodeTriState(filter.isOneTime),
+			isRepeatable: encodeTriState(filter.isRepeatable),
 			isAnchored: encodeTriState(filter.isAnchored),
 		}),
 		paramsToFilter: params =>
@@ -54,7 +54,7 @@ export function backlogFilterUrlState(): TableUrlStateOptions<ActivityBacklogPro
 				decodeNumber(params.maxDurationMinutes),
 				decodeNumber(params.minParticipants),
 				decodeNumber(params.maxParticipants),
-				decodeTriState(params.isOneTime),
+				decodeTriState(params.isRepeatable),
 				decodeTriState(params.isAnchored),
 			),
 	}

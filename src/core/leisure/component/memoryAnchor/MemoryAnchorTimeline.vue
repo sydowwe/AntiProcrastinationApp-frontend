@@ -305,7 +305,7 @@
 
 	function sourceLabel(anchor: MemoryAnchor): string | null {
 		if (anchor.hasBucketList) return t('leisure.anchorSourceBucketList')
-		if (anchor.hasBacklog && anchor.backlogIsOneTime) return t('leisure.anchorSourceBacklog')
+		if (anchor.hasBacklog && anchor.backlogIsRepeatable === false) return t('leisure.anchorSourceBacklog')
 		return null
 	}
 

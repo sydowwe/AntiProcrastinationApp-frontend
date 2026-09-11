@@ -11,7 +11,12 @@ export class MemoryAnchor implements IIdResponse {
 		public highlightNote: string,
 		public rating: number,
 		public hasBacklog: boolean,
-		public backlogIsOneTime: boolean,
+		/**
+		 * `null` when `hasBacklog` is false — "is the backlog entry repeatable" has no answer when there is
+		 * no entry, and `false` there would read as "it is one-time". Only a non-repeatable entry is closed
+		 * by being anchored, so the Source column tests `=== false`, not truthiness.
+		 */
+		public backlogIsRepeatable: boolean | null,
 		public hasBucketList: boolean,
 	) {}
 
@@ -29,7 +34,7 @@ export class MemoryAnchor implements IIdResponse {
 			highlightNote = '',
 			rating = 0,
 			hasBacklog = false,
-			backlogIsOneTime = false,
+			backlogIsRepeatable = null,
 			hasBucketList = false,
 		} = object
 		return new MemoryAnchor(
@@ -41,7 +46,7 @@ export class MemoryAnchor implements IIdResponse {
 			highlightNote,
 			rating,
 			hasBacklog,
-			backlogIsOneTime,
+			backlogIsRepeatable,
 			hasBucketList,
 		)
 	}

@@ -50,7 +50,7 @@ describe('leisure filter URL round-trip', () => {
 			maxDurationMinutes: '45',
 			minParticipants: '2',
 			maxParticipants: '6',
-			isOneTime: 'true',
+			isRepeatable: 'true',
 			isAnchored: 'false',
 		})
 		expect(paramsToFilter(query)).toEqual(filter)
@@ -66,14 +66,14 @@ describe('leisure filter URL round-trip', () => {
 	it('tri-state false round-trips, null stays absent', () => {
 		const { filterToParams, paramsToFilter } = backlogFilterUrlState()
 		const isFalse = new ActivityBacklogProfileFilter()
-		isFalse.isOneTime = false
+		isFalse.isRepeatable = false
 		const query = toQuery(filterToParams(isFalse))
-		expect(query).toEqual({ isOneTime: 'false' })
-		expect(paramsToFilter(query).isOneTime).toBe(false)
+		expect(query).toEqual({ isRepeatable: 'false' })
+		expect(paramsToFilter(query).isRepeatable).toBe(false)
 
 		const isNull = new ActivityBacklogProfileFilter()
-		expect(filterToParams(isNull).isOneTime).toBe('')
-		expect(paramsToFilter({}).isOneTime).toBeNull()
+		expect(filterToParams(isNull).isRepeatable).toBe('')
+		expect(paramsToFilter({}).isRepeatable).toBeNull()
 	})
 
 	it('garbage in the query decodes to null, not NaN or a bogus enum', () => {
@@ -82,12 +82,12 @@ describe('leisure filter URL round-trip', () => {
 			locationTypeIds: 'abc,,x',
 			energyLevels: 'sideways,low',
 			maxDurationMinutes: 'nope',
-			isOneTime: 'yes',
+			isRepeatable: 'yes',
 		})
 		expect(filter.locationTypeIds).toBeNull()
 		expect(filter.energyLevels).toEqual([EnergyLevel.Low])
 		expect(filter.maxDurationMinutes).toBeNull()
-		expect(filter.isOneTime).toBeNull()
+		expect(filter.isRepeatable).toBeNull()
 	})
 
 	it('bucket list: min/max and tri-state', () => {

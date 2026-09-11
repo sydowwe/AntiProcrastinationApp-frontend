@@ -42,7 +42,7 @@
 				{{ $t('leisure.anchorSourceBucketList') }}
 			</VChip>
 			<VChip
-				v-else-if="item.hasBacklog && item.backlogIsOneTime"
+				v-else-if="item.hasBacklog && item.backlogIsRepeatable === false"
 				size="x-small"
 				color="secondaryOutline"
 				link

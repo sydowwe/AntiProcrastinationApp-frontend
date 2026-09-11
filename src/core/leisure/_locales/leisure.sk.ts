@@ -13,7 +13,7 @@ const leisure = {
 			maxParticipants: `Max ľudí`,
 			expectedCostTier: `Cena`,
 			durationMinutes: `Dĺžka (min)`,
-			isOneTime: `Jednorazový zážitok`,
+			isRepeatable: `Opakovateľná aktivita`,
 			difficultyLevel: `Náročnosť`,
 			projectArea: `Oblasť`,
 			estimatedHours: `Odhad hodín`,

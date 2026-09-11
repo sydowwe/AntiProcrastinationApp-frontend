@@ -17,8 +17,8 @@ export class ActivityBacklogProfile implements IIdResponse {
 		public maxParticipants: number | null,
 		public expectedCostTier: LookupResponse,
 		public durationMinutes: number,
-		public isOneTime: boolean,
-		// Only meaningful while `isOneTime` — a repeatable activity is never "done". `null` means the
+		public isRepeatable: boolean,
+		// Only meaningful while `!isRepeatable` — a repeatable activity is never "done". `null` means the
 		// API does not carry the field yet (see prompts/leisure/backend/B1-backend.md).
 		public isAnchored: boolean | null,
 		public memoryAnchorId: number | null,
@@ -40,7 +40,7 @@ export class ActivityBacklogProfile implements IIdResponse {
 			maxParticipants = null,
 			expectedCostTier = {},
 			durationMinutes = 0,
-			isOneTime = false,
+			isRepeatable = false,
 			isAnchored = null,
 			memoryAnchorId = null,
 		} = object
@@ -60,7 +60,7 @@ export class ActivityBacklogProfile implements IIdResponse {
 			maxParticipants,
 			LookupResponse.fromJson(expectedCostTier),
 			durationMinutes,
-			isOneTime,
+			isRepeatable,
 			isAnchored,
 			memoryAnchorId,
 		)

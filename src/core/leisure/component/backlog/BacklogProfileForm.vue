@@ -32,7 +32,7 @@
 					entityToEdit.maxParticipants,
 					entityToEdit.expectedCostTier.id,
 					entityToEdit.durationMinutes,
-					entityToEdit.isOneTime,
+					entityToEdit.isRepeatable,
 				)
 			: new ActivityBacklogProfileRequest(),
 	)

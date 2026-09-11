@@ -61,8 +61,8 @@
 						hideDetails
 					/>
 					<NullFalseTrueCheckbox
-						v-model="draft.isOneTime"
-						:label="$t('leisure.fields.isOneTime')"
+						v-model="draft.isRepeatable"
+						:label="$t('leisure.fields.isRepeatable')"
 						hideDetails
 					/>
 					<NullFalseTrueCheckbox
@@ -148,11 +148,11 @@
 		items,
 		cloneFilter: base => Object.assign(new ActivityBacklogProfileFilter(), base),
 		scopeFilter: copy => {
-			copy.isOneTime = true
+			copy.isRepeatable = false
 		},
-		// Forcing `isOneTime` onto the copy would contradict a user who asked for the repeatable half,
-		// so the readout stands down instead of reporting a fraction of a set they are not looking at.
-		applicable: current => current.isAnchored == null && current.isOneTime !== false,
+		// Forcing `isRepeatable: false` onto the copy would contradict a user who asked for the repeatable
+		// half, so the readout stands down instead of reporting a fraction of a set they are not looking at.
+		applicable: current => current.isAnchored == null && current.isRepeatable !== true,
 	})
 
 	// Every reload is a change to the set the fraction is over — a new anchor, a new entry, a deleted
@@ -188,7 +188,7 @@
 		expectedCostTierIds: countChip('leisure.fields.expectedCostTier', 'sack-dollar'),
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
-		isOneTime: boolChip('leisure.fields.isOneTime', 'star', 'rotate'),
+		isRepeatable: boolChip('leisure.fields.isRepeatable', 'rotate', 'star'),
 		isAnchored: boolChip('leisure.fields.experienced', 'circle-check'),
 	}
 </script>
