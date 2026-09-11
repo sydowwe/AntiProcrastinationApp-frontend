@@ -42,17 +42,11 @@ declare global {
 	}
 }
 
-// Augments axios' own request config. `src/_common/api/useRequestState.ts` passes `_silent`
-// through to the interceptor, so without this the framework does not type-check. Declared here
-// rather than in the submodule, which this project must never edit.
-declare module 'axios' {
-	interface AxiosRequestConfig {
-		// When true, the response interceptor will NOT show an error snackbar for this request.
-		// Use it when the caller wants to own error messaging (e.g. a contextual 409/422 message),
-		// and then optionally fall back to `handleHttpCodes(status)` for statuses it doesn't special-case.
-		_silent?: boolean
-	}
-}
+// The `AxiosRequestConfig._silent` augmentation that used to live here has moved into the
+// framework, next to the `InternalAxiosRequestConfig` one it pairs with
+// (`src/_common/axiosConfig.ts`). It is the interceptor's own contract, so every consuming app was
+// re-declaring it; the old comment here also claimed the submodule "must never be edited", which
+// CLAUDE.md no longer says.
 
 declare module 'vue' {
 	interface ComponentCustomProperties {

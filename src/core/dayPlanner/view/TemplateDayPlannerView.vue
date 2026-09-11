@@ -105,6 +105,7 @@
 	import { useRoute } from 'vue-router'
 	import TemplatePlannerPanel from '@/core/dayPlanner/component/template/TemplatePlannerPanel.vue'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { plannerInstancesMounted } from '@/core/dayPlanner/composable/usePlannerKeyboardScope.ts'
 
 	const {
@@ -214,6 +215,13 @@
 			if (token !== latestLoadToken) return
 			store.tasks = tasks
 			store.initializeTaskGridPositions()
+		} catch (error) {
+			// The two concurrent loads described above share one `useFetchFiltered` instance, so the
+			// second aborts the first. That is fine — `latestLoadToken` already discards the stale
+			// result — but the view-window watcher does not await `loadTasks`, so the aborted promise
+			// was left floating and surfaced as an unhandled rejection on every clean load. Real
+			// failures still propagate.
+			if (!isRequestCanceled(error)) throw error
 		} finally {
 			if (!isSplitView) hideFullScreenLoading()
 		}
