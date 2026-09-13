@@ -251,6 +251,7 @@ const dayPlanner = {
 		},
 		undo: {
 			taskMoved: `Presun úlohy`,
+			tasksMoved: `Presun úloh`,
 			taskResized: `Zmena veľkosti úlohy`,
 			taskCreated: `Vytvorenie úlohy`,
 			taskUpdated: `Úprava úlohy`,

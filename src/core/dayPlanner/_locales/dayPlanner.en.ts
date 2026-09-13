@@ -244,6 +244,7 @@ const dayPlanner = {
 		},
 		undo: {
 			taskMoved: `Task moved`,
+			tasksMoved: `Tasks moved`,
 			taskResized: `Task resized`,
 			taskCreated: `Task created`,
 			taskUpdated: `Task updated`,

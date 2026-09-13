@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { type AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
@@ -10,6 +11,7 @@ export function usePlannerKeyboard(
 	removePreviewTasksFromGrid: () => void,
 ) {
 	const undoStack = useUndoStack()
+	const { t } = useI18n()
 	// The listener stays on `document` — the grid is not focusable and hotkeys must work while the
 	// pointer sits over the side panel — but it only acts for the planner the user is driving.
 	const { isActive, hasOtherInstances } = usePlannerKeyboardScope(rootRef)
@@ -85,7 +87,8 @@ export function usePlannerKeyboard(
 				Promise.all(movedTasks.map(t => store.updateTaskSpan(t.id, TaskSpan.fromTask(t))))
 					.then(() => {
 						undoStack.push({
-							description: movedTasks.length > 1 ? 'Tasks moved' : 'Task moved',
+							description:
+								movedTasks.length > 1 ? t('planner.undo.tasksMoved') : t('planner.undo.taskMoved'),
 							date: moveDate,
 							undo: async () => {
 								for (const orig of originals) {
