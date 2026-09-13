@@ -108,9 +108,22 @@ Known for this unit — verify each, do not assume:
 - A2 and A3 are recorded as `fixed, needs retest only` — confirmed by source, never
   re-driven. Run their `Verify:` blocks and close them or reopen them; do not take the
   status line's word for it.
-- What is open and NOT yours to fix: U1 and U2 are seed gaps (the fixture has no elapsed
-  periods and no streak >= 30). Do not re-file them as app defects, and do not let an empty
-  weekly-review card or an unreachable milestone icon read as a regression.
+- U1 and U2 are SEED gaps, not app defects: the fixture has no routine period with elapsed
+  history and no item with streak >= 30 (its best is 12). Do not re-file them as app
+  defects, and do not let an empty weekly-review card or an unreachable milestone icon read
+  as a regression.
+  **The ask now exists — do NOT write a second one.** `backend/B8-routine-streak-history-seed.md`
+  (2026-09-13) covers both, established from the API source: `E2eFixtureSeeder` writes
+  item-level streaks only, never period-level state, and seeds zero `RoutinePeriodCompletion`
+  rows. These surfaces are unreachable by construction.
+  **What B8 is missing is exactly what you can supply:** nobody has driven these screens
+  against `e2e-v3` to watch them be empty. Add that observation — which surfaces render
+  empty, and what each shows instead — to B8's evidence rather than opening anything new.
+- THE COUNTER HIT-TEST IS NOW A PROBABLE BUG, not an open contradiction. `_fix-queue.md`
+  re-graded it: what looked like two disagreeing pieces of evidence is "one probable bug plus
+  a Playwright synthetic-event artifact", needing one confirmation. Read that entry before
+  you test it — and note it caveats A1's retest, since a control can carry a correct
+  accessible name and still be unreachable by a real mouse.
 - **The two backend escalations are settled (round 4) — do not re-open them.** Deleting a
   time period does NOT cascade: the FK is `Restrict` and the delete is refused with a 409,
   test-covered server-side. And the streak does NOT compound on repeated toggling — the

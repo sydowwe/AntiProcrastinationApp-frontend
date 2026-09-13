@@ -563,8 +563,18 @@ consequence.** That is a design question ("should un-ticking inside the same cyc
 open-ended data-integrity escalation it was filed as. The seed-drift note above still stands as written —
 Meditation reads 6 — since +1 is precisely what happened.
 
+**The design question is now written up** as
+[`B9`](../../../prompts/view-docs/backend/B9-routine-untick-streak-decision.md) (backend ask; not to be
+confused with finding `B9` above, which is a different thing that is already fixed). It is a decision, not a
+defect, and **nothing is blocked on it** — unit 10 can run and close regardless. The client cannot decide it:
+no endpoint writes an item's streak, and streak fields are server-owned by design.
+
 ### U1. Weekly review card (R2) not reached — seed has zero elapsed periods
-- **Status:** open
+- **Status:** open · **the seed ask now exists**, as
+  [`B8`](../../../prompts/view-docs/backend/B8-routine-streak-history-seed.md) (written 2026-09-13). Confirmed
+  from the API source: `E2eFixtureSeeder` writes item-level streaks only, never period-level state, and seeds
+  **zero** `RoutinePeriodCompletion` rows — so this is unreachable by construction, not by accident. Do not
+  re-file it; attach a browser observation to B8 instead.
 - **Severity:** unverified
 - **Where:** `/routine-todo-list` — `RoutineWeeklyReviewCard.vue`, gated by
   `useRoutineGroups.ts:52-55`'s `reviewEligibleGroups` (`totalPeriodsElapsed > 0` per period).
@@ -575,7 +585,13 @@ Meditation reads 6 — since +1 is precisely what happened.
   `TimePeriodForm` prefilled per the R2 intent doc.
 
 ### U2. Personal-bests panel, milestone streak icons, and populated heatmaps not reached — same seed gap
-- **Status:** open
+- **Status:** open · covered by
+  [`B8`](../../../prompts/view-docs/backend/B8-routine-streak-history-seed.md), same as U1. Sharpened by the
+  source read: `getMilestoneIcon` has five branches (7/30/90/180/365) and the highest seeded item streak is
+  **12**, so four of the five have never rendered anywhere. It reads `item.streak`, not `bestStreak`, so the
+  `BestStreak = 30` already in the fixture does not reach them. Also note the client fabricates heatmap cells
+  via `mockHistory()` when `completionHistory` is empty *and* `totalPeriodsElapsed > 0` — so seeding the
+  counter alone would produce plausible-looking fake history, which is why B8 asks for real rows.
 - **Severity:** unverified
 - **Where:** `/routine-settings` — `PersonalBestsPanel.vue` (gated on `totalPeriodsElapsed > 0`, same condition
   as U1); `/routine-todo-list` — the star/trophy/gem/crown streak-milestone icons in `RoutineTodoListItem.vue`
