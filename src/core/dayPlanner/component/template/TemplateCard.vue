@@ -63,11 +63,17 @@
 			<div class="mb-3 d-flex justify-space-between align-center">
 				<div class="text-caption mt-1 d-flex align-center ga-2">
 					<span v-if="template.defaultWakeUpTime">
-						<VIcon class="mb-1 mr-1">sun</VIcon>
+						<VIcon
+							icon="sun"
+							class="mb-1 mr-1"
+						/>
 						{{ Time.getString(template.defaultWakeUpTime) }}
 					</span>
 					<span v-if="template.defaultBedTime">
-						<VIcon class="ml-2 mb-1">moon</VIcon>
+						<VIcon
+							icon="moon"
+							class="ml-2 mb-1"
+						/>
 						{{ Time.getString(template.defaultBedTime) }}
 					</span>
 				</div>

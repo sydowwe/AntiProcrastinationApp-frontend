@@ -1,5 +1,11 @@
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import vuePrettierConfig from '@vue/eslint-config-prettier'
+// Pinned to the v3 line: v4 requires `vue-eslint-parser@^10`, and this repo is on 9.4.3 via
+// `@vue/eslint-config-typescript@14.7.0` → `eslint-plugin-vue@9`. v3 ships no type declarations
+// (v4 does), hence the suppression — when the toolchain moves to v4, this line starts failing as an
+// *unused* expect-error, which is the reminder to delete it.
+// @ts-expect-error -- no bundled types on the v3 line
+import vueI18n from '@intlify/eslint-plugin-vue-i18n'
 
 export default defineConfigWithVueTs(
 	// `src/_common` is the vue_framework submodule: a shared repo this app must never write to.
@@ -37,6 +43,33 @@ export default defineConfigWithVueTs(
 			'no-console': ['off', { allow: ['error', 'warn'] }],
 			'prefer-const': 'warn',
 			eqeqeq: ['error', 'smart'],
+		},
+	},
+
+	// Hardcoded user-facing strings. This is a *static* check on purpose: an un-localized literal is
+	// invisible in the language it was hardcoded in, so an English browser pass cannot tell a fixed
+	// string from a broken one — only a Slovak one can, and a locale sweep per unit is far more
+	// expensive than a lint rule. It earns its keep: the first run found five hardcoded strings in
+	// `todoList`, a module two browser passes had already swept, because the drag-and-drop
+	// placeholders only render mid-drag and nobody was dragging.
+	//
+	// `attributes` is the half that matters most here — `label="Length in days"` is the shape every
+	// i18n finding so far has taken. `/.+/` means "on any element".
+	{
+		files: ['src/**/*.vue'],
+		plugins: { '@intlify/vue-i18n': vueI18n },
+		rules: {
+			'@intlify/vue-i18n/no-raw-text': [
+				'error',
+				{
+					attributes: {
+						'/.+/': ['label', 'title', 'hint', 'placeholder', 'text', 'subtitle', 'confirmBtnLabel'],
+					},
+					// Punctuation, separators, digits and one/two-letter unit suffixes (`d`, `h`, `m`)
+					// are not translatable text and read the same in both locales.
+					ignorePattern: '^[-–—·/|:%#*+@.,()\\[\\]{}~\\d\\s]*$|^[a-z]{1,2}$',
+				},
+			],
 		},
 	},
 

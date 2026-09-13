@@ -94,12 +94,13 @@
 			v-else-if="primarySessions.length === 0 && detailSessions.length === 0 && backgroundSessions.length === 0"
 		>
 			<div class="empty-state">
+				<!-- The icon name belongs in `icon`, not the default slot: as slot content it rendered as
+					literal text, not as an icon. Not an i18n defect — `no-raw-text` just surfaced it. -->
 				<VIcon
+					icon="timeline"
 					size="48"
 					color="grey-lighten-1"
-				>
-					timeline
-				</VIcon>
+				/>
 				<p class="text-grey mt-2">{{ $t('activityTracking.common.noActivityRecorded') }}</p>
 			</div>
 		</template>
