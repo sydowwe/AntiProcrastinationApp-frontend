@@ -1,6 +1,9 @@
 import { useEntityQuery } from '@/_common/api/useEntityQuery.ts'
 import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+// The registered translator, not `useI18n()`: an API composable is called from places that are not a
+// component setup, where `useI18n()` would throw. Same reason the interceptor and undo stack use it.
+import { t } from '@/_common/i18n/translator.ts'
 import { RoutineTodoListItemRequest } from '@/core/todoList/dto/request/RoutineTodoListItemRequest.ts'
 import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
@@ -34,7 +37,7 @@ export function useRoutineTodoListItemCrud() {
 			return RoutineTodoListGroupedList.listFromObjects(response.data)
 		} catch (e) {
 			console.error(e)
-			showErrorSnackbar('Error loading data. Please try again later.')
+			showErrorSnackbar(t('toDoList.loadFailed'))
 			return []
 		}
 	}

@@ -20,7 +20,7 @@
 				class="flex-grow-1"
 			>
 				<span class="position-absolute w-100 text-center text-caption font-weight-bold text-white">
-					{{ progress.total ? Math.round((progress.done / progress.total) * 100) : 0 }}%
+					{{ progressPercent }}%
 				</span>
 			</VProgressLinear>
 			<VIconBtn
@@ -40,7 +40,7 @@
 			class="duplicate-warning-banner"
 			color="error"
 			icon="ban"
-			title="Task already present in this list"
+			:title="$t('toDoList.duplicateInList')"
 			titleCentered
 		/>
 
@@ -109,7 +109,7 @@
 					size="40"
 					opacity="0.4"
 				/>
-				<span class="text-body-2">No tasks</span>
+				<span class="text-body-2">{{ $t('toDoList.noTasks') }}</span>
 			</div>
 		</div>
 	</div>
@@ -224,6 +224,10 @@
 		const total = source.reduce((sum, item) => sum + (item.totalCount ?? 1), 0)
 		return { done, total }
 	})
+
+	const progressPercent = computed(() =>
+		progress.value.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0,
+	)
 
 	const estimatedTimeRemaining = computed(() => {
 		const source = allItems ?? items

@@ -12,6 +12,8 @@
 					variant="text"
 					size="x-small"
 					:disabled="i === 0"
+					:title="$t('toDoList.stepMoveUp', { position: i + 1 })"
+					:aria-label="$t('toDoList.stepMoveUp', { position: i + 1 })"
 					@click="moveStep(i, -1)"
 				/>
 				<VIconBtn
@@ -19,6 +21,8 @@
 					variant="text"
 					size="x-small"
 					:disabled="i === model.length - 1"
+					:title="$t('toDoList.stepMoveDown', { position: i + 1 })"
+					:aria-label="$t('toDoList.stepMoveDown', { position: i + 1 })"
 					@click="moveStep(i, 1)"
 				/>
 			</div>
@@ -28,11 +32,15 @@
 				hideDetails
 				class="flex-grow-1"
 			/>
+			<!-- Named by position: a step's name can be empty, and four identical "Delete" names would
+				pass an aria-label sweep while still being unusable. -->
 			<VIconBtn
 				icon="trash-can"
 				color="error"
 				variant="text"
 				size="small"
+				:title="$t('toDoList.stepDelete', { position: i + 1 })"
+				:aria-label="$t('toDoList.stepDelete', { position: i + 1 })"
 				@click="model.splice(i, 1)"
 			/>
 		</div>
@@ -49,6 +57,8 @@
 				icon="plus"
 				variant="tonal"
 				color="primaryOutline"
+				:title="$t('toDoList.addStep')"
+				:aria-label="$t('toDoList.addStep')"
 				@click="addStep"
 			/>
 		</div>

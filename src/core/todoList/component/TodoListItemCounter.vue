@@ -9,6 +9,8 @@
 					color="white"
 					variant="tonal"
 					size="35"
+					:title="decreaseLabel"
+					:aria-label="decreaseLabel"
 					@click.stop="emit('minus')"
 				>
 					<VIcon size="22" />
@@ -16,6 +18,8 @@
 				<VProgressLinear
 					v-else
 					v-bind="vHoverProps"
+					:title="increaseLabel"
+					:aria-label="increaseLabel"
 					color="neutral-400"
 					:modelValue="((doneCount ?? 0) / (totalCount ?? 1)) * 100"
 					height="35"
@@ -45,6 +49,9 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
+
 	const { doneCount, totalCount, isDone } = defineProps<{
 		doneCount: number | null
 		totalCount: number | null
@@ -55,4 +62,16 @@
 		minus: []
 		increment: []
 	}>()
+
+	const { t } = useI18n()
+
+	// The control renders a number and a bar and nothing else, so without these it reached assistive
+	// tech unnamed. Each names the current state *and* what a click does — the two branches are two
+	// different actions on the same visual control.
+	const increaseLabel = computed(() =>
+		t('toDoList.counterIncrease', { done: doneCount ?? 0, total: totalCount ?? 0 }),
+	)
+	const decreaseLabel = computed(() =>
+		t('toDoList.counterDecrease', { done: doneCount ?? 0, total: totalCount ?? 0 }),
+	)
 </script>

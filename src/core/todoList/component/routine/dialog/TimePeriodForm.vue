@@ -6,61 +6,63 @@
 	>
 		<VTextField
 			v-model="request.text"
-			label="Name"
+			:label="$t('routineTodoList.timePeriods.name')"
 			:rules="[requiredRule]"
 		></VTextField>
 		<VNumberInput
 			v-model="request.lengthInDays"
-			label="Length in days"
+			:label="$t('routineTodoList.timePeriods.length')"
 			:min="1"
 			@update:modelValue="onLengthChanged"
 		></VNumberInput>
 		<ColorPicker
 			v-model="request.color"
-			label="Color"
+			:label="$t('routineTodoList.timePeriods.color')"
 		></ColorPicker>
 		<VNumberInput
 			v-model="request.historyDepth"
-			label="History depth (periods)"
+			:label="$t('routineTodoList.timePeriods.historyDepth')"
 			:min="1"
 			:max="52"
-			hint="How many past periods to show in the completion heatmap"
+			:hint="$t('routineTodoList.timePeriods.historyDepthHint')"
 			persistentHint
 		></VNumberInput>
 		<VDivider></VDivider>
-		<span class="text-caption text-medium-emphasis">Streak settings</span>
+		<span class="text-caption text-medium-emphasis">
+			{{ $t('routineTodoList.timePeriods.streakSettings') }}
+		</span>
 		<VNumberInput
 			v-model="request.streakThreshold"
-			label="Streak threshold (%)"
+			:label="$t('routineTodoList.timePeriods.streakThreshold')"
 			:min="1"
 			:max="100"
-			hint="Minimum % of items completed to count the period toward your streak"
+			:hint="$t('routineTodoList.timePeriods.streakThresholdHint')"
 			persistentHint
 		></VNumberInput>
 		<VNumberInput
 			v-model="request.streakGraceDays"
-			label="Grace days"
+			:label="$t('routineTodoList.timePeriods.graceDays')"
 			:min="0"
-			hint="Days after the period ends before the streak resets"
+			:hint="$t('routineTodoList.timePeriods.graceDaysHint')"
 			persistentHint
 		></VNumberInput>
 		<VSelect
 			v-if="isWeekAligned"
 			v-model="request.resetAnchorDay"
-			label="Reset anchor day"
-			:items="weekDayOptions"
+			:label="$t('routineTodoList.timePeriods.resetAnchorDay')"
+			:items="anchorDayOptions"
 			itemTitle="label"
 			itemValue="value"
-			hint="Week day to anchor resets to"
+			:hint="$t('routineTodoList.timePeriods.resetAnchorDayHint')"
 			persistentHint
 		></VSelect>
 		<VNumberInput
 			v-else
 			v-model="request.resetAnchorDay"
-			label="Reset anchor day of month"
+			:label="$t('routineTodoList.timePeriods.resetAnchorDayOfMonth')"
 			:min="0"
 			:max="30"
-			hint="Day of month to align the start to (0 = rolling, no anchor)"
+			:hint="$t('routineTodoList.timePeriods.resetAnchorDayOfMonthHint')"
 			persistentHint
 		></VNumberInput>
 	</VForm>
@@ -70,6 +72,7 @@
 	import { computed, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import ColorPicker from '@/_common/component/inputs/ColorPicker.vue'
+	import { useAnchorDayOptions } from '@/core/todoList/composable/useAnchorDayOptions.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
 	import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
@@ -85,17 +88,7 @@
 	}>()
 
 	const { requiredRule } = useGeneralRules()
-
-	const weekDayOptions = [
-		{ label: 'Rolling (no anchor)', value: 0 },
-		{ label: 'Monday', value: 1 },
-		{ label: 'Tuesday', value: 2 },
-		{ label: 'Wednesday', value: 3 },
-		{ label: 'Thursday', value: 4 },
-		{ label: 'Friday', value: 5 },
-		{ label: 'Saturday', value: 6 },
-		{ label: 'Sunday', value: 7 },
-	]
+	const { anchorDayOptions } = useAnchorDayOptions()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const request = ref(entityToEdit ? TimePeriodRequest.fromEntity(entityToEdit) : new TimePeriodRequest())

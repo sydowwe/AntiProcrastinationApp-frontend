@@ -17,7 +17,7 @@
 			</VListItemAction>
 		</template>
 		<VListItemTitle class="font-weight-medium">
-			{{ isInvalid ? 'Activity already exists' : 'Drop here to add item' }}
+			{{ isInvalid ? $t('toDoList.activityAlreadyExists') : $t('toDoList.dropHereToAdd') }}
 		</VListItemTitle>
 	</VListItem>
 </template>

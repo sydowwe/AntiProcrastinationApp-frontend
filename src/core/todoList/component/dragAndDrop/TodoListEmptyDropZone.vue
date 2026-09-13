@@ -20,7 +20,7 @@
 				:class="isInvalidDrop ? 'text-error' : 'text-primary'"
 				class="font-weight-medium"
 			>
-				{{ isInvalidDrop ? 'Activity already exists' : 'Drop items here' }}
+				{{ isInvalidDrop ? $t('toDoList.activityAlreadyExists') : $t('toDoList.dropHere') }}
 			</div>
 		</VCardText>
 	</VCard>

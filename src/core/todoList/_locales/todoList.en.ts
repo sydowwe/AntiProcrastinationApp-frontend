@@ -24,6 +24,27 @@ const todoList = {
 		addStep: `Add step`,
 		stepsProgress: `{done}/{total} steps`,
 		progressCount: `{done} / {total}`,
+		// Accessible names for the step buttons in the Add/Edit dialog. A step's name can be empty, so
+		// these are qualified by position — four identical "Delete" names would pass an aria-label
+		// sweep while still being unusable.
+		stepMoveUp: `Move step {position} up`,
+		stepMoveDown: `Move step {position} down`,
+		stepDelete: `Delete step {position}`,
+		isRepeated: `Is repeated`,
+		doneCount: `Done count`,
+		totalCount: `Total count`,
+		duplicateInList: `Task already present in this list`,
+		noTasks: `No tasks`,
+		// Drag-and-drop states. They only render mid-drag, which is why no browser pass caught them —
+		// the static `no-raw-text` rule did.
+		dropHere: `Drop items here`,
+		dropHereToAdd: `Drop here to add item`,
+		activityAlreadyExists: `Activity already exists`,
+		// Accessible names for the multi-count counter — they name the current state and what a click does.
+		counterIncrease: `Increase: {done} of {total}`,
+		counterDecrease: `Decrease: {done} of {total}`,
+		timeLogged: `Time logged`,
+		loadFailed: `Couldn't load the data. Please try again later.`,
 		savedToHistory: `Saved {name} to history`,
 		errorSavingToHistory: `Error saving {name} to history`,
 		clearFilters: `Clear filters`,
@@ -112,6 +133,11 @@ const todoList = {
 		reorder: `Reorder`,
 		finishReordering: `Finish reordering`,
 		addDialogTitle: `Add to routine to-do list`,
+		suggestedDays: `Suggested days`,
+		suggestedDayOfMonth: `Suggested day of month`,
+		dayOfMonthChip: `Day {day}`,
+		streakTooltip: `Streak: {streak} · best: {best}`,
+		gracePeriodActive: `Grace period active!`,
 		history: `History`,
 		historyDialogTitle: `{group} · {days}-day periods`,
 		// See the note on the SK key: a deep link never un-hides a group by itself.
@@ -154,6 +180,46 @@ const todoList = {
 		heatmapPartial: `{label} · {done} of {total} done`,
 		heatmapFrozen: `{label} · covered by a skip`,
 		progressCount: `{done} / {total}`,
+		// `/routine-settings` and its dialog. A namespace of its own, not `settings.*` — `settings` is
+		// already a string (the link in the list header), and vue-i18n cannot have it be both.
+		timePeriods: {
+			title: `Time periods`,
+			add: `Add time period`,
+			edit: `Edit time period`,
+			name: `Name`,
+			length: `Length in days`,
+			lengthColumn: `Length (days)`,
+			color: `Color`,
+			historyDepth: `History depth (periods)`,
+			historyDepthHint: `How many past periods to show in the completion heatmap`,
+			streakSettings: `Streak settings`,
+			streakThreshold: `Streak threshold (%)`,
+			streakThresholdColumn: `Streak threshold`,
+			streakThresholdHint: `Minimum % of items completed to count the period toward your streak`,
+			graceDays: `Grace days`,
+			graceDaysHint: `Days after the period ends before the streak resets`,
+			resetAnchorDay: `Reset anchor day`,
+			resetAnchorColumn: `Reset anchor`,
+			resetAnchorDayHint: `Week day to anchor resets to`,
+			resetAnchorDayOfMonth: `Reset anchor day of month`,
+			resetAnchorDayOfMonthHint: `Day of month to align the start to (0 = rolling, no anchor)`,
+			rolling: `Rolling (no anchor)`,
+			isHidden: `Is hidden`,
+			// The server refuses to delete a period that still has routines in it (the FK is `Restrict`)
+			// and answers 409. The generic 409 message talks about a concurrent edit by someone else,
+			// which here is both untrue and unactionable. See B9 in findings.md.
+			// Plural forms — `one | other`.
+			deleteBlocked: `Can't delete "{name}" — {count} routine is still assigned to it. Move or delete it first. | Can't delete "{name}" — {count} routines are still assigned to it. Move or delete them first.`,
+			deleteBlockedUnknownCount: `Can't delete "{name}" — routines are still assigned to it. Move or delete them first.`,
+			// Ordinal day of the month, selected through `Intl.PluralRules(..., 'ordinal')` — hence all
+			// four categories. This replaces a hardcoded `${value}th`, which rendered "1th"/"2th"/"3th".
+			dayOfMonth: {
+				one: `{day}st`,
+				two: `{day}nd`,
+				few: `{day}rd`,
+				other: `{day}th`,
+			},
+		},
 		freeze: {
 			// Plural forms — `one | other`.
 			remaining: `{count} skip left | {count} skips left`,

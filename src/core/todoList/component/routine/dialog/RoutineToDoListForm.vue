@@ -25,7 +25,7 @@
 			></BaseTodoListRepeatCountFormField>
 			<VIdSelect
 				v-model="request.timePeriodId"
-				:label="$t('toDoList.timePeriod')"
+				:label="$t('routineTodoList.timePeriod')"
 				:clearable="false"
 				:items="timePeriodOptions"
 				hideDetails
@@ -35,20 +35,22 @@
 				v-if="(timePeriod?.lengthInDays ?? 0) > 1 && (timePeriod?.lengthInDays ?? 0) <= 14"
 				class="mb-2"
 			>
-				<label class="text-caption text-medium-emphasis mb-1 d-block">Suggested days</label>
+				<label class="text-caption text-medium-emphasis mb-1 d-block">
+					{{ $t('routineTodoList.suggestedDays') }}
+				</label>
 				<DayOfWeekPicker v-model="request.suggestedDays" />
 			</div>
 			<VNumberInput
 				v-else-if="(timePeriod?.lengthInDays ?? 0) > 14"
 				v-model="request.suggestedDayOfMonth"
-				label="Suggested day of month"
+				:label="$t('routineTodoList.suggestedDayOfMonth')"
 				:min="1"
 				:max="31"
 				hideDetails
 			/>
 			<VTextarea
 				v-model="request.note"
-				label="Note"
+				:label="$t('toDoList.note')"
 				density="compact"
 				:rows="2"
 				hideDetails

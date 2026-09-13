@@ -12,6 +12,7 @@
 	import { API } from '@/_common/axiosConfig.ts'
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { useI18n } from 'vue-i18n'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 
@@ -24,6 +25,7 @@
 
 	const { create: createActivityHistory } = useActivityHistoryCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { t } = useI18n()
 
 	const inner = ref<InstanceType<typeof LogTimeController>>()
 	const currentItemId = ref<number | null>(null)
@@ -47,7 +49,7 @@
 
 	async function finalize(startTimestamp: Date, length: Time) {
 		const historyRecordId = await createActivityHistory(startTimestamp, length, currentActivityId.value!)
-		showSuccessSnackbar('Time logged')
+		showSuccessSnackbar(t('toDoList.timeLogged'))
 		const itemId = currentItemId.value ?? undefined
 		let itemWasCompleted = false
 		if (currentItemId.value !== null) {

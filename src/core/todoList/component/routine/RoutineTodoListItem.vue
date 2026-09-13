@@ -39,8 +39,13 @@
 					</div>
 				</template>
 				<span>
-					Streak: {{ toDoListItem.streak }} | Best: {{ toDoListItem.bestStreak }}
-					<span v-if="gracePeriodActive">| Grace period active!</span>
+					{{
+						$t('routineTodoList.streakTooltip', {
+							streak: toDoListItem.streak,
+							best: toDoListItem.bestStreak,
+						})
+					}}
+					<span v-if="gracePeriodActive">· {{ $t('routineTodoList.gracePeriodActive') }}</span>
 				</span>
 			</VTooltip>
 		</template>
@@ -52,7 +57,7 @@
 				variant="tonal"
 				color="neutral-600"
 			>
-				{{ DAY_OF_WEEK_SHORT_LABELS[day] }}
+				{{ dayLabels[day] }}
 			</VChip>
 			<VChip
 				v-if="toDoListItem.suggestedDayOfMonth"
@@ -61,7 +66,7 @@
 				color="neutral-600"
 				prependIcon="calendar-day"
 			>
-				Day {{ toDoListItem.suggestedDayOfMonth }}
+				{{ $t('routineTodoList.dayOfMonthChip', { day: toDoListItem.suggestedDayOfMonth }) }}
 			</VChip>
 		</template>
 	</BaseTodoListItem>
@@ -72,7 +77,8 @@
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
 	import BaseTodoListItem from '@/core/todoList/component/BaseTodoListItem.vue'
-	import { DAY_OF_WEEK_SHORT_LABELS } from '@/_common/dto/enum/DayOfWeek.ts'
+	import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
 
 	const {
 		toDoListItem,
@@ -97,6 +103,17 @@
 		quickStartTimer: [toDoListItem: RoutineTodoListItemEntity]
 		itemClicked: [toDoListItem: RoutineTodoListItemEntity]
 	}>()
+
+	// Localized short day names, keyed by the `DayOfWeek` the API sends. `DAY_OF_WEEK_SHORT_LABELS`
+	// is hardcoded English and is only a non-display fallback — see CLAUDE.md.
+	const dayOfWeekOptions = useDayOfWeekOptions()
+	const dayLabels = computed(
+		() =>
+			Object.fromEntries(dayOfWeekOptions.value.map(option => [option.value, option.label])) as Record<
+				DayOfWeek,
+				string
+			>,
+	)
 
 	const gracePeriodActive = computed(() => {
 		if (!streakConfig || !toDoListItem.lastCompletedAt || !toDoListItem.streak) return false

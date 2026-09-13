@@ -25,6 +25,27 @@ const todoList = {
 		addStep: `Pridať krok`,
 		stepsProgress: `{done}/{total} krokov`,
 		progressCount: `{done} / {total}`,
+		// Prístupné názvy krokových tlačidiel v dialógu Pridať/Upraviť. Krok nemusí mať vyplnený
+		// názov, preto sa pomenúvajú poradím — štyri rovnaké „Vymazať“ by prešli kontrolou
+		// aria-label a pritom by boli nepoužiteľné.
+		stepMoveUp: `Posunúť krok {position} vyššie`,
+		stepMoveDown: `Posunúť krok {position} nižšie`,
+		stepDelete: `Vymazať krok {position}`,
+		isRepeated: `Opakovaná`,
+		doneCount: `Počet hotových`,
+		totalCount: `Celkový počet`,
+		duplicateInList: `Úloha už v tomto zozname je`,
+		noTasks: `Žiadne úlohy`,
+		// Stavy pri presúvaní myšou. Vidieť ich len počas ťahania, preto ich nezachytil ani jeden
+		// prechod cez prehliadač — našlo ich až statické pravidlo `no-raw-text`.
+		dropHere: `Sem presuňte položky`,
+		dropHereToAdd: `Sem presuňte na pridanie`,
+		activityAlreadyExists: `Aktivita už existuje`,
+		// Prístupné názvy počítadla viacpočetnej položky — pomenúvajú aj stav, aj to, čo klik spraví.
+		counterIncrease: `Zvýšiť: {done} z {total}`,
+		counterDecrease: `Znížiť: {done} z {total}`,
+		timeLogged: `Čas zaznamenaný`,
+		loadFailed: `Nepodarilo sa načítať údaje. Skúste to prosím neskôr.`,
 		savedToHistory: `Uložené {name} do histórie`,
 		errorSavingToHistory: `Chyba pri ukladaní {name} do histórie`,
 		clearFilters: `Vymazať filtre`,
@@ -122,6 +143,11 @@ const todoList = {
 		reorder: `Zmeniť poradie`,
 		finishReordering: `Dokončiť zoraďovanie`,
 		addDialogTitle: `Pridať do rutinného zoznamu úloh`,
+		suggestedDays: `Odporúčané dni`,
+		suggestedDayOfMonth: `Odporúčaný deň v mesiaci`,
+		dayOfMonthChip: `Deň {day}`,
+		streakTooltip: `Séria: {streak} · najdlhšia: {best}`,
+		gracePeriodActive: `Odklad je aktívny!`,
 		history: `História`,
 		historyDialogTitle: `{group} · {days}-dňové obdobia`,
 		// Shown when a deep link (typically a notification) points at a group the user has hidden. The
@@ -166,6 +192,47 @@ const todoList = {
 		heatmapPartial: `{label} · {done} z {total} hotových`,
 		heatmapFrozen: `{label} · pokryté vynechaním`,
 		progressCount: `{done} / {total}`,
+		// `/routine-settings` a jeho dialóg. Samostatný priestor názvov, nie `settings.*` — `settings`
+		// je už reťazec (odkaz v hlavičke zoznamu) a vue-i18n ho nemôže byť aj objektom.
+		timePeriods: {
+			title: `Časové úseky`,
+			add: `Pridať časový úsek`,
+			edit: `Upraviť časový úsek`,
+			name: `Názov`,
+			length: `Dĺžka v dňoch`,
+			lengthColumn: `Dĺžka (dni)`,
+			color: `Farba`,
+			historyDepth: `Hĺbka histórie (počet období)`,
+			historyDepthHint: `Koľko minulých období sa zobrazí v mape dokončení`,
+			streakSettings: `Nastavenia série`,
+			streakThreshold: `Prah série (%)`,
+			streakThresholdColumn: `Prah série`,
+			streakThresholdHint: `Minimálne % dokončených položiek, aby sa obdobie počítalo do série`,
+			graceDays: `Dni odkladu`,
+			graceDaysHint: `Počet dní po konci obdobia, kým sa séria vynuluje`,
+			resetAnchorDay: `Deň ukotvenia resetu`,
+			resetAnchorColumn: `Ukotvenie resetu`,
+			resetAnchorDayHint: `Deň v týždni, na ktorý sa viaže reset`,
+			resetAnchorDayOfMonth: `Deň v mesiaci pre ukotvenie resetu`,
+			resetAnchorDayOfMonthHint: `Deň v mesiaci, na ktorý sa viaže začiatok (0 = plynulé, bez ukotvenia)`,
+			rolling: `Plynulé (bez ukotvenia)`,
+			isHidden: `Skryté`,
+			// Server odmietne vymazať úsek, do ktorého ešte patria rutiny (cudzí kľúč je `Restrict`),
+			// a odpovie 409. Všeobecná hláška pre 409 hovorí o súbežnej úprave iným používateľom — čo
+			// je tu nepravda aj neriešiteľná radou „obnovte stránku“. Pozri B9 v findings.md.
+			// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
+			deleteBlocked: `Časový úsek „{name}“ sa nedá vymazať — patrí doň {count} rutina. Najprv ju presuňte inam alebo vymažte. | Časový úsek „{name}“ sa nedá vymazať — patria doň {count} rutiny. Najprv ich presuňte inam alebo vymažte. | Časový úsek „{name}“ sa nedá vymazať — patrí doň {count} rutín. Najprv ich presuňte inam alebo vymažte.`,
+			deleteBlockedUnknownCount: `Časový úsek „{name}“ sa nedá vymazať — stále doň patria rutiny. Najprv ich presuňte inam alebo vymažte.`,
+			// Radová číslovka dňa v mesiaci. Vyberá sa cez `Intl.PluralRules(..., 'ordinal')`, preto sú
+			// tu všetky štyri kategórie — slovenčina používa vo všetkých rovnaký tvar „5.“, angličtina
+			// nie (1st/2nd/3rd/4th). Predtým sa vykresľovalo natvrdo `${value}th`, čiže „1th“.
+			dayOfMonth: {
+				one: `{day}.`,
+				two: `{day}.`,
+				few: `{day}.`,
+				other: `{day}.`,
+			},
+		},
 		freeze: {
 			// Tvary množného čísla — `one | few | many` (1 / 2–4 / 5+), pozri slovakPluralRule v src/i18n.ts.
 			remaining: `zostáva {count} vynechanie | zostávajú {count} vynechania | zostáva {count} vynechaní`,
