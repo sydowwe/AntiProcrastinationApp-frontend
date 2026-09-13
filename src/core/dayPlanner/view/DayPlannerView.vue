@@ -164,7 +164,7 @@
 		buildRequestFromEntity,
 	})
 
-	const { fetchSuggestionsForDate } = useRepeatingPlannerTaskApi()
+	const { fetchSuggestionsForCalendar } = useRepeatingPlannerTaskApi()
 
 	const logTimeController = ref<InstanceType<typeof DayPlannerLogTimeController>>()
 	// Provide the store for slot content (EventBlock components)
@@ -241,9 +241,14 @@
 
 	// Load tasks for the current date
 	async function loadTasks() {
+		// The suggestions call is deliberately NOT allowed to reject this `Promise.all`. Suggestions are
+		// an optional prompt in the side panel; the tasks are the screen. While the request was
+		// malformed (see `fetchSuggestionsForCalendar`) its 400 rejected the pair, `store.tasks` was
+		// never assigned, and the planner rendered an empty grid for every day — with the real cause
+		// only visible in the console. A suggestion outage should cost the suggestions, nothing else.
 		const [tasks, fetched] = await Promise.all([
 			fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime)),
-			fetchSuggestionsForDate(formatDateForApi(store.viewedDate)),
+			fetchSuggestionsForCalendar(calendar.value!.id).catch(() => [] as SuggestionResponse[]),
 		])
 		store.tasks = tasks
 		suggestions.value = fetched
