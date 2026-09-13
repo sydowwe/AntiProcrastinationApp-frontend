@@ -12,6 +12,11 @@ import path from 'path'
 export interface SeedUser {
 	id: number
 	email: string
+	/**
+	 * `testpass123` **does not satisfy the app's own registration policy** (10 chars, uppercase, digit,
+	 * non-alphanumeric). The seeder writes the hash directly, so signing in works — but no seeded account
+	 * can be re-created through the sign-up form. A registration spec must invent its own password.
+	 */
 	password: string
 	locale: string
 }
@@ -22,6 +27,16 @@ export interface SeedResponse {
 	seedDateUtc: string
 	primaryUser: SeedUser
 	secondaryUser: SeedUser
+	/**
+	 * Added in `e2e-v3`. Carries `Admin` **and** `User`; the only account that satisfies the reminders
+	 * module's admin routes (`reminder-definition/*`, `reminder-dashboard/*` except `my-upcoming`).
+	 *
+	 * Deliberately a third account rather than `primaryUser` promoted: if the account nearly every spec
+	 * signs in as were an admin, no spec could tell an admin gate that still works from one silently
+	 * removed. It has the per-user defaults every account gets and **no fixture data of its own** — point
+	 * no content assertion at it.
+	 */
+	adminUser: SeedUser
 	activities: Record<SeedActivityKey, number>
 	todoLists: Record<SeedTodoListKey, number>
 	todoListItems: Record<SeedTodoListItemKey, number>
@@ -33,6 +48,18 @@ export interface SeedResponse {
 	trackingMappings: Record<SeedTrackingMappingKey, number>
 	/** Added in `e2e-v2`. */
 	notifications: Record<SeedNotificationKey, number>
+	/**
+	 * Added in `e2e-v3`. The user-facing **portal** ids — what `/pripomienky` (the user's own reminder
+	 * screens) navigates by.
+	 */
+	reminders: Record<SeedReminderKey, number>
+	/**
+	 * Added in `e2e-v3`. The admin **register** ids — what `GET /api/reminder-definition/{id}` takes.
+	 *
+	 * Each is its portal id + 200, and that gap is deliberate: passing a `reminders` id here 404s
+	 * instead of quietly returning a different row. Same keys as {@link SeedResponse.reminders}.
+	 */
+	reminderDefinitions: Record<SeedReminderKey, number>
 	/** Keys are verbatim English display text, not camelCase. */
 	taskPriorities: Record<string, number>
 	/** Keys are verbatim English display text, not camelCase. */
@@ -96,6 +123,22 @@ export type SeedTrackingMappingKey =
 
 export type SeedNotificationKey = 'newestUnread' | 'oldestRead' | 'secondaryNewest'
 
+/**
+ * Keys both `reminders` and `reminderDefinitions` — the same six rows under two id spaces.
+ *
+ * Shaped so no dashboard number is zero and no two are equal: 4 of the 6 have a pending occurrence,
+ * 3 of those inside the overview's 7-day window and 1 outside it. `paused` and `cancelled` are the
+ * non-active states, both schedule types are represented, and `secondaryPostParcel` belongs to
+ * `secondaryUser` — it is what makes "the admin register rolls up every user" visible.
+ */
+export type SeedReminderKey =
+	| 'callTheDentist'
+	| 'fileTaxReturn'
+	| 'payRentRecurring'
+	| 'paused'
+	| 'cancelled'
+	| 'secondaryPostParcel'
+
 export type SeedCountKey =
 	| 'activities'
 	| 'todoListItems'
@@ -116,6 +159,16 @@ export type SeedCountKey =
 	| 'notifications'
 	/** Strictly smaller than `notifications`, which is what makes the bell's All/Unread filter testable. */
 	| 'unreadNotifications'
+	// --- added in `e2e-v3` ---
+	| 'reminderDefinitions'
+	/** Pending occurrences, across all users — the admin register's figure, not `my-upcoming`'s. */
+	| 'upcomingReminders'
+	| 'reminderDispatches'
+	/**
+	 * **1**, while *two* dispatch rows have failed: the ledger includes a failure a later row reverses.
+	 * Assert 1 on the overview's attention card, not the count of failed rows.
+	 */
+	| 'reminderFailuresNeedingAttention'
 
 /**
  * The fixture version this suite is written against, checked against `fixture` in the response by
@@ -126,7 +179,7 @@ export type SeedCountKey =
  * it is one failure in global setup that says what actually happened. Bump this only together with
  * reading the API's `docs/e2eTestSeed.md` for what moved.
  */
-export const EXPECTED_FIXTURE_VERSION = 'e2e-v2'
+export const EXPECTED_FIXTURE_VERSION = 'e2e-v3'
 
 /** Every route in the API is under `/api` (FastEndpoints sets `RoutePrefix = "api"` globally). */
 export const SEED_PATH = '/api/test/seed'

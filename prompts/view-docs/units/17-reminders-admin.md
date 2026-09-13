@@ -32,6 +32,17 @@ Environment, already verified — do not re-check:
 - Dev server https://localhost:3000 (this exact origin — the session cookie is bound to
   it), backend https://localhost:8080, both running and seeded. You are signed in and the
   account locale is English. If the UI renders Slovak, stop and report.
+- SIGN IN AS THE SEED'S `adminUser` (id 10003, `admin@example.com`), NOT `primaryUser`.
+  All five of these routes are Admin-gated on the server and answer 403 for the ordinary
+  account — deliberately, since they roll up every user's reminders with no user scoping.
+  That is correct behaviour, not a finding. Credentials come from e2e/.state/seed.json.
+  On the data you should see (fixture e2e-v3): the register lists 6 definitions, upcoming
+  4, dispatch history 7, and the overview reads 3 of 4 due within 7 days, 1 paused,
+  1 cancelled, 1 failure needing attention (two dispatch rows failed; a later row
+  reverses one — so 1 is right).
+- /pripomienky/register/:id takes the reminderDefinitions id (23201-23205, 23301), NOT
+  the reminders portal id (23001-…). The Subject cell shows the portal id while its link
+  targets the definition id; that is intended. A portal id on that route 404s.
 
 This is a Windows machine — use the PowerShell tool for shell commands, never Bash.
 

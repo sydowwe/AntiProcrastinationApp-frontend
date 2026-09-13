@@ -77,6 +77,16 @@ Known for this unit — verify each, do not assume:
   `a9a10ea6` (touches only `src/core/leisure/**`), `TemplatePlannerPanel` (never touches
   the overlay), a counter mismatch in `useLoading` (it is a plain boolean), and a missing
   `finally` in `TemplateDayPlannerView.loadTasks` (it has one).
+  UPDATE 2026-09-12: it is getting WORSE, and it no longer needs `--repeat-each` to show up.
+  Three consecutive plain `npx playwright test` runs each failed exactly one or three
+  templateDayPlanner specs, a DIFFERENT one each time ("Add New Task button opens the creation
+  dialog", "delete action shows a confirmation dialog", "cancelling the delete dialog keeps the
+  task"), always with the same `role="status" aria-label="Loading..."` card intercepting the
+  click. It is now the only thing standing between this suite and a green run. Candidate 1
+  below is CONFIRMED as a real misbinding by reading the two files — `LoadingFullscreen.vue:3`
+  really does `v-model` a ref that `LoadingComposable.ts` hands out through `readonly()` — so
+  the write-back is dropped and the dialog's internal state can outlive the ref. That makes it
+  the first thing to fix; it is a framework change, so it wants the owner's call.
   Two candidates, unverified, in the order worth chasing:
   1. `LoadingFullscreen.vue:3` binds `v-model="fullScreenLoading"` to a ref that
      `LoadingComposable.ts` returns via `readonly()`. If `VDialog` writes back to that

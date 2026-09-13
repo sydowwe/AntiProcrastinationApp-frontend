@@ -104,8 +104,8 @@ Sign in from the seed's `primaryUser`. For each site, before and after:
 | useExperiencedProgress | the progress readout on the backlog / bucket-list boards |
 | useLookupTable | `/activity-settings/activities` |
 
-> `/leisure/backlog` may still 500 on sort — that is [`B2`](../../view-docs/backend/B2-grid-500-on-unmapped-sortby.md),
-> a backend issue, not yours. Check whether it has landed before treating an empty board as a regression.
+> `/leisure/backlog` no longer 500s on sort — that was [`B2`](../../view-docs/backend/_done/B2-grid-500-on-unmapped-sortby.md), closed 2026-09-13,
+> a backend issue, not yours. It returns 200 with rows now, so an empty board here **is** a regression.
 
 Then:
 

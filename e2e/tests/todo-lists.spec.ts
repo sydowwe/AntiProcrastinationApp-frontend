@@ -173,11 +173,10 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		async () => {},
 	)
 
-	test.fixme(
-		'per-item calibration chip and header calibration line render correctly once >=5 comparable items exist',
-		// Semantic + needs specific seed data (see findings B3/O1) — not reachable with the default seed.
-		async () => {},
-	)
+	// The per-item calibration chip and the header calibration line used to be a fixme here, on the
+	// grounds that the seed could not reach the >=5 comparable items the ratio is gated on. `e2e-v2`
+	// ships 6 and the estimates now come back on the wire, so both are written for real — in
+	// todo-motivation.spec.ts, with the rest of the motivation surfaces rather than duplicated here.
 
 	// Was a fixme on the grounds that "asserting no console error would currently fail". Half of that is
 	// still true and always will be, so the assertion is scoped to the half that is actionable.

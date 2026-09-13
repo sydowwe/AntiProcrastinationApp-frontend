@@ -14,6 +14,19 @@ export type { SeedResponse } from './seed'
  */
 const AUTH_DIR = path.resolve(__dirname, '../.state')
 
+/**
+ * `POST /auth/login` is throttled per caller: a few sign-ins in quick succession start failing with
+ * *"You are requesting this endpoint too frequently!"*, and the cooldown is well over a minute.
+ * (Observed 2026-09-13 while probing by hand. One attempt in that window came back as a plain
+ * `401 Invalid email or password` on credentials that had just worked — so a single bad-credential
+ * failure is not proof the credential is bad.)
+ *
+ * That is why the storage state above is cached rather than re-driven: a run does at most one cold
+ * sign-in per account, and `adminPage` (added with `e2e-v3`) makes that three rather than two. If a run
+ * ever fails at `toHaveURL('/')` on the *last* of them with the login form still on screen, check the
+ * response before hunting locators — it is the throttle, not the credential.
+ */
+
 function authFileFor(user: SeedUser): string {
 	return path.join(AUTH_DIR, `auth-${user.id}.json`)
 }
@@ -59,6 +72,15 @@ type Fixtures = {
 	authenticatedPage: Page
 	/** Signed in as the seed's secondary user, in its own browser context — for isolation checks. */
 	secondaryPage: Page
+	/**
+	 * Signed in as the seed's `adminUser` (id 10003), in its own browser context — the only account the
+	 * reminders module's admin routes accept. Everything under `/pripomienky` except the user's own
+	 * screens answers **403** on `authenticatedPage`, by design.
+	 *
+	 * It has no fixture data of its own, so assert on rows it can *see* (the register rolls up every
+	 * user's reminders, unscoped) and never on rows it owns.
+	 */
+	adminPage: Page
 	/** The `POST /api/test/seed` response: stable ids, counts and `seedDateUtc`. */
 	seed: SeedResponse
 }
@@ -104,6 +126,14 @@ export const test = base.extend<Fixtures & Options>({
 
 	secondaryPage: async ({ seed, browser }, use) => {
 		const page = await signedInPage(browser, seed.secondaryUser)
+		await use(page)
+		await page.context().close()
+	},
+
+	// The credential comes off the seed response like the other two, not from `.env.test` — the account
+	// is part of the fixture, so the fixture is what says what it is.
+	adminPage: async ({ seed, browser }, use) => {
+		const page = await signedInPage(browser, seed.adminUser)
 		await use(page)
 		await page.context().close()
 	},

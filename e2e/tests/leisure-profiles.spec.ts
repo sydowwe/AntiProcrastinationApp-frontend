@@ -1,6 +1,6 @@
 import { test } from '../fixtures/auth'
 
-// Specs for the leisure-profile surfaces named in prompts/view-docs/E2E-SEED-WIRING.md's Task 3
+// Specs for the leisure-profile surfaces that had no seed data to render before `POST /api/test/seed`
 // (`profiles.backlog` / `bucketList` / `project` / `memoryAnchor`). None of the four are written — driving
 // each screen in the browser via `playwright-cli` before writing anything (as the task requires) found that
 // every one of them is currently broken, not by a locator or seed problem.
@@ -23,26 +23,27 @@ import { test } from '../fixtures/auth'
 // | ------------------------------- | --------------------------------------------- | ---- | ----- |
 // | `/leisure/projects` (board)     | `POST /api/activity-project-profile/grid`     | 200  | **fixed** — `BOARD_PAGE_SIZE` 500 → 200, the server's cap. Renders |
 // | `/activity-settings/activities` | `POST /api/activity/grid`                     | 200  | **fixed server-side** — the rename is complete. Renders 10 rows |
-// | `/leisure/memory-anchors`       | `POST /api/memory-anchor/grid`                | 500  | **backend** — sorts by `periodKey`, an unmapped key (B2) |
-// | `/leisure/backlog`              | `POST /api/activity-backlog-profile/grid`     | 500  | **backend** — sorts by `activity.name`, an unmapped key (B2) |
-// | `/leisure/bucket-list`          | `POST /api/activity-bucket-list-profile/grid` | 500  | **backend** — same as above (B2) |
+// | `/leisure/memory-anchors`       | `POST /api/memory-anchor/grid`                | 200  | **fixed server-side 2026-09-13** — `periodKey` is a supported composite (B2) |
+// | `/leisure/backlog`              | `POST /api/activity-backlog-profile/grid`     | 200  | **fixed server-side 2026-09-13** — `activity.name` resolves natively (B2) |
+// | `/leisure/bucket-list`          | `POST /api/activity-bucket-list-profile/grid` | 200  | **fixed server-side 2026-09-13** — same as above (B2) |
 //
 // **The `/grid` rename is finished.** `/api/activity/grid` and `/api/memory-anchor/grid` both answer 200, and
 // `POST /{entity}/filtered-table` now returns 405 on all five entities — the mirror image of the old symptom.
 // Do not add per-call-site `path` overrides; there is nothing left to work around.
 //
-// The three remaining 500s are **one** bug, not three: a grid throws whenever `sortBy` names a key it cannot
-// map to a column. `sortBy: []` returns 200 on every one of these endpoints. A dot is not required — a
-// dot-free non-column key fails identically, so it is not about nested paths. Filed once as
-// prompts/view-docs/backend/B2-grid-500-on-unmapped-sortby.md, which also covers the client-side half (three
-// of these views send keys the server does not have).
+// Those three 500s were **one** bug, not three: a grid threw whenever `sortBy` named a key it could not map to
+// a column. Filed once as prompts/view-docs/backend/_done/B2-grid-500-on-unmapped-sortby.md and **closed
+// 2026-09-13** — every key these views send now resolves (`activity.name` natively, `periodKey` as a
+// server-expanded composite), and an unresolvable key is a **400 naming the key**, never a 500.
 //
-// The failure renders as an **empty state**, not an error, so `/leisure/backlog` says "You don't have any here
-// yet" while the fixture does contain `profiles.backlog`. Never take an empty leisure table at face value here
-// without checking the network log.
+// One habit from that era is still worth keeping: the failure rendered as an **empty state**, not an error, so
+// `/leisure/backlog` said "You don't have any here yet" while the fixture did contain `profiles.backlog`. The
+// table component still cannot distinguish a failed request from an empty list (tracked in
+// docs/views/_fix-queue.md), so never take an empty leisure table at face value without checking the network
+// log.
 //
-// Still no spec for the three blocked surfaces — there is nothing in the UI to assert against. The projects
-// surface now works and is deliberately left to unit 13's inventory pass, which writes
+// Still no spec for the three surfaces — they only became drivable on 2026-09-13. The projects
+// surface is deliberately left to unit 13's inventory pass, which writes
 // `13-leisure-projects.draft.spec.ts` from a live crawl; a second spec written blind from here would only
 // collide with it.
 

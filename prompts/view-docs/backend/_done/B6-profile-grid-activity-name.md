@@ -27,8 +27,8 @@
 >    not a case to fall back on.
 >
 > **This does not leave the client correct — see the follow-up below.** It also resolves
-> [`B7` §1 and §2](../B7-grid-sort-key-audit.md) and the general-class half of
-> [`B2`](../B2-grid-500-on-unmapped-sortby.md); both are settled in their own files.
+> [`B7` §1 and §2](B7-grid-sort-key-audit.md) and the general-class half of
+> [`B2`](B2-grid-500-on-unmapped-sortby.md); both are settled in their own files.
 >
 > ### ⚠ Follow-up this creates for the client (not fixed here — `src/` is out of scope for the close-out)
 >
@@ -68,15 +68,15 @@
 > `activityName` since added to `activity-backlog-profile/grid` is returned and never read, and that grid still
 > renders `—` like the other three. Option B was never implemented; there is no client-side lookup to remove.
 > Full evidence, plus the same question for the four lookup columns and the `isRepeatable`/`isOneTime`
-> mismatch, in [`B7` §2](../B7-grid-sort-key-audit.md). Choosing **A-nested** also makes `activity.name` resolve
-> natively on all four routes, which fixes the sort gap in [`B7` §1](../B7-grid-sort-key-audit.md) for free.
+> mismatch, in [`B7` §2](B7-grid-sort-key-audit.md). Choosing **A-nested** also makes `activity.name` resolve
+> natively on all four routes, which fixes the sort gap in [`B7` §1](B7-grid-sort-key-audit.md) for free.
 
 > Measured 2026-09-11 against a local API + local Postgres, signed in as the seed's `primaryUser` (id 10001),
 > fixture `e2e-v1`.
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one — but the answer may land on the client instead.
 **Affects:** units **12** (`leisure-bucket-anchors`) and **13** (`leisure-projects`), and the `activity.name`
-sort in [`B2`](../B2-grid-500-on-unmapped-sortby.md).
+sort in [`B2`](B2-grid-500-on-unmapped-sortby.md).
 **Effort:** small either way. **Risk:** low.
 
 **This is a contract question, not a defect report.** Both answers below are defensible; the client cannot

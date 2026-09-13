@@ -68,7 +68,7 @@ invents a freeze", so that third heatmap state is reachable *only* from real row
 4. ≥ 1 routine item has `Streak >= 30`. Ideally also 90, 180 and 365, which needs three more items (or three
    more periods) but would be the first time those branches render at all.
 5. The new ids and counts are reported in the seed response and typed in `e2e/fixtures/seed.ts`, the way
-   `dayPlannerTemplates` and `trackingMappings` were for [`B3`](B3-seed-fixture-coverage.md).
+   `dayPlannerTemplates` and `trackingMappings` were for [`B3`](_done/B3-seed-fixture-coverage.md).
 
 ## Notes
 

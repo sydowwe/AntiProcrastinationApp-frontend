@@ -1,29 +1,68 @@
 # B2 — a paged grid answers 500 when `sortBy` names a key it cannot map
 
-> 🔧 **FIXED in the API working tree (2026-09-11), not yet deployed.** The answer chosen is neither of the two
-> in *What "done" looks like* below — it is a third and better one: **remap the keys instead of rejecting
-> them.** `GridSortKeyExtensions.ExpandSortKey` rewrites `activity.name` → `activityName` and
-> `periodKey` → `anchorYear, anchorMonth` onto members that exist on the projected response, so **the client
-> needs no change** and the *The other half* section below is moot for these views.
+> ✅ **ANSWERED AND DEPLOYED — 2026-09-13. Both halves, not one.** Verified against the running local API on
+> fixture `e2e-v3`, signed in as the seed's `primaryUser`. This block replaces an earlier note describing a
+> narrower, remap-only fix (`GridSortKeyExtensions`); **that fix and that file are gone** — ignore any doc
+> still describing it.
 >
-> **The general class is not fixed, deliberately.** An unresolvable key is still an `ArgumentException` out of
-> `SortByMany` — i.e. still a 500, not a 400 or an unsorted page. A new sortable column added to any of these
-> tables can reintroduce it. Worth knowing before a unit pass proposes one.
+> **1. The 500 is gone in the general case.** An unresolvable sort key is now a **400 naming the key**, never a
+> 500 and never a silently unsorted page. Measured:
 >
-> ⚠️ **And one existing column was missed.** `memory-anchor/grid` has a *second* sortable column that emits
-> `activity.name`; only `periodKey` was remapped for that endpoint, so its Activity header still 500s. Found by
-> reading every column definition in the app — [`B7`](_done/B7-grid-sort-key-audit.md), which also lists every sort
-> key every grid can emit and flags two `activity.text` keys on the tracker-mapping grids that need checking.
+> ```
+> POST /api/activity-backlog-profile/grid   sortBy: [{"key":"zzzNotAColumn"}]   → 400
+> {"statusCode":400,"message":"One or more errors occurred!",
+>  "errors":{"sortBy":["Unknown sort key 'zzzNotAColumn'."]}}
+> ```
 >
-> Against the still-running old build every case in this file reproduced unchanged, so **re-verify after the
-> rebuild** with step 5 of *Verification*.
+> It is the shape the grid base already uses for page/page-size errors: `errors.sortBy[]`, the offending key
+> echoed (truncated at 64 chars), **no `errorId`**. *If a body carries an `errorId`, that is still an unhandled
+> 500 and a different bug — report it.* Same 400 on `reminder-dashboard/my-upcoming`, which is not a `/grid`
+> route, so the fix is in the shared layer as asked.
+>
+> **2. Every key the five broken views already send now resolves,** so they return 200 *with rows* and need no
+> client change. **Units 11, 12, 16 and 13's table view are unblocked.** *The other half* below is now tidying,
+> not blocking.
+>
+> **3. "Is sorting by a related entity's property supported?" — yes.** The B6 reshape nests the whole
+> `ActivityResponse` on the row, so `activity.name` resolves **natively**, and so do `activity.role.name` and
+> `activity.category.name` (all three measured 200 on `activity-project-profile/grid`). The rule is
+> *resolvable*, never *nested*: `activity.zzz` → 400, exactly like a dot-free non-column. **The old "nesting is
+> the trigger" hypothesis is dead** — see *The trigger* below, which is now history.
+>
+> **Measured this pass** (200 unless stated): `activity-backlog-profile/grid` · `activity.name`, `[]`;
+> `activity-bucket-list-profile/grid` · `activity.name`; `activity-project-profile/grid` · `activity.name`,
+> `activity.role.name`, `activity.category.name`, and `activity.zzz` → **400**; `memory-anchor/grid` ·
+> `periodKey` **and** `activity.name` — so [`B7` §1](B7-grid-sort-key-audit.md)'s missed column is closed
+> too; `reminder-dashboard/my-upcoming` · `nextOccurrence`, `nextOccurrenceAt`, and `zzzNotAColumn` → **400**.
+>
+> **One wording correction to the backend's own note:** the message reads `Unknown sort key 'x'.`, not
+> `Sort key 'x' does not resolve on …`. The shape is as described; only the sentence differs. Render the
+> `errors.sortBy[]` array, not a match on its text.
+>
+> **Two keys to know about going forward.** `periodKey` is a genuine **composite**, supported permanently —
+> the server expands it to `anchorYear, anchorMonth` and both inherit the single `isDesc` you send, so desc is
+> `anchorYear DESC, anchorMonth DESC`, never mixed. `nextOccurrence` is a **compatibility alias only**,
+> accepted on all three reminder reads (`reminder-dashboard/my-upcoming`, `reminder-dashboard/upcoming`,
+> `reminder-definition/grid`) so the three stop disagreeing; the backend asks us to migrate
+> `/pripomienky/moje` to `nextOccurrenceAt` at our convenience so they can drop it.
+>
+> **What has not changed, and still binds us:** a key the server has never heard of is a hard failure — now a
+> 400 instead of a 500. A new sortable column header must emit the name of a member of the **projected response
+> DTO**, not a field of the entity, and not every field visible in a row qualifies. Send it once against the
+> endpoint; a 400 names it immediately.
+>
+> **One thing to fix on our side regardless.** The table component renders its **empty state for a failed
+> request**, which is what let one bug be filed three times — a 400 and a genuinely empty list are
+> indistinguishable on screen. An error state distinct from the empty state would have caught this in minutes.
+> Tracked app-side in `docs/views/_fix-queue.md`; not a backend concern.
 
 > Measured 2026-09-11 against a local API + local Postgres, signed in as the seed's `primaryUser` (id 10001),
 > fixture `e2e-v1`. Every status below was observed, not inferred.
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
-**Blocks:** units **11** (`leisure-backlog-picker`), **12** (`leisure-bucket-anchors`), **16**
-(`reminders-user`), and the table half of unit **13** (`leisure-projects`).
+**Blocked** (past tense as of 2026-09-13) units **11** (`leisure-backlog-picker`), **12**
+(`leisure-bucket-anchors`), **16** (`reminders-user`), and the table half of unit **13** (`leisure-projects`).
+All four are now runnable.
 **Effort:** small. **Risk:** low — this is error handling on a path that currently throws.
 
 ## What this replaces
@@ -163,15 +202,30 @@ the answer is no, say so and the client will stop asking.
 
 ## The other half — not yours
 
+> **Settled 2026-09-13 — none of this is blocking any more.** Every key below now returns **200 with rows** as
+> sent. Only one line survives as work, and it is a rename for the backend's benefit, not ours. Per-view state
+> as of the close-out:
+>
+> | View | Sends | Works? | Action |
+> | --- | --- | --- | --- |
+> | `/leisure/backlog` | `activity.name` | ✅ natively | **keep** |
+> | `/leisure/bucket-list` | `activity.name` | ✅ natively | **keep** |
+> | `/leisure/projects?view=table` | `activity.name` | ✅ natively | **keep** |
+> | `/leisure/memory-anchors` | `periodKey` | ✅ server expands to `anchorYear, anchorMonth` | **keep** — it is one column to us |
+> | `/pripomienky/moje` | `nextOccurrence` | ✅ alias for `nextOccurrenceAt` | **migrate** to `nextOccurrenceAt` so the alias can be dropped |
+
 Recorded here only so the two halves are not each mistaken for the whole. **These are frontend fixes and are
 tracked app-side; no action needed in the API repo:**
 
 - `/pripomienky/moje` sends `nextOccurrence`; the mapped column is `nextOccurrenceAt`, which returns **200**.
-  `/pripomienky/register` already sends the correct `nextOccurrenceAt`.
-- `/leisure/backlog` sends `activity.name`; that grid already returns a flat `activityName` field, and
-  `sortBy: [{"key":"activityName"}]` returns **200**.
-- `/leisure/memory-anchors` sends `periodKey`, which is a client-side composite with no server column.
-  `anchorYear` and `anchorMonth` both exist and return **200**.
-- `/leisure/projects?view=table` and `/leisure/bucket-list` send `activity.name`, and neither entity exposes
+  `/pripomienky/register` already sends the correct `nextOccurrenceAt`. ⬅ **the one item still outstanding.**
+- ~~`/leisure/backlog` sends `activity.name`; that grid already returns a flat `activityName` field, and
+  `sortBy: [{"key":"activityName"}]` returns **200**.~~ `activity.name` resolves natively now; do **not**
+  migrate to `activityName`, which no DTO reads.
+- ~~`/leisure/memory-anchors` sends `periodKey`, which is a client-side composite with no server column.
+  `anchorYear` and `anchorMonth` both exist and return **200**.~~ `periodKey` is a supported composite and is
+  the key to keep sending.
+- ~~`/leisure/projects?view=table` and `/leisure/bucket-list` send `activity.name`, and neither entity exposes
   the activity name as a flat column — those two depend on the contract question in
-  [`B6-profile-grid-activity-name.md`](_done/B6-profile-grid-activity-name.md).
+  [`B6-profile-grid-activity-name.md`](B6-profile-grid-activity-name.md).~~ B6 was answered with the nested
+  shape, which is what makes `activity.name` resolve.

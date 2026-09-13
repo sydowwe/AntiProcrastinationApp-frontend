@@ -84,7 +84,7 @@
 > old build. Re-check the two `activity.text` rows in §3 against the projection — I cannot see it from here.
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
-**Follows:** [`B2`](../B2-grid-500-on-unmapped-sortby.md) (the remaps) and
+**Follows:** [`B2`](B2-grid-500-on-unmapped-sortby.md) (the remaps — since superseded; see B2's close-out) and
 [`B6`](B6-profile-grid-activity-name.md) (the contract question). This is the audit B2's closing note asked
 for — *"a new sortable column added to any of these tables can reintroduce it"* — done exhaustively across
 every grid in the app rather than per view.
@@ -309,7 +309,7 @@ turned on — **please confirm rather than assume**, since a unit pass may well 
 | `activity-tracking/android/settings/tracker-android-mapping-by-pattern/grid` | **`activity.text`** | Same, `AndroidMappingsTable.vue:48`. |
 
 Both are on unit **06** (`tracking-settings`), whose tables are empty for fixture reasons
-([`B3`](../B3-seed-fixture-coverage.md)) — so a 500 here would currently be invisible behind the same false
+([`B3`](B3-seed-fixture-coverage.md)) — so a 500 here would currently be invisible behind the same false
 empty state B2 describes.
 
 ### Not grids

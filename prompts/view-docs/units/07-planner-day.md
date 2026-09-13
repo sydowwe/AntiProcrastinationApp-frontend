@@ -57,6 +57,21 @@ Known for this unit — verify each, do not assume:
   split into one component per tab (95c7bbf2), so it has several tabs.
 - Existing Playwright coverage: e2e/tests/dayPlanner.spec.ts already asserts arrow-key date
   navigation and the input-focus guard. Do not duplicate those in your draft spec.
+- TWO BUGS ALREADY FOUND HERE (2026-09-12), so do not re-derive them:
+  1. FIXED — `loadTasks` fetched repeating-task suggestions with `?date=`, but the route takes
+     `{calendarId}` in the PATH. The 400 rejected the `Promise.all` it shared with the task
+     fetch, so `store.tasks` was never assigned and the planner rendered an EMPTY GRID on
+     every date, with the cause visible only in the console. This is the withdrawn backend ask
+     B5 (it was always a frontend bug). The suggestions call is now also `.catch`-ed so it can
+     never take the tasks down with it again.
+  2. OPEN, NOT FIXED — the selection action bar's **Delete is unreachable** at 1280x720 with
+     the sidebar expanded. `_common/component/ActionBar.vue` is `position: fixed; left: 50%;
+     transform: translateX(-50%)`, i.e. centred on the VIEWPORT, while Vuetify insets content
+     with `padding-left: 288px` on `.v-main`. The bar's left end slides under the nav drawer,
+     which swallows the pointer events. Two specs are `test.fixme`d on it. The fix is a
+     framework change (centre on the content box) and affects every view mounting ActionBar,
+     so it needs the owner's call — note that a `toBeVisible()` assertion does NOT catch this,
+     since Playwright's visibility is layout, not occlusion.
 - Recent commits post-date the intent sources: 5c72fd5a split DayPlannerView, 4e3366ed
   collapsed six bulk-action tails into useBulkTaskAction, 64ad48c8 replaced the calendar's
   hand-rolled URL query handling.

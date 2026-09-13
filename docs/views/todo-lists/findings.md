@@ -315,7 +315,13 @@
   then bump the pointer.
 
 ### O1. Estimate-vs-actual calibration is fully built but has no seed data to demonstrate it
-- **Status:** open
+- **Status:** resolved (round 4, 2026-09-12) — the `e2e-v2` fixture delivers it and both surfaces now have
+  passing specs
+- **Verify:** `cd e2e && npx playwright test tests/todo-motivation.spec.ts -g "calibration"` — three specs in
+  *Estimate-vs-actual calibration (/todo-list/:id — "Focus")*. `GET /api/todo-list-item?todoListId=13001` now
+  returns `suggestedTime` (re-read from the response body, not the UI): "Feature Development" 2h against a 2h
+  26m history average, "Bug Fixing" 45m against 1h 1m, and `counts.calibrationTodoListItems: 6` clears the
+  `MIN_COMPARABLE_ITEMS = 5` gate, so the header renders "Your estimates run about 1.2x actual time".
 - **Severity:** opportunity
 - **Where:** `/todo-list/:id`, `src/core/todoList/composable/useEstimateCalibration.ts` +
   `POST /api/activity-history/aggregate-by-activity`
@@ -368,7 +374,11 @@
   Filed separately as **B3**, since that is the actual defect, not an inconclusive one.
 
 ### U3. S3's per-item "usually Nm" chip and header calibration line could not be visually confirmed
-- **Status:** open
+- **Status:** verified (round 4, 2026-09-12) — both surfaces observed in the browser and pinned by specs
+- **Verify:** as O1. Observed on `/todo-list/13001`: the chip renders both sides (`~2h  / 2h 26m`), its
+  tooltip reads "You usually spend 2h 26m on this" — neutral, as S3 requires — and the header line reads
+  "Your estimates run about 1.2x actual time". The tooltip is teleported outside `#app`, so it needs a hover
+  and must not be scoped to `#app`.
 - **Severity:** unverified
 - **Where:** `src/core/todoList/component/BaseTodoListItem.vue` (per-item chip, gated on
   `toDoListItem.suggestedTime?.isNotZero()`) and `TodoListTitleBar.vue` (header line, gated on ≥5 comparable

@@ -1,6 +1,6 @@
 import { expect, test } from '../fixtures/auth'
 
-// Specs for the activity-lifecycle surfaces named in prompts/view-docs/E2E-SEED-WIRING.md's Task 3
+// Specs for the activity-lifecycle surfaces that had no seed data to render before `POST /api/test/seed`
 // (`activities.archived` / `notDeletable` / `deletable`). Driven in the browser via `playwright-cli`
 // against the `e2e-v1` fixture before writing this — see the note below on what could not be covered.
 //

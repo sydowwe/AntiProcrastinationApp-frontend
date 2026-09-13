@@ -1,7 +1,68 @@
 # B4 — every reminders-admin endpoint answers 403 for the seeded account
 
+## ✅ Answered and delivered — 2026-09-13
+
+**The answer was "yes, these five routes should require Admin here."** The policy is deliberate and recent:
+the backend's `ReminderCrudAuthMatrixTests` records that these routes used to sit at `GetUserRole()`, that this
+contradicted the module's own `summary.md`, and that they were moved to `GetAdminRole()` on purpose. They roll
+up **every** user's reminders with no user scoping at all — `ApplyUserScoping` is a deliberate no-op on them —
+so the role gate is the only boundary in front of them. The **fixture** was what was wrong, not the policy.
+
+The scheduler contrast measured below is real but does not generalise: `scheduler-dashboard` genuinely is open
+to any signed-in user in this host, and `reminder-dashboard/my-upcoming` answering 200 is the design — it is
+the self-service sibling and it scopes by caller.
+
+**What landed:** fixture `e2e-v3`, with a third account and reminder rows (there were none before, so items
+2–4 of *What "done" looks like* would have returned an empty 200 even with the role):
+
+```
+"adminUser":           { "id": 10003, "email": "admin@example.com", "password": "testpass123", "locale": "EN" }
+"reminders":           { "callTheDentist": 23001, "fileTaxReturn": 23002, "payRentRecurring": 23003,
+                         "paused": 23004, "cancelled": 23005, "secondaryPostParcel": 23101 }
+"reminderDefinitions": { each is its portal id + 200 — 23201, 23202, 23203, 23204, 23205, 23301 }
+counts: reminderDefinitions 6 · upcomingReminders 4 · reminderDispatches 7 · reminderFailuresNeedingAttention 1
+```
+
+`adminUser` is deliberately **not** `primaryUser` promoted: if the account nearly every spec signs in as were
+an admin, no spec could tell an admin gate that still works from one silently removed. It carries the per-user
+defaults and **no fixture data of its own** — point no content assertion at it.
+
+**Verified 2026-09-13** against a local API + local Postgres, fixture `e2e-v3`, by direct request and then in
+the browser on `https://localhost:3000`:
+
+| Route | `primaryUser` | `adminUser` |
+| --- | --- | --- |
+| `POST /api/reminder-definition/grid` (`sortBy: []`) | **403** | **200**, 6 items |
+| `GET /api/reminder-definition/23201` | **403** | **200**, the `Call the dentist` definition |
+| `POST /api/reminder-dashboard/upcoming` | **403** | **200**, 4 items |
+| `POST /api/reminder-dashboard/dispatch-history` | **403** | **200**, 7 items |
+| `GET /api/reminder-dashboard/overview` | **403** | **200**, `upcomingTotal 4 · upcomingNext7Days 3 · pausedCount 1 · cancelledCount 1 · failedNeedingAttention 1` |
+| `POST /api/reminder-dashboard/my-upcoming` | **200** (unchanged) | — |
+
+All five views render as `adminUser`: `/pripomienky/register` lists **6 rows**, `/register/23201` renders the
+detail (payload `{"title": "Call the dentist", …}`), `/nadchadzajuce` **4 rows**, `/historia` **7 rows**,
+`/prehlad` shows *Due within 7 days 3 of 4 upcoming · Paused 1 · Cancelled 1*. **Unit 17 is unblocked** — it
+must be run signed in as `adminUser`.
+
+**Two things to carry forward:**
+
+- **`/api/reminder-definition/{id}` takes a `reminderDefinitions` id, not a `reminders` one.** Confirmed:
+  `GET /api/reminder-definition/23001` **404s**. The 200-apart numbering is what makes the wrong id fail loudly
+  instead of returning someone else's row. The register's *Subject* cell shows the portal id (`Reminder #23004`)
+  while its link targets the definition id (`/register/23204`) — that is correct, not a mismatch.
+- **The client role model stays as it is.** `src/core/user/authAdapter.ts` returning constant `true` is right;
+  `GET /api/user/data` still returns no `roles` field, so the client has nothing to route on. The server is the
+  authorization check. Making the client gate on a role would need a backend change — ask, do not infer.
+
+**Client-side follow-up, landed with this:** `EXPECTED_FIXTURE_VERSION` in `e2e/fixtures/seed.ts` is bumped to
+`e2e-v3` (global setup fails loudly until it is), `SeedResponse` types `adminUser` / `reminders` /
+`reminderDefinitions` / the four new counts, and `e2e/fixtures/auth.ts` exposes an `adminPage` fixture that
+reads the credential off the seed response. `primaryUser` stays the plain-user context.
+
+---
+
 > Measured 2026-09-11 against a local API + local Postgres, signed in as the seed's `primaryUser` (id 10001),
-> fixture `e2e-v1`.
+> fixture `e2e-v1`. **The original ask follows, unedited.**
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
 **Blocks:** unit **17** (`reminders-admin`) — all five of its views.
