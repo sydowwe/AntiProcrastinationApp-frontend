@@ -60,7 +60,7 @@ Unit **09** (`todo-lists`) is already done. Everything below assumes that.
 
 | Unit | Views | Why this one |
 | --- | --- | --- |
-| ✅ **01** home | 1 | Clean: no 4xx/5xx, no raw keys, renders six populated widgets. One view, so a bad output contract costs one cheap run. |
+| ✅ **01** home | 1 | Clean: no 4xx/5xx, no raw keys, renders five populated widgets. One view, so a bad output contract costs one cheap run. |
 
 **01 is still the right calibration unit, and it is still clean** — re-verified 2026-09-11: `/` renders the
 day-planner strip, routine tasks, upcoming tasks and today's activity with real seeded data, and issues no
@@ -133,7 +133,7 @@ for:
 
 - the project card shows **"—" where the activity name belongs**. Confirmed still true on 2026-09-11: the grid
   row carries `activityId: 12009` and no name field at all, so `ActivityInfo.fromJson({})` yields an empty
-  name. This is a **contract question**, now written up as [`B6`](backend/B6-profile-grid-activity-name.md) —
+  name. This is a **contract question**, now written up as [`B6`](backend/_done/B6-profile-grid-activity-name.md) —
   let the unit describe the symptom; B6 holds the decision.
 - board mode requests **200 rows in one page and never pages**. Fine for a hobby list, and the cap is the
   server's, but it is a real ceiling and the view does not say so when it is hit.
@@ -226,7 +226,7 @@ batch with app-side findings.
 | Unit | Views | Blocked on |
 | --- | --- | --- |
 | ⛔ **11** leisure-backlog-picker | 2 | [`B2`](backend/B2-grid-500-on-unmapped-sortby.md) — `/leisure/backlog` sorts by `activity.name` and 500s into a false empty state. Its sibling `/leisure/pick` is **clean**, and the old `enums.energyLevel.Low` raw key no longer reproduces |
-| ⛔ **12** leisure-bucket-anchors | 2 | [`B2`](backend/B2-grid-500-on-unmapped-sortby.md) — both views, `activity.name` and `periodKey`. **B2 alone does not release it**: `memory-anchor/grid`'s Activity column also emits `activity.name`, unremapped ([`B7` §1](backend/B7-grid-sort-key-audit.md)). Also touches [`B6`](backend/B6-profile-grid-activity-name.md) |
+| ⛔ **12** leisure-bucket-anchors | 2 | [`B2`](backend/B2-grid-500-on-unmapped-sortby.md) — both views, `activity.name` and `periodKey`. ~~**B2 alone does not release it**: `memory-anchor/grid`'s Activity column also emits `activity.name`, unremapped~~ — **no longer true (2026-09-13)**: [`B7` §1](backend/_done/B7-grid-sort-key-audit.md) closed, `activity.name` resolves natively on all four profile grids. [`B6`](backend/_done/B6-profile-grid-activity-name.md) is closed too, so **B2 is this unit's only remaining gate** |
 | ⛔ **16** reminders-user | 1 | [`B2`](backend/B2-grid-500-on-unmapped-sortby.md) **only**, now that the locale gate is gone — moved here from Wave F |
 | ✅ **08** planner-templates | 3 | **Unblocked 2026-09-11** — `B3` landed and the fixture now seeds three templates (`seed.dayPlannerTemplates`: `homeOffice` 5 tasks, `officeDay` 4, `pinned` 3, the last one pinned so the list's pinned section renders). All three views carry real data. Two things to know before running it: the list view's "no cards behind a permanent loading overlay" bug is **fixed**, and `templateDayPlanner.spec.ts` now runs 16 tests with none skipped, so its assertions are a description of these screens you can read instead of rediscovering |
 
@@ -238,7 +238,7 @@ unresolvable sort key is still an unhandled exception, so a **new** column added
 reintroduce the same 500. Worth knowing when a unit pass proposes a new sortable column.
 
 **That caveat already has one live case**, and it is not hypothetical — see
-[`B7`](backend/B7-grid-sort-key-audit.md), which reads every column definition in the app against every grid
+[`B7`](backend/_done/B7-grid-sort-key-audit.md), which reads every column definition in the app against every grid
 response. **Unit 12 is not fully released by B2**: `memory-anchor/grid` has a *second* sortable column
 emitting `activity.name`, which B2 did not remap for that endpoint, so the Activity header still 500s on
 click. Expect the view to load and the Activity column to fail. B7 also settles B6 from the client's side —
@@ -290,5 +290,7 @@ blocked.
 The remaining five are held by **one deployed-pending fix** ([`B2`](backend/B2-grid-500-on-unmapped-sortby.md)),
 **one fixture ask** ([`B3`](backend/B3-seed-fixture-coverage.md)) and **one authorization question**
 ([`B4`](backend/B4-reminders-admin-403.md)). The reminders EN locale decision is **done**.
-[`B6`](backend/B6-profile-grid-activity-name.md) blocks nothing and can be answered at leisure;
+[`B6`](backend/_done/B6-profile-grid-activity-name.md) is **answered and shipped** (2026-09-13, option A — a
+nested full `ActivityResponse` on all four profile grids); it blocked nothing, but it leaves a client-side
+parse follow-up recorded in the ask;
 [`B5`](backend/B5-repeating-planner-task-suggestions.md) was **withdrawn** — it turned out to be a frontend bug.

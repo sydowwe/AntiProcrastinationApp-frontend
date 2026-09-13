@@ -211,8 +211,8 @@ describing an empty screen as the feature.
 | [`B3` — seed fixture coverage](backend/B3-seed-fixture-coverage.md) | open | 08; improves 05, 06, 18 |
 | [`B4` — reminders-admin 403](backend/B4-reminders-admin-403.md) | open — **now 17's only gate** | 17 |
 | [`B5` — `repeating-planner-task/suggestions`](backend/B5-repeating-planner-task-suggestions.md) | ⛔ **withdrawn — not a backend ask** | — |
-| [`B6` — profile grids omit the activity name](backend/B6-profile-grid-activity-name.md) | open, a contract question | affects 12, 13 |
-| [`B7` — grid sort-key audit](backend/B7-grid-sort-key-audit.md) | open — one missed column, plus B6's answer from the client's side | 12; hardens 11, 13 |
+| [`B6` — profile grids omit the activity name](backend/_done/B6-profile-grid-activity-name.md) | ✅ **answered and shipped** (2026-09-13) — option A, a nested full `ActivityResponse` on all four. Leaves a **client-side** follow-up: `ActivityInfo.fromJson` no longer finds `categoryName`/`icon`/`color`, which now hang off `activity.category` / `activity.role` | affects 12, 13 |
+| [`B7` — grid sort-key audit](backend/_done/B7-grid-sort-key-audit.md) | ✅ **answered in full** (2026-09-13) — §1 fixed by shape, not a remap: `activity.name` resolves natively on all four grids. Unresolvable keys now **400**, not 500 | 12; hardens 11, 13 |
 
 **B7 is the exhaustive version of B2's closing warning.** B2 fixed five grids by remapping their keys and said
 so explicitly: *"a new sortable column added to any of these tables can reintroduce it."* B7 reads every column

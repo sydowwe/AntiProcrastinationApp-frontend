@@ -12,7 +12,7 @@
 >
 > ⚠️ **And one existing column was missed.** `memory-anchor/grid` has a *second* sortable column that emits
 > `activity.name`; only `periodKey` was remapped for that endpoint, so its Activity header still 500s. Found by
-> reading every column definition in the app — [`B7`](B7-grid-sort-key-audit.md), which also lists every sort
+> reading every column definition in the app — [`B7`](_done/B7-grid-sort-key-audit.md), which also lists every sort
 > key every grid can emit and flags two `activity.text` keys on the tracker-mapping grids that need checking.
 >
 > Against the still-running old build every case in this file reproduced unchanged, so **re-verify after the
@@ -174,4 +174,4 @@ tracked app-side; no action needed in the API repo:**
   `anchorYear` and `anchorMonth` both exist and return **200**.
 - `/leisure/projects?view=table` and `/leisure/bucket-list` send `activity.name`, and neither entity exposes
   the activity name as a flat column — those two depend on the contract question in
-  [`B6-profile-grid-activity-name.md`](B6-profile-grid-activity-name.md).
+  [`B6-profile-grid-activity-name.md`](_done/B6-profile-grid-activity-name.md).

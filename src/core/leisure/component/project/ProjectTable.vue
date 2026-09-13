@@ -8,6 +8,7 @@
 		:columns
 		:itemsLength
 		showActions
+		deleteConfirmationColumn="activity.name"
 		@onLoadItems="emit('onLoadItems')"
 		@onAdd="openCreateDialog"
 		@onEdit="onEdit"

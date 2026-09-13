@@ -1,18 +1,99 @@
 # B7 — grid sort-key audit: one sortable column the remap missed, and the nested-vs-flat decision
 
+> ## ✅ Answered in full — 2026-09-13
+>
+> Backend `fa47560` plus the archived follow-up. Every section is settled; the audit's two "things that need a
+> decision" both resolve, and **neither resolved the way this file proposed.**
+>
+> - **§1 — fixed by shape, not by a remap, and the remap is gone.** `MemoryAnchorResponse` derives from
+>   `WithActivityResponse`, so **`activity.name` resolves natively on all four profile grids**, along with
+>   `activity.role.name` and `activity.category.name` (the conditional category projection left-joins, so
+>   uncategorised rows sort as null rather than disappearing). This file asked to *keep* the
+>   `activity.name → activityName` remaps for old bookmarked URLs; they were **deleted**, and that is safe —
+>   the key those URLs carry is `activity.name`, which is exactly the key that now resolves on its own. The
+>   remap only ever pointed it at a flattened member that no longer exists. `periodKey` keeps its expansion,
+>   which is the case a remap is actually for.
+> - **§2 — nested.** See [`B6`](B6-profile-grid-activity-name.md) for the payload. The flat
+>   `activityName` is gone with no alias; the four lookups now arrive as `{id, text}` objects beside their ids.
+>   **What this audit did not anticipate:** the grids send the **full `ActivityResponse`**, not the
+>   `{id, name, categoryName, icon, color}` shape `ActivityInfo` parses — that flat shape survives only on
+>   `/leisure/suggestion/draw`. Two shapes under one key, by route. Names render off the grids;
+>   `categoryName`/`icon`/`color` will not until `ActivityInfo` derives them as `category ?? role`.
+> - **§3 — both open rows resolve, and the confirmation is yes.** `activity.text` lands on a real member for
+>   both mapping grids (`TrackerDesktopMappingResponse.cs:42`, `TrackerAndroidMappingResponse.cs:37`, each
+>   projecting `ActivityFilterFormResponse { Id, Text = Activity.Name, RoleId, CategoryId }` through
+>   `BaseGridEndpoint`). `role.name` / `category.name` **would** resolve on `activity/grid` if made sortable
+>   (`GridActivityEndpoint.cs:85-86`) — safe to turn on. Note `activity` is **nullable** on the two mapping
+>   grids (an unmapped pattern), so an `activity.text` sort orders those rows as null: Postgres puts nulls
+>   last ascending, first descending. Not a bug.
+> - **The latent bare keys stay latent, with one change:** the four lookup columns now exist as objects, so a
+>   sortable one must send **`locationType.text`, not `locationType`**.
+>   ⚠️ **Measured 2026-09-13, and it contradicts the reply:** a bare `locationType` returns **500**
+>   (`errorId be94ee6d327f`), *not* the 400 the API stated. `locationType.text` returns 200. See the
+>   correction note at the bottom of this block.
+> - **§4 — `periodKey` in a secondary position works.** The expansion is a `SelectMany` over the sort array
+>   (`SortKeyExtensions.ExpandSortKey`), so the two members splice in at `periodKey`'s own index and every
+>   other key keeps its position. Both inherit the column's single `isDesc`, so descending is
+>   `anchor_year DESC, anchor_month DESC` and never a mix. `[{rating,desc},{periodKey,desc}]` orders by rating
+>   first, as clicked. **Honest gap the API flagged:** integration tests pin `periodKey` only as the *sole*
+>   sort key. The splice is right by construction but nothing asserts a multi-key ordering — **the two-click
+>   combinations in §4 are the cheapest place for us to catch a regression**, and that is now an e2e ask on
+>   this side.
+> - **§2's three adjacent breakages — all three settled.** `isRepeatable` is the single name, read and write;
+>   no `isOneTime` survives anywhere in the solution except a comment recording its deliberate removal, which
+>   closes the write-half concern about the binder silently defaulting it. `backlogIsRepeatable` is genuinely
+>   `null` (not `false`) with no backlog entry — `(bool?)p.IsRepeatable` over a correlated subquery, pinned by
+>   an integration test. `memory-anchor/grid` computes `hasBucketList`/`hasBacklog`/`backlogIsRepeatable` in
+>   the projection so they sort in SQL. **Grid and by-id deliberately disagree**: `memory-anchor/{id}` leaves
+>   all three at `false`/`false`/`null`, because the profiles are not reachable from the anchor and that
+>   projection has no `DbContext` to reach them with. A Source cell on the edit form would read as "from
+>   nowhere" — **the API offered to add them to by-id on request.**
+>
+> ### Two corrections to this file's model of the backend
+>
+> 1. **An *unknown* sort key is a `400` naming the key, not a `500`** — but **only an unknown one**.
+>    `InvalidSortKeyException` → `InvalidSortKeyMiddleware`, logged at Warning. The two tracker-distinct
+>    endpoints were swallowing it into a generic 500 and now rethrow explicitly.
+>
+>    ⚠️ **Verified 2026-09-13 against the running API, and the general claim does not hold.** Probing
+>    `activity-backlog-profile/grid`:
+>
+>    | `sortBy` key | status | body |
+>    | --- | --- | --- |
+>    | `zzzNotAColumn` | **400** | `{"errors":{"sortBy":["Unknown sort key 'zzzNotAColumn'."]}}` |
+>    | `locationType` (names an object) | **500** | `{"errorId":"be94ee6d327f", …}` |
+>    | `locationType.text` | **200** | rows |
+>
+>    So the fix covers *unrecognised* keys, not keys that **resolve to a non-scalar member**. The second row
+>    is the one a real column definition would produce, and it is still an opaque 500 behind a false empty
+>    state — i.e. `B2`'s general class is **narrower than reported**. Not filed as a new ask here; recorded in
+>    `docs/views/_fix-queue.md` for the owner of that surface, per the close-out runbook.
+> 2. **The archived case is not uniform, which changes this file's "done" item 3.** `memory-anchor` keeps the
+>    row and renders the name for an archived activity (the filter is lifted by name on grid *and* by-id). The
+>    three `Activity*Profile` grids **drop the row entirely**, count included — the failure mode there is an
+>    absent row, not a blank name. Expect `12010` on `/leisure/memory-anchors` and absent from the other three.
+>
+> ### Left standing on the client, unchanged by any of this
+>
+> `BacklogTable.vue:11`'s `deleteConfirmationColumn="activityName"` reads a field that **no longer exists on
+> the response at all**. It is now unambiguously a client fix; `activity.name` is the value it wants.
+
 > Written 2026-09-11 by reading the client's column definitions and response DTOs, **not** by probing the API.
 > Every "resolves / does not resolve" claim below is about what the *client emits*; the right-hand side is
 > matched against the row key sets measured in [`B6`](B6-profile-grid-activity-name.md) on the still-running
 > old build. Re-check the two `activity.text` rows in §3 against the projection — I cannot see it from here.
 
 **Repo:** the .NET 10 / FastEndpoints backend, not this one.
-**Follows:** [`B2`](B2-grid-500-on-unmapped-sortby.md) (the remaps) and
+**Follows:** [`B2`](../B2-grid-500-on-unmapped-sortby.md) (the remaps) and
 [`B6`](B6-profile-grid-activity-name.md) (the contract question). This is the audit B2's closing note asked
 for — *"a new sortable column added to any of these tables can reintroduce it"* — done exhaustively across
 every grid in the app rather than per view.
 **Effort:** one line for §1; §2 is ~15 minutes either way. **Risk:** low.
 
 ## The two things that need a decision
+
+> ⛔ **Both decided — see the block at the top of this file.** Item 1 no longer reproduces: `activity.name`
+> resolves natively, so the *Activity* header click returns 200. Item 2 was answered **nested**.
 
 1. **`memory-anchor/grid` has a second sortable column emitting `activity.name`.** The B2 remap covers only
    `periodKey` for that endpoint, so the grid still 500s the moment anyone clicks the *Activity* header.
@@ -228,7 +309,7 @@ turned on — **please confirm rather than assume**, since a unit pass may well 
 | `activity-tracking/android/settings/tracker-android-mapping-by-pattern/grid` | **`activity.text`** | Same, `AndroidMappingsTable.vue:48`. |
 
 Both are on unit **06** (`tracking-settings`), whose tables are empty for fixture reasons
-([`B3`](B3-seed-fixture-coverage.md)) — so a 500 here would currently be invisible behind the same false
+([`B3`](../B3-seed-fixture-coverage.md)) — so a 500 here would currently be invisible behind the same false
 empty state B2 describes.
 
 ### Not grids

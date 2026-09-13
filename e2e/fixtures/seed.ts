@@ -66,7 +66,18 @@ export type SeedTodoListItemKey =
 	| 'mostOverdue'
 	| 'leastOverdue'
 
-export type SeedProfileKey = 'backlog' | 'bucketList' | 'project' | 'memoryAnchor'
+/**
+ * `memoryAnchorOnArchived` is the anchor whose activity is archived. It is the case that separates
+ * `memory-anchor` from the three `Activity*Profile` grids: the anchor keeps its row and its name, while
+ * an archived activity removes a backlog/bucket-list/project row entirely. The fixture has returned it
+ * since `e2e-v2`; it was simply missing from this union.
+ */
+export type SeedProfileKey =
+	| 'backlog'
+	| 'bucketList'
+	| 'project'
+	| 'memoryAnchor'
+	| 'memoryAnchorOnArchived'
 
 export type SeedRoutineKey = 'daily' | 'weekly' | 'monthly'
 

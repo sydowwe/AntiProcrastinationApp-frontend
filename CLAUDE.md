@@ -380,8 +380,26 @@ self-signed cert) sets `contextOptions.ignoreHTTPSErrors`. That is not optional 
 for it, only the config file. Command output lands in `.playwright-cli/`, which is gitignored because it can contain tokens; nothing prunes it, so run
 `npm run playwright:clean` when it gets noisy (it had grown to 130 files before that script existed).
 
-**Signing in.** The CLI drives its own browser, so it does not inherit the session from your Chrome. Sign in through the form — credentials come from
-`e2e/.state/seed.json` (`primaryUser`), never hardcoded here, because the seed owns them:
+**Signing in — load a storage state; do not drive the form.** The CLI drives its own browser, so it does not inherit the session from your Chrome. Reach for an
+existing state file **first**, in this order: `e2e/.state/auth-10001.json` (usually present), then `.playwright-cli/auth.json` if a previous session saved one.
+
+```
+playwright-cli open https://localhost:3000
+playwright-cli state-load e2e/.state/auth-10001.json
+playwright-cli reload
+playwright-cli eval "location.pathname"            # assert "/" — see SIGNED_OUT_ONLY_ROUTES below
+```
+
+If **neither** file exists, regenerate one by running a signed-in spec (`npm test --prefix e2e` writes `auth-10001.json` via `e2e/fixtures/auth.ts`) rather than
+filling the form by hand.
+
+> ⚠️ **The form path below is documented for completeness and currently CANNOT work locally.** `VITE_RECAPTCHA_SITE_KEY` is empty in `.env.development`, and
+> `LoginView.vue` awaits `executeRecaptcha('login')` *before* `API.post('/auth/login')`. Since 2026-09-13 `UseRecaptchaHandler` resolves to an empty token instead of
+> hanging, so the form now at least reaches the server — but the server still decides, so treat form sign-in as unreliable here. Before that fix the click produced
+> **no request, no console error and no validation message**, which reads as a bad locator and costs a long detour. If a click on *Log in* appears to do nothing,
+> this is why; check `VITE_RECAPTCHA_SITE_KEY` before hunting locators.
+
+Credentials come from `e2e/.state/seed.json` (`primaryUser`), never hardcoded here, because the seed owns them:
 
 ```
 playwright-cli open https://localhost:3000/login
@@ -405,9 +423,10 @@ That last step only works because of `SIGNED_OUT_ONLY_ROUTES` in `src/router.ts`
 `/forgotten-password`. Before that guard existed, the `reload` left you on `/login` while the top bar rendered the account chip and every `/api/*` call returned 200
 — i.e. signed in, but staring at the sign-in form. Assert `location.pathname` rather than trusting the header either way.
 
-**Do not rely on `e2e/.state/auth-10001.json`.** It is a by-product of `e2e/fixtures/auth.ts`, and `global-setup.ts` deletes the whole `.state/` directory on every
-seed — so it exists only between a signed-in spec and the next `npm run test:e2e`. It is a legitimate shortcut when it happens to be there, but its absence is normal
-and is not a bug to investigate.
+**`e2e/.state/auth-10001.json` is the preferred way in, but do not assume it is there.** It is a by-product of `e2e/fixtures/auth.ts`, and `global-setup.ts` deletes
+the whole `.state/` directory on every seed — so it exists only between a signed-in spec and the next `npm run test:e2e`. Its absence is normal and is not a bug to
+investigate; the fix is to run a signed-in spec to regenerate it, **not** to fall back to the login form (see the reCAPTCHA note above). Corrected 2026-09-13: this
+paragraph used to open *"Do not rely on"* and sent readers to a form path that cannot complete locally.
 
 **Expect a burst of 401s on the first load, and do not chase it.** The access token in the state file lives ~15 minutes, so any older state file loads, fails every
 request with 401, and then refreshes through the axios interceptor. The `reload` above is enough to clear it — after it the console is clean and every `/api/*` call
