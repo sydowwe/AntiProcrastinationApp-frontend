@@ -106,14 +106,14 @@ that owns each one must resolve which**, and record the answer in its inventory.
 - **`PomodoroTimerView` is routed from `component/`, not `view/`** (`src/core/activityHistory/component/PomodoroTimerView.vue`). Every other routed component lives in a `view/` directory. Structure oddity; not necessarily a defect.
 - **The framework's `TermsAndConditionsView.vue` is not routed by this app.** Expected orphan: the app routes its own `TermsView` because the framework's copy is placeholder text baked into the template rather than locale-driven. Documented in `src/core/user/user.routes.ts`. Do not re-report it.
 - **`/day-planner/:date` vs `/day-planner/templates`** — declared with `:date` first, but vue-router ranks static segments above params, so `/day-planner/templates` still wins. Not a bug; noted because the declaration order invites the opposite conclusion.
-- **`meta.requiredRole: 'admin'` is a no-op here.** Ten routes carry it (all of `reminders-admin` and `scheduler`). This app has no role model, so they are reachable by any signed-in user. "Is this correctly gated?" is not a question this app can answer — it exists so the framework modules stay unmodified.
+- **`meta.requiredRole: 'admin'` is a no-op *client-side*.** Ten routes carry it (all of `reminders-admin` and `scheduler`). This app has no role model, so the guard always passes and the views mount for any signed-in user — it exists so the framework modules stay unmodified. **The server is not a no-op, and the two disagree:** the five `reminders-admin` routes really do require Admin (confirmed 2026-09-13, `B4`), so an ordinary account mounts the view and then gets 403 on its data; the five `scheduler` routes are open to any signed-in user in this host. `GET /api/user/data` returns no `roles` field, so the client has nothing to route on — do not "fix" the adapter by guessing.
 - **`/activity-settings` is the only redirect** in the table.
 
 ## Coverage tracker
 
 | Unit | Routes | Inventory written? |
 | --- | --- | --- |
-| 1 `home` | 1 | ☐ |
+| 1 `home` | 1 | ☑ |
 | 2 `activity-settings` | 2 (incl. redirect; 3 tab values) | ☐ |
 | 3 `history-review` | 3 | ☐ |
 | 4 `history-capture` | 4 | ☐ |
@@ -121,8 +121,8 @@ that owns each one must resolve which**, and record the answer in its inventory.
 | 6 `tracking-settings` | 2 | ☐ |
 | 7 `planner-day` | 4 | ☐ |
 | 8 `planner-templates` | 3 | ☐ |
-| 9 `todo-lists` | 2 | ☐ |
-| 10 `todo-routine` | 2 | ☐ |
+| 9 `todo-lists` | 2 | ☑ |
+| 10 `todo-routine` | 2 | ☑ |
 | 11 `leisure-backlog-picker` | 2 | ☐ |
 | 12 `leisure-bucket-anchors` | 2 | ☐ |
 | 13 `leisure-projects` | 1 | ☐ |

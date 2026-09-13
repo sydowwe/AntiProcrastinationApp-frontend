@@ -11,6 +11,20 @@ unverified 3 (U1, U2, A2). B6 is open but halved — its undo-tooltip half was a
 B8 was filed retroactively during triage. See `docs/views/_fix-queue.md` for the reasoning behind every
 re-grade.
 
+**Tally (after round 3):** blocker 0 · **every app-side finding then filed was code-fixed** — B3, B4, B6, A1
+and P1 in this round; A2 and A3 confirmed already fixed in source. **None of round 3 is
+browser-verified**, so each one's `Verify:` block is outstanding, and B4/B6/P1 need the **SK** locale
+to check at all.
+
+**Tally (after round 4 — the API source read):** the two backend escalations are **settled**, and one of them
+produced a new app-side finding. B5 step 3 is answered — deleting a time period does **not** cascade, it is
+refused with a 409 — so the cascade question closes. The streak escalation is **corrected**: the compounding
+case it feared is explicitly guarded and tested; what is left is a bounded +1. New finding **B9** (open): that
+409 surfaces as "This record was changed by someone else", which is untrue and unactionable — **B9 is
+code-fixed in the same round**, and is the only finding here whose defect *and* fix are both unobserved.
+Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testing question in
+`_fix-queue.md`'s *Needs verification*.
+
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
@@ -19,6 +33,8 @@ re-grade.
 | 2 | 2026-09-10 | working tree | **fix pass** — B1, B2, B5, B7, B8 code-fixed (fix-queue batches F1, F3, F5, F6, F8). `npx vue-tsc --build --force` exit 0, `npm run lint` exit 0. B3/B4/B6 (F4, the i18n batch), P1 (F7) and A1/A2 (F2) untouched. **Not browser-verified** — this session had no browser; every `Verify:` block below is still outstanding. |
 | 2a | 2026-09-10 | 46e4b67e | **browser verification attempt blocked** — the group's open tab and a direct navigation to `/routine-todo-list` both bounced to `https://localhost:3000/login` (Slovak-locale login form, not the expected signed-in English session). Per this round's own instructions, stopped rather than signing in. No `Verify:` block for B1/B2/B5/B7/B8 was executed; no finding status changed below. |
 | 2b | 2026-09-10 | 46e4b67e | **browser verification, all five pass.** Session confirmed signed in as `999gangshit999@gmail.com`, EN locale, landed on `/routine-todo-list` with group cards (no `/login` bounce). **Environment note:** the account's data had been fully reset since the round-1/1a evidence was captured — `grouped-by-time-period` returned `items: []` for all four periods (no "Meditation", no "Meal Preparation", no "Laundry") and `/todo-list` showed "No lists" (list id 1 from earlier evidence 404s). This is a seed/DB reset, not a regression — the four time periods themselves (`Daily`/`Weekly`/`Monthly`/`Yearly`, same ids 1-4, same thresholds/colors) were intact. B7, B8, B5 don't depend on item data and were verified directly. B1 (the important one) and B2's structural check were verified by creating two temporary routine items ("Retest B1 Checkbox" single-count, "Retest B1 Counter" 0/2 multi-count) in the Daily group, exercising every step of the `Verify:` block, then deleting both afterward — board is back to "No tasks" in all four groups, no lasting drift. B2's second half (`/todo-list/1` cross-check) could not run — no normal-list data exists in this account to check. Console showed only the pre-existing B3 warning (`toDoList.timePeriod` not found), nothing new. All five findings pass; no regressions. |
+| 3 | 2026-09-13 | working tree | **fix pass** — fix-queue batches F4 (A1), F5 (B3, B4, B6), F6 (P1) and F7 (the unfiled `TodoListStepsFormField` controls) all code-fixed. New `routineTodoList.timePeriods.*` namespace in `todoList.{sk,en}.ts` (**not** `settings.*` — `settings` is already a leaf string in use, and vue-i18n cannot have it be both). The `${value}th` ordinal that rendered "1th" now goes through `Intl.PluralRules(…, 'ordinal')` against four locale forms; both hardcoded weekday arrays now come from the framework's `calendar.*` keys via the new `useAnchorDayOptions()`, and `RoutineTodoListItem`'s day chips from `useDayOfWeekOptions()`. A2 and A3 re-graded to *fixed, needs retest* against source. `npm run type-check` exit 0, `npm run lint` exit 0. **No browser verification** — this session had no dev server running. |
+| 4 | 2026-09-13 | working tree | **API source read**, in the backend repo `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer` — no running API, no browser, source and integration tests only. Settled both backend escalations that had been carried since round 1a. **B5 step 3: answered** — `RoutineTimePeriod → RoutineTodoList` is `DeleteBehavior.Restrict`, so a delete with items is refused with a clean 409 (test-covered); only `RoutinePeriodCompletion` cascades. CLAUDE.md's cascade rule therefore does not apply to this delete. **The streak escalation: corrected** — `UpdateItemStreak` increments once per *cycle*, not per toggle, guarded by `AlreadyCountedThisCycle` and pinned by two tests, so repeated clicking cannot compound; the irreversible part is a bounded +1. **New finding B9** — the 409 renders as the generic `httpErrors.conflict` string ("changed by someone else… refresh"), which is false and unactionable for a referential-integrity refusal — **and fixed in the same round**: `onDelete` now owns the 409 via `_silent`, names the period and its routine count (fetched only in the failure path), and falls back to `handleHttpCodes` for every other status. `npm run type-check` exit 0, `npm run lint` exit 0. Still no browser: B9's defect and its fix are both unobserved. |
 
 ---
 
@@ -141,7 +157,8 @@ re-grade.
   entry), so there is no normal list left in this account to confirm still shows its one summary unchanged.
 
 ### B3. Routine "Add" dialog's time-period field label renders as the raw key `toDoList.timePeriod`
-- **Status:** open
+- **Status:** code-fixed (round 3), not browser-verified — `RoutineToDoListForm.vue` now resolves
+  `routineTodoList.timePeriod`, the namespace the key actually lives in
 - **Severity:** bug
 - **Where:** `src/core/todoList/component/routine/dialog/RoutineToDoListForm.vue:28`
 - **Expected:** Every field label resolves to real text — CLAUDE.md's i18n rules, and the same class of defect
@@ -164,7 +181,8 @@ re-grade.
   `$t('routineTodoList.timePeriod')`.
 
 ### B4. `/routine-settings` and its create/edit dialog are entirely un-localized
-- **Status:** open
+- **Status:** code-fixed (round 3), not browser-verified — needs the **SK** check, since in EN the
+  fixed and the broken state look identical
 - **Severity:** bug
 - **Where:** `src/core/todoList/view/RoutineSettingsView.vue` (whole file) and
   `src/core/todoList/component/routine/dialog/TimePeriodForm.vue` (whole file) — zero `$t()` calls in either
@@ -235,15 +253,31 @@ re-grade.
   Clicked CANCEL (not Confirm); all 4 rows (Daily/Weekly/Monthly/Yearly) still present afterward, id/column data
   unchanged. The cascade-count half of the `Verify:` block remains unestablished, as already tracked as open in
   the "Still open" note below — this round did not touch it.
-- **Still open — the cascade half (`Verify:` step 3).** Whether deleting a time period cascades to the routine
-  items assigned to it is a server contract this pass never established, and CLAUDE.md requires a cascading
-  delete to state how many children go with it. Two consequences if it does cascade: `BasicTable`'s generic
-  dialog cannot express a count, and it bypasses `useDeleteConfirmation` entirely — making `/routine-settings`
-  a delete site outside the composable CLAUDE.md names as the sole owner of that decision. Escalated in
-  `docs/views/_fix-queue.md`.
+- **~~Still open — the cascade half (`Verify:` step 3).~~ ANSWERED 2026-09-13, from the API source. It does
+  not cascade: the delete is *refused*.** Read directly in the backend repo
+  (`C:\Users\jakub\RiderProjects\AdhdTimeOrganizer`), not inferred from the client:
+  - `RoutineTimePeriodConfiguration.cs:78-81` — `HasMany(r => r.RoutineTodoListColl) … .OnDelete(DeleteBehavior.Restrict)`.
+  - Only two entities carry a `TimePeriodId` FK. Routine items are **Restrict**; `RoutinePeriodCompletion`
+    (`RoutinePeriodCompletionConfiguration.cs`) is **Cascade** — so the only rows that die with a period are
+    its own completion-history records. **No user-authored routine is ever deleted by this.**
+  - `DeleteRoutineTimePeriodEndpoint` is a bare `BaseDeleteEndpoint<RoutineTimePeriod>`; the framework base
+    catches the Postgres FK violation and maps it `ForeignKeyViolation` → `DbForeignKeyError` → **409**
+    (`DatabaseExceptionUtils.cs:26`, `EndpointHelper.cs:14`). Not a 500.
+  - Pinned by an integration test: `TodoListDeleteBehaviorTests.DeleteRoutineTimePeriod_WithItems_Returns409`
+    — *"Deleting a RoutineTimePeriod that still has routine items is Restricted -- clean 409"*, asserting both
+    the period and the item survive.
+
+  **Consequences, both of which close the escalation rather than continue it:**
+  1. **CLAUDE.md's cascade-delete rule does not apply to this delete** — there is no cascade and therefore no
+     child count to state. `BasicTable`'s generic dialog not being able to express a count is moot here, as is
+     the `useDeleteConfirmation` bypass *on cascade grounds* (the bypass itself is still true, but it is a
+     plain delete with no cascading consequence, which is the case the preference already covers).
+  2. **What is left is a different, real defect** — the 409 renders a message that is untrue and unactionable.
+     Filed below as **B9**, which is the live half of what this step was worried about.
 
 ### B6. Hardcoded English tooltip text on the streak flame and the undo button
-- **Status:** open
+- **Status:** code-fixed (round 3), not browser-verified — the undo half was already fixed; the streak
+  half now resolves `routineTodoList.streakTooltip` / `.gracePeriodActive`
 - **Severity:** bug
 - **Where:** `src/core/todoList/component/routine/RoutineTodoListItem.vue:41-44` (streak tooltip: `Streak: {{
   }} | Best: {{ }}`, plus `| Grace period active!`) and `src/core/todoList/component/TodoListUndoBtn.vue:5`
@@ -343,8 +377,72 @@ re-grade.
   "Notifications & reminders", "Routine time periods & streaks" — real prose, not a raw key. Clicked it;
   navigated to `/routine-settings` (confirmed via `window.location.href`).
 
+### B9. Deleting a time period that still has routines fails with "This record was changed by someone else"
+- **Status:** code-fixed (round 4), **never observed in the browser — neither the defect nor the fix**.
+  Filed and fixed in the same pass from the API source read that closed B5 step 3 (see above); deleting a real
+  seeded period was avoided to keep the fixture intact. The chain below is established from both codebases,
+  not from a reproduction, which makes this the one finding in this file whose `Verify:` block has never been
+  run in either direction.
+- **Severity:** bug
+- **Where:** `/routine-settings` → delete (trash icon) on a period that has routine items assigned →
+  `RoutineSettingsView.vue`'s `onDelete` → `deleteEntity` → the axios interceptor's error handler
+  (`_common/composable/general/ErrorHandlingFunctions.ts:23`)
+- **Expected:** When a delete is refused because the row is still referenced, the message should say so and
+  name the way out. The user's next action is "move or delete the routines in this period first" — the client
+  can even say how many, since `/routine-todo-list/grouped-by-time-period` already gives it the per-period
+  counts it renders on the list screen.
+- **Actual:** The API answers **409** for exactly this case (by design — see B5 above), and `409` is mapped
+  wholesale to `httpErrors.conflict`, whose text is *"This record was changed by someone else. Refresh the
+  page and try again."* (`src/locales/common.en.ts:15`; the framework's own copy at
+  `_common/_locales/common.{sk,en}.ts:140/148` says the same thing). Both halves are false here: nobody else
+  changed anything, and refreshing will never make the delete succeed. The period stays in the table with no
+  indication of why, and the only way to discover the real reason is to guess it.
+- **Evidence:** API side — `RoutineTimePeriodConfiguration.cs:78-81` (`DeleteBehavior.Restrict`),
+  `DatabaseExceptionUtils.cs:26` (FK violation → `DbForeignKeyError`), `EndpointHelper.cs:14`
+  (`DbForeignKeyError` → 409), and the integration test
+  `TodoListDeleteBehaviorTests.DeleteRoutineTimePeriod_WithItems_Returns409` proving the status is reached and
+  both rows survive. Client side — `ErrorHandlingFunctions.ts:23-25` and the two `conflict:` strings.
+- **Repro:** 1. Go to `/routine-settings`. 2. Delete a period that still has routine items (the seed's
+  Daily/Weekly both qualify — **do this against a throwaway period you created, not a fixture row**).
+  3. Confirm. 4. Read the snackbar.
+- **Verify:** 1. Create a time period, assign one routine item to it. 2. Delete the period and confirm.
+  3. **Pass condition:** the snackbar names the real reason — that the period still holds N routines — and
+  does not say the record was changed by someone else or suggest refreshing. 4. The period is still listed
+  afterwards (the delete genuinely did not happen, and the UI must not optimistically drop the row).
+- **Root cause guess:** `409` has exactly one message across the whole app, and it is written for the
+  optimistic-concurrency case. This endpoint returns 409 for a referential-integrity refusal instead, so the
+  one generic string is wrong for it. The server does distinguish the two (`DbConcurrencyError` vs
+  `DbForeignKeyError`) — that distinction is just flattened to a bare status code by the time the client sees
+  it.
+- **Suggested fix:** Handle it at the call site rather than by rewording the global 409 string, which is
+  correct for the concurrency case it was written for: catch the 409 in `RoutineSettingsView.vue`'s
+  `onDelete`, pass `_silent: true` on the request config to suppress the interceptor's snackbar (the
+  mechanism CLAUDE.md documents for exactly this), and show a period-specific message with the routine count.
+  **Worth raising upstream but not blocking:** a framework that returned its `ResultErrorType` in the error
+  body would let every call site tell a concurrency 409 from a referential one without each one
+  special-casing its own endpoint — the information exists server-side and is discarded at the boundary.
+- **Fix applied (round 4):** Exactly the suggested shape, in `RoutineSettingsView.vue`'s `onDelete`:
+  - `deleteEntity(item.id, { _silent: true })`, so the interceptor's generic 409 never fires. The framework's
+    own doc comment on `_silent` (`_common/axiosConfig.ts:28-31`) names this case: *"when the caller wants to
+    own the messaging (a contextual 409/422, say), optionally falling back to `handleHttpCodes(status)` for
+    statuses it does not special-case."* That fallback is exactly what the `else` branch does, so **no other
+    status loses its message** by being silenced here — that was the risk of `_silent` and it is handled.
+  - The 409 branch shows `routineTodoList.timePeriods.deleteBlocked`, which names the period and the routine
+    count and says to move or delete them first. The count comes from `fetchGroupedByTimePeriod()`, fetched
+    **only in the failure path** — this screen makes no such request otherwise. If it fails, or returns no
+    group for the period, it degrades to `deleteBlockedUnknownCount` (same sentence, no number) rather than to
+    silence.
+  - The row is only removed from the table after the delete actually resolves, so a refused delete leaves the
+    period visible — matching the server, where nothing was deleted.
+  - Both messages are SK-primary with EN mirrors; SK carries the three plural forms its rule expects.
+- **Still to verify, and it matters more here than usual:** this finding was written and fixed without either
+  state being seen on screen. The `Verify:` block above is the whole of the evidence for it. Run it against a
+  period you created yourself.
+
 ### A1. Multi-count item counter (e.g. "0/2") has no accessible name
-- **Status:** open
+- **Status:** code-fixed (round 3), not browser-verified — both branches now carry a localized
+  `title` + `aria-label` naming the state and the action ("Increase: 2 of 5"). The separate
+  hit-testing question in `_fix-queue.md` is untouched and still open
 - **Severity:** a11y
 - **Where:** `/routine-todo-list`, "Laundry" (Weekly group) — `TodoListItemCounter.vue`, shared with the normal
   list.
@@ -365,7 +463,9 @@ re-grade.
 - **Suggested fix:** Add a localized `aria-label` to `TodoListItemCounter.vue`'s root button.
 
 ### A2. Steps-expand chevron has no accessible name
-- **Status:** open
+- **Status:** fixed, needs retest only (confirmed by source 2026-09-13) — `BaseTodoListItemSteps.vue:11-13`
+  carries `:title`, `:aria-label` **and** `:aria-expanded`, all localized. It landed silently with the
+  round-2 shared-component edit; this line was never updated. See `_fix-queue.md` Contradiction 2
 - **Severity:** a11y
 - **Where:** `/routine-todo-list`, any item with steps (e.g. "Meal Preparation", "Morning Exercise", "House
   Cleaning") — the chevron toggle in `BaseTodoListItem.vue`, shared with the normal list.
@@ -384,7 +484,10 @@ re-grade.
 - **Suggested fix:** Add a localized, state-dependent `aria-label` to the chevron in `BaseTodoListItem.vue`.
 
 ### A3. Undo button has no accessible name
-- **Status:** open
+- **Status:** fixed, needs retest only (confirmed by source 2026-09-13) — `TodoListUndoBtn.vue:12` binds
+  `:aria-label="label"`, a localized computed resolving `general.undo` + the next undo's description, or
+  `general.nothingToUndo` when disabled. That is this finding's own pass condition. The round-1a triage
+  already dropped it in the tally, but this `Status:` line was never updated to match
 - **Severity:** a11y
 - **Where:** `/routine-todo-list` top toolbar — `TodoListUndoBtn.vue`, shared with the normal list.
 - **Expected:** Same standard as A1/A2. The button does carry a `VTooltip` with real (if unlocalized, see B6)
@@ -405,7 +508,8 @@ re-grade.
   that text localized.
 
 ### P1. "Total count" label truncated to "Total co…" in the Add-routine-item dialog
-- **Status:** open
+- **Status:** code-fixed (round 3), not browser-verified — the fixed `:width`/`maxWidth` pair is gone;
+  the inputs now take a `minWidth` floor and grow with the row. Check in **both** locales
 - **Severity:** polish
 - **Where:** `/routine-todo-list` → Add dialog → toggle "Is repeated" → the revealed `VNumberInput` stepper.
 - **Expected:** A field's visible label should not clip under normal dialog width (610px dialog, plenty of
@@ -429,6 +533,35 @@ API read), but the streak/last-completed advance triggered by the accidental com
 through the UI — no endpoint or undo path exists for it (see B1's root cause: the undo stack is never
 populated by a done-toggle at all). Flagging this explicitly rather than silently leaving it: a later pass
 using this same seed should expect Meditation's streak to read 6, not 5.
+
+### What the server actually does — corrected 2026-09-13 against the API source
+
+This note was escalated in `_fix-queue.md` as *"a done-toggle advances `streak`/`lastCompletedAt`
+irreversibly… an accidental checkbox click permanently inflates a streak."* Read against
+`AdhdTimeOrganizer.Routines`, **that overstates it, and the worst case it implies is explicitly guarded
+against.** What is true:
+
+- **The increment is once per *cycle*, not once per toggle.** `RoutineResetService.UpdateItemStreak` calls
+  `AlreadyCountedThisCycle(item)` and returns before touching `Streak`/`BestStreak` if the item has already
+  scored in the current cycle. Its own doc comment names the exact fear: *"un-ticking and re-ticking an item,
+  or re-sending `ForceValue = true` at an already-complete counted item … must not walk `Streak` and
+  `BestStreak` up. Only a reset opens the item up to being counted again."* Two tests pin it —
+  `UpdateItemStreak_CalledTwiceInTheSameCycle_IncrementsOnlyOnce` and its control
+  `UpdateItemStreak_AfterANewCycle_IncrementsAgain`. **So repeated clicking cannot compound.**
+- **One accidental tick in a fresh cycle does still cost +1, permanently.** `Streak++` (and `BestStreak` if it
+  is a new record), and un-ticking does not give it back — `UpdateItemStreak` returns immediately when
+  `!item.IsDone`, so there is no decrement path anywhere. That is the real, and only, irreversible part.
+- **`LastCompletedAt` moving on every completing toggle is deliberate**, not a leak: *"it means 'last
+  completed', not 'last scored'."*
+- **The period-level streak is unaffected if the tick is undone before the period rolls over.** It is
+  evaluated at reset time from live state — `completedCount = items.Count(i => i.IsDone)` against
+  `period.StreakThreshold` (`RoutineResetService`, the `TryReset` path) — not accumulated per toggle. So that
+  half is self-correcting.
+
+**Net: an accidental click costs exactly one point on one item's streak, once, with no period-level
+consequence.** That is a design question ("should un-ticking inside the same cycle decrement?"), not the
+open-ended data-integrity escalation it was filed as. The seed-drift note above still stands as written —
+Meditation reads 6 — since +1 is precisely what happened.
 
 ### U1. Weekly review card (R2) not reached — seed has zero elapsed periods
 - **Status:** open

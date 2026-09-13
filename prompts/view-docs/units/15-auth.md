@@ -53,6 +53,21 @@ Known for this unit — verify each, do not assume:
 - F4: the registration terms checkbox links to /legal/terms and /legal/privacy by route
   NAME, handed to the framework via installFramework({ legalRoutes }) in main.ts. Confirm
   both links resolve — a rename breaks them silently while a path change does not.
+- THREE HARDCODED ENGLISH STRINGS ARE ALREADY KNOWN HERE, found 2026-09-13 by a static
+  sweep, not in the browser. Confirm each renders and file them properly ([framework], with
+  the SK evidence) rather than re-discovering them:
+    `LoginView.vue:158`             showErrorSnackbar('No user!!!')
+    `ForgottenPasswordView.vue:71`  showErrorSnackbar('Email not found')
+    `ConfirmEmailView.vue:69`       showErrorSnackbar('Error')
+  "No user!!!" is a developer placeholder shown to real users — worth saying plainly what it
+  looks like, and what it SHOULD say is a product decision, not a translation.
+- SEPARATE, AND BIGGER THAN IT LOOKS: `LoginView.vue:165-176` branches on English server
+  text — `.includes('Invalid email or password')`, `'Too many failed login attempts'`,
+  `'User locked out for'`, `'Email not confirmed'`. That is the client matching prose it
+  does not own. Check what the server actually sends now (the real strings, from the
+  response body of a failed login), and whether every branch still hits. A backend that
+  localized or reworded any of those messages would silently drop the user into the generic
+  error path with nothing in the console to say why.
 - ConfirmEmailView and ConfirmEmailChangeView need a token from a real e-mail. If you
   cannot obtain one, visit them without a token, document what they do with that, and
   record the happy path as unverified. Do not invent a token and document the error state
