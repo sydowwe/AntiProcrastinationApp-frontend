@@ -22,6 +22,7 @@
 		PeriodCompletion,
 		RoutineTimePeriodEntity,
 	} from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
+	import { useRoutineDateFormat } from '@/core/todoList/composable/useRoutineDateFormat.ts'
 
 	const { timePeriod } = defineProps<{
 		timePeriod: RoutineTimePeriodEntity
@@ -30,6 +31,7 @@
 	use([HeatmapChart, CalendarComponent, TooltipComponent, VisualMapComponent, CanvasRenderer])
 
 	const { t } = useI18n()
+	const { periodLabel } = useRoutineDateFormat()
 
 	const periodByDay = computed(() => {
 		const map = new Map<string, PeriodCompletion>()
@@ -68,7 +70,8 @@
 
 	function getThemeColor(varName: string): string {
 		const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
-		if (raw && raw.includes(' ')) {
+		// Vuetify stores theme colours as bare channels (`5,150,105`), which is not a colour on its own.
+		if (raw && /^\d+\s*,\s*\d+\s*,\s*\d+$/.test(raw)) {
 			return `rgb(${raw})`
 		}
 		return raw || '#888888'
@@ -87,7 +90,7 @@
 					const dateStr: string = params.data[0]
 					const p = periodByDay.value.get(dateStr)
 					if (!p) return dateStr
-					const label = `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
+					const label = periodLabel(p.periodStart, p.periodEnd, timePeriod.lengthInDays)
 					if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
 					if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 					if (p.completedCount / p.totalCount >= 1) return t('routineTodoList.heatmapAllDone', { label })
@@ -98,16 +101,29 @@
 					})
 				},
 			},
-			visualMap: {
-				show: false,
-				min: 0,
-				max: 1,
-				// Series 0 only — the frozen series carries its own fixed colour.
-				seriesIndex: 0,
-				inRange: {
-					color: [neutralColor, successColor],
+			// Every heatmap series must be bound to a visual map or ECharts throws
+			// ("Heatmap must use with visualMap") and paints nothing — the frozen series gets a
+			// fixed-colour one so its `itemStyle` below stays the only thing deciding how it looks.
+			visualMap: [
+				{
+					show: false,
+					min: 0,
+					max: 1,
+					seriesIndex: 0,
+					inRange: {
+						color: [neutralColor, successColor],
+					},
 				},
-			},
+				{
+					show: false,
+					min: 0,
+					max: 1,
+					seriesIndex: 1,
+					inRange: {
+						color: [infoColor, infoColor],
+					},
+				},
+			],
 			calendar: {
 				top: 30,
 				left: 40,
@@ -157,9 +173,5 @@
 		const m = String(d.getMonth() + 1).padStart(2, '0')
 		const day = String(d.getDate()).padStart(2, '0')
 		return `${y}-${m}-${day}`
-	}
-
-	function formatDate(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 	}
 </script>

@@ -238,7 +238,7 @@ const todoList = {
 			remaining: `zostáva {count} vynechanie | zostávajú {count} vynechania | zostáva {count} vynechaní`,
 			unit: `{count} vynechanie | {count} vynechania | {count} vynechaní`,
 			remainingTooltip: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie.`,
-			remainingTooltipWithReset: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie, obnoví sa {date}.`,
+			remainingTooltipWithReset: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie, obnoví sa {date}`,
 			coverMiss: `Pokryť zmeškané`,
 			confirmTitle: `Použiť vynechanie?`,
 			confirmText: `Pokryť {date} vynechaním a udržať sériu. Potom ti zostane {remaining}.`,

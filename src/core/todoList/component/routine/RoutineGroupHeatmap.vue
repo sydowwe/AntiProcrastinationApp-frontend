@@ -26,6 +26,7 @@
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { PeriodCompletion } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
+	import { useRoutineDateFormat } from '@/core/todoList/composable/useRoutineDateFormat.ts'
 
 	const {
 		history,
@@ -40,6 +41,7 @@
 	const emit = defineEmits<{ click: [] }>()
 
 	const { t } = useI18n()
+	const { periodLabel } = useRoutineDateFormat()
 
 	const CELL_SIZE = 13
 	const GAP = 4
@@ -116,13 +118,8 @@
 		return 'cell-level-4'
 	}
 
-	function formatDate(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-	}
-
 	function tooltipText(p: PeriodCompletion): string {
-		const label =
-			lengthInDays === 1 ? formatDate(p.periodStart) : `${formatDate(p.periodStart)} – ${formatDate(p.periodEnd)}`
+		const label = periodLabel(p.periodStart, p.periodEnd, lengthInDays)
 		if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
 		if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 		const ratio = p.completedCount / p.totalCount

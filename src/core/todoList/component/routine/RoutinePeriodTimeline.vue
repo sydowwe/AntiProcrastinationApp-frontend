@@ -39,11 +39,13 @@
 	import { useI18n } from 'vue-i18n'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
+	import { useRoutineDateFormat } from '@/core/todoList/composable/useRoutineDateFormat.ts'
 
 	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity; color?: string }>()
 
 	const { getBgColor } = useColor()
 	const { t } = useI18n()
+	const { shortDate, shortWeekday, shortMonth } = useRoutineDateFormat()
 
 	interface TimelineSegment {
 		fill: number
@@ -53,7 +55,7 @@
 
 	const resetDateLabel = computed(() => {
 		if (!timePeriod.nextResetAt) return ''
-		return new Date(timePeriod.nextResetAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+		return shortDate(timePeriod.nextResetAt)
 	})
 
 	function roundHalf(value: number): number {
@@ -112,13 +114,15 @@
 						? 0
 						: Math.round(((now - slotStart) / (slotEnd - slotStart)) * 100)
 
+			// The formatter reads `locale` on every call, which is what keeps this computed tracking a
+			// locale switch — nothing else in its body is i18n-reactive.
 			const labelDate = new Date(slotStart)
 			const label =
 				mode === 'day'
-					? labelDate.toLocaleDateString(undefined, { weekday: 'short' })
+					? shortWeekday(labelDate)
 					: mode === 'week'
-						? labelDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-						: labelDate.toLocaleDateString(undefined, { month: 'short' })
+						? shortDate(labelDate)
+						: shortMonth(labelDate)
 
 			return { fill, label, showLabel: skipEvery === 1 || i % skipEvery === 0 }
 		})

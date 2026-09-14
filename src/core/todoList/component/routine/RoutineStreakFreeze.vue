@@ -46,6 +46,7 @@
 	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useStreakFreeze } from '@/core/todoList/composable/useStreakFreeze.ts'
+	import { useRoutineDateFormat } from '@/core/todoList/composable/useRoutineDateFormat.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 
 	const { timePeriod } = defineProps<{ timePeriod: RoutineTimePeriodEntity }>()
@@ -54,6 +55,7 @@
 
 	const { t } = useI18n()
 	const { coverableMiss, requestFreeze } = useStreakFreeze()
+	const { shortDate } = useRoutineDateFormat()
 
 	const isSpending = ref(false)
 
@@ -66,10 +68,7 @@
 		if (timePeriod.freezeBudgetResetsAt) {
 			return t('routineTodoList.freeze.remainingTooltipWithReset', {
 				budget: timePeriod.freezeBudget ?? remaining.value,
-				date: new Date(timePeriod.freezeBudgetResetsAt).toLocaleDateString(undefined, {
-					month: 'short',
-					day: 'numeric',
-				}),
+				date: shortDate(timePeriod.freezeBudgetResetsAt),
 			})
 		}
 		return t('routineTodoList.freeze.remainingTooltip', { budget: timePeriod.freezeBudget ?? remaining.value })

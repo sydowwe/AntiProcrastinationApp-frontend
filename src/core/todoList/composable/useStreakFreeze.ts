@@ -2,6 +2,7 @@ import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useDialog } from '@/_common/composable/general/useDialog.ts'
 import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
+import { useRoutineDateFormat } from '@/core/todoList/composable/useRoutineDateFormat.ts'
 import type {
 	PeriodCompletion,
 	RoutineTimePeriodEntity,
@@ -22,6 +23,7 @@ export function useStreakFreeze() {
 	const { confirm } = useDialog()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { spendStreakFreeze } = useRoutineTodoListItemCrud()
+	const { periodLabel } = useRoutineDateFormat()
 
 	/**
 	 * A period counts as missed when it fell short of the group's completion threshold.
@@ -77,13 +79,8 @@ export function useStreakFreeze() {
 	}
 
 	function formatPeriodLabel(period: PeriodCompletion, lengthInDays: number): string {
-		const start = formatDate(period.periodStart)
-		return lengthInDays === 1 ? start : `${start} – ${formatDate(period.periodEnd)}`
+		return periodLabel(period.periodStart, period.periodEnd, lengthInDays)
 	}
 
 	return { isMissedPeriod, coverableMiss, requestFreeze, formatPeriodLabel }
-}
-
-function formatDate(iso: string): string {
-	return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }

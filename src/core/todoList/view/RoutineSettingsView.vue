@@ -100,7 +100,7 @@
 	// Computed, not a plain array: the headers have to follow a locale switch, and a `TableColumn[]`
 	// built at setup time would freeze whichever locale happened to be active then.
 	const columns = computed<TableColumn[]>(() => [
-		new TableColumn('color', '', false),
+		new TableColumn('color', t('routineTodoList.timePeriods.color'), false),
 		new TableColumn('text', t('routineTodoList.timePeriods.name')),
 		new TableColumn('lengthInDays', t('routineTodoList.timePeriods.lengthColumn')),
 		new TableColumn('resetAnchorDay', t('routineTodoList.timePeriods.resetAnchorColumn'), false),
