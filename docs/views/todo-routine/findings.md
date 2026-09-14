@@ -421,8 +421,18 @@ moved; B9, B10 and P1's SK half remain where round 5 left them.
   navigated to `/routine-settings` (confirmed via `window.location.href`).
 
 ### B9. Deleting a time period that still has routines fails with "This record was changed by someone else"
-- **Status:** code-fixed (round 4), **never observed in the browser — neither the defect nor the fix**.
-  Filed and fixed in the same pass from the API source read that closed B5 step 3 (see above); deleting a real
+- **Status:** ✅ **fixed and verified (round 7, 2026-09-14, live)** — with exclusive access to the account this
+  time. Setup through the app's own API: an 11-day period ("RT eleven", id 17 — a length the unique index
+  accepts) with one routine item in it. Trash icon → the dialog reads *"Are you sure you want to delete RT
+  eleven?"* (B5 holds) → **Confirm** → `DELETE /api/routine-time-period/17` → **409**, snackbar *"Can't delete
+  "RT eleven" — 1 routine is still assigned to it. Move or delete it first."*, row still listed, then
+  `GET …/grouped-by-time-period` (the count fetch, failure path only). No "changed by someone else" text.
+  Deleting the item and confirming again → **204**, row gone. Both throwaway rows are deleted; the fixture's
+  four periods are untouched. **Looking at the dialog rather than the toast, as the queue asked: it stays open
+  after Confirm on both the 409 and the 204 path, Confirm disabled** — that is the `BasicTable` framework
+  defect (`_fix-queue.md`, "delete-confirm dialog never closes"), now observed for the first time, and is
+  unrelated to B9's own fix.
+  *(Round 4 note kept below.)* Filed and fixed in the same pass from the API source read that closed B5 step 3 (see above); deleting a real
   seeded period was avoided to keep the fixture intact. The chain below is established from both codebases,
   not from a reproduction, which makes this the one finding in this file whose `Verify:` block has never been
   run in either direction.
@@ -617,7 +627,12 @@ moved; B9, B10 and P1's SK half remain where round 5 left them.
 - **Suggested fix:** Add a localized `aria-label` to `TodoListItemCounter.vue`'s root button.
 
 ### A2. Steps-expand chevron has no accessible name
-- **Status:** fixed, confirmed by source only (round 5) — `BaseTodoListItemSteps.vue:11-13` still carries
+- **Status:** ✅ **fixed and verified (round 7, 2026-09-14, live)** — a temporary Daily item with two steps
+  (created and deleted through the API): the chevron exposes `aria-label="Hide: Steps"` /
+  `aria-expanded="true"`, and after a click `"Show: Steps"` / `"false"` with the step list gone from the DOM.
+  The unfiled `TodoListStepsFormField` sweep ran in the same session: Add dialog with two steps typed, every
+  control named and position-qualified (*Move step 1 up/down*, *Delete step 1*, … *Add step*), **0 unnamed**
+  of the dialog's buttons. Previous status: fixed, confirmed by source only (round 5) — `BaseTodoListItemSteps.vue:11-13` still carries
   `:title`, `:aria-label` **and** `:aria-expanded`, all localized (re-read this round, unchanged). **Not
   driven live this round** — the fresh `e2e-v3` seed's routine items (Take Medication, Weekly Review, Pay
   Rent) have no steps, so there was no stepped item on `/routine-todo-list` to hover/inspect without first
@@ -669,7 +684,10 @@ moved; B9, B10 and P1's SK half remain where round 5 left them.
   "Undo: <description>" enabled-state wording was not re-driven but is the same computed property).
 
 ### P1. "Total count" label truncated to "Total co…" in the Add-routine-item dialog
-- **Status:** fixed and verified in EN (round 5); **SK not completed this round** — the fixed
+- **Status:** ✅ **fixed and verified in both locales** — SK completed round 7 (2026-09-14): account set to
+  Slovak, Add dialog, *Opakovaná* on → the *Celkový počet* label renders in full, `scrollWidth 101 ===
+  clientWidth 101` inside a 377 px field (`screenshots/routine-todo-list--round7-sk-total-count.png`).
+  Round-5 note: fixed and verified in EN; SK not completed that round — the fixed
   `:width`/`maxWidth` pair is gone, the inputs now take a `minWidth` floor and grow with the row
 - **Severity:** polish
 - **Where:** `/routine-todo-list` → Add dialog → toggle "Is repeated" → the revealed `VNumberInput` stepper.
