@@ -2,8 +2,9 @@
 
 > Pass: inventory · captured 2026-09-09 · commit `acd7db0d`
 
-**Tally:** blocker 0 · bug 4 (2 fixed + verified, 2 open — B3, B4) · a11y 2 (both fixed + verified) · polish 1
-(fixed + verified) · opportunity 1 · unverified 2 (U1, U3) · settled 1 (U2 → see B3)
+**Tally:** blocker 0 · bug 6 (all fixed + verified — B5 and B6 filed and fixed in round 5) · a11y 2 (both fixed +
+verified) · polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
+verified) · settled 1 (U2 → see B3). **No open items.**
 
 ## Round history
 | round | date | commit | what changed |
@@ -13,6 +14,8 @@
 | 2 | 2026-09-10 | working tree | **fix pass** — B1, B2, A1, A2, P1 code-fixed. `npm run type-check` 0 errors, `npm run lint` 0 errors. O1/U1/U2/U3 untouched (seed-data / mutation-pass work, not code). |
 | 2a | 2026-09-10 | working tree | **browser verification** on `https://localhost:3000`, EN locale, signed in. All five `Verify:` blocks executed — see each finding's *Verified* line. Two follow-ups came out of it: a layout fix to B1's new alert, and **five more nameless icon controls on `/todo-list/:id`** that A1's `/todo-list`-scoped sweep never covered (recorded under A1). |
 | 3 | 2026-09-10 | working tree | **e2e seed-backed pass** (`POST /api/test/seed` now works). Drove the "Focus" (13001) and "Errands" (13002) lists via `playwright-cli` to write Task-3 specs. U1 confirmed working (6 overdue items trip the banner, message and buttons render correctly) but its "Today" action itself is broken — filed as **B4**, a framework-level `Time.fromJson` contract bug that fails every reschedule touching an item with a due time. U2 settled — the click is not dead — but that surfaced **B3**, a new bug: the same click also opens the log-time dialog. O1/U3 still not verifiable: the seed's `withEstimate`/`withEstimateAndSteps` items (ids 14002/14001) return no `suggestedTime` in `GET /api/todo-list-item`, despite being named for it and counted in the seed response's `calibrationTodoListItems: 6` — a fixture/backend gap, reported rather than fixed here. |
+| 4 | 2026-09-12 | working tree | `e2e-v2` fixture delivers `suggestedTime` — O1 resolved, U3 verified, calibration specs written. |
+| 5 | 2026-09-13 | working tree | **close-out pass** — every remaining item retested in the browser (SK and EN, `playwright-cli` against `e2e-v3`). **B4 had already been fixed on the API side** (`dueTime` became `{hours, minutes}` on 2026-09-11, backend commit `6395cee`); `Time.fromJson` was made tolerant of both shapes anyway and the two B4 `fixme`s are real specs now. **B3 was not "fixed silently"** as `_fix-queue.md` had it — the round-2 edit moved the `itemClicked` emit *above* the multi-count branch, so a row-body click on a counted item both stepped the counter and opened the dialog; fixed for real this round. Two new bugs surfaced while retesting the counter and are fixed: **B5** (counter steps were never persisted) and **B6** (a dwelling mouse could only decrement, and neither action was keyboard-reachable). U1 superseded by B4. `_shell/P1` (the breadcrumb) fixed from this side. Type-check 0, lint 0, `todo-lists.spec.ts` + `todo-motivation.spec.ts` green. |
 
 ---
 
@@ -236,7 +239,19 @@
   back. `sort` was not in play (list was in `custom`), consistent with the exclusion above.
 
 ### B3. Multi-count counter click also opens the manual log-time dialog
-- **Status:** open
+- **Status:** fixed and verified (round 5, 2026-09-13)
+- **Fix applied (round 5):** `_fix-queue.md` had this down as "fixed silently" because the counter's own
+  `@increment`/`@minus` bypass `itemClicked`. That was only half of it: `itemClicked()` still emitted
+  **before** the `isMultipleCount` branch and then called `progressClicked()`, so a click on the row body
+  of a counted item both stepped the counter and opened the dialog — which is exactly the repro below
+  ("click anywhere on the row"). The pre-round-2 code had the branch *above* the emit; the round-2 edit
+  inverted it. Resolved the other way round rather than restoring it: the row body is now **only** the
+  log-time gesture, for counted items as for every other row, and the counter is stepped only through its
+  own two buttons (see B6). `BaseTodoListItem.vue`'s `itemClicked()` returns after the emit for counted items.
+- **Verified (round 5):** on `/todo-list/13001`, clicking the "Deep Clean Kitchen" title opens "Log time
+  manually" and the counter stays at 2/5; clicking the bar goes 2/5 → 3/5 with no dialog. Pinned by
+  `todo-motivation.spec.ts` › "clicking the row body opens the log-time dialog and leaves the counter alone"
+  and "the bar increments after a dwelling hover, without opening the log-time dialog".
 - **Severity:** bug
 - **Where:** `/todo-list/:id` — `src/core/todoList/component/BaseTodoListItem.vue`'s `itemClicked()` (around
   line 311), which backs the `TodoListItemCounter`'s row for multi-count items
@@ -264,7 +279,19 @@
   see U2 for the correction.
 
 ### B4. Overdue renegotiation ("Today" / "In a week") always fails for any item with a due time — `Time.fromJson` cannot parse the backend's string shape
-- **Status:** open
+- **Status:** fixed and verified (round 5, 2026-09-13)
+- **What actually closed it:** the **API**, on 2026-09-11 — `TodoListItemResponse.DueTime` and both request
+  DTOs became `TimeDto` (`{hours, minutes}`), backend commit `6395cee` "stop two fields lying to the
+  client". Re-read from the wire this round: `GET /api/todo-list-item?todoListId=13002` returns
+  `"dueTime":{"hours":17,"minutes":0}`. So `_fix-queue.md`'s "re-verified unchanged and still live" was true
+  of the frontend file and false of the defect — the contract the finding documented no longer exists.
+  `Time.fromJson` (`src/_common/dto/dto/Time.ts`) was still made to accept the `"HH:MM[:SS]"` string by
+  delegating to `Time.fromString()`, so the framework's DTO reads either shape — a cheap, generic guard for
+  any other API in the family that serializes a bare `TimeOnly`. Submodule commit + pointer bump.
+- **Verified (round 5):** "Today" on the Errands banner → 6× `PUT /api/todo-list-item/*` → 200, request
+  body carries `"dueTime":{"hours":17,"minutes":0}`, snackbar "6 úloh presunutých na dnes", and after a
+  reload every item reads "Dnes 17:00" — time of day preserved, banner gone. Both former `fixme`s in
+  `todo-motivation.spec.ts` are real tests now ("Today" and "In a week"), each asserting the 17:00 survives.
 - **Severity:** bug (high — silently breaks the entire bulk-reschedule feature, not just this banner)
 - **Where:** `src/_common/dto/dto/Time.ts`'s `Time.fromJson()`, consumed by
   `TodoListItemEntity.fromJson` (`dueTime` field) and round-tripped by
@@ -314,6 +341,52 @@
   `fromJson`. This is a framework file (`src/_common`) — per `CLAUDE.md`'s submodule rules, fix it there first,
   then bump the pointer.
 
+### B5. Counter steps were never persisted — only the step that flipped `isDone` reached the server
+- **Status:** fixed and verified (round 5, 2026-09-13) — found while retesting B3
+- **Severity:** bug (high — a counted item's progress was lost on every reload)
+- **Where:** `src/core/todoList/component/BaseTodoListItem.vue` — `progressClicked()` / `minusClicked()`
+- **Expected:** Stepping a 2/5 counter to 3/5 and reloading shows 3/5.
+- **Actual:** It showed 2/5. Both handlers changed the local `doneCount` ref and emitted `isDoneChanged`
+  **only when `isDone` flipped** — so 2 → 3 → 4 fired no request at all, and only the 4 → 5 step did.
+- **Evidence:** round-5 browser pass — `Decrease` from 2/5 to 1/5 produced no `PATCH`; reload read 2/5.
+  Confirmed by reading the handlers, and by reading the API: `BaseToggleIsDoneTodoListEndpoint.IsDoneLogic`
+  treats `toggle-is-done` with `forceValue: true` as **+1** and `forceValue: false` as **−1** for an item
+  with a `TotalCount`, clamping and flipping `IsDone` at the ends. The endpoint was built for per-step
+  reporting; the client just wasn't doing it.
+- **Fix applied:** both handlers now emit on every step (`true` for +1, `false` for −1); the local change
+  stays as the optimistic half and the view's per-item resync after the call brings back the server's
+  count. The two home widgets (`TodoListWidget`, `RoutineTodoWidget`) route a counted item's step through
+  the API and then `refreshNow()` instead of their optimistic `item.isDone = forceValue ?? !previous`, which
+  would have shown a 1/5 item as done on its first increment.
+- **Verified (round 5):** `PATCH /todo-list-item/toggle-is-done {"ids":[14013],"forceValue":true}` → 204,
+  `GET /todo-list-item/14013` resync, reload reads 3/5; `forceValue:false` → 204, 2/5. Pinned by
+  `todo-motivation.spec.ts` › "an increment survives a reload" (waits on the resync before reloading —
+  the optimistic 3 says nothing about the write).
+
+### B6. A real mouse could only ever *decrement* the counter, and neither action was keyboard-reachable
+- **Status:** fixed and verified (round 5, 2026-09-13) — the "counter hit-testing" item in `_fix-queue.md`,
+  confirmed and closed
+- **Severity:** bug + a11y
+- **Where:** `src/core/todoList/component/TodoListItemCounter.vue`
+- **Expected:** Clicking the bar increments; some visible control decrements; both work from the keyboard.
+- **Actual:** The component was a `VHover` that rendered the minus button **instead of** the bar while
+  hovered. A mouse dwells before it clicks, so by the time the click landed the bar was gone and the minus
+  button was under the pointer: 2/5 → 1/5. Playwright's synthesised move+click landed before Vue's
+  re-render, which is why round 3 recorded an increment and the queue filed a "contradiction". The
+  round-3 a11y label sat on the `VProgressLinear` — a `progressbar`, not focusable, not a button — so
+  `Tab` reached neither action.
+- **Evidence:** `playwright-cli hover` → 600 ms → `click` on the 2/5 bar: the snapshot showed
+  `button "Znížiť: 2 z 5"` under the pointer and the click produced **1/5**.
+- **Fix applied:** two always-present controls, no hover swap — the bar is a native `<button>` (focusable,
+  Enter/Space) wrapping the progress bar, named "Increase: N of M"; a small text-variant `VIconBtn` under
+  it, "Decrease: N of M", disabled at 0; the bar is disabled once done. The container stops click
+  propagation so neither reaches the row's log-time gesture (B3).
+- **Verified (round 5):** hover-dwell-click → 3/5; minus → 2/5; `focus()` + Enter → +1, Space on the minus →
+  −1; screen-reader names correct in SK and EN. Pinned by `todo-motivation.spec.ts` › "the bar increments
+  after a dwelling hover…", "the minus button decrements" and "both counter buttons are reachable and
+  operable by keyboard". Caveat noted in `_fix-queue.md` for `todo-routine/A1` is discharged by the same
+  change — the routine list renders the same component.
+
 ### O1. Estimate-vs-actual calibration is fully built but has no seed data to demonstrate it
 - **Status:** resolved (round 4, 2026-09-12) — the `e2e-v2` fixture delivers it and both surfaces now have
   passing specs
@@ -344,7 +417,10 @@
   a result.
 
 ### U1. Overdue-renegotiation banner and bulk-reschedule / one-by-one review flow not exercised
-- **Status:** open
+- **Status:** settled (round 5) — superseded by B4. The round-3 note already answered the structural question
+  (6 seeded overdue items trip the banner, all three actions render); the only failing part was the
+  reschedule itself, which was B4 and is fixed. The whole flow is now pinned by the four tests in
+  `todo-motivation.spec.ts`'s *Overdue renegotiation banner* block.
 - **Severity:** unverified
 - **Where:** `/todo-list/:id` — `OverdueRenegotiateBanner.vue` / `useOverdueRenegotiation.ts`
 - **What would verify it:** The "Default" list's seed data has zero overdue items (confirmed via the "Past due"

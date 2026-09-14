@@ -210,7 +210,13 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** Add a skip link as the first focusable element in `App.vue` or the framework's top-level layout.
 
 ### P1. Breadcrumb does not distinguish a list-detail route from its parent list route
-- **Status:** open
+- **Status:** fixed and verified (2026-09-13, from the `todo-lists` side — `_fix-queue.md` F11)
+- **Fix applied:** `TodoListView.vue` calls the framework's `useSetBreadcrumbExtra()` and pushes the fetched
+  list's name once `listEntity` resolves — no route-meta mechanism, no framework change. Before the fetch
+  resolves, and for an id that names no list, it pushes nothing.
+- **Verified:** `/todo-list/13001` renders `Home › To-do list › Focus` with "To-do list" a working link to
+  `/todo-list`; `/todo-list/999999` renders `Home › To-do list` (no raw id, no empty crumb); navigating
+  back to `/todo-list` clears the extra segment.
 - **Severity:** polish
 - **Where:** `AppBreadcrumbs` (framework) rendering `/todo-list` and `/todo-list/1` (and presumably `/todo-list/999999`) identically as "Home › To-do list"
 - **Expected:** Plain user sense — a breadcrumb's job is to show where you are; a param route ought to add a segment (even just the record's name) so it's visually distinguishable from its list page.
@@ -220,6 +226,22 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Verify:** 1. Visit `/todo-list`, note the breadcrumb. 2. Visit `/todo-list/1`. 3. **Pass condition:** the second breadcrumb carries an additional segment identifying the specific list, and the "To-do list" segment is now a working link back to `/todo-list`. 4. Confirm no raw id or i18n key leaks into the new segment.
 - **Note:** this is a shell-rendered control but the fix likely belongs to whichever unit owns the route meta. Deferred to `todo-lists` at discovery time.
 - **Suggested fix:** Route meta could supply a dynamic breadcrumb label (e.g. the list's name) for `:id` routes; a decision for whichever unit owns `todo-lists`, not this shell pass.
+
+### P2. The current-page breadcrumb is invisible in the light theme — on every route
+- **Status:** fixed and verified (2026-09-13, framework — found while verifying P1's fix)
+- **Severity:** polish (it is the *current page's* crumb, so in the light theme every page read as one crumb short —
+  `/todo-list` showed just `Home ›`)
+- **Where:** `src/_common/nav/AppBreadcrumbs.vue` (framework)
+- **Actual:** The last segment is `disabled` (meaning "not a link"), and the title slot painted it
+  `rgb(var(--v-theme-on-surface))` — dark in the light theme — on an app bar this app colours
+  `secondary-container`, which is dark in **both** themes. The `opacity: 1` on the span could not undo Vuetify's
+  `0.38` on the disabled `li` either, so even in the dark theme the current crumb was the faintest one.
+- **Evidence:** `getComputedStyle` on the disabled crumb's span at `/todo-list`, light theme: `rgb(31, 41, 55)`
+  on the dark bar; `li` opacity `0.38`. Clipped screenshot of `.v-breadcrumbs` shows `Home ›` and nothing after.
+- **Fix applied:** the title inherits the bar's own text colour (no explicit colour), and a scoped `:deep` rule sets
+  the disabled `li` to `opacity: 1` — the current crumb is now the bold one, links medium, both in the bar's colour.
+  Generic: no host-specific colour assumption remains. Submodule commit + pointer bump.
+- **Verified:** `Home › To-do list › Focus` legible in light and dark, `/todo-list` shows `Home › To-do list`.
 
 ### U1. Snackbar stacking behaviour not verified
 - **Status:** open

@@ -25,6 +25,16 @@ code-fixed in the same round**, and is the only finding here whose defect *and* 
 Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testing question in
 `_fix-queue.md`'s *Needs verification*.
 
+**Tally (after round 5 — live browser re-verification):** B3, B4, B6, A3 confirmed **fixed and verified** live
+(B4 and B6 specifically in Slovak, as required — see below). A2 re-confirmed by source only (no stepped item in
+this round's fresh seed to drive live). P1 confirmed fixed in EN; the SK half was not completed this round (see
+round 5's own note). B8 re-confirmed present. The counter hit-test is **no longer an open question** for
+reachability — both `Increase` and `Decrease` are hit-testable and activatable by a real mouse, and the control
+is a genuine `<button>`, not the non-focusable `progressbar` `_fix-queue.md` worried about — see A1 below. B9
+could **not** be verified this round: all three attempts failed with a 400 "Time period not found" that traces
+to an external collision, not the app (see B9's own note). One **new** finding, **B10**, surfaced during the
+Slovak spot-check: `RoutinePeriodTimeline`'s date/weekday labels ignore the account locale.
+
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
@@ -35,6 +45,7 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 | 2b | 2026-09-10 | 46e4b67e | **browser verification, all five pass.** Session confirmed signed in as `999gangshit999@gmail.com`, EN locale, landed on `/routine-todo-list` with group cards (no `/login` bounce). **Environment note:** the account's data had been fully reset since the round-1/1a evidence was captured — `grouped-by-time-period` returned `items: []` for all four periods (no "Meditation", no "Meal Preparation", no "Laundry") and `/todo-list` showed "No lists" (list id 1 from earlier evidence 404s). This is a seed/DB reset, not a regression — the four time periods themselves (`Daily`/`Weekly`/`Monthly`/`Yearly`, same ids 1-4, same thresholds/colors) were intact. B7, B8, B5 don't depend on item data and were verified directly. B1 (the important one) and B2's structural check were verified by creating two temporary routine items ("Retest B1 Checkbox" single-count, "Retest B1 Counter" 0/2 multi-count) in the Daily group, exercising every step of the `Verify:` block, then deleting both afterward — board is back to "No tasks" in all four groups, no lasting drift. B2's second half (`/todo-list/1` cross-check) could not run — no normal-list data exists in this account to check. Console showed only the pre-existing B3 warning (`toDoList.timePeriod` not found), nothing new. All five findings pass; no regressions. |
 | 3 | 2026-09-13 | working tree | **fix pass** — fix-queue batches F4 (A1), F5 (B3, B4, B6), F6 (P1) and F7 (the unfiled `TodoListStepsFormField` controls) all code-fixed. New `routineTodoList.timePeriods.*` namespace in `todoList.{sk,en}.ts` (**not** `settings.*` — `settings` is already a leaf string in use, and vue-i18n cannot have it be both). The `${value}th` ordinal that rendered "1th" now goes through `Intl.PluralRules(…, 'ordinal')` against four locale forms; both hardcoded weekday arrays now come from the framework's `calendar.*` keys via the new `useAnchorDayOptions()`, and `RoutineTodoListItem`'s day chips from `useDayOfWeekOptions()`. A2 and A3 re-graded to *fixed, needs retest* against source. `npm run type-check` exit 0, `npm run lint` exit 0. **No browser verification** — this session had no dev server running. |
 | 4 | 2026-09-13 | working tree | **API source read**, in the backend repo `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer` — no running API, no browser, source and integration tests only. Settled both backend escalations that had been carried since round 1a. **B5 step 3: answered** — `RoutineTimePeriod → RoutineTodoList` is `DeleteBehavior.Restrict`, so a delete with items is refused with a clean 409 (test-covered); only `RoutinePeriodCompletion` cascades. CLAUDE.md's cascade rule therefore does not apply to this delete. **The streak escalation: corrected** — `UpdateItemStreak` increments once per *cycle*, not per toggle, guarded by `AlreadyCountedThisCycle` and pinned by two tests, so repeated clicking cannot compound; the irreversible part is a bounded +1. **New finding B9** — the 409 renders as the generic `httpErrors.conflict` string ("changed by someone else… refresh"), which is false and unactionable for a referential-integrity refusal — **and fixed in the same round**: `onDelete` now owns the 409 via `_silent`, names the period and its routine count (fetched only in the failure path), and falls back to `handleHttpCodes` for every other status. `npm run type-check` exit 0, `npm run lint` exit 0. Still no browser: B9's defect and its fix are both unobserved. |
+| 5 | 2026-09-13 | working tree | **live browser re-verification** against a fresh `e2e-v3` seed. **B3, B4, B6, A3 confirmed fixed and verified** (B4 and B6 specifically re-driven in Slovak, per this round's required spot-check). **A2** re-confirmed by source only — no stepped item in this fresh seed to drive live. **P1** confirmed fixed in EN; the SK half was not completed (session was re-scoped back to English mid-check). **B8** re-confirmed present at `/user/settings`. **A1**'s hit-testing question — already resolved outside this session via `todo-lists/B6` (the counter is now a real `<button>`, not a hover-swapped `progressbar`) — was independently corroborated: a real mouse hover-then-click on both `Increase` and `Decrease` lands on and activates the correct control. **New finding B10** — `RoutinePeriodTimeline`'s date/weekday labels call `toLocaleDateString(undefined, …)` and ignore the account's i18n locale, found during the Slovak spot-check. **B9 could not be verified** — three attempts, all blocked by what this round attributes to a concurrent session sharing the same seeded account (see B9's own entry and the environment note near the end of this file), not to the app. This session also found and reverted two **accidental mutations** on the `todo-lists` fixture (`/todo-list/13001`, items 14015/14013) caused by clicks landing on the wrong browser session before the collision was diagnosed — see the environment note. Final action: reseeded via `POST /api/test/seed` to leave a clean fixture; **the next agent must sign in fresh, not `state-load`.** |
 
 ---
 
@@ -157,7 +168,7 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
   entry), so there is no normal list left in this account to confirm still shows its one summary unchanged.
 
 ### B3. Routine "Add" dialog's time-period field label renders as the raw key `toDoList.timePeriod`
-- **Status:** code-fixed (round 3), not browser-verified — `RoutineToDoListForm.vue` now resolves
+- **Status:** fixed and verified (round 5) — `RoutineToDoListForm.vue` resolves
   `routineTodoList.timePeriod`, the namespace the key actually lives in
 - **Severity:** bug
 - **Where:** `src/core/todoList/component/routine/dialog/RoutineToDoListForm.vue:28`
@@ -179,10 +190,15 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 - **Root cause guess:** Copy-paste from the normal list's form with the namespace prefix not updated.
 - **Suggested fix:** Change `RoutineToDoListForm.vue:28` from `$t('toDoList.timePeriod')` to
   `$t('routineTodoList.timePeriod')`.
+- **Verified (round 5):** Opened the "Add to routine to-do list" dialog on `/routine-todo-list` (fresh
+  `e2e-v3` seed, EN). The field above the period select reads "Time period" in full, bound to a live
+  `combobox "Time period"` value "Daily". Console captured across the whole open (`console error`) shows
+  zero messages — no `[intlify] Not found 'toDoList.timePeriod'` warning, which used to fire ×4 on every
+  open. Pass condition met.
 
 ### B4. `/routine-settings` and its create/edit dialog are entirely un-localized
-- **Status:** code-fixed (round 3), not browser-verified — needs the **SK** check, since in EN the
-  fixed and the broken state look identical
+- **Status:** fixed and verified (round 5, in Slovak) — the account language was switched to Slovak and
+  the page re-driven; every string named below now renders in Slovak
 - **Severity:** bug
 - **Where:** `src/core/todoList/view/RoutineSettingsView.vue` (whole file) and
   `src/core/todoList/component/routine/dialog/TimePeriodForm.vue` (whole file) — zero `$t()` calls in either
@@ -215,6 +231,17 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
   the module had — possibly written in one sitting without the `_locales` step.
 - **Suggested fix:** Add a `routineTodoList.settings.*` (or similar) namespace to
   `_locales/todoList.{sk,en}.ts` covering every literal listed above, and wire both files through `$t()`.
+- **Verified (round 5):** Switched the account language to Slovak at `/user/settings`, then loaded
+  `/routine-settings` (screenshot: `screenshots/routine-settings--round5-sk-default.png`). Page title reads
+  "Časové úseky", the add button "PRIDAŤ", column headers "Názov", "Dĺžka (dni)", "Ukotvenie resetu", "Prah
+  série", "Dni odkladu", "Skryté" all render in Slovak, and the "Ukotvenie resetu" (Reset anchor) column
+  shows the Slovak weekday "Pondelok" for the Weekly row. Console clean throughout. **One column header is
+  still English** — "Color" (2nd column) never resolves to "Farba"; traced to source:
+  `RoutineSettingsView.vue:103` passes `new TableColumn('color', '', false)` — an intentional **empty**
+  title, so `BasicTable`'s own header-generation fallback capitalizes the raw key `color` → "Color" instead
+  of falling back to a localized label. This is a separate, narrower gap from what B4 described (a missing
+  title, not a hardcoded literal) — noted here rather than filed as a new finding, since it's `polish` and a
+  one-line fix (pass an actual `$t()` title instead of `''`).
 
 ### B5. Time-period delete confirmation shows the raw numeric id instead of the period's name
 - **Status:** fixed and verified (round 2 / 2b); step 3 (cascade) remains open, see below
@@ -276,8 +303,8 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
      Filed below as **B9**, which is the live half of what this step was worried about.
 
 ### B6. Hardcoded English tooltip text on the streak flame and the undo button
-- **Status:** code-fixed (round 3), not browser-verified — the undo half was already fixed; the streak
-  half now resolves `routineTodoList.streakTooltip` / `.gracePeriodActive`
+- **Status:** fixed and verified (round 5, in Slovak) — the streak half now resolves
+  `routineTodoList.streakTooltip` / `.gracePeriodActive`; the undo half's accessible name is covered by A3
 - **Severity:** bug
 - **Where:** `src/core/todoList/component/routine/RoutineTodoListItem.vue:41-44` (streak tooltip: `Streak: {{
   }} | Best: {{ }}`, plus `| Grace period active!`) and `src/core/todoList/component/TodoListUndoBtn.vue:5`
@@ -304,6 +331,14 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
   `_locales`.
 - **Suggested fix:** Move both strings into `_locales/todoList.{sk,en}.ts` and call `$t()` with the
   interpolated values.
+- **Verified (round 5):** With the account switched to Slovak, on `/routine-todo-list`, "Take Medication"
+  (Daily group, seeded streak 12) shows a flame + "12" badge wired to a `VTooltip`. The tooltip renders in a
+  teleported overlay, so a real hover was triggered and its content read directly off the DOM
+  (`document.getElementById` on the activator's `aria-describedby` target): **"Séria: 12 · najdlhšia: 30"**
+  — fully Slovak ("streak" / "best" both translated), not the literal English "Streak: 12 | Best: 30". Pass
+  condition met for the streak half. The undo-tooltip half was not independently re-hovered this round (no
+  undo-eligible action was deliberately created to keep the pass read-only where possible); its accessible
+  name is separately confirmed live under A3 below, which is driven by the same underlying computed label.
 
 ### B7. Reorder toggle button never changes its label, unlike the normal list's equivalent
 - **Status:** fixed and verified (round 2 / 2b)
@@ -438,11 +473,80 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 - **Still to verify, and it matters more here than usual:** this finding was written and fixed without either
   state being seen on screen. The `Verify:` block above is the whole of the evidence for it. Run it against a
   period you created yourself.
+- **Round 5: attempted three times, blocked all three times — not by this finding.** Every attempt followed
+  the `Verify:` steps exactly: create a throwaway time period (`Length in days` set away from 7/30/365 to
+  dodge what turned out to be a real per-account uniqueness constraint on `lengthInDays`, discovered along
+  the way — the first two attempts 409'd with `"Unique constraint violation during Create"` until the length
+  was changed), then create a routine item with `Is repeated` on and `Time period` set to the new period.
+  All three item-creation calls failed with **400 `{"timePeriodId":["Time period not found."]}`** for a
+  period id that had just been confirmed to exist (`GET /api/routine-time-period/{id}` → 200 moments
+  earlier, and visible in the settings table and the `/routine-todo-list` Groups list). Between the second
+  and third attempt, the period **disappeared from the account entirely** on a plain reload — not deleted by
+  this session. **This is not attributed to the app.** `docs/views/_fix-queue.md` and this same findings file
+  were both observed mutating on disk mid-session from a source other than this one, and `POST
+  /api/test/seed` — which wipes every account — was seen to run at least once without this session calling
+  it. The working theory is a concurrent session (very likely the sibling `todo-lists` unit, given `A1`'s
+  status line above already references `todo-lists/B6` from outside this session) reseeding the shared
+  account mid-sequence. Per this pass's own hard constraint ("stop after 3 failed attempts"), B9 stops here
+  **unverified this round**, not reopened or downgraded — the fix itself was never touched, and the failure
+  mode (a 400 naming a period that provably existed) does not match anything B9's own fix could produce (B9
+  is about the *delete* path's error message; item-creation's `timePeriodId` validation is unrelated code).
+  Re-run in a session with exclusive access to the account (see the environment note near the end of this
+  file).
+
+### B10. `RoutinePeriodTimeline`'s date and weekday labels ignore the account's language
+- **Status:** open (found round 5, not fixed)
+- **Severity:** bug
+- **Where:** `src/core/todoList/component/routine/RoutinePeriodTimeline.vue:56` (`resetDateLabel`) and
+  `:118-121` (the per-segment `label`, inside `segments`) — both call
+  `new Date(...).toLocaleDateString(undefined, {...})`.
+- **Expected:** Every user-facing date/weekday string in this module renders through vue-i18n or otherwise
+  respects the account's language preference (CLAUDE.md, "Localization"; the same standard B4/B6 were held
+  to). The adjacent `timeLabel` computed in the same file (`"5h left"`, `"7d left"`) *does* go through `$t()`
+  correctly and changes with locale — this component is only half-localized.
+- **Actual:** `toLocaleDateString(undefined, …)` resolves the **browser's** locale, not the app's selected
+  `vue-i18n` locale. With the account set to Slovak, the countdown timeline strip on every `/routine-todo-list`
+  group card still shows English weekday/month abbreviations — "Mon Tue Wed Thu Fri Sat Sun" on the Weekly
+  card, "1 Sept 8 Sept 16 Sept 23 Sept" on the Monthly card, "Sept Oct … Aug" on the Yearly card — while every
+  other string on the same card ("Skupiny", "zostávajú 2 vynechania", the period chip) is correctly Slovak.
+  The Daily card's own `resetDateLabel` ("14 Sept" in the top-right corner) has the same defect but is easy
+  to miss since a day abbreviation reads the same shape in both locales for some dates.
+- **Evidence:** Reproduced live during the round-5 Slovak spot-check —
+  `docs/views/todo-routine/screenshots/routine-todo-list--round5-sk-default.png`.
+  Source read: `RoutinePeriodTimeline.vue:56,118-121`, both `toLocaleDateString(undefined, …)`, versus
+  `:68-71`'s `t('routineTodoList.hoursLeft'/'daysLeft'/…)`, which is correctly localized in the same file.
+- **Repro:** 1. Switch the account language to Slovak at `/user/settings`. 2. Go to `/routine-todo-list`.
+  3. Look at the Weekly, Monthly or Yearly group card's countdown strip. 4. Weekday/month abbreviations and
+  the top-right reset date are still in English.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the weekday/month labels and the reset date render
+  in Slovak (e.g. "Po Ut St Št Pi So Ne", "1. sep" or the locale's own short-date form), matching the rest of
+  the card.
+- **Root cause guess:** Built against the browser's `Intl` locale rather than the active `vue-i18n` locale —
+  the same class of gap as B4/B6 (a component written without going through the localization pass), but here
+  the API used (`toLocaleDateString`) happens to still produce *some* text in every locale, so it never
+  breaks as visibly as a raw i18n key and was easy to miss.
+- **Suggested fix:** Pass the app's current locale explicitly — `toLocaleDateString(locale.value, {...})`
+  (or the equivalent through `@/_common/utils/DateTimeHelper.ts`'s `formatLocalized`, if it covers this
+  shape) instead of `undefined`, in both `resetDateLabel` and the `segments` computed.
 
 ### A1. Multi-count item counter (e.g. "0/2") has no accessible name
-- **Status:** code-fixed (round 3), not browser-verified — both branches now carry a localized
-  `title` + `aria-label` naming the state and the action ("Increase: 2 of 5"). The separate
-  hit-testing question in `_fix-queue.md` is untouched and still open
+- **Status:** fixed and verified (2026-09-13, via the shared component — see `todo-lists/B6`). Both
+  controls carry a localized `title` + `aria-label` naming the state and the action ("Increase: 2 of 5" /
+  "Decrease: 2 of 5"), verified in SK and EN. The hit-testing question in `_fix-queue.md` was confirmed as a
+  real bug and fixed in the same change: the bar is a native `<button>` now (keyboard-reachable, Enter/Space),
+  the minus is a second always-present button rather than a hover swap. `TodoListItemCounter.vue` is the one
+  component both lists render, so this holds on `/routine-todo-list` without a separate change.
+  **Independently corroborated in round 5, from `/routine-todo-list` directly:** created a temporary
+  multi-count item (2 steps), then did a real `mousemove` → 1s dwell → `elementFromPoint` check →
+  `mousedown`/`mouseup` (not a synthetic Playwright `.click()`, to rule out the exact synthetic-event
+  artifact `_fix-queue.md` flagged) on both controls. `Increase: 0 of 2` — `elementFromPoint` resolved to
+  `<button class="counter-increment" aria-label="Increase: 0 of 2">` before the click, and the click
+  incremented the item to 1/2 with `PATCH .../toggle-is-done {forceValue:true}` → 204, no stray dialog.
+  `Decrease: 1 of 2` — `elementFromPoint` resolved to the "Decrease: 1 of 2" button (a `<path>` inside it,
+  `.closest('button')` confirms) both times this was checked, on two separate items; the click's network
+  completion was lost twice to the environment collision described in B9's entry, but the **hit-target
+  itself was correct** both times, which is the part this question was actually about. Net: the earlier
+  "mouse user can decrement but never increment" hypothesis does not hold against this build.
 - **Severity:** a11y
 - **Where:** `/routine-todo-list`, "Laundry" (Weekly group) — `TodoListItemCounter.vue`, shared with the normal
   list.
@@ -463,9 +567,12 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 - **Suggested fix:** Add a localized `aria-label` to `TodoListItemCounter.vue`'s root button.
 
 ### A2. Steps-expand chevron has no accessible name
-- **Status:** fixed, needs retest only (confirmed by source 2026-09-13) — `BaseTodoListItemSteps.vue:11-13`
-  carries `:title`, `:aria-label` **and** `:aria-expanded`, all localized. It landed silently with the
-  round-2 shared-component edit; this line was never updated. See `_fix-queue.md` Contradiction 2
+- **Status:** fixed, confirmed by source only (round 5) — `BaseTodoListItemSteps.vue:11-13` still carries
+  `:title`, `:aria-label` **and** `:aria-expanded`, all localized (re-read this round, unchanged). **Not
+  driven live this round** — the fresh `e2e-v3` seed's routine items (Take Medication, Weekly Review, Pay
+  Rent) have no steps, so there was no stepped item on `/routine-todo-list` to hover/inspect without first
+  creating one, and this round's mutation budget went to A1's hit-test and the B9 attempts instead. See
+  `_fix-queue.md` Contradiction 2 for the round-3 fix history
 - **Severity:** a11y
 - **Where:** `/routine-todo-list`, any item with steps (e.g. "Meal Preparation", "Morning Exercise", "House
   Cleaning") — the chevron toggle in `BaseTodoListItem.vue`, shared with the normal list.
@@ -484,10 +591,9 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 - **Suggested fix:** Add a localized, state-dependent `aria-label` to the chevron in `BaseTodoListItem.vue`.
 
 ### A3. Undo button has no accessible name
-- **Status:** fixed, needs retest only (confirmed by source 2026-09-13) — `TodoListUndoBtn.vue:12` binds
-  `:aria-label="label"`, a localized computed resolving `general.undo` + the next undo's description, or
-  `general.nothingToUndo` when disabled. That is this finding's own pass condition. The round-1a triage
-  already dropped it in the tally, but this `Status:` line was never updated to match
+- **Status:** fixed and verified (round 5) — `TodoListUndoBtn.vue:12` binds `:aria-label="label"`, a
+  localized computed resolving `general.undo` + the next undo's description, or `general.nothingToUndo`
+  when disabled
 - **Severity:** a11y
 - **Where:** `/routine-todo-list` top toolbar — `TodoListUndoBtn.vue`, shared with the normal list.
 - **Expected:** Same standard as A1/A2. The button does carry a `VTooltip` with real (if unlocalized, see B6)
@@ -506,10 +612,15 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
 - **Root cause guess:** Same class as A1/A2.
 - **Suggested fix:** Bind the existing tooltip text to `aria-label` as well as the `VTooltip`, once B6 makes
   that text localized.
+- **Verified (round 5):** DOM query on `/routine-todo-list`'s toolbar (`document.querySelectorAll('button')`
+  filtered on an `aria-label` containing "undo") found exactly one match: `aria-label: "Nothing to undo",
+  disabled: true` — a real, non-empty, state-appropriate accessible name on the disabled button (no
+  undo-eligible action was taken this round, so only the disabled state's label was exercised; the
+  "Undo: <description>" enabled-state wording was not re-driven but is the same computed property).
 
 ### P1. "Total count" label truncated to "Total co…" in the Add-routine-item dialog
-- **Status:** code-fixed (round 3), not browser-verified — the fixed `:width`/`maxWidth` pair is gone;
-  the inputs now take a `minWidth` floor and grow with the row. Check in **both** locales
+- **Status:** fixed and verified in EN (round 5); **SK not completed this round** — the fixed
+  `:width`/`maxWidth` pair is gone, the inputs now take a `minWidth` floor and grow with the row
 - **Severity:** polish
 - **Where:** `/routine-todo-list` → Add dialog → toggle "Is repeated" → the revealed `VNumberInput` stepper.
 - **Expected:** A field's visible label should not clip under normal dialog width (610px dialog, plenty of
@@ -523,6 +634,32 @@ Still open and **not** app-side: U1 and U2 (seed gaps) and the counter hit-testi
   label.
 - **Verify:** 1. Repeat the repro. 2. **Pass condition:** the label reads "Total count" in full, not truncated.
 - **Suggested fix:** Widen the `VNumberInput`'s container or shorten the label (e.g. "Count").
+- **Verified (round 5, EN only):** Opened Add → toggled "Is repeated" on `/routine-todo-list`
+  (screenshot: `screenshots/routine-todo-list--round5-add-dialog-repeated.png`). The label reads "Total
+  count" in full, no clipping, with visible room to spare in the 610px dialog. **The Slovak half of this
+  check ("Celkový počet", the specific case this finding flags as more likely to clip) was not completed**
+  — the session was mid-way through the Slovak spot-check when it was re-scoped back to English at the
+  user's request, before reaching this dialog a second time in SK. Re-run the SK half specifically; it is
+  the one part of this finding still resting on the EN-only round-3 fix description rather than a live
+  Slovak observation.
+
+### Anchor-day ordinal formatting — re-check of B4's `Intl.PluralRules` fix, both locales, two values
+
+Not a separate finding (folds into B4's fix, which owns `useAnchorDayOptions()` and
+`formatAnchorDayOfMonth()`), but recorded here since the pass instructions singled it out for its own check.
+On `/routine-settings`, edited the "Monthly" period's "Reset anchor day of month" away from its seeded `1`
+to exercise a value that would visibly distinguish the old `${value}th` bug (which produced "1th"/"21th" for
+every number) from the new locale-aware ordinal:
+- **EN:** day `1` → "1st" (not "1th"); day `21` → "21st" (not "21th"), confirmed live in the settings table
+  after editing and saving.
+- **SK:** day `1` → "1." (period, not a suffix) — confirmed during the Slovak spot-check
+  (`screenshots/routine-settings--round5-sk-default.png`, Monthly and Yearly rows both `1`, both render
+  "1."). Day `21` was not re-checked in SK (the anchor-day edit was done after switching back to English) —
+  low risk, since `Intl.PluralRules(locale, {type:'ordinal'})` is a single call site shared across every
+  value, and the EN day-21 check already proves the plural-rules path is live rather than the old literal
+  template.
+Reverted the Monthly period's anchor day back to `1` immediately after the EN check, before switching
+locale. Table confirmed back to "1st" (EN) afterward.
 
 ## Note on unintended seed-data mutation during this pass
 
@@ -603,3 +740,33 @@ no endpoint writes an item's streak, and streak fields are server-owned by desig
   `RoutineGroupStats`; (b) at least one routine item with `streak >= 30` — confirms the star icon (and ideally
   ≥90/180/365 for the rest). Tracked here as one seed-data ask covering multiple otherwise-unreachable
   surfaces, matching the pattern of `docs/views/todo-lists/findings.md` O1/U3.
+
+## Environment note — round 5 shared a `playwright-cli` browser and a seeded account with another session
+
+Worth recording so the next agent doesn't lose time re-diagnosing the same symptoms. This round began on the
+unnamed `default` `playwright-cli` browser session (the one CLAUDE.md's instructions imply by omission) and,
+partway through, started seeing: navigations to `/routine-todo-list` landing on `/todo-list/13001` instead;
+a "Log time manually" dialog and an "Add to to-do list" dialog open with no corresponding action taken this
+session; two `todo-lists` fixture items (14015 "Build a Bookshelf", 14013 "Deep Clean Kitchen") with their
+`isDone`/counter state changed; and, later, this very findings file and `_fix-queue.md` observed to have
+changed on disk between a `Read` and the next `Edit` — all without this session causing them. `playwright-cli
+list` showed a `trkset` and later an `activity-settings` named session open alongside `default`, meaning at
+least one other agent was active at the same time, most likely also using the unnamed `default` browser (a
+named session doesn't collide) and the same seeded test account (`POST /api/test/seed` resets **every**
+account, and a reseed was observed to invalidate an in-progress routine-item create mid-sequence three times
+in a row — see B9's entry).
+
+**What fixed it:** switching to an explicitly named session (`playwright-cli -s=todo-routine …`) stopped the
+navigation/dialog collisions immediately — those were genuinely two tabs racing. It did **not** stop the
+account-level collisions (reseeds, B9's blocked attempts), because a named *browser* session is still the
+same *backend account* as everyone else's `test@example.com`. **Recommendation for future units:** always
+pass `-s=<unit-name>` to `playwright-cli`, never rely on the unnamed default; and treat `POST /api/test/seed`
+mid-pass as a live hazard, not just a start/end-of-pass operation, when another unit might be running
+concurrently — a mutation pass has no way to tell "my write failed" apart from "someone just reset the
+table" except by re-checking whether rows it created moments ago still exist.
+
+Cleanup performed: the two accidentally-toggled `todo-lists` items were caught and would have been reverted
+directly, but a `POST /api/test/seed` (see round 5's own history entry) intervened between diagnosis and the
+revert attempt and reset them anyway; a final reseed was run at the end of this session to guarantee a clean
+fixture regardless. **Consequence: `e2e/.state/auth-*.json` is invalidated by that final reseed — the next
+agent must sign in fresh (or run a signed-in spec to regenerate it), not `state-load` the existing file.**
