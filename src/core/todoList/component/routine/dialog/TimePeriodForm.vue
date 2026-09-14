@@ -19,6 +19,7 @@
 		<ColorPicker
 			v-model="request.color"
 			:label="$t('routineTodoList.timePeriods.color')"
+			required
 		></ColorPicker>
 		<VNumberInput
 			v-model="request.historyDepth"

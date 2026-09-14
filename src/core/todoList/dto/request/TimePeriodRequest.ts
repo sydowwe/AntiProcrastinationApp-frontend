@@ -5,7 +5,9 @@ import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/Ro
 export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 	constructor(
 		public text: string | null = null,
-		public color: string | undefined = undefined,
+		// Required on the wire (`TextColorRequest`): the server answers 400 without it, so a new period
+		// starts with a real palette colour and the form's picker offers no "none".
+		public color: string = 'blue',
 		public lengthInDays: number = 7,
 		public isHidden: boolean = false,
 		public streakThreshold: number = 90,
