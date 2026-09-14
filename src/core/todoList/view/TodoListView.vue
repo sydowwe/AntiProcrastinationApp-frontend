@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEntity.ts'
 	import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
@@ -170,6 +170,7 @@
 	import { useOverdueRenegotiation } from '@/core/todoList/composable/useOverdueRenegotiation.ts'
 	import { useUnscheduledNudge } from '@/core/todoList/composable/useUnscheduledNudge.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useSetBreadcrumbExtra } from '@/_common/composable/general/useBreadcrumbs.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
@@ -216,6 +217,14 @@
 	 * only tell was an unhandled rejection in the console.
 	 */
 	const loadFailed = ref(!Number.isFinite(todoListId))
+
+	// The nav tree stops at `/todo-list`, so without this the detail route wore its parent's crumbs
+	// verbatim. The list's name is the only thing worth adding: before the fetch resolves, and for an
+	// id that names no list, there is no crumb rather than a raw id or an empty segment.
+	const { setBreadcrumbExtra } = useSetBreadcrumbExtra()
+	watch(listEntity, value => {
+		setBreadcrumbExtra(value ? [{ title: value.name }] : [])
+	})
 
 	const {
 		isInChangeOrderMode,
