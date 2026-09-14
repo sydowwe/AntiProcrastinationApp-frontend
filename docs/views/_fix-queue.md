@@ -1,10 +1,31 @@
 # Fix queue
 
-> Built 2026-09-14 · commit `df2b163d` (working tree carries the untracked `tracking-settings` and
-> `activity-settings` docs, the round-5 `todo-routine` findings, and uncommitted counter/breadcrumb fixes
-> under `src/core/todoList/`) · units triaged: `_shell`, `home` (1), `todo-lists` (9), `todo-routine` (10),
-> `leisure-projects` (13), `tracking-settings` (6), `activity-settings` (2) · findings considered: 68 ·
-> batches: 30
+> Built 2026-09-14 · commit `adc9c67f` (working tree carries the untracked `history-review` and
+> `user-settings` docs, the two draft specs, and the **uncommitted `F24`/`F25` application** under
+> `src/core/todoList/` — see the sixth-pass note) · units triaged: `_shell`, `home` (1), `todo-lists` (9),
+> `todo-routine` (10), `leisure-projects` (13), `tracking-settings` (6), `activity-settings` (2),
+> `history-review` (3) · findings considered: 79 · batches: 38
+
+> **Sixth pass, 2026-09-14, commit `adc9c67f` — unit 3 `history-review` absorbed.** Scoped by the
+> operator to that unit; nothing outside the sections naming it was re-read, and `F1`–`F25` / `FW1`–`FW5`
+> stand as the fifth pass left them. Eleven findings (0 · 4 · 2 · 3 · 0 · 2 — the unit's tally matches its
+> body) became **seven app-side batches (`F26`–`F32`) and one framework batch (`FW6`)**, plus one
+> escalation (§8) that is a design decision rather than a defect. Every finding was checked against source
+> this pass — the API's too, which is what settled `B4` — and four root-cause guesses were overturned
+> (*Contradictions* §27–§34): the clipped banner is Vuetify's `flex: 1 1` basis, not `flex-shrink`; the
+> "in-hole" legend is a left-anchored box overlapping a 300 px canvas; the holiday names are a country
+> table's proper nouns, not a localization gap; and the error-vs-empty gap is **wider** than filed — two
+> more fetch owners have no `catch` at all and leave the *previous* period's rows on screen. The pattern
+> `F27` needs is already built one module over (`useActivityDashboard`), and `StackedBarsChart` already
+> takes the `error` prop the history views never pass. Two things changed outside the unit: **`F24` and
+> `F25` are applied in the working tree** (uncommitted — `useRoutineDateFormat.ts` is untracked, zero
+> `toLocaleDateString(undefined` calls remain outside it, and the Color header resolves
+> `routineTodoList.timePeriods.color`), so both move to *Awaiting retest*; and the `FW6` name the fifth
+> pass reserved for the unobserved `BasicTable` dialog defect is **taken by `A2`** — that item is now
+> `FW7`-if-confirmed. The 79 above is 68 + 11.
+>
+> ⚠️ **Unit 14 `user-settings` is also on disk and is NOT triaged here** — the operator scoped this run to
+> `history-review`. It waits for the next run, the way `activity-settings` waited through the third.
 
 > **Fifth pass, 2026-09-14, commit `df2b163d` — unit 10 `todo-routine` re-absorbed after its round 5.**
 > Scoped by the operator to that unit; nothing outside the sections naming it was re-read, and the fourth
@@ -91,22 +112,44 @@
 | F21 | Categories table's "Role" column is a comma-joined aggregate presented as a single value | app | `activity-settings/P1` | low |
 | F22 | Activities filter bar clips the "Categories" label | app | `activity-settings/P2` | low |
 | F23 | Parallel `playwright-cli` sessions must not share one storage-state file — the API rotates refresh tokens (**grown**: nor the unnamed `default` browser session, nor a mid-pass reseed) | docs only | `activity-settings/U3` (+ `todo-routine` round-5 environment note) | trivial |
-| F24 | Routine components format dates through the browser's locale, not the account's — 8 `toLocaleDateString(undefined, …)` calls in 5 files | app | `todo-routine/B10` | low |
-| F25 | `/routine-settings` "Color" column header is the capitalized raw key — the title is `''` and the framework fills it in | app | *(unfiled — `todo-routine/B4`'s round-5 verification note)* | trivial |
+| F24 | ✅ **APPLIED (working tree, uncommitted) — awaiting retest** — Routine components format dates through the browser's locale, not the account's — 8 `toLocaleDateString(undefined, …)` calls in 5 files | app | `todo-routine/B10` | low |
+| F25 | ✅ **APPLIED (working tree, uncommitted) — awaiting retest** — `/routine-settings` "Color" column header is the capitalized raw key — the title is `''` and the framework fills it in | app | *(unfiled — `todo-routine/B4`'s round-5 verification note)* | trivial |
+| F26 | Period-total banner is a `flex: 1 1` (basis `0%`) item — it never has a size to wrap on, so it is squeezed to ~62 px instead of dropping to a new line | app | `history-review/B1` | trivial |
+| F27 | History dashboards have no error state: three fetch owners null or **keep** their data on failure and every panel renders "No data for this period" — the pattern is already built in `useActivityDashboard` | app | `history-review/B2` | med |
+| F28 | `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer | app | `history-review/B3` | trivial |
+| F29 | Stacked-bar columns are bare `div`s: no name, no role, no `tabindex`, no key handler — and on Detail they show a pointer cursor and do nothing | app (`activityTracking/component/stackedBars/`, shared per `migration-revision.md` §7) | `history-review/A1` | low-med |
+| F30 | Summary cards are named "View details for X" and toggle a highlight — same cloned label on `activityTracking`'s domain card; neither card activates from the keyboard | app | `history-review/P1` (+ unfiled twin in `activityTracking`) | low |
+| F31 | Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas; `isNarrow` is a dead prop | app | `history-review/P2` | low-med |
+| F32 | `/activity-history/calendar` has no `<h1>`, unlike its two siblings | app | `history-review/P3` | trivial |
 | FW1 | `MyDialog` is `persistent` by default, so Escape closes nothing | **framework** | `_shell/A1` | med (decision first) |
 | FW2 | Two framework icon-only controls have no accessible name | **framework** | `_shell/A2`, `leisure-projects/A1` | low |
 | FW3 | ✅ **CLOSED 2026-09-13** — `Time.fromJson` cannot parse the backend's string shape (the API had already switched to `{hours, minutes}` on 2026-09-11; `fromJson` now accepts both) | **framework** | `todo-lists/B4` | med |
 | FW4 | `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so | **framework** (docs only) | *(none — prevents the next `F12`)* | low |
 | FW5 | `DataTable`'s default row actions render the internal slug as their `title`, not the localized label | **framework** | `activity-settings/B4` | trivial |
+| FW6 | `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
 
-25 app-side (`F9`, `F17`, `F19` and `F23` include CLAUDE.md or runbook edits; `F17` and `F23` are nothing
-else) · 5 framework · 7 escalations (3 open: §1, §6, §7 — §2 and §3 were settled by `todo-routine`'s
-round-4 API read and are struck below).
+32 app-side (`F9`, `F17`, `F19` and `F23` include CLAUDE.md or runbook edits; `F17` and `F23` are nothing
+else; `F24`/`F25` are applied and awaiting retest) · 6 framework · 8 escalations (4 open: §1, §6, §7, §8 —
+§2 and §3 were settled by `todo-routine`'s round-4 API read and are struck below).
+
+**Order among the unit-3 batches.** `F27` first if any of the others is going to be verified in the same
+browser session — it is the only one that changes what a *failed* request looks like, and `history-review/U1`
+(the empty-state check) is only meaningful once "empty" and "failed" are distinguishable on screen. `F29`
+before `F30`: both decide what an interactive chart element is *called*, and the two should agree on a
+verb ("Highlight", "Filter to", "Open the day") before either ships. `F26`, `F28`, `F32` are one-line edits,
+independent of everything. `F31` is independent but touches the same `HistoryPieChart.vue` a light-theme
+fix would (see its *Adjacent*), so do the two together or not at all. `FW6` is a separate repo and needs
+an app-side locale mirror in the pointer-bump commit — see the batch.
+
+**`F29` edits unit 5's module.** `StackedBarColumn.vue` lives in `activityTracking/component/stackedBars/`,
+which `migration-revision.md` §7 documents as shared presentation owned by a feature module (the two
+`activityHistory` views import it across the module boundary, and that is the recorded gap, not a new one).
+Unit 5 has not run; when it does, its inventory will describe the post-`F29` bars. Say so in the commit.
 
 **`F24` and `F25` are independent of everything, and of each other** — different files, different causes,
-both in `src/core/todoList/`. `F24` needs the SK locale to verify; `F25` does not. Neither touches the
-uncommitted `todoList` files in the working tree (`BaseTodoListItem.vue`, `TodoListItemCounter.vue`,
-`TodoListView.vue`), so they can land before or after those are committed.
+both in `src/core/todoList/`. `F24` needs the SK locale to verify; `F25` does not. **Both are now applied
+in the working tree** (sixth pass) and sit in *Awaiting retest*; the note about the uncommitted `todoList`
+files is moot — they are all uncommitted together now.
 
 **Order among the unit-2 batches.** `F19` before `FW5` is *verified* — once the Roles/Categories tables
 have their own `#actions` slot they no longer render `DataTable`'s default buttons, so `FW5` has to be
@@ -1012,6 +1055,299 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   clean.
 - **Risk:** None.
 
+## F26. The period-total banner is a `flex: 1 1` item — it has no size to wrap on
+
+- **Scope:** app-side `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue`
+- **Closes:** `history-review/B1`
+- **Root cause — not the one the finding names, and its suggested fix would not work.** Vuetify's own
+  stylesheet sets `.v-alert { display: grid; flex: 1 1; }` (`VAlert.css:1-3`), and the two-value shorthand
+  is `flex: 1 1 0%` — a **zero flex-basis**. So inside `HistorySummaryCards.vue:4`'s
+  `d-flex ga-4 align-center mb-4 flex-wrap` row the banner's *hypothetical* main size is 0 px: the row's
+  wrap test sums title + 170 px + 100 px + three gaps + **0** and finds it fits, so `flex-wrap` never
+  fires. The alert then *grows* into whatever is left over, capped by the inline `max-width: fit-content`
+  (`HistoryPeriodBanner.vue:10`). In the Summary view's `lg="6"` column (`HistorySummaryView.vue:81-85`,
+  ~560 px at 1440 wide) the leftover after *"Top Activities"* and the two selects is about 60 px — which
+  is the 62 px the finding measured. Nothing is *shrinking*; the finding's `flex-shrink: 0` would leave
+  the basis at 0 and change nothing.
+- **Files:** `HistoryPeriodBanner.vue:10` (the inline style) and `:69-73` (the `.myAlert` block)
+- **What to change:** Give `.myAlert` `flex: 0 0 auto` (basis `auto` is the whole fix — the item's
+  hypothetical size becomes its content width, the row wraps it to its own line when it does not fit, and
+  it never grows). Drop the inline `max-width: fit-content`, which was compensating for the grow half of
+  the same shorthand. Keep it a flex item; do not `position` it or move it out of the row — the row's
+  `flex-wrap` is the behaviour the finding asks for.
+- **Do not change:** `HistorySummaryCards.vue:4`'s row. Its `flex-wrap` is correct and the two selects'
+  `min-width`/`max-width` are what keep *them* legible. Also not the `VAlert` `density`/`variant` — the
+  alert is the right size once it is allowed to be its own size.
+- **Verification:** `history-review/B1`'s `Verify:` block at ≥ 1440 px — the banner reads *"Period total:
+  19h 7m vs previous: 7h 16m +163.1%"* in full, on one line or on its own line below the selects. Then
+  `?range=threeDays` or any range with no baseline (`percentChange === null`), so the *"no baseline"*
+  caption branch is exercised at its shorter width; and 1920 wide, where the banner should sit inline.
+- **Risk:** None. One element's flex shorthand.
+
+## F27. History dashboards have no error state — three fetch owners null or keep their data on failure, and every panel says "No data for this period"
+
+- **Scope:** app-side — `src/core/activityHistory/composable/useHistoryDashboard.ts`,
+  `src/core/historyDashboard/component/HistoryTimeline.vue`,
+  `src/core/activityHistory/view/HistoryCalendarView.vue`, and the panel components that render the
+  empty state (`HistorySummaryCards.vue`, `HistoryPieChartSection.vue`, `HistoryInsights.vue`) plus the
+  two views' `<StackedBarsChart>` bindings
+- **Closes:** `history-review/B2`
+- **Root cause — confirmed, and wider than filed.** Three different failure behaviours, none of them an
+  error state:
+  1. **The composable nulls and forgets.** `useHistoryDashboard.ts:135-182` — each of the four fetchers is
+     `try { data = await … } catch { data = null } finally { loading = false }`. Its own comment (`:132-134`)
+     says the null is deliberate so a stale chart never reads as a true one, and that *"the axios
+     interceptor still raises the error snackbar"*. Both true; but `null` is also what an empty response
+     *looks like* to every consumer — `HistorySummaryCards.vue:49` (`!data || data.cards.length === 0`),
+     `HistoryPieChartSection.vue:14`, and `HistorySummaryView.vue:44-55` / `HistoryDetailView.vue:91-100`
+     pass `StackedBarsChart` `:windows`/`:loading` and **no `:error`**, so the chart's own `windows.length
+     === 0` branch (`StackedBarsChart.vue:60-69`) renders the no-data copy. A snackbar that disappears
+     versus a panel that stays on screen saying *"No data for this period · 09.09.2026"* — the panel wins.
+  2. **The timeline keeps the previous day.** `HistoryTimeline.vue:156-164` is `try { historyList = await
+     … } finally { loading = false }` — **no `catch`**. A failed `detail/timeline` request leaves the
+     *previous* date's records under the new date's `periodLabel` (`:14`), which is precisely the
+     stale-reads-as-true case the composable's comment was written to prevent, and the rejection escapes
+     the `watch` at `:166-169` as an unhandled one.
+  3. **The calendar view renders a blank grid.** `HistoryCalendarView.vue:54-69` is the same
+     `try/finally` with no `catch`. On a failed month change `days` keeps the previous month's rows;
+     `CalendarGrid.calendarWeeks` (`:209-266`) looks each week up by date, finds nothing in the new range,
+     pushes no weeks — and `allDaysEmpty` (`:52`) is `false` because the *old* rows have data, so the
+     empty state does not render either. Blank card, no message, unhandled rejection from the
+     `dateRangeChange` emit's watcher.
+  Cases 2 and 3 are **source-certain and unobserved** — the unit mocked only `detail/pie-chart`. They are
+  in this batch because they are the same concern in the same view family with the same fix, not because
+  a browser has seen them; the verification step below is what makes them observed.
+- **The pattern is already written, one module over — copy it, do not design a new one.**
+  `useActivityDashboard.ts:306-316` holds one `ref(false)` error flag per panel; each fetcher resets it,
+  sets it in `catch` (skipping `axios.isCancel`, `:109-110`), and requests carry `_silent: true` so the
+  interceptor's snackbar is suppressed and the failure surfaces **only** as the panel's retry state
+  (`:306-307`); the empty-state test at `:483-496` is guarded on `!…Error` for every panel. The four
+  tracking dashboards then bind `:error`/`@retry` on every panel (`ActivityDashboard.vue:21-87`), and
+  `StackedBarsChart.vue:41-57` **already renders that state** — icon, `activityTracking.common.loadFailed`,
+  a Retry button emitting `retry`. `useHistoryDashboard`'s docstring (`:80-82`) says it was *"shaped after
+  `activityTracking`'s `useActivityDashboard`"*; the error half is the part that was not carried over.
+- **Files:** `useHistoryDashboard.ts:101-105` (add the four flags beside the loading ones), `:135-182`
+  (set/reset), `:207-211` (exclude errored panels from `isEmpty` — a failed round must not trigger the
+  first-run check, and must never resolve `hasAnyHistoryEver` to `false`), `:251-277` (export);
+  `historyDashboardApi.ts:28-103` (`_silent: true` on the seven dashboard reads — **not** on
+  `getHasAnyHistoryEver`, which has its own `catch`); `HistorySummaryCards.vue:47-53` and
+  `HistoryPieChartSection.vue:14-20` (an `error?: boolean` prop and a `retry` emit, rendering the same
+  shape as `ActivityPieChartSection.vue:24` — `HistoryEmptyState` can take an `error` variant, or a
+  sibling `HistoryErrorState`, whichever keeps the H7 `periodLabel` off the error copy); `HistoryTimeline.vue:156-164`
+  and `HistoryCalendarView.vue:54-69` (add the `catch`, an `error` ref, and the state); the two views'
+  `<StackedBarsChart>` (`:error="stackedBarsError" @retry="fetchStackedBars"`) and `HistoryInsights`
+  (which reads `pieChartData`/`timeOfDayData` and should hide, not say "no data", when either errored).
+- **What to change:** Exactly the tracking shape, in the history composable and the two view-local
+  fetchers. **Two decisions to make once, not per panel:** (a) `_silent` — adopt it, so a failed round
+  is one retry state per panel and not four snackbars plus four panels; (b) the Calendar view's error
+  state has to render *outside* `CalendarGrid` (the grid has no error slot and is framework) — the
+  `HistoryEmptyState` slot above it at `:8-13` is the place, with `days` cleared to `[]` on failure so the
+  grid is honestly empty rather than blank-with-stale-rows. Retry for the calendar re-fires
+  `fetchCalendarActivity` with the last range — hold the range in a ref; `CalendarGrid` only emits it
+  on change.
+- **Do not change:** `StackedBarsChart.vue` — it already has the state. `HistoryEmptyState`'s existing
+  callers' copy (`activityTracking.common.noDataForPeriod`) — cross-module locale reuse that the H5
+  comment records as deliberate; the *error* copy can reuse `activityTracking.common.loadFailed`/`retry`
+  the same way or get `historyDashboard.*` keys, but do not fork the no-data string. `checkFirstRunIfEmpty`'s
+  own `catch` (`:217-225`) — it is already right.
+- **Verification:** `history-review/B2`'s `Verify:` block (`playwright-cli route
+  "**/api/activity-history/dashboard/detail/pie-chart" --status=500`, reload `/activity-history/detail`) —
+  the pie panel shows a state visibly distinct from *"No data for this period"*, with a working Retry
+  (`unroute`, click, the panel populates). Then the two cases the unit did not mock: route
+  `**/dashboard/detail/timeline` → 500 and **change the date** — the timeline must not show the previous
+  day's records; route `**/dashboard/calendar` → 500 and **change the month** — the calendar must show an
+  error state, not a blank grid, and `playwright-cli console error` must carry **no** unhandled
+  rejection. Then the summary: route `**/dashboard/summary/*` → 500 on a fresh load and confirm the
+  first-run block does **not** appear (the `isEmpty` guard). Finally, with nothing routed, the seed's
+  empty day (`date=2026-09-07`) must still read *"No data for this period"* — the fix must not turn empty
+  into error.
+- **Risk:** Medium — it touches every panel on three views and changes what a failure looks like for all
+  of them. `_silent` removes a snackbar users may be used to; that is the tracking dashboards' existing
+  behaviour and the consistent choice. The `isEmpty` guard is the subtle part: get it wrong in the other
+  direction and a genuinely-new user with one failed panel never sees the onboarding block.
+
+## F28. `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer
+
+- **Scope:** app-side `src/core/activityHistory/view/HistoryDetailView.vue` — not the framework
+- **Closes:** `history-review/B3` (re-graded to `polish` — *Contradictions* §29)
+- **Root cause:** Confirmed, and the finding's own reading is exact. `navItems.ts:12-17` registers the
+  History group with two children, `to: '/activity-history'` (Summary) and `/activity-history/calendar`;
+  `findTrail()` (`useBreadcrumbs.ts:16-39`) keeps the longest `matchesPath` hit and
+  `'/activity-history/detail'.startsWith('/activity-history' + '/')` is true, so Detail inherits Summary's
+  crumb. Same class as `_shell/P1` (`/todo-list/:id` inheriting `/todo-list`), same fix — `F11` —
+  which is now the fourth consumer of `useSetBreadcrumbExtra()` in this tree (`TodoListView.vue:224`
+  and three framework detail views). Not `F14`'s class: that was a nav `to` naming one *tab* of a family;
+  this route is a drill-down with no nav entry at all, by design (`_routes.md`, orphan table, resolved by
+  unit 3).
+- **Files:** `HistoryDetailView.vue` (script setup — one `useSetBreadcrumbExtra()` call, one `watch`)
+- **What to change:** `setBreadcrumbExtra([{ title: t('history.detail.title') }])` on setup — the key
+  already exists (`activityHistory.en.ts:28`, *"History Detail"*). Optionally append the viewed date; if
+  so, format it through `localeTag(locale.value)` (`src/i18n.ts:35`, the `F24` rule) — **not**
+  `formatToDate` from `DateTimeHelper.ts`, which is hardcoded `sk` (*Contradictions* §22) and is already
+  what `periodLabel` uses on this view (in scope to leave, out of scope to copy). Watch `date` so the
+  segment follows the picker. The `onBeforeUnmount` cleanup is the composable's; nothing to add.
+- **Do not change:** `navItems.ts` — registering `/activity-history/detail` would put a landing-page
+  entry in the sidebar for a page that is never a landing destination. Not `useBreadcrumbs.ts` (`F11`'s
+  *Do not change*, same reason). Not the sidebar highlight: `SidebarNavItem.vue:52` will keep lighting
+  *Summary* on Detail through the same `matchesPath`, and for a drill-down that is the right answer.
+- **Verification:** `history-review/B3`'s `Verify:` block — `/activity-history/detail?date=2026-09-09`
+  reads *"Home › Summary › History Detail"* (or with the date); `/activity-history` itself still reads
+  *"Home › Summary"*; navigate Detail → Calendar via the icon button and confirm the extra crumb is gone.
+- **Risk:** None. `extraSegmentSlots` is module-level state; the unmount hook clears it — `F11` proved
+  that on the same mechanism.
+
+## F29. Stacked-bar columns are bare `div`s — no name, no role, no `tabindex`, no key handler; and on Detail they show a pointer and do nothing
+
+- **Scope:** app-side `src/core/activityTracking/component/stackedBars/StackedBarColumn.vue`,
+  `StackedBarsGrid.vue`, `StackedBarsChart.vue` — **unit 5's module**, shared with `activityHistory` per
+  `migration-revision.md` §7 (see the note under the summary table)
+- **Closes:** `history-review/A1`
+- **Root cause:** Confirmed. `StackedBarColumn.vue:2-8` is `<div class="bar-column" … @click>` with two
+  coloured child `div`s and nothing else; `.bar-column { cursor: pointer }` (`:77-81`). No `role`, no
+  `tabindex`, no `aria-label`, no `title`, no `@keydown`. The hover tooltip (`StackedBarsGrid.vue:89-90`
+  → `StackedBarsTooltip`) is the only place the bar's name and duration are ever spelled out, and it is
+  mouse-only. So the finding's *"Tab to or inspect"* repro is half impossible — Tab cannot reach a
+  `div` — and the gap is wider than naming: the Summary view's primary drill-down is unreachable without a
+  mouse.
+- **The two consumers disagree about what a bar *is*, and the fix has to know.** `HistorySummaryView.vue:54`
+  binds `@activityClick="handleActivityClick"` (drill into Detail); `HistoryDetailView.vue:91-100` binds
+  **no** click handler at all, and the four tracking dashboards have their own semantics. A blanket
+  `role="button"` would name a control on Detail that does nothing — the same affordance lie `F30` is
+  about, from the other side. Today Detail's bars already lie a little (`cursor: pointer`, no action);
+  fix that here rather than leave it.
+- **Files:** `StackedBarColumn.vue:2-8` (the element), `:30-43` (props/emits), `:76-81` (cursor);
+  `StackedBarsGrid.vue:78-93` (the mount — it has `formatWindowLabel(window)` at `:112` and is the only
+  layer that knows the window's time range); `StackedBarsChart.vue:99-121` (an `interactive?: boolean`
+  prop, or derive it — the component cannot see whether the parent bound `@activityClick`, so a prop it
+  is); the two history views and four tracking dashboards (pass it where a handler is bound).
+- **What to change:** On `StackedBarColumn`: an `:aria-label` built from the domain name (the `_other`
+  bucket via `activityTracking.common.other`), the duration (`fromSeconds(data.activeSeconds)` — the
+  tooltip's own wording, `StackedBarsTooltip.vue`), and the window label the grid passes down;
+  `role="button"`, `tabindex="0"` and `@keydown.enter.space.prevent` **only when `interactive`**, else
+  `role="img"` (a named graphic, not a control) and `cursor: default`. Localize the label pattern —
+  one key in `activityTracking.{sk,en}.ts`, since the component is that module's. Keyboard focus needs
+  a visible ring (`:focus-visible` outline on `.bar-column`); the grid is a positioned CSS grid, so check
+  the ring is not clipped by a neighbouring column's `z-index: 5`.
+- **Do not change:** `StackedBarsGrid`'s tooltip or hit-testing — the mouse path works and unit 3 drilled
+  through it. Do not move the component into `historyDashboard` or `_common` in this batch;
+  `migration-revision.md` §7 already records that decision and its reasons. Do not touch
+  `StackedBarsGrid.vue:460`'s `toLocaleString('en', …)` (`F24`'s *Do not change* named it — unit 5's).
+- **Verification:** `history-review/A1`'s `Verify:` block on `/activity-history` — a bar exposes a
+  localized name in the snapshot (`getByRole('button', { name: /…/ })` resolves), **Tab reaches it**,
+  Enter drills into Detail with the same `date`/`groupBy` as a click. Then `/activity-history/detail`:
+  the bars are `img`, not `button`, and the cursor is no longer a pointer. Then one tracking dashboard
+  (`/activity-tracking`) to confirm its own click semantics are intact and its bars are named. SK as
+  well as EN for the label.
+- **Risk:** Low-medium. Six dashboards render this component; the change is additive markup plus a
+  prop with a `false` default, so an unmodified consumer gets named, non-interactive bars — which is
+  the honest state for a chart nobody bound a handler on. The bar count is data-driven (25–42 on the
+  seed), so check the snapshot stays readable rather than becoming 42 long labels.
+
+## F30. Summary cards are named "View details for X" and toggle a highlight — and the same cloned label sits on `activityTracking`'s domain card
+
+- **Scope:** app-side `src/core/historyDashboard/_locales/historyDashboard.{sk,en}.ts`,
+  `src/core/activityTracking/_locales/activityTracking.{sk,en}.ts`; adjacent —
+  `historyDashboard/component/summaryCards/HistorySummaryCard.vue`,
+  `activityTracking/component/summaryCards/ActivityDomainCard.vue`
+- **Closes:** `history-review/P1`. **Also closes, unfiled:** the identical mismatch on
+  `ActivityDomainCard.vue:7-9` — `activityTracking.statColumn.viewDetails` (*"View details for
+  {domain}"*), whose click is `emit('click', domain)` → `domainClick` → `selectedDomain`
+  (`ActivitySummaryCards.vue:72-73,135-136`): the same select-toggle. The history card was built from
+  the tracking one (`HistorySummaryCards.vue:116`'s own comment: *"Reused from activityTracking"*), so the
+  label came with it. Unit 5 has not run; one locale edit each, same commit.
+- **Root cause:** Confirmed. `HistorySummaryCard.vue:8` binds
+  `:aria-label="$t('historyDashboard.summaryCards.viewDetails', { name })"` on a card whose only effect
+  is `emit('click', historyGroupKey(card))` → `handleGroupSelect` → `selectedGroup` toggles
+  (`useHistoryDashboard.ts:242-244`) and the pie chart highlights the slice. The label describes an
+  action that does not exist. Severity `polish` stands.
+- **Adjacent, source-certain, unobserved — fix while in the file:** both cards are `role="button"
+  tabindex="0"` with `@click` and **no key handler**, and `VCard` adds none (`VCard.js` has no
+  `keydown`/`onKeydown`; it renders a `div` with `onClick` and `tabindex`). So both are focusable,
+  announced as buttons, and inert on Enter/Space. Add `@keydown.enter.space.prevent` to the same emit.
+  Not filed by the unit (it clicked); flagged here because `F29` is settling the same question for the
+  bars and the two should land as one convention.
+- **Files:** `historyDashboard.en.ts:20` / `.sk.ts:20`; `activityTracking.en.ts:101` / `.sk.ts:101`;
+  `HistorySummaryCard.vue:2-10`; `ActivityDomainCard.vue:7-9`
+- **What to change:** Rename the two strings to what the click does — *"Highlight {name} in the chart"*
+  / *"Zvýrazniť {name} v grafe"* (or *"Filter to"*, but pick the same verb `F29` uses for its drill-down
+  so the two kinds of chart control read as two kinds). Keep the key names; only the values change.
+  Since the card is a toggle, `aria-pressed="selected"` is the honest extra and costs one attribute.
+- **Do not change:** the behaviour. The finding's alternative — make the card actually open details — is a
+  feature, and the pie-chart cross-highlight is the designed interaction (`HistoryPieChartSection.vue`
+  renders the details panel for the selected group; that *is* the detail).
+- **Verification:** `history-review/P1`'s `Verify:` block — the accessible name describes the highlight;
+  Enter on a focused card highlights the slice (and again un-highlights); `aria-pressed` follows
+  `selected`. Repeat on `/activity-tracking`'s domain cards. Both locales.
+- **Risk:** None. Two strings and one key handler per card.
+
+## F31. Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas, and `isNarrow` is a dead prop
+
+- **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue`
+- **Closes:** `history-review/P2`
+- **Root cause — not "in-hole", and the suggested fix does not apply.** The legend is not inside the
+  donut; it is an ECharts legend boxed to the **left 58 %** of the canvas (`HistoryPieChart.vue:59-63`:
+  `orient: 'vertical', left: 0, right: '42%'`) while the pie is centred at **74 %** with an outer
+  radius of 75 % (`:87-88`). On a wide canvas the pie's left edge lands at ~57 % and the two just clear.
+  But `HistoryPieChartSection.vue:23-34` puts the chart in a `flex-fill` **beside a 200–250 px details
+  card**, inside the Summary view's `lg="6"` column — so at 1440 the canvas is roughly 300 px wide, the
+  legend box ends at ~175 px and the pie starts at ~130 px. ECharts does not clip legend text to the box
+  (the `formatter` at `:73-82` truncates at 25 *characters*, which is a width the layout never measured),
+  so the entry runs into the slices. Same geometry on Detail's `HistoryInsightsColumn direction="row"`.
+  `isNarrow?: boolean` (`:30`) is declared, passed by `home`'s `ActivityHistoryWidget.vue:26`, and **read
+  nowhere** — it is the hook this fix was supposed to hang on.
+- **Files:** `HistoryPieChart.vue:27-31` (props), `:59-88` (legend and series geometry)
+- **What to change:** Make the layout answer to the width. Either honour `isNarrow` (and have
+  `HistoryPieChartSection` derive it from its own measured width — `useResizeObserver` is already in use
+  in `HistorySummaryCards.vue:137`) or measure inside the chart component; below the threshold, put the
+  legend `orient: 'horizontal'` at `bottom` and centre the pie at `['50%', '45%']`. Above it, keep the
+  side layout but truncate by **pixels** — ECharts 5's `legend.textStyle.width` + `overflow:
+  'truncate'` — instead of by character count, and let the pie `center` follow the legend's actual
+  width rather than a constant 74 %.
+- **Adjacent, source-certain, unobserved:** `textStyle.color: '#fff'` (`:69`) and `borderColor: '#666'`
+  (`:64`) are hardcoded — dark-theme values on a chart that renders in both themes
+  (`createAppVuetify.ts:74` defaults to dark, which is why the sweep never saw white-on-white). Read
+  `useTheme().current.value.colors['on-surface']` instead. Same hardcode in
+  `StackedBarsChart.vue:479` (`.legend-label { color: #fff }`) — unit 5's, out of scope, noted so a
+  fixing session that opens both does not fix one.
+- **Do not change:** the `avoidLabelOverlap: false` / `label.show: false` series settings — slice labels
+  are off by design and the tooltip carries them. Not the 25-item cap on the request
+  (`HistorySummaryView.vue:231`) — fewer entries would dodge the symptom without fixing the layout.
+- **Verification:** `history-review/P2`'s `Verify:` block on `/activity-history/detail?date=2026-09-09`
+  (two groups) — a **screenshot**, since the a11y tree cannot see a canvas: legend text fully clear of
+  the slices. Then `/activity-history` with `?groupBy=activity` and the week range (more entries, longer
+  names), at 1440 and 1920; and the home widget, which passes `isNarrow` and should get the stacked
+  layout. Both themes if the colour half is taken.
+- **Risk:** Low-medium. A width-driven layout switch is a second render on resize; ECharts `autoresize`
+  is already on (`:4`), so the cost is the option recompute. Check the selection highlight
+  (`selectedMode: 'single'`) survives a layout switch mid-selection.
+
+## F32. `/activity-history/calendar` has no `<h1>`, unlike its two siblings
+
+- **Scope:** app-side `src/core/activityHistory/view/HistoryCalendarView.vue`,
+  `src/core/activityHistory/_locales/activityHistory.{sk,en}.ts`
+- **Closes:** `history-review/P3`
+- **Root cause:** Confirmed. The view's template (`:1-26`) is a fragment of `HistoryFirstRunState` /
+  `HistoryEmptyState` / `CalendarGrid` with no header row; `HistorySummaryView.vue:19` and
+  `HistoryDetailView.vue:33` both render `<h1 class="text-h4">` inside a `d-flex align-center ga-6
+  flex-wrap` header, each with an icon button linking to the sibling view. `history.calendar.*`
+  (`activityHistory.en.ts:32-37`) has no `title` key to render even if the markup were there.
+- **Files:** `HistoryCalendarView.vue:1-2`; `activityHistory.en.ts:32` / `.sk.ts` (one key,
+  `history.calendar.title`)
+- **What to change:** The siblings' header row, minus the controls the calendar does not have: an
+  icon button to Summary (`chart-line`, the reverse of the siblings' `calendar-days` button — reuse
+  `history.detail.openSummary`'s shape, new key `history.calendar.openSummary`) and
+  `<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>`. Wrap the fragment in a root
+  `d-flex flex-column` so the header sits above the grid and `CalendarGrid`'s `height: 100%` chain
+  (`CalendarGrid.vue:287-292`) still resolves — check the grid still fills to the footer after the header
+  is added; the siblings use `flex-fill` + `min-height: 0` on the body for this.
+- **Do not change:** `CalendarGrid`'s own `VCardTitle` toolbar — it is the date-range control, not a page
+  heading, and it is framework.
+- **Verification:** `history-review/P3`'s `Verify:` block — `document.querySelector('h1')` resolves on
+  `/activity-history/calendar` above the Mode/Month/Year row; the grid still scrolls inside the card at
+  900 px tall rather than pushing the holiday footer off-screen.
+- **Risk:** None beyond layout — but it is the `F12` class of layout (a definite-height flex chain), so
+  look at the result rather than trusting the a11y tree.
+
 ---
 
 ## FW1. `MyDialog` is `persistent` by default, so Escape closes nothing
@@ -1137,6 +1473,51 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   (`RoutineSettingsView.vue`, a `BasicTable` with default actions and `@onDelete`) or run this before
   `F19`. Both locales, per step 3 of the block.
 - **Risk:** None. One field name, and the correct value is already what the sibling renders.
+
+## FW6. `CalendarGrid`'s day cells are click-only `div`s — no accessible name, role, `tabindex` or key handler
+
+- **Scope:** **[framework]** `src/_common/component/calendar/CalendarGrid.vue` — submodule commit in
+  `vue_framework`, then a pointer bump in this repo; **the pointer-bump commit must also carry an
+  app-side locale mirror** (below)
+- **Closes:** `history-review/A2`. **Pre-empts** the same finding from unit 7 (`planner-day`, not yet
+  run): `PlannerCalendarView.vue:2-53` mounts the same component with the same `@dayClick`.
+- **Root cause:** Confirmed, and the finding's framework guess was right — the click target is the
+  grid's own markup, not the app's slot. `CalendarGrid.vue:64-76` renders each cell as `<div
+  class="day-cell" … @click="handleDayClick(dayData)">` and the app's `#day-cell-content` slot (`:81-84`)
+  sits *inside* it. No `role`, `tabindex`, `aria-label`, `title` or `@keydown` on the cell; the
+  `.empty` cells (`:70`, padding cells for days outside the range) carry the same `@click` and are
+  no-op'd in `handleDayClick` (`:268-271`). `CalendarDayCellHeader` renders the visible day number, so
+  the snapshot shows digits with no relationship to the clickable wrapper — which is why the unit had to
+  click a neighbouring ref and sometimes hit the wrong day.
+- **Files:** `CalendarGrid.vue:64-76` (the cell), `:268-271` (the handler); `src/_common/docs/components.md`
+  (the `CalendarGrid` entry) in the same commit
+- **What to change:** On non-empty cells: `role="button"`, `tabindex="0"`, `@keydown.enter.space.prevent`
+  to the same `handleDayClick`, and an `:aria-label` naming the date — the finding's *"View history for
+  September 10, 2026"* is app wording; the framework's generic form is the date plus the weekday
+  (`allDays` at `:175-188` already has the localized weekday names; the date must be formatted through
+  the i18n locale, **not** `formatToDateWithDay` from `DateTimeHelper.ts`, which is hardcoded `sk`
+  (*Contradictions* §22) and would announce Slovak dates in EN). The label key goes in the framework's
+  `calendar` namespace next to `calendar.daysToShow`. **`.empty` cells get none of it** — no role, no
+  tabindex, and `cursor: default` is already there (`:406-409`); make the `@click` conditional too so a
+  padding cell is not a focus stop. A `:focus-visible` outline on `.day-cell` — the existing `.selected`
+  outline (`:379-383`) is the shape to mirror, not reuse, since selected and focused are different states.
+- **⚠️ The locale mirror is not optional.** This app's `src/locales/common.{sk,en}.ts` declares its own
+  `calendar` namespace (`common.en.ts:431`, with the comment at `:429` saying it is *"consumed by
+  `_common/component/calendar/CalendarGrid.vue`"*), and the aggregator spread is shallow — the app's
+  `calendar` **replaces** the framework's wholesale (CLAUDE.md *Localization*; R11 was exactly this
+  namespace). Any key `CalendarGrid` resolves that is not mirrored renders raw here. Add the new key to
+  both app files in the pointer-bump commit, and say so in its message.
+- **Do not change:** the `#day-cell-content` slot contract or the `dayClick` payload — `HistoryCalendarView`
+  and `PlannerCalendarView` both cast it. Not `CalendarDayCellHeader` — the visible day number is fine;
+  the name belongs on the control. Do not batch with `F29`/`F30` (rule 1 — those are app-side).
+- **Verification:** `history-review/A2`'s `Verify:` block on `/activity-history/calendar` — a day cell
+  resolves by `getByRole('button', { name: /10/ })` (or whatever the label pattern is), Tab reaches it,
+  Enter navigates to `/activity-history/detail?date=2026-09-10` exactly as a click does; padding cells
+  are not focus stops. Then `/day-planner` for the second consumer. **Both locales**, and specifically
+  check the name is not raw `calendar.<key>` in either — that is the mirror check.
+- **Risk:** Low, but two repos and one locale trap. Every app on the framework that renders
+  `CalendarGrid` gains focusable cells — a month is 28–42 new tab stops, which is correct for a control
+  grid but is a change a keyboard user of another app will notice.
 
 ---
 
@@ -1283,6 +1664,35 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
    The client-side half — what to do at this call site until either lands — is under *Needs verification*
    below, because the message on screen has not actually been observed; only the 409 has.
 
+8. **Public-holiday names are a country table's proper nouns, stored as strings at row creation — there is
+   no locale to key on, and no country preference to omit them by** — `history-review/B4`, re-graded
+   `bug` → `polish` (*Contradictions* §30). Read at the source this pass: `CalendarDayFactory.cs:37` writes
+   `HolidayName = HolidayCalendar.ForDate(date, countryCode)` when a `Calendar` row is created (seeder or
+   lazy provisioner — both go through it), and `HolidayCalendar.cs:31-56` is a **Slovak** table of native
+   names (`"Deň Ústavy Slovenskej republiky"`, `"Sedembolestná Panna Mária"`), with a Czech sibling
+   (`:58-81`) and `DefaultCountryCode = "SK"` — *"the only country this app has ever seeded"* (`:11-12`).
+   The column is `string?`, max 200 (`CalendarConfiguration.cs:20`); the History endpoint projects it
+   as-is (`CalendarActivityEndpoint.cs:95`). So this is **not** the shell's `B1` shape (app text
+   resolved in the wrong locale at dispatch) and should not be batched with it: the string is the
+   holiday's *name*, in the language of the country whose holiday it is, and there is no English
+   variant anywhere to have chosen instead. An EN-locale user in Slovakia arguably *should* see
+   "Sedembolestná Panna Mária" — that is what the day is called. The finding's other pass condition
+   (*"omitted for accounts outside Slovakia"*) has nothing to read: `User` carries no country, and
+   `HolidayCalendar` is only ever called with the default.
+
+   **The ask, if one is wanted, is a design decision with two halves and the client cannot take either
+   alone:**
+   - **A country preference** (`/user/preferences` — it describes the person, CLAUDE.md's ownership
+     table) that `CalendarDayFactory` reads instead of the constant. Without it the "outside Slovakia"
+     branch cannot exist. Note the re-materialisation problem: rows are created once, so a country
+     change would need a backfill or the holiday column would need to become a *lookup* at read time
+     (`HolidayCalendar.ForDate` is cheap and pure, so that is viable).
+   - **If localized names are wanted at all**, store a stable key per holiday (`SK_CONSTITUTION_DAY`) and
+     let each client resolve it through vue-i18n — the same *"send a key + params"* shape §1 asks for
+     notifications. Native-name rendering is a defensible default and costs nothing; it just has to be a
+     decision rather than an accident of `DefaultCountryCode`.
+   Not blocking any unit. `CalendarGrid.vue:104` renders whatever arrives and needs no change either way.
+
 ## Needs verification (unverified findings, and what would settle each)
 
 ### Awaiting retest — code-fixed this cycle, never seen in a browser
@@ -1304,6 +1714,8 @@ been seen in either direction.
 | `todo-routine/B9` | `RoutineSettingsView.vue:163-201` — `_silent` 409 → `deleteBlocked` / `deleteBlockedUnknownCount`, count fetched only in the failure path, row kept | ❌ **not verified — three attempts, all lost to a concurrent reseed** (the period vanished on a plain reload between attempts). Neither the defect nor the fix has ever been seen on screen. **How to run it:** exclusive access to the account (no other unit running); create a period with `lengthInDays` **not** in {1, 7, 30, 365} — the unique index (§7) rejects the seeded lengths; create one routine item in it; delete the period; read the snackbar and confirm the row stays. It is the one `todo-routine` item still on this list for a reason other than locale |
 | *(unfiled)* | `TodoListStepsFormField.vue`'s four step controls now named, position-qualified | ⏳ not swept in round 5 — `main button, main a.v-btn` on the Add dialog with steps, expect `0` unnamed |
 | `todo-lists/B3` | ✅ **fixed for real 2026-09-13** — it was *not* fixed silently: the round-2 edit moved the emit above the multi-count branch, so a row-body click on a counted item still stepped the counter *and* opened the dialog | closed; `Status:` line corrected; spec pins it |
+| `todo-routine/B10` (`F24`) | **applied in the working tree, uncommitted** (sixth pass, source-verified): `composable/useRoutineDateFormat.ts` is untracked and imported by all five files; `grep toLocaleDateString(undefined` across `src/core/todoList/` hits only the helper itself | ⏳ **not seen in a browser.** Run `F24`'s *Verification* verbatim — SK weekday/month forms on all three cards, the heatmap tooltip, the history dialog, the freeze chip, then EN **without reloading**. The finding's `Status:` still reads `open`; set it on pass |
+| *(unfiled — `F25`)* | **applied, uncommitted**: `RoutineSettingsView.vue:103` is `new TableColumn('color', t('routineTodoList.timePeriods.color'), false)` | ⏳ one look at `/routine-settings` in SK — header reads *Farba* |
 
 ### ⚠️ Found in the fifth pass: the create/edit path on `/routine-settings` has the 409 defect `B9` fixed for delete
 
@@ -1370,7 +1782,7 @@ only the snackbar will pass `B9` and miss this. Look at the dialog, not the toas
 **What would settle it:** on `/routine-settings`, create a throwaway time period through the app's own API
 (the mutating-spec rule; `lengthInDays` not in {1, 7, 30, 365} — §7), click its trash icon, click **Confirm**,
 and read whether the dialog is still on screen once the row is gone. If it is, this is a **framework batch**
-(`FW6` next run — `FW5` was taken by the fourth pass): either `confirmDelete`
+(`FW7` next run — `FW5` was taken by the fourth pass and `FW6` by the sixth): either `confirmDelete`
 closes the dialog immediately, or the emit carries a way for the parent to close it after the async delete
 resolves — the existing `deleteLoading` flag suggests the second was the intent and was never finished.
 That is a design decision for `vue_framework`, not a per-consumer workaround; do not add
@@ -1391,6 +1803,22 @@ That is a design decision for `vue_framework`, not a per-consumer workaround; do
 | --- | --- | --- |
 | `tracking-settings/U1` — the mapping delete button reaches nothing | run its *What would verify it* after `F12` **and** `F13` land: a `DELETE …/tracker-desktop-mapping-by-pattern/{id}` fires and the row is gone after reload | Kept `unverified` per rule 5, but it is source-certain (`DesktopMappingsTable.vue:36` declares only `edit`; `BasicTable`'s `hasDelete` default renders the button anyway). `F13` wires it; the retest also answers the dialog question above |
 | *(unfiled)* sidebar highlights *Desktop tracking* on the Mappings tab, nothing on `/activity-settings/roles` | one look at the sidebar on each route, before and after `F14` | `SidebarNavItem.vue:52` uses the same `matchesPath` as the breadcrumb, so `F14`'s data fix closes both; it must be *checked*, not assumed, because the `VBtn :to` in the header toggle is a second active-state mechanism on the same screen |
+
+### `history-review` — two `unverified`, both seed-shape gaps with a cheaper route than a seed change
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — Calendar's and Summary's empty / first-run branches never seen on screen | **Empty:** no seed change needed. `HistoryCalendarView.vue:71-78`'s own comment says calendar rows exist only for the current and next year, and `fillMissingDays` pads a past-year range with placeholders — so `/activity-history/calendar` navigated to any 2020 month must render `history.calendar.noActivityInRange` above a grid of *"Not recorded"* cells, and `/activity-history?date=2020-01-01&range=month` must render the three `HistoryEmptyState`s with `periodLabel` *01.01.2020*. **First-run:** needs an account with **zero** history rows anywhere — `getHasAnyHistoryEver()` is a global check. Read `e2e/.state/seed.json` for whether `secondaryUser` (10002) seeds history; if it does not, the `secondaryPage` fixture is the one-minute route, else a throwaway account | Seed-data shape, not a defect. **Run after `F27`** — until then an empty state and a failed request look the same, and a 2020 range is exactly where a backend edge case would show up as "empty" |
+| `U2` — the null-`wakeUpTime` path (`CalendarActivityDaySummary.ts:37-38`) never exercised live | **No seed row needed:** `playwright-cli route "**/api/activity-history/dashboard/calendar"` with a fulfilled body copied from a real response and one day's `wakeUpTime`/`bedTime` set to `null` (the CLI's `route` takes a body as well as a status — check `playwright-cli route --help` for the flag name rather than trusting this row). Pass: that cell renders without its sleep line and the rest of the month still paints | Source-only today; the fix it would confirm (`H1`, `Time | null` with independent rendering) is in the DTO and the cell component. If the mocked body is a chore, a one-line ask on the seed — one day with no sleep record — is the alternative, and it is the *only* seed ask this unit produced |
+
+**Source-certain, unobserved, and carried inside batches rather than listed as findings** (each named in
+its batch's *Adjacent* / *Root cause*, with a verification step): the timeline and calendar views keeping
+the *previous* period's rows on a failed fetch, with an unhandled rejection (`F27`, cases 2 and 3); the
+summary/domain cards being `role="button"` with no key handler (`F30`); Detail's bars showing a pointer
+with no click consumer (`F29`); `HistoryPieChart`'s hardcoded dark-theme legend colours (`F31`); and
+`isNarrow` being a dead prop (`F31`). None of them needs a browser to be *believed* — the code paths
+have one outcome — but each batch's verification is where they get *seen*, and a fixing session that
+finds one of them does not reproduce should stop and say so rather than fix it anyway.
 
 ### The multi-count counter is probably unreachable by a real mouse — and the last queue's "contradiction" resolves
 
@@ -1470,18 +1898,33 @@ This is in the **framework submodule** (`src/_common`), so it is a two-repo comm
 
 ### Seed-data gaps — one ask, two findings
 
-**The routine half is now a written ask:** `prompts/view-docs/backend/B8-routine-streak-history-seed.md`
-(2026-09-13, open). `todo-routine`'s round 4 confirmed from the seeder source that it is unreachable **by
-construction** — `E2eFixtureSeeder` writes item-level streaks only and seeds zero `RoutinePeriodCompletion`
-rows — and sharpened the ask: `getMilestoneIcon` reads `item.streak`, not `bestStreak`, so the fixture's
-`BestStreak = 30` reaches none of its five branches, and the client **fabricates** heatmap cells via
-`mockHistory()` when `completionHistory` is empty and `totalPeriodsElapsed > 0`, which is why `B8` asks for
-real rows rather than a counter. Do not re-file `U1`/`U2`; attach browser observations to `B8`.
+**The routine half is done on the API side — `B8` closed 2026-09-14, moved to
+`prompts/view-docs/backend/_done/B8-routine-streak-history-seed.md`.** It was already covered by the API's
+`e2e-v4` work (uncommitted on `dev` on top of `7f9f9e5` when the ask was written; `B8` measured against
+`e2e-v3`, which is why source showed nothing). Every "Done when" item is met, plus the catch-up trap:
+`E2eFixtureSeeder.AddRoutinePeriodHistory()` seeds 16 `RoutinePeriodCompletion` rows on Weekly
+(pattern `xf.xxxx.xx.xx.xx` newest-first — met / missed / **frozen**, streak 1, best 4) and 16 on Daily (one
+4-of-5 miss eleven cycles back; streak 11, best 30); `totalPeriodsElapsed` / `totalPeriodsCompleted` are now
+**derived** from those rows by `RoutineTimePeriodResponse.From`, so the client's `mockHistory()` fallback cannot
+fire for them, and Monthly / Yearly stay bare on purpose so the empty state is still reachable. Four new daily
+items cover the remaining milestone tiers (`milestone30` Drink water 45 — the one daily item left un-ticked;
+`milestone90` Journal 120; `milestone180` Make the bed 200; `milestone365` Brush teeth 400). Freeze budgets and
+`lastResetAt` are pre-stamped so the first grouped read writes nothing. Typed in `e2e/fixtures/seed.ts`
+(`EXPECTED_FIXTURE_VERSION = 'e2e-v4'`, the four `SeedRoutineKey`s, `counts.routinePeriodCompletions` /
+`.frozenRoutinePeriodCompletions`), pinned by three tests in `TestSeedEndpointTests.cs`. Two caveats from the
+seeder: Weekly has one freeze fewer than budget if the seeded freeze falls in the current calendar month, and a
+spec that straddles midnight UTC with a milestone item un-ticked will see the lapse zero its streak.
+
+**What is still owed is the browser pass** — `todo-routine/U1`/`U2` stay `unverified` until someone drives
+`/routine-todo-list` and `/routine-settings` against a **v4-seeded database** (the running API is built from
+the v4 seeder as of 2026-09-14 09:44 — its dll carries `e2e-v4` — but the on-disk `e2e/.state/seed.json` is
+still yesterday's `e2e-v3`, so check `fixture` in the next seed response before trusting the screen). If a
+surface is still empty against v4, that is a **defect**, not a fixture gap — file it as one.
 
 | what to seed | unblocks |
 | --- | --- |
-| ≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory` — **`B8`** | `todo-routine/U1` (weekly review card), `todo-routine/U2` (personal bests, heatmaps, consistency/trend) |
-| ≥1 routine item with `streak >= 30` (ideally 90/180/365 too) — **`B8`** | `todo-routine/U2` (milestone icons — the seed's best is 12) |
+| ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | `todo-routine/U1` (weekly review card), `todo-routine/U2` (personal bests, heatmaps, consistency/trend) — browser pass outstanding |
+| ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | `todo-routine/U2` (milestone icons) — browser pass outstanding |
 | ≥1 **routine** item with steps (the `todo-lists` fixture has them; the routine groups do not — round 5: "Take Medication, Weekly Review, Pay Rent have no steps") | `todo-routine/A2`'s live check and the unfiled `TodoListStepsFormField` sweep, both read-only today. Low priority — a temporary item does the same job; worth one line on `B8` if it is reopened anyway |
 | enough desktop mappings to exceed one page (>25, or a smaller page size in the spec) | `F12`'s second verification step — that the Mappings body *scrolls inside the card* rather than merely paints. Two seeded mappings (one `Activity`, one `Ignored`) can prove the row paints; they cannot prove the fill-parent contract still holds. Low priority: `ActivityTable` already exercises the same path with 10 rows |
 
@@ -1532,8 +1975,14 @@ small one. One note for when it is weighed: the cheapest shape is folding the ic
 row width — and it is the same cell `F21` may already be touching on the categories table, so the two
 could ship together if `F21` lands first.
 
-`todo-lists/O1` remains `resolved` (round 4). No other open opportunity findings exist across the seven
-units triaged.
+`todo-lists/O1` remains `resolved` (round 4). **`history-review` filed no `opportunity` finding** — its
+tally line says `opportunity 0` and the body agrees. Two things it *could* have filed as one, recorded here
+so Phase 4 does not have to rediscover them: `HistoryPieChart.vue`'s `isNarrow` prop is the unfinished
+half of a responsive layout (`F31` takes it), and the Detail view's bars have no click consumer at all
+(`F29` names it) — a drill-*through* from a day's window to the timeline filtered to that window would be
+the natural use, and the `activityClick` payload already carries the window. Neither is an opportunity
+finding by the template's definition; both are noted. No other open opportunity findings exist across the
+eight units triaged.
 
 ## Contradictions & re-grades
 
@@ -1736,6 +2185,103 @@ Everything below was checked against the **current working-tree source** this pa
     (rotation → 401 on `/refresh`) is untouched; round 5 saw a different symptom (a period vanishing on
     reload) with a different cause (reseed), which is why it is an addition to `F23` and not a counter-example.
 
+27. **`history-review/B1`'s root cause is wrong in kind, and its suggested fix would not work.** The
+    finding says the alert is *"allowed to shrink below its intrinsic content width"* and proposes
+    `flex-shrink: 0`. Vuetify's `.v-alert` is `flex: 1 1` (`VAlert.css:3`) — basis **`0%`** — so the
+    item has no intrinsic size in the wrap calculation to begin with; it *grows* into the ~60 px left
+    over and is capped there by the inline `max-width: fit-content`. `flex-shrink: 0` leaves the basis
+    at zero and the banner at 62 px. The evidence (an element screenshot, a measured rect, the full text
+    in the a11y tree) is exactly right; the fix is `flex-basis: auto` (`F26`). Severity `bug` stands —
+    the information is rendered and unreadable, which the finding correctly calls worse than absent.
+
+28. **`B2` is confirmed, cites the wrong precedent, and is narrower than the code.** Its *Expected*
+    points at the framework table's error-vs-empty gap (the *Needs verification* item under the B2
+    settlement). The nearer precedent is one module over: `useActivityDashboard.ts:306-316` already
+    holds per-panel error flags with `_silent` requests and an `!…Error`-guarded empty test, and
+    `StackedBarsChart.vue:41-57` already renders a retry state on an `error` prop that
+    `HistorySummaryView.vue:44-55` and `HistoryDetailView.vue:91-100` simply never pass.
+    `useHistoryDashboard`'s docstring says it was *"shaped after"* that composable — the error half was
+    left behind. And the finding's root-cause guess (*"fetchers null the data ref on any rejection"*)
+    is true of the composable only: `HistoryTimeline.vue:156-164` and `HistoryCalendarView.vue:54-69`
+    have **no `catch`** and keep the previous period's rows under the new period's heading — the exact
+    failure mode the composable's own comment (`:132-134`) exists to prevent — with an unhandled
+    rejection out of a watcher. Three behaviours, one batch (`F27`). Severity `bug` stands; if anything
+    the timeline case is the graver one.
+
+29. **`B3` is re-graded `bug` → `polish`, for consistency, not because it is wrong.** The evidence is a
+    direct `textContent` read and the mechanism is exactly as the finding describes (`matchesPath`
+    prefix, `findTrail` longest-match, no nav entry for a drill-down). But `_shell/P1` — the same class
+    (`/todo-list/:id` inheriting `/todo-list`'s crumb), the same mechanism, the same fix (`F11`) — was
+    graded `polish` and closed as one. Two units grading one defect two ways is the drift this section
+    exists to catch; the lower grade is the one with the precedent. `F28`.
+
+30. **`B4` is not a localization gap and must not be batched with `_shell/B1`.** The finding's guess —
+    *"content resolved/stored server-side rather than through vue-i18n against the request's locale"* —
+    is right that the string is stored, and wrong about what it is. `HolidayCalendar.cs:31-56` is a
+    per-**country** table of native holiday names, written once into `Calendar.HolidayName` by
+    `CalendarDayFactory.cs:37` with `DefaultCountryCode = "SK"`; there is no locale dimension, no key,
+    and no English name that was passed over. *"Sedembolestná Panna Mária"* is the holiday's name the way
+    *"Thanksgiving"* is — the shell's `B1` is app-authored text (*"Blíži sa termín"*) rendered in the
+    wrong language, which is a different fact. The other pass condition (omit for non-Slovak accounts)
+    cannot be met by either repo alone: `User` has no country. Re-graded `bug` → `polish` and moved to
+    *Escalations* §8 as a two-part design decision (country preference; key-based names if localized
+    names are wanted at all). The unit's instinct to escalate rather than fix client-side was right.
+
+31. **`A1`'s suggested fix would name a control that does nothing on half its consumers, and its repro
+    step cannot be executed.** *"Tab to or inspect a stacked-bar column"* — Tab cannot reach a `div`, so
+    the gap is reachability as well as naming (`StackedBarColumn.vue:2-8` has no `tabindex` either).
+    And *"add an `aria-label` per bar segment … this also fixes the equivalent gap wherever else the
+    component is mounted"* assumes every mount is interactive: `HistoryDetailView.vue:91-100` binds no
+    `@activityClick`, so its bars are `cursor: pointer` decorations, and a `button` role there is the
+    `P1` affordance lie in reverse. `F29` adds an `interactive` prop and names the bars as `img` where
+    nothing listens. Severity `a11y` stands; the batch is wider than the finding.
+
+32. **`A2`'s root-cause guess is confirmed, and its "check whether `dayPlanner` flagged this" is
+    answered: it could not have.** The click target is `CalendarGrid.vue:64-76`'s own `div`, not the
+    `#day-cell-content` slot the app fills, so the batch is framework (`FW6`). `PlannerCalendarView.vue:2`
+    mounts the same component with the same emit — but unit 7 has not run, so there is nothing to batch
+    with yet; `FW6` closes unit 7's future finding in advance. One trap the finding could not see from
+    the browser: the framework's `calendar` locale namespace is **replaced wholesale** by this app's
+    (`common.en.ts:429-431`, R11), so the new label key must be mirrored app-side in the pointer-bump
+    commit or it renders raw exactly where it was meant to help.
+
+33. **`P1` has an unfiled twin, and both cards have a second, worse a11y gap.**
+    `ActivityDomainCard.vue:7-9` carries `activityTracking.statColumn.viewDetails` (*"View details for
+    {domain}"*) over the identical select-toggle (`ActivitySummaryCards.vue:72-73,135-136`); the history
+    card was built from it (`HistorySummaryCards.vue:116`'s comment). One cause, two locale files, one
+    batch (`F30`), unit 5 unrun. The second gap: both are `role="button" tabindex="0"` with only
+    `@click`, and `VCard` binds no key handler (`VCard.js` — no `keydown`), so a keyboard user reaches a
+    "button" that does nothing on Enter. Source-certain, unobserved (the unit clicked); folded into
+    `F30` as adjacent rather than filed, because `F29` is settling the same convention for the bars in
+    the same session.
+
+34. **`P2` describes the wrong geometry, so its suggested fix has nothing to cap.** *"Legend text inside a
+    donut chart's centre"* — the legend is an ECharts legend boxed to the left 58 % of the canvas
+    (`HistoryPieChart.vue:59-63`), and the pie is centred at 74 % (`:87`); on the ~300 px canvas the
+    Summary's `lg="6"` column leaves beside the details card, the two overlap by ~45 px and ECharts does
+    not clip legend text to its box. *"Cap the in-hole legend to the hole's diameter"* would cap nothing.
+    The evidence (the screenshot) is exactly right — text does run into the slices — and the finding's
+    fallback (*"switch to an external legend … once entry count/name length exceeds a threshold"*) is
+    close: the threshold is canvas **width**, and the dead `isNarrow` prop (`:30`, passed by `home`,
+    read nowhere) was already the hook for it. `F31`. Severity `polish` stands.
+
+35. **The unit's tally line matches its body** — `0 · 4 · 2 · 3 · 0 · 2 = 11`, verified by count. After
+    this pass's re-grades it reads `0 · 2 · 2 · 5 · 0 · 2`: `B3` and `B4` moved to `polish`. The third
+    unit in the sweep whose count needed no correction (after `tracking-settings` and `activity-settings`).
+
+36. **`F24` and `F25` were applied between the fifth pass and this one, and the queue did not know.**
+    Found from `git status`, not from any finding: `useRoutineDateFormat.ts` untracked, five routine
+    files modified, zero `toLocaleDateString(undefined` outside the helper, `RoutineSettingsView.vue:103`
+    localized. Same situation as the second pass's old `F4`–`F7` — batches become retest rows, not
+    deleted. `todo-routine/B10`'s `Status:` still reads `open`; the retest sets it.
+
+37. **Not a contradiction, recorded so nobody files it as one:** `HistorySummaryCards.vue` reads
+    `activityTracking.dashboard.comparedTo`, `activityTracking.baseline.*` and
+    `activityTracking.common.noDataForPeriod` — one module's component resolving another module's locale
+    keys. The H5 comment at `:116` calls it deliberate reuse, and locale keys cross no import boundary
+    CLAUDE.md names. `F27` and `F30` add strings near those; they should follow the existing choice
+    (reuse `activityTracking.common.*` for the error copy) rather than fork it.
+
 ### Re-grades
 
 | finding | was | now | why |
@@ -1766,10 +2312,22 @@ Everything below was checked against the **current working-tree source** this pa
 | `todo-routine/B9` | code-fixed, listed nowhere in this queue | code-fixed, **awaiting retest**, never observed either way; its create/edit sibling is source-certain under *Needs verification* | Contradiction 24; the retest is merged with the `BasicTable` dialog check |
 | `todo-routine/P1` | awaiting retest, both locales | **EN verified**, SK half outstanding | Round 5 was re-scoped mid-check |
 | `todo-routine/A2` | awaiting retest | still source-only — no stepped routine item in the seed | Seed-data table gains a row |
-| `todo-routine/U1`, `U2` | `unverified`, seed gap | `unverified`, **filed as backend ask `B8`** | Round 4 confirmed the gap is by construction |
+| `todo-routine/U1`, `U2` | `unverified`, seed gap | `unverified`, **seed gap closed — `B8` done in `e2e-v4`, browser pass outstanding** | 2026-09-14: the API had already seeded real period history + four milestone items; `B8` moved to `_done`. Next empty surface is a defect |
 | *Escalations* §2 | open backend question | ✅ **resolved** — `Restrict` → 409, no cascade | Round 4 API read; the message half became `B9` |
 | *Escalations* §3 | open data-integrity escalation | **re-scoped** to a bounded design question, backend ask `B9-routine-untick-streak-decision.md` | Round 4: once-per-cycle guard, tested; +1 is the whole cost |
 | *(counter hit-testing)* | ✅ fixed | ✅ fixed **and corroborated with a real mouse from the routine list** | Section closed |
+| `history-review/B1` | `bug`, `flex-shrink` cause, `flex-shrink: 0` fix | `bug`, **`flex-basis: 0%` cause**, suggested fix rejected (`F26`) | Contradiction 27 |
+| `history-review/B2` | `bug`, composable nulls data | `bug`, **three fetch owners, two with no `catch`** (`F27`) | Contradiction 28 |
+| `history-review/B3` | `bug` | **`polish`** (`F28`) | Contradiction 29 — `_shell/P1` precedent |
+| `history-review/B4` | `bug`, "batch with `_shell/B1`" | **`polish`**, **escalation §8**, not batched with §1 | Contradiction 30 |
+| `history-review/A1` | `a11y`, naming only | `a11y`, **naming + reachability + an `interactive` flag** (`F29`) | Contradiction 31 |
+| `history-review/A2` | `a11y`, framework guess | `a11y`, **framework confirmed** (`FW6`) + app-side locale mirror | Contradiction 32 |
+| `history-review/P1` | `polish`, one label | `polish`, **two labels + keyboard activation** (`F30`) | Contradiction 33 |
+| `history-review/P2` | `polish`, "in-hole legend" | `polish`, **width-driven layout; `isNarrow` dead prop** (`F31`) | Contradiction 34 |
+| `history-review/P3` | `polish` | `polish`, stands (`F32`) | — |
+| `history-review/U1` | `unverified`, "future pass with a 2020 range" | `unverified`, **runnable today with no seed change**, after `F27` | Its own repro is enough; the calendar's past-year padding is documented in the view |
+| `history-review/U2` | `unverified`, "seed row needed" | `unverified`, **route-mockable** | A fulfilled route body replaces the seed ask |
+| `todo-routine/B10` (`F24`), *(unfiled)* `F25` | open batches | ✅ **applied in the working tree**, awaiting retest | Contradiction 36 |
 
 ### Findings this triage did not challenge further
 
@@ -1804,12 +2362,27 @@ tally paragraph matches its body: five closures, one new finding, one blocked re
 question closed. Its round-history table is the most complete in the sweep — five rounds, each with the
 commit or working-tree state it ran against — and is the reason this pass could be done from disk.
 
+`history-review` (sixth pass) — every one of its eleven findings was read against source, and the API's
+where the client could not answer (`B4`). Nothing was dropped and nothing merged: the unit's eleven are
+eleven distinct concerns, which is itself unusual (unit 2 and unit 6 each shipped a pair that was one
+defect). What the unit got right without exception is the **evidence** — an element screenshot with a
+measured rect (`B1`), a mocked 500 with the console line (`B2`), a `textContent` read (`B3`), a screenshot
+of the strip plus a source read confirming the client renders the string as-is (`B4`), snapshot excerpts
+with ref ranges and counts (`A1`, `A2`), a `className` before/after (`P1`), `!!document.querySelector('h1')`
+(`P3`). What it got wrong, four times out of eleven, is the **mechanism** one layer below what it could
+see — a Vuetify stylesheet rule, an ECharts layout box, a C# country table, a `try/finally` in a
+component it did not mock. That is the same ratio as every earlier unit, and the same lesson: the
+`Root cause guess` field is a guess, and the batch is where it gets checked. `P3` stands exactly as
+filed; `U1` and `U2` stand as `unverified` with cheaper routes to settle them than the unit proposed.
+
 ### Coverage tracker note
 
 `docs/views/_routes.md`'s coverage tracker still shows **units 13 `leisure-projects`, 6 `tracking-settings`
-and 2 `activity-settings` as ☐** despite their documents being on disk. Units 1, 9 and 10 were ticked
-earlier; these three need the same. `units/06-*.md`, `units/02-*.md` and `units/10-*.md` are in
-`units/_done/` (the first two staged, the third untracked); `units/13-*.md` still is not. Not a code defect —
-flagged for whoever next touches that file, since the tracker's whole purpose is to prove nothing was
-skipped. `F14`'s two redirect routes and `F20`'s catch-all will change `_routes.md`'s record count from
-53 to 56 when they land.
+and 2 `activity-settings` as ☐** despite their documents being on disk. Units 1, 9, 10 — and, as of the
+sixth pass, **3 and 14** — are ticked; these three need the same. `units/06-*.md`, `units/02-*.md`,
+`units/10-*.md`, `units/03-*.md` and `units/14-*.md` are in `units/_done/` (the last two untracked);
+`units/13-*.md` still is not. Unit 3 also **resolved the `/activity-history/detail` orphan** in
+`_routes.md`'s table (struck, with the two entry points named) — the first of the four orphan candidates
+to be closed. Not a code defect — flagged for whoever next touches that file, since the tracker's whole
+purpose is to prove nothing was skipped. `F14`'s two redirect routes and `F20`'s catch-all will change
+`_routes.md`'s record count from 53 to 56 when they land.
