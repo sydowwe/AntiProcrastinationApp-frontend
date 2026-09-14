@@ -106,7 +106,20 @@ export type SeedProfileKey =
 	| 'memoryAnchor'
 	| 'memoryAnchorOnArchived'
 
-export type SeedRoutineKey = 'daily' | 'weekly' | 'monthly'
+/**
+ * `daily` / `weekly` / `monthly` are the three original items (streak 12 / 1 / 0). The `milestone*` keys
+ * were added in `e2e-v4`: four more **daily** items whose current streak clears the named tier of
+ * `RoutineTodoListItem.vue`'s icon switch (45 / 120 / 200 / 400). `milestone30` is the one daily item not
+ * yet ticked today; the other three, and `daily`, are done.
+ */
+export type SeedRoutineKey =
+	| 'daily'
+	| 'weekly'
+	| 'monthly'
+	| 'milestone30'
+	| 'milestone90'
+	| 'milestone180'
+	| 'milestone365'
 
 /**
  * `homeOffice` (5 tasks) and `officeDay` (4) are the two the split/compare view needs; `pinned`
@@ -169,6 +182,18 @@ export type SeedCountKey =
 	 * Assert 1 on the overview's attention card, not the count of failed rows.
 	 */
 	| 'reminderFailuresNeedingAttention'
+	// --- added in `e2e-v4` ---
+	/**
+	 * Closed routine cycles in the completion ledger across the primary account's periods: 16 each on
+	 * `Daily` and `Weekly`, none on `Monthly` / `Yearly`. What the heatmaps, trend and consistency figure
+	 * are computed over — and the reason `completionHistory` is no longer the client-side mock for those two.
+	 */
+	| 'routinePeriodCompletions'
+	/**
+	 * Of those, the ones a streak freeze was spent on (**1**, on `Weekly`'s most recent miss). The heatmap's
+	 * third cell state; `mockHistory` never invents one, so it is reachable only from this row.
+	 */
+	| 'frozenRoutinePeriodCompletions'
 
 /**
  * The fixture version this suite is written against, checked against `fixture` in the response by
@@ -179,7 +204,7 @@ export type SeedCountKey =
  * it is one failure in global setup that says what actually happened. Bump this only together with
  * reading the API's `docs/e2eTestSeed.md` for what moved.
  */
-export const EXPECTED_FIXTURE_VERSION = 'e2e-v3'
+export const EXPECTED_FIXTURE_VERSION = 'e2e-v4'
 
 /** Every route in the API is under `/api` (FastEndpoints sets `RoutePrefix = "api"` globally). */
 export const SEED_PATH = '/api/test/seed'

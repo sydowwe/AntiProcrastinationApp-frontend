@@ -205,9 +205,27 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		expect(unhandled).toEqual([])
 	})
 
-	test.fixme(
-		'"Clear filters" resets hideDone and sort in addition to priority/due filters',
-		// Logged as polish P1 — currently false, so this is a fixme rather than a real assertion.
-		async () => {},
-	)
+	// P1's fix (docs/views/todo-lists/findings.md) broadened the reset to `hideDone` and left `sort` out
+	// on purpose — it reorders rather than hides, and its own button always names the mode. So the
+	// assertion is: the chip appears for hideDone alone, and one click clears hideDone and due together.
+	test('"Clear filters" resets hideDone together with the due filter, and leaves sort alone', async ({
+		authenticatedPage,
+	}) => {
+		const clearChip = authenticatedPage.locator('#app').getByText('Clear filters')
+		await expect(clearChip).toBeHidden()
+		await authenticatedPage.getByLabel('Hide done').click()
+		await expect(authenticatedPage).toHaveURL(/[?&]hideDone=true/)
+		await expect(clearChip).toBeVisible()
+		await authenticatedPage.locator('#app').getByText('Past due', { exact: true }).click()
+		await expect(authenticatedPage).toHaveURL(/[?&]due=overdue/)
+		const sortButton = authenticatedPage.getByRole('button', { name: /CUSTOM ORDER|BY PRIORITY|BY DUE DATE/i })
+		await sortButton.click()
+		await expect(authenticatedPage).toHaveURL(/[?&]sort=priority/)
+
+		await clearChip.click()
+		await expect(authenticatedPage).not.toHaveURL(/hideDone=|due=/)
+		await expect(authenticatedPage).toHaveURL(/[?&]sort=priority/)
+		await expect(authenticatedPage.getByLabel('Hide done')).not.toBeChecked()
+		await expect(clearChip).toBeHidden()
+	})
 })
