@@ -130,34 +130,44 @@
 		return formatAnchorDayOfMonth(value)
 	}
 
-	async function openAddDialog() {
-		const result = await openDialog<{ idToEdit: number | null; request: TimePeriodRequest }>({
+	// The request runs inside the form's confirm (see `TimePeriodForm`'s `submit` prop) so a refused
+	// save keeps the dialog open. `_silent` for the same reason as `onDelete` below: `lengthInDays` is
+	// unique per account and the server answers a bare 409 from the index, which the interceptor
+	// words as an optimistic-concurrency conflict. The form turns it into an inline field error.
+	function openAddDialog() {
+		openDialog({
 			component: TimePeriodForm,
+			componentProps: {
+				submit: async (request: TimePeriodRequest) => {
+					const created = await createWithResponse(request, { _silent: true })
+					timePeriods.value.push(created)
+				},
+			},
 			dialogProps: {
 				title: t('routineTodoList.timePeriods.add'),
 				confirmBtnLabel: t('general.create'),
 			},
 		})
-		if (!result) return
-		const created = await createWithResponse(result.request)
-		timePeriods.value.push(created)
 	}
 
-	async function openEditDialog(entityToEdit: RoutineTimePeriodEntity) {
-		const result = await openDialog<{ idToEdit: number | null; request: TimePeriodRequest }>({
+	function openEditDialog(entityToEdit: RoutineTimePeriodEntity) {
+		openDialog({
 			component: TimePeriodForm,
-			componentProps: { entityToEdit },
+			componentProps: {
+				entityToEdit,
+				submit: async (request: TimePeriodRequest) => {
+					await update(entityToEdit.id, request, { _silent: true })
+					const index = timePeriods.value.findIndex(p => p.id === entityToEdit.id)
+					if (index !== -1) {
+						timePeriods.value[index] = { ...timePeriods.value[index], ...request }
+					}
+				},
+			},
 			dialogProps: {
 				title: t('routineTodoList.timePeriods.edit'),
 				confirmBtnLabel: t('general.save'),
 			},
 		})
-		if (!result || result.idToEdit === null) return
-		await update(result.idToEdit, result.request)
-		const index = timePeriods.value.findIndex(p => p.id === result.idToEdit)
-		if (index !== -1) {
-			timePeriods.value[index] = { ...timePeriods.value[index], ...result.request }
-		}
 	}
 
 	async function onDelete(item: RoutineTimePeriodEntity) {

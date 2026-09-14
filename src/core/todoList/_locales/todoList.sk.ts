@@ -223,6 +223,7 @@ const todoList = {
 			// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
 			deleteBlocked: `Časový úsek „{name}“ sa nedá vymazať — patrí doň {count} rutina. Najprv ju presuňte inam alebo vymažte. | Časový úsek „{name}“ sa nedá vymazať — patria doň {count} rutiny. Najprv ich presuňte inam alebo vymažte. | Časový úsek „{name}“ sa nedá vymazať — patrí doň {count} rutín. Najprv ich presuňte inam alebo vymažte.`,
 			deleteBlockedUnknownCount: `Časový úsek „{name}“ sa nedá vymazať — stále doň patria rutiny. Najprv ich presuňte inam alebo vymažte.`,
+			lengthTaken: `Úsek dlhý {days} deň už existuje — každá dĺžka sa dá použiť len raz. | Úsek dlhý {days} dni už existuje — každá dĺžka sa dá použiť len raz. | Úsek dlhý {days} dní už existuje — každá dĺžka sa dá použiť len raz.`,
 			// Radová číslovka dňa v mesiaci. Vyberá sa cez `Intl.PluralRules(..., 'ordinal')`, preto sú
 			// tu všetky štyri kategórie — slovenčina používa vo všetkých rovnaký tvar „5.“, angličtina
 			// nie (1st/2nd/3rd/4th). Predtým sa vykresľovalo natvrdo `${value}th`, čiže „1th“.

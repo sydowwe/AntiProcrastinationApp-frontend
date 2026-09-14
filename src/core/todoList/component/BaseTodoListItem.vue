@@ -36,8 +36,13 @@
 				/>
 			</div>
 
-			<div class="flex-fill">
-				<div class="d-flex ga-1 align-center">
+			<!-- `min-width: 0` lets this column shrink below its content so the chip row wraps instead of
+			     running past the card edge (a daily routine with all seven weekday chips at four columns). -->
+			<div
+				class="flex-fill"
+				style="min-width: 0"
+			>
+				<div class="d-flex flex-wrap ga-1 align-center">
 					<slot
 						name="pre-chips"
 						:isInChangeOrderMode
