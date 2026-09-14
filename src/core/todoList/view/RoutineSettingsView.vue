@@ -138,6 +138,7 @@
 		openDialog({
 			component: TimePeriodForm,
 			componentProps: {
+				existingPeriods: timePeriods.value,
 				submit: async (request: TimePeriodRequest) => {
 					const created = await createWithResponse(request, { _silent: true })
 					timePeriods.value.push(created)
@@ -155,6 +156,7 @@
 			component: TimePeriodForm,
 			componentProps: {
 				entityToEdit,
+				existingPeriods: timePeriods.value,
 				submit: async (request: TimePeriodRequest) => {
 					await update(entityToEdit.id, request, { _silent: true })
 					const index = timePeriods.value.findIndex(p => p.id === entityToEdit.id)

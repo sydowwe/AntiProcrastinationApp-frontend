@@ -7,13 +7,14 @@
 		<VTextField
 			v-model="request.text"
 			:label="$t('routineTodoList.timePeriods.name')"
-			:rules="[requiredRule]"
+			:rules="[requiredRule, nameFreeRule]"
+			:errorMessages="conflictError"
 		></VTextField>
 		<VNumberInput
 			v-model="request.lengthInDays"
 			:label="$t('routineTodoList.timePeriods.length')"
 			:min="1"
-			:errorMessages="lengthTakenError"
+			:rules="[lengthFreeRule]"
 			@update:modelValue="onLengthChanged"
 		></VNumberInput>
 		<ColorPicker
@@ -83,14 +84,25 @@
 	import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
 
-	const { entityToEdit = null, submit } = defineProps<{
+	const {
+		entityToEdit = null,
+		existingPeriods = [],
+		submit,
+	} = defineProps<{
 		entityToEdit?: RoutineTimePeriodEntity | null
 		/**
+		 * The account's other periods, for validating before the request goes out. Both `text` and
+		 * `lengthInDays` are unique per account (`RoutineTimePeriodConfiguration.cs:13,79`), and the server
+		 * reports either collision as the same bare 409, so this is the only way to tell the user *which*
+		 * field is the problem. The entity being edited is excluded here.
+		 */
+		existingPeriods?: RoutineTimePeriodEntity[]
+		/**
 		 * Performs the create/update. It runs *inside* the dialog's confirm so a failed request leaves the
-		 * form on screen with what the user typed: `lengthInDays` is unique per account and the server
-		 * answers a bare 409 from the index, which the interceptor would otherwise word as "changed by
-		 * someone else" after the dialog had already closed. Call the API with `_silent: true` — this form
-		 * handles the 409 inline and routes every other status through `handleHttpCodes` itself.
+		 * form on screen with what the user typed: a 409 from the unique indexes would otherwise be worded
+		 * by the interceptor as "changed by someone else" after the dialog had already closed. Call the API
+		 * with `_silent: true` — this form handles the 409 inline and routes every other status through
+		 * `handleHttpCodes` itself.
 		 */
 		submit: (request: TimePeriodRequest) => Promise<void>
 	}>()
@@ -106,7 +118,26 @@
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const request = ref(entityToEdit ? TimePeriodRequest.fromEntity(entityToEdit) : new TimePeriodRequest())
-	const lengthTakenError = ref<string[]>([])
+	// Only reached on a race the pre-check could not see (another client added a period since the list
+	// loaded); the 409 body says nothing about which index refused, so the message names both fields.
+	const conflictError = ref<string[]>([])
+
+	const others = computed(() => existingPeriods.filter(p => p.id !== entityToEdit?.id))
+
+	function nameFreeRule(value: string | null): true | string {
+		const name = value?.trim().toLowerCase() ?? ''
+		return (
+			!others.value.some(p => p.text?.trim().toLowerCase() === name) || t('routineTodoList.timePeriods.nameTaken')
+		)
+	}
+
+	function lengthFreeRule(value: number | string | null): true | string {
+		const days = Number(value)
+		return (
+			!others.value.some(p => p.lengthInDays === days) ||
+			t('routineTodoList.timePeriods.lengthTaken', { days }, days)
+		)
+	}
 
 	const isWeekAligned = computed(() => {
 		const d = request.value.lengthInDays
@@ -116,14 +147,13 @@
 	dialogApi.onConfirm(onConfirm)
 
 	function onLengthChanged() {
-		lengthTakenError.value = []
 		request.value.resetAnchorDay = 0
 		request.value.historyDepth = RoutineTimePeriodEntity.defaultHistoryDepth(request.value.lengthInDays)
 	}
 
 	async function onConfirm() {
 		// A stale server error would fail `validate()` below; the server re-decides on every submit.
-		lengthTakenError.value = []
+		conflictError.value = []
 		const { valid } = (await form.value?.validate()) ?? { valid: false }
 		if (!valid) return
 		dialogApi.setLoading(true)
@@ -132,8 +162,7 @@
 		} catch (e) {
 			const status = axios.isAxiosError(e) ? e.response?.status : undefined
 			if (status === 409) {
-				const days = request.value.lengthInDays
-				lengthTakenError.value = [t('routineTodoList.timePeriods.lengthTaken', { days }, days)]
+				conflictError.value = [t('routineTodoList.timePeriods.conflict')]
 			} else {
 				handleHttpCodes(status ?? 0)
 			}

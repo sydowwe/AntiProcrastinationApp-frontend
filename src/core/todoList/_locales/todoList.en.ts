@@ -212,6 +212,8 @@ const todoList = {
 			deleteBlocked: `Can't delete "{name}" — {count} routine is still assigned to it. Move or delete it first. | Can't delete "{name}" — {count} routines are still assigned to it. Move or delete them first.`,
 			deleteBlockedUnknownCount: `Can't delete "{name}" — routines are still assigned to it. Move or delete them first.`,
 			lengthTaken: `A {days}-day period already exists — each length can be used once.`,
+			nameTaken: `A period with this name already exists.`,
+			conflict: `Another period already uses this name or this length — both must be unique.`,
 			// Ordinal day of the month, selected through `Intl.PluralRules(..., 'ordinal')` — hence all
 			// four categories. This replaces a hardcoded `${value}th`, which rendered "1th"/"2th"/"3th".
 			dayOfMonth: {
