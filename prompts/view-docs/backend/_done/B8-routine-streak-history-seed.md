@@ -1,5 +1,47 @@
 # B8 — the fixture seeds no routine *period* history, so four streak surfaces have never rendered
 
+> ## ✅ Already done — 2026-09-14
+>
+> Covered by the API's `e2e-v4` work, which was uncommitted on `dev` (on top of `7f9f9e5`) when this file was
+> written against `e2e-v3` — the source read below was true of v3 and simply never saw v4. Every *Done when*
+> item is met, plus one this file did not ask for (the catch-up trap):
+>
+> 1. **Period history** — `E2eFixtureSeeder.AddRoutinePeriodHistory()`: Weekly gets 16 `RoutinePeriodCompletion`
+>    rows (= `RoutineHistoryCycles`, matching the client's default `HistoryDepth`), newest-first
+>    `xf.xxxx.xx.xx.xx` — met, missed, and one **frozen** (`isFrozen = true`) on the second-newest cycle so it
+>    is on screen without scrolling; the miss behind it is left unfrozen so a spec can still spend a freeze.
+>    Daily gets 16 rows, all 5-of-5 except one 4-of-5 eleven cycles back.
+> 2. **Mixed rows, third cell state** — yes, see above.
+> 3. **Counters agree with the rows by construction** — period `streak` / `bestStreak` are computed from the
+>    rows by `RoutineStreakFreezeService.RecomputeStreak` (Weekly 1 / 4, Daily 11 / 30), and
+>    `totalPeriodsElapsed` / `totalPeriodsCompleted` are **no longer stored** — `RoutineTimePeriodResponse.From`
+>    derives them from `completionHistory` (elapsed = row count, completed = rows meeting `streakThreshold`;
+>    frozen counts as elapsed, not completed). So `mockHistory()` can never fire for Daily or Weekly. Monthly
+>    and Yearly are left bare on purpose so the empty state stays reachable.
+> 4. **Milestone items** — four new daily items in `AddRoutines()`, one per tier of `getMilestoneIcon`:
+>    `milestone30` *Drink water* 45 (the one daily item left un-ticked), `milestone90` *Journal* 120,
+>    `milestone180` *Make the bed* 200, `milestone365` *Brush teeth* 400. Streaks sit well past their tier so a
+>    tick/un-tick pair cannot cross a boundary. Caveat: a spec straddling midnight UTC with one un-ticked will
+>    see the lapse zero it.
+> 5. **Seed response / `seed.ts`** — `EXPECTED_FIXTURE_VERSION = 'e2e-v4'`, `SeedRoutineKey` gains the four
+>    `milestone*` keys, `counts` gains `routinePeriodCompletions` / `frozenRoutinePeriodCompletions`;
+>    `routineTimePeriods.Weekly` / `.Daily` give the period ids.
+> 6. **Catch-up trap (unasked)** — `freezesRemaining` / `freezeBudgetResetsAt` are pre-stamped on all four
+>    periods and `lastResetAt` sits on the current cycle boundary, so the first grouped read's
+>    `TryResetCatchUp` and `RefreshFreezeBudget` are no-ops — no read of the fixture writes. Weekly shows one
+>    freeze fewer than budget if the seeded freeze falls in the current calendar month.
+>
+> Pinned by three tests in `TestSeedEndpointTests.cs`: the catch-up/freeze-refresh no-op invariant over every
+> seeded period, `Seed_LeavesAnItemStreakInEveryMilestoneTier`, and
+> `Seed_LeavesTheRoutineHistoryVisibleThroughTheReadPath` (real read refresher; asserts all three cell states,
+> ascending `periodStart`, `streak > 0`, `bestStreak > streak`, `0 < totalPeriodsCompleted < totalPeriodsElapsed`).
+>
+> **Browser pass done the same day** — `docs/views/todo-routine/findings.md`, *Round 6 browser pass*: after a
+> fresh v4 seed (`fixture e2e-v4`, 32 completions / 1 frozen), all seven surfaces render and match the rows —
+> review card, both heatmaps with met / missed / frozen, 94 % / 69 % with computed trends, personal bests,
+> freeze chips (Weekly at 1/2, as the calendar-month caveat predicts for September), and all five milestone
+> icons. `U1` and `U2` are closed. Screenshots under `docs/views/todo-routine/screenshots/*round6-v4*`.
+
 > Measured 2026-09-13 **from source**, in the API repo (`AdhdTimeOrganizer`), against fixture `e2e-v3`.
 > No running API and no browser were used to write this — see *How this was established* at the bottom for
 > exactly what that does and does not prove. The client-side half is from `docs/views/todo-routine/`, which

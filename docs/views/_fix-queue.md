@@ -112,8 +112,8 @@
 | F21 | Categories table's "Role" column is a comma-joined aggregate presented as a single value | app | `activity-settings/P1` | low |
 | F22 | Activities filter bar clips the "Categories" label | app | `activity-settings/P2` | low |
 | F23 | Parallel `playwright-cli` sessions must not share one storage-state file — the API rotates refresh tokens (**grown**: nor the unnamed `default` browser session, nor a mid-pass reseed) | docs only | `activity-settings/U3` (+ `todo-routine` round-5 environment note) | trivial |
-| F24 | ✅ **APPLIED (working tree, uncommitted) — awaiting retest** — Routine components format dates through the browser's locale, not the account's — 8 `toLocaleDateString(undefined, …)` calls in 5 files | app | `todo-routine/B10` | low |
-| F25 | ✅ **APPLIED (working tree, uncommitted) — awaiting retest** — `/routine-settings` "Color" column header is the capitalized raw key — the title is `''` and the framework fills it in | app | *(unfiled — `todo-routine/B4`'s round-5 verification note)* | trivial |
+| F24 | ✅ **FIXED 2026-09-14, verified in SK + no-reload EN switch** (uncommitted) — Routine components format dates through the browser's locale, not the account's — 8 `toLocaleDateString(undefined, …)` calls in 5 files | app | `todo-routine/B10` | low |
+| F25 | ✅ **FIXED 2026-09-14, verified** (*Farba* in SK, *Color* in EN; uncommitted) — `/routine-settings` "Color" column header is the capitalized raw key — the title is `''` and the framework fills it in | app | *(unfiled — `todo-routine/B4`'s round-5 verification note)* | trivial |
 | F26 | Period-total banner is a `flex: 1 1` (basis `0%`) item — it never has a size to wrap on, so it is squeezed to ~62 px instead of dropping to a new line | app | `history-review/B1` | trivial |
 | F27 | History dashboards have no error state: three fetch owners null or **keep** their data on failure and every panel renders "No data for this period" — the pattern is already built in `useActivityDashboard` | app | `history-review/B2` | med |
 | F28 | `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer | app | `history-review/B3` | trivial |
@@ -979,6 +979,19 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 ## F24. Routine components format dates through the browser's locale, not the account's
 
+> ✅ **FIXED 2026-09-14.** `composable/useRoutineDateFormat.ts` (`shortDate` / `shortWeekday` / `shortMonth` /
+> `periodLabel`, all through `localeTag(locale.value)`) replaces all eight call sites; the three private
+> `formatDate` helpers are gone. Verified per the block below in SK (`po ut st št pi so ne`, `1. 9. | 8. 9. …`,
+> `sep okt … aug`, reset date `15. 9.`, heatmap tooltip `7. 9. · všetko hotové`, freeze chip `obnoví sa 1. 10.`,
+> history-dialog tooltip `25. 5. – 1. 6. · všetko hotové`) and the no-reload EN switch (`Mon | Tue | …`).
+> Two things the verification turned up and fixed with it, both in this module: the SK
+> `freeze.remainingTooltipWithReset` template ended in `{date}.` and rendered `1. 10..`; and **the history
+> dialog's calendar heatmap had never rendered at all** — ECharts threw *"Heatmap must use with visualMap"*
+> because R1's frozen series was not bound to one, and `getThemeColor` only wrapped `rgb()` around values with
+> a space while Vuetify writes `5,150,105`, so the cells would have been black anyway. `RoutineGroupHistoryBody.vue`
+> now carries a second fixed-colour visual map and a channel-triplet check. Not filed by any unit (nobody could
+> have hovered a cell that was not there); recorded on `todo-routine/B10`'s status line.
+
 - **Scope:** app-side `src/core/todoList/` — five files, eight call sites, one helper
 - **Closes:** `todo-routine/B10`
 - **Root cause:** `toLocaleDateString(undefined, …)` resolves the **browser's** `Intl` locale, and the
@@ -1032,6 +1045,9 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   which is what every other string on the card already does.
 
 ## F25. `/routine-settings` "Color" column header is the capitalized raw key
+
+> ✅ **FIXED 2026-09-14.** `RoutineSettingsView.vue:103` → `t('routineTodoList.timePeriods.color')`. Verified:
+> second header reads *Farba* in SK and *Color* in EN, console clean.
 
 - **Scope:** app-side `src/core/todoList/view/RoutineSettingsView.vue:103`
 - **Closes:** nothing filed — `todo-routine/B4`'s round-5 verification note records it as *"noted here
@@ -1915,16 +1931,18 @@ items cover the remaining milestone tiers (`milestone30` Drink water 45 — the 
 seeder: Weekly has one freeze fewer than budget if the seeded freeze falls in the current calendar month, and a
 spec that straddles midnight UTC with a milestone item un-ticked will see the lapse zero its streak.
 
-**What is still owed is the browser pass** — `todo-routine/U1`/`U2` stay `unverified` until someone drives
-`/routine-todo-list` and `/routine-settings` against a **v4-seeded database** (the running API is built from
-the v4 seeder as of 2026-09-14 09:44 — its dll carries `e2e-v4` — but the on-disk `e2e/.state/seed.json` is
-still yesterday's `e2e-v3`, so check `fixture` in the next seed response before trusting the screen). If a
-surface is still empty against v4, that is a **defect**, not a fixture gap — file it as one.
+**And the browser pass is done too** (`todo-routine` round 6, 2026-09-14, against a freshly v4-seeded
+database): all seven surfaces render and match the seeded rows — review card with both eligible periods,
+heatmaps with met / missed / frozen, 94 % and 69 % consistency with computed trends, personal bests 30/11 and
+4/1, freeze chips 2 and 1, and all five milestone icons on one screen. **`U1` and `U2` are closed.** The one
+thing the wider board surfaced is a polish finding, `todo-routine/P2` (weekday chips overflow the Daily column
+at 1440 px now that it holds five items) — not queued here yet; it is a one-component `flex-wrap` and can ride
+along with the next `todoList` batch.
 
 | what to seed | unblocks |
 | --- | --- |
-| ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | `todo-routine/U1` (weekly review card), `todo-routine/U2` (personal bests, heatmaps, consistency/trend) — browser pass outstanding |
-| ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | `todo-routine/U2` (milestone icons) — browser pass outstanding |
+| ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | ~~`todo-routine/U1`, `U2`~~ ✅ both verified live, round 6 |
+| ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | ~~`todo-routine/U2` (milestone icons)~~ ✅ all five icons verified live, round 6 |
 | ≥1 **routine** item with steps (the `todo-lists` fixture has them; the routine groups do not — round 5: "Take Medication, Weekly Review, Pay Rent have no steps") | `todo-routine/A2`'s live check and the unfiled `TodoListStepsFormField` sweep, both read-only today. Low priority — a temporary item does the same job; worth one line on `B8` if it is reopened anyway |
 | enough desktop mappings to exceed one page (>25, or a smaller page size in the spec) | `F12`'s second verification step — that the Mappings body *scrolls inside the card* rather than merely paints. Two seeded mappings (one `Activity`, one `Ignored`) can prove the row paints; they cannot prove the fill-parent contract still holds. Low priority: `ActivityTable` already exercises the same path with 10 rows |
 
@@ -2312,7 +2330,7 @@ Everything below was checked against the **current working-tree source** this pa
 | `todo-routine/B9` | code-fixed, listed nowhere in this queue | code-fixed, **awaiting retest**, never observed either way; its create/edit sibling is source-certain under *Needs verification* | Contradiction 24; the retest is merged with the `BasicTable` dialog check |
 | `todo-routine/P1` | awaiting retest, both locales | **EN verified**, SK half outstanding | Round 5 was re-scoped mid-check |
 | `todo-routine/A2` | awaiting retest | still source-only — no stepped routine item in the seed | Seed-data table gains a row |
-| `todo-routine/U1`, `U2` | `unverified`, seed gap | `unverified`, **seed gap closed — `B8` done in `e2e-v4`, browser pass outstanding** | 2026-09-14: the API had already seeded real period history + four milestone items; `B8` moved to `_done`. Next empty surface is a defect |
+| `todo-routine/U1`, `U2` | `unverified`, seed gap | ✅ **verified live and closed** (round 6, `e2e-v4`) | 2026-09-14: the API had already seeded real period history + four milestone items; `B8` moved to `_done`; all seven surfaces driven and cross-checked against the rows. New polish `P2` (chip overflow) |
 | *Escalations* §2 | open backend question | ✅ **resolved** — `Restrict` → 409, no cascade | Round 4 API read; the message half became `B9` |
 | *Escalations* §3 | open data-integrity escalation | **re-scoped** to a bounded design question, backend ask `B9-routine-untick-streak-decision.md` | Round 4: once-per-cycle guard, tested; +1 is the whole cost |
 | *(counter hit-testing)* | ✅ fixed | ✅ fixed **and corroborated with a real mouse from the routine list** | Section closed |

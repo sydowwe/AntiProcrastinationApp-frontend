@@ -108,17 +108,20 @@ Known for this unit — verify each, do not assume:
 - A2 and A3 are recorded as `fixed, needs retest only` — confirmed by source, never
   re-driven. Run their `Verify:` blocks and close them or reopen them; do not take the
   status line's word for it.
-- U1 and U2 are SEED gaps, not app defects: the fixture has no routine period with elapsed
-  history and no item with streak >= 30 (its best is 12). Do not re-file them as app
-  defects, and do not let an empty weekly-review card or an unreachable milestone icon read
-  as a regression.
-  **The ask now exists — do NOT write a second one.** `backend/B8-routine-streak-history-seed.md`
-  (2026-09-13) covers both, established from the API source: `E2eFixtureSeeder` writes
-  item-level streaks only, never period-level state, and seeds zero `RoutinePeriodCompletion`
-  rows. These surfaces are unreachable by construction.
-  **What B8 is missing is exactly what you can supply:** nobody has driven these screens
-  against `e2e-v3` to watch them be empty. Add that observation — which surfaces render
-  empty, and what each shows instead — to B8's evidence rather than opening anything new.
+- U1 and U2 WERE seed gaps and are not any more (2026-09-14). `backend/_done/B8-routine-streak-
+  history-seed.md` is closed: the `e2e-v4` fixture seeds 16 real `RoutinePeriodCompletion` rows
+  on Weekly (met / missed / one frozen) and 16 on Daily, and four extra daily items with streaks
+  45 / 120 / 200 / 400 so every `getMilestoneIcon` tier renders. The previous paragraph here
+  ("unreachable by construction") described `e2e-v3` and is superseded.
+  **The rule has therefore flipped: against a v4-seeded database, an empty weekly-review card,
+  an empty heatmap or a missing milestone icon IS a defect** — file it as a new `B` finding in
+  `findings.md`. Do not reopen B8 and do not write a second seed ask.
+  **Both are now VERIFIED** (round 6, 2026-09-14, live against a fresh v4 seed — see *Round 6
+  browser pass* in `findings.md` for the observed values per surface and the three screenshots).
+  Before trusting the screen on a re-run, confirm `fixture: 'e2e-v4'` in the seed response: the
+  running API can be v4 while the database is still an older seed. Do not spend the Weekly
+  freeze (`31 Aug – 7 Sept`, the only frozen row) — a future spec consumes it.
+  New polish finding from that pass: `P2`, weekday chips overflow the Daily column at 1440 px.
 - THE COUNTER HIT-TEST IS NOW A PROBABLE BUG, not an open contradiction. `_fix-queue.md`
   re-graded it: what looked like two disagreeing pieces of evidence is "one probable bug plus
   a Playwright synthetic-event artifact", needing one confirmation. Read that entry before

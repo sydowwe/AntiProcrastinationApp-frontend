@@ -35,6 +35,13 @@ could **not** be verified this round: all three attempts failed with a 400 "Time
 to an external collision, not the app (see B9's own note). One **new** finding, **B10**, surfaced during the
 Slovak spot-check: `RoutinePeriodTimeline`'s date/weekday labels ignore the account locale.
 
+**Tally (after round 6 — B8 close-out + live pass against `e2e-v4`, 2026-09-14):** **U1 and U2 closed,
+verified in a browser** — the weekly review card, both heatmaps with all three cell states, consistency /
+trend, personal bests, the freeze budget and all five milestone icons render from real seeded rows (see *Round
+6 browser pass*). `unverified` drops from 3 to 1 (A2, still no stepped routine item). One **new** polish
+finding, **P2**: with five daily items the weekday chips overflow the Daily column at 1440 px. Nothing else
+moved; B9, B10 and P1's SK half remain where round 5 left them.
+
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
@@ -46,6 +53,7 @@ Slovak spot-check: `RoutinePeriodTimeline`'s date/weekday labels ignore the acco
 | 3 | 2026-09-13 | working tree | **fix pass** — fix-queue batches F4 (A1), F5 (B3, B4, B6), F6 (P1) and F7 (the unfiled `TodoListStepsFormField` controls) all code-fixed. New `routineTodoList.timePeriods.*` namespace in `todoList.{sk,en}.ts` (**not** `settings.*` — `settings` is already a leaf string in use, and vue-i18n cannot have it be both). The `${value}th` ordinal that rendered "1th" now goes through `Intl.PluralRules(…, 'ordinal')` against four locale forms; both hardcoded weekday arrays now come from the framework's `calendar.*` keys via the new `useAnchorDayOptions()`, and `RoutineTodoListItem`'s day chips from `useDayOfWeekOptions()`. A2 and A3 re-graded to *fixed, needs retest* against source. `npm run type-check` exit 0, `npm run lint` exit 0. **No browser verification** — this session had no dev server running. |
 | 4 | 2026-09-13 | working tree | **API source read**, in the backend repo `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer` — no running API, no browser, source and integration tests only. Settled both backend escalations that had been carried since round 1a. **B5 step 3: answered** — `RoutineTimePeriod → RoutineTodoList` is `DeleteBehavior.Restrict`, so a delete with items is refused with a clean 409 (test-covered); only `RoutinePeriodCompletion` cascades. CLAUDE.md's cascade rule therefore does not apply to this delete. **The streak escalation: corrected** — `UpdateItemStreak` increments once per *cycle*, not per toggle, guarded by `AlreadyCountedThisCycle` and pinned by two tests, so repeated clicking cannot compound; the irreversible part is a bounded +1. **New finding B9** — the 409 renders as the generic `httpErrors.conflict` string ("changed by someone else… refresh"), which is false and unactionable for a referential-integrity refusal — **and fixed in the same round**: `onDelete` now owns the 409 via `_silent`, names the period and its routine count (fetched only in the failure path), and falls back to `handleHttpCodes` for every other status. `npm run type-check` exit 0, `npm run lint` exit 0. Still no browser: B9's defect and its fix are both unobserved. |
 | 5 | 2026-09-13 | working tree | **live browser re-verification** against a fresh `e2e-v3` seed. **B3, B4, B6, A3 confirmed fixed and verified** (B4 and B6 specifically re-driven in Slovak, per this round's required spot-check). **A2** re-confirmed by source only — no stepped item in this fresh seed to drive live. **P1** confirmed fixed in EN; the SK half was not completed (session was re-scoped back to English mid-check). **B8** re-confirmed present at `/user/settings`. **A1**'s hit-testing question — already resolved outside this session via `todo-lists/B6` (the counter is now a real `<button>`, not a hover-swapped `progressbar`) — was independently corroborated: a real mouse hover-then-click on both `Increase` and `Decrease` lands on and activates the correct control. **New finding B10** — `RoutinePeriodTimeline`'s date/weekday labels call `toLocaleDateString(undefined, …)` and ignore the account's i18n locale, found during the Slovak spot-check. **B9 could not be verified** — three attempts, all blocked by what this round attributes to a concurrent session sharing the same seeded account (see B9's own entry and the environment note near the end of this file), not to the app. This session also found and reverted two **accidental mutations** on the `todo-lists` fixture (`/todo-list/13001`, items 14015/14013) caused by clicks landing on the wrong browser session before the collision was diagnosed — see the environment note. Final action: reseeded via `POST /api/test/seed` to leave a clean fixture; **the next agent must sign in fresh, not `state-load`.** |
+| 6 | 2026-09-14 | working tree | **B8 closed and U1/U2 verified live against `e2e-v4`.** The API side replied that `B8`'s whole "Done when" list was already covered by its `e2e-v4` work (uncommitted on `dev` atop `7f9f9e5`; B8 had measured `e2e-v3`). First confirmed without reseeding that the running API (started 09:44) is built from the v4 seeder (dll carries `e2e-v4`), then — once the owner cleared it, other units being live on the account — reseeded: `fixture e2e-v4`, 32 completions / 1 frozen, items 19004–19007. Drove `/routine-todo-list` and `/routine-settings` in a dedicated `-s=todo-routine` session (round 5's state file was stale; signed in through the form, which works locally). **All seven surfaces render and match the rows** — raw `grouped-by-time-period` cross-checked against the DOM; console clean; nothing mutated. Three screenshots under `screenshots/*round6-v4*`. U1/U2 → verified; `B8` → `_done`; `_fix-queue.md` updated; the unit-10 prompt's "unreachable by construction" paragraph replaced with "against v4, empty is a defect". New **P2** (weekday chips overflow the Daily column at 1440). |
 
 ---
 
@@ -495,7 +503,20 @@ Slovak spot-check: `RoutinePeriodTimeline`'s date/weekday labels ignore the acco
   file).
 
 ### B10. `RoutinePeriodTimeline`'s date and weekday labels ignore the account's language
-- **Status:** open (found round 5, not fixed)
+- **Status:** fixed and verified (2026-09-14, in Slovak, `_fix-queue.md` F24) — the eight
+  `toLocaleDateString(undefined, …)` sites in five files (the two below plus `RoutineGroupHeatmap.vue`,
+  `RoutineGroupHistoryBody.vue`, `RoutineStreakFreeze.vue`, `useStreakFreeze.ts`) now go through
+  `composable/useRoutineDateFormat.ts`, which formats with `localeTag(locale.value)`. Seen live:
+  Weekly strip `po ut st št pi so ne`, Monthly `1. 9. | 8. 9. | 16. 9. | 23. 9.`, Yearly `sep okt … aug`,
+  Daily reset date `15. 9.`; heatmap tooltip `7. 9. · všetko hotové`, freeze chip `obnoví sa 1. 10.`,
+  history-dialog tooltip `25. 5. – 1. 6. · všetko hotové`. Flipping the store locale to EN **without a
+  reload** re-rendered every label in English (`Mon | Tue | …`, `15 Sept`), so the `segments` computed
+  tracks the locale. Two side findings fixed in passing: the SK `freeze.remainingTooltipWithReset` ended
+  in `{date}.` and rendered `1. 10..` (SK short dates carry their own full stop; the trailing one is gone),
+  and the history dialog's calendar heatmap had **never rendered** — ECharts threw *"Heatmap must use with
+  visualMap"* because the frozen series added in R1 had no visual map, and `getThemeColor` only wrapped
+  values containing a space while Vuetify writes `5,150,105`, so even the painted cells would have been
+  black. Both fixed in `RoutineGroupHistoryBody.vue`; the dialog now shows green/dark/blue cells.
 - **Severity:** bug
 - **Where:** `src/core/todoList/component/routine/RoutinePeriodTimeline.vue:56` (`resetDateLabel`) and
   `:118-121` (the per-segment `label`, inside `segments`) — both call
@@ -707,12 +728,18 @@ defect, and **nothing is blocked on it** — unit 10 can run and close regardles
 no endpoint writes an item's streak, and streak fields are server-owned by design.
 
 ### U1. Weekly review card (R2) not reached — seed has zero elapsed periods
-- **Status:** open · **the seed ask now exists**, as
-  [`B8`](../../../prompts/view-docs/backend/B8-routine-streak-history-seed.md) (written 2026-09-13). Confirmed
-  from the API source: `E2eFixtureSeeder` writes item-level streaks only, never period-level state, and seeds
-  **zero** `RoutinePeriodCompletion` rows — so this is unreachable by construction, not by accident. Do not
-  re-file it; attach a browser observation to B8 instead.
-- **Severity:** unverified
+- **Status:** ✅ **verified — closed (round 6, 2026-09-14).** The review card renders with both eligible
+  periods and *Reduce frequency* opens the prefilled form; see *Round 6 browser pass* row 4. Kept below: how
+  the seed gap was closed. The ask
+  [`B8`](../../../prompts/view-docs/backend/_done/B8-routine-streak-history-seed.md) turned out to be already
+  covered by the API's `e2e-v4` work (uncommitted on `dev` when B8 was written against `e2e-v3`).
+  `E2eFixtureSeeder.AddRoutinePeriodHistory()` now seeds 16 `RoutinePeriodCompletion` rows on **Weekly**
+  (period id `routineTimePeriods.Weekly`; newest-first `xf.xxxx.xx.xx.xx` — met / missed / one **frozen** on
+  the second-newest cycle; streak 1, best 4) and 16 on **Daily** (one 4-of-5 miss eleven cycles back; streak
+  11, best 30). `totalPeriodsElapsed` / `totalPeriodsCompleted` are derived from those rows server-side, so
+  `reviewEligibleGroups` has two eligible periods. Monthly / Yearly are deliberately left bare. Pinned by
+  `Seed_LeavesTheRoutineHistoryVisibleThroughTheReadPath` in the API's `TestSeedEndpointTests.cs`.
+- **Severity:** ~~unverified~~ verified
 - **Where:** `/routine-todo-list` — `RoutineWeeklyReviewCard.vue`, gated by
   `useRoutineGroups.ts:52-55`'s `reviewEligibleGroups` (`totalPeriodsElapsed > 0` per period).
 - **What would verify it:** `GET /api/routine/settings` confirms `routineReviewDismissedForWeekStart: null`
@@ -722,14 +749,28 @@ no endpoint writes an item's streak, and streak fields are server-owned by desig
   `TimePeriodForm` prefilled per the R2 intent doc.
 
 ### U2. Personal-bests panel, milestone streak icons, and populated heatmaps not reached — same seed gap
-- **Status:** open · covered by
-  [`B8`](../../../prompts/view-docs/backend/B8-routine-streak-history-seed.md), same as U1. Sharpened by the
-  source read: `getMilestoneIcon` has five branches (7/30/90/180/365) and the highest seeded item streak is
-  **12**, so four of the five have never rendered anywhere. It reads `item.streak`, not `bestStreak`, so the
-  `BestStreak = 30` already in the fixture does not reach them. Also note the client fabricates heatmap cells
-  via `mockHistory()` when `completionHistory` is empty *and* `totalPeriodsElapsed > 0` — so seeding the
-  counter alone would produce plausible-looking fake history, which is why B8 asks for real rows.
-- **Severity:** unverified
+- **Status:** ✅ **verified — closed (round 6, 2026-09-14).** Personal bests, both heatmaps with all three
+  cell states, consistency / trend, the freeze budget and all five milestone icons rendered against `e2e-v4`
+  — *Round 6 browser pass* rows 1–3 and 5–7. Seed gap closed by the same
+  [`B8`](../../../prompts/view-docs/backend/_done/B8-routine-streak-history-seed.md) close-out as U1. What
+  `e2e-v4` seeds for each surface:
+  - **Heatmaps / consistency / trend** — Weekly's 16 rows carry all three cell states (met, missed, frozen);
+    because `totalPeriodsElapsed` is now *derived* from `completionHistory`, the client's `mockHistory()`
+    fallback cannot fire for Daily or Weekly, so what renders is real, never fabricated.
+  - **Personal bests** — Weekly streak 1 / best 4, Daily streak 11 / best 30, both computed from the rows by
+    `RoutineStreakFreezeService.RecomputeStreak`, so they agree with the heatmap by construction.
+  - **Milestone icons** — four new daily items, one per tier of `getMilestoneIcon` on `item.streak`:
+    `milestone30` *Drink water* 45 (the only daily item left un-ticked), `milestone90` *Journal* 120,
+    `milestone180` *Make the bed* 200, `milestone365` *Brush teeth* 400; plus the existing *Take medication* 12
+    for the flame. Streaks sit well past their tier so an un-tick/re-tick pair cannot cross a boundary; a spec
+    that straddles midnight UTC with one un-ticked will see the lapse zero it.
+  - **Freeze** — `freezesRemaining` / `freezeBudgetResetsAt` are pre-stamped and `lastResetAt` sits on the
+    current cycle boundary, so the first grouped read writes nothing; the unfrozen miss behind the frozen one
+    is left for a spec to spend a freeze on. Weekly shows one freeze fewer than budget if the seeded freeze
+    falls in the current calendar month.
+  Ids and counts: `seed.routines.milestone*`, `seed.routineTimePeriods.Weekly` / `.Daily`,
+  `seed.counts.routinePeriodCompletions` / `.frozenRoutinePeriodCompletions` (`e2e/fixtures/seed.ts`).
+- **Severity:** ~~unverified~~ verified
 - **Where:** `/routine-settings` — `PersonalBestsPanel.vue` (gated on `totalPeriodsElapsed > 0`, same condition
   as U1); `/routine-todo-list` — the star/trophy/gem/crown streak-milestone icons in `RoutineTodoListItem.vue`
   (`getMilestoneIcon`, thresholds 7/30/90/180/365 — the seed's highest item streak is 12, past the flame
@@ -740,6 +781,56 @@ no endpoint writes an item's streak, and streak fields are server-owned by desig
   `RoutineGroupStats`; (b) at least one routine item with `streak >= 30` — confirms the star icon (and ideally
   ≥90/180/365 for the rest). Tracked here as one seed-data ask covering multiple otherwise-unreachable
   surfaces, matching the pattern of `docs/views/todo-lists/findings.md` O1/U3.
+
+### Round 6 browser pass — run 2026-09-14, all seven surfaces render against `e2e-v4`
+
+Setup: `POST /api/test/seed` → `fixture: 'e2e-v4'`, `seedDateUtc 2026-09-14`, `counts.routinePeriodCompletions
+32`, `.frozenRoutinePeriodCompletions 1`, `routines.milestone30..365 = 19004..19007`. Own `playwright-cli`
+session (`-s=todo-routine`, per F23); round 5's `auth-10001.json` bounced to `/login?redirect=/` (stale refresh
+token), so this round **signed in through the form** with the seed's `primaryUser` — which works locally, the
+way `e2e/fixtures/auth.ts` does it — and saved `.playwright-cli/auth-todo-routine.json`. Console: 0 errors on
+both views. No mutation was made: the history dialog and *Reduce frequency* form were both cancelled, nothing
+was ticked, the Weekly freeze was not spent. Raw `GET /routine-todo-list/grouped-by-time-period` was read once
+to cross-check the screen against the rows; the numbers below are from that response and the DOM, not by eye.
+
+| # | where | observed | verdict |
+| --- | --- | --- | --- |
+| 1 | Daily group items | *Drink Water* 45 → `star` (un-ticked), *Brush Teeth* 400 → `crown`, *Make the Bed* 200 → `gem`, *Journal* 120 → `trophy`, *Take Medication* 12 → `fire-flame-curved` — all five `data-icon`s present in `main`; item tooltips `Streak: 45 · best: 45` … `Streak: 12 · best: 30` | ✅ U2 milestone icons — the four never-before-rendered branches now have a screenshot |
+| 2 | Weekly card heatmap | cell classes (oldest→newest) `level-4 level-0 level-4 ×4 level-0 frozen level-4 empty` — the last 9 rows of `x x . x x . x x . x x x x . f x` plus the current-period placeholder, at the 10-cell width the card affords; frozen cell is hatched and its tooltip reads *"31 Aug – 7 Sept · covered by a skip"* | ✅ U2 third cell state |
+| 3 | Daily card stats | streak **11**, consistency **94 %** (15/16), trend *"Holding steady"* with tooltip *"Recently 100 % of periods, earlier 98 %"* (the 4/5 on 2 Sept is in the earlier half); Weekly: streak **1**, **69 %** (11/16), *"Less often than before"*, tooltip *"Recently 63 %, earlier 75 %"* — 5/8 vs 6/8, exactly the seed pattern | ✅ U2 consistency / trend — computed from real rows, `mockHistory()` never involved |
+| 4 | Weekly review card | present at top: *Daily — Last time 5 of 5* and *Weekly — Last time 1 of 1*, each with Keep / Reduce frequency / Pause; Monthly and Yearly correctly absent (elapsed 0). *Reduce frequency* on Daily opens `TimePeriodForm` titled "Reduce frequency", prefilled Name *Daily*, length 1, depth 16, threshold 100, grace 0, rolling — cancelled | ✅ **U1 closed** |
+| 5 | freeze chips | Daily *2 skips left* (`2/2`), Weekly **1 skip left** (`1/2` — the seeded freeze falls in September, the current calendar month, as the seeder comment predicts); tooltip *"A missed period can be covered by a skip so your run continues — 2 per period, refills 1 Oct."* | ✅ U2 freeze budget |
+| 6 | `/routine-settings` *Your routines over time* | two cards: **Daily** best 30 · streak 11 · 94 % · 1d; **Weekly** best 4 · streak 1 · 69 % · 7d. Monthly / Yearly are filtered out of the panel (`totalPeriodsElapsed > 0`) and keep their empty state on the list view (0 %, grey heatmap, *No tasks* on Yearly) | ✅ U2 personal bests; empty state still reachable |
+| 7 | history dialog (click Weekly heatmap) | ECharts calendar May → Sep, 16 week-columns Monday-aligned: green met, dark missed, light-blue **frozen** column 31 Aug – 7 Sept, current week white. Data cross-checked against the response: ascending `periodStart`, `2026-05-25 … 2026-09-07`, one `isFrozen` | ✅ U2 heatmap (dialog) |
+
+Screenshots: `screenshots/routine-todo-list--round6-v4-overview.png` (rows 1–5),
+`routine-todo-list--round6-v4-history-dialog-weekly.png` (row 7),
+`routine-settings--round6-v4-personal-bests.png` (row 6).
+
+**Not defects, worth knowing before someone files them:**
+
+- The card heatmap shows **10** cells, not `historyDepth` 16 — `RoutineGroupHeatmap` sizes to container width
+  and slices the newest `total` entries, so Daily's 2 Sept miss is off the card and visible only in the dialog.
+- One column in the dialog can show a paler border on a couple of day cells after a hover — ECharts emphasis
+  state, not a data split; the rows are all Monday-aligned.
+- `RoutineTodoListItem`'s **weekday chips overflow the Daily column at 1440 px** (`Mon Tue Wed T…` clipped, see
+  the overview screenshot) now that the seed has five daily items with all seven days selected. Same family as
+  `home/B1` / `F7` (fixed width vs. a four-column board) but on the item row, not the widget header. Filed
+  below as **P2** rather than folded into this pass.
+- `/routine-settings` renders no breadcrumb beyond *Home* (the list view shows *Home › Routine*). Not
+  investigated; a one-line check for whoever next touches `RoutineSettingsView`'s route meta.
+
+### P2. Routine item weekday chips overflow the column at 1440 px
+- **Status:** open (found round 6, not fixed)
+- **Severity:** polish
+- **Where:** `/routine-todo-list`, Daily group — every item row with all seven days selected; `RoutineTodoListItem.vue`
+- **What happens:** at a 1440×900 viewport with four groups on screen, the item row's day chips run past the
+  card edge and are clipped (`Mon Tue Wed T`); the milestone icon and streak count stay visible, the remaining
+  chips do not. The board was never this wide before — `e2e-v3` had one daily item.
+- **Evidence:** `screenshots/routine-todo-list--round6-v4-overview.png`, Daily column.
+- **Suggested resolution:** let the chip row wrap (`flex-wrap`) or collapse to a compact weekday strip below
+  the title on narrow columns; do not shrink the column. Verify with the four-group default and the `Groups`
+  filter set to one group (where the row has room and should not change).
 
 ## Environment note — round 5 shared a `playwright-cli` browser and a seeded account with another session
 
