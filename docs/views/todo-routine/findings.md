@@ -582,12 +582,18 @@ moved; B9, B10 and P1's SK half remain where round 5 left them.
   409 to an inline `errorMessages` on the length field (`routineTodoList.timePeriods.lengthTaken`, SK
   pluralised deň/dni/dní), routes every other status through `handleHttpCodes`, and only closes on success.
   The error clears on the next length change and on every resubmit.
-- **Also seen while setting this up, not fixed, not in this finding's scope:** with the colour picker left on
-  its default *None*, the same request is rejected **400** — `RoutineTimePeriodRequest` *"was missing required
-  properties including: 'color'"* — and that surfaces as the interceptor's generic snackbar with the dialog
-  closed (the same shape this finding fixes for 409, but for a validation failure the client could prevent).
-  Either `color` should be required client-side (a `requiredRule` on `ColorPicker`, or a non-null default), or
-  the server should accept it as optional. Worth its own finding on the next pass.
+- **Follow-up, same day (`e39c01c1`):** `Text` is unique per account too (`RoutineTimePeriodConfiguration.cs:13`,
+  pinned by `RoutineTimePeriodUniqueIndexTests`), and the API reports either index as the same bare 409 — so
+  the inline "7-day period already exists" above was wrong whenever the *name* was the collision. The form now
+  takes `existingPeriods` from the view and validates **both** fields before the request (case-insensitive
+  name, exact length, the edited entity excluded); verified *"weekly"/7* → both fields flagged, **no request
+  sent**. A 409 is now only reachable on a race and reads *"Another period already uses this name or this
+  length — both must be unique."* on the name field.
+- **Colour aside — ✅ closed the same day (`126d2968`).** With the picker on *None* the request was rejected
+  **400** (`RoutineTimePeriodRequest` derives from `TextColorRequest`, colour required on the wire) and that
+  closed the dialog with the generic snackbar. `ColorPicker` gained a `required` prop (framework `98b92d0`)
+  that drops the *None* swatch, the form passes it, and a new `TimePeriodRequest` starts as `'blue'`.
+  Verified: Add with defaults → `POST` 201 carrying `"color":"blue"`.
 
 ### A1. Multi-count item counter (e.g. "0/2") has no accessible name
 - **Status:** fixed and verified (2026-09-13, via the shared component — see `todo-lists/B6`). Both
