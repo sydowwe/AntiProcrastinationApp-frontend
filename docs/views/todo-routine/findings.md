@@ -550,6 +550,35 @@ moved; B9, B10 and P1's SK half remain where round 5 left them.
   (or the equivalent through `@/_common/utils/DateTimeHelper.ts`'s `formatLocalized`, if it covers this
   shape) instead of `undefined`, in both `resetDateLabel` and the `segments` computed.
 
+### B11. Creating or editing a time period with an already-used length closes the form and says "changed by someone else"
+- **Status:** fixed and verified (2026-09-14) — filed from `_fix-queue.md`'s fifth-pass *Needs verification*
+  entry (it was source-certain but unobserved; B9's sibling one function up in the same file).
+- **Severity:** bug
+- **Where:** `/routine-settings`, *Add* / edit dialog — `RoutineSettingsView.vue` `openAddDialog` /
+  `openEditDialog`, `TimePeriodForm.vue`.
+- **Expected:** a refused save keeps the dialog open with what was typed and says why, on the field that
+  caused it.
+- **Actual (before):** `lengthInDays` is unique per account (`RoutineTimePeriodConfiguration.cs:79`), and the
+  API answers a bare **409** from the index. The view awaited `createWithResponse` *after* `openDialog`
+  resolved — i.e. after `TimePeriodForm` had already closed itself on confirm — with no `_silent`, so the
+  interceptor's status-only switch showed *"This record was changed by someone else. Refresh the page and try
+  again."* and the form was gone.
+- **Evidence (2026-09-14, live):** *Add* → name "Dup weekly", length 7 (the seeded Weekly), colour Blue →
+  *Create*: `POST /api/routine-time-period` → **409**, the dialog stays open, and the length field reads
+  *"A 7-day period already exists — each length can be used once."*; a second *Create* → 409 again, same
+  state; no "changed by someone" text anywhere on the page; *Cancel* → nothing written.
+- **Fix:** the request now runs *inside* the dialog's confirm — `TimePeriodForm` takes a `submit(request)`
+  prop the view supplies (create or update, both `_silent`), calls it under `dialogApi.setLoading`, maps a
+  409 to an inline `errorMessages` on the length field (`routineTodoList.timePeriods.lengthTaken`, SK
+  pluralised deň/dni/dní), routes every other status through `handleHttpCodes`, and only closes on success.
+  The error clears on the next length change and on every resubmit.
+- **Also seen while setting this up, not fixed, not in this finding's scope:** with the colour picker left on
+  its default *None*, the same request is rejected **400** — `RoutineTimePeriodRequest` *"was missing required
+  properties including: 'color'"* — and that surfaces as the interceptor's generic snackbar with the dialog
+  closed (the same shape this finding fixes for 409, but for a validation failure the client could prevent).
+  Either `color` should be required client-side (a `requiredRule` on `ColorPicker`, or a non-null default), or
+  the server should accept it as optional. Worth its own finding on the next pass.
+
 ### A1. Multi-count item counter (e.g. "0/2") has no accessible name
 - **Status:** fixed and verified (2026-09-13, via the shared component — see `todo-lists/B6`). Both
   controls carry a localized `title` + `aria-label` naming the state and the action ("Increase: 2 of 5" /
@@ -821,7 +850,13 @@ Screenshots: `screenshots/routine-todo-list--round6-v4-overview.png` (rows 1–5
   investigated; a one-line check for whoever next touches `RoutineSettingsView`'s route meta.
 
 ### P2. Routine item weekday chips overflow the column at 1440 px
-- **Status:** open (found round 6, not fixed)
+- **Status:** fixed and verified (2026-09-14) — `BaseTodoListItem.vue`'s chip row is now `flex-wrap` and its
+  column `min-width: 0` (the flex default `min-width: auto` was what stopped the row shrinking). At 1440×900
+  with four groups the last chip's right edge is 451 px against a card edge of 574 px — nothing clips — and
+  with the `Groups` filter set to Daily alone all seven chips stay on one line (unchanged). The trade-off is
+  height: in the four-column layout an all-seven-days item wraps onto five lines with the title below the
+  chips. A compact strip below the title would be shorter but `BaseTodoListItem` is shared with the normal
+  list, so that is a layout decision for both lists, not a routine-only polish fix; left as is.
 - **Severity:** polish
 - **Where:** `/routine-todo-list`, Daily group — every item row with all seven days selected; `RoutineTodoListItem.vue`
 - **What happens:** at a 1440×900 viewport with four groups on screen, the item row's day chips run past the
