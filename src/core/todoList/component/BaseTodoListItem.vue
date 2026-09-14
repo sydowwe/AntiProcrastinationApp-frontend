@@ -315,29 +315,27 @@
 		}
 
 		// `itemClicked` means "the user clicked the row body", which is the gesture the views treat as
-		// "log time against this task". `progressClicked` used to emit it itself, so operating the counter
-		// opened the dialog too — the multi-count twin of the checkbox bug above.
+		// "log time against this task". The counter has buttons of its own for its two steps, so a
+		// counted item's row body does *not* also step the counter — that pairing is what popped the
+		// log-time dialog over every increment (the multi-count twin of the checkbox bug above).
 		emits('itemClicked', { ...toDoListItem, isDone: isDone.value, doneCount: doneCount.value } as TItem)
 
-		if (toDoListItem.isMultipleCount) {
-			progressClicked()
-			return
-		}
+		if (toDoListItem.isMultipleCount) return
 
 		toggleDone()
 	}
 
+	// For a counted item the server's `toggle-is-done` with a `forceValue` is one step of the counter
+	// (`true` = +1, `false` = −1, clamped and flipping `isDone` at the ends), so every step is reported,
+	// not only the one that flips `isDone` — reporting only the flip left every intermediate count
+	// local and lost on the next reload. The local change is the optimistic half; the view's resync
+	// after the call brings back whatever the server settled on.
 	function minusClicked() {
 		if (isInChangeOrderMode) return
 		if (doneCount.value === null || doneCount.value <= 0) return
 		doneCount.value--
-		const oldIsDone = isDone.value
-		if (isDone.value) {
-			isDone.value = false
-		}
-		if (oldIsDone !== isDone.value) {
-			emitChanged(false)
-		}
+		isDone.value = false
+		emitChanged(false)
 	}
 
 	function progressClicked() {
@@ -345,13 +343,10 @@
 		if (doneCount.value === null || toDoListItem.totalCount === null) return
 		if (doneCount.value >= toDoListItem.totalCount) return
 		doneCount.value++
-		const oldIsDone = isDone.value
 		if (doneCount.value >= toDoListItem.totalCount) {
 			isDone.value = true
 		}
-		if (oldIsDone !== isDone.value) {
-			emitChanged()
-		}
+		emitChanged(true)
 	}
 
 	function actionButtonText(name: string) {

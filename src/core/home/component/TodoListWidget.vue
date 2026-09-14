@@ -101,6 +101,14 @@
 	function handleIsDoneChanged(id: number, forceValue?: boolean) {
 		const item = items.value.find(i => i.id === id)
 		if (!item) return
+		// For a counted item `forceValue` is one step of its counter, not its final state: the row is
+		// already showing the step, and only the server knows whether it tipped the item over.
+		if (item.isMultipleCount) {
+			toggleIsDone(id, forceValue)
+				.then(refreshNow)
+				.catch(() => showErrorSnackbar(t('home.toggleTaskFailed', { task: item.activity.name })))
+			return
+		}
 		const previousIsDone = item.isDone
 		item.isDone = forceValue ?? !previousIsDone
 		toggleIsDone(id, forceValue).catch(() => {

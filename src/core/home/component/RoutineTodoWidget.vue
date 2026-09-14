@@ -218,6 +218,14 @@
 	function handleIsDoneChanged(id: number, forceValue?: boolean) {
 		const sourceItem = groupedItems.value.flatMap(g => g.items).find(i => i.id === id)
 		if (!sourceItem) return
+		// For a counted item `forceValue` is one step of its counter, not its final state: the row is
+		// already showing the step, and only the server knows whether it tipped the item over.
+		if (sourceItem.isMultipleCount) {
+			toggleIsDoneOrThrow(id, forceValue)
+				.then(refreshNow)
+				.catch(() => showErrorSnackbar(t('home.toggleTaskFailed', { task: sourceItem.activity.name })))
+			return
+		}
 		const previousIsDone = sourceItem.isDone
 		sourceItem.isDone = forceValue ?? !previousIsDone
 		toggleIsDoneOrThrow(id, forceValue).catch(() => {
