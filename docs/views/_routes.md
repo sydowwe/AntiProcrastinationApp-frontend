@@ -96,7 +96,7 @@ that owns each one must resolve which**, and record the answer in its inventory.
 
 | Route | View | Note |
 | --- | --- | --- |
-| `/activity-history/detail` | `HistoryDetailView` | Sits between Summary and Calendar in the module but is linked from neither in the nav. Likely a drill-down target — `prompts/_done/activity-history/H6-url-state-and-drilldown.md` is about exactly this, so unit 3 should check whether the drill-down actually links here. |
+| ~~`/activity-history/detail`~~ | ~~`HistoryDetailView`~~ | **Resolved 2026-09-14 (unit 3).** Not an orphan — confirmed live as a drill-down target reached two ways: a stacked-bar column click on Summary (carries `date`+`groupBy`), and a day-cell click on Calendar (carries `date`). Links back out via icon buttons to both Calendar and Summary. No nav entry is correct: it is never a landing destination. See `docs/views/history-review/usecase.md` (Entity lifecycle). |
 | `/day-planner/templates/split` | `TemplateSplitView` | `prompts/_done/day-planner/P1-split-view-dead.md` is literally titled "split view dead". Unit 8 must confirm whether that prompt's fix landed or the view is still unreachable. |
 | `/routine-settings` | `RoutineSettingsView` | Every other settings page is linked from `/user/settings` via `ModuleSettingsSection`. Unit 10 should check it is listed there — CLAUDE.md requires *every* settings page to be reachable from `/user/settings`. |
 | `/day-planner/settings` | `DayPlannerSettingsView` | Has a sidebar entry, so not an orphan — but same `ModuleSettingsSection` check applies. |
@@ -115,7 +115,7 @@ that owns each one must resolve which**, and record the answer in its inventory.
 | --- | --- | --- |
 | 1 `home` | 1 | ☑ |
 | 2 `activity-settings` | 2 (incl. redirect; 3 tab values) | ☐ |
-| 3 `history-review` | 3 | ☐ |
+| 3 `history-review` | 3 | ☑ |
 | 4 `history-capture` | 4 | ☐ |
 | 5 `tracking-dashboards` | 4 | ☐ |
 | 6 `tracking-settings` | 2 | ☐ |
@@ -126,7 +126,7 @@ that owns each one must resolve which**, and record the answer in its inventory.
 | 11 `leisure-backlog-picker` | 2 | ☐ |
 | 12 `leisure-bucket-anchors` | 2 | ☐ |
 | 13 `leisure-projects` | 1 | ☐ |
-| 14 `user-settings` | 4 | ☐ |
+| 14 `user-settings` | 4 | ☑ |
 | 15 `auth` | 5 | ☐ |
 | 16 `reminders-user` | 1 | ☐ |
 | 17 `reminders-admin` | 5 | ☐ |
