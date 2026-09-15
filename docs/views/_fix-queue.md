@@ -1,12 +1,12 @@
 # Fix queue
 
-> Built 2026-09-14 · commit `6aac48bb` (working tree carries the untracked `docs/views/auth/`,
-> `docs/views/history-capture/`, `docs/views/history-review/`, `docs/views/user-settings/`,
-> `docs/views/planner-day/`, `docs/views/tracking-dashboards/` and their six draft specs) · units
-> triaged: `_shell`, `home` (1), `todo-lists` (9), `todo-routine` (10), `leisure-projects` (13),
-> `tracking-settings` (6), `activity-settings` (2), `history-review` (3), `user-settings` (14),
-> `history-capture` (4), `auth` (15), `planner-day` (7), `tracking-dashboards` (5) · findings
-> considered: 122 · batches: 63
+> Built 2026-09-15 · commit `04c405e9` **plus the working tree** (the unit-1 and unit-2 mutation
+> rounds and the unit-11/12 inventories are uncommitted; unit 8's docs landed at `9e36b92f`) · units
+> triaged: `_shell`, `home` (1, inventory + mutation), `todo-lists` (9), `todo-routine` (10),
+> `leisure-projects` (13), `tracking-settings` (6), `activity-settings` (2, inventory + mutation),
+> `history-review` (3), `user-settings` (14), `history-capture` (4), `auth` (15), `planner-day` (7),
+> `tracking-dashboards` (5), `planner-templates` (8), `leisure-backlog-picker` (11),
+> `leisure-bucket-anchors` (12) · findings considered: 163 · batches: 83
 
 > Closed batches, closed verification items, the per-pass narrative and the *Contradictions & re-grades* audit
 > trail live in [`_fix-queue-log.md`](_fix-queue-log.md). This file holds only open work.
@@ -20,9 +20,9 @@
 | F3 | ✅ **FIXED 2026-09-13** — `ActivityInfo` reads `icon`/`color` flat; the API nests them under `activity.category` / `activity.role` | app + framework | `leisure-projects/B3` | low |
 | F4 | Table's "Messy" icon column has no text alternative | app | `leisure-projects/A2` | low |
 | F5 | Inactive readiness-status buttons are invisible (non-text contrast) | app | `leisure-projects/A3` | low |
-| F6 | Dead `class="flex-1-1"` on four `FilterPanel` call sites logs a warning per render | app | `leisure-projects/P1` | low |
+| F6 | Dead `class="flex-1-1"` on four `FilterPanel` call sites logs a warning per render | app | `leisure-projects/P1`, **`leisure-backlog-picker/P1`** | low |
 | F7 | `RoutineTodoWidget`'s header controls are clipped off-screen | app | `home/B1` | low-med |
-| F8 | NowBar shows a contradictory "DONE" / "No plan for today" pair while loading | app | `home/B2` | low-med |
+| F8 | **Rewritten (round 2):** a sign-in race orphans the day-plan fetch — `useTodayPlan`'s user-id watcher bumps `loadToken` on the `0 → id` hydration, the in-flight response is discarded, nothing re-fetches, and NowBar/DayPlannerWidget stay on "No plan for today" (or spin forever if the fetch failed); the original NowBar loading gap rides along | app | `home/B2` (+ settles `home/U1`) | med |
 | F9 | `homeUiStore` never persists, and CLAUDE.md says the opposite of what the plugin does | app + docs | `home/B3` | low |
 | F10 | No skip-to-content link | app | `_shell/A3` | low |
 | F11 | ✅ **FIXED 2026-09-13** — Breadcrumb does not distinguish `/todo-list/:id` from `/todo-list` | app | `_shell/P1` | low |
@@ -33,7 +33,7 @@
 | F16 | Settings header row clips its labels at 1440 px | app | `tracking-settings/B4` | low |
 | F17 | CLAUDE.md's "every settings page" sentence reads wider than `moduleSettingsLinks.ts` means | docs only | `tracking-settings/P1` | trivial |
 | F18 | The mount-time combobox rebuild writes back into the activities filter — wiping URL ids and double-firing the grid | app | `activity-settings/B2`, `B3` (+ retests `U4`) | med |
-| F19 | Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it | app | `activity-settings/B7`, `A1` (+ answers `U2`) | med |
+| F19 | Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it (**grown**: the generic dialog's raw-id copy, `B8`, goes with the generic dialog) | app | `activity-settings/B7`, `A1`, **`B8`** (+ `U2`, now browser-confirmed) | med |
 | F20 | No catch-all route — any unknown URL renders a blank main area | app | `activity-settings/B5` | low |
 | F21 | Categories table's "Role" column is a comma-joined aggregate presented as a single value | app | `activity-settings/P1` | low |
 | F22 | Activities filter bar clips the "Categories" label | app | `activity-settings/P2` | low |
@@ -52,7 +52,7 @@
 | F35 | `dateTime.secondsShort` renders raw on every running clock — and `general.from`/`general.to` on every `TimeRangePicker` in range mode: the app-side `common` mirror is written per consumer, has leaked four times, and should become the deep-merge `SK.ts` already does for `user` | app (`src/locales/`) + CLAUDE.md | `history-capture/B1` (+ two unfiled twins) | low (decision: merge vs. patch) |
 | F36 | Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
 | F37 | Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
-| F38 | Leftover `console.log` in `TimerPresetsSection.vue` — and two more app-side; `no-console` is configured `off` with an allow-list, which is why lint did not catch any of them | app + `eslint.config.ts` | `history-capture/P1` | trivial |
+| F38 | Leftover `console.log` in `TimerPresetsSection.vue` — and two more app-side; `no-console` is configured `off` with an allow-list, which is why lint did not catch any of them | app + `eslint.config.ts` | `history-capture/P1`, **`planner-templates/P2`** | trivial |
 | F39 | The auth guard's redirect drops the destination — `router.ts:98` returns `{ name: 'login' }` with no `redirect` query, while the interceptor's own forced-logout path already writes one | app (`src/router.ts`) | `auth/B1` (write half; the read half is `FW11`) | trivial |
 | F40 | Logging out fires `GET /routine/settings` and logs a 401 — `resetAppState()` *creates* `routineReviewStore`, the Pinia plugin calls `ensureLoaded()` on creation, and the load has no signed-out guard and no `catch` | app (`src/core/todoList/store/routineReviewStore.ts`) | `auth/P2` | low |
 | F41 | `DayPlannerSettingsView`'s tabs stack — `d-flex` on two `VTabsWindowItem`s is `display: flex !important`, which beats the inline `display: none` Vuetify's `v-show` sets on an inactive item | app | `planner-day/B1` | trivial |
@@ -63,11 +63,28 @@
 | F47 | Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`; the card's accessible name promises *"View details for Spotify"*. A local panel from the data on the page (label, package, total time, share of the span, the summary card's baseline stat); a per-app session count is **not on the wire** (§79) | app | `tracking-dashboards/B2` (narrowed) | low |
 | F48 | The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
 | F49 | Date-preset chips and source-filter chips are focusable `span`s with no role and no state — Vuetify 3.12's `VChip` adds `tabindex`/keydown when clickable and nothing else; the same state-bearing class sits on `todoList`'s two filter groups and `dayPlanner`'s day-of-week and duration chips (15 chip-controls app-wide, 6 of them toggles/selects) | app (`activityTracking`, `todoList`, `dayPlanner`) | `tracking-dashboards/A1` (+ unfiled twins in `TodoListFilters.vue`, `RepeatingTaskDialog.vue`, `BasePlannerTaskDialog.vue`) | low-med |
+| F50 | The Compare Templates dialog is empty every time — **two** unkeyed `Promise.all` fan-outs from one api instance (`fetchById` ×2, then `fetchFiltered` ×2), each cancelling its own sibling; the finding's fix closes only the first; folds `B3`'s dead *Confirm* button (`:showConfirmBtn` is not a `MyDialog` prop), same file | app (`TemplateComparisonDialog.vue`) | `planner-templates/X1`, `B3` | low |
+| F51 | The template planner's side panel at `<md` is the **open** panel squeezed to 400 × 16 px and pushed off-screen — not a broken "opened" state — and the template planner has **no control that reopens it** once the X is tapped (`panelOpen` is only ever set `false`); the shell is shared with `/day-planner/:date`, whose mobile layout is a different, unchecked shape | app (`PlannerSidePanelShell.vue`, `TemplateDayPlannerView.vue`, `TemplatePlannerHeader.vue`) | `planner-templates/X2` (+ the inventory's misread "collapsed pill") | med |
+| F52 | Template card title row: the name never truncates, so the Active/Inactive switch label wraps one letter per line and the day-type chip hard-clips to "Wee" / "Workd" on every card at 1440 px | app (`TemplateCard.vue`) | `planner-templates/B1` | low |
+| F53 | The template form mirrors none of the API's contract: `suggestedForDayType` is `required` server-side and `?:` client-side (400 after the dialog has closed, input lost), and `Name` `[Required]`/100, `Description` 500, `Icon` 50 have no rule either — `form.validate()` validates nothing | app (`TaskPlannerDayTemplateRequest.ts`, `TaskPlannerDayTemplateDetailsForm.vue`) | `planner-templates/B2` | low |
+| F54 | Template list sort and the split view's two picks are not in the URL — the `F42` shape, two more views in the same module | app (`TemplateListView.vue`, `TemplateSplitView.vue`) | `planner-templates/B4` | low-med |
+| F55 | `/day-planner/templates/:templateId` with an unknown id keeps the **previous** template's name in the header — and, because the store persists `templateName` to `sessionStorage`, across a reload too; `loadTemplateDetails` has no `catch` at either of its two call sites (the `F43` shape, template side) | app (`TemplatePlannerPanel.vue`, `templateDayPlannerStore.ts`) | `planner-templates/B5` | low |
+| F56 | Seven icon-only controls in `dayPlanner` have no accessible name — card pin, compare checkbox (also pointer-blocked by the card's own icon), the side panel's close X, the split view's back arrow, both planner headers' undo button (named by its badge count when the stack is non-empty), and the day planner's mobile `bars` toggle | app (`src/core/dayPlanner/`) | `planner-templates/A1`, `A2`, `A3` (re-identified), `U3` (settled from source) + three unfiled | low |
+| F57 | The Scheduled Days picker is clipped to Mon–Fri in the 400 px template panel — `DayOfWeekPicker` cannot wrap and the panel is the only place it renders without a dialog's width | app (`TaskPlannerDayTemplateDetailsForm.vue`) | `planner-templates/P1` | trivial |
+| F58 | The app's EN `$vuetify` block is a 180-line hand copy of Vuetify's own `en` export, byte-identical except for **two missing keys** (`timePicker.notAllowed`, `command.search`) — replace the copy with the import | app (`src/locales/common.en.ts`) | `home/A1` (+ one unfiled key) | trivial |
+| F59 | A skipped (`Cancelled`) task renders as done in `DayPlannerWidget` — row class, `aria-pressed` and the checkbox label all key off `isFinished`, which is `Completed ∨ Cancelled` by design; and the checkbox on a cancelled row advances it to `Completed` | app (`DayPlannerWidget.vue`, `useTodayPlan.ts`) | `home/B4` | low |
+| F60 | `MemoryAnchorFilter` sends `year`/`month`; the server reads `anchorYear`/`anchorMonth` — the same names the client's own create request already uses; rename the two wire fields, keep the URL keys | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts` + its test) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three are §13) | trivial |
+| F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` | low |
+| F62 | `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
+| F63 | Four leisure request DTOs default their lookup ids to the sentinel `0` — the pickers render a literal "0", `requiredRule` accepts it, and an unset form reaches the server as `activityId: 0` | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/X3` (the `0` half), `leisure-bucket-anchors/B2` (+ one unfiled DTO) | low-med |
+| F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented | app (`useLeisurePicker.ts:250`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/X2`, `P2` | low |
+| F65 | Leisure's view-mode toggles, the timeline's year controls and the source/experienced chips carry a localized `:title` and no `aria-label` | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
+| F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
 | FW1 | `MyDialog` is `persistent` by default, so Escape closes nothing | **framework** | `_shell/A1` | med (decision first) |
 | FW2 | **Six** framework icon-only controls have no accessible name (**grown**: `MonthYearPicker`'s prev/next month, `MyDateInput`'s prev/next day) | **framework** | `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled in `MyDateInput`) | low |
 | FW3 | ✅ **CLOSED 2026-09-13** — `Time.fromJson` cannot parse the backend's string shape (the API had already switched to `{hours, minutes}` on 2026-09-11; `fromJson` now accepts both) | **framework** | `todo-lists/B4` | med |
 | FW4 | `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so | **framework** (docs only) | *(none — prevents the next `F12`)* | low |
-| FW5 | `DataTable`'s default row actions render the internal slug as their `title`, not the localized label | **framework** | `activity-settings/B4` | trivial |
+| FW5 | `DataTable`'s default row actions render the internal slug as their `title`, not the localized label (**grown**: seen again on both `leisure-bucket-anchors` tables — `title="edit"`/`"delete"`, no `aria-label`) | **framework** | `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half) | trivial |
 | FW6 | `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
 | FW7 | Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
 | FW8 | Six elevated buttons in the framework's user module use the tonal/outlined colour tokens (`error`/`warning`), and the pairing rule is written only in this app's CLAUDE.md | **framework** | `user-settings/P1` (+ the three on unit 15's signed-out views — pre-empted, and the unit did not re-file them) | trivial |
@@ -78,12 +95,22 @@
 | FW15 | `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
+| FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
+| FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
+| FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B1` (+ one unfiled column on `/leisure/bucket-list`) | med (decision: word-boundary match vs. opt-in) |
 
-48 app-side (`F9`, `F17`, `F19`, `F23` and `F35` include CLAUDE.md or runbook edits; `F17` and `F23` are
-nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 15 framework
-(`FW10` and `FW14` are reserved numbers, not batches — see *Needs verification*) · 10 escalations (6 open:
-§1, §6, §7, §8, §9, §10 — §2 and §3 were settled by `todo-routine`'s round-4 API read and are struck
-below). Unit 4 added no framework batch and no escalation; unit 15 added four framework batches and no
+65 app-side (`F9`, `F17`, `F19`, `F23` and `F35` include CLAUDE.md or runbook edits; `F17` and `F23` are
+nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 18 framework
+(`FW10` and `FW14` are reserved numbers, not batches — see *Needs verification*) · 13 escalations (9 open:
+§1, §6, §7, §8, §9, §10, §11, §12, §13 — §2 and §3 were settled by `todo-routine`'s round-4 API read and
+are struck below). Units 11 and 12 between them added two framework batches and **three escalations** —
+the most of any pass since unit 14 — and every one of the three is a client/server contract gap the
+browser could only see the edge of: a validator that rejects the palette names the server's own seeder
+writes (§11), an endpoint the client was told exists and which no file in the API declares (§12), and
+four grid filter contracts of which the server reads eight fields out of twenty-seven (§13). The two
+mutation rounds (units 1 and 2) added one app batch each from actually mutating (`F59`, and `B8` folded
+into `F19`), rewrote one existing batch from the root (`F8`), and settled three `unverified` rows in a
+browser. Unit 4 added no framework batch and no escalation; unit 15 added four framework batches and no
 escalation — every one of its defects is in `src/_common/modules/user/` or `src/router.ts`, which is
 what a unit made of framework views looks like. Unit 7 added three framework batches and no escalation,
 and split one finding across the boundary (`FW16`/`F44`) — a planner view built on `CalendarGrid`,
@@ -91,7 +118,61 @@ and split one finding across the boundary (`FW16`/`F44`) — a planner view buil
 and four of its seven findings landed there. Unit 5 added no framework batch — its four dashboards are
 built from this module's own components on top of Vuetify and ECharts, and the one Vuetify-default gap
 (`F49`) is fixed at the call sites, not in `componentDefaults` (rule 4, see the batch) — and one
-escalation that the unit did not file and could not have seen on the seed (§10).
+escalation that the unit did not file and could not have seen on the seed (§10). Unit 8 added one
+framework batch and no escalation: its blocker splits across the boundary the way `FW16`/`F44` did
+(`FW18` is the helper, `F50` is the dialog), and its one apparent backend question — whether
+*Suggested for day type* should be optional — is settled from the API source as **no**: the column is
+non-nullable and indexed, the request field is `required`, and `/suggestions` is built on it (`F53`).
+
+**Order among the unit-11/12 batches.** `F61` first — two constants, and until they change neither
+the ladder nor the timeline renders anything, so nothing else on those two views can be verified; it is
+also the one batch here that must **not** stop at the constant (see its body — the empty-state-on-failure
+half is the part `ProjectsView` did not fix either). `F64` second: it is the picker's default landing
+state and closes a `blocker` with one expression. `F63` before either unit's **mutation pass** — that pass
+has to submit all four create forms and will otherwise file the literal-"0" defect four more times; it
+touches four DTOs and four forms, so run `npm run type-check` and do all four in one commit, not per
+finding. `F62` is a one-file edit and is honest about being half a fix: with §12 open, its "failed"
+branch is what every user sees on *Add*, so word that branch for a real failure, not for "you have no
+eligible activities". `F60` is independent, trivial, and should ship before §13 is written so the ask
+does not have to mention two fields the client owns. `F65` and `F66` are independent of everything.
+`FW19` and `FW20` are two repos and independent of each other; `FW20` needs a **decision** before an
+edit (word-boundary matching keeps zero-config; opt-in changes every app's tables) and its verification
+must include the framework's own `JobRunHistory` and every `DataTable` consumer in this app, because
+loosening the match can drop a column that was formatting correctly by luck. **Do not add per-table
+slots app-side as a workaround for `FW20`** unless the framework declines — the collision class is
+"any key containing `ratio`/`rate`/`vat`/`date`/`sum`/`fee`", and `elevated` contains `vat`.
+
+**The three new escalations gate three verifications, and nothing else.** `F63`'s *Verify* step 3
+(no request fires on an empty form) holds without them; `F62`'s pass condition needs §12; `F60`'s needs
+nothing (the server already reads the renamed fields); and `leisure-backlog-picker/X1`'s *Verify*
+block is unrunnable until §13 lands, because the filter it tests has never existed on the wire.
+
+**Order among the unit-1/2 mutation-round batches.** `F8` is rewritten from the root and is now
+`med`, not `low-med`: read the whole batch — round 1's fix (a loading branch in `NowBar`) is still in
+it but is now the *smaller* half, and applied alone it changes nothing the mutation pass observed,
+because the state it hides is permanent, not transient. `F59` is independent of `F8` and touches the
+same two files; ship `F8` first so `F59`'s verification is not fighting the race. `F58` is independent
+of everything and is the cheapest item in this queue after `F38` — an import replacing a hand copy.
+`F19` has grown by one line and no new work: `B8` closes because the generic dialog goes. `FW19` should
+land **before** `F19` is verified — its verification reads a 409 snackbar, and today that snackbar is
+the generic string on every table in the app.
+
+**Order among the unit-8 batches.** `F50` first and alone — it is the unit's only *observed* blocker
+and a one-file change, and **it does not wait on `FW18`**: the second fan-out (`fetchFiltered`) already
+has a `requestKey`, and the first (`fetchById`) can be sequenced or given a second instance today
+(the workaround `A1`'s Part 2 catalogues); when `FW18` lands, the pointer-bump commit swaps that
+workaround for a key, the same shape as `FW11`/`F39`. **Read the whole batch before editing the
+dialog** — the finding's suggested fix moves the `CanceledError` from `:120` to `:122` and the dialog
+stays empty. `F51` is the other blocker and the only batch here that needs a resize to verify; its fix
+lands in the shared shell, so **drive `/day-planner/:date` at 390 px in the same session** — unit 7
+never resized, the day view's mobile layout is a different shape (`DayPlannerView.vue:3` has no
+`flex-column`), and `X2`'s *Expected* assumes it works. `F56` before `F51`'s verification if both run in
+one session: `F51` adds the reopen control that `F56` then has to name — decide the label once. `F52`,
+`F53`, `F57` are one-file edits, independent of everything; `F53` before the unit's **mutation pass**,
+which will otherwise file the lost-input defect a second time from the create path. `F54` and `F55`
+are the `F42` and `F43` shapes on the template side and should ship **after** their siblings, copying
+whatever those settle (query codec; not-found treatment) rather than deciding it a second time.
+`FW18` is independent, additive, and two repos.
 
 **Order among the unit-5 batches.** `F46` first and alone — it is a two-file, three-attribute change
 and it decides the **one locale key** every detail-panel close button will share, which `F47`'s new
@@ -339,7 +420,9 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 ## F6. A dead `class="flex-1-1"` on four `FilterPanel` call sites logs a Vue warning on every render
 
 - **Scope:** app-side — the four leisure views, **not** `src/_common/component/FilterPanel.vue`
-- **Closes:** `leisure-projects/P1`
+- **Closes:** `leisure-projects/P1`, **`leisure-backlog-picker/P1`** (thirteenth pass — the same
+  warning, observed on `/leisure/backlog`; the finding's *"BacklogView is the only leisure view that
+  passes a `class`"* is wrong, the grep below still returns four — §93)
 - **Root cause:** `FilterPanel.vue`'s template is multi-root (a `<div>` plus a sibling `<Teleport>`,
   `:1-82`), so Vue cannot auto-inherit attributes and logs *"Extraneous non-props attributes (class) were
   passed to component…"* for every call site that passes one. Four do — `ProjectsView.vue:27`,
@@ -389,30 +472,57 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `playwright-cli click` with no forced/JS fallback. Confirm the period chips are not clipped either.
 - **Risk:** Low, one component's CSS. Re-check the header still lines up with the other three widgets.
 
-## F8. NowBar shows a contradictory "DONE" / "No plan for today" pair while the plan is still loading
+## F8. A sign-in race orphans the day-plan fetch — the home page lands on "No plan for today" (or spins forever) and nothing re-fetches
 
-- **Scope:** app-side `src/core/home/component/NowBar.vue`, `src/core/home/composable/useTodayPlan.ts`
-- **Closes:** `home/B2`
-- **Re-verified unchanged this pass:** `NowBar.vue` contains **zero** occurrences of `loading` — neither in the
-  `useTodayPlan()` destructure nor anywhere in the template.
-- **Root cause:** Two compounding gaps. (1) `NowBar` never branches on `loading`, unlike its sibling
-  `DayPlannerWidget`, which guards on it before rendering plan-derived content (`DayPlannerWidget.vue:88-92`).
-  (2) `focusMode` (`useTodayPlan.ts:163-166`) is computed purely from `tasks`, independent of `hasPlan`, so
-  while the `calendar/day-plan` request is in flight `tasks` is `[]` → `focusMode` is `'allDone'` ("DONE")
-  while `hasPlan` is still `false` ("No plan for today"). The pair renders briefly on every load — and
-  **permanently** on a genuinely plan-less day.
-- **Files:** `src/core/home/component/NowBar.vue` (destructure list + template `v-if`),
-  `src/core/home/composable/useTodayPlan.ts:163-166`
-- **What to change:** Both halves. Add `loading` to the destructure and a loading branch matching
-  `DayPlannerWidget`'s spinner; separately make `focusMode` (or the kicker binding) consult `hasPlan` before
-  falling through to `'allDone'`. The loading guard alone hides the transient case and leaves the steady-state
-  contradiction.
-- **Do not change:** `DayPlannerWidget`'s own loading guard — it is correct and is the pattern to copy.
-- **Verification:** `home/B2`'s `Verify:` block — throttle the network (or delay the day-plan endpoint) and
-  load `/` on an account with a real plan: the now bar shows a loading state and never "No plan for
-  today"/"DONE" for a day that has a plan. Then confirm a genuinely plan-less day still reads sensibly.
-- **Risk:** Low. Confirm the `hasPlan` guard doesn't suppress the legitimate `'allDone'` state for a day that
-  has a plan with every task done — that state must still render.
+- **Scope:** app-side `src/core/home/composable/useTodayPlan.ts`, `src/core/home/component/NowBar.vue`
+- **Closes:** `home/B2` (round 2). **Settles `home/U1`** — the mutation pass forced a 500 on
+  `calendar/day-plan/**` on a plain reload and both widgets rendered `home.loadFailedPlan` with a working
+  *Retry*; H6's error UI is correct, and the only way it is unreachable is this race (see the log).
+- **Rewritten in the thirteenth pass.** Round 1 saw a transient pair and this batch prescribed a loading
+  branch. Round 2 reproduced the pair on **3 of 4 fresh sign-ins**, waited 3 s, and it did not clear —
+  it is a permanent state that only a reload fixes, and the reload "fixes" it by winning the same race
+  the other way (§95). Round 1's fix is kept below as the smaller half; applied alone it changes nothing
+  the mutation pass observed.
+- **Root cause (source-verified this pass, `useTodayPlan.ts`):** `fetchPlan()` (`:397-404`) captures
+  `token = ++loadToken` and applies its response only `if (token === loadToken)`. `resetTodayPlan()`
+  (`:466-478`) does `loadToken++` and sets `loading = true`. `wireLifecycle`'s user-id watcher
+  (`:512-521`) calls `resetTodayPlan()` on **every** change of `userStore.currentUser.id` — including the
+  `0 → <id>` hydration that happens once `GET /user/data` resolves after a fresh sign-in, which is not a
+  user change. On sign-in `user/data` and `day-plan` fire together; when `user/data` wins (140 ms vs
+  524 ms in the reproducing run) the watcher bumps the token mid-flight, the day-plan response is
+  discarded, and the retry gate `if (hadPlan && id !== 0)` (`:516-519`) is `false` because `hadPlan`
+  reads `planDate`, which the discarded response never set. Three visible outcomes: (1) `hasPlan: false`
+  on a day with a plan, in both widgets, permanently; (2) NowBar additionally shows `'allDone'` beside
+  it, because `focusMode` (`:163-166`) is computed from `tasks` alone and never branches on `loading` —
+  round 1's finding; (3) if the discarded fetch *failed*, `load()`'s `finally` has already set
+  `loading = false` and the reset flips it back to `true` with nothing left to clear it —
+  `DayPlannerWidget` spins forever and never reaches the error branch (round 2's third variant).
+- **Files:** `useTodayPlan.ts:512-521` (the watcher), `:466-478` (`resetTodayPlan`), `:163-166`
+  (`focusMode`); `NowBar.vue` (destructure list + template `v-if`)
+- **What to change:** In the watcher, treat `previousId === 0` as hydration, not a user change: nothing
+  belonging to another account can be loaded while the id is `0`, because the reset already ran when it
+  *became* `0` — so `if (previousId === 0) return` before the reset (keep `id === previousId` and the
+  `→ 0` sign-out path exactly as they are). If a stricter shape is preferred, keep the reset and drop the
+  `hadPlan` gate — re-call `ensureLoaded()` unconditionally when `id !== 0` — but then `resetTodayPlan()`
+  must stop setting `loading = true` on its own (let `load()` own it, which it already does at `:425`),
+  or variant (3) survives. Then round 1's half: add `loading` to `NowBar`'s destructure with a loading
+  branch matching `DayPlannerWidget.vue:88-92`, and make `focusMode` consult `hasPlan` before falling
+  through to `'allDone'`.
+- **Do not change:** `fetchPlan`'s stale-response guard (`:404`) — it is correct and is what makes the
+  midnight watcher (`:504-508`) safe; the sign-out path (`id → 0`), which is H2's isolation and was
+  re-verified clean this pass against the secondary account; `DayPlannerWidget`'s own loading guard.
+- **Verification:** `home/B2`'s **round-2** `Verify:` block — sign out and in up to four times on the
+  seeded primary account and read the plan without a reload, then `response-body` on the day-plan
+  request to confirm a `hasPlan: true` response was *applied*, not discarded. Then the third variant:
+  `playwright-cli route "**/api/calendar/day-plan/**" --status=500` **before** signing in, sign in, and
+  confirm the widgets reach the error/Retry state rather than a spinner. Then round 1's block: a
+  genuinely plan-less day (the secondary account) reads *"No plan for today"* with no *DONE* beside it,
+  and a day with every task done still reads *DONE*.
+- **Risk:** Medium. The watcher is the app's only sign-out reset for this module; the `previousId === 0`
+  early-return must not swallow the `→ 0` transition (it does not — `previousId` is the old value — but
+  write the test as two sign-ins with different accounts in one tab, which is `account-isolation.spec.ts`'s
+  shape). `loading` ownership is shared between `load()`, `refresh()` and `resetTodayPlan()`; moving it
+  changes three call sites.
 
 ## F9. `homeUiStore` never persists, and CLAUDE.md asserts the opposite of what the plugin does
 
@@ -707,8 +817,13 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `src/core/activity/component/activityRole/ActivityRoleTable.vue`,
   `activityCategory/ActivityCategoryTable.vue`, `ActivityTable.vue:121-137`; plus one row in CLAUDE.md's
   *sanctioned cross-module imports* table
-- **Closes:** `activity-settings/B7`, `activity-settings/A1`. **Answers `U2`** from source (below) — the
-  browser step it asks for is optional.
+- **Closes:** `activity-settings/B7`, `activity-settings/A1`, **`activity-settings/B8`** (thirteenth
+  pass — the generic dialog reads *"Are you sure you want to delete 4?"* because neither table passes
+  `deleteConfirmationColumn`; this batch replaces that dialog with `useDialog().confirm()`, so the raw
+  id goes with it. **If a fixing session keeps `BasicTable`'s built-in dialog for either table**, the
+  one-attribute alternative is `deleteConfirmationColumn="name"` — do one or the other, not neither).
+  **`U2` is now browser-confirmed** (mutation round 2): Delete → Confirm on the *Planner task* system
+  role → `409`, row kept, message hidden behind the generic string — which is `FW19`.
 - **Root cause — and two things the finding's suggested fix gets wrong.** `ActivityRoleTable.vue:2-15`
   and `ActivityCategoryTable.vue:2-15` use `BasicTable`'s default actions with `@onDelete`, so every row
   offers an always-enabled delete behind the generic *"Are you sure you want to delete X?"*. The finding
@@ -1443,7 +1558,11 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Scope:** app-side `src/core/activityHistory/component/TimerPresetsSection.vue:155`,
   `src/core/dayPlanner/component/template/MiniTimeline.vue:50`,
   `src/core/todoList/composable/dragAndDrop/UseDragAndDropMonitor.ts:24`, `eslint.config.ts:43`
-- **Closes:** `history-capture/P1`
+- **Closes:** `history-capture/P1`, **`planner-templates/P2`** (twelfth pass — unit 8 filed
+  `MiniTimeline.vue:50` on its own, observed as three `Proxy(Array)` lines per load of
+  `/day-planner/templates`; it was already in this batch's file list from the eighth-pass grep, so the
+  finding closes here rather than opening a second batch. Its `Verify:` block is the browser check for
+  that line: zero `[LOG]` from `MiniTimeline.vue` on the template list.)
 - **Root cause:** The line the finding names (`loadPresetsData()`, `console.log(allPresets.value)` right
   after the `fetchAll()`) — confirmed. The reason it survived is `eslint.config.ts:43`:
   `'no-console': ['off', { allow: ['error', 'warn'] }]` — the rule is **off**, with an allow-list that is
@@ -1940,7 +2059,520 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   arrows to move selection). Acceptable here — Tab reaches each chip — but say so in the commit so
   nobody files it as a regression.
 
+## F50. The Compare Templates dialog is empty every time — two unkeyed fan-outs, and the finding's fix closes one
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TemplateComparisonDialog.vue`
+- **Closes:** `planner-templates/X1`; folds **`planner-templates/B3`** (same file, one attribute — see
+  below)
+- **Root cause:** Confirmed in source. `TemplateComparisonDialog.vue:107-108` destructures one
+  `useTaskPlannerDayTemplateTaskCrud()` and one `useTemplatePlannerTaskCrud()`, and the `watch(dialog)`
+  at `:116-132` does two fan-outs from them: `:120` `Promise.all([fetchById(ids[0]), fetchById(ids[1])])`
+  and `:121-124` `Promise.all([fetchFiltered(…t1…), fetchFiltered(…t2…)])`. Both helpers abort their
+  own previous call — `useEntityQuery.ts:35` unconditionally (`fetchByIdController?.abort()`, one
+  controller per *method*, so a second id cancels the first), and `useFetchFiltered.ts:54-56` per
+  `requestKey`, defaulting to one shared key when none is passed — so in each pair the first promise
+  rejects with `CanceledError`, `Promise.all` rejects, `run()` re-throws cancellations by design
+  (`useRequestState.ts:45`), and the `try … finally` at `:119-131` never reaches `sides.value = …`.
+  The two-null default renders the `:00 - :00 · 0 tasks` the unit photographed. **The finding sees
+  only the first pair.** Its suggested fix — key or split the two `fetchById`s — makes `:120` resolve
+  and moves the identical failure to `:122`; the dialog stays empty and the console shows the same
+  error one line down. `TemplateListView.vue:315-326`, in this module, already documents and uses the
+  `requestKey: t.id` form for exactly this fan-out.
+- **`B3`, same file:** `:6` passes `:showConfirmBtn="false"`; `MyDialog`'s prop is `hasConfirmBtn`
+  (`MyDialog.vue:94,110`), so the attribute lands in `$attrs` and a live *Confirm* renders that emits
+  `confirmed` to nobody. The other seven call sites in `src/` spell it correctly — one typo, not a
+  class.
+- **Files:** `TemplateComparisonDialog.vue:6` (`B3`), `:107-108`, `:116-132`
+- **What to change:** Three edits. **(a)** `:121-124` — pass `{ requestKey: t1.id }` / `{ requestKey:
+  t2.id }` as the third argument, the form `TemplateListView.vue:326` uses; the keyed API exists today.
+  **(b)** `:120` — until `FW18` lands, either `await` the two `fetchById`s sequentially (one extra
+  round trip inside a dialog that already shows a spinner) or take a second
+  `useTaskPlannerDayTemplateTaskCrud()` instance for the right-hand side **with a comment naming the
+  cause** in the `aborts its previous` wording `prompts/_common/api/A1` greps for, so that batch's
+  Part 2 finds and retires it. After `FW18`: `fetchById(id, undefined, { requestKey: id })` and delete
+  the workaround in the pointer-bump commit. **(c)** `:6` — `:hasConfirmBtn="false"`. Consider a
+  `catch` that shows the interceptor's toast *and* keeps `sides` on the two-null default behind a
+  `v-if="side.template"` guard, so a real failure reads as "nothing loaded" rather than as a template
+  with no name and no tasks — the current empty-state markup is what made this look like data.
+- **Do not change:** `useEntityQuery.ts` (that is `FW18`, a `vue_framework` commit); the
+  `TemplatePlannerTaskFilter` window (`t.defaultWakeUpTime … defaultBedTime`) — the list view uses the
+  same bounds.
+- **Verification:** `X1`'s `Verify:` block — both panels show name, icon, chips and a populated
+  timeline; **`playwright-cli requests` shows two `GET /task-planner-day-template/{id}` and two `POST
+  /template-planner-task/filter`, none `ERR_ABORTED`** (a clean console proves nothing here —
+  cancellations are not logged, `A1`'s *Traps*). Then `B3`'s: only *Cancel* renders. Open → Cancel →
+  reopen with the *same* two ids, since the watcher refetches on every open.
+- **Risk:** None beyond the dialog. If (b) takes the second-instance route, `A1`'s workaround table
+  grows by one row until `FW18` retires it — say so in the commit.
+
+## F51. The template planner's side panel at `<md` is the open panel, squeezed and off-screen — and nothing reopens it
+
+- **Scope:** app-side `src/core/dayPlanner/component/PlannerSidePanelShell.vue`,
+  `src/core/dayPlanner/view/TemplateDayPlannerView.vue`,
+  `src/core/dayPlanner/component/template/TemplatePlannerHeader.vue`
+- **Closes:** `planner-templates/X2` (+ corrects the inventory's `:162` "mobile panel-open toggle (the
+  collapsed pill)" row — see *Contradictions* §86)
+- **Root cause:** Two halves, and the finding describes the first through a misreading. **(1) Layout.**
+  `PlannerSidePanelShell.vue:7` sets `width` as an inline style (`400px` from
+  `TemplateDayPlannerView.vue:9`, `380px` by default) with `minWidth: '280px'` and no breakpoint
+  override, while `TemplateDayPlannerView.vue:3` switches the container to `flex-column` below `md`
+  and keeps `h-100`. So at 390 px the card is 400 px wide in a 390 px column — the page scrolls
+  sideways, which is the `left: -166` and the second screenshot — and, as a column item with no
+  `flex-shrink: 0` or minimum height beside a `flex-fill` grid, it is squeezed to its 16 px
+  `VCardTitle` sliver. `panelOpen` starts `true` (`useRoutinePlacement.ts:28`), so **the "collapsed
+  pill" the unit tapped *is* the open panel** — the two mobile screenshots show the same element
+  before and after a horizontal scroll, not a closed and an opened state. **(2) No reopen.** The only
+  writer of `panelOpen = true` in the template planner is its initial value: the shell's X sets it
+  `false` (`:22`), `TemplatePlannerHeader.vue` has no toggle, and `v-show="panelOpen || mdAndUp"`
+  (`:4`) then hides the panel until a reload. The day planner has the control the template planner
+  lacks — `DayPlannerHeader.vue:7-14`, a `d-md-none` `bars` `VIconBtn` (itself unnamed; `F56`). The
+  unit's *Expected* (*"the way it does on `DayPlannerSidePanel`'s default 380px"*) is unobserved: unit
+  7 never resized, and `DayPlannerView.vue:3` has **no** `flex-column`, so at 390 px the day view is a
+  380 px panel *beside* the grid — a different failure, not a working reference.
+- **Files:** `PlannerSidePanelShell.vue:3-8` (width/height at `<md`), `:16-23` (close X);
+  `TemplateDayPlannerView.vue:3,9`; `TemplatePlannerHeader.vue:3-8` (where the toggle goes);
+  reference — `DayPlannerHeader.vue:7-14`, `DayPlannerView.vue:3`
+- **What to change:** **(a)** In the shell, apply the caller's `width` only at `mdAndUp` (the composable
+  is already there, `:85`) and go full-width below it — `width: '100%'`, drop the `minWidth` — and
+  give the card `flex: 0 0 auto` (or a `min-height: fit-content`) so a column parent cannot squeeze it.
+  Whether the mobile panel is an in-flow block above the grid or an overlay (`VNavigationDrawer
+  temporary`, or a `VBottomSheet`) is a design choice; in-flow is the smaller change and matches the
+  `flex-column` the view already opts into. **(b)** Add the reopen control to
+  `TemplatePlannerHeader.vue` — the same `d-md-none` `bars` button `DayPlannerHeader.vue:7-14` renders,
+  bound to the view's `panelOpen` (it is not in the header's props today; pass it as a model the way
+  `DayPlannerHeader` takes `v-model:panelOpen`). Name it in the same edit — `F56` lists it. **(c)** Look
+  at `DayPlannerView.vue:3` while there: it should probably take the same `flex-column flex-md-row`
+  the template view has, but that is unit 7's screen and unobserved — verify before changing, and file
+  what is seen rather than fixing blind.
+- **Do not change:** the `mdAndUp` breakpoint (the shell's own comment says why it is not the caller's);
+  `useRoutinePlacement.ts` — `panelOpen` living there is fine, it just needs a second writer.
+- **Verification:** `X2`'s `Verify:` block at 390×844 on `/day-planner/templates/20001`: the panel's
+  bounding box is ≤ viewport width, fully on-screen, tall enough to show *Template Name*; **plus:** tap
+  X → panel gone, tap the new toggle → panel back, no reload; `window.scrollX` stays 0 throughout. Then
+  the same three checks on `/day-planner/<today>` — the shell is shared, and that view's `bars` toggle
+  already exists, so a fix that works only under `flex-column` shows up there.
+- **Risk:** Medium — it is the chrome of both planners at every width below 960 px, and the day view's
+  mobile layout has never been looked at. Screenshot both views at 390 and at 1024 (just above `md`)
+  before and after.
+
+## F52. Template card title row — the name never truncates, so the switch label and the chip pay for it
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TemplateCard.vue`
+- **Closes:** `planner-templates/B1`
+- **Root cause:** Confirmed in source. `VCardTitle` (`:8`) is `d-flex justify-space-between
+  align-center`; the left group (`:9-25`, checkbox + icon + `<span>{{ template.name }}</span>`) has no
+  `min-width: 0` and no `text-truncate`, so it keeps its intrinsic width, and the right group
+  (`:26-51`, `DayTypeChip` + `VSwitch` with an inline `label` + pin `VIconBtn`) absorbs the shortfall:
+  the switch's label box collapses to ~20 px with `white-space: normal` (one letter per line) and the
+  chip clips with `text-overflow: clip`. Vuetify's `VCardTitle` sets `white-space: nowrap` and
+  `overflow: hidden` on itself, which is why the row clips rather than wraps. Three cards, three
+  column widths — the unit measured it on all three.
+- **Files:** `TemplateCard.vue:8-51`
+- **What to change:** Make the *name* the flexible part: `min-width: 0` + `text-truncate` on the name
+  span (with `:title="template.name"` so the full name is recoverable), and `flex-shrink-0` on the
+  right-hand group so its three controls keep their intrinsic width. Then decide whether the switch
+  needs a visible label at all — the row is already the busiest in the card, and `F56` is about to
+  give the pin a name; a switch named by `aria-label` with the state shown by its own thumb is the
+  usual Vuetify shape. If the label stays, `white-space: nowrap` on it as well. Do **not** solve it by
+  fixing the card grid's column width — the chip count and the name length are both data-driven.
+- **Do not change:** `DayTypeChip` — it is shared with the comparison dialog and the day view; the clip
+  is the row's fault, not the chip's.
+- **Verification:** `B1`'s `Verify:` block at 1440×900 — *Active*/*Inactive* on one line, *Weekend* and
+  *Workday* whole (or an ellipsis + tooltip). Add a template with a 40-character name through *Add
+  Template* (`F53` makes that path safe) and confirm the *name* is what truncates.
+- **Risk:** None — one row's CSS.
+
+## F53. The template form mirrors none of the API's contract — a required enum is optional, and nothing else is checked either
+
+- **Scope:** app-side `src/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts`,
+  `src/core/dayPlanner/component/template/TaskPlannerDayTemplateDetailsForm.vue`
+- **Closes:** `planner-templates/B2`
+- **Root cause:** Confirmed on both sides. The client DTO declares `suggestedForDayType?: DayType`
+  (`TaskPlannerDayTemplateRequest.ts:14`) with no default, so a blank *Add Template* serialises without
+  the key; the server's `TaskPlannerDayTemplateRequest.cs:29` is `public required DayType
+  SuggestedForDayType`, and `System.Text.Json` rejects the body before validation runs — the
+  `serializerErrors` 400 the unit quoted, surfaced by the interceptor as the server's generic title.
+  **Wider than the finding:** the form (`TaskPlannerDayTemplateDetailsForm.vue:6-79`) declares no
+  `:rules` on any field, so `validateAndGetData()`'s `form.validate()` (`:143`) is always `true`;
+  `Name` is `[Required][StringLength(100)]`, `Description` `[StringLength(500)]`, `Icon`
+  `[StringLength(50)]` on the server (`:11-19`), and an empty name or a 101-character one takes the
+  same route — dialog closed, input gone, generic snackbar. *Duplicate* and *Edit* hide all of it
+  because `fromEntity` copies a valid enum in. **Not a backend ask:** the column is non-nullable and
+  indexed (`Initial.Designer.cs:1669,1701`), `/suggestions` matches on it, and every server-side
+  fixture sets it — the field is required by design, and the client is the side that disagrees.
+- **Files:** `TaskPlannerDayTemplateRequest.ts:14` (and `:8-19` generally),
+  `TaskPlannerDayTemplateDetailsForm.vue:6-11` (name), `:30-36` (description), `:38-43` (day type),
+  `:67-72` (icon)
+- **What to change:** **(a)** `suggestedForDayType: DayType = DayType.Workday` (or whichever the owner
+  wants as the blank-form default — the seed's three templates are two `Workday`, one `Weekend`), so
+  the type stops lying and a blank form is a valid body. **(b)** Rules that mirror the contract:
+  required + `maxLength(100)` on the name, `maxLength(500)` on the description, `maxLength(50)` on the
+  icon, required on the day-type select — through `RulesComposition.ts` so the messages are the
+  app's, not hand-written. `hideDetails` on every field means the messages need somewhere to render;
+  drop it on the fields that gain a rule, or use `hideDetails="auto"`. **(c)** Optional but worth the
+  look: the dialog closes on `dialogApi.close({ request })` (`TemplateDetailsForm.vue:32`) and the
+  caller then calls the API (`TemplateListView.vue:337-352,371-402`), so *any* server rejection —
+  a future 409 on a duplicate name, say — still costs the user their input. Moving `create`/`update`
+  inside the dialog's `onConfirm` under `dialogApi.setLoading()` keeps the dialog open on failure.
+  Check how the app's other `openDialog` consumers do it before diverging; if they all close-then-call,
+  this is a pattern decision, not this batch's.
+- **Do not change:** the server DTO; the `Time` defaults (`07:00`/`23:00`) — those already work.
+- **Verification:** `B2`'s `Verify:` block — *Add Template*, name only, *Create*: **either** the select
+  blocks with a required message and the dialog stays open, **or** the template is created with the
+  default and the app lands on `/day-planner/templates/<newId>`; no 400, no *"One or more errors
+  occurred!"*. Then an empty name → blocked in the dialog, not a 400. Confirm the list count went
+  from 3 to 4 and reseed.
+- **Risk:** Low. A default day type means a user who ignores the field gets `Workday` silently — the
+  select shows it, and that is the trade the unit's own *Expected* offers.
+
+## F54. Template list sort and the split view's picks are not in the URL — the `F42` shape, two more views
+
+- **Scope:** app-side `src/core/dayPlanner/view/TemplateListView.vue`,
+  `src/core/dayPlanner/view/TemplateSplitView.vue`
+- **Closes:** `planner-templates/B4`
+- **Root cause:** Confirmed. `TemplateListView.vue:228` `const sortBy = ref<SortOption>('mostUsed')`
+  and `TemplateSplitView.vue:103-104` `leftTemplateId`/`rightTemplateId` are plain refs; nothing
+  reads or writes `route.query`. CLAUDE.md's *URL State* rule names sort and selection outright, and
+  the module already holds the codec (`useCalendarUrlState.ts` — absent-when-default,
+  `router.replace`), which `F42` is about to reuse for `/day-planner/settings`. The split view's case
+  is the sharper one: it is reachable only from a button (`TemplateListView.vue:47`), and a reload
+  after picking both sides returns two empty selects — the unit observed it.
+- **Files:** `TemplateListView.vue:228-232` (+ the `VSelect` that binds it);
+  `TemplateSplitView.vue:103-104,114-…` (`onMounted` loads the options; the two ids should be read
+  from the query after that and validated against them)
+- **What to change:** Copy `F42`'s shape once it has settled (query vs. route param — `F42` recommends
+  a `?` query, absent for the default): `?sort=alphabetical` on the list (absent for `mostUsed`),
+  `?left=20001&right=20002` on the split view, written with `router.replace` from a watcher and read
+  once on setup. Validate: an unknown sort value falls back to `mostUsed`; an id not in
+  `templateOptions` (or equal to the other side) is dropped, not sent to the grid — the split view
+  mounts `TemplateDayPlannerView` per side and a bogus id would otherwise reach `F55`'s 404 path
+  twice. Prefer one small composable in `dayPlanner/composable/` shared by the three views over three
+  inline watchers.
+- **Do not change:** the sort *options* or the pinned/active/inactive sectioning — only where the
+  choice lives.
+- **Verification:** `B4`'s `Verify:` block — the two repros, then reload, then open the URL fresh in a
+  new session (`playwright-cli open <url>` after `state-load`). Add: `?sort=zzz` → *Most used*, clean
+  console; `?left=999999` → the select stays empty, no `GET …/999999`.
+- **Risk:** None. Query-only, so `_routes.md` and `F14`'s nav matching are untouched.
+
+## F55. An unknown template id keeps the previous template's name — the `F43` shape on the template side, plus a persisted store
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TemplatePlannerPanel.vue`,
+  `src/core/dayPlanner/store/templateDayPlannerStore.ts`; `src/core/dayPlanner/view/TemplateDayPlannerView.vue`
+  for the not-found state
+- **Closes:** `planner-templates/B5`
+- **Root cause:** Confirmed. `TemplatePlannerPanel.vue:47-56` `loadTemplateDetails()` is `const
+  template = await fetchById(templateId)` followed by the four store writes, with no `catch`, and it is
+  called from `onMounted` (`:40-42`) and from the `templateId` watcher (`:66-71`) — the same
+  two-call-site shape as `F43`'s `DayPlannerView.vue:211` + `useDayNavigation.ts:71-84`. On a 404 the
+  interceptor toasts, the promise rejects at the hook boundary (Vue's *"Unhandled error during
+  execution of mounted hook"*), and the store's `currentTemplateId`/`templateName` keep whatever they
+  held. **The twist the finding half-saw:** `useTemplateDayPlannerStore` persists both fields to
+  `sessionStorage` (`templateDayPlannerStore.ts:80`, `persist: { omit: ['tasks'], storage:
+  sessionStorage }`), so the stale name also survives a reload of the bad URL and a fresh tab opened
+  from it — the header reads *Home Office* for `999999` until the session ends. The `if (!template)
+  throw Error(…)` on `:50` is dead: `fetchById` rejects on a 404, it never resolves `undefined`.
+- **Files:** `TemplatePlannerPanel.vue:40-42,47-56,66-71`; `templateDayPlannerStore.ts:58-62`
+  (`resetStore` — already clears both fields, unused on this path); `TemplateDayPlannerView.vue:30`
+  (the header's fallback is `planner.template.dayTemplateFallback`, which never renders today because
+  the stale name wins)
+- **What to change:** Wrap the fetch in `try/catch` at `loadTemplateDetails` (not `_silent` — the
+  interceptor's toast is the right first signal, as `F43` says); on failure call `store.resetStore()`
+  so the name, id and tasks clear together, and render a not-found state in the header slot — an
+  inline `VAlert` naming the id with a *Back to templates* action, the same shape `F43`(b) asks for
+  on the date view and `PlannerTaskLinkView` already has for a missing task. Agree the treatment with
+  `F43` rather than inventing a second one. Delete the dead `throw` on `:50`. In the split view the
+  panel gets its id from a select, so the path is unreachable there — but the same component is
+  mounted, so nothing in the fix may assume the route.
+- **Do not change:** the store's persistence — per-tab planner state is deliberate (its own comment);
+  `F54` is what stops a bogus id reaching this path from the split view's URL.
+- **Verification:** `B5`'s `Verify:` block, then **reload** `/day-planner/templates/999999` and open it
+  in a second tab — header must not read a real template's name either time;
+  `playwright-cli sessionstorage-list` shows `templateName: ""`. Console shows the interceptor's line
+  and no Vue unhandled-hook error. Then `/day-planner/templates/20001` → *Home Office* again.
+- **Risk:** Low — a `catch` and a state the view never had.
+
+## F56. Seven icon-only controls in `dayPlanner` have no accessible name — and the compare checkbox is under the card's icon
+
+- **Scope:** app-side `src/core/dayPlanner/` — five files
+- **Closes:** `planner-templates/A1`, `A2`, `A3` (re-identified, §86), `U3` (settled from source);
+  three unfiled twins found reading the same files
+- **Root cause:** Confirmed per control, from source (the unit `eval`'d two of them, the rest are the
+  same markup):
+
+  | # | control | file | observed? |
+  | --- | --- | --- | --- |
+  | 1 | card pin — `VIconBtn icon="thumbtack"`, no label | `TemplateCard.vue:43-50` | yes (`A1`) |
+  | 2 | compare checkbox — `VCheckbox`, no `label`/`aria-label`; **and** its hit-box sits under the template `VIcon` beside it | `TemplateCard.vue:10-23` | yes (`A2`, Playwright's intercept log) |
+  | 3 | side panel close — `VIconBtn icon="xmark"`, `d-md-none` | `PlannerSidePanelShell.vue:16-23` | the unit's `nth(4)` is this or #5 — the "open toggle" it named does not exist (§86) |
+  | 4 | split view back — `VBtn icon="arrow-left"`, no text | `TemplateSplitView.vue:5-11` | source only (`U3`) — a `VBtn` with only `icon` has no name; nothing to observe |
+  | 5 | template planner undo — `VBtn` wrapping a `VIcon` + `VBadge :content="stackSize"` inside a `VTooltip` | `TemplatePlannerHeader.vue:35-60` | unfiled — the tooltip sets `aria-describedby`, not a name; with a non-empty stack the badge's number *is* the name |
+  | 6 | day planner undo — identical markup | `DayPlannerHeader.vue:64-85` | unfiled, unit 7's screen |
+  | 7 | day planner mobile panel toggle — `VIconBtn icon="bars"`, `d-md-none` | `DayPlannerHeader.vue:7-14` | unfiled — unit 7 never resized; `F51` adds its template-side twin |
+
+  App-side throughout — none of these is a framework component's own markup, so this does not touch
+  `FW2` (rule 1). The same class as `F4`, `F19`'s trash button and `F46`: this module's turn.
+- **Files:** the seven rows above; `src/core/dayPlanner/_locales/dayPlanner.{sk,en}.ts` for the keys
+- **What to change:** A bound, localized `aria-label` on each: pin → *Pin template* / *Unpin template*
+  by `isPinned`; checkbox → *Select {name} for comparison* (`:label` would also fix #2's second half by
+  giving the control a real box — or keep it label-less and give the `VCheckbox` `me-1` +
+  `flex-shrink-0` so the icon stops overlapping its input; either way `A2`'s pass condition is a
+  *direct* click landing); close → *Close panel*; back → *Back to templates*; undo → *Undo* with the
+  count folded in (*Undo (2)*) so the badge stops being the name; `bars` → *Open panel* / *Close
+  panel* by `panelOpen`. Share keys between #5/#6 and #3/#7/`F51`'s new toggle — one string each.
+- **Do not change:** the `VTooltip` on the undo buttons (it stays as the description); `FW2`'s files.
+- **Verification:** `A1`/`A2`/`A3`'s `Verify:` blocks — each control addressable by
+  `getByRole('button', { name })` (checkbox: `getByRole('checkbox', { name })`), and `A2`'s direct
+  click succeeds with no intercept in Playwright's log. #7 and #3 need 390 px; #6 needs
+  `/day-planner/<today>`. Confirm the names change with the locale.
+- **Risk:** None — attributes only. The draft spec's positional locators (`nth(3)`, `nth(4)`) will
+  keep working and should be replaced by the names in the same commit.
+
+## F57. The Scheduled Days picker is clipped to Mon–Fri in the 400 px template panel
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TaskPlannerDayTemplateDetailsForm.vue`
+- **Closes:** `planner-templates/P1`
+- **Root cause:** Confirmed. `:77` renders the framework's `DayOfWeekPicker` — a `VBtnToggle` of
+  seven `size="small"` buttons with `divided`, `display: inline-flex`, no wrap — inside a `div` in a
+  `flex-column` group (`:63-66`, the non-dialog branch of `:65`). Seven small buttons plus dividers need more
+  than the ~360 px the panel leaves after padding, and `VCard`'s `overflow: hidden` clips the rest.
+  In the dialog (`isDialog`, `flex-md-row`) the same picker has the dialog's width and is fine — the
+  400 px panel is the only place it renders narrow.
+- **Files:** `TaskPlannerDayTemplateDetailsForm.vue:73-78` (the label + picker block); reference —
+  `src/_common/component/inputs/DayOfWeekPicker.vue` (single root, so a class on the tag lands on the
+  `VBtnToggle`)
+- **What to change:** App-side, one class: `class="flex-wrap"` on the `<DayOfWeekPicker>` tag lets the
+  toggle break onto a second row at this width (`divided`'s inner borders look odd across a wrap —
+  drop `divided` via the picker if it becomes a prop, or accept it). Alternatively `density="compact"`
+  / `size="x-small"` if the picker grows those props — but that is a `vue_framework` change for a
+  400 px panel this app chose, and `F6`'s reasoning applies: the smaller, app-side edit first. If the
+  owner would rather widen the panel, `F51` is the batch that touches the shell's width and this
+  should ride with it.
+- **Do not change:** `DayOfWeekPicker.vue` (framework) in this batch; the dialog branch.
+- **Verification:** `P1`'s `Verify:` block on `/day-planner/templates/20001` — all seven day buttons
+  visible and togglable; then *Edit Details* from the list to confirm the dialog's row is unchanged.
+- **Risk:** None.
+
 ---
+
+## F58. The EN `$vuetify` block is a hand copy of Vuetify's `en` export, minus two keys
+
+- **Scope:** app-side `src/locales/common.en.ts:43-223`
+- **Closes:** `home/A1` (+ the unfiled sibling key `command.search`)
+- **Root cause:** `common.en.ts` carries a 180-line `$vuetify: { … }` object. Diffed this pass against
+  `import { en } from 'vuetify/locale'` (the installed package, flattened): **124 keys upstream, 122 in
+  the copy, zero differing values, zero extra keys** — it is byte-identical except for
+  `timePicker.notAllowed` and `command.search`, which were added upstream after the copy was taken.
+  `createAppVuetify.ts:78` routes Vuetify's own lookups through vue-i18n (`createVueI18nAdapter`), so a
+  key the copy lacks is a console `[intlify] Not found '$vuetify.timePicker.notAllowed'` and a
+  screen-reader announcement that never happens — exactly what the mutation pass saw typing a letter
+  into `TrackTimeDialog`'s masked *Length* field. The SK side (`src/_common/_locales/vuetifyLocale.sk.ts`)
+  is complete against `sk`; only EN drifted, because only EN is app-side.
+- **Files:** `src/locales/common.en.ts` (the `$vuetify` key); `src/locales/EN.ts` only if the import
+  is placed there instead
+- **What to change:** Replace the object with `$vuetify: en` (or `{ ...en }` if any app override is ever
+  wanted — none exists today). A locale that cannot drift is the fix; adding the two keys by hand is
+  the same bug deferred to the next Vuetify bump. Consider the same for SK in the framework
+  (`vuetifyLocale.sk.ts` → `import { sk } from 'vuetify/locale'`) — but that is a `vue_framework`
+  change and **not this batch**; it is complete today, so nothing is broken there.
+- **Do not change:** `httpErrors`, `validation`, `export` in the same file — those mirror the
+  *framework's* Slovak `common`, not Vuetify, and are `F35`'s subject.
+- **Verification:** `home/A1`'s `Verify:` block — the Track Time dialog, a letter into *Length*, no
+  `[intlify]` warning. Then one `DataTable` footer and one `VDatePicker` in EN to confirm nothing else
+  changed (nothing should — the values are identical).
+- **Risk:** None beyond the import resolving — `vuetify/locale` is already imported by
+  `createAppVuetify.ts`'s adapter path, so the package entry exists.
+
+## F59. A skipped task renders as done — `isFinished` is the wrong predicate for the row's visual and ARIA state
+
+- **Scope:** app-side `src/core/home/component/DayPlannerWidget.vue`, `src/core/home/composable/useTodayPlan.ts`
+- **Closes:** `home/B4`
+- **Root cause (source-verified):** `isFinished(task)` (`useTodayPlan.ts:125-127`) is
+  `Completed || Cancelled` — correct for "no countdown, no alert", which is what it was written for.
+  `DayPlannerWidget.vue` reuses it for three things it does not mean: the row class
+  (`'row--done': isFinished(task)`, `:172`), the checkbox fill (`'check--on'`, `:182`) and
+  `aria-pressed` (`:184`) — while the label stays `home.markDone` (`:183`). So a `Cancelled` row is
+  indistinguishable from a `Completed` one, its `skipReason` (which the PATCH did send —
+  `useTodayPlan.ts:302-308`) renders nowhere, and the checkbox's accessible state claims *done*. Worse,
+  `toggleTaskStatus` (`:268-273`) tests `status === Completed` only, so clicking the checkbox on a
+  cancelled row sends it to **`Completed`**, not back to `NotStarted` — the finding's *Verify* step 3.
+- **Files:** `DayPlannerWidget.vue:172,182-185` (+ its `.row--done`/`.check--on` styles `:377-381`,
+  `:458`); `useTodayPlan.ts:268-273` (`toggleTaskStatus`)
+- **What to change:** Branch the row on `task.status` rather than `isFinished`: `Completed` keeps the
+  check; `Cancelled` gets its own muted/struck treatment plus a small *Skipped* chip carrying
+  `skipReason` (the `home.skipReason.*` keys already exist — `useTodayPlan.ts:32`), `aria-pressed="false"`
+  and a label that says what the click will do. Decide what that click *does* — restoring `NotStarted`
+  is the sensible reading of "un-skip" — and encode it in `toggleTaskStatus` (or hide the checkbox on a
+  cancelled row and put the restore in `TaskActionMenu`, which already owns Skip). Whichever, the label
+  and the action must agree.
+- **Do not change:** `isFinished` itself or its other consumers (`isActive`, the alert scheduler) — it is
+  right where it is used for timing.
+- **Verification:** `home/B4`'s `Verify:` block — skip via `TaskActionMenu`, read the row's class and
+  the checkbox's `aria-pressed`/name, then click it and read the `PATCH …/status` body. NowBar's own
+  rendering of a cancelled focus task is worth one look in the same session; `focusMode` derives from
+  `isActive`, so it should already be right.
+- **Risk:** Low. One widget, one composable function; the SK copy for the chip needs the locale.
+
+## F60. `MemoryAnchorFilter` sends `year`/`month`; the server reads `anchorYear`/`anchorMonth`
+
+- **Scope:** app-side `src/core/leisure/dto/request/MemoryAnchorFilter.ts`,
+  `src/core/leisure/view/MemoryAnchorsView.vue:38,46`, `src/core/leisure/composable/leisureFilterUrlState.ts:112-121`
+  + `leisureFilterUrlState.test.ts`, `MemoryAnchorsView.vue:131-140` (`loadTimeline` strips the two by name)
+- **Closes:** the `year` and `month` cases of `leisure-bucket-anchors/B1`. The `minRating` case and
+  everything on `/leisure/bucket-list` are **§13** — the server has no field to read.
+- **Root cause:** The server's `MemoryAnchorFilterRequest` declares `AnchorMonth`, `AnchorYear`,
+  `ActivityId` and `GridMemoryAnchorEndpoint.ApplyCustomFiltering` (`:87-97`) filters on all three. The
+  client's filter class names the first two `year` and `month`; System.Text.Json drops the unknown
+  members and the request is answered unfiltered with a 200. The client's **create** request already
+  uses `anchorYear`/`anchorMonth` (the `B2` evidence body), the response DTO does, and the `periodKey`
+  sort expands to them — the filter is the client's own odd one out, which is why this pair is an app
+  batch and not part of the escalation.
+- **What to change:** Rename the two constructor fields (and `hasAny()`), the two `draft.*` bindings,
+  and the encode/decode lines. **Keep the URL keys `year` and `month`** — `leisureFilterUrlState.ts:112-113`
+  maps them explicitly, so bookmarks survive. Update the test's expectations at `:147`. `loadTimeline`'s
+  `Object.assign(…, { year: null, month: null })` must follow the rename or it will stop stripping them.
+- **Do not change:** `activityName` or `minRating` — neither exists server-side; renaming them
+  changes nothing and pre-empts §13's decision.
+- **Verification:** `B1`'s `Verify:` block, cases `?year=2025` (zero rows) and `?month=1` (zero rows)
+  only; the `minRating` case stays failing until §13. Then the Timeline toggle with a year filter set,
+  to confirm it still draws all twelve months.
+- **Risk:** None.
+
+## F61. Ladder and Timeline ask for 500 rows against a cap of 200 — and a failure renders as "empty"
+
+- **Scope:** app-side `src/core/leisure/view/BucketListView.vue:142,149-160`,
+  `src/core/leisure/view/MemoryAnchorsView.vue:120,131-145`
+- **Closes:** `leisure-bucket-anchors/X1`, `X2`
+- **Root cause:** `BaseGridEndpoint.MaxItemsPerPage` is **200** and the base answers a 400 naming the
+  field above it (`BaseGridEndpoint.cs:31,104-106`). `LADDER_PAGE_SIZE = 500` and
+  `TIMELINE_PAGE_SIZE = 500` therefore fail on every load, and both loaders are `try … finally` with no
+  `catch`: the rejection propagates to the console, `ladderItems`/`timelineItems` keep their initial
+  `[]`, and the view's empty-state copy renders — *"You don't have any here yet"* over a table that
+  showed rows a second earlier. `ProjectsView.vue:118-122` fixed the identical constant to 200 with a
+  comment that names this exact failure; the grep this pass (`PAGE_SIZE =` under `src/core`) finds no
+  third 500 — `useLeisurePicker.ts:48` is already 200.
+- **What to change:** Both constants to 200, with `ProjectsView`'s comment. Then the half `ProjectsView`
+  did not do: a `catch` that sets an error flag, and an error branch in each view distinct from the
+  empty state — the README's *Class 1* note (*"give the table component an error state distinct from its
+  empty state"*) is the same ask, and `F27` is the pattern (`useActivityDashboard`'s error/retry). A
+  user with more than 200 bucket-list rows or anchors would then see a truncated ladder/timeline rather
+  than a 400 — say so in a comment; paging the ladder is not this batch.
+- **Do not change:** `ProjectsView.vue`; the server cap (it is documented and deliberate).
+- **Verification:** `X1`'s and `X2`'s `Verify:` blocks — no 400, the seeded row on rung 3, July and
+  August 2026 shaded. Then `playwright-cli route "**/api/activity-bucket-list-profile/grid" --status=500`
+  and toggle to Ladder: the error branch, not the empty copy.
+- **Risk:** Low. Two constants and two small template branches.
+
+## F62. `NewMemoryAnchorForm`'s mount fetch has no `try/finally` — any failure is a permanent spinner
+
+- **Scope:** app-side `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue:105-112`
+- **Closes:** the frontend half of `leisure-bucket-anchors/X3`. The endpoint itself is **§12** — it
+  does not exist.
+- **Root cause:** `onMounted` awaits `fetchAnchorEligibleActivities()` and only then sets
+  `loading.value = false` (`:110-111`). A rejection skips the second line: the Activity picker keeps its
+  spinner and its literal `0` (`F63`), and the designed fallback (`leisure.errors.noEligibleActivities`,
+  gated on `!loading && length === 0`) can never render. Today every call rejects, because the route the
+  client calls is not declared anywhere in the API — the 400 body (*"Value [anchor-eligible-activities]
+  is not valid for a [Int64] property"*) is the `/{id}` route swallowing the path, not an ordering bug.
+- **What to change:** `try { … } catch { failed.value = true } finally { loading.value = false }`.
+  Render a **distinct** error alert on `failed` — do not fall through to *"no eligible activities"*,
+  which would tell every user today that they have nothing to anchor when the truth is that the
+  server could not be asked. Keep the Backlog/Bucket-list links in both alerts.
+- **Do not change:** `memoryAnchorApi.ts:31-34` — the path is the contract §12 asks the server to honour.
+- **Verification:** `X3`'s `Verify:` block cannot pass until §12 lands; until then the check is the
+  negative: open *Add* on `/leisure/memory-anchors`, and within a second the spinner is gone and the
+  error alert is on screen. After §12: the picker lists real options.
+- **Risk:** None.
+
+## F63. Four leisure request DTOs default their lookup ids to `0` — the pickers show "0", the required rule passes, and the server is asked to create with `activityId: 0`
+
+- **Scope:** app-side `src/core/leisure/dto/request/{ActivityBacklogProfileRequest,ActivityBucketListProfileRequest,MemoryAnchorRequest,ActivityProjectProfileRequest}.ts`
+  + the four `New*Form.vue` components that bind them
+- **Closes:** `leisure-backlog-picker/X3` (the `0`-default half; the "no snackbar" half is under *Needs
+  verification* — §91), `leisure-bucket-anchors/B2` (+ the unfiled fourth DTO,
+  `ActivityProjectProfileRequest.ts:7`, found by grep: `public \w+Id: number = 0` hits eight fields in
+  four files, all in this module — `MergeActivitiesRequest.survivorId` is the only other and is set
+  before use)
+- **Root cause:** `ActivityBacklogProfileRequest.ts:6-13` defaults `activityId`, `locationTypeId`,
+  `weatherDependencyId`, `expectedCostTierId` to `0`; `ActivityBucketListProfileRequest.ts:3-4`
+  `activityId`, `experienceTypeId`; `MemoryAnchorRequest.ts:15` and `ActivityProjectProfileRequest.ts:7`
+  `activityId`. Vuetify's select/autocomplete cannot resolve `0` against any option, so it renders the
+  raw value as text — both units photographed the literal **"0"**. `requiredRule`
+  (`RulesComposition.ts:22-26`) rejects `null`/`undefined`/`''`/`[]` and nothing else, so `0` validates,
+  the form submits, and the server answers 400 `"Activity not found."` — for backlog, with the dialog
+  still open and nothing visibly changed. The same module already does this right for
+  `financialGoal: number | null = null`.
+- **What to change:** Type the eight fields `number | null` with default `null`, in constructor and
+  `fromJson`. The forms' `v-model`s then carry `null` until a pick is made; `requiredRule` blocks the
+  submit with `validation.required`; `hasObjectChanged`-style dirty checks, if any, see a real change.
+  Check every place that reads these fields as `number` (`BacklogProfileForm.vue:24-37` passes the edit
+  entity's ids — fine; `useAnchorCapture`'s `lockActivity` path sets a real id — fine) and run
+  `npm run type-check`.
+- **Do not change:** `requiredRule` — `0` is a legitimate value for a count field elsewhere; the rule is
+  right, the defaults are wrong.
+- **Verification:** `X3`'s `Verify:` step 3 and `B2`'s `Verify:` — a fresh *Add* dialog shows
+  placeholders, not "0"; *Create* with nothing selected fires **no request** and shows the required
+  message. Do the projects form too.
+- **Risk:** Low-medium — eight fields, four forms, one type-check.
+
+## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
+
+- **Scope:** app-side `src/core/leisure/composable/useLeisurePicker.ts:250`,
+  `src/core/leisure/api/leisureWeatherApi.ts:3-9` (comment)
+- **Closes:** `leisure-backlog-picker/X2`, `P2`
+- **Root cause:** `GET /leisure-weather-fit` answers `200 { matchingWeatherDependencyIds: [] }` for an
+  account with no weather location — and its endpoint's own doc comment (`GetLeisureWeatherFitEndpoint.cs`)
+  spells out the client's obligation: *"The client reads an empty set and a failed call identically
+  ('no weather opinion'): nothing ranks up, no badge renders, nothing is excluded."* `useWeatherFit.ts`
+  says the same in its header. `useLeisurePicker.ts:250` then does
+  `weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null` — `[]` is not nullish, so
+  `isEligible`'s backlog branch (`leisureScoring.ts:246-253`) sees a non-null list that contains no id and
+  excludes **every** backlog entry with any `weatherDependencyId`, including the seed's one row whose
+  dependency is the *"None"* lookup. `/leisure/pick`'s default landing state shows no backlog card at
+  any time budget. `leisureWeatherApi.ts:3-9` meanwhile still says the endpoint is *"Not implemented
+  server-side yet… Every call fails today"* — `P2`.
+- **What to change:** Collapse the empty set to `null` **once**, at the boundary — in `fetchTodayFit`
+  (return `null` when the array is empty) or in `WeatherFit.fromJson` — so every consumer, not just the
+  picker, gets the contract (`fitsToday` already returns `false` for `null`, so the badge is unchanged).
+  Rewrite the `leisureWeatherApi.ts` comment to describe the live endpoint and the empty-means-no-opinion
+  rule.
+- **Do not change:** `isEligible` — with a non-empty list it is correct, and a real mismatch must still
+  exclude (`X2`'s *Verify* step 4).
+- **Verification:** `X2`'s `Verify:` block — the seeded *Read a Novel* (45 min, 1 person) appears at
+  ≥ 60 min / *Just me*; then `playwright-cli route "**/api/leisure-weather-fit"` fulfilled with an id
+  that is *not* the row's dependency, and confirm it is excluded.
+- **Risk:** None beyond deciding where the collapse lives; put it at the boundary so `O1`'s later
+  `maxParticipants` work does not have to remember it.
+
+## F65. Leisure's icon-only controls carry a localized `:title` and no `aria-label`
+
+- **Scope:** app-side `src/core/leisure/view/{BucketListView,MemoryAnchorsView,ProjectsView}.vue:14,20`
+  (view-mode toggles), `component/memoryAnchor/MemoryAnchorTimeline.vue:32,42,67` (previous / choose /
+  next year), `MemoryAnchorTable.vue:40,50` and `ExperiencedCell.vue:10` (source/anchor chips),
+  `BucketListLadder.vue:128` and `ProjectReadinessBoard.vue:80,96` (delete, messy)
+- **Closes:** `leisure-bucket-anchors/A1` (app half) — **re-graded `a11y` → `polish`** (§98): a
+  `title` *is* an accessible name, just the weakest one, and the finding's expectation is this app's
+  own convention rather than a failure. The `title="edit"` half of the same finding is `FW5`.
+- **What to change:** `:aria-label` beside each `:title`, same key. Do not drop `:title` — it is the
+  sighted user's tooltip.
+- **Verification:** `A1`'s `Verify:` block on the toggles and the timeline buttons — `aria-label`
+  non-null and localized.
+- **Risk:** None.
+
+## F66. `boolChip` reuses the true icon for the false state on four of five chips
+
+- **Scope:** app-side `src/core/leisure/composable/useLeisureFilterChips.ts:19`;
+  `BacklogView.vue:192`, `BucketListView.vue:218-219`, `ProjectsView.vue:163`
+- **Closes:** `leisure-bucket-anchors/P1`
+- **Root cause:** `boolChip(labelKey, trueIcon, falseIcon = trueIcon)` — the default was presumably a
+  convenience, and every call site but `isRepeatable` (`rotate`/`star`) took it. The label already
+  flips `✓`/`✗`; the icon does not.
+- **What to change:** Either pass a false icon at the four sites (`circle-xmark` for *experienced*,
+  a slashed variant for *travel*/*messy*), or drop the default and make the parameter required so the
+  next chip cannot forget. The second is the fix; the first is the patch.
+- **Verification:** `P1`'s `Verify:` block on `/leisure/bucket-list`, then the same chip on
+  `/leisure/backlog` and `/leisure/projects`.
+- **Risk:** None.
 
 ## FW1. `MyDialog` is `persistent` by default, so Escape closes nothing
 
@@ -2062,7 +2694,10 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 - **Scope:** **[framework]** `src/_common/component/dataTable/DataTable.vue:83` — submodule commit, then
   pointer bump
-- **Closes:** `activity-settings/B4`
+- **Closes:** `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half — the unit's
+  `eval` read `title="edit"` / `title="delete"`, `aria-label: null` on both leisure tables' row actions;
+  that is this slug, seen from two more tables. The "add `aria-label`" widening this batch already
+  mentions below is now worth doing in the same line — three units have asked for it.)
 - **Root cause:** Confirmed by direct read. `TableAction` is `(name, text, color, variant, icon,
   onClick)` (`TableAction.ts:1-10`); `BasicTable.vue:175,177` constructs the defaults as
   `new TableAction('edit', t('general.edit'), …)` / `('delete', t('general.delete'), …)`; and
@@ -2081,8 +2716,9 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   discriminator `TableGrid.vue:131` switches on (`action.name === 'edit'`).
 - **Verification:** `B4`'s `Verify:` block — **but not on `/activity-settings/roles` once `F19` has
   landed**, because that table will no longer render the default actions. Use `/routine-settings`
-  (`RoutineSettingsView.vue`, a `BasicTable` with default actions and `@onDelete`) or run this before
-  `F19`. Both locales, per step 3 of the block.
+  (`RoutineSettingsView.vue`, a `BasicTable` with default actions and `@onDelete`) or `/leisure/bucket-list`
+  / `/leisure/memory-anchors` (both on default actions, per `A1`'s evidence). Both locales, per step 3 of
+  the block. `A1`'s pass condition adds a non-null `aria-label` — only if the widening is taken.
 - **Risk:** None. One field name, and the correct value is already what the sibling renders.
 
 ## FW6. `CalendarGrid`'s day cells are click-only `div`s — no accessible name, role, `tabindex` or key handler
@@ -2651,7 +3287,116 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `ActionBar`, and an app whose `.v-layout` has a *right* drawer moves the bar the other way, which is
   correct and worth saying in the commit message.
 
+## FW18. `useEntityQuery.fetchById` cancels a sibling id — the 2026-09-11 `useFetchFiltered` bug, one helper over
+
+- **Scope:** **[framework]** `src/_common/api/useEntityQuery.ts`, `src/_common/docs/api.md`
+  (submodule commit + pointer bump); app-side in the pointer-bump commit: `prompts/_common/api/A1-request-key-for-sibling-fetch-helpers.md:129-131`
+  and CLAUDE.md's `_common/api/` bullet
+- **Closes:** the framework half of `planner-templates/X1` (`F50` is the app half; `X1` itself closes
+  when the dialog renders, which `F50` achieves without this)
+- **Root cause:** `useEntityQuery.ts:29-42` — one `AbortController` per **method**, `fetchById` calls
+  `fetchByIdController?.abort()` before every request regardless of the id. That is right for a detail
+  view switching ids (latest wins) and wrong for two ids fetched concurrently from one instance: the
+  first rejects with `CanceledError`, and `Promise.all` over the pair rejects — exactly the shape
+  `useFetchFiltered` had until 2026-09-11 and now documents in its own `requestKey` doc-comment
+  (`useFetchFiltered.ts:15-40`, which even uses "a fan-out over ids" as its example). **Two documents
+  say this helper does not have the problem, and both are wrong** (*Contradictions* §85):
+  `prompts/_common/api/A1:129-131` — *"Do not add `requestKey` to `useEntityQuery`. It already holds
+  a separate controller per method … which is the same idea expressed differently"* — conflates
+  per-method with per-call, and CLAUDE.md's `_common/api/` bullet lists the three filtered helpers as
+  the ones that "still hold a single controller per instance" and omits this one. The unit's finding
+  cites *"CLAUDE.md's own documented gotcha"* for `useEntityQuery`; CLAUDE.md documents no such thing,
+  which is how a component written after the `useFetchFiltered` fix reintroduced the bug — the author
+  was told this helper was safe.
+- **Files:** `useEntityQuery.ts:29-42` (`fetchById`; `fetchByField` `:44-59` is the same shape and
+  should take the same option — `fetchAll`/`fetchSelectOptions` take no id and are genuinely
+  latest-wins), `src/_common/docs/api.md`; `A1:129-131`; CLAUDE.md `_common/api/` bullet
+- **What to change:** **Additive, default-preserving — not a semantics change (rule 4 does not bite).**
+  Copy `useFetchFiltered.ts:13,47,54-58,71-76` — a module-level `Symbol` default key, a `Map<key,
+  AbortController>`, an optional third argument `{ requestKey }` on `fetchById` (and `fetchByField`),
+  identity-guarded cleanup in `finally`. Omitting the key must reproduce today's abort-previous
+  behaviour exactly, so every existing caller is untouched. **Do not key by `id` by default** — it
+  looks like the obvious fix, but a detail view that switches ids fast today gets the stale response
+  cancelled for free, and keyed-by-id it would get both responses in arrival order; that is a
+  behaviour change every app would inherit, and it is what rule 4 exists for. Then: update
+  `src/_common/docs/api.md` in the same submodule commit; in the pointer-bump commit, rewrite
+  `A1:129-131` to say `useEntityQuery`'s per-method controllers are *latest-wins per method* and
+  `fetchById`/`fetchByField` now take `requestKey` like the others, and add `useEntityQuery` to the
+  CLAUDE.md bullet's list of helpers that abort their previous call. `F50`'s workaround comes out in
+  the same pointer-bump commit.
+- **Do not change:** the abort itself (`A1` constraint 3 — scope it, do not remove it);
+  `useRequestState.run`'s cancellation re-throw (`:45`) — it is what lets a keyed caller tell a
+  cancel from a failure, and `isRequestCanceled()` depends on it.
+- **Verification:** unit-level in the framework: two `fetchById`s with distinct keys from one instance
+  both resolve; two with the same key (or no key) — the first rejects with a cancel; the map is empty
+  after both settle. App-level: `F50`'s `requests` check after the pointer bump, with the workaround
+  removed. Grep `src/` for other `Promise.all([…fetchById` / `fetchByField` — this pass found only the
+  dialog, but the check is cheap and it is the class, not the instance, that ships.
+- **Risk:** Low — opt-in, and `useFetchFiltered` has carried the identical shape since 2026-09-11 with
+  no regression. It does ship to every app on the framework; the `Symbol` default is what makes that
+  safe.
+
 ---
+
+## FW19. `extractServerMessage` prefers the generic `message` over the specific `errors` — every validation snackbar in the app reads "One or more errors occurred!"
+
+- **Scope:** **[framework]** `src/_common/axiosConfig.ts:86-101` — submodule commit, then pointer bump
+- **Closes:** `activity-settings/B9`
+- **Root cause (source-verified):** `extractServerMessage` returns on the first non-empty of `data`
+  (string) → `detail` → **`message`** → `errors[first list][0]`. FastEndpoints' validation shape is
+  `{ statusCode, message: "One or more errors occurred!", errors: { field: ["…"] } }` — `message` is
+  always present and always generic, so the `errors` branch is unreachable against this API. The
+  mutation pass read two real messages the user never saw: `errors.color` → *"Color must be a valid hex
+  color code…"* (§11) and, on the system-role delete, `errors.generalErrors` → *"This is a system role
+  the app files quick-created activities under, so it cannot be deleted. You can rename it instead."*
+  The same function feeds `useRequestState.run`'s `error.value` (`useRequestState.ts:47-48`), so every
+  composable's error string is generic too. `todo-routine/B9`'s per-call-site `_silent` workaround exists
+  partly because of this.
+- **Files:** `src/_common/axiosConfig.ts:86-101`; `src/_common/docs/api.md` if it documents the
+  extraction order
+- **What to change:** Try `errors` **before** `message`: if `errors` yields a string, return it;
+  otherwise `detail`, then `message`. Keep the 500 branch's `errorId` handling as is — it reads
+  `message` deliberately (`:239-249`) and a 500 body has no `errors`. Consider a field-aware variant
+  (`"<field>: <text>"`) only if another app wants it; this batch is the order swap.
+- **Do not change:** `handleHttpCodes` (`ErrorHandlingFunctions.ts`) — it never reads the body and
+  is not this bug; escalation §7's "carry the error *type*" ask is the separate improvement.
+- **Verification:** `B9`'s `Verify:` block — trigger the role-colour 400 (until §11 lands it is one
+  click away) and the system-role 409; both snackbars show the specific text. Then a 500 with an
+  `errorId` still shows the id.
+- **Risk:** Low, but framework-wide: every app on a backend whose `errors` map holds technical strings
+  will now surface them. On this backend they are authored prose; say so in the commit.
+
+## FW20. `useTableFormatters`' substring heuristics misclassify columns — `durationMinutes` is a percentage, `inspirationSource` is a dash
+
+- **Scope:** **[framework]** `src/_common/composable/table/useTableFormatters.ts:4-33` — submodule
+  commit, then pointer bump. **Decision first** (word-boundary/segment matching vs. opt-in auto-format).
+- **Closes:** `leisure-backlog-picker/B1` (+ one unfiled: the *Inspiration source* column on
+  `/leisure/bucket-list` renders **"—"** for the seeded row whose value is *"A friend's climbing
+  photos"* — §96)
+- **Root cause (source-verified):** `isPercentKey` is `['percent','rate','vat','ratio','discount'].some(kw => lower.includes(kw))`
+  (`:6,30-33`); `isCurrencyKey`, `isDateKey`, `isBooleanKey` are the same shape. `DataTable.vue:33-61`
+  applies them to every column without a consumer slot. Tested against all **105** `TableColumn` keys in
+  this app this pass: `durationMinutes` → `ratio` → `formatPercent(45)` = *"45.00 %"* (the finding);
+  `inspirationSource` → `ratio` → `formatPercent("A friend's…")` = *"—"* (`:41`, non-number → dash), no
+  slot in `BucketListTable.vue` (`:19-43` slot five other columns); `expectedCostTier` → `cost`, shielded
+  by a slot. The framework's **own** `JobRunHistory.vue:90,99` slots exactly `durationSeconds` (`ratio`)
+  and `errorSummary` (`sum`) — the trap was hit inside the framework and worked around rather than
+  fixed. Unit 12 listed *Inspiration source* as a rendered column and did not notice its content was a
+  dash; the seed says the row has text.
+- **What to change:** Match on camelCase segments / word boundaries (`durationMinutes` → `duration`,
+  `minutes`; `inspirationSource` → `inspiration`, `source`), or make auto-format opt-in per column
+  (`TableColumn` gains a `format` hint, default `raw`). The first keeps zero-config and is a smaller
+  diff; the second is honest. Either way, add a unit test that feeds every keyword-containing
+  non-match (`duration`, `elevated`, `candidate`, `update`, `assumption`) and asserts `raw`.
+- **Do not change:** the app's tables — no per-table slots as a workaround (see the ordering note
+  above), and no rename of `durationMinutes` (it is the wire field).
+- **Verification:** `B1`'s `Verify:` block (*"45"*, no percent) **and** `/leisure/bucket-list`'s
+  *Inspiration source* showing the seeded text; then every `DataTable` consumer in this app that relies
+  on auto-format — the tracker mapping tables (`isActive`/`isIgnored` booleans), `RoutineSettingsView`
+  (`isHidden`), `ActivityTable` (`isUnavoidable`) — still renders its icons; and the framework's
+  `JobRunHistory` unchanged. Both locales.
+- **Risk:** Medium, framework-wide: loosening the match can un-format a column that another app named
+  `vatRate`; tightening it to segments keeps those. Prefer segments.
 
 ## Escalations (backend / outside this repo)
 
@@ -2919,6 +3664,94 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
     then read the legend and click the slice — or a seed app under 1 % of the span. Until then, `F47`
     guards the row locally (its *What to change*), which is a shim to remove when this lands.
 
+11. **Creating or editing any Role, Category or To-do-list category is refused: the validator demands
+    a hex colour, and the palette — on both sides, including the server's own seeder — is names** —
+    `activity-settings/X1` (`blocker`), observed on Create and on a no-change Edit of a seeded role.
+    Read at the source this pass, and the side that owns the format is not in doubt:
+    - The client's `ColorPicker.vue:31` writes `color.name` — `"rose"`, `"emerald"` — from
+      `COLOR_PALETTE`, and every renderer resolves that name to a theme-aware `{bg, text}` pair
+      (`color[currentTheme].bg`, `:29`). A hex string would lose the light/dark pairing.
+    - The **server's own framework** declares the same names as constants —
+      `framework/Sydowwe.Framework/domain/enum/ColorPalette.cs` (`Crimson = "crimson"` … `Slate`) —
+      and the e2e seeder writes them (`E2eFixtureSeeder.cs:409-417`: `ColorPalette.Blue`,
+      `ColorPalette.Emerald`, `ColorPalette.Violet`…). So every seeded role would fail its own
+      validator on a round trip, which is exactly what the unit saw on *Health & Fitness*.
+    - The validator, `NameTextColorIconValidator.cs:16-20`, is
+      `.Matches("^#(?:[0-9a-fA-F]{3}){1,2}$")` and dates from **2026-05-16** (`a51309e`) — before the
+      palette existed on either side (`colorPalette.ts` first appears 2026-06-22). It is the stale side.
+    - It is shared: `ActivityRoleValidator`, `ActivityCategoryValidator` **and
+      `TodoListCategoryValidator`** derive from it, so `/todo-list`'s category create/edit
+      (`TodoListCategoryForm.vue:18`, same `ColorPicker`) is broken by construction — unit 9's inventory
+      (`:28`) recorded that path as *not separately tested*. `RoutineTimePeriodValidator` has no colour
+      rule and `TaskImportanceValidator` only caps length, which is why routine periods create fine.
+    - One more thing the ask must carry: the column is **`character varying(7)`**
+      (`EntityFieldLengths.Color = 7`, applied by `NameTextColorEntityConfigurationExtension.cs:33,39`,
+      `Initial.Designer.cs:714,782`) and `"burgundy"` is eight characters. Relaxing the regex alone
+      leaves one swatch that cannot be saved.
+
+    **The ask:** replace the regex with membership in `ColorPalette` (a `Must(c => ColorPalette.All.Contains(c))`
+    with a message naming the accepted set), widen `EntityFieldLengths.Color` past the longest name
+    (with the migration), and pin the field's contract with a test that posts a palette *name* —
+    `NameTextColorIconValidationTests.cs` currently posts `#abcdef` everywhere (`:46,68,88,93`). No
+    client change. The alternative — a hex-emitting `ColorPicker` mode — is a `vue_framework` change
+    that would still leave every stored name invalid on re-save, and it is not recommended. `FW19`
+    is what makes this failure *legible* meanwhile (the user currently sees the generic string).
+    **Do not write a backend prompt file for this** — the implementer does; this paragraph is the
+    evidence to paste.
+
+12. **`GET /memory-anchor/anchor-eligible-activities` does not exist** — `leisure-bucket-anchors/X3`
+    (`blocker`). The unit's guess was route ordering (*"shadowed by a generic `/{id}` route"*). Searched
+    the whole API this pass: no endpoint file under `endpoint/memoryAnchor/` declares it
+    (`GetById`, `GetSelectOptions`, `Grid`, `Create`, `Update`, `Delete`, `BatchDelete` — that is the
+    list), and the string `anchor-eligible` appears in **no `.cs` file**. The 400 body
+    (*"Value [anchor-eligible-activities] is not valid for a [Int64] property"*) is
+    `GetByIdMemoryAnchorEndpoint` catching the path, which is what absence looks like from outside.
+    `prompts/_done/leisure/backend/B1-backend.md:5` asserted the route *"already knows which activities
+    qualify"*; it never landed. Until it does, the unlocked *Add* on `/leisure/memory-anchors` cannot
+    create anything (the locked *"I did this"* path — `U1` — does not call it).
+
+    **The ask:** implement it per `B1-backend.md`'s definition — the caller's activities that have a
+    one-time backlog profile (`!IsRepeatable`) or a bucket-list profile and no memory anchor yet,
+    projected as `SelectOption` (`{ id, text }`), scoped by user, archived activities excluded — and
+    decide the question `B1-backend.md:63` left open (whether an already-anchored activity stays
+    listed; the client's *"I did this"* flow suggests **no**). `F62` is the client half and lands
+    regardless.
+
+13. **The four leisure profile grids' filter contracts have never matched: the client sends 27 filter
+    fields, the server reads 8** — `leisure-backlog-picker/X1` (`blocker`, re-graded — §89),
+    `leisure-bucket-anchors/B1` (three of its five cases; the other two are `F60`). This is escalation
+    §6's shape (`roleIds` vs `RoleId`) on four more endpoints, and both units misdiagnosed it from the
+    browser: unit 11 saw a filter "work on two requests and fail on one" and blamed a sort/filter
+    interaction; unit 12 saw five fields "ignored" and one "working". Read against
+    `AdhdTimeOrganizer.ActivityProfiles/application/dto/filter/*` and each grid's
+    `ApplyCustomFiltering` this pass:
+
+    | grid | client sends (`src/core/leisure/dto/request/*Filter.ts`) | server reads |
+    | --- | --- | --- |
+    | `activity-backlog-profile` | `activityName`, `locationTypeIds[]`, `weatherDependencyIds[]`, `energyLevels[]`, `effortTypes[]`, `expectedCostTierIds[]`, `maxDurationMinutes`, `minParticipants`, `maxParticipants`, `isRepeatable`, `isAnchored` | `EnergyLevel` (scalar), `EffortType` (scalar), `IsRepeatable`, `IsAnchored` |
+    | `activity-bucket-list-profile` | `activityName`, `experienceTypeIds[]`, `minComfortZoneStep`, `maxComfortZoneStep`, `requiresTravel`, `isAnchored` | `RequiresTravel`, `ComfortZoneStep` (exact), `IsAnchored` |
+    | `memory-anchor` | `activityName`, `year`, `month`, `minRating` | `AnchorMonth`, `AnchorYear`, `ActivityId` (→ `F60` renames the two the client got wrong) |
+    | `activity-project-profile` | `activityName`, `difficultyLevels[]`, `readinessStatuses[]`, `projectArea`, `isMessy` | `DifficultyLevel` (scalar), `ReadinessStatus` (scalar), `IsMessy`, `ProjectArea` |
+
+    `IFilterRequest` is an empty marker and `BaseGridEndpoint` applies nothing generic
+    (`BaseGridEndpoint.cs:124-125` → `ApplyCustomFiltering` only), so **`activityName` filters on none of
+    the four** — every *Activity* filter chip, every `?activityName=` bookmark, and the memory-anchor
+    table's source-chip navigation (`MemoryAnchorTable.vue:125` pushes `{ activityName }` to the source
+    view) have always returned the unfiltered grid with a 200. The list-vs-scalar fields (`energyLevels`
+    vs `EnergyLevel`) are dropped by name, not coerced. Unit 12's *"activityName confirmed working"* has
+    no mechanism and is contradicted by source (§90); unit 11's two "correct" count requests were zero
+    for an unrelated reason (§89).
+
+    **The ask:** adopt the client's field names on all four filter records — `ActivityName` as a
+    case-insensitive `Contains` on `Activity.Name`; the `*Ids[]`/enum lists as `Contains`; the ranges
+    (`Min/MaxComfortZoneStep`, `MaxDurationMinutes`, `Min/MaxParticipants`, `MinRating`) as
+    comparisons — keep the existing scalars if anything else sends them, and **pin the field names
+    with an integration test per grid**, because the failure mode is a silent 200 and no test on either
+    side can catch it otherwise (§6's ask, verbatim). Nothing changes client-side when it lands:
+    `hasAny()`, the chips and the URL codecs already carry every field. The client-side alternative —
+    hiding the unread inputs — is a product regression for a contract gap and is not recommended.
+    `leisure-backlog-picker/X1`'s `Verify:` block is the acceptance test for the `activityName` half.
+
 ## Needs verification (unverified findings, and what would settle each)
 
 ### Awaiting retest — code-fixed this cycle, never seen in a browser
@@ -2943,12 +3776,10 @@ been seen in either direction.
 | `todo-routine/B10` (`F24`) | **applied in the working tree, uncommitted** (sixth pass, source-verified): `composable/useRoutineDateFormat.ts` is untracked and imported by all five files; `grep toLocaleDateString(undefined` across `src/core/todoList/` hits only the helper itself | ⏳ **not seen in a browser.** Run `F24`'s *Verification* verbatim — SK weekday/month forms on all three cards, the heatmap tooltip, the history dialog, the freeze chip, then EN **without reloading**. The finding's `Status:` still reads `open`; set it on pass |
 | *(unfiled — `F25`)* | **applied, uncommitted**: `RoutineSettingsView.vue:103` is `new TableColumn('color', t('routineTodoList.timePeriods.color'), false)` | ⏳ one look at `/routine-settings` in SK — header reads *Farba* |
 
-### `activity-settings` — four `unverified`, of which two are settled from source
+### `activity-settings` — two `unverified` remain (`U1` and `U2` closed by the mutation round — see the log)
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — the *"no archived activities"* empty-state copy | one look at `/activity-settings/activities?archived=archived` signed in as the **`secondaryUser`** (the `secondaryPage` fixture), if that account seeds no archived activity — check `e2e/.state/seed.json` first rather than assuming | Seed-data shape, not a defect. If the second account also has one, it needs a throwaway account or a `test.fixme` naming this row |
-| `U2` — what a Delete on a system/referenced role or category does server-side | **settled from the API source this pass**, no browser needed: a role → **409** with a user-readable message on both the `systemKey` and in-use paths (`DeleteActivityRoleEndpoint.cs:42-62`); a category → **204**, and every activity under it has its `categoryId` set to `null` (`DeleteActivityCategoryEndpoint.cs` is a bare `BaseDeleteEndpoint`, FK `SetNull` at `ActivityConfiguration.cs:42`). Neither path deletes an activity or its history | `F19` is built on this answer. The unit's caution about the seed's system roles was well placed for the wrong reason — a role delete could never have destroyed them; a *category* delete on the seed would have silently unfiled ten activities |
 | `U3` — repeated 401 → `/refresh` 401 → sign-out | **re-graded** to a runbook error, mechanism source-verified (token rotation, 5 s grace) — see `F23` and *Contradictions* §19 | Not an app defect and not retestable as one; the fix is the paragraph, and the proof is the next parallel run keeping both sessions |
 | `U4` — one *"0 of 0"* on an unfiltered request | retest after **`F18`**: reload, type a name, clear it, three times, and read `itemsCount` off the response body each time | `F18` removes the only competing request this view fires, which is the only candidate mechanism the finding names. Checked `useFetchFilteredTable.ts:47-55` this pass: an aborted call defers to `latest`, so the simple "stale response overwrote the fresh one" story does not hold as written — if it recurs *after* `F18`, capture the response body, because the cause is then somewhere this queue has not looked |
 
@@ -3173,13 +4004,76 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 - **The pie endpoints' `"Other"` row — source-certain, unobserved, backend-shaped (§10).** Settled by
   one fulfilled `route` body or a seed app under 1 % of the span; `F47` guards it locally meanwhile.
 
+### `planner-templates` — three `unverified`: one settled from source, two for the mutation pass
+
+- **`U3` — split view's back button has no accessible name. ✅ Settled from source, closes in `F56`.**
+  `TemplateSplitView.vue:5-11` is `<VBtn icon="arrow-left" …>` with no `aria-label`, no `title` and no
+  default-slot text; a `VBtn` given only `icon` renders an SVG and nothing an accessibility tree can
+  name. There is nothing a browser would add — the unit's own rule (*"eval the button the same way
+  A1/A3 were confirmed"*) would return the same `{text: "", aria: null, title: ""}` it already got for
+  the pin. Folded as row 4 of `F56` rather than left waiting for a refile as "A4".
+- **`U1` — the header stat line excludes background tasks, never exercised.** Stands as `unverified`;
+  it is a seed-shape gap (all twelve seeded template tasks are `isBackground: false`) and the
+  behaviour is source-certain and deliberate (`TemplateDayPlannerView.vue:178-182` filters
+  `nonBgTasks` before counting). What would settle it — **not a seed ask** (CLAUDE.md's *Mutating
+  specs* rule 1): the unit's **mutation pass** creates one task with `isBackground: true` on template
+  `20001` through `POST /api/template-planner-task`, reads the header, and judges the wording
+  (*"5 tasks"* for a template that shows six blocks). The likely outcome is `polish` — a *"(+1
+  background)"* suffix or nothing — and it goes straight into the unit's `findings.md` at that
+  severity; no batch is reserved for it.
+- **`U2` — cross-template drag-and-drop in the split view never exercised.** Stands; it is the
+  mutation pass's job by definition (the unit was an inventory pass), and the source path
+  (`TemplateSplitView.vue:80-207`: `PATCH` the task's `templateId`, splice from the source store,
+  push into the target) reads as complete. What would settle it: one drag from left to right with
+  `playwright-cli` — `requests` shows one `PATCH /template-planner-task/{id}`, the block moves at the
+  same time-of-day, the success snackbar fires; then a drop *outside* both panels, which must leave
+  the task where it was and fire no request. `F54` should land first so the two picks survive the
+  reload the drag test will want.
+
+### ⚠️ Found while triaging unit 11: a 400 with no snackbar — three units, three different observations of one interceptor path
+
+`leisure-backlog-picker/X3` polled the DOM for 1.8 s after *Create* (six samples) and saw **no
+`.v-snackbar`**; `leisure-bucket-anchors/B2` on the same shape of 400 says *"a snackbar may have fired
+and auto-dismissed before capture — not independently confirmed"*; `activity-settings/X1` on a 400 from
+the same `useEntityCommand.create` path **saw** the snackbar (the generic string `FW19` is about). Read
+this pass: `axiosConfig.ts:221-228` calls `showErrorSnackbar` for every non-`_silent` 400,
+`activityBacklogProfileApi.ts` sets no `disableErrorHandling`, `useRequestState.ts:31` therefore passes
+no `_silent`, and `SnackbarComposable.ts`'s `showSnackbar` has no dedupe, no suppression and a 3 000 ms
+timeout — so a 1.8 s poll starting after the click should have caught it. There is no path in source by
+which this request stays silent. Either the observation is wrong (the poll's selector, or the snackbar
+rendered behind the dialog's scrim and the agent was reading a `find` that scopes to the dialog) or there
+is a real intermittent in the framework, which would be a much bigger finding than `X3`.
+
+**What would settle it:** `/leisure/backlog` → *Add* → *Create* untouched, with
+`playwright-cli find "One or more errors"` within 3 s, **and** `playwright-cli eval
+"document.querySelectorAll('.v-snackbar').length"`. If it is absent, patch a `console.log` into
+`showErrorSnackbar` via `route`-served source or read `snackbar.value` off the composable — the question
+is whether the interceptor was called, not whether the DOM shows it. Until then `F63` fixes the input
+side and `X3`'s *Verify* step 2(b) stays open.
+
+### `leisure-backlog-picker` — four `unverified`, all environment-shaped; none settles from source
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — `PickerView`'s *nothing filed yet* and *load failed* states | `nothingFiled`: sign in as `secondaryUser` (the `secondaryPage` fixture) and open `/leisure/pick` — check `e2e/.state/seed.json` first for that account's leisure counts rather than assuming; if it seeds rows too, a `test.fixme`. `failed`: `playwright-cli route "**/api/activity-backlog-profile/grid" --status=500` and reload | Seed/tooling gaps, not defects. Note `F64` changes the *default* landing state on the primary account from "no suggestions" to "one card" — run this after it |
+| `U2` — the loading skeleton | `playwright-cli route` with a delay on the three pool `grid` calls, then `find "skeleton"` | Cosmetic; one screenshot |
+| `U3` — `BacklogView`'s loading and error states | Same route-delay for loading; `--status=400` for the error state — and read whether the *table* shows an error or its empty copy, which is `F61`'s question one view over | If it shows the empty copy, file it against `F61`'s pattern rather than as a new finding |
+| `U4` — arrow keys inside `ConstraintBar`'s three `VBtnToggle` groups | Tab into one group, `ArrowRight`/`ArrowLeft`, confirm selection moves and wraps; then with focus in the filter's text field confirm the arrows do nothing to the toggles | The CLAUDE.md keyboard-checklist item. Vuetify's `VBtnToggle` is a `group` with no roving tabindex of its own, so the honest expectation is *"arrows do nothing, Tab moves between buttons"* — decide before asserting |
+
+### `leisure-bucket-anchors` — two `unverified`: one for the mutation pass, one settled from source
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — the locked *"I did this"* capture flow | The unit's mutation pass: create a not-yet-anchored bucket-list row **through the API** (CLAUDE.md *Mutating specs* rule 1), click *I did this*, confirm the dialog opens with the activity locked and the current month/year defaulted | Not a seed ask. This path does not call the missing endpoint (§12) — `lockActivity` short-circuits `onMounted` (`NewMemoryAnchorForm.vue:109`) — so it is testable today |
+| `U2` — deleting an anchor vs. the source row's `isAnchored` | ✅ **Settled from source** — see the log's *Closed verification items*. `IsAnchored`/`MemoryAnchorId` are computed **in SQL at read time** from the anchors table (`GridActivityBucketListProfileEndpoint.cs:24-25,50-55`: `anchors.Any(m => m.ActivityId == p.ActivityId)`), not stored on the profile, so a deleted anchor cannot leave a dangling flag. The mutation pass may still click it, but there is no defect to find | — |
+
 ### Carried forward, unchanged
 
 - ~~**`todo-lists/U1`**~~ — ✅ re-graded 2026-09-13 to *settled, superseded by B4/FW3*, both of which are
   closed; the whole banner flow is pinned by four tests in `todo-motivation.spec.ts`.
-- **`home/U1`** — widget error/retry states never seen against a real failure. Force a 500 on one of the six
-  widget endpoints (`playwright-cli route`) and confirm only that widget shows its error/Retry state, the
-  other five are unaffected, and Retry re-fires.
+- ~~**`home/U1`**~~ — ✅ **settled by the unit-1 mutation round (2026-09-15)**: a forced 500 on
+  `calendar/day-plan/**` rendered the error/Retry state in both widgets and Retry re-fired; the case
+  where it is unreachable is the sign-in race, folded into `F8`. Moved to the log.
 - **`_shell/U1`** — snackbar stacking. Trigger two snackbar-worthy actions in quick succession.
 - **`_shell/U2`** — fullscreen-loading strand. Navigate away *during* a slow request under throttling.
 
@@ -3269,5 +4163,24 @@ the other three clients not at all) — once §10 settles the sentinel, one thre
 tidy-up, and it is where a *"show the tail"* affordance (expand *Other* into its members) would live.
 Neither is an opportunity by the template's definition; both are noted.
 
-No other open opportunity findings exist across the thirteen units triaged.
+**`leisure-backlog-picker/O1` — `minParticipants`/`maxParticipants` are filter fields with no input,
+and `maxParticipants` is never read by the picker's ranking.** Two halves, and only the second is
+really an opportunity. The filter half is **moot until §13 lands** — the server reads neither field, so
+an input for them today would be one more chip that filters nothing; note it on §13 rather than here.
+The ranking half is real and app-side: `backlogSuggestion()` (`useLeisurePicker.ts:70`) reads
+`minParticipants` into `CandidateFacts` and not `maxParticipants`, so a one-person entry is offered to
+a four-person draw. The unit is right that `D1-backend.md`'s semantics question is why — *"not clear
+whether it filters or…"* — and that question is a product decision (hard cap vs. penalty), which is
+what makes it Phase-4 material rather than a batch. When it is weighed: `isEligible`'s backlog branch
+is one comparison away, and `F64` will already have decided where the weather signal collapses, so the
+same boundary is where a people cap would go.
+
+**`leisure-bucket-anchors/O1` — `financialGoal`, `inspirationSource` and the anchor's source flags are
+captured but never spent.** Goes to `docs/opportunities.md` at Phase 4. One correction for when it is
+weighed: the finding says both fields render *"as plain columns"* on the table — `inspirationSource`
+does not; it renders **"—"** on every row today (`FW20`), so the honest line is that the field is
+shown nowhere at all. The savings-goal progress readout the unit sketches (`useExperiencedProgress`'s
+pattern over `financialGoal`) is the cheapest of the three ideas and needs no backend.
+
+No other open opportunity findings exist across the fifteen units triaged.
 

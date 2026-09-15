@@ -7,6 +7,73 @@
 
 ## Pass history (newest first)
 
+> **Thirteenth pass, 2026-09-15, commit `04c405e9` + working tree — units 11 `leisure-backlog-picker`
+> and 12 `leisure-bucket-anchors` (inventory) and the mutation rounds of units 1 `home` and 2
+> `activity-settings` absorbed.** Scoped by the operator to what is uncommitted; `F1`–`F57` /
+> `FW1`–`FW18` stand as the twelfth pass left them except where a new finding folds in (`F6`, `F19`,
+> `FW5`) or a mutation round rewrote one from the root (`F8`). Twenty-six findings went in (11 + 10 from
+> the two inventories, 2 + 3 new from the two mutation rounds; the four tallies match their bodies)
+> and came out as **nine app batches (`F58`–`F66`), two framework batches (`FW19`, `FW20`) and three
+> escalations (§11–§13)** — the most escalations of any pass since unit 14, and every one of the three
+> is a client/server contract gap that the browser could only see the edge of. Every finding was read
+> against source, the API's included, and **five of the seven `blocker`s changed shape under it**:
+> backlog `X1` is not a sort/filter interaction but a filter that has never existed on the wire, with
+> its "working" evidence explained by an unrelated field (§89); bucket `X3` is not a route-ordering bug
+> but a route that no file in the API declares (§92); backlog `X3`'s "no snackbar" half has no
+> mechanism in source and is contradicted by unit 2 on the same path (§91, *Needs verification*);
+> activity-settings `X1`'s "which side owns the colour format" is answered from the server's own
+> `ColorPalette` constants and seeder — the validator is the stale side, the column is one character
+> too short for `burgundy`, and `/todo-list`'s category form is broken by the same validator (§94,
+> §11); and home `B2` is rewritten from the root by its own round 2 — a `loadToken` bump on the
+> `0 → id` hydration orphans the day-plan fetch, permanently, and the loading branch round 1
+> prescribed would hide nothing (§95). Two things the units did not file were found from source:
+> `inspirationSource` renders **"—"** on `/leisure/bucket-list` for a seeded string, the second victim
+> of the same substring heuristic unit 11 caught on `durationMinutes` (§96, `FW20`), and
+> `ActivityProjectProfileRequest` is the fourth DTO with the `0` sentinel (`F63`). Four `unverified`
+> rows closed: activity-settings `U1`/`U2` in a browser, home `U1` in a browser (folded into `F8`),
+> bucket `U2` from source (§97). Two contradictions between units and this queue's own earlier passes:
+> backlog `P1` claims to be the only leisure view passing `class` to `FilterPanel` — the grep still
+> says four (§93, merged into `F6`); and unit 12's *"activityName confirmed working"* has no server
+> field to have worked through (§90). The 163 in the header is 137 + 26.
+>
+> **Environment note for the operator, from the two mutation rounds.** Unit 1's round reseeded at its
+> end (fixture `e2e-v4`, `seedDateUtc` 2026-09-15) — that invalidated `e2e/.state/auth-10001.json`,
+> which is why it is absent now. Unit 2's round ran *after* that and **did not reseed**: it permanently
+> deleted the seeded activity *"Unused Idea"* (id 12012) and says so in its operator note. **The
+> database is one row short of `e2e-v4` right now; reseed before the next unit** and the next `npm test`
+> in `e2e/` will do it anyway through `global-setup.ts`. `EXPECTED_FIXTURE_VERSION` on this side is
+> already `e2e-v4` (`e2e/fixtures/seed.ts:207`), so nothing to bump.
+
+> **Twelfth pass, 2026-09-15, commit `50bd6b0d` — unit 8 `planner-templates` absorbed.** The first
+> pass after the queue/log split, and the first on a clean tree — every unit's docs are committed.
+> Scoped by the operator to that unit; nothing outside the sections naming it was re-read, and
+> `F1`–`F49` / `FW1`–`FW17` stand as the eleventh pass left them, with one fold: `F38` gains
+> `planner-templates/P2` (`MiniTimeline.vue:50` was already in its file list from the eighth-pass
+> grep — the unit observed the line the grep predicted). Fifteen findings (2 · 5 · 3 · 2 · 0 · 3 — the
+> tally matches the body) became **eight app-side batches (`F50`–`F57`) and one framework batch
+> (`FW18`)**, no escalation. Every finding was read against source, the API's included, and the
+> unit's two blockers both changed shape under it. `X1` (the empty Compare dialog) is real and
+> **twice** what was filed (§87): the dialog does two unkeyed `Promise.all` fan-outs from one api
+> instance, `fetchById` ×2 then `fetchFiltered` ×2, and the finding's suggested fix closes the first
+> and leaves the second — so `F50` says so in bold, and the helper-level cause splits out as `FW18`
+> (`useEntityQuery` needs the `requestKey` `useFetchFiltered` got on 2026-09-11), which contradicts a
+> standing framework prompt: `prompts/_common/api/A1:129-131` says in so many words *not* to add one
+> (§85). `X2` (the mobile side panel) is real and **misread** (§86): the "collapsed pill" the unit
+> tapped is the *open* panel squeezed to 400 × 16 px — the screenshots show the same element before and
+> after a horizontal scroll — and the template planner has **no control that reopens it**; `A3`, which
+> named that non-existent toggle, is re-identified as the shell's close X (or the header's undo) and
+> closes in `F56` with four more unnamed controls found in the same files, three of them unfiled
+> (both planners' undo buttons, whose badge count becomes their name; the day planner's mobile `bars`
+> toggle, which unit 7 never resized to see). `B2` grew from one field to the whole form (§88): the
+> backend's `TaskPlannerDayTemplateRequest.cs` makes the day type `required` and caps name/description/
+> icon, the client declares it `?:` and validates nothing — and the "should it be optional?" question
+> is answered from source as no (non-nullable, indexed, drives `/suggestions`), so it is `F53`, not an
+> escalation. `B5` grew by a `sessionStorage` persist that keeps the stale name across a reload
+> (`F55`). `U3` is settled from source and closes in `F56`; `U1`/`U2` wait for the mutation pass. The
+> split-view orphan in `_routes.md:45,100` is resolved by the unit's inventory (`:26` — *Edit Side by
+> Side*, `mdAndUp` only), which the operator should strike; the tracker row `:123` is still ☐. The 137
+> above is 122 + 15.
+
 > **Eleventh pass, 2026-09-14, commit `6aac48bb` — unit 5 `tracking-dashboards` absorbed.** Scoped by
 > the operator to that unit; nothing outside the sections naming it was re-read, and `F1`–`F44` /
 > `FW1`–`FW17` stand as the tenth pass left them, with two touch-ups where earlier batches had
@@ -592,6 +659,44 @@ same field the B2 close-out asks us to migrate in `sortBy` (`nextOccurrence` →
 one change, and doing the `sortBy` half alone fixes nothing visible.
 
 This is in the **framework submodule** (`src/_common`), so it is a two-repo commit — see CLAUDE.md.
+
+### `activity-settings/U1` and `U2` — ✅ closed by the unit-2 mutation round, 2026-09-15 (thirteenth pass)
+
+Moved from the queue's *Needs verification* verbatim, with the round-2 outcome on top of each.
+
+| finding | what settles it | note | round-2 outcome |
+| --- | --- | --- | --- |
+| `U1` — the *"no archived activities"* empty-state copy | one look at `/activity-settings/activities?archived=archived` signed in as the **`secondaryUser`** (the `secondaryPage` fixture), if that account seeds no archived activity — check `e2e/.state/seed.json` first rather than assuming | Seed-data shape, not a defect. If the second account also has one, it needs a throwaway account or a `test.fixme` naming this row | ✅ **verified, no defect** — the round un-archived the seed's only archived activity to empty the view, read `activities.archive.noneArchived` (*"Nothing has been archived yet."*) with no create button (`TableEmptyState`'s `v-if="!isFiltered"`), then re-archived it (`screenshots/activities--archived-empty-mutation.png`). A cheaper route than the secondary account, and it restored the seed |
+| `U2` — what a Delete on a system/referenced role or category does server-side | **settled from the API source this pass**, no browser needed: a role → **409** with a user-readable message on both the `systemKey` and in-use paths (`DeleteActivityRoleEndpoint.cs:42-62`); a category → **204**, and every activity under it has its `categoryId` set to `null` (`DeleteActivityCategoryEndpoint.cs` is a bare `BaseDeleteEndpoint`, FK `SetNull` at `ActivityConfiguration.cs:42`). Neither path deletes an activity or its history | `F19` is built on this answer. The unit's caution about the seed's system roles was well placed for the wrong reason — a role delete could never have destroyed them; a *category* delete on the seed would have silently unfiled ten activities | ✅ **browser-confirmed for the role half** — Delete → Confirm on *Planner task* → `DELETE /api/activity-role/4` **409**, row kept, server message *"This is a system role the app files quick-created activities under, so it cannot be deleted. You can rename it instead."* — **not shown**; the snackbar read the generic string, which is the new `B9` → `FW19`. The category half was not clicked (it would have unfiled ten activities on a seed the round chose not to reset) and stands on the source read |
+
+### `home/U1` — ✅ closed by the unit-1 mutation round, 2026-09-15 (thirteenth pass)
+
+> **`home/U1`** — widget error/retry states never seen against a real failure. Force a 500 on one of the six
+> widget endpoints (`playwright-cli route`) and confirm only that widget shows its error/Retry state, the
+> other five are unaffected, and Retry re-fires.
+
+✅ **Verified, no defect in the error UI.** `playwright-cli route` on `calendar/day-plan/**` → 500 on a plain
+reload: both `NowBar` and `DayPlannerWidget` rendered `home.loadFailedPlan`/`home.noCalendar` with a working
+*Retry* (`DayPlannerWidget.vue:94-112`), and Retry re-fired the request and rendered the plan once the mock was
+removed. H6's fix is real. **The same 500 forced *during* a fresh sign-in** produced a spinner that never
+resolved — that is not the error UI's gap, it is the third variant of the sign-in race and lives in `F8`
+(`resetTodayPlan()` sets `loading = true` after `load()`'s `finally` has cleared it). The other five widgets
+were not individually forced; the finding is folded into `B2` by the unit and this log agrees.
+
+### `leisure-bucket-anchors/U2` — ✅ settled from source, 2026-09-15 (thirteenth pass)
+
+> **`U2`** — Effect of deleting a memory anchor on its source profile's `isAnchored` flag not verified. A
+> mutation-pass session should delete the anchor for *"Learn Bouldering"* and confirm whether the
+> bucket-list row's Experienced chip reverts to *"I did this"* or stays stuck showing *"Experienced"* with a
+> dangling `memoryAnchorId`.
+
+`IsAnchored` and `MemoryAnchorId` are **not stored on the profile**. `GridActivityBucketListProfileEndpoint.cs`
+overrides the projection so both are computed in SQL from the anchors table at read time — its own comment at
+`:24-25`: *"Overridden so IsAnchored / MemoryAnchorId are computed in SQL rather than overlaid afterwards"* —
+and the `IsAnchored` filter is `anchors.Any(m => m.ActivityId == p.ActivityId)` (`:50-55`); the backlog grid
+does the same (`GridActivityBacklogProfileEndpoint.cs:53-60`). A deleted anchor therefore cannot leave a
+dangling flag: the next grid read simply does not find it. There is no defect to observe; the mutation pass
+may still click it, and the chip will read *I did this* again.
 
 ## Contradictions & re-grades
 
@@ -1346,6 +1451,196 @@ Everything below was checked against the **current working-tree source** this pa
     `fixme`s to `B1`, `B2`, `A1`, `A2` (`:114,126,134,142`) one-to-one. Every edit in this pass anchors
     on text no other section contains, as before.
 
+85. **A standing framework prompt and CLAUDE.md both say `useEntityQuery` is safe from the
+    cancel-your-sibling bug, and `planner-templates/X1` is the counter-example.**
+    `prompts/_common/api/A1-request-key-for-sibling-fetch-helpers.md:129-131`: *"Do not add
+    `requestKey` to `useEntityQuery`. It already holds a separate controller per method (`fetchById`,
+    `fetchAll`, …), which is the same idea expressed differently. Only the three listed helpers share
+    one controller across every call."* Per-method is not per-call: `useEntityQuery.ts:34-37` aborts
+    the previous `fetchById` whatever its id, so `Promise.all([fetchById(a), fetchById(b)])` from one
+    instance rejects every time — which is what `TemplateComparisonDialog.vue:120` does and what the
+    unit photographed. CLAUDE.md's `_common/api/` bullet has the same gap by omission: it names
+    `useFetchFilteredSorted`, `useFetchSorted` and `useFetchFilteredTable` as the helpers that "still
+    hold a single controller per instance" and does not mention this one. The finding itself cites
+    *"CLAUDE.md's own documented gotcha"* for `useEntityQuery` — there is no such sentence; the unit
+    inferred the mechanism correctly and attributed the documentation wrongly. Net: the dialog's
+    author was told, in writing, that the helper they reached for was the safe one. `FW18` adds the
+    key (opt-in, `Symbol` default, the `useFetchFiltered` shape) and rewrites both sentences; `F50`
+    fixes the dialog without waiting for it.
+
+86. **`X2`'s "opened panel" and `A3`'s "panel-open toggle (the collapsed pill)" are the same
+    element, and it is the open panel — no such toggle exists in the template planner.** Source:
+    `panelOpen` starts `true` (`useRoutinePlacement.ts:28`); the only writer of `false` is the shell's
+    X (`PlannerSidePanelShell.vue:22`); nothing in `TemplateDayPlannerView.vue` or
+    `TemplatePlannerHeader.vue` writes `true`; the reopen control the unit describes exists only in
+    the *day* planner's header (`DayPlannerHeader.vue:7-14`, `d-md-none` `bars`). The two mobile
+    screenshots agree with the source and not with the captions: `day-planner-templates-id--mobile.png`
+    shows a thin grey card strip at the top — the 400 px-wide `VCard` squeezed to its 16 px title by
+    the `flex-column` + `h-100` parent — and `…--mobile-panel-open2.png` shows the **same page scrolled
+    ~170 px to the right** (the X now visible, the 5M/10M/15M toggle and *Home* location chip in
+    frame, *Home Office* cut to *ks*), which is what a 400 px child does to a 390 px viewport. So the
+    inventory's `:162` row (*"opens the panel at `<md` widths"*) and `:207-211` (*"Panel-closed state
+    renders correctly … Opening the panel produces a sliver"*) describe one state twice, and the
+    real defect is worse than filed: the panel is broken on **arrival**, and once the X is tapped it
+    cannot come back without a reload. Two consequences. `A3` stays `a11y` but names the wrong control
+    — the unnamed `nth(4)` button it `eval`'d is the shell's close X or the header's undo, both of
+    which are unnamed in source and both of which `F56` names. And `X2`'s *Expected* — *"the way it
+    does on `DayPlannerSidePanel`'s default 380px"* — is unobserved: unit 7 never resized (the
+    Phase 3 X4 pass is still pending), and `DayPlannerView.vue:3` has no `flex-column`, so at 390 px
+    the day view is a 380 px panel *beside* the grid, a different failure and not a working
+    reference. `F51`'s verification drives both routes at 390 for that reason.
+
+87. **`X1`'s suggested fix closes half the bug and the finding does not know it.** The root-cause
+    guess is exactly right about `:120` (two `fetchById`s, one controller). It does not look at
+    `:121-124`, which is `Promise.all([fetchFiltered(…t1…), fetchFiltered(…t2…)])` from one
+    `useTemplatePlannerTaskCrud()` with **no `requestKey`** — `useFetchFiltered.ts:54-56` then keys
+    both under the shared `Symbol` and the first cancels, the same `CanceledError` one line down.
+    Keying or splitting only the `fetchById` pair moves the rejection from `:120` to `:122`; the
+    `try … finally` still never reaches `sides.value`, and the dialog stays on its two-null default.
+    `TemplateListView.vue:315-326`, in the same module, uses `requestKey: t.id` for exactly this
+    fan-out with a comment saying why — the dialog was written without reading it. `F50` names both
+    lines and the verification counts requests, because a clean console proves nothing here (`A1`'s
+    *Traps*; cancellations are not logged).
+
+88. **`B2` is a client/server contract disagreement, and the contract is the server's.** The unit
+    filed one field; the source has the whole form. Client: `TaskPlannerDayTemplateRequest.ts:14`
+    `suggestedForDayType?: DayType`, no default; `TaskPlannerDayTemplateDetailsForm.vue:6-79` declares
+    no `:rules` on any field, so `validateAndGetData()`'s `form.validate()` (`:143`) is always true.
+    Server (`AdhdTimeOrganizer.Planning/…/TaskPlannerDayTemplateRequest.cs`): `Name`
+    `[Required][StringLength(100)]`, `Description` `[StringLength(500)]`, `Icon` `[StringLength(50)]`,
+    `SuggestedForDayType` `public required DayType` — the `required` modifier is why the failure is a
+    `serializerErrors` 400 rather than a validation 400, and why it reads as the server's generic
+    title. The one question that could have been an escalation — should *Suggested for day type* be
+    optional? — is answered without a running server: the column is `int` non-nullable and indexed
+    (`Initial.Designer.cs:1669,1701`), `/suggestions` matches templates on it, and every server-side
+    fixture and integration test sets it. Required by design; the client is the side that disagrees.
+    `F53` mirrors the contract and stops there; the dialog-closes-before-the-call shape
+    (`TemplateDetailsForm.vue:32` → `TemplateListView.vue:352`) is noted as a pattern decision, not
+    batched.
+
+89. **`leisure-backlog-picker/X1`'s evidence is misread, and its root-cause guess points at the wrong
+    layer.** The finding rests on a discrepancy: two count-only requests returned `itemsCount: 0` for a
+    nonsense `activityName` and the main table request returned the row, so the name filter "works on
+    two of three requests" and the sort on `activity.name` must be breaking the third. Source, both
+    sides: the server's `ActivityBacklogProfileFilterRequest` has **no `ActivityName` member** — it
+    reads `EnergyLevel`, `EffortType`, `IsRepeatable`, `IsAnchored` and nothing else
+    (`GridActivityBacklogProfileEndpoint.cs:41-60`; `BaseGridEndpoint.cs:124-125` applies nothing
+    generic) — so the name filter has never worked on *any* request. The two count-only requests were
+    zero because `useExperiencedProgress` is wired with `scopeFilter: copy => { copy.isRepeatable = false }`
+    (`BacklogView.vue:150`) and the seed's one backlog row is `IsRepeatable = true`
+    (`E2eFixtureSeeder.cs:734`): the denominator over one-time entries is 0 on this account whatever
+    the name says. The unit tested one server-read field (`isRepeatable`), saw it work, and generalised
+    to "filters work, except this one". The sort has nothing to do with it. Re-scoped from a
+    sort/filter-interaction ask to the four-grid contract gap in **§13**; severity stays `blocker`
+    (the filter chip and the URL both claim a narrowing that never happens). The inventory's
+    *"activity-name filter survives a reload"* describes the URL codec only.
+
+90. **`leisure-bucket-anchors/B1` says `activityName` and `isAnchored` "both confirmed working" and
+    five numeric fields are "silently ignored" — the server has no `ActivityName` on either grid, and
+    two of the five are the client's own naming slip.** `ActivityBucketListProfileFilterRequest` is
+    `RequiresTravel`, `ComfortZoneStep` (exact match), `IsAnchored`; `MemoryAnchorFilterRequest` is
+    `AnchorMonth`, `AnchorYear`, `ActivityId`. So: `isAnchored` works (correct); `activityName` cannot
+    have — with one seeded row and no recorded input, the "confirmed" is unexplained and is contradicted
+    by source; `minComfortZoneStep`/`maxComfortZoneStep` are a range the server's scalar never sees;
+    `minRating` has no counterpart at all; and `year`/`month` are read by the server under the names
+    `anchorYear`/`anchorMonth` — which the client's **own create request** already uses
+    (`{"anchorMonth":9,"anchorYear":2026,…}` in `B2`'s evidence). That pair is an app batch (`F60`);
+    the other three cases are §13. The finding's root-cause guess (*"not wired into the where clause"*)
+    is right for `minRating` and wrong in kind for the rest — the clause exists, the names do not meet.
+
+91. **Three units, one interceptor path, three observations.** `leisure-backlog-picker/X3`: a 400 on
+    `POST /activity-backlog-profile`, DOM polled six times over 1.8 s, **no `.v-snackbar`**.
+    `leisure-bucket-anchors/B2`: a 400 on `POST /memory-anchor`, *"a snackbar may have fired and
+    auto-dismissed before capture — not independently confirmed"*. `activity-settings/X1`: a 400 on
+    `POST /activity-role`, snackbar **seen** (*"One or more errors occurred!"*). All three go
+    `useEntityCommand.create` → `useRequestState.run` → the interceptor's `case BadRequest:
+    showErrorSnackbar(…)` (`axiosConfig.ts:227-228`); none passes `_silent`
+    (`activityBacklogProfileApi.ts` sets no `disableErrorHandling`; `useRequestState.ts:31`);
+    `showSnackbar` has no dedupe and a 3 000 ms timeout. Source offers **no** path by which the
+    backlog request stays silent. `X3`'s guess (*"the interceptor's call is not reaching the DOM for
+    this specific path"*) names the mystery without a mechanism. Not batched — `F63` takes the `0`
+    half; the snackbar half is a *Needs verification* item with an exact probe, because if it is real
+    it is a framework intermittent and far bigger than one form.
+
+92. **`leisure-bucket-anchors/X3`'s "route registered after `/{id}`" is wrong — the route does not
+    exist.** The `endpoint/memoryAnchor/` directory holds `GetById`, `GetSelectOptions`, `Grid`,
+    `Create`, `Update`, `Delete`, `BatchDelete`; the string `anchor-eligible` occurs in **no `.cs` file
+    in the API**. The 400 body (*"Value [anchor-eligible-activities] is not valid for a [Int64]
+    property"*) is `GetByIdMemoryAnchorEndpoint` binding the path segment, which is what a missing
+    sibling route looks like from a browser. `prompts/_done/leisure/backend/B1-backend.md:5` told the
+    frontend the route *"already knows which activities qualify"* and `B1-close-the-loop.md:14` built
+    on that; it never landed. Same lesson as the withdrawn `B5`: a 4xx from outside cannot tell "no
+    route" from "wrong parameter". Escalation §12; the frontend half (`F62`) is unchanged by the
+    correction.
+
+93. **`leisure-backlog-picker/P1` says `BacklogView` is *"the only leisure view (confirmed by grep
+    across `src/core/`) that passes a `class` to `<FilterPanel>`"* — the grep this pass returns four.**
+    `ProjectsView.vue:27`, `MemoryAnchorsView.vue:27`, `BucketListView.vue:27`, `BacklogView.vue:7`,
+    all `class="flex-1-1"`, exactly as `F6` has listed since the eighth pass. The unit's grep must have
+    matched the opening tag's line only (`<FilterPanel` is on its own line in all four; the `class`
+    is two lines down). Merged into `F6` as a duplicate; `F6`'s verification already says to check all
+    four views because the warning is per call site.
+
+94. **`activity-settings/X1` asks which side owns the colour format; the server's own code answers
+    it.** `framework/Sydowwe.Framework/domain/enum/ColorPalette.cs` declares the palette as
+    **names** (`Crimson = "crimson"` … `Slate = "slate"`, the same 29 the client's `COLOR_PALETTE`
+    emits), `E2eFixtureSeeder.cs:409-417` writes `ColorPalette.Blue`/`Emerald`/`Violet`/`Sky`/`Yellow`
+    into the very roles and categories the unit edited, and the validator that refuses them
+    (`NameTextColorIconValidator.cs:16-20`, hex regex) predates the palette on both sides —
+    `git log -S 'valid hex color'` bottoms out at `a51309e` (2026-05-16); the client's `colorPalette.ts`
+    first appears 2026-06-22. So the finding's *"write-path regression"* reading is right and its
+    *"needs a decision on which side"* is answered: the validator is stale. Two consequences the unit
+    could not see: the column is `character varying(7)` (`EntityFieldLengths.Color = 7`) and
+    `burgundy` is eight characters, so relaxing the regex alone still refuses one swatch; and
+    `TodoListCategoryValidator` derives from the same base, so `/todo-list`'s category create/edit
+    (`TodoListCategoryForm.vue:18`, same `ColorPicker`) is broken by construction — unit 9's inventory
+    `:28` records that path as *not separately tested*. Escalation §11; no client batch.
+
+95. **`home/B2` round 1 and this queue's `F8` prescribed a loading branch; round 2 shows the state is
+    not transient.** Round 1 saw the *DONE* / *No plan for today* pair "briefly on every load" and
+    `F8` said add `loading` to `NowBar` and gate `focusMode` on `hasPlan`. Round 2 reproduced it on 3
+    of 4 fresh sign-ins, waited 3 s, and it stayed — in **both** widgets, including `DayPlannerWidget`,
+    which round 1 credited with guarding correctly. Source agrees with round 2: the user-id watcher
+    (`useTodayPlan.ts:512-521`) calls `resetTodayPlan()` on the `0 → id` hydration, which bumps
+    `loadToken` (`:467`) while the day-plan fetch is in flight; `fetchPlan` discards the response
+    (`:404`); the retry gate `hadPlan && id !== 0` (`:516-519`) is false because `hadPlan` reads a
+    `planDate` the discarded response never set. A loading branch hides nothing here — `loading` is
+    already `false` (the `load()` `finally` ran) and the data is simply absent. And round 2's third
+    variant is the inverse: a *failed* fetch's `finally` clears `loading`, then the reset sets it
+    `true` (`:473`) with nothing left to clear it — a permanent spinner that never reaches the error
+    branch `U1` verified. `F8` is rewritten from the root with round 1's half kept as the smaller
+    part; effort `low-med` → `med`. Round 1's "narrow but real window" was honest — the window is the
+    difference between two unrelated requests' response times, and it has no reason to be narrow.
+
+96. **`leisure-backlog-picker/B1`'s heuristic has a second victim on the neighbouring unit's screen,
+    and neither unit saw it.** `isPercentKey` matches `ratio` as a raw substring; `durationMinutes`
+    (the finding) is one hit. Tested against all 105 `TableColumn` keys in this app this pass:
+    `inspirationSource` (`BucketListTable.vue:112`) is the other — `inspi**ratio**n` — and
+    `BucketListTable.vue` slots five columns (`:19-43`) but not that one, so `formatPercent` gets a
+    string and returns `"—"` (`useTableFormatters.ts:41`). The seed's *Learn Bouldering* carries
+    `InspirationSource = "A friend's climbing photos"` (`E2eFixtureSeeder.cs:745`). Unit 12's inventory
+    lists *Inspiration* as a rendered column (`:44`) and its `O1` says the field renders *"as a plain
+    column"*; it has never rendered. The framework's own `JobRunHistory.vue:90,99` slots exactly
+    `durationSeconds` (`ratio`) and `errorSummary` (`sum` → currency) — the trap was hit inside
+    `vue_framework` and worked around per column rather than fixed. `FW20` names both app columns and
+    both framework slots; the `O1` note is corrected in *Deferred to opportunities*.
+
+97. **`leisure-bucket-anchors/U2` (does deleting an anchor leave `isAnchored` dangling?) has a source
+    answer: it cannot.** The flag is not a column. Both profile grids compute `IsAnchored` /
+    `MemoryAnchorId` in SQL from the anchors table at read time (`GridActivityBucketListProfileEndpoint.cs:24-25,50-55`,
+    `GridActivityBacklogProfileEndpoint.cs:53-60`). Settled; moved to *Closed verification items*.
+
+98. **`leisure-bucket-anchors/A1` is two findings with two owners, and only one of them is a missing
+    name.** Its evidence lists `title="edit"` / `title="delete"` with `aria-label: null` on the row
+    actions, and `title="Table"` / `"Ladder"` / `"Add"` on the header controls. The first is
+    `DataTable.vue:83` binding `action.name` (the slug) instead of `action.text` — `FW5`, seen from
+    two more tables, and the unit's own root-cause guess says as much. The second is a localized
+    `title` with no `aria-label` — a real accessible name, the weakest kind, and the finding's
+    expectation is *"consistent with this app's own pattern"* rather than a failure to name. That half
+    is re-graded `a11y` → `polish` and batched as `F65`; the unit's suggestion to add `aria-label`
+    beside `title` is what `F65` does. The lower-case/sentence-case inconsistency it notes rides along
+    with `FW5` (the slug is what is lower-case).
+
 ### Re-grades
 
 | finding | was | now | why |
@@ -1442,6 +1737,48 @@ Everything below was checked against the **current working-tree source** this pa
 | *`F30` (unit 3)* | app batch, two modules | app batch, **`activityTracking` half withdrawn** — label honest on 3 of 4 dashboards, key handlers present since 2026-08-20 | Contradiction 80 |
 | *`F29` (unit 3)* | "unit 5 has not run" | note closed — unit 5 ran pre-`F29`, did not re-file the bars | — |
 | *(unfiled — pie endpoints' literal `"Other"`)* | — | **escalation §10**, source-certain, unobserved; `F47` guards it locally | Rule 2; found reading `B2` |
+| `planner-templates/X1` | `blocker`, one fan-out, app-shaped fix | `blocker`, **two** fan-outs (`F50`); helper-level cause split out as **`FW18`** | Contradictions 85, 87; rule 1 |
+| `planner-templates/B3` | own `bug` | folded into **`F50`** — same file, one attribute | `FW11`/`FW13` precedent for a same-file fold; still a `bug` |
+| `planner-templates/X2` | `blocker`, "opened panel unusable", day planner as the working reference | `blocker`, **re-described** (`F51`): the *open* panel squeezed and off-screen, **no reopen control**; the day-planner reference withdrawn as unobserved | Contradiction 86 |
+| `planner-templates/A3` | `a11y`, "mobile panel-open toggle" | `a11y`, **re-identified** — the shell's close X (or the header undo); the toggle it names does not exist; closes in `F56` | Contradiction 86 |
+| `planner-templates/U3` | `unverified` (source read only) | ✅ **settled from source**, closes in **`F56`** | a `VBtn` with only `icon` has no name; a browser would return the same empty triple the unit already got for `A1` |
+| *(unfiled — both planners' undo buttons; day planner's mobile `bars` toggle)* | — | **app batch `F56`**, source-certain | found reading `A3`'s files; the badge count becomes the undo button's name; unit 7 never resized |
+| `planner-templates/P2` | own `polish` | merged into **`F38`** | `MiniTimeline.vue:50` has been in `F38`'s file list since the eighth pass; the unit observed what the grep predicted |
+| `planner-templates/B2` | `bug`, one field | `bug`, **whole form** (`F53`) — name/description/icon caps too; the backend's `required` confirmed from source, **no escalation** | Contradiction 88 |
+| `planner-templates/B5` | `bug`, navigation only | `bug`, **also survives a reload** (`F55`) — the store persists `templateName`; dead `throw` on `:50` noted | Source; the `F43` shape on the template side |
+| `planner-templates/B1`, `B4`, `A1`, `A2`, `P1` | as filed | stand as filed — `F52`, `F54`, `F56`, `F56`, `F57` | each re-verified in source; `A2`'s pointer intercept is observed (Playwright's own log) and not re-derived |
+| `planner-templates/U1`, `U2` | `unverified` | stand — **mutation pass** settles both; `U1` is a seed-shape gap to be filled through the app's API, not a seed ask | Rule 5; CLAUDE.md *Mutating specs* rule 1 |
+| `leisure-backlog-picker/X1` | `blocker`, backend ask "sort breaks the name filter" | `blocker`, **re-scoped**: the name filter has never existed on the wire on any of the four leisure grids — escalation **§13**; the count-only "evidence" explained by `scopeFilter` `isRepeatable: false` against a repeatable seed row | Contradiction 89 |
+| `leisure-backlog-picker/X2` | `blocker` | `blocker`, app batch **`F64`**; the server's own doc comment states the contract the client breaks | source, both sides |
+| `leisure-backlog-picker/X3` | `blocker`, two compounding bugs | **split**: the `0`-default half → **`F63`** (`bug`, four DTOs not one); the "no snackbar" half → *Needs verification* — no mechanism in source, contradicted by unit 2 | Contradiction 91; rule 5 |
+| `leisure-backlog-picker/B1` | `bug` **[framework]**, one column | `bug` **[framework]** `FW20`, **two** app columns (+ two framework slots that already dodge it); the second (`inspirationSource` → "—") unfiled by unit 12 | Contradiction 96 |
+| `leisure-backlog-picker/P1` | own `polish`, "the only leisure view" | **merged into `F6`** — the eighth pass listed all four call sites; the unit's grep missed three | Contradiction 93 |
+| `leisure-backlog-picker/P2` | own `polish` | folded into **`F64`** — the comment is in the file `F64` edits | same-file fold, `F50`/`B3` precedent |
+| `leisure-backlog-picker/O1` | `opportunity` | stands, deferred; the filter half is moot until §13 (the server reads neither field), the ranking half is the real opportunity | Rule 6 |
+| `leisure-backlog-picker/U1`–`U4` | `unverified` | stand; each has a `playwright-cli route` or seed probe named | Rule 5 |
+| `leisure-bucket-anchors/X1`, `X2` | two `blocker`s | one app batch **`F61`**, `blocker` — one cause, two constants; grown by the empty-on-failure half `ProjectsView` also lacks | Rule 3 |
+| `leisure-bucket-anchors/X3` | `blocker`, "route ordering" | `blocker`, **split**: the route does not exist → escalation **§12**; the `try/finally` → **`F62`** | Contradiction 92; rule 2 |
+| `leisure-bucket-anchors/B1` | `bug`, five fields "ignored server-side", `activityName` "working" | **split**: `year`/`month` are the client's own naming slip → **`F60`**; `minRating` and the comfort-zone range → **§13**; the `activityName` "working" withdrawn as unexplained | Contradiction 90 |
+| `leisure-bucket-anchors/B2` | `bug`, two DTOs | `bug`, **`F63`** — four DTOs, with `X3`'s half and one unfiled | grep `public \w+Id: number = 0` |
+| `leisure-bucket-anchors/A1` | `a11y`, "several controls" | **split**: row actions → **`FW5`** (grown, the slug); header/timeline controls → **`F65`**, re-graded **`a11y` → `polish`** (a `title` is a name) | Contradiction 98 |
+| `leisure-bucket-anchors/P1` | `polish` | stands, **`F66`** | — |
+| `leisure-bucket-anchors/O1` | `opportunity`, "rendered as plain columns" | stands, deferred, **corrected**: `inspirationSource` renders "—" today (`FW20`) | Contradiction 96 |
+| `leisure-bucket-anchors/U1` | `unverified` | stands — the unit's mutation pass, through the API; testable today (does not touch §12's route) | Rule 5 |
+| `leisure-bucket-anchors/U2` | `unverified` | ✅ **settled from source** — the flag is computed, not stored | Contradiction 97 |
+| `home/B2` (round 2) | `bug`, `F8` "loading branch" | `bug`, **`F8` rewritten** from the root — the `loadToken` race; effort `low-med` → `med` | Contradiction 95 |
+| `home/B4` | `bug` | stands, **`F59`** — source-verified (`isFinished` reused for row state; `toggleTaskStatus` tests `Completed` only) | — |
+| `home/A1` | `a11y`, "confirm whether Vuetify ships the key / fix the merge" | stands as `a11y`, **`F58`** — settled from a diff: the EN block is a byte-identical copy of `vuetify/locale`'s `en` minus two keys | node diff this pass |
+| `home/U1` | `unverified` | ✅ **verified in a browser** (round 2), folded into `F8` | Closed verification items |
+| `home/B1`, `B3` | as filed | stand — `F7`, `F9`; round 2 re-confirmed both unchanged | — |
+| `activity-settings/X1` | `blocker`, "needs a decision on which side" | `blocker`, **escalation §11** — the decision is answered from the server's own `ColorPalette` and seeder; grown by the `varchar(7)` column and the `/todo-list` category form | Contradiction 94; rule 2 |
+| `activity-settings/B8` | own `bug` | folded into **`F19`** — the generic dialog it describes is the one `F19` removes; the one-attribute alternative named in case it is kept | Rule 3 |
+| `activity-settings/B9` | `bug` **[framework]** | stands, **`FW19`** — source-verified check order at `axiosConfig.ts:91-97` | — |
+| `activity-settings/U1`, `U2` | `unverified` | ✅ **closed in a browser** (round 2) | Closed verification items |
+| `activity-settings/B1`–`B7`, `A1`, `P1`, `P2` | as filed | stand — round 2 re-confirmed all open against `e2e-v4` | — |
+| *(unfiled — `ActivityProjectProfileRequest.activityId = 0`)* | — | **`F63`**, source-certain | grep |
+| *(unfiled — `inspirationSource` renders "—")* | — | **`FW20`**, source-certain, seed says the row has text | Contradiction 96 |
+| *(unfiled — `$vuetify.command.search` missing in EN)* | — | **`F58`**, from the diff | — |
+| *(unfiled — `/todo-list` category create/edit fails the same colour rule)* | — | **§11**, by construction (shared validator, same `ColorPicker`) | Contradiction 94 |
 
 ### Findings this triage did not challenge further
 
@@ -1644,3 +1981,32 @@ file's eleventh in-place pass and it is ~410 KB**; the operator has said the sha
 a separate session — the audit-trail sections (the pass blockquotes, *Contradictions*, *Re-grades*,
 these addenda) are the bulk and are what a per-pass log file should take, leaving the summary table,
 open batches, escalations and *Needs verification* here.
+
+**Twelfth pass (unit 8) — coverage tracker note.** The first pass on a clean tree: `docs/views/planner-templates/`
+and its draft spec were committed at `9e36b92f` and the unit file is in `units/_done/`. Two rows in
+`_routes.md` are now stale and the operator should edit them (this pass touches only the queue and the
+log): the tracker row (`:123`) is still **☐**, and `/day-planner/templates/split` (`:45`, `:100`) still
+carries the orphan ⚠️ although the inventory resolves it — the *Edit Side by Side* button on
+`/day-planner/templates` (`inventory.md:26`, `TemplateListView.vue:47`) navigates there, so the fix
+`P1-split-view-dead.md` asked for has landed. One wrinkle worth carrying into the manifest's note: the
+button renders at `mdAndUp` only, so the split view has **no mobile entry point** — deliberate for a
+drag-and-drop editor, and not a finding. The three template route rows (`:44-46`) are otherwise accurate;
+nothing in `F50`–`F57` adds, removes or redirects a route. The unit's tally (2 · 5 · 3 · 2 · 0 · 3 = 15)
+matches its body, and its `U` numbering runs `U1`, `U3`, `U2` in file order — harmless, noted so nobody
+hunts for a missing one. Its inventory rows `:162` and `:207-211` describe the mobile panel wrongly
+(§86) and should be corrected when the unit's mutation pass appends to the file.
+
+**Thirteenth pass (units 11, 12; mutation rounds 1, 2) — coverage tracker note.** Nothing in this pass
+is committed: `docs/views/leisure-backlog-picker/`, `docs/views/leisure-bucket-anchors/`, both draft
+specs and the two mutation-round `findings.md` edits are untracked or modified, and the unit prompt
+files for 11 and 12 are still in `units/` (modified, not moved to `_done/`) — the operator's call, once
+the docs are read. `_routes.md`'s coverage tracker is now stale for more rows than it is right for:
+**2, 4, 5, 6, 7, 8, 11, 12, 13, 15 all have an inventory on disk and are ☐** (`:117-130`); only 1, 3, 9,
+10, 14 are ticked. The four route rows for units 11 and 12 (`:51-54`) are accurate — nothing in `F58`–`F66`
+adds, removes or redirects a route. Both tallies match their bodies (11: 3 · 1 · 0 · 2 · 1 · 4 = 11; 12:
+3 · 2 · 1 · 1 · 1 · 2 = 10). Two inventory corrections for the units' mutation passes to carry: unit
+12's `inventory.md:44` lists *Inspiration source* as a rendered column — it renders "—" (§96); unit 11's
+"activity-name filter survives a reload" describes the URL codec, not the table (§89). Unit 2's
+round-2 header tally reads *"unverified 2 (U1/U2 resolved this round, U3/U4 remain open)"* and its
+body agrees; unit 1's reads `unverified 0` and its `U1` section is gone from the body, folded into
+`B2` — consistent, noted so nobody hunts for it.
