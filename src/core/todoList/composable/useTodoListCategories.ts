@@ -49,7 +49,8 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	}
 
 	async function addCategory(request: TodoListCategoryRequest) {
-		request.color ??= 'default'
+		// Was `request.color ??= 'default'` — `"default"` is the picker's empty state, not a palette
+		// name, and the server refuses it (B10). The request DTO seeds a real palette name instead.
 		await createWithResponse(request)
 		await loadCategories()
 		showSuccessSnackbar(i18n.t('successFeedback.added'))

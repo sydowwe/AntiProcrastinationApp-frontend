@@ -16,6 +16,7 @@
 		<ColorPicker
 			v-model="request.color"
 			:label="t('activities.color')"
+			required
 		/>
 		<IconPicker
 			v-model="request.icon"

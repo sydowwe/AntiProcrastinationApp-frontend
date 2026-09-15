@@ -15,7 +15,10 @@
 			v-model="request.icon"
 			class="mb-5"
 		/>
-		<ColorPicker v-model="request.color" />
+		<ColorPicker
+			v-model="request.color"
+			required
+		/>
 	</VForm>
 </template>
 
@@ -43,7 +46,7 @@
 	const form = ref<InstanceType<typeof VForm>>()
 	const request = ref(
 		entityToEdit
-			? new TodoListCategoryRequest(entityToEdit.name, entityToEdit.icon, entityToEdit.color)
+			? new TodoListCategoryRequest(entityToEdit.name, entityToEdit.icon, entityToEdit.color ?? 'blue')
 			: new TodoListCategoryRequest(''),
 	)
 
