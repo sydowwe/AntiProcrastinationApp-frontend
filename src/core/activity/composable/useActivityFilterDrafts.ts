@@ -62,6 +62,17 @@ export function useActivityFilterDrafts(
 		sharedTextDraft.value = shared.text ?? ''
 	}
 
+	/**
+	 * **Derivation only — never a write back into the filter.** `refreshActivityCombos()` reassigns both
+	 * comboboxes from `activitiesFilter`, and it runs whenever the option lists change, which at mount
+	 * is *before* they have loaded. While the filter write lived in a watcher on these refs, every such
+	 * rebuild was also a write: `buildCombobox` drops ids it cannot resolve, so a `?roleIds=` link was
+	 * emptied into `roleIds = []` and `syncUrl()` deleted the param before the first request, and a bare
+	 * load turned the constructor's `null` into `[]`, which defeats `useLookupTable`'s JSON snapshot
+	 * guard and fires a second `loadItems()` that aborts the first. The filter is now written only by
+	 * `onRoleComboboxInput` / `onCategoryComboboxInput`, which a component event fires for user input
+	 * alone. Keep it that way: if this ever needs to feed the filter again, it needs a different route.
+	 */
 	function refreshActivityCombos() {
 		roleCombobox.value = buildCombobox(
 			activitiesFilter.value.roleIds,
@@ -186,27 +197,34 @@ export function useActivityFilterDrafts(
 		{ deep: true },
 	)
 
-	watch(
-		roleCombobox,
-		vals => {
-			activitiesFilter.value.roleIds = vals.filter((v): v is SelectOption => typeof v !== 'string').map(v => v.id)
-			const strings = vals.filter((v): v is string => typeof v === 'string')
-			activitiesFilter.value.roleName = strings.length ? strings.join(' ') : null
-		},
-		{ deep: true },
-	)
+	/**
+	 * combobox -> filter, for **user input only**. Bound to the two `VCombobox`es'
+	 * `@update:modelValue` rather than watched on the refs, because a component event cannot be raised
+	 * by `refreshActivityCombos()` — see its comment for the two bugs the watcher form caused.
+	 *
+	 * An empty selection is normalised back to `null`, the constructor's shape, so the filter a bare
+	 * load holds is byte-identical to the one `paramsToActivityFilter` produces. The server reads an
+	 * empty list and an absent one the same way (`B11`), so this is about `useLookupTable`'s snapshot
+	 * guard and the URL round trip, not about what gets filtered.
+	 */
+	function applyComboboxSelection(
+		vals: (SelectOption | string)[],
+		idsKey: 'roleIds' | 'categoryIds',
+		nameKey: 'roleName' | 'categoryName',
+	) {
+		const ids = vals.filter((v): v is SelectOption => typeof v !== 'string').map(v => v.id)
+		const strings = vals.filter((v): v is string => typeof v === 'string')
+		activitiesFilter.value[idsKey] = ids.length ? ids : null
+		activitiesFilter.value[nameKey] = strings.length ? strings.join(' ') : null
+	}
 
-	watch(
-		categoryCombobox,
-		vals => {
-			activitiesFilter.value.categoryIds = vals
-				.filter((v): v is SelectOption => typeof v !== 'string')
-				.map(v => v.id)
-			const strings = vals.filter((v): v is string => typeof v === 'string')
-			activitiesFilter.value.categoryName = strings.length ? strings.join(' ') : null
-		},
-		{ deep: true },
-	)
+	function onRoleComboboxInput(vals: (SelectOption | string)[]) {
+		applyComboboxSelection(vals, 'roleIds', 'roleName')
+	}
+
+	function onCategoryComboboxInput(vals: (SelectOption | string)[]) {
+		applyComboboxSelection(vals, 'categoryIds', 'categoryName')
+	}
 
 	return {
 		activeTab,
@@ -215,6 +233,8 @@ export function useActivityFilterDrafts(
 		categoriesFilter,
 		roleCombobox,
 		categoryCombobox,
+		onRoleComboboxInput,
+		onCategoryComboboxInput,
 		archivedView,
 		activityNameDraft,
 		activityTextDraft,

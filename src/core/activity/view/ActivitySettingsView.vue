@@ -27,6 +27,7 @@
 					/>
 					<VCombobox
 						v-model="roleCombobox"
+						@update:modelValue="onRoleComboboxInput"
 						:label="t('activities.roles')"
 						:items="roleOptions"
 						itemValue="id"
@@ -39,6 +40,7 @@
 					/>
 					<VCombobox
 						v-model="categoryCombobox"
+						@update:modelValue="onCategoryComboboxInput"
 						:label="t('activities.categories')"
 						:items="categoryOptions"
 						itemValue="id"
@@ -137,6 +139,8 @@
 		categoriesFilter,
 		roleCombobox,
 		categoryCombobox,
+		onRoleComboboxInput,
+		onCategoryComboboxInput,
 		archivedView,
 		activityNameDraft,
 		activityTextDraft,
