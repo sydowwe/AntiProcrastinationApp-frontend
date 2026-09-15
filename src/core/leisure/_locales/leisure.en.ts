@@ -136,6 +136,7 @@ const leisure = {
 			notEligible: `Activity must have a one-time Backlog or Bucket List profile to be anchored.`,
 			duplicate: `This activity is already anchored for that month.`,
 			noEligibleActivities: `You don't have any activity eligible for anchoring yet — it needs a one-time Backlog or Bucket List profile. Create one here:`,
+			eligibleActivitiesLoadFailed: `We couldn't load your eligible activities. Try again in a moment.`,
 		},
 	},
 	enums: {

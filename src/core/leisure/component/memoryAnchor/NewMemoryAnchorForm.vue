@@ -18,12 +18,12 @@
 			:clearable="false"
 		/>
 		<VAlert
-			v-else-if="!loading && eligibleActivities.length === 0"
-			type="info"
+			v-else-if="failed || (!loading && eligibleActivities.length === 0)"
+			:type="failed ? 'error' : 'info'"
 			variant="tonal"
 			density="comfortable"
 		>
-			{{ $t('leisure.errors.noEligibleActivities') }}
+			{{ $t(failed ? 'leisure.errors.eligibleActivitiesLoadFailed' : 'leisure.errors.noEligibleActivities') }}
 			<div class="d-flex ga-2 mt-2">
 				<VBtn
 					size="small"
@@ -103,12 +103,18 @@
 	const form = ref<InstanceType<typeof VForm>>()
 	const eligibleActivities = ref<SelectOption[]>([])
 	const loading = ref(!lockActivity)
+	const failed = ref(false)
 
 	onMounted(async () => {
 		// Nothing to choose from when the activity is already decided.
 		if (lockActivity) return
-		eligibleActivities.value = await fetchAnchorEligibleActivities()
-		loading.value = false
+		try {
+			eligibleActivities.value = await fetchAnchorEligibleActivities()
+		} catch {
+			failed.value = true
+		} finally {
+			loading.value = false
+		}
 	})
 
 	async function validate() {

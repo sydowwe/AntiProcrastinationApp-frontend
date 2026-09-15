@@ -136,6 +136,7 @@ const leisure = {
 			notEligible: `Aktivita musí mať jednorazový Backlog alebo Bucket list profil aby mohla byť zakotvená.`,
 			duplicate: `Táto aktivita je už zakotvená pre daný mesiac.`,
 			noEligibleActivities: `Zatiaľ nemáte žiadnu aktivitu, ktorú by ste mohli zakotviť — na to potrebuje jednorazový Backlog alebo Bucket list profil. Vytvorte si ho tu:`,
+			eligibleActivitiesLoadFailed: `Vaše zakotviteľné aktivity sa nepodarilo načítať. Skúste to o chvíľu znova.`,
 		},
 	},
 	enums: {
