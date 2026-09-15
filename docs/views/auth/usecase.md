@@ -33,9 +33,14 @@ directly.
 - Complete a 2FA one-time code in a dialog, if the account has it enabled
 
 **What the user can see, and the question it answers**
-- The wrong-password / locked-out / email-not-confirmed snackbar — answers "why didn't that work?"
+- The wrong-password / locked-out / email-not-confirmed snackbar — answers "why didn't that work?", except
+  the email-not-confirmed case does not actually fire any more: a genuinely unconfirmed account now gets the
+  same generic "invalid email or password" as a wrong password (Findings B6, round 2 — live-confirmed with a
+  real throwaway account).
 - The "Resend confirmation email" prompt, shown after an unconfirmed-e-mail login attempt or right after
-  registering — answers "how do I get another copy of that e-mail?"
+  registering — answers "how do I get another copy of that e-mail?" (the post-registration trigger for this
+  panel remains unverified end-to-end — see U5 — since Registration itself cannot complete via the UI; see
+  X2)
 
 **Depends on:** `VITE_RECAPTCHA_SITE_KEY` (empty in this dev environment — see Findings U3); the server's
 exact error-message strings, which the client string-matches to choose a snackbar (Findings U4).
@@ -56,7 +61,8 @@ exact error-message strings, which the client string-matches to choose a snackba
 
 **Depends on:** `installFramework({ legalRoutes })` in `main.ts` for where the terms/privacy links resolve
 (this app: `/legal/terms`, `/legal/privacy`); `VITE_RECAPTCHA_SITE_KEY`, which — unlike Login — blocks
-submission entirely when absent (Findings O1).
+submission entirely when absent (Findings X2, round 2 — confirmed live that the server would have accepted
+the request; escalated from round 1's O1).
 
 ### ForgottenPasswordView (`/forgotten-password`)
 **Purpose:** Request a password-reset e-mail.
@@ -106,17 +112,30 @@ settings.
 
 ## Entity lifecycle
 
-No entity is created, edited or deleted by this pass (inventory only, and registration cannot complete in
-this dev environment — see O1). In general: an account is created by `POST /auth/register`, authenticated by
-`POST /auth/login` (+ `POST /auth/login/2fa`), and this module never deletes one — that lives in the user
-module's settings surface (`_common/modules/user/component/settings/SecuritySection.vue`, out of this unit).
+**Round 2 (mutation pass):** the account entity's real create/verify lifecycle could not be driven through
+this unit's own UI — `RegistrationView`'s own client-side guard refuses to submit in this environment (X2).
+To still exercise the rest of the unit, two throwaway accounts were created via a direct
+`POST /auth/register` call (bypassing only the guard, not the server) —
+`auth-mutation-throwaway-1@example.com` (plain) and `auth-mutation-throwaway-2fa@example.com`
+(`twoFactorEnabled: true`). Both confirmed created (`200`, real `qrCode`/`recoveryCodes` for the 2FA one).
+Neither could be confirmed (no real inbox in this environment) or logged into (B6: an unconfirmed account's
+login attempt is indistinguishable from a wrong password), so the lifecycle stops at "created, unconfirmed"
+for both. Both were wiped by the end-of-pass `POST /api/test/seed` reseed — no residue left behind.
+
+In general: an account is created by `POST /auth/register`, authenticated by `POST /auth/login`
+(+ `POST /auth/login/2fa`), and this module never deletes one — that lives in the user module's settings
+surface (`_common/modules/user/component/settings/SecuritySection.vue`, out of this unit).
 
 ## Data this unit captures but does not spend
 
 - **2FA recovery codes issued at registration** (`response.data.recoveryCodes` in `RegistrationView.vue:154`)
   are checked for truthiness to decide which branch to take, then discarded — never passed to
-  `QrCodeFor2FABody` or shown anywhere. See Findings U1. This is the same shape of bug as the already-filed
+  `QrCodeFor2FABody` or shown anywhere. See Findings U1 — round 2 confirmed live (via the direct-API
+  workaround) that the server really does return real recovery codes for a 2FA registration, strengthening
+  what was previously a source-only claim, though the actual on-screen discarding still couldn't be driven
+  through the real UI path. This is the same shape of bug as the already-filed
   `framework/F1-2fa-recovery-codes.md` (which covers the *regenerate* button in settings), but it is the
   *initial-enrollment* path and is not yet asked for.
 - **The `redirect` query param the axios interceptor attaches on a forced 401 logout**
-  (`_common/axiosConfig.ts:175`) is written but nothing ever reads it back — see Findings B1.
+  (`_common/axiosConfig.ts:175`) is written but nothing ever reads it back — see Findings B1, re-confirmed
+  round 2.
