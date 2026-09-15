@@ -123,6 +123,13 @@ fires with the tab closed — verified live for both single-boundary (timer) and
 15 boundaries posted at Start for a 2-cycle/4-period run) scheduling, and for cancel-on-pause /
 reschedule-on-resume.
 
+**What happens to a session that ends inside its first minute is not one rule but two, and they disagree**
+(mutation pass, findings B4/B5): `TimerView` discards it with no dialog and no feedback at all; `PomodoroTimerView`
+opens the same save dialog it always would, but the duration it quotes is blank because `Time.getNice` was never
+written for a zero-minute span, and confirming it writes a real `length: {hours:0, minutes:0}` row. Neither is
+the intended behaviour — see the findings for what "intended" should mean here — but the app currently has both
+of them at once for structurally the same situation.
+
 ## Data this unit captures but does not spend
 - **`ActivityHistory.length`'s sub-minute precision** — the stopwatch and countdown both track to the second
   internally (`TimePrecise`), but nothing downstream (the review dashboards, the to-do calibration aggregate)

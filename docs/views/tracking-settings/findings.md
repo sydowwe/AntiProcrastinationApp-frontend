@@ -1,13 +1,14 @@
 # tracking-settings — findings
 
-> Pass: inventory · captured 2026-09-13 · commit `df2b163d`
+> Pass: mutation · captured 2026-09-15 · commit `97f1e414`
 
-**Tally:** blocker 1 · bug 4 · a11y 0 · polish 1 · opportunity 1 · unverified 1
+**Tally:** blocker 4 · bug 7 · a11y 0 · polish 1 · opportunity 1 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `df2b163d` | initial inventory pass |
+| 2 | 2026-09-15 | `97f1e414` | mutation pass. Confirmed X1 still reproduces (amended with a keyboard-workaround nuance below). Added X2/X3/X4 (all newly discovered, all blocker-severity, all in the create/edit/delete lifecycle). Added B5/B6/B7. Converted U1 from unverified to **confirmed** — see X4, which supersedes it; U1's row is kept for the audit trail and marked `stale`. |
 
 ---
 
@@ -60,6 +61,138 @@
   the parent `VCardText`'s `flex-fill` sizing — one of them is claiming height it isn't rendering, causing the
   table body to be pushed underneath (not clipped by `overflow:hidden`, since the row's own `getBoundingClientRect`
   still returns plausible coordinates; more likely a stacking/paint-order issue than a clip).
+- **Round 2 (mutation pass) amendment — reproduces identically, plus a keyboard-only workaround exists:**
+  Re-confirmed on both a pre-existing seeded row and a freshly created one: `desktop-settings-mappings--mutation-two-rows.png`
+  shows the same blank gap with "1-2 of 2" in the footer. A real mouse click is still blocked exactly as
+  described above. **However**, programmatically focusing the row's `edit`/`delete` button
+  (`el.focus()`) and then pressing a real `Enter` key **does** activate it correctly — confirmed four times: it
+  navigated to `distinctEntries` with the correct pattern/activity pre-filled for two different rows (one
+  seeded, one created this pass), and it opened the real delete-confirmation dialog for two different rows.
+  `.focus()` and a dispatched `Enter` keydown do not go through the coordinate-based hit-test that blocks a
+  pointer click, so this is consistent with X1's root cause guess (a stacking/paint bug), not a disabled or
+  unwired control. This does not downgrade the severity — a mouse or touch user, which is most users, is still
+  fully blocked, and a keyboard user would only find this path via `Tab`, which was not independently verified
+  in this pass (only programmatic `.focus()` was) — but it means the row's actions are not entirely dead, and a
+  fix likely only needs to correct paint/stacking, not re-wire any handler.
+
+---
+
+### X2. "To ignored" mode can never actually be saved, on both platforms — the request never carries `isIgnored: true`
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `src/core/activityTracking/composable/useMappingSettings.ts:39-54` (`saved()`), used by both
+  `DesktopSettingsView.vue` and `AndroidSettingsView.vue` via `useMappingSettings`
+- **Expected:** Per `usecase.md`'s "What the user can do": "Define a pattern... and either assign it to an
+  activity... or mark it ignored, then save it as a rule." Clicking "To ignored" then "Save" should create a
+  rule with `isIgnored: true` and no activity.
+- **Actual:** Clicking "To ignored" correctly updates the UI — the Role/Category/Activity fields hide, and the
+  "TO IGNORED" toggle renders visibly pressed (screenshot below) — but `saved()` never reads `mode.value` at
+  all. It unconditionally does `request.value.activityId = formData.value.activityId` (etc.) and never sets
+  `request.value.isIgnored`, so the outgoing request always carries `isIgnored: null` regardless of which mode
+  is selected. With nothing else set either (formData is empty in ignored mode), the request satisfies neither
+  target and the server rejects it every time. **This makes marking anything as ignored from the UI completely
+  impossible** — confirmed independently on both desktop and Android with two different source rows
+  (`Code.exe`, `Gmail`).
+- **Evidence:** Screenshot `screenshots/desktop-settings-distinctEntries--mutation-to-ignored-toggle.png` (shows
+  "TO IGNORED" pressed, Save enabled). Desktop request/response (`POST
+  .../tracker-desktop-mapping-by-pattern`): sent
+  `{"processName":"Code.exe",...,"isIgnored":null,"activityId":null,"roleId":null,"categoryId":null}`, received
+  `400 {"errors":{"target":["Exactly one target must be set: IsIgnored=true, ActivityId, or RoleId/CategoryId
+  (not multiple)"]}}`. Android request/response (`POST .../tracker-android-mapping-by-pattern`): sent
+  `{"appLabel":"Gmail",...,"isIgnored":null,"activityId":null,"roleId":null,"categoryId":null}`, received the
+  identical 400. Source read confirms the mechanism: `useMappingSettings.ts:39-54`'s `saved()` has no branch on
+  `mode.value` and no line touching `request.value.isIgnored` anywhere in the file.
+- **Repro:** 1. Go to `/activity-tracking/desktop/settings/distinctEntries` (or the android route). 2. Type any
+  pattern into Process Name / App Label. 3. Click "To ignored". 4. Click "Save". 5. Console shows a 400 with
+  the "Exactly one target must be set" message; a generic "Failed to save mapping" snackbar appears (see B6);
+  no row is created.
+- **Verify:** 1. Repeat the repro on both routes. 2. **Pass condition:** the request body sent on Save carries
+  `isIgnored: true` when "To ignored" is selected, the server responds 2xx, and the new rule appears on the
+  Mappings tab with "Is ignored" set and no activity.
+- **Root cause guess:** `saved()` in `useMappingSettings.ts` was written only for the "to activity" path — the
+  `mode` ref exists and correctly drives which fields the template shows, but nothing in `saved()` was ever
+  updated to also branch on it and set `isIgnored`.
+- **Suggested fix:** In `useMappingSettings.ts:39-43`, branch on `mode.value`: when `'toIgnored'`, set
+  `request.value.isIgnored = true` and leave `activityId`/`roleId`/`categoryId` null; when `'toActivity'`, keep
+  the current three lines and explicitly set `isIgnored = null` (or `false`, matching whatever the "clear" path
+  already produces).
+
+---
+
+### X3. Editing any existing mapping fails with a 400 on both platforms — the update request never carries `isActive`
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `src/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts:12`
+  (`public isActive?: boolean` — optional, no default, never assigned) and the equivalent
+  `TrackerAndroidMappingRequest`; consumed by `useMappingSettings.ts`'s `saved()` → `config.update(id, request)`
+- **Expected:** Per `usecase.md`'s "Entity lifecycle": a mapping is "edited here (`edit` action → repopulates
+  the form... )". Loading a row into the edit form (now reachable via the X1 keyboard workaround, or via a
+  future X1 fix) and clicking Save should persist the change.
+- **Actual:** `isActive` is declared as an optional class field with no default value and is never assigned
+  anywhere in `edit()`, `saved()`, or the request DTO's constructor defaults, so `JSON.stringify` drops the key
+  entirely from the outgoing body. The **create** endpoint tolerates its absence (confirmed: creating a new
+  mapping with no `isActive` in the body returns `201`), but the **update** endpoint's DTO
+  (`UpdateTrackerDesktopMappingRequest` / the android equivalent) declares it required, so every edit-save
+  fails with a 400 whose message names the exact missing field. Reproduced on both platforms, on both a freshly
+  created row and a pre-existing seeded row (`rider64.exe` → `Desk Research`, id 21001).
+- **Evidence:** Desktop `PUT .../tracker-desktop-mapping-by-pattern/21003` request body:
+  `{"processName":"vlc.exe",...,"activityId":12008,"roleId":11003,"categoryId":null}` (no `isActive` key at
+  all) → `400
+  {"errors":{"serializerErrors":["JSON deserialization for type '...UpdateTrackerDesktopMappingRequest' was
+  missing required properties including: 'isActive'."]}}`. Android `PUT
+  .../tracker-android-mapping-by-pattern/21103` request body:
+  `{"appLabel":"Duolingo",...,"activityId":12016,"roleId":11003,"categoryId":null}` (same omission) → identical
+  400 naming `UpdateTrackerAndroidMappingRequest`. Console showed the `AxiosError` on both; a generic "Failed to
+  save mapping" snackbar appeared each time (see B6). Source read of
+  `TrackerDesktopMappingRequest.ts:12` confirms `isActive?: boolean` is never written to.
+- **Repro:** 1. Go to the Mappings tab (desktop or android). 2. Reach a row's `edit` button (see X1's keyboard
+  workaround if the pointer click is still blocked). 3. Change any field (e.g. the target Activity). 4. Click
+  "Save". 5. Console shows a 400 naming `isActive` as missing; the row's data does not change.
+- **Verify:** 1. Repeat the repro on both routes. 2. **Pass condition:** the PUT request body includes
+  `isActive`, the server responds 2xx, and the Mappings tab shows the edited value after a reload.
+- **Root cause guess:** The desktop/android request classes were written against the **create** contract, where
+  the server apparently defaults `isActive`, without noticing the **update** contract requires it explicitly.
+  `edit()` in `DesktopSettingsView.vue`/`AndroidSettingsView.vue` populates the form from the row being edited
+  but was never wired to also capture that row's current `isActive` into the request.
+- **Suggested fix:** Have `edit()` read the row's `isActive` (already present in the grid response, see
+  `inventory.md`'s Mappings-tab readable-surfaces row) into a field `saved()` includes in the update request —
+  or simplest, always send the current toggle state (defaulting `true` for a new row) so both create and update
+  carry it consistently instead of relying on the create endpoint's server-side default.
+
+---
+
+### X4. Delete confirmation opens and can be confirmed, but no delete request is ever sent — the row silently survives
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`'s `<BasicTable ... @onLoadItems="load"
+  @onEdit="emit('edit', $event)" />` — confirmed missing an `@onDelete` listener on both, matching the
+  source-read prediction already on file as U1 below
+- **Expected:** Per `usecase.md`'s "Entity lifecycle", deleting a mapping "stops the rule from applying to
+  future observations" — the row should disappear and a delete request should fire.
+- **Actual:** Reaching `delete` via the X1 keyboard workaround (focus + Enter) opens `BasicTable`'s built-in
+  "Delete confirmation" dialog correctly. Clicking "Confirm" closes the dialog, but **no DELETE (or any) request
+  for the mapping ever appears in the network log**, no snackbar of any kind appears, no console error appears,
+  and the row is still present, unchanged, after the confirm — confirmed independently on both platforms
+  (desktop: `rider64.exe` row, id 21001; android: `Duolingo` row, id newly created this pass). This upgrades and
+  supersedes U1 below, which could not reach the button in the inventory pass and correctly flagged the missing
+  `@onDelete` listener from source alone.
+- **Evidence:** Desktop: confirmed via `playwright-cli requests` immediately before and after clicking
+  "Confirm" on `/activity-tracking/desktop/settings/mappings` — the only new request was the incidental grid
+  re-fetch, no delete call; the row (`rider64.exe`) remained in the table afterward. Android: identical result
+  on `/activity-tracking/android/settings/mappings` with the `Duolingo` row. Confirmation dialog text itself is
+  also a defect, filed separately as B7.
+- **Repro:** 1. Go to a Mappings tab. 2. Reach a row's `delete` button (X1 keyboard workaround: focus the
+  button via script, press Enter — or a normal click, once X1 is fixed). 3. Click "Confirm" in the dialog. 4.
+  Observe: no new network request fires, no snackbar appears, the row is still present.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** confirming fires a delete request that returns 2xx,
+  and the row is gone from the table after the grid re-fetches (or after a reload).
+- **Root cause guess:** Same as U1's source-only prediction, now confirmed live: `DesktopMappingsTable.vue` /
+  `AndroidMappingsTable.vue` never declare a `delete` emit or an `@onDelete` handler on their `<BasicTable>`, so
+  `BasicTable`'s internal `emit('onDelete', itemToDelete.value)` on confirm fires into nothing.
+- **Suggested fix:** Add `@onDelete="handleDelete"` on both tables' `<BasicTable>`, wired to
+  `config.deleteEntity(id)` (already exposed by `useTrackerDesktopMappingCrud()` /
+  `useTrackerAndroidMappingCrud()` per `desktopActivityTrackingApi.ts:100-111`) followed by a re-`load()` and a
+  success snackbar.
 
 ---
 
@@ -191,6 +324,102 @@
 
 ---
 
+### B5. The distinct-entries list never excludes (or marks) an entry that already has an active mapping rule
+- **Status:** open
+- **Severity:** bug
+- **Where:** `GET`-equivalent grid backing `POST /api/activity-tracking/desktop/grid` (and the android
+  equivalent) — server response only, no client-side filtering visible either
+- **Expected:** Per `usecase.md`'s own description (written from this same distinct-entries table): "Browse the
+  distinct, not-yet-considered process/product/window-title combinations." Creating a mapping rule for an entry
+  is the act of considering it, so it should stop appearing as something still needing review — otherwise nothing
+  distinguishes an entry a user has already handled from one they haven't, and a user re-visiting this tab has
+  no way to tell which patterns still need a decision.
+- **Actual:** Created an `Exact` rule mapping `vlc.exe` → "Read a Novel" (confirmed `201`). Immediately
+  re-filtering the distinct-entries grid for exactly `vlc.exe` (same tab, no reload) still returned it:
+  `{"items":[{"processName":"vlc.exe","productName":"VLC media player","windowTitle":"Documentary.mkv","id":76}],"itemsCount":1}`.
+  The request sent no parameter that could exclude already-mapped rows
+  (`{"filter":{"processName":"vlc.exe","processNameMatchType":"Exact",...}}`, no `excludeMapped` or similar
+  key), so this is the server's raw distinct-values list, unfiltered by mapping status, and the client makes no
+  attempt to cross-reference it against the Mappings tab's data either.
+- **Evidence:** `POST .../desktop/grid` request/response captured immediately after the `201` create — see
+  above. No `is-mapped`/`considered` field anywhere in the response shape.
+- **Repro:** 1. Go to `/activity-tracking/desktop/settings/distinctEntries`. 2. Create a mapping for any listed
+  process (any pattern, any target). 3. Type that exact process name into the Process Name filter and click
+  Filter (or just reload the tab). 4. The entry is still listed as if never mapped.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the entry either disappears from the distinct-entries
+  list, or is visibly marked as already covered by a rule (e.g. a badge/column), once a matching mapping
+  exists.
+- **Root cause guess:** The distinct-entries endpoint appears to return the raw set of observed
+  process/product/window-title tuples with no join against the mappings table; nothing in the frontend
+  compensates.
+- **Suggested fix:** This is very likely a backend contract gap (the endpoint would need to either exclude
+  already-mapped tuples or return a flag), so — per this pass's brief on preference-ownership — report rather
+  than shim: do not attempt to filter this client-side against the Mappings tab's own paginated, separately
+  filtered dataset, since the two lists have no shared identifier to join on from the client alone (distinct
+  entries have no `id` that corresponds to a mapping row's pattern in the general case, e.g. `Contains`/`Regex`
+  match types).
+
+---
+
+### B6. Save failures show a generic "Failed to save mapping" snackbar, discarding the server's specific validation messages
+- **Status:** open
+- **Severity:** bug
+- **Where:** `useMappingSettings.ts:44-53` (`saved()`'s `catch` block:
+  `showErrorSnackbar(t('activityTracking.settings.failedToSaveMapping'))`)
+- **Expected:** When a save is rejected for a reason the user caused (missing pattern, missing target, or — see
+  X2/X3 — the app's own bugs), the message shown should help them fix it. There is also no client-side
+  validation at all: neither the pattern fields nor the required "* Activity" field (visually marked with an
+  asterisk) block a Save click when empty.
+- **Actual:** Clicking "Save" with every field empty sends the request straight to the server, which correctly
+  rejects it with a structured, specific error:
+  `{"errors":{"patterns":["At least one pattern (ProcessName, ProductName or WindowTitle) must be provided"],"target":["Exactly one target must be set: IsIgnored=true, ActivityId, or RoleId/CategoryId (not multiple)"]}}`.
+  The UI discards both messages and shows only the generic "Failed to save mapping", identical to what X2 and
+  X3 also show for their unrelated causes — a user cannot tell from the UI alone whether they forgot a field,
+  hit a real bug, or something else entirely.
+- **Evidence:** `docs/views/tracking-settings` — captured via a scripted Save-and-read-snackbar sequence; the
+  snackbar text was confirmed as exactly `"Failed to save mapping"` for three different underlying 400 causes
+  in this pass (empty form, X2's ignored-mode bug, X3's edit bug). Response body for the empty-form case shown
+  above, from `POST .../tracker-desktop-mapping-by-pattern` around the same session.
+- **Repro:** 1. Go to either distinct-entries tab. 2. Click "Clear", then click "Save" without filling
+  anything. 3. A 400 with two specific field errors is returned; the snackbar reads only "Failed to save
+  mapping".
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** either the Save button is disabled / the fields show
+  inline validation before any request is sent, or the snackbar/inline error surfaces the server's actual
+  `patterns`/`target` messages instead of the generic string.
+- **Suggested fix:** Add client-side required-field validation on the pattern group and the "* Activity" field
+  (mirroring the `*` already in the label), and have the `catch` block in `saved()` surface
+  `err.response?.data?.errors` when present, falling back to the generic string only when the server response
+  has no structured errors.
+
+---
+
+### B7. Mapping delete confirmation names the raw numeric id instead of describing what will be deleted
+- **Status:** open
+- **Severity:** bug
+- **Where:** `_common/component/dataTable/BasicTable.vue`'s built-in delete-confirmation `MyDialog`, as
+  configured/consumed by `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`
+- **Expected:** Per this pass's own checklist ("does a delete confirm, and does the confirmation say what will
+  be lost"), the dialog should describe the row being deleted in terms a user recognises — the pattern and/or
+  target activity, not an internal id.
+- **Actual:** The dialog reads exactly "Are you sure you want to delete 21003?" (desktop) / "...21103?"
+  (android) — the mapping's database id, which is never shown anywhere else in the UI and gives the user no way
+  to confirm they are deleting the rule they think they are, especially if two similar-looking rows exist.
+- **Evidence:** Snapshot text captured on both platforms: `dialog "Delete confirmation": generic: Delete
+  confirmation / generic: Are you sure you want to delete 21003? / button "Cancel" / button "Confirm"` (desktop,
+  id 21003 — the mapping created earlier in this pass); identical shape with `21103` on android.
+  This is a `BasicTable`-level default, so it is likely shared by every other table in the app using its
+  built-in delete confirmation, not unique to this unit — worth a framework-level look, not confirmed here
+  since that's outside this unit.
+- **Repro:** 1. Reach any Mappings-tab row's `delete` button (see X1's keyboard workaround). 2. Observe the
+  confirmation dialog text.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the dialog text names the row's pattern (e.g. the
+  process name / app label) and/or its target, not only the numeric id.
+- **Suggested fix:** Pass a human-readable label into `BasicTable`'s delete-confirmation slot/prop per row
+  (e.g. a computed `displayName` from `processName`/`appLabel` + target), rather than defaulting to the row's
+  raw id.
+
+---
+
 ### P1. Tracking settings routes are not reachable from `/user/settings`, in apparent tension with CLAUDE.md
 - **Status:** open
 - **Severity:** polish
@@ -243,7 +472,10 @@
 ---
 
 ### U1. Mappings table's `delete` action has no confirmed effect (source suggests it is wired to nothing)
-- **Status:** open
+- **Status:** stale — **confirmed and superseded by [X4](#x4-delete-confirmation-opens-and-can-be-confirmed-but-no-delete-request-is-ever-sent--the-row-silently-survives)
+  in the round 2 mutation pass.** The keyboard workaround documented in X1's round 2 amendment reached the
+  button, opened the dialog, and confirmed exactly this prediction was correct. Kept below, unmodified, for the
+  audit trail — file new work against X4, not this entry.
 - **Severity:** unverified — **source read only, not reproduced in this pass** (see X1: the button could not be
   reached with a real, non-forced click, so the confirmation dialog was never actually opened)
 - **Where:** `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`'s `<BasicTable ... @onLoadItems="load"

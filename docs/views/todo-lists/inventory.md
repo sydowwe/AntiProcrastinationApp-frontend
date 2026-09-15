@@ -1,6 +1,9 @@
 # todo-lists — inventory
 
 > Captured 2026-09-09 · locale EN · account `999gangshit999@gmail.com` · commit `acd7db0d`
+> Updated 2026-09-15 (mutation pass) · account `test@example.com` (fixture `e2e-v4`) · commit `97f1e414` —
+> additions below are marked "this pass" / "mutation pass"; everything else is the original inventory-pass
+> capture and was not re-verified.
 
 ## Views
 
@@ -45,13 +48,20 @@
   ascending). Contrast with `TodoListView`, whose filters are all URL-backed. See Findings.
 
 **Dialogs opened from here**
-- **"New category" / category edit** (`TodoListCategoryForm`) — Name, an icon picker whose label renders as the
-  raw i18n key `iconPicker.icon` (see Findings), a colour swatch grid (~20 unlabelled colour buttons), Cancel/Add
-  (or Edit).
-- **"Add to to-do list" / list edit** (`TodoListForm`) — Name, the same `iconPicker.icon`-labelled icon picker,
-  Category select, Description textarea, Cancel/Add (or Edit).
+- **"New category" / category edit** (`TodoListCategoryForm`) — Name (required, "This field is required" on
+  blank submit), an icon picker whose label renders as the raw i18n key `iconPicker.icon` (see Findings), a
+  colour swatch grid, Cancel/Add (or Edit). **Correction (mutation pass):** the swatches are not unlabelled —
+  each is a `role="radio"` with a real `aria-label` (`"Crimson"`, `"Red"`, … `"Slate"`, plus `"None"`), 30 total,
+  confirmed via `read_page`. **Submitting this dialog always fails** — see Findings **X1** — regardless of which
+  swatch is picked, including the default "None".
+- **"Add to to-do list" / list edit** (`TodoListForm`) — Name (required), the same `iconPicker.icon`-labelled
+  icon picker, Category select, Description textarea, Cancel/Add (or Edit). Confirmed working end-to-end this
+  pass: create, rename, and prefilled reopen on edit all succeed with no console errors.
 - **Delete list?** (confirm dialog via `useDialog().confirm`) — names the list, and when it has items states
-  "Items in this list: N. They will be deleted with it." before offering Cancel/Delete.
+  "Items in this list: N. They will be deleted with it." before offering Cancel/Delete. **Confirmed this pass**
+  on an empty list (created and deleted during mutation testing): the dialog renders even with 0 items, and
+  correctly omits the item-count line since there is nothing to lose. Confirming deletes with a `DELETE
+  /api/todo-list/{id} => 204` and no error.
 
 **Keyboard**
 - Not separately walked beyond the shell's Tab-order baseline (see `_shell.md`); the five icon-only buttons in
@@ -94,7 +104,8 @@
 | Quick-start stopwatch (per item) | icon button | `title`/`aria-label` = "Start a 10-minute timer" (translated text, has a name) | starts a running timer immediately, prefilled from `suggestedTime` or 10 min default — **not clicked this pass** to avoid starting a real timer session (side-effecting) | in place / hands off to running-timer store |
 | Overflow menu (⋮, icon-only) | button → menu | no accessible name on the trigger itself; menu items are labelled buttons (LOG TIME / ADD TO PLANNER / EDIT / DELETE / MOVE TO LIST) | opens a per-item action menu | dialog / in place |
 | Checkbox (single-count items) | checkbox | `VCheckboxBtn`, no visible/aria label beyond position | toggles done | in place |
-| Counter (multi-count items, e.g. "0/2") | click target | `TodoListItemCounter`, no accessible name | increments `doneCount`; shows a checkbox affordance on hover but a single click did not change the count in this pass (see Findings, `unverified`) | in place |
+| _(a11y confirmed via `eval` this pass — see Findings **A3**: `{"text":"","aria":null,"ariaLabelledby":null}`)_ | | | | |
+| Counter (multi-count items, e.g. "2/5") | button pair (fixed round-5) | `"Increase: N of M"` / `"Decrease: N of M"`, both named and keyboard-reachable | increments/decrements `doneCount`, persists every step (round-5 fix for B5/B6) | in place |
 | Step checkboxes (expanded items) | checkbox × N | plain checkboxes, step text as label | toggles a single step done | in place |
 | Hide done | switch | `VSwitch`, labelled "Hide done" | hides completed items from the filtered view | in place (URL: `?hideDone=true`) |
 | Priority chips (e.g. "Today", "This week", "This month") | filter chips | chip text = priority name | filters to items with that priority | in place (URL: `?priorities=<id>,...`) |
@@ -136,18 +147,31 @@
 
 **Dialogs opened from here**
 - **"Add to to-do list" (`ToDoListItemDialog`)** — "Quick create activity" toggle, Role, Category, Activity
-  (required, with an inline "+" quick-create), "Is repeated" toggle, Priority select (default "Today"), Due date
-  (date picker; selecting a date reveals a "Specific time" toggle defaulted **on** with a prefilled 09:00 time —
-  confirms the N1 prompt's "make the time field prominent, not optional-looking" requirement), "Suggested
-  duration" toggle, "Reward when done" select (leisure backlog), Note. Cancel/Add.
+  (required — "This field is required" on blank submit, confirmed this pass — with an inline "+" quick-create),
+  "Is repeated" toggle, Priority select (default "Today"), Due date (date picker; selecting a date reveals a
+  "Specific time" toggle defaulted **on** with a prefilled 09:00 time — confirms the N1 prompt's "make the time
+  field prominent, not optional-looking" requirement), "Suggested duration" toggle, "Reward when done" select
+  (leisure backlog), Note, Steps (add-step text field + button). Cancel/Add. **Confirmed working this pass**:
+  activity-only submission creates the item, it appears in the list, the header progress count and the list
+  card's `x / y done` on `TodoListsView` both update immediately.
+- **Edit item** (same `ToDoListItemDialog`, reached via overflow menu EDIT) — prefilled from the item; editing
+  the Note and resubmitting succeeds (`PUT /api/todo-list-item/{id} => 200`) and the new note renders inline
+  under the item title on the row (not just a hover tooltip — see `usecase.md` correction).
 - **"Add New Task" (day-planner `PlannerTaskDialog`, reached via the "Not scheduled" chip, the header SCHEDULE
   button, or the overflow menu's ADD TO PLANNER)** — Date, Start time + quick-duration chips (10m…3h), an
   activities filter (All activities / To-do list / Routine) with List/Priority filters and an activity select
   prefilled to the item that triggered it, Importance, "Is background" toggle, Location, Status, Notes.
-  Cancel/Confirm.
+  Cancel/Confirm. Not opened this pass (out of this unit — see Transitions).
 - **Per-item overflow menu** — not a `MyDialog`, a `VMenu`: LOG TIME, ADD TO PLANNER, EDIT, DELETE, MOVE TO LIST.
-- **Delete item** confirmation — not opened this pass (would mutate seed data); per `useDeleteConfirmation`
-  wiring elsewhere in the module, expected to follow the same cascade-aware pattern as the list delete.
+- **Delete item** — **no confirmation dialog** (confirmed this pass, twice, on both a done and a not-done item):
+  clicking DELETE fires `DELETE /api/todo-list-item/{id}` immediately with nothing in between, regardless of the
+  account's "Ask before deleting single items" preference (checked ON for this account). Recovery is via the
+  "Undo: Delete '<name>'" toolbar button only. See Findings **B7** — this contradicts both the preference and
+  the pattern used by list/category delete on the sibling view.
+- **"Move to list"** (`MoveToListForm`) — a single "Destination list" select (every other list in the account,
+  excluding the current one) + Cancel/Confirm. **Every confirmation fails with a 404** (see Findings **B8**) —
+  the item is never actually moved, the dialog closes anyway, and the only sign of failure is the console/
+  network (no visible error state was still showing by the time of the follow-up screenshot).
 
 **Keyboard**
 - The "Not scheduled" chip is explicitly keyboard-operable (`tabindex`, Enter/Space handlers) — a deliberate

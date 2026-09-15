@@ -1,10 +1,10 @@
 # todo-lists — findings
 
-> Pass: inventory · captured 2026-09-09 · commit `acd7db0d`
+> Pass: mutation · captured 2026-09-15 · commit `97f1e414`
 
-**Tally:** blocker 0 · bug 6 (all fixed + verified — B5 and B6 filed and fixed in round 5) · a11y 2 (both fixed +
-verified) · polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
-verified) · settled 1 (U2 → see B3). **No open items.**
+**Tally:** blocker 1 (X1, new) · bug 8 (B1–B6 all fixed + verified; B7, B8 new) · a11y 3 (A1–A2 fixed + verified;
+A3 new) · polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
+verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
 
 ## Round history
 | round | date | commit | what changed |
@@ -16,8 +16,150 @@ verified) · settled 1 (U2 → see B3). **No open items.**
 | 3 | 2026-09-10 | working tree | **e2e seed-backed pass** (`POST /api/test/seed` now works). Drove the "Focus" (13001) and "Errands" (13002) lists via `playwright-cli` to write Task-3 specs. U1 confirmed working (6 overdue items trip the banner, message and buttons render correctly) but its "Today" action itself is broken — filed as **B4**, a framework-level `Time.fromJson` contract bug that fails every reschedule touching an item with a due time. U2 settled — the click is not dead — but that surfaced **B3**, a new bug: the same click also opens the log-time dialog. O1/U3 still not verifiable: the seed's `withEstimate`/`withEstimateAndSteps` items (ids 14002/14001) return no `suggestedTime` in `GET /api/todo-list-item`, despite being named for it and counted in the seed response's `calibrationTodoListItems: 6` — a fixture/backend gap, reported rather than fixed here. |
 | 4 | 2026-09-12 | working tree | `e2e-v2` fixture delivers `suggestedTime` — O1 resolved, U3 verified, calibration specs written. |
 | 5 | 2026-09-13 | working tree | **close-out pass** — every remaining item retested in the browser (SK and EN, `playwright-cli` against `e2e-v3`). **B4 had already been fixed on the API side** (`dueTime` became `{hours, minutes}` on 2026-09-11, backend commit `6395cee`); `Time.fromJson` was made tolerant of both shapes anyway and the two B4 `fixme`s are real specs now. **B3 was not "fixed silently"** as `_fix-queue.md` had it — the round-2 edit moved the `itemClicked` emit *above* the multi-count branch, so a row-body click on a counted item both stepped the counter and opened the dialog; fixed for real this round. Two new bugs surfaced while retesting the counter and are fixed: **B5** (counter steps were never persisted) and **B6** (a dwelling mouse could only decrement, and neither action was keyboard-reachable). U1 superseded by B4. `_shell/P1` (the breadcrumb) fixed from this side. Type-check 0, lint 0, `todo-lists.spec.ts` + `todo-motivation.spec.ts` green. |
+| 6 | 2026-09-15 | `97f1e414` | **formal mutation pass** (this unit's `Pass: mutation` had never been run — rounds 2–5 above were a fix/verification cycle riding on the inventory pass's own data, not a full create→edit→delete lifecycle sweep). Drove `List`, `Category` and `ToDoListItem` through create/edit/delete against fixture `e2e-v4` (seed date 2026-09-14). List and Item CRUD is clean (validation, edit, done-toggle, propagation to the list-card counter, and list deletion all work correctly, including the cascade-aware "Delete list?" confirmation). Four new defects surfaced: **X1** — category creation is 100% broken (client sends a semantic colour name, API requires a hex code); **B7** — item deletion never confirms despite "Ask before deleting single items" being on; **B8** — "Move to list" 404s on every attempt (client and server routes have diverged); **A3** — the item done-checkbox has no accessible name. Account state fully restored by hand (no reseed needed — every created entity was also deleted in-session); the next agent can keep using `e2e/.state/auth-10001.json` if still fresh, or sign in via the form (`test@example.com` / `testpass123` from `e2e/.state/seed.json`) as this session did after the stale token's refresh also 401'd. |
 
 ---
+
+### X1. Creating a to-do list category always fails — the colour picker sends a semantic name, the API requires a hex code
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `/todo-list` → "New category" dialog (`TodoListCategoryForm.vue`) → `src/_common/component/inputs/ColorPicker.vue` — **[framework]**
+- **Expected:** Filling in a name and submitting the "New category" dialog creates the category, per plain user
+  sense and per this unit's own `usecase.md` ("Create, edit and delete categories").
+- **Actual:** Every submission fails with a **400**, regardless of which colour swatch is picked — including the
+  default "None" swatch, which is selected when the dialog opens. There is no way to create a category through
+  this dialog at all. The dialog also **closes as if the submission succeeded** (per this app's
+  `useDialog()` pattern — confirming the form closes the dialog and hands the request to the caller, which then
+  makes the API call), leaving only a generic, non-specific "One or more errors occurred!" snackbar as the only
+  sign anything went wrong. A user who doesn't notice the snackbar has no way to tell the category wasn't
+  created.
+- **Root cause:** `ColorPicker.vue` (`src/_common/component/inputs/ColorPicker.vue:31`) sets
+  `model = color.name` on swatch click — a semantic key like `"blue"`, `"crimson"`, `"default"` — sourced from
+  `COLOR_PALETTE` (`src/_common/utils/colorPalette.ts`), which only carries per-theme **hex** values
+  (`dark.bg`/`light.bg` etc.), never the swatch's own semantic name, out to the caller. `TodoListCategoryForm.vue`
+  passes that name straight through as `TodoListCategoryRequest.color` with no translation. The backend's
+  validator rejects it: `"errors":{"color":["Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"]}`.
+  This is a framework component (`_common/component/inputs/ColorPicker.vue`) used with an API that expects hex —
+  either `ColorPicker` needs to emit the theme-appropriate hex value instead of the semantic name, or every
+  caller needs to translate `color.name` → hex before sending, which defeats the point of a shared component.
+- **Evidence:** three separate `POST /api/todo-list-category` requests, all **400**:
+  - `{"name":"Mutation Test Category","icon":null,"color":"default"}` → `{"statusCode":400,...,"errors":{"color":["Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"]}}` (default "None" swatch, no interaction)
+  - `{"name":"Mutation Test Category","icon":null,"color":"blue"}` → identical 400 (explicit "Blue" swatch picked)
+  - a third identical attempt, also 400
+  Screenshots: `docs/views/todo-lists/screenshots/todo-list--mutation-category-validation.png` (required-name
+  validation, which does work) and
+  `docs/views/todo-lists/screenshots/todo-list--mutation-category-create-400-no-feedback.png` (the generic
+  failure snackbar, dialog already closed, no new category in the list).
+- **Repro:** 1. Sign in, go to `/todo-list`. 2. Click "New category". 3. Type a name. 4. Click a colour swatch
+  (any of them — "Blue" was used here) or leave the default "None". 5. Click "Add". 6. Console/network shows a
+  400 on `POST /api/todo-list-category`; the dialog closes; a red "One or more errors occurred!" snackbar
+  appears; no new category is in the "Categories" panel.
+- **Verify:** 1. Same repro, any colour choice including the default. 2. **Pass condition:** the request
+  succeeds (2xx) and the new category appears in the "Categories" panel under the name typed. 3. Repeat with at
+  least one non-default swatch to confirm the fix isn't hex-shaped-by-accident for one particular colour.
+- **Suggested fix:** Either change `ColorPicker`'s `model` to the swatch's hex value (`color[currentTheme].bg`,
+  or a theme-independent hex the palette doesn't currently carry) so every caller sends what the API expects, or
+  add a `name → hex` lookup in `TodoListCategoryRequest`'s construction. The former fixes every current and
+  future caller of `ColorPicker` at once; per CLAUDE.md's submodule rules, fix `_common` first, then bump the
+  pointer.
+
+### B7. Deleting a to-do list item never asks for confirmation, even with "Ask before deleting single items" on
+- **Status:** open
+- **Severity:** bug
+- **Where:** `/todo-list/:id` → item overflow menu → Delete → `src/core/todoList/composable/useUndoableListCrud.ts:110` (`deleteItem`), wired from `src/core/todoList/view/TodoListView.vue`
+- **Expected:** Per the user's own preference at `/user/settings` — "Ask before deleting single items", **checked
+  ON** for this account — and per CLAUDE.md's `useDeleteConfirmation` rules ("Reading `askBeforeDelete` directly
+  at a delete site is now a bug"), deleting a single to-do list item should show a confirmation before it
+  happens. List deletes on the same view (`TodoListsView.vue`) and category deletes
+  (`useTodoListCategories.ts`) both correctly import and call `useDeleteConfirmation`'s `shouldConfirm`.
+- **Actual:** Clicking Delete in the item's overflow menu deletes it **immediately** — `DELETE
+  /api/todo-list-item/{id}` fires with no dialog in between — and the only recovery is the "Undo: Delete
+  '<name>'" button that appears afterward. Reproduced twice, once on a done item and once on a not-done item,
+  same result both times.
+- **Root cause:** `useUndoableListCrud.ts`'s `deleteItem()` calls `api.deleteEntity(id)` directly with no
+  `shouldConfirm`/`useDeleteConfirmation` check anywhere in the function — unlike the list and category delete
+  sites, which both import that composable. The undo mechanism is real and does work, but it is not the same
+  contract as the preference: undo requires the user to *notice* the toast and act within its window, while
+  "ask before deleting" is supposed to require the user to *confirm* before the delete happens at all.
+- **Evidence:** `DELETE /api/todo-list-item/14103 => [204]`, no confirmation dialog in the snapshot immediately
+  before or after the click, both on `/todo-list/13102` (a "Bug Fixing" item, done) and again on the same route
+  (a "Code Review" item, not done). `/user/settings` snapshot shows `checkbox "Ask before deleting single
+  items" [checked]` at the time of both repros. Source read of `useUndoableListCrud.ts:110-125` confirms no
+  confirmation call exists in the delete path, versus `TodoListsView.vue:186,190` and
+  `useTodoListCategories.ts:8,15`, which both import and call `useDeleteConfirmation`.
+- **Repro:** 1. Sign in, confirm `/user/settings` → "Ask before deleting single items" is checked. 2. Open any
+  to-do list, e.g. `/todo-list/13001`. 3. Add an item (or use an existing one). 4. Open its overflow menu (⋮) →
+  Delete. 5. **No dialog appears** — the item is gone immediately and an "Undo: Delete '<name>'" button shows up
+  in its place.
+- **Verify:** 1. Same repro, preference still checked. 2. **Pass condition:** a confirmation dialog appears
+  before the item is removed, and cancelling it leaves the item in place with no `DELETE` request sent.
+- **Suggested fix:** Wire `useDeleteConfirmation`'s `shouldConfirm` into `useUndoableListCrud.deleteItem` (or
+  into the call site in `TodoListView.vue`) the same way `TodoListsView.vue` and `useTodoListCategories.ts`
+  already do, gated on the item being a leaf delete (it always is — items have no children).
+
+### B8. "Move to list" always fails with a 404 — the client and server routes have diverged
+- **Status:** open
+- **Severity:** bug
+- **Where:** `/todo-list/:id` → item overflow menu → "Move to list" → `src/core/todoList/api/todoListItemApi.ts:104-112` (`moveToList`)
+- **Expected:** Per this unit's own `usecase.md` ("Moving an item between lists does not delete/recreate it; the
+  item id is preserved") and the dialog's own "Confirm" button, picking a destination list and confirming should
+  move the item there.
+- **Actual:** Every attempt fails with a **404**. The item stays in its original list; the "Move to list" dialog
+  closes with no visible error feedback (same silent-failure UX as X1 — console/network is the only place the
+  failure shows up).
+- **Root cause:** a client/server route mismatch. The client calls
+  `PATCH /api/todo-list-item/move/{id}/{destinationListId}` with **no request body**
+  (`todoListItemApi.ts:106`: `` await API.patch(`${url}/move/${id}/${destinationListId}`) ``). The backend's
+  route is `PATCH /todo-list-item/{id}/move`
+  (`AdhdTimeOrganizer.TodoLists/application/endpoint/todoListItem/command/MoveTodoListItemEndpoint.cs:22`:
+  `` Patch($"/{entityName.Kebaberize()}/{{id:long:required}}/move") ``), and it expects the destination list id
+  in the **request body** as `{"destinationListId": N}`
+  (`MoveToListTodoListItemRequest.cs`), not as a second URL segment. The two sides look like they diverged
+  independently — the path segment order is reversed (`/move/{id}/{dest}` vs `/{id}/move`) *and* the payload
+  shape changed from URL param to body. The backend route otherwise looks complete and tested
+  (`MoveTodoListItemTests.cs` exists in the API repo), so this reads as a frontend call that was never updated
+  after a backend routing change, not a missing backend feature.
+- **Evidence:** `PATCH /api/todo-list-item/move/14105/13002 => [404]`; console:
+  `Error moving todo list item 14105 to list 13002 AxiosError: Request failed with status code 404` at
+  `todoListItemApi.ts:83` via `TodoListView.vue:200` (`moveItemToList`) via `TodoListView.vue:197`
+  (`openMoveToList`). Screenshot:
+  `docs/views/todo-lists/screenshots/todo-list-id--mutation-move-to-list-404.png`. Confirmed the item ("Read a
+  Novel", id 14105) was still present in the source list ("Focus", 13001) after the failed move. Backend source
+  read (not part of this frontend repo, corroboration only) confirms the route and body shape described above.
+- **Repro:** 1. Open any to-do list with at least one item, e.g. `/todo-list/13001`. 2. Open an item's overflow
+  menu → "Move to list". 3. Pick any destination list. 4. Click "Confirm". 5. Console shows a 404 on
+  `PATCH .../todo-list-item/move/{id}/{destId}`; the item is still in the source list after reload.
+- **Verify:** 1. Same repro. 2. **Pass condition:** the request succeeds (2xx), the item disappears from the
+  source list, and reloading the destination list shows it there with the same id.
+- **Suggested fix:** Change `moveToList` in `todoListItemApi.ts` to
+  `` API.patch(`${url}/${id}/move`, { destinationListId }) ``, matching the backend's actual route and body
+  shape.
+
+### A3. The to-do item's done checkbox has no accessible name
+- **Status:** open
+- **Severity:** a11y
+- **Where:** `/todo-list/:id` — the per-item done checkbox in `src/core/todoList/component/BaseTodoListItem.vue`
+  (distinct from the overflow-menu trigger already fixed as A2)
+- **Expected:** Per the same WAI-ARIA standard already applied to A1/A2, an interactive control needs a
+  discoverable name — doubly so for a checkbox with no adjacent visible label text (the item's activity name
+  sits to its right but is not wired as the checkbox's label).
+- **Actual:** `document.querySelectorAll` / `eval` confirms the checkbox element has empty `textContent`, no
+  `aria-label`, and no `aria-labelledby`. A screen-reader user tabbing through the list hears only "checkbox,
+  not checked" with no indication of which task it belongs to.
+- **Evidence:** `eval` on the checkbox ref for the "Bug Fixing" item on `/todo-list/13102`:
+  `{"text":"","aria":null,"ariaLabelledby":null}`.
+- **Repro:** 1. Open any to-do list with at least one single-count (non-multi-count) item, e.g. `/todo-list/1`.
+  2. Inspect the row's checkbox. 3. Confirm no `aria-label`, `aria-labelledby`, or visible text is attached to
+  it.
+- **Verify:** 1. Same repro. 2. **Pass condition:** the checkbox exposes an accessible name that includes the
+  item's activity name (matching A2's pattern, e.g. `` `${t('general.markDone')}: ${item.activity.name}` ``), so
+  every row's checkbox is independently distinguishable in the accessibility tree.
+- **Root cause guess:** same class as A1/A2 — an interactive control shipped without a label. The multi-count
+  counter's two buttons (fixed under B6) already carry qualified names; this is the one remaining unlabelled
+  per-item control.
+- **Suggested fix:** Add `:aria-label="`${t('general.markDone')}: ${toDoListItem.activity.name}`"` (or similar,
+  reusing whichever key is closest to existing "mark done" copy) to the `VCheckboxBtn` in
+  `BaseTodoListItem.vue`.
 
 ### B1. Invalid list id throws an unhandled console exception with no visible error state
 - **Status:** fixed and verified (round 2 / 2a)

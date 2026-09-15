@@ -1,12 +1,13 @@
 # Fix queue
 
-> Built 2026-09-15 · commit `04c405e9` **plus the working tree** (the unit-1 and unit-2 mutation
-> rounds and the unit-11/12 inventories are uncommitted; unit 8's docs landed at `9e36b92f`) · units
-> triaged: `_shell`, `home` (1, inventory + mutation), `todo-lists` (9), `todo-routine` (10),
-> `leisure-projects` (13), `tracking-settings` (6), `activity-settings` (2, inventory + mutation),
-> `history-review` (3), `user-settings` (14), `history-capture` (4), `auth` (15), `planner-day` (7),
+> Built 2026-09-15 · commit `97f1e414` **plus the working tree** (the unit-4, unit-6 and unit-9 mutation
+> rounds and unit 10's round 8 are uncommitted; unit 15's mutation round landed at `04c405e9`) · units
+> triaged: `_shell`, `home` (1, inventory + mutation), `todo-lists` (9, inventory + mutation),
+> `todo-routine` (10), `leisure-projects` (13), `tracking-settings` (6, inventory + mutation),
+> `activity-settings` (2, inventory + mutation), `history-review` (3), `user-settings` (14),
+> `history-capture` (4, inventory + mutation), `auth` (15, inventory + mutation), `planner-day` (7),
 > `tracking-dashboards` (5), `planner-templates` (8), `leisure-backlog-picker` (11),
-> `leisure-bucket-anchors` (12) · findings considered: 163 · batches: 83
+> `leisure-bucket-anchors` (12) · findings considered: 177 · batches: 91
 
 > Closed batches, closed verification items, the per-pass narrative and the *Contradictions & re-grades* audit
 > trail live in [`_fix-queue-log.md`](_fix-queue-log.md). This file holds only open work.
@@ -26,8 +27,8 @@
 | F9 | `homeUiStore` never persists, and CLAUDE.md says the opposite of what the plugin does | app + docs | `home/B3` | low |
 | F10 | No skip-to-content link | app | `_shell/A3` | low |
 | F11 | ✅ **FIXED 2026-09-13** — Breadcrumb does not distinguish `/todo-list/:id` from `/todo-list` | app | `_shell/P1` | low |
-| F12 | Mappings table body has zero height — the row exists but is inside a 0 px scroll box | app | `tracking-settings/X1` | low |
-| F13 | Mappings tab: no filter control reaches the grid, and the delete button reaches nothing | app | `tracking-settings/B1` (+ wires `U1`) | med |
+| F12 | Mappings table body has zero height — the row exists but is inside a 0 px scroll box (**round 2 re-confirmed**, plus a `focus()` + Enter path that works — consistent with the scroll-box cause, not with a paint bug) | app | `tracking-settings/X1` | low |
+| F13 | Mappings tab: no filter control reaches the grid, and the delete button reaches nothing (**grown**: the dead delete is now `X4`, observed on both platforms; the raw-id confirmation `B7` is one `deleteConfirmationColumn` attribute on the same tag) | app | `tracking-settings/B1`, **`X4`**, **`B7`** (+ `U1`, now confirmed) | med |
 | F14 | Tabbed routes get the wrong breadcrumb (and sidebar highlight) because the nav `to` is one tab's literal path | app | `tracking-settings/B2`, `activity-settings/B6` | low |
 | F15 | Distinct-entries filter, page and sort are not in the URL | app | `tracking-settings/B3` | med |
 | F16 | Settings header row clips its labels at 1440 px | app | `tracking-settings/B4` | low |
@@ -80,6 +81,12 @@
 | F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented | app (`useLeisurePicker.ts:250`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/X2`, `P2` | low |
 | F65 | Leisure's view-mode toggles, the timeline's year controls and the source/experienced chips carry a localized `:title` and no `aria-label` | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
+| F67 | A session that rounds to zero minutes is handled three different ways by the three capture views, and none of them tells the user: Pomodoro offers *"done for ?"* and writes a `{0,0}` row (201), Timer discards silently, Stopwatch does what Pomodoro does under 30 s (unfiled, source-certain) — one policy, applied in one place, before the save dialog | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low-med (decision: discard-with-message vs. save seconds) |
+| F68 | The manual-entry form fires one `POST` per click while the first is in flight, and never resets — so a second click is a `409` from the unique index, and so is *every* re-submit of an unchanged form after a success | app (`AddActivityManuallyView.vue`, `AddActivityManuallyForm.vue`) | `history-capture/B6` (was `U1`) | low |
+| F69 | Deleting a to-do item never confirms, whatever `askBeforeDelete` says — `useUndoableListCrud.deleteItem` was never one of P3's five sites and bypasses `useDeleteConfirmation`; the routine list shares the composable | app (`src/core/todoList/composable/useUndoableListCrud.ts` + its two views) + CLAUDE.md row | `todo-lists/B7` (+ the unfiled routine twin) | low |
+| F70 | *Move to list* has 404'd since the day it was written — the client calls `PATCH /move/{id}/{dest}` against a server route that has been `PATCH /{id}/move` + `{ destinationListId }` since 2026-05-15 | app (`todoListItemApi.ts:104-112`) | `todo-lists/B8` | trivial |
+| F71 | The to-do item's done checkbox has no accessible name — nor do the step checkboxes one level down (unfiled); both views, since `BaseTodoListItem` is shared | app (`BaseTodoListItem.vue:19`, `BaseTodoListItemSteps.vue:39`) | `todo-lists/A3` (+ one unfiled) | trivial |
+| F72 | `useMappingSettings.saved()` sends three of the form's five facts: *To ignored* never reaches the wire (`isIgnored` stays `null` → 400 on every ignored save), `isActive` is never sent (→ the update DTO's `required` 400 on every edit), nothing validates before the request, and the view's own `catch` overwrites the interceptor's snackbar with a generic string | app (`useMappingSettings.ts`, the two `Tracker*MappingRequest.ts`, the two views' `edit()`, the two action bars) | `tracking-settings/X2`, `X3`, `B6` | med |
 | FW1 | `MyDialog` is `persistent` by default, so Escape closes nothing | **framework** | `_shell/A1` | med (decision first) |
 | FW2 | **Six** framework icon-only controls have no accessible name (**grown**: `MonthYearPicker`'s prev/next month, `MyDateInput`'s prev/next day) | **framework** | `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled in `MyDateInput`) | low |
 | FW3 | ✅ **CLOSED 2026-09-13** — `Time.fromJson` cannot parse the backend's string shape (the API had already switched to `{hours, minutes}` on 2026-09-11; `fromJson` now accepts both) | **framework** | `todo-lists/B4` | med |
@@ -88,22 +95,32 @@
 | FW6 | `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
 | FW7 | Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
 | FW8 | Six elevated buttons in the framework's user module use the tonal/outlined colour tokens (`error`/`warning`), and the pairing rule is written only in this app's CLAUDE.md | **framework** | `user-settings/P1` (+ the three on unit 15's signed-out views — pre-empted, and the unit did not re-file them) | trivial |
-| FW9 | The forgotten-password flow cannot complete at either step: the request omits the `required` `recaptchaToken` (400 today), and the link the server would mail points at `/reset-password`, **a route and view that exist in no repo on this side** — plus a dead 404 branch the server never takes, a hardcoded snackbar and a `TypeError` on network failure | **framework** (new view + route) | `auth/X1`, `auth/B3` | med |
+| FW9 | The forgotten-password flow cannot complete at either step: ~~the request omits the `required` `recaptchaToken` (400 today)~~ **✅ token half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X1` verified fixed in round 3, 204 for a real and a nonexistent address), and the link the server would mail points at `/reset-password`, **a route and view that exist in no repo on this side** — plus a dead 404 branch the server never takes, a hardcoded snackbar and a `TypeError` on network failure | **framework** (new view + route) | ~~`auth/X1`~~ (fixed), `auth/B3` | med |
 | FW11 | Post-login redirect, read half: `LoginView`'s two success handlers and `LoginVerifyQrCode` hardcode `router.push('/')`, so the `?redirect=` the interceptor already writes (and `F39` will) is never honoured — with an open-redirect guard; folds `P3`'s `console.log(valid)` and the `'No user!!!'` literal, same file | **framework** | `auth/B1` (read half), `auth/P3` | low |
-| FW12 | Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId`, and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
-| FW13 | `RegistrationView` fails closed on an empty reCAPTCHA token while the API's local always-pass service assumes the client fails open — the one thing making local registration impossible; its `catch` also overwrites the server's `409 "User already exists"` with *"changed by someone else"*; folds `P1`'s legal links (`target="_blank"`), same file | **framework** | `auth/O1` (re-graded `bug`), `auth/P1` (+ unblocks `U1`, `U5`, half of `U2`) | low |
+| FW12 | Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar — **the unit's round 2 re-drove it and now says the same**); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId` (**observed in round 2** — it answers 401 and trips `FW21`), and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
+| FW13 | ~~`RegistrationView` fails closed on an empty reCAPTCHA token~~ **✅ guard half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X2` verified fixed in round 3, a real account created through the UI); what is left: its `catch` overwrites the server's `409 "User already exists"` with *"changed by someone else"* (the round-3 duplicate submit **did** answer 409), and `P1`'s legal links (`target="_blank"`), same file | **framework** | ~~`auth/O1`/`X2`~~ (fixed), `auth/P1` | low |
+| FW14 | Registration's 2FA recovery codes are received and discarded — `open2FADialog(response.data.qrCode)` passes the QR only and `QrCodeFor2FABody` has no prop to take them; the settings-side enrolment already shows them through `RecoveryCodesBody` | **framework** (`RegistrationView.vue:118-129,149-158`) | `auth/B8` (was `U1`, now browser-observed) | low |
 | FW15 | `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
 | FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
 | FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
 | FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B1` (+ one unfiled column on `/leisure/bucket-list`) | med (decision: word-boundary match vs. opt-in) |
+| FW21 | The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
 
-65 app-side (`F9`, `F17`, `F19`, `F23` and `F35` include CLAUDE.md or runbook edits; `F17` and `F23` are
-nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 18 framework
-(`FW10` and `FW14` are reserved numbers, not batches — see *Needs verification*) · 13 escalations (9 open:
-§1, §6, §7, §8, §9, §10, §11, §12, §13 — §2 and §3 were settled by `todo-routine`'s round-4 API read and
-are struck below). Units 11 and 12 between them added two framework batches and **three escalations** —
+71 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
+`F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 20
+framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` is now a batch) ·
+15 escalations (11 open: §1, §6, §7, §8, §9, §10, §11, §12, §13, §14, §15 — §2 and §3 were settled by
+`todo-routine`'s round-4 API read and are struck below). **The fourteenth pass absorbed four mutation
+rounds** — units 4, 6 and 9 from the working tree, and unit 15's from `04c405e9`, which the thirteenth pass
+had scoped past: fourteen new findings became six app batches (`F67`–`F72`), two framework batches
+(`FW14`, `FW21`) and two escalations (§14, §15), and **two framework batches shrank by half without the
+queue noticing** — `FW9`'s token and `FW13`'s fail-closed guard both landed in `vue_framework` `6157283`
+and were verified in unit 15's round 3. Every one of the seven new `blocker`s was read against source and
+the API's: three are the same function (`useMappingSettings.saved()`, `F72`), one is `F13`'s dead delete
+seen live (`X4`), one is the fourth observation of §11's colour validator (`todo-lists/X1`), and two are
+already fixed. Units 11 and 12 between them added two framework batches and **three escalations** —
 the most of any pass since unit 14 — and every one of the three is a client/server contract gap the
 browser could only see the edge of: a validator that rejects the palette names the server's own seeder
 writes (§11), an endpoint the client was told exists and which no file in the API declares (§12), and
@@ -123,6 +140,22 @@ framework batch and no escalation: its blocker splits across the boundary the wa
 (`FW18` is the helper, `F50` is the dialog), and its one apparent backend question — whether
 *Suggested for day type* should be optional — is settled from the API source as **no**: the column is
 non-nullable and indexed, the request field is `required`, and `/suggestions` is built on it (`F53`).
+
+**Order among the fourteenth-pass batches.** `F70` first and alone — one line, and it un-breaks a
+feature that has been dead since the day it was written. `F72` before `F13`'s verification: the mappings
+table cannot be *edited* into a verifiable state until the update request carries `isActive`, and `F13`'s
+delete retest wants a row this pass can create-and-delete rather than a seeded one. **Read `F72` whole
+before touching `saved()`** — the finding's "always send `true`" would silently re-activate every inactive
+rule on edit, because the server's update is a full PUT replace. `F69` before unit 9's next round and
+before the routine list is retested: both views share the composable, so one edit changes two screens.
+`F67` needs a **decision** (discard with a message, or save the seconds) before an edit, and the decision
+must be made once for three views — do not fix Pomodoro to match Timer and leave Stopwatch; `F68` is
+independent of it and one file. `F71` is attributes only and can ride with any `todoList` commit.
+`FW14` is six lines that already exist one file over (`SecuritySection.vue:261-281`) and needs a
+throwaway registration to verify — reseed after. `FW21` is an allowlist edit; land it with `FW12`, whose
+`userId` guard removes the only trigger anyone has observed. `FW9` and `FW13` are **smaller than their
+bodies say** — read the ✅ line at the top of each before starting; what remains of `FW13` is the `catch`
+and two `target="_blank"`s.
 
 **Order among the unit-11/12 batches.** `F61` first — two constants, and until they change neither
 the ladder nor the timeline renders anything, so nothing else on those two views can be verified; it is
@@ -601,9 +634,19 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   fill-parent contract that seventeen other tables rely on; making the body self-sizing would silently
   remove sticky headers app-wide. What *is* wrong at the framework level is that the contract is
   **undocumented** — that is `FW4`, and it is a docs commit, not a code change.
+- **Round 2 (fourteenth pass) — re-confirmed on a seeded and a freshly created row, and a keyboard path
+  works.** The unit found that `el.focus()` on the row's `edit`/`delete` button followed by a real Enter
+  activates it (four times, both actions, both platforms) and reads that as *"consistent with a
+  stacking/paint bug"*. It is consistent with **this** batch's cause and not with that one: `focus()`
+  scrolls the focused element into view *inside its nearest scrollable ancestor* — the 0 px
+  `.v-table__wrapper` — and Enter dispatches a click on the focused element without hit-testing, so both
+  halves skip exactly the coordinate test that the pointer fails. A paint-order bug would not respond to
+  `focus()` at all. Nothing changes in *What to change*; the amendment is recorded so the next reader does
+  not reopen the framework hypothesis (§101).
 - **Verification:** `tracking-settings/X1`'s `Verify:` block on both routes — the row paints in a screenshot,
   and a **normal, non-forced** click on its `edit` button navigates to the `distinctEntries` tab with the
   form populated. Add: `document.elementFromPoint()` at the button's rect centre resolves to the button.
+  Add: `Tab` from the filter row reaches the row's buttons (the unit only tried a programmatic `focus()`).
 - **Risk:** None beyond layout. The unit's own remark that the Android `VCardText` lacks the app's `flex-fill`
   class is a red herring — Vuetify's `.v-card-text` is `flex: 1 1 auto` by default (`VCard.css:249-250`), so
   both views' card bodies already fill; the omission is one level lower.
@@ -612,8 +655,11 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 - **Scope:** app-side `src/core/activityTracking/view/DesktopSettingsView.vue`,
   `src/core/activityTracking/view/AndroidSettingsView.vue`, and the two `*MappingsTable.vue` components
-- **Closes:** `tracking-settings/B1`. **Also wires `tracking-settings/U1`** (see below), which stays listed
-  under *Needs verification* until `F12` makes its button clickable.
+- **Closes:** `tracking-settings/B1`, **`X4`** (fourteenth pass — the dead delete, now **observed** on both
+  platforms through `F12`'s keyboard path: Confirm closes the dialog, no request fires, the row stays),
+  **`B7`** (the confirmation names the raw id — `"Are you sure you want to delete 21003?"` — because neither
+  table passes `deleteConfirmationColumn`; one attribute on the same `<BasicTable>` tag this batch edits,
+  the `activity-settings/B8`/`F19` shape). `U1` is confirmed by `X4` and closed (see the log).
 - **Root cause — three dead paths, not the two the finding names.** Confirmed in source:
   1. `DesktopSettingsView.vue:32-35` renders `DesktopEntriesFilterBar` unconditionally and its `@filter`
      handler is `distinctEntriesTable?.load()`. On the Mappings tab that ref is `null` (the component is
@@ -646,16 +692,27 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   other eight `@onDelete` consumers do (`RoutineSettingsView.vue:163-179` is the model, including its
   409 handling). Do **not** add a second confirmation through `useDeleteConfirmation` — `BasicTable` has
   already confirmed by the time `onDelete` fires, and Escalation §2 records that this bypass of the app's
-  cascade rule is a framework question, not one to paper over per call site. **Expect the dialog to stay
-  open after the row is gone** — see *Needs verification*, "the `BasicTable` delete dialog never closes":
-  that is a framework defect this batch will be the first to observe, not something to work around here.
+  cascade rule is a framework question, not one to paper over per call site. ~~**Expect the dialog to stay
+  open after the row is gone**~~ — that framework defect was fixed in `vue_framework` `98b92d0` (log,
+  *Closed verification items*), and `X4` confirms it from this side: Confirm closes the dialog on both
+  platforms today, with a dead handler behind it. **Same tag, one more attribute:**
+  `deleteConfirmationColumn="processName"` on the desktop table and `"appLabel"` on the Android one
+  (`BasicTable.vue:208` resolves it through `getNestedValue`, so a dotted path works if a target label is
+  wanted instead), so the dialog names the rule and not its id (`B7`). A rule whose only pattern is a
+  product name or window title would read blank — pick the column per platform that the seeder and the
+  form both always fill, or compose a label in a computed and expose it as a hidden column.
 - **Do not change:** `BasicTable`'s `hasDelete = true` default — removing the button instead of wiring it
-  would close `U1` by deletion, and the usecase names delete as this view's purpose.
+  would close `U1` by deletion, and the usecase names delete as this view's purpose. Do not fix `B7` in
+  `BasicTable` — the raw-id fallback when no column is passed is a per-call-site omission (two tables
+  here, two in `F19`), not a framework default worth changing under rule 4.
 - **Verification:** `tracking-settings/B1`'s `Verify:` block on both routes — a `POST
   …/tracker-desktop-mapping-by-pattern/grid` (android equivalent) fires with the updated filter and the count
   changes. Add the third path explicitly: pick an Activity in the picker and confirm the request body carries
   its id; type a process name and click Filter on the *Mappings* tab and confirm the body carries the
-  pattern. Then run `U1`'s *What would verify it* step.
+  pattern. Then `X4`'s `Verify:` block — Confirm fires `DELETE …/tracker-desktop-mapping-by-pattern/{id}`
+  → 2xx and the row is gone after the re-fetch — and `B7`'s: the dialog names the pattern. **Create the
+  row you delete through the API first** (CLAUDE.md *Mutating specs* rule 1): the seeded mappings are
+  what unit 6's inventory describes, and `F72`'s create path is the other thing this session can prove.
 - **Risk:** Medium — this is the view's only search and its only delete, and the filter object is shared
   with the create form (`useMappingSettings.ts:33,40`), so a pattern typed to search the Mappings tab is
   also the pattern the next *Save* would write. That is the existing distinct-entries behaviour and is
@@ -1538,8 +1595,10 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Do not change:** `TimerPresetDialog.vue` — its delete path is fine for this batch. (Adjacent, not
   filed, not for this batch: `:129` confirms through `useDialog().confirm()` unconditionally rather than
   `useDeleteConfirmation`, so a user with `askBeforeDelete = false` is still asked — CLAUDE.md's
-  preference-ownership table lists five delete sites and this is a sixth. Unit 4's mutation pass will
-  exercise it; let it file it.) Do not add a `closable` prop with a handler — that keeps the button and
+  preference-ownership table lists five delete sites and this is a sixth. Unit 4's mutation pass did
+  **not** exercise it — it skipped `B3`'s surface as unchanged — so it stays source-only; `F69` is the
+  same class in `todoList`, observed, and fixes its site the way this one should be fixed when touched.)
+  Do not add a `closable` prop with a handler — that keeps the button and
   its "Close" name for a control that does not close anything.
 - **Verification:** `history-capture/B3`'s `Verify:` block, first pass condition: outside edit mode,
   `document.querySelectorAll('.v-chip__close').length === 0` on `/activity-history/timer`, and Tab from
@@ -2574,6 +2633,243 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `/leisure/backlog` and `/leisure/projects`.
 - **Risk:** None.
 
+## F67. A session that rounds to zero minutes is handled three ways by three views — and none of them tells the user
+
+- **Scope:** app-side `src/core/activityHistory/component/PomodoroTimerView.vue:255-281`,
+  `src/core/activityHistory/view/TimerView.vue:204-224`, `src/core/activityHistory/view/StopWatchView.vue:172-201`,
+  `src/core/activityHistory/_locales/activityHistory.{sk,en}.ts`
+- **Closes:** `history-capture/B4`, `history-capture/B5`, and the **unfiled stopwatch twin** (below)
+- **Root cause — confirmed in source, and it is one gap seen from three sides.** Every capture view ends
+  in a `finishSession()` that turns elapsed time into a `Time` (whole minutes) and hands it to
+  `SaveActivityBody`, and each one answers "what if that is zero?" differently:
+  | view | how it rounds | under a minute |
+  | --- | --- | --- |
+  | Timer (`:216-219`) | `initialTime − remaining.toTimeLength` — `TimePrecise.toTimeLength` rounds seconds to the nearest minute, so a 10-minute timer stopped at 0:15 is `10 − 10 = 0`, at 0:45 it is `1` | `if (length.getInMinutes <= 0) { store.clearSession(); return }` — **discarded, nothing shown** (`B5`) |
+  | Pomodoro (`:260`) | `Time.fromSeconds(floor(ms/1000))` — **floors**, so anything under 60 s is `0` | **no guard** → `SaveActivityBody` renders `activities.confirmSaveActivity` with `timeSpent.getNice`, which is `"" + ' ' + ""` for `{0,0}` (`Time.ts:40-42`) → *"done for ?"*; Confirm → `POST /api/activity-history` `{"length":{"hours":0,"minutes":0}}` → **201** (`B4`) |
+  | Stopwatch (`:177`) | `TimePrecise.fromSeconds(...).toTimeLength` — rounds, so 0–29 s is `0`, 30–59 s is `1` | **no guard** — under 30 s it is `B4` exactly, one view over; source-certain, the unit did not stop a stopwatch that fast |
+  The manual form, for contrast, refuses `!timeLength.isNotZero()` before it asks the server
+  (`AddActivityManuallyForm.vue:70`). So the account can already hold zero-length rows from two of the
+  four capture flows, and the server will take them: `ActivityHistoryValidator` is `Length.TotalSeconds
+  >= 0`, not `> 0` (§15). The unit's own root-cause line is right — *"nobody wrote down what should
+  happen when a session ends before it produces a whole minute"* — and that is why this is one batch and
+  not two: fixing Pomodoro to match Timer ships a silent discard to a second view, and fixing Timer to
+  match Pomodoro ships the malformed prompt to a second view.
+- **Files:** the three `finishSession()`s above; `SaveActivityBody.vue:3` only if the seconds option is
+  taken; `src/_common/dto/dto/Time.ts:40-42` is **not** in scope (below)
+- **What to change:** Decide once, then apply the same branch in all three views **before**
+  `openDialog(SaveActivityBody)`. Two honest options: **(a) discard with a message** — when the rounded
+  length is zero, `store.clearSession()` and `showSnackbar(t('history.sessionTooShortToLog'))` (new key,
+  both locales, worded as information rather than an error — the timer's *"please set a duration"* is not
+  it); **(b) keep the seconds** — build the length with `Math.ceil` of the seconds instead of a floor or a
+  round, so the shortest recordable session is one minute, and let the dialog show it. (a) matches
+  `runningTimerStore.ts`'s own rule 2 (*"never fabricate time the user did not spend"*), which (b) mildly
+  breaks for a 5-second session; (a) is the recommendation. Either way the three views must agree, and
+  the rounding helpers (`toTimeLength` vs `Time.fromSeconds`) should be unified in the same commit so the
+  30-second cliff is the same on every view. Keep the manual form's own guard as it is — it is the
+  fourth view already doing (a) without the message.
+- **Do not change:** `Time.getNice` in `src/_common` — hardening it to say *"0m"* would make the prompt
+  *read* sensibly while the view still writes a zero row, i.e. it fixes the symptom the finding
+  photographed and not the one it filed. It is a framework line with eleven consumers (grep `.getNice`),
+  and a fix here should make it unreachable with a zero rather than teach it to render one. If it is
+  hardened anyway, that is a separate `vue_framework` commit, not this batch. Not `TimerView`'s
+  `activityId` embedded path (`:220-224`) — an embedder gets the numbers and decides for itself.
+- **Verification:** `B4`'s `Verify:` block (Pomodoro: Start → Stop inside a second → **no** *"done for
+  ?"* dialog, and no `POST` with `{0,0}`); `B5`'s (Timer: Start → Stop under a minute → the user is told;
+  `requests` shows `timer-alarm/cancel` and nothing else); then the stopwatch at ~10 s, which must behave
+  like whichever of (a)/(b) was chosen and not like today's Pomodoro; then a **45-second** timer and a
+  **45-second** stopwatch, which today save one minute — confirm the chosen rule is consistent (under (a)
+  they still save one minute; under (b) too). Both locales for the new key. Reseed after: (b) writes rows.
+- **Risk:** Low. Three small branches; the only judgement is (a) vs (b), and the wrong one is still
+  better than the current three.
+
+## F68. The manual-entry form fires one `POST` per click and never resets — the second click, and every re-submit after a success, is a `409`
+
+- **Scope:** app-side `src/core/activityHistory/view/AddActivityManuallyView.vue:17-23,36-38`,
+  `src/core/activityHistory/component/AddActivityManuallyForm.vue:53-82`
+- **Closes:** `history-capture/B6` (round 1's `U1`, now observed — and the queue's §53 split of it, both
+  halves, is settled below)
+- **Root cause — confirmed, and the reset half is no longer taste.** `handleSave()` is
+  `await formRef.value?.saveActivity()` with no re-entry flag; `saveActivity()` sets nothing while
+  `await saveActivityToHistory(…)` is pending; the button has no `:loading`/`:disabled`. Two clicks inside
+  the round trip are two `create` calls with the **same** `activityId` and `startTimestamp`, and the
+  server's unique index `(UserId, ActivityId, StartTimestamp)` (`ActivityHistoryConfiguration.cs`) turns
+  the second into a **409** — the mechanism the unit guessed and could not verify; confirmed at the
+  source. What the finding did not draw out: `dateTime` is set once at mount (`Form.vue:53`, `new Date()`)
+  and nothing resets it after a success, so a user who records a span and clicks *Record* again —
+  the same activity, the same "when" — gets the same 409, surfaced as `history.errorSavingToHistory`
+  (*"error saving"*) for a save that is not an error but a duplicate. That is why the reset half moves
+  from "unsourced" (§53) to required: without it the form's second use is always a failure. Which fields
+  reset is still the judgement §53 named — a user logging several spans of one activity plausibly wants
+  the activity kept — but *"when"* must advance (to now, or to the end of the span just saved), or the
+  index refuses.
+- **Files:** `AddActivityManuallyView.vue` (a `saving` ref, `:loading="saving"` on the button, `@saved`
+  bound); `AddActivityManuallyForm.vue` (a `reset()` in `defineExpose`, or reset inside `saveActivity()`
+  after `emit('saved')`)
+- **What to change:** Gate `handleSave` on a `saving` ref set around the `await` (the
+  `TimerPresetDialog` confirm shape), bind it to the button's `loading`. Then the reset: on `saved`, set
+  `dateTime` to `new Date()` (or to `dateTime + timeLength`, which is the more useful default for
+  back-to-back logging — pick one and say why in the code) and clear `timeLength`; keep the activity
+  selection. The success snackbar (`history.addedToHistory`) already fires; nothing else is needed to
+  "make it obvious the save happened".
+- **Do not change:** the server's index — a duplicate `(activity, start)` *is* a duplicate; the 409 is
+  right. Not `useSaveActivityToHistory` — its snackbar pair is shared with the three timer views.
+- **Verification:** `B6`'s `Verify:` block — `dblclick` on *Record activity to history* produces **one**
+  `POST /api/activity-history` (`playwright-cli requests`), no 409, no console `AxiosError`; then a
+  single save followed by a second *Record* → a second 201 with a different `startTimestamp`, not a 409.
+  Reseed after.
+- **Risk:** None.
+
+## F69. Deleting a to-do item never confirms, whatever `askBeforeDelete` says — the item delete was never one of P3's five sites
+
+- **Scope:** app-side `src/core/todoList/composable/useUndoableListCrud.ts:110-125`, its two consumers
+  (`TodoListView.vue`, `RoutineToDoListView.vue`), and one row in CLAUDE.md's *sanctioned cross-module
+  imports* table
+- **Closes:** `todo-lists/B7` (+ the **unfiled routine twin** — `RoutineToDoListView` drives the same
+  composable, so its item delete has the same gap; unit 10 ran seven rounds and never filed it because
+  its deletes were of periods, not items)
+- **Root cause:** Confirmed. `deleteItem()` is `await api.deleteEntity(id)` then `pushDeleteUndo(…)`,
+  with no `shouldConfirm` anywhere in the file (grep: `useDeleteConfirmation` has six importers in
+  `src/core`, none in `todoList/composable/useUndoableListCrud.ts`). `prompts/_done/user/P3-delete-confirmation-granularity.md`
+  listed **five** delete sites, and the item delete was not among them — it was already an undo-only path
+  through `useTodoListUndo` before P3 ran, so P3 never touched it. But P3's own rule covers it exactly:
+  *"a delete that is a LEAF and is UNDOABLE honors the preference, and when the preference says 'don't
+  ask', shows an undo affordance instead of a dialog"* — and `useDeleteConfirmation.resolveDelete()`
+  encodes that (`askBeforeDelete` → `'confirm'` before it ever looks at `undoable`). With the preference
+  **on** (the seed's default, the unit's screenshot), the item delete is the one site in the app that
+  ignores it; with it off, the undo it already shows is the correct answer. So this is not "add a dialog"
+  — it is "route the sixth site through the composable that already decides".
+- **Files:** `useUndoableListCrud.ts:110` (or the two call sites, if the composable is to stay
+  preference-free — it is `todoList`'s own, so importing `core/user`'s composable there is the sanctioned
+  exception, same as `TodoListsView.vue:186`); `CLAUDE.md` — the `useDeleteConfirmation` row says "the
+  five delete sites in `todoList`, `dayPlanner`, `historyDashboard`"; `F19` adds `activity`, this adds a
+  sixth `todoList` site; rewrite the count once, not twice.
+- **What to change:** Before `api.deleteEntity(id)`: `if (shouldConfirm({ cascades: false, undoable:
+  true })) { const ok = await confirm({ title: …, text: t('toDoList.deleteItemConfirm', { name }) }); if
+  (!ok) return }` — `useDialog().confirm()`, the shape `TodoListsView.vue:186-190` already uses for the
+  list delete. `cascades: false` is right (items have no children; steps are a JSON column, not rows —
+  confirm against `TodoListItemConfiguration.cs` before asserting it in a comment). Keep the undo entry
+  either way — P3's *undoable* branch is what makes the "don't ask" case safe.
+- **Do not change:** `useDeleteConfirmation` itself; the list and category sites (correct); the undo stack.
+  Do not read `askBeforeDelete` directly — CLAUDE.md names that as the bug.
+- **Verification:** `B7`'s `Verify:` block with the preference **on**: ⋮ → *Delete* → a dialog; Cancel →
+  no `DELETE`, item still there; Confirm → `DELETE …/todo-list-item/{id}` 204 and the undo button. Then
+  the preference **off**: no dialog, immediate delete, undo button — unchanged from today. Then
+  `/routine-todo-list`, same two checks (create a throwaway routine item through the API first). Both
+  locales for the new key.
+- **Risk:** Low. One branch in a composable two views share — that is the point, and the risk: test both.
+
+## F70. *Move to list* has 404'd since the day it was written — the client calls a route the server replaced the day before
+
+- **Scope:** app-side `src/core/todoList/api/todoListItemApi.ts:104-112`
+- **Closes:** `todo-lists/B8`
+- **Root cause:** Confirmed on both sides, with dates. The client sends
+  ``API.patch(`${url}/move/${id}/${destinationListId}`)`` with no body (`:106`). The server's only move
+  route is `Patch("/todo-list-item/{id:long:required}/move")` taking `MoveToListTodoListItemRequest
+  { required long DestinationListId }` in the body (`MoveTodoListItemEndpoint.cs:22`,
+  `MoveToListTodoListItemRequest.cs`), with an IDOR guard that answers **404** for a destination the
+  caller cannot see — and `/move/14105/13002` matches nothing at all, which is the 404 the unit saw. The
+  unit's guess (*"a frontend call that was never updated after a backend routing change"*) has the order
+  backwards: the server moved to `/{id}/move` + body on **2026-05-15** (`0517bb3`, which deleted the old
+  `MoveToListTodoListItemEndpoint`), and the client's line was written on **2026-05-16** (`1a2e0284`) —
+  against the endpoint that had been deleted the day before. Four months, no caller ever succeeded, and
+  no spec covers it (`todo-lists.spec.ts` has no move test) — §100.
+- **What to change:** ``API.patch(`${url}/${id}/move`, { destinationListId })``. One line. While there:
+  the dialog closes before the call (`TodoListView.vue:197-200`), so a real 404 — a list the user cannot
+  see — loses the pick; that is the close-then-call shape `F53`(c) flagged and `todo-routine/B11` fixed
+  for time periods, not this batch's to redesign, but say in the commit that the pattern is known.
+- **Do not change:** the server route or the guard's 404 — a stranger's list id staying unconfirmable is
+  the point of it.
+- **Verification:** `B8`'s `Verify:` block — pick a destination, Confirm → `PATCH …/todo-list-item/14105/move`
+  → 204, the item leaves *Focus* and appears in *Errands* under the same id after a reload. Then
+  `secondaryUser`'s list id as the destination (read it off `seed.json`) → 404, item unmoved. Add the
+  move to `todo-lists.spec.ts` — a route contract with no test is how this stayed broken. Reseed after.
+- **Risk:** None.
+
+## F71. The to-do item's done checkbox has no accessible name — nor do the step checkboxes under it
+
+- **Scope:** app-side `src/core/todoList/component/BaseTodoListItem.vue:19-28`,
+  `src/core/todoList/component/BaseTodoListItemSteps.vue:39-47`, `src/core/todoList/_locales/toDoList.{sk,en}.ts`
+- **Closes:** `todo-lists/A3` (+ the **unfiled** step checkboxes — same markup one level down, found
+  reading the file; `DraggedItemPreview.vue:15`'s copy is `disabled` and decorative, leave it)
+- **Root cause:** Confirmed. `VCheckboxBtn` at `:19` carries `v-model`, colours, `:disabled` and
+  `@click.prevent.stop`, and no `label`, `aria-label` or `aria-labelledby`; the activity name beside it
+  is a sibling `div`, not a label. Same for each step's `VCheckboxBtn` (`Steps.vue:39`). Every other
+  per-item control in this component was named in rounds 2–5 (`A1`, `A2`, `B6`); this is the last one,
+  and it is the one a keyboard user reaches first. `BaseTodoListItem` is the routine list's base too, so
+  the fix lands on both views.
+- **What to change:** `:aria-label="t('toDoList.markDone', { name: toDoListItem.activity.name })"` on
+  the item checkbox and `t('toDoList.markStepDone', { name: step.text })` on each step's — new keys in
+  `toDoList.{sk,en}.ts` (`home.markDone` exists with the same shape, `home.en.ts:15`, but it is another
+  module's key; mint the pair here rather than import across the boundary). `aria-checked` is
+  Vuetify's; nothing else.
+- **Do not change:** the `@click.prevent.stop` handlers (`B3`'s fix); `DayPlannerWidget`'s checkbox
+  (`F59`'s, already labelled).
+- **Verification:** `A3`'s `Verify:` block — `getByRole('checkbox', { name: /Bug Fixing/ })` resolves on
+  `/todo-list/13001`; then expand an item with steps and `getByRole('checkbox', { name: /<step text>/ })`;
+  then `/routine-todo-list` once. Both locales.
+- **Risk:** None — attributes only.
+
+## F72. `useMappingSettings.saved()` sends three of the form's five facts — *To ignored* never reaches the wire, `isActive` is never sent, nothing validates, and the view's own `catch` overwrites the server's message
+
+- **Scope:** app-side `src/core/activityTracking/composable/useMappingSettings.ts:39-54`,
+  `src/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts:12-13`,
+  `…/android/settings/TrackerAndroidMappingRequest.ts:10-11`, `DesktopSettingsView.vue`'s and
+  `AndroidSettingsView.vue`'s `edit()`, the two `*DistinctEntriesActions.vue` bars
+- **Closes:** `tracking-settings/X2`, `X3`, `B6`
+- **Root cause — three defects in one function, confirmed against both sides' source:**
+  1. **`X2` — mode never reaches the request.** `saved()` (`:39-43`) copies `activityId`/`roleId`/
+     `categoryId` from `formData` and never reads `mode`; `request.isIgnored` is never written anywhere in
+     the file, so it stays the constructor's `null`. The server's `AddMappingTargetRules()` requires
+     exactly one target (`IsIgnored = true`, or `ActivityId`, or `RoleId`/`CategoryId`) and answers the
+     400 the unit quoted. *To ignored* has never worked from the UI, on either platform. `edit()` on an
+     ignored row (`else { mode.value = 'toIgnored' }`) lands in the same dead path.
+  2. **`X3` — `isActive` is never sent, and it is `required` on update.** Both request classes declare
+     `isActive?: boolean` with no default and no writer; `JSON.stringify` drops the key.
+     `CreateTrackerDesktopMappingRequest.cs` defaults `IsActive = true`, so create works;
+     `UpdateTrackerDesktopMappingRequest.cs` is `required bool IsActive` (since `ae70138`, 2026-08-12,
+     CQ-10) and its `UpdateEntity` is a **full replace** — its own remark says so. Every edit-save on
+     either platform is the serializer 400 the unit quoted. **The finding's suggested shortcut is
+     wrong:** *"always send the current toggle state (defaulting `true` for a new row)"* would re-activate
+     every inactive rule the moment it is edited, because there is no toggle — `O1` is that there is no
+     control for `isActive` anywhere. `edit()` must copy the row's `isActive` (the grid response carries
+     it, `TrackerDesktopMappingResponse.ts:13`) into the request, and a new row sends `true`.
+  3. **`B6` — no validation, and the wrong snackbar.** Nothing gates *Save*: the pattern group has no
+     rule and `ActivitySelectionForm`'s `requiredRule` (`:123`) is never run through a `VForm.validate()`
+     before `saved()` is called, so an empty form reaches the server. The server answers a **specific**
+     400 (`patterns`, `target`) — and the interceptor snackbars it (generic today, `FW19`) — and then the
+     `catch` at `:51-53` calls `showErrorSnackbar(t('activityTracking.settings.failedToSaveMapping'))`,
+     which `showSnackbar` renders **in place of** the first. So the user sees the generic string for an
+     empty form, for `X2`, for `X3` and for a real failure alike, and `FW19` on its own would not help
+     this call site: the second snackbar wins (§105).
+- **Files:** `useMappingSettings.ts:39-54`; the two request DTOs (`isActive: boolean = true` — a
+  default, not optional); the two views' `edit()` (copy `item.isActive` and, for an ignored row, set
+  `request.isIgnored = true` or let `saved()` derive it from `mode`); the two action bars (wrap the
+  pattern fields + `ActivitySelectionForm` in one `VForm`, or validate before calling `saved`)
+- **What to change:** In `saved()`: branch on `mode.value` — `'toIgnored'` → `isIgnored = true`,
+  `activityId`/`roleId`/`categoryId` = `null`; `'toActivity'` → `isIgnored = null` and the three ids as
+  today. Send `isActive` always: the edited row's value on update, `true` on create. Validate first —
+  at least one pattern, and in `toActivity` mode an activity (or a role/category, if the server's
+  `RoleId`/`CategoryId` target is meant to be reachable from this form — today the picker cascades but
+  the form never submits without an activity; decide and say so) — and return before the request with
+  the fields marked. Then the `catch`: drop the generic snackbar and let the interceptor speak (it
+  already does for every non-`_silent` 400), **or** pass `_silent: true` on the two calls and show
+  `error.response?.data?.errors` field-by-field yourself — one or the other, never both. Keep
+  `failedToSaveMapping` for the `status === undefined` network case only, the `LoginView` shape.
+- **Do not change:** the server's "exactly one target" rule or the PUT-replace semantics — both are
+  documented and deliberate; the `mode` ref and the template that already switches on it (correct);
+  `filter`'s double duty as the search pattern (`F15`'s *Do not change*).
+- **Verification:** `X2`'s block on both platforms — *To ignored* + *Save* → the body carries
+  `"isIgnored":true` and no ids, 201, the rule appears under the Mappings tab's *Ignored* type. `X3`'s —
+  edit the seeded `rider64.exe` rule (through `F12`'s keyboard path until `F12` lands), change the
+  activity, *Save* → `PUT` body carries `"isActive":true` **and the row's own value** (edit a rule whose
+  `isActive` is `false` — create one through the API — and confirm it stays `false`), 2xx, the change
+  survives a reload. `B6`'s — *Clear* → *Save*: **no request**, the pattern group and the activity field
+  show their messages; then force a server 400 (`route --status=400 --body=…`) and read **one** snackbar
+  with the server's text. Reseed after; every created rule is otherwise undeletable until `F13`.
+- **Risk:** Medium — this is the view's only write path, on two platforms, and it changes what an
+  *edit* sends for every rule. The `isActive` copy is the line to get right; the `X3` shortcut is the
+  trap.
+
 ## FW1. `MyDialog` is `persistent` by default, so Escape closes nothing
 
 - **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` — submodule commit in `vue_framework`,
@@ -2892,6 +3188,16 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 ## FW9. The forgotten-password flow cannot complete at either step — the request omits `recaptchaToken`, and the reset link points at a view that does not exist
 
+> ✅ **Half landed, 2026-09-15 — the token.** `vue_framework` `6157283` (bump `04c405e9`):
+> `ForgottenPasswordView` now calls `executeRecaptcha('forgot_password')` — the action name this batch
+> derived from the endpoint — and posts `{ email, recaptchaToken }`. Unit 15's round 3 verified it live:
+> **204** for the seeded address and for a nonexistent one, the success `MyDialog` open, no error snackbar.
+> `auth/X1` is `fixed`. **What is still open is everything below from item 2 on**: the `/reset-password`
+> route and view (the larger half — the mail still points at `F20`'s blank page), `B3`'s `catch` (the dead
+> 404 branch, the hardcoded literal, the `TypeError` on no response, the `console.log`), and the optional
+> success-dialog exit. The round-3 note that the two addresses answer identically is the enumeration guard
+> item 3 describes, observed. Read the body as written; skip the token sentences.
+
 - **Scope:** **[framework]** `src/_common/modules/user/view/ForgottenPasswordView.vue`, a **new**
   `src/_common/modules/user/view/ResetPasswordView.vue`, `src/_common/modules/user/user.routes.ts`,
   `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/docs/modules/user.md:8` —
@@ -3063,10 +3369,20 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `bg-main`, no such class exists, and the *Go to login* button after a **successful** confirmation
   renders with no fill. Unobserved (success needs a real token), one outcome. Both `console.log(error)`
   lines (`:57,71`, `:58`) are `F38`'s pre-empt.
+- **Fourteenth pass — unit 15's round 2 re-drove `B4` and now agrees with this batch:** the
+  *"persistent explanation"* on `ConfirmEmailChangeView` was the snackbar mid-fade
+  (`confirm-email-change--mutation-recheck.png` shows the steady state: one button), both views are
+  bare, and `B5`'s `/resend-confirmation-email/undefined` request was observed on the wire — it answers
+  **401** (the API's `FallbackPolicy` on an unmatched `{id:long}` route, not an auth decision) and drags
+  a `/auth/refresh` behind it (`FW21`). The `userId` guard below removes that trigger. One more detail from
+  the same round, adjacent and folded: a no-params visit posts `API.post('/auth' + fullPath)` with **no
+  body**, which the server answers **415**, not 404 — so the initial-confirm `catch` sees a media-type
+  error for a missing token. Guard it the same way: no `userId`/`token` in the query → render the error
+  state without posting at all (the shape `FW9`'s reset view takes for a bad link).
 - **Why `U6` is not a defect:** the unit reasoned that `showFullScreenLoading()` on mount with no
   `hideFullScreenLoading()` in either `catch`, and an interceptor that hides only on success, should
   strand the spinner on any error — and then honestly reported that three live attempts never showed
-  one. The missing piece is `SnackbarComposable.ts:43-46`: `showSnackbar` calls
+  one (four, after round 2 — and the unit still lists `U6` as open; it has not read §64). The missing piece is `SnackbarComposable.ts:43-46`: `showSnackbar` calls
   `hideFullScreenLoading()` unless `dontHideFullScreenLoading` is set, and both views'
   `catch` blocks call `showErrorSnackbar` first. The spinner is hidden by the snackbar, on every
   error, by design. Dropped; the unit's "inconclusive, not negative" was the right thing to write.
@@ -3100,6 +3416,18 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   views most users see once.
 
 ## FW13. `RegistrationView` fails closed on an empty reCAPTCHA token — the one thing making local registration impossible — and its `catch` overwrites the server's message
+
+> ✅ **Half landed, 2026-09-15 — the guard.** `vue_framework` `6157283` (bump `04c405e9`) deleted the
+> `if (!recaptchaToken) { … return }` block; `RegistrationView.vue:138` now assigns the token as-is, with
+> a comment saying why. Unit 15's round 2 had escalated `O1` to **`X2`** (`blocker`) on the same
+> mechanism this batch described — the server accepts the empty token, the client refused to send it —
+> and round 3 verified the fix: `POST /auth/register` → 200 through the real form, a throwaway account
+> created, `/login` reached with the prefill (`U5` resolved as "working as coded"), and the 2FA dialog
+> reached for the first time (`B8` → `FW14`). **What is still open:** the `catch` at `:163-166`
+> (`handleHttpCodes(error.response?.status)` — the round-3 duplicate submit **did** answer 409, so the
+> *"changed by someone else"* string is now one click away for anyone who registers twice), and `P1`'s
+> two `target="_blank"`s (`:41,46` — unchanged in the commit). The `UseRecaptchaHandler.ts` doc sentence
+> landed too (`docs/composables.md`). Read the body from *Adjacent, source-certain* on.
 
 - **Scope:** **[framework]** `src/_common/modules/user/view/RegistrationView.vue:41,46,131-170`,
   `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/composable/UseRecaptchaHandler.ts`
@@ -3162,6 +3490,47 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   correctly. The `_blank` links are a behaviour change for every app's registration page; a host that
   wants same-tab legal pages has no override, which is acceptable for two links whose whole problem
   was being same-tab.
+
+## FW14. Registration's 2FA recovery codes are received and discarded — the settings-side enrolment already shows them, one file over
+
+- **Scope:** **[framework]** `src/_common/modules/user/view/RegistrationView.vue:118-129,149-158`, a new
+  `src/_common/modules/user/utils/recoveryCodes.ts` (lifted from `SecuritySection.vue:261-267`),
+  `src/_common/docs/modules/user.md` — submodule commit, then pointer bump
+- **Closes:** `auth/B8` (round 1's `U1`, **now browser-observed** in round 3 — the number the ninth pass
+  reserved for exactly this)
+- **Root cause:** Confirmed by direct read, and the unit's evidence is the response body itself.
+  `validateAndSendForm`'s success branch (`:149-158`) tests `response.data.recoveryCodes` for truthiness
+  and then calls `open2FADialog(response.data.qrCode)` — the codes are the *condition* and never the
+  *argument*. `open2FADialog` (`:118-129`) opens `QrCodeFor2FABody` with `{ qrCodeImage }` only, awaits
+  *Done*, and `goToLogin()`s. `QrCodeFor2FABody.vue:15` declares one prop. The server sends
+  `{ twoFactorEnabled, qrCode, recoveryCodes: [5 codes] }` (`TwoFactorAuthResponse.cs`,
+  `BaseRegisterUserEndpoint.cs:86-113`; round 3 read them off `response-body`), and after *Done* they
+  exist nowhere the user can reach — a brand-new account whose owner loses the authenticator has no way
+  back in. The settings-side enrolment solved this in `prompts/_done/user/framework/F1-2fa-recovery-codes.md`:
+  `SecuritySection.vue:196-197` → `normalizeRecoveryCodes(data)` → `openRecoveryCodesDialog(codes)` →
+  `RecoveryCodesBody` (`:269-281`, `persistent: true`, `hasCloseBtn: false`, *Done* to dismiss). F1 landed
+  for the regenerate path and missed this one.
+- **Files:** `RegistrationView.vue:118-129,149-158`; `utils/recoveryCodes.ts` (new — `normalizeRecoveryCodes`
+  moved out of `SecuritySection.vue:261-267` so both call sites share it; `SecuritySection` imports it);
+  `docs/modules/user.md` (the registration flow's description gains the second dialog)
+- **What to change:** After `open2FADialog(qrCode)` resolves and before `goToLogin()`:
+  `await openDialog({ component: RecoveryCodesBody, componentProps: { codes: normalizeRecoveryCodes(response.data) }, dialogProps: { title: i18n.t('user.recoveryCodes'), confirmBtnLabel: i18n.t('general.done'), hasCloseBtn: false, persistent: true, isSmall: false } })`
+  — the `SecuritySection` call, verbatim, so the two enrolment paths render the same body with the same
+  copy/download affordance. Order: QR first (the authenticator must be enrolled before the codes mean
+  anything), codes second, then login. Adjacent, same branch: the `noRecoveryCodesReceived` and
+  `noQrCodeReceived` arms (`:154,:157`) show a snackbar and **never navigate** — the user is left on a
+  submitted registration form with an account already created; end both with `goToLogin()`.
+- **Do not change:** `QrCodeFor2FABody` (it is the QR dialog; two responsibilities in one body is how
+  the codes got dropped); `SecuritySection`'s own flow beyond the import; the server. Do not batch with
+  `FW13` — same file, different finding, different reason (`FW15`/`FW2` precedent); one submodule commit
+  may carry both if it says so.
+- **Verification:** `B8`'s `Verify:` block — register a throwaway with *use 2FA* ticked → QR dialog →
+  *Done* → **a second dialog listing five codes** with the copy/download control `RecoveryCodesBody`
+  already has → *Done* → `/login` with the prefill. Then `/user/settings` → enable 2FA on a throwaway →
+  confirm the settings path is unchanged. **Reseed after** — two accounts are mutations. Promote
+  `e2e/tests/auth.draft.spec.ts:104`.
+- **Risk:** Low, two repos. Every app on the framework gains a second dialog on 2FA registration — the
+  one the settings page already shows, so no app's user sees a shape they have not seen.
 
 ## FW15. `MyDateInput` binds `$attrs` first, so every caller's `label` (and `hideDetails`) is discarded
 
@@ -3397,6 +3766,37 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `JobRunHistory` unchanged. Both locales.
 - **Risk:** Medium, framework-wide: loosening the match can un-format a column that another app named
   `vatRate`; tightening it to segments keeps those. Prefer segments.
+
+## FW21. The interceptor's `AUTH_ENDPOINTS` allowlist names the signed-in auth routes and none of the signed-out ones
+
+- **Scope:** **[framework]** `src/_common/axiosConfig.ts:63-65` — submodule commit, then pointer bump
+- **Closes:** `auth/B7` — **re-graded `bug` → `polish`** (§110)
+- **Root cause:** Confirmed. `AUTH_ENDPOINTS = ['/auth/refresh', '/auth/login/2fa', '/auth/login',
+  '/auth/microsoft-sign-in', '/auth/logout']` and `isAuthEndpoint()` is `url === path ||
+  url.endsWith(path)`, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email`
+  or `/auth/resend-confirmation-email/{id}` takes the refresh-and-retry branch (`:180-199`) while no
+  session exists: `POST /auth/refresh` → 401 → `logoutClient()`, which returns at its first line because
+  `auth.isAuthenticated` is already `false` (`:171-172`) → the original rejection. The unit observed the
+  pair on `B5`'s `/resend-confirmation-email/undefined`. **Why that 401 exists at all:** `undefined` does
+  not match `{id:long}`, the route is unmatched, and the API's authorization `FallbackPolicy` answers
+  unmatched paths with 401 (README, *Test data*) — it is not the endpoint saying anything. `FW12`'s
+  `userId` guard removes the only observed trigger; the allowlist gap remains for any future 401 from a
+  signed-out route, and the cost of it is one wasted request and one console line. No user-visible
+  effect, hence `polish`. `FW9`'s *Do not change* on this list stands for the two endpoints it names
+  (neither answers 401); this batch is the class, not those two.
+- **What to change:** Either extend the list with the four signed-out paths (matching
+  `/auth/resend-confirmation-email` by prefix, since it carries an id), or replace the `endsWith` test
+  with "starts with `/auth/`" and keep the list as documentation of which ones exist. The second is
+  smaller and cannot drift again; check that no `/auth/*` route is ever called **signed in** with an
+  expectation of refresh — `/auth/logout` is in the list already, so the answer is no.
+- **Do not change:** the refresh branch itself, or `logoutClient()`'s signed-out early return — that
+  return is what makes this harmless.
+- **Verification:** `B7`'s `Verify:` block after `FW12` has landed needs a different trigger (the
+  `undefined` path is gone): `playwright-cli route "**/api/auth/forgotten-password" --status=401`, submit
+  the form signed out, and confirm `requests` shows **no** `/auth/refresh`. Then sign in and confirm an
+  expired-token refresh on a normal route still works — `CLAUDE.md`'s 401-burst paragraph is the check.
+- **Risk:** None to behaviour; two repos. An app whose signed-out endpoints live under a different prefix
+  gains nothing and loses nothing.
 
 ## Escalations (backend / outside this repo)
 
@@ -3699,6 +4099,23 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
     **Do not write a backend prompt file for this** — the implementer does; this paragraph is the
     evidence to paste.
 
+    **Observed from the `/todo-list` side too (fourteenth pass) — `todo-lists/X1`, `blocker`, merged
+    here.** Unit 9's mutation round submitted the *New category* dialog three times (`"color":"default"`,
+    `"color":"blue"`, and again) and got the same
+    `"Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"` 400 each time — the shared-validator
+    consequence the paragraph above predicted by construction, now with screenshots
+    (`todo-list--mutation-category-create-400-no-feedback.png`). The unit filed it as **`[framework]`**
+    with the suggested fix *"change `ColorPicker`'s `model` to the swatch's hex value"* — that is the
+    rejected alternative, and the attribution is the wrong side (§99): the server's own `ColorPalette`
+    constants and seeder write names, the routine-period form ships `"color":"blue"` and gets 201
+    (`todo-routine/B11`'s colour aside, verified), and only the three `NameTextColorIconValidator`
+    subclasses refuse them. Two more things the observation adds to the ask: the dialog **closes on
+    submit** before the caller's request fails (the close-then-call shape, `F53`(c)/`F70`), so the typed
+    name is lost with the 400; and the default swatch is `"default"` — a name the validator will also
+    have to accept, or `ColorPicker`'s `required` prop (framework `98b92d0`) should be passed here as it
+    is on the time-period form. Both are app-side follow-ups for after the validator lands, not reasons
+    to touch the picker.
+
 12. **`GET /memory-anchor/anchor-eligible-activities` does not exist** — `leisure-bucket-anchors/X3`
     (`blocker`). The unit's guess was route ordering (*"shadowed by a generic `/{id}` route"*). Searched
     the whole API this pass: no endpoint file under `endpoint/memoryAnchor/` declares it
@@ -3752,6 +4169,41 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
     hiding the unread inputs — is a product regression for a contract gap and is not recommended.
     `leisure-backlog-picker/X1`'s `Verify:` block is the acceptance test for the `activityName` half.
 
+14. **An unconfirmed account's correct password is answered `401 "Invalid email or password"`, never the
+    `403 "Email not confirmed"` the sign-in flow was written to send** — `auth/B6` (`bug`, observed twice
+    on two throwaway accounts in unit 15's round 2). The unit's guess (*"the server no longer signals it"*)
+    is half right: the server **has** the branch and never reaches it. Read at the source this pass:
+    `framework/Sydowwe.Framework/application/service/auth/PasswordSignInFlow.cs:105-106` returns
+    `EmailNotConfirmed` (→ 403, `:47`) with the comment *"checked after password verification so the
+    answer can't be used to probe which addresses are registered"* — but it sits **after**
+    `signInManager.CheckPasswordSignInAsync(user, password, true)` (`:83`), and the host registers
+    `options.SignIn.RequireConfirmedEmail = true` (`IdentityServiceExtensions.cs:121`). ASP.NET Identity's
+    `CheckPasswordSignInAsync` runs `PreSignInCheck` → `CanSignInAsync` **before** it verifies the
+    password, and with that option set an unconfirmed user gets `SignInResult.NotAllowed` back — which is
+    `!result.Succeeded`, so `:95-101` answers *"Invalid email or password"* and the flow's own check at
+    `:105` is dead code for every deployment that sets the option. Two consequences: `LoginView.vue:185-193`'s
+    dedicated branch (the `emailConfirmationNeeded` snackbar and the resend panel) is unreachable, and
+    the password was never checked — so the lockout counter does not move either. **The ask:** verify the
+    password with `userManager.CheckPasswordAsync` (and feed lockout with `AccessFailedAsync`) before the
+    confirmation test, or test `result.IsNotAllowed` and map it to `EmailNotConfirmed` — the second is
+    one line but answers 403 *without* having checked the password, which is the enumeration leak the
+    comment at `:103-104` was written to prevent. Then a test that registers, does not confirm, and
+    signs in with the right password expecting 403. This is a `Sydowwe.Framework` (backend) file, so it
+    ships to every API on that framework. Nothing on this side changes; the client branch is already
+    right. It also gates `auth/U2` — a 2FA login cannot be driven until an unconfirmed throwaway can be
+    confirmed or the flow reaches the 2FA gate — and compounds with `FW9`: the natural next click for a
+    user told "wrong password" is *Forgot password?*, whose mail still points at a route that does not
+    exist.
+
+15. **`POST /api/activity-history` accepts a zero-length row** — found reading `history-capture/B4`'s
+    request. `ActivityHistoryValidator` is `RuleFor(x => x.Length).Must(x => x.TotalSeconds >= 0)`
+    (*"Length must be non-negative"*); the round-2 body `{"length":{"hours":0,"minutes":0}}` was a 201
+    (`id 15503`). A history record of nothing is not information on any read path (the dashboards sum
+    it, the timeline draws a zero-width block, the calibration average divides by it), and `F67` is the
+    client half — but a validator that stops at `>= 0` lets the next client (the desktop tracker's
+    attribution sink, a future import) write it again. **The ask:** `> 0`, with a message the
+    interceptor can show, and one integration test. Small, not blocking; `F67` does not wait on it.
+
 ## Needs verification (unverified findings, and what would settle each)
 
 ### Awaiting retest — code-fixed this cycle, never seen in a browser
@@ -3773,8 +4225,11 @@ been seen in either direction.
 | `todo-routine/B9` | `RoutineSettingsView.vue:163-201` — `_silent` 409 → `deleteBlocked` / `deleteBlockedUnknownCount`, count fetched only in the failure path, row kept | ✅ **verified (round 7, 2026-09-14, exclusive account)** exactly as the runbook here prescribes: 11-day period + one item → Confirm → `DELETE …/17` **409**, snackbar *"Can't delete "RT eleven" — 1 routine is still assigned to it. Move or delete it first."*, row kept, count fetched in the failure path. Item removed → Confirm → **204**, row gone. Throwaway rows cleaned up. **And the dialog check it was merged with came back positive — see the section below** |
 | *(unfiled)* | `TodoListStepsFormField.vue`'s four step controls now named, position-qualified | ✅ **swept (round 7)** — Add dialog with two steps: *Move step 1 up/down*, *Delete step 1*, *Move step 2 up/down*, *Delete step 2*, *Add step*; **0 unnamed** buttons in the dialog |
 | `todo-lists/B3` | ✅ **fixed for real 2026-09-13** — it was *not* fixed silently: the round-2 edit moved the emit above the multi-count branch, so a row-body click on a counted item still stepped the counter *and* opened the dialog | closed; `Status:` line corrected; spec pins it |
-| `todo-routine/B10` (`F24`) | **applied in the working tree, uncommitted** (sixth pass, source-verified): `composable/useRoutineDateFormat.ts` is untracked and imported by all five files; `grep toLocaleDateString(undefined` across `src/core/todoList/` hits only the helper itself | ⏳ **not seen in a browser.** Run `F24`'s *Verification* verbatim — SK weekday/month forms on all three cards, the heatmap tooltip, the history dialog, the freeze chip, then EN **without reloading**. The finding's `Status:` still reads `open`; set it on pass |
-| *(unfiled — `F25`)* | **applied, uncommitted**: `RoutineSettingsView.vue:103` is `new TableColumn('color', t('routineTodoList.timePeriods.color'), false)` | ⏳ one look at `/routine-settings` in SK — header reads *Farba* |
+| ~~`todo-routine/B10` (`F24`)~~, ~~*(unfiled — `F25`)*~~ | both verified 2026-09-14 (`todo-routine/B10`'s own entry: SK forms on every card, the heatmap tooltip, the history dialog, the freeze chip, then EN without a reload; `F25` in the log's *Closed batches*) — these two rows had lagged the summary table by two passes | ✅ moved to the log (fourteenth pass) |
+
+**Every row in this table is now closed.** Unit 10's round 8 (2026-09-15) re-confirmed both views against
+round 6/7's recorded numbers with no drift; the unit's own tally reads *"every finding this unit ever filed
+is now `fixed and verified`"*. The table stays for one more pass as the record, then goes to the log.
 
 ### `activity-settings` — two `unverified` remain (`U1` and `U2` closed by the mutation round — see the log)
 
@@ -3783,12 +4238,12 @@ been seen in either direction.
 | `U3` — repeated 401 → `/refresh` 401 → sign-out | **re-graded** to a runbook error, mechanism source-verified (token rotation, 5 s grace) — see `F23` and *Contradictions* §19 | Not an app defect and not retestable as one; the fix is the paragraph, and the proof is the next parallel run keeping both sessions |
 | `U4` — one *"0 of 0"* on an unfiltered request | retest after **`F18`**: reload, type a name, clear it, three times, and read `itemsCount` off the response body each time | `F18` removes the only competing request this view fires, which is the only candidate mechanism the finding names. Checked `useFetchFilteredTable.ts:47-55` this pass: an aborted call defers to `latest`, so the simple "stale response overwrote the fresh one" story does not hold as written — if it recurs *after* `F18`, capture the response body, because the cause is then somewhere this queue has not looked |
 
-### `tracking-settings` — two items that `F12`/`F13`/`F14` will surface, not close
+### `tracking-settings` — one item that `F14` will surface, not close (`U1` confirmed by the mutation round as `X4` — see the log)
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `tracking-settings/U1` — the mapping delete button reaches nothing | run its *What would verify it* after `F12` **and** `F13` land: a `DELETE …/tracker-desktop-mapping-by-pattern/{id}` fires and the row is gone after reload | Kept `unverified` per rule 5, but it is source-certain (`DesktopMappingsTable.vue:36` declares only `edit`; `BasicTable`'s `hasDelete` default renders the button anyway). `F13` wires it; the retest also answers the dialog question above |
 | *(unfiled)* sidebar highlights *Desktop tracking* on the Mappings tab, nothing on `/activity-settings/roles` | one look at the sidebar on each route, before and after `F14` | `SidebarNavItem.vue:52` uses the same `matchesPath` as the breadcrumb, so `F14`'s data fix closes both; it must be *checked*, not assumed, because the `VBtn :to` in the header toggle is a second active-state mechanism on the same screen |
+| `tracking-settings/B5` — re-graded `bug` → `opportunity`, under *Deferred* | — | the distinct-entries grid is the raw observation ledger by design; whether it should also say "already covered by a rule" is a product question with a backend half (§103) |
 
 ### `history-review` — two `unverified`, both seed-shape gaps with a cheaper route than a seed change
 
@@ -3824,27 +4279,19 @@ re-drive the screen by hand.
 | `U4` — mismatched new/confirm password | **Mechanism settled; the message is broken.** `MyNewPasswordInput.vue:34-37` appends `doPasswordsMatch(v) \|\| t('user.passwordsDontMatch')` to the confirm field's rules, so the line appears inline as you type; and `ChangePasswordForm.vue:50-51` runs `form.validate()` on Confirm and returns without a request when invalid. But the key is defined **nowhere** (`FW7`, adjacent), so what the line says today is `user.passwordsDontMatch`. Settle by promoting the `fixme`: fill `a` / `b`, expect a sentence under the confirm field, click Confirm, expect **no** `POST /user/change-password` | The spec's *"does not enable Confirm"* is not how the form works — Confirm stays enabled and the handler bails; assert on the absent request, not a disabled button. Latent and not filed: the confirm rule does not re-run when the *first* field changes afterwards (no watcher), but `form.validate()` on Confirm catches it, so no wrong password can be submitted |
 | `U5` — language switch | **Mechanism settled.** `onLocaleChange` → `userStore.setPreferences({ locale })` → `await updatePreferences` + `Object.assign(currentUser, partial)` (`authStore.ts:33-36`) → `App.vue`'s deep watcher on `currentUser` → `i18n.locale.value = currentUser.locale` (`App.vue:94`). That is the **same watcher and the same store method** the unit verified live for the theme toggle (theme applies at `:88-93`, four lines above); only the final assignment is untested. Settle on `secondaryUser`, or on the primary account and reseed afterwards — the seed restores `locale: "EN"` (README *Prerequisites* §3) | The sweep-wide "must stay English" concern is real but cheap to honour: `POST /api/test/seed` is the revert |
 
-### `history-capture` — one `unverified`, half of it source-certain
+### `auth` — three `unverified` remain after the mutation round: one environment, one seed (now gated by §14), one deliberate
+
+Unit 15's round 2/3 (committed in `04c405e9`, absorbed in the fourteenth pass) closed three of the six:
+`U1` is **observed** and batched (`FW14`), `U5` is **resolved** (working as coded — the prefill, the
+autofocus and the resend panel all seen after a real registration), and `U6` was already settled from
+source (§64 — the unit still lists it open; its round-2 detail, the 415 on a bodiless confirm post, is
+folded into `FW12`). The three rows below are what is left; `U1`/`U5`/`U6`'s rows are in the log.
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — manual entry form: no in-flight guard, no reset after save | **The double-submit half is source-certain** and stays out of a batch only by rule 5: `AddActivityManuallyView.vue:36-38`'s `handleSave` is `await formRef.value?.saveActivity()` with no re-entry flag, `AddActivityManuallyForm.vue:63-82` sets nothing while `await saveActivityToHistory(…)` → `create(…)` is pending, and the button at `View.vue:17-23` has no `:loading`/`:disabled`. Two clicks before the first `POST /api/activity-history` resolves are two `create` calls; there is no other code path. The unit's own *What would verify it* is right and belongs to the **mutation pass**: fill a real activity and a non-zero length, click *Record activity to history* twice inside the round trip, count the `POST`s in `playwright-cli requests`, then reseed. **If confirmed, a low-effort app batch next run** (`F39`): a `saving` ref in the view that gates `handleSave` and binds `:loading` on the button — the same shape as `TimerPresetDialog`'s confirm | **The reset half is not sourced.** *"Either the form clears … or the button disables"* — the second clause is plain user sense; the first is taste. No intent source (`prompts/_done/activity-history/`, `prompts/_done/activity/A6-selection-form-api.md`) says what the form should do after a save, and a user logging several spans of one activity plausibly wants the activity and date kept and only the length cleared. If the batch adds a reset, decide *what* resets from that use, not from the timer views' Stop → clear pattern, which is a different flow (a session ends; a form does not). Re-graded in place: the finding stays `unverified` as filed, but its two halves have different standing (§53) |
-
-### `auth` — six `unverified`: one settled as no defect, one source-certain, two unblocked by `FW13`, one environment, one seed
-
-The unit's six `U` items have three different causes, and only one of them is a data gap. Two are
-the client-side reCAPTCHA guard `FW13` removes (`U1`, `U5`); one is a code path whose outcome is
-fixed by reading it (`U6`); one is the dev environment's missing site key (`U3`); one was a deliberate
-choice not to lock out a shared account (`U4`); and one is the seed (`U2`).
-
-| finding | what settles it | note |
-| --- | --- | --- |
-| `U1` — registration's 2FA recovery codes are received and discarded | **Source-certain; observable after `FW13`.** `RegistrationView.vue:152-161` tests `response.data.recoveryCodes` for truthiness and then opens `QrCodeFor2FABody` with `qrCodeImage` only; the component declares exactly one prop (`QrCodeFor2FABody.vue:15-17`). The server does send them: `TwoFactorAuthResponse.cs:7-9` is `{ twoFactorEnabled, qrCode, recoveryCodes }` and `BaseRegisterUserEndpoint.cs:86-113` returns it. **And the fix already exists one file over:** `SecuritySection.vue:196-197,269-281` shows codes once after a settings-side enrolment through `RecoveryCodesBody` (`prompts/_done/user/framework/F1-…` landed for that path and missed this one). The check, after `FW13`: register a throwaway address with *use 2FA* ticked → QR dialog → *Done* → **no** recovery codes anywhere; reseed | Rule 5 keeps it out of a batch until seen; when it is, it is **`FW14`**: after `open2FADialog` resolves, `await openDialog({ component: RecoveryCodesBody, componentProps: { codes: normalizeRecoveryCodes(response.data) }, dialogProps: { title: t('user.recoveryCodes'), confirmBtnLabel: t('general.done'), hasCloseBtn: false, persistent: true, isSmall: false } })` before `goToLogin()` — six lines, the same call `SecuritySection` makes, with `normalizeRecoveryCodes` lifted into `utils/`. The user-facing stake is the finding's own sentence: a brand-new account whose owner loses the authenticator has no way back in |
-| `U2` — the 2FA login dialog (`LoginVerifyQrCode`) never exercised | **Seed gap, and the seed alone is not enough.** Driving the OTP needs an account with 2FA enabled *and a known TOTP secret* the spec can compute codes from — a seeded flag without the secret only reaches the dialog, not through it. Two routes: (a) an `e2e-v5` account (`twoFactorUser`, 10004) whose secret the seed response returns, so a spec can `otplib`-generate the code; (b) after `FW13`, enrol a throwaway account by hand through registration and read the secret off the QR (`otpauth://` URI) — one-off, not a spec. The dialog's *structure* (title, `VOtpInput`, wrong-code line, Escape behaviour under `FW1`'s `persistent` default) is reachable with (b) in a minute | Route (a) is a one-paragraph seed ask if the operator wants a spec; it belongs in `B3`'s family (`prompts/view-docs/backend/_done/B3-seed-fixture-coverage.md`), not a new file. Note the `LoginVerifyQrCode` redirect line is `FW11`'s and reads the same helper — a source read covers that half |
-| `U3` — reCAPTCHA badge show/hide never observable | **Environment**, not the app: `VITE_RECAPTCHA_SITE_KEY` is empty in `.env.development`, so `recaptcha-v3`'s `load()` is never called and `.grecaptcha-badge` never exists (`UseRecaptchaHandler.ts:79-88` returns `''` before loading). **One latent thing from the read, for when a key exists:** nothing calls `loadRecaptcha()` on mount — the script loads lazily inside the first `executeRecaptcha()` — so on `/login` the badge appears only *after* the first submit, and `router.afterEach` (`router.ts:107-112`) has no badge to show until the next navigation. Google's terms want the badge (or its alternative text) visible wherever v3 runs; check it when a key is configured, not before | Not a defect anyone can see today; not a batch |
-| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). So `LoginView.vue:174-176`'s substring match will show the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change. **Dead code, harmless:** `:186` is `generalErrors.includes('User locked out for')`, an *exact-element* `Array.includes` against a string the server never sends; it never matches and the `!handled` fallback at `:201-202` shows `generalErrors[0]` anyway — the same text. A disposable account is still the right way to *see* it: six wrong passwords, read the snackbar, wait five minutes | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
-| `U5` — "redirected from registration" login prefill | **Unblocked by `FW13`** — its verification block *is* this check (a completed registration lands on `/login` with the e-mail prefilled and the resend panel shown). Mechanism read: `RegistrationView.vue:151` sets `userStore.currentUser.email`, `LoginView.vue:134-138` reads `userStore.userName` on mount. One caveat the unit did not name: `userName` is persisted (`authStore.ts:79`, `localStorage`), so the prefill also fires for anyone who was signed in on this browser before and signed out — `logout()` resets `currentUser` to `new User()` (`:63-66`), so after a *clean* logout it is empty, but a session that expired (the interceptor's `logoutClient` → `auth.logout()`) goes through the same reset. Fine as far as read; worth one look that the resend panel does not show for an already-confirmed returning user | Closes with `FW13`'s retest |
-| `U6` — a stuck full-screen spinner on both confirm views | ✅ **Settled from source — not a defect, dropped.** `SnackbarComposable.ts:43-46`: `showSnackbar` calls `hideFullScreenLoading()` unless `dontHideFullScreenLoading` is passed, and both views' `catch` blocks call `showErrorSnackbar` (`ConfirmEmailView.vue:55`, `ConfirmEmailChangeView.vue:56`). The spinner is hidden by the snackbar on every error path. The unit's three negative attempts were right and its "inconclusive" was honest; the mechanism it was missing is one composable over. `FW12` adds the explicit hide anyway so the view stops relying on it | §64 |
+| `U2` — the 2FA login dialog (`LoginVerifyQrCode`) never exercised | **Seed gap, and the seed alone is not enough — and now §14 gates it too.** Round 2 registered a real 2FA-enabled throwaway through the API and still could not reach the dialog: the account also needs a confirmed e-mail, and an unconfirmed one is answered `401 "Invalid email or password"` before the flow ever reaches the 2FA gate (§14 — the `PreSignInCheck` short-circuit). So the routes are: (a) an `e2e-v5` account (`twoFactorUser`, 10004) seeded **confirmed** and with a known TOTP secret the seed response returns, so a spec can `otplib`-generate the code; (b) by hand, once §14 lands or a confirmation mail can be read: enrol a throwaway through registration (works since `FW13`'s half landed), confirm it, read the secret off the QR's `otpauth://` URI. The dialog's *structure* (title, `VOtpInput`, wrong-code line, Escape under `FW1`'s `persistent` default) is reachable with (b) in a minute | Route (a) is a one-paragraph seed ask if the operator wants a spec; it belongs in `B3`'s family (`prompts/view-docs/backend/_done/B3-seed-fixture-coverage.md`), not a new file. Note the `LoginVerifyQrCode` redirect line is `FW11`'s and reads the same helper — a source read covers that half |
+| `U3` — reCAPTCHA badge show/hide never observable | **Environment**, not the app: `VITE_RECAPTCHA_SITE_KEY` is empty in `.env.development` (re-confirmed in round 2), so `recaptcha-v3`'s `load()` is never called and `.grecaptcha-badge` never exists (`UseRecaptchaHandler.ts:79-88` returns `''` before loading). **One latent thing from the read, for when a key exists:** nothing calls `loadRecaptcha()` on mount — the script loads lazily inside the first `executeRecaptcha()` — so on `/login` the badge appears only *after* the first submit, and `router.afterEach` (`router.ts:107-112`) has no badge to show until the next navigation. Google's terms want the badge (or its alternative text) visible wherever v3 runs; check it when a key is configured, not before | Not a defect anyone can see today; not a batch |
+| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). So `LoginView.vue:174-176`'s substring match will show the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change. **Dead code, harmless:** `:186` is `generalErrors.includes('User locked out for')`, an *exact-element* `Array.includes` against a string the server never sends; it never matches and the `!handled` fallback at `:201-202` shows `generalErrors[0]` anyway — the same text. **Round 2 found the safe way to see it:** register a throwaway (the UI works now), fail its password six times, read the snackbar, reseed — but note §14: an *unconfirmed* throwaway never reaches the password check, so the lockout counter will not move for it. Confirm the account first, or wait for §14 | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
 
 ### ⚠️ Found while triaging unit 4: `TimePicker` snaps `:58` / `:59` to minute **60** at any interval above 1 — framework, source-certain, unobserved
 
@@ -3904,7 +4351,7 @@ along with the next `todoList` batch.
 | --- | --- |
 | ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | ~~`todo-routine/U1`, `U2`~~ ✅ both verified live, round 6 |
 | ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | ~~`todo-routine/U2` (milestone icons)~~ ✅ all five icons verified live, round 6 |
-| ≥1 **routine** item with steps (the `todo-lists` fixture has them; the routine groups do not — round 5: "Take Medication, Weekly Review, Pay Rent have no steps") | `todo-routine/A2`'s live check and the unfiled `TodoListStepsFormField` sweep, both read-only today. Low priority — a temporary item does the same job; worth one line on `B8` if it is reopened anyway |
+| ~~≥1 **routine** item with steps~~ — **moot**: `todo-routine/A2` was verified in round 7 (2026-09-14) on a temporary two-step Daily item created and deleted in-session, and the `TodoListStepsFormField` sweep ran on the same dialog | ~~`todo-routine/A2`~~ ✅ both closed, round 7 |
 | enough desktop mappings to exceed one page (>25, or a smaller page size in the spec) | `F12`'s second verification step — that the Mappings body *scrolls inside the card* rather than merely paints. Two seeded mappings (one `Activity`, one `Ignored`) can prove the row paints; they cannot prove the fill-parent contract still holds. Low priority: `ActivityTable` already exercises the same path with 10 rows |
 
 Also worth naming for unit 13's own sake: the projects seed holds **one** row, which is why `F2`'s
@@ -4098,7 +4545,27 @@ create form nor `edit()` binds a control to it — so a rule can only be disable
 `docs/opportunities.md` at Phase 4. Two notes for when it is weighed: (1) the cheapest shape is an inline
 toggle on the `isActive` column, which is a `BasicTable` `#item.isActive` slot plus a `patch` — the
 `useEntityCommand` base already has `batchedToggle` for exactly this; (2) it is worth nothing until `F12`
-lands, because the column it would live in is currently invisible.
+lands, because the column it would live in is currently invisible. **(3), from the mutation round:** the
+update contract makes this less optional than it looked — `UpdateTrackerDesktopMappingRequest.IsActive`
+is `required` and the update is a full replace (`F72`), so the edit path must carry the row's `isActive`
+either way; once it does, a toggle is the one control that makes the value the user's rather than
+whatever the row happened to hold.
+
+**`tracking-settings/B5` — the distinct-entries list never excludes or marks an entry that already has a
+rule** — filed `bug` by the mutation round, **re-graded `opportunity`** (§103). The expectation is the
+unit's own `usecase.md` (*"not-yet-considered"*), written by the same unit in round 1; no intent source
+(`prompts/_done/activity-tracking/R4-settings-views.md`, `B3`'s seed ask) says the list is an inbox. Read
+at the source: `FetchTableDistinctDesktopEntry.cs` groups the raw `DesktopActivityEntry` ledger by
+`(ProductName, ProcessName, WindowTitle)` with no join to the mappings table, and the heartbeat
+(`DesktopActivityHeartbeatEndpoint.cs:89-104`) **keeps recording** an entry that matches a to-activity
+rule — it attributes the seconds *and* stores the row; only an ignored match is dropped. So a mapped
+process legitimately keeps appearing: the list is what was observed, not what is undecided, and the
+`vlc.exe` row the unit re-found after creating its rule is the ledger working. What is real is the
+product gap the unit names — nothing tells a user which tuples already have a rule — and it has a
+backend half (a flag per tuple, or an exclude toggle; `B3`'s note that the seeder drops *ignored* tuples
+"the way the heartbeat would" is the same design stated from the seed side). Goes to
+`docs/opportunities.md` at Phase 4; the client cannot join the two grids alone (the unit's own
+*Suggested fix* says why — pattern match types have no id to join on).
 
 **`activity-settings/O1` — role and category icons are picked in the forms, sent by the API, rendered in
 the activity picker, and shown in neither settings table.** Confirmed from the column lists

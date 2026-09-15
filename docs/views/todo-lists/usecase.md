@@ -106,5 +106,9 @@ item between lists does not delete/recreate it; the item id is preserved across 
 - The "reward when done" leisure pairing (`pairedLeisureActivityId`) is set at item-creation time but only
   surfaces later as a chip and a completion-time snackbar — there is no view in this unit that lists "items with
   a pending reward" as its own surface.
-- `TodoListItemEntity.note` is captured on the item but only exposed as a truncated tooltip on hover, never
-  shown in full inline.
+
+**Correction (mutation pass, 2026-09-15):** the inventory pass's claim that `TodoListItemEntity.note` is "only
+exposed as a truncated tooltip on hover, never shown in full inline" does not hold — creating an item with a
+note and reloading `/todo-list/:id` shows the note rendered inline under the item title (confirmed via
+screenshot, `todo-list-id--mutation-item-done.png`). `note` is fully spent by this unit; it has been removed
+from this list.

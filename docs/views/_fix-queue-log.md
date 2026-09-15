@@ -7,6 +7,47 @@
 
 ## Pass history (newest first)
 
+> **Fourteenth pass, 2026-09-15, commit `97f1e414` + working tree — the mutation rounds of units 4
+> `history-capture`, 6 `tracking-settings` and 9 `todo-lists`, unit 10 `todo-routine`'s round 8, and
+> unit 15 `auth`'s mutation round (rounds 2–3, committed in `04c405e9` and never triaged: the
+> thirteenth pass was scoped to what was *uncommitted* that day and this had already been committed
+> under it) absorbed.** Fourteen findings went in (2 · 4 · 6 · 0 · 2 new from units 4, 9, 6, 10, 15 —
+> the renumberings `U1→B6`, `U1→X4`, `O1→X2`, `U1→B8` are not new and are not counted twice) and came
+> out as **six app batches (`F67`–`F72`), two framework batches (`FW14`, `FW21`) and two escalations
+> (§14, §15)**, with two existing batches grown (`F13` takes `X4` and `B7`; `F12` a round-2 note) and
+> **two shrunk without the queue knowing**: `vue_framework` `6157283` (bump `04c405e9`) had already
+> landed `FW9`'s token half and `FW13`'s fail-closed guard, both verified live by unit 15's round 3 —
+> `auth/X1` and `X2` are `fixed`, and the bodies now say so at the top. Every finding was read against
+> source, the API's included, and the seven new `blocker`s sorted into three real defects and four
+> other things: `tracking-settings/X2`, `X3` and `B6` are one function (`useMappingSettings.saved()`
+> sends three of the form's five facts — §102 catches the finding's own shortcut, which would silently
+> re-activate every inactive rule on edit); `X4` is `F13`'s dead delete seen live, and its dialog
+> *closing* is the browser confirmation the fifth pass's `BasicTable` fix never got; `todo-lists/X1` is
+> §11 observed from its fourth surface, filed as `[framework]` with the fix §11 rejects (§99); and
+> `auth/X1`/`X2` were fixed before the round that filed them was read. Three findings changed shape
+> under source: `history-capture/B4` + `B5` are one gap on three views, with the stopwatch as the unfiled
+> third (§106); `B6`'s 409 is the unique index, and that makes the form's missing reset a correctness
+> bug rather than the taste §53 called it (§107); `todo-lists/B8`'s route was replaced on the server
+> the day *before* the client line was written (§100). One re-graded down and deferred
+> (`tracking-settings/B5`, `bug` → `opportunity` — the distinct-entries grid is the observation
+> ledger by design, §103), one re-graded down and batched (`auth/B7`, `bug` → `polish` — the 401 is the
+> `FallbackPolicy`'s, and the cost is one wasted request, §110). One backend defect found from the
+> unit's evidence and the framework's source: `auth/B6`'s missing "email not confirmed" branch is not
+> missing — Identity's `PreSignInCheck` returns `NotAllowed` before the flow's own check runs (§109,
+> §14). Six verification rows closed: `tracking-settings/U1` (→ `X4`), `history-capture/U1` (→ `B6`),
+> `auth/U1` (→ `B8`/`FW14`), `auth/U5` (resolved), and the two `todo-routine` *Awaiting retest* rows
+> that had lagged the summary table for two passes. The 177 in the header is 163 + 14.
+>
+> **Environment note for the operator, from the four rounds.** Units 4 and 6 each reseeded at their
+> end; unit 9 restored by hand (every created row deleted in-session) and signed in through the form
+> after the reseeded token 401'd; unit 15 reseeded twice. The database is at `e2e-v4` with nothing
+> known to be left behind — but unit 6 says in as many words that it *could not* delete through the UI
+> (`X4`), so its cleanup rests on the reseed alone; if the next run finds a `vlc.exe` or `Duolingo`
+> rule, that is residue, not seed. `e2e/.state/auth-10001.json` is stale again (three reseeds today).
+> The unit files for 04, 06 and 09 are back in `units/` (moved out for their mutation runs, per the
+> flow `04c405e9` used for 01/02/04) and unit 10's is in `_done/` — the folder listing no longer says
+> which units are finished; the round-history tables do.
+
 > **Thirteenth pass, 2026-09-15, commit `04c405e9` + working tree — units 11 `leisure-backlog-picker`
 > and 12 `leisure-bucket-anchors` (inventory) and the mutation rounds of units 1 `home` and 2
 > `activity-settings` absorbed.** Scoped by the operator to what is uncommitted; `F1`–`F57` /
@@ -697,6 +738,74 @@ and the `IsAnchored` filter is `anchors.Any(m => m.ActivityId == p.ActivityId)` 
 does the same (`GridActivityBacklogProfileEndpoint.cs:53-60`). A deleted anchor therefore cannot leave a
 dangling flag: the next grid read simply does not find it. There is no defect to observe; the mutation pass
 may still click it, and the chip will read *I did this* again.
+
+### `tracking-settings/U1` — ✅ confirmed by the unit-6 mutation round as `X4`, 2026-09-15 (fourteenth pass)
+
+The source-only prediction (no `@onDelete` on either `<BasicTable>`, so `BasicTable`'s `emit('onDelete')`
+fires into nothing) was reached through `F12`'s `focus()` + Enter path and observed on both platforms:
+Confirm closes the dialog, `playwright-cli requests` shows no `DELETE`, no snackbar, the row stays. The
+unit renumbered it `X4` (`blocker`) and marked `U1` `stale`; `F13` closes it. Moved here as written in the
+third pass:
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `tracking-settings/U1` — the mapping delete button reaches nothing | run its *What would verify it* after `F12` **and** `F13` land: a `DELETE …/tracker-desktop-mapping-by-pattern/{id}` fires and the row is gone after reload | Kept `unverified` per rule 5, but it is source-certain (`DesktopMappingsTable.vue:36` declares only `edit`; `BasicTable`'s `hasDelete` default renders the button anyway). `F13` wires it; the retest also answers the dialog question above |
+
+And the *"dialog question above"* — the fifth pass's "`BasicTable`'s delete-confirm dialog never closes"
+item, fixed in `vue_framework` `98b92d0` without a browser — is answered by the same observation: the
+dialog **closes** on Confirm today, on two tables whose handler is dead. First browser confirmation of
+that fix from the app side.
+
+### `history-capture/U1` — ✅ reproduced by the unit-4 mutation round as `B6`, 2026-09-15 (fourteenth pass)
+
+Both halves settled. The double-submit half exactly as the eighth pass read it — `dblclick` fires two
+`POST /api/activity-history`, and the second is a **409** from the server's unique index
+`(UserId, ActivityId, StartTimestamp)`, which the unit guessed and this pass confirmed at
+`ActivityHistoryConfiguration.cs`. The reset half — which §53 called unsourced — is settled by the same
+index: `dateTime` is set once at mount and never advances, so *any* second submit of the form after a
+success is the same 409, rendered as *"error saving"*. `F68` is the batch. Moved here as the eighth pass
+wrote it:
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — manual entry form: no in-flight guard, no reset after save | **The double-submit half is source-certain** and stays out of a batch only by rule 5: `AddActivityManuallyView.vue:36-38`'s `handleSave` is `await formRef.value?.saveActivity()` with no re-entry flag, `AddActivityManuallyForm.vue:63-82` sets nothing while `await saveActivityToHistory(…)` → `create(…)` is pending, and the button at `View.vue:17-23` has no `:loading`/`:disabled`. Two clicks before the first `POST /api/activity-history` resolves are two `create` calls; there is no other code path. The unit's own *What would verify it* is right and belongs to the **mutation pass**: fill a real activity and a non-zero length, click *Record activity to history* twice inside the round trip, count the `POST`s in `playwright-cli requests`, then reseed. **If confirmed, a low-effort app batch next run** (`F39`): a `saving` ref in the view that gates `handleSave` and binds `:loading` on the button — the same shape as `TimerPresetDialog`'s confirm | **The reset half is not sourced.** *"Either the form clears … or the button disables"* — the second clause is plain user sense; the first is taste. No intent source (`prompts/_done/activity-history/`, `prompts/_done/activity/A6-selection-form-api.md`) says what the form should do after a save, and a user logging several spans of one activity plausibly wants the activity and date kept and only the length cleared. If the batch adds a reset, decide *what* resets from that use, not from the timer views' Stop → clear pattern, which is a different flow (a session ends; a form does not). Re-graded in place: the finding stays `unverified` as filed, but its two halves have different standing (§53) |
+
+(The "`F39`" the eighth pass reserved was taken by `auth/B1`'s write half in the ninth; the batch is `F68`.)
+
+### `auth/U1` and `auth/U5` — ✅ closed by the unit-15 mutation round, 2026-09-15 (fourteenth pass)
+
+`U1` is **observed**: round 3 registered a throwaway with 2FA ticked, read five `recoveryCodes` off the
+`POST /auth/register` response body, and the dialog showed the QR and a *Done* button only
+(`registration--2fa-qr-dialog-no-recovery-codes.png`). The unit renumbered it `B8`; the batch is
+`FW14`, with the six-line fix the ninth pass wrote in this row. `U5` is **resolved, no defect**: after
+the same registration, `/login` rendered the prefilled e-mail, the autofocused password field and the
+*Resend confirmation email* panel — all three claims of `LoginView.vue:134-138`
+(`login--redirected-from-registration.png`). Both rows moved here as the ninth pass wrote them:
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — registration's 2FA recovery codes are received and discarded | **Source-certain; observable after `FW13`.** `RegistrationView.vue:152-161` tests `response.data.recoveryCodes` for truthiness and then opens `QrCodeFor2FABody` with `qrCodeImage` only; the component declares exactly one prop (`QrCodeFor2FABody.vue:15-17`). The server does send them: `TwoFactorAuthResponse.cs:7-9` is `{ twoFactorEnabled, qrCode, recoveryCodes }` and `BaseRegisterUserEndpoint.cs:86-113` returns it. **And the fix already exists one file over:** `SecuritySection.vue:196-197,269-281` shows codes once after a settings-side enrolment through `RecoveryCodesBody` (`prompts/_done/user/framework/F1-…` landed for that path and missed this one). The check, after `FW13`: register a throwaway address with *use 2FA* ticked → QR dialog → *Done* → **no** recovery codes anywhere; reseed | Rule 5 keeps it out of a batch until seen; when it is, it is **`FW14`**: after `open2FADialog` resolves, `await openDialog({ component: RecoveryCodesBody, componentProps: { codes: normalizeRecoveryCodes(response.data) }, dialogProps: { title: t('user.recoveryCodes'), confirmBtnLabel: t('general.done'), hasCloseBtn: false, persistent: true, isSmall: false } })` before `goToLogin()` — six lines, the same call `SecuritySection` makes, with `normalizeRecoveryCodes` lifted into `utils/`. The user-facing stake is the finding's own sentence: a brand-new account whose owner loses the authenticator has no way back in |
+| `U5` — "redirected from registration" login prefill | **Unblocked by `FW13`** — its verification block *is* this check (a completed registration lands on `/login` with the e-mail prefilled and the resend panel shown). Mechanism read: `RegistrationView.vue:151` sets `userStore.currentUser.email`, `LoginView.vue:134-138` reads `userStore.userName` on mount. One caveat the unit did not name: `userName` is persisted (`authStore.ts:79`, `localStorage`), so the prefill also fires for anyone who was signed in on this browser before and signed out — `logout()` resets `currentUser` to `new User()` (`:63-66`), so after a *clean* logout it is empty, but a session that expired (the interceptor's `logoutClient` → `auth.logout()`) goes through the same reset. Fine as far as read; worth one look that the resend panel does not show for an already-confirmed returning user | Closes with `FW13`'s retest |
+
+The `U5` caveat (a returning, already-confirmed user seeing the resend panel) was not looked at by the
+round and stays a one-look item — recorded here, not re-listed in the queue.
+
+### `auth/U6` — the unit still lists it open; the queue settled it in the ninth pass (§64)
+
+Not a change of state, a note so nobody reopens it: unit 15's round 2 made a fourth attempt, saw no stuck
+spinner, and kept `U6` `unverified` because it had not read §64. Its one new fact — a no-params visit's
+`POST /auth/confirm-email` answers **415**, not a network error, because `API.post('/auth' + fullPath)`
+sends no body — is adjacent to `FW12` and is folded there (guard the missing query before posting).
+
+### `todo-routine/B10` (`F24`) and the `F25` header — ✅ verified 2026-09-14; the *Awaiting retest* rows lagged two passes
+
+Both were ✅ in the summary table since the sixth pass's follow-up and in *Closed batches* below; the two
+⏳ rows under *Awaiting retest* were never struck. `todo-routine/B10`'s own entry records the browser
+pass (SK forms on every card, the heatmap tooltip, the history dialog, the freeze chip, then EN without a
+reload — and two side fixes: a doubled full stop in the SK freeze tooltip, and the history dialog's
+heatmap, which had never rendered), and `F25`'s *Farba* header is in its closed body. Unit 10's round 8
+(2026-09-15) re-confirmed both views against the round-6/7 numbers with no drift. The table in the queue
+now reads all-closed; it goes to this section next pass.
 
 ## Contradictions & re-grades
 
@@ -1641,6 +1750,141 @@ Everything below was checked against the **current working-tree source** this pa
     beside `title` is what `F65` does. The lower-case/sentence-case inconsistency it notes rides along
     with `FW5` (the slug is what is lower-case).
 
+99. **`todo-lists/X1` files the colour 400 as `[framework]` and proposes the fix §11 rejects.** The unit
+    saw `ColorPicker` emit `"blue"` and the validator demand hex, and concluded the picker is wrong —
+    *"either `ColorPicker` needs to emit the theme-appropriate hex value … or every caller needs to
+    translate"*. The thirteenth pass had already answered which side is stale from the server's own
+    code (§94): `ColorPalette.cs` declares the names, the e2e seeder writes them, and the routine-period
+    form ships `"color":"blue"` and gets 201 (`todo-routine/B11`, verified 2026-09-14). The regex lives
+    in one validator base three DTOs share, and it predates the palette on both sides. `X1` is the
+    fourth surface of §11 (roles, categories, and now to-do categories observed; §11 predicted this one
+    by construction) and is merged there, `blocker` kept. The two things the observation adds — the
+    dialog closes before the 400, and `"default"` is what the default swatch sends — are app-side notes
+    for after the validator lands.
+
+100. **`todo-lists/B8` — "a frontend call that was never updated after a backend routing change" has the
+    order backwards, and the gap is four months wide.** The server replaced `MoveToListTodoListItemEndpoint`
+    (`/move/{id}/{dest}`) with `MoveTodoListItemEndpoint` (`/{id}/move` + `{ destinationListId }`) on
+    **2026-05-15** (`0517bb3`); the client's `moveToList` was written on **2026-05-16** (`1a2e0284`)
+    against the shape deleted the day before, and `git log -S` finds no later edit on either side. So
+    it was not updated-then-broken, it was born broken — and no spec covers the move
+    (`todo-lists.spec.ts` has none), which is why nothing caught it. `F70`'s verification adds one.
+
+101. **`tracking-settings/X1`'s round-2 amendment reads a working `focus()` + Enter path as "consistent
+    with a stacking/paint bug".** It is consistent with `F12`'s cause and not with that one: `focus()`
+    scrolls the element into view within its nearest scrollable ancestor — the 0 px `.v-table__wrapper`
+    the third pass identified — and a keyboard Enter dispatches the click on the focused element with
+    no coordinate hit-test, so both halves bypass exactly the check the pointer fails. A paint-order
+    defect would leave `focus()` with nothing to scroll and the pointer still blocked. Nothing in `F12`
+    changes; the amendment is annotated in its body so the framework hypothesis is not reopened.
+
+102. **`tracking-settings/X3`'s suggested fix would silently re-activate every inactive rule on
+    edit.** The finding's shortcut — *"always send the current toggle state (defaulting `true` for a
+    new row)"* — assumes a toggle that does not exist (`O1` is that there is none) and misses that
+    `UpdateTrackerDesktopMappingRequest.UpdateEntity` is a **full replace** by its own remark: a body
+    saying `isActive: true` for a rule that was `false` flips it. `edit()` must copy the row's own
+    `isActive` from the grid response (`TrackerDesktopMappingResponse.ts:13`) into the request; `F72`
+    says so, and its verification edits a rule that is `false` and checks it stays `false`.
+
+103. **`tracking-settings/B5`'s expectation is the unit's own usecase, and the ledger it calls a gap is
+    the design.** *"Browse the distinct, not-yet-considered … combinations"* was written by the same
+    unit in round 1; no intent source says the list is an inbox. `FetchTableDistinctDesktopEntry.cs`
+    groups the raw `DesktopActivityEntry` rows with no join to mappings, and
+    `DesktopActivityHeartbeatEndpoint.cs:89-104` keeps *recording* an entry that matches a to-activity
+    rule (it attributes and stores; only an ignored match is skipped) — so a mapped `vlc.exe` keeps
+    appearing because the ledger is what was observed, not what is undecided. `B3`'s seed note says the
+    same from the other side ("the seeder drops [ignored ones] the way the heartbeat would"). The
+    product gap is real (nothing marks a tuple that already has a rule) and has a backend half; `bug`
+    → `opportunity`, deferred.
+
+104. **`tracking-settings/B7`'s "likely a `BasicTable`-level default shared by every other table" is a
+    per-call-site omission.** `BasicTable.vue:208` names the row by `deleteConfirmationColumn` when one
+    is passed and falls back to `item.id` when none is — the two mappings tables pass none, exactly as
+    the two `activity-settings` tables did not (`B8`, folded into `F19` in the thirteenth pass).
+    Of the eleven `<BasicTable>` consumers in `src/core`, five pass it (`BacklogTable`,
+    `BucketListTable`, `MemoryAnchorTable`, `ProjectTable`, `RoutineSettingsView`), two are `F19`'s and
+    two are these; the remaining two are worth one grep before `F13` ships. Folded into `F13` (same tag);
+    not a framework batch — rule 4 is for defaults worth changing, and "the id when you gave me
+    nothing" is the honest fallback.
+
+105. **`tracking-settings/B6`'s generic snackbar is the view's own, not the interceptor's — and `FW19`
+    alone would not surface the message here.** The unit reads *"the UI discards both messages and
+    shows only the generic 'Failed to save mapping'"* as one snackbar. It is two: the mapping API goes
+    through `useEntityCommand` with no `_silent` (`desktopActivityTrackingApi.ts:100`), so the
+    interceptor snackbars the server's 400 (generic today, specific after `FW19`), and then
+    `useMappingSettings.ts:51-53`'s `catch` calls `showErrorSnackbar(t('…failedToSaveMapping'))`, which
+    `showSnackbar` renders **in place of** the first. After `FW19` the user would see the specific text
+    for a tenth of a second and then the generic one. `F72` removes the second snackbar (or silences the
+    first and reads `errors` itself — one or the other).
+
+106. **`history-capture/B4` and `B5` are one gap on three views, and the unfiled third is the worst
+    documented.** The unit filed Pomodoro (writes `{0,0}` behind *"done for ?"*) and Timer (discards
+    silently) as two bugs with *"the same root shape"*. The stopwatch (`StopWatchView.vue:177`) is
+    Pomodoro's case under 30 s: `TimePrecise.toTimeLength` **rounds** seconds to the minute where
+    `Time.fromSeconds` **floors** them, so a 10-second stopwatch reaches the same unguarded
+    `SaveActivityBody` with `{0,0}`. And `B5`'s threshold is not "under a minute": the timer computes
+    `initialTime − remaining.toTimeLength`, so a 45-second stop *saves one minute* and a 15-second stop
+    is discarded. Three views, two rounding helpers, three policies — one batch (`F67`) with a
+    decision, not two fixes.
+
+107. **`history-capture/B6`'s 409 is the unique index — and that settles §53's "reset half is taste"
+    the other way.** The unit could not confirm the mechanism (*"same-`activityId`+`startTimestamp`
+    uniqueness is the likely shape, not verified"*); `ActivityHistoryConfiguration.cs` has
+    `HasIndex(UserId, ActivityId, StartTimestamp).IsUnique()`, and `DatabaseExceptionUtils` maps the
+    violation to 409. The consequence the finding did not draw: the form's `dateTime` is set once at
+    mount (`AddActivityManuallyForm.vue:53`) and nothing resets it, so **every** second submit of an
+    unchanged form after a success is the same 409, shown as *"error saving"*. The eighth pass called
+    the reset unsourced (§53); it is now a correctness requirement — *when* must advance — with only
+    *which other fields* left to taste. `F68`.
+
+108. **Unit 15's `X1` and `X2` were fixed before the round that filed them was read, and the queue's
+    two batches did not know.** `vue_framework` `6157283` / bump `04c405e9` (2026-09-15) landed
+    `ForgottenPasswordView`'s token and deleted `RegistrationView`'s fail-closed guard; unit 15's round 3
+    verified both in a browser and its docs were committed *in the same commit*. The thirteenth pass,
+    run the same day, was scoped by the operator to the uncommitted tree and left `FW9`/`FW13` as the
+    ninth pass wrote them. Both bodies now carry a ✅ header naming what landed and what is left
+    (`FW9`: the `/reset-password` view and `B3`'s catch; `FW13`: the catch and `P1`'s links). Lesson
+    for the runbook: "scoped to the working tree" needs a `git log` over `docs/views/` since the last
+    pass, or a committed round is invisible.
+
+109. **`auth/B6` — the server does not "no longer signal" an unconfirmed address; it has the branch and
+    never reaches it.** `PasswordSignInFlow.cs:105-106` returns `EmailNotConfirmed` → 403, deliberately
+    *after* the password check. But it calls `CheckPasswordSignInAsync` first (`:83`), and the host sets
+    `RequireConfirmedEmail = true` (`IdentityServiceExtensions.cs:121`), so Identity's `PreSignInCheck`
+    answers `NotAllowed` before verifying the password — `!result.Succeeded` → *"Invalid email or
+    password"* (`:95-101`). The flow's own check is dead code on every deployment that sets the option,
+    the client's 403 branch (`LoginView.vue:185-193`) is unreachable, and lockout never counts an
+    unconfirmed user's failed attempts. A framework-repo (`Sydowwe.Framework`) fix — escalation §14 —
+    and it gates `U2` and `U4`'s throwaway route.
+
+110. **`auth/B7`'s 401 is the API's `FallbackPolicy`, not the endpoint, and the cost is one wasted
+    request.** `/auth/resend-confirmation-email/undefined` matches no route (`undefined` is not a
+    `long`), and the README's *Test data* note explains what an unmatched path answers: 401. The
+    interceptor then refreshes, gets 401, calls `logoutClient()`, which returns at
+    `!auth.isAuthenticated` (`axiosConfig.ts:171-172`). The allowlist gap is real and is `FW21`; the
+    severity is not `bug` — nothing the user sees changes — and `FW12`'s `userId` guard removes the
+    only trigger observed. `FW9`'s *Do not change* on `AUTH_ENDPOINTS` stands for the two endpoints it
+    names; `FW21` is the class. `bug` → `polish`.
+
+111. **`auth/U6` is open in the unit and settled in the queue, and both are right about what they saw.**
+    §64 settled it from `SnackbarComposable.ts:43-46` in the ninth pass; unit 15's round 2 tried twice
+    more, saw nothing, and kept it `unverified` because the unit does not read the queue. Not a
+    contradiction of fact; recorded so the fifth attempt is not made. The round's 415 detail is folded
+    into `FW12`.
+
+112. **`todo-lists/B7` — the item delete is not one of P3's five sites, and that is why it reads the
+    preference the way it does (not at all).** `P3-delete-confirmation-granularity.md` lists five sites
+    by file and line; `useUndoableListCrud.deleteItem` is not among them because it was already an
+    undo-only path through `useTodoListUndo` when P3 ran. P3's own rule covers it (*"a leaf that is
+    undoable honors the preference"*) and `useDeleteConfirmation.resolveDelete` encodes it — so with
+    `askBeforeDelete` on, this is the one delete in the app that ignores the user. The routine list
+    shares the composable and has the same gap unfiled (unit 10's seven rounds deleted periods, never
+    items). `F69`; CLAUDE.md's "five sites" row needs its count fixed once for `F19` and this together.
+
+113. **`todo-lists/A3` stops one level short.** The item's `VCheckboxBtn` (`BaseTodoListItem.vue:19`)
+    has no name — and neither does each step's (`BaseTodoListItemSteps.vue:39`), the same markup the
+    round did not expand. Both in `F71`; the drag preview's copy is `disabled` and decorative.
+
 ### Re-grades
 
 | finding | was | now | why |
@@ -1779,6 +2023,32 @@ Everything below was checked against the **current working-tree source** this pa
 | *(unfiled — `inspirationSource` renders "—")* | — | **`FW20`**, source-certain, seed says the row has text | Contradiction 96 |
 | *(unfiled — `$vuetify.command.search` missing in EN)* | — | **`F58`**, from the diff | — |
 | *(unfiled — `/todo-list` category create/edit fails the same colour rule)* | — | **§11**, by construction (shared validator, same `ColorPicker`) | Contradiction 94 |
+| `history-capture/B4` + `B5` | two `bug`s, "same root shape" | one app batch **`F67`**, `bug`, with the **stopwatch** as an unfiled third view and a decision named | Contradiction 106; rule 3 |
+| `history-capture/B6` (was `U1`) | `unverified`, two halves of different standing (§53) | `bug`, **`F68`** — double-submit observed; the reset half is now a correctness requirement (the 409 index) | Contradiction 107 |
+| `history-capture/B1`, `B2` | open | stand, **re-confirmed live** in round 2 (`F35`, `F36`) | — |
+| `history-capture/B3`, `P1` | open | stand, not re-walked (no code change) — `F37`, `F38` | — |
+| `todo-lists/X1` | `blocker` **[framework]**, `ColorPicker` → hex | `blocker`, **merged into §11** — the server's validator is the stale side; the suggested fix is the one §11 rejects | Contradiction 99 |
+| `todo-lists/B7` | `bug` | stands, **`F69`** — the sixth delete site, never in P3's five; routine twin unfiled | Contradiction 112 |
+| `todo-lists/B8` | `bug`, "never updated after a routing change" | stands, **`F70`** — born broken on 2026-05-16, one day after the server moved the route | Contradiction 100 |
+| `todo-lists/A3` | `a11y`, one checkbox | `a11y`, **`F71`** — plus the step checkboxes | Contradiction 113 |
+| `tracking-settings/X1` (round 2) | `blocker`, amendment reads a keyboard path as "stacking/paint" | `blocker`, stands as `F12`; the amendment is annotated as consistent with the scroll-box cause | Contradiction 101 |
+| `tracking-settings/X2`, `X3`, `B6` | three findings (two `blocker`, one `bug`) | one app batch **`F72`**, `blocker` — one function; `X3`'s suggested shortcut rejected | Contradictions 102, 105; rule 3 |
+| `tracking-settings/X4` (was `U1`) | `blocker` | folded into **`F13`** — the dead delete that batch already wires, now observed; `U1` closed | — |
+| `tracking-settings/B7` | `bug`, "likely a `BasicTable` default" | `bug`, folded into **`F13`** — one `deleteConfirmationColumn` attribute per table | Contradiction 104 |
+| `tracking-settings/B5` | `bug` | **`opportunity`**, deferred — the ledger is by design; the marker is a product question with a backend half | Contradiction 103 |
+| `tracking-settings/B1`–`B4`, `P1`, `O1` | as filed | stand — `F13`, `F14`, `F15`, `F16`, `F17`, deferred; round 2 re-confirmed `B1` on both platforms | — |
+| `auth/X1` (was round 1's `X1`) | `blocker`, open in `FW9` | ✅ **fixed** — `vue_framework` `6157283`, verified round 3; `FW9` keeps its other two thirds | Contradiction 108 |
+| `auth/X2` (was `O1`, re-graded `bug` in the ninth pass) | `blocker` (unit's round 2) | ✅ **fixed** — same commit, verified round 3; `FW13` keeps the catch and `P1`'s links | Contradiction 108 |
+| `auth/B6` | `bug`, "backend no longer signals it" | `bug`, **escalation §14** — the branch exists and is dead under `RequireConfirmedEmail`; a `Sydowwe.Framework` fix | Contradiction 109; rule 2 |
+| `auth/B7` | `bug` | **`polish`**, **`FW21`** — the 401 is the `FallbackPolicy`'s; one wasted request | Contradiction 110 |
+| `auth/B8` (was `U1`) | `unverified`, `FW14`-if-confirmed | `bug`, **`FW14`** — observed in round 3 | — |
+| `auth/B4` | `bug`, sibling is the model (round 1) | `bug`, both views bare — **the unit now agrees** with `FW12` (round 2 re-drove it) | — |
+| `auth/B5` | `bug` | stands in `FW12`; the `/undefined` request now observed, and it is `FW21`'s trigger | — |
+| `auth/U5` | `unverified` | ✅ **resolved, no defect** — all three claims seen live after a real registration | Closed verification items |
+| `auth/U2`, `U3`, `U4` | `unverified` | stand; `U2` and `U4` now gated by §14 as well | — |
+| `auth/U6` | `unverified` (unit, round 2) | stays **dropped** (§64); the 415 detail folded into `FW12` | Contradiction 111 |
+| `auth/B1`, `B2`, `B3`, `A1`, `P1`, `P2`, `P3` | as filed | stand — re-verified live or by source in round 2 (`F39`/`FW11`, `FW7`, `FW9`, `FW7`, `FW13`, `F40`, `FW11`) | — |
+| `todo-routine` round 8 | — | no new findings; every entry `fixed and verified`; two stale ⏳ rows in *Awaiting retest* struck | — |
 
 ### Findings this triage did not challenge further
 
@@ -1909,6 +2179,61 @@ finding"* — has now been earned twice. The unit is also the first read-only on
 the one framework-owned surface they share (`StackedBarColumn`, `F29`) was already in the queue
 from the other consumer.
 
+`history-capture` (fourteenth pass, mutation round) — all three new findings read against source and
+the API's (`ActivityHistoryValidator`, `ActivityHistoryConfiguration`'s index). `B4` and `B5` stand and
+merge; `B6` stands and both its halves are now sourced. What the unit got right is the **entity
+lifecycle discipline** the pass exists for: it created rows, read their ids off the response body,
+photographed the malformed prompt, counted requests, and reseeded. What it got wrong is **extent**,
+again, the same way as in round 1 (§48–§53): two views where there are three, "under a minute" where
+the cliff is thirty seconds on one view and rounds on another, a 409 whose consequence for the
+*single*-click case it did not draw out. Two things it did not do and said so: `B3` and `P1` were not
+re-walked (no code change — correct call), so `F37`'s prediction that edit mode's pencil hides the chip
+is still unobserved, and `TimerPresetDialog`'s unconditional confirm (`F37`'s adjacent, "let the
+mutation pass file it") was not exercised either. Its tally (0 · 6 · 0 · 1 · 0 · 0 = 7) matches its body.
+
+`todo-lists` (fourteenth pass, round 6 — the unit's first real mutation pass, five rounds after its
+inventory) — all four new findings read against source, and the API's for two (`MoveTodoListItemEndpoint`
+and its request; the validator base behind `X1`). `X1` merges into §11; `B7`, `B8`, `A3` stand and grow
+by one twin each. What the unit got right is **the evidence on every line**: three request bodies with
+their 400s for `X1`, the preference checkbox's state in the same snapshot as the missing dialog for `B7`,
+the console stack through `TodoListView.vue:197-200` for `B8`, an `eval` triple for `A3` — and a
+lifecycle that left nothing behind without a reseed. What it got wrong is **ownership**, twice: `X1`
+filed against the framework picker when the server's own constants use the names it emits (§99), and
+`B8`'s history read in the wrong direction (§100). And what it did not know is what the queue had
+already written: §11 named this exact form as broken by construction two passes earlier, and `B7`'s
+composable was outside P3's list from the start. Its round history is now the longest in the sweep (six
+rounds plus 1a/2a) and still reconciles — the tally line's "4 open items: X1, B7, B8, A3" matches the
+body exactly.
+
+`tracking-settings` (fourteenth pass, mutation round) — all seven new findings read against source and
+the API's (both mapping request DTOs and their validators, the heartbeat, the distinct-entries grid).
+`X2`, `X3`, `B6` merge; `X4` and `B7` fold into `F13`; `B5` falls to `opportunity`; `X1`'s amendment is
+annotated. What the unit got right is **reaching the unreachable**: it found the `focus()` + Enter path
+past `F12`'s blocker on its own, used it to drive edit and delete on both platforms, and thereby turned
+`U1` into an observation and found `X3` — a defect no inventory pass could have seen. What it got wrong
+is the mechanism beneath two of its own observations (§101, §105) and the fix for one (§102 — the
+shortcut that would re-activate rules), and one expectation it wrote itself in round 1 and then held the
+app to (§103). Its tally (4 · 7 · 0 · 1 · 1 · 0 = 13) matches its body with `U1` correctly marked stale
+and uncounted. One thing for whoever runs `F72`: every rule this round created is still in the database
+only if the reseed did not run — the unit says it did.
+
+`auth` (fourteenth pass, rounds 2–3, from `04c405e9`) — the two new findings and every re-verification
+read against source, and the framework repo's for `B6` (`PasswordSignInFlow.cs`,
+`IdentityServiceExtensions.cs`). `B6` becomes §14; `B7` falls to `polish` and becomes `FW21`; `B8` becomes
+`FW14`; `X1`/`X2` were fixed before this pass read them. What the unit got right is **closing its own
+loop**: round 2 escalated `O1` to a blocker with the direct-API experiment that proved the server accepts
+the empty token, the fix landed the same day, and round 3 re-ran exactly the two blockers and the
+`unverified` rows they unblocked — the retest model the runbook describes, done by the unit itself. And
+it corrected its own round-1 error on `B4` unprompted (§60 had said the same; the unit reached it
+independently). What it got wrong is the layer beneath the screen, as ever: a 401 it read as the
+endpoint's answer (§110), a branch it read as removed (§109), and a spinner it kept chasing after the
+queue had settled it (§111). Its tally (2 · 8 · 1 · 3 · 0 · 5 = 19) matches its body, with `O1`/`U1`
+kept as pointers and not double-counted.
+
+`todo-routine` (fourteenth pass, round 8) — nothing to challenge: a re-run of the unit prompt that read
+its own instruction ("mostly verification, not discovery") and diffed two screens against round 6/7's
+numbers. Exact match, console clean, no new findings. The only queue effect is two stale ⏳ rows struck.
+
 ### Coverage tracker note
 
 `docs/views/_routes.md`'s coverage tracker still shows **units 13 `leisure-projects`, 6 `tracking-settings`
@@ -2010,3 +2335,14 @@ adds, removes or redirects a route. Both tallies match their bodies (11: 3 · 1 
 round-2 header tally reads *"unverified 2 (U1/U2 resolved this round, U3/U4 remain open)"* and its
 body agrees; unit 1's reads `unverified 0` and its `U1` section is gone from the body, folded into
 `B2` — consistent, noted so nobody hunts for it.
+
+**Fourteenth-pass addendum:** the working tree holds the unit-4, 6 and 9 mutation-round docs and unit
+10's round 8 (nine modified files, fifteen new screenshots) plus `units/10-todo-routine.md` staged into
+`_done/`; `units/04-*`, `06-*` and `09-*` are back in `units/` after their rounds, the way `04c405e9`
+moved 01/02/04 out for theirs — so **the `units/` listing no longer tracks completion**; the
+round-history tables do, and every unit but 16–19 now has at least an inventory. `_routes.md`'s tracker
+(`:117-134`) still has 4, 6 and 15 as ☐ although each has had two rounds. No route changed in this pass;
+`F70` corrects an API path, not a route. Three of the four rounds reseeded (4, 6, 15 — twice) and one
+restored by hand (9); `e2e/.state/auth-10001.json` is stale. The one operator action this pass asks for:
+**run a `git log --since` over `docs/views/` before the next scoped triage** — the auth round sat
+committed for a full pass because "the working tree" was the scope (§108).

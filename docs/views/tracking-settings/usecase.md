@@ -30,7 +30,8 @@ attributed to a real activity, or excluded from tracking.
   tracker (`distinctEntries` tab).
 - Define a pattern (process name / product name / window title, each with a match type) and either assign it
   to an activity (with role/category pre-filled from the activity) or mark it ignored, then save it as a rule
-  (`Save`).
+  (`Save`). **The "mark it ignored" half is non-functional** — confirmed in the round 2 mutation pass, see
+  Findings X2.
 - Browse existing rules, filtered by active/inactive, type (Activity/Ignored), and — for the Activity type —
   role/category/activity (`mappings` tab).
 - Edit an existing rule (loads its pattern and target back into the `distinctEntries` tab's form) or delete it.
@@ -57,13 +58,19 @@ window titles).
 
 ## Entity lifecycle
 
-A `TrackerDesktopMapping` / `TrackerAndroidMapping` is created here (via `Save`), edited here (`edit` action →
-repopulates the form on the `distinctEntries` tab), and deleted here (`delete` action on the `mappings` tab —
-see Findings B1, this pass could not confirm the delete actually removes anything). Deleting a mapping does not
-touch the `Activity` it points to, nor any `ActivityHistory` already attributed under a prior mapping — it only
-stops the rule from applying to *future* observations. Nothing else in the app creates or edits these rows;
-`ActivityDashboard`/`DesktopActivityDashboard`/`AndroidActivityDashboard` only read tracking data, they don't
-manage mappings.
+A `TrackerDesktopMapping` / `TrackerAndroidMapping` is created here (via `Save`, "to activity" mode only — "to
+ignored" mode is completely broken, see Findings X2), edited here in principle (`edit` action → repopulates the
+form on the `distinctEntries` tab — the repopulation itself works, but every edit-save fails server-side, see
+Findings X3) and deleted here in principle (`delete` action on the `mappings` tab opens a real confirmation
+dialog, but confirming it does not remove anything — **confirmed** in the round 2 mutation pass, see Findings
+X4, which supersedes the inventory pass's U1). Deleting a mapping is not currently exercisable enough to confirm
+what it *would* touch, but by design it should not touch the `Activity` it points to, nor any `ActivityHistory`
+already attributed under a prior mapping — it should only stop the rule from applying to *future* observations.
+Nothing else in the app creates or edits these rows; `ActivityDashboard`/`DesktopActivityDashboard`/
+`AndroidActivityDashboard` only read tracking data, they don't manage mappings.
+
+**As of the round 2 mutation pass (2026-09-15), only "create, to-activity mode" of this lifecycle actually
+works.** Create-to-ignored, edit, and delete are all confirmed broken — see `findings.md` X2/X3/X4.
 
 ## Data this unit captures but does not spend
 

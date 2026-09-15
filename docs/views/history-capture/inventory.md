@@ -1,6 +1,7 @@
 # history-capture — inventory
 
-> Captured 2026-09-14 · locale EN · account `test@example.com` · commit `5e42b813`
+> Captured 2026-09-14, re-verified (mutation pass) 2026-09-15 · locale EN · account `test@example.com` · commit
+> `63e851ff`
 
 ## Views
 
@@ -41,7 +42,11 @@ a stopwatch
 - no query params
 - `localStorage: runningTimerSession::u<accountId>` — the whole session (kind, timestamps, activity, alarm ids).
   Survives reload and tab close (up to 12h); confirmed by reload mid-run: elapsed at reload matched wall-clock
-  time passed since the pre-reload reading (45s → 55s across a ~10s round trip through Home and back)
+  time passed since the pre-reload reading (45s → 55s across a ~10s round trip through Home and back).
+  **Re-confirmed in the mutation pass** with a full navigate-away → reload → navigate-back round trip through
+  `NowBar`: started on `/activity-history/stopwatch`, navigated to `/`, `NowBar` showed "Timer running for Write
+  Blog Post — open it" at `00:10`, reloaded `/` (session survived the reload, clock now `00:16`), clicked the
+  chip back to `/activity-history/stopwatch` and found the same running session, not a fresh one.
 - `localStorage: activityPickerRecency.v1::u<accountId>` — last-picked activity ids, feeds the "Recently used"
   subheader
 
@@ -104,7 +109,12 @@ countdown
 - Save-to-history confirm — same as stopwatch.
 - "Another timer is running" replace-guard (`useTimerSessionGuard`) — title "Another timer is running", text
   `Stopwatch is running for "Bug Fixing". Starting a new session discards it.`, buttons Cancel / "Discard and
-  start". Confirmed: Cancel leaves the other session untouched.
+  start". Confirmed: Cancel leaves the other session untouched. **Re-confirmed live in the mutation pass** with
+  the roles reversed (a running Timer, an attempted Stopwatch start): dialog read `Timer is running for "Meal
+  Preparation". Starting a new session discards it.`, Cancel returned to the timer view with the timer still
+  counting and unaffected.
+- **Mutation pass, Stop within the first minute:** no dialog opens at all — the session is silently discarded.
+  See finding B5; this is a real defect, not a documentation gap.
 
 **Keyboard**
 - Escape closes an open `TimePicker` overlay (confirmed — clicking the Length field opens a `VTimePicker` menu
@@ -165,6 +175,9 @@ finding.
   does.
 - Save-to-history confirm on Stop — same shape as the other two, quoting the **focus** activity's name and
   accumulated focus time only (rest time, if any, is saved silently in the same call without its own dialog).
+  **Mutation pass, Stop within the first minute:** the dialog still opens (unlike Timer — see B5) but its
+  duration slot renders blank, reading "Confirm saving activity "Brush Teeth" - done for ?"; confirming it POSTs
+  a real `length: {hours:0, minutes:0}` row. See finding B4.
 - "Another timer is running" replace-guard — reached from here too when a stopwatch/timer is already live;
   confirmed identical copy pattern, naming the *other* kind.
 
@@ -197,7 +210,7 @@ finding.
 | From to-do list / From routine to-do list / Role / Category / * Activity / Create new activity | — | as stopwatch | — | in place / dialog |
 | When | date+time input pair | `getByLabel('When')`-adjacent calendar/clock icons | defaults to "now"; date and time are two separately-clickable segments | in place |
 | Length | masked textbox | `getByRole('textbox', { name: 'Length' })` | same 5-minute-rounding behaviour as Timer/Pomodoro — see finding B2 | in place |
-| Record activity to history | button | `getByRole('button', { name: 'Record activity to history' })` | validates activity (required) and length (must be non-zero) client-side before any request; **not disabled during the request and the form is not reset/cleared after a successful save** — see finding B5 | in place (no confirm step, unlike the other three) |
+| Record activity to history | button | `getByRole('button', { name: 'Record activity to history' })` | validates activity (required) and length (must be non-zero) client-side before any request; **not disabled during the request and the form is not reset/cleared after a successful save — confirmed live in the mutation pass: a fast double-click fires two `POST`s, the backend 409s the second rather than duplicating the row** — see finding B6 | in place (no confirm step, unlike the other three) |
 
 **Readable surfaces**
 | surface | kind | contents | raw/derived | populated by |
