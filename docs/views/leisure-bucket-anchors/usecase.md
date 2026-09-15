@@ -28,15 +28,20 @@ experienced.
 comfort-zone stretching is on their mind.
 
 **What the user can do**
-- Add, edit and delete a bucket-list profile (activity, experience type, comfort-zone step 1–5, requires
-  travel, financial goal, inspiration source) via `BucketListProfileForm` / `NewBucketListProfileForm`.
+- Add a bucket-list profile (activity, experience type, comfort-zone step 1–5, requires travel, financial
+  goal, inspiration source) via `NewBucketListProfileForm` — **confirmed working**. Edit and delete an
+  existing profile via `BucketListProfileForm` are exposed identically but **both are completely
+  non-functional** (silent 404, no error shown to the user) — see `findings.md` X4.
 - Toggle between a **table** and a **ladder** view, with the choice kept in the `view` URL query param.
 - Filter by activity name, experience type, comfort-zone step range, "requires travel" and "experienced"
-  (tri-state: any / yes / no) — the panel's state round-trips through the URL.
+  (tri-state: any / yes / no) — the panel's state round-trips through the URL. Only `activityName` and
+  `isAnchored` actually narrow the result set; the comfort-zone-step range is accepted and sent but ignored
+  server-side (see `findings.md` B1).
 - Mark a row "I did this" from the table's Experienced column or the ladder's per-item action, which opens
-  the memory-anchor capture dialog pre-filled with the activity.
+  the memory-anchor capture dialog pre-filled with the activity — **confirmed working**, including the
+  reverse: deleting the resulting anchor correctly un-marks the row as experienced again.
 - On the ladder, see one highlighted "next rung" nudge — the lowest comfort-zone step that still has an
-  unexperienced item — and delete an item directly from its rung card.
+  unexperienced item — and delete an item directly from its rung card (same non-functional delete as above).
 
 **What the user can see, and the question it answers**
 - Experienced-progress bar ("N of M experienced") — answers "how much of my list have I actually done?"
@@ -84,22 +89,29 @@ should supply this is also currently broken).
 ## Entity lifecycle
 
 A bucket-list profile (`ActivityBucketListProfile`, keyed by `activityId`) is created, edited and deleted
-entirely within `BucketListView`. Deleting it does not touch any memory anchor that already points at the
-same activity — the two are related by `activityId`/`memoryAnchorId`, not by cascade.
+entirely within `BucketListView`. **Create works; edit and delete do not** — both send the profile's
+`activityId` where the backend expects the profile's own row id, so every `PUT`/`DELETE` 404s silently (no
+error shown, the edit dialog just stays open and the deleted row just stays in the table). Confirmed in the
+mutation pass across both the table and ladder call sites; see `findings.md` X4. Deleting a profile (once
+that bug is fixed) does not touch any memory anchor that already points at the same activity — the two are
+related by `activityId`/`memoryAnchorId`, not by cascade.
 
 A memory anchor (`MemoryAnchor`) is created either from `MemoryAnchorsView` directly (any eligible
-activity) or via the "I did this" capture flow from a bucket-list or backlog row (`useAnchorCapture`,
-activity locked). Editing changes month/year/rating/note; deleting it does not delete the bucket-list or
-backlog profile it came from, and — per the seed data observed — does not appear to flip the source
-profile's `isAnchored` back to `false` within this pass's testing window (not independently re-verified
-after a delete, since deleting would have cost the only two seeded anchors — logged as `unverified`).
+activity — **currently broken, the eligible-activities endpoint 404s**, see `findings.md` X3) or via the "I
+did this" capture flow from a bucket-list or backlog row (`useAnchorCapture`, activity locked — **confirmed
+working end-to-end** in the mutation pass). Editing changes month/year/rating/note (**confirmed working** —
+unlike the bucket-list profile, `MemoryAnchor` carries its own real id, not an activity-derived one).
+Deleting it does not delete the bucket-list or backlog profile it came from, but **does correctly flip the
+source profile's `isAnchored` back to `false`** — confirmed in the mutation pass by creating an anchor via
+"I did this," deleting it, and observing the bucket-list row revert from "Experienced" to "I did this."
 
 ## Data this unit captures but does not spend
 
-- `ActivityBucketListProfile.financialGoal` and `.inspirationSource` — captured on every profile, rendered
-  as plain table columns, but nothing in either view (or in the ladder/timeline) uses them to sort, filter,
-  or drive any suggestion. `inspirationSource` in particular reads as free-text worth surfacing somewhere
-  richer than a table cell.
+- `ActivityBucketListProfile.financialGoal` and `.inspirationSource` — captured on every profile, but nothing
+  in either view (or in the ladder/timeline) uses them to sort, filter, or drive any suggestion.
+  `inspirationSource` in particular reads as free-text worth surfacing somewhere richer than a table cell —
+  and right now isn't even reaching the table cell it has: a formatter bug renders it as "—" unconditionally
+  (`findings.md` B3), so today this field is captured but not read back anywhere in the UI at all.
 - `MemoryAnchor.hasBacklog` / `backlogIsRepeatable` / `hasBucketList` — three fields whose only purpose
   today is choosing which one source chip (if any) to render. The richer question they could answer — "of
   everything I've anchored, how much came from planning ahead versus a repeatable habit I happened to

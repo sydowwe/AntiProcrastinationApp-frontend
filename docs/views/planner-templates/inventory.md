@@ -1,10 +1,13 @@
 # planner-templates — inventory
 
-> Captured 2026-09-14 · locale EN · account `test@example.com` · commit `6aac48bb`
+> Captured 2026-09-14 (inventory), retested 2026-09-15 (mutation pass) · locale EN · account
+> `test@example.com` · commit `041d9b2d`
 
 Fixture: `homeOffice` (id `20001`, 5 tasks), `officeDay` (id `20002`, 4 tasks), `pinned` a.k.a. "Relaxed
-Weekend" (id `20003`, 3 tasks, the only `isPinned` one). All template tasks are foreground (no
-`isBackground` seed data — the header stat line's background exclusion could not be exercised).
+Weekend" (id `20003`, 3 tasks, the only `isPinned` one). All seeded template tasks are foreground; the
+2026-09-15 mutation pass added a real `isBackground` task to a throwaway template to exercise the header
+stat line's background exclusion (see `findings.md` `P3`), then deleted it — the fixture's own tasks are
+still all foreground.
 
 ## Views
 
@@ -24,11 +27,11 @@ Weekend" (id `20003`, 3 tasks, the only `isPinned` one). All template tasks are 
 | Cancel (list toolbar) | button | `getByRole('button', {name:'Cancel'})` | exits compare mode, clears selection | in place |
 | Sort dropdown | select | `getByRole('combobox')` | Most Used / Recently Used / Alphabetical; re-sorts within each section (pinned/active/inactive) | in place — **not reflected in the URL, see Findings B4** |
 | Edit Side by Side | button | `getByRole('button', {name:'Edit Side by Side'})` | navigates to the split view; renders only at `mdAndUp` (no mobile equivalent) | `/day-planner/templates/split` |
-| Add Template | button | `getByRole('button', {name:'Add Template'})` | opens the create dialog (`TemplateDetailsForm`) | dialog |
+| Add Template | button | `getByRole('button', {name:'Add Template'})` | opens the create dialog (`TemplateDetailsForm`); on a successful create, **navigates straight to the new template's `/day-planner/templates/:id`** (confirmed live, mutation pass 2026-09-15) rather than staying on the list | `/day-planner/templates/:id` |
 | Template card (click) | row | `getByText(<card text>)` | navigates to the template's detail view | `/day-planner/templates/:id` |
 | Active/Inactive switch | switch | `getByRole('switch', {name:'Active'})`/`'Inactive'` | toggles `isActive`, reloads the list (moves the card between sections) | in place — **label text wraps vertically, see Findings B1** |
-| Pin toggle | icon button, **unnamed** | no accessible name/title (see Findings A1); only reachable via a positional locator | `PATCH .../pinned`, optimistic with rollback on failure | in place |
-| Delete | button | `getByRole('button', {name:'Delete'}).first()` etc. | opens a confirm dialog naming the template and, if it has tasks, the cascade count | dialog |
+| Pin toggle | icon button, **unnamed** | no accessible name/title (see Findings A1); only reachable via a positional locator | `PATCH .../pinned`, optimistic; **confirmed live (mutation pass) to move the card between the Pinned and Active/Inactive sections in both directions** | in place |
+| Delete | button | `getByRole('button', {name:'Delete'}).first()` etc. | opens a confirm dialog naming the template and, if it has tasks, the cascade count. **Confirmed live (mutation pass):** with "Ask before deleting single items" off, a 0-task template deletes with *no* confirmation at all, but a template with ≥1 task always shows the cascade count prompt regardless of the preference | dialog, or immediate delete if the template has 0 tasks and the preference is off |
 | Edit Details | button | `getByRole('button', {name:'Edit Details'})` | opens the edit dialog, pre-filled including `suggestedForDayType` | dialog |
 | Duplicate | button | `getByRole('button', {name:'Duplicate'})` | opens the create dialog pre-filled with `"<name> (copy)"` and every field, including `suggestedForDayType` | dialog |
 | Use Today | button | `getByRole('button', {name:'Use Today'})` | navigates to today's day planner with `?applyTemplateId=<id>` | `/day-planner/:todayDate?applyTemplateId=<id>` (out of unit) |
@@ -88,7 +91,7 @@ Weekend" (id `20003`, 3 tasks, the only `isPinned` one). All template tasks are 
 | back arrow | icon button | `getByRole('button')` near the title (has an icon but check accessible name — not separately verified this pass) | returns to the list | `/day-planner/templates` |
 | Left Template / Right Template | select | `getByRole('combobox', {name:'Left Template'/'Right Template'})` | loads that `TemplateDayPlannerView` into the panel, independently of the other side | in place |
 | everything `TemplateDayPlannerView` exposes | — | — | identical to the standalone view, once per panel, against independent `main`/`secondary` stores | in place |
-| drag a task across panels | drag-and-drop (`@atlaskit/pragmatic-drag-and-drop`) | not verified by an actual drag in this pass (too failure-prone to script reliably; a drag handle icon is visible on each task block) | intended to move the task to the other template via `PATCH` + local store splice | in place |
+| drag a task across panels | drag-and-drop (`@atlaskit/pragmatic-drag-and-drop`) | a drag handle (`.split-drag-handle`, `title="Drag to other template"`) is visible on each task block | intended to move the task to the other template via `PATCH` + local store splice. **Mutation pass (2026-09-15) made three scripted attempts (`dragTo`, a manual multi-step pointer drag, a handle-targeted drag) and none crossed panels — every attempt was captured by the source panel's own same-grid drag-to-reschedule instead** (confirmed via the resulting `PATCH` body only ever containing `startTime`/`endTime`, never `templateId`); see Findings U2. Same-panel drag-to-reschedule itself works correctly. | in place, or a same-panel time change if the cross-panel drop isn't recognized |
 
 **Readable surfaces**
 | surface | kind | contents | raw/derived | populated by |
@@ -157,14 +160,16 @@ prop) · guard: auth
 | Cancel (placing banner) | button | `getByRole('button', {name:'Cancel'})` | clears the placement, banner disappears | in place |
 | Start / duration steppers, 5M/10M/15M/30M | inputs + buttons | — | changes the grid's time-slot granularity | in place |
 | Add New Task | button | `getByRole('button', {name:'Add New Task'})` | opens the create-task dialog | dialog |
-| Task block (grid) | button, accessible name includes time/role/category/importance/location | `getByRole('button', {name:/<task name>/})` | selects it; selection-actions bar appears (Edit/Cut/Duplicate/Split/Cancel) | in place |
+| Task block (grid) | button, accessible name includes time/role/category/importance/location | `getByRole('button', {name:/<task name>/})` | selects it (click adds to selection rather than replacing it — confirmed multi-select via click alone, no Ctrl needed); selection-actions bar appears (Edit/Cut/Duplicate/Split/Cancel for 1 selected, Delete/Cut/Duplicate/Split for 2+). Deleting 2+ selected confirms with "delete N selected tasks?" (`docs/views/planner-templates/screenshots/day-planner-templates-id--mutation-multiselect-delete-confirm.png`) | in place |
+| Background task block (grid, `isBackground: true`) | plain `<div>`, **no role, no accessible name, no tabindex** | `.background-task-block`; only reachable by mouse click — see Findings A4 | click selects it (mouse-only); **not reachable via Tab, and Escape does not clear its selection** (both confirmed live, mutation pass 2026-09-15) | in place |
+| Delete (selection-actions bar) | button | `getByRole('button', {name:'Delete'})` | opens a confirm dialog naming the task (or "delete N selected tasks?" for multi-select) — **confirmed live: with "Ask before deleting single items" off, a single task deletes immediately with no dialog; the dialog always appears when the preference is on** | dialog, or immediate delete if the preference is off |
 | mobile panel-close "X" | icon button | `d-md-none`, no separate accessible-name check done | closes the panel at `<md` widths | in place |
 | mobile panel-open toggle (the collapsed pill) | icon button, **unnamed** | no accessible name (see Findings A3) | opens the panel at `<md` widths — **but see Findings X2, the opened panel is unusable** | in place |
 
 **Readable surfaces**
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
-| Header stat line | text | "N tasks · Xh Ym planned · Zh Wm free" | derived, **excludes background tasks by design** (`taskStats` filters `nonBgTasks`) — not exercised with a background task in this seed | client-side, from `store.tasks` |
+| Header stat line | text | "N tasks · Xh Ym planned · Zh Wm free" | derived, **excludes background tasks by design** (`taskStats` filters `nonBgTasks`) — **confirmed live (mutation pass 2026-09-15): a template with 1 foreground + 1 background task still reads "1 task · 1h planned"**, unchanged from before the background task was added; see Findings P3 for the labelling suggestion this prompted | client-side, from `store.tasks` |
 | Time grid | custom grid, one row per slot | task blocks positioned by time | raw times, derived pixel/row position | `POST /api/template-planner-task/filter` |
 | Task block accessible name | text | "`<name>, <start> to <end>, role: <role>[, category: <category>][, importance: <level>][, location: <loc>]`" | raw, composed | same |
 | Keyboard help paragraph | text (visually hidden, in the a11y tree) | "Tab moves between tasks. Space or Enter selects... Arrow Up/Down move... Escape clears." | static | — |
@@ -193,6 +198,10 @@ prop) · guard: auth
 - Fully documented by the view's own on-grid help paragraph (see Readable surfaces above): Tab between
   tasks, Space/Enter select, `E` edit, Delete removes, Ctrl+D duplicates, Arrow Up/Down move by one slot,
   Escape clears selection. Confirmed scoped per-instance in the split view (see TemplateSplitView above).
+  **Confirmed live (mutation pass 2026-09-15) that this help text is inaccurate for a background task:**
+  selecting a foreground task and pressing Tab jumps to the toolbar's "Delete" button, skipping any
+  background task on the grid entirely (it is never in the Tab sequence); selecting only a background
+  task and pressing Escape does not clear the selection. See Findings A4.
 
 **Console & network**
 - errors/warnings: none on a valid id. **On an invalid id, an uncaught 404 (`AxiosError`) from

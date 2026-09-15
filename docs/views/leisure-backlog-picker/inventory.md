@@ -1,135 +1,177 @@
 # leisure-backlog-picker — inventory
 
-> Captured 2026-09-14 · locale EN · account `test@example.com` · commit `50bd6b0d`
+> Captured 2026-09-15 · locale EN · account `test@example.com` · commit `f457aa0c`
+
+Shell (nav, top bar, dialog Escape-persistence default, breadcrumbs) is documented once in
+`docs/views/_shell/inventory.md` — only differences from that baseline are called out below.
 
 ## Views
 
 ### BacklogView (`/leisure/backlog`)
 ![default](screenshots/leisure-backlog--default.png)
 
-**Route:** `/leisure/backlog` · params: none · query: `page`, `perPage`, `sortBy`, plus every
-`ActivityBacklogProfileFilter` field · guard: auth
-**Reached from:** sidebar "Leisure → Backlog"; `PickerView`'s "Browse everything" / "Fill the
-backlog" links; `SuggestionCard`'s backlog-source chip does **not** link here (chip is not a link,
-`sourceMeta.routeName` is unused for navigation — see Findings)
+**Route:** `/leisure/backlog` · params: none · query: `page`, `perPage`, `sortBy`, plus every filter
+field (`locationTypeIds`, `weatherDependencyIds`, `energyLevels`, `effortTypes`,
+`expectedCostTierIds`, `maxDurationMinutes`, `isRepeatable`, `isAnchored`, `activityName`) when set ·
+guard: auth (no `public` meta)
+**Reached from:** sidebar "Leisure → Backlog"; `ExperiencedCell`'s "open anchor" link from
+`/leisure/memory-anchors` goes the other way
 
 **Actions**
 | label | kind | selector | does | destination |
 | --- | --- | --- | --- | --- |
-| Filter | button | `getByRole('button', {name:'Filter'})` | opens the filter side panel | overlay, see Dialogs |
-| Activity / Location / Weather / Energy / Effort / Cost / Duration (min) / Repeatable activity / Experienced | filter inputs | `getByLabel(<field>)` inside the filter panel | edits the draft filter | in place, applied on Confirm |
-| Clear | button (in filter panel) | `getByRole('button',{name:'Clear'})` | resets filter to defaults, applies immediately, closes panel | in place |
-| Confirm | button (in filter panel) | `getByRole('button',{name:'Confirm'})` | applies the draft filter, writes it to the URL, closes panel | in place |
-| filter chip × (e.g. "Repeatable activity: X") | chip, closable | `ChipWithIcon` in the header row | removes just that one filter field | in place |
-| Add (+) | icon button | `getByRole('button',{name:'Add'})` (title="Add") | opens the create dialog | dialog, see below |
-| Edit (pencil) | icon button | `getByRole('button',{name:'Edit'})` (title="Edit") | opens the edit dialog, prefilled | dialog, see below |
-| Delete (trash) | icon button | `getByRole('button',{name:'Delete'})` (title="Delete") | opens a delete-confirmation `MyDialog` | dialog, see below |
-| "I did this" | button (per row, one-time entries only) | `getByRole('button',{name:"I did this"})` | opens anchor-capture flow | dialog (not opened in this pass — would create a `MemoryAnchor`, out of scope for an inventory pass) |
-| "Done" chip (per row, already-anchored) | chip, link | `title="Open the memory anchor"` | navigates to the matching anchor | `/leisure/memory-anchors?activityName=<name>` |
-| Column header (sortable: Activity, Duration (min)) | columnheader | `getByRole('columnheader',{name:...})` | toggles sort asc/desc, writes to URL | in place |
-| Column header (non-sortable: Location, Weather, Energy, Cost, Repeatable activity, Experienced) | columnheader | — | no-op on click (confirmed: clicking "Location" left `sortBy` unchanged) | in place |
-| Items-per-page select, pager arrows | table footer | `MyTableFooter` | pages the table | in place |
+| Filter | button | role=button "Filter" | opens the `FilterPanel` drawer | in place (drawer) |
+| Add (header, icon `+`) | button | role=button "Add" | opens create dialog (`BacklogProfileForm`) | dialog |
+| edit (row) | button | role=button "edit" in row | opens edit dialog, activity locked | dialog |
+| delete (row) | button | role=button "delete" in row | opens `BasicTable`'s built-in delete-confirmation dialog, naming the activity | dialog, then **fails silently — see X1** |
+| "I did this" (row, `Experienced` col) | button | role=button "I did this", only on non-repeatable rows with `isAnchored !== true` | opens `MemoryAnchorForm` ("Write it down") | dialog |
+| "Experienced" chip (row) | chip/link | `.v-chip` inside `tbody` — not addressable by role, only by text (see A1) | navigates to memory anchors, pre-filtered | `/leisure/memory-anchors?activityName=…` |
+| column headers (Activity, Duration) | sort toggle | role=columnheader | re-sorts; **clicking a second header adds a secondary sort key rather than replacing the first** (`sortBy` became `activity.name:asc,durationMinutes:asc`) | in place |
+| Items-per-page select / pagination | select + buttons | standard `BasicTable` footer | pages the table | in place |
+
+**Create dialog fields** (`BacklogProfileForm` → `NewBacklogProfileForm`): Activity (searchable
+autocomplete, required, inline-create-on-no-match), Location (select, required by data but **no
+client `required` rule**), Weather (same), Energy (select, defaults "Medium"), Effort (select,
+optional), Cost (select, required by data but no client rule), Min/Max people (number inputs), Duration
+(number input, defaults 60), Repeatable (checkbox).
 
 **Readable surfaces**
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
-| Backlog table | server-paged table | Activity, Location, Weather, Energy, Cost, Duration (min), Repeatable activity (icon), Experienced | raw (each column is a DTO field) except the weather "good today" chip, which is derived (`fitsToday(item.weatherDependency.id, weatherFit)`) | `POST /activity-backlog-profile/grid` |
-| Experienced progress bar | text readout, conditionally rendered | "N of M experienced" | derived — two page-size-1 count requests under the current filter (one unscoped, one `isAnchored:true`) | `POST /activity-backlog-profile/grid` ×2 (see Findings for a `[framework]` chip layout note only; the two-call design itself is intentional, documented in the composable) |
-| Filter chips | chips in header | one per active filter field | derived from the applied filter | client-side, from `filter.value` |
+| table | server-paged table | Activity, Location, Weather, Energy, Cost, Duration (min), Repeatable activity, Experienced | raw, one derived column (`isGoodToday` chip is client-computed from `weatherFit` + row's `weatherDependency.id`) | `POST /activity-backlog-profile/grid` |
+| "N of M one-time things experienced" bar | progress bar + text | count of `isAnchored === true` over count of `isRepeatable === false`, under the current filter | derived client-side from two extra count-only (`itemsPerPage:1`) requests | two extra `POST /activity-backlog-profile/grid` calls, see Console & network |
+| "good today" chip | chip | shown when the row's `weatherDependency.id` is in today's `matchingWeatherDependencyIds` | derived | `GET /leisure-weather-fit` |
 
 **States**
-- empty: "These are things you could do. You don't have any here yet[…]" (`leisure.emptyStates.backlog`), with an inline "ADD" button. Reached both when the table is genuinely empty and when a filter matches zero rows (same copy either way — confirmed by filtering `isRepeatable: false` against a seed whose one row is repeatable).
-- loading: not captured distinctly (single-row seed loads too fast to catch a loading skeleton in this pass) — `unverified`.
-- error: not reachable with the current seed/session (no way to force the grid endpoint to fail from the UI) — `unverified`.
+- empty: "No entries yet" style copy + an inline Add button in the table's `#noData` slot (per L4) —
+  not captured this pass since the seed always carries one row; confirmed present in source
+  (`BacklogTable.vue`'s `noData` template) but not screenshotted — **unverified, U1**.
+- loading: standard `BasicTable` skeleton/spinner (framework, not re-documented here).
+- error: a failed `grid` fetch is not something this pass could trigger without breaking the network
+  connection; not exercised — **unverified**.
 
 **URL & persisted state**
-- `page`, `perPage`, `sortBy` — survive reload (confirmed: toggled sort to `activity.name:desc`, reloaded, sort held).
-- Every `ActivityBacklogProfileFilter` field — survives reload (confirmed with `activityName=novel`: filter chip and filtered result both held after reload).
-- No `localStorage` use on this view.
+- `page`, `perPage`, `sortBy`, and every filter field round-trip through the URL and survive a hard
+  reload — confirmed: filtered by Location=Indoor, URL carried `locationTypeIds=4`, reload kept both
+  the URL and the filter chip.
+- No `localStorage`/`sessionStorage` use observed in this view.
 
 **Dialogs opened from here**
-- **Create/Edit** (`BacklogProfileForm` → `NewBacklogProfileForm`, title "Activity Backlog") — fields: Activity (autocomplete, locked on edit), Location, Weather, Energy, Effort, Cost, Min/Max people, Duration (min), Repeatable activity (checkbox). Confirm label "Create" or "Save". See Findings X3 for defects found inside this dialog.
-- **Delete confirmation** (`MyDialog`, title "Delete confirmation") — "Are you sure you want to delete `<activity name>`?", Cancel / Confirm. No cascade warning (correct — deleting a backlog profile has no children). Escape does **not** close it — same framework default as shell finding A1, not re-filed here.
-- **Quick-create activity** (`QuickCreateActivityDialog`, reachable via the Activity field's "create «typed text»" no-results affordance) — not opened in this pass (would create a real `Activity`, a side effect out of scope for read-only inventory); code-reviewed only, see `usecase.md`.
+- **Create/Edit "Activity Backlog"** (`BacklogProfileForm`) — see fields above. Cancel/Save. Escape
+  does **not** close it — matches shell baseline A1 (`persistent` default), not re-filed here.
+- **Delete confirmation** (`BasicTable`'s built-in `MyDialog`) — "Are you sure you want to delete
+  {activity name}?", Cancel/Confirm. Confirms unconditionally regardless of `askBeforeDelete` (there
+  is no cascade here to warn about — a backlog profile has no children).
+- **"Write it down"** (`MemoryAnchorForm`, opened via `ExperiencedCell`) — Activity (disabled,
+  prefilled), Month, Year, Highlight (textarea, server-required, **no client `required` rule** — see
+  B3), Rating (number, 1–10, default 5). Cancel/"Save the moment".
 
 **Keyboard**
-- Tab order inside the filter panel moves through fields top-to-bottom then Clear/Confirm; the panel traps focus (`handleKeydown`'s Tab-wrap logic) and returns focus to the "Filter" button on close — not independently re-verified by direct Tab-key testing in this pass, confirmed by source read only.
-- Escape closes the **filter panel** (confirmed: panel's own `handleKeydown` sets `open=false`, distinct from `MyDialog`'s persistent-by-default behaviour).
-- Escape does **not** close the delete-confirmation dialog (confirmed, see Dialogs above).
+- Tab reaches Filter, Add, then each row's action buttons in order; standard `BasicTable` pattern,
+  not re-audited per-control here (see shell).
+- The `VIdSelect` fields in both the filter drawer and the create dialog use Vuetify's
+  `data-no-activator` wrapper on the input — a **direct** `getByRole('combobox').click()` was
+  intercepted by that wrapper in every attempt (5/5) and had to fall back to clicking the outer
+  field container. Real pointer clicks anywhere in the visible field still land on the same outer
+  container, so this was not confirmed to be user-facing; flagged as a documentation note only, not
+  a filed defect.
 
 **Console & network**
-- errors/warnings: one recurring **[framework]** Vue warning — `Extraneous non-props attributes (class) were passed to component… at <FilterPanel>` — fires on every render because `BacklogView.vue` passes `class="flex-1-1"` to `<FilterPanel>`, whose root is a fragment (a `<div>` plus a `<Teleport>`), so Vue cannot auto-inherit the class. See Findings P1.
-- non-2xx: two, both self-inflicted by this pass while probing the create dialog — `POST /activity-backlog-profile` → 400 `{"errors":{"activityId":["Activity not found."]}}`, twice. See Findings X3.
-- duplicate requests: none. Three `POST /activity-backlog-profile/grid` calls fire on load, but with three different bodies (main table page, and two page-size-1 "experienced" counts with different `isAnchored` values) — by design, documented in `useExperiencedProgress.ts`. **However**, see Findings X1: the main table's copy of the filter is not applied the same way the two count requests' copies are, so "three requests, three different bodies" is not the same claim as "three requests, all correctly filtered."
-
-## Transitions out of this unit
-| from | control | goes to |
-| --- | --- | --- |
-| BacklogTable "Done"/"I did this" | anchor chip | `/leisure/memory-anchors?activityName=<name>` (out of unit scope) |
-
----
+- errors/warnings: none on a plain load or on filtering.
+- non-2xx: `POST /activity-backlog-profile` → 400 (create with unselected required fields, X2/B1);
+  `POST /memory-anchor` → 400 (empty Highlight, B3); `PUT` and `DELETE /activity-backlog-profile/{activityId}`
+  → 404 (X1) — all captured below in Findings.
+- duplicate requests: a filter change fires **three** `POST /activity-backlog-profile/grid` calls
+  (one from the table's own `load()`, two count-only `itemsPerPage:1` calls from
+  `useExperiencedProgress`'s filter watch) — this is documented, deliberate design (separate
+  composable instances, per the code comments), not a bug. The very first load additionally fires
+  two more count-only calls once the main row arrives (the progress bar's `supported` flip). None of
+  these share an identical request body, so this is not the "same request fired twice" duplicate
+  pattern the audit is looking for.
+- requests while signed out / before data needed: none observed.
 
 ### PickerView (`/leisure/pick`)
-![default, nothing-fits state](screenshots/leisure-pick--default.png)
+![suggestions](screenshots/leisure-pick--suggestions-mocked-weather.png)
 
-**Route:** `/leisure/pick` · params: none · query: `minutes`, `energy`, `people`, `cost`, `location`,
-`seed` (all written on mount even at defaults, except `cost`/`location` which are omitted at `null`)
-· guard: auth
-**Reached from:** sidebar "Leisure → What should I do?" (listed first in the group); `BacklogView`
-does not link here.
+**Route:** `/leisure/pick` · params: none · query: `minutes`, `energy`, `people`, `seed`, plus
+`maxCostTierId`/`locationTypeId` when set · guard: auth
+**Reached from:** sidebar "Leisure → What should I do?"; `BacklogTable`'s empty-state offers no link
+here (only the reverse: this view links to `BacklogView`)
 
 **Actions**
 | label | kind | selector | does | destination |
 | --- | --- | --- | --- | --- |
-| Time available chips (15 min/30 min/1 h/2 h/4 h) | `VBtnToggle` | `getByRole('button',{name:...})` | sets `minutes`, triggers a re-draw (and a re-fetch if a source crosses its minute threshold) | in place |
-| Energy right now (Low/Medium/High) | `VBtnToggle` | `getByRole('button',{name:...})` | sets `energy`, re-ranks locally (no re-fetch) | in place |
-| Who's around (Just me/Two of us/A group) | `VBtnToggle` | `getByRole('button',{name:...})` | sets `people`, re-ranks locally | in place |
-| More constraints | disclosure button | `getByRole('button',{name:'More constraints'})` | reveals Spend-at-most / Location selects | in place |
-| Spend at most / Location | `VIdSelect`, clearable | `getByLabel(<field>)` | sets secondary constraint, re-fetches (these two are request-affecting) | in place |
-| "Do it now" | button, per card | `getByRole('button',{name:'Do it now'})` | **mutation** — creates an `InProgress` `PlannerTask` starting now | in place, card flips to confirmation |
-| "Plan for later" | button, per card | `getByRole('button',{name:'Plan for later'})` | opens `PlanLaterDialog` | dialog, see below |
-| "Something else" | button | `getByRole('button',{name:'Something else'})` | records the current set as seen (rejected), draws a new `seed` | in place |
-| "Browse everything" | link | `getByRole('link',{name:'Browse everything'})` | — | `/leisure/backlog` |
-| "Fill the backlog" (empty state) | link | `getByRole('link',{name:'Fill the backlog'})` | — | `/leisure/backlog` |
-| "I have `<n>`" (empty state, `nothingFits` only) | button | `getByRole('button',{name:/I have/})` | relaxes `minutes` to the next `TIME_OPTIONS` value | in place |
-| "Clear extras" (empty state, `nothingFits` only, shown when a secondary constraint is set) | button | — | resets `maxCostTierId`/`locationTypeId` to null | in place |
-| "Open planner" (per committed card) | link | `getByRole('link',{name:'Open planner'})` | — | `/day-planner/<today, DD-MM-YYYY>` |
+| Time available (15 min/30 min/1 h/2 h/4 h) | button toggle group | role=button, each duration label | sets `minutes`, re-ranks (re-fetches pool only if the change crosses the project/bucket-list minute thresholds) | in place |
+| Energy right now (Low/Medium/High) | button toggle group | role=button | sets `energy`, re-ranks locally (no re-fetch) | in place |
+| Who's around (Just me/Two of us/A group) | button toggle group | role=button | sets `people`, re-ranks locally | in place |
+| More constraints | disclosure button | role=button "More constraints" | reveals Cost/Location selects (not URL-hidden-state, just a local `ref`) | in place |
+| Spend at most / Location (when revealed) | select | `VIdSelect`, same `data-no-activator` pattern as Backlog's filters | sets `maxCostTierId`/`locationTypeId`, re-fetches pool | in place |
+| Do it now | button | role=button "Do it now" | books a slot starting now, `InProgress` | `POST /planner-task`, card flips to "planned" state |
+| Plan for later | button | role=button "Plan for later" | opens `PlanLaterDialog` (start-time stepper + live "Booking H:MM – H:MM" preview) | dialog → same commit path |
+| Something else | button | role=button "Something else" | records current cards as "shown", draws a new `seed`, re-ranks (no re-fetch) | in place |
+| Browse everything / Fill the backlog | link | role=link | leaves the unit | `/leisure/backlog` |
+| Open planner (after commit) | link | role=link "Open planner" | leaves the unit | `/day-planner/:date` (today) |
 
 **Readable surfaces**
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
-| Suggestion cards (≤3) | cards | icon/colour, name, category, source chip, "why" reason list, primary actions | derived — client-side ranking (`leisureScoring.ts`) over three raw pools | `POST /activity-backlog-profile/grid`, `/activity-project-profile/grid` (≥60 min), `/activity-bucket-list-profile/grid` (≥120 min) |
-| "Fits in `<n>`" / "Takes `<n>`" reason | text | duration fit | derived label over a raw field (`statedDurationMinutes`) or a derived slot size (`slotMinutesFor`) | same as above |
-| "Energy: X" / "Energy: ~X (estimated)" reason | text | energy match | raw for backlog (`energyLevel`), derived for project/bucket-list (`difficultyAsEnergy`/`comfortStepAsEnergy`), and the card is honest about which (`energyIsDerived`) | same as above |
-| Weather-fit reason ("fits today's weather") | text, conditional | shown only when `fitsToday()` is true | derived, gated on `GET /leisure-weather-fit` | `leisure-weather-fit` |
-| Empty-state panel | card | one of three messages + contextual actions | derived from `loadFailed` / `poolCount` / (`poolCount>0 && suggestions.length===0`) | client-side state, see Findings X2 for why `nothingFits` was the only one reachable in this pass |
+| suggestion cards (≤3) | cards | activity name/icon/colour, source chip (Backlog/Bucket list/Project), 2–5 "why" reasons, primary actions | derived — client-side ranking over three raw pools (`leisureScoring.ts`, pure, unit-tested) | `POST activity-backlog-profile/grid`, `POST activity-project-profile/grid` (only when `minutes ≥ 60`), `POST activity-bucket-list-profile/grid` (only when `minutes ≥ 120`), plus `GET /leisure-weather-fit` |
+| empty state | card + copy + recovery actions | one of three distinct messages (load failed / nothing filed / nothing fits) | derived from `loadFailed`/`poolCount`/eligible-count | same requests above |
 
 **States**
-- empty (`nothingFiled`, "you have nothing filed yet"): **not reachable with the current seed** — the account's backlog is never empty (one row always present) so `poolCount` never hits 0 — `unverified`.
-- empty (`nothingFits`, "nothing matches those constraints"): reached and screenshotted — see `leisure-pick--default.png`. Root cause in this account is **not** narrow constraints, see Findings X2.
-- empty (`failed`, load error): not reachable without forcing a network failure — `unverified`.
-- loading: `VSkeletonLoader` × `SUGGESTION_COUNT` (3) grid — not independently screenshotted (loads too fast against localhost) — confirmed present in source only.
+- **empty — nothing fits** (the state this pass actually landed on with default constraints and the
+  seed data, see X3 for why): "Nothing matches those constraints. Try loosening one.", offers "I
+  have {next longer duration}" and "Fill the backlog". Screenshot:
+  `screenshots/leisure-pick--empty-nothing-fits.png`.
+- **empty — nothing filed** (`poolCount === 0`): not reached this pass without deleting the only
+  seeded backlog row — **unverified, U2** (message exists in source, `leisure.picker.emptyNothingFiled`).
+- **empty — load failed**: not reached (would need a network failure) — **unverified, U3**.
+- **populated** (3 cards, or fewer under a thin pool): reached only via a mocked `leisure-weather-fit`
+  response — see X3. `screenshots/leisure-pick--suggestions-mocked-weather.png`.
+- **committed**: card replaces its action row with "Planned {start}–{end}" + "Open planner"; observed
+  for both time-shown cards after a "Do it now" commit —
+  `screenshots/leisure-pick--mutation-committed.png`.
+- loading: `VSkeletonLoader` cards while `loading && suggestions.length === 0` (source-confirmed, not
+  screenshotted mid-flight — **unverified, U4**).
 
 **URL & persisted state**
-- `minutes`, `energy`, `people`, `seed` — always present, confirmed written on bare `/leisure/pick` load (arrived as `?minutes=60&energy=medium&people=1&seed=<random>` with no query at all).
-- `cost` (`maxCostTierId`), `location` (`locationTypeId`) — present only when set, confirmed absent by default and confirmed the two secondary selects show "Anything" (a real placeholder, unlike the create-dialog "0" bug — see Findings) rather than a stray value.
-- `leisure.picker.history::<userId>` in `localStorage`, via `useUserScopedStorage` — confirmed written on "Something else" (`{"suggestedAt":{"bucketList:12008":"<ISO instant>"},"lastCommittedEffort":null}`).
+- `minutes`, `energy`, `people`, `seed` (and `maxCostTierId`/`locationTypeId` when set) all round-trip
+  through the URL and survive a reload — confirmed: after "Something else" changed `seed` in the URL,
+  a reload reproduced the identical draw (same `seed` → same three-or-fewer cards, per the scoring
+  rule's determinism).
+- `suggestionHistory` (staleness/last-committed-effort) is written to browser storage on every draw
+  and every commit — **not verified against `useUserScopedStorage`** (CLAUDE.md requires per-user
+  namespacing for exactly this kind of state); `suggestionHistory.ts` was not read in this pass —
+  flagged as unverified rather than asserted, **U5**.
+- "More constraints" expanded/collapsed is a local `ref`, correctly NOT persisted (a display toggle,
+  not data).
 
 **Dialogs opened from here**
-- **Plan for later** (`PlanLaterDialog`, title "Plan for later", explicitly `persistent: false`) — a `TimePicker` defaulted to the next half hour, a live "Booking `HH:MM`–`HH:MM`" preview, Cancel / "Add to plan". **Escape closes it** (confirmed) — this is the dialog CLAUDE.md's `MyDialog` default would otherwise block, and this call site correctly opts out.
+- **Plan for later** (`PlanLaterDialog`) — Start time stepper (‹ / › plus a time field), live
+  "Booking H:MM – H:MM" preview computed from the candidate's slot sizing. Cancel/"Add to plan".
+  Not `persistent` (`dialogProps.persistent: false` explicitly passed, unlike every other dialog in
+  this unit) — **this one does close on Escape**, the one dialog in the unit that differs from the
+  shell A1 baseline. Confirmed by source (`SuggestionCard.vue` passes `persistent: false` explicitly)
+  though not independently re-tested with Escape in-browser this pass.
 
 **Keyboard**
-- `VBtnToggle` groups (time/energy/people) were not exhaustively arrow-key-tested in this pass beyond confirming click selection — `unverified`.
-- Escape on `PlanLaterDialog` confirmed working (see Dialogs).
+- Button-toggle groups (`VBtnToggle`) are native `role=button` elements in a row — standard Tab/Enter,
+  no custom arrow-key handling observed or claimed by the source.
 
 **Console & network**
-- errors/warnings: none specific to this view (the only recurring warning in this unit's console log is `BacklogView`'s FilterPanel one, confirmed not present while on `/leisure/pick`).
-- non-2xx: none.
-- duplicate requests: none. `GET /leisure-weather-fit` fires once per mount; `POST .../grid` fires once per source per pool-signature change (confirmed: raising `minutes` from 60→120 fired exactly one new `activity-bucket-list-profile/grid` call, and neither backlog nor project re-fetched since their part of the signature hadn't changed); a `seed` change (reroll) fires **zero** new requests (confirmed — ranking is re-run over the cached pool).
+- errors/warnings: none across every interaction in this pass (constraint changes, reroll, commit,
+  plan-later cancel).
+- non-2xx: none — the picker's own requests were all 200/201/204 throughout.
+- duplicate requests: none — a constraint change that crosses a source threshold fires exactly one
+  `grid` call per newly-eligible source; a constraint change that only affects ranking (energy,
+  people, "something else") fires **zero** network requests, confirmed by the request log staying
+  flat across several toggles.
+- requests while signed out: none observed.
 
 ## Transitions out of this unit
 | from | control | goes to |
 | --- | --- | --- |
-| "Browse everything" / "Fill the backlog" | link | `/leisure/backlog` (same unit) |
-| "Open planner" (committed card) | link | `/day-planner/<today>` (out of scope) |
-| "Do it now" / "Plan for later" confirm | mutation | writes into `dayPlanner`, no navigation |
+| BacklogTable row, "Experienced" chip | click | `/leisure/memory-anchors?activityName=…` |
+| PickerView, "Browse everything" / "Fill the backlog" | click | `/leisure/backlog` |
+| PickerView, committed card's "Open planner" | click | `/day-planner/:date` (today, `DD-MM-YYYY`) |
+| BacklogProfileForm / NewBacklogProfileForm, inline activity create | nested dialog only, no navigation | stays in unit (`QuickCreateActivityDialog`) |

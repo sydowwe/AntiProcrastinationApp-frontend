@@ -1,118 +1,365 @@
 # leisure-backlog-picker — findings
 
-> Pass: inventory · captured 2026-09-14 · commit `50bd6b0d`
+> Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 3 · bug 1 · a11y 0 · polish 2 · opportunity 1 · unverified 4
+**Tally:** blocker 1 · bug 5 · a11y 1 · polish 1 · opportunity 2 · unverified 5
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
-| 1 | 2026-09-14 | `50bd6b0d` | initial inventory pass |
+| 1 | 2026-09-15 | `f457aa0c` | initial mutation pass |
 
 ---
 
-### X1. The Backlog table's `activityName` filter is silently ignored on the main (paginated, sorted) table request — the table shows every row regardless of what was typed
+### X1. Editing or deleting any backlog profile fails — the frontend uses the wrong id
 - **Status:** open
 - **Severity:** blocker
-- **Where:** `POST /api/activity-backlog-profile/grid` (backend — not reproducible as a frontend code defect; the client sends the correct, well-formed filter both times, see Evidence)
-- **Expected:** Typing an activity name that matches nothing and confirming the filter should narrow the table to zero rows — exactly what the tri-state `isRepeatable`/`isAnchored` filters on the same view correctly do (confirmed working in the same session, same account, same sort state).
-- **Actual:** Filtering `activityName` to `"no such activity xyz"` (matches nothing in this seed) leaves the seeded row ("Read a Novel") visible in the table, with the filter chip still showing "Activity: no such activity xyz" as applied. Caught by a discrepancy between two request shapes fired from the exact same user action: the view's **two count-only requests** (`itemsPerPage:1`, `sortBy:[]`, used by the "experienced" progress readout) correctly return `{"items":[],"itemsCount":0}` for this filter — but the **main table request** (`itemsPerPage:25`, `sortBy:[{"key":"activity.name","isDesc":false}]`), sent in the same batch with the identical `filter` object, returns the unfiltered row anyway (`{"items":[{..."name":"Read a Novel"...}],"itemsCount":1}`). The `isRepeatable` filter, tested earlier in this same pass under the same default sort, **did** correctly empty the main table — so this is specific to `activityName`, not a blanket "filters do nothing" bug. (This also means the "activity-name filter survives a reload" behaviour documented in `inventory.md` is only half true: the URL/chip round-trips correctly, but the visible table it is supposedly filtering does not actually narrow.)
-- **Evidence:** Three requests fired from one "Confirm" click, all carrying `filter.activityName: "no such activity xyz"`: `itemsPerPage:1, sortBy:[], isAnchored:null` → `itemsCount:0`; `itemsPerPage:1, sortBy:[], isAnchored:true` → `itemsCount:0`; `itemsPerPage:25, sortBy:[{key:"activity.name",isDesc:false}], isAnchored:null` → `itemsCount:1`, item `"name":"Read a Novel"`. Reproduced twice independently: once via `playwright-cli` (manual), once via the draft e2e spec below, which is why that spec's matching test is a `fixme` rather than a real assertion.
-- **Repro:** 1. Go to `/leisure/backlog` (default sort is `activity.name:asc`, so this is the view's normal landing state, not a contrived one). 2. Open Filter, type an activity name that matches nothing, Confirm. 3. The table still shows the unfiltered row(s); the filter chip shows as active.
-- **Verify:** 1. Same steps. 2. **Pass condition:** the table shows zero rows and the empty-state copy (`leisure.emptyStates.backlog`) renders. 3. Confirm a matching substring (e.g. "novel") still correctly narrows to the matching row(s) only — both directions must hold, since a fix that stops matching altogether would trade one failure for another.
-- **Root cause guess:** the two working count-only requests share `sortBy:[]`; the one broken request is the only one with a non-empty `sortBy` naming a **joined-entity** column (`activity.name` — the filter and the sort both target the joined `Activity`, not a column native to `ActivityBacklogProfile`). `isRepeatable` is a native column and filtered correctly under the same sort, which points at the server's query builder dropping (or mis-joining) the `activityName` predicate specifically when a sort on the same joined path is also present. This is the same shape of gap as the already-closed `B2-grid-500-on-unmapped-sortby` bug referenced in `e2e/tests/leisure-profiles.spec.ts` (a joined/composite key interacting badly with sort), not a recurrence of it — that one threw a 500, this one silently returns unfiltered data, which is worse (no signal at all that anything went wrong).
-- **Suggested fix:** backend — out of this frontend pass's remit to fix (see `CLAUDE.md`'s backend-ask convention). Worth a fast-tracked ask given the silent-failure severity: a user who filters and sees a plausible-looking but wrong result set has no way to know it happened.
+- **Where:** `src/core/leisure/component/backlog/BacklogProfileForm.vue:48` (`update(entityToEdit.activityId, ...)`),
+  `src/core/leisure/component/backlog/BacklogTable.vue:151` (`deleteEntity(item.activityId)`), root
+  cause in `src/core/leisure/dto/response/ActivityBacklogProfile.ts:27-29` (`get id() { return this.activityId }`)
+- **Expected:** Editing a backlog entry's duration and saving persists the change; deleting a row
+  after confirming removes it. Plain user sense, and the entity lifecycle described in
+  `docs/views/glossary.md` ("an activity has at most one backlog profile").
+- **Actual:** Both operations 404. `ActivityBacklogProfile.fromJson` reads the server's own row id
+  (a distinct field, e.g. `"id":17002`) but the DTO's `id` getter discards it and returns `activityId`
+  (e.g. `12005`) instead. Every write call in this unit is keyed by `entityToEdit.activityId` /
+  `item.activityId`, which is not what the REST resource is keyed by. Confirmed directly:
+  `GET /api/activity-backlog-profile/12005` (activityId) → 404; `GET /api/activity-backlog-profile/17002`
+  (the same row's own id, taken from the grid response) → 200. The mismatch is not particular to the
+  row I created — the pre-existing seeded row is `activityId:12007` / `id:17001`, also mismatched, so
+  this affects every backlog profile, not an edge case.
+- **Evidence:** `docs/views/leisure-backlog-picker/screenshots/leisure-backlog--mutation-edit-dialog-404-silent.png`,
+  `screenshots/leisure-backlog--mutation-delete-404-silent.png`; network:
+  `PUT /api/activity-backlog-profile/12005` → 404, `DELETE /api/activity-backlog-profile/12005` → 404,
+  `GET /api/activity-backlog-profile/17002` → 200 (same row, correct id).
+- **Repro:** 1. Go to `/leisure/backlog`. 2. Click "edit" on any row, change Duration, click Save. The
+  dialog stays open with no visible error; the row's duration is unchanged after closing. 3. Click
+  "delete" on the same row, confirm. The confirmation dialog closes but the row remains in the table.
+- **Verify:** 1. Go to `/leisure/backlog`, edit a row's Duration and Save. 2. **Pass condition:** the
+  dialog closes and the table shows the new duration. 3. Delete a row and confirm.
+  **Pass condition:** the row disappears and a reload does not bring it back.
+- **Root cause guess:** `ActivityBacklogProfile.id` should return the server's own `id` field, not
+  `activityId` — or, if the identity-by-activity model documented in the glossary is intentional, the
+  PUT/DELETE routes need to accept `activityId` server-side instead. This is a contract question
+  between the DTO and the API, not purely a frontend typo — flag to whoever owns the backend contract
+  before picking a fix.
+- **Suggested fix:** If the server resource really is keyed by its own row id, change `id` to return
+  a real `id` field threaded through the constructor (not computed from `activityId`), and update the
+  two call sites above to use it. Do not silently alias — anything relying on "one activity, one
+  profile" elsewhere (`ExperiencedCell`'s reverse lookup, `useLeisurePicker`'s `key` construction)
+  should keep using `activityId` explicitly, since that part of the model is correct.
 
-### X2. The picker excludes every backlog entry with a stated weather dependency whenever the weather signal returns "no opinion" — making `/leisure/pick` return zero backlog suggestions for any account without a weather location configured
+---
+
+### B1. The picker hard-excludes a "no weather dependency" backlog entry whenever today's weather doesn't match any lookup value — currently blocking the only seeded suggestion
 - **Status:** open
-- **Severity:** blocker
-- **Where:** `src/core/leisure/composable/leisureScoring.ts:246-253` (`isEligible`, `'backlog'` case), fed by `src/core/leisure/composable/useLeisurePicker.ts:250` (`weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null`)
-- **Expected:** Per `prompts/_done/leisure/backend/D2-backend.md` ("the frontend cannot tell these two apart today... pick whichever is simpler") and `leisureScoring.ts`'s own doc comment ("Unknown weather excludes nothing: absence of the signal must never read as a mismatch"), an empty `matchingWeatherDependencyIds` array must be treated identically to "no weather signal at all" — i.e. it must exclude nothing.
-- **Actual:** `GET /leisure-weather-fit` returns `200 {"matchingWeatherDependencyIds":[]}` for this account (no location preference set — the endpoint is implemented and responding, contrary to the stale comment in `leisureWeatherApi.ts`, see P2 below). `WeatherFit.fromJson` turns that into a real, non-null `WeatherFit` object, so `weatherFit.value?.matchingWeatherDependencyIds ?? null` evaluates to `[]`, **not** `null` (an empty array is not nullish). `isEligible`'s backlog branch then runs `weatherMatchIds !== null && !weatherMatchIds.includes(candidate.weatherDependencyId)`, which is `true` for **every** backlog row that has any `weatherDependency` set at all — including a row whose weather dependency is explicitly the "None" lookup row (id 5 in this seed), which exists specifically to mean "not weather dependent." The one seeded backlog entry ("Read a Novel", 45 min, 1 participant, weatherDependency "None") is well within every stated constraint (fits in 60 min, fits "Just me") and is still excluded, so `/leisure/pick` shows "Nothing matches those constraints" at every time budget from 15 min to 4 h. Confirmed the exclusion is weather-specific, not duration-specific: raising the time budget to 2 h and 4 h still never surfaces it, while a bucket-list item (no `weatherDependencyId`) surfaces normally at 2 h+. Worth stating plainly: this means the view's **default landing state** (60 min, medium energy, just me — what every first-time visitor sees) shows zero suggestion cards, not a degraded set — confirmed while writing this unit's e2e draft, where a "Something else" test written against the default constraints could not even find the button, because it only renders inside the has-suggestions branch of the template.
-- **Evidence:** `docs/views/leisure-backlog-picker/screenshots/leisure-pick--default.png` and `leisure-pick--2h-still-empty.png` (only a bucket-list card ever appears; the backlog entry never does, at any time budget). Requests: `GET https://localhost:8080/api/leisure-weather-fit` → `200 {"matchingWeatherDependencyIds":[]}`; `POST /api/activity-backlog-profile/grid` → 200 with the one eligible-by-every-other-rule row.
-- **Repro:** 1. On an account with no weather location set (confirm `GET /leisure-weather-fit` returns `200` with an empty array). 2. Seed one `ActivityBacklogProfile` with any non-null `weatherDependency` (including "None"), `durationMinutes` and `minParticipants` within reach of some constraint set. 3. Open `/leisure/pick`, set any time/energy/people. 4. The backlog entry never appears in the three suggestions, and if it is the only eligible source, the view shows "Nothing matches those constraints."
-- **Verify:** 1. Same setup. 2. Open `/leisure/pick` at a time budget ≥ the entry's `durationMinutes` and enough people. 3. **Pass condition:** the entry appears as a suggestion (or is at least eligible — check via the ranking, not just the top 3) despite the weather endpoint returning an empty array. 4. Confirm a *non-empty* `matchingWeatherDependencyIds` that genuinely excludes the row (a real mismatch) still excludes it correctly — both halves must hold.
-- **Root cause guess:** `useLeisurePicker.ts`'s `weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null` needs to also collapse an empty array to `null`, e.g. `weatherFit.value?.matchingWeatherDependencyIds?.length ? weatherFit.value.matchingWeatherDependencyIds : null` — or `WeatherFit.fromJson` itself could return `null` instead of an object when the array is empty, matching `useWeatherFit`'s own documented contract that `null` means "no opinion."
-- **Suggested fix:** see root cause guess. Do not conflate with "always include the 'none' row" — the backend contract already promises to include a "none/any weather" row's id when it *has* an opinion; this bug is specifically about the *no-opinion* (empty array) case being treated as a definite mismatch.
+- **Severity:** bug
+- **Where:** `src/core/leisure/composable/leisureScoring.ts` `isEligible()` (backlog branch), fed by
+  `src/core/leisure/composable/useWeatherFit.ts` and `useLeisurePicker.ts`'s `redraw()`
+- **Expected:** Per `prompts/_done/leisure/D2-weather-aware.md` (¶2, "degrade honestly... the picker
+  must rank exactly as it does today [without weather]") and the `activity-weather-dependency` lookup
+  itself including a "None" value, a backlog entry that declares no weather dependency should never
+  be excluded — or boosted — by weather. It should rank identically with or without a weather signal.
+- **Actual:** `isEligible()` treats every non-null `weatherDependencyId` identically: if
+  `weatherMatchIds` is non-null (i.e. the weather call succeeded, even if it matched nothing) and does
+  not contain the candidate's id, the candidate is excluded — with no special case for the "None"
+  lookup value. Right now, live, `GET /leisure-weather-fit` returns `{"matchingWeatherDependencyIds":[]}`
+  (a successful call, empty match set — not the "unavailable" `null` case the code otherwise handles
+  correctly). Under that response, the seed's one backlog row ("Read a Novel", `weatherDependency:
+  "None"`, id 5) is excluded, and with the seed's one project ineligible for an unrelated reason
+  (`readinessStatus: NeedsShopping`), the picker shows **zero suggestions on a fresh default load** —
+  "Nothing matches those constraints" — despite one plainly-eligible candidate (45 min ≤ 60 available,
+  1 participant ≤ 1 available).
+- **Evidence:** `screenshots/leisure-pick--empty-nothing-fits.png` (default load, real weather
+  response); `screenshots/leisure-pick--suggestions-mocked-weather.png` (identical candidate appears
+  once `leisure-weather-fit` is mocked to return `{"matchingWeatherDependencyIds":[5]}` via
+  `playwright-cli route`) — same pool, same constraints, only the weather response differs. Network:
+  `GET https://localhost:8080/api/leisure-weather-fit` → `200 {"matchingWeatherDependencyIds":[]}`.
+- **Repro:** 1. Go to `/leisure/pick` with default constraints (1 h, Medium, Just me) against the
+  seed data, on a day the weather service returns an empty match set (currently: always, for this
+  environment). 2. Observe "Nothing matches those constraints" despite the backlog containing one
+  eligible entry.
+- **Verify:** 1. With a backlog entry whose `weatherDependency` is "None" and otherwise eligible,
+  load `/leisure/pick`. 2. **Pass condition:** the entry appears as a suggestion regardless of what
+  `matchingWeatherDependencyIds` contains (empty array, non-matching array, or omitted entirely) — a
+  "None" dependency must never be hard-excluded or scored via the weather-match bonus. 3. Confirm a
+  backlog entry with an actual weather dependency (e.g. "Sunny") is still correctly excluded/boosted.
+- **Root cause guess:** `isEligible`/`scoreCandidate` never special-case the specific lookup id that
+  means "not weather dependent" — they were written generically against "any `weatherDependencyId`",
+  which is correct for a real dependency but wrong for the "none" sentinel value. The same gap shows
+  up in the ranking bonus: the mocked screenshot's reason chip reads "Good weather for this today" for
+  an indoor, weather-independent activity, which is misleading even in the cases where it happens not
+  to be excluded.
+- **Suggested fix:** Either carry a `boolean` "has a real weather dependency" alongside
+  `weatherDependencyId` in `CandidateFacts` (cleanest — doesn't depend on a magic lookup id staying
+  stable), or special-case the "None" lookup's id explicitly and skip both the hard exclusion and the
+  `WEATHER_MATCH_BONUS`/reason-chip for it.
 
-### X3. Submitting the backlog create form with the Activity field untouched fails completely silently — no snackbar, no field error, nothing
+---
+
+### B2. Create-dialog required selects show a literal "0" instead of a placeholder, and it leaks into typed search text
 - **Status:** open
-- **Severity:** blocker
-- **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (Activity/Location/Weather/Cost fields), `src/core/leisure/component/backlog/BacklogProfileForm.vue:42-57` (`onConfirm`), `src/core/leisure/dto/request/ActivityBacklogProfileRequest.ts:6-13` (`activityId`/`locationTypeId`/`weatherDependencyId`/`expectedCostTierId` default to `0`)
-- **Expected:** A required field left unset should either block submission with a visible validation message, or — if it does reach the server and gets rejected — the user should see *something* (a snackbar, a field error) explaining why nothing happened. Plain user sense, and this app's own convention: every other 400 in this codebase surfaces via the axios interceptor's automatic error snackbar (`src/_common/axiosConfig.ts:227-229`).
-- **Actual:** On a brand-new create dialog, the Activity, Location, Weather and Cost fields all display the literal text **"0"** instead of an empty/placeholder state (confirmed via DOM: `generic [ref=f3e606]: "0"` inside the Activity combobox) — because their request DTO defaults to the numeric sentinel `0` rather than `null`, and Vuetify renders an unresolvable id as its raw value rather than blank. Clicking "Create" without touching any field: `ActivityAutocompleteWithCreate`'s `requiredRule` (`src/_common/composable/general/rules/RulesComposition.ts:22-26`) only rejects `null`/`undefined`/empty string/empty array — **`0` passes as valid** — so the form's own `validate()` returns `valid: true` and `onConfirm` proceeds to call the API. The server correctly rejects it: `POST /api/activity-backlog-profile` → `400 {"statusCode":400,"message":"One or more errors occurred!","errors":{"activityId":["Activity not found."]}}`. Polled the DOM for 1.8s after the click settled (6 samples at 300ms intervals): **no `.v-snackbar` element ever appeared**, at any point. The only trace is a console-only, unhandled exception ("Unhandled error during execution of component event handler at `<MyDialog>`" / `AxiosError: Request failed with status code 400`) that no user will ever see. The dialog stays open with the same misleading "0" fields, and repeating the click reproduces the identical silent failure (confirmed twice).
-- **Evidence:** `docs/views/leisure-backlog-picker/screenshots/leisure-backlog--create-dialog.png` and `leisure-backlog--create-validation.png` (identical before/after clicking Create — no visible change at all); request `POST https://localhost:8080/api/activity-backlog-profile` → 400 with the body above; 1.8s DOM poll for `.v-snackbar` returning `present:false` at all 6 samples; console stack trace naming `BacklogProfileForm.vue:53` → `useEntityCommand.ts:13` → `useRequestState.ts:17`.
-- **Repro:** 1. Go to `/leisure/backlog`. 2. Click "Add" (+). 3. Without touching any field, click "Create". 4. Observe: dialog stays open, all fields look exactly as before, no snackbar, no red field, no error text anywhere on the page.
-- **Verify:** 1. Same steps. 2. **Pass condition:** either (a) client-side validation now rejects the unset Activity field before any request fires, and the field shows a visible error, or (b) the request still fires and fails, but the user sees a snackbar or inline error naming the problem ("Activity not found." or similar). Either way, something must be visibly different on screen after clicking Create. 3. Separately, confirm the Activity/Location/Weather/Cost fields show an empty/placeholder state (not literal "0") on a fresh create dialog.
-- **Root cause guess:** two independent bugs compounding: (1) `ActivityBacklogProfileRequest`'s lookup-id fields default to `0` instead of `null`, which both causes the "0" display and lets `requiredRule` (which only catches nullish/empty values) treat an unselected field as valid; (2) separately, the axios interceptor's own code (`axiosConfig.ts:227`) appears to call `showErrorSnackbar` unconditionally for a 400 that isn't `_silent` — worth tracing why that call is not reaching the DOM for this specific path, since every other 400 finding in this repo's other unit docs (e.g. `todo-lists`) did surface a snackbar.
-- **Suggested fix:** default `activityId` (and the other lookup ids) to `null` on `ActivityBacklogProfileRequest`, type them `number | null` through the form, and let `VIdAutocomplete`/`VIdSelect` show their placeholder naturally; that alone would likely also fix `requiredRule`'s blind spot. Investigate the swallowed snackbar separately — it is a correctness gap independent of the "0" default.
+- **Severity:** bug
+- **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (Activity, Location,
+  Weather, Cost fields), root cause `src/core/leisure/dto/request/ActivityBacklogProfileRequest.ts:6-13`
+  (`activityId = 0`, `locationTypeId = 0`, `weatherDependencyId = 0`, `expectedCostTierId = 0`)
+- **Expected:** An unselected required field shows its label as a placeholder (e.g. "Activity"),
+  not a value — plain sense, and how every other `VIdSelect`/`VIdAutocomplete` in the app behaves
+  when its model is `null`.
+- **Actual:** `ActivityBacklogProfileRequest`'s numeric defaults are `0`, not `null`. Since no lookup
+  item has id `0`, Vuetify renders the raw model value as text: all four fields show a literal "0" on
+  the fresh create dialog. Worse for the Activity autocomplete specifically: it is a search field, and
+  the leaked "0" is not cleared on focus — typing "Grocery" while the field displays "0" produces
+  "0Grocery", which becomes both the search filter text and (if nothing matches) the pre-filled name
+  offered by the inline "Create activity …" quick-create affordance from L4.
+- **Evidence:** `screenshots/leisure-backlog--mutation-create-dialog.png` (four fields showing "0"),
+  `screenshots/leisure-backlog--mutation-create-zero-leak.png` (field reads "0Grocery", no-results row
+  reads `Create activity "0Grocery"`).
+- **Repro:** 1. Go to `/leisure/backlog`, click Add. 2. Observe Activity/Location/Weather/Cost all
+  show "0". 3. Click into Activity and type "Grocery" without first clearing the field. 4. Observe
+  the field reads "0Grocery".
+- **Verify:** 1. Open the create dialog fresh. 2. **Pass condition:** Activity, Location, Weather and
+  Cost show their label as a placeholder with no value text. 3. Click into Activity and type a search
+  term without touching the clear button. **Pass condition:** the field contains only what was typed.
+- **Root cause guess:** The request DTO's defaults should be `null` for every field that is a real
+  foreign key with no sensible zero value (`activityId`, `locationTypeId`, `weatherDependencyId`,
+  `expectedCostTierId`), matching how `effortType` is already correctly defaulted to `null`. This
+  likely also requires widening the constructor/field types to `number | null`.
+- **Suggested fix:** Change the four defaults to `null` and widen the types; verify the `create`
+  request still round-trips correctly once a real selection overwrites them (should be unaffected,
+  since a selection already overwrites the field regardless of its starting value).
 
-### B1. The Backlog table's "Duration (min)" column renders as a percentage — "45.00 %" instead of "45"
+---
+
+### B3. Create-form client validation doesn't match server requirements, and the failure is shown as a useless generic message
+- **Status:** open
+- **Severity:** bug
+- **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (only `Activity` carries
+  `:rules="[requiredRule]"`, via `ActivityAutocompleteWithCreate.vue`; Location/Weather/Cost carry
+  none), `src/core/leisure/component/backlog/BacklogProfileForm.vue:42-57` (`onConfirm` has no
+  `catch`), root cause `src/_common/composable/general/rules/RulesComposition.ts:22-27` (`requiredRule`
+  treats `0` as a valid, present value)
+- **Expected:** A create form should not let the user submit a state the server is going to reject
+  for a reason the server can already name — either block it client-side, or show the server's
+  specific complaint. `src/_common/axiosConfig.ts` already has `extractServerFieldError()` built
+  for exactly this (FastEndpoints' `{errors: {propertyName: [...]}}` shape → route to the right field).
+- **Actual:** Because of B2, an untouched Activity field holds `0`, and `requiredRule(0)` returns
+  `true` (it only rejects `null`/`undefined`/empty string/empty array — `0` is none of those). So the
+  client-side `form.value!.validate()` passes with nothing selected, and Location/Weather/Cost have no
+  rule to fail even if they did check for `0`. The request reaches the server and gets a 400 with
+  `{"errors":{"activityId":["Activity not found."]}}`. `BacklogProfileForm.vue`'s `onConfirm` has no
+  `catch`, so the specific message never reaches the UI — the only thing the user sees is the axios
+  interceptor's generic snackbar, which for a 400 prefers the response's own top-level `message`
+  field ("One or more errors occurred!") over the actually-useful per-field text sitting right next
+  to it in `errors.activityId[0]`.
+- **Evidence:** `screenshots/leisure-backlog--mutation-create-invalid-400.png` (dialog after submit,
+  no field-level error shown anywhere). Network: `POST /api/activity-backlog-profile` → 400, body
+  `{"statusCode":400,"message":"One or more errors occurred!","errors":{"activityId":["Activity not found."]}}`;
+  request body `{"activityId":0,"locationTypeId":0,"weatherDependencyId":0,...}`.
+- **Repro:** 1. Go to `/leisure/backlog`, click Add. 2. Click Create without selecting anything.
+  3. Observe: no red field state, dialog stays open, a snackbar reading "One or more errors occurred!"
+  appears and disappears within a few seconds with no way to tell which field was the problem.
+- **Verify:** 1. Open the create dialog, submit with nothing selected. 2. **Pass condition:** the
+  Activity field (and any other genuinely-required field) shows a visible validation message before
+  any request is sent, OR — if it does reach the server — the resulting snackbar/field state names
+  the specific field the server rejected, not a generic "errors occurred" string.
+- **Root cause guess:** Same defaults-of-`0` issue as B2 is what lets `requiredRule` pass; fixing B2
+  (defaults to `null`) would make the existing `requiredRule` on Activity correctly block submission.
+  Location/Weather/Cost still need a `required` rule added, since B2 alone only fixes the display, not
+  the missing validation on those three fields. Separately, `onConfirm` should catch the write and
+  call `extractServerFieldError(error, 'activityId')` (etc.) to surface the specific message instead
+  of relying on the generic interceptor snackbar.
+- **Suggested fix:** Add `:rules="[requiredRule]"` to Location/Weather/Cost's `VIdSelect`s; wrap
+  `onConfirm`'s `create`/`update` call in `try/catch` and surface `extractServerFieldError` (or at
+  least the caught error) rather than letting it propagate silently to the interceptor only.
+
+---
+
+### B4. Same pattern in the memory-anchor form: Highlight is server-required, has no client rule, and the 400 is silent
+- **Status:** open
+- **Severity:** bug
+- **Where:** `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue` (Highlight field, no
+  `required` rule observed), `src/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue` (its
+  `onConfirm`, not inspected for a catch block but the observed behaviour matches B3's pattern exactly)
+- **Expected:** Same as B3 — either block an empty Highlight client-side, or show the server's actual
+  complaint.
+- **Actual:** Clicking "Save the moment" with Highlight empty sends the request, gets a 400
+  (`{"errors":{"highlightNote":["'highlight Note' must not be empty."]}}`), and the dialog stays open
+  with no red state on the Highlight field — only the same generic "One or more errors occurred!"
+  snackbar as B3.
+- **Evidence:** `screenshots/leisure-backlog--mutation-anchor-400-silent.png`. Network:
+  `POST /api/memory-anchor` → 400, body
+  `{"statusCode":400,"message":"One or more errors occurred!","errors":{"highlightNote":["'highlight Note' must not be empty."]}}`;
+  request body `{"activityId":12005,"anchorMonth":9,"anchorYear":2026,"highlightNote":"","rating":5}`.
+- **Repro:** 1. Go to `/leisure/backlog`, click "I did this" on an eligible row. 2. Leave Highlight
+  empty, click "Save the moment". 3. Observe: dialog stays open, no field-level error, generic
+  snackbar only.
+- **Verify:** 1. Open "Write it down" for an eligible activity, leave Highlight empty, submit.
+  2. **Pass condition:** a visible validation message appears on the Highlight field before or
+  instead of a network round-trip.
+- **Root cause guess:** Same missing-required-rule-plus-uncaught-write pattern as B3 — likely worth
+  batching the fix for both forms together rather than treating as unrelated.
+- **Suggested fix:** Add a `required` rule to the Highlight textarea; same `extractServerFieldError`
+  treatment as B3's suggested fix.
+
+---
+
+### B5. Duration column renders as a percentage — "90.00 %" instead of "90 min"
 - **Status:** open
 - **Severity:** bug — **[framework]**
-- **Where:** `src/_common/composable/table/useTableFormatters.ts:7,29-32` (`PERCENT_KEYWORDS`, `isPercentKey`), triggered by the column key `durationMinutes` in `src/core/leisure/component/backlog/BacklogTable.vue:127`
-- **Expected:** A `durationMinutes` column showing minutes, per its own header label ("Duration (min)") and the raw API value (`durationMinutes: 45`, a plain integer).
-- **Actual:** `useTableFormatters.ts`'s zero-config auto-format heuristic classifies a column as a percentage if its lowercased key `.includes()` any of `['percent','rate','vat','ratio','discount']`. `'durationMinutes'.toLowerCase()` is `'durationminutes'`, which contains the substring `'ratio'` at index 2 (`du-RATIO-nMinutes`) purely by coincidence — the column has nothing to do with a ratio. `formatPercent` then renders the raw integer `45` as `"45.00 %"`.
-- **Evidence:** `docs/views/leisure-backlog-picker/screenshots/leisure-backlog--default.png` (Duration (min) column reads "45.00 %"); confirmed via `'durationMinutes'.toLowerCase().includes('ratio')` → `true` in the live page; confirmed the raw API value is the plain integer `45` (`POST /activity-backlog-profile/grid` response body).
-- **Repro:** 1. Go to `/leisure/backlog` with at least one row present. 2. Look at the "Duration (min)" column. 3. It reads "`<n>`.00 %" instead of "`<n>`".
-- **Verify:** 1. Same steps. 2. **Pass condition:** the Duration (min) column shows the plain integer (or an explicit unit like "45 min"), not a percent sign. 3. Confirm no other column in the app that legitimately means a percentage (e.g. a real completion rate) lost its formatting as a side effect of the fix.
-- **Root cause guess:** the keyword-substring heuristic in `useTableFormatters.ts` is a false-positive machine by construction — any column whose name happens to contain one of these five short strings anywhere (not as a whole word) is misclassified. `durationMinutes`/`ratio` is the collision found in this unit; the same class of bug could exist wherever another column name happens to contain `rate`, `vat`, `percent` or `discount` as a substring.
-- **Suggested fix:** either give `BacklogTable.vue` an explicit `#item.durationMinutes` slot (the same pattern already used for `locationType`/`weatherDependency`/etc. in the same file, and the one L2 already moved the rest of this table to) to bypass the heuristic entirely, or make the framework heuristic match whole words/camelCase segments instead of raw substrings.
+- **Where:** `src/_common/composable/table/useTableFormatters.ts` `isPercentKey()` /
+  `PERCENT_KEYWORDS`, observed via `src/core/leisure/component/backlog/BacklogTable.vue`'s
+  `durationMinutes` column (no `#item.durationMinutes` slot override, so it falls through to the
+  generic formatter in `src/_common/component/dataTable/DataTable.vue:56-57`)
+- **Expected:** The "Duration (min)" column should render a plain number (e.g. "90"), matching its
+  own header label.
+- **Actual:** Every row shows e.g. "90.00 %". `PERCENT_KEYWORDS` includes `'ratio'`, and
+  `isPercentKey()` does `key.toLowerCase().includes(kw)` — `"durationminutes"` contains `"ratio"` as a
+  substring (**du-RATIO-nMinutes**), a false-positive match unrelated to the column's actual meaning.
+- **Evidence:** `screenshots/leisure-backlog--default.png` and every later Backlog screenshot in this
+  pass — the "Duration (min)" column consistently reads "45.00 %" / "90.00 %" for both the seeded row
+  and the row created in this pass.
+- **Repro:** 1. Go to `/leisure/backlog`. 2. Read any row's Duration (min) column.
+- **Verify:** 1. Go to `/leisure/backlog`. 2. **Pass condition:** the Duration column shows a plain
+  number, no "%". 3. Confirm no other column in this app whose key happens to contain "duration" (a
+  substring of "ratio") regressed to plain-number-as-percent in the other direction — this is a
+  shared, keyword-matched formatter, so the fix affects every consumer, not just this table.
+- **Root cause guess:** Substring matching on short, generic keywords (`'ratio'`, `'rate'`, `'vat'`)
+  is inherently collision-prone against compound English words. `"duration"` is the only confirmed
+  collision found in this pass, but the same risk applies to any future column key containing one of
+  these substrings.
+- **Suggested fix:** Word-boundary match instead of substring match (e.g. split the key into words by
+  casing and compare whole words), or require an explicit opt-in (a column-level format hint) rather
+  than inferring format from the key name at all — the latter is more invasive but removes this whole
+  class of false positive.
 
-### P1. `BacklogView` passes a `class` prop to `<FilterPanel>`, which cannot inherit it — a recurring Vue warning on every render
+---
+
+### A1. The "Experienced" chip has no accessible interactive role
+- **Status:** open
+- **Severity:** a11y
+- **Where:** `src/core/leisure/component/ExperiencedCell.vue` — the `<VChip link @click="openAnchor">`
+  shown once a row is anchored
+- **Expected:** An element the user can click to navigate should be reachable by an accessible role
+  (`button` or `link`) and by its visible name, per the same standard the PROMPT-TEMPLATE checklist
+  applies to every other control in this pass.
+- **Actual:** `playwright-cli click "getByRole('button', { name: 'Experienced' })"` found no match;
+  reaching the chip required falling back to a text-based locator
+  (`locator('tbody').getByText('Experienced')`). The accessibility snapshot renders the chip as a
+  bare `generic` node with a `data-no-activator` div inside it, not as a `button`/`link` role.
+- **Evidence:** Tool error `Error: "getByRole('button', { name: 'Experienced' })" does not match any
+  elements`, immediately followed by a successful click via the text-based fallback in the same
+  session (see transcript around the anchor-navigation step of this pass).
+- **Repro:** 1. Go to `/leisure/backlog` with at least one anchored row. 2. Try to address the
+  "Experienced" chip by role (`button` or `link`) and its visible name.
+- **Verify:** 1. Same setup. 2. **Pass condition:** `getByRole('button', { name: 'Experienced' })` or
+  `getByRole('link', { name: 'Experienced' })` resolves to the chip, and activating it via keyboard
+  (Tab to it, Enter) navigates to the memory anchors view exactly as a mouse click does.
+- **Suggested fix:** Vuetify's `VChip` with `link` should already emit `role="button"` and
+  `tabindex="0"` when clickable — confirm whether a prop or wrapper here is suppressing that, and
+  whether the same pattern is reused by other clickable chips in the framework (`ChipWithIcon.vue`).
+
+---
+
+### P1. Clicking a second column header adds a secondary sort instead of replacing the first
 - **Status:** open
 - **Severity:** polish
-- **Where:** `src/core/leisure/view/BacklogView.vue:7` (`<FilterPanel v-model="filter" class="flex-1-1" ...>`); `src/_common/component/FilterPanel.vue`'s root is a `<div>` followed by a `<Teleport>`, i.e. a multi-root/fragment component Vue cannot auto-inherit attrs onto.
-- **Expected:** No console noise on a normal page load; a `class` passed to a component either does something or is not passed.
-- **Actual:** Every render of `BacklogView` (initial load, every filter open/close, every dialog open/close observed in this pass) logs `[INFO] Extraneous non-props attributes (class) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes. at <FilterPanel>`. Functionally harmless here — `FilterPanel`'s own root div already carries a hardcoded `flex-fill` class, so the header row still lays out correctly (confirmed visually) — but it is dead code and console noise, and `BacklogView` is the only leisure view (confirmed by grep across `src/core/`) that passes a `class` to `<FilterPanel>` at all.
-- **Evidence:** `.playwright-cli/console-2026-09-14T23-00-11-414Z.log` (repeats on every `BacklogView` render observed in this pass); `grep -rn "<FilterPanel" src/core/` shows no other call site passing `class`.
-- **Repro:** 1. Open `/leisure/backlog`. 2. Open devtools console. 3. The warning is present from the first load and repeats on every re-render.
-- **Verify:** 1. Same steps. 2. **Pass condition:** the console shows no "Extraneous non-props attributes" warning naming `<FilterPanel>` on `/leisure/backlog`.
-- **Suggested fix:** remove the unused `class="flex-1-1"` from `BacklogView.vue`'s `<FilterPanel>` call site — `FilterPanel`'s own root already handles its flex sizing.
+- **Where:** `BacklogTable.vue`'s columns, backed by `BasicTable`/`DataTable` (framework) — observed
+  clicking "Duration (min)" while already sorted by "Activity"
+- **Expected:** Clicking a column header in a simple, non-multi-sort-advertised table like this one
+  typically replaces the active sort, the way most of this app's single-sort tables behave — no
+  visible affordance here (no shift-click hint, no multi-sort icon) tells the user clicking a second
+  header will layer a sort instead of switching to it.
+- **Actual:** `sortBy` became `activity.name:asc,durationMinutes:asc` after a single plain click on
+  "Duration (min)" while "Activity" was still the active sort — accepted by the server with no error,
+  just not the sort the click looked like it was asking for.
+- **Evidence:** URL changed from `sortBy=activity.name:asc` to
+  `sortBy=activity.name:asc,durationMinutes:asc` after one click on the Duration header, no modifier
+  key held.
+- **Repro:** 1. Go to `/leisure/backlog` (default sort: Activity). 2. Click the "Duration (min)"
+  header once. 3. Observe the URL's `sortBy` gains a second key rather than replacing the first.
+- **Verify:** 1. Same steps. 2. **Pass condition:** either the URL replaces the sort key entirely
+  (single-sort table), or — if multi-sort is intentional — the header UI visibly indicates
+  multi-sort is active (numbered sort badges, as `BacklogTable`'s own "Activity 1" header chip
+  already shows for the primary key, extended to the secondary).
+- **Root cause guess:** Likely `BasicTable`/`DataTable`'s default Vuetify `VDataTable` `multiSort`
+  behaviour, shared by every table in the app — if so this is a framework-wide default, not specific
+  to this unit, and worth checking against the other leisure tables (Projects, Bucket list, Memory
+  anchors) before filing a fix here.
 
-### P2. `leisureWeatherApi.ts`'s doc comment says the weather endpoint is unimplemented; it is not
-- **Status:** open
-- **Severity:** polish
-- **Where:** `src/core/leisure/api/leisureWeatherApi.ts:4-9` ("Not implemented server-side yet... Every call fails today")
-- **Expected:** A comment describing a temporary backend gap should stop being accurate the moment the gap closes.
-- **Actual:** `GET /leisure-weather-fit` returns `200 {"matchingWeatherDependencyIds":[]}` today — the backend ask in `prompts/_done/leisure/backend/D2-backend.md` has evidently landed (the response shape matches its contract exactly), but the comment still claims every call fails. This is a documentation-only issue — the code's `try/catch` degrades correctly either way — but it is exactly the kind of stale comment that sends the next reader chasing a "known missing feature" that already shipped, and it is directly relevant to X1 above, which is a live consequence of the endpoint now returning real (if empty) data.
-- **Evidence:** `GET https://localhost:8080/api/leisure-weather-fit` → `200 {"matchingWeatherDependencyIds":[]}`, observed twice in this pass (once per view load).
-- **Repro:** n/a — a code/comment mismatch, not a runtime repro.
-- **Verify:** Comment in `leisureWeatherApi.ts` no longer claims the endpoint doesn't exist.
-- **Suggested fix:** update the comment to reflect that the endpoint exists and currently returns an empty match set for this account (no `weatherLocation` preference set yet, per `D2-backend.md` §2) rather than "not implemented."
+---
 
-### O1. `minParticipants`/`maxParticipants` are real, round-tripping filter fields with no UI to set them, and `maxParticipants` is never read by the picker's ranking at all
+### O1. `maxParticipants` is captured on every backlog entry and spent nowhere
 - **Status:** open
 - **Severity:** opportunity
-- **Where:** `src/core/leisure/dto/request/ActivityBacklogProfileFilter.ts:14-15` (fields exist), `src/core/leisure/composable/leisureFilterUrlState.ts:41-42` (both encode/decode through the URL), `src/core/leisure/view/BacklogView.vue`'s `<template #fields>` (neither field has an input), `src/core/leisure/composable/useLeisurePicker.ts:70` (`backlogSuggestion` reads `minParticipants` into `CandidateFacts` but never reads `maxParticipants`)
-- **Expected:** Per `usecase.md`'s "captures but does not spend" section — a filter field that exists on the DTO and round-trips through the URL should be reachable from the UI, and a field the create form asks the user to fill in (`maxParticipants`, shown in `NewBacklogProfileForm.vue`) should feed something downstream.
-- **Actual:** `ActivityBacklogProfileFilter` has both `minParticipants` and `maxParticipants`, and `leisureFilterUrlState.ts`'s `backlogFilterUrlState()` encodes/decodes both — but `BacklogView.vue`'s filter panel renders no input for either (confirmed via screenshot: the filter panel shows Activity/Location/Weather/Energy/Effort/Cost/Duration/Repeatable/Experienced only). Separately, the picker's ranking (`useLeisurePicker.ts`'s `backlogSuggestion()`) reads `profile.minParticipants` into `CandidateFacts.minParticipants` (used as a hard constraint) but never reads `profile.maxParticipants` at all — a backlog entry capped at 2 people (e.g. "Read a Novel", `maxParticipants: 1`) is suggested identically for a "group" (4-person) draw as one with no cap.
-- **Evidence:** `docs/views/leisure-backlog-picker/screenshots/leisure-backlog--filter-open.png` (8 filter fields, no participant range); `grep -rn "maxParticipants" src/core/leisure/` shows it captured (form), filtered-on-paper (DTO + URL state), and never read in `useLeisurePicker.ts`.
-- **Repro:** n/a — an absence, confirmed by code + a look at the rendered filter panel.
-- **Verify:** n/a — this is a feature gap, not a defect with a pass condition.
-- **Root cause guess:** `prompts/_done/leisure/backend/D1-backend.md`'s own "if the ranked endpoint is not going to be built" section flags `maxParticipants`'s filter *semantics* as ambiguous ("not clear whether it filters... or..."), which may be exactly why the picker's client-side draw never picked the field up — the frontend didn't know which meaning to implement.
-- **Suggested fix:** two independent, small asks: (1) add min/max-people inputs to `BacklogView`'s filter panel now that the URL plumbing already exists; (2) once `D1-backend.md`'s participant-semantics question is answered, feed `maxParticipants` into `isEligible`'s backlog branch alongside `minParticipants`.
+- **Where:** `NewBacklogProfileForm.vue` (Max people input) → `ActivityBacklogProfileRequest.maxParticipants`
+  → `ActivityBacklogProfile.maxParticipants`; no `BacklogTable.vue` column reads it, and
+  `leisureScoring.ts`'s `CandidateFacts.minParticipants` is the only participant field the picker's
+  `isEligible()` ever checks.
+- **Where it could feed:** the picker's hard-exclusion logic already treats `minParticipants` as "not
+  enough people"; `maxParticipants` is the natural symmetric signal for "too many people" (a
+  two-player game suggested to "A group") or for down-ranking (not excluding) an activity that
+  doesn't use all the people available. Right now the field the user filled in has no observable
+  effect anywhere in the app.
+- **Repro:** 1. Create a backlog entry with Max people = 2. 2. Look for it anywhere in `BacklogTable`'s
+  columns (not present) or in the picker's eligibility/ranking for a "who's around: A group" (4+)
+  constraint (not read).
 
-### U1. `PickerView`'s "nothing filed yet" and "load failed" empty states are unverified — unreachable with the current seed
+### O2. `ExperiencedCell`'s "open anchor" link navigates by activity name, not the id it already has
+- **Status:** open
+- **Severity:** opportunity
+- **Where:** `src/core/leisure/component/ExperiencedCell.vue` `openAnchor()` — navigates to
+  `{ name: 'leisureMemoryAnchors', query: { activityName } }`, while `ActivityBacklogProfile` already
+  carries `memoryAnchorId` for exactly this row.
+- **Where it could feed:** a direct id-based filter (or a future anchors detail route) would survive
+  an activity being renamed and would not risk two differently-anchored activities sharing a display
+  name (the filter is a text match on `activityName`, not a strict id match) — currently a latent
+  correctness risk rather than an observed failure, since the seed has no name collisions to expose
+  it.
+- **Repro:** 1. Read `ExperiencedCell.vue`'s `openAnchor()` and `ActivityBacklogProfile`'s fields side
+  by side — `memoryAnchorId` is present on every anchored row and unused by this function.
+
+---
+
+### U1. Backlog table empty state not reached with current seed
 - **Status:** open
 - **Severity:** unverified
-- **Where:** `src/core/leisure/view/PickerView.vue`'s `emptyState` computed (`kind: 'nothingFiled'` and `kind: 'failed'` branches)
-- **What would verify it:** The current seed always has at least one row across the three leisure tables, so `poolCount` never reaches `0` and `nothingFiled` never renders; and there is no way from the UI to force `GET`/`POST` failures on the pool fetch, so `failed` never renders either. Verifying both would need either an account with a genuinely empty backlog/bucket-list/projects, or a way to throttle/fail the network (e.g. via a test harness), neither available in this pass.
+- **What would verify it:** The seed always carries at least one backlog row (`activityId:12007`),
+  and this pass could not delete it without breaking every other finding's repro (and because delete
+  is broken anyway — X1). Source (`BacklogTable.vue`'s `#noData` slot, and the "L4 empty state" copy
+  in `_locales/leisure.{sk,en}.ts`) was read but not exercised. A pass with a way to empty the table
+  (or a seed variant with zero backlog rows) would confirm the copy and the inline Add affordance
+  render as designed.
 
-### U2. `PickerView`'s loading skeleton was not screenshotted
+### U2. Picker's "nothing filed at all" empty state not reached
 - **Status:** open
 - **Severity:** unverified
-- **Where:** `src/core/leisure/view/PickerView.vue:14-23` (`VSkeletonLoader` × `SUGGESTION_COUNT`)
-- **What would verify it:** Against a localhost backend, the pool fetch resolves before a screenshot can be taken. Verifying the skeleton's actual appearance (not just its presence in source) would need network throttling.
+- **What would verify it:** Same blocker as U1 — reaching `poolCount === 0` needs an account with zero
+  eligible rows across all three sources, which the current seed (and this unit's inability to safely
+  delete backlog rows via the UI, per X1) does not allow without disturbing shared seed state.
 
-### U3. `BacklogView`'s loading and error states were not independently observed
+### U3. Picker's "load failed" empty state not reached
 - **Status:** open
 - **Severity:** unverified
-- **Where:** `BacklogTable.vue` via `BasicTable`/`DataTable`'s built-in loading prop, and whatever the table shows on a failed `grid` fetch
-- **What would verify it:** Same limitation as U2 — a single-row seed against a local backend never shows a loading state long enough to capture, and there is no UI-only way to force the grid endpoint to fail.
+- **What would verify it:** Would need a genuine network failure on the pool fetch (e.g. `route --status 500`
+  on one of the three `grid` endpoints) rather than the weather mock used in this pass; not attempted
+  since it wasn't needed to confirm the higher-priority B1 finding and risked confusing the request
+  log for the rest of the session.
 
-### U4. Keyboard arrow-key navigation inside `ConstraintBar`'s `VBtnToggle` groups not exhaustively tested
+### U4. Picker's loading skeleton not screenshotted
 - **Status:** open
 - **Severity:** unverified
-- **Where:** `src/core/leisure/component/picker/ConstraintBar.vue` (three `VBtnToggle` groups: time, energy, people)
-- **What would verify it:** This pass confirmed the toggles are clickable and update the URL/state correctly, but did not walk them with actual arrow-key presses to confirm roving-tabindex behaviour or confirm arrow keys are suppressed while a text input elsewhere on the page has focus (the CLAUDE.md checklist item). A follow-up pass should Tab into one `VBtnToggle`, press ArrowRight/ArrowLeft, and confirm selection moves and wraps sensibly.
+- **What would verify it:** The `VSkeletonLoader` state (`loading && suggestions.length === 0`) is
+  confirmed in source but is only on-screen for the duration of the initial fetch, too fast to
+  reliably catch with this pass's tooling (a screenshot taken immediately after `goto` still showed
+  the resolved state in every attempt).
+
+### U5. `suggestionHistory` storage scoping not verified
+- **Status:** open
+- **Severity:** unverified
+- **What would verify it:** `CLAUDE.md` requires per-user `localStorage` namespacing via
+  `useUserScopedStorage` for anything like "dismissed hints" or "pinned templates" — the picker's
+  staleness/last-committed-effort record (`suggestionHistory.ts`) looks like the same category of
+  state but its implementation was not opened in this pass. A second account signed in on the same
+  browser (`secondaryPage` fixture, or a manual second sign-in) reading `/leisure/pick` and checking
+  whether it inherits the primary account's staleness history would confirm or clear this.

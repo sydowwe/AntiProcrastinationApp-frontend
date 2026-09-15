@@ -767,7 +767,8 @@ While diagnosing B1, this pass inadvertently left "Meditation" (Daily group, ite
 API read), but the streak/last-completed advance triggered by the accidental completion could not be reverted
 through the UI — no endpoint or undo path exists for it (see B1's root cause: the undo stack is never
 populated by a done-toggle at all). Flagging this explicitly rather than silently leaving it: a later pass
-using this same seed should expect Meditation's streak to read 6, not 5.
+using this same seed should expect Meditation's streak to read 6, not 5. *(Retired 2026-09-15 — see the
+answered `B9` ask below: a reseed restores 5, and the un-tick now walks the streak back.)*
 
 ### What the server actually does — corrected 2026-09-13 against the API source
 
@@ -798,11 +799,20 @@ consequence.** That is a design question ("should un-ticking inside the same cyc
 open-ended data-integrity escalation it was filed as. The seed-drift note above still stands as written —
 Meditation reads 6 — since +1 is precisely what happened.
 
-**The design question is now written up** as
-[`B9`](../../../prompts/view-docs/backend/B9-routine-untick-streak-decision.md) (backend ask; not to be
-confused with finding `B9` above, which is a different thing that is already fixed). It is a decision, not a
-defect, and **nothing is blocked on it** — unit 10 can run and close regardless. The client cannot decide it:
-no endpoint writes an item's streak, and streak fields are server-owned by design.
+**The design question was written up** as
+[`B9`](../../../prompts/view-docs/backend/_done/B9-routine-untick-streak-decision.md) (backend ask; not to be
+confused with finding `B9` above, which is a different thing that is already fixed). It was a decision, not a
+defect, and nothing was blocked on it. The client could not decide it: no endpoint writes an item's streak,
+and streak fields are server-owned by design.
+
+**✅ Answered 2026-09-15 — option 2, shipped in API `4ab3710`.** Un-ticking inside the same open cycle now
+walks `streak` back and restores `bestStreak` to its pre-score value (a new server-internal
+`BestStreakBeforeScore` mark captures the record at score time, so no history recompute is needed); an un-tick
+after the cycle has closed changes nothing. `LastCompletedAt` still moves on every completing tick. Also
+found on the way: item streaks were never zeroed on a miss — `OpenNewCycle` now does that for items left
+undone at the boundary. **Client needs nothing** — render `streak` / `bestStreak` as sent. The seed-drift
+note above is retired: a reseed restores Meditation to 5, and a stray click undone in the same cycle no
+longer leaves a trace, so no `docs/e2eTestSeed.md` caveat is needed.
 
 ### U1. Weekly review card (R2) not reached — seed has zero elapsed periods
 - **Status:** ✅ **verified — closed (round 6, 2026-09-14).** The review card renders with both eligible

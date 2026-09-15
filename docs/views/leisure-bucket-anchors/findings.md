@@ -1,13 +1,15 @@
 # leisure-bucket-anchors — findings
 
-> Pass: inventory · captured 2026-09-15 · commit `50bd6b0d`
+> Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 3 · bug 2 · a11y 1 · polish 1 · opportunity 1 · unverified 2
+**Tally:** blocker 4 (X3 fixed and verified; X1, X2, X4 open) · bug 3 · a11y 1 · polish 1 · opportunity 1 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-15 | `50bd6b0d` | initial inventory pass |
+| 2 | 2026-09-15 | `f457aa0c` | mutation pass — full create→edit→delete lifecycle exercised for both entities. Found **X4** (edit and delete both silently 404 for every bucket-list profile — a new blocker) and **B3** (Inspiration column always renders "—" regardless of data, a framework formatter bug). Strengthened **B2** with matching evidence on the bucket-list side plus a worse search-corruption wrinkle. Reconfirmed **X1, X2, X3, B1** unchanged. Resolved **U1** and **U2** (both verified working correctly, moved to Resolved section below, no longer counted as findings). **A1** and **P1** were not re-driven this round (time-boxed; no code change expected in the affected files) — carried forward as-is. |
+| 3 | 2026-09-16 | working tree | **X3 closed.** Backend shipped `GET /memory-anchor/anchor-eligible-activities` (`AdhdTimeOrganizer` `dev`, `GetAnchorEligibleActivitiesEndpoint`, pinned by 6 green `AnchorEligibleActivitiesTests`; written up as `prompts/view-docs/backend/_implemented/B12-…`) and the frontend's missing `try/catch/finally` plus a distinct failure alert landed the same day (`_fix-queue.md` `F62`, now closed — bodies in `_fix-queue-log.md` → *Closed batches*/*Closed escalations*, §12). Verified live against the restarted local backend: opening "Add" on `/leisure/memory-anchors` fetches and populates the Activity picker with no console error. |
 
 ---
 
@@ -44,6 +46,8 @@
   have more than 200 bucket-list rows, page through server-side instead — but match whatever the projects
   board eventually does here rather than diverging. Either way, wrap the fetch so a failure renders a visible
   error state instead of silently falling through to "empty."
+- **Round 2 (mutation pass):** reconfirmed unchanged — same 400, same empty-state fallback, on the same
+  `LADDER_PAGE_SIZE = 500` constant.
 
 ### X2. Memory-anchors timeline view always shows the empty state, even with real data — same 400 as X1
 - **Status:** open
@@ -67,9 +71,16 @@
 - **Root cause guess:** Same as X1 — batch the fix. See X1 for the precedent (`ProjectsView.vue`'s
   `BOARD_PAGE_SIZE`) showing this exact bug was already found and fixed once in this module.
 - **Suggested fix:** Same as X1 — `TIMELINE_PAGE_SIZE = 200`.
+- **Round 2 (mutation pass):** reconfirmed unchanged — same 400 on `POST /api/memory-anchor/grid`, same
+  empty-state fallback, even with a third real anchor present at the time of the retest.
 
 ### X3. Memory anchor "Add" (unlocked) is completely non-functional — eligible-activities endpoint returns 400, and the form hangs in a permanent loading state
-- **Status:** open
+- **Status:** ✅ **fixed and verified live 2026-09-16** (`_fix-queue.md` `F62`, backend §12). The backend
+  shipped the missing route (`GetAnchorEligibleActivitiesEndpoint`, `AdhdTimeOrganizer` `dev`) and the
+  frontend's `onMounted` now wraps the fetch in `try/catch/finally` with a distinct error alert instead of
+  hanging — see `_fix-queue-log.md`'s `F62`/§12 entries for the full contract and diff. Verified live: `GET
+  /api/memory-anchor/anchor-eligible-activities` returns 200 and the Activity picker on a fresh "Add"
+  populates with no console error.
 - **Severity:** blocker
 - **Where:** `/leisure/memory-anchors` → Add → `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue:107-112`
   (`onMounted`), backend route `GET /api/memory-anchor/anchor-eligible-activities`
@@ -102,6 +113,73 @@
   route. Frontend: wrap the `onMounted` fetch in `try/catch/finally` so `loading.value = false` always runs
   and a failure falls through to the existing "no eligible activities" alert (or a distinct error alert)
   rather than hanging.
+- **Round 2 (mutation pass):** reconfirmed unchanged — identical 400 and stuck-spinner symptom. Also
+  confirmed the locked-activity path (`useAnchorCapture` / "I did this") does **not** hit this endpoint at
+  all and works correctly (see the resolved U1 entry below), so this remains isolated to the unlocked "Add"
+  entry point only.
+
+### X4. Editing or deleting a bucket-list profile always fails with a silent 404 — every row's edit and delete is completely non-functional
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `src/core/leisure/component/bucketList/BucketListProfileForm.vue:48` (`update(entityToEdit.activityId, ...)`),
+  `src/core/leisure/component/bucketList/BucketListTable.vue:133` (`deleteEntity(item.activityId)`),
+  `src/core/leisure/component/bucketList/BucketListLadder.vue:214` (same call, ladder's own delete action);
+  `src/core/leisure/dto/response/ActivityBucketListProfile.ts:21` (`get id(): number { return this.activityId }`)
+- **Expected:** Editing a bucket-list row's fields and clicking Save should persist the change; clicking delete
+  and confirming should remove the row — this is the basic CRUD contract every other entity in this app (and
+  this same unit's memory anchors, confirmed working below) honours.
+- **Actual:** Both actions send the wrong id. The grid response's row carries its own primary key separately
+  from the activity (`"id":17101` alongside `"activityId":12008` in the same JSON object — see the `B1`
+  evidence block for a full row), but `ActivityBucketListProfile`'s `id` getter returns `activityId` instead,
+  and every call site explicitly passes `.activityId` (not even relying on the getter) to `update()` /
+  `deleteEntity()`. The backend's routes are keyed by the profile's own id, not the activity id, so **every**
+  edit and **every** delete 404s:
+  - Edit: created a fresh profile (`Build a Bookshelf`, id `17102`, `activityId` `12009`), changed Comfort zone
+    step 1→4, saved — `PUT /api/activity-bucket-list-profile/12009` → **404**. Repeated on the pre-existing
+    seeded row (`Learn Bouldering`, id `17101`, `activityId` `12008`): `PUT
+    /api/activity-bucket-list-profile/12008` → **404**.
+  - Delete: confirming delete on the same fresh row fired `DELETE /api/activity-bucket-list-profile/12009` →
+    **404**. Manually re-issuing the same request against the profile's own id — `DELETE
+    /api/activity-bucket-list-profile/17102` → **204** — confirms the backend is fine and the frontend is
+    sending the wrong key.
+  - Both failures are silent: the edit dialog stays open showing the unsaved change with no error text
+    anywhere in the DOM (no alert, no snackbar observed); the delete-confirmation dialog closes and the row
+    stays in the table with no error surfaced either. A user has no way to know either action failed short of
+    noticing the row didn't change.
+  - Memory anchors, in the same unit, do **not** have this bug — `MemoryAnchor` carries its own real `id` (no
+    activity-derived getter) and `MemoryAnchorTable.vue:156` passes `item.id`; a same-session no-op edit
+    (`PUT /api/memory-anchor/18002` → **200**) and a real delete (`DELETE /api/memory-anchor/18004` → **204**)
+    both worked correctly, confirming the bug is specific to activity-keyed profile DTOs, not a general
+    problem with this unit's CRUD plumbing.
+- **Evidence:** `docs/views/leisure-bucket-anchors/screenshots/bucket-list--mutation-edit-404.png` (dialog
+  stuck open after a failed save, no error shown); `docs/views/leisure-bucket-anchors/screenshots/bucket-list--mutation-delete-404.png`
+  (row still present after confirming delete); requests: `PUT /api/activity-bucket-list-profile/12008` → 404,
+  `PUT /api/activity-bucket-list-profile/12009` → 404, `DELETE /api/activity-bucket-list-profile/12009` → 404,
+  and the corrected `DELETE /api/activity-bucket-list-profile/17102` → 204 issued directly via `fetch()` in
+  the page context to isolate the id as the sole variable.
+- **Repro:** 1. Go to `/leisure/bucket-list`. 2. Click edit on any row, change any field, click Save. 3. Dialog
+  stays open, nothing changes, no error is shown, and the network tab shows a 404 on `PUT
+  /api/activity-bucket-list-profile/{activityId}`. Or: 1. Click delete on any row, confirm. 2. The row is
+  still there afterwards, network tab shows a 404 on the matching `DELETE`.
+- **Verify:** 1. Repeat either repro. 2. **Pass condition:** the request URL uses the profile's own `id` (the
+  grid response's `id` field, not `activityId`), returns 200/204, and the table reflects the change/removal
+  without a reload.
+- **Root cause guess:** `ActivityBucketListProfile.id` getter aliases `activityId`, and every call site passes
+  `.activityId` explicitly rather than the DTO's own `id` field — both need to change together, or the getter
+  alone would silently fix call sites that use `item.id` while call sites using `.activityId` directly would
+  keep failing. **This same pattern (grep-confirmed, not independently reproduced — out of this unit's scope)
+  appears in three sibling leisure views**: `src/core/leisure/component/backlog/BacklogTable.vue:151`,
+  `src/core/leisure/component/project/ProjectTable.vue:108`, and
+  `src/core/leisure/component/project/ProjectReadinessBoard.vue:231` all call `deleteEntity(item.activityId)`
+  on their own activity-keyed DTOs — worth flagging to whoever owns the `leisure-backlog-picker` and any
+  future projects unit, since it reads like the same mistake made three more times rather than three
+  independent bugs.
+- **Suggested fix:** Change `update()`/`deleteEntity()` call sites for bucket-list (and, if the same audit
+  confirms it, backlog/project) profiles to pass the DTO's real database `id`, not `activityId`. Since the
+  profile is one-per-activity, `activityId` is a legitimate *business* key — but the REST routes are keyed by
+  the row's own id, so the frontend needs to carry both fields distinctly rather than aliasing one to the
+  other. Also wrap both `update()` and `deleteEntity()` calls in error handling that surfaces a snackbar on
+  failure — right now a 404 here is indistinguishable from success to the user.
 
 ### B1. Numeric and date range filters are silently ignored server-side on both grid endpoints
 - **Status:** open
@@ -138,6 +216,9 @@
   sending the right shape — is already confirmed correct.
 - **Suggested fix:** Backend: wire `minComfortZoneStep`/`maxComfortZoneStep`/`year`/`month`/`minRating` into
   the respective grid queries. No frontend change needed once that lands.
+- **Round 2 (mutation pass):** reconfirmed unchanged for `minComfortZoneStep` — navigated directly to
+  `/leisure/bucket-list?minComfortZoneStep=5`, request body correctly carried `"minComfortZoneStep":5`,
+  response still returned the `comfortZoneStep: 3` seeded row (`itemsCount: 1`).
 
 ### B2. Create dialogs show a literal "0" in required pickers, and the required-field rule accepts it — an invalid submission reaches the server
 - **Status:** open
@@ -162,20 +243,39 @@
   found."`/`"'highlight Note' must not be empty."`) — so no bad data was written, but the rejection is silent
   in the UI (no field-level error text was visible in this pass; a snackbar may have fired and auto-dismissed
   before capture — not independently confirmed either way).
+  **Round 2 (mutation pass) — reconfirmed and worse than first recorded:** repeated the same invalid-submit
+  test on the Bucket List dialog (previously only the Memory Anchors side was submitted): `POST
+  /api/activity-bucket-list-profile` fired with `{"activityId":0,"inspirationSource":""}`-shaped body → 400,
+  body `{"errors":{"inspirationSource":["'inspiration Source' must not be empty."],"activityId":["Activity not
+  found."]}}`. Queried every `[role=alert]` node in the form after the rejected submit — all four are empty
+  strings, so the silent-failure half of this finding is now **confirmed**, not just suspected, on both
+  forms. Additionally found a compounding interaction bug from the same root cause: because the Activity
+  field's displayed text is the literal `"0"` rather than an empty placeholder, typing to search does not
+  replace it — the input becomes `"0Build a bookshelf"`, which matches no real option and offers only "Create
+  activity" instead of the real one. The user must notice this and manually clear the field with its "Clear"
+  button before the search works, which is a discoverability trap layered on top of the original defect.
 - **Evidence:** `docs/views/leisure-bucket-anchors/screenshots/bucket-list--create-dialog.png` (Activity and
   Experience type both show "0"); `docs/views/leisure-bucket-anchors/screenshots/memory-anchors--create-invalid-submit.png`
   (Activity still "0" after a rejected Create click); request `POST /api/memory-anchor` body
   `{"activityId":0,"anchorMonth":9,"anchorYear":2026,"highlightNote":"","rating":5}` → 400, body
   `{"errors":{"highlightNote":["'highlight Note' must not be empty."],"activityId":["Activity not
-  found."]}}`.
+  found."]}}`. Round 2: `docs/views/leisure-bucket-anchors/screenshots/bucket-list--mutation-invalid-submit.png`
+  (form after the rejected Bucket List submit, all alerts empty); request `POST
+  /api/activity-bucket-list-profile` body includes `"activityId":0` → 400, body
+  `{"errors":{"inspirationSource":["'inspiration Source' must not be empty."],"activityId":["Activity not
+  found."]}}`; the search-corruption wrinkle is visible by typing into a fresh Activity field and observing
+  the input read `"0<typed text>"`.
 - **Repro:** 1. Go to `/leisure/bucket-list`, click Add. 2. Activity and Experience type fields both show "0".
   Or: 1. Go to `/leisure/memory-anchors`, click Add. 2. Click Create without touching any field. 3. A
   `POST /api/memory-anchor` fires and is rejected server-side, with no visible client-side validation message
-  having stopped it first.
+  having stopped it first. Or: 1. Open either "Add" dialog fresh. 2. Click into the Activity field and type a
+  real activity's name. 3. The input reads `"0<what you typed>"` and no matching option appears, only "Create
+  activity ...".
 - **Verify:** 1. Open either "Add" dialog fresh. 2. **Pass condition:** the Activity (and, for Bucket List,
   Experience type) field is visually empty/placeholder, not "0". 3. Click Create without selecting anything.
   4. **Pass condition:** no network request fires; a visible "required" message appears under the field
-  instead.
+  instead. 5. Type a real activity's name into a fresh Activity field. **Pass condition:** the real option
+  appears in the dropdown without needing to clear the field first.
 - **Root cause guess:** The DTO fields should be typed `number | null = null`, matching the pattern already
   used correctly elsewhere in this module (e.g. `ActivityBucketListProfileRequest.financialGoal: number |
   null = null`). This is the same class of defect L2 fixed for other fields in this module (`as number |
@@ -183,6 +283,49 @@
 - **Suggested fix:** Change both defaults to `null` (and the constructor/`fromJson` param types to `number |
   null`), matching `financialGoal`'s existing pattern. `requiredRule` already correctly rejects `null` — no
   change needed there once the defaults stop being `0`.
+
+### B3. The bucket-list table's Inspiration column always renders "—", regardless of the underlying data
+- **Status:** open
+- **Severity:** bug
+- **Where:** `src/_common/composable/table/useTableFormatters.ts:6,30-33` (`PERCENT_KEYWORDS`, `isPercentKey`,
+  `formatPercent`), consumed by `src/_common/component/dataTable/DataTable.vue`'s zero-config default
+  formatter (no per-column slot is defined for `inspirationSource` in `BucketListTable.vue`)
+- **Expected:** A row whose `inspirationSource` is a non-empty string should show that string in the
+  Inspiration column, the same way the seeded row's Financial goal ("120") and the created row's Comfort zone
+  step both display their real values through the same zero-config default path.
+- **Actual:** Both rows tested — the seeded `Learn Bouldering` (`inspirationSource: "A friend's climbing
+  photos"`) and a freshly created `Build a Bookshelf` (`inspirationSource: "Mutation pass test row"`) — show a
+  literal "—" in the Inspiration column, even though the API response, the component's own `items` prop, and
+  the edit dialog (opened on the same row) all correctly carry the real string. **Root cause confirmed by
+  direct introspection of the running component**: `isPercentKey('inspirationSource')` returns `true`, because
+  `PERCENT_KEYWORDS` includes `'ratio'`, and the substring `"ratio"` appears inside `"inspiRATIOn"` —
+  `"inspirationSource".includes('ratio')` is `true`. Once misclassified as a percent field, the cell renders
+  via `formatPercent(value)`, which returns `"—"` for any value that is not `typeof === 'number'` — always,
+  since `inspirationSource` is a string. This is a false-positive substring match in a keyword-heuristic
+  formatter, not a data or DTO problem: `getValue(item, 'inspirationSource')` returns the correct string right
+  up until the `isPercentKey` branch throws it away.
+- **Evidence:** Live component introspection via the page's own Vue instance (`comp.setupState`) on
+  `.my-data-table`: `isPercentKey('inspirationSource')` → `true`; `isCurrencyKey('inspirationSource')` →
+  `false`; `formatPercent('Mutation pass test row')` → `"—"`; `getValue(item, 'inspirationSource')` on the
+  same item → `"Mutation pass test row"` (correct). DOM evidence: the Inspiration `<td>` is wrapped in a
+  `<span data-v-ff53285f>` (`DataTable.vue`'s percent-branch markup), while the Financial goal `<td>` (which
+  goes through the *unwrapped* default-`else` branch) has no such span — the wrapper is the tell that the
+  wrong branch fired. `docs/views/leisure-bucket-anchors/screenshots/bucket-list--mutation-created.png` and
+  `bucket-list--mutation-after-i-did-this.png` both show "—" in Inspiration for rows with real data.
+- **Repro:** 1. Go to `/leisure/bucket-list`. 2. The seeded `Learn Bouldering` row's Inspiration column reads
+  "—". 3. Open its edit dialog — the Inspiration field correctly shows "A friend's climbing photos",
+  confirming the data exists and only the table cell is wrong.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the Inspiration column shows the real text, not "—",
+  for any row with a non-empty `inspirationSource`.
+- **Root cause guess:** `PERCENT_KEYWORDS = ['percent', 'rate', 'vat', 'ratio', 'discount']` in
+  `useTableFormatters.ts` is a plain-substring match (`key.toLowerCase().includes(kw)`), which is inherently
+  fragile — `'ratio'` collides with "inspiRATIOn" here, but the same class of collision could hit any future
+  column (`'rate'` would also match "opeRATIon", "geneRATE", "iteRATE"; `'sum'` in `CURRENCY_KEYWORDS` would
+  match "conSUMe"). This is a framework-level bug (`src/_common`), not specific to this app or this column.
+- **Suggested fix:** Require a word boundary or a known-suffix match (e.g. the key ends with one of the
+  keywords, or matches `/(?:^|[A-Z])Ratio$/` style patterns) instead of a bare substring `includes()` — or,
+  more robustly, make these heuristics opt-in per column (a `format` field on `TableColumn`) rather than
+  name-sniffed, since a heuristic that silently blanks real data is worse than one that under-formats it.
 
 ### A1. Several icon-only controls have a `title` but no `aria-label` across both views
 - **Status:** open
@@ -247,22 +390,32 @@
   spontaneous" memories, which the savoring-literature framing M1 was built around would support directly.
 - **Not filed as a bug:** both views work correctly as built; this is unspent data, not broken data.
 
-### U1. "I did this" capture flow (locked-activity create) not exercised — no eligible seed row
-- **Status:** open
-- **Severity:** unverified
-- **Where:** `ExperiencedCell.vue` → `useAnchorCapture.ts` → `MemoryAnchorForm.vue` (`lockActivity` path)
-- **What would verify it:** The only seeded bucket-list row is already `isAnchored: true`, so the "I did
-  this" button (shown only for `isAnchored !== true` rows) never rendered in this pass, and no backlog
-  one-time row was available either. Needs either a fresh, not-yet-anchored bucket-list/backlog profile in
-  the seed, or a mutation-pass session that creates one, clicks "I did this," and confirms the dialog opens
-  pre-filled with the activity locked and defaults to the current month/year.
+## Resolved this round
 
-### U2. Effect of deleting a memory anchor on its source profile's `isAnchored` flag not verified
-- **Status:** open
-- **Severity:** unverified
+Both were `unverified` after the inventory pass and have now been directly exercised. Neither is a defect —
+both are removed from the tally above (severity `unverified` no longer applies once tested) and kept here
+only for continuity with round 1.
+
+### (was U1) "I did this" capture flow (locked-activity create) — verified working correctly
+- **Status:** stale (resolved — confirmed working, not a defect)
+- **Where:** `ExperiencedCell.vue` → `useAnchorCapture.ts` → `MemoryAnchorForm.vue` (`lockActivity` path)
+- **What was verified:** Created a fresh, not-yet-anchored bucket-list profile (`Build a Bookshelf`) in this
+  mutation pass specifically to exercise this path. Clicked its "I did this" action: the capture dialog
+  (`Write it down`) opened with the Activity field showing the locked activity name as read-only text (not a
+  picker), Month/Year defaulted to the current month/year (September/2026), Highlight empty, and Rating
+  defaulted to 5. Filling the highlight and saving fired `POST /api/memory-anchor` → 201, the dialog closed,
+  the bucket-list row immediately flipped from "I did this" to "Experienced" (progress bar 1→2 of 2), and the
+  new anchor appeared correctly in `/leisure/memory-anchors` with a working "Bucket List" source chip pointing
+  back to the row. Screenshots: `bucket-list--mutation-i-did-this-dialog.png`,
+  `bucket-list--mutation-after-i-did-this.png`, `memory-anchors--mutation-after-i-did-this.png`.
+
+### (was U2) Deleting a memory anchor correctly reverts its source profile's `isAnchored` flag
+- **Status:** stale (resolved — confirmed working, not a defect)
 - **Where:** `MemoryAnchor` deletion vs. `ActivityBucketListProfile.isAnchored`/`.memoryAnchorId`
-- **What would verify it:** This pass did not delete either of the two seeded anchors (both are the only
-  anchor data in the account; deleting them would have cost every other unit's fixture until a reseed). A
-  mutation-pass session should delete the anchor for "Learn Bouldering" and confirm whether the bucket-list
-  row's Experienced chip reverts to "I did this" or stays stuck showing "Experienced" with a dangling
-  `memoryAnchorId`.
+- **What was verified:** Deleted the anchor created for the U1 test above (`DELETE /api/memory-anchor/18004` →
+  204). Immediately after, the source bucket-list row (`Build a Bookshelf`) reverted from "Experienced" back
+  to showing the "I did this" action, and the progress bar returned to "1 of 2 experienced" — the backend
+  correctly un-links the profile rather than leaving a dangling `memoryAnchorId`. Screenshot:
+  `bucket-list--mutation-after-anchor-delete.png`. Note this is a one-way link revert, not a cascade delete
+  (no rows are destroyed by deleting the anchor), so the delete-confirmation dialog's plain "Are you sure you
+  want to delete {name}?" wording is adequate here and was not flagged as a finding.

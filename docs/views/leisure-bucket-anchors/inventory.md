@@ -1,6 +1,7 @@
 # leisure-bucket-anchors — inventory
 
-> Captured 2026-09-15 · locale EN · account `test@example.com` · commit `50bd6b0d`
+> Captured 2026-09-15 (inventory pass, `50bd6b0d`) · updated 2026-09-15 (mutation pass, `f457aa0c`) · locale EN
+> · account `test@example.com`
 
 Shell chrome (top bar, sidebar, user menu, notification bell, dialog host, snackbars) is documented once in
 `docs/views/_shell/inventory.md` — not repeated here except where this unit's views differ from that
@@ -41,7 +42,7 @@ framework default shared by every table in the app, not unit-specific).
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
 | Experienced-progress bar | progress bar + text ("N of M experienced") | `done`/`total` counts | derived — two extra count-only (`itemsPerPage:1`) requests under the current filter, not read off the loaded page | `POST /api/activity-bucket-list-profile/grid` ×2 (isAnchored:null, isAnchored:true), fired alongside the table's own fetch — 3 total requests per load/filter change, by design (see `useExperiencedProgress.ts` comments) |
-| Table | table, 7 data columns + actions | Activity, Experienced, Experience type, Comfort zone step (`/5`, coloured), Requires travel (icon), Financial goal, Inspiration | raw, except Experienced (derived display of `isAnchored`) | `POST /api/activity-bucket-list-profile/grid` |
+| Table | table, 7 data columns + actions | Activity, Experienced, Experience type, Comfort zone step (`/5`, coloured), Requires travel (icon), Financial goal, Inspiration | raw, except Experienced (derived display of `isAnchored`); **Inspiration always renders "—" regardless of the underlying value — a table-formatter bug, not missing data, see Findings B3** | `POST /api/activity-bucket-list-profile/grid` |
 | Ladder | 5 grouped sections ("rungs") | one per `comfortZoneStep` 1–5, each holding its matching rows; a "next rung" nudge card above the rungs | raw grouping of the same rows the table would show; nudge is derived (lowest rung with an unexperienced item) | intended: `POST /api/activity-bucket-list-profile/grid` at `itemsPerPage:500` — **currently never succeeds, see Findings X1** |
 | Activity name cell icon | icon | the activity's `Role` icon/colour | raw (`ActivityInfo.role`) | same table fetch |
 
@@ -73,9 +74,21 @@ framework default shared by every table in the app, not unit-specific).
   (select, required implied by DTO default but not enforced — see Findings B2), Comfort zone step (1–5
   stepper), Requires travel (checkbox), Financial goal (number, nullable), Inspiration (text). Cancel closes
   without saving (confirmed); Escape does not close (shell A1, re-confirmed here). **A fresh create dialog
-  shows "0" in the Activity and Experience type fields** — see Findings B2.
+  shows "0" in the Activity and Experience type fields** — see Findings B2. **Create itself works** (confirmed
+  in the mutation pass: `POST /api/activity-bucket-list-profile` → 201, new row appears without a reload) —
+  **but Save on an edit always fails silently** (`PUT /api/activity-bucket-list-profile/{activityId}` → 404,
+  dialog stays open with no error shown) — see Findings X4.
 - **Delete confirmation** — "Are you sure you want to delete {activity name}?" Cancel/Confirm. Cancel
-  verified not to delete (row count unchanged after).
+  verified not to delete (row count unchanged after). **Confirm also does not delete** — mutation pass found
+  `DELETE /api/activity-bucket-list-profile/{activityId}` 404s for every row, silently (dialog closes, row
+  stays, no error shown) — see Findings X4.
+- **"I did this" capture dialog** (`MemoryAnchorForm`, locked-activity mode, titled **"Write it down"**) —
+  Activity rendered as read-only text (not a picker), Month/Year (number, defaults to the current month/year),
+  Highlight (textarea, empty by default), Rating (number, defaults to 5). Confirmed working end-to-end in the
+  mutation pass: saving fires `POST /api/memory-anchor` → 201, the source row's Experienced state flips
+  immediately, and the new anchor appears in `/leisure/memory-anchors` with a working "Bucket List" source
+  chip. This is the one create path in this view that is **not** affected by Findings X4 (it never calls
+  `update()`/`deleteEntity()` on the bucket-list profile itself).
 
 **Keyboard**
 - Tab order through the header reaches Table/Ladder toggle → Filter → Add, matching visual order.
@@ -153,10 +166,20 @@ did this" action anywhere in the app.
   **This dialog is non-functional against the running backend** — see Findings X3. Shows "0" in the Activity
   field exactly like the bucket-list form — same root cause, Findings B2.
 - **MemoryAnchorForm** (edit / "I did this", locked) — same fields, Activity replaced by a read-only text
-  field showing the locked activity name. Not independently exercised in this pass (no un-anchored bucket-
-  list/backlog row existed in seed data to trigger "I did this" — see Findings U1).
+  field showing the locked activity name; dialog is titled **"Write it down"** in locked/create-from-capture
+  mode. **Confirmed working end-to-end in the mutation pass**: created a fresh not-yet-anchored bucket-list
+  row specifically to exercise this path — the dialog opened pre-filled with the activity locked, Month/Year
+  defaulted to the current month/year, Rating defaulted to 5; saving fired `POST /api/memory-anchor` → 201 and
+  the new anchor appeared immediately in the table with a working source chip. **Editing an existing anchor
+  also works** — a no-op edit (open, change nothing, Save) on the seeded `Retired Hobby` row fired `PUT
+  /api/memory-anchor/18002` → 200. Unlike the bucket-list profile forms (Findings X4), `MemoryAnchor` carries
+  its own real `id` rather than an activity-derived one, so this entity's edit/delete are not affected by that
+  bug.
 - **Delete confirmation** — "Are you sure you want to delete {activity name}?" — confirmed via screenshot
-  `memory-anchors--delete-confirm.png`; Cancel verified not to delete.
+  `memory-anchors--delete-confirm.png`; Cancel verified not to delete. **Confirm does delete** (mutation pass:
+  `DELETE /api/memory-anchor/{id}` → 204, row disappears without a reload) — and deleting an anchor that came
+  from a bucket-list "I did this" correctly reverts the source row's `isAnchored` back to false (was Findings
+  U2, now resolved/confirmed working — see findings.md's Resolved section).
 
 **Keyboard**
 - Not separately walked beyond the Escape check (shared `MyDialog` base, same as bucket list).

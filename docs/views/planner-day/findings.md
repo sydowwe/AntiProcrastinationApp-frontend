@@ -1,13 +1,72 @@
 # planner-day — findings
 
-> Pass: inventory · captured 2026-09-14 · commit `6aac48bb`
+> Pass: inventory + mutation · captured 2026-09-14, 2026-09-15 · commit `041d9b2d`
 
-**Tally:** blocker 0 · bug 6 · a11y 1 · polish 0 · opportunity 0 · unverified 0
+**Tally:** blocker 1 · bug 8 · a11y 1 · polish 2 · opportunity 0 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `6aac48bb` | initial inventory pass |
+| 2 | 2026-09-15 | `041d9b2d` | mutation pass — full create/edit/delete lifecycle for `PlannerTask`, `RepeatingPlannerTask` and a skip reason; found X1, B7, B8, P1, P2 |
+
+---
+
+### X1. Editing a task's name is completely broken — the edit is either silently blocked or silently discarded, in both toggle states
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `src/core/dayPlanner/component/BasePlannerTaskDialog.vue:120` (`save()`) →
+  `src/core/activity/component/ActivitySelectOrQuickEditFormField.vue:65` (`execAndReturnStatus`) →
+  `src/core/activity/composable/quickCreateActivityComposition.ts:28` (`quickEditActivity`) →
+  `src/core/activity/store/activityOptionsStore.ts:162`, which calls `PATCH /api/activity/{id}/Overwrite`
+- **Expected:** `PlannerTask` has no name of its own — the "* Name" field in the Edit Task dialog edits the
+  underlying shared `Activity`'s name (see `glossary.md`'s Activity spine). Typing a new name and confirming
+  should rename the activity (with the "Quick edit activity" toggle controlling exactly that), the way every
+  other editable field in the same dialog saves.
+- **Actual:** Two independent failures, covering both states of the "Quick edit activity" toggle (which
+  defaults to **checked**, mode "Overwrite", every time the dialog is opened):
+  1. **Toggle ON (the default):** confirming with a changed Name calls `PATCH /api/activity/12002/Overwrite`,
+     which the backend answers with **404** — the route does not exist. This call is awaited before the
+     actual task PUT, so the failure blocks the *entire* save: not just the name, but every other field
+     changed in the same dialog session (time, status, importance, location, …) is discarded too. The dialog
+     stays open, the Confirm button remains clickable, and **nothing** in the UI indicates a failure — no
+     snackbar, no inline error, no console-visible user-facing message (only a raw `AxiosError` in devtools).
+  2. **Toggle OFF:** confirming succeeds — `PUT /api/planner-task/{id}` returns 200 and every other field
+     change is saved correctly — but the typed Name change is silently dropped. `GET` the task afterward and
+     `activity.name` is unchanged. There is no per-task name field for the value to land in, and with the
+     toggle off nothing writes it to the Activity either, so the edit vanishes with no error and no warning
+     that it wouldn't be applied.
+  In short: **there is no toggle state in which changing a task's name actually works**, and the failure mode
+  in both cases is silent.
+- **Evidence:** Requests captured live: `PATCH https://localhost:8080/api/activity/12002/Overwrite` → `404`
+  (toggle on, dialog stays open, task block in the grid unchanged — screenshot
+  `day-planner-date--mutation-quickedit-404-silent.png`); `PUT https://localhost:8080/api/planner-task/16008`
+  → `200` (toggle off) whose response body still reads `"activity":{"name":"Feature Development",...}` despite
+  typing "Feature Development Renamed" into the Name field beforehand. Console:
+  `AxiosError: Request failed with status code 404` at `activityOptionsStore.ts:162` via
+  `quickCreateActivityComposition.ts:28` via `ActivitySelectOrQuickEditFormField.vue:65` via
+  `BasePlannerTaskDialog.vue:120`.
+- **Repro:** 1. Go to `/day-planner/15-09-2026` (or any day with a task). 2. Select a task, press `E` to edit.
+  3. Clear "* Name" and type a new value. 4. Leave "Quick edit activity" checked (the default). 5. Click
+  Confirm. **Observe:** dialog stays open, no error shown, task block unchanged. 6. Uncheck "Quick edit
+  activity". 7. Click Confirm again. **Observe:** dialog closes, task block still shows the *old* name.
+- **Verify:** 1. Repeat the repro's steps 1–5. **Pass condition (toggle on):** either the rename succeeds and
+  the activity's name updates everywhere it's referenced, or the dialog shows a visible error and stays open
+  for a reason the user can act on — not silent no-op. 2. Repeat with the toggle off. **Pass condition:** the
+  Name field either applies the caller's intent (e.g. by disabling/hiding the field entirely when quick-edit is
+  off, since there's nothing for it to write to) or is clearly read-only, never an editable-looking field whose
+  value is discarded.
+- **Root cause guess:** `PATCH /api/activity/{id}/Overwrite` is not a registered backend route (confirmed 404,
+  not a permissions/400 shape) — this is very likely the same class of gap as the other backend-route findings
+  already filed in `prompts/view-docs/backend/` for other units. The toggle-off silent-discard is a separate,
+  purely frontend gap: `ActivitySelectOrQuickEditFormField.vue` has no code path that does anything with the
+  Name field's value when quick-edit is off.
+- **Suggested fix:** Backend: register (or fix the method/route on) the activity-overwrite endpoint. Frontend,
+  independent of that: (a) `save()` should not let a rejected `quickEditActivity` call silently swallow the
+  rest of the form's save — catch it, show `useSnackbar().showErrorSnackbar`, and keep the user's other field
+  edits either saved or visibly unsaved, not silently discarded; (b) when "Quick edit activity" is off, either
+  disable the Name field (there is nothing for it to write to) or make it a read-only display of the current
+  activity name, so it cannot look editable while being a no-op.
 
 ---
 
@@ -186,6 +245,79 @@
 - **Suggested fix:** Mirror `activeTab` to a `tab` query param with `router.replace`, same pattern as this
   module's own `useCalendarUrlState.ts`.
 
+### B7. The plan-vs-actual block treats every day as "materially done" the instant it loads — F2's own withhold-until-over rule never actually holds
+- **Status:** open
+- **Severity:** bug
+- **Where:** `src/core/dayPlanner/composable/usePlanVsActual.ts:37` (`isDayMateriallyDone`) and
+  `src/core/dayPlanner/store/dayPlannerStore.ts:158-171` (`viewEndDate`)
+- **Expected:** `prompts/_done/day-planner/F2-plan-vs-actual.md` states explicitly: *"Do not compute a drift
+  verdict at 10:00 for a day that ends at 23:00. Either restrict to finished tasks or show nothing until the
+  day is materially done."* `isDayMateriallyDone = currentTime.value >= store.viewEndDate` is the intended
+  gate for exactly this.
+- **Actual:** `viewEndDate` is computed from `core.viewEndTime.hours`: if `endHour >= 24` it correctly rolls
+  onto tomorrow, but the `else` branch (`endHour` 0–23) sets `date.setHours(endHour, endMinute, 0, 0)` on
+  **today's** date with no adjustment — even though the rest of the module treats an end-hour lower than the
+  start-hour as an overnight wrap (`isOverMidnight = viewStartTime.hours > viewEndTime.hours`,
+  `usePlannerStoreCore.ts:99`). Every day observed in this pass (and throughout the seed) has `bedTime`
+  `{hours:0, minutes:0}` — rendered as "00:00", i.e. midnight, the *end* of an 08:00–00:00 day — which the
+  `else` branch turns into `viewEndDate` = **today at 00:00:00**, an instant that is in the past for virtually
+  the entire day. The result: `isDayMateriallyDone` is `true` almost immediately after midnight and stays
+  `true` for the rest of the day, so the plan-vs-actual block renders its "materially done" verdict at any
+  hour, not just once the day is over. Confirmed live: at **19:54 local time**, on a day running 08:00–00:00
+  with one task still two minutes from starting, the block already read "Planned 3h · logged 0m · 3 tasks
+  never happened" — counting a task that had not even started yet as "never happened" (a direct consequence:
+  `neverHappenedCount` only checks `status !== Completed`, which is a safe simplification *if* the day is
+  genuinely over, but is wrong the moment the gate that's supposed to guarantee that is itself broken).
+- **Evidence:** Screenshot `day-planner-date--mutation-task-created.png` (header shows "Planned 3h · logged
+  0m", "3 tasks never happened" at 19:5x with a task starting at 19:55 still pending); browser time confirmed
+  via `new Date().toString()` → `Tue Sep 15 2026 19:54:44 GMT+0200`; grid header read "Time grid 08:00 – 00:00"
+  confirming `bedTime = {hours:0, minutes:0}`; source read of both files above.
+- **Repro:** 1. Go to `/day-planner/<today's date>` any time other than exactly midnight, on a day whose bed
+  time renders as "00:00" (the seed default). 2. **Observe:** the plan-vs-actual line under the progress bar
+  ("Planned Xh · logged Ym" / "N tasks never happened") is already visible, hours before the day's actual end.
+- **Verify:** 1. Same repro, at e.g. 10:00 on a day that runs until 23:00 or 00:00. **Pass condition:** the
+  plan-vs-actual block renders nothing (per F2's own spec) until the day is genuinely over. 2. Once genuinely
+  past the day's end time, confirm the block **does** appear and its counts are correct.
+- **Root cause guess:** `viewEndDate`'s `else` branch never accounts for an overnight-spanning view the way
+  `isOverMidnight` elsewhere in the same store already does — it needs the same "does end-hour roll past
+  start-hour" check, not just a hardcoded `>= 24` threshold that the day's actual data (`bedTime.hours = 0`)
+  never reaches.
+- **Suggested fix:** In `dayPlannerStore.ts`'s `viewEndDate`, treat `endHour < core.viewStartTime.value.hours`
+  (i.e. reuse the existing `isOverMidnight` condition) the same as `endHour >= 24`: roll onto the next
+  calendar day before setting hours.
+
+### B8. A deleted task's calendar day-summary counters (total/completed/%) never refresh — confirmed stale even after a full reload
+- **Status:** open
+- **Severity:** bug
+- **Where:** `DayPlannerProgressBlock.vue:9-22` reads `calendar.completedTasks` / `calendar.totalTasks` /
+  `calendar.completionRate` straight from the `Calendar` API payload (`GET /api/calendar/by-date/{date}`);
+  confirmed stale server-side, not a frontend cache issue
+- **Expected:** Deleting a task should update every surface counting that day's tasks. The `taskStats` figures
+  in the same component (planned/free minutes, computed client-side from `store.tasks`) already do this
+  correctly — the header's "N/M tasks · X%" should too.
+- **Actual:** Created a 3rd task on 2026-09-15 (`1/3 tasks 33%` — correct), then deleted it. The header
+  continued to read **"1/3 tasks 33%"** — stale by one task — while the *same line*'s "2h planned" (client-side)
+  and the plan-vs-actual block's "2 tasks never happened" below it (also client-side) both correctly reflected
+  the remaining 2 tasks. Confirmed this is not a Vue-reactivity/staleness artifact: a **full page reload**
+  still returned `"totalTasks":3,"completedTasks":1` from `GET /api/calendar/by-date/15-09-2026` — the
+  `Calendar` row's own cached counters were never decremented server-side when the task was deleted.
+- **Evidence:** Screenshot `day-planner-date--mutation-stale-progress-count.png` (taken pre-reload, same
+  "1/3 tasks 33%" reading); response body of the post-reload `GET /api/calendar/by-date/15-09-2026`:
+  `{"...","totalTasks":3,"completedTasks":1,...}` while the grid genuinely rendered only 2 task blocks
+  (Bug Fixing, Code Review) and the plan-vs-actual line agreed on 2.
+- **Repro:** 1. Note a day's "N/M tasks X%" header. 2. Create a task on that day, confirm the header increments.
+  3. Delete that task. 4. **Observe:** header does not decrement. 5. Reload the page. 6. **Observe:** still not
+  decremented.
+- **Verify:** 1. Repeat the repro. **Pass condition:** after step 6 (a reload), the header's task count and %
+  match the actual number of task blocks rendered in the grid.
+- **Root cause guess:** Backend-side — `Calendar.totalTasks`/`completedTasks` read as a denormalized counter on
+  the `Calendar` row (or a `DayPlan` aggregate) that gets incremented on `POST /api/planner-task` but is not
+  decremented on `DELETE /api/planner-task/{id}`. Not a frontend fix — the same class of gap as the other
+  backend-confirmed counters in this doc set; worth batching into a backend session with X1.
+- **Suggested fix:** Backend: recompute or decrement the `Calendar`'s task counters in the same transaction as
+  the `PlannerTask` delete (and audit the status-change path too, since `completedTasks` is equally
+  denormalized).
+
 ---
 
 ### A1. Calendar month prev/next arrows have no accessible name
@@ -204,3 +336,52 @@
 - **Root cause guess:** Same class as shell A2 (sidebar hamburger) — a framework-wide gap in icon-only `VBtn`
   usage, not specific to this module.
 - **Suggested fix:** Add localized `aria-label`s to the two buttons in `CalendarGrid.vue`.
+
+---
+
+### P1. Missing FontAwesome icon on the "Date range" recurrence tab — console error, blank icon slot
+- **Status:** open
+- **Severity:** polish
+- **Where:** New/Edit Repeating Task dialog (`/day-planner/settings`, Repeating Tasks tab → Add), the
+  "Recurrence" tab strip's "Date range" button
+- **Expected:** Each recurrence-type tab (Day of week, Day of month, Date range, Day type) shows a leading
+  icon, matching the other three.
+- **Actual:** "Date range" renders with no icon at all — just the text, misaligned against its siblings which
+  all have one. Console logs `Could not find one or more icon(s) {prefix: fas, iconName: calendar-range}` the
+  moment the dialog opens.
+- **Evidence:** Screenshot `day-planner-settings--mutation-repeating-recurrence.png` (Day of week/Day of
+  month/Day type all show an icon, Date range shows none); console:
+  `[ERROR] Could not find one or more icon(s) {prefix: fas, iconName: calendar-range}` at
+  `@fortawesome_vue-fontawesome.js`.
+- **Repro:** 1. Go to `/day-planner/settings`, Repeating Tasks tab. 2. Click the "+ Add" button. 3. Look at the
+  four recurrence-type tab buttons.
+- **Verify:** 1. Same repro. **Pass condition:** "Date range" shows an icon matching its siblings, and the
+  console logs no "Could not find one or more icon(s)" error.
+- **Root cause guess:** `calendar-range` is not part of the FontAwesome 7 free/solid icon set actually bundled
+  by this app (CLAUDE.md specifies FontAwesome 7) — likely a renamed or pro-only icon referenced by its old
+  name.
+- **Suggested fix:** Swap to a bundled icon (e.g. `calendar-days` or `calendar-week`, both present elsewhere in
+  this module's own recurrence tabs) in whichever component renders the recurrence tab strip.
+
+### P2. "Importance" is silently required in the New/Edit Repeating Task dialog but shows no required-field asterisk
+- **Status:** open
+- **Severity:** polish
+- **Where:** New/Edit Repeating Task dialog, `Importance` select — contrast with the same dialog's `* Name` /
+  `* Activity`, which do carry the asterisk convention used throughout this app's dialogs
+- **Expected:** Every other required field in this app's forms (confirmed in the same session: Add/Edit Task's
+  `* Name`, `* Activity`) is marked with a leading `*` before its label. A field that blocks submission with
+  "This field is required" should carry the same marker.
+- **Actual:** Clicking Confirm with Importance left unset fails with a "This field is required" alert under the
+  field — but the label reads plain "Importance", not "* Importance", so there is no upfront visual cue that
+  this field (unlike Location, Notes, "Is background" on the very same dialog) is mandatory.
+- **Evidence:** Snapshot showing `combobox "Importance"` (no asterisk) alongside `alert: "This field is
+  required"` after a failed submit attempt; contrasted with `combobox "* Activity"` and `textbox "* Name"` in
+  the same dialog and in the plain Add/Edit Task dialog, where Importance is genuinely optional and unmarked.
+- **Repro:** 1. Go to `/day-planner/settings`, Repeating Tasks tab, click "+ Add". 2. Fill Activity and pick a
+  recurrence day, but leave Importance unset. 3. Click Confirm. **Observe:** submission fails with "This field
+  is required" under Importance, which had no asterisk warning beforehand.
+- **Verify:** 1. Same repro. **Pass condition:** the Importance label carries the same required-field marker as
+  Name/Activity before the user ever attempts to submit.
+- **Suggested fix:** Add the `*` prefix to the Importance label in the repeating-task form (or, if Importance
+  is genuinely meant to be optional here the way it is in the plain task dialog, relax the validator instead —
+  whichever matches the intended design).

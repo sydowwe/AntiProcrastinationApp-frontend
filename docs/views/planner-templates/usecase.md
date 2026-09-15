@@ -96,6 +96,20 @@ whole distinction from a real `PlannerTask`. Applying a template (outside this u
 `PlannerTask` rows for a specific day, recording `isFromTemplate` and `sourceTemplateTaskId` so the origin
 survives — this unit only edits the template, never a day built from it.
 
+**Confirmed by the mutation pass (2026-09-15):** successfully creating a template navigates straight to
+its `TemplateDayPlannerView` (`/day-planner/templates/:id`) rather than staying on the list — a
+create-then-edit flow, not create-then-browse
+(`docs/views/planner-templates/screenshots/day-planner-templates-id--mutation-created.png`). The
+cascade-confirms-regardless-of-preference rule holds exactly: with "Ask before deleting single items"
+off, a single (non-cascading) template task and a template with zero tasks both delete with no
+confirmation at all, but a template with one or more tasks still shows the "Tasks in this template: N.
+They will be deleted with it." prompt every time
+(`docs/views/planner-templates/screenshots/day-planner-templates--mutation-delete-cascade-confirm.png`
+with the preference on,
+`docs/views/planner-templates/screenshots/day-planner-templates--mutation-cascade-confirm-pref-off.png`
+with it off — identical prompt either way). See `findings.md` round 2 for the full evidence trail,
+including a confirmed a11y gap on background tasks and a broadened validation-gap finding (`B2`).
+
 ## Data this unit captures but does not spend
 - `usageCount` / `lastUsedAt` — incremented by the *apply* flow (out of this unit), read here only to
   drive the "Most Used" / "Recently Used" sort and the card's "Used N times" line. This unit never writes

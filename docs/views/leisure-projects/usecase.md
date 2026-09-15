@@ -30,11 +30,12 @@ check what's blocking an existing one, or bump its status after buying materials
 **What the user can do**
 
 - Toggle between a **board** (grouped by readiness, the default) and a plain **table**, with the choice
-  meant to survive a reload via the URL's `view` query param — see Findings for where this breaks.
+  meant to survive a reload via the URL's `view` query param — see Findings B1 for where this breaks.
 - Filter by activity name, difficulty, readiness, area and messiness; every field round-trips through the
   URL.
 - Create a project via "Add" (bound to an existing or newly-created `Activity`) from either view.
-- Edit a project by clicking its board card, or via the table's row action.
+- Edit a project by clicking its board card, or via the table's row action. **As of this pass, every write
+  — status change, edit, delete — fails against the live backend; see Findings X1.**
 - Delete a project from either view, behind a generic (non-cascading) confirmation.
 - **Move a project between readiness columns with one click** on the board — the click writes
   `readinessStatus` immediately; there is no drag-and-drop, a status-button row on the card instead (see
@@ -51,6 +52,9 @@ check what's blocking an existing one, or bump its status after buying materials
   `requiredTools` are **not** columns here — they only ever surface on the board's `NeedsShopping` cards.
 - **Filter chips** above both views summarise the active filter (e.g. "Readiness (1)"), each removable
   individually.
+- Activity icon + name, colour-matched to the activity's role, on every card/row (`ActivityNameCell`,
+  shared with the other three leisure tables) — **now renders correctly** (see Findings B3, fixed since the
+  2026-09-13 inventory pass).
 
 **Depends on:** the activity picker's own data (`useActivityCrud().fetchSelectOptions`) for the
 create/edit form's activity field; no user preference (theme/locale aside) changes this view's behaviour.
@@ -60,18 +64,16 @@ create/edit form's activity field; no user preference (theme/locale aside) chang
 A project profile is created by attaching profile fields to an existing `Activity`, or by creating a new
 `Activity` inline (the autocomplete's "create new" option, `QuickCreateActivityDialog`) and attaching the
 profile to it in the same form submit. Editing changes any profile field, including a full-payload
-`readinessStatus` change via the board's one-click status control (see Findings — this is a known,
-documented backend gap, not an oversight: `prompts/_done/leisure/backend/P1-backend.md` asks for a
-status-only PATCH route that does not exist yet, so every status click round-trips the whole profile).
-Deleting removes the profile row only — the underlying `Activity` and any history/planner/to-do rows
-pointing at it are untouched, which is presumably why the delete confirmation is a plain "are you sure",
-not a cascade warning: there is nothing to cascade.
+`readinessStatus` change via the board's one-click status control — a known, documented backend gap, not an
+oversight: `prompts/_done/leisure/backend/P1-backend.md` asks for a status-only PATCH route that does not
+exist yet, so every status click round-trips the whole profile (and, per Findings X1, currently 404s
+regardless, for an unrelated reason — the frontend keys the write by the wrong id). Deleting removes the
+profile row only — the underlying `Activity` and any history/planner/to-do rows pointing at it are
+untouched, which is presumably why the delete confirmation is a plain "are you sure", not a cascade
+warning: there is nothing to cascade.
 
 ## Data this unit captures but does not spend
 
-- **`activity.role.icon` / `activity.role.color`** — sent on the wire (nested under `activity.role`), but
-  `ActivityNameCell.vue` reads `activity.icon` / `activity.color` (flat, not nested), so the per-project
-  activity icon L3 built never actually renders for this view. See Findings B3.
 - **`activity.isOnTodoList`** — present in every `/api/activity-project-profile/grid` response row, read by
   nothing in `src/`. It looks like backend groundwork for exactly the shopping-list-to-todo handoff P1 asked
   the frontend to *evaluate* (point 4: "consider whether a NeedsShopping project's materials list should be

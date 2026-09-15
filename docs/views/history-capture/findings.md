@@ -107,7 +107,11 @@
   instead of leaving Vuetify's default (silent, unbound) close behaviour active outside edit mode.
 
 ### B4. A pomodoro stopped inside the first minute writes a zero-length history row behind a malformed confirm prompt
-- **Status:** open
+- **Status:** ✅ **fixed and verified live 2026-09-15** (`F67`). Start → Stop inside the same tick on
+  `/activity-history/pomodoro` now shows *"That session was too short to record — nothing was saved"* and no
+  dialog at all; `requests` for the span holds `timer-alarm/schedule` + `timer-alarm/cancel` and no
+  `POST /api/activity-history`. The malformed *"done for ?"* prompt is unreachable because `getNice` is never
+  called with a zero `Time` from this view any more — `Time.getNice` itself is untouched, as the batch said.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/component/PomodoroTimerView.vue:255-281` (`finishSession()` has no
   near-zero-length guard, unlike `TimerView`'s — see B5), and
@@ -130,6 +134,13 @@
 - **Repro:** 1. Go to `/activity-history/pomodoro`. 2. Pick a focus activity. 3. Click Start, then immediately
   click Stop (within the same second). 4. The confirm dialog reads "... - done for ?". 5. Click Confirm. 6. A
   `POST /api/activity-history` fires with `length: {hours:0, minutes:0}` and returns `201`.
+- **Server-side change, 2026-09-15 — step 6 is now a `400`, and the finding stays open.** The escalation this
+  finding raised (retired §15, `prompts/view-docs/backend/_implemented/B17-…`) landed: `ActivityHistoryValidator`
+  is `Length.TotalSeconds > 0` with *"Length must be positive."* on both `POST` and `PUT`, so the zero row can no
+  longer be written by any client. That fixes the row, not the flow — the malformed *"done for ?"* prompt is
+  still shown and Confirm still fails, now with an error snackbar at the end instead of a silent bad write. The
+  client guard (`F67`, settled as **discard with a message** before the dialog opens) is still the fix. Re-running
+  the repro today should show the 400, not the 201.
 - **Verify:** 1. Repeat the repro. 2. **Pass condition:** either the dialog is not shown at all for a session
   that produced 0 logged minutes (matching `TimerView`'s discard-and-clear behaviour), or it is shown with a
   duration that reads sensibly (e.g. "less than a minute") and, if confirmed, writes a length that is not
@@ -145,7 +156,10 @@
   reading it will reproduce the same "?" text).
 
 ### B5. Stopping a timer inside the first minute discards the elapsed time with zero feedback
-- **Status:** open
+- **Status:** ✅ **fixed and verified live 2026-09-15** (`F67`). The discard is the same; it now says so. A
+  15-minute timer started and stopped ~0.3 s later shows *"That session was too short to record — nothing was
+  saved"*, and the same timer stopped after 45 s opens the save dialog reading *"done for 1m"* — so the branch
+  still only swallows sessions that really round to nothing.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/view/TimerView.vue:216-219` (`if (length.getInMinutes <= 0) {
   store.clearSession(); return }`, inside `finishSession()`)

@@ -1,111 +1,110 @@
 # leisure-backlog-picker — use cases
 
 ## What this unit is for
-Two views that form one loop: `BacklogView` is where the user files "things I could do" with a rich
-vocabulary (energy, effort, location, weather, cost, duration, party size), and `PickerView`
-(`/leisure/pick`, "What should I do right now?") is the payoff — it reads that backlog (plus the
-bucket list and projects) and answers the question the filters alone never could: "I have 45
-minutes, low energy, indoors — what should I do?" `PickerView` **spends** what `BacklogView`
-**collects**; documenting the picker without knowing the backlog's shape would be documenting half
-a feature.
+Two halves of one loop: `BacklogView` is where the user files "things I could do" against the
+richest vocabulary in the leisure module (energy, effort, location, weather dependency, cost tier,
+duration, party size, repeatability). `PickerView` is where that vocabulary gets spent — the user
+states time/energy/people available and gets three concrete suggestions instead of a filtered list,
+with a one-click way to commit to one right now or later today.
 
 ## Where it sits
-A user arrives at `/leisure/backlog` from the sidebar's "Leisure" group to file things they could do
-some day, the same way they would use any of the other three leisure tables (bucket list, projects,
-memory anchors — out of this unit's scope, see `docs/views/glossary.md`). `/leisure/pick` is reached
-from the same nav group ("What should I do?", listed first) and is a dead end in the useful sense —
-it is the terminal screen for "I'm bored," not a hub. Its cards commit the user forward into
-`dayPlanner` (via `core/dayPlanner/api` and `dto` only, the cross-module boundary `CLAUDE.md`
-allows), either starting a task now or booking a slot later today. `BacklogView`'s "Experienced"
-column links sideways into `leisureMemoryAnchors` (also out of scope) to close the loop on a
-one-time activity.
+A user arrives at `/leisure/backlog` either to stock the backlog for the first time or to add/edit
+one entry, then later arrives at `/leisure/pick` — from the sidebar directly, or from anywhere via
+the "What should I do?" nav entry — when they are actually free and undecided. Committing a
+suggestion hands off to `dayPlanner` (creates a `PlannerTask` for today, via `dayPlanner/api` only,
+per `CLAUDE.md`'s cross-module rule). `PickerView` also reads `activityProjectProfile` and
+`activityBucketListProfile` (the other two leisure tables) as secondary suggestion sources, and both
+views can create a `MemoryAnchor` when a one-time backlog entry is marked done — that anchor is
+edited/viewed on `/leisure/memory-anchors`, outside this unit.
 
 ## Views
 
 ### BacklogView (`/leisure/backlog`)
-**Purpose:** File and maintain "things I could do" — one backlog profile per activity.
-**Who opens it and why:** Someone stocking the pool the picker draws from, or auditing what they
-already filed (via the "Experienced" progress readout and filters).
+**Purpose:** CRUD + filter surface for `ActivityBacklogProfile` rows — the picker's main pool.
+**Who opens it and why:** stocking the backlog for the first time, or maintaining an existing entry
+(new duration estimate, marking something as done).
 
 **What the user can do**
 - Filter the backlog by activity name, location, weather dependency, energy, effort, cost tier,
-  a duration ceiling, and a tri-state repeatable/experienced toggle — every field round-trips through
-  the URL, so a filtered view is bookmarkable and survives a reload.
-- Create, edit and delete a backlog profile via a dialog form, including creating the underlying
-  Activity inline (`ActivityAutocompleteWithCreate` → `QuickCreateActivityDialog`) without leaving
-  the leisure module.
-- Mark a one-time (non-repeatable) entry "I did this" inline, which opens the anchor-capture flow
-  (`useAnchorCapture`) and, once anchored, links through to the matching Memory Anchors row.
-- See a live "N of M experienced" progress readout, scoped to the one-time half of the backlog under
-  the current filter.
+  duration ceiling, repeatable/one-time, and experienced/not — filters persist in the URL and
+  survive a reload.
+- Create a backlog entry, picking an existing activity or creating a brand-new one inline without
+  leaving the dialog (L4's inline-create, via `ActivityAutocompleteWithCreate` → a nested
+  `QuickCreateActivityDialog`).
+- Edit an existing entry (activity locked once created — the identity of a backlog profile is one
+  activity, per the glossary).
+- Delete an entry, with a confirmation naming the activity.
+- Mark a one-time (non-repeatable) entry "I did this", opening a "Write it down" memory-anchor form
+  inline (month/year, highlight note, 1–10 rating) without leaving the table.
+- Jump from an anchored row's "Experienced" chip to `/leisure/memory-anchors` pre-filtered to that
+  activity.
 
 **What the user can see, and the question it answers**
-- The table (activity, location, weather, energy, cost, duration, repeatable icon, experienced
-  action) — answers "what have I filed, and what does each entry need to happen?"
-- A "good for today" chip on the weather column — answers "does today's actual weather favour this
-  one?" (raw signal from `GET /leisure-weather-fit`, derived comparison against the row's
-  `weatherDependencyId`)
-- The experienced-progress bar — answers "how much of my one-time backlog have I actually done?"
+- The table (location, weather, energy, cost, duration, repeatable, experienced columns) — answers
+  "what do I already have filed, and in what state?"
+- A "good for today" chip on rows whose weather dependency matches today's actual conditions —
+  answers "is now specifically a good time for this one?"
+- An "N of M one-time things experienced" progress bar, scoped to non-repeatable entries only —
+  answers "how much of my one-time backlog have I actually gotten to?" (hidden when the API doesn't
+  carry `isAnchored` yet, when the current filter is already slicing on `isAnchored`/`isRepeatable`,
+  or when the denominator is zero.)
 
-**Depends on:** the `activity-location-type`, `activity-weather-dependency` and
-`activity-expected-cost-tier` lookup tables (shared with the create/edit form and the filter); the
-weather-fit signal, which degrades to "no badge" when absent — see Findings.
+**Depends on:** the `askBeforeDelete`/`firstDayOfWeek` preferences are not read here (delete always
+confirms unconditionally via `BasicTable`'s own dialog, independent of the app-wide preference — see
+findings). Reads today's weather fit (`leisure-weather-fit`) for the "good today" badge only; degrades
+silently if unavailable.
 
 ### PickerView (`/leisure/pick`)
-**Purpose:** Turn constraints ("I have X minutes, Y energy, Z people") into three concrete
-suggestions instead of a filtered list, per Iyengar & Lepper — a long eligible list reproduces the
-paralysis the module exists to cure.
-**Who opens it and why:** Someone with unstructured time who does not want to think through their
-own backlog — the app's answer to "I'm bored."
+**Purpose:** turn the backlog (plus eligible bucket-list and project rows) into three ranked
+suggestions and commit the user to one.
+**Who opens it and why:** the user is free, undecided, and wants an answer rather than a list —
+this is explicitly built against Iyengar & Lepper (2000): a long eligible list reproduces the
+paralysis the feature exists to cure.
 
 **What the user can do**
-- Set time available (15 min – 4 h), energy (low/medium/high) and who's around (alone/pair/group) as
-  one-tap toggle chips, plus optional secondary constraints (max cost, location) behind a
-  "More constraints" disclosure.
-- Draw again ("Something else") without repeating the same three, and reload or share the URL to
-  reproduce the exact same draw (`?minutes=&energy=&people=&seed=`).
-- Commit to a suggestion: "Do it now" starts tracking immediately (an in-progress `PlannerTask`
-  starting this minute); "Plan for later" opens a time picker and books a slot later today.
-- Escape from a specific suggestion into "Browse everything" (back to the full backlog table) when
-  none of the three land.
+- State time available (15 min – 4 h), energy right now, and who's around — all default to sensible
+  values, so the view is usable with zero input, and every change re-ranks (re-fetching the pool
+  only when the change could alter which rows are eligible; energy/people re-rank locally).
+- Optionally reveal a secondary "spend at most" cost tier and a location constraint.
+- Commit to a suggestion: "Do it now" (books a slot on today's plan starting now, `InProgress` with
+  `actualStartTime` set) or "Plan for later" (pick a start time; `NotStarted`).
+- "Something else" — reroll for three different suggestions, recording the rejected draw as "shown"
+  so the same three don't keep reappearing.
+- "Browse everything" / "Fill the backlog" — bail out to `BacklogView` when the picker can't help.
+- Once committed, the card shows the booked time range and a link to open the day planner.
 
 **What the user can see, and the question it answers**
-- Up to three suggestion cards, each showing source (backlog/project/bucket list), a "why" list
-  (duration fit, energy fit — labelled "estimated" when derived rather than stated, weather fit,
-  comfort-zone step) — answers "why this, specifically, right now?"
-- Three distinct empty states (load failed / nothing filed at all / nothing fits these constraints)
-  — answers "is this broken, empty, or just too narrow?"
-- Once committed, the card flips to a confirmation showing the booked time range and a link to open
-  the day planner — answers "did that actually go anywhere?"
+- Up to three suggestion cards (activity, source chip, a short list of *why* it was picked: duration
+  fit, energy match — labelled as stated vs. derived depending on the source, context label, comfort
+  step, weather fit) — answers "what should I actually do, and why this one?"
+- Three distinct empty states (failed to load / nothing filed at all / nothing fits current
+  constraints), each with its own copy and its own recovery action — answers "why is nothing here,
+  and what do I do about it?" without blaming the user for a server failure.
 
-**Depends on:** the same three leisure tables `BacklogView`'s siblings own (backlog, bucket list,
-project), `useLeisureFilterChips`/lookup data for cost and location options, the weather-fit signal
-(ranking only, never a hard gate on its own absence), and per-account `localStorage` staleness
-history (`leisure.picker.history::<userId>`, via `useUserScopedStorage`) so a draw does not repeat
-itself indefinitely.
+**Depends on:** `PROJECT_MIN_MINUTES` (60) and `BUCKET_LIST_MIN_MINUTES` (120) gate whether those two
+sources are even fetched — a project/bucket-list row is invisible under a short time budget by
+design, not a bug. Today's weather fit (`leisure-weather-fit`) feeds both a hard exclusion and a
+ranking bonus for backlog rows — see findings for a defect in how a "no dependency" row is treated.
 
 ## Entity lifecycle
-A backlog profile is created and deleted from `BacklogView`'s dialog, keyed 1:1 to an `Activity`
-(`activityId` is the profile's own id — see glossary). `PickerView` never creates or deletes a
-backlog profile; its only write is a `PlannerTask` in `dayPlanner`, cross-module, on commit. Deleting
-a backlog profile has no cascade (confirmed: the delete dialog asks only "Are you sure you want to
-delete `<activity name>`?", no child-count warning), consistent with a profile having no rows of its
-own that reference it. Anchoring (marking one-time backlog entries "done") creates a `MemoryAnchor`
-row, owned by a different unit.
+An `ActivityBacklogProfile` is created and edited only from `BacklogView` (`BacklogProfileForm.vue` /
+`NewBacklogProfileForm.vue`), keyed 1:1 by `activityId` (an activity can have at most one backlog
+profile — see `docs/views/glossary.md`). It is spent by `PickerView` as one of up to three ranked
+candidates and, once marked "I did this", produces a `MemoryAnchor` (created inline from either the
+backlog table or a suggestion's follow-through — memory anchors are not created inside this unit
+today; only the backlog table's "I did this" affordance creates one here). Deleting a backlog profile
+does not delete the activity or any memory anchor already linked to it. **As documented, edit and
+delete are both non-functional in the running app** — see finding X1.
 
 ## Data this unit captures but does not spend
-- **`ActivityBacklogProfile.minParticipants` / `maxParticipants` as *filters*.** Both fields exist on
-  `ActivityBacklogProfileFilter`, both round-trip through the URL (`leisureFilterUrlState.ts`), but
-  `BacklogView`'s `<FilterPanel>` never renders an input for either — there is no way to reach this
-  filter from the UI at all, only by hand-editing the query string.
-- **`ActivityBacklogProfile.maxParticipants` in the picker's ranking.** `useLeisurePicker.ts`'s
-  `backlogSuggestion()` reads `minParticipants` into `CandidateFacts` but never reads
-  `maxParticipants` — a backlog entry capped at 2 people is suggested identically for a "group" (4)
-  draw. (`D1-backend.md` flags the field's own filter semantics as ambiguous, which may be why the
-  picker's client-side draw never picked it up either.)
-- **`WeatherFit.matchingWeatherDependencyIds` as an empty array.** The contract
-  (`prompts/_done/leisure/backend/D2-backend.md`) explicitly says the frontend cannot and need not
-  distinguish "no signal" from "signal says nothing matches" — but the ranking code *does*
-  distinguish them (checks `!== null`), and the backend today sends the empty-array shape. See
-  Findings X2 — this is the sharpest capture-without-spend gap in the unit, because the intent was
-  explicitly "treat both as no opinion" and the implementation treats them as opposites.
+- `maxParticipants` — captured on both create and edit forms (`NewBacklogProfileForm.vue`), but no
+  column renders it in `BacklogTable.vue` and no picker logic reads it (`leisureScoring.ts` only
+  ever reads `minParticipants`, as a hard "not enough people" exclusion). A user filling in "at most
+  4 people" gets no feedback anywhere that the field did anything.
+- `memoryAnchorId` — carried on `ActivityBacklogProfile` and echoed by the API, but the frontend
+  never reads it: `ExperiencedCell.vue`'s "open the anchor" link navigates by `activityName` query
+  filter on `/leisure/memory-anchors` instead of the id it already has in hand. Works today because
+  activity name is unique-enough in the seed, but is a name-collision risk the id would avoid.
+- `effortType` on non-backlog sources — the picker's "effort variety" scoring signal
+  (`EFFORT_VARIETY_BONUS`) only ever has a non-null `effortType` to compare against for backlog
+  candidates; the concept exists but two of the three sources can never trigger it.
