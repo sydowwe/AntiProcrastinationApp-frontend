@@ -17,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `todo-routine`
 - Module: `todoList`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `RoutineToDoListView`   `/routine-todo-list`
     `RoutineSettingsView`   `/routine-settings`

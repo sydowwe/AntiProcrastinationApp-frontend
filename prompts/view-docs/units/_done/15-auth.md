@@ -2,8 +2,7 @@
 
 Module: `_common/user`
 
-Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the
-unit's docs have landed and you have read them.
+Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the unit's docs have landed and you have read them.
 
 For the mutation pass, paste the same block with `Pass:` changed to `mutation` — use a throwaway account.
 
@@ -18,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `auth`
 - Module: `_common/user`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `LoginView`  `/login`
     `RegistrationView`  `/registration`

@@ -1,13 +1,14 @@
 # home — findings
 
-> Pass: inventory · captured 2026-09-13 · commit `430e6f03`
+> Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally:** blocker 0 · bug 3 · a11y 0 · polish 0 · opportunity 0 · unverified 1
+**Tally:** blocker 0 · bug 4 · a11y 1 · polish 0 · opportunity 0 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `430e6f03` | initial inventory pass. All ten `H1`–`H10` prompts (`prompts/_done/home/`) had already landed — verified live, not assumed: real current date in the pie-chart request and the activity-history deep link (H1), route-name fix on "Add to planner" (H1), `resetTodayPlan()`/`effectScope`/day-rollover watcher present (H2), one shared `WidgetCard` shell (H4), due-date chips on to-do rows + persisted-store `hideDone` toggle *attempted* (H8 — see B3), one dashboard-wide refresh coordinator with visibility/day-change/online/interval triggers (H7), NowBar as sole owner of the focus task with `DayPlannerWidget`'s focus block removed (H9). The three bugs below are new, found by driving the browser against real seeded data — none are regressions of a listed H-prompt defect. |
+| 2 | 2026-09-15 | `04c405e9` | mutation pass. B1 re-confirmed open (same 218px header overflow, now measured against fixture `e2e-v4`). B2 **root-caused and widened**: what round 1 described as a narrow, hard-to-hit loading race is in fact a near-deterministic sign-in bug — reproduced on 3 of 4 fresh sign-ins in this pass regardless of network speed, traced to a specific line (`useTodayPlan.ts:512-521`), and shown to have a second, worse variant (a permanently stuck spinner, reproduced by forcing a 500 during sign-in) that also **answers round 1's U1** (H6's error/Retry UI is correct in isolation; this race is what makes it unreachable). B3 re-confirmed open, unchanged. Cross-account isolation (H2) re-verified clean — no leaked plan data switching to the secondary account, folded into B2's evidence rather than filed separately. One new bug found only by actually mutating state, **B4** (skipping a task renders it identically to completing it — the `row--done`/`aria-pressed` distinction the checkbox exists to convey is simply absent for `Cancelled`), and one new **a11y** finding, **A1**, from a masked-input edge case discovered while testing keyboard-shortcut suppression. Full task lifecycle exercised: start/finish/skip/snooze via NowBar, the day-planner-widget checkbox, the shared `TaskActionMenu`, and the **M**/**P**/**T** keyboard shortcuts, plus the hide/show-done toggle (B3). Database reseeded (`POST /api/test/seed`, fixture `e2e-v4`, `seedDateUtc` now `2026-09-15`) at the end to restore known-good state — **this invalidates `e2e/.state/auth-10001.json`; the next agent must sign in through the form rather than `state-load` it.** |
 
 ---
 
@@ -52,8 +53,13 @@
   way the header already does below `md`), or give the chip row its own `overflow-x: auto` scroller
   that does not also swallow the two action buttons — the buttons need to stay anchored and visible
   regardless of how many periods exist.
+- **Round 2 (mutation pass, 2026-09-15):** Re-confirmed open, unchanged mechanism. Fresh measurement
+  against fixture `e2e-v4` (Daily/Weekly/Monthly/Yearly periods, 1440×900): `.widget-card__header`
+  `scrollWidth: 766` vs `clientWidth: 548` — a 218px overflow, same shape, slightly different pixel
+  count than round 1's 205px (period-chip content differs by fixture). Not re-driven with a mouse click
+  this round; the DOM measurement is the same falsifiable check round 1 used.
 
-### B2. NowBar shows a contradictory "Done" + "No plan for today" pair while the plan is still loading
+### B2. A sign-in race discards the day-plan fetch, leaving NowBar/DayPlannerWidget stuck on a false "No plan for today" — or, if the fetch fails, stuck spinning forever
 - **Status:** open
 - **Severity:** bug
 - **Where:** `/` → `NowBar` (`src/core/home/component/NowBar.vue`) reading `focusMode`/`hasPlan` from
@@ -103,6 +109,71 @@
 - **Suggested fix:** Add a `v-if="loading"` branch to `NowBar` matching `DayPlannerWidget`'s spinner,
   and make `focusMode` (or the template's kicker binding) branch on `hasPlan` before falling through to
   `'allDone'` — e.g. a day with `hasPlan === false` should never render the `allDone` kicker at all.
+- **Round 2 (mutation pass, 2026-09-15) — root cause found, and it is worse than "narrow window":**
+  Reproduced on **3 of 4** fresh sign-ins in this pass (log out → log back in as the same seeded
+  account, real plan, 3 real tasks including one `InProgress`), every time with the ordinary local
+  backend — no network throttling needed, and the state does **not** self-correct: waited 3+ seconds
+  with no further interaction after one reproduction and the false pair was still showing, both in
+  `NowBar` **and** in `DayPlannerWidget` (which round 1 credited with guarding on `loading` correctly —
+  it does, but that guard only prevents the spinner from being skipped; it does not protect against
+  this). Only a full `page.reload()` fixes it. Root cause, read from
+  `src/core/home/composable/useTodayPlan.ts:397-521`:
+  1. `fetchPlan()` (line 397) captures `token = ++loadToken` at call time, and applies its response only
+     `if (token === loadToken)` (line 404) — a stale-response guard, correct in isolation.
+  2. `wireLifecycle`'s `watch(() => userStore.currentUser.id, ...)` (lines 512-521) calls
+     `resetTodayPlan()` — which itself does `loadToken++` (line 467) — whenever `currentUser.id`
+     changes, including the **0 → real-id** transition that happens once `GET /api/user/data` resolves
+     after a fresh login (the user store's `id` starts at its empty-user default until that request
+     completes).
+  3. On login, `GET /api/user/data` and `GET /api/calendar/day-plan/{date}` fire together. Measured
+     this pass: `user/data` **140ms**, `day-plan` **524ms** (request #2862/#2864 in this session) — so
+     `user/data` resolves first, the id-watcher fires mid-flight of the day-plan request, and
+     `resetTodayPlan()` bumps `loadToken` **before** the day-plan response arrives. When it does arrive,
+     `token !== loadToken` and `fetchPlan()` silently discards it (the `if (token !== loadToken) return`
+     at line 404) — `calendar`/`tasks`/`hasPlan` stay at the reset defaults forever, because nothing
+     re-fetches: `resetTodayPlan()`'s caller only re-triggers `ensureLoaded()` `if (hadPlan && id !== 0)`
+     (line 519), and `hadPlan` was computed as `planDate.value !== null` **before** the discarded
+     response could have set `planDate` — so at reset time `hadPlan` is `false` and the retry never
+     fires. On the reload that "fixes" it, the same race exists but resolves the other way — confirmed
+     by this pass's own timing: `user/data` took **387ms** on that reload, slower than the day-plan
+     fetch, so the watcher fired *after* the response had already applied. This is a coin flip, not a
+     fix; it is exactly why round 1 called it "a narrow but real window" without being able to pin down
+     why the width varied — the width is the gap between two unrelated requests' response times, and it
+     has no reason to be either always-narrow or always-wide.
+  4. Cross-account isolation itself is **not** broken by this — verified this pass by switching to
+     `test2@example.com`: its own genuinely plan-less day (`hasPlan: false`, confirmed via
+     `response-body` on its own `calendar/day-plan/2026-09-15`) rendered correctly with no leaked data
+     from the primary account, and switching back to the primary account reproduced the race again on
+     its own data, not the secondary account's. H2's user-id-watcher reset is doing its isolation job
+     correctly; it is the same watcher's side effect on an in-flight request that is the bug.
+- **Round 2 evidence:** `docs/views/home/screenshots/home--mutation-false-empty-state.png` (this
+  pass's repro, same pair as round 1's `home--default.png`); request timings in this session — user/data
+  #1415 (boot, n/a), #2862 (140ms) vs day-plan #2864 (524ms) for the reproducing login; #2841 (387ms)
+  vs day-plan #2848 (n/a, resolved first) for the reload that self-corrected; `response-body 2864`
+  confirming the discarded response actually carried `"hasPlan":true` with 3 real tasks at the moment
+  the UI still read "No plan for today"; source read of `useTodayPlan.ts` lines 397-521 as cited above.
+- **Round 2 verify:** 1. Sign out, sign in again as an account with a real plan for today (repeat up to
+  4 times if needed — this is a race, not a guaranteed repro). 2. **Pass condition:** within a couple of
+  seconds of landing on `/` post-login, without any manual reload, both `NowBar` and `DayPlannerWidget`
+  show the real plan (or, on a genuinely plan-less day, `hasPlan: false` confirmed via the network
+  response) — never a `hasPlan: true` response silently discarded. 3. A stronger check for whoever fixes
+  it: either make `resetTodayPlan()`'s `loadToken` bump not orphan an in-flight *same-user* fetch (the
+  watcher only needs to guard against a genuine user *change*, not the 0→real-id hydration of the same
+  session), or have the reset path re-fetch unconditionally rather than gating the retry on `hadPlan`,
+  which is untrustworthy at the exact moment it is read here.
+- **Round 1's U1 ("widget error/retry states not verified") is now answered, and folds into this
+  finding rather than staying separate:** forced `GET /api/calendar/day-plan/**` to 500 via
+  `playwright-cli route`. On a plain reload with no sign-in race, both `NowBar` and `DayPlannerWidget`
+  correctly show `home.loadFailedPlan`/`home.noCalendar`'s error text and a working **Retry** button
+  (`DayPlannerWidget.vue:94-112`'s `v-else-if="error"` branch) — clicking Retry re-fired the request and
+  rendered the real plan once the mock was removed. H6's fix is real and correctly implemented. But
+  forcing the same 500 **during** a fresh sign-in reproduced a third, worse variant of this exact race:
+  `resetTodayPlan()` unconditionally sets `loading.value = true` (line 473) whenever it runs, and if the
+  id-watcher fires *after* the failed `load()`'s own `finally` already set `loading.value = false`, the
+  reset flips it back to `true` with nothing left to flip it back — `DayPlannerWidget` hangs on its
+  `VProgressCircular` **forever**, never reaching the error branch at all, confirmed still spinning after
+  reload-free waiting. So H6's error UI is correct and the retry mechanism works; the bug making it
+  unreachable some of the time is this finding, not a gap in H6.
 
 ### B3. `hideDoneTodoList`/`hideDoneRoutine` never persist, and the reason is a stale claim in CLAUDE.md
 - **Status:** open
@@ -152,20 +223,91 @@
   remit, flagged here because it was discovered in the course of this unit — CLAUDE.md's Pinia
   persistence claim should be corrected or the plugin registration changed to match it; the two
   disagreeing is what let this ship.
+- **Round 2 (mutation pass, 2026-09-15):** Re-confirmed open, unchanged. Toggled "Show done" on the
+  to-do widget; `playwright-cli sessionstorage-get homeUi` still returns "not found" immediately after
+  the click. Also confirmed the toggle resets to its default on an in-app navigation-and-back
+  (`/` → `/todo-list` → `/`): both widgets' toggles read "Show done" again on return, not the "Hide
+  done" state left before navigating.
 
----
-
-### U1. Widget error/retry states not verified against a real failure
+### B4. A skipped (`Cancelled`) task renders identically to a completed one in the day-planner widget
 - **Status:** open
-- **Severity:** unverified
-- **Where:** All four `WidgetCard`-based widgets' `error`/`errorText`/retry paths
-  (`WidgetCard.vue:38-57`), and `DayPlannerWidget`'s own equivalent block
-  (`DayPlannerWidget.vue:94-112`) — the client-side half of H6's "every failure renders as an empty
-  success" fix.
-- **What would verify it:** This pass only observed the happy path (200s throughout) and the
-  documented stale-token 401 burst, which resolves itself on refresh rather than surfacing as a
-  widget-level error. Confirming H6's fix holds needs a forced 4xx/5xx on one of the six data
-  endpoints (a network route override, e.g. `playwright-cli route` returning 500 for
-  `todo-list-item/dashboard-widget`) and a check that the affected widget shows its `errorText` +
-  Retry button rather than a false empty state, that the other five widgets are unaffected, and that
-  Retry actually re-fires the request.
+- **Severity:** bug
+- **Where:** `/` → `DayPlannerWidget`'s task-row checkbox (`src/core/home/component/DayPlannerWidget.vue`,
+  the `row row--done` / `check check--on` markup, `aria-pressed`/`aria-label` pair) — found only by
+  actually exercising `TaskActionMenu`'s Skip action, one of the mutation pass's required lifecycle
+  steps, not by reading source.
+- **Expected:** `docs/views/home/inventory.md`'s own reading of this surface (round 1) describes
+  "duration, missed/status chips" as part of what the day-planner list shows — i.e. a task's status is
+  expected to be visually distinguishable, and the glossary's `PlannerTaskStatus` treats `Cancelled` as
+  a distinct terminal state from `Completed`, with its own `skipReason`. A user glancing at the list
+  after skipping a task with a stated reason should be able to tell it was skipped, not finished — and
+  should not be invited to "un-finish" it via the same checkbox that un-does a real completion.
+- **Actual:** After skipping the day's `InProgress` task via `TaskActionMenu` → Skip → "Ran out of
+  time" (confirmed via `PATCH /api/planner-task/16002/status` → 204, followed by a refresh that
+  returned `PlannerTaskStatus: "Cancelled"` for that task), the row renders with class
+  `row row--done`, its checkbox `aria-pressed="true"` and `aria-label="Mark \"Bug Fixing\" as done"` —
+  the exact same class and ARIA state a genuinely `Completed` task gets (compare "Morning Exercise",
+  `Completed` in the same list, same `row--done`/`aria-pressed="true"` pair). No skip-reason text, no
+  distinguishing chip, no strikethrough-vs-checkmark difference — nothing on screen says this task was
+  skipped rather than done. The row that *was* visually distinct while the task was `InProgress` (a
+  small "In progress" label next to the category) loses that distinction entirely once cancelled,
+  rather than gaining a "Skipped" one.
+- **Evidence:** `page.evaluate` on the checkbox's `closest()` row after the skip:
+  `class="row row--done" ... aria-label="Mark \"Bug Fixing\" as done" aria-pressed="true"` (captured
+  live, this session); the `PATCH .../status` response accepted the `Cancelled` status with a
+  `skipReason` in the request body (`PatchPlannerTaskStatusRequest(Cancelled, null, null, reason)` per
+  `useTodayPlan.ts:302-308`), so the reason reaches the server but nothing downstream of the fetch
+  renders it.
+- **Repro:** 1. Load `/` on a day with an `InProgress` or `NotStarted` task. 2. Open that task's
+  "Actions for" menu (NowBar or the day-planner row). 3. Choose Skip → any reason. 4. Look at the
+  day-planner widget's row for that task.
+- **Verify:** 1. Repeat the repro above. 2. **Pass condition:** the skipped row is visually and
+  semantically distinct from a completed row — different icon/class/colour, and the checkbox's
+  accessible name and `aria-pressed` value do not claim the task is "done". 3. Confirm clicking the
+  checkbox on a skipped row does something sensible (currently it would call `toggleTaskStatus`, whose
+  `isDone` check only recognises `Completed`, so clicking a `Cancelled` row's checkbox sets it to
+  `Completed` rather than restoring `NotStarted` — worth deciding deliberately rather than leaving as a
+  side effect of the shared toggle).
+- **Root cause guess:** The row's CSS class and the checkbox's `aria-pressed`/label are almost certainly
+  derived from `isFinished(task)` (`useTodayPlan.ts:125-127`), which is `true` for **both**
+  `Completed` and `Cancelled` by design (it is the correct predicate for "no longer needs a countdown or
+  an alert") — but `DayPlannerWidget` appears to reuse that same boolean for the row's visual "done"
+  styling instead of branching separately on `task.status === Completed` vs `=== Cancelled`.
+- **Suggested fix:** Give a `Cancelled` row its own visual treatment (a muted/struck-through style, or a
+  small "Skipped" chip showing `skipReason`) distinct from `Completed`'s checkmark, and change the
+  checkbox to either hide itself or explicitly restore `NotStarted` for a `Cancelled` row rather than
+  advancing it to `Completed`.
+
+### A1. A Vuetify time-input's keystroke-rejected announcement resolves to a raw i18n key
+- **Status:** open
+- **Severity:** a11y
+- **Where:** `TrackTimeDialog`'s "Length" field (a Vuetify time-mask input), opened from NowBar's Track
+  button, `TaskActionMenu`'s Track item, or the **T** shortcut
+- **Expected:** Every user-facing string resolves through vue-i18n to real text in the active locale —
+  CLAUDE.md's own Class-2 raw-key defect class, already fixed once for the reminders module this pass
+  (`docs/views/_shell` and this repo's runbook both treat a raw key as a bug class, not a one-off).
+- **Actual:** Typing a non-numeric character (tested: `f`) into the Length field's masked time input is
+  correctly rejected (the field's value did not accept the letter — it read `"07:"` after the
+  keystroke, one digit short of before, consistent with the mask discarding the invalid char), but doing
+  so logs `[intlify] Not found '$vuetify.timePicker.notAllowed' key in 'EN' locale messages.` to the
+  console. The key is not rendered as visible text anywhere on screen (confirmed via `find` for both
+  `notAllowed` and `timePicker` immediately after triggering it) — so this is not a Class-2 visible raw
+  key, but Vuetify's own a11y contract for this component uses that string for a screen-reader
+  announcement of *why* the keystroke was rejected, and a sighted user's console warning is exactly what
+  a screen-reader user gets nothing in place of.
+- **Evidence:** Console warning captured live: `[intlify] Not found '$vuetify.timePicker.notAllowed' key
+  in 'EN' locale messages. @ .../vue-i18n.js:23`; `el.value` on the Length field read `"07:"`
+  immediately after the rejected keystroke (`eval "el => el.value"`); `find "notAllowed"` and
+  `find "timePicker"` both returned no matches against the rendered page.
+- **Repro:** 1. Open the Track Time dialog (Track button, menu item, or **T**). 2. Click into the
+  "Length" field. 3. Type a letter, e.g. `f`. 4. Check the console.
+- **Verify:** 1. Repeat the repro above with the browser's console open. 2. **Pass condition:** no
+  `[intlify] Not found` warning fires for `$vuetify.timePicker.notAllowed` (or any `$vuetify.*` key) in
+  the EN locale.
+- **Root cause guess:** Vuetify ships this message key as part of its own internal locale bundle
+  (`$vuetify.*`), and this app's EN locale file does not include an override or the framework does not
+  merge Vuetify's own English default for it — the same shape of gap as the reminders module's missing
+  `.en.ts` files (Class 2 in the runbook), but inside Vuetify's own namespace rather than this app's.
+- **Suggested fix:** Confirm whether Vuetify ships its own English default for `$vuetify.timePicker.*`
+  and, if the app's i18n setup is overriding rather than merging Vuetify's message catalogue, fix the
+  merge; otherwise add the missing key to this app's EN (and SK) locale under the `$vuetify` namespace.

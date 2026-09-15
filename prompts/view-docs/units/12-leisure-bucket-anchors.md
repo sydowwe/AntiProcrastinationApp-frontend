@@ -17,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `leisure-bucket-anchors`
 - Module: `leisure`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `BucketListView`   `/leisure/bucket-list`
     `MemoryAnchorsView`   `/leisure/memory-anchors`

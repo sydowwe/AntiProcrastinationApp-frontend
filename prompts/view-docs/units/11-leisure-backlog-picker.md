@@ -17,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `leisure-backlog-picker`
 - Module: `leisure`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `BacklogView`   `/leisure/backlog`
     `PickerView`    `/leisure/pick`

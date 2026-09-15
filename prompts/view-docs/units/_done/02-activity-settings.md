@@ -2,10 +2,7 @@
 
 Module: `activity`
 
-Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the
-unit's docs have landed and you have read them.
-
-For the mutation pass, paste the same block with `Pass:` changed to `mutation`.
+Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the unit's docs have landed and you have read them.
 
 ---
 
@@ -18,7 +15,7 @@ Fill its Unit block with:
 
 - Unit name: `activity-settings`
 - Module: `activity`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `ActivitySettingsView`   `/activity-settings/:tab(activities\|roles\|categories)` — **all three tabs**
 - Intent sources: prompts/_done/activity/README.md, A1-correctness-sweep.md,

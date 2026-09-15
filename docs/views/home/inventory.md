@@ -1,6 +1,8 @@
 # home — inventory
 
-> Captured 2026-09-13 · locale EN · account `test@example.com` · commit `430e6f03` · viewport 1440×900
+> Captured 2026-09-13 (round 1, inventory) · updated 2026-09-15 (round 2, mutation — see
+> `findings.md`'s round history for what changed) · locale EN · account `test@example.com` · commit
+> `430e6f03` (round 1) / `04c405e9` (round 2) · viewport 1440×900
 
 ## Views
 
@@ -32,7 +34,7 @@ view/route.
 | Routine: item checkbox / menu | button | `RoutineTodoListItem` (owned by `todoList`, not re-audited here) | Toggles done / opens item actions | in place / menu |
 | To-do: hide/show done | button, icon-only, toggle | `getByRole('button', { name: /Show done|Hide done/ })`, **2nd** instance | Filters completed to-do items in place, count in header updates | in place — reachable (this widget's header does not overflow) |
 | To-do: open | button, icon-only | `getByRole('button', { name: 'Open: Upcoming tasks' })` | Navigates to the full to-do list | `/todo-list` |
-| To-do: row checkbox / "More actions" / "Add to planner" | button | `NormalTodoListItem` (owned by `todoList`) — `getByRole('button', { name: 'More actions: {item}' })` → `getByRole('button', { name: 'Add to planner' })` | Toggles done / opens item menu / navigates | in place / menu / `/day-planner/DD-MM-YYYY` — **confirmed live, no crash (H1 fix verified)** |
+| To-do: row checkbox / "More actions" / "Add to planner" | button | `NormalTodoListItem` (owned by `todoList`) — `getByRole('button', { name: 'More actions: {item}' })` → `getByRole('button', { name: 'Add to planner' })` | Toggles done / opens item menu / navigates | in place / menu / `/day-planner/DD-MM-YYYY` — **confirmed live, no crash (H1 fix verified); actually clicked through in the mutation pass (round 2), landed on `/day-planner/15-09-2026` with no console errors** |
 | Activity history: open | button, icon-only | `getByRole('button', { name: "Open: Today's activity" })` | Navigates to the detail timeline for today | `/activity-history/detail?date=YYYY-MM-DD&…` — **confirmed real current date, not the historic hardcoded one (H1 fix verified)** |
 | Quick record: Pomodoro | button | `getByRole('button', { name: /Pomodoro/ })` | Navigates to the pomodoro timer | `/activity-history/pomodoro` |
 | Quick record: Timer / Stopwatch / Manual | button | icon + label, named | Navigates to the respective recording view | `/activity-history/timer` \| `/stopwatch` \| `/manual` |
@@ -50,7 +52,7 @@ single one is unnamed. This is a deliberate improvement over the shell's own ham
 | Now bar headline + kicker + countdown | text | task name / "You're done for today!" / "No plan for today"; DONE/NOW/UP NEXT/MISSED; "Ends in Xm" etc. | derived (`focusMode`, `focusCountdown` — pure client computeds over `tasks`/`hasPlan`) | `GET /api/calendar/day-plan/{date}` |
 | Now bar progress bar | progress | fill % of the active task's elapsed slot | derived (`activeProgress`) | same |
 | Day strip | bar chart (positioned divs, `aria-hidden`) | one segment per non-background task, elapsed fill, now-marker | derived | same |
-| Day planner list | list | time range, name, category chip, duration, missed/status chips | raw (times, name, category) + derived (missed/status chip visibility) | same |
+| Day planner list | list | time range, name, category chip, duration, missed/status chips | raw (times, name, category) + derived (missed/status chip visibility) | same — **a `Cancelled` (skipped) row renders identically to a `Completed` one, no distinct chip or class; see B4** |
 | Day planner progress ring | ring | completed/total non-background tasks | derived | same |
 | Routine period sheets | chips | per-period streak + best-streak | raw (`currentStreak`/`bestStreak` from the API) | `GET /api/routine-time-period` |
 | Routine groups | list + progress bar | per-group done/total (counting multi-count items), "+N not due today" | derived (`isSuggestedForToday`, confirmed correctly reading the discriminated `suggestedDays`/`suggestedDayOfMonth` fields — **H8 item 3's "is this overloaded" question resolved: it is not, see Findings note**) | `GET /api/routine-todo-list/grouped-by-time-period` |
@@ -60,15 +62,21 @@ single one is unnamed. This is a deliberate improvement over the shell's own ham
 | "Total tracked" line | counter | formatted duration | derived (`fromSeconds`) from the same pie response | same |
 
 **States**
-- empty: Day planner → "No plan for today" + Plan-today button (not reachable this pass after the
-  first reload — the seeded calendar for today has 2 real tasks; **see B2** for the transient
-  false-empty state observed on first render). Routine/To-do → not reachable with current seed (both
-  have items). Activity history → "No activity tracked today", confirmed reachable (seed has no
-  entries dated today).
+- empty: Day planner → "No plan for today" + Plan-today button (the seeded calendar for today
+  genuinely has no plan on some sessions and 2-3 real tasks on others, date-dependent; **see B2** — on
+  a day that *does* have a plan, this same pair renders anyway on most fresh sign-ins, not just
+  transiently on first render, and needs a manual reload to clear). Routine/To-do → not reachable with
+  current seed (both have items). Activity history → "No activity tracked today", confirmed reachable
+  (seed has no entries dated today).
 - loading: Day planner and each of the four `WidgetCard`-based widgets show a centred
-  `VProgressCircular` while `loading` is true. **The now bar does not** — see B2.
-- error: not reachable in this pass (would need a forced 4xx/5xx on one of the six boot requests);
-  logged as `unverified` (U1) rather than guessed at from source.
+  `VProgressCircular` while `loading` is true. **The now bar does not** — see B2. **Confirmed
+  (mutation pass, round 2) that this spinner can also get stuck permanently** if the sign-in race
+  described in B2 lands after a failed fetch — forced via `playwright-cli route` returning 500, see B2.
+- error: reachable and correct in isolation (mutation pass, round 2) — forcing a 500 on
+  `calendar/day-plan` with no sign-in race in flight renders `home.loadFailedPlan`/`home.noCalendar`
+  text plus a working Retry button on both the now bar and the day planner widget; Retry re-fires the
+  request. Resolves round 1's `U1`. The other four `WidgetCard` widgets' error paths were not
+  individually forced this round.
 
 **URL & persisted state**
 - No route params or query params on `/` itself.
@@ -90,13 +98,20 @@ single one is unnamed. This is a deliberate improvement over the shell's own ham
 - **S** — start the focus task (enabled only when a focus task exists and it is not already `now`)
 - **F** — finish the focus task (enabled only in `now` mode)
 - **T** — open the tracker for the focus task — confirmed live, opened `TrackTimeDialog`
-- **M** — snooze the focus task by the menu's first snooze step (+15m)
+- **M** — snooze the focus task by the menu's first snooze step (+15m) — confirmed live (mutation
+  pass, round 2): task moved 09:00–10:30 → 09:15–10:45, `PUT /api/planner-task/{id}` → 200, both NowBar
+  and the day-planner list updated in sync
 - **P** — open today's planner — confirmed live, navigated to `/day-planner/13-09-2026`
 - All five are bound once from `HomeView` (`useHomeShortcuts`), not per-widget, and are suppressed
   while an `INPUT`/`TEXTAREA`/`SELECT`/`contenteditable` has focus (`isTypingTarget` in the shared
-  `useKeyboardShortcuts`) — confirmed by source; **no text input exists on this view itself** to
-  reproduce the suppression live, so this half is corroborated by code, not independently observed
-  here.
+  `useKeyboardShortcuts`) — confirmed by source. **Round 2 (mutation pass):** opened `TrackTimeDialog`
+  (which itself has a text input, the "Length" field — the one available on this view), focused it, and
+  pressed **F**: no finish request fired (confirmed via `requests`), consistent with suppression. This
+  does **not** cleanly isolate `isTypingTarget` from the dialog's own guard, though — the timer dialog
+  already disables all five shortcuts while open (see next bullet), so this observation is consistent
+  with either mechanism and does not independently confirm typing-target suppression outside a dialog.
+  No text input exists on this view **outside** a dialog, so that narrower case remains corroborated by
+  source only.
 - The timer dialog disables all five while open (`enabled: () => !trackerOpen.value`) — confirmed by
   source, consistent with Track (T) putting up a dialog that would otherwise still respond to S/F/M.
 

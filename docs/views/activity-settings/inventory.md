@@ -1,8 +1,8 @@
 # activity-settings — inventory
 
-> Captured 2026-09-13 · locale EN · account `test@example.com` · commit `df2b163d`
+> Captured 2026-09-13, mutation pass 2026-09-15 · locale EN · account `test@example.com` · commit `04c405e9`
 
-> **Seed note:** this unit's draft e2e spec run mid-pass triggered `e2e/global-setup.ts`'s
+> **Seed note (round 1):** this unit's draft e2e spec run mid-pass triggered `e2e/global-setup.ts`'s
 > `POST /api/test/seed`, resetting the account to fixture `e2e-v3` — done while two other view-docs units
 > were running in parallel, which CLAUDE.md warns against (see the operator note in `findings.md`). Once
 > those two units finished, this pass re-verified every bug/a11y/polish finding below in a fresh session
@@ -10,6 +10,16 @@
 > quoted (`e2e-v3` reuses the same deterministic ids as the fixture in effect during the first session), so
 > nothing below needed correcting. A couple of previously-`unverified` items were also resolved in that
 > second session — see `findings.md`'s round `1b`.
+
+> **Mutation pass note (round 2, 2026-09-15):** fixture had moved on again to `e2e-v4` (same id scheme,
+> `test@example.com` / id `10001` unchanged). Ran the full Activity lifecycle (create → edit → archive →
+> unarchive → merge → delete) and confirmed it end-to-end — all correct, see `findings.md` round 2. The same
+> attempt for Role/Category surfaced a new blocker: **create and edit are completely broken for both tabs**
+> (`findings.md` X1). The auth state file (`e2e/.state/auth-10001.json`) had a dead refresh token at the start
+> of this round and had to be replaced by a fresh login through the form — `.playwright-cli/auth.json` now
+> holds a good session for anyone continuing from here. This round deliberately did **not** reseed afterward
+> (see the operator note in `findings.md`); the account has one residual change — the seeded activity "Unused
+> Idea" (id 12012) was deleted during delete-lifecycle testing and was not restored.
 
 All three views share one component, `ActivitySettingsView.vue`, and one shell (tabs + filter bar). Per
 `docs/views/_shell/inventory.md`, the top bar/sidebar/user menu/notification bell/dialog host are not
@@ -69,12 +79,12 @@ path). See Findings B5.
 **States**
 - empty (no activities at all): "An activity is the thing you record — one entry for something you do
   repeatedly." + inline "Create new activity" action (confirmed by screenshot)
-- empty (filtered, e.g. Archived view with nothing archived): a different copy path exists
-  (`archivedOnlyView` ternary in `ActivityTable.vue:144`) but was not independently triggered this pass — the
-  seed account has exactly one archived activity, so the "no archived activities" copy was not seen (see
-  Findings U1)
+- empty (filtered, e.g. Archived view with nothing archived): confirmed (mutation pass round 2, by
+  temporarily un-archiving the seed's one archived activity) — renders `t('activities.archive.noneArchived')`
+  ("Nothing has been archived yet.") with no create button, correctly distinct from the unfiltered empty copy.
+  See Findings U1 (resolved).
 - loading: not independently captured (requests resolve fast against local seed data)
-- error: not triggered (see Findings U2 — a forced 4xx/5xx on `/api/activity/grid` was not attempted)
+- error: not triggered (a forced 4xx/5xx on `/api/activity/grid` was not attempted)
 
 **URL & persisted state**
 - `name`, `text` — debounced 300ms into the query, `router.replace` (confirmed no history-stack growth from
@@ -95,13 +105,22 @@ path). See Findings B5.
 - **Create/Edit activity** (`ActivityForm` → reuses `ActivitySelectionForm`'s field set): Role picker (with
   inline "Add new role"), Category picker (with inline "Add new category"), "Activity" name field, "Activity
   description" field, "Is activity unavoidable" checkbox. Cancel/Create buttons. Title reads "Create new
-  activity" / editing reads similarly per `activities.editActivity`.
+  activity" / editing reads "Edit Activity". **Confirmed end-to-end (mutation pass round 2):** empty-form
+  submit shows "This field is required" on Role and Activity; a valid submit creates the row (confirmed via
+  filter, since a new row sorts wherever its name lands alphabetically, not necessarily onto page 1); editing
+  an existing row prefills every field correctly and the table re-fetches on Save. Archive/Unarchive round-trip
+  confirmed (dims the row, moves it between the Active/Archived views, success snackbar fires, no
+  confirmation — reversible). Full create→edit→delete cycle produces zero console errors.
 - **Merge activities** (`MergeActivitiesDialog`): radio-select the survivor from the selected rows (each
   option shows role · category · records count), a warning banner stating the exact merge consequence ("1
   activity and 3 records will be merged into 'Bug Fixing'. This cannot be undone." — text is dynamic per
   selection) plus a note that overlapping references count once. Cancel/Merge buttons. Matches
   `A9-archive-and-merge.md`'s spec closely, including the "fewer records may move than the total suggests"
-  nuance. Not confirmed (Cancel used, to stay in the inventory pass).
+  nuance. **Confirmed end-to-end (mutation pass round 2):** merging two test activities opens a **second**,
+  separate "Merge confirmation" dialog on top of this one (`useDialog().confirm()`) before the request fires —
+  a genuine double-confirmation for an irreversible action, not a duplicate. The request succeeds, the
+  selection and merge banner clear, the survivor remains in the table and the merged-away row is gone.
+  `screenshots/activities--merge-dialog-mutation.png`.
 
 **Keyboard**
 - Not exhaustively walked (tab-order audit is the shell's job per `docs/views/_shell/inventory.md`); the
@@ -159,9 +178,16 @@ registers the `activities` path)
 - **Create/Edit role** (`ActivityRoleForm`): Name (required, with a diacritics/special-chars rule), Text
   (textarea), Color (a swatch `radiogroup`, one option pre-selected by default), Icon (`IconPicker`, renders
   as a labelled textbox with a picker button). Title "Add new role" / "Edit role" — confirmed by opening it
-  (`screenshots/roles--create-dialog.png`) and closing via Cancel without submitting. The 6 rows visible
-  behind the dialog (3 user roles, 3 system roles) render identically — no badge or visual marker
-  distinguishes a system role from a user-created one anywhere in this list.
+  (`screenshots/roles--create-dialog.png`). The 6 rows visible behind the dialog (3 user roles, 3 system
+  roles) render identically — no badge or visual marker distinguishes a system role from a user-created one
+  anywhere in this list, including inside this dialog's own Role picker used elsewhere (system roles are
+  selectable exactly like user roles when creating an Activity). **Submitting this dialog is completely
+  broken (mutation pass round 2) — both Create and Edit 400 on the Color field. See Findings X1.** Deleting a
+  role opens a generic confirm dialog that names the row by its **raw numeric id**, not its name — see
+  Findings B8. Confirmed (round 2) that attempting to delete a system role ("Planner task") is correctly
+  refused server-side with a 409 and a specific message, though the message itself is masked by a separate bug
+  (B9) and the row is never actually removed — see Findings U2 (resolved) and B7 (still open: the client never
+  disables the button for this case in the first place).
 
 **Keyboard:** not independently walked; no unit-specific deviation observed.
 
@@ -201,7 +227,10 @@ registers the `activities` path)
 **Dialogs opened from here:** **Create/Edit category** (`ActivityCategoryForm`): Name, Text, Color, Icon —
 same field set as the role form minus the diacritics rule, and, confirmed by opening it
 (`screenshots/categories--create-dialog.png`), **no Role field of any kind** — reinforcing Findings P1: a
-category genuinely cannot be assigned a role anywhere in the UI. Closed via Cancel without submitting.
+category genuinely cannot be assigned a role anywhere in the UI. **Submitting this dialog is completely
+broken (mutation pass round 2), identically to the Roles tab — see Findings X1**
+(`screenshots/categories--create-400-bug.png`). Delete confirmation has the same raw-id bug as Roles (Findings
+B8).
 
 **Keyboard:** not independently walked.
 

@@ -17,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `todo-lists`
 - Module: `todoList`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `TodoListsView`   `/todo-list`
     `TodoListView`    `/todo-list/:id`

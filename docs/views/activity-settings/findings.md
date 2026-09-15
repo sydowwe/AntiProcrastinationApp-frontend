@@ -1,21 +1,42 @@
 # activity-settings — findings
 
-> Pass: inventory · captured 2026-09-13 · commit `df2b163d`
+> Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally:** blocker 0 · bug 7 · a11y 1 · polish 2 · opportunity 1 · unverified 4
+**Tally:** blocker 1 · bug 9 · a11y 1 · polish 2 · opportunity 1 · unverified 2 (U1/U2 resolved this round, U3/U4 remain open)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `df2b163d` | initial inventory pass |
 | 1b | 2026-09-13 | `df2b163d` | dev server had gone down and the account had been reseeded (fixture `e2e-v3`, see the operator note below) in between; re-verified B1-B7, A1 and P1 against the fresh session — all reproduced identically (same seeded ids/names). Confirmed U3 (browser back collapses filter edits, per `router.replace`) and opened the Role/Category create dialogs (formerly U2/U5) — folded a new confirmed defect (B7: Roles/Categories never disable Delete for a non-deletable row) out of that work, and narrowed the old U2 to what's still genuinely unknown (what a Delete click on a protected row actually does server-side). Tally: bug 6→7, unverified 6→4. |
+| 2 | 2026-09-15 | `04c405e9` | **mutation pass**, fixture `e2e-v4`. Ran the full entity lifecycle (create → edit → archive → unarchive → merge → delete) for Activity — every step worked correctly, including the merge confirmation's exact-count copy and the nested double-confirmation. Attempting the same for Role/Category surfaced a new **blocker** (X1: create/edit is completely broken for both tabs — the framework `ColorPicker` emits a palette name like `"rose"` but the backend now requires a hex string) and a new bug (B8: the generic delete-confirmation dialog they fall back to shows the raw numeric id, not the name). Resolved **U1** (archived-empty copy confirmed correct) and **U2** (system-role delete is correctly refused server-side with a good, specific message — which is itself hidden by a newly-found framework bug, B9). Reconfirmed B1-B7 still open against the new fixture. Tally: blocker 0→1, bug 7→9, unverified 4→2. |
 
-**Operator note:** this round's draft e2e spec run (the template's mandated "run only your own file, once"
+**Operator note (round 2):** this round deliberately did **not** run `POST /api/test/seed` to clean up, even though one seeded activity ("Unused Idea", id 12012) was permanently deleted as part of delete-lifecycle testing and could not be restored through the UI (Activity creation works, but the new row would get a different id than the fixture's). Reseeding wipes every account, and this round's own git-status snapshot showed several other `view-docs` units mid-edit, so a shared reseed risked repeating the exact parallel-session collision `findings.md` round 1b already recorded. **Whoever runs the next unit against this account should reseed first** and can then disregard this note.
+
+**Operator note (round 1):** this round's draft e2e spec run (the template's mandated "run only your own file, once"
 step) triggered `POST /api/test/seed` via `e2e/global-setup.ts`, resetting every account to fixture `e2e-v3`
 — done in error while two other view-docs units were running in parallel, which CLAUDE.md explicitly warns
 against (it wipes every account and invalidates every `e2e/.state/auth-*.json`). All findings below were
 captured beforehand against the prior fixture; see the caveat at the top of `inventory.md`. If the other two
 units' passes look like they lost data or got signed out partway through, this is why.
+
+---
+
+### X1. Creating or editing a Role or Category is completely broken — the Color field always fails server validation
+- **Status:** open
+- **Severity:** blocker
+- **Where:** `/activity-settings/roles` and `/activity-settings/categories` → Create/Edit dialogs (`ActivityRoleForm.vue`, `ActivityCategoryForm.vue`) → `POST /api/activity-role`, `PUT /api/activity-role/:id`, `POST /api/activity-category`
+- **Expected:** Filling in a valid name and submitting the Create/Edit form for a Role or Category should succeed, per plain user sense — this is the module's only lookup-table management screen, and A1/A4/A5's own verify steps assume creating a role/category works.
+- **Actual:** Every Create **and every Edit** for both Roles and Categories fails with a 400. The framework's `ColorPicker.vue` (`src/_common/component/inputs/ColorPicker.vue:31`, `model = color.name`) writes a palette **name** (`"rose"`, `"red"`, …) into `RoleRequest.color`/`CategoryRequest.color`; the backend's validator now requires a hex string (`"Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"`). This is not limited to newly-picked colors: editing an **existing, untouched** role ("Health & Fitness", whose stored color is already the name `"green"`) and clicking Save with no changes fails identically, because the edit form round-trips the same named value back to the server. The dialog gives the user no visible clue anything went wrong beyond a snackbar reading the unhelpful generic "One or more errors occurred!" (see B9) — it just sits open as if the click did nothing.
+- **Evidence:** `POST /api/activity-role` request body `{"name":"ViewDocsTestRole","text":"...","color":"rose","icon":null}` → 400
+  `{"statusCode":400,"message":"One or more errors occurred!","errors":{"color":["Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"]}}`.
+  Identical failure confirmed on `PUT /api/activity-role/11002` (Health & Fitness, no fields changed) and on `POST /api/activity-category` with color `"red"`. Screenshots:
+  `screenshots/roles--create-400-bug.png` (dialog stuck open, no visible error), `screenshots/categories--create-400-bug.png`.
+- **Repro:** 1. Go to `/activity-settings/roles`. 2. Click "+", fill Name, pick any Color swatch, click Create. 3. Request fails with 400; dialog stays open. 4. Separately: open Edit on any existing role, change nothing, click Save — same 400.
+- **Verify:** 1. Repeat the repro for Create and Edit, on both Roles and Categories. 2. **Pass condition:** the request succeeds (2xx), the dialog closes, and the row appears/updates in the table.
+- **Root cause guess:** Contract mismatch between the framework's `ColorPicker` (always emits a palette name) and this backend's validation (now requires hex) — either the backend tightened validation on a field the framework never sent hex for, or the backend previously accepted names and a recent change enforces hex. Existing rows still show named colors in their GET responses (`"color":"blue"` for "Work"), so this looks like a **write-path regression**, not a read/write format that was always hex. Not fixable from this repo alone without knowing which side is supposed to change; likely needs either the backend to accept the same palette names it already stores, or `ColorPicker` to be given a hex-emitting variant.
+- **Suggested fix:** n/a — needs a decision on which side owns the color format. If the backend's hex requirement is intentional, `ColorPicker.vue` needs a hex-output mode (or `COLOR_PALETTE` needs a name→hex map at the call site); if not, the backend validator should accept the same values it already stores and returns.
+- **Note:** this also breaks the inline "Add new role"/"Add new category" quick-create buttons inside the Activity create/edit dialog (`NewActivityForm.vue` opens the same `ActivityRoleForm`/`ActivityCategoryForm`) — not independently re-tested in the browser, but it is the identical component and request path, so it is affected by construction, not by inference from an untested code path with different inputs.
 
 ---
 
@@ -216,10 +237,64 @@ units' passes look like they lost data or got signed out partway through, this i
   use `BasicTable`'s generic default actions instead of a custom `#actions` slot like `ActivityTable.vue`'s.
 - **Suggested fix:** Give both tables a custom `#actions` slot mirroring `ActivityTable.vue`'s Delete button
   (`:disabled="!item.canDelete"` + a tooltip explaining why), the same pattern already proven there.
-- **Note:** this pass deliberately did **not** click Delete on a system role or a referenced row to see what
-  the server actually does — the seed's system roles are load-bearing for the rest of the app (per
-  `Role.ts`'s own comment), and confirming/denying a hard 409 wasn't worth that risk. What's confirmed here
-  is the missing client-side safeguard; the exact server-side failure mode remains open (see U2).
+- **Note:** round 1 deliberately did not click Delete on a system role to see what the server does. Round 2
+  (mutation pass) did, since a mutation pass is expected to reseed afterward — see **U2**, now resolved: the
+  server correctly refuses with a 409 and the role is not deleted. The missing client-side safeguard
+  documented here is still open regardless of that finding.
+
+### B8. Roles/Categories delete confirmation shows the raw numeric id instead of the row's name, and a generic "Confirm" instead of "Delete"
+- **Status:** open
+- **Severity:** bug
+- **Where:** `/activity-settings/roles`, `/activity-settings/categories` — the default `BasicTable` delete
+  confirmation dialog (`src/_common/component/dataTable/BasicTable.vue:199-210`)
+- **Expected:** The confirmation should name what is about to be deleted, the way the Activities tab's own
+  delete confirmation does ("Are you sure you want to delete Bug Fixing?").
+- **Actual:** Clicking Delete on the "Planner task" role opens a dialog reading **"Are you sure you want to
+  delete 4?"** — `4` is the role's raw database id, not its name. The confirm button also reads generic
+  "Confirm" rather than "Delete" (the Activities tab's custom dialog explicitly sets `confirmBtnLabel`; this
+  generic one does not).
+- **Evidence:** `screenshots/roles--delete-confirm-raw-id.png`. Source: `BasicTable.vue`'s `del(item)` does
+  `const name = deleteConfirmationColumn ? getNestedValue(item, deleteConfirmationColumn) : item.id` — neither
+  `ActivityRoleTable.vue` nor `ActivityCategoryTable.vue` passes a `deleteConfirmationColumn` prop, so it falls
+  through to the raw id every time, for every row, on both tables.
+- **Repro:** 1. Go to `/activity-settings/roles` (or `/categories`). 2. Click the delete icon on any row.
+  3. Read the confirmation text.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the dialog names the row by its `name` field, not its
+  id, and (optionally, lower priority) the confirm button reads "Delete".
+- **Root cause guess:** `BasicTable`'s generic actions were adopted by both tables (see B7's same root cause)
+  without passing the `deleteConfirmationColumn="name"` prop the component already supports.
+- **Suggested fix:** Add `deleteConfirmationColumn="name"` to both `<BasicTable>` usages.
+
+### B9. `extractServerMessage` shows the generic top-level `message`, hiding the specific, useful text in `errors` — framework-wide
+- **Status:** open
+- **Severity:** bug — **[framework]**
+- **Where:** `src/_common/axiosConfig.ts:86-101` (`extractServerMessage`), which feeds every automatic error
+  snackbar in the app (`axiosConfig.ts:217-262`)
+- **Expected:** When a backend error response carries both a generic top-level `message` and a specific,
+  human-written explanation in `errors`, the snackbar should show the specific one — that is clearly the
+  intent, since the function already has a branch that reads `errors` at all.
+- **Actual:** `extractServerMessage` checks `obj.detail`, then `obj.message`, then `obj.errors`, **returning as
+  soon as any of them is non-empty**. This backend's error shape always sets a generic `message` ("One or more
+  errors occurred!") alongside the useful text in `errors`, so the `errors` branch is dead code against this
+  API — the specific string is never reached. Confirmed twice in this pass with genuinely useful backend text
+  that the user never sees:
+  1. X1's color validation: `errors.color` = `"Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"` —
+     the user sees "One or more errors occurred!" instead.
+  2. The system-role delete guard (409, see U2): `errors.generalErrors` = `"This is a system role the app
+     files quick-created activities under, so it cannot be deleted. You can rename it instead."` — again
+     replaced by the same generic string.
+- **Evidence:** Response bodies quoted in X1 and U2; `extractServerMessage`'s field-check order in
+  `axiosConfig.ts:87-99`.
+- **Repro:** 1. Trigger any 400/409 from this backend that has both `message` and `errors` set (X1's repro
+  works). 2. Read the snackbar text.
+- **Verify:** 1. Repeat the repro. 2. **Pass condition:** the snackbar shows the specific text from `errors`
+  (e.g. the color-format message or the system-role message), not "One or more errors occurred!".
+- **Root cause guess:** `obj.message` is checked before `obj.errors` in `extractServerMessage`; for this
+  backend's error shape the two are never both meaningful at once, so the check order needs reversing (prefer
+  `errors` when present, fall back to `message`).
+- **Suggested fix:** In `extractServerMessage`, try the `errors`-extraction branch before the plain
+  `obj.message` check, at least when `message` is a generic, non-actionable string. Framework-level fix —
+  affects every app on this backend shape, not just this module.
 
 ---
 
@@ -312,28 +387,29 @@ units' passes look like they lost data or got signed out partway through, this i
 
 ---
 
-### U1. The "no archived activities" empty-state copy was not independently confirmed
-- **Status:** open
-- **Severity:** unverified
+### U1. ~~The "no archived activities" empty-state copy was not independently confirmed~~ — resolved
+- **Status:** fixed and verified (2026-09-15, mutation pass round 2 — this was already correct, not a code fix)
+- **Severity:** unverified (closed)
 - **Where:** `ActivityTable.vue:144` (`archivedOnlyView` ternary), Archived filter view
-- **What would verify it:** The seed account has exactly one archived activity ("Retired Hobby"), so
-  switching to the Archived view always shows one row, never the empty state. Verifying the
-  `activities.archive.noneArchived` copy would need either an account with zero archived activities, or
-  archiving the seed's only remaining active activities first (out of scope for an inventory pass).
+- **Verified:** Temporarily un-archived the seed's only archived activity ("Retired Hobby") to empty the
+  Archived view, confirmed the table renders exactly the copy `t('activities.archive.noneArchived')` ("Nothing
+  has been archived yet.") with **no** create button (`TableEmptyState`'s `v-if="!isFiltered"` correctly hides
+  it for a filtered empty state) — `screenshots/activities--archived-empty-mutation.png`. Re-archived "Retired
+  Hobby" immediately afterward to restore the seed's original state (confirmed back to "1-1 of 1" on the
+  Archived view).
 
-### U2. What actually happens when Delete is clicked on a system or referenced role/category
-- **Status:** open
-- **Severity:** unverified
-- **Where:** `/activity-settings/roles`, `/activity-settings/categories` — confirmed seed rows: "Planner
-  task" / "Routine task" / "To-do list task" (`systemKey` set), "Work" / "Errands" (in-use, `canDelete:
-  false`)
-- **What would verify it:** B7 confirms the Delete button is wrongly enabled for these rows and the
-  confirmation dialog gives no warning. What's still open is what happens **after** confirming — a clean
-  409 with a snackbar (the generic "something went wrong" experience A9's Problem 1 originally described for
-  Activities), a silent no-op, or (worst case) an actual deletion of a role the app itself depends on. Not
-  attempted this pass — the seed's three system roles are load-bearing for other units' passes and for the
-  app itself, and this is a real DELETE call with no confirmed-safe undo. Whoever runs this needs either a
-  disposable seed row to target or a green light to accept the risk on a system role.
+### U2. ~~What actually happens when Delete is clicked on a system or referenced role/category~~ — resolved
+- **Status:** fixed and verified (2026-09-15, mutation pass round 2 — server-side behavior is correct; the
+  UI-side gap this uncovered is now B9)
+- **Severity:** unverified (closed)
+- **Where:** `/activity-settings/roles` — confirmed on "Planner task" (`systemKey: plannerTask`)
+- **Verified:** Clicked Delete → Confirm on the "Planner task" system role. The server correctly refused with
+  `409 Conflict` (`DELETE /api/activity-role/4 => 409`) and the role was **not** deleted (confirmed still
+  present in the table afterward). The server's own error message is good and specific: "This is a system
+  role the app files quick-created activities under, so it cannot be deleted. You can rename it instead." —
+  but the user never sees that text because of a separate, newly-found bug, **B9**, which shows the generic
+  "One or more errors occurred!" instead. B7 (missing client-side disabled state) is still open regardless —
+  the button should never have offered this action in the first place.
 
 ### U3. A repeated 401→refresh failure that ends in a real sign-out, not root-caused
 - **Status:** open
