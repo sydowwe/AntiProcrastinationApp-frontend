@@ -12,6 +12,11 @@ import { useRoutineReviewStore } from '@/core/todoList/store/routineReviewStore.
  * tab starts from nothing rather than the previous account's in-memory state. Call this AFTER the
  * store's own `logout()` — it does not reimplement that call, only extends it.
  *
+ * Calling `useXStore()` here CREATES the store if nothing has yet, and a store exposing
+ * `ensureLoaded()` is loaded by `createAppPinia`'s plugin on creation — so every store reset here
+ * must no-op its load while signed out, or logging out from a page that never created it fires a
+ * request against a session the server has just dropped (`routineReviewStore` did exactly that).
+ *
  * Deliberately does NOT reset, and the reason lives here rather than at each declaration:
  *   - `'theme'` (`App.vue`) — a device preference, not account data; clearing it flashes the wrong
  *     colour scheme on the login screen the framework's top bar renders next.

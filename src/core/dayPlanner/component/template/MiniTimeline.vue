@@ -47,7 +47,6 @@
 		label?: string
 		showCount?: boolean
 	}>()
-	console.log(tasks)
 
 	const totalMinutes = computed(() => {
 		const start = startTime.getInMinutes

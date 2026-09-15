@@ -1,12 +1,17 @@
-// App-wide namespaces not owned by a single core module. The framework's `common` is still only
-// PARTIALLY translated to English (N11: `notifications.*` and `reminderPreference.*` only — see
-// `@/_common/_locales/common.en.ts`), so this file carries the `$vuetify`, `httpErrors`,
-// `validation` and `export` translations that would otherwise be missing for English users, for
-// every namespace the framework has not covered itself yet.
+// App-wide namespaces not owned by a single core module — the app-level counterpart of
+// @/_common/_locales/common.en.ts, which has been complete in English since `e04dad2`.
+//
+// How the two meet is decided in `EN.ts`: `general`, `dateTime` and `controls` are DEEP-MERGED
+// (framework keys survive, this app wins collisions), so a key only needs to be here when this app
+// wants a different wording or the framework has no such key. `httpErrors`, `validation`,
+// `calendar` and `iconPicker` below are still shallow replacements — they are complete against
+// the framework's copies today and differ only in wording. If one of them ever falls behind a
+// framework key, move it to the merge in `EN.ts` rather than adding the key by hand.
+import { en } from 'vuetify/locale'
+
 const common = {
-	// Mirrors `httpErrors` from @/_common/_locales/common.sk.ts, which the framework http
-	// interceptor resolves through `t()`. The framework ships Slovak only, so without an English
-	// copy here EN users would see raw keys where they currently get hardcoded English strings.
+	// This app's wording for the framework http interceptor's messages. Replaces the framework's
+	// `httpErrors` wholesale (see the header), so it must carry every key the interceptor resolves.
 	httpErrors: {
 		badRequest: `The request contains invalid data.`,
 		unauthorized: `You need to sign in to perform this action.`,
@@ -20,9 +25,8 @@ const common = {
 		unexpected: `An unexpected error occurred.`,
 		unknown: `An unknown error occurred. Please contact support.`,
 	},
-	// Mirrors `validation` from @/_common/_locales/common.sk.ts, for the same reason as `httpErrors`
-	// above: the framework's `useGeneralRules` resolves every message through `t('validation.*')`
-	// and ships Slovak only, so EN users would see raw keys on every failed form rule.
+	// This app's wording for the framework's `useGeneralRules` messages — same contract as
+	// `httpErrors` above: a wholesale replacement, so it must stay complete.
 	validation: {
 		required: `This field is required`,
 		onlyLetters: `The field may contain letters only`,
@@ -33,194 +37,10 @@ const common = {
 		invalidEmail: `Invalid e-mail format`,
 		houseNumber: `Invalid house number (e.g. 12, 12A or 12/A)`,
 	},
-	// Mirrors `export` from @/_common/_locales/common.sk.ts, for the same reason as `httpErrors` above:
-	// the framework's ExportMenu.vue resolves these through `t()` and ships Slovak only.
-	export: {
-		button: `Export`,
-		excel: `Excel (.xlsx)`,
-		csv: `CSV (.csv)`,
-	},
-	$vuetify: {
-		badge: 'Badge',
-		open: 'Open',
-		close: 'Close',
-		dismiss: 'Dismiss',
-		confirmEdit: {
-			ok: 'OK',
-			cancel: 'Cancel',
-		},
-		dataIterator: {
-			noResultsText: 'No matching records found',
-			loadingText: 'Loading items...',
-		},
-		dataTable: {
-			itemsPerPageText: 'Rows per page:',
-			ariaLabel: {
-				sortDescending: 'Sorted descending.',
-				sortAscending: 'Sorted ascending.',
-				sortNone: 'Not sorted.',
-				activateNone: 'Activate to remove sorting.',
-				activateDescending: 'Activate to sort descending.',
-				activateAscending: 'Activate to sort ascending.',
-			},
-			sortBy: 'Sort by',
-		},
-		dataFooter: {
-			itemsPerPageText: 'Items per page:',
-			itemsPerPageAll: 'All',
-			nextPage: 'Next page',
-			prevPage: 'Previous page',
-			firstPage: 'First page',
-			lastPage: 'Last page',
-			pageText: '{0}-{1} of {2}',
-		},
-		dateRangeInput: {
-			divider: 'to',
-		},
-		datePicker: {
-			itemsSelected: '{0} selected',
-			range: {
-				title: 'Select dates',
-				header: 'Enter dates',
-			},
-			title: 'Select date',
-			header: 'Enter date',
-			input: {
-				placeholder: 'Enter date',
-			},
-			ariaLabel: {
-				previousMonth: 'Previous month',
-				nextMonth: 'Next month',
-				selectYear: 'Select year',
-				previousYear: 'Previous year',
-				nextYear: 'Next year',
-				selectMonth: 'Select month',
-				selectDate: '{0}',
-				// Full date format
-				currentDate: 'Today, {0}',
-			},
-		},
-		noDataText: 'No data available',
-		carousel: {
-			prev: 'Previous visual',
-			next: 'Next visual',
-			ariaLabel: {
-				delimiter: 'Carousel slide {0} of {1}',
-			},
-		},
-		calendar: {
-			moreEvents: '{0} more',
-			today: 'Today',
-		},
-		input: {
-			clear: 'Clear {0}',
-			prependAction: '{0} prepended action',
-			appendAction: '{0} appended action',
-			otp: 'Please enter OTP character {0}',
-		},
-		fileInput: {
-			counter: '{0} files',
-			counterSize: '{0} files ({1} in total)',
-		},
-		fileUpload: {
-			title: 'Drag and drop files here',
-			divider: 'or',
-			browse: 'Browse Files',
-		},
-		timePicker: {
-			am: 'AM',
-			pm: 'PM',
-			title: 'Select Time',
-			hour: 'Hour',
-			minute: 'Minute',
-			second: 'Second',
-		},
-		pagination: {
-			ariaLabel: {
-				root: 'Pagination Navigation',
-				next: 'Next page',
-				previous: 'Previous page',
-				page: 'Go to page {0}',
-				currentPage: 'Page {0}, Current page',
-				first: 'First page',
-				last: 'Last page',
-			},
-		},
-		stepper: {
-			next: 'Next',
-			prev: 'Previous',
-		},
-		rating: {
-			ariaLabel: {
-				item: 'Rating {0} of {1}',
-			},
-		},
-		loading: 'Loading...',
-		infiniteScroll: {
-			loadMore: 'Load more',
-			empty: 'No more',
-		},
-		rules: {
-			required: 'This field is required',
-			email: 'Please enter a valid email',
-			number: 'This field can only contain numbers',
-			integer: 'This field can only contain integer values',
-			capital: 'This field can only contain uppercase letters',
-			maxLength: 'You must enter a maximum of {0} characters',
-			minLength: 'You must enter a minimum of {0} characters',
-			strictLength: 'The length of the entered field is invalid',
-			exclude: 'The {0} character is not allowed',
-			notEmpty: 'Please choose at least one value',
-			pattern: 'Invalid format',
-		},
-		hotkey: {
-			then: 'then',
-			ctrl: 'Ctrl',
-			command: 'Command',
-			space: 'Space',
-			shift: 'Shift',
-			alt: 'Alt',
-			enter: 'Enter',
-			escape: 'Escape',
-			upArrow: 'Up Arrow',
-			downArrow: 'Down Arrow',
-			leftArrow: 'Left Arrow',
-			rightArrow: 'Right Arrow',
-			backspace: 'Backspace',
-			option: 'Option',
-			plus: 'plus',
-			shortcut: 'Keyboard shortcut: {0}',
-			or: 'or',
-		},
-		video: {
-			play: 'Play',
-			pause: 'Pause',
-			seek: 'Seek',
-			volume: 'Volume',
-			showVolume: 'Show volume control',
-			mute: 'Mute',
-			unmute: 'Unmute',
-			enterFullscreen: 'Full screen',
-			exitFullscreen: 'Exit full screen',
-		},
-		colorPicker: {
-			ariaLabel: {
-				eyedropper: 'Select color with eyedropper',
-				hueSlider: 'Hue',
-				alphaSlider: 'Alpha',
-				redInput: 'Red value',
-				greenInput: 'Green value',
-				blueInput: 'Blue value',
-				alphaInput: 'Alpha value',
-				hueInput: 'Hue value',
-				saturationInput: 'Saturation value',
-				lightnessInput: 'Lightness value',
-				hexInput: 'HEX value',
-				hexaInput: 'HEX with alpha value',
-				changeFormat: 'Change color format',
-			},
-		},
-	},
+	// Vuetify's own English strings, resolved through the vue-i18n adapter `createAppVuetify` installs.
+	// This used to be a hand copy of the same object, which silently fell two keys behind a Vuetify
+	// bump (`timePicker.notAllowed`, `command.search` — F58); the import cannot drift.
+	$vuetify: en,
 	navigation: {
 		home: `Home`,
 		history: `History`,
@@ -269,12 +89,10 @@ const common = {
 	app: {
 		brandName: `Adhd time organizer`,
 	},
+	// Deep-merged over the framework's `general` in `EN.ts` — only this app's own keys and its
+	// deliberate rewordings live here; anything identical to the framework's copy was deleted (F35).
 	general: {
-		// Used by the framework's TableHeaderComposable.
-		actions: `Actions`,
 		or: `Or`,
-		// Joins the two legal links in the framework's registration checkbox.
-		and: `and`,
 		please: `Please`,
 		close: `Close`,
 		create: `Create`,
@@ -302,10 +120,6 @@ const common = {
 		show: `Show`,
 		confirm: `Confirm`,
 		new: `New`,
-		// Same story as `undoSuccess` below: the framework's `ColorPicker` and `MyPdfViewer` resolve
-		// `general.none`, and this namespace replaces the framework's wholesale — so the key was
-		// missing in EN *and* SK until now.
-		none: `None`,
 		update: `Update`,
 		optional: `Optional`,
 		search: `Search`,
@@ -314,27 +128,19 @@ const common = {
 		addToPlanner: `Add to planner`,
 		logTime: `Log time`,
 		moveToList: `Move to list`,
-		// Same story as `deleteConfirmationTitle` below: the framework's `general.backToList`
-		// (reminders' definition detail, and now the scheduler's job/run detail views) never had an
-		// EN counterpart — this app's `general` replaces the framework's wholesale, so it rendered
-		// the raw key for an EN user. Discovered while verifying the scheduler EN locale (S2).
-		backToList: `Back to list`,
-		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
-		// wholesale, so its copy of this key never reaches i18n.
-		undoSuccess: `{description} was undone`,
-		// Same collision again: the framework has `general.undo`, this namespace replaces it wholesale.
-		undo: `Undo`,
 		nothingToUndo: `Nothing to undo`,
-		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
-		// every app-side `useDialog().confirm` for a delete. EN never had them at all — `EN.ts` does not
-		// spread the framework's Slovak-only `common`.
+		// This app's wording; the framework says "Confirm deletion" / "You do not have permission …".
 		deleteConfirmationTitle: `Delete confirmation`,
-		deleteConfirmationText: `Are you sure you want to delete {name}?`,
-		// `general.retry` (the retry button on the scheduler's two detail pages, S1) and
-		// `general.forbidden` (their non-admin card) existed in no locale at all — see the SK file.
-		retry: `Try again`,
 		forbidden: `You don't have permission to view this page.`,
 		start: `Start`,
+		// The skip link in `App.vue` — the first tab stop on every page.
+		skipToContent: `Skip to main content`,
+		backHome: `Back to home`,
+	},
+	// The catch-all route (`src/router.ts`) — rendered for any URL no module claims.
+	notFound: {
+		title: `Page not found`,
+		text: `This address does not lead anywhere. Check the link or go back to the home page.`,
 	},
 	dateTime: {
 		when: `When`,
@@ -357,38 +163,14 @@ const common = {
 		dateRange: `Date range`,
 		hoursBack: `Hours back`,
 		today: `Today`,
-		// --- Mirrored from `_common/_locales/common.sk.ts` ---
-		// EN needs the mirror even more than SK does: `EN.ts` does not spread the framework's
-		// Slovak-only `common` at all, so these keys have no fallback whatsoever here. Same set as
-		// the SK block — see the comment there.
-		mode: `Mode`,
-		range: `Range`,
-		duration: `Duration`,
+		// Deep-merged over the framework's `dateTime` in `EN.ts` (F35) — the keys the framework's
+		// `DateRangePicker` / `MonthYearPicker` / `TimeDisplay` / `TimeRangePicker` resolve come from
+		// its own file now. Only this app's deliberate rewordings stay:
+		// the framework says "Anchor point"; this app's pickers label the field "Anchor".
 		anchor: `Anchor`,
-		unit: `Unit`,
-		quantity: `Quantity`,
-		fromStart: `From start`,
-		toEnd: `To end`,
-		daysPlural: `Days`,
-		weeksPlural: `Weeks`,
-		hoursShort: `h`,
-		minutesShort: `min`,
-		switchToTimeRange: `Switch to time range`,
-		switchToDuration: `Switch to duration`,
+		// Deliberately not the framework's wording, which hardcodes "31 days" — `maxDays` is a prop and
+		// this app passes 366 for the activity dashboards.
 		dateRangeExceedsLimit: `The selected date range is too long`,
-		startDateBeforeEndDate: `The start date must be before the end date`,
-		january: `January`,
-		february: `February`,
-		march: `March`,
-		april: `April`,
-		may: `May`,
-		june: `June`,
-		july: `July`,
-		august: `August`,
-		september: `September`,
-		october: `October`,
-		november: `November`,
-		december: `December`,
 	},
 	controls: {
 		start: `Start`,
@@ -425,9 +207,8 @@ const common = {
 			sun: `Sun`,
 		},
 	},
-	// Mirrors the framework's Slovak-only `calendar` namespace (`_common/_locales/common.sk.ts`),
-	// consumed by `_common/component/calendar/CalendarGrid.vue`. EN.ts does not spread the framework
-	// `common`, so without this EN users see raw keys in the calendar toolbar and day headers.
+	// This app's wording for `_common/component/calendar/CalendarGrid.vue`'s strings. A wholesale
+	// replacement of the framework's `calendar` (see the header), so it must stay complete.
 	calendar: {
 		daysToShow: `Days to show`,
 		allWeek: `All week`,
@@ -448,11 +229,8 @@ const common = {
 		sat: `Sat`,
 		sun: `Sun`,
 	},
-	// Mirrors the framework's Slovak-only `iconPicker` namespace (`_common/_locales/common.sk.ts`),
-	// consumed by `_common/component/inputs/IconPicker.vue` + `IconPickerDialog.vue`. Same story as
-	// `calendar` above: EN.ts does not spread the framework `common`, so without this the icon field
-	// in every create/edit dialog that has one rendered the raw `iconPicker.icon` /
-	// `iconPicker.selectIconPlaceholder` keys for EN users.
+	// This app's wording for `_common/component/inputs/IconPicker.vue` + `IconPickerDialog.vue`.
+	// Same contract as `calendar` above.
 	iconPicker: {
 		selectIcon: `Select an icon`,
 		searchPlaceholder: `Search icons...`,

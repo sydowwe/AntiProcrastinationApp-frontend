@@ -18,20 +18,19 @@ import scheduler from '@/_common/modules/scheduler/_locales/scheduler.sk.ts'
 import reminders from '@/_common/modules/reminders/_locales/reminders.sk.ts'
 import remindersDashboard from '@/_common/modules/reminders/_locales/remindersDashboard.sk.ts'
 
-// `common` (framework) is spread first so this app's own modules still win every collision — the
-// two share six top-level namespaces (navigation, general, dateTime, controls, authorization,
-// user) and object spread is shallow, so a colliding namespace is replaced wholesale, not merged.
-// `appCommon` and the per-module locales below own those six between them and are spread after,
-// which preserves this app's original strings exactly. What `common` contributes on top is
-// `validation`, `export`, `notifications`, `reminderPreference`, `calendar`, `iconPicker` and
-// `app` — namespaces this app doesn't define locally.
+// `common` (framework) is spread first so this app's own modules still win every collision.
+// Object spread is SHALLOW: a colliding top-level namespace is replaced wholesale, not merged.
+// That is what we want for `navigation` and `app` (the framework's copies are another app's
+// sidebar and brand), and it is what `appCommon` and the per-module locales rely on.
 //
-// `user` is now a namespace TWO files contribute to (`frameworkUser` + `appUser`), unlike every
-// other namespace here which comes from exactly one source. It cannot simply be spread last like
-// the others — a bare `...appUser` would replace the whole `user` key (including `authorization`,
-// which `appUser` doesn't declare) wholesale. See the explicit merge below. If you add a locale
-// namespace that a second file also wants to contribute to, follow this same pattern rather than
-// a second `...` spread.
+// It is NOT what we want for a namespace two files both contribute to, where the framework's
+// keys must survive and this app's must win collisions: `general`, `dateTime`, `controls` and
+// `user`. Those four are merged explicitly at the bottom. Before that merge existed the app kept a
+// hand-written "mirror" of the framework's keys in `common.sk.ts`, written per consumer rather
+// than per namespace, and it leaked a raw key four times (`migration-revision.md` R5/R6/R11, then
+// `dateTime.secondsShort` — F35). A framework component resolving a `general.*`/`dateTime.*`/
+// `controls.*` key now needs nothing app-side. If you add a namespace a second file also wants to
+// contribute to, add it to that merge rather than a second `...` spread.
 const SK = {
 	...vuetifyLocale,
 	...common,
@@ -51,9 +50,13 @@ const SK = {
 	...scheduler,
 	...reminders,
 	...remindersDashboard,
-	// `user` is the one namespace two files contribute to: the framework owns auth, 2FA and
-	// sessions; this app owns its preference and about/legal strings. Shallow spread would drop
-	// one side wholesale, so merge the namespace itself and let the app win collisions.
+	// The namespaces two files contribute to — see the header. The framework's keys survive and
+	// the app's win collisions. `user`: the framework owns auth, 2FA and sessions; this app owns
+	// its preference and about/legal strings. `general`/`dateTime`/`controls`: the framework's
+	// components resolve their own keys; this app adds its own and rewords a few.
+	general: { ...common.general, ...appCommon.general },
+	dateTime: { ...common.dateTime, ...appCommon.dateTime },
+	controls: { ...common.controls, ...appCommon.controls },
 	user: { ...frameworkUser.user, ...appUser.user },
 }
 export default SK

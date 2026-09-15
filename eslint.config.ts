@@ -40,7 +40,10 @@ export default defineConfigWithVueTs(
 			'@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 			'@typescript-eslint/no-unused-expressions': 'warn',
 			'@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-			'no-console': ['off', { allow: ['error', 'warn'] }],
+			// `error`, not `off`: with the rule off the allow-list was decoration, and three
+			// `console.log` leftovers shipped through it (F38). `error`/`warn` stay allowed — the
+			// axios interceptor and store `catch` blocks report through them on purpose.
+			'no-console': ['error', { allow: ['error', 'warn'] }],
 			'prefer-const': 'warn',
 			eqeqeq: ['error', 'smart'],
 		},

@@ -285,10 +285,15 @@ shipped a delete path with no confirmation dialog. Do not add a fourth without a
   `src/locales/{SK,EN}.ts`. App-wide strings not owned by a module go in `src/locales/common.{sk,en}.ts`. SK is primary, EN is the fallback.
     - The aggregator spread is **shallow**: a colliding top-level namespace is replaced wholesale, not merged. The app's own namespaces are spread after the
       framework's `common` so they win. Read the comment at the top of `SK.ts` before adding a namespace.
-    - **Consequence when adopting framework code:** a framework component resolving `t('general.foo')` renders the raw key here, because this app's `general`
-      replaces the framework's. Mirror the key into `src/locales/common.{sk,en}.ts` by hand as part of the adoption. This has been missed three times
-      (`validation`, `general.undoSuccess`, `calendar` — `migration-revision.md` R5/R6/R11). EN needs the mirror too: `EN.ts` does not spread the framework's
-      Slovak-only `common` at all.
+    - **Four namespaces are deep-merged, not spread** — `general`, `dateTime`, `controls` and `user`, at the bottom of both `SK.ts` and `EN.ts`
+      (`general: { ...common.general, ...appCommon.general }`). The framework's keys survive and the app's win collisions, so a framework component
+      resolving `t('general.foo')` or `t('dateTime.secondsShort')` needs **nothing** app-side. Put a key in `src/locales/common.{sk,en}.ts` only when this app
+      wants a different wording or the framework has no such key. Before the merge the app kept a hand-written mirror of the framework's keys, and it leaked a
+      raw key four times (`validation`, `general.undoSuccess`, `calendar`, `dateTime.secondsShort` — `migration-revision.md` R5/R6/R11 and `_fix-queue.md` F35).
+    - **Every other colliding namespace is still a wholesale replacement.** `navigation` and `app` deliberately (the framework's copies are another app's);
+      EN's `httpErrors`, `validation`, `calendar` and `iconPicker` are this app's wordings and must stay complete against the framework's. If one of them ever
+      falls behind a framework key, add it to the merge rather than mirroring the key by hand. The framework's `common.en.ts` is complete (since `e04dad2`),
+      and `EN.ts` spreads it — the older claim that EN had no framework fallback is stale.
 - **Pinia Stores**: Use Composition API (Setup Stores) pattern: `defineStore('name', () => { ... })`. Stores live in their module's `store/` directory. Name the
   load method `ensureLoaded()` and let `createAppPinia`'s plugin call it on creation — never fetch a store's data from a component's `onMounted`. See
   `### _common/bootstrap/`.

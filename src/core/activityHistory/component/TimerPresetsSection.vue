@@ -152,7 +152,6 @@
 
 	async function loadPresetsData() {
 		allPresets.value = await fetchAll()
-		console.log(allPresets.value)
 	}
 
 	function applyPreset(preset: TimerPreset) {

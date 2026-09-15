@@ -29,14 +29,23 @@ export const useRoutineReviewStore = defineStore(
 		const isLoaded = ref(false)
 		let inFlight: Promise<void> | null = null
 
-		/** Idempotent and de-duplicated: several mounts in one visit share the single GET. */
+		/**
+		 * Idempotent and de-duplicated: several mounts in one visit share the single GET.
+		 *
+		 * No-ops while signed out and never rejects — `createAppPinia`'s plugin calls this on store
+		 * creation without awaiting or catching, and the first creation can be `resetAppState()`
+		 * on logout (`useSessionReset.ts`), i.e. after the server has already dropped the session.
+		 * Without the guard that fired a `GET routine/settings` that could only answer 401. On a
+		 * failed load `isLoaded` stays `false`, so the next call retries.
+		 */
 		async function ensureLoaded(): Promise<void> {
-			if (isLoaded.value) return
+			if (isLoaded.value || !useUserStore().isAuthenticated) return
 			inFlight ??= fetchSettings()
 				.then(settings => {
 					lastDismissedWeekStart.value = settings.routineReviewDismissedForWeekStart
 					isLoaded.value = true
 				})
+				.catch(() => {})
 				.finally(() => {
 					inFlight = null
 				})

@@ -15,14 +15,14 @@ import scheduler from '@/_common/modules/scheduler/_locales/scheduler.en.ts'
 import reminders from '@/_common/modules/reminders/_locales/reminders.en.ts'
 import remindersDashboard from '@/_common/modules/reminders/_locales/remindersDashboard.en.ts'
 
-// The framework's `common` is now PARTIAL in English (N11: only `notifications.*` and
-// `reminderPreference.*` — see the comment atop `@/_common/_locales/common.en.ts` for what is
-// still Slovak-only there). Spread it first, same position as SK.ts's `...common`, so `appCommon`
-// and the app's own modules still win every collision — `appCommon` carries the EN `$vuetify` and
-// `httpErrors` translations that stand in for the framework's still-untranslated namespaces (see
-// its top-of-file comment).
+// The framework's `common` has been complete in English since `e04dad2` (it was once only
+// `notifications.*` and `reminderPreference.*`). Spread it first, same position as SK.ts's
+// `...common`, so `appCommon` and the app's own modules still win every collision. `appCommon`
+// carries the EN `$vuetify` (Vuetify's own export) and this app's wordings for a few framework
+// namespaces — see its top-of-file comment.
 //
-// `user` is merged rather than spread, mirroring SK.ts — see the comment there for why.
+// `general`, `dateTime`, `controls` and `user` are merged rather than spread, mirroring SK.ts —
+// see the comment there for why.
 const EN = {
 	...common,
 	...appCommon,
@@ -41,6 +41,9 @@ const EN = {
 	...scheduler,
 	...reminders,
 	...remindersDashboard,
+	general: { ...common.general, ...appCommon.general },
+	dateTime: { ...common.dateTime, ...appCommon.dateTime },
+	controls: { ...common.controls, ...appCommon.controls },
 	user: { ...frameworkUser.user, ...appUser.user },
 }
 export default EN

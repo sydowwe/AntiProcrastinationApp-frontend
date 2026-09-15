@@ -86,6 +86,15 @@ Findings against these are **submodule** issues — fixes are commits in `vue_fr
 > route **names** are the module's contract and never change — `navItems.ts` and the breadcrumb fixes resolve
 > them by name, so renaming a route here breaks those links while changing a path does not.
 
+## Catch-all (`src/router.ts`, last entry — added 2026-09-15, F20)
+
+| Route | Name | View | Guard | Nav | Unit |
+| --- | --- | --- | --- | --- | --- |
+| `/:pathMatch(.*)*` | `notFound` | `NotFoundView` (`core/home/view/`) | auth | — (any unmatched URL) | 1 `home` |
+
+> Declared after every module spread so it is a fallback, never a shadow. Not `public`: a signed-out visitor
+> on an unknown URL still lands on `/login`. Brings the manifest to **54 route records**.
+
 ---
 
 ## ⚠️ Orphan candidates — no nav entry, and not a param/detail route

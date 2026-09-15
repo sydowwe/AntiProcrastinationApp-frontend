@@ -3,6 +3,7 @@ import { useAuth } from '@/_common/auth/authAdapter.ts'
 import { hasRequiredRole, type RequiredRole } from '@/_common/nav/navTypes.ts'
 import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 import { homeRoutes } from '@/core/home/home.routes.ts'
+import NotFoundView from '@/core/home/view/NotFoundView.vue'
 import { activityRoutes } from '@/core/activity/activity.routes.ts'
 import { activityHistoryRoutes } from '@/core/activityHistory/activityHistory.routes.ts'
 import { activityTrackingRoutes } from '@/core/activityTracking/activityTracking.routes.ts'
@@ -62,6 +63,14 @@ const router = createRouter({
 		...remindersRoutes,
 		...notificationsRoutes,
 		...schedulerRoutes(APP_SCHEDULER_PATHS),
+		// The catch-all. It MUST stay last — declared before any spread it would shadow every route
+		// after it. Deliberately not `public`: a signed-out visitor on an unknown URL still goes to
+		// `/login`, and the `SIGNED_OUT_ONLY_ROUTES` bounce sends them to `/` afterwards.
+		{
+			path: '/:pathMatch(.*)*',
+			name: 'notFound',
+			component: NotFoundView,
+		},
 	],
 })
 

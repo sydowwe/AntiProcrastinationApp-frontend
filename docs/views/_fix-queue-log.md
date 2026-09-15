@@ -404,6 +404,29 @@
 - **Risk:** Low. Worst case an icon string arrives in a shape FontAwesome doesn't recognise and renders a
   missing-glyph box — visible immediately, not silent.
 
+## F10. No skip-to-content link
+
+> ✅ **FIXED 2026-09-15.** `src/App.vue`: a `d-sr-only-focusable` anchor is the first child of `<VApp>`,
+> `<VMain>` carries `id="main-content"` + `tabindex="-1"`, and the click is handled (`preventDefault` +
+> `$el.focus()`) rather than left to the fragment, so the router never sees a `#main-content` hash
+> navigation. Label `general.skipToContent` in `common.{sk,en}.ts`. Verified on a fresh load: the first
+> Tab lands on a visible "Skip to main content" at (8, 8); Enter moves `document.activeElement` to
+> `<main>` with the URL unchanged; the next Tab lands on a button inside main; blurred, the link is a
+> 1×1 clipped box.
+
+- **Scope:** app-side `src/App.vue` — not the framework
+- **Closes:** `_shell/A3`
+- **Re-verified unchanged this pass:** `src/App.vue` has zero matches for `skip`.
+- **Root cause:** No skip link exists; the first Tab stop from a fresh load is the framework's sidebar toggle.
+  To be first in the tab order the link must precede `<Navbar>` in DOM order, which is `App.vue` — and
+  `<VMain>` (the `<main>` landmark it targets) is already there too, so no submodule change is needed.
+- **Files:** `src/App.vue` — insert before `<Navbar>`, target `<VMain>` (give it an `id`)
+- **What to change:** A visually-hidden-until-focused anchor as the first child of `<VApp>`. Label from
+  `src/locales/common.{sk,en}.ts` — app-wide string, no module owns it.
+- **Verification:** `_shell/A3`'s `Verify:` block — first Tab stop is a visible "skip to main content" link,
+  activating it moves focus into the main region, and it is invisible when unfocused.
+- **Risk:** None.
+
 ## F11. Breadcrumb does not distinguish `/todo-list/:id` from `/todo-list`
 
 > ✅ **FIXED 2026-09-13.** `TodoListView.vue` watches `listEntity` and calls `setBreadcrumbExtra([{ title:
@@ -427,6 +450,56 @@
 - **Verification:** `_shell/P1`'s `Verify:` block, plus `/todo-list/999999`, which must not render a crumb for
   a list that doesn't exist.
 - **Risk:** Low. `extraSegmentSlots` is module-level state; confirm the crumb clears on navigating away.
+
+## F20. No catch-all route — any unknown URL renders a blank main area
+
+> ✅ **FIXED 2026-09-15.** `src/router.ts` ends with `{ path: '/:pathMatch(.*)*', name: 'notFound',
+> component: NotFoundView }`, non-public. The view is the sanctioned fallback — `src/core/home/view/
+> NotFoundView.vue` (the `PlannerTaskLinkView` shape: `VAlert` + *Back to home*), with
+> `migration-revision.md` §14 holding the upstream ask and `_routes.md` gaining the 54th record. Strings
+> `notFound.{title,text}` + `general.backHome` in `common.{sk,en}.ts`. Verified `/foo` and
+> `/activity-settings/nonsense` render the page with zero `[Vue Router warn]`. One correction to the
+> verify line: `/todo-list/abc` does **not** reach the catch-all — `/todo-list/:id` has no digit
+> constraint, so it matches and `TodoListView`'s own "This list doesn't exist" state handles it, which is
+> the right outcome.
+
+- **Scope:** app-side `src/router.ts` (the route array's last entry) plus one small view and two locale
+  keys in `src/locales/common.{sk,en}.ts` — **not** `activity.routes.ts`
+- **Closes:** `activity-settings/B5`
+- **Root cause — app-wide, not activity-settings.** `activity.routes.ts:10`'s
+  `:tab(activities|roles|categories)` regex is correct and rejects `/activity-settings/nonsense`; what
+  is missing is anything to catch the rejection. `src/` contains **no** `pathMatch`, no not-found route
+  and no catch-all of any kind (grep across `src/**/*.{ts,vue}` this pass), so `/foo`, `/todo-list/abc`
+  and every other unmatched path do exactly what the finding describes — sidebar and top bar render,
+  `<RouterView>` renders nothing, and the console warns. Unit 2 is simply the first unit whose route
+  has a constrained param, so it is the first to have typed a wrong one.
+- **The 23 repeated empty-path warnings** are consistent with the ~two dozen `:to` links in the shell
+  (`SidebarNavItem.vue:10,27`, `SidebarNavGroup.vue:35,60`, `UserMenu.vue:26-41`, `AppTopBar.vue:18`)
+  each resolving via `useLink` against a current route that has no match; not verified further, and not
+  worth it — once the current route *is* matched, the condition that produces them is gone. Confirm by
+  console after the fix rather than by root-causing it first.
+- **Files:** `src/router.ts` (append `{ path: '/:pathMatch(.*)*', name: 'notFound', component:
+  NotFoundView }` **after** every spread — order is what makes it a fallback); the view itself.
+  `TodoListView.vue:18-19` and `PlannerTaskLinkView.vue:8-9` are the app's existing not-found
+  treatments (a `VEmptyState` with a localized title/text and a way home) — copy that shape.
+- **What to change:** One global not-found route rendering a localized empty state with a link to
+  `{ name: 'home' }`. Leave it **non-public**: a signed-out visitor on an unknown path should still go to
+  `/login`, and the guard's `SIGNED_OUT_ONLY_ROUTES` bounce back to `/` afterwards is fine. Where the
+  view lives is a judgement call CLAUDE.md's framework rule answers — a not-found page is generic enough
+  that another app would want it as written, so `src/_common/component/` (submodule commit + pointer
+  bump) is the "right" home; if the fixing session does not want a two-repo change, `src/core/home/view/
+  NotFoundView.vue` with a `migration-revision.md` entry is the sanctioned fallback. The **route
+  registration is app-side either way**, which is why this is an app batch.
+- **Do not change:** the activity route's regex, or widen it to `:tab(…)?` with a `beforeEnter` — the
+  finding's suggested fix. That closes one family and leaves every other unmatched path blank; and a
+  *missing* tab already redirects (`activity.routes.ts:5-8`), so the only case it would add is
+  "invalid tab → activities", which is arguably wrong (a bad URL should say so, not silently land
+  somewhere else). `B5`'s pass condition accepts either; the global page satisfies it.
+- **Verification:** `B5`'s `Verify:` block, then `/foo` and `/todo-list/abc` — all three render the
+  not-found state, the console logs **no** `[Vue Router warn]`, and the sidebar highlights nothing.
+  Signed out, `/foo` still lands on `/login`.
+- **Risk:** Low. A catch-all declared *before* a real route would shadow it — it must be last, and
+  `_routes.md` gains one record (54, or 56 after `F14`'s two redirects).
 
 ## F24. Routine components format dates through the browser's locale, not the account's
 
@@ -521,6 +594,223 @@
 - **Verification:** `/routine-settings` in SK — second column header reads *Farba*; in EN, *Color*. Console
   clean.
 - **Risk:** None.
+
+## F35. `dateTime.secondsShort` renders raw on every running clock — the fourth leak of a mirror written per consumer, not per namespace
+
+> ✅ **FIXED 2026-09-15 — the merge, not the patch.** `general`, `dateTime` and `controls` are merged at
+> the bottom of `SK.ts` and `EN.ts` the way `user` always was. The mirrored blocks and their "mirrored
+> from" comments are deleted from `common.{sk,en}.ts` (diffed mechanically against the framework files
+> first); what stays there is this app's deliberate rewordings — SK `general.start` (*Začať*, a verb, vs
+> the framework's noun), SK `switchToTimeRange`/`switchToDuration`, both `dateRangeExceedsLimit`s, EN
+> `anchor`, `deleteConfirmationTitle`, `forbidden` — plus EN's identical `export` block removed. The stale
+> "EN is partial / `EN.ts` does not spread `common`" sentences are corrected in `EN.ts`, `common.en.ts`,
+> `migration-revision.md` §5 (now resolved, in the ledger) and CLAUDE.md's *Localization* bullets, which
+> now say the merged namespaces need nothing and name the merge site. Verified through the running app's
+> i18n: `dateTime.secondsShort` = `s`, `general.from`/`to` = *From*/*To* and *Od*/*Do* in both locales;
+> the stopwatch shows `s`, the Summary picker in range mode labels its second field *To*; no `[intlify]`
+> lines; `vue-tsc --build --force` exits 0.
+
+- **Scope:** app-side `src/locales/common.sk.ts`, `src/locales/common.en.ts`, `src/locales/SK.ts`,
+  `src/locales/EN.ts` + docs-only `CLAUDE.md` (the *Localization* bullet on mirroring)
+- **Closes:** `history-capture/B1`, plus two **unfiled, source-certain** twins — `general.from` and
+  `general.to`, which `TimeRangePicker.vue:9,59` resolves in *range* mode and no app locale file defines
+- **Root cause — confirmed, and wider than the finding.** The finding is exactly right about the
+  mechanism: `SK.ts:21-27` spreads the framework's `common` first and `appCommon` after, the spread is
+  shallow, so the app's `dateTime` replaces the framework's wholesale, and `TimeDisplay.vue:38` resolves
+  a key the app's copy never carried. `secondsShort` has been in the framework's SK file since
+  `3976e81` (2026-06-24); the app's mirror block was written on 2026-09-09 (`f6af3c35`) and picked
+  `hoursShort`/`minutesShort` without it. **Why it was missed is written in the file:** the SK comment at
+  `common.sk.ts:149-154` says *"every key below is one the framework's own `DateRangePicker` /
+  `MonthYearPicker` resolve"* — the mirror was built by reading two consumers, not by diffing the
+  namespace, and `TimeDisplay` was not one of the two. That is the same way R5, R6 and R11 happened.
+  Diffed mechanically this pass (a throwaway script over the four files, deleted): in **both** locales
+  the app's `dateTime` lacks exactly one framework key (`secondsShort`), `controls` and `app` lack none,
+  and **`general` lacks 26** — `total, print, addNew, formErrors, saveAll, discard, yes, no, active,
+  inactive, from, to, of, back, prev, next, image, imageRequired, imageTooLarge, address, city, street,
+  houseNumber, postalCode, descriptiveNumber, orientationNumber`. Of those, two are resolved by a
+  framework component **this app mounts**: `TimeRangePicker` labels its start field `general.from`
+  (when no `label` prop is passed) and its end field `general.to` whenever `mode === 'range'` — a state
+  one click on the toggle button reaches and `localStorage['timeRangePickerMode']` then persists across
+  reloads. Eight consumers (`HistorySummaryView`, `HistoryDetailView`, `ActivityDashboardHeader`, and
+  five in `dayPlanner`). Unit 3 saw the toggle (`history-review/inventory.md:24`, *"Switch to time
+  range"*) and did not click it. The other 24 are resolved only by framework components this app does
+  not mount (`MyPdfViewer`, `LookupDialog`, `TableGrid`, `TableCellEditor`, the two address fields) —
+  today. `general.yes`/`general.no` are the pair `F4` intends to use.
+- **Files:** `src/locales/common.en.ts:339-392` (`dateTime`), `:290-338` (`general`);
+  `src/locales/common.sk.ts:128-185`, and its `general` block; `src/locales/SK.ts:35-58`;
+  `src/locales/EN.ts:26-45`. Reference only — `src/_common/_locales/common.{sk,en}.ts`,
+  `src/_common/component/dateTime/TimeDisplay.vue:36-38`, `TimeRangePicker.vue:9,59`.
+- **What to change — recommended: stop mirroring and merge.** `SK.ts:57` already does
+  `user: { ...frameworkUser.user, ...appUser.user }` for the one namespace two files contribute to, with a
+  comment explaining exactly why. `general`, `dateTime` and `controls` are the same situation — two files
+  contribute, the app must win collisions, and the framework's keys must survive — and they get a shallow
+  spread instead. Do the same merge for those three in both `SK.ts` and `EN.ts` (`general: {
+  ...common.general, ...appCommon.general }`, etc.), and then **delete the mirrored blocks and their
+  "mirrored from" comments** from both app files (the app's deliberate divergences — the two
+  `dateRangeExceedsLimit` wordings, `anchor` — stay because the app is spread second). Exclude
+  `navigation`: the framework's copy is another app's HR tree and the merge would only add dead keys.
+  Then rewrite CLAUDE.md's *Localization* consequence bullet — it currently tells the reader to *"mirror
+  the key … by hand"*, which is the instruction that has now produced R5, R6, R11 and this — to say the
+  merged namespaces need nothing and to name the merge site. **Fallback if the merge is declined:** the
+  finding's own one-line fix (`secondsShort: \`s\`` next to `minutesShort` in both files) **plus**
+  `general.from` / `general.to` in both files (SK: *Od* / *Do*), plus a vitest next to
+  `src/locales/slovakPlurals.test.ts` asserting that for each of `general`, `dateTime`, `controls` every
+  leaf key in the framework file exists in the app file — so the fifth leak fails `npm test` instead of
+  rendering. One of the two; not neither.
+- **Do not change:** `src/_common/_locales/*` — the framework's files are complete; the gap is
+  entirely app-side. Do not add `secondsShort` to `activityHistory.{sk,en}.ts` or any module locale: it
+  is a `common` key resolved by a framework component. Do not "fix" `EN.ts:18-23`'s comment in passing
+  without checking it — it says the framework's `common.en.ts` is *partial* (*"only `notifications.*` and
+  `reminderPreference.*`"*), which stopped being true at `e04dad2` (2026-09-11, *"complete the English
+  mirror"*); the diff above shows the framework's EN `dateTime`/`general` are now as full as SK's. Same
+  for CLAUDE.md's *"`EN.ts` does not spread the framework's Slovak-only `common` at all"* — it does, at
+  `EN.ts:27`. Both are stale sentences to correct in the same commit, not reasons to hedge the merge.
+- **Verification:** `history-capture/B1`'s `Verify:` block verbatim on all three clock views, in **both**
+  locales (`s` in each; the finding's screenshot `stopwatch--default.png` is the before). Then the
+  twins: on `/activity-history` (Summary) click *Switch to time range* and read the second field's label —
+  *To* / *Do*, not `general.to`; reload and confirm it stays (the mode persists). `playwright-cli console`
+  must show zero `[intlify] Not found` lines on all four screens. If the merge was chosen, run
+  `npm run type-check` — the merged objects change the inferred locale type, and any consumer typed
+  against the old shape shows up there.
+- **Risk:** Low for the patch. Low-medium for the merge: it changes which strings win for keys **both**
+  files define — but the app is spread second, so every string this app renders today is unchanged, and
+  the only new strings are ones that currently render as raw keys. The one thing to look at is the
+  `vuetifyLocale` spread in `SK.ts:36` — unrelated, but it is the same file and the same shape.
+
+## F38. Leftover `console.log` in `TimerPresetsSection.vue` — and the lint rule that should have caught it is `off`
+
+> ✅ **FIXED 2026-09-15.** `eslint.config.ts` flipped to `'no-console': ['error', { allow: ['error',
+> 'warn'] }]`; the rule reported **exactly the three predicted lines** (`TimerPresetsSection.vue`,
+> `MiniTimeline.vue`, `UseDragAndDropMonitor.ts`), all deleted by hand. `npm run lint` exits 0 with the
+> rule on; the five framework lines are untouched (ESLint ignores `src/_common`, and they belong to
+> `FW9`/`FW11`/`FW12`).
+
+- **Scope:** app-side `src/core/activityHistory/component/TimerPresetsSection.vue:155`,
+  `src/core/dayPlanner/component/template/MiniTimeline.vue:50`,
+  `src/core/todoList/composable/dragAndDrop/UseDragAndDropMonitor.ts:24`, `eslint.config.ts:43`
+- **Closes:** `history-capture/P1`, **`planner-templates/P2`** (twelfth pass — unit 8 filed
+  `MiniTimeline.vue:50` on its own, observed as three `Proxy(Array)` lines per load of
+  `/day-planner/templates`; it was already in this batch's file list from the eighth-pass grep, so the
+  finding closes here rather than opening a second batch. Its `Verify:` block is the browser check for
+  that line: zero `[LOG]` from `MiniTimeline.vue` on the template list.)
+- **Root cause:** The line the finding names (`loadPresetsData()`, `console.log(allPresets.value)` right
+  after the `fetchAll()`) — confirmed. The reason it survived is `eslint.config.ts:43`:
+  `'no-console': ['off', { allow: ['error', 'warn'] }]` — the rule is **off**, with an allow-list that is
+  only meaningful when it is on, i.e. someone configured the intent and not the severity. A grep for
+  `console.log(` across `src/` finds **three** app-side leftovers (the two others: `MiniTimeline.vue:50`
+  logs `tasks` on every render of the template planner's mini timeline; `UseDragAndDropMonitor.ts:24`
+  logs `'Global drag start:'` + payload on every drag) and five in the framework's `user` module
+  (`LoginView.vue:142` `console.log(valid)`; `ForgottenPasswordView.vue:73`, `ConfirmEmailView.vue:57,71`,
+  `ConfirmEmailChangeView.vue:58` — `console.log(error)` in `catch` blocks, which the allow-list would
+  want as `console.error`). One correction to the finding: **only `TimerView` mounts
+  `TimerPresetsSection`** (`TimerView.vue:42`); the Pomodoro view mounts `PomodoroSetupPanel` and
+  `PomodoroPresetsDialog`, neither of which imports it. The finding's own evidence names only `/timer`;
+  the *"both mount this component"* sentence is unobserved and wrong (§48).
+- **Files:** the four above.
+- **What to change:** Flip `eslint.config.ts:43` to `'no-console': ['error', { allow: ['error', 'warn'] }]`,
+  run `npm run lint`, and delete what it reports — expected: the three app-side lines, nothing else.
+  (`npm run lint` runs `--fix`, but `no-console` has no fixer, so the deletions are by hand.) If the
+  count differs from three, the difference is the finding, not the rule.
+- **Do not change:** the five framework lines — ESLint ignores `src/_common` by config, so the rule will
+  not report them, and they are `vue_framework` commits. **Unit 15 has now run** (ninth pass) and they
+  are taken: `LoginView.vue:142` by `FW11` (filed as `auth/P3`), `ForgottenPasswordView.vue:73` by
+  `FW9`, `ConfirmEmailView.vue:57,71` and `ConfirmEmailChangeView.vue:58` by `FW12` — the last four
+  disappear with the `catch` blocks they sit in rather than becoming `console.error`, because each of
+  those views already shows a snackbar in the same branch. Pre-empted here so the fixing session does
+  not chase them into the submodule.
+- **Verification:** `history-capture/P1`'s `Verify:` block on `/activity-history/timer` — zero `[LOG]`
+  lines from `TimerPresetsSection.vue`. Then `npm run lint` exits 0 with the rule on. The two other
+  deletions are verified by the lint run, not a browser.
+- **Risk:** None to runtime. The lint change is app-wide and the CLAUDE.md *Lint* line says the baseline
+  is 0 errors with two known warnings — re-measure after the flip and correct that sentence if the
+  warning count moves.
+
+## F40. Logging out fires `GET /routine/settings` and logs a 401 — `resetAppState()` creates the store, and the plugin loads it
+
+> ✅ **FIXED 2026-09-15.** `routineReviewStore.ensureLoaded()` returns early on `!useUserStore().isAuthenticated`
+> and the chain has a `.catch(() => {})`, so the plugin's uncaught call never rejects and `isLoaded` stays
+> `false` for a retry. `useSessionReset.ts`'s doc comment carries the rule for every future store in that
+> list. Verified: *Log out* from `/` produces only `POST /auth/logout → 204` — no `routine/settings`, no
+> console error; after signing back in, `/routine-todo-list` still fires `GET /routine/settings → 200`.
+
+- **Scope:** app-side `src/core/todoList/store/routineReviewStore.ts:33-44`, and one sentence in
+  `src/core/user/composable/useSessionReset.ts`'s doc comment
+- **Closes:** `auth/P2`
+- **Root cause — not the one filed.** The finding says an in-flight request survives the logout
+  because `ensureLoaded`'s `inFlight` promise has no cancellation, and proposes an `AbortController`.
+  Traced this pass: on the Home dashboard **nothing creates `routineReviewStore`** — its only
+  consumers are `useRoutineWeeklyReview.ts:15` (mounted by `RoutineToDoListView`, not by any `home`
+  component; grep of `src/core/home/` finds no import) and `useSessionReset.ts:42`. So the store does
+  not exist until *Log out*: `useLogout.ts:11-13` awaits `POST /auth/logout`, calls `auth.logout()`,
+  `App.vue:104-109`'s watcher sees `isAuthenticated` fall and calls `resetAppState()`, whose line 42 is
+  `useRoutineReviewStore().resetStore()` — and **that `useRoutineReviewStore()` call is the store's
+  first creation**, which is exactly the moment `createAppPinia.ts:13-14` calls `ensureLoaded()`.
+  `ensureLoaded` (`:33-44`) has no signed-out guard, so `fetchSettings()` fires **after** the server
+  has cleared the session, answers 401, the interceptor's refresh attempt fails or is skipped (the
+  route is already `login`), and `console.error('ERROR: ', error)` prints. Then `resetStore()` runs on
+  a store that has just started loading. That is why the unit saw it "twice, deterministically" on a
+  logout it thought was merely "prompt": it is not a race, it happens on every logout from any page
+  that never visited `/routine-todo-list`. Two more things in the same eleven lines, both CLAUDE.md's
+  own `ensureLoaded` contract: the method **rejects** (no `catch`, and the plugin's call is "neither
+  awaited nor caught"), so besides the interceptor's line there is an unhandled rejection; and it has
+  no `isAuthenticated` guard, which the same CLAUDE.md paragraph names as the `activityOptionsStore`
+  pattern ("the load itself no-ops while signed out, so booting on the login screen fires no request").
+  Severity `polish` stands — no snackbar (401 is silent by design) and no user-visible state — but
+  the fix is smaller and different from the one proposed.
+- **Files:** `routineReviewStore.ts:33-44`; `useSessionReset.ts:10-36` (doc comment)
+- **What to change:** In `ensureLoaded`: `if (isLoaded.value || !useUserStore().isAuthenticated)
+  return` as the first line, and `.catch(() => {})` (or a caught `try/await`) so the promise the plugin
+  fires never rejects — `isLoaded` stays `false` on failure so the next call retries, which is the
+  behaviour `RoutineToDoListView.vue:199`'s `onMounted` call already relies on. Add one line to
+  `useSessionReset.ts`'s comment: *calling `useXStore()` here creates the store if nothing has yet, and
+  a store with `ensureLoaded()` loads on creation — so every store reset here must no-op its load while
+  signed out.* That sentence is the real fix; the guard is its first application.
+- **Do not change:** `resetAppState()`'s list (the other four stores expose no `ensureLoaded`, checked
+  by grep — the sentence above is what keeps that true). Do not add an `AbortController` — there is
+  no in-flight request to abort, and `resetStore()` already clears `inFlight`. Do not touch
+  `RoutineToDoListView.vue:199`'s `onMounted` call in this batch: it violates CLAUDE.md's "components
+  must not call it in `onMounted`" rule, but it is also what reloads the dismissal after a second
+  sign-in (the store's watcher resets and does not reload — CLAUDE.md says so), so removing it needs
+  the reload half added to the watcher first. Adjacent, out of scope, noted.
+- **Verification:** `P2`'s `Verify:` block: sign in, land on `/`, open the user menu, *Log out*, read
+  the console — no `401` on `/routine/settings`, no `AxiosError`. Then the positive check the finding
+  did not write: `/routine-todo-list` still shows (or hides) the weekly review card correctly after a
+  fresh sign-in, i.e. the guard did not swallow the signed-in load.
+- **Risk:** None. The guard is the same shape as the store one module over.
+
+## F58. The EN `$vuetify` block is a hand copy of Vuetify's `en` export, minus two keys
+
+> ✅ **FIXED 2026-09-15.** `common.en.ts` now has `import { en } from 'vuetify/locale'` and `$vuetify: en`;
+> the 180-line copy is gone. Verified through the running app's i18n that `$vuetify.timePicker.notAllowed`
+> and `$vuetify.command.search` resolve in EN, and typing letters into the masked *Length* field on
+> `/activity-history/manual` (the same `TimePicker` as the Track Time dialog) logs no `[intlify]` warning.
+> The SK side (`vuetifyLocale.sk.ts` → `import { sk }`) is still the framework's call, as this entry says.
+
+- **Scope:** app-side `src/locales/common.en.ts:43-223`
+- **Closes:** `home/A1` (+ the unfiled sibling key `command.search`)
+- **Root cause:** `common.en.ts` carries a 180-line `$vuetify: { … }` object. Diffed this pass against
+  `import { en } from 'vuetify/locale'` (the installed package, flattened): **124 keys upstream, 122 in
+  the copy, zero differing values, zero extra keys** — it is byte-identical except for
+  `timePicker.notAllowed` and `command.search`, which were added upstream after the copy was taken.
+  `createAppVuetify.ts:78` routes Vuetify's own lookups through vue-i18n (`createVueI18nAdapter`), so a
+  key the copy lacks is a console `[intlify] Not found '$vuetify.timePicker.notAllowed'` and a
+  screen-reader announcement that never happens — exactly what the mutation pass saw typing a letter
+  into `TrackTimeDialog`'s masked *Length* field. The SK side (`src/_common/_locales/vuetifyLocale.sk.ts`)
+  is complete against `sk`; only EN drifted, because only EN is app-side.
+- **Files:** `src/locales/common.en.ts` (the `$vuetify` key); `src/locales/EN.ts` only if the import
+  is placed there instead
+- **What to change:** Replace the object with `$vuetify: en` (or `{ ...en }` if any app override is ever
+  wanted — none exists today). A locale that cannot drift is the fix; adding the two keys by hand is
+  the same bug deferred to the next Vuetify bump. Consider the same for SK in the framework
+  (`vuetifyLocale.sk.ts` → `import { sk } from 'vuetify/locale'`) — but that is a `vue_framework`
+  change and **not this batch**; it is complete today, so nothing is broken there.
+- **Do not change:** `httpErrors`, `validation`, `export` in the same file — those mirror the
+  *framework's* Slovak `common`, not Vuetify, and are `F35`'s subject.
+- **Verification:** `home/A1`'s `Verify:` block — the Track Time dialog, a letter into *Length*, no
+  `[intlify]` warning. Then one `DataTable` footer and one `VDatePicker` in EN to confirm nothing else
+  changed (nothing should — the values are identical).
+- **Risk:** None beyond the import resolving — `vuetify/locale` is already imported by
+  `createAppVuetify.ts`'s adapter path, so the package entry exists.
 
 ## Closed verification items
 

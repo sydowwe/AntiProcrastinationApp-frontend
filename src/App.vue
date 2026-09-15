@@ -1,5 +1,16 @@
 <template>
 	<VApp>
+		<!-- First tab stop on every page: the framework's Navbar comes next in DOM order, so this is
+			 the only place a skip link can precede the sidebar toggle. `d-sr-only-focusable` keeps it
+			 out of sight until it has focus; the click is handled rather than left to the fragment so
+			 the router never sees a `#main-content` hash navigation. -->
+		<a
+			href="#main-content"
+			class="d-sr-only-focusable skip-link"
+			@click.prevent="focusMainContent"
+		>
+			{{ $t('general.skipToContent') }}
+		</a>
 		<Navbar>
 			<!-- No `v-if` on the bell: `AppTopBar` already renders this slot only when
 				 `auth.isAuthenticated`, so a second guard here would be a copy of the framework's,
@@ -8,7 +19,12 @@
 				<NotificationBell></NotificationBell>
 			</template>
 		</Navbar>
-		<VMain style="height: 100dvh; overflow: hidden">
+		<VMain
+			id="main-content"
+			ref="mainContent"
+			tabindex="-1"
+			style="height: 100dvh; overflow: hidden"
+		>
 			<VContainer
 				class="h-100 d-flex py-0 px-2 px-md-3 overflow-y-auto"
 				fluid
@@ -22,7 +38,7 @@
 	</VApp>
 </template>
 <script setup lang="ts">
-	import { watch } from 'vue'
+	import { useTemplateRef, watch } from 'vue'
 	import { useTheme } from 'vuetify/framework'
 	import { useI18n } from 'vue-i18n'
 	import Snackbar from '@/_common/component/feedback/Snackbar.vue'
@@ -64,6 +80,14 @@
 	const userStore = useUserStore()
 	const theme = useTheme()
 	const i18n = useI18n()
+
+	const mainContent = useTemplateRef<{ $el: HTMLElement }>('mainContent')
+
+	// `<main>` carries `tabindex="-1"` so it can take focus without joining the tab order; the next
+	// Tab then lands on the first control inside the view rather than back in the sidebar.
+	function focusMainContent() {
+		mainContent.value?.$el.focus()
+	}
 
 	function resolveTheme(preference: ThemePreference): 'light' | 'dark' {
 		if (preference === 'system') {
@@ -128,4 +152,24 @@
 		},
 	)
 </script>
-<style scoped></style>
+<style scoped>
+	/* Only the focused state needs styling — `d-sr-only-focusable` handles the hidden one. Fixed so
+	   it overlays the top bar instead of pushing the layout down for the one frame it is visible. */
+	.skip-link:focus {
+		position: fixed;
+		top: 8px;
+		left: 8px;
+		z-index: 10000;
+		padding: 8px 16px;
+		border-radius: 8px;
+		background: rgb(var(--v-theme-primary));
+		color: rgb(var(--v-theme-on-primary));
+		text-decoration: none;
+	}
+
+	/* Focus is moved here programmatically by the skip link; a focus ring around the whole main
+	   region would be noise. */
+	#main-content:focus {
+		outline: none;
+	}
+</style>

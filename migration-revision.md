@@ -84,21 +84,12 @@ on whether either module compares a client-derived day against a server-derived 
 `dayPlannerStore.datetimeToSlotIndex` was left alone deliberately and stays that way: zero callers, and it takes a `Date` whose instant-vs-calendar-day nature is
 undetermined. Resolve the ambiguity before giving it a caller, not after.
 
-### 5. `dateTime` mirror — a fourth instance of the shallow-spread trap, mirrored not fixed
+### 5. `dateTime` mirror — resolved 2026-09-15 by the deep merge (F35)
 
-`activityTracking` U3 adopted `_common/component/dateTime/DateRangePicker.vue` (and through it `MonthYearPicker.vue`) for the dashboards' custom range. Both resolve
-~24 keys under `dateTime` — `mode`, `range`, `duration`, `anchor`, `unit`, `quantity`, `fromStart`, `toEnd`, `daysPlural`, `weeksPlural`, `dateRangeExceedsLimit`,
-`startDateBeforeEndDate` and the twelve month names — **none** of which this app had. `src/locales/common.{sk,en}.ts` owns the `dateTime` namespace and is spread after
-the framework's, so its `dateTime` replaced the framework's wholesale: every one of those keys rendered as a raw `dateTime.mode` string in this app, and had done since
-before U3 — nobody had mounted either component here.
-
-Mirrored by hand into `src/locales/common.{sk,en}.ts` (EN needs it independently: `EN.ts` does not spread the framework's Slovak-only `common` at all). Two knowing
-divergences from the framework text: `dateRangeExceedsLimit` drops the hardcoded "31 dní" because `maxDays` is a prop and this module passes 366.
-
-**The real fix is not a mirror.** Six namespaces collide between `common.sk.ts` and `_common/_locales/common.sk.ts`, and every framework component adopted from now on
-pays this tax again. The options are a deep merge in `SK.ts`/`EN.ts` (the `user` namespace already does exactly this, explicitly, at the bottom of `SK.ts`), or moving
-this app's colliding keys out of the framework-owned namespaces. Either is a contained change to two files and would close this permanently; it was out of scope for U3
-and is not urgent, but it is now the fourth time this has cost someone an afternoon.
+The mirror leaked a fifth time (`dateTime.secondsShort`, `general.from`/`general.to`) and was replaced by what this entry asked for: `general`, `dateTime` and
+`controls` are now merged explicitly at the bottom of `SK.ts` and `EN.ts` the way `user` always was, the mirrored blocks are deleted from
+`src/locales/common.{sk,en}.ts`, and only this app's deliberate rewordings remain there. See the header comments in those four files and CLAUDE.md's
+*Localization* bullets. Kept in the ledger below.
 
 ### 6. Orphaned enum locale blocks in `leisure`
 
@@ -333,6 +324,20 @@ boundary (same rule that lets `ModuleSettingsSection.vue` link by name). When th
 auth store persists to **localStorage** — that is what makes the redirect fire on a cold open of `/login` rather than
 only on an in-app navigation.
 
+### 14. The framework ships no not-found view, so the catch-all route's page is app-side
+
+**Local file kept:** `src/core/home/view/NotFoundView.vue` — a `VAlert` with a localized title/text and a *Back to home* button, the same shape as the
+per-entity not-found states in `TodoListView.vue` and `PlannerTaskLinkView.vue`. Its strings are the app's `notFound.*` and `general.backHome` in
+`src/locales/common.{sk,en}.ts`.
+
+**The gap.** Until F20 (2026-09-15) `src/` had no `pathMatch` route at all: any unmatched URL rendered the shell with an empty `<RouterView>` and a
+`[Vue Router warn]`. The route registration is app-side by nature (it must be the last entry of *this* app's route array), but the view has nothing
+app-specific in it — every app in the family wants the same page, and the `{ name: 'home' }` target is a route name every app declares.
+
+**The upstream ask:** `_common/component/NotFoundView.vue` (or `_common/view/`), with its strings under the framework's `common` — `general.backHome` and a
+new `notFound` namespace, mirrored into EN as well. When it lands, repoint the import in `src/router.ts`, delete the local file and the two app-side
+strings, and note it in `_common/docs/components.md`.
+
 ---
 
 ## Lessons kept
@@ -347,10 +352,11 @@ Five things the resolved entries taught that are not obvious from the code, and 
   ref-ness that vue-tsc's template unwrapping keys off, so every consumer of a slot carrying that ref errors once per field. Cast to `as Ref<T>` instead — equally
   dishonest about `UnwrapRef`, but it preserves what the template checker needs. This bit twice: `FilterPanel`'s `draft` (53 errors) and `TableGrid`'s `snapshots`
   (5). (R12, R13.)
-- **Framework strings under a colliding namespace never reach i18n.** `src/locales/{SK,EN}.ts` spread shallowly, so this app's `common`, `general`, `validation` and
-  three others _replace_ the framework's wholesale. Adopting framework code that resolves `t('general.something')` means mirroring that key into
-  `src/locales/common.{sk,en}.ts` by hand, or users see the raw key. Caught **four** times (`validation`, `general.undoSuccess`, `calendar`, and now the whole
-  `dateTime` picker vocabulary) and it will happen again. (R5, R6, R11, U3.)
+- **Framework strings under a colliding namespace never reach i18n — unless the namespace is merged.** `src/locales/{SK,EN}.ts` spread shallowly, so a
+  colliding namespace _replaces_ the framework's wholesale. The hand-written mirror that stood in for a merge leaked a raw key **five** times
+  (`validation`, `general.undoSuccess`, `calendar`, the `dateTime` picker vocabulary, `dateTime.secondsShort`) before `general`/`dateTime`/`controls` were
+  merged the way `user` always was. The remaining wholesale replacements (`navigation`, `app`, and EN's `httpErrors`/`validation`/`calendar`/`iconPicker`)
+  are deliberate; if one falls behind, add it to the merge, do not mirror. (R5, R6, R11, U3, F35.)
 - **Grep with word boundaries before declaring a symbol dead — or live.** Two files in the leftovers audit were about to be promoted into the framework on the
   strength of substring matches (`ExperienceType` matching `useActivityExperienceTypeApi`; `DateOnly` matching a trailing comment). Both were unreferenced. (R14.)
 - **An entry's stated diagnosis can be wrong in a way that makes it look unfixable.** §5 recorded "the framework exposes only `dateRange`, widen the expose" — but
@@ -383,6 +389,7 @@ Removed from this file 2026-08-19. Full text: `git log -p -- migration-revision.
 | R14                   | the `src/` leftovers audit — dead code deleted, app-domain code moved into modules         | done 2026-08-10                 |
 | R17                   | `User.timezone` kept equal to the browser's zone; the contract written into framework docs | done 2026-08-18                 |
 | R18                   | hydration moved onto the login path and onto boot (`hydrateOnBoot`)                        | done 2026-08-18                 |
+| §5 _(the second one)_ | the `dateTime`/`general`/`controls` mirror → deep merge in `SK.ts`/`EN.ts`                 | F35, 2026-09-15                 |
 | R19                   | registration terms/privacy linked through app-registered routes (`legalRoutes`)            | done 2026-08-18                 |
 | R20                   | `CalendarGrid` honours `firstDayOfWeek`                                                    | done 2026-08-18                 |
 | R21                   | account deletion asks for intent before identity                                           | done 2026-08-18                 |

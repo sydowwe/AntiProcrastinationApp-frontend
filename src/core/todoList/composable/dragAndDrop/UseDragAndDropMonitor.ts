@@ -21,7 +21,6 @@ export function useDragAndDropMonitor() {
 					globalIsDragging.value = true
 					globalDraggedActivityId.value = source.data.activityId as number
 					globalDraggedSourceListId.value = source.data.listId as number
-					console.log('Global drag start:', source.data)
 				}
 			},
 			onDrop: ({ source, location }) => {

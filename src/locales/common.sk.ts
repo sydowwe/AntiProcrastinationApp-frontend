@@ -1,6 +1,8 @@
 // App-wide namespaces not owned by a single core module — the app-level counterpart of
-// @/_common/_locales/common.sk.ts. Spread after the framework's `common` in the SK aggregator so
-// this app's `navigation`/`general`/`dateTime`/`controls` win the collision (see SK.ts).
+// @/_common/_locales/common.sk.ts. How the two meet is decided in `SK.ts`: `general`, `dateTime`
+// and `controls` are DEEP-MERGED (framework keys survive, this app wins collisions), so a key only
+// needs to be here when this app wants a different wording or the framework has no such key.
+// `navigation` and `app` replace the framework's wholesale — its copies are another app's.
 const common = {
 	navigation: {
 		home: `Domov`,
@@ -50,14 +52,10 @@ const common = {
 	app: {
 		brandName: `Adhd time organizer`,
 	},
+	// Deep-merged over the framework's `general` in `SK.ts` — only this app's own keys and its
+	// deliberate rewordings live here; anything identical to the framework's copy was deleted (F35).
 	general: {
-		// Used by the framework's TableHeaderComposable; the app's `general` namespace replaces the
-		// framework's wholesale (see the note at the top of SK.ts), so it has to be repeated here.
-		actions: `Akcie`,
 		or: `Alebo`,
-		// Joins the two legal links in the framework's registration checkbox — same reason as
-		// `actions` above: this namespace replaces the framework's wholesale.
-		and: `a`,
 		please: `Prosím`,
 		close: `Zavrieť`,
 		create: `Vytvoriť`,
@@ -85,10 +83,6 @@ const common = {
 		show: `Zobraziť`,
 		confirm: `Potvrdiť`,
 		new: `Nový`,
-		// Rovnaký prípad ako `actions` vyššie: frameworkové `ColorPicker` a `MyPdfViewer` prekladajú
-		// `general.none`, ale tento namespace nahrádza ten frameworkový celý, takže bez tejto kópie
-		// sa vykreslí holý kľúč aj v slovenčine.
-		none: `Žiadne`,
 		update: `Aktualizovať`,
 		optional: `Voliteľné`,
 		search: `Hľadať`,
@@ -97,33 +91,17 @@ const common = {
 		addToPlanner: `Pridať do plánovača`,
 		logTime: `Zaznamenať čas`,
 		moveToList: `Presunúť do zoznamu`,
-		// Same story as `actions` above: the framework's `general.backToList` (reminders' definition
-		// detail, and now the scheduler's job/run detail views) is wholesale-replaced by this
-		// namespace, so it has to be repeated here too — otherwise it silently falls back to the EN
-		// string via `fallbackLocale`, showing English text on an SK page. Discovered while adding
-		// the scheduler EN locale (S2), which is what first gave this key an EN counterpart to fall
-		// back to.
-		backToList: `Späť na zoznam`,
-		// Used by the framework's useUndoStack. The app's `general` namespace replaces the framework's
-		// wholesale (see the note at the top of SK.ts), so its copy of this key never reaches i18n.
-		undoSuccess: `{description} bolo vrátené späť`,
-		// Tá istá kolízia znova: framework má `general.undo`, ale tento namespace ho nahrádza celý.
-		undo: `Vrátiť späť`,
 		nothingToUndo: `Nie je čo vrátiť späť`,
-		// Same story: BasicTable's and TableGrid's built-in delete dialogs resolve these two, and so does
-		// every app-side `useDialog().confirm` for a delete. Without the mirror they render the raw key —
-		// which is what every table in the app did until this was noticed (migration-revision.md R5/R6/R11
-		// are the same defect three times over).
-		deleteConfirmationTitle: `Potvrdenie vymazania`,
-		deleteConfirmationText: `Ste si istý, že chcete vymazať {name}?`,
-		// Same story again, with a twist: `general.retry` (the retry button on the scheduler's two
-		// detail pages, S1) and `general.forbidden` (their non-admin card) existed in NO locale at all
-		// — `retry` is only defined under the framework's `notifications` namespace, and the
-		// framework's `general.forbidden` is wholesale-replaced by this one. The retry button has been
-		// rendering the raw key `GENERAL.RETRY` since S1 shipped; found while browser-verifying S4.
-		retry: `Skúsiť znova`,
-		forbidden: `Nemáte oprávnenie na zobrazenie tejto stránky.`,
+		// This app's wording; the framework says "Začiatok" (a noun — this is the timer's verb).
 		start: `Začať`,
+		// The skip link in `App.vue` — the first tab stop on every page.
+		skipToContent: `Preskočiť na obsah`,
+		backHome: `Späť domov`,
+	},
+	// The catch-all route (`src/router.ts`) — rendered for any URL no module claims.
+	notFound: {
+		title: `Stránka sa nenašla`,
+		text: `Táto adresa nevedie nikam. Skontrolujte odkaz alebo sa vráťte na domovskú stránku.`,
 	},
 	dateTime: {
 		when: `Kedy`,
@@ -146,42 +124,14 @@ const common = {
 		dateRange: `Rozmedzie dátumov`,
 		hoursBack: `Hodín späť`,
 		today: `Dnes`,
-		// --- Mirrored from `_common/_locales/common.sk.ts` ---
-		// `SK.ts` spreads this app's `dateTime` AFTER the framework's, and the spread is shallow, so
-		// this namespace replaces the framework's wholesale rather than merging with it. Every key
-		// below is one the framework's own `DateRangePicker` / `MonthYearPicker` resolve; without the
-		// mirror they render as raw `dateTime.mode` strings in this app. Adopting either component was
-		// what surfaced it (activityTracking U3) — the same omission as `migration-revision.md` R5/R6/R11.
-		mode: `Režim`,
-		range: `Rozsah`,
-		duration: `Trvanie`,
-		anchor: `Kotviaci bod`,
-		unit: `Jednotka`,
-		quantity: `Počet`,
-		fromStart: `Od začiatku`,
-		toEnd: `Do konca`,
-		daysPlural: `Dni`,
-		weeksPlural: `Týždne`,
-		hoursShort: `h`,
-		minutesShort: `min`,
+		// Deep-merged over the framework's `dateTime` in `SK.ts` (F35) — the keys the framework's
+		// `DateRangePicker` / `MonthYearPicker` / `TimeDisplay` / `TimeRangePicker` resolve come from
+		// its own file now. Only this app's deliberate rewordings stay:
 		switchToTimeRange: `Prepnúť na rozsah času`,
 		switchToDuration: `Prepnúť na dĺžku`,
 		// Deliberately not the framework's wording, which hardcodes "31 dní" — `maxDays` is a prop and
 		// this app passes 366 for the activity dashboards.
 		dateRangeExceedsLimit: `Zvolený rozsah dátumov je príliš dlhý`,
-		startDateBeforeEndDate: `Dátum od musí byť pred dátumom do`,
-		january: `Január`,
-		february: `Február`,
-		march: `Marec`,
-		april: `Apríl`,
-		may: `Máj`,
-		june: `Jún`,
-		july: `Júl`,
-		august: `August`,
-		september: `September`,
-		october: `Október`,
-		november: `November`,
-		december: `December`,
 	},
 	controls: {
 		start: `Štart`,
