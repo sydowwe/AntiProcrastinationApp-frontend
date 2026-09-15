@@ -107,10 +107,13 @@ export function projectFilterUrlState(): TableUrlStateOptions<ActivityProjectPro
 export function memoryAnchorFilterUrlState(): TableUrlStateOptions<MemoryAnchorFilter> {
 	return {
 		defaultFilter: new MemoryAnchorFilter(),
+		// The URL keys stay `year`/`month` while the wire fields are `anchorYear`/`anchorMonth` (the
+		// server's names) — this map is the only place the two spellings meet, and it is what keeps
+		// existing `?year=`/`?month=` bookmarks working.
 		filterToParams: filter => ({
 			activityName: encodeText(filter.activityName),
-			year: encodeNumber(filter.year),
-			month: encodeNumber(filter.month),
+			year: encodeNumber(filter.anchorYear),
+			month: encodeNumber(filter.anchorMonth),
 			minRating: encodeNumber(filter.minRating),
 		}),
 		paramsToFilter: params =>

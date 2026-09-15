@@ -35,7 +35,7 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.year"
+						v-model="draft.anchorYear"
 						:label="$t('leisure.fields.anchorYear')"
 						:min="2000"
 						:max="2200"
@@ -43,7 +43,7 @@
 						hideDetails
 					/>
 					<VNumberInput
-						v-model="draft.month"
+						v-model="draft.anchorMonth"
 						:label="$t('leisure.fields.anchorMonth')"
 						:min="1"
 						:max="12"
@@ -66,7 +66,7 @@
 				v-if="viewMode === 'timeline'"
 				:items="timelineItems"
 				:loading="timelineLoading"
-				:monthFilter="filter?.month ?? null"
+				:monthFilter="filter?.anchorMonth ?? null"
 				v-model:year="timelineYear"
 				@onReload="reloadTimeline"
 			/>
@@ -131,9 +131,13 @@
 	async function loadTimeline() {
 		timelineLoading.value = true
 		try {
-			// `year` and `month` are stripped from the request: the timeline navigates years itself and
-			// narrows months client-side, so sending them would leave it with only one month to draw.
-			const timelineFilter = Object.assign(new MemoryAnchorFilter(), filter.value, { year: null, month: null })
+			// `anchorYear` and `anchorMonth` are stripped from the request: the timeline navigates years
+			// itself and narrows months client-side, so sending them would leave it with only one month
+			// to draw. These are the wire field names — the URL keys are still `year`/`month`.
+			const timelineFilter = Object.assign(new MemoryAnchorFilter(), filter.value, {
+				anchorYear: null,
+				anchorMonth: null,
+			})
 			const request = new FilteredTableRequest<MemoryAnchorFilter>(
 				TIMELINE_PAGE_SIZE,
 				1,
@@ -152,13 +156,14 @@
 		void loadTimeline()
 	}
 
-	// The year navigator writes the filter's own `year`, so it is bookmarkable through the existing URL
-	// param, its chip honestly describes what is on screen, and switching back to the table lands on the
-	// same year. Reassigned rather than mutated so `hasAny()` survives on a real MemoryAnchorFilter.
+	// The year navigator writes the filter's own `anchorYear`, so it is bookmarkable through the existing
+	// `?year=` URL param, its chip honestly describes what is on screen, and switching back to the table
+	// lands on the same year. Reassigned rather than mutated so `hasAny()` survives on a real
+	// MemoryAnchorFilter.
 	const timelineYear = computed<number | null>({
-		get: () => filter.value?.year ?? null,
+		get: () => filter.value?.anchorYear ?? null,
 		set: value => {
-			filter.value = Object.assign(new MemoryAnchorFilter(), filter.value, { year: value })
+			filter.value = Object.assign(new MemoryAnchorFilter(), filter.value, { anchorYear: value })
 		},
 	})
 
@@ -175,8 +180,8 @@
 
 	const chipFormatters: ChipFormatters<MemoryAnchorFilter> = {
 		activityName: textChip('leisure.fields.activity', 'magnifying-glass'),
-		year: textChip('leisure.fields.anchorYear', 'calendar'),
-		month: textChip('leisure.fields.anchorMonth', 'calendar-days'),
+		anchorYear: textChip('leisure.fields.anchorYear', 'calendar'),
+		anchorMonth: textChip('leisure.fields.anchorMonth', 'calendar-days'),
 		minRating: v => (v != null ? { label: `${i18n.t('leisure.fields.rating')} ≥ ${v}`, icon: 'star' } : null),
 	}
 </script>
