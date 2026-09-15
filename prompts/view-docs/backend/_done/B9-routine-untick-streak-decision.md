@@ -1,5 +1,57 @@
 # B9 — should un-ticking a routine item inside the same cycle walk its streak back?
 
+> ## ✅ Answered: option 2, shipped — 2026-09-15
+>
+> Un-ticking inside the same cycle walks the streak back. Landed in API `4ab3710` (*"Walk a routine item's
+> streak back on an un-tick inside the same cycle, and break it on a miss"*), with a follow-up on the planner
+> event handler.
+>
+> **What changed.** `RoutineTodoList.BestStreakBeforeScore` (new nullable column) is the "scored this cycle"
+> mark, replacing the old `AlreadyCountedThisCycle` derivation: `null` until the item scores the open cycle;
+> after the scoring tick it holds `BestStreak` as it stood *before* that tick. `RoutineResetService.UpdateItemStreak`
+> (`RoutineResetService.cs:379`) now runs in both directions:
+>
+> - Tick, not yet scored: `BestStreakBeforeScore = BestStreak; Streak++; BestStreak = max(...)`.
+>   `LastCompletedAt` still moves on every completing tick ("last completed", not "last scored").
+> - Tick, already scored: no-op on the counters, as before.
+> - Un-tick, mark set: `Streak--` (floored at 0), `BestStreak = max(bestBefore, Streak)`, mark cleared.
+>   Un-tick/re-tick is net zero and the record is restored — the "awkward half" is handled without a history
+>   recompute because the pre-score record is captured at score time.
+> - Un-tick, mark null: the tick belonged to a cycle since closed — nothing to give back, no change.
+>
+> Every reset path clears the mark via one `OpenNewCycle` helper shared by both `TryReset` overloads, so a
+> score whose cycle has closed is out of reach. The column exists because after a tick `BestStreak == Streak`
+> reads identically whether the tick set the record or merely reached it.
+>
+> **Found on the way.** Nothing had ever zeroed `RoutineTodoList.Streak` — an item's streak was a lifetime
+> count, and the `BestStreak > Streak` the seeders assume could never occur. `OpenNewCycle` now zeroes the
+> item streak when the item reaches the boundary undone (the record stands); done keeps what the tick earned.
+> No threshold/grace/freeze at item level — those stay period concepts.
+>
+> **Reach.** Both toggle endpoints; the step toggle now fires the hook on either `IsDone` transition (un-ticking
+> a step of a done item never reached the streak before). `PlannerTaskIsDoneChangedEventHandler` calls
+> `UpdateItemStreak` in both directions and now loads the period and runs the lazy single-item `CheckGrace` +
+> `TryReset` first, like the toggle endpoints' `BeforeToggle` — otherwise a planner un-tick landing after the
+> period elapsed but before any reset had run would walk back a closed cycle's score.
+> `ActivityTimeRecordedEventHandler` still completes an item without loading its period, which is why the mark
+> lives on the item rather than being derived against `LastResetAt`. The migration backfills the mark on rows
+> that had scored under the old derivation, carrying the current record.
+>
+> **Tests.** `RoutineToggleIsDoneTests`: `Toggle_UntickInsideTheSameCycle_GivesTheStreakBack`,
+> `Toggle_UntickAfterTheCycleClosed_LeavesTheEarlierScoreAlone`, `Toggle_UntickThenRetick_DoesNotInflateTheItemStreak`,
+> `Toggle_ForceTrueTwiceOnACompleteCountedItem_DoesNotInflateTheItemStreak`,
+> `Toggle_OnAnElapsedPeriod_BreaksTheStreakOfAnItemLeftUndone`,
+> `PlannerHandler_OnAnElapsedPeriod_ResetsTheItemBeforeApplyingTheChange`, plus the reset-service unit tests.
+>
+> **For the client: nothing.** Render `streak` / `bestStreak` as sent; `BestStreakBeforeScore` is internal and
+> not exposed. The "Meditation" fixture drift (6/2026-09-10 vs seeded 5/2026-09-09) is corrected by a reseed,
+> and going forward a stray click undone in the same cycle leaves no trace. The `docs/e2eTestSeed.md` caveat
+> option 1 would have needed is not needed.
+>
+> ---
+>
+> *Original ask below, kept as written.*
+
 > A **decision**, not a defect report. Nothing here is broken against its own design; the question is whether
 > the design is what you want. Nothing is blocked on the answer.
 >
