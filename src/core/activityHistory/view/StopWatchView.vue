@@ -63,6 +63,7 @@
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
+	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
 
 	const { activityId = null, compact = false } = defineProps<{
 		activityId?: number | null
@@ -79,6 +80,7 @@
 	const { saveActivityToHistory } = useSaveActivityToHistory()
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
+	const { sessionLengthFromMs, discardIfTooShort } = useSessionLength()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
@@ -174,10 +176,16 @@
 		if (current === null || !current.ended || finishing) return
 		finishing = true
 		try {
-			const length = TimePrecise.fromSeconds(Math.floor(elapsedMs.value / 1000)).toTimeLength
+			const length = sessionLengthFromMs(elapsedMs.value)
 			const startTimestamp = new Date(current.startedAtEpoch)
 			const name = current.activityName
 			const targetActivityId = current.activityId
+			// Before the embedder branch too: a session that rounds to nothing has nothing to hand
+			// anyone. Same branch, same wording, in all three capture views.
+			if (discardIfTooShort(length)) {
+				store.clearSession()
+				return
+			}
 			if (activityId) {
 				// Pinned by the embedder: it does the recording, so hand the numbers back. Cleared
 				// first, so the dialog around us sees the session is over before it reads it.

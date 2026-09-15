@@ -90,6 +90,7 @@
 		type PomodoroSession,
 	} from '@/core/activityHistory/store/runningTimerStore.ts'
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
+	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
 
 	const {
 		activityId = null,
@@ -116,6 +117,7 @@
 	const { saveActivityToHistory } = useSaveActivityToHistory()
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
+	const { sessionLengthFromMs, discardIfTooShort } = useSessionLength()
 
 	const activityPanel = ref<InstanceType<typeof PomodoroActivityPanel>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
@@ -257,9 +259,16 @@
 		if (current === null || !current.ended || finishing) return
 		finishing = true
 		try {
-			const timeSpent = Time.fromSeconds(Math.floor(current.focusElapsedMs / 1000))
+			const timeSpent = sessionLengthFromMs(current.focusElapsedMs)
 			const startTimestamp = new Date(current.startedAtEpoch)
 			const name = current.activityName
+			// Before everything else, embedders included: a session that rounds to nothing has nothing
+			// to hand anyone, and the save dialog would offer "done for ?" over a length the API now
+			// rejects. Same branch, same wording, in all three capture views.
+			if (discardIfTooShort(timeSpent)) {
+				store.clearSession()
+				return
+			}
 			if (activityId) {
 				store.clearSession()
 				emit('done', startTimestamp, timeSpent)
@@ -284,14 +293,14 @@
 	// if one was picked and any rest time accrued — the rest activity for the rest.
 	function saveActivity(current: PomodoroSession, startTimestamp: Date, timeSpent: Time) {
 		void saveActivityToHistory(current.activityId, current.activityName, startTimestamp, timeSpent)
-		if (current.restActivityId != null && current.restElapsedMs > 0) {
-			void saveActivityToHistory(
-				current.restActivityId,
-				current.restActivityName,
-				startTimestamp,
-				Time.fromSeconds(Math.floor(current.restElapsedMs / 1000)),
-			)
-		}
+		if (current.restActivityId == null) return
+		// The rest record is the fourth zero-length path: `restElapsedMs > 0` let a 20-second break
+		// through, which rounded to `{0,0}` and is a 400 now. It is silent on purpose — the focus
+		// record is what the user confirmed, and a snackbar about the break they did not ask to log
+		// would only confuse it.
+		const restSpent = sessionLengthFromMs(current.restElapsedMs)
+		if (!restSpent.isNotZero()) return
+		void saveActivityToHistory(current.restActivityId, current.restActivityName, startTimestamp, restSpent)
 	}
 
 	function resetPickersToDefault() {

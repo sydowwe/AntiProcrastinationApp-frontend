@@ -79,6 +79,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
+	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
 
 	const {
 		activityId = null,
@@ -105,6 +106,7 @@
 	const { saveActivityToHistory } = useSaveActivityToHistory()
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
+	const { sessionLengthFromMs, discardIfTooShort } = useSessionLength()
 
 	const activitySelectionForm = ref<InstanceType<typeof ActivitySelectionForm>>()
 
@@ -213,7 +215,9 @@
 			// countdown runs and a freshly mounted one reports null until its options are back. The
 			// session has carried both the id and the name since the moment Start was pressed.
 			const targetActivityId = current.activityId
-			if (length.getInMinutes <= 0) {
+			// This view had the discard already; what it did not have was a word for the user. Same
+			// branch, same wording, in all three capture views.
+			if (discardIfTooShort(length)) {
 				store.clearSession()
 				return
 			}
@@ -237,11 +241,16 @@
 		}
 	}
 
-	/** How much of the set duration was actually used — the whole of it once it has run out. */
+	/**
+	 * How much of the set duration was actually used — the whole of it once it has run out, since
+	 * `remainingMs` is then 0. Taken off the session's own milliseconds rather than by subtracting one
+	 * rounded `Time` from another, so this view rounds the way the other two do (`useSessionLength`)
+	 * instead of rounding the *remainder* and inheriting the result.
+	 */
 	function timePassed() {
-		return timeRemaining.value === 0
-			? initialTime.value
-			: initialTime.value.subtract(timeRemainingObject.value.toTimeLength)
+		const current = session.value
+		if (current === null) return new Time()
+		return sessionLengthFromMs(current.durationMs - store.remainingMs)
 	}
 
 	function applyPreset(preset: TimerPreset) {

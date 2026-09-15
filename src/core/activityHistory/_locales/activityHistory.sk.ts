@@ -16,6 +16,9 @@ const activityHistory = {
 		taskDoneFor: `Úloha trvala {duration}`,
 		historyUpdated: `Záznam histórie bol upravený`,
 		historyUpdateFailed: `Úprava záznamu histórie zlyhala`,
+		// Informácia, nie chyba — relácia kratšia ako pol minúty sa zaokrúhli na nulu a taká sa
+		// nedá zaznamenať (pozri useSessionLength.ts).
+		sessionTooShortToLog: `Relácia bola príliš krátka na zaznamenanie — nezapísali sme nič`,
 		// Vloží sa do general.deleteConfirmationText ("Ste si istý, že chcete vymazať {name}?"), takže
 		// musí byť v akuzatíve.
 		recordNounAccusative: `tento záznam aktivity`,

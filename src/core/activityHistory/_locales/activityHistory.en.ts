@@ -16,6 +16,9 @@ const activityHistory = {
 		taskDoneFor: `Task done for {duration}`,
 		historyUpdated: `Activity history updated`,
 		historyUpdateFailed: `Failed to update activity history`,
+		// Information, not an error — a session under half a minute rounds to zero and cannot be
+		// recorded (see useSessionLength.ts).
+		sessionTooShortToLog: `That session was too short to record — nothing was saved`,
 		// Plugged into general.deleteConfirmationText ("Are you sure you want to delete {name}?").
 		recordNounAccusative: `this activity history record`,
 
