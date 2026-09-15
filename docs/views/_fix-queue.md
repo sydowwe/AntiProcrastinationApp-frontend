@@ -33,7 +33,7 @@
 | F15 | Distinct-entries filter, page and sort are not in the URL | app | `tracking-settings/B3` | med |
 | F16 | Settings header row clips its labels at 1440 px | app | `tracking-settings/B4` | low |
 | F17 | CLAUDE.md's "every settings page" sentence reads wider than `moduleSettingsLinks.ts` means | docs only | `tracking-settings/P1` | trivial |
-| F18 | The mount-time combobox rebuild writes back into the activities filter — wiping URL ids and double-firing the grid | app | `activity-settings/B2`, `B3` (+ retests `U4`) | med |
+| F18 | ✅ **FIXED 2026-09-15** — the mount-time combobox rebuild wrote back into the activities filter, wiping URL ids and double-firing the grid; the two deep watchers are replaced by `@update:modelValue` handlers, so a rebuild is now a pure derivation, and an empty selection normalises to `null`. Verified live including the tab-switch case; **`U4` retested and closed with it**. Body in the log | app | `activity-settings/B2`, `B3` (+ closed `U4`) | med |
 | F19 | Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it (**grown**: the generic dialog's raw-id copy, `B8`, goes with the generic dialog) | app | `activity-settings/B7`, `A1`, **`B8`** (+ `U2`, now browser-confirmed) | med |
 | F20 | ✅ **FIXED 2026-09-15** (`NotFoundView` app-side, `migration-revision.md` §14) — No catch-all route — any unknown URL renders a blank main area | app | `activity-settings/B5` | low |
 | F21 | Categories table's "Role" column is a comma-joined aggregate presented as a single value | app | `activity-settings/P1` | low |
@@ -74,14 +74,14 @@
 | F57 | The Scheduled Days picker is clipped to Mon–Fri in the 400 px template panel — `DayOfWeekPicker` cannot wrap and the panel is the only place it renders without a dialog's width | app (`TaskPlannerDayTemplateDetailsForm.vue`) | `planner-templates/P1` | trivial |
 | F58 | ✅ **FIXED 2026-09-15** — The app's EN `$vuetify` block is a 180-line hand copy of Vuetify's own `en` export, byte-identical except for **two missing keys** (`timePicker.notAllowed`, `command.search`) — replace the copy with the import | app (`src/locales/common.en.ts`) | `home/A1` (+ one unfiled key) | trivial |
 | F59 | A skipped (`Cancelled`) task renders as done in `DayPlannerWidget` — row class, `aria-pressed` and the checkbox label all key off `isFinished`, which is `Completed ∨ Cancelled` by design; and the checkbox on a cancelled row advances it to `Completed` | app (`DayPlannerWidget.vue`, `useTodayPlan.ts`) | `home/B4` | low |
-| F60 | `MemoryAnchorFilter` sends `year`/`month`; the server reads `anchorYear`/`anchorMonth` — the same names the client's own create request already uses; rename the two wire fields, keep the URL keys | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts` + its test) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three are §13) | trivial |
+| F60 | ✅ **FIXED 2026-09-15** — `MemoryAnchorFilter` sent `year`/`month` while the server reads `anchorYear`/`anchorMonth`; the two wire fields are renamed and the URL keys stay `year`/`month`, so bookmarks survive. Verified live across seven filter URLs. The timeline's twelve-month check is still blocked by `F61`. Body in the log | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts`; its test needed **no** change, and that is the bookmark pin) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three closed with ~~§13~~ `B11`) | trivial |
 | F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` | low |
-| F62 | `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
+| F62 | ✅ **FIXED 2026-09-15** — `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
 | F63 | Four leisure request DTOs default their lookup ids to the sentinel `0` — the pickers render a literal "0", `requiredRule` accepts it, and an unset form reaches the server as `activityId: 0` | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/X3` (the `0` half), `leisure-bucket-anchors/B2` (+ one unfiled DTO) | low-med |
 | F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented | app (`useLeisurePicker.ts:250`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/X2`, `P2` | low |
 | F65 | Leisure's view-mode toggles, the timeline's year controls and the source/experienced chips carry a localized `:title` and no `aria-label` | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
-| F67 | A session that rounds to zero minutes is handled three different ways by the three capture views, and none of them tells the user: Pomodoro offers *"done for ?"* and writes a `{0,0}` row (201), Timer discards silently, Stopwatch does what Pomodoro does under 30 s (unfiled, source-certain) — one policy, applied in one place, before the save dialog | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low-med (decision: discard-with-message vs. save seconds) |
+| F67 | ✅ **FIXED AND VERIFIED 2026-09-15** (`useSessionLength.ts` — one rounding rule and one discard-with-message for all three capture views, plus the pomodoro's rest record; body in the log) — A session that rounds to zero minutes was handled three different ways by the three capture views, and none of them told the user | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low |
 | F68 | The manual-entry form fires one `POST` per click while the first is in flight, and never resets — so a second click is a `409` from the unique index, and so is *every* re-submit of an unchanged form after a success | app (`AddActivityManuallyView.vue`, `AddActivityManuallyForm.vue`) | `history-capture/B6` (was `U1`) | low |
 | F69 | Deleting a to-do item never confirms, whatever `askBeforeDelete` says — `useUndoableListCrud.deleteItem` was never one of P3's five sites and bypasses `useDeleteConfirmation`; the routine list shares the composable | app (`src/core/todoList/composable/useUndoableListCrud.ts` + its two views) + CLAUDE.md row | `todo-lists/B7` (+ the unfiled routine twin) | low |
 | F70 | *Move to list* has 404'd since the day it was written — the client calls `PATCH /move/{id}/{dest}` against a server route that has been `PATCH /{id}/move` + `{ destinationListId }` since 2026-05-15 | app (`todoListItemApi.ts:104-112`) | `todo-lists/B8` | trivial |
@@ -111,8 +111,12 @@
 71 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 20
 framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` is now a batch) ·
-15 escalations (11 open: §1, §6, §7, §8, §9, §10, §11, §12, §13, §14, §15 — §2 and §3 were settled by
-`todo-routine`'s round-4 API read and are struck below). **The fourteenth pass absorbed four mutation
+15 escalations (6 open: §1, §7, §8, §9, §10, §11 — §2, §3, §4, §5, §6, §12, §13, §14 and §15 are closed,
+their bodies moved to [`_fix-queue-log.md`](_fix-queue-log.md) → *Closed escalations*; §5 closed 2026-09-15
+when `B20` landed with no frontend half left; §12 closed 2026-09-15 when the anchor-eligible-activities
+endpoint landed and `F62` shipped; **§6 and §13 closed together 2026-09-15** when `B11` landed — one
+defect class on five grids, and no frontend half, because all five filter classes already carried the
+names the server adopted). **The fourteenth pass absorbed four mutation
 rounds** — units 4, 6 and 9 from the working tree, and unit 15's from `04c405e9`, which the thirteenth pass
 had scoped past: fourteen new findings became six app batches (`F67`–`F72`), two framework batches
 (`FW14`, `FW21`) and two escalations (§14, §15), and **two framework batches shrank by half without the
@@ -164,10 +168,11 @@ half is the part `ProjectsView` did not fix either). `F64` second: it is the pic
 state and closes a `blocker` with one expression. `F63` before either unit's **mutation pass** — that pass
 has to submit all four create forms and will otherwise file the literal-"0" defect four more times; it
 touches four DTOs and four forms, so run `npm run type-check` and do all four in one commit, not per
-finding. `F62` is a one-file edit and is honest about being half a fix: with §12 open, its "failed"
-branch is what every user sees on *Add*, so word that branch for a real failure, not for "you have no
-eligible activities". `F60` is independent, trivial, and should ship before §13 is written so the ask
-does not have to mention two fields the client owns. `F65` and `F66` are independent of everything.
+finding. `F62` **and §12 are both closed** (2026-09-15) — the endpoint landed and `F62`'s distinct failure
+alert shipped with it. **§6 and §13 are also both closed** (2026-09-15, `B11`) — all 27 filter fields
+are read now, with no client change. **`F60` is also fixed** (2026-09-15) — the one filter-field rename
+the client owned, since the server grew no `year`/`month` alias; its timeline verification step is the
+only thing still waiting on `F61`. `F65` and `F66` are independent of everything.
 `FW19` and `FW20` are two repos and independent of each other; `FW20` needs a **decision** before an
 edit (word-boundary matching keeps zero-config; opt-in changes every app's tables) and its verification
 must include the framework's own `JobRunHistory` and every `DataTable` consumer in this app, because
@@ -175,10 +180,14 @@ loosening the match can drop a column that was formatting correctly by luck. **D
 slots app-side as a workaround for `FW20`** unless the framework declines — the collision class is
 "any key containing `ratio`/`rate`/`vat`/`date`/`sum`/`fee`", and `elevated` contains `vat`.
 
-**The three new escalations gate three verifications, and nothing else.** `F63`'s *Verify* step 3
-(no request fires on an empty form) holds without them; `F62`'s pass condition needs §12; `F60`'s needs
-nothing (the server already reads the renamed fields); and `leisure-backlog-picker/X1`'s *Verify*
-block is unrunnable until §13 lands, because the filter it tests has never existed on the wire.
+**The three new escalations gated three verifications.** `F63`'s *Verify* step 3
+(no request fires on an empty form) holds without them; `F62`'s pass condition needed §12, and both
+closed together 2026-09-15; `F60`'s needed nothing (the server already read the renamed fields) and it
+is now fixed and verified, **except** its timeline step, which `F61` blocks, not an escalation; and
+`leisure-backlog-picker/X1`'s *Verify*
+block ~~is unrunnable until §13 lands, because the filter it tests has never existed on the wire~~ —
+**§13 landed 2026-09-15 (`B11`), so the block is now runnable as written** against a backend build
+carrying it.
 
 **Order among the unit-1/2 mutation-round batches.** `F8` is rewritten from the root and is now
 `med`, not `low-med`: read the whole batch — round 1's fix (a loading branch in `NowBar`) is still in
@@ -297,13 +306,14 @@ the commit so nobody reads that line as a regression.
 
 **`F24` and `F25` are independent of everything, and of each other** — different files, different causes,
 both in `src/core/todoList/`. `F24` needs the SK locale to verify; `F25` does not. **Both are now applied
-in the working tree** (sixth pass) and sit in *Awaiting retest*; the note about the uncommitted `todoList`
+in the working tree** (sixth pass) and were verified 2026-09-14 (the log's *Awaiting retest* table); the note about the uncommitted `todoList`
 files is moot — they are all uncommitted together now.
 
 **Order among the unit-2 batches.** `F19` before `FW5` is *verified* — once the Roles/Categories tables
 have their own `#actions` slot they no longer render `DataTable`'s default buttons, so `FW5` has to be
-checked on a table that still does (`/routine-settings`). `F18` first if `U4` is to be retested
-meaningfully, since it removes the competing request that is the only candidate explanation. `F20`,
+checked on a table that still does (`/routine-settings`). ~~`F18` first if `U4` is to be retested
+meaningfully, since it removes the competing request that is the only candidate explanation.~~ **Both
+done 2026-09-15** — `F18` landed and `U4` was retested in the same pass and closed. `F20`,
 `F21`, `F22`, `F23` are independent of everything.
 
 **Order within the new batches matters.** `F12` first — until the row paints, `F13`'s delete wiring and
@@ -676,7 +686,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `useTrackerDesktopMappingCrud`, `desktopActivityTrackingApi.ts:100,111`) and re-`load()`, the way the
   other eight `@onDelete` consumers do (`RoutineSettingsView.vue:163-179` is the model, including its
   409 handling). Do **not** add a second confirmation through `useDeleteConfirmation` — `BasicTable` has
-  already confirmed by the time `onDelete` fires, and Escalation §2 records that this bypass of the app's
+  already confirmed by the time `onDelete` fires, and retired Escalation §2 (log, *Closed escalations*) records that this bypass of the app's
   cascade rule is a framework question, not one to paper over per call site. ~~**Expect the dialog to stay
   open after the row is gone**~~ — that framework defect was fixed in `vue_framework` `98b92d0` (log,
   *Closed verification items*), and `X4` confirms it from this side: Confirm closes the dialog on both
@@ -800,59 +810,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   should stop filing it.
 - **Risk:** None.
 
-## F18. The mount-time combobox rebuild writes back into the activities filter
-
-- **Scope:** app-side `src/core/activity/composable/useActivityFilterDrafts.ts` (and the two `VCombobox`
-  bindings in `src/core/activity/view/ActivitySettingsView.vue:28-51`)
-- **Closes:** `activity-settings/B2`, `activity-settings/B3`. **Retests `U4`** — see *Needs verification*.
-- **Root cause — one mechanism, two symptoms, and the unit's guess was right on both.** Confirmed in
-  source: `refreshActivityCombos()` (`useActivityFilterDrafts.ts:65-76`) *reassigns* `roleCombobox` and
-  `categoryCombobox` from the filter, and the two deep watchers at `:189-209` write the combobox back
-  *into* the filter — `roleIds = vals.filter(…).map(v => v.id)`, which is `[]` when the combobox is
-  empty. So every programmatic rebuild is also a write, and the rebuild runs in `onMounted` (`:103-107`),
-  when `roleOptions` is still `[]` because `activityOptionsStore` is `persist: false` and its fetch has
-  not resolved (`activityOptionsStore.ts:320`).
-  - **B2:** with `?roleIds=11001`, `hydrateTabFromQuery` sets `[11001]`; the rebuild finds no option to
-    match (`buildCombobox` drops unmatched ids, `activitySettingsUrlParams.ts:99-102`), assigns `[]`,
-    the watcher writes `roleIds = []`, and the `activitiesFilter` deep watcher (`:167-173`) calls
-    `syncUrl()`, which omits an empty list — the param is gone before the first request. When the
-    options land, `watch([roleOptions, categoryOptions])` rebuilds from the already-wiped filter.
-  - **B3:** on a bare load the constructor default is `roleIds = null` (`ActivityFilter.ts:8`); the
-    same write turns it into `[]`. `useLookupTable.ts:41-52` guards its deep filter watch with a JSON
-    snapshot **for exactly this case** — its comment names "a combobox watcher re-deriving ids/name from
-    the same filter" — but `"roleIds":null` ≠ `"roleIds":[]`, so it fires `loadItems()` a second time,
-    aborting the `BasicTable` mount's request. The Roles/Categories tabs have no combobox and fire once,
-    which is the finding's own control.
-- **Files:** `useActivityFilterDrafts.ts:65-76,103-113,189-209`; `ActivitySettingsView.vue:28-51`;
-  reference only — `useLookupTable.ts:34-52`, `activitySettingsUrlParams.ts:93-105`,
-  `activityOptionsStore.ts:164-169,320`
-- **What to change:** Separate "the user edited the combobox" from "the code rebuilt the combobox" —
-  today both go through one deep watcher. Recommended: delete the two combobox watchers and move the
-  filter write into `@update:modelValue` handlers on the two `VCombobox`es (a function each,
-  `onRoleComboboxInput(vals)` / `onCategoryComboboxInput(vals)`, exported from the composable). A
-  component event fires for user input only, so `refreshActivityCombos()` becomes a pure derivation and
-  both symptoms go. In the same handlers, **normalise the empty case to `null`** (`ids.length ? ids :
-  null`) so clearing every chip returns the filter to its constructor shape and `useLookupTable`'s
-  snapshot sees no change. If the watcher shape must stay, a guard flag only works with
-  `{ flush: 'sync' }` on both watchers — the default pre-flush runs after a synchronous
-  `syncing = false` has already been reset — so say which in the commit.
-  **Do not** fix B2 by skipping the rebuild while the options are empty: a user with zero categories
-  would then never get their chips built, and it leaves the writer in place for the next caller.
-- **Do not change:** `useLookupTable`'s snapshot guard to treat `null` and `[]` as equal — that would
-  mask the writer rather than remove it, and the guard's comment would become a second wrong claim about
-  what the combobox does. Also leave the `watch(tab)` / `watch(activeTab)` mirrored early-exits alone;
-  the composable's header comment explains why they are load-bearing and this batch does not touch
-  tab switching.
-- **Verification:** `B2`'s `Verify:` block — `?roleIds=11001` survives a fresh `goto` **and** the outgoing
-  `POST /api/activity/grid` body carries `"roleIds":[11001]` (the rows will still not filter until
-  Escalation §6 lands; check the request, not the table). `B3`'s block — exactly one grid `POST` per
-  load, no `ERR_ABORTED`. Add: pick a role from the combobox, remove the chip, and confirm the request
-  body reads `"roleIds":null` (not `[]`) and the URL has no `roleIds`. Then re-drive `U4`'s sequence
-  (type a name, clear it) three times.
-- **Risk:** Low-medium. The watcher graph in this composable has a warning comment for a reason; the
-  change is confined to the two combobox edges, but run the tab-switch-with-filters-set case the comment
-  describes before and after.
-
 ## F19. Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it
 
 - **Scope:** app-side `src/core/activity/dto/response/Role.ts`, `Category.ts`,
@@ -888,7 +845,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
        server deliberately allows. The correct shape is CLAUDE.md's cascade rule: a delete that takes
        other rows' state with it **always confirms and says how many** — `usageCount` activities will
        lose their category. That is `useDeleteConfirmation`'s `cascades: true` branch, which the
-       generic `BasicTable` dialog cannot express (Escalation §2 is the same gap seen from
+       generic `BasicTable` dialog cannot express (retired Escalation §2, in the log, is the same gap seen from
        `/routine-settings`).
 - **Why `A1` is in this batch and not its own.** `ActivityTable.vue:122-131`'s trash `VIconBtn` has no
   `title`/`aria-label` (confirmed: Edit at `:99` and Archive at `:110` carry `:title`, the trash does
@@ -2231,31 +2188,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `isActive`, so it should already be right.
 - **Risk:** Low. One widget, one composable function; the SK copy for the chip needs the locale.
 
-## F60. `MemoryAnchorFilter` sends `year`/`month`; the server reads `anchorYear`/`anchorMonth`
-
-- **Scope:** app-side `src/core/leisure/dto/request/MemoryAnchorFilter.ts`,
-  `src/core/leisure/view/MemoryAnchorsView.vue:38,46`, `src/core/leisure/composable/leisureFilterUrlState.ts:112-121`
-  + `leisureFilterUrlState.test.ts`, `MemoryAnchorsView.vue:131-140` (`loadTimeline` strips the two by name)
-- **Closes:** the `year` and `month` cases of `leisure-bucket-anchors/B1`. The `minRating` case and
-  everything on `/leisure/bucket-list` are **§13** — the server has no field to read.
-- **Root cause:** The server's `MemoryAnchorFilterRequest` declares `AnchorMonth`, `AnchorYear`,
-  `ActivityId` and `GridMemoryAnchorEndpoint.ApplyCustomFiltering` (`:87-97`) filters on all three. The
-  client's filter class names the first two `year` and `month`; System.Text.Json drops the unknown
-  members and the request is answered unfiltered with a 200. The client's **create** request already
-  uses `anchorYear`/`anchorMonth` (the `B2` evidence body), the response DTO does, and the `periodKey`
-  sort expands to them — the filter is the client's own odd one out, which is why this pair is an app
-  batch and not part of the escalation.
-- **What to change:** Rename the two constructor fields (and `hasAny()`), the two `draft.*` bindings,
-  and the encode/decode lines. **Keep the URL keys `year` and `month`** — `leisureFilterUrlState.ts:112-113`
-  maps them explicitly, so bookmarks survive. Update the test's expectations at `:147`. `loadTimeline`'s
-  `Object.assign(…, { year: null, month: null })` must follow the rename or it will stop stripping them.
-- **Do not change:** `activityName` or `minRating` — neither exists server-side; renaming them
-  changes nothing and pre-empts §13's decision.
-- **Verification:** `B1`'s `Verify:` block, cases `?year=2025` (zero rows) and `?month=1` (zero rows)
-  only; the `minRating` case stays failing until §13. Then the Timeline toggle with a year filter set,
-  to confirm it still draws all twelve months.
-- **Risk:** None.
-
 ## F61. Ladder and Timeline ask for 500 rows against a cap of 200 — and a failure renders as "empty"
 
 - **Scope:** app-side `src/core/leisure/view/BucketListView.vue:142,149-160`,
@@ -2280,27 +2212,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   August 2026 shaded. Then `playwright-cli route "**/api/activity-bucket-list-profile/grid" --status=500`
   and toggle to Ladder: the error branch, not the empty copy.
 - **Risk:** Low. Two constants and two small template branches.
-
-## F62. `NewMemoryAnchorForm`'s mount fetch has no `try/finally` — any failure is a permanent spinner
-
-- **Scope:** app-side `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue:105-112`
-- **Closes:** the frontend half of `leisure-bucket-anchors/X3`. The endpoint itself is **§12** — it
-  does not exist.
-- **Root cause:** `onMounted` awaits `fetchAnchorEligibleActivities()` and only then sets
-  `loading.value = false` (`:110-111`). A rejection skips the second line: the Activity picker keeps its
-  spinner and its literal `0` (`F63`), and the designed fallback (`leisure.errors.noEligibleActivities`,
-  gated on `!loading && length === 0`) can never render. Today every call rejects, because the route the
-  client calls is not declared anywhere in the API — the 400 body (*"Value [anchor-eligible-activities]
-  is not valid for a [Int64] property"*) is the `/{id}` route swallowing the path, not an ordering bug.
-- **What to change:** `try { … } catch { failed.value = true } finally { loading.value = false }`.
-  Render a **distinct** error alert on `failed` — do not fall through to *"no eligible activities"*,
-  which would tell every user today that they have nothing to anchor when the truth is that the
-  server could not be asked. Keep the Backlog/Bucket-list links in both alerts.
-- **Do not change:** `memoryAnchorApi.ts:31-34` — the path is the contract §12 asks the server to honour.
-- **Verification:** `X3`'s `Verify:` block cannot pass until §12 lands; until then the check is the
-  negative: open *Add* on `/leisure/memory-anchors`, and within a second the spinner is gone and the
-  error alert is on screen. After §12: the picker lists real options.
-- **Risk:** None.
 
 ## F63. Four leisure request DTOs default their lookup ids to `0` — the pickers show "0", the required rule passes, and the server is asked to create with `activityId: 0`
 
@@ -2391,55 +2302,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Verification:** `P1`'s `Verify:` block on `/leisure/bucket-list`, then the same chip on
   `/leisure/backlog` and `/leisure/projects`.
 - **Risk:** None.
-
-## F67. A session that rounds to zero minutes is handled three ways by three views — and none of them tells the user
-
-- **Scope:** app-side `src/core/activityHistory/component/PomodoroTimerView.vue:255-281`,
-  `src/core/activityHistory/view/TimerView.vue:204-224`, `src/core/activityHistory/view/StopWatchView.vue:172-201`,
-  `src/core/activityHistory/_locales/activityHistory.{sk,en}.ts`
-- **Closes:** `history-capture/B4`, `history-capture/B5`, and the **unfiled stopwatch twin** (below)
-- **Root cause — confirmed in source, and it is one gap seen from three sides.** Every capture view ends
-  in a `finishSession()` that turns elapsed time into a `Time` (whole minutes) and hands it to
-  `SaveActivityBody`, and each one answers "what if that is zero?" differently:
-  | view | how it rounds | under a minute |
-  | --- | --- | --- |
-  | Timer (`:216-219`) | `initialTime − remaining.toTimeLength` — `TimePrecise.toTimeLength` rounds seconds to the nearest minute, so a 10-minute timer stopped at 0:15 is `10 − 10 = 0`, at 0:45 it is `1` | `if (length.getInMinutes <= 0) { store.clearSession(); return }` — **discarded, nothing shown** (`B5`) |
-  | Pomodoro (`:260`) | `Time.fromSeconds(floor(ms/1000))` — **floors**, so anything under 60 s is `0` | **no guard** → `SaveActivityBody` renders `activities.confirmSaveActivity` with `timeSpent.getNice`, which is `"" + ' ' + ""` for `{0,0}` (`Time.ts:40-42`) → *"done for ?"*; Confirm → `POST /api/activity-history` `{"length":{"hours":0,"minutes":0}}` → **201** (`B4`) |
-  | Stopwatch (`:177`) | `TimePrecise.fromSeconds(...).toTimeLength` — rounds, so 0–29 s is `0`, 30–59 s is `1` | **no guard** — under 30 s it is `B4` exactly, one view over; source-certain, the unit did not stop a stopwatch that fast |
-  The manual form, for contrast, refuses `!timeLength.isNotZero()` before it asks the server
-  (`AddActivityManuallyForm.vue:70`). So the account can already hold zero-length rows from two of the
-  four capture flows, and the server will take them: `ActivityHistoryValidator` is `Length.TotalSeconds
-  >= 0`, not `> 0` (§15). The unit's own root-cause line is right — *"nobody wrote down what should
-  happen when a session ends before it produces a whole minute"* — and that is why this is one batch and
-  not two: fixing Pomodoro to match Timer ships a silent discard to a second view, and fixing Timer to
-  match Pomodoro ships the malformed prompt to a second view.
-- **Files:** the three `finishSession()`s above; `SaveActivityBody.vue:3` only if the seconds option is
-  taken; `src/_common/dto/dto/Time.ts:40-42` is **not** in scope (below)
-- **What to change:** Decide once, then apply the same branch in all three views **before**
-  `openDialog(SaveActivityBody)`. Two honest options: **(a) discard with a message** — when the rounded
-  length is zero, `store.clearSession()` and `showSnackbar(t('history.sessionTooShortToLog'))` (new key,
-  both locales, worded as information rather than an error — the timer's *"please set a duration"* is not
-  it); **(b) keep the seconds** — build the length with `Math.ceil` of the seconds instead of a floor or a
-  round, so the shortest recordable session is one minute, and let the dialog show it. (a) matches
-  `runningTimerStore.ts`'s own rule 2 (*"never fabricate time the user did not spend"*), which (b) mildly
-  breaks for a 5-second session; (a) is the recommendation. Either way the three views must agree, and
-  the rounding helpers (`toTimeLength` vs `Time.fromSeconds`) should be unified in the same commit so the
-  30-second cliff is the same on every view. Keep the manual form's own guard as it is — it is the
-  fourth view already doing (a) without the message.
-- **Do not change:** `Time.getNice` in `src/_common` — hardening it to say *"0m"* would make the prompt
-  *read* sensibly while the view still writes a zero row, i.e. it fixes the symptom the finding
-  photographed and not the one it filed. It is a framework line with eleven consumers (grep `.getNice`),
-  and a fix here should make it unreachable with a zero rather than teach it to render one. If it is
-  hardened anyway, that is a separate `vue_framework` commit, not this batch. Not `TimerView`'s
-  `activityId` embedded path (`:220-224`) — an embedder gets the numbers and decides for itself.
-- **Verification:** `B4`'s `Verify:` block (Pomodoro: Start → Stop inside a second → **no** *"done for
-  ?"* dialog, and no `POST` with `{0,0}`); `B5`'s (Timer: Start → Stop under a minute → the user is told;
-  `requests` shows `timer-alarm/cancel` and nothing else); then the stopwatch at ~10 s, which must behave
-  like whichever of (a)/(b) was chosen and not like today's Pomodoro; then a **45-second** timer and a
-  **45-second** stopwatch, which today save one minute — confirm the chosen rule is consistent (under (a)
-  they still save one minute; under (b) too). Both locales for the new key. Reseed after: (b) writes rows.
-- **Risk:** Low. Three small branches; the only judgement is (a) vs (b), and the wrong one is still
-  better than the current three.
 
 ## F68. The manual-entry form fires one `POST` per click and never resets — the second click, and every re-submit after a success, is a `409`
 
@@ -2692,34 +2554,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** Low, but still two repos, two commits — submodule commit before the pointer bump, and the
   `dateTime` mirror in the bump.
 
-## FW3. `Time.fromJson` cannot parse the backend's string shape
-
-> ✅ **CLOSED 2026-09-13.** "Re-verified unchanged and still live" was true of the file and false of the
-> defect: the API switched `dueTime` to `{hours, minutes}` on 2026-09-11 (backend `6395cee`), and the wire
-> now reads `"dueTime":{"hours":17,"minutes":0}`. `Time.fromJson` was still made to delegate to
-> `Time.fromString()` for a string argument — generic, default-preserving, documented in `baseDtos.md` —
-> so the framework DTO reads either shape. Verified end to end: 6× `PUT` → 200, snackbar, 17:00 preserved
-> after reload. Both `todo-motivation.spec.ts` `fixme`s are real tests now. `todo-lists/B4` closed.
-
-- **Scope:** **[framework]** `src/_common/dto/dto/Time.ts` — submodule commit, then pointer bump
-- **Closes:** `todo-lists/B4`
-- **Re-verified unchanged and still live this pass:** `Time.fromJson` still reads
-  `const { hours = 0, minutes = 0 } = object`.
-- **Root cause:** The backend serializes a due time as the **string** `"HH:MM:SS"`, so every item with a real
-  due time silently parses as `00:00` on read, and any subsequent `update()`/`updateWithResponse()`
-  round-trips that zeroed value back out as `{"hours":0,"minutes":0}`, which the backend rejects with a 400
-  (*"Cannot get the value of a token type 'StartObject' as a string."*). Not scoped to the overdue-renegotiation
-  banner — it breaks **any** update path that serializes a `dueTime` through `ToDoListItemRequest.fromEntity`.
-  `Time.fromString()` (same file, `:50-58`) already parses the string shape correctly; `fromJson` just doesn't
-  call it.
-- **Files:** `src/_common/dto/dto/Time.ts:17-20`
-- **What to change:** Have `fromJson` delegate to `fromString` when its argument is a string.
-- **Verification:** `todo-lists/B4`'s `Verify:` block — on `/todo-list/13002` ("Errands") click "Today" on the
-  overdue banner: all 6 `PUT`s return 2xx, the "Moved 6 tasks…" snackbar appears, and each item's
-  **time-of-day is preserved**, not zeroed. The second half matters: a fix that only stops the 400 would still
-  be silently losing every due time on read.
-- **Risk:** Medium. This DTO is read on every to-do item with a due time across the whole app. Test both
-  directions.
+<!-- FW3 (Time.fromJson could not parse the backend's string shape) closed 2026-09-13 — body in _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## FW4. `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so
 
@@ -3561,16 +3396,19 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 > **Written as backend prompts 2026-09-15** — every open entry below now has a file in
 > `prompts/view-docs/backend/`, numbered from `B10` in order of what it blocks. Edit the file, not the
-> paragraph, when the ask changes; the paragraph stays as the evidence trail.
+> paragraph, when the ask changes; the paragraph stays as the evidence trail. Once an ask lands **and**
+> its frontend half (if any) is done, the paragraph is deleted from here and its body moved to
+> [`_fix-queue-log.md`](_fix-queue-log.md) → *Closed escalations*; the § number is retired, never reused,
+> so the gaps below are load-bearing for every cross-reference.
 >
 > | § | file | § | file |
 > | --- | --- | --- | --- |
-> | §11 | `B10-color-validator-rejects-palette-names.md` | §10 | `B16-pie-chart-other-bucket-sentinel.md` |
-> | §6 + §13 | `B11-grid-filter-field-names-never-matched.md` | §15 | `B17-activity-history-accepts-zero-length.md` |
-> | §12 | `B12-anchor-eligible-activities-endpoint-missing.md` | §7 | `B18-error-type-in-409-body.md` |
-> | §14 | `B13-unconfirmed-login-answers-401-not-403.md` | §8 | `B19-holiday-names-country-and-locale-decision.md` |
-> | §9 | `B14-google-calendar-oauth-cannot-complete.md` | §5 follow-up | `B20-grid-500-on-sort-by-non-scalar-member.md` |
-> | §1 | `B15-notification-text-ignores-account-locale.md` | §3 | `_done/B9-routine-untick-streak-decision.md` (answered) |
+> | ~~§11~~ | `_implemented/B10-…` — landed, body in the log | §10 | `B16-pie-chart-other-bucket-sentinel.md` |
+> | ~~§6 + §13~~ | `_implemented/B11-…` — landed, body in the log | ~~§15~~ | `_implemented/B17-…` — landed, body in the log |
+> | ~~§12~~ | `_implemented/B12-…` — landed, body in the log | §7 | `B18-error-type-in-409-body.md` |
+> | ~~§14~~ | `_implemented/B13-…` — landed, body in the log | §8 | `B19-holiday-names-country-and-locale-decision.md` |
+> | §9 | `B14-google-calendar-oauth-cannot-complete.md` | ~~§5~~ | `_implemented/B20-…` — landed, body in the log |
+> | §1 | `B15-notification-text-ignores-account-locale.md` | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
 
 1. **Notification titles and bodies ignore the account locale** — `_shell/B1`. Still open, and **now
    confirmed on real data (2026-09-13)**. ~~Not re-testable on the current seed (zero notifications).~~ That
@@ -3582,115 +3420,20 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
    server-side at dispatch, so no `src/` change can fix it. The ask: resolve notification text
    against the recipient's locale preference at dispatch, or send a key + params and let the client resolve it.
 
-2. **✅ RESOLVED 2026-09-13 (unit 10, round 4 — API source read) — it does not cascade; the delete is
-   refused.** ~~Does deleting a routine time period cascade, and to what?~~ `RoutineTimePeriodConfiguration.cs:78-81`
-   is `DeleteBehavior.Restrict` on `RoutineTodoListColl`; only `RoutinePeriodCompletion` cascades (its own
-   history rows, nothing user-authored). The FK violation maps to a **409** (`DatabaseExceptionUtils.cs:26`
-   → `EndpointHelper.cs:14`), pinned by `TodoListDeleteBehaviorTests.DeleteRoutineTimePeriod_WithItems_Returns409`.
-   So CLAUDE.md's cascade rule does not apply and `BasicTable`'s inability to state a child count is moot
-   *here* (the bypass of `useDeleteConfirmation` is still real, still framework, still a `FW` decision
-   for a table whose delete *does* cascade — none found yet). What it left behind is the **message**: that
-   409 rendered as *"changed by someone else — refresh"*, filed and fixed as `todo-routine/B9`, which is
-   the one `todo-routine` item still awaiting a browser (*Needs verification*).
+<!-- §2 (routine time period delete — Restrict, not cascade) resolved 2026-09-13; §3 (untick/streak decision) answered 2026-09-15 (API 4ab3710); §4 (activity contract — nested role/category, client half shipped as F3) resolved 2026-09-13. Bodies in _fix-queue-log.md → Closed escalations. Numbers retired, not reused. -->
 
-3. **✅ RE-SCOPED 2026-09-13 (same round) — a bounded design question, now a written ask, blocking
-   nothing.** ~~A done-toggle advances `streak`/`lastCompletedAt` irreversibly, with no undo path.~~ Read
-   against `RoutineResetService.UpdateItemStreak`: the increment is **once per cycle**, guarded by
-   `AlreadyCountedThisCycle` and pinned by two tests, so repeated clicking cannot compound; `LastCompletedAt`
-   moving is deliberate; the period-level streak is evaluated at reset from live state, so un-ticking
-   before rollover costs nothing there. The irreversible part is exactly **+1 on one item, once**. Whether
-   un-ticking inside the same cycle should give it back was
-   `prompts/view-docs/backend/_done/B9-routine-untick-streak-decision.md` (a decision, not a defect — not to
-   be confused with finding `B9`). The client cannot act on it either way: streak fields are server-owned.
-   **✅ ANSWERED 2026-09-15 — option 2, shipped (API `4ab3710`):** an un-tick inside the open cycle walks
-   `streak` back and restores `bestStreak`; after the cycle closes it changes nothing. Client needs nothing;
-   the Meditation fixture drift is cleared by a reseed.
+<!-- §5 (grid sort keys — B7's unknown-key class 2026-09-13, B20's non-scalar-member class 2026-09-15) closed 2026-09-15: both asks landed and there was no frontend half left. Body in _fix-queue-log.md → Closed escalations. The convention it leaves behind — a sortable TableColumn over a lookup emits the `.text` leaf, not the object — is now a reminder, not a trap: getting it wrong is a 400 the interceptor shows. Number retired, not reused. -->
 
-4. **✅ RESOLVED 2026-09-13 — the `activity` contract is settled; what remains is a client-side parse bug.**
-   `prompts/view-docs/backend/_done/B6-profile-grid-activity-name.md` (now in `_done/`) carries the full
-   answer. All three questions this entry raised are closed:
-   - `activity.role.icon` / `activity.role.color` **is** the intended home — nested, not flattened. `category`
-     is the same shape and is **nullable**. So **`F3`'s fallback is the permanent fix, not a shim**, and its
-     direction is the server's own: `category?.icon ?? role.icon`, `category?.color ?? role.color`.
-   - **All four grids agree.** Every one derives from `WithActivityResponse` and carries a full
-     `ActivityResponse`, on both `…/grid` and `…/{id}`.
-   - **`activity` does *not* carry `categoryName`.** Use `activity.category?.name ?? null`. The flat
-     `{id, name, categoryName, icon, color}` shape still exists, but only on `/leisure/suggestion/draw`
-     (`/leisure/pick`) — two different shapes under the same key, by route.
+<!-- §6 + §13 (five grid filters — the client sent 27 field names the server never declared) closed 2026-09-15:
+     `B11` landed on `dev` and there was no frontend half — all five filter classes already carried the
+     adopted names, verified by inspection. Body in _fix-queue-log.md → Closed escalations. Both numbers
+     retired, not reused. Two things it leaves behind: an **empty list is "no opinion"**, not "match
+     nothing" (pinned by a test), and `GridFilterFieldNameTests` posts each field as a raw camelCase JSON
+     property, so adding a member to one of the five records means adding a case there. `F18` and `F60`
+     were unaffected and still landed app-side; both are now fixed (2026-09-15). `F18`'s verification was
+     the first that could check the *table* rather than only the request body, which is what finally
+     showed a `?roleIds=` bookmark working end to end. -->
 
-   **The client half is now fixed too (2026-09-13) — see `F3`.** `ActivityInfo.fromJson` reads the flat
-   fields first and falls back to `category ?? role`, so it parses the grid shape and the draw shape with one
-   code path. Still true and still worth heeding: `usageCount`, `canDelete` and `isOnTodoList` are
-   structurally present on the nested activity but **left at their defaults** — do not read them off these
-   rows.
-
-   One behavioural consequence worth not designing against: an **archived** activity removes the row entirely
-   from the three `Activity*Profile` grids (count included), while `memory-anchor` deliberately keeps its row
-   and name. There is no such thing as a row with a blank or missing `activity`; treat one as a bug.
-
-5. **✅ RESOLVED 2026-09-13 — `B7` answered in full; it leaves three client-side items, all in `src/`.**
-   `prompts/view-docs/backend/_done/B7-grid-sort-key-audit.md`. §1 was fixed **by shape rather than by a
-   remap** — `activity.name` resolves natively on all four profile grids, so the *Activity* header click on
-   `memory-anchor/grid` no longer 500s, and the `activity.name → activityName` remaps were **deleted**
-   (safe: bookmarked `?sortBy=activity.name:asc` URLs carry the key that now resolves natively). What lands
-   on this side:
-   - ✅ **FIXED 2026-09-13 — `BacklogTable.vue:11`.** Now `deleteConfirmationColumn="activity.name"`. This
-     needed a **framework** change to work at all: `BasicTable.vue:211` indexed the row flat, so it resolves
-     through `getNestedValue` now. Dotless keys are unaffected. See `F3`.
-   - ✅ **Already satisfied — error handling distinguishes `400` from `500`.**
-     `ErrorHandlingFunctions.ts:11` has had its own `case 400` all along, separate from `case 500`, so an
-     unresolvable sort key (`InvalidSortKeyException` → `InvalidSortKeyMiddleware`) surfaces a snackbar rather
-     than the old false empty state. **No change was needed**; verified by reading the switch, not in a
-     browser.
-   - ⏳ **Latent, no action taken: if a lookup column is ever made sortable, send `locationType.text`, not
-     `locationType`.** None is currently sortable, so nothing to change today — this is a trap for the next
-     person who makes one sortable.
-
-     ⚠️ **And it is a worse trap than the API's reply implies.** Probed against the running API
-     2026-09-13 on `activity-backlog-profile/grid`: `zzzNotAColumn` → **400** naming the key;
-     **`locationType` → 500** (`errorId be94ee6d327f`); `locationType.text` → **200**. So the
-     "unresolvable keys are 400 now" fix covers *unrecognised* keys only, **not keys that resolve to a
-     non-scalar member** — which is precisely what a real column definition would emit. That case is still
-     an opaque 500 behind a false empty state.
-
-     **Re-probed and confirmed at the B2 close-out (2026-09-13, after the deploy):** `locationType` →
-     **500** `errorId 13ae656a28ee`, `activity` → **500** `errorId 28962860a3af`, while `locationType.text`
-     and `activity.name` → **200** and `energyDemandId` (a field present in every row but not sortable) →
-     **400**. So this is not "B2's class is narrower than reported" — B2 *is* fixed for the class it names.
-     This is a **second, distinct unhandled 500**, and B2's close-out reply names it in advance: *"If you see
-     `errorId` in a body, that is still an unhandled 500 and is a different bug — report it."* Still not
-     filed as a new ask here (the close-out runbook reserves that for the surface owner), but it is now an
-     invited one, and this paragraph is the evidence to paste into it.
-
-   Two smaller notes for whoever writes the specs: `activity` is **nullable** on the two tracker mapping
-   grids, so an `activity.text` sort puts those rows nulls-last ascending / nulls-first descending — correct,
-   not a bug. And the API flagged an **honest test gap**: its integration tests pin `periodKey` only as the
-   sole sort key, so the multi-key splice (`[{rating,desc},{periodKey,desc}]` must order by rating first) is
-   right by construction but unasserted. B7 §4's two-click combinations are the cheapest place to catch a
-   regression, which makes this an **e2e ask on our side**, not a backend one.
-
-6. **The activities grid filter's id fields have never matched between client and server** —
-   `activity-settings/B1`. **Not** "the backend ignores `roleIds`/`categoryIds`", which is how the
-   finding reads: those fields do not exist on the wire. Read at the source this pass:
-   `ActivityFilterRequest.cs:27-28` declares **`RoleId: long?`** and **`CategoryId: long?`** —
-   singular scalars — and `GridActivityEndpoint.cs:129-133` filters on them with `==`. The client has
-   sent **`roleIds: number[]`** / **`categoryIds: number[]`** since at least the August module
-   restructure (`git log -S roleIds` bottoms out at `540f9529`, 2026-08-07, with the list shape already
-   in place), and no commit on either side has ever carried the other's name. System.Text.Json drops
-   unknown members silently, so every id-filtered request has always returned the unfiltered list with
-   a 200 and nothing anywhere said so. `A1-correctness-sweep.md` item 5 fixed the *binding* (the
-   combobox now reaches the request body — the finding confirms that) and verified the request, never
-   the rows.
-
-   **This is a contract decision, not a one-side fix**, and the client cannot make it alone without a
-   UI regression: the filter is a multi-select combobox with chips, and the URL state already carries
-   comma-joined lists (`activitySettingsUrlParams.ts:67,69`), so narrowing the client to one id means
-   changing the control, the param names and the bookmarks. **The ask:** add `RoleIds: long[]?` and
-   `CategoryIds: long[]?` to `ActivityFilterRequest` and filter with `Contains` — two `Where` clauses,
-   with the singular fields kept (or dropped, nothing on this side sends them). Then an integration test
-   that pins the filter *field names*, since the failure mode here is a silent 200 and no test on either
-   side could have caught it. Until it lands, `F18` should still be applied — it fixes what the client
-   *sends*; this is about what the server *reads*.
 
 7. **Client side closed 2026-09-14; the ask itself stays open, and is smaller than written.** Two corrections
    from the API source: `Text` is unique per account as well (`RoutineTimePeriodConfiguration.cs:13`), and
@@ -3839,179 +3582,36 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
     then read the legend and click the slice — or a seed app under 1 % of the span. Until then, `F47`
     guards the row locally (its *What to change*), which is a shim to remove when this lands.
 
-11. **Creating or editing any Role, Category or To-do-list category is refused: the validator demands
-    a hex colour, and the palette — on both sides, including the server's own seeder — is names** —
-    `activity-settings/X1` (`blocker`), observed on Create and on a no-change Edit of a seeded role.
-    Read at the source this pass, and the side that owns the format is not in doubt:
-    - The client's `ColorPicker.vue:31` writes `color.name` — `"rose"`, `"emerald"` — from
-      `COLOR_PALETTE`, and every renderer resolves that name to a theme-aware `{bg, text}` pair
-      (`color[currentTheme].bg`, `:29`). A hex string would lose the light/dark pairing.
-    - The **server's own framework** declares the same names as constants —
-      `framework/Sydowwe.Framework/domain/enum/ColorPalette.cs` (`Crimson = "crimson"` … `Slate`) —
-      and the e2e seeder writes them (`E2eFixtureSeeder.cs:409-417`: `ColorPalette.Blue`,
-      `ColorPalette.Emerald`, `ColorPalette.Violet`…). So every seeded role would fail its own
-      validator on a round trip, which is exactly what the unit saw on *Health & Fitness*.
-    - The validator, `NameTextColorIconValidator.cs:16-20`, is
-      `.Matches("^#(?:[0-9a-fA-F]{3}){1,2}$")` and dates from **2026-05-16** (`a51309e`) — before the
-      palette existed on either side (`colorPalette.ts` first appears 2026-06-22). It is the stale side.
-    - It is shared: `ActivityRoleValidator`, `ActivityCategoryValidator` **and
-      `TodoListCategoryValidator`** derive from it, so `/todo-list`'s category create/edit
-      (`TodoListCategoryForm.vue:18`, same `ColorPicker`) is broken by construction — unit 9's inventory
-      (`:28`) recorded that path as *not separately tested*. `RoutineTimePeriodValidator` has no colour
-      rule and `TaskImportanceValidator` only caps length, which is why routine periods create fine.
-    - One more thing the ask must carry: the column is **`character varying(7)`**
-      (`EntityFieldLengths.Color = 7`, applied by `NameTextColorEntityConfigurationExtension.cs:33,39`,
-      `Initial.Designer.cs:714,782`) and `"burgundy"` is eight characters. Relaxing the regex alone
-      leaves one swatch that cannot be saved.
+<!-- §11 (colour validator demanded hex; the palette on both sides is names) resolved 2026-09-16 — backend
+     landed `MustBePaletteColor()` + the `Color` 7→20 widening migration, frontend half landed the same day
+     (`required` on the three pickers, `color: string = 'blue'` in the three request DTOs, and the
+     `??= 'default'` line deleted from `useTodoListCategories.ts`). Verified live: the no-change Edit is a
+     200 and Create with the picker untouched is a 201. Body in _fix-queue-log.md → Closed escalations.
+     Nothing left open: the one transient — `"burgundy"`, the only 8-character swatch, answering
+     `generalErrors: ["Data too long during Create"]` — was an API process predating the migrate; the owner
+     confirmed `Color` is `character varying(20)` in the DB the same day. Number retired, not reused. -->
 
-    **The ask:** replace the regex with membership in `ColorPalette` (a `Must(c => ColorPalette.All.Contains(c))`
-    with a message naming the accepted set), widen `EntityFieldLengths.Color` past the longest name
-    (with the migration), and pin the field's contract with a test that posts a palette *name* —
-    `NameTextColorIconValidationTests.cs` currently posts `#abcdef` everywhere (`:46,68,88,93`). No
-    client change. The alternative — a hex-emitting `ColorPicker` mode — is a `vue_framework` change
-    that would still leave every stored name invalid on re-save, and it is not recommended. `FW19`
-    is what makes this failure *legible* meanwhile (the user currently sees the generic string).
-    **Do not write a backend prompt file for this** — the implementer does; this paragraph is the
-    evidence to paste.
+<!-- §12 (anchor-eligible-activities endpoint missing) resolved 2026-09-15 — landed in AdhdTimeOrganizer
+     on `dev`, frontend half shipped as F62. Body in _fix-queue-log.md → Closed escalations. Number
+     retired, not reused. -->
 
-    **Observed from the `/todo-list` side too (fourteenth pass) — `todo-lists/X1`, `blocker`, merged
-    here.** Unit 9's mutation round submitted the *New category* dialog three times (`"color":"default"`,
-    `"color":"blue"`, and again) and got the same
-    `"Color must be a valid hex color code (e.g. #FFFFFF or #FFF)"` 400 each time — the shared-validator
-    consequence the paragraph above predicted by construction, now with screenshots
-    (`todo-list--mutation-category-create-400-no-feedback.png`). The unit filed it as **`[framework]`**
-    with the suggested fix *"change `ColorPicker`'s `model` to the swatch's hex value"* — that is the
-    rejected alternative, and the attribution is the wrong side (§99): the server's own `ColorPalette`
-    constants and seeder write names, the routine-period form ships `"color":"blue"` and gets 201
-    (`todo-routine/B11`'s colour aside, verified), and only the three `NameTextColorIconValidator`
-    subclasses refuse them. Two more things the observation adds to the ask: the dialog **closes on
-    submit** before the caller's request fails (the close-then-call shape, `F53`(c)/`F70`), so the typed
-    name is lost with the 400; and the default swatch is `"default"` — a name the validator will also
-    have to accept, or `ColorPicker`'s `required` prop (framework `98b92d0`) should be passed here as it
-    is on the time-period form. Both are app-side follow-ups for after the validator lands, not reasons
-    to touch the picker.
+<!-- §13 closed 2026-09-15 together with §6 — same defect class, same ask (`B11`), one body in
+     _fix-queue-log.md → Closed escalations. See the §6 + §13 tombstone above. Number retired, not reused. -->
 
-12. **`GET /memory-anchor/anchor-eligible-activities` does not exist** — `leisure-bucket-anchors/X3`
-    (`blocker`). The unit's guess was route ordering (*"shadowed by a generic `/{id}` route"*). Searched
-    the whole API this pass: no endpoint file under `endpoint/memoryAnchor/` declares it
-    (`GetById`, `GetSelectOptions`, `Grid`, `Create`, `Update`, `Delete`, `BatchDelete` — that is the
-    list), and the string `anchor-eligible` appears in **no `.cs` file**. The 400 body
-    (*"Value [anchor-eligible-activities] is not valid for a [Int64] property"*) is
-    `GetByIdMemoryAnchorEndpoint` catching the path, which is what absence looks like from outside.
-    `prompts/_done/leisure/backend/B1-backend.md:5` asserted the route *"already knows which activities
-    qualify"*; it never landed. Until it does, the unlocked *Add* on `/leisure/memory-anchors` cannot
-    create anything (the locked *"I did this"* path — `U1` — does not call it).
+<!-- §14 (auth/B6, unconfirmed login answered 401) resolved 2026-09-15 — body in _fix-queue-log.md → Closed escalations. Number retired, not reused; the list below keeps its source numbering. -->
 
-    **The ask:** implement it per `B1-backend.md`'s definition — the caller's activities that have a
-    one-time backlog profile (`!IsRepeatable`) or a bucket-list profile and no memory anchor yet,
-    projected as `SelectOption` (`{ id, text }`), scoped by user, archived activities excluded — and
-    decide the question `B1-backend.md:63` left open (whether an already-anchored activity stays
-    listed; the client's *"I did this"* flow suggests **no**). `F62` is the client half and lands
-    regardless.
-
-13. **The four leisure profile grids' filter contracts have never matched: the client sends 27 filter
-    fields, the server reads 8** — `leisure-backlog-picker/X1` (`blocker`, re-graded — §89),
-    `leisure-bucket-anchors/B1` (three of its five cases; the other two are `F60`). This is escalation
-    §6's shape (`roleIds` vs `RoleId`) on four more endpoints, and both units misdiagnosed it from the
-    browser: unit 11 saw a filter "work on two requests and fail on one" and blamed a sort/filter
-    interaction; unit 12 saw five fields "ignored" and one "working". Read against
-    `AdhdTimeOrganizer.ActivityProfiles/application/dto/filter/*` and each grid's
-    `ApplyCustomFiltering` this pass:
-
-    | grid | client sends (`src/core/leisure/dto/request/*Filter.ts`) | server reads |
-    | --- | --- | --- |
-    | `activity-backlog-profile` | `activityName`, `locationTypeIds[]`, `weatherDependencyIds[]`, `energyLevels[]`, `effortTypes[]`, `expectedCostTierIds[]`, `maxDurationMinutes`, `minParticipants`, `maxParticipants`, `isRepeatable`, `isAnchored` | `EnergyLevel` (scalar), `EffortType` (scalar), `IsRepeatable`, `IsAnchored` |
-    | `activity-bucket-list-profile` | `activityName`, `experienceTypeIds[]`, `minComfortZoneStep`, `maxComfortZoneStep`, `requiresTravel`, `isAnchored` | `RequiresTravel`, `ComfortZoneStep` (exact), `IsAnchored` |
-    | `memory-anchor` | `activityName`, `year`, `month`, `minRating` | `AnchorMonth`, `AnchorYear`, `ActivityId` (→ `F60` renames the two the client got wrong) |
-    | `activity-project-profile` | `activityName`, `difficultyLevels[]`, `readinessStatuses[]`, `projectArea`, `isMessy` | `DifficultyLevel` (scalar), `ReadinessStatus` (scalar), `IsMessy`, `ProjectArea` |
-
-    `IFilterRequest` is an empty marker and `BaseGridEndpoint` applies nothing generic
-    (`BaseGridEndpoint.cs:124-125` → `ApplyCustomFiltering` only), so **`activityName` filters on none of
-    the four** — every *Activity* filter chip, every `?activityName=` bookmark, and the memory-anchor
-    table's source-chip navigation (`MemoryAnchorTable.vue:125` pushes `{ activityName }` to the source
-    view) have always returned the unfiltered grid with a 200. The list-vs-scalar fields (`energyLevels`
-    vs `EnergyLevel`) are dropped by name, not coerced. Unit 12's *"activityName confirmed working"* has
-    no mechanism and is contradicted by source (§90); unit 11's two "correct" count requests were zero
-    for an unrelated reason (§89).
-
-    **The ask:** adopt the client's field names on all four filter records — `ActivityName` as a
-    case-insensitive `Contains` on `Activity.Name`; the `*Ids[]`/enum lists as `Contains`; the ranges
-    (`Min/MaxComfortZoneStep`, `MaxDurationMinutes`, `Min/MaxParticipants`, `MinRating`) as
-    comparisons — keep the existing scalars if anything else sends them, and **pin the field names
-    with an integration test per grid**, because the failure mode is a silent 200 and no test on either
-    side can catch it otherwise (§6's ask, verbatim). Nothing changes client-side when it lands:
-    `hasAny()`, the chips and the URL codecs already carry every field. The client-side alternative —
-    hiding the unread inputs — is a product regression for a contract gap and is not recommended.
-    `leisure-backlog-picker/X1`'s `Verify:` block is the acceptance test for the `activityName` half.
-
-14. **An unconfirmed account's correct password is answered `401 "Invalid email or password"`, never the
-    `403 "Email not confirmed"` the sign-in flow was written to send** — `auth/B6` (`bug`, observed twice
-    on two throwaway accounts in unit 15's round 2). The unit's guess (*"the server no longer signals it"*)
-    is half right: the server **has** the branch and never reaches it. Read at the source this pass:
-    `framework/Sydowwe.Framework/application/service/auth/PasswordSignInFlow.cs:105-106` returns
-    `EmailNotConfirmed` (→ 403, `:47`) with the comment *"checked after password verification so the
-    answer can't be used to probe which addresses are registered"* — but it sits **after**
-    `signInManager.CheckPasswordSignInAsync(user, password, true)` (`:83`), and the host registers
-    `options.SignIn.RequireConfirmedEmail = true` (`IdentityServiceExtensions.cs:121`). ASP.NET Identity's
-    `CheckPasswordSignInAsync` runs `PreSignInCheck` → `CanSignInAsync` **before** it verifies the
-    password, and with that option set an unconfirmed user gets `SignInResult.NotAllowed` back — which is
-    `!result.Succeeded`, so `:95-101` answers *"Invalid email or password"* and the flow's own check at
-    `:105` is dead code for every deployment that sets the option. Two consequences: `LoginView.vue:185-193`'s
-    dedicated branch (the `emailConfirmationNeeded` snackbar and the resend panel) is unreachable, and
-    the password was never checked — so the lockout counter does not move either. **The ask:** verify the
-    password with `userManager.CheckPasswordAsync` (and feed lockout with `AccessFailedAsync`) before the
-    confirmation test, or test `result.IsNotAllowed` and map it to `EmailNotConfirmed` — the second is
-    one line but answers 403 *without* having checked the password, which is the enumeration leak the
-    comment at `:103-104` was written to prevent. Then a test that registers, does not confirm, and
-    signs in with the right password expecting 403. This is a `Sydowwe.Framework` (backend) file, so it
-    ships to every API on that framework. Nothing on this side changes; the client branch is already
-    right. It also gates `auth/U2` — a 2FA login cannot be driven until an unconfirmed throwaway can be
-    confirmed or the flow reaches the 2FA gate — and compounds with `FW9`: the natural next click for a
-    user told "wrong password" is *Forgot password?*, whose mail still points at a route that does not
-    exist.
-
-15. **`POST /api/activity-history` accepts a zero-length row** — found reading `history-capture/B4`'s
-    request. `ActivityHistoryValidator` is `RuleFor(x => x.Length).Must(x => x.TotalSeconds >= 0)`
-    (*"Length must be non-negative"*); the round-2 body `{"length":{"hours":0,"minutes":0}}` was a 201
-    (`id 15503`). A history record of nothing is not information on any read path (the dashboards sum
-    it, the timeline draws a zero-width block, the calibration average divides by it), and `F67` is the
-    client half — but a validator that stops at `>= 0` lets the next client (the desktop tracker's
-    attribution sink, a future import) write it again. **The ask:** `> 0`, with a message the
-    interceptor can show, and one integration test. Small, not blocking; `F67` does not wait on it.
+<!-- §15 (history-capture/B4, POST /activity-history accepted a zero-length row) resolved 2026-09-15 — body in _fix-queue-log.md → Closed escalations. Number retired, not reused. The validator is now `Length.TotalSeconds > 0` on both POST and PUT; it decided `F67`'s (a)-vs-(b) question as **(a)**, which is recorded in `F67` itself. -->
 
 ## Needs verification (unverified findings, and what would settle each)
 
-### Awaiting retest — code-fixed this cycle, never seen in a browser
+<!-- "Awaiting retest" table (11 rows, todo-routine + todo-lists/B3) — every row closed by rounds 5-8; moved to _fix-queue-log.md → Closed verification items on 2026-09-15. -->
 
-Not a fix batch and not a defect list: these need one browser session running the named `Verify:` blocks.
-**Rewritten in the fifth pass against `todo-routine`'s round 5** (2026-09-13, live, fresh `e2e-v3` seed):
-five of the eight rows are closed, and what is left is two half-checks and one finding that has never
-been seen in either direction.
-
-| finding | what landed | round-5 outcome |
-| --- | --- | --- |
-| `todo-routine/A1` | counter carries `:title`/`:aria-label` on both branches; native `<button>` (`todo-lists/B6`) | ✅ **verified.** Real `mousemove` → 1 s dwell → `elementFromPoint` → `mousedown`/`mouseup` on both controls: *Increase 0 of 2* hit its `<button class="counter-increment">` and produced 1/2 (`PATCH …/toggle-is-done {forceValue:true}` → 204, no dialog); *Decrease 1 of 2* resolved to the decrease button on two separate items. The "mouse can decrement but never increment" hypothesis is dead against this build |
-| `todo-routine/B3` | `RoutineToDoListForm.vue:28` → `routineTodoList.timePeriod` | ✅ **verified** — label *Time period*, console clean across the open |
-| `todo-routine/B4` | `/routine-settings` + `TimePeriodForm` localized; `useAnchorDayOptions()`; `Intl.PluralRules` ordinal | ✅ **verified in SK** — *Časové úseky*, *PRIDAŤ*, all headers, *Pondelok* in the anchor column; ordinal `1` → "1." (SK) and `1`/`21` → "1st"/"21st" (EN). **One header stayed English — "Color" — and that is `F25`**, a different cause (empty title, not a literal) |
-| `todo-routine/B6` | `routineTodoList.streakTooltip` / `.gracePeriodActive` | ✅ **verified in SK** — *"Séria: 12 · najdlhšia: 30"* read off the teleported tooltip. Undo-tooltip half not re-hovered; its label is the same computed `A3` verified |
-| `todo-routine/A3` | `TodoListUndoBtn.vue:12` `:aria-label="label"` | ✅ **verified** — `aria-label: "Nothing to undo"` on the disabled button; enabled-state wording not exercised |
-| `todo-routine/P1` | fixed `:width`/`maxWidth` replaced by a `minWidth` floor | ✅ **SK verified (round 7, 2026-09-14)** — *Celkový počet* in full, label `scrollWidth 101 === clientWidth 101` in a 377 px field. Both locales closed |
-| `todo-routine/A2` | `BaseTodoListItemSteps.vue:11-13` `:title`/`:aria-label`/`:aria-expanded` | ✅ **verified (round 7)** on a temporary two-step Daily item: `Hide: Steps` / `aria-expanded=true` → click → `Show: Steps` / `false`, step list gone. Item deleted afterwards |
-| `todo-routine/B9` | `RoutineSettingsView.vue:163-201` — `_silent` 409 → `deleteBlocked` / `deleteBlockedUnknownCount`, count fetched only in the failure path, row kept | ✅ **verified (round 7, 2026-09-14, exclusive account)** exactly as the runbook here prescribes: 11-day period + one item → Confirm → `DELETE …/17` **409**, snackbar *"Can't delete "RT eleven" — 1 routine is still assigned to it. Move or delete it first."*, row kept, count fetched in the failure path. Item removed → Confirm → **204**, row gone. Throwaway rows cleaned up. **And the dialog check it was merged with came back positive — see the section below** |
-| *(unfiled)* | `TodoListStepsFormField.vue`'s four step controls now named, position-qualified | ✅ **swept (round 7)** — Add dialog with two steps: *Move step 1 up/down*, *Delete step 1*, *Move step 2 up/down*, *Delete step 2*, *Add step*; **0 unnamed** buttons in the dialog |
-| `todo-lists/B3` | ✅ **fixed for real 2026-09-13** — it was *not* fixed silently: the round-2 edit moved the emit above the multi-count branch, so a row-body click on a counted item still stepped the counter *and* opened the dialog | closed; `Status:` line corrected; spec pins it |
-| ~~`todo-routine/B10` (`F24`)~~, ~~*(unfiled — `F25`)*~~ | both verified 2026-09-14 (`todo-routine/B10`'s own entry: SK forms on every card, the heatmap tooltip, the history dialog, the freeze chip, then EN without a reload; `F25` in the log's *Closed batches*) — these two rows had lagged the summary table by two passes | ✅ moved to the log (fourteenth pass) |
-
-**Every row in this table is now closed.** Unit 10's round 8 (2026-09-15) re-confirmed both views against
-round 6/7's recorded numbers with no drift; the unit's own tally reads *"every finding this unit ever filed
-is now `fixed and verified`"*. The table stays for one more pass as the record, then goes to the log.
-
-### `activity-settings` — two `unverified` remain (`U1` and `U2` closed by the mutation round — see the log)
+### `activity-settings` — one `unverified` remains (`U1` and `U2` closed by the mutation round, `U4` by the `F18` retest — see the log)
 
 | finding | what settles it | note |
 | --- | --- | --- |
 | `U3` — repeated 401 → `/refresh` 401 → sign-out | **re-graded** to a runbook error, mechanism source-verified (token rotation, 5 s grace) — see `F23` and *Contradictions* §19 | Not an app defect and not retestable as one; the fix is the paragraph, and the proof is the next parallel run keeping both sessions |
-| `U4` — one *"0 of 0"* on an unfiltered request | retest after **`F18`**: reload, type a name, clear it, three times, and read `itemsCount` off the response body each time | `F18` removes the only competing request this view fires, which is the only candidate mechanism the finding names. Checked `useFetchFilteredTable.ts:47-55` this pass: an aborted call defers to `latest`, so the simple "stale response overwrote the fresh one" story does not hold as written — if it recurs *after* `F18`, capture the response body, because the cause is then somewhere this queue has not looked |
+| ~~`U4` — one *"0 of 0"* on an unfiltered request~~ | ✅ **closed 2026-09-15** — retested exactly as this row specified, after `F18` landed: three rounds of type-a-name / clear-it, reading `itemsCount` off each response rather than the rendered count. Identical every round — typed `1`, cleared `26`, two requests per round and no third. Body in the log | It did not recur, which fits the row's own reasoning: `F18` removed the only competing request this view fires. The row's escape hatch (capture the response body if it recurs anyway, because the cause would be somewhere unlooked) was not needed |
 
 ### `tracking-settings` — one item that `F14` will surface, not close (`U1` confirmed by the mutation round as `X4` — see the log)
 
@@ -4054,7 +3654,7 @@ re-drive the screen by hand.
 | `U4` — mismatched new/confirm password | **Mechanism settled; the message is broken.** `MyNewPasswordInput.vue:34-37` appends `doPasswordsMatch(v) \|\| t('user.passwordsDontMatch')` to the confirm field's rules, so the line appears inline as you type; and `ChangePasswordForm.vue:50-51` runs `form.validate()` on Confirm and returns without a request when invalid. But the key is defined **nowhere** (`FW7`, adjacent), so what the line says today is `user.passwordsDontMatch`. Settle by promoting the `fixme`: fill `a` / `b`, expect a sentence under the confirm field, click Confirm, expect **no** `POST /user/change-password` | The spec's *"does not enable Confirm"* is not how the form works — Confirm stays enabled and the handler bails; assert on the absent request, not a disabled button. Latent and not filed: the confirm rule does not re-run when the *first* field changes afterwards (no watcher), but `form.validate()` on Confirm catches it, so no wrong password can be submitted |
 | `U5` — language switch | **Mechanism settled.** `onLocaleChange` → `userStore.setPreferences({ locale })` → `await updatePreferences` + `Object.assign(currentUser, partial)` (`authStore.ts:33-36`) → `App.vue`'s deep watcher on `currentUser` → `i18n.locale.value = currentUser.locale` (`App.vue:94`). That is the **same watcher and the same store method** the unit verified live for the theme toggle (theme applies at `:88-93`, four lines above); only the final assignment is untested. Settle on `secondaryUser`, or on the primary account and reseed afterwards — the seed restores `locale: "EN"` (README *Prerequisites* §3) | The sweep-wide "must stay English" concern is real but cheap to honour: `POST /api/test/seed` is the revert |
 
-### `auth` — three `unverified` remain after the mutation round: one environment, one seed (now gated by §14), one deliberate
+### `auth` — three `unverified` remain after the mutation round: one environment, one seed (ungated since §14 landed), one deliberate
 
 Unit 15's round 2/3 (committed in `04c405e9`, absorbed in the fourteenth pass) closed three of the six:
 `U1` is **observed** and batched (`FW14`), `U5` is **resolved** (working as coded — the prefill, the
@@ -4064,9 +3664,9 @@ folded into `FW12`). The three rows below are what is left; `U1`/`U5`/`U6`'s row
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U2` — the 2FA login dialog (`LoginVerifyQrCode`) never exercised | **Seed gap, and the seed alone is not enough — and now §14 gates it too.** Round 2 registered a real 2FA-enabled throwaway through the API and still could not reach the dialog: the account also needs a confirmed e-mail, and an unconfirmed one is answered `401 "Invalid email or password"` before the flow ever reaches the 2FA gate (§14 — the `PreSignInCheck` short-circuit). So the routes are: (a) an `e2e-v5` account (`twoFactorUser`, 10004) seeded **confirmed** and with a known TOTP secret the seed response returns, so a spec can `otplib`-generate the code; (b) by hand, once §14 lands or a confirmation mail can be read: enrol a throwaway through registration (works since `FW13`'s half landed), confirm it, read the secret off the QR's `otpauth://` URI. The dialog's *structure* (title, `VOtpInput`, wrong-code line, Escape under `FW1`'s `persistent` default) is reachable with (b) in a minute | Route (a) is a one-paragraph seed ask if the operator wants a spec; it belongs in `B3`'s family (`prompts/view-docs/backend/_done/B3-seed-fixture-coverage.md`), not a new file. Note the `LoginVerifyQrCode` redirect line is `FW11`'s and reads the same helper — a source read covers that half |
+| `U2` — the 2FA login dialog (`LoginVerifyQrCode`) never exercised | **Seed gap — and the §14 gate is gone as of 2026-09-15.** Round 2 registered a real 2FA-enabled throwaway through the API and still could not reach the dialog: the account also needs a confirmed e-mail, and an unconfirmed one was answered `401 "Invalid email or password"` before the flow ever reached the 2FA gate (§14 — the `PreSignInCheck` short-circuit, **now fixed**: a confirmed throwaway passes the gate and the flow returns the pending 2FA token as documented). So the routes are: (a) an `e2e-v5` account (`twoFactorUser`, 10004) seeded **confirmed** and with a known TOTP secret the seed response returns, so a spec can `otplib`-generate the code; (b) by hand, now open — needs only a confirmation mail that can be read: enrol a throwaway through registration (works since `FW13`'s half landed), confirm it, read the secret off the QR's `otpauth://` URI. The dialog's *structure* (title, `VOtpInput`, wrong-code line, Escape under `FW1`'s `persistent` default) is reachable with (b) in a minute | Route (a) is a one-paragraph seed ask if the operator wants a spec; it belongs in `B3`'s family (`prompts/view-docs/backend/_done/B3-seed-fixture-coverage.md`), not a new file. Note the `LoginVerifyQrCode` redirect line is `FW11`'s and reads the same helper — a source read covers that half |
 | `U3` — reCAPTCHA badge show/hide never observable | **Environment**, not the app: `VITE_RECAPTCHA_SITE_KEY` is empty in `.env.development` (re-confirmed in round 2), so `recaptcha-v3`'s `load()` is never called and `.grecaptcha-badge` never exists (`UseRecaptchaHandler.ts:79-88` returns `''` before loading). **One latent thing from the read, for when a key exists:** nothing calls `loadRecaptcha()` on mount — the script loads lazily inside the first `executeRecaptcha()` — so on `/login` the badge appears only *after* the first submit, and `router.afterEach` (`router.ts:107-112`) has no badge to show until the next navigation. Google's terms want the badge (or its alternative text) visible wherever v3 runs; check it when a key is configured, not before | Not a defect anyone can see today; not a batch |
-| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). So `LoginView.vue:174-176`'s substring match will show the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change. **Dead code, harmless:** `:186` is `generalErrors.includes('User locked out for')`, an *exact-element* `Array.includes` against a string the server never sends; it never matches and the `!handled` fallback at `:201-202` shows `generalErrors[0]` anyway — the same text. **Round 2 found the safe way to see it:** register a throwaway (the UI works now), fail its password six times, read the snackbar, reseed — but note §14: an *unconfirmed* throwaway never reaches the password check, so the lockout counter will not move for it. Confirm the account first, or wait for §14 | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
+| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). The substring match shows the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change. ~~**Dead code, harmless:** `generalErrors.includes('User locked out for')` is an *exact-element* `Array.includes` against a string the server never sends, and the `!handled` fallback shows `generalErrors[0]` anyway — the same text.~~ **Fixed 2026-09-15** with the retired §14: lockout and *Email not confirmed* are both **403**, so a dead lockout branch was one edit away from offering the resend panel to a locked-out user. The substring match now sits above both status arms; visible text unchanged. **Round 2 found the safe way to see it:** register a throwaway (the UI works now), fail its password six times, read the snackbar, reseed — an unconfirmed throwaway now feeds lockout too, so it need not be confirmed first | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
 
 ### ⚠️ Found while triaging unit 4: `TimePicker` snaps `:58` / `:59` to minute **60** at any interval above 1 — framework, source-certain, unobserved
 
@@ -4122,11 +3722,10 @@ thing the wider board surfaced is a polish finding, `todo-routine/P2` (weekday c
 at 1440 px now that it holds five items) — not queued here yet; it is a one-component `flex-wrap` and can ride
 along with the next `todoList` batch.
 
+<!-- The three routine seed rows (completionHistory, streak >= 30, routine item with steps) all closed by B8 + rounds 6/7 — moved to _fix-queue-log.md → Closed verification items on 2026-09-15. -->
+
 | what to seed | unblocks |
 | --- | --- |
-| ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | ~~`todo-routine/U1`, `U2`~~ ✅ both verified live, round 6 |
-| ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | ~~`todo-routine/U2` (milestone icons)~~ ✅ all five icons verified live, round 6 |
-| ~~≥1 **routine** item with steps~~ — **moot**: `todo-routine/A2` was verified in round 7 (2026-09-14) on a temporary two-step Daily item created and deleted in-session, and the `TodoListStepsFormField` sweep ran on the same dialog | ~~`todo-routine/A2`~~ ✅ both closed, round 7 |
 | enough desktop mappings to exceed one page (>25, or a smaller page size in the spec) | `F12`'s second verification step — that the Mappings body *scrolls inside the card* rather than merely paints. Two seeded mappings (one `Activity`, one `Ignored`) can prove the row paints; they cannot prove the fill-parent contract still holds. Low priority: `ActivityTable` already exercises the same path with 10 rows |
 
 Also worth naming for unit 13's own sake: the projects seed holds **one** row, which is why `F2`'s
@@ -4291,11 +3890,8 @@ side and `X3`'s *Verify* step 2(b) stays open.
 
 ### Carried forward, unchanged
 
-- ~~**`todo-lists/U1`**~~ — ✅ re-graded 2026-09-13 to *settled, superseded by B4/FW3*, both of which are
-  closed; the whole banner flow is pinned by four tests in `todo-motivation.spec.ts`.
-- ~~**`home/U1`**~~ — ✅ **settled by the unit-1 mutation round (2026-09-15)**: a forced 500 on
-  `calendar/day-plan/**` rendered the error/Retry state in both widgets and Retry re-fired; the case
-  where it is unreachable is the sign-in race, folded into `F8`. Moved to the log.
+<!-- todo-lists/U1 (settled, superseded by B4/FW3) and home/U1 (settled by the unit-1 mutation round) both closed — moved to _fix-queue-log.md → Closed verification items on 2026-09-15. -->
+
 - **`_shell/U1`** — snackbar stacking. Trigger two snackbar-worthy actions in quick succession.
 - **`_shell/U2`** — fullscreen-loading strand. Navigate away *during* a slow request under throttling.
 
@@ -4407,8 +4003,11 @@ Neither is an opportunity by the template's definition; both are noted.
 
 **`leisure-backlog-picker/O1` — `minParticipants`/`maxParticipants` are filter fields with no input,
 and `maxParticipants` is never read by the picker's ranking.** Two halves, and only the second is
-really an opportunity. The filter half is **moot until §13 lands** — the server reads neither field, so
-an input for them today would be one more chip that filters nothing; note it on §13 rather than here.
+really an opportunity. The filter half was **moot until §13 landed** — the server read neither field, so
+an input for them then would have been one more chip that filters nothing. **§13 landed 2026-09-15
+(`B11`)**: both `minParticipants` and `maxParticipants` are now read (with `maxParticipants` excluding
+rows whose own `maxParticipants` is `null` — an unbounded entry never fits under a cap), so the filter
+half is a live opportunity again and belongs here, not on a retired escalation number.
 The ranking half is real and app-side: `backlogSuggestion()` (`useLeisurePicker.ts:70`) reads
 `minParticipants` into `CandidateFacts` and not `maxParticipants`, so a one-person entry is offered to
 a four-person draw. The unit is right that `D1-backend.md`'s semantics question is why — *"not clear
