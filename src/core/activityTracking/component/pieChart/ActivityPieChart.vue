@@ -39,7 +39,7 @@
 	import { LegendComponent, TooltipComponent } from 'echarts/components'
 	import type { EChartsOption } from 'echarts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
-	import type { PieSegment } from './PieSegment.ts'
+	import { OTHER_DOMAIN, type PieSegment } from './PieSegment.ts'
 
 	const props = defineProps<{
 		domains: PieSegment[]
@@ -59,7 +59,7 @@
 
 	const chartOption = computed<EChartsOption>(() => {
 		const data = props.domains.map(segment => ({
-			name: segment.domain === '_other' ? t('activityTracking.common.other') : segment.domain,
+			name: segment.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : segment.domain,
 			value: segment.seconds,
 			itemStyle: {
 				color: segment.color,
@@ -93,7 +93,7 @@
 				},
 				formatter: (name: string) => {
 					const segment = props.domains.find(
-						d => (d.domain === '_other' ? t('activityTracking.common.other') : d.domain) === name,
+						d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === name,
 					)
 					if (segment) {
 						const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name
@@ -141,13 +141,13 @@
 		if (!params.data) return
 
 		const clickedDomain = props.domains.find(
-			d => (d.domain === '_other' ? t('activityTracking.common.other') : d.domain) === params.data.name,
+			d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === params.data.name,
 		)
 
 		if (!clickedDomain) return
 
 		// Ignore clicks on "Other" segment
-		if (clickedDomain.domain === '_other') {
+		if (clickedDomain.domain === OTHER_DOMAIN) {
 			return
 		}
 

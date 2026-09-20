@@ -1243,6 +1243,70 @@ chips now filter. **`F18` and `F60` still land app-side**, unchanged: the server
 `anchorYear`/`anchorMonth` and grew no alias for `year`/`month`, so `F60` is still the client's own slip.
 Both batches' verification blocks said "check the request, not the table"; they can now check the table.
 
+### §10 — ✅ RESOLVED 2026-09-16 (backend `B16` landed on its working tree, verified and extended 2026-09-21, **not yet committed there**; frontend half in this tree the same day). Two sentinels for one folded-tail row
+
+**The ask, as it stood in the queue** — source-certain, unobserved on the seed; found in the eleventh pass
+reading `tracking-dashboards/B2`'s data path. The four pie endpoints (`WebExtension`/`Desktop`/`Android`/
+`UnifiedPieChartEndpoint.cs`) folded the sub-`minPercent` tail into a row named the literal `"Other"`;
+the three per-source stacked-bars endpoints folded theirs into `"_other"`. The client recognised only the
+second (`ActivityPieChart.vue`, `StackedBarsChart.vue:440`, `StackedBarsTooltip.vue:43`): translated it
+(`activityTracking.common.other`, *Ostatné*), coloured it neutrally, refused to select it. Every dashboard
+sends `minPercent: 1`, so whenever anything fell under 1 % of the span the pie's tail was (a) an
+untranslated English legend entry in Slovak, (b) a selectable slice — `?selected=Other`, a desktop
+`process-details?processName=Other` request, after `F47` an Android panel titled *Other* — and (c) on
+`/activity-tracking`, which also buckets locally at 3 % into `_other`, a **second** "Other" legend entry
+whenever the server's bucket summed to ≥ 3 %. Written up as `prompts/view-docs/backend/B16-…` on
+2026-09-15 with three rules: a folded row is a sentinel, not a name; one sentinel across every endpoint
+that folds; the folded row is never drill-downable. Contract only — which constant, and where, was theirs.
+
+**What the backend did (2026-09-16, verified 2026-09-21).** One constant, `FoldedRow.Sentinel = "_other"`
+in `AdhdTimeOrganizer.Tracking/domain/helper/FoldedRow.cs`; all seven folding endpoints reference it, and a
+grep of the Tracking slice finds no other `"Other"`/`"_other"` literal outside that file and doc comments.
+The four pie endpoints emit it in the same identity fields that carried `"Other"` — `packageName`/
+`appLabel`, `processName`/`productName`, `domain`, `label`; `UnifiedPieChartEndpoint`'s private
+`OtherLabel = "Other"` is gone. Nothing else moved: seconds, percentages, ordering, the totals row. The
+three stacked-bars endpoints are wire-identical, now sourced from the constant. Unified stacked-bars has no
+`minSeconds` and never folds — not on the list, not a gap. Pinned by two theories in
+`TrackingDashboardParityTests`, both asserting the literal string rather than importing the constant so
+they pin the wire, not the server's own name for it: `PieChart_FoldsTheTailUnderTheSameSentinelOnEverySource`
+(four pie routes, `minPercent: 5`) and — added 2026-09-21 when the verification pass noticed the bars had
+been rerouted through the constant with nothing asserting them — `StackedBars_FoldTheTailUnderTheSameSentinelOnEverySource`
+(three stacked-bars routes, `minSeconds: 100`). 15 passed, 0 failed. **All of it is still on the API's
+working tree**: `FoldedRow.cs` untracked, seven endpoints modified, no commit — see §126 and the
+*Needs verification* row in the queue. Until it is committed, any reachable server still sends `"Other"`.
+
+**What the frontend did (2026-09-16, same tree, uncommitted).** `F47`'s local guard on the `"Other"` row —
+the one shim `B16` named — was never written; `F47`'s body now says so explicitly. Instead
+`OTHER_DOMAIN = '_other'` was exported from `component/pieChart/PieSegment.ts` with a doc comment naming it
+a sentinel, and replaced the eight scattered `'_other'` literals in `ActivityPieChart.vue`,
+`ActivityPieChartSection.vue` and `UnifiedPieChartSection.vue`. The one behaviour the rename could surface
+differently — the backend's single question back, *"does the client's local 3 % bucket merge or overwrite
+the server's row now that both use the same key?"* — was closed in code: both locally-bucketing sections
+(the queue's §10 named only the web one; `UnifiedPieChartSection` buckets the same way and was the second)
+now read `d.domain !== OTHER_DOMAIN && percent >= threshold`, so the server's folded row goes into the single
+`otherSeconds` accumulator unconditionally and exactly one `OTHER_DOMAIN` segment is pushed. **It sums.** A
+server row above the local threshold used to survive as its own segment beside the local bucket — that is
+(c), now impossible. Answered in the `B16` file's *FRONTEND ANSWER*; no test needed on this side, the
+fold is a `computed` over props.
+
+**What it did not do.** Two fold thresholds for one concept (server `minPercent: 1`, client 3 %) are
+unchanged and now commented in both sections; that is `tracking-dashboards` deferred item (2), not a
+defect. The backend's out-of-scope flag on `AdhdTimeOrganizer.History/…/HistoryPieChartBuilder.cs` — *"has
+its own `"Other"` literals, probably the identical bug"* — was **stale**: `:20` is
+`public const string OtherName = "_other";` and has been. Their offer to do the History side as a follow-up
+needs no answer but "nothing to do". What *is* wrong there is the History **client**: the history dashboard
+mounts its own `historyDashboard/component/pieChart/HistoryPieChart.vue`, not `ActivityPieChart.vue`, and it
+renders the sentinel raw — `_other` in the legend, slice selectable. Filed as `F84`, app-side, no backend
+half, never blocked by §10.
+
+**What it unblocks, and what it does not.** Nothing was queued behind §10: `F47` and `F48` were written to
+land either way, `F84` is independent, and the client guard is a no-op against the old wire value so this
+side commits safely in either order. The one thing still owed is a **look** — the queue's *Closed without a
+browser* row: a seed app under 1 % of the span, or one fulfilled `route` body, should paint a grey
+*Ostatné* slice that clicks to nothing, and on `/activity-tracking` and `/unified` exactly **one** such
+legend entry. That look is worthless until the API side is committed and running; folded into the
+mutation pass, not its own row. Number retired, not reused.
+
 ### §11 — ✅ RESOLVED 2026-09-16 (backend landed; frontend half landed the same day). The colour validator demanded hex, and the palette — on both sides, including the server's own seeder — is names
 
 **The ask, as it stood in the queue** — `activity-settings/X1` + `todo-lists/X1` (both `blocker`, observed

@@ -167,7 +167,7 @@
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { unifiedItemColor, useActivitySources } from '@/core/activityTracking/composable/useActivitySources.ts'
-	import type { PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { OTHER_DOMAIN, type PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import type { UnifiedActivityItem } from '@/core/activityTracking/dto/response/unified/UnifiedActivityItem.ts'
 	import type { UnifiedPieTotals } from '@/core/activityTracking/dto/response/unified/UnifiedPieTotals.ts'
 	import type { ActivitySource } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
@@ -228,9 +228,13 @@
 		const significant: PieSegment[] = []
 		let otherSeconds = 0
 
+		// The server folds its own tail first and sends it as an `OTHER_DOMAIN` row, so that row is merged
+		// into this bucket unconditionally rather than thresholded — above `otherThresholdPercent` it would
+		// otherwise survive as a *second* `OTHER_DOMAIN` segment and the legend would carry two identical
+		// "Ostatné" entries. Same guard as `ActivityPieChartSection`, the other locally-bucketing section.
 		for (const segment of data) {
 			const percent = (segment.seconds / total) * 100
-			if (percent >= otherThresholdPercent) {
+			if (segment.domain !== OTHER_DOMAIN && percent >= otherThresholdPercent) {
 				significant.push({ ...segment, percent })
 			} else {
 				otherSeconds += segment.seconds
@@ -239,10 +243,10 @@
 
 		if (otherSeconds > 0) {
 			significant.push({
-				domain: '_other',
+				domain: OTHER_DOMAIN,
 				seconds: otherSeconds,
 				percent: (otherSeconds / total) * 100,
-				color: unifiedItemColor('_other'),
+				color: unifiedItemColor(OTHER_DOMAIN),
 			})
 		}
 

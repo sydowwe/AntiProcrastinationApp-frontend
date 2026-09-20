@@ -75,7 +75,7 @@
 	import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
-	import type { PieSegment } from './PieSegment.ts'
+	import { OTHER_DOMAIN, type PieSegment } from './PieSegment.ts'
 	import type { DomainPieData } from '@/core/activityTracking/dto/response/pieChart/DomainPieData.ts'
 	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
@@ -116,14 +116,19 @@
 
 		if (total === 0) return []
 
-		// Calculate percentages and group small ones into "Other"
+		// Calculate percentages and group small ones into "Other".
+		// The server folds its own tail first (`minPercent: 1`) and sends it as an `OTHER_DOMAIN` row, so
+		// that row is merged into this bucket unconditionally rather than thresholded: above the local
+		// threshold it would otherwise survive as a *second* `OTHER_DOMAIN` segment and the legend would
+		// carry two identical "Ostatné" entries. Two fold thresholds in two places is the real tidy-up
+		// (see `_fix-queue.md` → `tracking-dashboards` deferred (2)); this keeps the sentinel single.
 		const threshold = props.otherThresholdPercent ?? 3
 		const significant: PieSegment[] = []
 		let otherSeconds = 0
 
 		for (const d of data) {
 			const percent = (d.seconds / total) * 100
-			if (percent >= threshold) {
+			if (d.domain !== OTHER_DOMAIN && percent >= threshold) {
 				significant.push({ ...d, percent })
 			} else {
 				otherSeconds += d.seconds
@@ -132,7 +137,7 @@
 
 		if (otherSeconds > 0) {
 			significant.push({
-				domain: '_other',
+				domain: OTHER_DOMAIN,
 				seconds: otherSeconds,
 				percent: (otherSeconds / total) * 100,
 				color: '#9e9e9e',
