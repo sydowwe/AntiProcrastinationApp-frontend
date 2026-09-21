@@ -106,6 +106,34 @@ test.describe('Android dashboard (/activity-tracking/android)', () => {
 		const firstCard = authenticatedPage.getByRole('button', { name: /^View details for/ }).first()
 		await expect(firstCard.getByText('Background', { exact: true })).toHaveCount(0)
 	})
+
+	// findings.md B2 (F47 + backend B23): selecting an app opens that app's own detail — the instant rows
+	// from the pie data, then exactly one GET …/app-details for the fetched figures.
+	test('selecting a Top Apps card shows that app\'s own detail with a session count', async ({
+		authenticatedPage,
+	}) => {
+		const detailRequests: string[] = []
+		authenticatedPage.on('request', request => {
+			if (request.url().includes('/activity-tracking/android/app-details')) detailRequests.push(request.url())
+		})
+
+		const firstCard = authenticatedPage.getByRole('button', { name: /^View details for/ }).first()
+		await firstCard.waitFor({ state: 'visible' })
+		const appLabel = (await firstCard.getAttribute('aria-label'))!.replace(/^View details for /, '')
+		await firstCard.click()
+
+		await expect(authenticatedPage).toHaveURL(new RegExp(`[?&]selected=${encodeURIComponent(appLabel)}`))
+		const closeButton = authenticatedPage.getByRole('button', { name: 'Close details' })
+		await expect(closeButton).toBeVisible()
+		// Scoped to #app: the panel title is the same text as the card and the pie legend.
+		await expect(authenticatedPage.locator('#app').getByText('Share of period:')).toBeVisible()
+		await expect(authenticatedPage.getByTestId('app-details-sessions')).toHaveText(/^\d+$/)
+		expect(detailRequests).toHaveLength(1)
+
+		await closeButton.click()
+		await expect(authenticatedPage).not.toHaveURL(/[?&]selected=/)
+		await expect(authenticatedPage.locator('#app').getByText('Share of period:')).toHaveCount(0)
+	})
 })
 
 test.describe('Findings from the inventory pass — semantic tier, not yet fixed', () => {
@@ -119,13 +147,6 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 			const closeButton = authenticatedPage.getByRole('button', { name: 'Close domain details' })
 			await expect(closeButton.locator('svg')).toBeVisible()
 		},
-	)
-
-	// findings.md B2: selecting an app on the android dashboard opens no detail panel — Web and Desktop
-	// both do. The side panel stays the fixed Total/Apps/Sessions summary regardless of selection.
-	test.fixme(
-		'B2: selecting a Top Apps card on /activity-tracking/android shows that app\'s own detail',
-		async () => {},
 	)
 
 	// findings.md A1: the date-preset chips (ActivityRangePicker.vue) and the unified source-filter

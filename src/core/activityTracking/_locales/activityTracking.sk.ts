@@ -87,6 +87,18 @@ const messages = {
 		monitorBreakdown: `Rozdelenie podľa monitora:`,
 		monitor: `Monitor {n}:`,
 		closeDomainDetails: `Zavrieť detaily domény`,
+		closeDetails: `Zavrieť detaily`,
+		shareOfSpan: `Podiel na období:`,
+		packageName: `Balík:`,
+		meanSession: `Priemerná relácia:`,
+		longestSession: `Najdlhšia relácia:`,
+		firstUse: `Prvé použitie:`,
+		lastUse: `Posledné použitie:`,
+		devices: `Zariadenia:`,
+		days: `Podľa dní:`,
+		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts)
+		sessionCount: `{count} relácia | {count} relácie | {count} relácií`,
+		appDetailsNotFound: `V zvolenom období nie sú žiadne relácie tejto aplikácie`,
 	},
 	viewMode: {
 		total: `Celkovo`,

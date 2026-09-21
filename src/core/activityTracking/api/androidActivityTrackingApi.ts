@@ -3,6 +3,7 @@ import { AndroidStackedBarsWindow } from '@/core/activityTracking/dto/response/a
 import { AndroidTimelineResponse } from '@/core/activityTracking/dto/response/android/AndroidTimelineResponse.ts'
 import { AndroidAppSummaryDto } from '@/core/activityTracking/dto/response/android/AndroidAppSummaryDto.ts'
 import { AndroidPieChartResponse } from '@/core/activityTracking/dto/response/android/AndroidPieChartResponse.ts'
+import { AndroidAppDetailsResponse } from '@/core/activityTracking/dto/response/android/AndroidAppDetailsResponse.ts'
 import type { AndroidStackedBarsRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidStackedBarsRequest.ts'
 import type { AndroidTimelineRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidTimelineRequest.ts'
 import type { AndroidSummaryCardsRequest } from '@/core/activityTracking/dto/request/android/dashboard/AndroidSummaryCardsRequest.ts'
@@ -55,6 +56,34 @@ export async function getAndroidFocusMetrics(
 ): Promise<FocusMetricsResponse> {
 	const { data } = await API.post(`${BASE_URL}/focus-metrics`, request, { signal, _silent: true })
 	return FocusMetricsResponse.fromJson(data)
+}
+
+/**
+ * The Android sibling of `getDesktopProcessDetails` — same envelope (`from`/`to` as instants) and the
+ * same optional daily window narrowing it back to the time-of-day slice the pie was drawn with; see the
+ * desktop twin for why the window matters over a multi-day span. Answers 404 when no session of that
+ * package starts inside the slice (a stale `?selected=` on reload), and `_silent` like every other
+ * dashboard read so the section words that itself instead of the interceptor snackbarring it.
+ */
+export async function getAndroidAppDetails(
+	packageName: string,
+	from: string,
+	to: string,
+	dailyWindow?: { startMinutes: number; endMinutes: number },
+	signal?: AbortSignal,
+): Promise<AndroidAppDetailsResponse> {
+	const { data } = await API.get(`${BASE_URL}/app-details`, {
+		params: {
+			packageName,
+			from,
+			to,
+			windowStartMinutes: dailyWindow?.startMinutes,
+			windowEndMinutes: dailyWindow?.endMinutes,
+		},
+		signal,
+		_silent: true,
+	})
+	return AndroidAppDetailsResponse.fromJson(data)
 }
 
 export function useTrackerAndroidMappingCrud() {

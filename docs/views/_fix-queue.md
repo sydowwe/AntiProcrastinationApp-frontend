@@ -75,7 +75,7 @@
 | F43 | `/day-planner/:date` with a malformed or unprovisioned date: two unguarded calendar fetches (`onMounted`'s `Promise.all`, and `useDayNavigation`'s `viewedDate` watcher) leave a blank header, an unhandled rejection and — on the second — a header for the *previous* day under the new URL | app | `planner-day/B5` (date half; the task half is settled, no defect) | low |
 | F44 | Calendar "Days to show" and the Range/Duration configuration do not round-trip in the URL — the app half: extend `useCalendarUrlState` once `FW16` exposes the state | app (**after `FW16`**) | `planner-day/B3` (app half) | med |
 | F46 | The pie-chart detail panel's close button was hand-rolled three times and drifted: `mdi-close` in a FontAwesome-only app on the web panel (blank square + console error), no accessible name at all on the desktop panel, and a "Close domain details" label on the unified panel whose items are domains, products *and* apps — one shared key, one identical button | app (`src/core/activityTracking/component/`) | `tracking-dashboards/B1`, `A2` | trivial |
-| F47 | Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`; the card's accessible name promises *"View details for Spotify"*. A local panel from the data on the page (label, package, total time, share of the span, the summary card's baseline stat); a per-app session count is **not on the wire** (§79) | app | `tracking-dashboards/B2` (narrowed) | low |
+| F47 | ~~Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`~~ **✅ landed 2026-09-21**, folded into `B23`'s frontend half (§18): `AndroidAppDetailsPanel.vue` renders the three instant rows and, under them, the per-app figures `B23` put on the wire — so the *"session count"* half of `B2`'s original pass condition is met too. The close button uses the `pieChart.closeDetails` key `F46` prescribes; `F46` still has to move the other three onto it | app | ~~`tracking-dashboards/B2`~~ (fixed) | low |
 | F48 | The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
 | F49 | Date-preset chips and source-filter chips are focusable `span`s with no role and no state — Vuetify 3.12's `VChip` adds `tabindex`/keydown when clickable and nothing else; the same state-bearing class sits on `todoList`'s two filter groups, `dayPlanner`'s day-of-week and duration chips, and (**grown**) `leisure`'s *Experienced* chip, where `<VChip link @click>` renders as a bare `generic` and `getByRole('button')` finds nothing (15 chip-controls app-wide, 6 of them toggles/selects) | app (`activityTracking`, `todoList`, `dayPlanner`, **`leisure`**) | `tracking-dashboards/A1`, **`leisure-backlog-picker/A1 (round 2)`** (+ unfiled twins in `TodoListFilters.vue`, `RepeatingTaskDialog.vue`, `BasePlannerTaskDialog.vue`) | low-med |
 | F50 | The Compare Templates dialog is empty every time — **two** unkeyed `Promise.all` fan-outs from one api instance (`fetchById` ×2, then `fetchFiltered` ×2), each cancelling its own sibling; the finding's fix closes only the first; folds `B3`'s dead *Confirm* button (`:showConfirmBtn` is not a `MyDialog` prop), same file | app (`TemplateComparisonDialog.vue`) | `planner-templates/X1`, `B3` | low |
@@ -1688,6 +1688,16 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None. Two attributes, one key; every consumer is in this module.
 
 ## F47. Selecting an app on `/activity-tracking/android` opens no detail — a local panel from the data on the page; a per-app session count is not on the wire
+
+> ✅ **Landed 2026-09-21** together with `B23`'s frontend half (§18) — the ask landed the same day the
+> batch was written, so the panel was built once with both halves: the instant rows below (total, share,
+> package; `pieChart.shareOfSpan` / `pieChart.packageName`) and, under a divider, the fetched figures. The
+> *"do not add an Android `details` fetch"* line is therefore void, as its own last sentence anticipated.
+> One deliberate deviation: the close button takes `pieChart.closeDetails` (*Close details* / *Zavrieť
+> detaily*), the key `F46` prescribes, rather than a fourth hand-typed label — `F46` should retire
+> `closeDomainDetails` onto it. The `summaryCardsData` baseline row was not added. Verified per the block
+> below: card and slice both toggle, `?selected=Spotify` opens from the URL, the folded slice selects
+> nothing. `tracking-dashboards.draft.spec.ts`'s `B2` fixme is a real test.
 
 - **Scope:** app-side `src/core/activityTracking/component/android/AndroidPieChartSection.vue`,
   `view/AndroidActivityDashboard.vue`, `_locales/activityTracking.{sk,en}.ts`
@@ -4110,9 +4120,20 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
      `e2e/tests/two-factor.spec.ts` (`otplib`), which also gives `user-settings/U1` its enrolment half. Body in
      _fix-queue-log.md → Closed escalations. Number retired, not reused; the list below keeps its source numbering. -->
 
-18. **An Android per-app detail read, the sibling of desktop's `process-details`** — `tracking-dashboards/B2`
-    as narrowed by §79, promoted from *Deferred to opportunities* item (1) on 2026-09-21 at the owner's
-    request. Not a defect: `F47` ships the local panel (total, share, package) from `props.apps`, and says
+18. ~~**An Android per-app detail read, the sibling of desktop's `process-details`**~~ — **✅ RESOLVED
+    2026-09-21**, the same day it was filed. Backend `B23` landed `GET /activity-tracking/android/app-details`
+    exactly as asked (API `c00e64d`, `AndroidAppDetailsEndpoint` pinned by `TrackingDetailsEndpointsTests`;
+    reply in `prompts/view-docs/backend/B23-…`): desktop's query contract with `packageName`, the window
+    mask on `SessionStartUtc`, 404 problem+json on no rows and on `_other`, `days` kept and bucketed on the
+    user's clock, no Active/Background. Frontend half the same afternoon, **with `F47` folded in** — it is
+    the instant half of the same panel: `getAndroidAppDetails` + `AndroidAppDetailsResponse`,
+    `AndroidAppDetailsPanel.vue` (total / share / package instantly, then sessions, mean, longest,
+    first/last use, devices when > 1, days when > 1 with a *+ N more*), the watcher in
+    `AndroidPieChartSection.vue` keyed on package + envelope with abort and a 404 → *"No sessions of this
+    app in the selected period"* branch (no retry, no snackbar). Verified live on the seed: one `GET` per
+    selection, 200, `?selected=Spotify` opens it from the URL, *Close details* clears both. Was:
+    `tracking-dashboards/B2` as narrowed by §79, promoted from *Deferred to opportunities* item (1) on
+    2026-09-21 at the owner's request. Not a defect: `F47` ships the local panel (total, share, package) from `props.apps`, and says
     itself not to fetch against an endpoint that does not exist. Every summary card is still named *"View
     details for {app}"* (`ActivityDomainCard.vue:8`) for a click that can show nothing more, because no Android
     response carries a per-app session count, first/last use or session length — `seconds == totalSeconds`
@@ -4593,8 +4614,8 @@ name. The rows exist (`AndroidSessionData`: `SessionStartUtc`, `DurationSeconds`
 session count, first/last use and mean session length are one `GroupBy` away server-side; the client
 half is `DesktopPieChartSection.vue:169-188`'s watcher, copied. Not a defect — the web dashboard's
 detail is also local-only — but it is the feature the label promises. **Written as `B23` on 2026-09-21**
-(escalation §18, `prompts/view-docs/backend/B23-android-per-app-detail-endpoint.md`); it leaves this list
-when the ask lands. **(2) The pie sections' *Other*
+(escalation §18) and **✅ landed the same day** (API `c00e64d`, frontend half with `F47` — see §18); it
+stays here only as the record of where it came from. **(2) The pie sections' *Other*
 bucket is computed in two places at two thresholds** (server at `minPercent: 1`; the web **and unified**
 clients at 3 % — the note said "web client" and undercounted by one — the other two not at all). §10
 settled the sentinel on 2026-09-16, and its frontend half had to teach both local bucketers to fold the
