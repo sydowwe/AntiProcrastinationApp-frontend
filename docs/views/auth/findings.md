@@ -559,9 +559,23 @@ duplicated, so the tally isn't double-counted.
 ---
 
 ### U4. The "too many failed attempts" and "locked out" login branches are unverified
-- **Status:** open
+- **Status:** resolved — the lockout branch verified live 2026-09-21 on both paths; the contract gap it
+  exposed is closed by `B21` (`_fix-queue.md` §16, body in `_fix-queue-log.md`)
 - **Severity:** unverified
 - **Where:** `LoginView.vue:173-193`
+- **Closing note (2026-09-21):** The numbers came from the API source (5 attempts, 5-minute lockout; the
+  **5th** wrong password answers the lockout 403). The branch as it stood showed the server's *English*
+  countdown sentence in both locales, because the deadline was on the wire only inside that sentence — filed
+  as `B21`, landed the same day as `lockoutEndUtc` on the 403 body. The client now branches on
+  `errorType === UserLockedOut` (no substring match) and the interceptor words the remaining minutes in the
+  account's locale (`httpErrors.forbiddenLockedOutUntil`), falling back to *"try again later"* when the field
+  is absent (a pre-`B21` server, or the 2FA flow's own lockout, which answers 401 with the type and no
+  instant). Verified through a throwaway registered via `POST /api/auth/register`, failed five times, then
+  submitted on `/login`: the snackbar read the localised fallback sentence against the pre-`B21` API
+  process, and *"Try again in 5 min."* after the API was restarted on the `B21` source (the 403 body then
+  carried `lockoutEndUtc`). Two things to know when repeating it: the login throttle is 5/min per IP, so
+  fail four times through the API and let the browser's submit be the 5th; and the throwaways are cleared
+  by the next reseed.
 - **Actual:** Not tested — deliberately, since triggering a real lockout on the shared seeded
   `test@example.com` account risks locking out other units/agents running concurrently against the same
   backend. The exact server-side attempt threshold and lockout duration are unknown from the frontend alone.

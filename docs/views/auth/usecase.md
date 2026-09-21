@@ -43,7 +43,9 @@ directly.
   X2)
 
 **Depends on:** `VITE_RECAPTCHA_SITE_KEY` (empty in this dev environment — see Findings U3); the server's
-exact error-message strings, which the client string-matches to choose a snackbar (Findings U4).
+exact error-message strings for the 401 and the unconfirmed-e-mail 403, which the client still string-matches
+to choose a snackbar — the lockout 403 no longer is: it is branched by `errorType` and worded from
+`lockoutEndUtc` since `B21` (Findings U4).
 
 ### RegistrationView (`/registration`)
 **Purpose:** Create a new account, optionally with 2FA enabled from the start.

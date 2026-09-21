@@ -1792,6 +1792,66 @@ still does not.
 **The seed.** `id 15503` and any other `{0,0}` rows predate this and are the seed's — unreachable from any
 client now. Reseed after `F67`'s verification as already planned.
 
+### §16 — ✅ RESOLVED 2026-09-21 (backend `B21` landed in `Sydowwe.Framework`, on the API's working tree at time of writing; frontend half the same day). The lockout 403 carries the instant the lock lifts
+
+**The ask, as it stood in the queue** — `auth/U4`, promoted from *Needs verification* the same morning,
+where the source read had named the ceiling: *"the countdown is server-only, so that is the ceiling without
+a contract change."* `PasswordSignInFlow.cs:165-172` answered a locked-out sign-in with 403,
+`errorType: UserLockedOut` (since `B18`) and one interpolated English string in `generalErrors` — *"Too
+many failed login attempts. Try again in {m}m {s}s"* — and the deadline was on the wire nowhere else. So
+the client shipped both bad options at once: `LoginView.vue:180-185` substring-matched the sentence and
+showed it verbatim in a Slovak UI, and the typed branch `FW24` had added (`httpErrors.forbiddenLockedOut`)
+was localised but could only say *"try again later"*, because saying how much later meant parsing prose
+the `B18` contract forbids reading. Filed as `B21`
+(`prompts/view-docs/backend/_done/B21-lockout-403-carries-no-machine-readable-retry-time.md`, response
+appended): one field, `lockoutEndUtc`, on that body only.
+
+**The answer, 2026-09-21 — exactly the shape asked for, with one correction.** `lockoutEndUtc` is on the
+lockout 403 body: ISO-8601, UTC, `Z` suffix, seven fractional digits (`new Date()` parses it; do not regex
+the digit count), Identity's `LockoutEnd` verbatim. **Absent, not null**, on every other response —
+the `EmailNotConfirmed` 403 and the 401 included — so a pre-`B21` server is indistinguishable from an
+absent field and the old wording is the compatibility path. Status stays 403, type stays `UserLockedOut`,
+the English sentence stays in `generalErrors` for older clients, no `Retry-After` header. Carried by both
+transports of `PasswordSignInFlow`: `POST /api/auth/login` and `POST /api/auth/extension/login`. **The
+correction:** the 2FA and Google paths do *not* reuse that flow — `POST /api/auth/login/2fa` (and
+`/2fa/extension`) has its own lockout branch answering **401** `UserLockedOut` with *"Account is temporarily
+locked…"* and no instant, so a user who trips lockout on TOTP codes gets the type without the field and
+the absent-field wording is the right rendering there; Google sign-in never meets password lockout at all.
+Pinned by `AuthSecurityTests.Login_LockedOut_Returns403_WithLockoutEndUtc` (five failures → 403, type,
+sentence still present, field present, ends in `Z`, lands in `(now, now+5m]`) and the `EmailNotConfirmed`
+sibling asserting the field absent. Also noted: it is the **5th** wrong password that answers the lockout
+403, not a 6th attempt.
+
+**The frontend half, the same day — all in the framework (`src/_common`).** `ErrorHandlingFunctions.ts`:
+a `TypedErrorDetails` interface (`{ lockoutEndUtc?: string }`, every field optional, `{}` is the older-API
+shape) as a fourth parameter of `resolveTypedHttpErrorMessage` and a third of `handleHttpCodes`; the
+`UserLockedOut` arm computes whole minutes to the instant — `Math.ceil`, floored at **1** so a client clock
+running ahead cannot read *0 min* — and returns `httpErrors.forbiddenLockedOutUntil` (*"Príliš veľa
+neúspešných pokusov o prihlásenie. Skúste to znovu o {minutes} min."* / *"… Try again in {minutes}
+min."*), or the unchanged `forbiddenLockedOut` when the field is absent or does not parse.
+`axiosConfig.ts`: `extractTypedErrorDetails(error)` beside `extractServerErrorType`, and the interceptor
+passes it through. `LoginView.vue:173-185`: the substring match and its seven-line justification are
+deleted, **but not replaced by nothing** — the branch is now `extractServerErrorType(error) ===
+ServerErrorType.UserLockedOut` → `handled = true`, because the snackbar is one slot where the last call
+wins and the view's `!handled` fallback shows `generalErrors[0]`: deleting the branch outright would have
+let the raw English sentence overwrite the interceptor's localised one a tick later. The two locale keys
+are the framework's; `httpErrors` is deep-merged in `EN.ts` (since `B18`) and SK takes the framework's
+namespace whole, so nothing app-side. `docs/{composables,api}.md` updated in the same framework commit.
+
+**Verified live, both halves.** *Fallback:* registered a throwaway through `POST /api/auth/register`,
+failed its password five times through the API (the 5th answered `403 UserLockedOut`, still without the
+field: the running API process had been built two minutes before `TypedErrorResponse.cs` was saved), then
+submitted the same account through `/login` in `playwright-cli` — after waiting out the login throttle
+(5/min per IP; the five API calls had spent it and the first browser submit was a 429). The snackbar read
+the localised *"Too many failed sign-in attempts. Try again later."*, request `POST /api/auth/login → 403`;
+before this change the same submit showed the server's English *"Too many failed login attempts. Try again
+in 4m 59s"*. *With the field:* restarted the API on the `B21` source, registered a second throwaway, failed
+it **four** times through the API and made the browser's submit the 5th — which keeps the five inside one
+throttle window and makes the browser's own request the one that trips the lock. Its body:
+`{"statusCode":403,…,"errorType":"UserLockedOut","lockoutEndUtc":"2026-09-21T09:12:12.1729619Z"}`; the
+snackbar read *"Too many failed sign-in attempts. Try again in 5 min."* Both throwaways are cleared by the
+next reseed.
+
 ## Closed verification items
 
 ### §91 — ✅ SETTLED 2026-09-16 (fifteenth pass), in the mundane direction: the snackbar fires
