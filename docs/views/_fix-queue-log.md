@@ -2156,6 +2156,69 @@ so the first live call was a routing 404 with `content-length: 0` — indistingu
 own 404 to the panel, which correctly showed the soft sentence. Told apart by the missing problem+json body;
 worth remembering the next time a freshly landed ask answers 404.
 
+### §20 — ✅ RESOLVED 2026-09-21 (backend `B25` landed in `Sydowwe.Framework` and the API, on their working trees at time of writing; frontend half the same day, in `vue_framework`). The 2FA login's 401 names its cause, and the lockout row carries the instant
+
+**The ask, as it stood in the queue** — `B21`'s response had named and declined it (*"a separate small
+ask"*), filed 2026-09-21 at the owner's request so the lockout contract closed on both flows, low priority.
+With one correction to that response, read from the source: `BaseValidateTwoFactorAuthForLoginEndpoint.cs:46-51`
+did `AddError` + `Send.ErrorsAsync(401)` and never stamped `result.ErrorType`, so the 401 carried **no
+`errorType` at all** — not `UserLockedOut` — for any of its three causes (expired/consumed session, locked
+out, wrong code), and `LoginVerifyQrCode.vue` rendered all three as the code being refused. Ask: (1) the
+type on all three 401s, (2) `lockoutEndUtc` beside it on the lockout row, (3) a decision on whether the code
+that *trips* the lock answers `UserLockedOut` or `InvalidTwoFactorAuthToken`. File:
+`prompts/view-docs/backend/_done/B25-2fa-login-lockout-carries-no-type-and-no-instant.md` (reply appended).
+
+**The answer, 2026-09-21 — all three, and the correction confirmed live.** Status stays 401 everywhere;
+the body now carries `Unauthorized` (pending cookie/token missing, malformed, expired, consumed, user gone),
+`UserLockedOut` + `lockoutEndUtc` (locked already, *or by this very code* — the decision is **yes**:
+`IsLockedOutAsync` is re-read after `AccessFailedAsync`, as `PasswordSignInFlow` and Identity's own
+`PasswordSignInAsync` do), or `InvalidTwoFactorAuthToken` (wrong, below the threshold). `/auth/login/2fa/setup`
+got the same `Unauthorized` on both of its 401s, so one *session expired* arm covers the whole 2FA login
+surface. The mechanism was fixed at the root rather than at the site: FastEndpoints' `Send.ErrorsAsync(int)`
+has no slot for the type, so it had to be stamped on `HttpContext.Items` on a separate line — which is how
+it was forgotten and why `B18`'s bare-`ToStatusCode` scan never saw it. Now a typed
+`Send.ErrorsAsync(errorType, status, [lockoutEnd])` overload does both in one call, the stamp-only helpers
+are `internal`, and a Roslyn guard (`ErrorStatusBypassGuardTests.NoFailedResultBranch_SendsErrorsWithoutTheType`)
+walks every `if (x.Failed)` branch in production code and fails on any untyped send — 18 sites migrated,
+one of which the first regex had missed. Pinned by four `TwoFa_Extension_*` tests in `AuthSecurityTests`
+(already locked; wrong code that trips the lock; wrong code below it, type present and instant absent;
+replayed token now asserts `Unauthorized`), 550 green on the touched surfaces.
+
+**Wider than the ask.** The same migration typed every auth 4xx that used to be a bare status — recaptcha
+failures (`RecaptchaTokenInvalid` / `RecaptchaWrongAction`), a taken registration address (`Conflict`, so
+the sign-up form is never offered *"pick another value"*), Identity policy refusals (`IdentityError`), 2FA
+provisioning with no e-mail (`MissingArgument`), an expired Google code (`Unauthorized`) — additively, no
+status changed. The one status change: `/activity/{id}/clone`, `PUT …/quick-edit` and `PATCH …/archived` had
+drifted from the CRUD bases and answered a DB refusal with a bare 400; they now map to 409 with the DB type
+(`DbUniqueViolationError` on a duplicate name) like `POST /activity` does, so `B18`'s *"pick another name"*
+wording applies with no special case. Recorded in the queue as *not filed*: the new auth types are each a
+wording decision for their own view and none was asked for here; the activity status change needs nothing
+client-side (no call site special-cased those 400s).
+
+**The frontend half, same day — all in the `vue_framework` submodule.** `ServerErrorType` declares
+`Unauthorized` and `InvalidTwoFactorAuthToken`; `resolveTypedHttpErrorMessage` gains a **401 arm for
+`UserLockedOut` only**, sharing the 403's `lockedOutMessage(details)` so the countdown is the same
+`httpErrors.forbiddenLockedOutUntil` from `lockoutEndUtc` on both flows. `LoginVerifyQrCode.vue`'s `catch`
+branches on `extractServerErrorType(error)`: `UserLockedOut` → `handleHttpCodes(401, type,
+extractTypedErrorDetails(error))`; `InvalidTwoFactorAuthToken` → the existing
+`authorization.codeRejectedSignInAgain`; `Unauthorized` and the no-type body of an older server → the new
+`authorization.sessionExpiredSignInAgain` (SK + EN). The dialog closes on every branch as before — the
+pending token is single-use, so a retype could only be refused again. One deliberate deviation from the
+response's *"arms for both `UserLockedOut` and `Unauthorized`"*: the resolver is the status-by-cause map the
+interceptor and `handleHttpCodes` share, and on a 401 the generic `Unauthorized` says nothing the status does
+not, so its sentence stays the dialog's `default` arm rather than becoming a framework-wide 401 wording.
+Moot for the interceptor either way — an auth endpoint's 401 rejects before its snackbar branch, which is
+why the dialog owns the message. Framework docs (`composables.md`, `api.md`) and the three stale *"the 2FA
+branch has no instant"* comments (`common.{sk,en}.ts`, `axiosConfig.ts`) updated in the same submodule
+commit. `vue-tsc --build --force` 0, eslint 0.
+
+**The wrong-code row is pinned; the lockout row is not.** `auth/U2`'s `two-factor.spec.ts` (`otplib`)
+already submits a bad code and asserts *"The code was not accepted…"* — that is the `InvalidTwoFactorAuthToken`
+row, and it passes against the `B25` API (restarted on `1d20f55` the same evening; the process on `:8080`
+had been started four hours before the commit). The lockout row needs a 2FA account failing five codes
+across five password sign-ins under the 5/min login throttle — the same spec is where it gets pinned when
+that is worth a minute of throttle, and the response says the same.
+
 ## Closed verification items
 
 ### §91 — ✅ SETTLED 2026-09-16 (fifteenth pass), in the mundane direction: the snackbar fires

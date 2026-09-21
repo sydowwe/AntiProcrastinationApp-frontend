@@ -583,8 +583,9 @@ duplicated, so the tally isn't double-counted.
   as `B21`, landed the same day as `lockoutEndUtc` on the 403 body. The client now branches on
   `errorType === UserLockedOut` (no substring match) and the interceptor words the remaining minutes in the
   account's locale (`httpErrors.forbiddenLockedOutUntil`), falling back to *"try again later"* when the field
-  is absent (a pre-`B21` server, or the 2FA flow's own lockout, which answers 401 with the type and no
-  instant). Verified through a throwaway registered via `POST /api/auth/register`, failed five times, then
+  is absent (a pre-`B21` server; the 2FA flow's own lockout 401 carried neither the type nor the instant
+  until `B25` landed the same day — `_fix-queue-log.md` §20 — and now carries both). Verified through a
+  throwaway registered via `POST /api/auth/register`, failed five times, then
   submitted on `/login`: the snackbar read the localised fallback sentence against the pre-`B21` API
   process, and *"Try again in 5 min."* after the API was restarted on the `B21` source (the 403 body then
   carried `lockoutEndUtc`). Two things to know when repeating it: the login throttle is 5/min per IP, so

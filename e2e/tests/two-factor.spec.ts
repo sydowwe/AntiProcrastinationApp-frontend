@@ -180,7 +180,8 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		await dialog.locator('.v-otp-input input').first().pressSequentially(await wrongCodeFor(sharedKey!))
 		expect((await rejected).status()).toBe(401)
 		// The pending token is single-use, so the dialog does not invite a retry it knows will fail: it
-		// closes, says so, and the form is there again with the e-mail kept.
+		// closes, says so, and the form is there again with the e-mail kept. The sentence is chosen by the
+		// body's `errorType` (`InvalidTwoFactorAuthToken`, B25).
 		await expect(page.getByText('The code was not accepted. Sign in again to try a new one.')).toBeVisible()
 		await expect(dialog).toBeHidden()
 		await expect(page).toHaveURL('/login')
