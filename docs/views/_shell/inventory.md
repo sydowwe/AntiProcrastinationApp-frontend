@@ -151,7 +151,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 
 ## Findings
 
-**Tally:** blocker 0 · bug 1 · a11y 3 · polish 1 · opportunity 0 · unverified 2 · **Framework-tagged: 3**
+**Tally:** blocker 0 · bug 0 (`B1` closed 2026-09-21) · a11y 3 · polish 1 · opportunity 0 · unverified 2 · **Framework-tagged: 3**
 
 ## Round history
 | round | date | commit | what changed |
@@ -159,11 +159,12 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 | 1 | 2026-09-09 | `acd7db0d` | initial shell pass |
 | 1a | 2026-09-10 | `acd7db0d` | backfilled `Status:` / `Verify:`; renumbered to the severity-prefix rule (`F1`→`B1`, `F2`→`A1`, old `A1`→`A2`, old `A2`→`A3`). Tally corrected: `F2` was severity `a11y` but counted as a bug. |
 | 2 | 2026-09-10 | `a87a3502` + working tree | re-verified the whole unit through `playwright-cli` against the **EN default locale** (`src/i18n.ts` `locale: 'EN'`, the signed-out guard in `App.vue`, and the filled-in `_common/_locales/common.en.ts`), signed in through the login form as the seed account `test@example.com`. Responsive section unblocked. A1/A2/A3/P1 re-confirmed open; B1 not re-testable on this account. |
+| 3 | 2026-09-21 | working tree | `B1` only — retested after backend `B15` (API `830cad6`) on a fresh `e2e-v3` seed as `primaryUser` (EN): bell rows English, a fresh test notification English, SK/EN switch re-renders existing rows. Closed. Tally: bug 1 → 0. |
 
 ---
 
 ### B1. Notification content ignores the account's English locale preference — renders raw Slovak text
-- **Status:** open — **not re-tested in round 2**: the seed account (`test@example.com`) has zero notifications, so the panel only rendered its "No notifications" empty state. Re-testing needs an account with dispatched notifications, or a dispatch triggered on purpose.
+- **Status:** ✅ **fixed and verified 2026-09-21** — backend `B15` (API `830cad6`, `prompts/view-docs/backend/_done/B15-notification-text-ignores-account-locale.md`), no frontend change. The *Verify* block below passed as written on a fresh seed as `primaryUser` (EN): all six fixture rows English in the bell (*Deadline approaching: Feature Development.*, *You have 3 scheduled reminders.*, …), and a fresh `POST /notification/test?type=ScheduledJobFailed` arrived live as *Scheduled job “purge-expired-run-logs” failed and needs attention.* The step-3 caveat about pre-existing rows did not apply: text is composed on every read, so switching the account to SK re-rendered the same rows in Slovak and switching back restored English. Escalation §1 closed; body in `_fix-queue-log.md`. ~~open — **not re-tested in round 2**: the seed account (`test@example.com`) has zero notifications, so the panel only rendered its "No notifications" empty state. Re-testing needs an account with dispatched notifications, or a dispatch triggered on purpose.~~
 - **Severity:** bug — **[framework]**
 - **Where:** Notification dropdown panel (`NotificationBell` → its panel) and `/notifikacie`, backed by `src/_common/modules/notifications/`
 - **Expected:** With the account's language preference set to English (confirmed via `/user/settings` → Appearance → Language = "Angličtina"/English, and every other piece of chrome — nav labels, breadcrumbs, dialog buttons — rendering in English), notification titles and bodies should also be in English.

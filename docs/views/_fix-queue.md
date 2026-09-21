@@ -1,16 +1,30 @@
 # Fix queue
 
-> Built 2026-09-15 · commit `97f1e414` **plus the working tree** (the unit-4, unit-6 and unit-9 mutation
-> rounds and unit 10's round 8 are uncommitted; unit 15's mutation round landed at `04c405e9`) · units
-> triaged: `_shell`, `home` (1, inventory + mutation), `todo-lists` (9, inventory + mutation),
-> `todo-routine` (10), `leisure-projects` (13), `tracking-settings` (6, inventory + mutation),
-> `activity-settings` (2, inventory + mutation), `history-review` (3), `user-settings` (14),
-> `history-capture` (4, inventory + mutation), `auth` (15, inventory + mutation), `planner-day` (7),
-> `tracking-dashboards` (5), `planner-templates` (8), `leisure-backlog-picker` (11),
-> `leisure-bucket-anchors` (12) · findings considered: 177 · batches: 91
+> Built 2026-09-21 · commit `0a174507` **plus the working tree** (the fifteenth pass's queue edits and
+> the `B16` frontend half are uncommitted) · **all 15 app units are triaged, every one of them
+> through a mutation round** — `_shell`, `home` (1), `activity-settings` (2), `history-review` (3),
+> `history-capture` (4), `tracking-dashboards` (5), `tracking-settings` (6), `planner-day` (7),
+> `planner-templates` (8), `todo-lists` (9), `todo-routine` (10), `leisure-backlog-picker` (11),
+> `leisure-bucket-anchors` (12), `leisure-projects` (13), `user-settings` (14), `auth` (15). Units 16–19
+> (`_submodule/`) have not run · findings considered: 200 · batches: 106
+
+> **The sixteenth pass (2026-09-21) absorbed no unit** — no `findings.md` has changed since the
+> fifteenth. What it absorbed is **two landed backend asks**: `B18` (`errorType` on every error body,
+> API `cd0a252`) whose frontend half was entirely unfiled and is now `FW24` + `F85`, and `B16`, whose
+> frontend half is in this repo's working tree while **the API half is still uncommitted there**. It
+> also re-read five batches against the current source on both sides of the wire: `F73` and `F74` are
+> confirmed and both got worse, `F76`, `F80`, `F81` and `F84` are confirmed as written, and two
+> *Needs verification* rows settled from a file read.
 
 > Closed batches, closed verification items, the per-pass narrative and the *Contradictions & re-grades* audit
 > trail live in [`_fix-queue-log.md`](_fix-queue-log.md). This file holds only open work.
+
+> ⚠️ **`leisure-backlog-picker`'s finding ids were renumbered by its round 2 and mean different things now**
+> (*Contradictions* §114). Its round-2 rewrite dropped the round-1 round-history row and re-lettered every
+> finding, so a `Closes:` line naming that unit is ambiguous unless it says which round. The mapping, once:
+> round-1 `X2` → `B1`, `X3` → `B2` + `B3`, `B1` → `B5`, `P1` → `P1 (round 1)`, and round-1 `X1` and `P2`
+> are **gone from the file without a retest note**. Every reference to this unit in the queue below is
+> tagged `(round 1)` or `(round 2)`. No other unit renumbered; this is the only one that needs the care.
 
 ## Summary
 
@@ -21,7 +35,7 @@
 | F3 | ✅ **FIXED 2026-09-13** — `ActivityInfo` reads `icon`/`color` flat; the API nests them under `activity.category` / `activity.role` | app + framework | `leisure-projects/B3` | low |
 | F4 | Table's "Messy" icon column has no text alternative | app | `leisure-projects/A2` | low |
 | F5 | Inactive readiness-status buttons are invisible (non-text contrast) | app | `leisure-projects/A3` | low |
-| F6 | Dead `class="flex-1-1"` on four `FilterPanel` call sites logs a warning per render | app | `leisure-projects/P1`, **`leisure-backlog-picker/P1`** | low |
+| F6 | Dead `class="flex-1-1"` on four `FilterPanel` call sites logs a warning per render (**reconfirmed** by unit 13's round 2) | app | `leisure-projects/P1`, **`leisure-backlog-picker/P1 (round 1)`** | low |
 | F7 | `RoutineTodoWidget`'s header controls are clipped off-screen | app | `home/B1` | low-med |
 | F8 | **Rewritten (round 2):** a sign-in race orphans the day-plan fetch — `useTodayPlan`'s user-id watcher bumps `loadToken` on the `0 → id` hydration, the in-flight response is discarded, nothing re-fetches, and NowBar/DayPlannerWidget stay on "No plan for today" (or spin forever if the fetch failed); the original NowBar loading gap rides along | app | `home/B2` (+ settles `home/U1`) | med |
 | F9 | `homeUiStore` never persists, and CLAUDE.md says the opposite of what the plugin does | app + docs | `home/B3` | low |
@@ -63,11 +77,11 @@
 | F46 | The pie-chart detail panel's close button was hand-rolled three times and drifted: `mdi-close` in a FontAwesome-only app on the web panel (blank square + console error), no accessible name at all on the desktop panel, and a "Close domain details" label on the unified panel whose items are domains, products *and* apps — one shared key, one identical button | app (`src/core/activityTracking/component/`) | `tracking-dashboards/B1`, `A2` | trivial |
 | F47 | Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`; the card's accessible name promises *"View details for Spotify"*. A local panel from the data on the page (label, package, total time, share of the span, the summary card's baseline stat); a per-app session count is **not on the wire** (§79) | app | `tracking-dashboards/B2` (narrowed) | low |
 | F48 | The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
-| F49 | Date-preset chips and source-filter chips are focusable `span`s with no role and no state — Vuetify 3.12's `VChip` adds `tabindex`/keydown when clickable and nothing else; the same state-bearing class sits on `todoList`'s two filter groups and `dayPlanner`'s day-of-week and duration chips (15 chip-controls app-wide, 6 of them toggles/selects) | app (`activityTracking`, `todoList`, `dayPlanner`) | `tracking-dashboards/A1` (+ unfiled twins in `TodoListFilters.vue`, `RepeatingTaskDialog.vue`, `BasePlannerTaskDialog.vue`) | low-med |
+| F49 | Date-preset chips and source-filter chips are focusable `span`s with no role and no state — Vuetify 3.12's `VChip` adds `tabindex`/keydown when clickable and nothing else; the same state-bearing class sits on `todoList`'s two filter groups, `dayPlanner`'s day-of-week and duration chips, and (**grown**) `leisure`'s *Experienced* chip, where `<VChip link @click>` renders as a bare `generic` and `getByRole('button')` finds nothing (15 chip-controls app-wide, 6 of them toggles/selects) | app (`activityTracking`, `todoList`, `dayPlanner`, **`leisure`**) | `tracking-dashboards/A1`, **`leisure-backlog-picker/A1 (round 2)`** (+ unfiled twins in `TodoListFilters.vue`, `RepeatingTaskDialog.vue`, `BasePlannerTaskDialog.vue`) | low-med |
 | F50 | The Compare Templates dialog is empty every time — **two** unkeyed `Promise.all` fan-outs from one api instance (`fetchById` ×2, then `fetchFiltered` ×2), each cancelling its own sibling; the finding's fix closes only the first; folds `B3`'s dead *Confirm* button (`:showConfirmBtn` is not a `MyDialog` prop), same file | app (`TemplateComparisonDialog.vue`) | `planner-templates/X1`, `B3` | low |
 | F51 | The template planner's side panel at `<md` is the **open** panel squeezed to 400 × 16 px and pushed off-screen — not a broken "opened" state — and the template planner has **no control that reopens it** once the X is tapped (`panelOpen` is only ever set `false`); the shell is shared with `/day-planner/:date`, whose mobile layout is a different, unchecked shape | app (`PlannerSidePanelShell.vue`, `TemplateDayPlannerView.vue`, `TemplatePlannerHeader.vue`) | `planner-templates/X2` (+ the inventory's misread "collapsed pill") | med |
 | F52 | Template card title row: the name never truncates, so the Active/Inactive switch label wraps one letter per line and the day-type chip hard-clips to "Wee" / "Workd" on every card at 1440 px | app (`TemplateCard.vue`) | `planner-templates/B1` | low |
-| F53 | The template form mirrors none of the API's contract: `suggestedForDayType` is `required` server-side and `?:` client-side (400 after the dialog has closed, input lost), and `Name` `[Required]`/100, `Description` 500, `Icon` 50 have no rule either — `form.validate()` validates nothing | app (`TaskPlannerDayTemplateRequest.ts`, `TaskPlannerDayTemplateDetailsForm.vue`) | `planner-templates/B2` | low |
+| F53 | The template form mirrors none of the API's contract: `suggestedForDayType` is `required` server-side and `?:` client-side (400 after the dialog has closed, input lost), and `Name` `[Required]`/100, `Description` 500, `Icon` 50 have no rule either — `form.validate()` validates nothing. **Round 2 read the form end to end and confirmed the batch as written** (zero `:rules` on any of the five fields; an empty `name` reached the wire unchallenged) — the batch does not grow, it just stops being an inference | app (`TaskPlannerDayTemplateRequest.ts`, `TaskPlannerDayTemplateDetailsForm.vue`) | `planner-templates/B2` (broadened in round 2) | low |
 | F54 | Template list sort and the split view's two picks are not in the URL — the `F42` shape, two more views in the same module | app (`TemplateListView.vue`, `TemplateSplitView.vue`) | `planner-templates/B4` | low-med |
 | F55 | `/day-planner/templates/:templateId` with an unknown id keeps the **previous** template's name in the header — and, because the store persists `templateName` to `sessionStorage`, across a reload too; `loadTemplateDetails` has no `catch` at either of its two call sites (the `F43` shape, template side) | app (`TemplatePlannerPanel.vue`, `templateDayPlannerStore.ts`) | `planner-templates/B5` | low |
 | F56 | Seven icon-only controls in `dayPlanner` have no accessible name — card pin, compare checkbox (also pointer-blocked by the card's own icon), the side panel's close X, the split view's back arrow, both planner headers' undo button (named by its badge count when the stack is non-empty), and the day planner's mobile `bars` toggle | app (`src/core/dayPlanner/`) | `planner-templates/A1`, `A2`, `A3` (re-identified), `U3` (settled from source) + three unfiled | low |
@@ -75,10 +89,10 @@
 | F58 | ✅ **FIXED 2026-09-15** — The app's EN `$vuetify` block is a 180-line hand copy of Vuetify's own `en` export, byte-identical except for **two missing keys** (`timePicker.notAllowed`, `command.search`) — replace the copy with the import | app (`src/locales/common.en.ts`) | `home/A1` (+ one unfiled key) | trivial |
 | F59 | A skipped (`Cancelled`) task renders as done in `DayPlannerWidget` — row class, `aria-pressed` and the checkbox label all key off `isFinished`, which is `Completed ∨ Cancelled` by design; and the checkbox on a cancelled row advances it to `Completed` | app (`DayPlannerWidget.vue`, `useTodayPlan.ts`) | `home/B4` | low |
 | F60 | ✅ **FIXED 2026-09-15** — `MemoryAnchorFilter` sent `year`/`month` while the server reads `anchorYear`/`anchorMonth`; the two wire fields are renamed and the URL keys stay `year`/`month`, so bookmarks survive. Verified live across seven filter URLs. The timeline's twelve-month check is still blocked by `F61`. Body in the log | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts`; its test needed **no** change, and that is the bookmark pin) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three closed with ~~§13~~ `B11`) | trivial |
-| F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` | low |
+| F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why. **The batch's own "grep for another `= 500`" is answered:** those two are the only ones (`useLeisurePicker` 200, `ProjectsView` 200, notifications 20) | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` (both reconfirmed by round 2) | low |
 | F62 | ✅ **FIXED 2026-09-15** — `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
-| F63 | Four leisure request DTOs default their lookup ids to the sentinel `0` — the pickers render a literal "0", `requiredRule` accepts it, and an unset form reaches the server as `activityId: 0` | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/X3` (the `0` half), `leisure-bucket-anchors/B2` (+ one unfiled DTO) | low-med |
-| F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented | app (`useLeisurePicker.ts:250`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/X2`, `P2` | low |
+| F63 | Four leisure request DTOs default their lookup ids to the sentinel `0` — the pickers render a literal "0", `requiredRule` accepts it, and an unset form reaches the server as `activityId: 0`. **Grown:** the fourth DTO is no longer unfiled (unit 13's round 2 photographed it) and the leak now has a *second* symptom on every one of them — typing into the Activity autocomplete without clearing produces `"0Learn Bouldering"`, which matches no option and offers only *Create activity* | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/B2` (round 2 — round 1's `X3`, the `0` half), `leisure-bucket-anchors/B2` (`0` half), **`leisure-projects/B5`** | low-med |
+| F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented. **Round 2 narrowed the headline and added a second symptom:** the excluded row's dependency is the *"None"* lookup, so the batch must not hard-exclude *or* badge it, and a mocked non-empty match produced the reason chip *"Good weather for this today"* on an indoor activity | app (`useLeisurePicker.ts:250`, `leisureScoring.ts`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/B1` (round 2 — round 1's `X2`), `P2` (round 1) | low |
 | F65 | Leisure's view-mode toggles, the timeline's year controls and the source/experienced chips carry a localized `:title` and no `aria-label` | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
 | F67 | ✅ **FIXED AND VERIFIED 2026-09-15** (`useSessionLength.ts` — one rounding rule and one discard-with-message for all three capture views, plus the pomodoro's rest record; body in the log) — A session that rounds to zero minutes was handled three different ways by the three capture views, and none of them told the user | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low |
@@ -105,13 +119,34 @@
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
 | FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
 | FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
-| FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B1` (+ one unfiled column on `/leisure/bucket-list`) | med (decision: word-boundary match vs. opt-in) |
+| FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap. **The `inspirationSource` half is no longer unfiled and is now proved from inside the running component** (`isPercentKey('inspirationSource')` → `true`, `formatPercent(…)` → `"—"`, `getValue(…)` → the real string), which is why it is the worse of the two: this heuristic does not mis-format real data, it **deletes** it | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B5` (round 2 — round 1's `B1`), **`leisure-bucket-anchors/B3`** | med (decision: word-boundary match vs. opt-in) |
 | FW21 | The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
+| F73 | **Three activity-keyed leisure profile DTOs never read the server's `id`** — `fromJson` does not destructure it and the `id` getter returns `activityId`, so all nine edit/delete/status-change call sites key the REST route by the wrong number. **Re-graded `med` → `high` by the sixteenth pass:** the API was read this time, and a 404 is the *lucky* outcome — ownership is checked on the row the id **found** (`OwnsActivityAsync(…, entity.ActivityId)`), so where the number happens to name another profile of the same type on the same account, the write lands on the wrong row | app (`src/core/leisure/dto/response/` ×3 + 9 call sites) | `leisure-projects/X1`, `leisure-backlog-picker/X1`, `leisure-bucket-anchors/X4` | med (effort) / **high** (severity) |
+| F74 | **`quickEdit` posts to a route that has not existed since the rename** — the client sends `PATCH /activity/{id}/Overwrite`\|`/Clone`, the server has `PUT /activity/{id}/quick-edit` and `POST /activity/{id}/clone`; every quick-edit and every quick-clone 404s in four dialogs across two modules, and the rejection is swallowed so the whole form save is discarded with no message. Folds the toggle-off half: with quick-edit **off** the Name field is a live-looking no-op. **Sixteenth pass, from the endpoint source:** the two modes differ in **verb and response shape** (`PUT` → **204, no body**; `POST` → **200 carrying the new id**), so the one templated `API.patch(…/${mode})` cannot be repaired by renaming the path segment — it has to split in two | app (`activityApi.ts`, `QuickEditMode.ts`, `ActivitySelectOrQuickEditFormField.vue`) | `planner-day/X1` (both halves) | med |
+| F75 | `viewEndDate` never rolls an overnight view onto the next day — with the seed's `bedTime` of `00:00` it resolves to **today at midnight**, so `isDayMateriallyDone` is true all day and the plan-vs-actual verdict ("3 tasks never happened") renders at 19:54 on a day that is not over | app (`dayPlannerStore.ts:157-170`) | `planner-day/B7` | low |
+| F76 | `estimatedHours` 8.5 displays as "9" **and submits as 9** — `VNumberInput`'s `precision` defaults to `0` regardless of `step`; opening and saving an edit dialog is enough to corrupt the value, and this module's own `UseTemplateActionBar.vue:33-34` already carries the fix | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
+| F77 | Leisure create forms send a submission the server will name a field for, and the field never hears about it — Location/Weather/Cost and the anchor's Highlight carry no `required` rule, and neither `onConfirm` catches the write, so a 400 whose body says *"'highlight Note' must not be empty."* surfaces only as the interceptor's generic snackbar (the half `F63` deliberately left) | app (`{Backlog,MemoryAnchor}ProfileForm.vue`, `New{Backlog,MemoryAnchor}…Form.vue`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
+| F78 | Two more primary click targets built as bare `<div>`s: the projects board card (the only way to open the edit dialog) and the template grid's background-task block — no role, no `tabindex`, no key handler; the template one is skipped by Tab *and* immune to Escape while its own help text says "Tab moves between tasks" | app (`ProjectReadinessBoard.vue:64-71`, the template grid's background block) | `leisure-projects/A4`, `planner-templates/A4` | low |
+| F79 | Filtering to zero renders the *"you have none at all"* onboarding copy and its Add CTA — on the projects board and table today, and by construction on all four leisure surfaces, which came out of one `L4` pass; every leisure filter DTO already has the `hasAny()` the branch needs | app (`src/core/leisure/` — 4 tables + board + ladder) | `leisure-projects/P3` | low |
+| F80 | The board card's metadata line reads "Woodworking· 8.5h" — two adjacent `v-if` templates each lead with `· ` and neither emits a leading space | app (`ProjectReadinessBoard.vue:86-98`) | `leisure-projects/P2` | trivial |
+| F81 | The repeating-task dialog asks for `fas fa-calendar-range`, which this app does not bundle — the *Date range* recurrence tab renders with no icon and logs a FontAwesome error every time the dialog opens. **Sixteenth pass proved it and bounded it:** `calendar-range` is a FA **Pro** name absent from all three free packs (aliases included), and a sweep of every static icon literal in `src/` found **exactly two** unresolvable ones app-wide — this and `F46`'s `mdi-close`. Not the tip of an iceberg; `calendar-days` is the substitute | app (`RecurrenceType.ts:15`) | `planner-day/P1` | trivial |
+| F82 | *Importance* blocks submission of the New/Edit Repeating Task dialog with "This field is required" and carries no `*`, unlike `* Name` and `* Activity` in the same dialog — and it is genuinely optional in the plain task dialog, so one of the two is wrong | app (`RepeatingTaskDialog.vue`) | `planner-day/P2` | trivial (decision: mark it or relax it) |
+| F83 | The template header counts foreground tasks only and does not say so — two blocks on screen, "1 task" in the header; the exclusion itself is correct and confirmed live | app (`TemplateDayPlannerView.vue` `taskStats`) | `planner-templates/P3` (was `U1`) | trivial |
+| F84 | The history dashboard's pie renders the server's folded-tail row **raw** — the legend reads the literal `_other`, untranslated in both locales, and the slice is selectable (`handleChartClick` has no sentinel branch, so it emits `{id: null, name: '_other'}` and cross-highlights the summary cards). The `activityTracking` pie has translated and blocked the same sentinel since it was written; `historyDashboard` never got the branch, and `HistoryGroupKey.ts:7-8` already documents the row it does not handle. Found from the other side while closing §10 — the backend's out-of-scope flag on `HistoryPieChartBuilder.cs` was **stale** (`OtherName` is already `"_other"`), so this is app-side with no backend half. **Re-read in the API this pass: `HistoryPieChartBuilder.cs:20` is `public const string OtherName = "_other";`** — confirmed on both sides, and the backend's offer to "do the History side as a follow-up" needs no answer because there is nothing there to change | app (`historyDashboard/component/pieChart/HistoryPieChart.vue:41,75-81,113-121`) | *(unfiled — fell out of §10's closure)* | low |
+| FW22 | `TableCellEditor`'s `DECIMAL` branch sets `:step="0.1"` and no `:precision`, so Vuetify rounds every decimal inline-edit cell to a whole number — `TableCellType.DECIMAL` does not do what it says. Source-certain, **no consumer in this app yet** | **framework** (`inlineEditTable/TableCellEditor.vue:19`) | *(unfiled — the framework twin of `leisure-projects/B4`)* | trivial |
+| FW23 | A second column-header click **adds** a sort key instead of replacing it (`sortBy=activity.name:asc,durationMinutes:asc` from one unmodified click), with no multi-sort affordance anywhere — `VDataTable`'s default, inherited by every table in the app | **framework** (decision: `BasicTable`/`DataTable` default) | `leisure-backlog-picker/P1` (round 2) | low (decision first) |
+| FW24 | **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
+| F85 | The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (blocked on `FW24`) |
 
-71 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
-`F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch) · 20
+84 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
+`F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
+`F85` is blocked on `FW24`) · 23
 framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` is now a batch) ·
-15 escalations (6 open: §1, §7, §8, §9, §10, §11 — §2, §3, §4, §5, §6, §12, §13, §14 and §15 are closed,
+15 escalations (**3 open: §7, §8, §9** — and **§7's ask has now landed**, so what is open there is
+the frontend half, `FW24` + `F85`, not the ask; **§1 closed 2026-09-21** when `B15` landed with no
+frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
+the fifteenth pass; §10 closed the same day when `B16` landed and its frontend half went in; §1, §2, §3, §4, §5, §6,
+§10, §11, §12, §13, §14 and §15 are closed,
 their bodies moved to [`_fix-queue-log.md`](_fix-queue-log.md) → *Closed escalations*; §5 closed 2026-09-15
 when `B20` landed with no frontend half left; §12 closed 2026-09-15 when the anchor-eligible-activities
 endpoint landed and `F62` shipped; **§6 and §13 closed together 2026-09-15** when `B11` landed — one
@@ -144,6 +179,40 @@ framework batch and no escalation: its blocker splits across the boundary the wa
 (`FW18` is the helper, `F50` is the dialog), and its one apparent backend question — whether
 *Suggested for day type* should be optional — is settled from the API source as **no**: the column is
 non-nullable and indexed, the request field is `required`, and `/suggestions` is built on it (`F53`).
+
+**Order among the sixteenth-pass batches.** `FW24` before `F85`, necessarily — `F85` reads a field the
+interceptor does not yet expose, and a pointer bump sits between them. `FW24` is also worth landing in
+the **same framework commit as `FW19`**: they are two different causes (message precedence vs. no
+per-type wording) and stay two batches, but they are the same two files and the same user-visible
+sentence, and shipping one without the other means two pointer bumps to fix one snackbar. Neither is
+blocked on anything, and neither is urgent: `B18` is additive, absent `errorType` keeps today's
+behaviour, and nothing in the queue waits on them.
+
+**Order among the fifteenth-pass batches.** `F73` first and alone — it is three blockers in one edit,
+it un-breaks every write on three of the four leisure surfaces, and nothing else in `leisure` can be
+verified past a create until it lands (`F76`, `F77` and `F79` all need an edit or a delete to complete).
+Do all three DTOs and all nine call sites in one commit and run `npm run type-check`: they share an
+interface (`IIdResponse`) and a half-migration is worse than none. **`F76` in the same session as
+`F73`, and before anyone opens a project edit dialog again** — today the rounding is masked by the 404,
+and the moment `F73` lands, opening and saving any project silently writes `8.5 → 9`. `F74` second and
+alone: it is the `F70` shape (a client calling a route the server renamed), it breaks four dialogs in
+two modules, and its *Clone* half has never been observed by anyone — verify both modes. `F77` after
+`F63`, not before: `F63` makes `requiredRule` able to fire at all, and `F77` is the rules and the
+`catch` on top of it; landing `F77` first leaves the three selects validating a `0` that passes.
+`F75` is one branch in one computed and needs no browser beyond loading today's plan before the day
+ends. `F78` must agree with `F29` and `FW6` on the role/keydown/`aria-label` pattern — whichever of the
+three ships first sets it, and the other two copy rather than re-decide; `F78` also wants `F51`'s
+reopen control settled if both run together, for the same reason `F56` does. `F79` should **not** be
+scoped to the projects view: all four leisure surfaces came out of one `L4` pass and share the branch,
+and a fix that teaches only the board to say "no results" leaves three tables lying. `F80`, `F81`,
+`F82` and `F83` are one-line edits, independent of everything; `F81` and `F82` are the same dialog and
+can share a commit, but they are different causes (a missing icon vs. a missing asterisk) and `F82`
+needs a **decision** first — mark it required or relax the validator, because the plain task dialog
+treats the same field as optional. `FW22` is two repos for one attribute and has **no consumer in this
+app**, so its verification is the framework's own, not ours. `FW23` needs a decision before an edit
+(rule 4): single-sort is what every table in this app looks like it does, but flipping
+`VDataTable`'s default changes every table in every app on the framework — and one of them may be
+relying on it.
 
 **Order among the fourteenth-pass batches.** `F70` first and alone — one line, and it un-breaks a
 feature that has been dead since the day it was written. `F72` before `F13`'s verification: the mappings
@@ -865,6 +934,12 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   the category cascade copy go in `activity.{sk,en}.ts` (*"N activities will lose this category"*, with
   the count); the role tooltip can reuse `activities.archive.deleteBlocked` or get a role-specific key —
   check the SK reads naturally for a role before reusing.
+- **Since 2026-09-21 the role 409 can be told apart at last, and this batch does not depend on it.**
+  `B18` put `errorType` on the wire, and `DELETE /api/activity-role/{id}` is the pair the backend built
+  it for: a system role answers `Conflict` (the server's own message, meant to be shown), an in-use role
+  answers `DbForeignKeyError`. This batch's `canDelete` gate is pre-flight and still the right shape —
+  the 409 is only the race fallback. If `FW24` has landed by the time this is fixed, that fallback can
+  name which of the two happened; if not, leave it generic and do not build a private parser for it.
 - **Do not change:** the server. The asymmetry is designed and documented; do not file a "make
   categories 409 too" ask off this batch. Do not route the role delete through
   `useDeleteConfirmation` — `canDelete: true` means nothing references it, which is
@@ -1706,12 +1781,14 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   could otherwise learn it is `/activity-tracking/android/settings`). Optionally, pass the matching
   `SummaryCardsData` in and add *vs. baseline* from `stat.percentChange` — the card shows it, the
   panel may repeat it; do not fetch anything new. Two keys: `pieChart.shareOfSpan` and
-  `pieChart.packageName`. **Guard the server's *Other* row:** with `minPercent: 1`
-  (`AndroidActivityDashboard.vue:170`) the endpoint folds the tail into a row whose `packageName` and
-  `appLabel` are the literal `"Other"` (`AndroidPieChartEndpoint.cs:79-80`), which `ActivityPieChart`
-  does **not** treat as its `_other` sentinel (`:150`) — so that slice is selectable today and would
-  open a panel titled *Other* with package *Other*. Skip it in `onSegmentClick` (or map it to `_other`
-  when building `pieSegments`, which also gets it translated); the full contract problem is §10.
+  `pieChart.packageName`. **The folded-tail row needs no local guard** — it used to: with `minPercent: 1`
+  (`AndroidActivityDashboard.vue:170`) the endpoint folds the tail into one row, and until 2026-09-16 that
+  row's `packageName`/`appLabel` were the literal `"Other"`, which `ActivityPieChart` did not recognise as
+  its sentinel, so the slice was selectable and would have opened a panel titled *Other* with package
+  *Other*. Backend `B16` landed (§10, closed — body in the log): all four pie endpoints now emit `_other`,
+  which `ActivityPieChart:150` already refuses to select and `:62` already translates. Write
+  `selectedDetails` against `props.apps` as above and nothing reaches it; do **not** add the skip that
+  earlier revisions of this batch asked for.
 - **Do not change:** the `summary-cards`/`pie-chart` request shapes; `ActivityPieChart.vue` (`F48`
   edits it — coordinate, do not both touch `:9-28`); the desktop pattern — do **not** add an Android
   `details` fetch against an endpoint that does not exist. Not `ActivityDomainCard`'s label (§80).
@@ -1720,7 +1797,8 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   the close button clears it and `?selected`*. Then: deselect by clicking the same card and by clicking
   the slice; reload with `?selected=Spotify` and confirm the panel opens from the URL (the model is
   URL-backed via `useActivityDashboard`'s `selectedItem`); select a card whose app is under the pie's
-  threshold if the seed has one, and confirm nothing selects *Other*. `tracking-dashboards.draft.spec.ts:126`
+  threshold if the seed has one, and confirm the folded slice reads *Ostatné* and selects nothing.
+  `tracking-dashboards.draft.spec.ts:126`
   is the `fixme` to fill in. SK as well as EN for the two new keys.
 - **Risk:** Low. Additive branch; nothing selected renders exactly today's card. The only judgement
   call is whether a three-row panel is worth opening — it is, because the alternative is a card that
@@ -2474,7 +2552,11 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   the form never submits without an activity; decide and say so) — and return before the request with
   the fields marked. Then the `catch`: drop the generic snackbar and let the interceptor speak (it
   already does for every non-`_silent` 400), **or** pass `_silent: true` on the two calls and show
-  `error.response?.data?.errors` field-by-field yourself — one or the other, never both. Keep
+  `error.response?.data?.errors` field-by-field yourself — one or the other, never both. If you take
+  the field-by-field path, key it on the presence of `errors`, not on `status === 400`: since
+  2026-09-21 (`B18` follow-up) a pattern the account already maps answers **409**
+  `errorType: "DbUniqueViolationError"` with `errors["Patterns"]` naming the clash, and that belongs
+  under the pattern field too. Keep
   `failedToSaveMapping` for the `status === undefined` network case only, the `LoginView` shape.
 - **Do not change:** the server's "exactly one target" rule or the PUT-replace semantics — both are
   documented and deliberate; the `mode` ref and the template that already switches on it (correct);
@@ -3392,6 +3474,553 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None to behaviour; two repos. An app whose signed-out endpoints live under a different prefix
   gains nothing and loses nothing.
 
+## F73. Three activity-keyed leisure profile DTOs drop the server's `id` — nine write call sites key the REST route by the wrong number
+
+- **Scope:** app-side `src/core/leisure/dto/response/{ActivityProjectProfile,ActivityBacklogProfile,ActivityBucketListProfile}.ts`
+  + nine call sites (`BacklogTable.vue:151`, `BacklogProfileForm.vue:48`, `BucketListTable.vue:133`,
+  `BucketListProfileForm.vue:48`, `BucketListLadder.vue:214`, `ProjectTable.vue:108`,
+  `ProjectProfileForm.vue:35`, `ProjectReadinessBoard.vue:231,242`)
+- **Closes:** `leisure-projects/X1`, `leisure-backlog-picker/X1 (round 2)`, `leisure-bucket-anchors/X4`
+  — three `blocker`s, three units, one cause. Also folds `leisure-projects/X1`'s own status-change half
+  (the readiness board's one-click `update`, which is the entire point of `P1-readiness-board.md`).
+- **Root cause:** all three DTOs declare `get id(): number { return this.activityId }` and **their
+  `fromJson` never destructures `id` at all** — read this pass, all three files: the server's own primary
+  key is dropped on the floor at parse time. Every write call site then passes `.activityId` explicitly
+  (not even through the getter), and the REST routes are keyed by the profile row's id. Confirmed by
+  three units independently and settled by direct request: `DELETE /api/activity-project-profile/12009`
+  (activityId) → 404 vs. `/17202` (the row's id) → **204**; the same pair on bucket-list (`12009` → 404,
+  `17102` → 204) and a `GET` pair on backlog (`12005` → 404, `17002` → 200). `MemoryAnchor` is the
+  control: it carries a real `id`, `MemoryAnchorTable.vue:156` passes `item.id`, and its edit and delete
+  both work.
+- **Re-graded `med` → `high` by the sixteenth pass, which read the API rather than the units'
+  observations.** The three grid responses project `Id = e.Id` **and** `ActivityId = e.ActivityId` as
+  two distinct fields (`ActivityProjectProfileResponse.cs`, `ActivityBacklogProfileResponse.cs:93-94`,
+  `ActivityBucketListProfileResponse.cs:48-49`), and every write route is the base `{id}` — including
+  the readiness board's, which only re-routes the *suffix*
+  (`PatchActivityProjectProfileStatusEndpoint.cs` → `/activity-project-profile/{id:long}/status`). The
+  part no unit could see: **authorization runs on the row the id found**, not on the row the user meant
+  — `AuthorizeAsync` is `ownership.OwnsActivityAsync(DbContext, User.GetId(), entity.ActivityId, ct)`
+  on all three entities. So a 404 is the *benign* outcome, and it is only the outcome because profile
+  ids and activity ids happen not to collide in the current fixture (profiles are seeded in the 17xxx
+  band, activities in 12xxx). Where the numbers do meet — a long-lived account, or any future
+  reseeding — the ownership check **passes** and the edit, delete or status change lands on a different
+  profile of the same type belonging to the same user, with no error anywhere. That is a silent
+  wrong-row write, which is why this stops being a `med`.
+- **Not an escalation, and one finding says otherwise.** `leisure-backlog-picker/X1 (round 2)` calls this
+  *"a contract question between the DTO and the API… flag to whoever owns the backend contract before
+  picking a fix"*. It is not: the other two units answered it empirically (a direct request against the
+  row's own id succeeds on both surfaces), so the server's keying is known and this is entirely app-side.
+  Do not write a backend ask for it (*Contradictions* §115).
+- **What to change:** add a real `id` to each of the three constructors and destructure it in `fromJson`
+  (`id = 0`, first parameter, matching `MemoryAnchor`); **delete the getter**, which is what made the
+  mistake invisible — with it gone, `item.id` is the row id everywhere and a call site that still means
+  the activity has to say `activityId`. Then change the nine call sites to `item.id` /
+  `entityToEdit.id`. All three `implements IIdResponse`, so a real field satisfies the interface the
+  getter was faking.
+- **Do not change:** the places where `activityId` is genuinely the business key — `ExperiencedCell`'s
+  reverse lookup, `useLeisurePicker`'s candidate `key`, and the request DTOs' `activityId` field, which
+  is the relationship the server stores. One activity has at most one profile; that model is correct and
+  this batch is only about which number addresses the *row*.
+- **Verification:** each finding's `Verify:` block — a status click moves the card and the column counts
+  change; an edit closes and persists across a reload; a delete removes the row and a reload does not
+  bring it back. Do all three surfaces, plus the ladder's own delete action
+  (`BucketListLadder.vue:214`), which no unit exercised. Then re-run `e2e/tests/leisure-profiles.spec.ts`.
+- **Risk:** Medium. Three DTOs and nine call sites in one commit — a half-migration leaves some surfaces
+  404ing and some working, which is harder to reason about than the current uniform failure. Run
+  `npm run type-check`; deleting the getter is what makes the compiler find anything missed.
+
+## F74. `quickEdit` calls a route that was renamed out from under it — four dialogs, two modes, silent
+
+- **Scope:** app-side `src/core/activity/api/activityApi.ts:34-42` (`quickEdit`),
+  `src/core/activity/dto/enum/QuickEditMode.ts`, `src/core/activity/component/ActivitySelectOrQuickEditFormField.vue:123-141`
+- **Closes:** `planner-day/X1` — both halves
+- **Root cause:** `quickEdit` builds `API.patch(`/activity/${id}/${mode}`)` with `mode` being the literal
+  `'Overwrite'` or `'Clone'`, and `QuickEditMode.ts:5-7` documents those values as *"the PascalCase path
+  segment of `PATCH /activity/{id}/{mode}`, so they are a wire contract — do not recase them."* Read
+  against the API this pass, that comment is **false and is itself the bug**: the server has
+  `Put("/activity/{id:long:required}/quick-edit")` (`QuickEditActivityEndpoint.cs:19`) and
+  `Post("/activity/{id:long:required}/clone")` (`CloneActivityEndpoint.cs`). There is no `PATCH` on
+  either, and no PascalCase segment anywhere — `SetArchivedActivityEndpoint.cs:17-19` even carries the
+  note explaining the split (*"the overwrite half is `PUT /activity/{id}/quick-edit`"*). So **both**
+  modes 404. Only *Overwrite* was observed, because it is the default; **the *Clone* half has never
+  been exercised by anyone** and is the same 404 with a different verb.
+  The request body is not implicated: the client's `QuickEditActivityRequest` (`name`, `text`,
+  `categoryId`) matches the server record exactly.
+  The second half is the swallow: `execAndReturnStatus` awaits `quickEditActivity` with no `try/catch`,
+  so the rejection propagates to `BasePlannerTaskDialog.save()` and takes the **whole** form save with
+  it — the time, status, importance and location the user also changed in that dialog session are
+  discarded with no snackbar, no inline error and nothing on screen but a dialog that will not close.
+- **This is not a backend gap, and the finding says it is.** `planner-day/X1`'s root-cause guess reads
+  *"very likely the same class of gap as the other backend-route findings already filed in
+  `prompts/view-docs/backend/`"* and its suggested fix opens with *"Backend: register (or fix the
+  method/route on) the activity-overwrite endpoint."* Both routes exist and are tested server-side; the
+  client is calling names that were replaced. This is the `F70` shape exactly (*Contradictions* §116).
+- **Blast radius is four dialogs in two modules, not one view.** `ActivitySelectOrQuickEditFormField` is
+  mounted by `BasePlannerTaskDialog.vue`, `settings/RepeatingTaskDialog.vue`,
+  `todoList/component/normal/ToDoListItemDialog.vue` and
+  `todoList/component/routine/dialog/RoutineToDoListForm.vue`. Renaming an activity from **any** of them
+  has been a silent no-op.
+- **What to change:** three edits, in this order.
+  1. `activityApi.ts` — dispatch on the mode instead of interpolating it: `PUT /${url}/${id}/quick-edit`
+     for overwrite, `POST /${url}/${id}/clone` for clone. Keep the option-cache invalidation. Note the
+     two return shapes differ — `quick-edit` is `204` with no body, `clone` is `200` carrying
+     `clonedEntity.Id` (both confirmed against the endpoints this pass) — and
+     `execAndReturnStatus:127-131` already branches on exactly that (`if (cloneId && mode === CLONE)`),
+     so it needs no change once the verbs are right. **One trap while you are in there:** the current
+     mapper is `response.data != null ? Number(response.data) : null`, and axios gives `data === ''`
+     for a 204 — `'' != null` is `true`, so the overwrite path will return **`0`**, not `null`, the
+     moment it starts succeeding. Harmless today only because the call site gates on the mode; make the
+     two functions return what they mean (`Promise<void>` and `Promise<number>`) rather than one
+     nullable number.
+  2. `QuickEditMode.ts` — rewrite the comment. The values are a **client-side discriminator now**, not a
+     wire contract; leaving that paragraph in place is how the next person re-introduces this.
+  3. `execAndReturnStatus` — `try/catch` around the `quickEditActivity` call: show
+     `showErrorSnackbar`, keep the dialog open, and **do not let a failed rename discard the rest of the
+     form**. Decide once whether the task PUT still runs when the rename fails (it should — the two are
+     independent writes and the user changed both).
+- **The toggle-off half is a separate edit in the same file.** With *Quick edit activity* **off**,
+  `isActivityFormHidden` is false, `execAndReturnStatus` returns the selected activity, and the typed
+  Name is written nowhere — no error, no warning, the field just looks editable and is not. Either
+  disable it in that state or render it read-only. The finding is right that this half is purely
+  frontend and survives the route fix.
+- **Do not change:** `QuickEditActivityRequest` (it matches), and the overwrite-vs-clone *semantics* —
+  only the transport is wrong.
+- **Verification:** `X1`'s `Verify:` block, run **four** times: `/day-planner/:date`'s Edit Task, the
+  repeating-task dialog, a to-do item and a routine item. In each, rename with the toggle on and confirm
+  the new name appears everywhere the activity is referenced; then pick *Clone* and confirm a **new**
+  activity is created and the task points at it (nobody has ever seen this path work). Then repeat with
+  the toggle off and confirm the Name field cannot silently swallow input.
+- **Risk:** Medium. This turns four dead write paths live at once, so the first real `quick-edit` and the
+  first real `clone` in this app's history happen in the verification session — budget for finding a
+  second defect behind the first.
+
+## F75. `viewEndDate` never rolls an overnight view onto the next day, so plan-vs-actual reports a verdict all day
+
+- **Scope:** app-side `src/core/dayPlanner/store/dayPlannerStore.ts:157-170` (`viewEndDate`)
+- **Closes:** `planner-day/B7`
+- **Root cause:** `viewEndDate`'s only next-day branch is `endHour >= 24`; the `else` sets
+  `date.setHours(endHour, …)` on **today**. The seed's `bedTime` is `{hours: 0, minutes: 0}` — an 08:00
+  → 00:00 day, i.e. midnight *at the end* — so `viewEndDate` resolves to today at 00:00:00, an instant
+  that is in the past from 00:00:01 onward. `usePlanVsActual.ts:36`'s
+  `isDayMateriallyDone = currentTime >= store.viewEndDate` is therefore true all day, and
+  `prompts/_done/day-planner/F2-plan-vs-actual.md`'s own rule — *"Do not compute a drift verdict at
+  10:00 for a day that ends at 23:00"* — never holds. Observed at 19:54 on a day with a task two minutes
+  from starting: *"Planned 3h · logged 0m · 3 tasks never happened"*.
+- **The module already knows the answer, one file over.** `usePlannerStoreCore.ts:99` is
+  `isOverMidnight = viewStartTime.hours > viewEndTime.hours` — which is exactly true for 08:00/00:00.
+  `viewEndDate` is the one place that asks a different question.
+- **What to change:** in `viewEndDate`, treat `endHour < viewStartTime.hours` the same as `endHour >= 24`
+  — roll the date forward one day, then set the hours. Reuse `core.isOverMidnight` rather than
+  re-deriving the comparison.
+- **Check the sibling while there:** `dateTimeFromSlotIndex` (same file, immediately below) uses the same
+  `hours >= 24` convention, and it is *correct* there — `slotIndexToTime` emits hours past 24 for an
+  overnight grid. The asymmetry is the trap: the grid's own math speaks the ≥24 dialect while
+  `viewEndTime.hours` comes from `bedTime` raw. Do not "fix" the slot version to match.
+- **Do not change:** `neverHappenedCount`'s `status !== Completed` test. It is a safe simplification
+  *once* the gate is honest, which is the finding's own reading.
+- **Verification:** `B7`'s `Verify:` block — load today's plan mid-afternoon on an 08:00–00:00 day and
+  confirm the plan-vs-actual line is **absent**; then confirm it appears with correct counts once past
+  the end time. A day configured with an end hour later than its start (e.g. 08:00–23:00) must be
+  unaffected — that is the regression to watch, since it is the branch that works today.
+- **Risk:** Low, but it changes what a *correct* day does too: anything else reading `viewEndDate` (the
+  grid's own extent, `slotIndexToTime` consumers) now gets tomorrow's midnight for an overnight view.
+  That is the intended meaning; grep the store's consumers before assuming nothing else depended on the
+  bug.
+
+## F76. `estimatedHours` 8.5 displays as "9" and **submits** as 9
+
+- **Scope:** app-side `src/core/leisure/component/project/NewProjectProfileForm.vue:35-39`
+- **Closes:** `leisure-projects/B4`
+- **Root cause:** `VNumberInput`'s `precision` prop defaults to `0`, independently of `step`. The field
+  sets `:step="0.5"` (right, for the increment buttons) and no `:precision`, so Vuetify formats *and
+  coerces* to whole numbers. Opening the edit dialog on the seeded `estimatedHours: 8.50` shows "9" in
+  the raw `<input>`, and an untouched *Save* sends `"estimatedHours":9`. No user action on the field is
+  required — opening and saving is enough.
+- **The fix already exists in this repo.** `dayPlanner/component/normal/UseTemplateActionBar.vue:33-34`
+  is `:step="0.5" :precision="null"` — copy that pair, do not invent a digit count. `:precision="1"`
+  (the finding's suggestion) would silently truncate a value with two decimals; `null` disables the
+  coercion, which is what a free-form hours field wants.
+- **Land it with `F73`.** Today the corruption is masked: the `PUT` 404s before it can persist. The
+  moment `F73` lands, every project edit dialog opened and saved rewrites the row. This is the one
+  ordering constraint in the fifteenth pass that is not a convenience.
+- **Do not change:** `componentDefaults`. A global `precision: null` would turn every integer field in
+  the app into a decimal one (rule 4 territory, and the wrong default for counts).
+- **Verification:** `B4`'s `Verify:` block, all three steps — including step 3, a value with two decimal
+  digits, which is what distinguishes `null` from `1`.
+- **Risk:** None app-side. The framework twin is `FW22`.
+
+## F77. Leisure create forms send what the server will reject, and the server's own per-field message never reaches the field
+
+- **Scope:** app-side `src/core/leisure/component/backlog/{NewBacklogProfileForm,BacklogProfileForm}.vue`,
+  `component/memoryAnchor/{NewMemoryAnchorForm,MemoryAnchorForm}.vue`,
+  `component/bucketList/{NewBucketListProfileForm,BucketListProfileForm}.vue`
+- **Closes:** `leisure-backlog-picker/B3 (round 2)`, `B4 (round 2)`, and the feedback half of
+  `leisure-bucket-anchors/B2` — the half `F63` explicitly left open
+- **Root cause:** two gaps that compound. (1) Only *Activity* carries `:rules="[requiredRule]"` (via
+  `ActivityAutocompleteWithCreate`); Location, Weather, Cost and the anchor's Highlight carry none, so
+  `form.validate()` passes on an empty form. (2) Neither `onConfirm` catches the write, so the server's
+  400 — whose body names the field exactly (`{"errors":{"highlightNote":["'highlight Note' must not be
+  empty."]}}`, `{"activityId":["Activity not found."]}`) — is handled only by the interceptor's generic
+  snackbar. `src/_common/axiosConfig.ts` already exports `extractServerFieldError()` built for
+  FastEndpoints' `{errors: {propertyName: [...]}}` shape and nothing here calls it.
+- **Round 2 settled the "silent 400" question that was in *Needs verification* (§91), and the answer is
+  the less alarming one.** `leisure-backlog-picker/B3` states plainly that *"a snackbar reading 'One or
+  more errors occurred!' appears and disappears within a few seconds"* — so the interceptor **does**
+  fire and there is no intermittent in the framework. What round 2 confirmed by querying every
+  `[role=alert]` in the form (all four empty) is that there is no **field-level** error, which is this
+  batch. Round 1's `X3` observation of no snackbar at all was wrong. §91 is settled and moves to the log.
+- **What to change:** add `:rules="[requiredRule]"` to Location / Weather / Cost on the backlog form and
+  to the Highlight textarea on the anchor form (check the bucket-list form's Inspiration source in the
+  same pass — the server rejects it empty too, per round 2's 400 body). Then wrap each `onConfirm`'s
+  `create`/`update` in `try/catch` and route the caught error through `extractServerFieldError` onto the
+  matching field, leaving the dialog open.
+- **After `F63`, not before.** `requiredRule` cannot fire while the models default to `0` — it accepts
+  `0` and always will (`F63`'s *Do not change*). Landing this first adds rules that validate a sentinel.
+- **Do not change:** the interceptor's generic snackbar. Its wording is `FW19`, a different batch in a
+  different repo; a field-level message is the fix here whatever the snackbar says.
+- **Verification:** `B3`'s and `B4`'s `Verify:` blocks — submit each form untouched and confirm a visible
+  required message under the specific field and **no** network request. Then force a server-side-only
+  rejection (a name the server refuses but the client rules allow) and confirm the message lands on the
+  field rather than only in the snackbar.
+- **Risk:** Low-medium. Adding required rules to fields that were effectively optional client-side can
+  block a submit that used to succeed — confirm against each endpoint's validator that all four are
+  genuinely `required` server-side before making them required here.
+
+## F78. Two more primary click targets built as bare `div`s
+
+- **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:64-71` (the card's
+  `@click="onEdit(item)"`) and the `.background-task-block` in the template day-planner grid
+  (`src/core/dayPlanner/`, rendered on `/day-planner/templates/:templateId` and both split panels)
+- **Closes:** `leisure-projects/A4`, `planner-templates/A4`
+- **Root cause:** one class, two components: an element whose *only* job is to be clicked is a `<div>`
+  with a handler and `cursor: pointer`. `{"tag":"DIV","tabindex":null,"role":null}` on both. The
+  template block is the worse of the two because the surrounding grid is done right — foreground tasks
+  are real `<button>`s with composed `aria-label`s — so the gap is visible as an inconsistency: Tab from
+  a foreground task jumps past the background block to the toolbar's *Delete*, contradicting the grid's
+  own on-screen help text (*"Tab moves between tasks"*), and Escape cannot clear its selection because
+  Escape's handler needs focus inside the grid, which an element with no `tabindex` can never hold. It
+  already renders a visually-hidden *"Background activity: Feature Development, 19:30 to 20:30"* that
+  names nothing, because the element it would name has no role.
+- **Why one batch and not two:** the edit is identical (`role="button"` + `tabindex="0"` +
+  Enter/Space keydown + a composed `aria-label`) and the two findings describe it in the same words. The
+  value of batching is that the *pattern* gets decided once.
+- **It must agree with `F29` and `FW6`, which are the same class in two other places.** `F29` is the
+  stacked-bar columns (`activityTracking`), `FW6` is `CalendarGrid`'s day cells (framework). These stay
+  separate batches — `FW6` by rule 1, `F29` because it also carries a pointer-cursor-that-does-nothing
+  half that is unique to it — but whichever of the three ships first fixes the verb and the keydown
+  shape, and the other two copy it rather than re-deciding. Four different answers to "what is a
+  clickable div called" is the outcome to avoid.
+- **Do not change:** the nested controls. The board card's status buttons and *Delete* are already real,
+  named `<button>`s and already `@click.stop` — only the keyboard-activation path on the card itself is
+  missing, and adding it must not make Enter on a nested button fire both.
+- **Verification:** both findings' `Verify:` blocks. For the template block specifically, run all three
+  of its consequences: Tab reaches it in grid order, Enter/Space selects it, and Escape clears the
+  selection — the finding proved each one separately and each is a different mechanism.
+- **Risk:** Low. Watch the multi-select interaction the finding documented as *working* (clicking a
+  second task adds rather than replaces, "2 selected", and a multi-delete confirms "delete 2 selected
+  tasks?") — that must survive.
+
+## F79. Filtering to zero shows the "you have none at all" onboarding copy, on every leisure surface
+
+- **Scope:** app-side `src/core/leisure/component/project/{ProjectTable.vue:33-51,ProjectReadinessBoard.vue:7-24}`,
+  and the same branch on `BacklogTable`, `BucketListTable`, `BucketListLadder`, `MemoryAnchorTable`,
+  `MemoryAnchorTimeline`
+- **Closes:** `leisure-projects/P3`
+- **Root cause:** every empty state keys on `items.length === 0` alone. A filter that excludes the one
+  seeded row produces the identical *"These are things you're building or making. You don't have any
+  projects here yet."* plus a prominent *Add* CTA — which reads as "you have never created one" and
+  nudges toward creating a duplicate rather than clearing the filter. The filter chips are visible in
+  the toolbar above the copy at the same time, which is the tell.
+- **What to change:** branch on `filter.value?.hasAny()` — **already implemented on every leisure filter
+  DTO**, which is why this is cheap — and render a "no results for these filters" message with a *clear
+  filters* action in place of the Add CTA. One locale key pair, reused by all six surfaces.
+- **Do not scope this to the projects view.** All four leisure surfaces came out of one
+  `L4-onboarding-empty-states.md` pass and share the shape; the finding says so and the source confirms
+  it. A fix that teaches only the board leaves three tables lying. It also overlaps `F61`: the ladder and
+  timeline render the *empty* state on a failed fetch, so after `F61` there are **three** states to tell
+  apart — empty, filtered-to-zero, failed. Decide the copy for all three at once.
+- **Verification:** `P3`'s `Verify:` block on the board and the table, then one filtered-to-zero load on
+  each of the other four surfaces. Keep a genuinely empty account (or `secondaryUser`) in the same
+  session to confirm the original copy still renders where it should.
+- **Risk:** Low. The only trap is a filter DTO whose `hasAny()` counts a default the user did not set —
+  check each before trusting it.
+
+## F80. The board card's metadata line runs two fields together
+
+- **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:86-98`
+- **Closes:** `leisure-projects/P2`
+- **Root cause:** two adjacent `<template v-if>` blocks each lead with the literal `· ` (space *after*,
+  none before) and sit with no whitespace between them in the source, so the second separator has no
+  leading space: *"Intermediate · Woodworking· 8.5h"*. Reproduced on the seeded row and on a row created
+  in the pass, so it is not data-shaped.
+- **What to change:** build the line as an array of the present parts and `join(' · ')`, rather than two
+  independent conditional templates each guessing at its own separator. That is also the only form that
+  stays right when a third optional field is added.
+- **Verification:** `P2`'s `Verify:` block, on a card with **both** optional fields and on a card with
+  only one — the second is where a naive `' · '` prefix leaves a leading separator.
+- **Risk:** None.
+
+## F81. The recurrence tab strip asks for an icon this app does not bundle
+
+- **Scope:** app-side — the recurrence-type tab strip in the New/Edit Repeating Task dialog
+  (`/day-planner/settings` → Repeating Tasks → Add)
+- **Closes:** `planner-day/P1`
+- **Root cause:** the *Date range* tab references `calendar-range`, which is **not** in the three free
+  FontAwesome packs this app bundles. Pinned down this pass rather than guessed: the name is absent
+  from `fas`, `far` *and* `fab`, aliases (the ligature list on each definition) included — it is a
+  Pro-only icon. The one literal is `RecurrenceType.ts:15` (`return 'calendar-range'`), not the
+  template. The tab renders with no icon, misaligned against its three siblings which all have one, and
+  the console logs `Could not find one or more icon(s) {prefix: fas, iconName: calendar-range}` on
+  every dialog open.
+- **It is not the tip of an iceberg, and that was worth checking.** Every static icon literal in
+  `src/` (204 in `.vue`, 79 in `.ts`, `_common` included) was resolved against the three packs this
+  pass. **Exactly two do not resolve:** this one and `F46`'s `mdi-close`. Nothing else to sweep up, and
+  no case for a registry or a lint rule off the back of it.
+- **What to change:** swap to a bundled icon. `calendar-days` is the closest fit for a range;
+  `calendar-week` also resolves. `_common/utils/fontAwesomeIcons.ts` registers the packs wholesale
+  rather than listing names, so it cannot be consulted for what exists — resolve a candidate against
+  the pack instead (`node -e "const {fas}=require('@fortawesome/free-solid-svg-icons'); …"`), or just
+  reuse a name already rendering elsewhere in this app.
+- **Verification:** `P1`'s `Verify:` block — the icon renders and the console logs nothing.
+- **Risk:** None.
+
+## F82. *Importance* is required in the repeating-task dialog, unmarked, and optional in the plain one
+
+- **Scope:** app-side `src/core/dayPlanner/component/settings/RepeatingTaskDialog.vue` (the Importance
+  select and its validator)
+- **Closes:** `planner-day/P2`
+- **Root cause:** submitting with Importance unset fails with *"This field is required"* under the field,
+  but the label reads plain *"Importance"* while `* Name` and `* Activity` in the same dialog carry the
+  app's asterisk convention. The user gets no upfront cue, and *Location*, *Notes* and *Is background*
+  sit unmarked beside it looking identical.
+- **Decide before editing.** The same field is genuinely optional in the plain Add/Edit Task dialog, so
+  one of the two dialogs is wrong. Marking it is the one-line fix; relaxing the validator is the other,
+  and is the right one if a repeating task has no more reason to demand an importance than a single task
+  does. Check the server's `RepeatingPlannerTask` contract before choosing — if `Importance` is
+  non-nullable there, the answer is the asterisk.
+- **Verification:** `P2`'s `Verify:` block — the cue is present before the first submit attempt. If the
+  validator is relaxed instead, confirm a repeating task created with no importance round-trips and
+  renders sensibly on the day grid.
+- **Risk:** None either way; the risk is shipping the wrong one of the two.
+
+## F83. The template header counts foreground tasks only and does not say so
+
+- **Scope:** app-side `src/core/dayPlanner/view/TemplateDayPlannerView.vue` (`taskStats`)
+- **Closes:** `planner-templates/P3` — round 1's `U1`, now **settled**: round 2 created the first
+  `isBackground: true` template task the fixture has ever had and confirmed the exclusion works exactly
+  as the code reads. This is a labelling gap, not a computation bug, and it is re-graded to `polish`
+  accordingly (the unit did this itself).
+- **Root cause:** `taskStats` filters `nonBgTasks` for all three figures. Excluding background time from
+  *planned* / *free* is correct — a background task does not block time. Excluding it from the plain
+  **count** is what leaves a reader with two blocks on screen and *"1 task · 1h planned · 15h free"* in
+  the header.
+- **What to change:** mention the background count when it is non-zero — *"1 task (+1 background) · 1h
+  planned · 15h free"*. One template string and one locale key pair; leave the planned/free arithmetic
+  alone.
+- **Verification:** `P3`'s `Verify:` block. Note it needs a background task to exist — none is seeded, so
+  create one through the API (CLAUDE.md *Mutating specs* rule 1) or repeat round 2's hand-made one and
+  clean up after.
+- **Risk:** None.
+
+## FW22. `TableCellEditor`'s `DECIMAL` cell rounds to whole numbers
+
+- **Scope:** **framework** `src/_common/component/dataTable/inlineEditTable/TableCellEditor.vue:19`
+  (submodule commit + pointer bump)
+- **Closes:** *(unfiled)* — found this pass while sizing `F76`. The framework twin of
+  `leisure-projects/B4`, split by rule 1.
+- **Root cause:** the numeric branch is `:step="cellType === TableCellType.DECIMAL ? 0.1 : 1"` with no
+  `:precision`, so Vuetify's default `precision: 0` coerces every value to an integer. A cell declared
+  `TableCellType.DECIMAL` therefore cannot hold a decimal — the type is decorative.
+- **What to change:** `:precision="cellType === TableCellType.DECIMAL ? null : 0"`, matching the shape
+  of the `step` expression beside it. Update `src/_common/docs/components.md` in the same commit (rule 3
+  of the submodule contract).
+- **Honest scope:** `TableCellType.DECIMAL` has **no consumer in this app** — the only two matches for it
+  in `src/` are the enum declaration and this line. So this is source-certain and unobserved, it fixes
+  nothing visible here, and its verification has to be a throwaway decimal column in the framework's own
+  fixtures rather than a screen in this app. It ships because another app on the framework may already
+  be using it, and because the `F76` fix would otherwise be app-side folklore.
+- **Risk:** Low, and it is the reason to ship it deliberately rather than folding it into `F76`: any app
+  currently using `DECIMAL` is getting integers today and may be relying on that rounding.
+
+## FW23. A second column-header click adds a sort key instead of replacing it
+
+- **Scope:** **framework** — `BasicTable`/`DataTable`'s `VDataTable` configuration
+  (`src/_common/component/dataTable/`). Submodule commit + pointer bump.
+- **Closes:** `leisure-backlog-picker/P1 (round 2)`
+- **Root cause:** one unmodified click on a second header turned `sortBy=activity.name:asc` into
+  `sortBy=activity.name:asc,durationMinutes:asc` — Vuetify's multi-sort behaviour, inherited by every
+  table in the app. The server accepts it; it is simply not what the click looked like it was asking
+  for, and there is no affordance anywhere (no shift-click hint, no numbered sort badges beyond the
+  primary key's own "Activity 1" chip) telling the user a second sort is being layered.
+- **Its own batch by rule 4.** Whatever is decided here applies to every table in every app on the
+  framework, not just the four leisure ones — that needs a decision, not a patch.
+- **The decision, stated plainly:** either (a) make single-sort the default and let a table opt into
+  multi-sort, which matches what every table in this app looks like it does and is the finding's first
+  pass condition; or (b) keep multi-sort and render the affordance — numbered badges on every active key,
+  extending the chip the primary key already has. (a) is a behaviour change for other apps; (b) is more
+  work and leaves a URL that grows on every click. Neither is obviously right, which is why this is
+  filed as a decision.
+- **What to check before deciding:** `useTableUrlState`'s `sortBy` codec already round-trips a
+  comma-joined list, so (a) does not simplify the URL format — and some consumer may be reading a
+  multi-key sort deliberately. Grep the framework and this app for a table passing more than one
+  default sort item.
+- **Verification:** `P1`'s `Verify:` block on `/leisure/backlog`, then the same two clicks on a
+  `DataTable` and a `BasicTable` elsewhere in the app, and on the framework's own `JobRunHistory`.
+- **Risk:** Medium for a trivial-looking change — it ships to every app on the framework and changes a
+  gesture users have already learned, in whichever direction it goes.
+
+## F84. The history dashboard's pie renders the folded-tail sentinel raw — `_other` in the legend, and the slice selects
+
+- **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue` (+ one locale key
+  if `activityTracking.common.other` is not reused — decide which, see below)
+- **Closes:** *(unfiled)*. Fell out of §10's closure, from the opposite side: the backend's `B16` answer
+  flagged `AdhdTimeOrganizer.History/application/dashboard/HistoryPieChartBuilder.cs` as out of scope and
+  "probably the identical bug". **It is not — that flag is stale.** `HistoryPieChartBuilder.cs:20` is
+  already `public const string OtherName = "_other"`, and has been; the History slice never had the
+  literal `"Other"` the Tracking pies did. The server side needs nothing. **Re-read in the API repo on
+  2026-09-21 and unchanged**, so the backend's *"say so and I'll do the History side as a follow-up"*
+  can be answered with "nothing to do" — this batch is the whole fix. What is wrong is the *client*:
+  the two modules' pies were written independently and only `activityTracking`'s learned the sentinel.
+- **Root cause — a branch that exists in one pie and not the other.** `ActivityPieChart.vue` translates
+  `OTHER_DOMAIN` on the way into the chart (`:62`), maps it back for the tooltip and the legend formatter
+  (`:96`, `:144`) and returns early rather than emitting a selection (`:150`). `HistoryPieChart.vue` has
+  none of the four: `:41` sets `name: item.name` verbatim, the legend `formatter` (`:75-81`) truncates and
+  percent-suffixes that same raw string, and `handleChartClick` (`:113-121`) resolves the datum by index
+  and emits `historyGroupKey(item)` for *any* slice. So the folded row shows as a literal `_other` in
+  **both** locales and is a selectable group — it cross-highlights the summary cards and the stacked bars
+  through `isSameHistoryGroup`, which matches it by name because its `groupId` is null.
+  `HistoryGroupKey.ts:7-8` already names this row ("the pie chart's `_other` roll-up") as one of the two
+  synthetic, id-less rows, so the DTO layer knew about it and the render layer did not.
+- **Adjacent, already handled — do not "fix" it twice.** The **colour** is fine:
+  `historyGroupColor.ts:47` routes a `groupId === null` row through `getDomainColor(name)`, which
+  special-cases `_other` to grey, so the slice already paints neutrally (this is the same conclusion §11's
+  body reached from the colour side). And `useHistoryInsights.ts:80` already has its own `OTHER_GROUP_NAME
+  = '_other'` constant and suppresses insights derived from the roll-up — a third copy of the literal,
+  which is the argument for a shared constant rather than a fourth.
+- **What to change:** give `HistoryPieChart` the same three touch points `ActivityPieChart` has — a
+  display-name helper used at `:41` and inside the legend `formatter`, and an early return in
+  `handleChartClick` when the resolved item is the roll-up. Branch on `item.groupId === null &&
+  item.name === <sentinel>`, **not on the name alone** — `HistoryGroupKey.ts:10-11` is explicit that a
+  user may name a real activity `_other` and that row carries an id. Two things to decide, both small:
+  (1) **which constant** — `historyDashboard` should not import `activityTracking`'s `OTHER_DOMAIN`
+  (cross-module, and neither is an `api/`/`dto/` export), so either lift one shared constant somewhere
+  both may import or reuse `useHistoryInsights.ts`'s `OTHER_GROUP_NAME` by exporting it; the latter is one
+  line and keeps the module self-contained. (2) **which locale key** — `activityTracking.common.other` is
+  the existing wording (*Ostatné*) but lives in another module's namespace; a `history.*` key with the
+  same two words is the boundary-respecting answer and costs two lines in `sk`/`en`.
+- **Do not change:** `HistoryPieChartBuilder.cs` or anything else server-side — the wire value is already
+  correct. Not `historyGroupColor.ts` (the grey works). Not `useHistoryInsights.ts`'s suppression logic.
+  Not `HistorySummaryCard.vue:21` unless the roll-up actually appears there — the summary-card endpoint is
+  a different builder and this pass did not check whether it folds at all; look before adding a branch.
+- **Verification:** `/activity-history/dashboard` on a `groupBy` and range where the seed has a group
+  under the builder's 1 % threshold (`HistoryPieChartBuilder`'s constant), or one fulfilled `route` body
+  carrying a `{"groupId": null, "name": "_other"}` row. Pass: the legend entry reads *Ostatné* (and its
+  English wording in EN), the slice is grey, and clicking it changes neither the selection nor the
+  summary-card highlight. Re-check that clicking a **real** grey/colourless slice still selects — the
+  guard must key on the id-plus-name pair, not on the colour or on `groupId === null` alone, or
+  `Uncategorized` stops selecting with it.
+- **Risk:** Low, one component. The only trap is the over-broad guard above: `Uncategorized` shares the
+  null `groupId` and *is* a real, selectable bucket.
+
+## FW24. `B18` landed and nothing on this side reads it — four different 409s still share one sentence, and today that sentence is the server's English DB prose
+
+- **Scope:** **framework** — `src/_common/composable/general/ErrorHandlingFunctions.ts` (the whole file
+  is 45 lines and switches on one `number`), `src/_common/axiosConfig.ts:220-250` (the interceptor's own
+  status switch), `src/_common/i18n/` locale keys under `httpErrors.*`, and
+  `src/_common/docs/composables.md`. Submodule commit **then** pointer bump — never one commit.
+- **Closes:** escalation §7's frontend half. No unit finding is filed against it, because no unit could
+  see it: the distinction did not exist on the wire until 2026-09-21.
+- **Root cause:** the API now sends `errorType` on every error body it authors — the `ResultErrorType`
+  member name as a plain PascalCase string (`DbUniqueViolationError`, `DbForeignKeyError`,
+  `DbConcurrencyError`, `Conflict`; on 403 `EmailNotConfirmed`, `UserLockedOut`). Landed as
+  `AdhdTimeOrganizer` `cd0a252`, purely additive: the field is **absent**, not null, when the server has
+  nothing better than the status. Nothing on this side reads it. `handleHttpCodes(statusCode: number)`
+  takes only a number — it cannot read it without a signature change — and the interceptor's `case
+  Conflict` is `showErrorSnackbar(serverMessage ?? t('httpErrors.conflict'))`.
+- **The user-facing symptom is not the one escalation §7 describes, and this is the more embarrassing
+  version.** §7 says a unique-index 409 tells the user *"This record was changed by someone else.
+  Refresh the page and try again."* That is true only of the `handleHttpCodes` path (a call site that
+  opted out with `_silent` and then routed the status back through it). On the **default** path the
+  interceptor prefers `serverMessage`, and for a DB-derived 409 that is the API's internal prose —
+  *"Unique constraint violation during Create"* — shown verbatim, in English, in a Slovak UI. Wrong
+  sentence either way; unlocalized developer text on the path that fires most often.
+- **What to change:**
+  1. Give `handleHttpCodes` an optional second parameter (`errorType?: string`) and a per-type branch
+     under `409` and `403`. **Optional, with the current sentence as the fallback** — every other app on
+     this framework, and every older API, must keep working untouched (CLAUDE.md's rule 2 for framework
+     edits). Add an `extractServerErrorType(error)` helper beside `extractServerMessage` in
+     `axiosConfig.ts`, in the same shape (typeof-guarded, `undefined` when absent).
+  2. Four new `httpErrors.*` keys with the wordings the backend spelled out: unique → *pick another
+     value*; FK → *remove or move what still depends on this first*; concurrency → today's refresh
+     sentence; business `Conflict` → **show the server's own message**, which is authored for the user.
+     SK primary, EN alongside.
+  3. In the interceptor's 409 branch, prefer the typed wording over `serverMessage` for the three
+     DB-derived types and keep `serverMessage` for `Conflict`. That is the one behaviour change to state
+     plainly in the commit message: today's raw *"Unique constraint violation during Create"* stops
+     reaching users.
+  4. `403`: branch `EmailNotConfirmed` / `UserLockedOut` behind the same fallback. `auth/B6` was solved
+     another way and this does not reopen it — it stops the *next* consumer having to.
+  5. Update `src/_common/docs/composables.md` in the same commit (rule 3).
+- **Do not change:** the status codes anything maps to; `extractServerMessage`'s precedence — that is
+  **`FW19`**, a different cause (a 400's `errors` map never being reached) that happens to live in the
+  same two files. Keep them as two batches and land them in one framework commit; do not fold `FW19`'s
+  reordering into this one and call it done. Do not touch the app-side call sites — that is `F85`, after
+  the pointer bump.
+- **Verification:** two live 409s, both named by the backend as the clean pair:
+  `DELETE /api/activity-role/{id}` on a **system** role → `errorType: "Conflict"`, and on a role that
+  still has activities → `errorType: "DbForeignKeyError"`. Same status, same endpoint, two different
+  sentences on screen. Then a duplicate routine time period (`DbUniqueViolationError`), a duplicate
+  desktop mapping pattern (`POST …/tracker-desktop-mapping-by-pattern` — also `DbUniqueViolationError`,
+  but **with** an `errors["Patterns"]` map; the backend's 2026-09-21 follow-up named it as the second
+  concrete pair, and it checks that the typed wording does not swallow a per-field map when one is
+  present), and one request against an endpoint that sends no `errorType` at all (any `Send.NotFoundAsync` 404) to confirm the
+  fallback. `DbConcurrencyError` **cannot be produced today** — no request DTO carries a row version, so
+  no endpoint can detect a stale write; wire the branch, do not try to test it.
+- **Risk:** Medium, and entirely in the other direction from usual: this ships to every app on
+  `vue_framework`, and an app whose API does not send `errorType` must see no change at all. The
+  fallback is the whole safety property — write the branch so an absent field is indistinguishable from
+  today.
+
+## F85. The two `_silent` 409 workarounds can read the type now — but `B18`'s own note about deleting them is wrong
+
+- **Scope:** app-side `src/core/todoList/component/routine/dialog/TimePeriodForm.vue:160-175`,
+  `src/core/todoList/view/RoutineSettingsView.vue:175-191`
+- **Closes:** escalation §7's app half. The two findings behind those call sites (`todo-routine/B9`,
+  `B11`) are already `fixed`; this is their follow-on, not a reopening.
+- **Blocked on `FW24`** and on the pointer bump after it. There is nothing to do here first.
+- **Root cause:** both sites opted out of the interceptor (`_silent: true`) and worded the 409
+  themselves, because a status code was the only thing either could see. With `errorType` on the wire
+  they can tell *which* 409 they got, which is the one thing both comments say they cannot.
+- **`B18`'s "what changes on the frontend" list is wrong twice, and a fixing session following it would
+  regress two things.** Read against the source this pass:
+  - *"Delete the two `_silent` + call-site wordings."* **No.** `TimePeriodForm.onConfirm` sets
+    `conflictError` and **returns without closing the dialog**, so the user keeps everything they typed
+    and sees the message against the form. An interceptor snackbar cannot do that, and the dialog
+    closing before the message arrives is the exact defect `todo-routine/B11` fixed. Keep `_silent`,
+    keep the inline error; what changes is only the **condition** — `errorType ===
+    'DbUniqueViolationError'` rather than `status === 409`, so a concurrency 409 stops being worded as
+    a name collision.
+  - *"`useDeleteConfirmation` can stop guessing about FK refusals it cannot see."* **It never guessed.**
+    `src/core/user/composable/useDeleteConfirmation.ts` is 45 lines of pre-flight policy
+    (`resolveDelete({cascades, undoable})`); it runs *before* the request and never sees a response, so
+    there is nothing in it to change. The post-hoc FK handling lives at the call sites —
+    `RoutineSettingsView.showDeleteBlocked` is the one that exists.
+- **What to change:** in `RoutineSettingsView.onDelete`, branch `showDeleteBlocked` on `errorType ===
+  'DbForeignKeyError'` instead of bare `status === 409`, and let anything else fall through to
+  `handleHttpCodes` (which by then words the rest correctly). In `TimePeriodForm.onConfirm`, the same
+  narrowing for `DbUniqueViolationError`. Both are one condition each.
+- **Also worth a line, not a batch:** `F19` gives the roles table a pre-flight `canDelete` gate, so its
+  409 becomes a race fallback only — but the pair the backend built this field for is exactly that
+  endpoint (system role → `Conflict`, in-use role → `DbForeignKeyError`). If `F19` lands **after**
+  `FW24`, its fallback can say which one happened instead of showing the generic sentence; if it lands
+  before, nothing is lost. Do not hold either for the other.
+- **Verification:** duplicate an existing routine time period's name and its `lengthInDays` in two
+  separate attempts — the dialog stays open both times with a message naming the right field. Then
+  delete a time period that still has routines: the *"remove these first"* dialog, not a snackbar.
+- **Risk:** None beyond the sequencing. If it lands before the pointer bump, `errorType` is `undefined`
+  and both conditions are false, so both sites silently stop handling the 409 they handle today — which
+  is why this is blocked rather than merely ordered.
+
 ## Escalations (backend / outside this repo)
 
 > **Written as backend prompts 2026-09-15** — every open entry below now has a file in
@@ -3403,22 +4032,24 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 >
 > | § | file | § | file |
 > | --- | --- | --- | --- |
-> | ~~§11~~ | `_implemented/B10-…` — landed, body in the log | §10 | `B16-pie-chart-other-bucket-sentinel.md` |
+> | ~~§11~~ | `_implemented/B10-…` — landed, body in the log | ~~§10~~ | `_implemented/B16-…` — landed, body in the log |
 > | ~~§6 + §13~~ | `_implemented/B11-…` — landed, body in the log | ~~§15~~ | `_implemented/B17-…` — landed, body in the log |
-> | ~~§12~~ | `_implemented/B12-…` — landed, body in the log | §7 | `B18-error-type-in-409-body.md` |
+> | ~~§12~~ | `_implemented/B12-…` — landed, body in the log | §7 | `_implemented/B18-…` — **ask landed 2026-09-21; frontend half open as `FW24` + `F85`** |
 > | ~~§14~~ | `_implemented/B13-…` — landed, body in the log | §8 | `B19-holiday-names-country-and-locale-decision.md` |
 > | §9 | `B14-google-calendar-oauth-cannot-complete.md` | ~~§5~~ | `_implemented/B20-…` — landed, body in the log |
-> | §1 | `B15-notification-text-ignores-account-locale.md` | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
+> | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
+>
+> **The fifteenth pass added none**, out of 23 new findings — the first pass since unit 3 to add zero.
+> That is not because nothing looked server-side: four findings were filed or guessed as backend gaps
+> and three of the four were disproved by reading the API this pass. `planner-day/X1`'s missing
+> `/Overwrite` route exists as `PUT …/quick-edit` (`F74`); `leisure-backlog-picker/X1 (round 2)`'s
+> "contract question" was already answered empirically by its two sibling units (`F73`);
+> `planner-day/B8`'s "denormalized counter" is computed live in SQL, so the premise is wrong and the
+> finding moves to *Needs verification*, not here. The fourth, `leisure-bucket-anchors/B1`, is a stale
+> local backend build — see *Needs verification*. **Read the API source before writing an ask**;
+> three of four is not a fluke, and each of these would have shipped as a `B2x` prompt file.
 
-1. **Notification titles and bodies ignore the account locale** — `_shell/B1`. Still open, and **now
-   confirmed on real data (2026-09-13)**. ~~Not re-testable on the current seed (zero notifications).~~ That
-   was true of `e2e-v1`; the fixture now seeds six notifications across six kinds, and signed in as
-   `primaryUser` — whose `locale` is **`EN`** — `/notifikacie` renders every title and body in **Slovak**:
-   *"Blíži sa termín"*, *"Pripomienky"*, *"Obdobie sa čoskoro končí"*, *"Sústredenie skončilo"*. Only the
-   fixture's own *"Testovacia notifikácia"* carries an English body, and its title is Slovak too.
-   So this escalation rests on observed behaviour for the first time, not inference. Text is localized
-   server-side at dispatch, so no `src/` change can fix it. The ask: resolve notification text
-   against the recipient's locale preference at dispatch, or send a key + params and let the client resolve it.
+<!-- §1 (notification text ignores the account locale — `_shell/B1`) closed 2026-09-21: `B15` landed as Option A (API `830cad6`), verified in the browser the same day, and there was no frontend half. The bell composes text on every read, so it follows the account's *current* locale — better than the "locale at dispatch" rule the ask settled for. Body in _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
 <!-- §2 (routine time period delete — Restrict, not cascade) resolved 2026-09-13; §3 (untick/streak decision) answered 2026-09-15 (API 4ab3710); §4 (activity contract — nested role/category, client half shipped as F3) resolved 2026-09-13. Bodies in _fix-queue-log.md → Closed escalations. Numbers retired, not reused. -->
 
@@ -3435,7 +4066,43 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
      showed a `?roleIds=` bookmark working end to end. -->
 
 
-7. **Client side closed 2026-09-14; the ask itself stays open, and is smaller than written.** Two corrections
+7. ✅ **THE ASK LANDED 2026-09-21** (`AdhdTimeOrganizer` `cd0a252`; the prompt file moved to
+   `backend/_implemented/` and carries the full response). **This paragraph stays only because the
+   frontend half has not started** — it is `FW24` (framework: read `errorType`, word each 409 and 403)
+   and `F85` (app: narrow the two `_silent` call sites), in that order. Delete this entry and move the
+   body to the log when both land.
+
+   What shipped, in one line: **every error body the API authors now carries `errorType`**, the
+   `ResultErrorType` member name as a plain PascalCase string, **absent** (not null) when the server
+   has nothing better than the status; FluentValidation 400s carry none and keep their `errors` map.
+   The values to branch on are `DbUniqueViolationError` / `DbForeignKeyError` / `DbConcurrencyError` /
+   `Conflict` on 409, and `EmailNotConfirmed` / `UserLockedOut` on 403. `DbConcurrencyError` is
+   unreachable today — no request DTO carries a row version — so wire it and do not expect to see it.
+   The backend also named the test pair: `DELETE /api/activity-role/{id}` answers `Conflict` for a
+   system role and `DbForeignKeyError` for a role that still has activities. **Two of the three
+   frontend consequences it lists are wrong** — see `F85`, which corrects them rather than repeating
+   them.
+
+   **Follow-up 2026-09-21 (same day, appended to the prompt file):** the "every error body" claim was
+   not quite true at landing — eleven hand-written endpoints still picked their 409 with a bare
+   `EndpointHelper.ToStatusCode(...)` and dropped the type. Those are converted and a source-scan test
+   (`ErrorStatusBypassGuardTests`) fails the API build on any new one. **Nothing in the contract
+   changed** and nothing new opens on this side; it only widens the routes `FW24` can rely on: the two
+   `…-mapping-by-pattern` creates/updates (duplicate pattern → `DbUniqueViolationError` **with**
+   `errors["Patterns"]` naming the clash — relevant to `F72`'s field-by-field branch), the three tracker
+   heartbeat/sync posts, `PATCH /activity/{id}/archived`, `POST /activity/merge`, every to-do step and
+   toggle-done write, `PATCH /planner-task/{id}/status` and `POST /planner-task/apply-template`. The
+   follow-up repeats the two wrong frontend consequences (*delete the `_silent` wordings*,
+   *`useDeleteConfirmation` can stop guessing*); `F85` still stands as the correction. `FW24` gains the
+   duplicate mapping pattern as a second verification pair.
+
+   **The record below is what was asked and why; it is kept as the evidence trail, but note one thing
+   it gets wrong about this side.** It says the client "is told *This record was changed by someone
+   else*". That is only the `_silent` + `handleHttpCodes` path. The default path is the interceptor,
+   which prefers the server's `message` — so an ordinary 409 has been showing the API's raw English
+   *"Unique constraint violation during Create"* in a Slovak UI (`FW24`, *Contradictions* §120).
+
+   **Client side closed 2026-09-14; the ask itself stays open, and is smaller than written.** Two corrections
    from the API source: `Text` is unique per account as well (`RoutineTimePeriodConfiguration.cs:13`), and
    **the bare 409 is a pinned contract** — `RoutineTimePeriodUniqueIndexTests` asserts `Conflict` for both
    indexes, so the first ask below (validate → 400) means changing that contract and those tests, which is a
@@ -3557,30 +4224,16 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
    the convention is in `prompts/_done/user/backend/README.md`, and the finished asks sit in
    `prompts/view-docs/backend/_done/`); this paragraph is the evidence to paste into it.
 
-10. **The four pie-chart endpoints emit their tail bucket as a literal `"Other"` row; the four
-    stacked-bars endpoints emit `"_other"` — and the client only understands the second.**
-    Source-certain, **unobserved** (found reading `B2`'s data path in the eleventh pass; the unit did
-    not file it and the seed may have no sub-1 % slice to show it). `WebExtensionPieChartEndpoint.cs:88`
-    (`Domain = "Other"`), `DesktopPieChartEndpoint.cs:81-82` (`ProcessName`/`ProductName = "Other"`),
-    `AndroidPieChartEndpoint.cs:79-80` (`PackageName`/`AppLabel = "Other"`),
-    `UnifiedPieChartEndpoint.cs:21` (`OtherLabel = "Other"`) — versus `WebExtensionStackedBarsEndpoint.cs:81`,
-    `DesktopStackedBarsEndpoint.cs:77-78`, `AndroidStackedBarsEndpoint.cs:113-114`, all `"_other"`.
-    Every dashboard sends `minPercent: 1` (`ActivityDashboard.vue:149`, `DesktopActivityDashboard.vue:180`,
-    `AndroidActivityDashboard.vue:170`), so the row is produced whenever anything falls under 1 %.
-    On the client, `ActivityPieChart.vue:62,96,144,150` recognises **only `_other`** — translates it
-    (`activityTracking.common.other`), and refuses to select it. The literal `"Other"` is therefore
-    (a) an untranslated English legend entry in SK, (b) a selectable slice — `?selected=Other`, a
-    desktop `process-details?processName=Other` request, and after `F47` an Android panel titled
-    *Other* — and (c) on the web dashboard, where `ActivityPieChartSection.vue:119-140` *also* buckets
-    below 3 % client-side into `_other`, potentially **two "Other" legend entries** when the server's
-    bucket sums to ≥ 3 %. The ask: emit `_other` from the pie endpoints as the stacked-bars ones already
-    do (one constant, four files), so the sentinel is one contract. The client-side alternative — stop
-    sending `minPercent` and bucket locally on all four sections the way the web one does — is more
-    code for the same result and leaves the server's `MinPercent` branch dead; not recommended, but
-    it is app-side if the backend declines. **What would settle whether it is live today:** `playwright-cli
-    route "**/api/activity-tracking/android/pie-chart"` with a fulfilled body carrying one `"Other"` row,
-    then read the legend and click the slice — or a seed app under 1 % of the span. Until then, `F47`
-    guards the row locally (its *What to change*), which is a shim to remove when this lands.
+<!-- §10 (two sentinels for one folded-tail row: the four pie endpoints said "Other", the four stacked-bars
+     ones "_other", and the client understood only the second) resolved 2026-09-16 — backend landed `B16`
+     (`FoldedRow.Sentinel`, one constant for all seven folding endpoints; the pie endpoints' wire value is
+     now `_other`), frontend half landed the same day: `F47`'s local guard was deleted before it was ever
+     written, `OTHER_DOMAIN` replaced the eight scattered literals in `component/pieChart/`, and the
+     double-fold collision the rename surfaced was closed in **two** sections, not the one §10 named
+     (`ActivityPieChartSection` **and** `UnifiedPieChartSection` both bucket locally at 3 %). Body in
+     _fix-queue-log.md → Closed escalations. The backend's out-of-scope flag on the History slice was stale
+     — `HistoryPieChartBuilder.OtherName` is already `"_other"` — but the History *client* renders that
+     sentinel raw; filed as `F84`, app-side, no backend half. Number retired, not reused. -->
 
 <!-- §11 (colour validator demanded hex; the palette on both sides is names) resolved 2026-09-16 — backend
      landed `MustBePaletteColor()` + the `Color` 7→20 widening migration, frontend half landed the same day
@@ -3822,8 +4475,14 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
   one panel designed to survive a failed round (`ActivitySourceFilter.vue:24-29`) — that comment has
   never been tested either. If any panel shows its *empty* state on a 500 instead of its error state,
   that is `F27`'s class on this side and a new finding.
-- **The pie endpoints' `"Other"` row — source-certain, unobserved, backend-shaped (§10).** Settled by
-  one fulfilled `route` body or a seed app under 1 % of the span; `F47` guards it locally meanwhile.
+- ~~**The pie endpoints' `"Other"` row — source-certain, unobserved, backend-shaped (§10).**~~ ✅ **Closed
+  2026-09-16 without a browser**: backend `B16` renamed the wire value to `_other` on all four pie
+  endpoints, so the client's existing branch covers all eight routes. Still worth *seeing* once, folded
+  into the mutation pass rather than left as its own row: a seed app under 1 % of the span, or one
+  fulfilled `route` body, should paint a grey **Ostatné** slice that clicks to nothing — and, on
+  `/activity-tracking` and `/unified` (the two sections that also bucket locally at 3 %), exactly **one**
+  such legend entry, not two. That second half is the collision the rename surfaced; it is fixed in code
+  and unobserved, same as everything else on this list.
 
 ### `planner-templates` — three `unverified`: one settled from source, two for the mutation pass
 
@@ -3851,42 +4510,68 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
   the task where it was and fire no request. `F54` should land first so the two picks survive the
   reload the drag test will want.
 
-### ⚠️ Found while triaging unit 11: a 400 with no snackbar — three units, three different observations of one interceptor path
+<!-- §91 ("a 400 with no snackbar — three units, three different observations") ✅ SETTLED 2026-09-16 by
+     unit 11's round 2, in the mundane direction: the snackbar fires. Its `B3` says so in as many words —
+     *"a snackbar reading 'One or more errors occurred!' appears and disappears within a few seconds"* —
+     so round 1's `X3` poll was wrong and there is no framework intermittent. What round 2 *did* confirm
+     (every `[role=alert]` in both forms empty after a rejected submit) is the absence of a **field-level**
+     error, which is now `F77`. Body moved to _fix-queue-log.md → Closed verification items. -->
 
-`leisure-backlog-picker/X3` polled the DOM for 1.8 s after *Create* (six samples) and saw **no
-`.v-snackbar`**; `leisure-bucket-anchors/B2` on the same shape of 400 says *"a snackbar may have fired
-and auto-dismissed before capture — not independently confirmed"*; `activity-settings/X1` on a 400 from
-the same `useEntityCommand.create` path **saw** the snackbar (the generic string `FW19` is about). Read
-this pass: `axiosConfig.ts:221-228` calls `showErrorSnackbar` for every non-`_silent` 400,
-`activityBacklogProfileApi.ts` sets no `disableErrorHandling`, `useRequestState.ts:31` therefore passes
-no `_silent`, and `SnackbarComposable.ts`'s `showSnackbar` has no dedupe, no suppression and a 3 000 ms
-timeout — so a 1.8 s poll starting after the click should have caught it. There is no path in source by
-which this request stays silent. Either the observation is wrong (the poll's selector, or the snackbar
-rendered behind the dialog's scrim and the agent was reading a `find` that scopes to the dialog) or there
-is a real intermittent in the framework, which would be a much bigger finding than `X3`.
-
-**What would settle it:** `/leisure/backlog` → *Add* → *Create* untouched, with
-`playwright-cli find "One or more errors"` within 3 s, **and** `playwright-cli eval
-"document.querySelectorAll('.v-snackbar').length"`. If it is absent, patch a `console.log` into
-`showErrorSnackbar` via `route`-served source or read `snackbar.value` off the composable — the question
-is whether the interceptor was called, not whether the DOM shows it. Until then `F63` fixes the input
-side and `X3`'s *Verify* step 2(b) stays open.
-
-### `leisure-backlog-picker` — four `unverified`, all environment-shaped; none settles from source
+### `leisure-backlog-picker` — five `unverified`; **note the round-2 renumbering** (see the warning at the top of this file)
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — `PickerView`'s *nothing filed yet* and *load failed* states | `nothingFiled`: sign in as `secondaryUser` (the `secondaryPage` fixture) and open `/leisure/pick` — check `e2e/.state/seed.json` first for that account's leisure counts rather than assuming; if it seeds rows too, a `test.fixme`. `failed`: `playwright-cli route "**/api/activity-backlog-profile/grid" --status=500` and reload | Seed/tooling gaps, not defects. Note `F64` changes the *default* landing state on the primary account from "no suggestions" to "one card" — run this after it |
-| `U2` — the loading skeleton | `playwright-cli route` with a delay on the three pool `grid` calls, then `find "skeleton"` | Cosmetic; one screenshot |
-| `U3` — `BacklogView`'s loading and error states | Same route-delay for loading; `--status=400` for the error state — and read whether the *table* shows an error or its empty copy, which is `F61`'s question one view over | If it shows the empty copy, file it against `F61`'s pattern rather than as a new finding |
-| `U4` — arrow keys inside `ConstraintBar`'s three `VBtnToggle` groups | Tab into one group, `ArrowRight`/`ArrowLeft`, confirm selection moves and wraps; then with focus in the filter's text field confirm the arrows do nothing to the toggles | The CLAUDE.md keyboard-checklist item. Vuetify's `VBtnToggle` is a `group` with no roving tabindex of its own, so the honest expectation is *"arrows do nothing, Tab moves between buttons"* — decide before asserting |
+| **round-1 `X1` and `P2` are gone from the file with no retest note** | Re-run round 1's two repros: type in the Backlog table's `activityName` filter and confirm the main paginated request actually narrows; and read `leisureWeatherApi.ts`'s doc comment | **Both are almost certainly already resolved, and neither should be re-filed.** Round-1 `X1` (the `activityName` filter ignored) is `B11`/§13's class and the server now applies it — read this pass, the sibling grid endpoints do `EF.Functions.ILike` on `Activity.Name`. Round-1 `P2` (the "endpoint is unimplemented" comment) is still open, inside `F64`. The gap is the *record*, not the behaviour — the rewrite dropped both silently |
+| `U1` — the backlog table's empty state | Blocked on `F73`: this pass could not delete the seeded row because delete 404s. After `F73`, delete a row created through the API and read the `#noData` slot | The finding names its own blocker as `X1`, i.e. `F73`. Do not ask for a seed variant first |
+| `U2` — the picker's *nothing filed at all* state | Sign in as `secondaryUser` (the `secondaryPage` fixture) and open `/leisure/pick` — check `e2e/.state/seed.json` for that account's leisure counts rather than assuming; if it seeds rows too, a `test.fixme` | `F64` changes the *default* landing state on the primary account from "no suggestions" to "one card" — run this after it, or the two states are indistinguishable |
+| `U3` — the picker's *load failed* state | `playwright-cli route "**/api/activity-backlog-profile/grid" --status=500` and reload | Read whether the picker distinguishes *failed* from *empty*. If it does not, that is `F61`'s pattern and `F79`'s third state — file it against those, not as a new finding |
+| `U4` — the picker's loading skeleton | `playwright-cli route` with a delay on the three pool `grid` calls, then `find "skeleton"` | Cosmetic; one screenshot. Same limitation `leisure-projects/U2` records for the board's progress bar — one throttled session settles both |
+| ~~`U5` — `suggestionHistory` per-user scoping~~ | ✅ **closed 2026-09-21, no defect** — the read the row asked for: `suggestionHistory.ts:2` imports `readUserScoped, writeUserScoped` from `@/core/user/composable/useUserScopedStorage.ts` and both accessors go through them. Its own header says so (*"P4 found this key un-namespaced and scoped it by account"*), i.e. the round-2 finding was written against a state of the file that had already been fixed | No batch. The one real limitation the file documents is different and already owned elsewhere: the record is per-**device**, and moving it server-side is `backend/D1-backend.md`, not this queue |
+| *(unfiled)* `ConstraintBar`'s three `VBtnToggle` groups and arrow keys — round 1's `U4`, dropped by the rewrite | Tab into one group, `ArrowRight`/`ArrowLeft`, confirm selection moves and wraps; then with focus in the filter's text field confirm the arrows do nothing to the toggles | The CLAUDE.md keyboard-checklist item, still unanswered. Vuetify's `VBtnToggle` is a `group` with no roving tabindex of its own, so the honest expectation is *"arrows do nothing, Tab moves between buttons"* — decide before asserting |
 
-### `leisure-bucket-anchors` — two `unverified`: one for the mutation pass, one settled from source
+### `leisure-bucket-anchors` — one item, and it is a stale backend build, not a defect
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — the locked *"I did this"* capture flow | The unit's mutation pass: create a not-yet-anchored bucket-list row **through the API** (CLAUDE.md *Mutating specs* rule 1), click *I did this*, confirm the dialog opens with the activity locked and the current month/year defaulted | Not a seed ask. This path does not call the missing endpoint (§12) — `lockActivity` short-circuits `onMounted` (`NewMemoryAnchorForm.vue:109`) — so it is testable today |
-| `U2` — deleting an anchor vs. the source row's `isAnchored` | ✅ **Settled from source** — see the log's *Closed verification items*. `IsAnchored`/`MemoryAnchorId` are computed **in SQL at read time** from the anchors table (`GridActivityBucketListProfileEndpoint.cs:24-25,50-55`: `anchors.Any(m => m.ActivityId == p.ActivityId)`), not stored on the profile, so a deleted anchor cannot leave a dangling flag. The mutation pass may still click it, but there is no defect to find | — |
+| `B1` — numeric and date range filters "silently ignored server-side" on both grids | Restart the local API on a build carrying `B11`, then re-run the three cases: `/leisure/bucket-list?minComfortZoneStep=5` (expect zero rows), `/leisure/memory-anchors?minRating=9` (expect one), `?year=2025` (expect zero) | ⚠️ **Re-graded `bug` → not-a-defect, pending that retest** (*Contradictions* §117). Read at the source this pass, all five fields are applied: `GridActivityBucketListProfileEndpoint.ApplyCustomFiltering` filters `MinComfortZoneStep`/`MaxComfortZoneStep`, `GridMemoryAnchorEndpoint` filters `MinRating`/`AnchorMonth`/`AnchorYear`. Round 2's reconfirmation (2026-09-15) ran against the pre-`B11` local build — the unit's **own round 3** records that it did not restart the backend until 2026-09-16. The `year`/`month` half is additionally explained by `F60`: the client sent those names while the server reads `anchorYear`/`anchorMonth`, which is the rename `F60` shipped and verified. All five cases are accounted for; none is an open server gap |
+| ~~`U1`, `U2`~~ | ✅ both closed — `U1` exercised live by round 2 (create → *I did this* → 201 → the row flips to *Experienced*, progress 1→2), `U2` settled from source in the thirteenth pass and re-confirmed live by round 2's delete. Bodies in the log | — |
+
+### `leisure-projects` — two `unverified`, both blocked on the same thing
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U1` — the genuinely-empty board and table states | Blocked on `F73`, same as `leisure-backlog-picker/U1`: the seed always carries `profiles.project: 17201` and this pass could not delete it through the UI. After `F73`, create-and-delete through the API and read both the `#noData` slot and the board's `isEmpty` branch | **Run it in `F79`'s session** — `F79` adds a third empty state (filtered-to-zero), and this row is the check that the original one still renders where it should |
+| `U2` — the loading progress bar | `playwright-cli route` with a delay on the `grid` call | Same limitation as `leisure-backlog-picker/U4`; one throttled session settles both |
+
+### `planner-day` — one finding whose premise is wrong, and it was filed as a backend ask
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `B8` — a deleted task's `totalTasks`/`completedTasks` stay stale, *"confirmed stale server-side"* | Repeat the repro and, **after the reload that still reads 3**, ask the server what tasks it thinks exist for that calendar and count them. Also check what the `DELETE` actually returned | ⚠️ **Not an escalation; the root-cause guess is disproved from source** (*Contradictions* §118). The finding reasons from *"a denormalized counter… incremented on POST but not decremented on DELETE"*. There is no such counter: `CalendarResponse.cs:62-63` projects `TotalTasks = c.Tasks.Count()` and `CompletedTasks = c.Tasks.Count(t => t.Status == Completed)` as live aggregates, and `Calendar.cs:50-51` are computed properties over the navigation. A response saying `3` means the server still had three tasks at read time — so the real question is *"did the delete happen?"*, not *"is the cache stale?"*. Two candidates the step above distinguishes: the `DELETE` did not succeed and the grid dropped the row optimistically, or the grid's own task source is narrower than `Calendar.Tasks` (a time-window or background filter). **Do not write a backend prompt until that step has run** |
+
+### `planner-templates` — two carried `unverified`, one now much better evidenced
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U2` — cross-template drag on the split view | Round 2 made three real attempts (`dragTo`, a manual multi-step pointer drag, and one starting from the `.split-drag-handle`) and **all three were captured by the source panel's own same-grid reposition** — confirmed by the resulting `PATCH` body carrying only `startTime`/`endTime`, never `templateId`, and by a mid-drag screenshot showing the source task's time already changing while the cursor was over the other panel. Next step: read `setupDropTargets`/`monitorForElements` and find what signal actually triggers the cross-template path | This is now strong negative evidence, not an untested path. It stays `unverified` rather than becoming a finding because *"a scripted pointer sequence cannot reach it"* is not the same claim as *"a real mouse cannot"* — but three attempts is the point at which reading `@atlaskit/pragmatic-drag-and-drop`'s drop-zone wiring is cheaper than a fourth |
+| ~~`U3` — the split view's back button may have no accessible name~~ | ✅ **confirmed 2026-09-21 and closed into `F56`, which already carries it as control #4.** The `eval` is unnecessary: `TemplateSplitView.vue:5-11` is `<VBtn icon="arrow-left" variant="tonal" color="secondaryOutline" size="small" @click=…/>` — no `aria-label`, no `title`, no child text and no default slot, so there is nothing for an accessible name to come from. A browser could only re-observe the markup | Stays in `F56`; no new batch, no `A5` needed on the queue's side. The remaining verification is `F56`'s own — that `getByRole('button', { name: 'Back to templates' })` resolves **after** the fix |
+
+### ⚠️ New 2026-09-21: `B16`'s frontend half is in this tree, and its backend half is **not committed** in the API's
+
+Escalation §10 is tombstoned as *"backend landed `B16` … frontend half landed the same day"*, and the
+frontend half is real — `OTHER_DOMAIN` in `PieSegment.ts` plus the merge guard in
+`ActivityPieChartSection.vue` and `UnifiedPieChartSection.vue`, all four files uncommitted in this repo.
+The other side is less finished than that wording implies.
+
+| what | state on 2026-09-21 | what settles it |
+| --- | --- | --- |
+| `FoldedRow.cs` (`Sentinel = "_other"`) and the seven endpoints that now reference it | **untracked / modified in the API working tree** — `git status` in `AdhdTimeOrganizer` shows `?? …/domain/helper/FoldedRow.cs` and seven `M` endpoint files; no commit carries them. The backend re-verified the change later on 2026-09-21 and added a second parity theory (`StackedBars_FoldTheTailUnderTheSameSentinelOnEverySource`, 15/15 green) — **and said "still on dev, uncommitted" again** | Commit them there, then re-drive one pie dashboard. Until then the four pie endpoints still send the literal `"Other"` on any server you can actually reach, so the legend shows an untranslated *Other* and §10's (a) and (b) both still reproduce |
+| the double-fold collision — *"please confirm the merge path sums rather than overwrites"*, the one question the backend asked back | **answered from the code, no browser needed: it sums.** Both sections accumulate into a single `otherSeconds` and push one segment (`ActivityPieChartSection.vue:126-146`, `UnifiedPieChartSection.vue:243-253`); the new guard (`d.domain !== OTHER_DOMAIN && percent >= threshold`) sends the server's folded row into that accumulator unconditionally, so a server row above the local 3 % threshold merges instead of surviving as a second identical legend entry | ✅ Replied 2026-09-21 — *FRONTEND ANSWER* appended to `_implemented/B16-…`, together with "nothing to do" on their History follow-up offer (`F84` is the client, the builder was already `_other`). No test needed |
+| two fold thresholds for one concept (server `minPercent: 1`, client 3 %) | unchanged, and now commented in both sections | Deliberately deferred — it is `tracking-dashboards` deferred item (2), not a defect |
+
+Not a finding against either repo, and **not** a reason to revert anything here: the guard is a no-op
+while the server still sends `"Other"`, so this side is safe to commit in either order. It is a
+sequencing note, and the reason a retest of §10 done today would fail for the wrong reason.
 
 ### Carried forward, unchanged
 
@@ -3996,9 +4681,12 @@ name. The rows exist (`AndroidSessionData`: `SessionStartUtc`, `DurationSeconds`
 session count, first/last use and mean session length are one `GroupBy` away server-side; the client
 half is `DesktopPieChartSection.vue:169-188`'s watcher, copied. Not a defect — the web dashboard's
 detail is also local-only — but it is the feature the label promises. **(2) The pie sections' *Other*
-bucket is computed in two places at two thresholds** (server at `minPercent: 1`, web client at 3 %,
-the other three clients not at all) — once §10 settles the sentinel, one threshold in one place is the
-tidy-up, and it is where a *"show the tail"* affordance (expand *Other* into its members) would live.
+bucket is computed in two places at two thresholds** (server at `minPercent: 1`; the web **and unified**
+clients at 3 % — the note said "web client" and undercounted by one — the other two not at all). §10
+settled the sentinel on 2026-09-16, and its frontend half had to teach both local bucketers to fold the
+server's row into their own rather than let it survive as a second one. That guard is the seam: one
+threshold in one place is still the tidy-up, and it is where a *"show the tail"* affordance (expand
+*Other* into its members) would live.
 Neither is an opportunity by the template's definition; both are noted.
 
 **`leisure-backlog-picker/O1` — `minParticipants`/`maxParticipants` are filter fields with no input,
@@ -4023,5 +4711,16 @@ does not; it renders **"—"** on every row today (`FW20`), so the honest line i
 shown nowhere at all. The savings-goal progress readout the unit sketches (`useExperiencedProgress`'s
 pattern over `financialGoal`) is the cheapest of the three ideas and needs no backend.
 
-No other open opportunity findings exist across the fifteen units triaged.
+**`leisure-backlog-picker/O2` — `ExperiencedCell`'s *open anchor* link navigates by activity *name*
+while the row already carries `memoryAnchorId`** (new in round 2). `openAnchor()` pushes
+`{ name: 'leisureMemoryAnchors', query: { activityName } }`, and the anchors filter is a `contains`
+match on that string, so two activities with the same display name land on each other's anchors and a
+rename breaks the link. The unit files it as an `opportunity` and that grading is right *today* — the
+seed has no name collision, so nothing is observably wrong — but note for Phase 4 that this is a
+latent **correctness** risk, not unspent data like the other three here: the moment an id-based filter
+or an anchors detail route exists, this becomes a one-line fix rather than a feature. If a name
+collision is ever seen in the wild, it is re-graded to `bug` and leaves this section.
+
+No other open opportunity findings exist across the fifteen units triaged — and with unit 11's round 2,
+every one of the fifteen has now been read for them at least once.
 

@@ -8,6 +8,73 @@
 
 ## Pass history (newest first)
 
+> **Sixteenth pass, 2026-09-21, commit `0a174507` + working tree — no unit absorbed; two landed backend
+> asks and a source re-read of the fifteenth pass's headline batches.** No `findings.md` has changed
+> since the fifteenth pass (checked by mtime: the newest is unit 13's, from before that pass wrote the
+> queue), and units 16–19 have not run, so there was nothing new from a browser to triage. What had
+> changed is on the other side of the wire. **`B18` landed** (`AdhdTimeOrganizer` `cd0a252`): every
+> error body now carries `errorType`, and **its entire frontend half was unfiled** — `handleHttpCodes`
+> still takes a bare `number`. That became two batches, split on rule 1: `FW24` (framework — read the
+> type, word each 409 and 403, status-only as the fallback) and `F85` (app — narrow the two `_silent`
+> call sites, blocked on the pointer bump). Writing them meant reading `B18`'s own *"what changes on
+> the frontend"* list, and **two of its three bullets are wrong**: deleting `TimePeriodForm`'s inline
+> 409 handling would undo `todo-routine/B11`'s dialog-stays-open fix, and `useDeleteConfirmation` never
+> guessed about FK refusals because it is pre-flight and never sees a response (§121, §122). A third
+> correction came out of the same read and is worse than the finding it corrects: escalation §7 says a
+> 409 reads *"This record was changed by someone else"*, but that is only the `_silent` path — on the
+> default path the interceptor prefers the server's `message`, so an ordinary 409 has been showing the
+> API's raw English *"Unique constraint violation during Create"* in a Slovak UI (§120). **`B16`'s two
+> halves are out of step:** the frontend half is in this repo's working tree, but `FoldedRow.cs` is
+> still untracked in the API's, so §10's symptoms reproduce on any reachable server and a retest today
+> would fail for the wrong reason (a *Needs verification* row now says so; the backend's one question
+> back — does the client's local bucket merge or overwrite — is answered from the code: it **sums**).
+> The rest of the pass was challenge rather than intake. `F73` and `F74` were re-read against the API
+> source and **both got worse**: `F73`'s failure is not uniformly a 404, because authorization runs on
+> the row the id *found* (`OwnsActivityAsync(…, entity.ActivityId)`), so a colliding id is a silent
+> wrong-row write — re-graded `med` → `high` (§123); and `F74` cannot be fixed by renaming the path
+> segment, because the two modes differ in verb *and* response shape (`PUT` → 204 no body, `POST` → 200
+> with the new id), with a `Number('') === 0` trap waiting on the overwrite path (§124). `F76`, `F80`,
+> `F81` and `F84` were confirmed as written; `F81` was also **bounded** — every static icon literal in
+> `src/` was resolved against the three bundled FontAwesome packs, aliases included, and exactly two do
+> not resolve: its `calendar-range` and `F46`'s `mdi-close` (§125). Two *Needs verification* rows
+> settled from one file read each: `leisure-backlog-picker/U5` is **not a defect** (the picker's
+> staleness record already goes through `readUserScoped`/`writeUserScoped`; round 2 filed it against a
+> state of the file that had already been fixed), and `planner-templates/U3` is **confirmed** and
+> already inside `F56` as control #4. Zero new escalations, and zero new findings — this is the first
+> pass whose entire input was other people's landings.
+
+> **Fifteenth pass, 2026-09-16, commit `0a174507` (clean tree) — the mutation rounds of units 7
+> `planner-day`, 8 `planner-templates`, 11 `leisure-backlog-picker`, 12 `leisure-bucket-anchors` and 13
+> `leisure-projects` absorbed, plus the retest notes in units 4 and 10. With this pass **all fifteen app
+> units have been triaged through a mutation round**; the sweep's remaining units (16–19) are the
+> framework submodule's and have not run.** Twenty-three new findings became eleven app batches
+> (`F73`–`F83`), two framework batches (`FW22`, `FW23`) and **zero escalations** — the first pass since
+> unit 3 to add none, and not for want of candidates: four findings were filed or guessed as server-side
+> and three were disproved by reading the API this pass (§115, §116, §118), with the fourth (§117) a
+> stale local backend build. The headline is a defect three units found independently and none of them
+> recognised as one thing: `leisure-projects/X1`, `leisure-backlog-picker/X1` and
+> `leisure-bucket-anchors/X4` are the same `get id() { return this.activityId }` in three DTOs whose
+> `fromJson` never reads the server's `id` at all, so nine write call sites key the REST route by the
+> wrong number and **every edit, delete and status change on three of the four leisure surfaces has been
+> a silent 404** (`F73`). The second-biggest is `planner-day/X1`, filed as a missing backend route: the
+> route exists, under a different verb and path, and the client has been calling a name that was
+> replaced — the `F70` shape, with the *Clone* half broken too and never observed by anyone (`F74`).
+> This pass also **had to correct the record rather than only extend it**: unit 11 rewrote its
+> `findings.md` from scratch in round 2, dropped the round-1 round-history row, re-lettered every
+> finding and lost two of them without a retest note, so four existing batches' `Closes:` lines pointed
+> at the wrong defects until this pass tagged every reference with its round (§114). `F63`, `F64`,
+> `FW20`, `F6` and `F49` all grew or were re-labelled because of it. Two things closed without a batch:
+> §91 (the "400 with no snackbar" that three units observed three ways) settled in the mundane
+> direction — unit 11's own round 2 saw the snackbar, so there is no framework intermittent, and what is
+> real is the missing *field-level* error (`F77`); and `leisure-bucket-anchors/B1`'s five "silently
+> ignored server-side" filters are all applied in the API source, against a build the unit had not
+> restarted (§117). Two `unverified` rows were also filed that settle from a single file read rather
+> than a browser, and are marked as such (`leisure-backlog-picker/U5`, `planner-templates/U3`). One
+> observation about the unit prompts, not the app: of the five mutation rounds, the three that mutated
+> *and restored by hand* (units 8, 12, 13) produced the pass's three blockers, and the two that did not
+> mutate an existing row produced none — creating an entity exercises far less of the contract than
+> editing one.
+
 > **Fourteenth pass, 2026-09-15, commit `97f1e414` + working tree — the mutation rounds of units 4
 > `history-capture`, 6 `tracking-settings` and 9 `todo-lists`, unit 10 `todo-routine`'s round 8, and
 > unit 15 `auth`'s mutation round (rounds 2–3, committed in `04c405e9` and never triaged: the
@@ -1058,6 +1125,32 @@
 > landed. The queue keeps a one-line tombstone under the original § number, because the numbers are
 > cross-referenced from the verification rows and from *Contradictions*.
 
+### §1 — ✅ RESOLVED 2026-09-21 (backend `B15` landed as Option A, API `830cad6`; no frontend half). Notification titles and bodies now follow the account's locale
+
+~~Notification titles and bodies ignore the account locale — `_shell/B1`.~~ Filed from inference on an
+empty seed, confirmed on real data 2026-09-13 once `e2e-v2` seeded six notifications: signed in as
+`primaryUser` (`locale: EN`), `/notifikacie` and the bell rendered every title and body in Slovak —
+*"Blíži sa termín"*, *"Pripomienky"*, *"Obdobie sa čoskoro končí"*, *"Sústredenie skončilo"* — while the
+chrome around them was English. The client renders `title`/`body` as opaque strings, so no `src/` change
+could fix it; the ask (`prompts/view-docs/backend/_done/B15-notification-text-ignores-account-locale.md`)
+offered server-side localization at dispatch (A) or key + params for the client to resolve (B).
+
+**Landed as A, and rule 2 came out better than asked.** A notification row stores only its type and
+payload; the text is composed against `User.locale` on **every read and every send**. So push and e-mail
+carry the locale the account had at dispatch, but the bell re-renders every row — old ones included — in
+the locale the account has *now*, which is the Option-B benefit with no contract change. User-authored
+payload content (a reminder's own title, an activity name, the Test message) stays verbatim; only the
+vocabulary around it is localized. CZ accounts read Slovak, deliberately and pinned by a test. Quotation
+marks follow the language („…“ / “…”) and Slovak counts decline their noun.
+
+**Verified 2026-09-21** through `playwright-cli` on a fresh seed as `primaryUser`: all six fixture rows
+English in the bell; a fresh `POST /notification/test?type=ScheduledJobFailed` arrived live over SignalR
+as *Scheduled job “purge-expired-run-logs” failed and needs attention.*; `PUT /user/preferences
+{locale: 'SK'}` re-rendered the same rows as *Naplánovaná úloha „purge-expired-run-logs“ zlyhala a
+vyžaduje pozornosť.* and switching back restored the English. No e2e spec matched a Slovak notification
+string, so `e2e/` needed nothing; `notificationTypeMeta.ts` and `NotificationResponse` are untouched.
+`_shell/B1` is closed in `docs/views/_shell/inventory.md`.
+
 ### §2 — ✅ RESOLVED 2026-09-13 (unit 10, round 4 — API source read). Deleting a routine time period does not cascade; the delete is refused
 
 ~~Does deleting a routine time period cascade, and to what?~~ `RoutineTimePeriodConfiguration.cs:78-81`
@@ -1545,6 +1638,56 @@ still does not.
 client now. Reseed after `F67`'s verification as already planned.
 
 ## Closed verification items
+
+### §91 — ✅ SETTLED 2026-09-16 (fifteenth pass), in the mundane direction: the snackbar fires
+
+> Moved out of the queue whole. The open question was whether a 400 from the leisure create forms was
+> reaching the user at all, because three units had reported three different things about the same
+> interceptor path. Unit 11's round 2 answers it in its own `B3`: *"a snackbar reading 'One or more
+> errors occurred!' appears and disappears within a few seconds with no way to tell which field was the
+> problem."* So round 1's `X3` poll (1.8 s, six DOM samples, no `.v-snackbar`) was simply wrong — most
+> likely a `find` scoped to the dialog, which is the first of the two explanations the item itself
+> offered — and **there is no intermittent in the framework**, which was the alarming branch. The source
+> reading recorded below was right the whole way through.
+>
+> What round 2 *did* newly confirm is a different claim, and it is real: querying every `[role=alert]`
+> in the form after a rejected submit returned four empty strings, on **both** the backlog and the
+> bucket-list forms. That is the absence of a **field-level** error, not of a snackbar, and it is now
+> `F77` together with the missing `required` rules that let the submit happen. The generic wording of
+> the snackbar itself stays `FW19`.
+>
+> The original item, verbatim:
+
+`leisure-backlog-picker/X3` polled the DOM for 1.8 s after *Create* (six samples) and saw **no
+`.v-snackbar`**; `leisure-bucket-anchors/B2` on the same shape of 400 says *"a snackbar may have fired
+and auto-dismissed before capture — not independently confirmed"*; `activity-settings/X1` on a 400 from
+the same `useEntityCommand.create` path **saw** the snackbar (the generic string `FW19` is about). Read
+this pass: `axiosConfig.ts:221-228` calls `showErrorSnackbar` for every non-`_silent` 400,
+`activityBacklogProfileApi.ts` sets no `disableErrorHandling`, `useRequestState.ts:31` therefore passes
+no `_silent`, and `SnackbarComposable.ts`'s `showSnackbar` has no dedupe, no suppression and a 3 000 ms
+timeout — so a 1.8 s poll starting after the click should have caught it. There is no path in source by
+which this request stays silent. Either the observation is wrong (the poll's selector, or the snackbar
+rendered behind the dialog's scrim and the agent was reading a `find` that scopes to the dialog) or there
+is a real intermittent in the framework, which would be a much bigger finding than `X3`.
+
+### `leisure-bucket-anchors/U1` — ✅ closed by the unit-12 mutation round, 2026-09-16 (fifteenth pass)
+
+> **`U1`** — the locked *"I did this"* capture flow, never exercised because the seed had no
+> not-yet-anchored bucket-list row. Round 2 created one (`Build a Bookshelf`) specifically to reach it
+> and drove the whole path: the capture dialog opened with the activity **locked as read-only text**
+> rather than a picker, Month/Year defaulted to the current month, Rating defaulted to 5, and saving
+> fired `POST /api/memory-anchor` → 201. The row flipped from *I did this* to *Experienced*, the
+> progress bar moved 1→2 of 2, and the anchor appeared on `/leisure/memory-anchors` with a working
+> *Bucket List* source chip pointing back. No defect. The queue's own note that this path short-circuits
+> the missing-endpoint problem (`lockActivity` returns before `onMounted`'s fetch) held exactly as
+> written — which is why it was testable while §12 was still open.
+>
+> Round 2 then deleted that anchor as cleanup and got `U2`'s answer for free: the source row reverted to
+> *I did this* and the progress bar to 1 of 2, confirming live what the thirteenth pass had already
+> settled from source (`IsAnchored` is computed in SQL at read time, so it cannot go stale). One thing
+> worth keeping: this is a **link revert, not a cascade** — deleting an anchor destroys no other row —
+> so the plain *"Are you sure you want to delete {name}?"* wording is adequate here and correctly does
+> **not** trigger `useDeleteConfirmation`'s cascade branch.
 
 ### Awaiting retest — code-fixed, never seen in a browser. ✅ Every row closed; moved out of the queue 2026-09-15
 
@@ -2948,6 +3091,204 @@ Everything below was checked against the **current working-tree source** this pa
     has no name — and neither does each step's (`BaseTodoListItemSteps.vue:39`), the same markup the
     round did not expand. Both in `F71`; the drag preview's copy is `disabled` and decorative.
 
+114. **`leisure-backlog-picker` renumbered its own finding ids between rounds, and four batches were
+    pointing at the wrong defects because of it.** This is the loudest thing in the fifteenth pass and
+    it is a documentation failure, not an app one. Round 2 did not append to `findings.md` the way every
+    other unit did — it **rewrote the file**, deleted the round-1 row from the round-history table
+    (leaving *"1 | 2026-09-15 | `f457aa0c` | initial mutation pass"* as the only round, which is not
+    what happened), and re-lettered every finding. The mapping, established by diffing the file against
+    `9407b8f5^`:
+
+    | round 1 | round 2 | consequence for the queue |
+    | --- | --- | --- |
+    | `X2` (weather exclusion) | `B1` | `F64`'s `Closes:` said `X2` |
+    | `X3` (silent invalid submit) | split into `B2` (the `0`s) + `B3` (the silence) | `F63` said `X3`; the split is an improvement |
+    | `B1` (duration as a percentage) | `B5` | `FW20` said `B1` — which now means something else entirely |
+    | `P1` (dead `flex-1-1` on `FilterPanel`) | *(gone)* | `F6` said `P1`; the new `P1` is multi-sort (`FW23`) |
+    | `X1` (`activityName` filter ignored) | *(gone, no retest note)* | the queue's §13 notes said its *Verify* block was newly runnable |
+    | `P2` (stale API doc comment) | *(gone)* | still open inside `F64` |
+
+    The worst of these is `P1` → `P1`: the id survived and changed meaning, so a `Closes:` line naming
+    it reads as correct and is not. Every reference to this unit in the queue is now tagged `(round 1)`
+    or `(round 2)`, and there is a warning at the top of the queue. **No other unit did this** — units
+    7, 8, 12 and 13 all appended and kept their ids stable, which is why the same triage worked on them
+    without any of this. The two dropped findings go to *Needs verification* as a record gap rather than
+    as defects; round-1 `X1` is almost certainly resolved by `B11` (the sibling grid endpoints do apply
+    `ActivityName`, read this pass) and round-1 `P2` is still open inside `F64`.
+
+115. **Three units found one defect and all three called it something else — and one of them wanted to
+    escalate it.** `leisure-projects/X1`, `leisure-backlog-picker/X1 (round 2)` and
+    `leisure-bucket-anchors/X4` are the same three lines of code. Read this pass, all three response
+    DTOs (`ActivityProjectProfile`, `ActivityBacklogProfile`, `ActivityBucketListProfile`) declare
+    `get id(): number { return this.activityId }` and **none of their `fromJson` methods destructures
+    `id` at all** — the server's primary key is dropped at parse time, which is why the getter looked
+    like a reasonable stand-in. `MemoryAnchor`, in the same directory, carries a real `id` and works.
+    The three units disagreed about the fix in a way worth recording:
+    - `leisure-projects/X1` got it right and even predicted the other two (*"likely worth fixing once
+      across all four leisure profile DTOs… rather than patching this table in isolation"*), but says
+      `fromJson` *"doesn't destructure it, so it's silently dropped"* — correct.
+    - `leisure-backlog-picker/X1 (round 2)` says the opposite of the source — *"`fromJson` reads the
+      server's own row id… but the DTO's `id` getter discards it"* — and concludes it is *"a contract
+      question between the DTO and the API, not purely a frontend typo — flag to whoever owns the
+      backend contract before picking a fix."* It is not a contract question: its two sibling units had
+      already issued a direct `DELETE` against the row's own id and got **204**, on two different
+      surfaces. Had this unit been triaged alone, it would have produced a backend prompt file for a
+      settled question.
+    - `leisure-bucket-anchors/X4` got both the cause and the blast radius right by grep (it names the
+      three sibling call sites) and correctly ruled out a general CRUD problem by showing memory
+      anchors' edit and delete working in the same session.
+    One batch, `F73`, nine call sites. The lesson for the runbook is narrow and worth having: **a
+    finding that says "flag to the backend" is worth a grep before it is worth a prompt file** — the
+    evidence that settles it may already be in a sibling unit's findings.
+
+116. **`planner-day/X1`'s "unregistered backend route" is a client calling a name that was replaced —
+    the `F70` shape, and the *Clone* half is broken too.** The finding reads
+    `PATCH /api/activity/{id}/Overwrite` → 404 and concludes *"very likely the same class of gap as the
+    other backend-route findings already filed in `prompts/view-docs/backend/`"*, with a suggested fix
+    opening *"Backend: register (or fix the method/route on) the activity-overwrite endpoint."* Read
+    against the API this pass: the endpoint exists as `Put("/activity/{id:long:required}/quick-edit")`
+    (`QuickEditActivityEndpoint.cs:19`), its sibling as `Post("/activity/{id:long:required}/clone")`,
+    and `SetArchivedActivityEndpoint.cs:17-19` even carries a comment explaining the split. The client's
+    `QuickEditActivityRequest` matches the server record field for field, so only the verb and the path
+    are wrong.
+
+    Two things the finding could not see. First, **`QuickEditMode.ts:5-7` is the bug's own
+    documentation**: *"The values are the PascalCase path segment of `PATCH /activity/{id}/{mode}`, so
+    they are a wire contract — do not recase them."* That comment is false and actively defends the
+    defect against anyone who notices the casing. Second, **the *Clone* mode is equally dead and has
+    never been observed by anyone** — it is the non-default option in the same select, and no unit in
+    the sweep picked it. Third, the blast radius: `ActivitySelectOrQuickEditFormField` is mounted by
+    four dialogs across `dayPlanner` **and** `todoList`, so renaming an activity has been a silent
+    no-op everywhere in the app, not on one screen. `F74`.
+
+117. **`leisure-bucket-anchors/B1`'s five "silently ignored server-side" filters are all applied in the
+    API source — the unit was driving a backend it had not restarted.** The finding is careful and its
+    request/response captures are exact, which is what makes it instructive. Read this pass:
+    `GridActivityBucketListProfileEndpoint.ApplyCustomFiltering` has explicit branches for
+    `MinComfortZoneStep` and `MaxComfortZoneStep`; `GridMemoryAnchorEndpoint` has them for `MinRating`,
+    `AnchorMonth` and `AnchorYear`. Three things line up to explain every case:
+    - the `year`/`month` half is **`F60`**, not a server gap — the client sent `year`/`month` while the
+      server reads `anchorYear`/`anchorMonth`, and the filter DTO's own comment says so in as many
+      words (*"The client sent `year` / `month` until F60 renamed them to these — the server side of
+      that agreement is to keep them, not to alias the old pair"*). `F60` shipped and was verified.
+    - `minRating` and `minComfortZoneStep` were always spelled right on both sides, so the only
+      explanation left is the build: `B11` landed 2026-09-15 and round 2 ran the same day.
+    - the unit's **own round 3** (2026-09-16) says it verified `X3` *"against the restarted local
+      backend"* — i.e. it did not restart until the day after the observations in question.
+    Re-graded from `bug` to not-a-defect pending one retest, which is in *Needs verification*. The
+    operational note this leaves behind is worth more than the finding: **a "the server ignores this"
+    observation is only as good as the build under it**, and this repo's units have now hit that twice
+    (§13's original filing was the other). Restarting the API before a mutation round is cheaper than
+    a triage pass reading four endpoint files.
+
+118. **`planner-day/B8`'s stale counters are not a cache — the server computes them live, so the
+    finding is asking the wrong question.** It concludes *"Backend-side — `Calendar.totalTasks`/
+    `completedTasks` read as a denormalized counter on the `Calendar` row… incremented on `POST` but not
+    decremented on `DELETE`"*, and recommends batching it into a backend session. There is no counter
+    to decrement: `CalendarResponse.cs:62-63` projects `TotalTasks = c.Tasks.Count()` and
+    `CompletedTasks = c.Tasks.Count(t => t.Status == PlannerTaskStatus.Completed)`, and `Calendar.cs:50-51`
+    are computed properties over the same navigation. So the post-reload response reading
+    `{"totalTasks":3,"completedTasks":1}` means the server still had three tasks when it answered — and
+    the question becomes *"did the delete happen?"* rather than *"is the cache stale?"*. Two candidates
+    the finding's own evidence does not separate: the `DELETE` did not succeed while the grid dropped
+    the row optimistically, or the grid's task source is narrower than `Calendar.Tasks`. Moved to
+    *Needs verification* with a settling step, **not** to *Escalations*. Had it gone to a backend prompt
+    as filed, the ask would have been to fix a counter that does not exist.
+
+119. **The pass's own shape says something about the unit prompts.** Five mutation rounds, three
+    blockers, and all three came from the rounds that **edited or deleted an existing row** and restored
+    it by hand (units 8, 12, 13). The rounds that created an entity and stopped found validation and
+    labelling gaps but no blocker. That is `F73` and `F74`'s whole story — both are write paths against
+    an *existing* entity, which a create-only pass cannot reach. Worth carrying into units 16–19: a
+    mutation round that does not edit and delete something pre-existing has exercised the cheaper half
+    of the contract. It is also why `F73` and `F74` sat undetected through fourteen triage passes.
+
+120. **Escalation §7 describes the wrong sentence, and the real one is worse.** §7 (and `B18` after it,
+    which was written from §7) says the client is told *"This record was changed by someone else.
+    Refresh the page and try again."* for every 409, citing `ErrorHandlingFunctions.ts:23-25`. That
+    citation is correct and the conclusion is not, because **`handleHttpCodes` is not the path most
+    409s take**. It is only reached from a call site that opted out with `_silent: true` and then
+    routed the status back through it — two sites in the whole app. Every other 409 goes through the
+    interceptor, and `axiosConfig.ts`'s `case HttpStatusCode.Conflict` is
+    `showErrorSnackbar(serverMessage ?? t('httpErrors.conflict'))` — `serverMessage` first. For a
+    DB-derived 409 that message is the API's internal prose (*"Unique constraint violation during
+    Create"*), so what users have actually been shown is untranslated English developer text, in a
+    Slovak UI, on the commoner path. Both wordings are wrong; the one nobody had noticed is the one
+    that fires more often. Recorded in `FW24` and in §7's own paragraph, which now carries the
+    correction above the original text rather than replacing it.
+
+121. **`B18`'s "delete the two `_silent` + call-site wordings" would regress `todo-routine/B11`.** The
+    backend's response, and the ask this repo wrote before it, both list *"the two `_silent` + call-site
+    wordings in `todoList` can be deleted"* as a frontend consequence. Read at the source:
+    `TimePeriodForm.onConfirm` catches the 409, sets `conflictError`, and **returns without calling
+    `dialogApi.close()`** — the dialog stays open with everything the user typed and the message renders
+    against the form. An interceptor snackbar cannot do either, and the dialog closing before the
+    message arrived is precisely the defect `B11` fixed (`e39c01c1`). So `F85` keeps both `_silent`
+    call sites and changes only their **condition**, from `status === 409` to the specific `errorType`.
+    The bullet is a reasonable thing for the backend to have assumed — the ask it was answering said the
+    client "worked around it twice" without saying what the workaround bought.
+
+122. **`useDeleteConfirmation` was never guessing about FK refusals, so there is nothing in it to
+    change.** Same list, third bullet: *"`useDeleteConfirmation` can stop guessing about FK refusals it
+    cannot see."* The composable (`src/core/user/composable/useDeleteConfirmation.ts`, 45 lines) is
+    entirely pre-flight: `resolveDelete({cascades, undoable})` decides whether to **ask** before the
+    request is made, and it never touches a response. The post-hoc FK handling lives at the call site
+    that has it — `RoutineSettingsView.showDeleteBlocked`. Dropped from `F85`'s change list. Worth
+    stating because the composable is one of three sanctioned cross-module imports in CLAUDE.md, so a
+    fixing session widening it on this advice would be changing a shared contract for nothing.
+
+123. **`F73` re-graded `med` → `high`: a 404 is the lucky outcome, not the defect.** All three units and
+    the fifteenth pass described the symptom as *"every write silently 404s"*, which the direct-request
+    evidence supports. Reading the API this pass adds the part none of them could see:
+    `AuthorizeAsync` on all three profile entities is
+    `ownership.OwnsActivityAsync(DbContext, User.GetId(), entity.ActivityId, ct)` — it authorizes **the
+    row the id found**, not the row the user meant. The three grid responses project `Id` and
+    `ActivityId` as separate fields, and every write route is the base `{id}` (the readiness board's
+    patch only re-routes the suffix). So the 404 depends entirely on profile ids and activity ids not
+    colliding, which is true of the current fixture by accident of banding (17xxx vs 12xxx) and is not
+    a property of anything. Where they do meet, the ownership check passes and the edit, delete or
+    status change lands on a **different profile of the same type on the same account**, silently.
+    Effort stays `med`; severity does not.
+
+124. **`F74` cannot be fixed by renaming the path segment, which is what the batch's own title
+    suggests.** Confirmed at the endpoints: `QuickEditActivityEndpoint.cs:19` is
+    `Put("/activity/{id:long:required}/quick-edit")` answering **204 with no body**, and
+    `CloneActivityEndpoint.cs` is `Post("/activity/{id:long:required}/clone")` answering **200 carrying
+    `clonedEntity.Id`**. The client has one function interpolating a mode into `API.patch`, so the two
+    modes have to become two functions — different verb, different path, different response. The
+    latent second bug: the current mapper is `response.data != null ? Number(response.data) : null`,
+    and axios hands back `data === ''` for a 204, so `'' != null` is true and the overwrite path will
+    return **`0`** the moment it starts working. Harmless today only because the call site gates on the
+    mode (`if (cloneId && mode === CLONE)`). Added to the batch.
+
+125. **`F81`'s missing icon is real, Pro-only, and — checked rather than assumed — the only one of its
+    kind in the app bar `mdi-close`.** `calendar-range` is absent from `free-solid`, `free-regular` and
+    `free-brands`, including each definition's ligature aliases, so it cannot resolve at runtime; the
+    literal is in `RecurrenceType.ts:15`, not a template, which is why a `.vue`-only grep would miss it.
+    The question the batch left open — *"worth one grep for other `calendar-range` references"* — is
+    answered wider than asked: every static icon literal in `src/` (204 in `.vue`, 79 in `.ts`,
+    `_common` included) was resolved against the three packs, and **exactly two do not resolve**: this
+    one and the `mdi-close` already filed as `F46`. No registry, no lint rule, no sweep batch — two
+    one-line edits that already have homes. The dynamic bindings (`:icon="item.icon"` and friends) are
+    out of reach of this check by construction; they render whatever the data carries, which is the
+    `iconPicker`'s problem, not this one.
+
+126. **`B16` is landed on this side and uncommitted on the other, and §10 reads as if both are done.**
+    The tombstone says *"backend landed `B16` … frontend half landed the same day"*. The frontend half
+    is genuinely in this tree (four files, uncommitted). In `AdhdTimeOrganizer`, `FoldedRow.cs` is
+    **untracked** and the seven endpoints that reference it are **modified**, with no commit carrying
+    them — which the backend's own response admits in passing (*"landed on dev (uncommitted working
+    tree as of now)"*) and which the tombstone flattened into "landed". Consequence for anyone
+    retesting: the four pie endpoints still send the literal `"Other"` on any reachable server, so
+    §10's untranslated-legend and selectable-slice symptoms both reproduce, and a retest today would
+    fail for a reason that is not this app's. The client guard is a no-op against the old wire value,
+    so nothing here needs reverting or reordering. While confirming it, the one question the backend
+    asked back — *"confirm the merge path sums rather than overwrites"* — is answerable from the code
+    without a browser: both locally-bucketing sections accumulate into a single `otherSeconds` and push
+    one segment, so a server-folded row above the local 3 % threshold **merges**. `F84` was
+    re-confirmed on the same trip: `HistoryPieChartBuilder.cs:20` is already `OtherName = "_other"`, so
+    the backend's offer to do the History side as a follow-up needs no answer but "nothing to do".
+
 ### Re-grades
 
 | finding | was | now | why |
@@ -3112,6 +3453,32 @@ Everything below was checked against the **current working-tree source** this pa
 | `auth/U6` | `unverified` (unit, round 2) | stays **dropped** (§64); the 415 detail folded into `FW12` | Contradiction 111 |
 | `auth/B1`, `B2`, `B3`, `A1`, `P1`, `P2`, `P3` | as filed | stand — re-verified live or by source in round 2 (`F39`/`FW11`, `FW7`, `FW9`, `FW7`, `FW13`, `F40`, `FW11`) | — |
 | `todo-routine` round 8 | — | no new findings; every entry `fixed and verified`; two stale ⏳ rows in *Awaiting retest* struck | — |
+| `leisure-projects/X1` + `leisure-backlog-picker/X1 (r2)` + `leisure-bucket-anchors/X4` | three `blocker`s, three units, three root-cause readings | merged into **one batch** (`F73`); severity stands at `blocker` | Contradiction 115 — one `id` getter in three DTOs, nine call sites |
+| `leisure-backlog-picker/X1 (r2)` | `blocker`, *"a contract question… flag to whoever owns the backend contract"* | `blocker`, **app-side, no escalation** | Its two sibling units already proved the server's keying with a direct request (204/200 on the row's own id) |
+| `planner-day/X1` | `blocker`, *"Backend: register… the activity-overwrite endpoint"* | `blocker`, **app-side** (`F74`); grew to include the never-observed *Clone* half and three more dialogs | Contradiction 116 — the route exists as `PUT …/quick-edit`; the client calls a replaced name |
+| `planner-day/B8` | `bug`, *"confirmed stale server-side"*, batch into a backend session | **premise disproved**; moved to *Needs verification*, not *Escalations* | Contradiction 118 — `TotalTasks` is `c.Tasks.Count()`, a live aggregate, not a counter |
+| `leisure-bucket-anchors/B1` | `bug`, five filters ignored server-side | **not a defect pending retest** — all five applied in the API source | Contradiction 117 — pre-`B11` local build; the `year`/`month` half is `F60`, already shipped |
+| `leisure-projects/A4` + `planner-templates/A4` | two `a11y` findings, two units | merged into **`F78`**; both stand at `a11y` | Identical edit (`role`+`tabindex`+keydown+`aria-label`); the *pattern* is what needs deciding once, with `F29`/`FW6` |
+| `leisure-backlog-picker/A1 (r2)` | `a11y`, own finding | folded into **`F49`** | Same `VChip`-renders-no-role cause as the four chip groups already in that batch |
+| `leisure-backlog-picker/B5 (r2)` + `leisure-bucket-anchors/B3` | one `[framework]` `bug` + one previously-unfiled column | both into **`FW20`**; `B3` is the worse half | `inspirationSource` is not mis-formatted, it is **deleted** — proved from inside the running component |
+| `leisure-backlog-picker/P1 (r2)` | `polish`, *"worth checking against the other leisure tables before filing"* | `polish`, **own framework batch** (`FW23`), decision-first | Rule 4 — `VDataTable`'s multi-sort default ships to every app on the framework |
+| `leisure-projects/B4` | `bug`, *"add `:precision="1"`"* | `bug` stands (`F76`); **suggested fix rejected** — `:precision="null"`, per `UseTemplateActionBar.vue:33-34` | `1` silently truncates two-decimal input; the repo already has the right pattern |
+| *(unfiled)* `TableCellEditor`'s `DECIMAL` branch | — | new **framework** batch (`FW22`), source-certain, **no consumer in this app** | Rule 1 split from `F76`; found while sizing it |
+| `leisure-backlog-picker/B3 (r2)`, `B4 (r2)` + `leisure-bucket-anchors/B2` (feedback half) | three `bug`s across two units | merged into **`F77`**; settles §91 | One cause: no `required` rule and no `catch`, so a per-field 400 dies in the interceptor |
+| `planner-templates/P3` | round 1's `U1` (`unverified`) | `polish` (`F83`) — the unit re-graded it itself and was right | Round 2 built the first `isBackground` task the fixture ever had; the exclusion is correct, the label is not |
+| `planner-templates/B2` | `bug`, day-type gap | `bug`, **broadened and now source-corroborated**; `F53` unchanged | Round 2 read the form end to end: zero `:rules` on any of five fields — the batch already said so |
+| `leisure-backlog-picker/U5` and `planner-templates/U3` | `unverified` | `unverified`, but **settle from one file read**, not a browser | Flagged in *Needs verification* so neither costs a session |
+| `leisure-backlog-picker/O2` | `opportunity` | stands, with a note: it is a latent **correctness** risk, not unspent data | Re-graded to `bug` only if a display-name collision is ever observed |
+| `history-capture/B4`, `B5` | `bug`, open | ✅ **fixed and verified 2026-09-15** (`F67`) — closed by the retest note, not by this pass | The unit's own round note; `B4`'s server half is retired §15 |
+| *(sixteenth pass, 2026-09-21 — everything below is from landings and source re-reads, not from a unit)* | | | |
+| `leisure-projects/X1`, `leisure-backlog-picker/X1 (r2)`, `leisure-bucket-anchors/X4` (`F73`) | `blocker` ×3 → batch `med` | batch severity **`med` → `high`** (effort still `med`) | §123 — authorization runs on the row the id *found*, so a colliding id is a silent wrong-row write, not a 404 |
+| `planner-day/X1` (`F74`) | `blocker`, "rename the path segment" | `blocker` stands, **fix reshaped**: two verbs, two response shapes, two functions; `Number('') === 0` trap added | §124 — read at `QuickEditActivityEndpoint.cs:19` and `CloneActivityEndpoint.cs` |
+| `planner-day/P1` (`F81`) | `polish`, "this app does not bundle it" | `polish` stands, **proved and bounded** — Pro-only, and the app-wide sweep finds exactly two unresolvable literals | §125 — the batch's own open grep, answered wider than asked |
+| *(unfiled — `F84`)* | app batch off §10's closure | stands, **re-confirmed in the API** (`HistoryPieChartBuilder.cs:20`) | §126 — the backend's follow-up offer needs no answer |
+| escalation §7 / `B18` | open ask, "client side closed" | **ask landed** (API `cd0a252`); frontend half filed as **`FW24`** (framework) + **`F85`** (app) | Rule 1 split; §120–§122 correct three claims in the ask's own frontend list |
+| `leisure-backlog-picker/U5` | `unverified`, "settles from one file read" | ✅ **closed — not a defect**; the key is already user-scoped | Round 2 filed it against a state of the file that `P4` had already fixed |
+| `planner-templates/U3` | `unverified`, "settles from one file read" | ✅ **closed — confirmed**; absorbed by `F56` as control #4, no new batch | `TemplateSplitView.vue:5-11` has no name source at all; a browser could only re-observe the markup |
+| `todo-routine` seed-drift note (Meditation streak 6, not 5) | standing caveat for later passes | **retired** — a reseed restores 5 and an un-tick now walks the streak back | Answered by `B9` (API `4ab3710`), option 2; client needs nothing |
 
 ### Findings this triage did not challenge further
 
@@ -3296,6 +3663,17 @@ kept as pointers and not double-counted.
 `todo-routine` (fourteenth pass, round 8) — nothing to challenge: a re-run of the unit prompt that read
 its own instruction ("mostly verification, not discovery") and diffed two screens against round 6/7's
 numbers. Exact match, console clean, no new findings. The only queue effect is two stale ⏳ rows struck.
+
+**Sixteenth pass (2026-09-21).** No unit ran, so the sample was chosen rather than given: the batches a
+fixing session would pick up first, plus everything the two landings touched. `F76` and `F80` were
+re-read and stand exactly as written — `NewProjectProfileForm.vue:34-39` is `:step="0.5"` with no
+`:precision`, and `ProjectReadinessBoard.vue:86-88`'s two adjacent `<template v-if>`s do produce
+"Woodworking· 8.5h", which is Vue's `whitespace: 'condense'` behaving correctly (the gap between a
+`}}` and an element condenses to a space; the gap between two elements with a newline is removed, and
+that second one is the `·` with nothing in front of it). `FW19` re-read and unchanged:
+`extractServerMessage` still returns `detail`, then `message`, then `errors`, so the specific text is
+still last. The rest of the queue was not re-challenged this pass — 100+ batches over sixteen passes,
+and the input that would justify it is a unit round, not another read of the same files.
 
 ### Coverage tracker note
 
