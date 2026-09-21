@@ -6,6 +6,10 @@ import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 
 export class ActivityProjectProfile implements IIdResponse {
 	constructor(
+		// The profile row's own primary key — every write route (`PUT`/`DELETE`/`PATCH …/status`) is
+		// keyed by it, not by `activityId`. A getter used to alias `id` to `activityId`, which sent nine
+		// call sites to the wrong row (404 on the seed, a silent wrong-row write once the id bands meet).
+		public id: number,
 		public activityId: number,
 		public activity: ActivityInfo,
 		public difficultyLevel: DifficultyLevel,
@@ -17,12 +21,9 @@ export class ActivityProjectProfile implements IIdResponse {
 		public readinessStatus: ReadinessStatus,
 	) {}
 
-	get id(): number {
-		return this.activityId
-	}
-
 	static fromJson(object: any) {
 		const {
+			id = 0,
 			activityId = 0,
 			activity = {},
 			difficultyLevel = DifficultyLevel.Beginner,
@@ -40,6 +41,7 @@ export class ActivityProjectProfile implements IIdResponse {
 		// rendered "No projects" on a list the API had returned in full. `convertToEnum` does the
 		// name -> value lookup; the default catches an unknown name rather than storing it.
 		return new ActivityProjectProfile(
+			id,
 			activityId,
 			ActivityInfo.fromJson(activity),
 			convertToEnum(DifficultyLevel, difficultyLevel) ?? DifficultyLevel.Beginner,

@@ -228,7 +228,7 @@
 			confirmBtnColor: 'error',
 		})
 		if (!confirmed) return
-		await deleteEntity(item.activityId)
+		await deleteEntity(item.id)
 		emit('onReload')
 	}
 
@@ -239,7 +239,7 @@
 		if (status === item.readinessStatus || pendingIds.value.has(item.activityId)) return
 		pendingIds.value.add(item.activityId)
 		try {
-			await update(item.activityId, ActivityProjectProfileRequest.fromProfile(item, status))
+			await update(item.id, ActivityProjectProfileRequest.fromProfile(item, status))
 			emit('onReload')
 		} finally {
 			pendingIds.value.delete(item.activityId)

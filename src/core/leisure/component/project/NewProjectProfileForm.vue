@@ -36,6 +36,7 @@
 			:label="$t('leisure.fields.estimatedHours')"
 			:min="0"
 			:step="0.5"
+			:precision="null"
 		/>
 		<VCheckbox
 			v-model="model.isMessy"

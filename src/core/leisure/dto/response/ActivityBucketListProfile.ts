@@ -4,6 +4,9 @@ import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts
 
 export class ActivityBucketListProfile implements IIdResponse {
 	constructor(
+		// The profile row's own primary key — every write route is keyed by it, not by `activityId`.
+		// See the note in `ActivityProjectProfile`.
+		public id: number,
 		public activityId: number,
 		public activity: ActivityInfo,
 		public experienceType: LookupResponse,
@@ -18,12 +21,9 @@ export class ActivityBucketListProfile implements IIdResponse {
 		public memoryAnchorId: number | null,
 	) {}
 
-	get id(): number {
-		return this.activityId
-	}
-
 	static fromJson(object: any) {
 		const {
+			id = 0,
 			activityId = 0,
 			activity = {},
 			experienceType = {},
@@ -35,6 +35,7 @@ export class ActivityBucketListProfile implements IIdResponse {
 			memoryAnchorId = null,
 		} = object
 		return new ActivityBucketListProfile(
+			id,
 			activityId,
 			ActivityInfo.fromJson(activity),
 			LookupResponse.fromJson(experienceType),

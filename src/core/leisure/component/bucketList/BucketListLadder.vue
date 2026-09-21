@@ -211,7 +211,7 @@
 	}
 
 	async function onDelete(item: ActivityBucketListProfile) {
-		await deleteEntity(item.activityId)
+		await deleteEntity(item.id)
 		emit('onReload')
 	}
 </script>

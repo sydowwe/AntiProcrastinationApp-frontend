@@ -148,7 +148,7 @@
 	}
 
 	async function onDelete(item: ActivityBacklogProfile) {
-		await deleteEntity(item.activityId)
+		await deleteEntity(item.id)
 		emit('onReload')
 	}
 </script>

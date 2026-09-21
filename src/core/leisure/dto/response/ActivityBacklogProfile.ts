@@ -7,6 +7,9 @@ import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts
 
 export class ActivityBacklogProfile implements IIdResponse {
 	constructor(
+		// The profile row's own primary key — every write route is keyed by it, not by `activityId`.
+		// See the note in `ActivityProjectProfile`.
+		public id: number,
 		public activityId: number,
 		public activity: ActivityInfo,
 		public locationType: LookupResponse,
@@ -24,12 +27,9 @@ export class ActivityBacklogProfile implements IIdResponse {
 		public memoryAnchorId: number | null,
 	) {}
 
-	get id(): number {
-		return this.activityId
-	}
-
 	static fromJson(object: any) {
 		const {
+			id = 0,
 			activityId = 0,
 			activity = {},
 			locationType = {},
@@ -50,6 +50,7 @@ export class ActivityBacklogProfile implements IIdResponse {
 		// on `/leisure/pick` and made `ENERGY_RANK[candidate.energyLevel]` undefined, so every energy
 		// comparison in `leisureScoring` produced NaN and silently dropped out of the ranking.
 		return new ActivityBacklogProfile(
+			id,
 			activityId,
 			ActivityInfo.fromJson(activity),
 			LookupResponse.fromJson(locationType),

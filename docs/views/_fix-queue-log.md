@@ -1366,6 +1366,100 @@
   call is whether a three-row panel is worth opening — it is, because the alternative is a card that
   says *"View details"* and a URL that says `?selected=` for a selection nothing displays.
 
+## F73. Three activity-keyed leisure profile DTOs drop the server's `id` — nine write call sites key the REST route by the wrong number
+> ✅ **FIXED 2026-09-21.** Exactly as *What to change* says: `id` is the first constructor parameter on
+> all three DTOs, destructured in `fromJson` with `id = 0` (the `MemoryAnchor` shape), the aliasing
+> getter is gone, and the nine call sites pass `item.id` / `entityToEdit.id` — the three edit forms'
+> `idToEdit` too, matching `MemoryAnchorForm`. `activityId` stays where it is the business key
+> (`useLeisurePicker` candidate keys, `ExperiencedCell`, the request DTOs, the board's `pendingIds`).
+> `vue-tsc --build --force` 0 errors, lint clean. Verified live on `/leisure/projects` against the seed:
+> a status click sent `PUT /activity-project-profile/17201` → 200 and the card moved; the edit dialog
+> saved → 200 and the table showed the new value after the grid refetch; *Delete* → `DELETE …/17201`
+> → 204 and the board rendered the empty state after a reload (fixture reseeded afterwards). The
+> backlog and bucket-list surfaces share the DTO shape and the same one-token call-site change, so they
+> were not driven separately; `leisure-backlog-picker/U1` and `leisure-projects/U1` (the genuinely-empty
+> states) are now unblocked. `F76` landed in the same session, as the batch required.
+
+- **Scope:** app-side `src/core/leisure/dto/response/{ActivityProjectProfile,ActivityBacklogProfile,ActivityBucketListProfile}.ts`
+  + nine call sites (`BacklogTable.vue:151`, `BacklogProfileForm.vue:48`, `BucketListTable.vue:133`,
+  `BucketListProfileForm.vue:48`, `BucketListLadder.vue:214`, `ProjectTable.vue:108`,
+  `ProjectProfileForm.vue:35`, `ProjectReadinessBoard.vue:231,242`)
+- **Closes:** `leisure-projects/X1`, `leisure-backlog-picker/X1 (round 2)`, `leisure-bucket-anchors/X4`
+  — three `blocker`s, three units, one cause. Also folds `leisure-projects/X1`'s own status-change half
+  (the readiness board's one-click `update`, which is the entire point of `P1-readiness-board.md`).
+- **Root cause:** all three DTOs declare `get id(): number { return this.activityId }` and **their
+  `fromJson` never destructures `id` at all** — read this pass, all three files: the server's own primary
+  key is dropped on the floor at parse time. Every write call site then passes `.activityId` explicitly
+  (not even through the getter), and the REST routes are keyed by the profile row's id. Confirmed by
+  three units independently and settled by direct request: `DELETE /api/activity-project-profile/12009`
+  (activityId) → 404 vs. `/17202` (the row's id) → **204**; the same pair on bucket-list (`12009` → 404,
+  `17102` → 204) and a `GET` pair on backlog (`12005` → 404, `17002` → 200). `MemoryAnchor` is the
+  control: it carries a real `id`, `MemoryAnchorTable.vue:156` passes `item.id`, and its edit and delete
+  both work.
+- **Re-graded `med` → `high` by the sixteenth pass, which read the API rather than the units'
+  observations.** The three grid responses project `Id = e.Id` **and** `ActivityId = e.ActivityId` as
+  two distinct fields (`ActivityProjectProfileResponse.cs`, `ActivityBacklogProfileResponse.cs:93-94`,
+  `ActivityBucketListProfileResponse.cs:48-49`), and every write route is the base `{id}` — including
+  the readiness board's, which only re-routes the *suffix*
+  (`PatchActivityProjectProfileStatusEndpoint.cs` → `/activity-project-profile/{id:long}/status`). The
+  part no unit could see: **authorization runs on the row the id found**, not on the row the user meant
+  — `AuthorizeAsync` is `ownership.OwnsActivityAsync(DbContext, User.GetId(), entity.ActivityId, ct)`
+  on all three entities. So a 404 is the *benign* outcome, and it is only the outcome because profile
+  ids and activity ids happen not to collide in the current fixture (profiles are seeded in the 17xxx
+  band, activities in 12xxx). Where the numbers do meet — a long-lived account, or any future
+  reseeding — the ownership check **passes** and the edit, delete or status change lands on a different
+  profile of the same type belonging to the same user, with no error anywhere. That is a silent
+  wrong-row write, which is why this stops being a `med`.
+- **Not an escalation, and one finding says otherwise.** `leisure-backlog-picker/X1 (round 2)` calls this
+  *"a contract question between the DTO and the API… flag to whoever owns the backend contract before
+  picking a fix"*. It is not: the other two units answered it empirically (a direct request against the
+  row's own id succeeds on both surfaces), so the server's keying is known and this is entirely app-side.
+  Do not write a backend ask for it (*Contradictions* §115).
+- **What to change:** add a real `id` to each of the three constructors and destructure it in `fromJson`
+  (`id = 0`, first parameter, matching `MemoryAnchor`); **delete the getter**, which is what made the
+  mistake invisible — with it gone, `item.id` is the row id everywhere and a call site that still means
+  the activity has to say `activityId`. Then change the nine call sites to `item.id` /
+  `entityToEdit.id`. All three `implements IIdResponse`, so a real field satisfies the interface the
+  getter was faking.
+- **Do not change:** the places where `activityId` is genuinely the business key — `ExperiencedCell`'s
+  reverse lookup, `useLeisurePicker`'s candidate `key`, and the request DTOs' `activityId` field, which
+  is the relationship the server stores. One activity has at most one profile; that model is correct and
+  this batch is only about which number addresses the *row*.
+- **Verification:** each finding's `Verify:` block — a status click moves the card and the column counts
+  change; an edit closes and persists across a reload; a delete removes the row and a reload does not
+  bring it back. Do all three surfaces, plus the ladder's own delete action
+  (`BucketListLadder.vue:214`), which no unit exercised. Then re-run `e2e/tests/leisure-profiles.spec.ts`.
+- **Risk:** Medium. Three DTOs and nine call sites in one commit — a half-migration leaves some surfaces
+  404ing and some working, which is harder to reason about than the current uniform failure. Run
+  `npm run type-check`; deleting the getter is what makes the compiler find anything missed.
+
+## F76. `estimatedHours` 8.5 displays as "9" and **submits** as 9
+> ✅ **FIXED 2026-09-21, in the same session as `F73`.** `:precision="null"` added beside `:step="0.5"`,
+> copied from `UseTemplateActionBar.vue:33-34`; `componentDefaults` untouched. Verified: the edit dialog
+> on the seeded project opened on **"8.5"** (was "9"), and typing `8.25` then *Save* sent
+> `"estimatedHours":8.25` and the table cell read `8.25` after the refetch — step 3 of `B4`'s block, the
+> one that distinguishes `null` from `1`. `FW22` (the framework twin in `TableCellEditor`) is untouched.
+
+- **Scope:** app-side `src/core/leisure/component/project/NewProjectProfileForm.vue:35-39`
+- **Closes:** `leisure-projects/B4`
+- **Root cause:** `VNumberInput`'s `precision` prop defaults to `0`, independently of `step`. The field
+  sets `:step="0.5"` (right, for the increment buttons) and no `:precision`, so Vuetify formats *and
+  coerces* to whole numbers. Opening the edit dialog on the seeded `estimatedHours: 8.50` shows "9" in
+  the raw `<input>`, and an untouched *Save* sends `"estimatedHours":9`. No user action on the field is
+  required — opening and saving is enough.
+- **The fix already exists in this repo.** `dayPlanner/component/normal/UseTemplateActionBar.vue:33-34`
+  is `:step="0.5" :precision="null"` — copy that pair, do not invent a digit count. `:precision="1"`
+  (the finding's suggestion) would silently truncate a value with two decimals; `null` disables the
+  coercion, which is what a free-form hours field wants.
+- **Land it with `F73`.** Today the corruption is masked: the `PUT` 404s before it can persist. The
+  moment `F73` lands, every project edit dialog opened and saved rewrites the row. This is the one
+  ordering constraint in the fifteenth pass that is not a convenience.
+- **Do not change:** `componentDefaults`. A global `precision: null` would turn every integer field in
+  the app into a decimal one (rule 4 territory, and the wrong default for counts).
+- **Verification:** `B4`'s `Verify:` block, all three steps — including step 3, a value with two decimal
+  digits, which is what distinguishes `null` from `1`.
+- **Risk:** None app-side. The framework twin is `FW22`.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
@@ -2220,6 +2314,31 @@ across five password sign-ins under the 5/min login throttle — the same spec i
 that is worth a minute of throttle, and the response says the same.
 
 ## Closed verification items
+
+### `B16` two-halves sequencing note — ✅ SETTLED 2026-09-21, the same day it was written: both halves are committed
+
+> Moved out of the queue whole. The note below was true at the sixteenth pass's read of the API working
+> tree; by the evening `FoldedRow.cs` and the seven endpoints were committed there as `5e70367` (*Fold the
+> sub-threshold tail under one `_other` sentinel on every tracking pie, matching the bars*), and this
+> repo's four files as `448931a5`. The §10 tombstone's *"landed the same day"* wording is therefore
+> accurate again, the *"guard is a no-op while the server still sends `"Other"`"* caveat no longer
+> applies, and a §10 retest on a current build sees `_other` on all four pie endpoints. Nothing to do.
+#### As written — `B16`'s frontend half is in this tree, and its backend half is **not committed** in the API's
+
+Escalation §10 is tombstoned as *"backend landed `B16` … frontend half landed the same day"*, and the
+frontend half is real — `OTHER_DOMAIN` in `PieSegment.ts` plus the merge guard in
+`ActivityPieChartSection.vue` and `UnifiedPieChartSection.vue`, all four files uncommitted in this repo.
+The other side is less finished than that wording implies.
+
+| what | state on 2026-09-21 | what settles it |
+| --- | --- | --- |
+| `FoldedRow.cs` (`Sentinel = "_other"`) and the seven endpoints that now reference it | **untracked / modified in the API working tree** — `git status` in `AdhdTimeOrganizer` shows `?? …/domain/helper/FoldedRow.cs` and seven `M` endpoint files; no commit carries them. The backend re-verified the change later on 2026-09-21 and added a second parity theory (`StackedBars_FoldTheTailUnderTheSameSentinelOnEverySource`, 15/15 green) — **and said "still on dev, uncommitted" again** | Commit them there, then re-drive one pie dashboard. Until then the four pie endpoints still send the literal `"Other"` on any server you can actually reach, so the legend shows an untranslated *Other* and §10's (a) and (b) both still reproduce |
+| the double-fold collision — *"please confirm the merge path sums rather than overwrites"*, the one question the backend asked back | **answered from the code, no browser needed: it sums.** Both sections accumulate into a single `otherSeconds` and push one segment (`ActivityPieChartSection.vue:126-146`, `UnifiedPieChartSection.vue:243-253`); the new guard (`d.domain !== OTHER_DOMAIN && percent >= threshold`) sends the server's folded row into that accumulator unconditionally, so a server row above the local 3 % threshold merges instead of surviving as a second identical legend entry | ✅ Replied 2026-09-21 — *FRONTEND ANSWER* appended to `_done/B16-…`, together with "nothing to do" on their History follow-up offer (`F84` is the client, the builder was already `_other`). No test needed |
+| two fold thresholds for one concept (server `minPercent: 1`, client 3 %) | unchanged, and now commented in both sections | Deliberately deferred — it is `tracking-dashboards` deferred item (2), not a defect |
+
+Not a finding against either repo, and **not** a reason to revert anything here: the guard is a no-op
+while the server still sends `"Other"`, so this side is safe to commit in either order. It is a
+sequencing note, and the reason a retest of §10 done today would fail for the wrong reason.
 
 ### §91 — ✅ SETTLED 2026-09-16 (fifteenth pass), in the mundane direction: the snackbar fires
 

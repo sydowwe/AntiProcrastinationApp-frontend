@@ -105,7 +105,7 @@
 	}
 
 	async function onDelete(item: ActivityProjectProfile) {
-		await deleteEntity(item.activityId)
+		await deleteEntity(item.id)
 		emit('onReload')
 	}
 </script>

@@ -45,8 +45,8 @@
 		dialogApi.setLoading(true)
 		try {
 			if (entityToEdit) {
-				await update(entityToEdit.activityId, request.value)
-				dialogApi.close({ request: request.value, idToEdit: entityToEdit.activityId })
+				await update(entityToEdit.id, request.value)
+				dialogApi.close({ request: request.value, idToEdit: entityToEdit.id })
 			} else {
 				const createdId = await create(request.value)
 				dialogApi.close({ request: request.value, createdId })

@@ -121,10 +121,10 @@
 | FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
 | FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap. **The `inspirationSource` half is no longer unfiled and is now proved from inside the running component** (`isPercentKey('inspirationSource')` → `true`, `formatPercent(…)` → `"—"`, `getValue(…)` → the real string), which is why it is the worse of the two: this heuristic does not mis-format real data, it **deletes** it | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B5` (round 2 — round 1's `B1`), **`leisure-bucket-anchors/B3`** | med (decision: word-boundary match vs. opt-in) |
 | FW21 | The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
-| F73 | **Three activity-keyed leisure profile DTOs never read the server's `id`** — `fromJson` does not destructure it and the `id` getter returns `activityId`, so all nine edit/delete/status-change call sites key the REST route by the wrong number. **Re-graded `med` → `high` by the sixteenth pass:** the API was read this time, and a 404 is the *lucky* outcome — ownership is checked on the row the id **found** (`OwnsActivityAsync(…, entity.ActivityId)`), so where the number happens to name another profile of the same type on the same account, the write lands on the wrong row | app (`src/core/leisure/dto/response/` ×3 + 9 call sites) | `leisure-projects/X1`, `leisure-backlog-picker/X1`, `leisure-bucket-anchors/X4` | med (effort) / **high** (severity) |
+| F73 | ✅ **FIXED 2026-09-21** — the three leisure profile DTOs now carry a real `id` (first constructor parameter, destructured in `fromJson`, the getter deleted) and all nine write call sites pass `item.id` / `entityToEdit.id`. Verified live on `/leisure/projects`: status click → `PUT /activity-project-profile/17201` 200, edit → 200 and persisted, delete → 204 and gone after reload. Body in the log | app (`src/core/leisure/dto/response/` ×3 + 9 call sites) | `leisure-projects/X1`, `leisure-backlog-picker/X1`, `leisure-bucket-anchors/X4` | med (effort) / **high** (severity) |
 | F74 | **`quickEdit` posts to a route that has not existed since the rename** — the client sends `PATCH /activity/{id}/Overwrite`\|`/Clone`, the server has `PUT /activity/{id}/quick-edit` and `POST /activity/{id}/clone`; every quick-edit and every quick-clone 404s in four dialogs across two modules, and the rejection is swallowed so the whole form save is discarded with no message. Folds the toggle-off half: with quick-edit **off** the Name field is a live-looking no-op. **Sixteenth pass, from the endpoint source:** the two modes differ in **verb and response shape** (`PUT` → **204, no body**; `POST` → **200 carrying the new id**), so the one templated `API.patch(…/${mode})` cannot be repaired by renaming the path segment — it has to split in two | app (`activityApi.ts`, `QuickEditMode.ts`, `ActivitySelectOrQuickEditFormField.vue`) | `planner-day/X1` (both halves) | med |
 | F75 | `viewEndDate` never rolls an overnight view onto the next day — with the seed's `bedTime` of `00:00` it resolves to **today at midnight**, so `isDayMateriallyDone` is true all day and the plan-vs-actual verdict ("3 tasks never happened") renders at 19:54 on a day that is not over | app (`dayPlannerStore.ts:157-170`) | `planner-day/B7` | low |
-| F76 | `estimatedHours` 8.5 displays as "9" **and submits as 9** — `VNumberInput`'s `precision` defaults to `0` regardless of `step`; opening and saving an edit dialog is enough to corrupt the value, and this module's own `UseTemplateActionBar.vue:33-34` already carries the fix | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
+| F76 | ✅ **FIXED 2026-09-21** (same session as `F73`, per its ordering constraint) — `:precision="null"` on the `estimatedHours` `VNumberInput`; the edit dialog now opens on "8.5", and a two-decimal `8.25` submits and persists as `8.25`. Body in the log | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
 | F77 | Leisure create forms send a submission the server will name a field for, and the field never hears about it — Location/Weather/Cost and the anchor's Highlight carry no `required` rule, and neither `onConfirm` catches the write, so a 400 whose body says *"'highlight Note' must not be empty."* surfaces only as the interceptor's generic snackbar (the half `F63` deliberately left) | app (`{Backlog,MemoryAnchor}ProfileForm.vue`, `New{Backlog,MemoryAnchor}…Form.vue`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
 | F78 | Two more primary click targets built as bare `<div>`s: the projects board card (the only way to open the edit dialog) and the template grid's background-task block — no role, no `tabindex`, no key handler; the template one is skipped by Tab *and* immune to Escape while its own help text says "Tab moves between tasks" | app (`ProjectReadinessBoard.vue:64-71`, the template grid's background block) | `leisure-projects/A4`, `planner-templates/A4` | low |
 | F79 | Filtering to zero renders the *"you have none at all"* onboarding copy and its Add CTA — on the projects board and table today, and by construction on all four leisure surfaces, which came out of one `L4` pass; every leisure filter DTO already has the `hasAny()` the branch needs | app (`src/core/leisure/` — 4 tables + board + ladder) | `leisure-projects/P3` | low |
@@ -141,10 +141,11 @@
 
 84 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
-`F85` is blocked on `FW24`) · 24
+`F85` is blocked on `FW24`; `F73` and `F76` landed together 2026-09-21, bodies in the log) · 24
 framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log) ·
-15 escalations (**2 open: §7, §9** — and **§7's ask has now landed**, so what is open there is
-the frontend half, `FW24` + `F85`, not the ask; **§8 closed 2026-09-21** when `B19` was decided — a stable
+20 escalations (**2 open: §7, §19** — §7's ask has landed, so what is open there is
+the frontend half, `FW24` + `F85`, not the ask; §19 (`B24`) is the only ask still open server-side, and
+the API's working tree shows it in progress; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
 frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
 the fifteenth pass; §10 closed the same day when `B16` landed and its frontend half went in; §1, §2, §3, §4, §5, §6,
@@ -3318,60 +3319,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None to behaviour; two repos. An app whose signed-out endpoints live under a different prefix
   gains nothing and loses nothing.
 
-## F73. Three activity-keyed leisure profile DTOs drop the server's `id` — nine write call sites key the REST route by the wrong number
-
-- **Scope:** app-side `src/core/leisure/dto/response/{ActivityProjectProfile,ActivityBacklogProfile,ActivityBucketListProfile}.ts`
-  + nine call sites (`BacklogTable.vue:151`, `BacklogProfileForm.vue:48`, `BucketListTable.vue:133`,
-  `BucketListProfileForm.vue:48`, `BucketListLadder.vue:214`, `ProjectTable.vue:108`,
-  `ProjectProfileForm.vue:35`, `ProjectReadinessBoard.vue:231,242`)
-- **Closes:** `leisure-projects/X1`, `leisure-backlog-picker/X1 (round 2)`, `leisure-bucket-anchors/X4`
-  — three `blocker`s, three units, one cause. Also folds `leisure-projects/X1`'s own status-change half
-  (the readiness board's one-click `update`, which is the entire point of `P1-readiness-board.md`).
-- **Root cause:** all three DTOs declare `get id(): number { return this.activityId }` and **their
-  `fromJson` never destructures `id` at all** — read this pass, all three files: the server's own primary
-  key is dropped on the floor at parse time. Every write call site then passes `.activityId` explicitly
-  (not even through the getter), and the REST routes are keyed by the profile row's id. Confirmed by
-  three units independently and settled by direct request: `DELETE /api/activity-project-profile/12009`
-  (activityId) → 404 vs. `/17202` (the row's id) → **204**; the same pair on bucket-list (`12009` → 404,
-  `17102` → 204) and a `GET` pair on backlog (`12005` → 404, `17002` → 200). `MemoryAnchor` is the
-  control: it carries a real `id`, `MemoryAnchorTable.vue:156` passes `item.id`, and its edit and delete
-  both work.
-- **Re-graded `med` → `high` by the sixteenth pass, which read the API rather than the units'
-  observations.** The three grid responses project `Id = e.Id` **and** `ActivityId = e.ActivityId` as
-  two distinct fields (`ActivityProjectProfileResponse.cs`, `ActivityBacklogProfileResponse.cs:93-94`,
-  `ActivityBucketListProfileResponse.cs:48-49`), and every write route is the base `{id}` — including
-  the readiness board's, which only re-routes the *suffix*
-  (`PatchActivityProjectProfileStatusEndpoint.cs` → `/activity-project-profile/{id:long}/status`). The
-  part no unit could see: **authorization runs on the row the id found**, not on the row the user meant
-  — `AuthorizeAsync` is `ownership.OwnsActivityAsync(DbContext, User.GetId(), entity.ActivityId, ct)`
-  on all three entities. So a 404 is the *benign* outcome, and it is only the outcome because profile
-  ids and activity ids happen not to collide in the current fixture (profiles are seeded in the 17xxx
-  band, activities in 12xxx). Where the numbers do meet — a long-lived account, or any future
-  reseeding — the ownership check **passes** and the edit, delete or status change lands on a different
-  profile of the same type belonging to the same user, with no error anywhere. That is a silent
-  wrong-row write, which is why this stops being a `med`.
-- **Not an escalation, and one finding says otherwise.** `leisure-backlog-picker/X1 (round 2)` calls this
-  *"a contract question between the DTO and the API… flag to whoever owns the backend contract before
-  picking a fix"*. It is not: the other two units answered it empirically (a direct request against the
-  row's own id succeeds on both surfaces), so the server's keying is known and this is entirely app-side.
-  Do not write a backend ask for it (*Contradictions* §115).
-- **What to change:** add a real `id` to each of the three constructors and destructure it in `fromJson`
-  (`id = 0`, first parameter, matching `MemoryAnchor`); **delete the getter**, which is what made the
-  mistake invisible — with it gone, `item.id` is the row id everywhere and a call site that still means
-  the activity has to say `activityId`. Then change the nine call sites to `item.id` /
-  `entityToEdit.id`. All three `implements IIdResponse`, so a real field satisfies the interface the
-  getter was faking.
-- **Do not change:** the places where `activityId` is genuinely the business key — `ExperiencedCell`'s
-  reverse lookup, `useLeisurePicker`'s candidate `key`, and the request DTOs' `activityId` field, which
-  is the relationship the server stores. One activity has at most one profile; that model is correct and
-  this batch is only about which number addresses the *row*.
-- **Verification:** each finding's `Verify:` block — a status click moves the card and the column counts
-  change; an edit closes and persists across a reload; a delete removes the row and a reload does not
-  bring it back. Do all three surfaces, plus the ladder's own delete action
-  (`BucketListLadder.vue:214`), which no unit exercised. Then re-run `e2e/tests/leisure-profiles.spec.ts`.
-- **Risk:** Medium. Three DTOs and nine call sites in one commit — a half-migration leaves some surfaces
-  404ing and some working, which is harder to reason about than the current uniform failure. Run
-  `npm run type-check`; deleting the getter is what makes the compiler find anything missed.
 
 ## F74. `quickEdit` calls a route that was renamed out from under it — four dialogs, two modes, silent
 
@@ -3471,27 +3418,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   That is the intended meaning; grep the store's consumers before assuming nothing else depended on the
   bug.
 
-## F76. `estimatedHours` 8.5 displays as "9" and **submits** as 9
-
-- **Scope:** app-side `src/core/leisure/component/project/NewProjectProfileForm.vue:35-39`
-- **Closes:** `leisure-projects/B4`
-- **Root cause:** `VNumberInput`'s `precision` prop defaults to `0`, independently of `step`. The field
-  sets `:step="0.5"` (right, for the increment buttons) and no `:precision`, so Vuetify formats *and
-  coerces* to whole numbers. Opening the edit dialog on the seeded `estimatedHours: 8.50` shows "9" in
-  the raw `<input>`, and an untouched *Save* sends `"estimatedHours":9`. No user action on the field is
-  required — opening and saving is enough.
-- **The fix already exists in this repo.** `dayPlanner/component/normal/UseTemplateActionBar.vue:33-34`
-  is `:step="0.5" :precision="null"` — copy that pair, do not invent a digit count. `:precision="1"`
-  (the finding's suggestion) would silently truncate a value with two decimals; `null` disables the
-  coercion, which is what a free-form hours field wants.
-- **Land it with `F73`.** Today the corruption is masked: the `PUT` 404s before it can persist. The
-  moment `F73` lands, every project edit dialog opened and saved rewrites the row. This is the one
-  ordering constraint in the fifteenth pass that is not a convenience.
-- **Do not change:** `componentDefaults`. A global `precision: null` would turn every integer field in
-  the app into a decimal one (rule 4 territory, and the wrong default for counts).
-- **Verification:** `B4`'s `Verify:` block, all three steps — including step 3, a value with two decimal
-  digits, which is what distinguishes `null` from `1`.
-- **Risk:** None app-side. The framework twin is `FW22`.
 
 ## F77. Leisure create forms send what the server will reject, and the server's own per-field message never reaches the field
 
@@ -3885,7 +3811,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 > | ~~§9~~ | `_done/B14-…` — landed 2026-09-21 (API `1e0dc3b`), frontend half the same day, body in the log | ~~§5~~ | `_done/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
 > | ~~§16~~ | `_done/B21-…` — landed 2026-09-21, frontend half the same day, body in the log | ~~§17~~ | `_done/B22-…` — landed 2026-09-21 as option (b), frontend half and the spec the same day, body in the log |
-> | §18 | `B23-android-per-app-detail-endpoint.md` — **new 2026-09-21**, promoted from *Deferred* | §19 | `B24-distinct-entries-say-which-rule-already-covers-them.md` — **new 2026-09-21**, promoted from *Deferred* |
+> | ~~§18~~ | `_done/B23-…` — landed 2026-09-21 (API `c00e64d`), frontend half the same day (`c2075f61`, with `F47`), body in the log | §19 | `B24-distinct-entries-say-which-rule-already-covers-them.md` — **new 2026-09-21**, promoted from *Deferred* |
 > | ~~§20~~ | `_done/B25-…` — landed 2026-09-21 with the decision taken (the code that trips the lock answers `UserLockedOut`), frontend half the same day, body in the log | | |
 >
 > **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
@@ -4367,7 +4293,7 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 | finding | what settles it | note |
 | --- | --- | --- |
 | **round-1 `X1` and `P2` are gone from the file with no retest note** | Re-run round 1's two repros: type in the Backlog table's `activityName` filter and confirm the main paginated request actually narrows; and read `leisureWeatherApi.ts`'s doc comment | **Both are almost certainly already resolved, and neither should be re-filed.** Round-1 `X1` (the `activityName` filter ignored) is `B11`/§13's class and the server now applies it — read this pass, the sibling grid endpoints do `EF.Functions.ILike` on `Activity.Name`. Round-1 `P2` (the "endpoint is unimplemented" comment) is still open, inside `F64`. The gap is the *record*, not the behaviour — the rewrite dropped both silently |
-| `U1` — the backlog table's empty state | Blocked on `F73`: this pass could not delete the seeded row because delete 404s. After `F73`, delete a row created through the API and read the `#noData` slot | The finding names its own blocker as `X1`, i.e. `F73`. Do not ask for a seed variant first |
+| `U1` — the backlog table's empty state | ~~Blocked on `F73`~~ **unblocked 2026-09-21** (`F73` landed; delete now hits the row id). Delete a row created through the API and read the `#noData` slot | The finding names its own blocker as `X1`, i.e. `F73`. Do not ask for a seed variant first |
 | `U2` — the picker's *nothing filed at all* state | Sign in as `secondaryUser` (the `secondaryPage` fixture) and open `/leisure/pick` — check `e2e/.state/seed.json` for that account's leisure counts rather than assuming; if it seeds rows too, a `test.fixme` | `F64` changes the *default* landing state on the primary account from "no suggestions" to "one card" — run this after it, or the two states are indistinguishable |
 | `U3` — the picker's *load failed* state | `playwright-cli route "**/api/activity-backlog-profile/grid" --status=500` and reload | Read whether the picker distinguishes *failed* from *empty*. If it does not, that is `F61`'s pattern and `F79`'s third state — file it against those, not as a new finding |
 | `U4` — the picker's loading skeleton | `playwright-cli route` with a delay on the three pool `grid` calls, then `find "skeleton"` | Cosmetic; one screenshot. Same limitation `leisure-projects/U2` records for the board's progress bar — one throttled session settles both |
@@ -4385,7 +4311,7 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — the genuinely-empty board and table states | Blocked on `F73`, same as `leisure-backlog-picker/U1`: the seed always carries `profiles.project: 17201` and this pass could not delete it through the UI. After `F73`, create-and-delete through the API and read both the `#noData` slot and the board's `isEmpty` branch | **Run it in `F79`'s session** — `F79` adds a third empty state (filtered-to-zero), and this row is the check that the original one still renders where it should |
+| `U1` — the genuinely-empty board and table states | ~~Blocked on `F73`~~ **half-settled 2026-09-21** by `F73`'s own verification: deleting the seeded `17201` through the UI worked and the board's `isEmpty` branch rendered *"You don't have any projects here yet"* after a reload. The table's `#noData` slot is still unseen — create-and-delete through the API and read it | **Run it in `F79`'s session** — `F79` adds a third empty state (filtered-to-zero), and this row is the check that the original one still renders where it should |
 | `U2` — the loading progress bar | `playwright-cli route` with a delay on the `grid` call | Same limitation as `leisure-backlog-picker/U4`; one throttled session settles both |
 
 ### `planner-day` — one finding whose premise is wrong, and it was filed as a backend ask
@@ -4401,23 +4327,11 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 | `U2` — cross-template drag on the split view | Round 2 made three real attempts (`dragTo`, a manual multi-step pointer drag, and one starting from the `.split-drag-handle`) and **all three were captured by the source panel's own same-grid reposition** — confirmed by the resulting `PATCH` body carrying only `startTime`/`endTime`, never `templateId`, and by a mid-drag screenshot showing the source task's time already changing while the cursor was over the other panel. Next step: read `setupDropTargets`/`monitorForElements` and find what signal actually triggers the cross-template path | This is now strong negative evidence, not an untested path. It stays `unverified` rather than becoming a finding because *"a scripted pointer sequence cannot reach it"* is not the same claim as *"a real mouse cannot"* — but three attempts is the point at which reading `@atlaskit/pragmatic-drag-and-drop`'s drop-zone wiring is cheaper than a fourth |
 | ~~`U3` — the split view's back button may have no accessible name~~ | ✅ **confirmed 2026-09-21 and closed into `F56`, which already carries it as control #4.** The `eval` is unnecessary: `TemplateSplitView.vue:5-11` is `<VBtn icon="arrow-left" variant="tonal" color="secondaryOutline" size="small" @click=…/>` — no `aria-label`, no `title`, no child text and no default slot, so there is nothing for an accessible name to come from. A browser could only re-observe the markup | Stays in `F56`; no new batch, no `A5` needed on the queue's side. The remaining verification is `F56`'s own — that `getByRole('button', { name: 'Back to templates' })` resolves **after** the fix |
 
-### ⚠️ New 2026-09-21: `B16`'s frontend half is in this tree, and its backend half is **not committed** in the API's
-
-Escalation §10 is tombstoned as *"backend landed `B16` … frontend half landed the same day"*, and the
-frontend half is real — `OTHER_DOMAIN` in `PieSegment.ts` plus the merge guard in
-`ActivityPieChartSection.vue` and `UnifiedPieChartSection.vue`, all four files uncommitted in this repo.
-The other side is less finished than that wording implies.
-
-| what | state on 2026-09-21 | what settles it |
-| --- | --- | --- |
-| `FoldedRow.cs` (`Sentinel = "_other"`) and the seven endpoints that now reference it | **untracked / modified in the API working tree** — `git status` in `AdhdTimeOrganizer` shows `?? …/domain/helper/FoldedRow.cs` and seven `M` endpoint files; no commit carries them. The backend re-verified the change later on 2026-09-21 and added a second parity theory (`StackedBars_FoldTheTailUnderTheSameSentinelOnEverySource`, 15/15 green) — **and said "still on dev, uncommitted" again** | Commit them there, then re-drive one pie dashboard. Until then the four pie endpoints still send the literal `"Other"` on any server you can actually reach, so the legend shows an untranslated *Other* and §10's (a) and (b) both still reproduce |
-| the double-fold collision — *"please confirm the merge path sums rather than overwrites"*, the one question the backend asked back | **answered from the code, no browser needed: it sums.** Both sections accumulate into a single `otherSeconds` and push one segment (`ActivityPieChartSection.vue:126-146`, `UnifiedPieChartSection.vue:243-253`); the new guard (`d.domain !== OTHER_DOMAIN && percent >= threshold`) sends the server's folded row into that accumulator unconditionally, so a server row above the local 3 % threshold merges instead of surviving as a second identical legend entry | ✅ Replied 2026-09-21 — *FRONTEND ANSWER* appended to `_done/B16-…`, together with "nothing to do" on their History follow-up offer (`F84` is the client, the builder was already `_other`). No test needed |
-| two fold thresholds for one concept (server `minPercent: 1`, client 3 %) | unchanged, and now commented in both sections | Deliberately deferred — it is `tracking-dashboards` deferred item (2), not a defect |
-
-Not a finding against either repo, and **not** a reason to revert anything here: the guard is a no-op
-while the server still sends `"Other"`, so this side is safe to commit in either order. It is a
-sequencing note, and the reason a retest of §10 done today would fail for the wrong reason.
-
+<!-- The `B16` two-halves sequencing note ("frontend half in this tree, backend half not committed in the
+     API's") ✅ SETTLED 2026-09-21, later the same day: both halves are committed — `FoldedRow.cs` and the
+     seven folding endpoints as API `5e70367`, the client's `OTHER_DOMAIN` + merge guard as `448931a5` —
+     so a §10 retest now runs against the real wire value. Body in _fix-queue-log.md → Closed verification
+     items. -->
 ### Carried forward, unchanged
 
 <!-- todo-lists/U1 (settled, superseded by B4/FW3) and home/U1 (settled by the unit-1 mutation round) both closed — moved to _fix-queue-log.md → Closed verification items on 2026-09-15. -->
