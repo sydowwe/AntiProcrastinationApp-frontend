@@ -68,6 +68,32 @@
 - **Suggested fix:** branch on `route.query.error` vs. a genuinely missing `code` and show
   `showErrorSnackbar` with a short explanation before redirecting.
 
+### B3. A step-up action right after opening the page can fail Identity's concurrency check — and is then reported as "Wrong password"
+- **Status:** open — batched as `_fix-queue.md` `FW25`
+- **Severity:** bug
+- **Where:** `/user/settings` → any `VerifyUserForm` action (2FA toggle observed; password/e-mail change,
+  delete account and 2FA reset take the same gate). Framework: `authStore.hydrateFromServer`,
+  `installFramework.ts:177`, `UserSettingsView.vue:47`, `timeZoneSync.ts`, `VerifyUserForm.vue:54-56`.
+- **Expected:** Enabling 2FA with the right password enables 2FA.
+- **Actual:** `POST /user/2fa/toggle` answers **400** `"Optimistic concurrency failure, object has been
+  modified."`, the dialog clears and snackbars *"Wrong password"*, the switch stays off. Deterministic on
+  a freshly seeded account driven by a spec; a human clicking a few seconds after the page loads usually
+  wins the race, which is why three rounds by hand never saw it.
+- **Evidence:** trace of `two-factor.spec.ts` test 1 (2026-09-21) — `PUT /api/user/preferences`
+  57.003→57.547 s overlapping `POST /api/user/2fa/toggle` 57.110→57.768 s → 400, a second PUT at 57.361;
+  three `GET /api/user/data` before them (sign-in, boot hook, `UserSettingsView.onMounted`). The same
+  toggle over plain HTTP after a reseed and sign-in, with nothing else in flight, answers 200.
+- **Repro:** 1. Reseed (accounts are `UTC`), browser in any other zone. 2. Form sign-in as `test2`. 3.
+  Load `/user/settings` and immediately toggle *Use two-factor authentication* → password → Confirm.
+- **Verify:** `two-factor.spec.ts` test 1 with its `waitForLoadState('networkidle')` line removed.
+  **Pass condition:** 200 and the *Enabling 2FA* dialog; one `PUT /user/preferences` per session.
+- **Root cause:** with `syncBrowserTimeZone` on, every `hydrateFromServer()` whose stored zone differs from
+  the browser's pushes a `PUT /user/preferences`, and the settings page runs three hydrations. A PUT still
+  saving when a step-up request has loaded the user row makes that request's `UpdateAsync` fail on the
+  concurrency stamp. `VerifyUserForm`'s bare `catch` then labels any failure a wrong password.
+- **Suggested fix:** see `FW25` — one in-flight hydration, one time-zone push per session, and a `catch`
+  that says *"Wrong password"* only on 401.
+
 ### A1. Password-field visibility toggles expose a non-descriptive accessible name
 - **Status:** open
 - **Severity:** a11y — **[framework]**

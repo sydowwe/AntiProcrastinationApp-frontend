@@ -3964,6 +3964,46 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   and both conditions are false, so both sites silently stop handling the 409 they handle today — which
   is why this is blocked rather than merely ordered.
 
+## FW25. Three hydrations per settings visit, each pushing the browser time zone — and one of them can race a step-up write into Identity's concurrency check
+
+- **Scope:** **framework** — `src/_common/modules/user/store/authStore.ts:22-31` (`hydrateFromServer`),
+  `src/_common/bootstrap/installFramework.ts:177`, `src/_common/modules/user/view/UserSettingsView.vue:47`,
+  `src/_common/modules/user/utils/timeZoneSync.ts`. Submodule commit, then pointer bump. A backend half
+  is optional and named below.
+- **Closes:** `user-settings/B3` (new 2026-09-21, found by `two-factor.spec.ts`).
+- **Root cause:** Confirmed by trace, deterministic on a freshly seeded account. `hydrateFromServer()`
+  runs three times on the way to `/user/settings` after a form sign-in — `login()` (`authStore.ts:57`),
+  the boot hook (`installFramework.ts:177`, on the full page load) and `UserSettingsView.onMounted`
+  (`:47`) — and with `syncBrowserTimeZone: true` **each one** compares the server's zone with the
+  browser's and `PUT /user/preferences` when they differ. The fixture accounts are seeded `UTC`
+  (`E2eFixtureSeeder.cs:364`) and a real user's stored zone drifts too, so this is not a test artefact:
+  the first PUT is aborted by the navigation, the other two land ~0.4 s apart. A `POST /user/2fa/toggle`
+  sent while one is in flight loads the user row before the PUT saves, and its own `UpdateAsync` fails
+  `IdentityResult` concurrency → **400 "Optimistic concurrency failure, object has been modified."** —
+  which `VerifyUserForm.onConfirm`'s bare `catch` (`VerifyUserForm.vue:54-56`) words as *"Wrong
+  password"* and clears the form, so the user retypes a password that was right. Every `VerifyUserPreProcessor` route
+  is exposed the same way (password change, e-mail change, delete account, 2FA reset). Plain HTTP with no
+  hydration in flight succeeds, which is what isolates it. Note for `FW24`: its claim that a concurrency
+  failure *"cannot be produced today"* holds for the 409 path; this one is Identity's, on a 400.
+- **What to change:** (1) `hydrateFromServer` de-duplicates — one in-flight promise shared by concurrent
+  callers, the way the `ensureLoaded` convention already asks of stores. (2) The time-zone push happens
+  **at most once per session**, not per hydration: remember the last pushed zone and skip when it matches
+  (`timeZoneSync.ts` already reads the browser zone per call; it needs a "last pushed" beside it). (3)
+  `UserSettingsView.onMounted`'s re-hydration is redundant with the boot hook on a full load and with
+  `login()` on an SPA navigation — keep it only if something on the page needs fresher data than the
+  store holds, and say what. Optional backend half: `BaseToggleTwoFactorAuthEndpoint` (and the other
+  step-up routes) could retry once on `ConcurrencyFailure`, since the preference write does not touch
+  what they change; not filed as a `B2x` — the client-side fix removes the writer. (4) Folded in, same
+  module: `VerifyUserForm`'s `catch` should say *"Wrong password"* only for a **401** — anything else is
+  not the user's password, and today it is reported as if it were.
+- **Do not change:** `syncBrowserTimeZone` itself (`useUserClock`'s reason for existing) or the seed's
+  `UTC`.
+- **Verification:** `two-factor.spec.ts` test 1 **without** its `waitForLoadState('networkidle')` line —
+  it is the reproducer, and passes only because of that wait today. Then the request log on
+  `/user/settings` after a form sign-in from a browser in a non-UTC zone: one `GET /user/data` per
+  navigation, one `PUT /user/preferences` per session.
+- **Risk:** Low. Fewer writes; nothing user-visible changes except the race disappearing.
+
 ## Escalations (backend / outside this repo)
 
 > **Written as backend prompts 2026-09-15** — every open entry below now has a file in
@@ -4217,7 +4257,7 @@ with no click consumer (`F29`); `HistoryPieChart`'s hardcoded dark-theme legend 
 have one outcome — but each batch's verification is where they get *seen*, and a fixing session that
 finds one of them does not reproduce should stop and say so rather than fix it anyway.
 
-### `user-settings` — one re-graded `bug` and four `unverified`, of which three are settled from source (`U1` closed by the 2FA spec, 2026-09-21)
+### `user-settings` — one re-graded `bug` and four `unverified`, of which three are settled from source (`U1` closed by the 2FA spec, 2026-09-21, which also filed `B3` → `FW25`)
 
 The unit's five `U` items share one cause that is not the app's: the harness's own safety classifier
 blocked a `fill` on a password field, a `select` on the language combobox and (twice) a click on *Delete

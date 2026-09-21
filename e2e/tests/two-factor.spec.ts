@@ -65,7 +65,11 @@ async function wrongCodeFor(sharedKey: string): Promise<string> {
 // its QR (B22 — until then the secret only ever left the server as a PNG, which is why this dialog had no
 // automated coverage: `docs/views/_fix-queue.md` auth/U2).
 test.describe('Two-factor authentication (/user/settings enrolment → /login code dialog)', () => {
-	test.describe.configure({ mode: 'serial' })
+	// The budget covers fixtures too, and each test here pays for a reseed (plus a cold sign-in for the
+	// first) before its first assertion. Warm, that is ~1.5 s; against an API that has just started it
+	// measured 24 s (2026-09-21), and the default 30 s then dies at a random later click with "Target page
+	// … has been closed" — which reads as the app, not the clock.
+	test.describe.configure({ mode: 'serial', timeout: 60_000 })
 	test.use({ freshSeed: true })
 
 	test.afterAll(async () => {
@@ -79,6 +83,13 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		seed,
 	}) => {
 		await secondaryPage.goto('/user/settings')
+		// Let the hydration writes land first. The fixture accounts are seeded in UTC and this browser is
+		// not, so with `syncBrowserTimeZone` every `hydrateFromServer()` pushes a `PUT /user/preferences` —
+		// and the settings page hydrates twice more after sign-in. A PUT still in flight when the toggle
+		// below loads the user row makes the toggle's own save fail Identity's concurrency check (400
+		// "Optimistic concurrency failure"), which is a real race (_fix-queue.md, user-settings/B3),
+		// not something this spec should win by luck.
+		await secondaryPage.waitForLoadState('networkidle')
 
 		// `VSwitch` renders a checkbox, not a `switch` role.
 		const twoFactorSwitch = secondaryPage.getByRole('checkbox', { name: 'Use two-factor authentication' })

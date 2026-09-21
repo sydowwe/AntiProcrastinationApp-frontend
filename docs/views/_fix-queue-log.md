@@ -1910,6 +1910,17 @@ second was the sixth: a 429 that renders as a stuck `/login` (the trace: `auth/l
 auth/login 429`). `two-factor.spec.ts` sorts after every other sign-in in the suite; a re-run inside a
 minute of the last still trips it, and that is documented in CLAUDE.md rather than worked around.
 
+**Re-run against a restarted API, the same afternoon — two more things, one of them a defect.** The block's
+test budget is 60 s (`test.describe.configure({ timeout })`): `freshSeed`'s reseed counts against it, and
+on the freshly started API it measured 24–26 s per call against ~1.5 s warm, so the default 30 s died at a
+random later click with *"Target page … has been closed"*. And test 1 then failed deterministically with
+`POST /user/2fa/toggle` → **400 "Optimistic concurrency failure"**: three `hydrateFromServer()` calls on the
+way to `/user/settings` (sign-in, boot hook, `UserSettingsView.onMounted`) each pushed the browser time zone
+over the seed's `UTC`, and a `PUT /user/preferences` still saving when the toggle loaded the user row tripped
+Identity's stamp — which `VerifyUserForm` then reported as *"Wrong password"*. Filed as `user-settings/B3`
+→ `FW25`; the spec waits for `networkidle` before enrolling and says so, and that wait is the line to delete
+to reproduce it.
+
 **Two things seen on the way, neither filed as a batch.** (1) After a wrong code the dialog says *Wrong code*
 and refocuses the input, but the token is already spent, so every retry from that dialog is a 401
 *"Invalid or expired authentication session"* rendered as the same *Wrong code* — the server distinguishes
