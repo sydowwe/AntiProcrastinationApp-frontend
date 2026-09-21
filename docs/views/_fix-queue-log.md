@@ -1295,6 +1295,77 @@
   navigation, one `PUT /user/preferences` per session.
 - **Risk:** Low. Fewer writes; nothing user-visible changes except the race disappearing.
 
+## F47. Selecting an app on `/activity-tracking/android` opens no detail — a local panel from the data on the page; a per-app session count is not on the wire
+
+> ✅ **Landed 2026-09-21** (`c2075f61`) together with `B23`'s frontend half (§18) — the ask landed the
+> same day the batch was written, so the panel was built once with both halves: the instant rows below
+> (total, share, package; `pieChart.shareOfSpan` / `pieChart.packageName`) and, under a divider, the
+> fetched figures. The *"do not add an Android `details` fetch"* line is therefore void, as its own last
+> sentence anticipated. One deliberate deviation: the close button takes `pieChart.closeDetails` (*Close
+> details* / *Zavrieť detaily*), the key `F46` prescribes, rather than a fourth hand-typed label — `F46`
+> should retire `closeDomainDetails` onto it. The `summaryCardsData` baseline row was not added. Verified
+> per the block below: card and slice both toggle, `?selected=Spotify` opens from the URL, the folded
+> slice selects nothing. `tracking-dashboards.draft.spec.ts`'s `B2` fixme is a real test.
+
+- **Scope:** app-side `src/core/activityTracking/component/android/AndroidPieChartSection.vue`,
+  `view/AndroidActivityDashboard.vue`, `_locales/activityTracking.{sk,en}.ts`
+- **Closes:** `tracking-dashboards/B2` — **narrowed** (*Contradictions* §79). The finding's pass
+  condition (*"at minimum its active seconds and session count"*) is amended below; the defect stands.
+- **Root cause — confirmed, and the unit's guess is right about the mechanism and wrong about the
+  data.** `AndroidPieChartSection.vue:57-78` renders one `VCard` with the span's `totals` and has **no
+  branch on `selectedAppLabel`** — the model is written (`:110,129-131`), drives the pie's
+  `selectedDomain` (`:52`), and is read by nothing else. Compare `ActivityPieChartSection.vue:145-161`
+  (`selectedDomainDetails` computed → `ActivityDetailsPanel` in `domain` mode) and
+  `UnifiedPieChartSection.vue:252-254,66-116` (`selectedDetails` → inline panel). Selecting an app
+  therefore fires no request (unit: `requests` showed none), changes no panel (unit: two screenshots,
+  same three numbers), and leaves `ActivitySummaryCards`' card announcing *"View details for Spotify"*
+  (`ActivityDomainCard.vue:8`) for a click that shows none — the one dashboard where that label is a
+  lie (§80).
+  **What the unit thought was available is not.** `AndroidAppPieData` is `{packageName, appLabel,
+  seconds, totalSeconds}` (`AndroidAppPieData.ts`), and the server sets **`Seconds == TotalSeconds` by
+  construction** (`AndroidPieChartEndpoint.cs:57-58` — both are `g.Sum(x => x.DurationSeconds)`); there
+  is no active/background split and no per-app session count anywhere in the Android responses.
+  `AndroidAppSummaryDto.stat` is an `ActivityStat` (`seconds`, `averageSeconds`, `percentChange`) —
+  the baseline comparison the card already shows, not a session count. `AndroidPieTotals.totalSessions`
+  is span-wide. So the *"session count"* half of the pass condition is a **backend ask** (the Android
+  sibling of desktop's `process-details` — sessions per app, first/last use, mean session length, from
+  the `AndroidSessionData` rows the endpoint already groups) and is now **written as `B23`** — escalation
+  §18, `prompts/view-docs/backend/B23-android-per-app-detail-endpoint.md` — not batched here.
+- **Files:** `AndroidPieChartSection.vue:57-78` (the panel), `:95-102` (props), `:110` (model);
+  `AndroidActivityDashboard.vue:81-91` (the mount — `summaryCardsData` is in scope at `:61` and can be
+  passed down); `activityTracking.{sk,en}.ts` `pieChart` block
+- **What to change:** A `selectedDetails` computed over `props.apps` (`find(a => a.appLabel ===
+  selectedAppLabel)`) and a `v-if="selectedDetails"` branch in the side card, mirroring the unified
+  panel's shape (`UnifiedPieChartSection.vue:66-116`): header = `appLabel` + `F46`'s close button
+  (emit → `selectedAppLabel = null`); rows = *Total* (`totalSeconds`), *Share of {span}*
+  (`totalSeconds / totals.totalSeconds`, the number the legend already prints), *Package* (`packageName`,
+  monospace caption — it is the identity the settings mapping table keys on, and the only place a user
+  could otherwise learn it is `/activity-tracking/android/settings`). Optionally, pass the matching
+  `SummaryCardsData` in and add *vs. baseline* from `stat.percentChange` — the card shows it, the
+  panel may repeat it; do not fetch anything new. Two keys: `pieChart.shareOfSpan` and
+  `pieChart.packageName`. **The folded-tail row needs no local guard** — it used to: with `minPercent: 1`
+  (`AndroidActivityDashboard.vue:170`) the endpoint folds the tail into one row, and until 2026-09-16 that
+  row's `packageName`/`appLabel` were the literal `"Other"`, which `ActivityPieChart` did not recognise as
+  its sentinel, so the slice was selectable and would have opened a panel titled *Other* with package
+  *Other*. Backend `B16` landed (§10, closed — body in the log): all four pie endpoints now emit `_other`,
+  which `ActivityPieChart:150` already refuses to select and `:62` already translates. Write
+  `selectedDetails` against `props.apps` as above and nothing reaches it; do **not** add the skip that
+  earlier revisions of this batch asked for.
+- **Do not change:** the `summary-cards`/`pie-chart` request shapes; `ActivityPieChart.vue` (`F48`
+  edits it — coordinate, do not both touch `:9-28`); the desktop pattern — do **not** add an Android
+  `details` fetch against an endpoint that does not exist. Not `ActivityDomainCard`'s label (§80).
+- **Verification:** `B2`'s `Verify:` block with the pass condition read as: *selecting an app changes
+  the side panel to that app's own detail — its total time, share of the span, and package name — and
+  the close button clears it and `?selected`*. Then: deselect by clicking the same card and by clicking
+  the slice; reload with `?selected=Spotify` and confirm the panel opens from the URL (the model is
+  URL-backed via `useActivityDashboard`'s `selectedItem`); select a card whose app is under the pie's
+  threshold if the seed has one, and confirm the folded slice reads *Ostatné* and selects nothing.
+  `tracking-dashboards.draft.spec.ts:126`
+  is the `fixme` to fill in. SK as well as EN for the two new keys.
+- **Risk:** Low. Additive branch; nothing selected renders exactly today's card. The only judgement
+  call is whether a three-row panel is worth opening — it is, because the alternative is a card that
+  says *"View details"* and a URL that says `?selected=` for a selection nothing displays.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
@@ -2040,6 +2111,50 @@ and the password again. A one-branch client change on `LoginVerifyQrCode`'s catc
 queued because `FW1`/`FW11` are already open on that file and it belongs in whichever lands first. (2)
 `user-settings.draft.spec.ts:49` (*Change password* dialog) fails on a strict-mode violation — `name:
 'Password'` substring-matches all three fields; pre-existing, not touched.
+
+### §18 — ✅ RESOLVED 2026-09-21 (backend `B23` landed as asked, API `c00e64d`; frontend half the same afternoon, `c2075f61`, with `F47` folded in). The Android dashboard's "View details for {app}" now opens a real detail
+
+**The ask, as it stood in the queue** — `tracking-dashboards/B2` as narrowed by §79, promoted from *Deferred
+to opportunities* item (1) on 2026-09-21 at the owner's request. Not a defect: `F47` was to ship a local
+panel (total, share, package) from `props.apps` and said itself not to fetch against an endpoint that did
+not exist. But every summary card was named *"View details for {app}"* (`ActivityDomainCard.vue:8`) for a
+click that could show nothing more, because no Android response carried a per-app session count, first/last
+use or session length — `seconds == totalSeconds` by construction (`AndroidPieChartEndpoint.cs:57-58`),
+`totalSessions` span-wide. The rows existed (`AndroidSessionData`: `DeviceId`, `PackageName`,
+`SessionStartUtc`, `SessionEndUtc`, `DurationSeconds`). Ask: `GET /activity-tracking/android/app-details`
+with desktop's query parameters and window semantics (`ToDailyWindows().Restrict()` on `SessionStartUtc`),
+404 on no rows, no invented Active/Background split (`F48`). File:
+`prompts/view-docs/backend/_done/B23-android-per-app-detail-endpoint.md` (reply appended).
+
+**The answer, 2026-09-21 — shipped exactly as asked.** `AndroidAppDetailsEndpoint`
+(`AdhdTimeOrganizer.Tracking/application/endpoint/android/query/`), pinned by
+`TrackingDetailsEndpointsTests` beside its two siblings. Desktop's query contract with `packageName` in place
+of `processName`, same base validator (to > from, ≤ 31 days, window pair both-or-neither, 0–1439). Envelope
+read on `SessionStartUtc ∈ [from, to)`, then the daily-window mask in the user's zone — a session counts
+whole by where it starts, no clipping. `appLabel` is the first non-empty label, falling back to the package;
+`lastUseUtc` is the latest session *end*; `meanSessionSeconds` rounds down; `devices` ordered by
+`totalSeconds` desc with the raw `deviceId` (nothing friendlier is on the sync payload); `days` kept — one
+entry per local calendar day with rows, `YYYY-MM-DD`, no entries for empty days. 404 problem+json *"App not
+found."* on no rows after the mask, on `_other` (short-circuited before any query), and on another user's
+package (rows are user-scoped). No `activeSeconds`/`backgroundSeconds`. Nothing on the other five Android
+responses changed.
+
+**The frontend half, the same afternoon.** `F47` had not landed either, so the panel was built once with both
+halves: `getAndroidAppDetails` + `AndroidAppDetailsResponse` (the two `*Utc` fields parsed, `days[].date`
+kept as a string), `AndroidAppDetailsPanel.vue` — total / share of period / package instantly from the pie
+row, then sessions, average and longest session, first/last use, devices when more than one, days when
+more than one with a *+ N more* — and the watcher in `AndroidPieChartSection.vue` keyed on package +
+envelope with an `AbortController`. A 404 is worded as *"No sessions of this app in the selected period"*
+with no retry and no snackbar (the read is `_silent`); other failures get the section's load-failed +
+retry. The close button takes `pieChart.closeDetails`, the key `F46` prescribes. Verified live on the seed:
+one `GET …/app-details` per selection, 200, `?selected=Spotify` opens the panel from the URL, a span change
+clears the selection (existing dashboard behaviour, same as desktop), *Close details* clears the URL, console
+clean. `tracking-dashboards.draft.spec.ts`'s `B2` fixme is a real test.
+
+**One thing seen on the way, not filed.** The API on `:8080` had been started before the endpoint's commit,
+so the first live call was a routing 404 with `content-length: 0` — indistinguishable from the endpoint's
+own 404 to the panel, which correctly showed the soft sentence. Told apart by the missing problem+json body;
+worth remembering the next time a freshly landed ask answers 404.
 
 ## Closed verification items
 

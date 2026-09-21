@@ -109,3 +109,88 @@ responses changes.
 - `docs/views/_fix-queue.md` *Deferred to opportunities* → `tracking-dashboards` (1) closes;
   `tracking-dashboards.draft.spec.ts:126`'s `fixme` gains a second assertion — that selecting fires exactly
   one `GET …/app-details` and the panel shows a session count.
+
+BACKEND RESPONSE (2026-09-21):
+
+B23 — shipped. AndroidAppDetailsEndpoint (AdhdTimeOrganizer.Tracking/application/endpoint/android/query/),
+pinned by TrackingDetailsEndpointsTests alongside its two siblings. Nothing on pie-chart, summary-cards,
+stacked-bars, timeline or focus-metrics changed. API commit c00e64d.
+
+Route
+
+GET /api/activity-tracking/android/app-details
+    ?packageName=com.spotify.music
+    &from=2026-09-14T07:00:00Z
+    &to=2026-09-20T15:00:00Z
+    &windowStartMinutes=540      (optional, pair)
+    &windowEndMinutes=1020       (optional, pair)
+
+Identical query contract to desktop/process-details with packageName in place of processName. Same base
+validator: to > from, span ≤ 31 days, window bounds 0–1439, both-or-neither on the window pair → 400
+otherwise. packageName empty or > 255 chars → 400.
+
+Response — exactly the shape you asked for
+
+{
+  "packageName": "com.spotify.music",
+  "appLabel": "Spotify",
+  "totalSeconds": 5430,
+  "sessions": 17,
+  "firstUseUtc": "2026-09-14T06:12:40Z",
+  "lastUseUtc": "2026-09-20T22:48:03Z",
+  "meanSessionSeconds": 319,
+  "longestSessionSeconds": 1810,
+  "devices": [
+    { "deviceId": "pixel-8-…", "totalSeconds": 5100, "sessions": 15 },
+    { "deviceId": "tab-s9-…",  "totalSeconds": 330,  "sessions": 2 }
+  ],
+  "days": [
+    { "date": "2026-09-14", "totalSeconds": 900, "sessions": 3 }
+  ]
+}
+
+Field notes:
+- totalSeconds, meanSessionSeconds, longestSessionSeconds, and the per-entry totalSeconds are long on the wire
+  (same as AndroidAppPieData.seconds); sessions counts are int.
+- appLabel — first non-empty label among the rows, falling back to packageName (desktop's productName rule).
+- firstUseUtc — earliest SessionStartUtc. lastUseUtc — latest SessionEndUtc, i.e. the last instant the app was
+  in use, not the last session's start.
+- meanSessionSeconds — totalSeconds / sessions, rounded down.
+- devices — ordered totalSeconds desc. deviceId is the raw identity from the sync payload; there is no
+  friendlier name on the wire (AndroidSyncRequest carries only deviceId), so render it verbatim as planned.
+- days — kept, it was free. One entry per calendar day with rows, on the user's clock (a 00:30 Bratislava
+  session is that local day, not the UTC day before), ordered by date (YYYY-MM-DD). Days inside the span with
+  no rows have no entry.
+- No activeSeconds / backgroundSeconds — consistent with F48.
+
+Rules, as implemented
+
+1. Window semantics mirror desktop exactly. Envelope read on SessionStartUtc ∈ [from, to), then restricted to
+   the daily windows in the user's zone. A session counts whole by where it starts; one starting outside a
+   window is dropped entirely. No clipping. Without the window pair the envelope is continuous (over-counts
+   the nights, same as desktop).
+2. 404 with "App not found." (problem+json, same shape as desktop's "Process not found.") when no rows match
+   after the mask. A stale ?selected= on reload is a soft 404, not an empty 200.
+3. packageName=_other → 404, short-circuited before any query. Never resolved to the folded rows.
+4. Cross-user: package names are guessable, so rows are scoped by user id; an app only another user has is
+   a 404.
+
+FRONTEND HALF (2026-09-21):
+
+Landed in `c2075f61`, with `F47` folded in — it had not landed either, so the panel was built once with both
+halves.
+
+- `api/androidActivityTrackingApi.ts` → `getAndroidAppDetails(packageName, from, to, dailyWindow?, signal?)`,
+  `_silent`; `dto/response/android/AndroidAppDetailsResponse.ts` parses the two `*Utc` strings, keeps
+  `days[].date` as the plain `YYYY-MM-DD`.
+- `component/android/AndroidAppDetailsPanel.vue`: total / share of period / package instantly from the pie
+  row, then sessions, average and longest session, first/last use, devices when > 1, days when > 1 with a
+  *+ N more*. `AndroidPieChartSection.vue` owns the watcher (package + envelope, `AbortController`); a 404
+  is worded *"No sessions of this app in the selected period"* with no retry, other failures get retry.
+- The window pair is sent as the app already holds it — `windowEndMinutes=0` for the 07:00–00:00 default —
+  and the server's over-midnight rule reads it correctly (verified: 200, one session on the seed day).
+- `tracking-dashboards.draft.spec.ts` asserts one `GET …/app-details` per selection and a visible session
+  count; `_fix-queue.md` §18 and `F47` are closed, bodies in the log.
+- Seen on the way: the API on :8080 predated the commit, so the first call was a routing 404 with
+  `content-length: 0` — the panel showed the soft sentence, which was right for the wrong reason. The
+  endpoint's own 404 carries a problem+json body; that is how to tell them apart.
