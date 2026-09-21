@@ -99,9 +99,16 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			async () => {},
 		)
 
-		// O1 / U1 / U5: registration cannot complete in this environment (VITE_RECAPTCHA_SITE_KEY unset,
-		// and RegistrationView fails closed on a missing token unlike LoginView — see findings.md O1).
-		test.fixme('completing registration with 2FA shows the issued recovery codes (findings.md U1)', async () => {})
+		// Registration completes now (O1 → X2, fixed — the empty reCAPTCHA token is sent as-is and the
+		// server decides), but the codes are still discarded: `open2FADialog` opens the QR body only and never
+		// `RecoveryCodesBody` (_fix-queue.md FW14). This stays a fixme until FW14 lands; the settings-side
+		// enrolment, which does show them, is covered by two-factor.spec.ts. Note the QR dialog
+		// on this path now also renders the manual-entry key (B22) — assert on `getByTestId('shared-key')`
+		// when promoting.
+		test.fixme(
+			'completing registration with 2FA shows the QR with its key, then the issued recovery codes (findings.md U1 / _fix-queue.md FW14)',
+			async () => {},
+		)
 	})
 
 	test.describe('ForgottenPasswordView (/forgotten-password)', () => {

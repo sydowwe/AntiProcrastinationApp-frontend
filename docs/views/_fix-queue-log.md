@@ -1852,6 +1852,73 @@ throttle window and makes the browser's own request the one that trips the lock.
 snackbar read *"Too many failed sign-in attempts. Try again in 5 min."* Both throwaways are cleared by the
 next reseed.
 
+### §17 — ✅ RESOLVED 2026-09-21 (backend `B22` landed as option (b): framework `6ade033`, host `74318d1`; frontend half and the spec the same day). The 2FA login dialog has a spec, and the QR has its key beside it
+
+**The ask, as it stood in the queue** — `auth/U2`, promoted from *Needs verification* the same morning.
+`LoginVerifyQrCode.vue` had never been driven by a spec and unit 15's three rounds could not reach it by
+hand: a spec needs a confirmed 2FA-enabled account *and* that account's TOTP secret, and the enrolment
+response (`TwoFactorAuthResponse { twoFactorEnabled, qrCode, recoveryCodes }`) carried the secret only as a
+base64 PNG of the `otpauth://` URI. Behind the spec's gap sat a user-facing one: an authenticator on the same
+device as the screen (a desktop password manager, the app on the one phone) cannot scan it, and there was no
+*"enter this key manually"* fallback. Filed as `B22`
+(`prompts/view-docs/backend/_done/B22-2fa-login-dialog-unreachable-by-a-spec.md`, response appended) with
+two shapes — (b) the key as a string beside the QR, preferred; (a) a seeded `twoFactorUser`.
+
+**The answer, 2026-09-21 — (b), no fixture change, `EXPECTED_FIXTURE_VERSION` stays `e2e-v4`.**
+`sharedKey` on `TwoFactorAuthResponse`: the base32 key exactly as Identity stores it (`A–Z2–7`, no padding,
+the QR's `secret=`), present whenever `qrCode` is, on every route that returns the record — `/user/2fa/toggle`
+(on, first-time and the existing-key re-render), `/user/2fa/reset`, `/auth/login/2fa/setup`, and registration
+with 2FA ticked. Not test-only, not environment-gated. Pinned server-side by
+`AuthFunctionalTests.SetupTwoFactorForLogin_WithPendingCookie_ProvisionsAuthenticator`, which now computes a
+TOTP from the string alone and finishes the login (`auth/login/2fa` → 204). One caution in the reply that the
+spec had to honour: **the validate step is single-use per password step** — a wrong code consumes the pending
+token, so the wrong-code and right-code assertions each need their own password sign-in.
+
+**The frontend half, the same day — all in the framework (`src/_common`).** `QrCodeFor2FABody.vue` takes an
+optional `sharedKey` and renders it under the image in groups of four with a copy button, labelled
+`user.enterKeyManually` (*"Nedá sa naskenovať? Zadajte do overovacej aplikácie tento kľúč:"* / *"Can't scan?
+Enter this key in your authenticator app instead:"*), plus `user.sharedKeyCopy/Copied/CopyFailed`; optional
+so a backend without the field still gets the QR alone. `RegistrationView` passes the key through.
+**Found while wiring it, and fixed in the same commit — the body was unreachable from the settings path:**
+`SecuritySection.onToggleTwoFactorAuth` showed the recovery codes on enable and *never the QR*, so a user
+who enabled 2FA in settings had no way to pair an authenticator except *Show 2FA QR code* — which posts
+`/user/2fa/reset`, mints a **new** key and a **new** set of recovery codes, and the handler for *that*
+(`onShow2FAQrCode`) discarded the codes it was sent (the `F1` bug, in a third place: the codes the user had
+just been told to save were silently invalidated). Both handlers now go through one `showTwoFactorSetup`:
+the QR with its key first (titled `user.enablingTwoFactorAuth` on enable — a key that existed and was used
+nowhere — or `user.show2FAQrCode` on reset), then the recovery codes when the response carries any.
+`docs/modules/user.md` gained a section on it. Not touched: `FW14` (registration still discards its codes —
+its own batch), and the *Show 2FA QR code* label, which still reads as a look when it is a reset; noted, not
+re-worded.
+
+**The spec — `e2e/tests/two-factor.spec.ts`, a `serial` block under `freshSeed`, `otplib@13` added to `e2e/`.**
+On `secondaryUser` (the primary signs in everywhere, the admin is the one `Admin`). Test 1 is
+`user-settings/U1`'s enrolment half through the screen: the switch (a `checkbox` role, not `switch`) →
+*Identity verification* → password → `POST /api/user/2fa/toggle` read off the wire (`sharedKey` matches
+`/^[A-Z2-7]+$/`) → the *Enabling 2FA* dialog with the QR `img` and the key whose text, spaces stripped,
+equals the response's → *Done* → *Recovery codes* with as many `<code>`s as the response, *Done* disabled
+until the acknowledgement is ticked → the switch checked. Test 2 is `auth/U2`: enrol through the API on
+`secondaryPage.request`, then in a signed-out context sign in by form → `dialog "Two-factor authentication"`
+→ a wrong code (computed to differ from the live one) → `POST /api/auth/login/2fa` **401** → *Wrong code*
+inline, dialog still open, still `/login` → Escape leaves it open (`FW1`'s `persistent` default, pinned as
+today's behaviour, not as a fix) → a second form sign-in → `otplib.generate({ secret })` → **204** (NoContent,
+not 200) → `/` with the dashboard. A `test.fixme` for the `?redirect=` line names `FW11`. `afterAll` reseeds
+so the account leaves the block with 2FA off. Both pass (12 s). **Why its own file:** the block was first
+written into `auth.spec.ts`, where it passed alone and failed in the full run — `POST /auth/login` is 5
+hits/min per client IP, the run opens with two cold sign-ins, `auth.spec.ts` spends two, and the block's
+second was the sixth: a 429 that renders as a stuck `/login` (the trace: `auth/login 200 → login/2fa 401 →
+auth/login 429`). `two-factor.spec.ts` sorts after every other sign-in in the suite; a re-run inside a
+minute of the last still trips it, and that is documented in CLAUDE.md rather than worked around.
+
+**Two things seen on the way, neither filed as a batch.** (1) After a wrong code the dialog says *Wrong code*
+and refocuses the input, but the token is already spent, so every retry from that dialog is a 401
+*"Invalid or expired authentication session"* rendered as the same *Wrong code* — the server distinguishes
+them (`Unauthorized` vs `InvalidTwoFactorAuthToken`), the client does not, and the only way on is *Cancel*
+and the password again. A one-branch client change on `LoginVerifyQrCode`'s catch; recorded here rather than
+queued because `FW1`/`FW11` are already open on that file and it belongs in whichever lands first. (2)
+`user-settings.draft.spec.ts:49` (*Change password* dialog) fails on a strict-mode violation — `name:
+'Password'` substring-matches all three fields; pre-existing, not touched.
+
 ## Closed verification items
 
 ### §91 — ✅ SETTLED 2026-09-16 (fifteenth pass), in the mundane direction: the snackbar fires

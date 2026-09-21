@@ -513,6 +513,13 @@ test.use({ freshSeed: true })
 
 `freshSeed` re-POSTs `/api/test/seed` before each test in scope (~1.5–2.0 s). The endpoint is a reset, not an upsert, so this is safe to repeat; cached auth
 survives it, because the accounts come back with the same ids and a deterministic security stamp and the API installs no `SecurityStampValidator`.
+It resets **before** each test, not after the last one — a block whose final test leaves a fixture *account* changed (`two-factor.spec.ts` enables 2FA on
+`secondaryUser`) adds `test.afterAll(reseed)` (`reseed` is exported from `fixtures/auth`) so later specs meet the account the fixture describes.
+
+**`POST /auth/login` is throttled at 5 hits per minute per client IP — hits, not failures.** A run starts with two cold sign-ins (global setup clears
+`.state/`) and `auth.spec.ts` spends two more inside the same minute, which is why `two-factor.spec.ts`'s two sign-ins live in their own file at the far end
+of the alphabet (folded into `auth.spec.ts` they were the sixth hit — a 429 that looks like a stuck `/login`). A re-run of either file inside a minute of the
+last fails the same way; it is not the spec. Every context, `page.request` call and `playwright-cli` session shares the IP.
 
 **Do not ask the backend for a seed shape.** A parameterised seed endpoint is a second write API parallel to the real one; the rule for what may go in the fixture
 at all is in the API repo's `docs/e2eTestSeed.md` under "What belongs in the fixture".

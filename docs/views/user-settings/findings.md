@@ -122,9 +122,20 @@
   `color="errorDark"` on those two `VBtn`s.
 
 ### U1. Two-factor authentication setup flow not exercised
-- **Status:** open
+- **Status:** resolved — exercised by the first test of `e2e/tests/two-factor.spec.ts` since
+  2026-09-21, and it found a defect, fixed the same day (`_fix-queue.md` §17, body in `_fix-queue-log.md`)
 - **Severity:** unverified
 - **Where:** `/user/settings` → Security → "Use two-factor authentication" checkbox
+- **Closing note (2026-09-21):** Run on `secondaryUser` under `freshSeed` with a reseed afterwards, which is
+  what answers the "shared account" objection below. The flow as it now stands: switch → *Identity
+  verification* → password → `POST /user/2fa/toggle` → an *Enabling 2FA* dialog with the QR **and its base32
+  key beside it** (`sharedKey`, `B22`, for an authenticator that cannot scan the screen) → *Done* →
+  *Recovery codes*, *Done* disabled until *"I have saved these codes somewhere safe"* is ticked → the switch
+  checked. **What it found:** until this pass the enable path showed the recovery codes and never the QR, so
+  the only way to pair an authenticator after enabling was *Show 2FA QR code* — which posts `/user/2fa/reset`,
+  mints a new key *and new codes*, and whose handler discarded those codes. Both handlers now share one
+  sequence (QR first, then codes when present). Still worth a look, not filed: the *Show 2FA QR code* label
+  reads as a look when it is a reset.
 - **What would verify it:** toggling it almost certainly starts a real 2FA enrollment (QR code / TOTP
   secret) on the account, which is a genuine, hard-to-reverse security-state mutation on the shared
   seed account this pass ran against — a `history-review` unit was running concurrently against the

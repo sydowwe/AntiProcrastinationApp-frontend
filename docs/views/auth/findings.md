@@ -525,9 +525,21 @@ duplicated, so the tally isn't double-counted.
 ---
 
 ### U2. The 2FA login dialog is entirely untested
-- **Status:** open
+- **Status:** resolved — driven by a spec since 2026-09-21; the contract gap that kept it unreachable is closed
+  by `B22` (`_fix-queue.md` §17, body in `_fix-queue-log.md`)
 - **Severity:** unverified
 - **Where:** `src/_common/modules/user/component/LoginVerifyQrCode.vue`
+- **Closing note (2026-09-21):** The wall was never the seed — it was that the enrolment response carried the
+  TOTP secret only as a QR PNG. `B22` added `sharedKey` (the base32 key, sent whenever `qrCode` is), so
+  `e2e/tests/two-factor.spec.ts` enrols `secondaryUser` through `/user/2fa/toggle`, reads the key off the
+  wire and generates codes with `otplib`. Seen live: correct password → the dialog; a wrong code →
+  `POST /api/auth/login/2fa` 401 and the inline *Wrong code* line, dialog still open, URL still `/login`;
+  Escape does nothing (`MyDialog`'s `persistent` default — `FW1`, pinned as today's behaviour); a fresh password
+  step and the right code → 204 (NoContent) → `/`. The `?redirect=` line is a `test.fixme` naming `FW11`. Two
+  things to know when repeating it: the pending token is **single-use** (a wrong code spends it, so the retry
+  the dialog invites is a second 401 the client also words as *Wrong code* — recorded in the log, not queued),
+  and `POST /auth/login` is throttled at 5/min per client IP — which is why the spec is its own file at the
+  end of the alphabet rather than a block in `auth.spec.ts`, where its second sign-in was the run's sixth.
 - **Actual:** No seeded account (`test@example.com`, `test2@example.com`, `admin@example.com` per
   `e2e/.state/seed.json`) has 2FA enabled, so this dialog — its OTP submission, its wrong-code path, its
   focus trap, and whether Escape closes it — could not be exercised.

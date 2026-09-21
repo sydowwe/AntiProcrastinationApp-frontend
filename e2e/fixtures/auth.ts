@@ -4,7 +4,7 @@ import path from 'path'
 import { readSeed, reseed, type SeedResponse, type SeedUser } from './seed'
 
 export { expect }
-export { seedDateParam } from './seed'
+export { apiUrl, reseed, seedDateParam } from './seed'
 export type { SeedResponse } from './seed'
 
 /**
