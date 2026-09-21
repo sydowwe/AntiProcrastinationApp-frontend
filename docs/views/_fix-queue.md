@@ -44,8 +44,8 @@
 | F12 | Mappings table body has zero height — the row exists but is inside a 0 px scroll box (**round 2 re-confirmed**, plus a `focus()` + Enter path that works — consistent with the scroll-box cause, not with a paint bug) | app | `tracking-settings/X1` | low |
 | F13 | Mappings tab: no filter control reaches the grid, and the delete button reaches nothing (**grown**: the dead delete is now `X4`, observed on both platforms; the raw-id confirmation `B7` is one `deleteConfirmationColumn` attribute on the same tag) | app | `tracking-settings/B1`, **`X4`**, **`B7`** (+ `U1`, now confirmed) | med |
 | F14 | Tabbed routes get the wrong breadcrumb (and sidebar highlight) because the nav `to` is one tab's literal path | app | `tracking-settings/B2`, `activity-settings/B6` | low |
-| F15 | Distinct-entries filter, page and sort are not in the URL | app | `tracking-settings/B3` | med |
-| F16 | Settings header row clips its labels at 1440 px | app | `tracking-settings/B4` | low |
+| F15 | Distinct-entries filter, page and sort are not in the URL (**narrowed 2026-09-21**: `coverage` is in the URL since §19 landed, through `useCoverageUrlState` and the handler-not-watcher shape this batch prescribes; the text fields, page and sort are still bare refs) | app | `tracking-settings/B3` | med |
+| F16 | ✅ **FIXED 2026-09-21** (folded into §19's frontend half — `flex-wrap` on the header, `flex-shrink: 0` on the tab toggle, both views; verified at 1440×900, body in the log) — Settings header row clips its labels at 1440 px | app | `tracking-settings/B4` | low |
 | F17 | CLAUDE.md's "every settings page" sentence reads wider than `moduleSettingsLinks.ts` means | docs only | `tracking-settings/P1` | trivial |
 | F18 | ✅ **FIXED 2026-09-15** — the mount-time combobox rebuild wrote back into the activities filter, wiping URL ids and double-firing the grid; the two deep watchers are replaced by `@update:modelValue` handlers, so a rebuild is now a pure derivation, and an empty selection normalises to `null`. Verified live including the tab-switch case; **`U4` retested and closed with it**. Body in the log | app | `activity-settings/B2`, `B3` (+ closed `U4`) | med |
 | F19 | Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it (**grown**: the generic dialog's raw-id copy, `B8`, goes with the generic dialog) | app | `activity-settings/B7`, `A1`, **`B8`** (+ `U2`, now browser-confirmed) | med |
@@ -91,7 +91,7 @@
 | F60 | ✅ **FIXED 2026-09-15** — `MemoryAnchorFilter` sent `year`/`month` while the server reads `anchorYear`/`anchorMonth`; the two wire fields are renamed and the URL keys stay `year`/`month`, so bookmarks survive. Verified live across seven filter URLs. The timeline's twelve-month check is still blocked by `F61`. Body in the log | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts`; its test needed **no** change, and that is the bookmark pin) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three closed with ~~§13~~ `B11`) | trivial |
 | F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why. **The batch's own "grep for another `= 500`" is answered:** those two are the only ones (`useLeisurePicker` 200, `ProjectsView` 200, notifications 20) | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` (both reconfirmed by round 2) | low |
 | F62 | ✅ **FIXED 2026-09-15** — `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
-| F63 | Four leisure request DTOs default their lookup ids to the sentinel `0` — the pickers render a literal "0", `requiredRule` accepts it, and an unset form reaches the server as `activityId: 0`. **Grown:** the fourth DTO is no longer unfiled (unit 13's round 2 photographed it) and the leak now has a *second* symptom on every one of them — typing into the Activity autocomplete without clearing produces `"0Learn Bouldering"`, which matches no option and offers only *Create activity* | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/B2` (round 2 — round 1's `X3`, the `0` half), `leisure-bucket-anchors/B2` (`0` half), **`leisure-projects/B5`** | low-med |
+| F63 | ✅ **FIXED 2026-09-21** (same session as `F77`, `F63` first per its ordering constraint) — all eight lookup ids are `number | null = null` on the four DTOs, `MemoryAnchorForm` passes `presetActivityId` through. Verified live on `/leisure/backlog`: the fresh *Add* dialog renders the three selects empty, not "0", and an untouched *Create* shows the required message and fires no `POST`. Body in the log | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/B2` (round 2 — round 1's `X3`, the `0` half), `leisure-bucket-anchors/B2` (`0` half), **`leisure-projects/B5`** | low-med |
 | F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented. **Round 2 narrowed the headline and added a second symptom:** the excluded row's dependency is the *"None"* lookup, so the batch must not hard-exclude *or* badge it, and a mocked non-empty match produced the reason chip *"Good weather for this today"* on an indoor activity | app (`useLeisurePicker.ts:250`, `leisureScoring.ts`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/B1` (round 2 — round 1's `X2`), `P2` (round 1) | low |
 | F65 | Leisure's view-mode toggles, the timeline's year controls and the source/experienced chips carry a localized `:title` and no `aria-label` | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
@@ -125,7 +125,7 @@
 | F74 | **`quickEdit` posts to a route that has not existed since the rename** — the client sends `PATCH /activity/{id}/Overwrite`\|`/Clone`, the server has `PUT /activity/{id}/quick-edit` and `POST /activity/{id}/clone`; every quick-edit and every quick-clone 404s in four dialogs across two modules, and the rejection is swallowed so the whole form save is discarded with no message. Folds the toggle-off half: with quick-edit **off** the Name field is a live-looking no-op. **Sixteenth pass, from the endpoint source:** the two modes differ in **verb and response shape** (`PUT` → **204, no body**; `POST` → **200 carrying the new id**), so the one templated `API.patch(…/${mode})` cannot be repaired by renaming the path segment — it has to split in two | app (`activityApi.ts`, `QuickEditMode.ts`, `ActivitySelectOrQuickEditFormField.vue`) | `planner-day/X1` (both halves) | med |
 | F75 | `viewEndDate` never rolls an overnight view onto the next day — with the seed's `bedTime` of `00:00` it resolves to **today at midnight**, so `isDayMateriallyDone` is true all day and the plan-vs-actual verdict ("3 tasks never happened") renders at 19:54 on a day that is not over | app (`dayPlannerStore.ts:157-170`) | `planner-day/B7` | low |
 | F76 | ✅ **FIXED 2026-09-21** (same session as `F73`, per its ordering constraint) — `:precision="null"` on the `estimatedHours` `VNumberInput`; the edit dialog now opens on "8.5", and a two-decimal `8.25` submits and persists as `8.25`. Body in the log | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
-| F77 | Leisure create forms send a submission the server will name a field for, and the field never hears about it — Location/Weather/Cost and the anchor's Highlight carry no `required` rule, and neither `onConfirm` catches the write, so a 400 whose body says *"'highlight Note' must not be empty."* surfaces only as the interceptor's generic snackbar (the half `F63` deliberately left) | app (`{Backlog,MemoryAnchor}ProfileForm.vue`, `New{Backlog,MemoryAnchor}…Form.vue`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
+| F77 | ✅ **FIXED 2026-09-21** (same session as `F63`) — required rules on every field the API's `Create*Validator` rejects empty (backlog Location/Weather/Cost, bucket-list Experience type + Inspiration source, anchor Highlight, project Project area), and a leisure `useServerFieldErrors` composable over `extractServerFieldError` that each wrapper form's `onConfirm` routes a caught 400 through, dialog kept open. Verified live: untouched *Create* → required messages and no `POST`; a server-only refusal (*Read a Novel*, already profiled) → *"Activity already has a backlog profile."* under the Activity field. Body in the log | app (`New{Backlog,BucketList,MemoryAnchor,Project}…Form.vue` + their wrappers, `composable/useServerFieldErrors.ts`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
 | F78 | Two more primary click targets built as bare `<div>`s: the projects board card (the only way to open the edit dialog) and the template grid's background-task block — no role, no `tabindex`, no key handler; the template one is skipped by Tab *and* immune to Escape while its own help text says "Tab moves between tasks" | app (`ProjectReadinessBoard.vue:64-71`, the template grid's background block) | `leisure-projects/A4`, `planner-templates/A4` | low |
 | F79 | Filtering to zero renders the *"you have none at all"* onboarding copy and its Add CTA — on the projects board and table today, and by construction on all four leisure surfaces, which came out of one `L4` pass; every leisure filter DTO already has the `hasAny()` the branch needs | app (`src/core/leisure/` — 4 tables + board + ladder) | `leisure-projects/P3` | low |
 | F80 | The board card's metadata line reads "Woodworking· 8.5h" — two adjacent `v-if` templates each lead with `· ` and neither emits a leading space | app (`ProjectReadinessBoard.vue:86-98`) | `leisure-projects/P2` | trivial |
@@ -141,11 +141,11 @@
 
 84 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
-`F85` is blocked on `FW24`; `F73` and `F76` landed together 2026-09-21, bodies in the log) · 24
+`F85` is blocked on `FW24`; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
 framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log) ·
-20 escalations (**2 open: §7, §19** — §7's ask has landed, so what is open there is
-the frontend half, `FW24` + `F85`, not the ask; §19 (`B24`) is the only ask still open server-side, and
-the API's working tree shows it in progress; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
+20 escalations (**1 open: §7** — §7's ask has landed, so what is open there is
+the frontend half, `FW24` + `F85`, not the ask; **§19 closed 2026-09-21** when `B24` landed and its
+frontend half shipped the same evening with `F16` folded in — no ask is open server-side; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
 frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
 the fifteenth pass; §10 closed the same day when `B16` landed and its frontend half went in; §1, §2, §3, §4, §5, §6,
@@ -846,7 +846,11 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   and confirm both survive. Re-run `edit()` from the Mappings tab and confirm the query is intact afterwards.
 - **Risk:** Medium — the same class of race as `F1`; test the edit hand-off specifically.
 
-## F16. The settings header row clips its labels at 1440 px
+## F16. The settings header row clips its labels at 1440 px — ✅ fixed 2026-09-21 with §19's frontend half
+
+> Ran **before** `F13` after all: §19's coverage toggle made the row overflow outright (the *Mappings* tab
+> was pushed out of view at 1440), so the wrap could not wait. If `F13` later hides or repoints the bar on the
+> Mappings tab, the wrap is still right — it only decides what happens when the row does not fit.
 
 - **Scope:** app-side `DesktopSettingsView.vue:7-36`, `AndroidSettingsView.vue:7-36`
 - **Closes:** `tracking-settings/B4`
@@ -2175,37 +2179,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   and toggle to Ladder: the error branch, not the empty copy.
 - **Risk:** Low. Two constants and two small template branches.
 
-## F63. Four leisure request DTOs default their lookup ids to `0` — the pickers show "0", the required rule passes, and the server is asked to create with `activityId: 0`
-
-- **Scope:** app-side `src/core/leisure/dto/request/{ActivityBacklogProfileRequest,ActivityBucketListProfileRequest,MemoryAnchorRequest,ActivityProjectProfileRequest}.ts`
-  + the four `New*Form.vue` components that bind them
-- **Closes:** `leisure-backlog-picker/X3` (the `0`-default half; the "no snackbar" half is under *Needs
-  verification* — §91), `leisure-bucket-anchors/B2` (+ the unfiled fourth DTO,
-  `ActivityProjectProfileRequest.ts:7`, found by grep: `public \w+Id: number = 0` hits eight fields in
-  four files, all in this module — `MergeActivitiesRequest.survivorId` is the only other and is set
-  before use)
-- **Root cause:** `ActivityBacklogProfileRequest.ts:6-13` defaults `activityId`, `locationTypeId`,
-  `weatherDependencyId`, `expectedCostTierId` to `0`; `ActivityBucketListProfileRequest.ts:3-4`
-  `activityId`, `experienceTypeId`; `MemoryAnchorRequest.ts:15` and `ActivityProjectProfileRequest.ts:7`
-  `activityId`. Vuetify's select/autocomplete cannot resolve `0` against any option, so it renders the
-  raw value as text — both units photographed the literal **"0"**. `requiredRule`
-  (`RulesComposition.ts:22-26`) rejects `null`/`undefined`/`''`/`[]` and nothing else, so `0` validates,
-  the form submits, and the server answers 400 `"Activity not found."` — for backlog, with the dialog
-  still open and nothing visibly changed. The same module already does this right for
-  `financialGoal: number | null = null`.
-- **What to change:** Type the eight fields `number | null` with default `null`, in constructor and
-  `fromJson`. The forms' `v-model`s then carry `null` until a pick is made; `requiredRule` blocks the
-  submit with `validation.required`; `hasObjectChanged`-style dirty checks, if any, see a real change.
-  Check every place that reads these fields as `number` (`BacklogProfileForm.vue:24-37` passes the edit
-  entity's ids — fine; `useAnchorCapture`'s `lockActivity` path sets a real id — fine) and run
-  `npm run type-check`.
-- **Do not change:** `requiredRule` — `0` is a legitimate value for a count field elsewhere; the rule is
-  right, the defaults are wrong.
-- **Verification:** `X3`'s `Verify:` step 3 and `B2`'s `Verify:` — a fresh *Add* dialog shows
-  placeholders, not "0"; *Create* with nothing selected fires **no request** and shows the required
-  message. Do the projects form too.
-- **Risk:** Low-medium — eight fields, four forms, one type-check.
-
 ## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
 
 - **Scope:** app-side `src/core/leisure/composable/useLeisurePicker.ts:250`,
@@ -3419,43 +3392,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   bug.
 
 
-## F77. Leisure create forms send what the server will reject, and the server's own per-field message never reaches the field
-
-- **Scope:** app-side `src/core/leisure/component/backlog/{NewBacklogProfileForm,BacklogProfileForm}.vue`,
-  `component/memoryAnchor/{NewMemoryAnchorForm,MemoryAnchorForm}.vue`,
-  `component/bucketList/{NewBucketListProfileForm,BucketListProfileForm}.vue`
-- **Closes:** `leisure-backlog-picker/B3 (round 2)`, `B4 (round 2)`, and the feedback half of
-  `leisure-bucket-anchors/B2` — the half `F63` explicitly left open
-- **Root cause:** two gaps that compound. (1) Only *Activity* carries `:rules="[requiredRule]"` (via
-  `ActivityAutocompleteWithCreate`); Location, Weather, Cost and the anchor's Highlight carry none, so
-  `form.validate()` passes on an empty form. (2) Neither `onConfirm` catches the write, so the server's
-  400 — whose body names the field exactly (`{"errors":{"highlightNote":["'highlight Note' must not be
-  empty."]}}`, `{"activityId":["Activity not found."]}`) — is handled only by the interceptor's generic
-  snackbar. `src/_common/axiosConfig.ts` already exports `extractServerFieldError()` built for
-  FastEndpoints' `{errors: {propertyName: [...]}}` shape and nothing here calls it.
-- **Round 2 settled the "silent 400" question that was in *Needs verification* (§91), and the answer is
-  the less alarming one.** `leisure-backlog-picker/B3` states plainly that *"a snackbar reading 'One or
-  more errors occurred!' appears and disappears within a few seconds"* — so the interceptor **does**
-  fire and there is no intermittent in the framework. What round 2 confirmed by querying every
-  `[role=alert]` in the form (all four empty) is that there is no **field-level** error, which is this
-  batch. Round 1's `X3` observation of no snackbar at all was wrong. §91 is settled and moves to the log.
-- **What to change:** add `:rules="[requiredRule]"` to Location / Weather / Cost on the backlog form and
-  to the Highlight textarea on the anchor form (check the bucket-list form's Inspiration source in the
-  same pass — the server rejects it empty too, per round 2's 400 body). Then wrap each `onConfirm`'s
-  `create`/`update` in `try/catch` and route the caught error through `extractServerFieldError` onto the
-  matching field, leaving the dialog open.
-- **After `F63`, not before.** `requiredRule` cannot fire while the models default to `0` — it accepts
-  `0` and always will (`F63`'s *Do not change*). Landing this first adds rules that validate a sentinel.
-- **Do not change:** the interceptor's generic snackbar. Its wording is `FW19`, a different batch in a
-  different repo; a field-level message is the fix here whatever the snackbar says.
-- **Verification:** `B3`'s and `B4`'s `Verify:` blocks — submit each form untouched and confirm a visible
-  required message under the specific field and **no** network request. Then force a server-side-only
-  rejection (a name the server refuses but the client rules allow) and confirm the message lands on the
-  field rather than only in the snackbar.
-- **Risk:** Low-medium. Adding required rules to fields that were effectively optional client-side can
-  block a submit that used to succeed — confirm against each endpoint's validator that all four are
-  genuinely `required` server-side before making them required here.
-
 ## F78. Two more primary click targets built as bare `div`s
 
 - **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:64-71` (the card's
@@ -3811,7 +3747,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 > | ~~§9~~ | `_done/B14-…` — landed 2026-09-21 (API `1e0dc3b`), frontend half the same day, body in the log | ~~§5~~ | `_done/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
 > | ~~§16~~ | `_done/B21-…` — landed 2026-09-21, frontend half the same day, body in the log | ~~§17~~ | `_done/B22-…` — landed 2026-09-21 as option (b), frontend half and the spec the same day, body in the log |
-> | ~~§18~~ | `_done/B23-…` — landed 2026-09-21 (API `c00e64d`), frontend half the same day (`c2075f61`, with `F47`), body in the log | §19 | `B24-distinct-entries-say-which-rule-already-covers-them.md` — **new 2026-09-21**, promoted from *Deferred* |
+> | ~~§18~~ | `_done/B23-…` — landed 2026-09-21 (API `c00e64d`), frontend half the same day (`c2075f61`, with `F47`), body in the log | ~~§19~~ | `_done/B24-…` — landed 2026-09-21 (API dev, uncommitted at the time), frontend half the same evening with `F16` folded in, body in the log |
 > | ~~§20~~ | `_done/B25-…` — landed 2026-09-21 with the decision taken (the code that trips the lock answers `UserLockedOut`), frontend half the same day, body in the log | | |
 >
 > **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
@@ -3980,7 +3916,19 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
      exactly as asked (API `c00e64d`); frontend half the same afternoon (`c2075f61`) with `F47` folded in.
      Body in _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
-19. **The distinct-entries grids should say which rule already covers each tuple** — `tracking-settings/B5`,
+19. ✅ **RESOLVED 2026-09-21** — backend `B24` landed exactly as asked (`coveredBy` on both `/grid` rows,
+    `coverage` on both filters, counts exact in every mode; the Android question answered: rules apply to
+    nothing at ingest today, so the Android chip reads "a rule exists that would match", resolved through
+    the class the sync will use). Frontend half the same evening: `MappingCoverageResponse` +
+    `MappingCoverage` enums, the *Rule* column (`MappingCoverageChip` — chip linking to
+    `…/mappings?mappingId=`, tinted there through `DataTable`'s new `highlightedId`; muted *Undecided* for
+    null), the three-way toggle in both filter bars, `?coverage=` in the URL (`useCoverageUrlState`,
+    written by the same handler that reloads — no watcher, so nothing races `edit()`'s push), the grid
+    reloaded after a save so the new rule's chips appear, and `F16` folded in because the toggle pushed the
+    Mappings tab out of the header at 1440. Default stays `All`: `edit()` lands on this tab with the
+    rule's pattern pre-filled, and `Uncovered` would hide the very rows that rule catches. Verified live on
+    both platforms. File moved to `_done/` with the reply appended; body to the log in the follow-up.
+    **The distinct-entries grids should say which rule already covers each tuple** — `tracking-settings/B5`,
     re-graded `opportunity` in §103, promoted from *Deferred to opportunities* on 2026-09-21 at the owner's
     request. The ledger is the raw observation record by design (the heartbeat stores a to-activity match
     *and* attributes it, `DesktopActivityHeartbeatEndpoint.cs:87-113`; only `IsIgnored` drops), so the row
@@ -4041,7 +3989,7 @@ it per-user defaults and nothing else (`E2eFixtureSeeder.cs:213`); no seed chang
 | finding | what settles it | note |
 | --- | --- | --- |
 | *(unfiled)* sidebar highlights *Desktop tracking* on the Mappings tab, nothing on `/activity-settings/roles` | one look at the sidebar on each route, before and after `F14` | `SidebarNavItem.vue:52` uses the same `matchesPath` as the breadcrumb, so `F14`'s data fix closes both; it must be *checked*, not assumed, because the `VBtn :to` in the header toggle is a second active-state mechanism on the same screen |
-| `tracking-settings/B5` — re-graded `bug` → `opportunity`, under *Deferred* | — | the distinct-entries grid is the raw observation ledger by design; whether it should also say "already covered by a rule" is a product question with a backend half (§103) |
+| ~~`tracking-settings/B5` — re-graded `bug` → `opportunity`, under *Deferred*~~ | ✅ **closed 2026-09-21** — `B24` landed; the *Rule* column and `?coverage=Uncovered` are the mark and the exclude the finding asked for (§19) | the distinct-entries grid is still the raw observation ledger by default (§103); the chip and the toggle are what say "already covered by a rule" |
 
 ### `history-review` — two `unverified`, both seed-shape gaps with a cheaper route than a seed change
 
@@ -4366,8 +4314,9 @@ is `required` and the update is a full replace (`F72`), so the edit path must ca
 either way; once it does, a toggle is the one control that makes the value the user's rather than
 whatever the row happened to hold.
 
-**`tracking-settings/B5` — the distinct-entries list never excludes or marks an entry that already has a
-rule** — filed `bug` by the mutation round, **re-graded `opportunity`** (§103). The expectation is the
+~~**`tracking-settings/B5` — the distinct-entries list never excludes or marks an entry that already has a
+rule**~~ — ✅ **closed 2026-09-21**: `B24` landed and the *Rule* column + `coverage` toggle shipped (§19).
+The entry stays for the audit trail. Filed `bug` by the mutation round, **re-graded `opportunity`** (§103). The expectation is the
 unit's own `usecase.md` (*"not-yet-considered"*), written by the same unit in round 1; no intent source
 (`prompts/_done/activity-tracking/R4-settings-views.md`, `B3`'s seed ask) says the list is an inbox. Read
 at the source: `FetchTableDistinctDesktopEntry.cs` groups the raw `DesktopActivityEntry` ledger by

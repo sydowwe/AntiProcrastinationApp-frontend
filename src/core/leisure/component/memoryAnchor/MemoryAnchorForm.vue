@@ -41,7 +41,7 @@
 					entityToEdit.highlightNote,
 					entityToEdit.rating,
 				)
-			: new MemoryAnchorRequest(presetActivityId ?? 0),
+			: new MemoryAnchorRequest(presetActivityId),
 	)
 
 	dialogApi.onConfirm(onConfirm)
@@ -58,8 +58,10 @@
 				const createdId = await create(request.value)
 				dialogApi.close({ request: request.value, createdId })
 			}
-		} catch {
-			// snackbar surfaced by axios interceptor; keep dialog open for retry
+		} catch (e) {
+			// The interceptor's snackbar already fired; this puts the server's per-field message under the
+			// field it names and keeps the dialog open for a retry.
+			formRef.value!.applyServerError(e)
 		} finally {
 			dialogApi.setLoading(false)
 		}

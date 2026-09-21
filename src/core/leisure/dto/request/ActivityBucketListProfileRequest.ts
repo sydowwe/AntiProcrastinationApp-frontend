@@ -1,7 +1,8 @@
+/** Lookup ids default to `null`, not `0` — see `ActivityBacklogProfileRequest` (F63). */
 export class ActivityBucketListProfileRequest {
 	constructor(
-		public activityId: number = 0,
-		public experienceTypeId: number = 0,
+		public activityId: number | null = null,
+		public experienceTypeId: number | null = null,
 		public comfortZoneStep: number = 1,
 		public requiresTravel: boolean = false,
 		public financialGoal: number | null = null,
@@ -10,8 +11,8 @@ export class ActivityBucketListProfileRequest {
 
 	static fromJson(object: any) {
 		const {
-			activityId = 0,
-			experienceTypeId = 0,
+			activityId = null,
+			experienceTypeId = null,
 			comfortZoneStep = 1,
 			requiresTravel = false,
 			financialGoal = null,

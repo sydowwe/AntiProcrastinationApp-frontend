@@ -2,9 +2,10 @@ import { DifficultyLevel } from '@/core/leisure/dto/enum/DifficultyLevel.ts'
 import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 
+/** `activityId` defaults to `null`, not `0` — see `ActivityBacklogProfileRequest` (F63). */
 export class ActivityProjectProfileRequest {
 	constructor(
-		public activityId: number = 0,
+		public activityId: number | null = null,
 		public difficultyLevel: DifficultyLevel = DifficultyLevel.Beginner,
 		public projectArea: string = '',
 		public estimatedHours: number = 1,
@@ -32,7 +33,7 @@ export class ActivityProjectProfileRequest {
 
 	static fromJson(object: any) {
 		const {
-			activityId = 0,
+			activityId = null,
 			difficultyLevel = DifficultyLevel.Beginner,
 			projectArea = '',
 			estimatedHours = 1,

@@ -10,9 +10,10 @@ function currentAnchorMonthYear(): { month: number; year: number } {
 	return { month: month!, year: year! }
 }
 
+/** `activityId` defaults to `null`, not `0` — see `ActivityBacklogProfileRequest` (F63). */
 export class MemoryAnchorRequest {
 	constructor(
-		public activityId: number = 0,
+		public activityId: number | null = null,
 		public anchorMonth: number = currentAnchorMonthYear().month,
 		public anchorYear: number = currentAnchorMonthYear().year,
 		public highlightNote: string = '',
@@ -22,7 +23,7 @@ export class MemoryAnchorRequest {
 	static fromJson(object: any) {
 		const now = currentAnchorMonthYear()
 		const {
-			activityId = 0,
+			activityId = null,
 			anchorMonth = now.month,
 			anchorYear = now.year,
 			highlightNote = '',

@@ -14,7 +14,8 @@
 			:modelValue="lockedActivityName"
 			:label="$t('leisure.fields.activity')"
 			readonly
-			hideDetails
+			:hideDetails="!serverErrors.activityId"
+			:errorMessages="serverErrors.activityId"
 			:clearable="false"
 		/>
 		<VAlert
@@ -50,6 +51,7 @@
 			:loading
 			required
 			:rules="[requiredRule]"
+			:errorMessages="serverErrors.activityId"
 		/>
 		<div class="d-flex ga-3">
 			<VNumberInput
@@ -72,6 +74,9 @@
 			:label="$t('leisure.fields.highlightNote')"
 			rows="3"
 			autoGrow
+			required
+			:rules="[requiredRule]"
+			:errorMessages="serverErrors.highlightNote"
 		/>
 		<VNumberInput
 			v-model="model.rating"
@@ -83,10 +88,11 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { onMounted, ref, watch } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import type { MemoryAnchorRequest } from '@/core/leisure/dto/request/MemoryAnchorRequest.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
+	import { useServerFieldErrors } from '@/core/leisure/composable/useServerFieldErrors.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
 
@@ -98,6 +104,7 @@
 	const model = defineModel<MemoryAnchorRequest>({ required: true })
 
 	const { requiredRule } = useGeneralRules()
+	const { serverErrors, clearServerErrors, applyServerError } = useServerFieldErrors(['activityId', 'highlightNote'])
 	const { fetchAnchorEligibleActivities } = useMemoryAnchorCrud()
 
 	const form = ref<InstanceType<typeof VForm>>()
@@ -117,13 +124,18 @@
 		}
 	})
 
+	// A server message is about the value that was submitted; any edit makes it stale.
+	watch(model, clearServerErrors, { deep: true })
+
 	async function validate() {
+		clearServerErrors()
 		return form.value!.validate()
 	}
 
 	function reset() {
+		clearServerErrors()
 		form.value?.reset()
 	}
 
-	defineExpose({ validate, reset })
+	defineExpose({ validate, reset, applyServerError })
 </script>

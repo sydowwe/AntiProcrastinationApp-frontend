@@ -1460,6 +1460,97 @@
   digits, which is what distinguishes `null` from `1`.
 - **Risk:** None app-side. The framework twin is `FW22`.
 
+## F63. Four leisure request DTOs default their lookup ids to `0` — the pickers show "0", the required rule passes, and the server is asked to create with `activityId: 0`
+> ✅ **FIXED 2026-09-21, in the same session as `F77` (its ordering constraint — `F63` first).** All
+> eight fields are `number | null = null` in constructor and `fromJson` on the four DTOs;
+> `MemoryAnchorForm` passes `presetActivityId` through instead of `?? 0`. Every consumer already typed
+> the id as nullable (`ActivityAutocompleteWithCreate`'s model is `number | null`) — `vue-tsc --build
+> --force` 0 errors, lint clean, the leisure unit tests unchanged. Verified live on `/leisure/backlog`:
+> the fresh *Add* dialog renders Location / Weather / Cost empty, not "0"; *Create* untouched shows
+> *This field is required* under Activity and (after `F77`) the three selects, and the request log
+> holds no `POST /activity-backlog-profile`. `requiredRule` untouched.
+
+- **Scope:** app-side `src/core/leisure/dto/request/{ActivityBacklogProfileRequest,ActivityBucketListProfileRequest,MemoryAnchorRequest,ActivityProjectProfileRequest}.ts`
+  + the four `New*Form.vue` components that bind them
+- **Closes:** `leisure-backlog-picker/X3` (the `0`-default half; the "no snackbar" half is under *Needs
+  verification* — §91), `leisure-bucket-anchors/B2` (+ the unfiled fourth DTO,
+  `ActivityProjectProfileRequest.ts:7`, found by grep: `public \w+Id: number = 0` hits eight fields in
+  four files, all in this module — `MergeActivitiesRequest.survivorId` is the only other and is set
+  before use)
+- **Root cause:** `ActivityBacklogProfileRequest.ts:6-13` defaults `activityId`, `locationTypeId`,
+  `weatherDependencyId`, `expectedCostTierId` to `0`; `ActivityBucketListProfileRequest.ts:3-4`
+  `activityId`, `experienceTypeId`; `MemoryAnchorRequest.ts:15` and `ActivityProjectProfileRequest.ts:7`
+  `activityId`. Vuetify's select/autocomplete cannot resolve `0` against any option, so it renders the
+  raw value as text — both units photographed the literal **"0"**. `requiredRule`
+  (`RulesComposition.ts:22-26`) rejects `null`/`undefined`/`''`/`[]` and nothing else, so `0` validates,
+  the form submits, and the server answers 400 `"Activity not found."` — for backlog, with the dialog
+  still open and nothing visibly changed. The same module already does this right for
+  `financialGoal: number | null = null`.
+- **What to change:** Type the eight fields `number | null` with default `null`, in constructor and
+  `fromJson`. The forms' `v-model`s then carry `null` until a pick is made; `requiredRule` blocks the
+  submit with `validation.required`; `hasObjectChanged`-style dirty checks, if any, see a real change.
+  Check every place that reads these fields as `number` (`BacklogProfileForm.vue:24-37` passes the edit
+  entity's ids — fine; `useAnchorCapture`'s `lockActivity` path sets a real id — fine) and run
+  `npm run type-check`.
+- **Do not change:** `requiredRule` — `0` is a legitimate value for a count field elsewhere; the rule is
+  right, the defaults are wrong.
+- **Verification:** `X3`'s `Verify:` step 3 and `B2`'s `Verify:` — a fresh *Add* dialog shows
+  placeholders, not "0"; *Create* with nothing selected fires **no request** and shows the required
+  message. Do the projects form too.
+- **Risk:** Low-medium — eight fields, four forms, one type-check.
+
+## F77. Leisure create forms send what the server will reject, and the server's own per-field message never reaches the field
+> ✅ **FIXED 2026-09-21, in the same session as `F63`.** The *Risk* check was done first: every field
+> made required here is non-nullable or `NotEmpty()` in the API's `Create*Validator` — backlog
+> Location/Weather/Cost (ownership-checked `long`s), bucket-list Experience type + Inspiration source,
+> anchor Highlight, and project Project area (`ProjectArea` is `NotEmpty()` too, so the projects form got
+> the same treatment). The `catch` half is a small leisure composable, `useServerFieldErrors(fields)`,
+> over `extractServerFieldError`: each `New*Form` binds `serverErrors.<field>` to `errorMessages`,
+> clears them before `validate()` (a stale one would fail it — `TimePeriodForm`'s lesson) and on any
+> model edit, and exposes `applyServerError`; each wrapper form's `onConfirm` catches the write and
+> routes it there, dialog open. The interceptor snackbar is untouched. The anchor form's **locked**
+> read-only Activity field takes the message too — that is the "I did this" path, where "must have a
+> Backlog or BucketList profile" would otherwise have nowhere to land. Verified live: untouched
+> backlog *Create* → four required messages, no `POST`; untouched anchor *Create* → required under
+> Activity and Highlight; then the seeded *Read a Novel* (already profiled) with all lookups filled →
+> `POST /activity-backlog-profile` 400 and *"Activity already has a backlog profile."* rendered under
+> the Activity field with the dialog still open.
+
+- **Scope:** app-side `src/core/leisure/component/backlog/{NewBacklogProfileForm,BacklogProfileForm}.vue`,
+  `component/memoryAnchor/{NewMemoryAnchorForm,MemoryAnchorForm}.vue`,
+  `component/bucketList/{NewBucketListProfileForm,BucketListProfileForm}.vue`
+- **Closes:** `leisure-backlog-picker/B3 (round 2)`, `B4 (round 2)`, and the feedback half of
+  `leisure-bucket-anchors/B2` — the half `F63` explicitly left open
+- **Root cause:** two gaps that compound. (1) Only *Activity* carries `:rules="[requiredRule]"` (via
+  `ActivityAutocompleteWithCreate`); Location, Weather, Cost and the anchor's Highlight carry none, so
+  `form.validate()` passes on an empty form. (2) Neither `onConfirm` catches the write, so the server's
+  400 — whose body names the field exactly (`{"errors":{"highlightNote":["'highlight Note' must not be
+  empty."]}}`, `{"activityId":["Activity not found."]}`) — is handled only by the interceptor's generic
+  snackbar. `src/_common/axiosConfig.ts` already exports `extractServerFieldError()` built for
+  FastEndpoints' `{errors: {propertyName: [...]}}` shape and nothing here calls it.
+- **Round 2 settled the "silent 400" question that was in *Needs verification* (§91), and the answer is
+  the less alarming one.** `leisure-backlog-picker/B3` states plainly that *"a snackbar reading 'One or
+  more errors occurred!' appears and disappears within a few seconds"* — so the interceptor **does**
+  fire and there is no intermittent in the framework. What round 2 confirmed by querying every
+  `[role=alert]` in the form (all four empty) is that there is no **field-level** error, which is this
+  batch. Round 1's `X3` observation of no snackbar at all was wrong. §91 is settled and moves to the log.
+- **What to change:** add `:rules="[requiredRule]"` to Location / Weather / Cost on the backlog form and
+  to the Highlight textarea on the anchor form (check the bucket-list form's Inspiration source in the
+  same pass — the server rejects it empty too, per round 2's 400 body). Then wrap each `onConfirm`'s
+  `create`/`update` in `try/catch` and route the caught error through `extractServerFieldError` onto the
+  matching field, leaving the dialog open.
+- **After `F63`, not before.** `requiredRule` cannot fire while the models default to `0` — it accepts
+  `0` and always will (`F63`'s *Do not change*). Landing this first adds rules that validate a sentinel.
+- **Do not change:** the interceptor's generic snackbar. Its wording is `FW19`, a different batch in a
+  different repo; a field-level message is the fix here whatever the snackbar says.
+- **Verification:** `B3`'s and `B4`'s `Verify:` blocks — submit each form untouched and confirm a visible
+  required message under the specific field and **no** network request. Then force a server-side-only
+  rejection (a name the server refuses but the client rules allow) and confirm the message lands on the
+  field rather than only in the snackbar.
+- **Risk:** Low-medium. Adding required rules to fields that were effectively optional client-side can
+  block a submit that used to succeed — confirm against each endpoint's validator that all four are
+  genuinely `required` server-side before making them required here.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
