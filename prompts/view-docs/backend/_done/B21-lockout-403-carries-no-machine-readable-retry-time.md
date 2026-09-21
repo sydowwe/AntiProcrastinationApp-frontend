@@ -171,5 +171,6 @@ deliberate:
   `generalErrors[0]` — the English sentence — a tick after the interceptor's localised one. Deleting the
   branch would have brought the English text straight back.
 
-The 2FA path's 401 `UserLockedOut` is left as the response describes: the type without the instant renders the
-open-ended wording. Not filed as a follow-up ask; it is not worth a contract change on its own.
+The 2FA path is left as is. Filed as `B25` the same day at the owner's request — with a correction: read from
+the source, `BaseValidateTwoFactorAuthForLoginEndpoint.cs:46-51` never stamps `result.ErrorType`, so that 401
+carries no type at all, not `UserLockedOut`.

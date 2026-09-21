@@ -4023,6 +4023,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
 > | ~~§16~~ | `_done/B21-…` — landed 2026-09-21, frontend half the same day, body in the log | ~~§17~~ | `_done/B22-…` — landed 2026-09-21 as option (b), frontend half and the spec the same day, body in the log |
 > | §18 | `B23-android-per-app-detail-endpoint.md` — **new 2026-09-21**, promoted from *Deferred* | §19 | `B24-distinct-entries-say-which-rule-already-covers-them.md` — **new 2026-09-21**, promoted from *Deferred* |
+> | §20 | `B25-2fa-login-lockout-carries-no-type-and-no-instant.md` — **new 2026-09-21**, `B21`'s declined follow-on; low priority | | |
 >
 > **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
 > `_implemented/` for seven of them, a directory that exists and is empty). A landed ask whose frontend
@@ -4212,6 +4213,21 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
     `AppDbContext` and the `canDelete` scan — so Android rules are CRUD-only today and apply to nothing. The
     ask frames it as a question (not yet vs. by design), not a finding. File:
     `prompts/view-docs/backend/B24-…`.
+
+20. **The 2FA login's lockout 401 carries neither the type nor the instant** — the follow-on `B21`'s
+    response named and declined (*"a separate small ask"*), filed 2026-09-21 at the owner's request so the
+    lockout contract closes on both flows. **Low priority, blocks nothing.** Read from the source, with one
+    correction to that response: `BaseValidateTwoFactorAuthForLoginEndpoint.cs:46-51` does `AddError` +
+    `Send.ErrorsAsync(401)` and never stamps `result.ErrorType`, so the 401 carries **no `errorType` at all**
+    — not `UserLockedOut` — for any of its three causes (expired/consumed session, locked out, wrong code),
+    and `LoginVerifyQrCode.vue:65-69` renders all three as *wrong code*. Reachability keeps it low: the
+    pending token is single-use, so every code attempt follows a password sign-in that checks lockout first
+    and answers the `B21` 403 with the countdown — the `:155` branch fires only when the lock lands between
+    the two steps. Ask: (1) stamp the type on all three 401s (the `B18` contract applied to this endpoint;
+    status stays 401), (2) `lockoutEndUtc` beside it on the lockout branch, (3) **decision**: should the wrong
+    code that *causes* the lock answer `UserLockedOut` rather than `InvalidTwoFactorAuthToken`. Client half
+    once landed: the dialog branches on the type; a 401 arm for that one type in
+    `resolveTypedHttpErrorMessage`. File: `prompts/view-docs/backend/B25-…`.
 
 **Looked at and deliberately not filed, same pass** — so the next reader does not re-derive them:
 `planner-day/B8` says in its own row *"do not write a
