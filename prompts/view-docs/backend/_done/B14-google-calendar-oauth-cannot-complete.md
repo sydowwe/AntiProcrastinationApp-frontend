@@ -75,3 +75,60 @@ become verifiable. The unit's `usecase.md` records them as unverifiable today.
 
 **Order:** 1 makes *Connect* reach Google; 2 makes Google come back; 3 makes the return leg pass the state
 check. Fixing 1 alone moves the failure one step later.
+
+BACKEND RESPONSE:
+
+B14 · Backend response — landed 2026-09-21 (AdhdTimeOrganizer 1e0dc3b, framework 23e13fe)
+
+All three stops are fixed server-side. The flow is now completable end to end once the redirect URI is registered in the Google console (that is an ops step,
+not a code one — listed at the bottom).
+
+Contract changes
+
+GET /api/user/google-calendar/status — gains configured
+
+{ "configured": true, "connected": false }
+
+- configured: false → this deployment has no Google OAuth client. Hide Connect and render "not available here". connected is always false in that case.
+- configured: true → the flow can run; connected says whether this account holds a refresh token, as before.
+
+GET /api/user/google-calendar/auth-url — no longer a 200 when unconfigured
+
+When configured is false this answers 503 with the standard error body:
+
+{ "statusCode": 503, "message": "...", "errors": { ... }, "errorType": "ServiceNotConfigured" }
+
+ServiceNotConfigured is a new errorType value (framework enum, so it can appear on other integrations later). You should never hit it if you branch on
+status.configured first, but word it as "not available", not as a failure to retry. No cookie is set on this response.
+
+On the 200 path the URL's redirect_uri is now <PAGE_URL>/google-calendar/callback — https://localhost:3000/google-calendar/callback in dev — so Google returns
+the user to your existing googleCalendar.routes.ts route. Nothing to change on your side.
+
+POST /api/user/google-calendar/connect — body is { code, state }, and state is required
+
+F33 must land: the validator rejects an empty state with a validation 400. The state cookie is now scoped so the browser actually sends it on this route, so a
+real round trip will pass the check. The three hand-rolled 400s now carry errorType:
+
+| errorType            | Meaning                                                                                 | What to say                                  |
+|----------------------|-----------------------------------------------------------------------------------------|----------------------------------------------|
+| CookieMissing        | the state cookie did not arrive (expired after 10 min, already consumed, or cross-site) | "Connection attempt expired — start again"   |
+| BadRequest           | cookie arrived but its state ≠ body state (a different / stale flow)                    | same wording; restart                        |
+| ExternalServiceError | Google refused the code exchange (used/expired code, revoked consent)                   | "Google rejected the connection — try again" |
+
+Success is still 204. The cookie is consumed on the first connect, so a replay of the same code/state is CookieMissing; don't retry a 204 automatically.
+
+Unchanged
+
+DELETE …/disconnect (204) and POST /api/calendar/{id}/sync-to-google — no shape change.
+
+What became verifiable
+
+GoogleCalendarCallbackView's success path and the sync leg can now be exercised against a real Google account. Order of work on your side: F33 → configured
+branch on the card → then the callback view and sync.
+
+FRONTEND HALF (2026-09-21): landed in that order — `F33` (`connect(code, state)`, `_silent`, the 400 worded by `errorType`), the `configured` branch on
+`GoogleCalendarCard` and `GoogleCalendarSyncBtn`, `F34` on the same card, Google's `access_denied` → a distinct "cancelled" toast, and the four `errorType`
+values added to the framework's `ServerErrorType`. Verified against `1e0dc3b`: status `{"configured":true,"connected":false}` → *Not connected* + *Connect*;
+fake `?code=x&state=y` → 400 `CookieMissing` → "Connection attempt expired — start again"; *Connect* → auth-url 200 → Google's `redirect_uri_mismatch` for
+`https://localhost:3000/google-calendar/callback`. So the only thing between here and a 204 is the console registration; the consent round trip and the sync
+leg are still to be exercised after it.

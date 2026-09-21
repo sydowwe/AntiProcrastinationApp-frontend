@@ -9,28 +9,30 @@
 				<VIcon icon="fab fa-google" />
 				<span>{{ i18n.t('googleCalendar.title') }}</span>
 				<VChip
-					:color="connected ? 'success' : 'error'"
+					v-if="status !== undefined"
+					:color="statusChipColor"
 					size="small"
 					density="compact"
 				>
-					{{ i18n.t(connected ? 'googleCalendar.connected' : 'googleCalendar.notConnected') }}
+					{{ i18n.t(statusChipKey) }}
 				</VChip>
 			</div>
 			<VBtn
-				:color="connected ? 'error' : 'primary'"
+				v-if="status?.configured"
+				:color="status.connected ? 'errorDark' : 'primary'"
 				:loading
 				size="small"
 				@click="toggle"
 			>
-				{{ i18n.t(connected ? 'googleCalendar.disconnect' : 'googleCalendar.connect') }}
+				{{ i18n.t(status.connected ? 'googleCalendar.disconnect' : 'googleCalendar.connect') }}
 			</VBtn>
 		</div>
 	</VCard>
 </template>
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { useGoogleCalendarApi } from '@/core/googleCalendar/api/googleCalendarApi.ts'
+	import { useGoogleCalendarApi, type GoogleCalendarStatus } from '@/core/googleCalendar/api/googleCalendarApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	// Lifted out of the framework's SecuritySection when the user module moved into `_common`:
@@ -40,19 +42,32 @@
 	const { showErrorSnackbar, showSuccessSnackbar } = useSnackbar()
 	const { getStatus, getAuthUrl, disconnect } = useGoogleCalendarApi()
 
-	const connected = ref(false)
+	// Undefined until the status answers, so the chip does not flash "Not connected" on a deployment
+	// where the integration is not available at all (`configured: false` — B14). No button is rendered
+	// there either: the auth-url endpoint would answer 503, and that is not a failure to retry.
+	const status = ref<GoogleCalendarStatus>()
 	const loading = ref(false)
 
-	getStatus().then(isConnected => {
-		connected.value = isConnected
+	const statusChipKey = computed(() => {
+		if (!status.value?.configured) return 'googleCalendar.notAvailable'
+		return status.value.connected ? 'googleCalendar.connected' : 'googleCalendar.notConnected'
+	})
+	const statusChipColor = computed(() => {
+		if (!status.value?.configured) return 'textMuted'
+		return status.value.connected ? 'success' : 'error'
+	})
+
+	getStatus().then(result => {
+		status.value = result
 	})
 
 	async function toggle() {
+		if (status.value === undefined) return
 		loading.value = true
 		try {
-			if (connected.value) {
+			if (status.value.connected) {
 				await disconnect()
-				connected.value = false
+				status.value = { ...status.value, connected: false }
 				showSuccessSnackbar(i18n.t('googleCalendar.disconnectSuccess'))
 			} else {
 				const url = await getAuthUrl()

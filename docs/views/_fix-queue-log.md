@@ -793,6 +793,79 @@
   the only new strings are ones that currently render as raw keys. The one thing to look at is the
   `vuetifyLocale` spread in `SK.ts:36` — unrelated, but it is the same file and the same shape.
 
+## F33. Google Calendar connect never sends the OAuth `state` the server requires — the client half of `B1`
+
+> ✅ **FIXED 2026-09-21**, in the same commit as the frontend half of `B14` (§9). `googleCalendarApi.ts`
+> `connect(code, state)` posts `{ code, state }` — `_silent`, because the server's 400 `message` is not
+> authored for the user and the interceptor was showing it *on top of* the view's own toast. The view
+> reads both off `route.query` (either missing → the existing failure branch) and words the 400 by its
+> `errorType`: `CookieMissing` / `BadRequest` → *"Connection attempt expired — start again"*
+> (`googleCalendar.connectExpired`), `ExternalServiceError` → *"Google rejected the connection — try
+> again"* (`connectRejected`), anything else → the generic `connectFailed`. The four values joined the
+> framework's `ServerErrorType` (`_common` commit) so the branch compares constants, not literals.
+> The optional `access_denied` branch **was** taken (owner's call, 2026-09-21): Google's Cancel shows
+> `googleCalendar.connectCancelled` on a `warningDark` snackbar instead of the failure toast — now that
+> the consent screen is reachable a Cancel will happen, and calling it a failure is misleading. `B2`'s
+> timing question is untouched by it. Verified: `goto /google-calendar/callback?code=x&state=y` →
+> `POST …/connect` body `{"code":"x","state":"y"}` → 400 — one toast in the snapshot the `goto` wrote,
+> *"Failed to connect Google Calendar"* on the pre-`B14` build (no type), *"Connection attempt expired —
+> start again"* on `1e0dc3b` (`errorType: CookieMissing`); `?error=access_denied` → the cancelled toast.
+> The end-to-end success path needs the redirect URI registered in the Google console (§9).
+
+- **Scope:** app-side `src/core/googleCalendar/api/googleCalendarApi.ts`,
+  `src/core/googleCalendar/view/GoogleCalendarCallbackView.vue`, `src/core/googleCalendar/_locales/googleCalendar.{sk,en}.ts`
+- **Closes:** `user-settings/B1` — the **client half**. The server half is *Escalations* §9 and closes
+  nothing in `src/`. Also touches the exact lines `B2` lives on: if `B2` confirms (it is re-graded
+  `unverified`, *Needs verification*), its fix lands here and nowhere else.
+- **Root cause — the finding's *"none on the frontend"* is wrong.** Read at the API source this pass:
+  `ConnectGoogleCalendarRequest` is `record (string Code, string State)`, `ConnectGoogleCalendarValidator`
+  has `RuleFor(x => x.State).NotEmpty().MaximumLength(128)`, and `ConnectGoogleCalendarEndpoint.HandleAsync`
+  compares `req.State` with the `google-oauth-state` cookie and answers a 400 on any mismatch **before
+  Google is called**. The client: `googleCalendarApi.ts:14-16` posts `{ code }` — no `state` — and
+  `GoogleCalendarCallbackView.vue:19` reads only `route.query.code`, although Google's redirect carries
+  `state=` because the auth-url endpoint put it there (`GoogleCalendarService.cs:54`). So on the day §9
+  lands and a user reaches the callback with a real code, the connect POST is a **validator 400** and
+  the view's `catch` (`:28-30`) shows *"Failed to connect Google Calendar"* — the same toast as a real
+  failure. Unobservable today only because `B1` breaks the flow one step earlier, which is how it
+  survived: the unit could not get past Google's error page to see it.
+- **What to change:** `connect(code, state)` posting `{ code, state }`; the view reads both off
+  `route.query` and treats *either* missing as the existing failure branch. **Optional, same lines, not
+  required by any finding:** branch on `route.query.error` first — `access_denied` is Google's own
+  "Cancel" — and show a softer, distinct key (`googleCalendar.connectCancelled`, SK + EN) rather than the
+  generic failure. That is the residual `B2` wanted; do it only if `B2` confirms, and say so in the
+  commit. Do **not** mark the callback route `public` to survive a session that lapsed during the consent
+  screen — a signed-out callback *should* bounce; whether the bounce preserves the destination is unit
+  15's question, not this batch's.
+- **Do not change:** the server's state check, and do not "fix" the 400 by making the client skip the
+  state — that check is the CSRF protection on the whole flow.
+- **Verification:** Two halves, and only the first is runnable today. **Now:** `playwright-cli goto
+  /google-calendar/callback?code=x&state=y`, then `playwright-cli requests` → the `POST
+  /api/user/google-calendar/connect` body must be `{"code":"x","state":"y"}`; the server answers 400
+  (cookie mismatch — expected) and the failure toast must be on screen (which is also `B2`'s check, so
+  read the snapshot the `goto` itself wrote rather than a later `find` — see §38). **After §9 (all three
+  parts):** `B1`'s `Verify:` block end to end — Google's real consent screen, back to
+  `/google-calendar/callback?code=…&state=…`, `POST …/connect` → 204, *"Google Calendar connected
+  successfully"*, the row reads **Connected**, and a reload keeps it (`GET …/status`). Then Disconnect.
+- **Risk:** None — the request is already failing, and it cannot fail worse.
+
+## F34. The Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`
+
+> ✅ **FIXED 2026-09-21** — `'error'` → `'errorDark'` on `GoogleCalendarCard.vue`'s button, in the `F33`
+> commit because the card was being rewritten for `B14`'s `configured` branch anyway (still not `FW8`,
+> which is the framework repo). Source-read only: the Connected row needs the real OAuth round trip.
+
+- **Scope:** app-side `src/core/googleCalendar/component/GoogleCalendarCard.vue:20`
+- **Closes:** nothing filed — the unfiled app-side twin of `user-settings/P1`. The finding compared the
+  two framework buttons against *"Edit"/"Connect" (both correctly `primary`, elevated)*, and it is right
+  about the state it saw; the same button reads `:color="connected ? 'error' : 'primary'"`, so once the
+  row is **Connected** it is exactly the defect `P1` describes, one card up. Not observable during the
+  pass because `B1` keeps every account disconnected.
+- **Root cause:** CLAUDE.md's colour-by-variant rule: `VBtn` defaults to `variant="elevated"`
+  (`createAppVuetify.ts:25`), and elevated takes `errorDark`; `error` is the tonal/outlined token.
+- **Do not change:** the chip on `:12` (`error`/`success` on a `VChip` — chips are not under the rule),
+  and **do not batch this with `FW8`** — same defect class, different repo (rule 1; the `F4`/`FW2` split).
+- **Verification:** Needs a Connected row; when it is reachable: both themes.
+
 ## F38. Leftover `console.log` in `TimerPresetsSection.vue` — and the lint rule that should have caught it is `off`
 
 > ✅ **FIXED 2026-09-15.** `eslint.config.ts` flipped to `'no-console': ['error', { allow: ['error',
@@ -1376,6 +1449,47 @@ as the EN fixture account renders *Constitution Day* and *Our Lady of Sorrows* a
 Slovak string. It passed against the running API on first run, which is also the proof the backfill
 reached the seed rows. SK output is unchanged by construction — the SK table is the exact strings the
 backend already sent. `history-review/B4` and `planner-day/B4` are closed in full.
+
+### §9 — ✅ RESOLVED 2026-09-21 (backend `B14` landed, API `1e0dc3b` + framework `23e13fe`; frontend half the same day). The Google Calendar OAuth flow is completable once the redirect URI is registered in the Google console
+
+**The ask, as it stood in the queue** — `user-settings/B1`, read to three server-side stops in the
+order a user hits them: (1) `ClientId` empty and `GET …/auth-url` handing out a `client_id=` URL as a
+200; (2) the redirect URI a literal `http://localhost:5173/…` while the app is `https://localhost:3000`;
+(3) the `google-oauth-state` cookie scoped to `/user/google-calendar` while the route is
+`/api/user/google-calendar/connect`, so a real browser never sent it and every connect was the *"state
+is missing"* 400 — invisible to the API's own suite, which wrote the `Cookie` header by hand. Filed as
+`B14` (`prompts/view-docs/backend/_done/B14-google-calendar-oauth-cannot-complete.md`, with the
+response appended).
+
+**The answer, 2026-09-21 — all three, plus a contract the client can branch on.** `GET …/status` gains
+`configured` (`false` → no OAuth client in this deployment; `connected` is then always `false`).
+`GET …/auth-url` answers **503 `ServiceNotConfigured`** instead of a 200 when unconfigured — a new
+framework `errorType`, never hit if the client branches on `configured` first. On the 200 path the
+`redirect_uri` is derived from the page URL + `/google-calendar/callback`. `POST …/connect` takes
+`{ code, state }`, `state` required; the cookie is scoped so the browser sends it; the three
+hand-rolled 400s carry `errorType` — `CookieMissing` (expired / consumed / cross-site), `BadRequest`
+(cookie arrived with another flow's state), `ExternalServiceError` (Google refused the exchange). The
+cookie is consumed on the first connect, so a replay is `CookieMissing` — never retry a 204. Disconnect
+and `POST /calendar/{id}/sync-to-google` unchanged. Remaining: registering the dev redirect URI in the
+Google console is an ops step, not code.
+
+**The frontend half, the same day.** Framework (`src/_common`): `ServerErrorType` gains the four values
+above, declared but deliberately not worded — their sentence depends on the flow (`docs/composables.md`).
+App: `googleCalendarApi.getStatus()` returns `{ configured, connected }` (both defaulting `false`, so an
+older server renders as *not available* rather than handing the user a broken URL); `connect(code,
+state)` is `F33`; `GoogleCalendarCard` holds the status as one optional object — no chip until it
+answers, *"Not available here"* (`googleCalendar.notAvailable`, `textMuted`) with **no button** when
+`configured` is false, the old Connected / Not connected pair otherwise; `dayPlanner`'s
+`GoogleCalendarSyncBtn` reads the same status and stays hidden when unconfigured. Verified twice the
+same day: against the pre-`B14` build the card read *Not available here* with no button (the missing
+`configured` defaults to `false`); after restarting the API on `1e0dc3b`, `GET …/status` →
+`{"configured":true,"connected":false}` (the dev box holds a client id in user-secrets), the card reads
+**Not connected** + *Connect*, `?code=x&state=y` → `POST …/connect` 400 `CookieMissing` → *"Connection
+attempt expired — start again"*, `?error=access_denied` → *"Google Calendar connection cancelled"*, and
+*Connect* → `GET …/auth-url` 200 → Google's **`redirect_uri_mismatch`** page for
+`https://localhost:3000/google-calendar/callback` — i.e. the right URI, not yet registered in the
+console. That registration is the one remaining step before the consent round trip and the sync leg
+can be run; `user-settings/usecase.md` records them as `unverified` until then.
 
 ### §10 — ✅ RESOLVED 2026-09-16 (backend `B16` landed on its working tree, verified and extended 2026-09-21, **not yet committed there**; frontend half in this tree the same day). Two sentinels for one folded-tail row
 

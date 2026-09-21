@@ -1,6 +1,6 @@
 <template>
 	<VBtn
-		v-if="!store.isTemplateInPreview && calendarId !== undefined"
+		v-if="configured && !store.isTemplateInPreview && calendarId !== undefined"
 		:loading="loading"
 		color="secondaryOutline"
 		variant="tonal"
@@ -29,11 +29,16 @@
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
 
+	// Hidden until the status answers `configured: true` — a deployment without a Google OAuth client
+	// has nothing to connect or sync to (B14).
+	const configured = ref(false)
 	const connected = ref(false)
 	const loading = ref(false)
 
 	onMounted(async () => {
-		connected.value = await getStatus()
+		const status = await getStatus()
+		configured.value = status.configured
+		connected.value = status.connected
 	})
 
 	async function handleClick() {

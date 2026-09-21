@@ -62,8 +62,8 @@
 | F30 | Summary cards are named "View details for X" and toggle a highlight; the history card does not activate from the keyboard (**`activityTracking` half withdrawn** — §80: its cards open a detail panel and already have key handlers) | app | `history-review/P1` | low |
 | F31 | Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas; `isNarrow` is a dead prop | app | `history-review/P2` | low-med |
 | F32 | `/activity-history/calendar` has no `<h1>`, unlike its two siblings | app | `history-review/P3` | trivial |
-| F33 | Google Calendar connect never sends the OAuth `state` the server's validator requires — the client half of `B1`, unobservable only because the server half breaks the flow one step earlier | app | `user-settings/B1` (client half; server half is §9) | low |
-| F34 | Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`, on the very row the unit compared against | app | *(unfiled twin of `user-settings/P1`)* | trivial |
+| F33 | ✅ **FIXED 2026-09-21** (with the `configured` branch `B14` added, same commit) — Google Calendar connect never sends the OAuth `state` the server's validator requires — the client half of `B1`, unobservable only because the server half breaks the flow one step earlier | app | `user-settings/B1` (client half; server half is §9) | low |
+| F34 | ✅ **FIXED 2026-09-21** (one token, in the `F33` commit — same card, not `FW8`) — Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`, on the very row the unit compared against | app | *(unfiled twin of `user-settings/P1`)* | trivial |
 | F35 | ✅ **FIXED 2026-09-15** (merge chosen) — `dateTime.secondsShort` renders raw on every running clock — and `general.from`/`general.to` on every `TimeRangePicker` in range mode: the app-side `common` mirror is written per consumer, has leaked four times, and should become the deep-merge `SK.ts` already does for `user` | app (`src/locales/`) + CLAUDE.md | `history-capture/B1` (+ two unfiled twins) | low (decision: merge vs. patch) |
 | F36 | Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
 | F37 | Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
@@ -1360,66 +1360,8 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None beyond layout — but it is the `F12` class of layout (a definite-height flex chain), so
   look at the result rather than trusting the a11y tree.
 
-## F33. Google Calendar connect never sends the OAuth `state` the server requires — the client half of `B1`
-
-- **Scope:** app-side `src/core/googleCalendar/api/googleCalendarApi.ts`,
-  `src/core/googleCalendar/view/GoogleCalendarCallbackView.vue`, `src/core/googleCalendar/_locales/googleCalendar.{sk,en}.ts`
-- **Closes:** `user-settings/B1` — the **client half**. The server half is *Escalations* §9 and closes
-  nothing in `src/`. Also touches the exact lines `B2` lives on: if `B2` confirms (it is re-graded
-  `unverified`, *Needs verification*), its fix lands here and nowhere else.
-- **Root cause — the finding's *"none on the frontend"* is wrong.** Read at the API source this pass:
-  `ConnectGoogleCalendarRequest` is `record (string Code, string State)`, `ConnectGoogleCalendarValidator`
-  has `RuleFor(x => x.State).NotEmpty().MaximumLength(128)`, and `ConnectGoogleCalendarEndpoint.HandleAsync`
-  compares `req.State` with the `google-oauth-state` cookie and answers a 400 on any mismatch **before
-  Google is called**. The client: `googleCalendarApi.ts:14-16` posts `{ code }` — no `state` — and
-  `GoogleCalendarCallbackView.vue:19` reads only `route.query.code`, although Google's redirect carries
-  `state=` because the auth-url endpoint put it there (`GoogleCalendarService.cs:54`). So on the day §9
-  lands and a user reaches the callback with a real code, the connect POST is a **validator 400** and
-  the view's `catch` (`:28-30`) shows *"Failed to connect Google Calendar"* — the same toast as a real
-  failure. Unobservable today only because `B1` breaks the flow one step earlier, which is how it
-  survived: the unit could not get past Google's error page to see it.
-- **Files:** `googleCalendarApi.ts:14-16`; `GoogleCalendarCallbackView.vue:18-32`; both locale files if the
-  optional branch below is taken. Reference only —
-  `AdhdTimeOrganizer/application/endpoint/user/command/googleCalendar/ConnectGoogleCalendarEndpoint.cs`,
-  `application/validator/ConnectGoogleCalendarValidator.cs`.
-- **What to change:** `connect(code, state)` posting `{ code, state }`; the view reads both off
-  `route.query` and treats *either* missing as the existing failure branch. **Optional, same lines, not
-  required by any finding:** branch on `route.query.error` first — `access_denied` is Google's own
-  "Cancel" — and show a softer, distinct key (`googleCalendar.connectCancelled`, SK + EN) rather than the
-  generic failure. That is the residual `B2` wanted; do it only if `B2` confirms, and say so in the
-  commit. Do **not** mark the callback route `public` to survive a session that lapsed during the consent
-  screen — a signed-out callback *should* bounce; whether the bounce preserves the destination is unit
-  15's question, not this batch's.
-- **Do not change:** the server's state check, and do not "fix" the 400 by making the client skip the
-  state — that check is the CSRF protection on the whole flow. Not `GoogleCalendarCard.vue` (that is
-  `F34`).
-- **Verification:** Two halves, and only the first is runnable today. **Now:** `playwright-cli goto
-  /google-calendar/callback?code=x&state=y`, then `playwright-cli requests` → the `POST
-  /api/user/google-calendar/connect` body must be `{"code":"x","state":"y"}`; the server answers 400
-  (cookie mismatch — expected) and the failure toast must be on screen (which is also `B2`'s check, so
-  read the snapshot the `goto` itself wrote rather than a later `find` — see §38). **After §9 (all three
-  parts):** `B1`'s `Verify:` block end to end — Google's real consent screen, back to
-  `/google-calendar/callback?code=…&state=…`, `POST …/connect` → 204, *"Google Calendar connected
-  successfully"*, the row reads **Connected**, and a reload keeps it (`GET …/status`). Then Disconnect.
-- **Risk:** None — the request is already failing, and it cannot fail worse.
-
-## F34. The Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`
-
-- **Scope:** app-side `src/core/googleCalendar/component/GoogleCalendarCard.vue:20`
-- **Closes:** nothing filed — the unfiled app-side twin of `user-settings/P1`. The finding compared the
-  two framework buttons against *"Edit"/"Connect" (both correctly `primary`, elevated)*, and it is right
-  about the state it saw; the same button reads `:color="connected ? 'error' : 'primary'"`, so once the
-  row is **Connected** it is exactly the defect `P1` describes, one card up. Not observable during the
-  pass because `B1` keeps every account disconnected.
-- **Root cause:** CLAUDE.md's colour-by-variant rule: `VBtn` defaults to `variant="elevated"`
-  (`createAppVuetify.ts:25`), and elevated takes `errorDark`; `error` is the tonal/outlined token.
-- **Files:** `GoogleCalendarCard.vue:20`
-- **What to change:** `'error'` → `'errorDark'`. One token.
-- **Do not change:** the chip on `:12` (`error`/`success` on a `VChip` — chips are not under the rule),
-  and **do not batch this with `FW8`** — same defect class, different repo (rule 1; the `F4`/`FW2` split).
-- **Verification:** Needs a Connected row, so blocked on §9 + `F33` like everything else on that card;
-  until then a one-line source read is the whole check. When it is reachable: both themes.
-- **Risk:** None.
+<!-- F33 + F34 (Google Calendar: send `state`; `errorDark` on the Disconnect button) fixed 2026-09-21
+     together with the frontend half of `B14` (§9). Bodies in _fix-queue-log.md → Closed batches. -->
 
 ## F36. Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take a time-of-day default
 
@@ -1768,8 +1710,8 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   the baseline comparison the card already shows, not a session count. `AndroidPieTotals.totalSessions`
   is span-wide. So the *"session count"* half of the pass condition is a **backend ask** (the Android
   sibling of desktop's `process-details` — sessions per app, first/last use, mean session length, from
-  the `AndroidSessionData` rows the endpoint already groups) and is recorded under *Deferred to
-  opportunities*, not batched here.
+  the `AndroidSessionData` rows the endpoint already groups) and is now **written as `B23`** — escalation
+  §18, `prompts/view-docs/backend/B23-android-per-app-detail-endpoint.md` — not batched here.
 - **Files:** `AndroidPieChartSection.vue:57-78` (the panel), `:95-102` (props), `:110` (model);
   `AndroidActivityDashboard.vue:81-91` (the mount — `summaryCardsData` is in scope at `:61` and can be
   passed down); `activityTracking.{sk,en}.ts` `pieChart` block
@@ -4033,12 +3975,19 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 >
 > | § | file | § | file |
 > | --- | --- | --- | --- |
-> | ~~§11~~ | `_implemented/B10-…` — landed, body in the log | ~~§10~~ | `_implemented/B16-…` — landed, body in the log |
-> | ~~§6 + §13~~ | `_implemented/B11-…` — landed, body in the log | ~~§15~~ | `_implemented/B17-…` — landed, body in the log |
-> | ~~§12~~ | `_implemented/B12-…` — landed, body in the log | §7 | `_implemented/B18-…` — **ask landed 2026-09-21; frontend half open as `FW24` + `F85`** |
-> | ~~§14~~ | `_implemented/B13-…` — landed, body in the log | ~~§8~~ | `_done/B19-…` — decided and landed 2026-09-21, frontend half the same day, body in the log |
-> | §9 | `B14-google-calendar-oauth-cannot-complete.md` | ~~§5~~ | `_implemented/B20-…` — landed, body in the log |
+> | ~~§11~~ | `_done/B10-…` — landed, body in the log | ~~§10~~ | `_done/B16-…` — landed, body in the log |
+> | ~~§6 + §13~~ | `_done/B11-…` — landed, body in the log | ~~§15~~ | `_done/B17-…` — landed, body in the log |
+> | ~~§12~~ | `_done/B12-…` — landed, body in the log | §7 | `_done/B18-…` — **ask landed 2026-09-21; frontend half open as `FW24` + `F85`** |
+> | ~~§14~~ | `_done/B13-…` — landed, body in the log | ~~§8~~ | `_done/B19-…` — decided and landed 2026-09-21, frontend half the same day, body in the log |
+> | ~~§9~~ | `_done/B14-…` — landed 2026-09-21 (API `1e0dc3b`), frontend half the same day, body in the log | ~~§5~~ | `_done/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
+> | §16 | `B21-lockout-403-carries-no-machine-readable-retry-time.md` — **new 2026-09-21** | §17 | `B22-2fa-login-dialog-unreachable-by-a-spec.md` — **new 2026-09-21** |
+> | §18 | `B23-android-per-app-detail-endpoint.md` — **new 2026-09-21**, promoted from *Deferred* | §19 | `B24-distinct-entries-say-which-rule-already-covers-them.md` — **new 2026-09-21**, promoted from *Deferred* |
+>
+> **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
+> `_implemented/` for seven of them, a directory that exists and is empty). A landed ask whose frontend
+> half is still open (`B18` today) is also in `_done/`; the open half is tracked by its `FW`/`F` batch, not by
+> the file's location.
 >
 > **The fifteenth pass added none**, out of 23 new findings — the first pass since unit 3 to add zero.
 > That is not because nothing looked server-side: four findings were filed or guessed as backend gaps
@@ -4068,7 +4017,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 
 
 7. ✅ **THE ASK LANDED 2026-09-21** (`AdhdTimeOrganizer` `cd0a252`; the prompt file moved to
-   `backend/_implemented/` and carries the full response). **This paragraph stays only because the
+   `backend/_done/` and carries the full response). **This paragraph stays only because the
    frontend half has not started** — it is `FW24` (framework: read `errorType`, word each 409 and 403)
    and `F85` (app: narrow the two `_silent` call sites), in that order. Delete this entry and move the
    body to the log when both land.
@@ -4143,53 +4092,13 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
      joined the locale deep-merge). `planner-day.draft.spec.ts`'s `fixme` is a passing test. Body in
      _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
-9. **The Google Calendar OAuth flow cannot complete against this API, for three separate server-side
-   reasons — and only the first is the one the unit saw** — `user-settings/B1`. The unit's evidence is
-   exact (`GET …/auth-url` → 200, then Google's *"Missing required parameter: client_id"*) and its guess
-   (*"a missing OAuth client ID in this dev environment"*) is right, but it is the first of three, and
-   fixing it alone moves the failure one step later. Read at the source this pass, in the order a user
-   would hit them:
-
-   1. **The client id is empty, and the endpoint knows it and returns 200 anyway.**
-      `AdhdTimeOrganizer/appsettings.json:19-23` is `"GoogleCalendar": { "ClientId": "", "ClientSecret": "",
-      "RedirectUri": "http://localhost:5173/google-calendar/callback" }`; `appsettings.Development.json`
-      carries no `GoogleCalendar` key (searched every `appsettings*.json`), so unless user-secrets fill it
-      in — and the observed URL says they do not — `GoogleCalendarService.GetAuthUrl` (`:40-54`) builds
-      `?client_id=&redirect_uri=…` from `Uri.EscapeDataString("")` and `GetGoogleCalendarAuthUrlEndpoint`
-      sends it as a 200. **Two asks:** configure the id/secret for the dev environment (they have to be
-      registered in the Google console against the redirect URI below, so this is not a one-line edit);
-      and **refuse to hand out a URL that cannot work** — when `ClientId` is empty, answer a
-      `503`/`notConfigured` (or expose `configured: false` on `GET …/status`) so the client can render
-      *"not available here"* and hide *Connect*, instead of shipping the user to Google's error page. Note
-      the adjacent trap: if the key were *absent* rather than empty, `Uri.EscapeDataString(null!)` throws
-      and this is a 500 with an `errorId` — the empty string is what makes it a silent 200.
-   2. **The redirect URI points at port 5173 over `http`.** The dev server is `https://localhost:3000`
-      (`.env.development` `VITE_APP_URL`; CLAUDE.md's *Browser verification*), so once step 1 is
-      configured Google will send the user, code in hand, to a port nothing listens on. It must match
-      `VITE_APP_URL` + `/google-calendar/callback` **and** be registered in the console — Google rejects
-      an unregistered `redirect_uri` with its own error page, which would read as a fourth bug.
-   3. **The state cookie is set on a path the connect route can never match.** `GetGoogleCalendarAuthUrlEndpoint`
-      appends `google-oauth-state` with `Path = "/user/google-calendar"` (`Secure`, `HttpOnly`,
-      `SameSite=Strict`, 10 min), and `ConnectGoogleCalendarEndpoint` deletes it with the same path — but
-      `Program.cs:622` sets `config.Endpoints.RoutePrefix = "api"`, so the browser's request is
-      `POST /api/user/google-calendar/connect`, and a cookie scoped to `/user/google-calendar` is **not
-      sent** to a path that does not start with it. `hasStateCookie` is therefore always `false` from a
-      real browser and every connect is the *"OAuth state is missing or does not match"* 400. The API's
-      own suite passes because `GoogleCalendarConnectionTests.cs:88-96` writes the `Cookie` header **by
-      hand** — it never exercises path matching. Ask: `Path = "/api/user/google-calendar"` (derived from
-      the prefix, not a second literal), and one test that round-trips through a `CookieContainer` so the
-      path is actually matched. One more thing to confirm while there: `SameSite=Strict` is fine in dev
-      (`localhost:3000` → `localhost:8080` is one site; ports do not count) — in production the app and
-      API origins must share a registrable domain or the cookie will not ride the POST at all.
-
-   **Order matters:** 1 makes *Connect* reach Google; 2 makes Google come back; 3 makes the return leg
-   pass the state check; and **`F33` on this side must land before 3 can be verified**, because the
-   client currently omits `state` from the body entirely. None of this blocks a unit — the
-   `GoogleCalendarCallbackView` success path and the whole `googleCalendar` module's sync leg
-   (`POST /calendar/{id}/sync-to-google`) stay unverifiable until all four land, which the unit's
-   `usecase.md` already records. **Do not write a backend prompt file for this** (the implementer does —
-   the convention is in `prompts/_done/user/backend/README.md`, and the finished asks sit in
-   `prompts/view-docs/backend/_done/`); this paragraph is the evidence to paste into it.
+<!-- §9 (Google Calendar OAuth cannot complete — `user-settings/B1`) closed 2026-09-21: `B14` landed all
+     three server-side stops (API `1e0dc3b`, framework `23e13fe`) — `configured` on `GET …/status`, 503
+     `ServiceNotConfigured` from `…/auth-url`, the redirect URI derived from the page URL, the state
+     cookie re-scoped to the `/api` prefix, and `errorType` on the three hand-rolled 400s — and the
+     frontend half (`F33` + the `configured` branch + `F34`) landed the same day. The real Google round
+     trip still needs the redirect URI registered in the console (ops). Body in _fix-queue-log.md →
+     Closed escalations. Number retired, not reused. -->
 
 <!-- §10 (two sentinels for one folded-tail row: the four pie endpoints said "Other", the four stacked-bars
      ones "_other", and the client understood only the second) resolved 2026-09-16 — backend landed `B16`
@@ -4221,6 +4130,67 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 <!-- §14 (auth/B6, unconfirmed login answered 401) resolved 2026-09-15 — body in _fix-queue-log.md → Closed escalations. Number retired, not reused; the list below keeps its source numbering. -->
 
 <!-- §15 (history-capture/B4, POST /activity-history accepted a zero-length row) resolved 2026-09-15 — body in _fix-queue-log.md → Closed escalations. Number retired, not reused. The validator is now `Length.TotalSeconds > 0` on both POST and PUT; it decided `F67`'s (a)-vs-(b) question as **(a)**, which is recorded in `F67` itself. -->
+
+16. **The lockout 403 carries the remaining time only inside an English sentence** — `auth/U4`, promoted
+    from *Needs verification* 2026-09-21, where it was named as *"the ceiling without a contract change"*.
+    `PasswordSignInFlow.cs:165-172` answers with `errorType: UserLockedOut` (since `B18`) and one
+    interpolated string, *"Too many failed login attempts. Try again in {m}m {s}s"*, and the deadline is on
+    the wire nowhere else. So the client ships both bad options at once: `LoginView.vue:180-185` substring-
+    matches the English sentence and shows it verbatim in a Slovak UI, while the typed branch
+    `FW24` added (`ErrorHandlingFunctions.ts:81-82`, `httpErrors.forbiddenLockedOut`) is localised but has to
+    say *"try again later"* because it cannot say how much later without word-matching, which `B18`'s own
+    contract forbids. Ask: `lockoutEndUtc` on that one body, absent everywhere else. One field wide on both
+    sides; blocks nothing. File: `prompts/view-docs/backend/B21-…`.
+
+17. **No spec can reach the 2FA login dialog, because the TOTP secret only ever leaves the server as a
+    picture** — `auth/U2`, promoted 2026-09-21 (its row said *"a one-paragraph seed ask if the operator wants a
+    spec; belongs in `B3`'s family"*, and `B3` is closed). Written against `e2eTestSeed.md`'s admission rule:
+    a spec *can* enrol 2FA on `secondaryUser` under `freshSeed` (rule 2), but `TwoFactorAuthResponse` carries
+    only a base64 PNG — `GenerateQrCode` renders the `otpauth://` URI through QRCoder and the secret string is
+    never sent (`TwoFactorAuthService.cs:161-175`) — so the spec would have to decode an image to generate a
+    code. Registration does not help (unconfirmed → `B13`'s gate). Two shapes offered, the backend picks:
+    **(b)** a `sharedKey` string beside `qrCode`, which is also the missing *"enter this key manually"*
+    fallback for a user who cannot scan their own screen; or **(a)** a seeded `twoFactorUser` (10004, `e2e-v5`)
+    whose secret the seed response echoes. Blocks nothing — `auth.draft.spec.ts:104`'s `fixme` and the
+    dialog's only automated coverage. File: `prompts/view-docs/backend/B22-…`.
+
+18. **An Android per-app detail read, the sibling of desktop's `process-details`** — `tracking-dashboards/B2`
+    as narrowed by §79, promoted from *Deferred to opportunities* item (1) on 2026-09-21 at the owner's
+    request. Not a defect: `F47` ships the local panel (total, share, package) from `props.apps`, and says
+    itself not to fetch against an endpoint that does not exist. Every summary card is still named *"View
+    details for {app}"* (`ActivityDomainCard.vue:8`) for a click that can show nothing more, because no Android
+    response carries a per-app session count, first/last use or session length — `seconds == totalSeconds`
+    by construction (`AndroidPieChartEndpoint.cs:57-58`), `totalSessions` is span-wide. The rows exist
+    (`AndroidSessionData`: `DeviceId`, `PackageName`, `SessionStartUtc`, `SessionEndUtc`, `DurationSeconds`).
+    Ask: `GET /activity-tracking/android/app-details` with desktop's query parameters and window semantics
+    (`ToDailyWindows().Restrict()` on `SessionStartUtc`), 404 on no rows, no invented Active/Background split
+    (`F48`). Client half: the watcher `DesktopPieChartSection.vue:169-188` already has, under `F47`'s rows.
+    File: `prompts/view-docs/backend/B23-…`.
+
+19. **The distinct-entries grids should say which rule already covers each tuple** — `tracking-settings/B5`,
+    re-graded `opportunity` in §103, promoted from *Deferred to opportunities* on 2026-09-21 at the owner's
+    request. The ledger is the raw observation record by design (the heartbeat stores a to-activity match
+    *and* attributes it, `DesktopActivityHeartbeatEndpoint.cs:87-113`; only `IsIgnored` drops), so the row
+    reappearing after a rule is created is not a defect — but nothing tells the user which rows still need a
+    decision, and the client cannot join the two grids: the match is first-match-wins in specificity order
+    over pattern match types, active rules only, and the distinct row's `id` is `Min(e.Id)` of the ledger.
+    Ask: `coveredBy: { mappingId, target, targetName } | null` per row on both `/grid`s and a
+    `coverage: All | Uncovered | Covered` filter, default `All`, under `B11`'s conventions, not sortable
+    (`B20`). **One thing found while writing it that the backend has to answer before the Android half means
+    anything:** `AndroidSyncEndpoint.cs` never reads `TrackerAndroidMappingByPattern` — the only readers are
+    `AppDbContext` and the `canDelete` scan — so Android rules are CRUD-only today and apply to nothing. The
+    ask frames it as a question (not yet vs. by design), not a finding. File:
+    `prompts/view-docs/backend/B24-…`.
+
+**Looked at and deliberately not filed, same pass** — so the next reader does not re-derive them:
+`planner-day/B8` says in its own row *"do not write a
+backend prompt until that step has run"*; `TimePicker`'s `00:60` needs no server half —
+`TimeDtoRules.cs` already rejects `minutes > 59` with a 400, which settles the *"may or may not normalise"*
+note; and the three seed rows in *Seed-data gaps* (>25 desktop mappings, 2–3 projects across readiness
+statuses, one sleep-less calendar day) all fail `e2eTestSeed.md`'s question 2 — the spec creates them
+through the API, or `route`-mocks the body. One rule-1 answer found on the way: `history-review/U1`'s
+first-run state needs an account with **zero** history, and `adminUser` (10003) is one — the seeder gives
+it per-user defaults and nothing else (`E2eFixtureSeeder.cs:213`); no seed change needed.
 
 ## Needs verification (unverified findings, and what would settle each)
 
@@ -4533,7 +4503,7 @@ The other side is less finished than that wording implies.
 | what | state on 2026-09-21 | what settles it |
 | --- | --- | --- |
 | `FoldedRow.cs` (`Sentinel = "_other"`) and the seven endpoints that now reference it | **untracked / modified in the API working tree** — `git status` in `AdhdTimeOrganizer` shows `?? …/domain/helper/FoldedRow.cs` and seven `M` endpoint files; no commit carries them. The backend re-verified the change later on 2026-09-21 and added a second parity theory (`StackedBars_FoldTheTailUnderTheSameSentinelOnEverySource`, 15/15 green) — **and said "still on dev, uncommitted" again** | Commit them there, then re-drive one pie dashboard. Until then the four pie endpoints still send the literal `"Other"` on any server you can actually reach, so the legend shows an untranslated *Other* and §10's (a) and (b) both still reproduce |
-| the double-fold collision — *"please confirm the merge path sums rather than overwrites"*, the one question the backend asked back | **answered from the code, no browser needed: it sums.** Both sections accumulate into a single `otherSeconds` and push one segment (`ActivityPieChartSection.vue:126-146`, `UnifiedPieChartSection.vue:243-253`); the new guard (`d.domain !== OTHER_DOMAIN && percent >= threshold`) sends the server's folded row into that accumulator unconditionally, so a server row above the local 3 % threshold merges instead of surviving as a second identical legend entry | ✅ Replied 2026-09-21 — *FRONTEND ANSWER* appended to `_implemented/B16-…`, together with "nothing to do" on their History follow-up offer (`F84` is the client, the builder was already `_other`). No test needed |
+| the double-fold collision — *"please confirm the merge path sums rather than overwrites"*, the one question the backend asked back | **answered from the code, no browser needed: it sums.** Both sections accumulate into a single `otherSeconds` and push one segment (`ActivityPieChartSection.vue:126-146`, `UnifiedPieChartSection.vue:243-253`); the new guard (`d.domain !== OTHER_DOMAIN && percent >= threshold`) sends the server's folded row into that accumulator unconditionally, so a server row above the local 3 % threshold merges instead of surviving as a second identical legend entry | ✅ Replied 2026-09-21 — *FRONTEND ANSWER* appended to `_done/B16-…`, together with "nothing to do" on their History follow-up offer (`F84` is the client, the builder was already `_other`). No test needed |
 | two fold thresholds for one concept (server `minPercent: 1`, client 3 %) | unchanged, and now commented in both sections | Deliberately deferred — it is `tracking-dashboards` deferred item (2), not a defect |
 
 Not a finding against either repo, and **not** a reason to revert anything here: the guard is a no-op
@@ -4586,9 +4556,12 @@ process legitimately keeps appearing: the list is what was observed, not what is
 `vlc.exe` row the unit re-found after creating its rule is the ledger working. What is real is the
 product gap the unit names — nothing tells a user which tuples already have a rule — and it has a
 backend half (a flag per tuple, or an exclude toggle; `B3`'s note that the seeder drops *ignored* tuples
-"the way the heartbeat would" is the same design stated from the seed side). Goes to
-`docs/opportunities.md` at Phase 4; the client cannot join the two grids alone (the unit's own
-*Suggested fix* says why — pattern match types have no id to join on).
+"the way the heartbeat would" is the same design stated from the seed side). ~~Goes to
+`docs/opportunities.md` at Phase 4~~ — **written as `B24` on 2026-09-21** (escalation §19,
+`prompts/view-docs/backend/B24-distinct-entries-say-which-rule-already-covers-them.md`); the client cannot
+join the two grids alone (the unit's own *Suggested fix* says why — pattern match types have no id to join
+on). The write-up found that `AndroidSyncEndpoint` never consults the Android mappings at all, which the ask
+puts to the backend as a question before its Android half can mean anything.
 
 **`activity-settings/O1` — role and category icons are picked in the forms, sent by the API, rendered in
 the activity picker, and shown in neither settings table.** Confirmed from the column lists
@@ -4647,7 +4620,9 @@ per-app detail endpoint** — the sibling of desktop's `GET /activity-tracking/d
 name. The rows exist (`AndroidSessionData`: `SessionStartUtc`, `DurationSeconds`, per package), so
 session count, first/last use and mean session length are one `GroupBy` away server-side; the client
 half is `DesktopPieChartSection.vue:169-188`'s watcher, copied. Not a defect — the web dashboard's
-detail is also local-only — but it is the feature the label promises. **(2) The pie sections' *Other*
+detail is also local-only — but it is the feature the label promises. **Written as `B23` on 2026-09-21**
+(escalation §18, `prompts/view-docs/backend/B23-android-per-app-detail-endpoint.md`); it leaves this list
+when the ask lands. **(2) The pie sections' *Other*
 bucket is computed in two places at two thresholds** (server at `minPercent: 1`; the web **and unified**
 clients at 3 % — the note said "web client" and undercounted by one — the other two not at all). §10
 settled the sentinel on 2026-09-16, and its frontend half had to teach both local bucketers to fold the

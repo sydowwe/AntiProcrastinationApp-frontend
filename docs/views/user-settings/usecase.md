@@ -29,7 +29,10 @@ data, connect Google Calendar, or delete their account.
 - Edit their email or password (each opens a framework dialog; both warn that the change logs out
   every other device).
 - Toggle two-factor authentication (not exercised in this pass — see *Depends on*).
-- Connect a Google Calendar account (currently broken — see `findings.md` X1).
+- Connect a Google Calendar account — only when the deployment has a Google OAuth client
+  (`GET …/status` → `configured: true`, `B14`); otherwise the row reads *"Not available here"* with no
+  button. The X1 breakage is fixed server-side (2026-09-21); the real consent round trip still needs
+  the redirect URI registered in the Google console, so it stays `unverified` here.
 - Toggle "ask before deleting single items" and pick their first day of week — both are app-added
   fields (`src/core/user/dto/userAugmentation.ts`) merged onto the framework's `User`/preferences
   payload, saved via `PUT /user/preferences`. **Confirmed live in the mutation pass**: both persist
@@ -96,19 +99,28 @@ in scope per README).
 **Purpose:** the landing point for Google's OAuth redirect after a user tries to connect their
 calendar from the Security card's "Connect" button.
 **Who opens it and why:** never directly — only as a redirect target from Google's consent screen,
-carrying either `?code=…` (success) or nothing/`?error=…` (declined or failed).
+carrying either `?code=…&state=…` (success) or nothing/`?error=…` (declined or failed).
 
 **What the user can do**
 - Nothing — it's a pure redirect target with no rendered UI of its own.
 
 **What the user can see, and the question it answers**
-- Nothing. On the two failure-path edge cases exercised in this pass (no `code`, and
-  `?error=access_denied`) it silently sends the user back to `/user/settings` with **no** feedback —
-  see `findings.md` X2.
+- One toast, then `/user/settings`. `?error=access_denied` (Google's Cancel) → *"Google Calendar
+  connection cancelled"* on a warning snackbar. Otherwise `code` or `state` missing → *"Failed to
+  connect Google Calendar"*.
+  `POST …/connect` 400 worded by its `errorType` (`F33`, 2026-09-21): `CookieMissing` / `BadRequest` →
+  *"Connection attempt expired — start again"*; `ExternalServiceError` → *"Google rejected the
+  connection — try again"*; anything else → the generic failure. 204 → *"Google Calendar connected
+  successfully"*. The request is `_silent`, so the interceptor no longer adds a second toast with the
+  server's own sentence. The "silent on `?error=access_denied`" observation (`findings.md` X2) was
+  re-graded `unverified` in the queue (§38).
 
-**Depends on:** a real Google OAuth round trip for the success path, which could not be completed in
-this pass — the "Connect" button that would produce a real `?code=` redirect is itself broken (see
-`findings.md` X1), so the success path is entirely `unverified`, not just untested.
+**Depends on:** a real Google OAuth round trip for the success path. The three server-side stops are
+fixed (`B14`, 2026-09-21) and the client sends `state`; *Connect* now reaches Google, which answers
+`redirect_uri_mismatch` for `https://localhost:3000/google-calendar/callback` — the right URI, not yet
+registered in the Google console. Until that is done the success path (and the sync leg) stays
+`unverified`. Run: the fake-code check (`?code=x&state=y` → body `{"code":"x","state":"y"}` → 400
+`CookieMissing` → the expired toast), the cancel branch, and the `configured: true` card.
 
 ## Entity lifecycle
 Not an entity module in the domain sense — this unit reads and writes the account itself. Delete
