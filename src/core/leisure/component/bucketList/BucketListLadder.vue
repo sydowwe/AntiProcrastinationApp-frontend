@@ -4,24 +4,16 @@
 			v-if="loading"
 			indeterminate
 		/>
-		<template v-if="!loading && isEmpty">
-			<div class="empty-state">
-				<VIcon
-					icon="star"
-					size="40"
-					class="mb-3"
-					style="opacity: 0.3"
-				/>
-				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.bucketList') }}</p>
-				<VBtn
-					color="success"
-					variant="tonal"
-					prependIcon="plus"
-					@click="openCreateDialog"
-				>
-					{{ $t('general.add') }}
-				</VBtn>
-			</div>
+		<template v-if="!loading && (failed || isEmpty)">
+			<LeisureEmptyState
+				icon="star"
+				:message="$t('leisure.emptyStates.bucketList')"
+				:filtered
+				:failed
+				@onAdd="openCreateDialog"
+				@onClearFilters="emit('onClearFilters')"
+				@onRetry="emit('onReload')"
+			/>
 		</template>
 		<template v-else>
 			<div class="d-flex justify-end">
@@ -148,6 +140,7 @@
 </template>
 
 <script setup lang="ts">
+	import LeisureEmptyState from '@/core/leisure/component/LeisureEmptyState.vue'
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
@@ -158,8 +151,20 @@
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
-	const { items, loading } = defineProps<{ items: ActivityBucketListProfile[]; loading: boolean }>()
-	const emit = defineEmits<{ onReload: [] }>()
+	const {
+		items,
+		loading,
+		filtered = false,
+		failed = false,
+	} = defineProps<{
+		items: ActivityBucketListProfile[]
+		loading: boolean
+		/** Whether the view's filter has anything set — tells "nothing matches" from "you have none" (F79). */
+		filtered?: boolean
+		/** The last load rejected — renders the error branch, never the empty copy (F61). */
+		failed?: boolean
+	}>()
+	const emit = defineEmits<{ onReload: []; onClearFilters: [] }>()
 	// Ascending, so the page reads top-to-bottom in climb order — rung 1 first, rung 5 last.
 	const RUNG_ORDER = [1, 2, 3, 4, 5]
 
@@ -217,15 +222,6 @@
 </script>
 
 <style scoped>
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 48px 24px;
-		text-align: center;
-		color: rgba(var(--v-theme-on-surface), 0.5);
-	}
-
 	.nudge-card {
 		cursor: pointer;
 	}

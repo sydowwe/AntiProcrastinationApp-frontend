@@ -31,29 +31,20 @@
 			/>
 		</template>
 		<template #noData>
-			<div class="empty-state">
-				<VIcon
-					icon="hammer"
-					size="40"
-					class="mb-3"
-					style="opacity: 0.3"
-				/>
-				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.projects') }}</p>
-				<VBtn
-					color="success"
-					variant="tonal"
-					prependIcon="plus"
-					@click="openCreateDialog"
-				>
-					{{ $t('general.add') }}
-				</VBtn>
-			</div>
+			<LeisureEmptyState
+				icon="hammer"
+				:message="$t('leisure.emptyStates.projects')"
+				:filtered
+				@onAdd="openCreateDialog"
+				@onClearFilters="emit('onClearFilters')"
+			/>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import LeisureEmptyState from '@/core/leisure/component/LeisureEmptyState.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import ProjectProfileForm from '@/core/leisure/component/project/ProjectProfileForm.vue'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
@@ -69,8 +60,10 @@
 		items: ActivityProjectProfile[]
 		loading: boolean
 		itemsLength: number
+		/** Whether the view\'s filter has anything set — tells "nothing matches" from "you have none" (F79). */
+		filtered?: boolean
 	}>()
-	const emit = defineEmits<{ onLoadItems: []; onReload: [] }>()
+	const emit = defineEmits<{ onLoadItems: []; onReload: []; onClearFilters: [] }>()
 	const page = defineModel<number>('page', { required: true })
 	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
@@ -109,14 +102,3 @@
 		emit('onReload')
 	}
 </script>
-
-<style scoped>
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 48px 24px;
-		text-align: center;
-		color: rgba(var(--v-theme-on-surface), 0.5);
-	}
-</style>

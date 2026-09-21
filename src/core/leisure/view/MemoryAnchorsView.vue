@@ -67,19 +67,24 @@
 				:items="timelineItems"
 				:loading="timelineLoading"
 				:monthFilter="filter?.anchorMonth ?? null"
+				:filtered="isTimelineFiltered"
+				:failed="timelineFailed"
 				v-model:year="timelineYear"
 				@onReload="reloadTimeline"
+				@onClearFilters="clearFilters"
 			/>
 			<MemoryAnchorTable
 				v-else
 				:items
 				:loading
 				:itemsLength
+				:filtered="isFiltered"
 				v-model:page="page"
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
 				@onReload="reload"
+				@onClearFilters="clearFilters"
 			/>
 		</div>
 	</div>
@@ -94,6 +99,7 @@
 	import MemoryAnchorTimeline from '@/core/leisure/component/memoryAnchor/MemoryAnchorTimeline.vue'
 	import { MemoryAnchorFilter } from '@/core/leisure/dto/request/MemoryAnchorFilter.ts'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
 	import { useMemoryAnchorCrud } from '@/core/leisure/api/memoryAnchorApi.ts'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
@@ -115,14 +121,23 @@
 
 	// The timeline groups by month rather than paging, and its year navigator has to know which years
 	// hold anything at all — so it takes the whole (filtered) history in one response. Anchors are at
-	// most a handful per month; a five-figure page size is a generous, simple cap rather than a real
-	// pagination scheme, matching how the bucket-list ladder and the project board already read.
-	const TIMELINE_PAGE_SIZE = 500
+	// most a handful per month, so one oversized page is a simpler answer than a real pagination
+	// scheme, matching how the bucket-list ladder and the project board already read.
+	//
+	// 200 is not a preference — it is the server's cap. `BaseFilterSortPaginateRequest` validates
+	// `itemsPerPage` with "Must not exceed 200.", so the previous 500 made every timeline load answer
+	// 400 and the view rendered the empty copy no matter what was in the database (F61). A user with
+	// more than 200 anchors sees a truncated timeline rather than a 400; paging it is not this batch.
+	// Raising it means raising the server's validator first.
+	const TIMELINE_PAGE_SIZE = 200
 	const route = useRoute()
 	const router = useRouter()
 	const viewMode = ref<'table' | 'timeline'>(route.query.view === 'timeline' ? 'timeline' : 'table')
 	const timelineItems = ref<MemoryAnchor[]>([])
 	const timelineLoading = ref(false)
+	// A rejected load must not render as "you have none" — the timeline shows its error branch instead
+	// and keeps whatever it had. A cancellation (a newer load superseded this one) is not a failure.
+	const timelineFailed = ref(false)
 
 	// Its own crud instance, on purpose: `useFetchFilteredTable` aborts its previous request, so sharing
 	// the table's instance would have the two modes cancel each other.
@@ -147,6 +162,10 @@
 			)
 			const result = await fetchTimeline(request)
 			timelineItems.value = result.items
+			timelineFailed.value = false
+		} catch (error) {
+			if (isRequestCanceled(error)) return
+			timelineFailed.value = true
 		} finally {
 			timelineLoading.value = false
 		}
@@ -154,6 +173,16 @@
 
 	function reloadTimeline() {
 		void loadTimeline()
+	}
+
+	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
+	// The timeline's rows only answer to the fields it sends — year and month are navigated and
+	// narrowed client-side (see `loadTimeline`), so a chosen year with nothing in it is still the
+	// genuinely-empty case, not a "nothing matches" one.
+	const isTimelineFiltered = computed(() => !!filter.value?.activityName || filter.value?.minRating != null)
+
+	function clearFilters() {
+		filter.value = new MemoryAnchorFilter()
 	}
 
 	// The year navigator writes the filter's own `anchorYear`, so it is bookmarkable through the existing

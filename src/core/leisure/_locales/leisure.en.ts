@@ -87,6 +87,11 @@ const leisure = {
 			bucketList: `These are experiences you want to have once. You don't have any here yet.`,
 			projects: `These are things you're building or making. You don't have any projects here yet.`,
 			memoryAnchors: `These are experiences you've had and want to remember. You don't have any memory anchors here yet.`,
+			// Two states that must not share the onboarding copy above (F79): a filter that matches nothing,
+			// and a load that failed (F61) — neither means the user has none.
+			filtered: `Nothing matches these filters.`,
+			clearFilters: `Clear filters`,
+			loadFailed: `Couldn't load this list. This doesn't mean it's empty.`,
 		},
 		weatherFit: {
 			goodToday: `Good for today`,

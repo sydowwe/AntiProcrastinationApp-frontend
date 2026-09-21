@@ -4,24 +4,16 @@
 			v-if="loading"
 			indeterminate
 		/>
-		<template v-if="!loading && items.length === 0">
-			<div class="empty-state">
-				<VIcon
-					icon="anchor"
-					size="40"
-					class="mb-3"
-					style="opacity: 0.3"
-				/>
-				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.memoryAnchors') }}</p>
-				<VBtn
-					color="success"
-					variant="tonal"
-					prependIcon="plus"
-					@click="openCreateDialog"
-				>
-					{{ $t('general.add') }}
-				</VBtn>
-			</div>
+		<template v-if="!loading && (failed || items.length === 0)">
+			<LeisureEmptyState
+				icon="anchor"
+				:message="$t('leisure.emptyStates.memoryAnchors')"
+				:filtered
+				:failed
+				@onAdd="openCreateDialog"
+				@onClearFilters="emit('onClearFilters')"
+				@onRetry="emit('onReload')"
+			/>
 		</template>
 		<template v-else>
 			<div class="d-flex align-center flex-wrap ga-2">
@@ -186,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+	import LeisureEmptyState from '@/core/leisure/component/LeisureEmptyState.vue'
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
@@ -200,12 +193,18 @@
 		items,
 		loading,
 		monthFilter = null,
+		filtered = false,
+		failed = false,
 	} = defineProps<{
 		items: MemoryAnchor[]
 		loading: boolean
 		monthFilter?: number | null
+		/** Whether the view's filter has anything set — tells "nothing matches" from "you have none" (F79). */
+		filtered?: boolean
+		/** The last load rejected — renders the error branch, never the empty copy (F61). */
+		failed?: boolean
 	}>()
-	const emit = defineEmits<{ onReload: [] }>()
+	const emit = defineEmits<{ onReload: []; onClearFilters: [] }>()
 	// `null` means "no year chosen yet" and resolves to `fallbackYear`, not to a hardcoded year: the
 	// view keeps this in the filter's `year`, which starts empty.
 	const year = defineModel<number | null>('year', { required: true })
@@ -319,15 +318,6 @@
 </script>
 
 <style scoped>
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 48px 24px;
-		text-align: center;
-		color: rgba(var(--v-theme-on-surface), 0.5);
-	}
-
 	.year-strip {
 		display: flex;
 		gap: 4px;

@@ -60,23 +60,13 @@
 			</span>
 		</template>
 		<template #noData>
-			<div class="empty-state">
-				<VIcon
-					icon="anchor"
-					size="40"
-					class="mb-3"
-					style="opacity: 0.3"
-				/>
-				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.memoryAnchors') }}</p>
-				<VBtn
-					color="success"
-					variant="tonal"
-					prependIcon="plus"
-					@click="openCreateDialog"
-				>
-					{{ $t('general.add') }}
-				</VBtn>
-			</div>
+			<LeisureEmptyState
+				icon="anchor"
+				:message="$t('leisure.emptyStates.memoryAnchors')"
+				:filtered
+				@onAdd="openCreateDialog"
+				@onClearFilters="emit('onClearFilters')"
+			/>
 		</template>
 	</BasicTable>
 </template>
@@ -85,6 +75,7 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import LeisureEmptyState from '@/core/leisure/component/LeisureEmptyState.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import MemoryAnchorForm from '@/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue'
 	import type { MemoryAnchor } from '@/core/leisure/dto/response/MemoryAnchor.ts'
@@ -100,8 +91,10 @@
 		items: MemoryAnchor[]
 		loading: boolean
 		itemsLength: number
+		/** Whether the view\'s filter has anything set — tells "nothing matches" from "you have none" (F79). */
+		filtered?: boolean
 	}>()
-	const emit = defineEmits<{ onLoadItems: []; onReload: [] }>()
+	const emit = defineEmits<{ onLoadItems: []; onReload: []; onClearFilters: [] }>()
 	const page = defineModel<number>('page', { required: true })
 	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
@@ -157,14 +150,3 @@
 		emit('onReload')
 	}
 </script>
-
-<style scoped>
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 48px 24px;
-		text-align: center;
-		color: rgba(var(--v-theme-on-surface), 0.5);
-	}
-</style>

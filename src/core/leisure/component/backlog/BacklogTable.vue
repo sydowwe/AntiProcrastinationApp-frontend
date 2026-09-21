@@ -63,29 +63,20 @@
 			<span>{{ item.effortType == null ? '—' : $t(`enums.effortType.${item.effortType}`) }}</span>
 		</template>
 		<template #noData>
-			<div class="empty-state">
-				<VIcon
-					icon="box-archive"
-					size="40"
-					class="mb-3"
-					style="opacity: 0.3"
-				/>
-				<p class="text-subtitle-2 font-weight-medium mb-3">{{ $t('leisure.emptyStates.backlog') }}</p>
-				<VBtn
-					color="success"
-					variant="tonal"
-					prependIcon="plus"
-					@click="openCreateDialog"
-				>
-					{{ $t('general.add') }}
-				</VBtn>
-			</div>
+			<LeisureEmptyState
+				icon="box-archive"
+				:message="$t('leisure.emptyStates.backlog')"
+				:filtered
+				@onAdd="openCreateDialog"
+				@onClearFilters="emit('onClearFilters')"
+			/>
 		</template>
 	</BasicTable>
 </template>
 
 <script setup lang="ts">
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
+	import LeisureEmptyState from '@/core/leisure/component/LeisureEmptyState.vue'
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import ExperiencedCell from '@/core/leisure/component/ExperiencedCell.vue'
@@ -104,8 +95,10 @@
 		items: ActivityBacklogProfile[]
 		loading: boolean
 		itemsLength: number
+		/** Whether the view\'s filter has anything set — tells "nothing matches" from "you have none" (F79). */
+		filtered?: boolean
 	}>()
-	const emit = defineEmits<{ onLoadItems: []; onReload: [] }>()
+	const emit = defineEmits<{ onLoadItems: []; onReload: []; onClearFilters: [] }>()
 	const page = defineModel<number>('page', { required: true })
 	const itemsPerPage = defineModel<number>('itemsPerPage', { required: true })
 	const sortBy = defineModel<VSortItem[]>('sortBy', { required: true })
@@ -156,14 +149,5 @@
 <style scoped>
 	.experienced {
 		opacity: 0.6;
-	}
-
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 48px 24px;
-		text-align: center;
-		color: rgba(var(--v-theme-on-surface), 0.5);
 	}
 </style>

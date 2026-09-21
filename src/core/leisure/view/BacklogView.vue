@@ -86,18 +86,20 @@
 				:items
 				:loading
 				:itemsLength
+				:filtered="isFiltered"
 				v-model:page="page"
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
 				@onReload="reloadAll"
+				@onClearFilters="clearFilters"
 			/>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref } from 'vue'
+	import { computed, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import BacklogTable from '@/core/leisure/component/backlog/BacklogTable.vue'
@@ -160,6 +162,12 @@
 	function reloadAll() {
 		reload()
 		recount()
+	}
+
+	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
+
+	function clearFilters() {
+		filter.value = new ActivityBacklogProfileFilter()
 	}
 
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()

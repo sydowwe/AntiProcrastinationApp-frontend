@@ -62,25 +62,30 @@
 				v-if="viewMode === 'board'"
 				:items="boardItems"
 				:loading="boardLoading"
+				:filtered="isFiltered"
+				:failed="boardFailed"
 				@onReload="loadBoard"
+				@onClearFilters="clearFilters"
 			/>
 			<ProjectTable
 				v-else
 				:items
 				:loading
 				:itemsLength
+				:filtered="isFiltered"
 				v-model:page="page"
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
 				@onReload="reload"
+				@onClearFilters="clearFilters"
 			/>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import ProjectTable from '@/core/leisure/component/project/ProjectTable.vue'
@@ -95,6 +100,7 @@
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { projectFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 
@@ -125,6 +131,9 @@
 	const viewMode = ref<'table' | 'board'>(route.query.view === 'table' ? 'table' : 'board')
 	const boardItems = ref<ActivityProjectProfile[]>([])
 	const boardLoading = ref(false)
+	// A rejected load must not render as "you have none" — the board shows its error branch instead.
+	// A cancellation (a newer load superseded this one) is not a failure.
+	const boardFailed = ref(false)
 
 	async function loadBoard() {
 		boardLoading.value = true
@@ -138,9 +147,19 @@
 			)
 			const result = await fetchFilteredTable(request)
 			boardItems.value = result.items
+			boardFailed.value = false
+		} catch (error) {
+			if (isRequestCanceled(error)) return
+			boardFailed.value = true
 		} finally {
 			boardLoading.value = false
 		}
+	}
+
+	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
+
+	function clearFilters() {
+		filter.value = new ActivityProjectProfileFilter()
 	}
 
 	watch(viewMode, value => router.replace({ query: { ...route.query, view: value } }))

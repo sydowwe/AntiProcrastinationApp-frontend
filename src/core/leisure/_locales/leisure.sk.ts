@@ -87,6 +87,11 @@ const leisure = {
 			bucketList: `Toto sú zážitky, ktoré chcete raz zažiť. Zatiaľ tu nemáte žiadny.`,
 			projects: `Toto sú veci, ktoré práve budujete alebo tvoríte. Zatiaľ tu nemáte žiadny projekt.`,
 			memoryAnchors: `Toto sú zážitky, ktoré ste zažili a chcete si ich pripomenúť. Zatiaľ tu nemáte žiadny pamätný moment.`,
+			// Two states that must not share the onboarding copy above (F79): a filter that matches nothing,
+			// and a load that failed (F61) — neither means the user has none.
+			filtered: `Týmto filtrom nič nezodpovedá.`,
+			clearFilters: `Zrušiť filtre`,
+			loadFailed: `Zoznam sa nepodarilo načítať. Neznamená to, že je prázdny.`,
 		},
 		weatherFit: {
 			goodToday: `Vhodné na dnes`,

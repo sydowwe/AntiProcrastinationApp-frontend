@@ -80,18 +80,23 @@
 				v-if="viewMode === 'ladder'"
 				:items="ladderItems"
 				:loading="ladderLoading"
+				:filtered="isFiltered"
+				:failed="ladderFailed"
 				@onReload="reloadLadder"
+				@onClearFilters="clearFilters"
 			/>
 			<BucketListTable
 				v-else
 				:items
 				:loading
 				:itemsLength
+				:filtered="isFiltered"
 				v-model:page="page"
 				v-model:itemsPerPage="itemsPerPage"
 				v-model:sortBy="sortBy"
 				@onLoadItems="load"
 				@onReload="reloadAll"
+				@onClearFilters="clearFilters"
 			/>
 		</div>
 	</div>
@@ -113,6 +118,7 @@
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { bucketListFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 	import { useExperiencedProgress } from '@/core/leisure/composable/useExperiencedProgress.ts'
@@ -138,13 +144,22 @@
 	})
 
 	// The ladder groups by rung rather than paging, so it needs every filtered row at once. A bucket
-	// list is small; a five-figure page size is a generous, simple cap rather than a real pagination scheme.
-	const LADDER_PAGE_SIZE = 500
+	// list is small, so one oversized page is a simpler answer than a real pagination scheme.
+	//
+	// 200 is not a preference — it is the server's cap. `BaseFilterSortPaginateRequest` validates
+	// `itemsPerPage` with "Must not exceed 200.", so the previous 500 made every ladder load answer
+	// 400 and the view rendered the empty copy no matter what was in the database (F61). A user with
+	// more than 200 entries sees a truncated ladder rather than a 400; paging the ladder is not this
+	// batch. Raising it means raising the server's validator first.
+	const LADDER_PAGE_SIZE = 200
 	const route = useRoute()
 	const router = useRouter()
 	const viewMode = ref<'table' | 'ladder'>(route.query.view === 'ladder' ? 'ladder' : 'table')
 	const ladderItems = ref<ActivityBucketListProfile[]>([])
 	const ladderLoading = ref(false)
+	// A rejected load must not render as "you have none" — the ladder shows its error branch instead
+	// and keeps whatever it had. A cancellation (a newer load superseded this one) is not a failure.
+	const ladderFailed = ref(false)
 
 	async function loadLadder() {
 		ladderLoading.value = true
@@ -158,9 +173,19 @@
 			)
 			const result = await fetchFilteredTable(request)
 			ladderItems.value = result.items
+			ladderFailed.value = false
+		} catch (error) {
+			if (isRequestCanceled(error)) return
+			ladderFailed.value = true
 		} finally {
 			ladderLoading.value = false
 		}
+	}
+
+	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
+
+	function clearFilters() {
+		filter.value = new ActivityBucketListProfileFilter()
 	}
 
 	// Declared after the ladder state on purpose: the composable reads `items` immediately, so a
