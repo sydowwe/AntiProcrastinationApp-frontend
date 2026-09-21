@@ -67,6 +67,27 @@ async function signedInPage(browser: import('@playwright/test').Browser, user: S
 	return page
 }
 
+/**
+ * Write the context's storage state back over the cached file before closing it.
+ *
+ * The API rotates the refresh token on every `POST /auth/refresh`, and a rotated token presented
+ * again more than 5 s later is the reuse-attack signature: the server revokes **every** session for
+ * that account (`RefreshTokenService.ValidateRefreshTokenAsync`). The access token in the cached
+ * state lives ~15 min, so in a run longer than that the first spec to refresh silently invalidated
+ * the file for every spec after it — each new context loaded the old token, tripped the attack
+ * check, and bounced to /login with nothing pointing here. Saving after every test keeps the file
+ * holding whatever token the last context ended with.
+ */
+async function releasePage(page: Page, user: SeedUser): Promise<void> {
+	const context = page.context()
+	try {
+		await context.storageState({ path: authFileFor(user) })
+	} catch {
+		// A crashed page cannot serialise its state; the next test falls back to the file as it was.
+	}
+	await context.close()
+}
+
 type Fixtures = {
 	/** Signed in as the seed's primary user. */
 	authenticatedPage: Page
@@ -121,13 +142,13 @@ export const test = base.extend<Fixtures & Options>({
 	authenticatedPage: async ({ seed, browser }, use) => {
 		const page = await signedInPage(browser, seed.primaryUser)
 		await use(page)
-		await page.context().close()
+		await releasePage(page, seed.primaryUser)
 	},
 
 	secondaryPage: async ({ seed, browser }, use) => {
 		const page = await signedInPage(browser, seed.secondaryUser)
 		await use(page)
-		await page.context().close()
+		await releasePage(page, seed.secondaryUser)
 	},
 
 	// The credential comes off the seed response like the other two, not from `.env.test` — the account
@@ -135,6 +156,6 @@ export const test = base.extend<Fixtures & Options>({
 	adminPage: async ({ seed, browser }, use) => {
 		const page = await signedInPage(browser, seed.adminUser)
 		await use(page)
-		await page.context().close()
+		await releasePage(page, seed.adminUser)
 	},
 })

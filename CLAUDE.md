@@ -393,7 +393,16 @@ playwright-cli open https://localhost:3000
 playwright-cli state-load e2e/.state/auth-10001.json
 playwright-cli reload
 playwright-cli eval "location.pathname"            # assert "/" — see SIGNED_OUT_ONLY_ROUTES below
+playwright-cli state-save e2e/.state/auth-10001.json   # NOT optional — see "a state file is single-use" below
 ```
+
+**A state file is single-use once its access token has expired — save it back after every load.** The API rotates the refresh token on
+every `POST /auth/refresh`, and the `reload` above refreshes (that is what the 401 burst is). The file still holds the *old* token, and
+presenting a rotated token again more than 5 s later is the server's reuse-attack signature: it **revokes every session for that account**
+(`RefreshTokenService.ValidateRefreshTokenAsync` in the API). So a second `state-load` of an unsaved file does not merely fail — it
+signs the seed user out everywhere, the e2e cache included, and the only way back is the form. This cost a detour on 2026-09-21 (it looked
+like an API restart had invalidated the token; it had not). `e2e/fixtures/auth.ts` does the same write-back after every test for the same
+reason.
 
 If **neither** file exists, regenerate one by running a signed-in spec (`npm test --prefix e2e` writes `auth-10001.json` via `e2e/fixtures/auth.ts`) rather than
 filling the form by hand.
@@ -422,6 +431,7 @@ Then save the session so the next agent skips the form: `playwright-cli state-sa
 playwright-cli open https://localhost:3000        # bounces to /login — no session yet
 playwright-cli state-load .playwright-cli/auth.json
 playwright-cli reload                             # the guard now sends /login → /
+playwright-cli state-save .playwright-cli/auth.json   # the token just rotated — write it back (see above)
 ```
 
 That last step only works because of `SIGNED_OUT_ONLY_ROUTES` in `src/router.ts`: an authenticated user is redirected off `/login`, `/registration` and
