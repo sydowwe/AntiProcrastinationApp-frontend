@@ -160,6 +160,17 @@ const messages = {
 		isIgnored: `Is ignored`,
 		matchType: `Match type`,
 		type: `Type`,
+		/** B24 — the *Rule* column and the three-way coverage filter on both distinct-entries grids. */
+		coverage: {
+			column: `Rule`,
+			All: `All`,
+			Uncovered: `Undecided`,
+			Covered: `Covered`,
+			undecided: `Undecided`,
+			ignored: `Ignored`,
+			rule: `Rule`,
+			editRule: `Open this rule on the Mappings tab`,
+		},
 	},
 }
 /** One root namespace — see the comment on the SK file, which carries the reasoning. */

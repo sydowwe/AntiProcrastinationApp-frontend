@@ -1366,6 +1366,80 @@
   call is whether a three-row panel is worth opening — it is, because the alternative is a card that
   says *"View details"* and a URL that says `?selected=` for a selection nothing displays.
 
+## F61. Ladder and Timeline ask for 500 rows against a cap of 200 — and a failure renders as "empty"
+> ✅ **FIXED 2026-09-21, in the same session as `F79`.** Both constants are 200 with the `ProjectsView`
+> comment; both loaders gained a `catch` that sets a `failed` flag (a cancellation from the composable's
+> own abort is excluded via `isRequestCanceled`) and the ladder/timeline render `LeisureEmptyState`'s error
+> branch — *"Couldn't load this list. This doesn't mean it's empty."* + *Try again* — over the empty copy.
+> The board got the same `catch` while its component was being taught the branch anyway; `ProjectsView`'s
+> constant and comment are untouched. Verified live: `/grid` 200 on both surfaces, the seeded bucket-list
+> row on rung 3, July (*Retired Hobby*) and August (*Learn Bouldering*) 2026 shaded and the other twenty
+> months empty; `route … --status=500` on each grid rendered the error branch, `unroute` + *Try again*
+> brought the rows back. `X1`, `X2` closed.
+
+
+- **Scope:** app-side `src/core/leisure/view/BucketListView.vue:142,149-160`,
+  `src/core/leisure/view/MemoryAnchorsView.vue:120,131-145`
+- **Closes:** `leisure-bucket-anchors/X1`, `X2`
+- **Root cause:** `BaseGridEndpoint.MaxItemsPerPage` is **200** and the base answers a 400 naming the
+  field above it (`BaseGridEndpoint.cs:31,104-106`). `LADDER_PAGE_SIZE = 500` and
+  `TIMELINE_PAGE_SIZE = 500` therefore fail on every load, and both loaders are `try … finally` with no
+  `catch`: the rejection propagates to the console, `ladderItems`/`timelineItems` keep their initial
+  `[]`, and the view's empty-state copy renders — *"You don't have any here yet"* over a table that
+  showed rows a second earlier. `ProjectsView.vue:118-122` fixed the identical constant to 200 with a
+  comment that names this exact failure; the grep this pass (`PAGE_SIZE =` under `src/core`) finds no
+  third 500 — `useLeisurePicker.ts:48` is already 200.
+- **What to change:** Both constants to 200, with `ProjectsView`'s comment. Then the half `ProjectsView`
+  did not do: a `catch` that sets an error flag, and an error branch in each view distinct from the
+  empty state — the README's *Class 1* note (*"give the table component an error state distinct from its
+  empty state"*) is the same ask, and `F27` is the pattern (`useActivityDashboard`'s error/retry). A
+  user with more than 200 bucket-list rows or anchors would then see a truncated ladder/timeline rather
+  than a 400 — say so in a comment; paging the ladder is not this batch.
+- **Do not change:** `ProjectsView.vue`; the server cap (it is documented and deliberate).
+- **Verification:** `X1`'s and `X2`'s `Verify:` blocks — no 400, the seeded row on rung 3, July and
+  August 2026 shaded. Then `playwright-cli route "**/api/activity-bucket-list-profile/grid" --status=500`
+  and toggle to Ladder: the error branch, not the empty copy.
+- **Risk:** Low. Two constants and two small template branches.
+
+## F79. Filtering to zero shows the "you have none at all" onboarding copy, on every leisure surface
+> ✅ **FIXED 2026-09-21, in the same session as `F61`.** One `LeisureEmptyState.vue` (icon, translated
+> onboarding message, `filtered`, `failed`; emits `onAdd` / `onClearFilters` / `onRetry`) replaced the seven
+> hand-copied blocks and their seven `.empty-state` style copies. Precedence is failed → filtered → empty:
+> a failed fetch says nothing about what the filter would have matched. `filtered` is the view's
+> `filter.hasAny()`, except on the timeline, where only `activityName` / `minRating` count — year and month
+> are navigated client-side, so an empty chosen year is still the genuinely-empty case. *Clear filters*
+> reassigns a fresh filter DTO, which is what `FilterPanel`'s own reset does. Three locale keys under
+> `leisure.emptyStates` (`filtered`, `clearFilters`, `loadFailed`), SK and EN; *Try again* is
+> `general.retry`. The trap in the risk line did not bite — no leisure `hasAny()` counts a default.
+> Verified `?activityName=zzzz` on all seven surfaces (backlog, bucket-list table + ladder, anchors table +
+> timeline, projects table + board): *"Nothing matches these filters."* + *Clear filters*, the click
+> dropped the param and the backlog read *1-1 of 1*; signed in as `secondaryUser`, every surface still
+> rendered its onboarding copy + *Add* — `leisure-projects/U1`'s unseen table `#noData` half included.
+
+
+- **Scope:** app-side `src/core/leisure/component/project/{ProjectTable.vue:33-51,ProjectReadinessBoard.vue:7-24}`,
+  and the same branch on `BacklogTable`, `BucketListTable`, `BucketListLadder`, `MemoryAnchorTable`,
+  `MemoryAnchorTimeline`
+- **Closes:** `leisure-projects/P3`
+- **Root cause:** every empty state keys on `items.length === 0` alone. A filter that excludes the one
+  seeded row produces the identical *"These are things you're building or making. You don't have any
+  projects here yet."* plus a prominent *Add* CTA — which reads as "you have never created one" and
+  nudges toward creating a duplicate rather than clearing the filter. The filter chips are visible in
+  the toolbar above the copy at the same time, which is the tell.
+- **What to change:** branch on `filter.value?.hasAny()` — **already implemented on every leisure filter
+  DTO**, which is why this is cheap — and render a "no results for these filters" message with a *clear
+  filters* action in place of the Add CTA. One locale key pair, reused by all six surfaces.
+- **Do not scope this to the projects view.** All four leisure surfaces came out of one
+  `L4-onboarding-empty-states.md` pass and share the shape; the finding says so and the source confirms
+  it. A fix that teaches only the board leaves three tables lying. It also overlaps `F61`: the ladder and
+  timeline render the *empty* state on a failed fetch, so after `F61` there are **three** states to tell
+  apart — empty, filtered-to-zero, failed. Decide the copy for all three at once.
+- **Verification:** `P3`'s `Verify:` block on the board and the table, then one filtered-to-zero load on
+  each of the other four surfaces. Keep a genuinely empty account (or `secondaryUser`) in the same
+  session to confirm the original copy still renders where it should.
+- **Risk:** Low. The only trap is a filter DTO whose `hasAny()` counts a default the user did not set —
+  check each before trusting it.
+
 ## F73. Three activity-keyed leisure profile DTOs drop the server's `id` — nine write call sites key the REST route by the wrong number
 > ✅ **FIXED 2026-09-21.** Exactly as *What to change* says: `id` is the first constructor parameter on
 > all three DTOs, destructured in `fromJson` with `id = 0` (the `MemoryAnchor` shape), the aliasing
@@ -1550,6 +1624,31 @@
 - **Risk:** Low-medium. Adding required rules to fields that were effectively optional client-side can
   block a submit that used to succeed — confirm against each endpoint's validator that all four are
   genuinely `required` server-side before making them required here.
+
+## F16. The settings header row clips its labels at 1440 px — ✅ fixed 2026-09-21 with §19's frontend half
+
+> Ran **before** `F13` after all: §19's coverage toggle made the row overflow outright (the *Mappings* tab
+> was pushed out of view at 1440), so the wrap could not wait. If `F13` later hides or repoints the bar on the
+> Mappings tab, the wrap is still right — it only decides what happens when the row does not fit. Verified at
+> 1440×900 on both platforms: title and tabs on the first line, the filter bar on its own line below, every
+> label readable. `tracking-settings/B4` closed.
+
+- **Scope:** app-side `DesktopSettingsView.vue:7-36`, `AndroidSettingsView.vue:7-36`
+- **Closes:** `tracking-settings/B4`
+- **Root cause:** The header `<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">` holds the title, the
+  two-button `VBtnToggle` and the whole filter bar with no `flex-wrap`; the bar's own root only stacks below
+  `md` (`DesktopEntriesFilterBar.vue:2`, `flex-column flex-md-row`). At 1440 px everything is a row and
+  every child shrinks: the screenshot on disk reads *MAPPI*, *P…*, *Co…*, *W…* — confirmed from
+  `desktop-settings-mappings--default.png` this pass, no browser needed.
+- **Files:** as above
+- **What to change:** Let the header wrap (`flex-wrap`) so the filter bar drops to its own line when it does
+  not fit, and give the `VBtnToggle` `flex-shrink: 0` so tab labels never truncate. **Run after `F13`** — if
+  that batch hides or repoints the bar on the Mappings tab, the row to lay out is different.
+- **Do not change:** the filter bar's `flex-md-row` breakpoint — it is right for mobile and is not the
+  problem.
+- **Verification:** `tracking-settings/B4`'s `Verify:` block at 1440×900 on all four routes; re-check 1920
+  still renders single-line, and 390 still stacks.
+- **Risk:** None beyond layout.
 
 ## Closed escalations
 
@@ -2340,6 +2439,75 @@ clean. `tracking-dashboards.draft.spec.ts`'s `B2` fixme is a real test.
 so the first live call was a routing 404 with `content-length: 0` — indistinguishable from the endpoint's
 own 404 to the panel, which correctly showed the soft sentence. Told apart by the missing problem+json body;
 worth remembering the next time a freshly landed ask answers 404.
+
+### §19 — ✅ RESOLVED 2026-09-21 (backend `B24` landed as asked, on the API's `dev` working tree at the time of writing; frontend half the same evening, with `F16` folded in). Both distinct-entries grids now say which rule already covers each tuple
+
+**The ask, as it stood in the queue** — `tracking-settings/B5`, re-graded `opportunity` in §103, promoted
+from *Deferred to opportunities* on 2026-09-21 at the owner's request. The ledger is the raw observation
+record by design (the heartbeat stores a to-activity match *and* attributes it,
+`DesktopActivityHeartbeatEndpoint.cs:87-113`; only `IsIgnored` drops), so the row reappearing after a rule
+is created is not a defect — but nothing told the user which rows still needed a decision, and the client
+could not join the two grids: the match is first-match-wins in specificity order over pattern match types,
+active rules only, and the distinct row's `id` is `Min(e.Id)` of the ledger. Ask:
+`coveredBy: { mappingId, target, targetName } | null` per row on both `/grid`s and a
+`coverage: All | Uncovered | Covered` filter, default `All`, under `B11`'s conventions, not sortable
+(`B20`). One thing found while writing it: `AndroidSyncEndpoint.cs` never reads
+`TrackerAndroidMappingByPattern` — Android rules were CRUD-only and applied to nothing — put to the backend
+as a question (not yet vs. by design). File:
+`prompts/view-docs/backend/_done/B24-distinct-entries-say-which-rule-already-covers-them.md` (reply
+appended).
+
+**The answer, 2026-09-21 — shipped exactly as asked.** `coveredBy` on every row of both grids, resolved by
+the server's own matcher (the heartbeat and the grid call the same class, so the chip cannot disagree with
+attribution): `null` when no *active* rule matches; otherwise `{ mappingId, target, targetName }` with
+`target` one of `Activity | RoleOrCategory | Ignored` and `targetName` the activity name, the role and/or
+category joined with ` · `, or **`null` for `Ignored`** — written, not omitted, so nullable not optional.
+Inactive rule → uncovered (the visible half of `tracking-settings/O1`); ignore rule → covered, and those
+rows drain over retention. `coverage` on both filter records: absent/`null`/`All` = the full record as
+before; `Uncovered` / `Covered` materialise the whole sorted distinct set, resolve, filter, then page — so
+`itemsCount` is **exact** in every mode and sort order is unchanged. Undefined value → 400. Not sortable
+(computed after the query; the framework's nested-object 400). `GridFilterFieldNameTests` pins the
+camelCase spelling on both grids. **Android answered:** the sync does not apply rules at ingest today and
+nothing records whether that is "not yet" or "by design", so the Android grid ships the same field and
+filter, meaning "an active rule exists that would match this pair", resolved through `AndroidMappingRuleSet`
+— the class the sync will use if it ever applies rules, so nothing on the wire changes if it does.
+
+**The frontend half, the same evening.** `dto/enum/MappingCoverage.ts` (`MappingCoverage`,
+`MappingCoverageTarget`), `dto/response/MappingCoverageResponse.ts` (`fromJsonOrNull`), `coveredBy` on both
+`Tracker*DistinctEntriesResponse`, `coverage: MappingCoverage | null = null` on both
+`*DistinctEntriesFilterRequest` (the mappings filters inherit it; the API skips unknown members, checked).
+`component/settings/MappingCoverageChip.vue` — a tonal chip with the target name (or *Ignored* with an
+eye-slash) whose `to` is `…/settings/mappings?mappingId=N`; muted italic *Undecided* for `null`.
+`MappingCoverageToggle.vue` — All / Undecided / Covered, `All` modelled as `null`, applies on click (unlike
+the text fields, which wait for *Filter*). *Rule* column on both tables, `isSortable: false`.
+`composable/useCoverageUrlState.ts` — `?coverage=` read on setup and written by the **same handler that
+reloads**, no watcher, which is how `F15`'s two-writer trap is sidestepped: `edit()` still mutates the
+filter and pushes in one tick, and nothing else writes the URL. The tab links carry the query so switching
+tabs and back keeps the view; *Clear* keeps it too (it is the view, not the rule pattern); `edit()` pushes
+the distinct-entries route with the coverage and without `mappingId`. The grid reloads after *Save* so the
+new rule's chips appear at once. **Default stays `All`**, decided here rather than in the ask: `edit()`
+lands on this tab with the rule's pattern pre-filled, and `Uncovered` would hide the very rows that rule
+catches; `Uncovered` is one click and bookmarkable. Framework: `DataTable` gained a generic
+`highlightedId?: string | number | null` (tints the matching row `bg-primary-container`, off by default),
+forwarded by `BasicTable`, documented in `components.md`; both mappings tables pass `route.query.mappingId`
+through it. There is no `id` filter and no GET-by-id on the mappings grid, so the deep link can only tint a
+rule that is on the loaded page — fine at today's rule counts, an ask if lists grow past a page.
+
+**Verified live on both platforms** against the seed: the two `rider64.exe` rows read *Desk Research* and
+the other four *Undecided*; *Undecided* → `?coverage=Uncovered`, 1-4 of 4, and a cold load of that URL
+restores the toggle; *Covered* → 1-2 of 2; *All* clears the query. Chip → `mappings?mappingId=21001` with
+that row tinted; edit from it → `distinctEntries` with `rider64.exe` / Exact prefilled. Android: Spotify
+reads *Read a Novel*, *Undecided* lists the other four, chip → `mappingId=21101`, row tinted. Five new
+tests in `tracking-settings.draft.spec.ts` (the *Rule column and coverage filter* describe) pass; the
+draft's other nine still fail on its own `beforeEach` (`getByRole('heading', …)` — `VCardTitle` renders a
+`div`), which fails identically with the view change stashed and is that spec's, not this batch's. `B5`
+and `B4` closed in `findings.md`; `usecase.md`'s *"not-yet-considered"* sentence rewritten to say what the
+list is and where the not-yet-considered view lives.
+
+**Two things fixed on the way.** `F16` (below, in *Closed batches*) — the toggle pushed the *Mappings* tab
+out of the 1440 header outright, so the wrap could not wait for `F13`. And `DismissibleMappingHint` gained
+`flex-grow-0`: Vuetify's `.v-alert { flex: 1 1 }` had been swallowing the table's height in the views'
+flex column — visible in the docs' own screenshot, never filed.
 
 ### §20 — ✅ RESOLVED 2026-09-21 (backend `B25` landed in `Sydowwe.Framework` and the API, on their working trees at time of writing; frontend half the same day, in `vue_framework`). The 2FA login's 401 names its cause, and the lockout row carries the instant
 

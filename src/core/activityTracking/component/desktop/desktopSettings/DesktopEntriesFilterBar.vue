@@ -63,6 +63,11 @@
 				/>
 			</template>
 		</MergedInputs>
+		<!-- A toggle applies on click, unlike the text fields, which wait for Filter / Enter. -->
+		<MappingCoverageToggle
+			v-model="filter.coverage"
+			@change="emit('filter')"
+		/>
 		<VBtn
 			color="primary"
 			prependIcon="magnifying-glass"
@@ -75,6 +80,7 @@
 
 <script setup lang="ts">
 	import MergedInputs from '@/_common/component/inputs/MergedInputs.vue'
+	import MappingCoverageToggle from '@/core/activityTracking/component/settings/MappingCoverageToggle.vue'
 	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 

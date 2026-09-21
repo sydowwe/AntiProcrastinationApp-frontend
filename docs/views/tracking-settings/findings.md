@@ -298,7 +298,9 @@
 ---
 
 ### B4. Header row (tab toggle + pattern filter + Filter button) is illegibly truncated at a standard desktop viewport
-- **Status:** open
+- **Status:** fixed and verified (2026-09-21, `F16`, folded into B5's landing — the header wraps and the tab
+  toggle no longer shrinks; at 1440×900 the filter bar sits on its own line under the title and tabs, every
+  label readable)
 - **Severity:** bug
 - **Where:** `DesktopSettingsView.vue` / `AndroidSettingsView.vue`'s top `<div class="pa-4 pb-0 w-100 d-flex
   align-center ga-4">` (title + `VBtnToggle` + filter bar), at 1440×900
@@ -325,8 +327,13 @@
 ---
 
 ### B5. The distinct-entries list never excludes (or marks) an entry that already has an active mapping rule
-- **Status:** open
-- **Severity:** bug
+- **Status:** fixed and verified (2026-09-21 — backend `B24` put `coveredBy` on every row and a `coverage`
+  filter on both grids; the *Rule* column shows the covering rule as a chip linking to it on the Mappings tab,
+  or *Undecided*, and the *All / Undecided / Covered* toggle is URL-backed as `?coverage=`. Verified against the
+  seed on both platforms: `rider64.exe` ×2 read *Desk Research* and `Undecided` lists exactly the other four;
+  Spotify reads *Read a Novel* on Android. The *Verify* block's "visibly marked" branch is what shipped — the
+  list still defaults to the full ledger, per §103; the exclude is one click)
+- **Severity:** bug (re-graded `opportunity` in `_fix-queue.md` §103 before it landed)
 - **Where:** `GET`-equivalent grid backing `POST /api/activity-tracking/desktop/grid` (and the android
   equivalent) — server response only, no client-side filtering visible either
 - **Expected:** Per `usecase.md`'s own description (written from this same distinct-entries table): "Browse the

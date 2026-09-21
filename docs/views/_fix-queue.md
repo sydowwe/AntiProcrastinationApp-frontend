@@ -89,7 +89,7 @@
 | F58 | ✅ **FIXED 2026-09-15** — The app's EN `$vuetify` block is a 180-line hand copy of Vuetify's own `en` export, byte-identical except for **two missing keys** (`timePicker.notAllowed`, `command.search`) — replace the copy with the import | app (`src/locales/common.en.ts`) | `home/A1` (+ one unfiled key) | trivial |
 | F59 | A skipped (`Cancelled`) task renders as done in `DayPlannerWidget` — row class, `aria-pressed` and the checkbox label all key off `isFinished`, which is `Completed ∨ Cancelled` by design; and the checkbox on a cancelled row advances it to `Completed` | app (`DayPlannerWidget.vue`, `useTodayPlan.ts`) | `home/B4` | low |
 | F60 | ✅ **FIXED 2026-09-15** — `MemoryAnchorFilter` sent `year`/`month` while the server reads `anchorYear`/`anchorMonth`; the two wire fields are renamed and the URL keys stay `year`/`month`, so bookmarks survive. Verified live across seven filter URLs. The timeline's twelve-month check is still blocked by `F61`. Body in the log | app (`MemoryAnchorFilter.ts`, `MemoryAnchorsView.vue`, `leisureFilterUrlState.ts`; its test needed **no** change, and that is the bookmark pin) | `leisure-bucket-anchors/B1` (the two of five cases the client owns; the other three closed with ~~§13~~ `B11`) | trivial |
-| F61 | Ladder and Timeline request 500 rows against a server cap of 200 — every load 400s and a `catch`-free `try/finally` renders the **empty** state; `ProjectsView` fixed the identical constant a month ago with a comment saying why. **The batch's own "grep for another `= 500`" is answered:** those two are the only ones (`useLeisurePicker` 200, `ProjectsView` 200, notifications 20) | app (`BucketListView.vue:142`, `MemoryAnchorsView.vue:120`) | `leisure-bucket-anchors/X1`, `X2` (both reconfirmed by round 2) | low |
+| F61 | ✅ **FIXED 2026-09-21** (same session as `F79`) — `LADDER_PAGE_SIZE` and `TIMELINE_PAGE_SIZE` are 200 with `ProjectsView`'s comment, both loaders `catch` into a `failed` flag (cancellations excluded via `isRequestCanceled`), and the ladder, timeline **and** board render a distinct *load failed* + *Try again* branch through the new `LeisureEmptyState`. Verified live: both grids 200, the seeded row on rung 3, July and August 2026 shaded; a routed 500 shows the error branch and *Try again* recovers. Body in the log | app (`BucketListView.vue`, `MemoryAnchorsView.vue`, `ProjectsView.vue` (board `catch` only), `component/LeisureEmptyState.vue`) | `leisure-bucket-anchors/X1`, `X2` | low |
 | F62 | ✅ **FIXED 2026-09-15** — `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
 | F63 | ✅ **FIXED 2026-09-21** (same session as `F77`, `F63` first per its ordering constraint) — all eight lookup ids are `number | null = null` on the four DTOs, `MemoryAnchorForm` passes `presetActivityId` through. Verified live on `/leisure/backlog`: the fresh *Add* dialog renders the three selects empty, not "0", and an untouched *Create* shows the required message and fires no `POST`. Body in the log | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/B2` (round 2 — round 1's `X3`, the `0` half), `leisure-bucket-anchors/B2` (`0` half), **`leisure-projects/B5`** | low-med |
 | F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented. **Round 2 narrowed the headline and added a second symptom:** the excluded row's dependency is the *"None"* lookup, so the batch must not hard-exclude *or* badge it, and a mocked non-empty match produced the reason chip *"Good weather for this today"* on an indoor activity | app (`useLeisurePicker.ts:250`, `leisureScoring.ts`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/B1` (round 2 — round 1's `X2`), `P2` (round 1) | low |
@@ -127,7 +127,7 @@
 | F76 | ✅ **FIXED 2026-09-21** (same session as `F73`, per its ordering constraint) — `:precision="null"` on the `estimatedHours` `VNumberInput`; the edit dialog now opens on "8.5", and a two-decimal `8.25` submits and persists as `8.25`. Body in the log | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
 | F77 | ✅ **FIXED 2026-09-21** (same session as `F63`) — required rules on every field the API's `Create*Validator` rejects empty (backlog Location/Weather/Cost, bucket-list Experience type + Inspiration source, anchor Highlight, project Project area), and a leisure `useServerFieldErrors` composable over `extractServerFieldError` that each wrapper form's `onConfirm` routes a caught 400 through, dialog kept open. Verified live: untouched *Create* → required messages and no `POST`; a server-only refusal (*Read a Novel*, already profiled) → *"Activity already has a backlog profile."* under the Activity field. Body in the log | app (`New{Backlog,BucketList,MemoryAnchor,Project}…Form.vue` + their wrappers, `composable/useServerFieldErrors.ts`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
 | F78 | Two more primary click targets built as bare `<div>`s: the projects board card (the only way to open the edit dialog) and the template grid's background-task block — no role, no `tabindex`, no key handler; the template one is skipped by Tab *and* immune to Escape while its own help text says "Tab moves between tasks" | app (`ProjectReadinessBoard.vue:64-71`, the template grid's background block) | `leisure-projects/A4`, `planner-templates/A4` | low |
-| F79 | Filtering to zero renders the *"you have none at all"* onboarding copy and its Add CTA — on the projects board and table today, and by construction on all four leisure surfaces, which came out of one `L4` pass; every leisure filter DTO already has the `hasAny()` the branch needs | app (`src/core/leisure/` — 4 tables + board + ladder) | `leisure-projects/P3` | low |
+| F79 | ✅ **FIXED 2026-09-21** (same session as `F61`) — one `LeisureEmptyState` component replaces the seven copies; it branches *failed* → *filtered* (`filter.hasAny()`, passed down as `filtered`) → genuinely empty, and the filtered branch offers *Clear filters* (reassigns a fresh filter DTO) instead of *Add*. Verified `?activityName=zzzz` on all seven surfaces, *Clear filters* drops the param and the rows return, and `secondaryUser` still gets the onboarding copy on every surface — which also settles `leisure-projects/U1`'s table half. Body in the log | app (`src/core/leisure/component/LeisureEmptyState.vue` + 4 tables, board, ladder, timeline, 4 views, locales) | `leisure-projects/P3` | low |
 | F80 | The board card's metadata line reads "Woodworking· 8.5h" — two adjacent `v-if` templates each lead with `· ` and neither emits a leading space | app (`ProjectReadinessBoard.vue:86-98`) | `leisure-projects/P2` | trivial |
 | F81 | The repeating-task dialog asks for `fas fa-calendar-range`, which this app does not bundle — the *Date range* recurrence tab renders with no icon and logs a FontAwesome error every time the dialog opens. **Sixteenth pass proved it and bounded it:** `calendar-range` is a FA **Pro** name absent from all three free packs (aliases included), and a sweep of every static icon literal in `src/` found **exactly two** unresolvable ones app-wide — this and `F46`'s `mdi-close`. Not the tip of an iceberg; `calendar-days` is the substitute | app (`RecurrenceType.ts:15`) | `planner-day/P1` | trivial |
 | F82 | *Importance* blocks submission of the New/Edit Repeating Task dialog with "This field is required" and carries no `*`, unlike `* Name` and `* Activity` in the same dialog — and it is genuinely optional in the plain task dialog, so one of the two is wrong | app (`RepeatingTaskDialog.vue`) | `planner-day/P2` | trivial (decision: mark it or relax it) |
@@ -255,7 +255,8 @@ slots app-side as a workaround for `FW20`** unless the framework declines — th
 **The three new escalations gated three verifications.** `F63`'s *Verify* step 3
 (no request fires on an empty form) holds without them; `F62`'s pass condition needed §12, and both
 closed together 2026-09-15; `F60`'s needed nothing (the server already read the renamed fields) and it
-is now fixed and verified, **except** its timeline step, which `F61` blocks, not an escalation; and
+is now fixed and verified, ~~**except** its timeline step, which `F61` blocks~~ — `F61` landed 2026-09-21
+and the timeline step held (July and August 2026 shaded, the other twenty months empty); and
 `leisure-backlog-picker/X1`'s *Verify*
 block ~~is unrunnable until §13 lands, because the filter it tests has never existed on the wire~~ —
 **§13 landed 2026-09-15 (`B11`), so the block is now runnable as written** against a backend build
@@ -845,29 +846,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Verification:** `tracking-settings/B3`'s `Verify:` block, then reload with `page=2`/a sort in the query
   and confirm both survive. Re-run `edit()` from the Mappings tab and confirm the query is intact afterwards.
 - **Risk:** Medium — the same class of race as `F1`; test the edit hand-off specifically.
-
-## F16. The settings header row clips its labels at 1440 px — ✅ fixed 2026-09-21 with §19's frontend half
-
-> Ran **before** `F13` after all: §19's coverage toggle made the row overflow outright (the *Mappings* tab
-> was pushed out of view at 1440), so the wrap could not wait. If `F13` later hides or repoints the bar on the
-> Mappings tab, the wrap is still right — it only decides what happens when the row does not fit.
-
-- **Scope:** app-side `DesktopSettingsView.vue:7-36`, `AndroidSettingsView.vue:7-36`
-- **Closes:** `tracking-settings/B4`
-- **Root cause:** The header `<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">` holds the title, the
-  two-button `VBtnToggle` and the whole filter bar with no `flex-wrap`; the bar's own root only stacks below
-  `md` (`DesktopEntriesFilterBar.vue:2`, `flex-column flex-md-row`). At 1440 px everything is a row and
-  every child shrinks: the screenshot on disk reads *MAPPI*, *P…*, *Co…*, *W…* — confirmed from
-  `desktop-settings-mappings--default.png` this pass, no browser needed.
-- **Files:** as above
-- **What to change:** Let the header wrap (`flex-wrap`) so the filter bar drops to its own line when it does
-  not fit, and give the `VBtnToggle` `flex-shrink: 0` so tab labels never truncate. **Run after `F13`** — if
-  that batch hides or repoints the bar on the Mappings tab, the row to lay out is different.
-- **Do not change:** the filter bar's `flex-md-row` breakpoint — it is right for mobile and is not the
-  problem.
-- **Verification:** `tracking-settings/B4`'s `Verify:` block at 1440×900 on all four routes; re-check 1920
-  still renders single-line, and 390 still stacks.
-- **Risk:** None beyond layout.
 
 ## F17. CLAUDE.md's "every settings page" sentence reads wider than `moduleSettingsLinks.ts` means
 
@@ -2154,31 +2132,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   `isActive`, so it should already be right.
 - **Risk:** Low. One widget, one composable function; the SK copy for the chip needs the locale.
 
-## F61. Ladder and Timeline ask for 500 rows against a cap of 200 — and a failure renders as "empty"
-
-- **Scope:** app-side `src/core/leisure/view/BucketListView.vue:142,149-160`,
-  `src/core/leisure/view/MemoryAnchorsView.vue:120,131-145`
-- **Closes:** `leisure-bucket-anchors/X1`, `X2`
-- **Root cause:** `BaseGridEndpoint.MaxItemsPerPage` is **200** and the base answers a 400 naming the
-  field above it (`BaseGridEndpoint.cs:31,104-106`). `LADDER_PAGE_SIZE = 500` and
-  `TIMELINE_PAGE_SIZE = 500` therefore fail on every load, and both loaders are `try … finally` with no
-  `catch`: the rejection propagates to the console, `ladderItems`/`timelineItems` keep their initial
-  `[]`, and the view's empty-state copy renders — *"You don't have any here yet"* over a table that
-  showed rows a second earlier. `ProjectsView.vue:118-122` fixed the identical constant to 200 with a
-  comment that names this exact failure; the grep this pass (`PAGE_SIZE =` under `src/core`) finds no
-  third 500 — `useLeisurePicker.ts:48` is already 200.
-- **What to change:** Both constants to 200, with `ProjectsView`'s comment. Then the half `ProjectsView`
-  did not do: a `catch` that sets an error flag, and an error branch in each view distinct from the
-  empty state — the README's *Class 1* note (*"give the table component an error state distinct from its
-  empty state"*) is the same ask, and `F27` is the pattern (`useActivityDashboard`'s error/retry). A
-  user with more than 200 bucket-list rows or anchors would then see a truncated ladder/timeline rather
-  than a 400 — say so in a comment; paging the ladder is not this batch.
-- **Do not change:** `ProjectsView.vue`; the server cap (it is documented and deliberate).
-- **Verification:** `X1`'s and `X2`'s `Verify:` blocks — no 400, the seeded row on rung 3, July and
-  August 2026 shaded. Then `playwright-cli route "**/api/activity-bucket-list-profile/grid" --status=500`
-  and toggle to Ladder: the error branch, not the empty copy.
-- **Risk:** Low. Two constants and two small template branches.
-
 ## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
 
 - **Scope:** app-side `src/core/leisure/composable/useLeisurePicker.ts:250`,
@@ -3426,31 +3379,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   second task adds rather than replaces, "2 selected", and a multi-delete confirms "delete 2 selected
   tasks?") — that must survive.
 
-## F79. Filtering to zero shows the "you have none at all" onboarding copy, on every leisure surface
-
-- **Scope:** app-side `src/core/leisure/component/project/{ProjectTable.vue:33-51,ProjectReadinessBoard.vue:7-24}`,
-  and the same branch on `BacklogTable`, `BucketListTable`, `BucketListLadder`, `MemoryAnchorTable`,
-  `MemoryAnchorTimeline`
-- **Closes:** `leisure-projects/P3`
-- **Root cause:** every empty state keys on `items.length === 0` alone. A filter that excludes the one
-  seeded row produces the identical *"These are things you're building or making. You don't have any
-  projects here yet."* plus a prominent *Add* CTA — which reads as "you have never created one" and
-  nudges toward creating a duplicate rather than clearing the filter. The filter chips are visible in
-  the toolbar above the copy at the same time, which is the tell.
-- **What to change:** branch on `filter.value?.hasAny()` — **already implemented on every leisure filter
-  DTO**, which is why this is cheap — and render a "no results for these filters" message with a *clear
-  filters* action in place of the Add CTA. One locale key pair, reused by all six surfaces.
-- **Do not scope this to the projects view.** All four leisure surfaces came out of one
-  `L4-onboarding-empty-states.md` pass and share the shape; the finding says so and the source confirms
-  it. A fix that teaches only the board leaves three tables lying. It also overlaps `F61`: the ladder and
-  timeline render the *empty* state on a failed fetch, so after `F61` there are **three** states to tell
-  apart — empty, filtered-to-zero, failed. Decide the copy for all three at once.
-- **Verification:** `P3`'s `Verify:` block on the board and the table, then one filtered-to-zero load on
-  each of the other four surfaces. Keep a genuinely empty account (or `secondaryUser`) in the same
-  session to confirm the original copy still renders where it should.
-- **Risk:** Low. The only trap is a filter DTO whose `hasAny()` counts a default the user did not set —
-  check each before trusting it.
-
 ## F80. The board card's metadata line runs two fields together
 
 - **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:86-98`
@@ -3916,32 +3844,11 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
      exactly as asked (API `c00e64d`); frontend half the same afternoon (`c2075f61`) with `F47` folded in.
      Body in _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
-19. ✅ **RESOLVED 2026-09-21** — backend `B24` landed exactly as asked (`coveredBy` on both `/grid` rows,
-    `coverage` on both filters, counts exact in every mode; the Android question answered: rules apply to
-    nothing at ingest today, so the Android chip reads "a rule exists that would match", resolved through
-    the class the sync will use). Frontend half the same evening: `MappingCoverageResponse` +
-    `MappingCoverage` enums, the *Rule* column (`MappingCoverageChip` — chip linking to
-    `…/mappings?mappingId=`, tinted there through `DataTable`'s new `highlightedId`; muted *Undecided* for
-    null), the three-way toggle in both filter bars, `?coverage=` in the URL (`useCoverageUrlState`,
-    written by the same handler that reloads — no watcher, so nothing races `edit()`'s push), the grid
-    reloaded after a save so the new rule's chips appear, and `F16` folded in because the toggle pushed the
-    Mappings tab out of the header at 1440. Default stays `All`: `edit()` lands on this tab with the
-    rule's pattern pre-filled, and `Uncovered` would hide the very rows that rule catches. Verified live on
-    both platforms. File moved to `_done/` with the reply appended; body to the log in the follow-up.
-    **The distinct-entries grids should say which rule already covers each tuple** — `tracking-settings/B5`,
-    re-graded `opportunity` in §103, promoted from *Deferred to opportunities* on 2026-09-21 at the owner's
-    request. The ledger is the raw observation record by design (the heartbeat stores a to-activity match
-    *and* attributes it, `DesktopActivityHeartbeatEndpoint.cs:87-113`; only `IsIgnored` drops), so the row
-    reappearing after a rule is created is not a defect — but nothing tells the user which rows still need a
-    decision, and the client cannot join the two grids: the match is first-match-wins in specificity order
-    over pattern match types, active rules only, and the distinct row's `id` is `Min(e.Id)` of the ledger.
-    Ask: `coveredBy: { mappingId, target, targetName } | null` per row on both `/grid`s and a
-    `coverage: All | Uncovered | Covered` filter, default `All`, under `B11`'s conventions, not sortable
-    (`B20`). **One thing found while writing it that the backend has to answer before the Android half means
-    anything:** `AndroidSyncEndpoint.cs` never reads `TrackerAndroidMappingByPattern` — the only readers are
-    `AppDbContext` and the `canDelete` scan — so Android rules are CRUD-only today and apply to nothing. The
-    ask frames it as a question (not yet vs. by design), not a finding. File:
-    `prompts/view-docs/backend/B24-…`.
+<!-- §19 (tracking-settings/B5, re-graded opportunity in §103 — the distinct-entries grids should say which rule
+     already covers each tuple) resolved 2026-09-21 — backend `B24` landed `coveredBy` on both `/grid` rows and
+     `coverage` on both filters exactly as asked, with the Android question answered (rules apply to nothing at
+     ingest today; the chip there means "would match"); frontend half the same evening with `F16` folded in.
+     Body in _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
 <!-- §20 (the 2FA login's lockout 401 carried neither the type nor the instant — `B21`'s declined follow-on)
      resolved 2026-09-21 — backend `B25` landed all three parts: the type on every 2FA-login 401
@@ -4259,7 +4166,7 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 
 | finding | what settles it | note |
 | --- | --- | --- |
-| `U1` — the genuinely-empty board and table states | ~~Blocked on `F73`~~ **half-settled 2026-09-21** by `F73`'s own verification: deleting the seeded `17201` through the UI worked and the board's `isEmpty` branch rendered *"You don't have any projects here yet"* after a reload. The table's `#noData` slot is still unseen — create-and-delete through the API and read it | **Run it in `F79`'s session** — `F79` adds a third empty state (filtered-to-zero), and this row is the check that the original one still renders where it should |
+| `U1` — the genuinely-empty board and table states | ~~Blocked on `F73`~~ **settled 2026-09-21** — the board half by `F73`'s own verification (deleting the seeded `17201` through the UI rendered *"You don't have any projects here yet"* after a reload), the table half in `F79`'s session: signed in as `secondaryUser`, `/leisure/projects?view=table` rendered the same copy + *Add* through the `#noData` slot, and so did every other leisure surface | Ran in `F79`'s session as planned — the third state (filtered-to-zero) is in, and the original copy still renders where it should |
 | `U2` — the loading progress bar | `playwright-cli route` with a delay on the `grid` call | Same limitation as `leisure-backlog-picker/U4`; one throttled session settles both |
 
 ### `planner-day` — one finding whose premise is wrong, and it was filed as a backend ask

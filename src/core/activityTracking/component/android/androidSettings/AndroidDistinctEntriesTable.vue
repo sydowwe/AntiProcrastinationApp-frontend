@@ -16,7 +16,14 @@
 			:itemsLength="totalItems"
 			:showActions="false"
 			@onLoadItems="load"
-		/>
+		>
+			<template #item.coveredBy="{ item }">
+				<MappingCoverageChip
+					:coveredBy="item.coveredBy"
+					settingsRouteName="androidSettings"
+				/>
+			</template>
+		</DataTable>
 	</div>
 </template>
 
@@ -33,6 +40,7 @@
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import AndroidDistinctEntriesActions from '@/core/activityTracking/component/android/androidSettings/AndroidDistinctEntriesActions.vue'
+	import MappingCoverageChip from '@/core/activityTracking/component/settings/MappingCoverageChip.vue'
 
 	const props = defineProps<{ filter: AndroidDistinctEntriesFilterRequest }>()
 	const emit = defineEmits<{ clear: []; save: [] }>()
@@ -48,6 +56,8 @@
 	const columns = [
 		new TableColumn('appLabel', t('activityTracking.settings.appLabel')),
 		new TableColumn('packageName', t('activityTracking.settings.packageName')),
+		// Computed server-side after the query; sending it as a sort key is a 400 (B24).
+		new TableColumn('coveredBy', t('activityTracking.settings.coverage.column'), false),
 	]
 
 	const items = ref<TrackerAndroidDistinctEntriesResponse[]>([])

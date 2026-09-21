@@ -26,8 +26,10 @@ button shortcuts that trip without leaving this view).
 attributed to a real activity, or excluded from tracking.
 
 **What the user can do**
-- Browse the distinct, not-yet-considered process/product/window-title combinations observed by the desktop
-  tracker (`distinctEntries` tab).
+- Browse the distinct process/product/window-title combinations observed by the desktop tracker
+  (`distinctEntries` tab). Each row's *Rule* column says which active rule already covers it (a chip that opens
+  that rule on the Mappings tab) or *Undecided*; the *All / Undecided / Covered* toggle narrows the list, and
+  `?coverage=Uncovered` is the not-yet-considered view — the default is the full observation record (B24).
 - Define a pattern (process name / product name / window title, each with a match type) and either assign it
   to an activity (with role/category pre-filled from the activity) or mark it ignored, then save it as a rule
   (`Save`). **The "mark it ignored" half is non-functional** — confirmed in the round 2 mutation pass, see
@@ -52,7 +54,9 @@ attributed to a real activity, or excluded from tracking.
 
 **What the user can do / see:** Identical to `DesktopSettingsView`, with the pattern fields narrowed to
 `appLabel` + `packageName` (desktop's third field, `windowTitle`, has no Android equivalent — apps don't have
-window titles).
+window titles). The *Rule* column and coverage toggle are here too, with one caveat the backend confirmed
+(B24): the Android sync does not yet apply rules at ingest, so *Covered* here means "an active rule exists
+that would match this app", not "this time was attributed".
 
 **Depends on:** same as desktop.
 

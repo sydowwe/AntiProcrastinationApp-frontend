@@ -163,6 +163,17 @@ const messages = {
 		isIgnored: `Je ignorované`,
 		matchType: `Typ zhody`,
 		type: `Typ`,
+		/** B24 — stĺpec *Pravidlo* a trojstavový filter pokrytia na oboch tabuľkách jedinečných záznamov. */
+		coverage: {
+			column: `Pravidlo`,
+			All: `Všetky`,
+			Uncovered: `Nerozhodnuté`,
+			Covered: `Pokryté`,
+			undecided: `Nerozhodnuté`,
+			ignored: `Ignorované`,
+			rule: `Pravidlo`,
+			editRule: `Otvoriť toto pravidlo na záložke Mapovania`,
+		},
 	},
 }
 /**

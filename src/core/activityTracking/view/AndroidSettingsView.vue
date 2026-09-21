@@ -4,7 +4,9 @@
 			elevation="2"
 			class="h-100 d-flex flex-column"
 		>
-			<div class="pa-4 pb-0 w-100 d-flex align-center ga-4">
+			<!-- Wraps (F16): the filter bar drops to its own line when the row is too narrow, and the tab
+			     toggle never shrinks, so its labels never truncate. -->
+			<div class="pa-4 pb-0 w-100 d-flex flex-wrap align-center ga-4">
 				<VCardTitle class="pa-0">{{ $t('activityTracking.settings.androidTitle') }}</VCardTitle>
 				<VBtnToggle
 					:modelValue="tableView"
@@ -12,26 +14,27 @@
 					density="compact"
 					color="primaryOutline"
 					variant="outlined"
-					style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px"
+					style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px; flex-shrink: 0"
 				>
+					<!-- The tab links carry the coverage so switching tabs and back keeps the chosen view. -->
 					<VBtn
 						value="distinctEntries"
 						height="40"
-						to="distinctEntries"
+						:to="distinctEntriesRoute"
 					>
 						{{ $t('activityTracking.settings.distinctEntries') }}
 					</VBtn>
 					<VBtn
 						value="mappings"
 						height="40"
-						to="mappings"
+						:to="{ name: 'androidSettings', params: { tableView: 'mappings' } }"
 					>
 						{{ $t('activityTracking.settings.mappings') }}
 					</VBtn>
 				</VBtnToggle>
 				<AndroidEntriesFilterBar
 					v-model="filter"
-					@filter="distinctEntriesTable?.load()"
+					@filter="applyFilter"
 				/>
 			</div>
 			<VCardText class="pt-1 d-flex flex-column ga-2">
@@ -42,12 +45,13 @@
 					v-model:mode="mode"
 					v-model:formData="formData"
 					:filter="filter"
-					@clear="clear"
-					@save="saved"
+					@clear="clearKeepingCoverage"
+					@save="saveAndReload"
 				/>
 				<AndroidMappingsTable
 					v-else-if="tableView === 'mappings'"
 					ref="mappingsTable"
+					:highlightedId="highlightedMappingId"
 					@edit="edit"
 				/>
 			</VCardText>
@@ -68,6 +72,7 @@
 	import AndroidMappingsTable from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsTable.vue'
 	import DismissibleMappingHint from '@/core/activityTracking/component/settings/DismissibleMappingHint.vue'
 	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
+	import { useCoverageUrlState } from '@/core/activityTracking/composable/useCoverageUrlState.ts'
 
 	const { create, update } = useTrackerAndroidMappingCrud()
 	const { filter, formData, mode, editedId, request, saved, clear } = useMappingSettings({
@@ -82,8 +87,35 @@
 		route.params.tableView === 'mappings' ? 'mappings' : 'distinctEntries',
 	)
 
+	// `coverage` lives in the URL (B24); the table reads it off `filter` like every other field.
+	const { coverageFromRoute, highlightedMappingId, coverageQuery } = useCoverageUrlState()
+	filter.value.coverage = coverageFromRoute.value
+	const distinctEntriesRoute = computed(() => ({
+		name: 'androidSettings',
+		params: { tableView: 'distinctEntries' },
+		query: coverageQuery(filter.value.coverage),
+	}))
+
 	const distinctEntriesTable = ref<InstanceType<typeof AndroidDistinctEntriesTable> | null>(null)
 	const mappingsTable = ref<InstanceType<typeof AndroidMappingsTable> | null>(null)
+
+	/** One handler writes the URL and reloads, so there is no watcher to race `edit()`'s push. */
+	function applyFilter() {
+		router.replace({ query: coverageQuery(filter.value.coverage) })
+		distinctEntriesTable.value?.load()
+	}
+
+	/** Coverage is the view, not the rule pattern being cleared — it survives *Clear*, as the URL does. */
+	function clearKeepingCoverage() {
+		clear()
+		filter.value.coverage = coverageFromRoute.value
+	}
+
+	/** The new rule's chips appear on reload; without it the rows keep reading *undecided*. */
+	async function saveAndReload() {
+		await saved()
+		distinctEntriesTable.value?.load()
+	}
 
 	function edit(item: TrackerAndroidMappingResponse) {
 		editedId.value = item.id
@@ -100,6 +132,6 @@
 		} else {
 			mode.value = 'toIgnored'
 		}
-		router.push({ name: 'androidSettings', params: { tableView: 'distinctEntries' } })
+		router.push(distinctEntriesRoute.value)
 	}
 </script>

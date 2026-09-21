@@ -145,3 +145,70 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 	// reached with a real click.
 	test.fixme('U1: deleting a mapping actually removes it (blocked on X1)', async () => {})
 })
+
+// findings.md B5 → backend B24 (landed 2026-09-21): every distinct row says which active rule covers it.
+// The seed's activity rule is Exact on rider64.exe (two window titles → two rows); the other four
+// desktop tuples have no rule. Android's rule is Exact on com.spotify.music.
+test.describe('Rule column and coverage filter (/activity-tracking/{desktop,android}/settings/distinctEntries — B24)', () => {
+	test('desktop: covered rows carry a chip naming the rule’s activity, the rest read Undecided', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		await authenticatedPage.goto('/activity-tracking/desktop/settings/distinctEntries')
+		await expect(authenticatedPage.getByRole('columnheader', { name: 'Rule' })).toBeVisible()
+		await expect(authenticatedPage.getByRole('link', { name: 'Desk Research' })).toHaveCount(2)
+		await expect(authenticatedPage.getByRole('cell', { name: 'Undecided' })).toHaveCount(
+			seed.counts.distinctDesktopEntries - 2,
+		)
+	})
+
+	test('desktop: Undecided narrows to the uncovered tuples, writes ?coverage=Uncovered, and survives a reload', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		await authenticatedPage.goto('/activity-tracking/desktop/settings/distinctEntries')
+		await authenticatedPage.getByRole('link', { name: 'Desk Research' }).first().waitFor()
+		await authenticatedPage.getByRole('button', { name: 'Undecided' }).click()
+		await expect(authenticatedPage).toHaveURL(/\?coverage=Uncovered$/)
+		await expect(authenticatedPage.getByRole('link', { name: 'Desk Research' })).toHaveCount(0)
+		await expect(authenticatedPage.getByRole('cell', { name: 'rider64.exe' })).toHaveCount(0)
+		await authenticatedPage.reload()
+		await expect(authenticatedPage.getByRole('cell', { name: 'Undecided' })).toHaveCount(
+			seed.counts.distinctDesktopEntries - 2,
+		)
+		await expect(authenticatedPage.getByRole('cell', { name: 'rider64.exe' })).toHaveCount(0)
+	})
+
+	test('desktop: Covered lists only the two rider64.exe rows, and All clears the query', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/activity-tracking/desktop/settings/distinctEntries?coverage=Covered')
+		await expect(authenticatedPage.getByRole('cell', { name: 'rider64.exe' })).toHaveCount(2)
+		await expect(authenticatedPage.getByRole('cell', { name: 'Undecided' })).toHaveCount(0)
+		await authenticatedPage.getByRole('button', { name: 'All', exact: true }).click()
+		await expect(authenticatedPage).toHaveURL(/\/distinctEntries$/)
+	})
+
+	test('desktop: the chip deep-links to the Mappings tab with the rule id in the query', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		await authenticatedPage.goto('/activity-tracking/desktop/settings/distinctEntries')
+		await authenticatedPage.getByRole('link', { name: 'Desk Research' }).first().click()
+		await expect(authenticatedPage).toHaveURL(
+			new RegExp(`/desktop/settings/mappings\\?mappingId=${seed.trackingMappings.desktopToActivity}$`),
+		)
+	})
+
+	test('android: Spotify carries the rule chip; Undecided lists the other four apps', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		await authenticatedPage.goto('/activity-tracking/android/settings/distinctEntries')
+		await expect(authenticatedPage.getByRole('link', { name: 'Read a Novel' })).toHaveCount(1)
+		await authenticatedPage.getByRole('button', { name: 'Undecided' }).click()
+		await expect(authenticatedPage).toHaveURL(/\?coverage=Uncovered$/)
+		await expect(authenticatedPage.getByRole('cell', { name: 'Undecided' })).toHaveCount(
+			seed.counts.distinctAndroidEntries - 1,
+		)
+		await expect(authenticatedPage.getByRole('cell', { name: 'Spotify' })).toHaveCount(0)
+	})
+})

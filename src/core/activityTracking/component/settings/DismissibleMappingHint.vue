@@ -1,6 +1,9 @@
 <template>
+	<!-- `flex-grow-0`: VAlert ships `flex: 1 1`, which in the views' flex column let it swallow the
+	     height meant for the table. -->
 	<VAlert
 		v-if="!dismissed"
+		class="flex-grow-0"
 		type="info"
 		variant="tonal"
 		closable

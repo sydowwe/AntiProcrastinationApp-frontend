@@ -13,6 +13,7 @@
 			:columns="columns"
 			:itemsLength="totalItems"
 			:showActionsHeader="false"
+			:highlightedId
 			@onLoadItems="load"
 			@onEdit="emit('edit', $event)"
 		/>
@@ -33,6 +34,8 @@
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import DesktopMappingsFilter from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsFilter.vue'
 
+	/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
+	const { highlightedId = null } = defineProps<{ highlightedId?: number | null }>()
 	const emit = defineEmits<{ edit: [item: TrackerDesktopMappingResponse] }>()
 
 	const { showErrorSnackbar } = useSnackbar()

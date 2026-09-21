@@ -17,7 +17,14 @@
 			:itemsLength="totalItems"
 			:showActions="false"
 			@onLoadItems="load"
-		/>
+		>
+			<template #item.coveredBy="{ item }">
+				<MappingCoverageChip
+					:coveredBy="item.coveredBy"
+					settingsRouteName="desktopSettings"
+				/>
+			</template>
+		</DataTable>
 	</div>
 </template>
 
@@ -34,6 +41,7 @@
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import DesktopDistinctEntriesActions from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesActions.vue'
+	import MappingCoverageChip from '@/core/activityTracking/component/settings/MappingCoverageChip.vue'
 
 	const props = defineProps<{ filter: DesktopDistinctEntriesFilterRequest }>()
 	const emit = defineEmits<{ clear: []; save: [] }>()
@@ -50,6 +58,8 @@
 		new TableColumn('processName', t('activityTracking.settings.processName')),
 		new TableColumn('productName', t('activityTracking.settings.productName')),
 		new TableColumn('windowTitle', t('activityTracking.settings.windowTitle')),
+		// Computed server-side after the query; sending it as a sort key is a 400 (B24).
+		new TableColumn('coveredBy', t('activityTracking.settings.coverage.column'), false),
 	]
 
 	const items = ref<TrackerDesktopDistinctEntriesResponse[]>([])
