@@ -113,7 +113,7 @@
 | FW11 | Post-login redirect, read half: `LoginView`'s two success handlers and `LoginVerifyQrCode` hardcode `router.push('/')`, so the `?redirect=` the interceptor already writes (and `F39` will) is never honoured — with an open-redirect guard; folds `P3`'s `console.log(valid)` and the `'No user!!!'` literal, same file | **framework** | `auth/B1` (read half), `auth/P3` | low |
 | FW12 | Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar — **the unit's round 2 re-drove it and now says the same**); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId` (**observed in round 2** — it answers 401 and trips `FW21`), and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
 | FW13 | ~~`RegistrationView` fails closed on an empty reCAPTCHA token~~ **✅ guard half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X2` verified fixed in round 3, a real account created through the UI); what is left: its `catch` overwrites the server's `409 "User already exists"` with *"changed by someone else"* (the round-3 duplicate submit **did** answer 409), and `P1`'s legal links (`target="_blank"`), same file | **framework** | ~~`auth/O1`/`X2`~~ (fixed), `auth/P1` | low |
-| FW14 | ~~Registration's 2FA recovery codes are received and discarded~~ **✅ landed 2026-09-21** — `RegistrationView` opens `RecoveryCodesBody` after the QR (`utils/recoveryCodes.ts` shared with `SecuritySection`), the "no QR"/"no codes" arms go on to `/login`; verified live and by the promoted `auth.draft.spec.ts` registration test | **framework** (`RegistrationView.vue`) | ~~`auth/B8`~~ (fixed) | low |
+| FW14 | ✅ **FIXED 2026-09-21** — registration's 2FA recovery codes were received and discarded; `RegistrationView` now opens `RecoveryCodesBody` after the QR (`utils/recoveryCodes.ts` shared with `SecuritySection`) and the "no QR"/"no codes" arms go on to `/login`. Verified live and by the promoted `auth.draft.spec.ts` registration test. Body in the log | **framework** (`RegistrationView.vue`) | `auth/B8` | low |
 | FW15 | `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
@@ -136,13 +136,13 @@
 | FW22 | `TableCellEditor`'s `DECIMAL` branch sets `:step="0.1"` and no `:precision`, so Vuetify rounds every decimal inline-edit cell to a whole number — `TableCellType.DECIMAL` does not do what it says. Source-certain, **no consumer in this app yet** | **framework** (`inlineEditTable/TableCellEditor.vue:19`) | *(unfiled — the framework twin of `leisure-projects/B4`)* | trivial |
 | FW23 | A second column-header click **adds** a sort key instead of replacing it (`sortBy=activity.name:asc,durationMinutes:asc` from one unmodified click), with no multi-sort affordance anywhere — `VDataTable`'s default, inherited by every table in the app | **framework** (decision: `BasicTable`/`DataTable` default) | `leisure-backlog-picker/P1` (round 2) | low (decision first) |
 | FW24 | **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
-| FW25 | ~~Three hydrations per settings visit each push the browser time zone, and a `PUT` racing a step-up write fails Identity's concurrency check, reported as "Wrong password"~~ **✅ landed 2026-09-21** — one in-flight hydration, one zone push per session, `VerifyUserForm` words only a 401 as the credential. **Grown on the way:** a wrong step-up password **signed the user out** (401 → refresh → identical retry → 401 → `logoutClient()`); fixed with `_credentialCheck` on the request, which makes the interceptor hand a live-token 401 back to the caller. Also the 2FA sign-in dialog now closes on a refusal instead of inviting a retry the single-use token cannot honour, and the reset button reads *Reset authenticator app* | **framework** (`authStore.ts`, `timeZoneSync.ts`, `VerifyUserForm.vue`, `axiosConfig.ts`, `LoginVerifyQrCode.vue`) | ~~`user-settings/B3`, `user-settings/B4`~~ (fixed) | low |
+| FW25 | ✅ **FIXED 2026-09-21** (filed and landed the same day) — three hydrations per settings visit each pushed the browser time zone, and a `PUT` racing a step-up write failed Identity's concurrency check, reported as "Wrong password"; now one in-flight hydration, one zone push per session, and `VerifyUserForm` words only a 401. **Grown on the way:** a wrong step-up password **signed the user out** (401 → refresh → identical retry → 401 → `logoutClient()`), fixed with `_credentialCheck` on the request. Same commit: the 2FA sign-in dialog closes on a refusal instead of inviting a retry the single-use token cannot honour, and the reset button reads *Reset authenticator app*. Body in the log | **framework** (`authStore.ts`, `timeZoneSync.ts`, `VerifyUserForm.vue`, `axiosConfig.ts`, `LoginVerifyQrCode.vue`) | `user-settings/B3`, `user-settings/B4` | low |
 | F85 | The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (blocked on `FW24`) |
 
 84 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
-`F85` is blocked on `FW24`) · 23
-framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` is now a batch) ·
+`F85` is blocked on `FW24`) · 24
+framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log) ·
 15 escalations (**2 open: §7, §9** — and **§7's ask has now landed**, so what is open there is
 the frontend half, `FW24` + `F85`, not the ask; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
@@ -3111,52 +3111,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   wants same-tab legal pages has no override, which is acceptable for two links whose whole problem
   was being same-tab.
 
-## FW14. Registration's 2FA recovery codes are received and discarded — the settings-side enrolment already shows them, one file over
-
-> ✅ **Landed 2026-09-21** as prescribed below: `utils/recoveryCodes.ts` lifted out of `SecuritySection`,
-> `RegistrationView.open2FADialogs` opens the QR (with its `B22` key) then `RecoveryCodesBody` then
-> `goToLogin()`, and both "nothing received" arms navigate. Verified live (throwaway with 2FA ticked →
-> QR + key → five codes, *Done* gated → `/login` with the prefill) and `auth.draft.spec.ts:104` is
-> promoted to a real test. `FW13`'s remaining half (the `catch` and `P1`'s links) is untouched.
-
-- **Scope:** **[framework]** `src/_common/modules/user/view/RegistrationView.vue:118-129,149-158`, a new
-  `src/_common/modules/user/utils/recoveryCodes.ts` (lifted from `SecuritySection.vue:261-267`),
-  `src/_common/docs/modules/user.md` — submodule commit, then pointer bump
-- **Closes:** `auth/B8` (round 1's `U1`, **now browser-observed** in round 3 — the number the ninth pass
-  reserved for exactly this)
-- **Root cause:** Confirmed by direct read, and the unit's evidence is the response body itself.
-  `validateAndSendForm`'s success branch (`:149-158`) tests `response.data.recoveryCodes` for truthiness
-  and then calls `open2FADialog(response.data.qrCode)` — the codes are the *condition* and never the
-  *argument*. `open2FADialog` (`:118-129`) opens `QrCodeFor2FABody` with `{ qrCodeImage }` only, awaits
-  *Done*, and `goToLogin()`s. `QrCodeFor2FABody.vue:15` declares one prop. The server sends
-  `{ twoFactorEnabled, qrCode, recoveryCodes: [5 codes] }` (`TwoFactorAuthResponse.cs`,
-  `BaseRegisterUserEndpoint.cs:86-113`; round 3 read them off `response-body`), and after *Done* they
-  exist nowhere the user can reach — a brand-new account whose owner loses the authenticator has no way
-  back in. The settings-side enrolment solved this in `prompts/_done/user/framework/F1-2fa-recovery-codes.md`:
-  `SecuritySection.vue:196-197` → `normalizeRecoveryCodes(data)` → `openRecoveryCodesDialog(codes)` →
-  `RecoveryCodesBody` (`:269-281`, `persistent: true`, `hasCloseBtn: false`, *Done* to dismiss). F1 landed
-  for the regenerate path and missed this one.
-- **Files:** `RegistrationView.vue:118-129,149-158`; `utils/recoveryCodes.ts` (new — `normalizeRecoveryCodes`
-  moved out of `SecuritySection.vue:261-267` so both call sites share it; `SecuritySection` imports it);
-  `docs/modules/user.md` (the registration flow's description gains the second dialog)
-- **What to change:** After `open2FADialog(qrCode)` resolves and before `goToLogin()`:
-  `await openDialog({ component: RecoveryCodesBody, componentProps: { codes: normalizeRecoveryCodes(response.data) }, dialogProps: { title: i18n.t('user.recoveryCodes'), confirmBtnLabel: i18n.t('general.done'), hasCloseBtn: false, persistent: true, isSmall: false } })`
-  — the `SecuritySection` call, verbatim, so the two enrolment paths render the same body with the same
-  copy/download affordance. Order: QR first (the authenticator must be enrolled before the codes mean
-  anything), codes second, then login. Adjacent, same branch: the `noRecoveryCodesReceived` and
-  `noQrCodeReceived` arms (`:154,:157`) show a snackbar and **never navigate** — the user is left on a
-  submitted registration form with an account already created; end both with `goToLogin()`.
-- **Do not change:** `QrCodeFor2FABody` (it is the QR dialog; two responsibilities in one body is how
-  the codes got dropped); `SecuritySection`'s own flow beyond the import; the server. Do not batch with
-  `FW13` — same file, different finding, different reason (`FW15`/`FW2` precedent); one submodule commit
-  may carry both if it says so.
-- **Verification:** `B8`'s `Verify:` block — register a throwaway with *use 2FA* ticked → QR dialog →
-  *Done* → **a second dialog listing five codes** with the copy/download control `RecoveryCodesBody`
-  already has → *Done* → `/login` with the prefill. Then `/user/settings` → enable 2FA on a throwaway →
-  confirm the settings path is unchanged. **Reseed after** — two accounts are mutations. Promote
-  `e2e/tests/auth.draft.spec.ts:104`.
-- **Risk:** Low, two repos. Every app on the framework gains a second dialog on 2FA registration — the
-  one the settings page already shows, so no app's user sees a shape they have not seen.
+<!-- FW14 (registration's 2FA recovery codes discarded) landed 2026-09-21 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused. -->
 
 ## FW15. `MyDateInput` binds `$attrs` first, so every caller's `label` (and `hideDetails`) is discarded
 
@@ -3971,60 +3926,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   and both conditions are false, so both sites silently stop handling the 409 they handle today — which
   is why this is blocked rather than merely ordered.
 
-## FW25. Three hydrations per settings visit, each pushing the browser time zone — and one of them can race a step-up write into Identity's concurrency check
-
-> ✅ **Landed 2026-09-21**, the same afternoon it was filed (`vue_framework` — see the pointer bump's
-> message). (1) `hydrateFromServer` shares one in-flight promise; (2) `timeZoneSync` remembers the last
-> zone it pushed; (3) `UserSettingsView.onMounted`'s call is kept — with (1) it is free on a full load and
-> on an SPA navigation it is the refresh the sessions list wants; (4) `VerifyUserForm` words only a 401.
-> **Grown while verifying (4):** a wrong step-up password did not merely show the wrong sentence — it
-> **signed the user out**. `/user/2fa/toggle` is not in `AUTH_ENDPOINTS`, so its 401 went through
-> refresh-and-retry, the retry resent the same wrong password, and the retry's 401 is the interceptor's
-> `logoutClient()` branch. Filed and fixed as `user-settings/B4`: `VerifyUserForm` posts with
-> `{ _credentialCheck: true }`, and the interceptor hands a 401 without `X-Token-Expired` straight back
-> to such a caller. Verification: `two-factor.spec.ts` test 1 — a wrong password → 401, *"Wrong
-> password"*, dialog still open, still `/user/settings` — then the right one. And the batch's own
-> verification line: with the spec's `networkidle` wait removed, test 1 passes (it failed on every run
-> before) — one PUT per page load can still in principle overlap a very fast click, which is why the
-> wait stays in the spec and the optional backend retry stays optional.
-
-- **Scope:** **framework** — `src/_common/modules/user/store/authStore.ts:22-31` (`hydrateFromServer`),
-  `src/_common/bootstrap/installFramework.ts:177`, `src/_common/modules/user/view/UserSettingsView.vue:47`,
-  `src/_common/modules/user/utils/timeZoneSync.ts`. Submodule commit, then pointer bump. A backend half
-  is optional and named below.
-- **Closes:** `user-settings/B3` (new 2026-09-21, found by `two-factor.spec.ts`).
-- **Root cause:** Confirmed by trace, deterministic on a freshly seeded account. `hydrateFromServer()`
-  runs three times on the way to `/user/settings` after a form sign-in — `login()` (`authStore.ts:57`),
-  the boot hook (`installFramework.ts:177`, on the full page load) and `UserSettingsView.onMounted`
-  (`:47`) — and with `syncBrowserTimeZone: true` **each one** compares the server's zone with the
-  browser's and `PUT /user/preferences` when they differ. The fixture accounts are seeded `UTC`
-  (`E2eFixtureSeeder.cs:364`) and a real user's stored zone drifts too, so this is not a test artefact:
-  the first PUT is aborted by the navigation, the other two land ~0.4 s apart. A `POST /user/2fa/toggle`
-  sent while one is in flight loads the user row before the PUT saves, and its own `UpdateAsync` fails
-  `IdentityResult` concurrency → **400 "Optimistic concurrency failure, object has been modified."** —
-  which `VerifyUserForm.onConfirm`'s bare `catch` (`VerifyUserForm.vue:54-56`) words as *"Wrong
-  password"* and clears the form, so the user retypes a password that was right. Every `VerifyUserPreProcessor` route
-  is exposed the same way (password change, e-mail change, delete account, 2FA reset). Plain HTTP with no
-  hydration in flight succeeds, which is what isolates it. Note for `FW24`: its claim that a concurrency
-  failure *"cannot be produced today"* holds for the 409 path; this one is Identity's, on a 400.
-- **What to change:** (1) `hydrateFromServer` de-duplicates — one in-flight promise shared by concurrent
-  callers, the way the `ensureLoaded` convention already asks of stores. (2) The time-zone push happens
-  **at most once per session**, not per hydration: remember the last pushed zone and skip when it matches
-  (`timeZoneSync.ts` already reads the browser zone per call; it needs a "last pushed" beside it). (3)
-  `UserSettingsView.onMounted`'s re-hydration is redundant with the boot hook on a full load and with
-  `login()` on an SPA navigation — keep it only if something on the page needs fresher data than the
-  store holds, and say what. Optional backend half: `BaseToggleTwoFactorAuthEndpoint` (and the other
-  step-up routes) could retry once on `ConcurrencyFailure`, since the preference write does not touch
-  what they change; not filed as a `B2x` — the client-side fix removes the writer. (4) Folded in, same
-  module: `VerifyUserForm`'s `catch` should say *"Wrong password"* only for a **401** — anything else is
-  not the user's password, and today it is reported as if it were.
-- **Do not change:** `syncBrowserTimeZone` itself (`useUserClock`'s reason for existing) or the seed's
-  `UTC`.
-- **Verification:** `two-factor.spec.ts` test 1 **without** its `waitForLoadState('networkidle')` line —
-  it is the reproducer, and passes only because of that wait today. Then the request log on
-  `/user/settings` after a form sign-in from a browser in a non-UTC zone: one `GET /user/data` per
-  navigation, one `PUT /user/preferences` per session.
-- **Risk:** Low. Fewer writes; nothing user-visible changes except the race disappearing.
+<!-- FW25 (three hydrations per settings visit racing a step-up write; grew user-settings/B4, the sign-out on a wrong step-up password) filed and landed 2026-09-21 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused. -->
 
 ## Escalations (backend / outside this repo)
 
