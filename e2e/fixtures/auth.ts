@@ -1,7 +1,7 @@
 import { test as base, expect, type Page } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
-import { readSeed, reseed, type SeedResponse, type SeedUser } from './seed'
+import { apiUrl, readSeed, reseed, type SeedResponse, type SeedUser } from './seed'
 
 export { expect }
 export { apiUrl, reseed, seedDateParam } from './seed'
@@ -31,14 +31,42 @@ function authFileFor(user: SeedUser): string {
 	return path.join(AUTH_DIR, `auth-${user.id}.json`)
 }
 
+/**
+ * Whether the cookies in `context` still buy a signed-in session, refreshing once if the access
+ * token has lapsed.
+ *
+ * A cached state is not a static credential. The access token lives ~15 min, and `POST /api/test/seed`
+ * truncates **every** mapped table — `RefreshTokens` included — so after any reseed a state older than
+ * that cannot refresh and every guarded route bounces to /login. That is invisible in a short run and
+ * broke a 23-minute one at the first `freshSeed` block past the quarter hour (2026-09-21). Probing
+ * costs one GET per test; the refresh only runs on a 401, and rotating a token here is safe because
+ * `releasePage` writes the context's cookies back afterwards.
+ */
+async function sessionIsLive(context: import('@playwright/test').BrowserContext): Promise<boolean> {
+	const probe = await context.request.get(`${apiUrl()}/api/user/data`)
+	if (probe.ok()) return true
+	if (probe.status() !== 401) return false
+	const refreshed = await context.request.post(`${apiUrl()}/api/auth/refresh`)
+	return refreshed.ok()
+}
+
 async function signedInPage(browser: import('@playwright/test').Browser, user: SeedUser): Promise<Page> {
 	const authFile = authFileFor(user)
 	fs.mkdirSync(AUTH_DIR, { recursive: true })
 
-	const context = await browser.newContext({
+	let context = await browser.newContext({
 		storageState: fs.existsSync(authFile) ? authFile : undefined,
 		ignoreHTTPSErrors: true,
 	})
+
+	if (fs.existsSync(authFile) && !(await sessionIsLive(context))) {
+		// The cached session is gone (see `sessionIsLive`). Forget it and sign in cold, the same way
+		// the first test of a run does — one more hit on the login throttle, only when it is needed.
+		await context.close()
+		fs.rmSync(authFile)
+		context = await browser.newContext({ ignoreHTTPSErrors: true })
+	}
+
 	const page = await context.newPage()
 
 	if (!fs.existsSync(authFile)) {

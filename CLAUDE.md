@@ -511,8 +511,11 @@ test.describe.configure({ mode: 'serial' })
 test.use({ freshSeed: true })
 ```
 
-`freshSeed` re-POSTs `/api/test/seed` before each test in scope (~1.5–2.0 s). The endpoint is a reset, not an upsert, so this is safe to repeat; cached auth
-survives it, because the accounts come back with the same ids and a deterministic security stamp and the API installs no `SecurityStampValidator`.
+`freshSeed` re-POSTs `/api/test/seed` before each test in scope (~1.5–2.0 s warm; **~26 s against a freshly started API**, which counts against the test's
+budget). The endpoint is a reset, not an upsert, so this is safe to repeat. Cached auth survives it **only while the access token lives (~15 min)**: the
+accounts come back with the same ids and a deterministic security stamp, but the truncate takes `RefreshTokens` too, so an older cached state cannot refresh.
+`fixtures/auth.ts` probes every cached session before handing out a page and signs in cold when it is dead — that is what keeps a long run from collapsing at
+its first `freshSeed` block past the quarter hour (it did, on 2026-09-21, twelve `user-settings` failures from one dead state).
 It resets **before** each test, not after the last one — a block whose final test leaves a fixture *account* changed (`two-factor.spec.ts` enables 2FA on
 `secondaryUser`) adds `test.afterAll(reseed)` (`reseed` is exported from `fixtures/auth`) so later specs meet the account the fixture describes.
 

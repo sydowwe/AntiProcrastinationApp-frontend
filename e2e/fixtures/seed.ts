@@ -320,11 +320,14 @@ export function writeSeedState(body: SeedResponse): void {
  * Costs a full truncate-and-rebuild (~1.5–2.0 s) per call. Safe to call repeatedly: the endpoint is a
  * reset, not an upsert, and the API's `Seed_Twice_LeavesIdenticalRows` pins that twice equals once.
  *
- * Cached auth survives it. The accounts come back with the same ids and the seeder writes a
- * deterministic security stamp, and this solution installs no `SecurityStampValidator` and no
- * `OnTokenValidated` hook — so a token issued before the reset still authenticates after it. Only
- * `global-setup.ts` clears `.state/`, and it does that because a storage state left by a *previous
- * run* may predate an id change.
+ * Cached auth survives it **only as long as the access token does** (~15 min). The accounts come back
+ * with the same ids and the seeder writes a deterministic security stamp, and this solution installs
+ * no `SecurityStampValidator` and no `OnTokenValidated` hook — so an access token issued before the
+ * reset still authenticates after it. But the truncate takes `RefreshTokens` with everything else, so
+ * once that access token lapses the cached state cannot refresh. `fixtures/auth.ts` probes each cached
+ * session before use and signs in cold when it is gone; do not rely on a state file across a reseed
+ * yourself. Only `global-setup.ts` clears `.state/`, and it does that because a storage state left by
+ * a *previous run* may predate an id change.
  */
 export async function reseed(): Promise<SeedResponse> {
 	const body = await postSeed()
