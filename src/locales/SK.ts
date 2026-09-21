@@ -58,5 +58,8 @@ const SK = {
 	dateTime: { ...common.dateTime, ...appCommon.dateTime },
 	controls: { ...common.controls, ...appCommon.controls },
 	user: { ...frameworkUser.user, ...appUser.user },
+	// `calendar` joined 2026-09-21 (B19): the framework owns the day names, this app owns the
+	// `holidays` table its backend's `holidayKey` resolves through.
+	calendar: { ...common.calendar, ...appCommon.calendar },
 }
 export default SK

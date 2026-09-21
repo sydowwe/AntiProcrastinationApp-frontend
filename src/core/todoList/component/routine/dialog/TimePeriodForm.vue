@@ -80,7 +80,8 @@
 	import { useAnchorDayOptions } from '@/core/todoList/composable/useAnchorDayOptions.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
 	import { useDialogApi } from '@/_common/composable/general/useDialog.ts'
-	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
+	import { handleHttpCodes, ServerErrorType } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
+	import { extractServerErrorType } from '@/_common/axiosConfig.ts'
 	import { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { TimePeriodRequest } from '@/core/todoList/dto/request/TimePeriodRequest.ts'
 
@@ -93,16 +94,16 @@
 		/**
 		 * The account's other periods, for validating before the request goes out. Both `text` and
 		 * `lengthInDays` are unique per account (`RoutineTimePeriodConfiguration.cs:13,79`), and the server
-		 * reports either collision as the same bare 409, so this is the only way to tell the user *which*
-		 * field is the problem. The entity being edited is excluded here.
+		 * reports either collision as the same 409 `DbUniqueViolationError` with no field named, so this is
+		 * the only way to tell the user *which* field is the problem. The entity being edited is excluded here.
 		 */
 		existingPeriods?: RoutineTimePeriodEntity[]
 		/**
 		 * Performs the create/update. It runs *inside* the dialog's confirm so a failed request leaves the
-		 * form on screen with what the user typed: a 409 from the unique indexes would otherwise be worded
-		 * by the interceptor as "changed by someone else" after the dialog had already closed. Call the API
-		 * with `_silent: true` — this form handles the 409 inline and routes every other status through
-		 * `handleHttpCodes` itself.
+		 * form on screen with what the user typed: a 409 from the unique indexes would otherwise be a
+		 * snackbar after the dialog had already closed. Call the API with `_silent: true` — this form
+		 * handles the unique-violation 409 inline and routes every other status through `handleHttpCodes`
+		 * itself.
 		 */
 		submit: (request: TimePeriodRequest) => Promise<void>
 	}>()
@@ -161,10 +162,14 @@
 			await submit(request.value)
 		} catch (e) {
 			const status = axios.isAxiosError(e) ? e.response?.status : undefined
-			if (status === 409) {
+			const errorType = axios.isAxiosError(e) ? extractServerErrorType(e) : undefined
+			// Only a unique-index refusal is a name/length collision this form can word inline. Any other
+			// 409 (a stale row, a business refusal) is not, and goes through the shared handler with its
+			// type so it is worded by cause rather than as a collision.
+			if (status === 409 && errorType === ServerErrorType.DbUniqueViolationError) {
 				conflictError.value = [t('routineTodoList.timePeriods.conflict')]
 			} else {
-				handleHttpCodes(status ?? 0)
+				handleHttpCodes(status ?? 0, errorType)
 			}
 			return
 		} finally {

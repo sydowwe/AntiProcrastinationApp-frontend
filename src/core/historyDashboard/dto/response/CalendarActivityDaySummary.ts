@@ -11,6 +11,9 @@ export class CalendarActivityDaySummary {
 		public readonly dayType: DayType,
 		public readonly dayIndex: number,
 		public readonly label: string | null,
+		// B19: both null on an ordinary day, and always set together. Resolve the key through
+		// `useHolidayLabel()`; the name is the native-Slovak fallback, never the primary display.
+		public readonly holidayKey: string | null,
 		public readonly holidayName: string | null,
 		/**
 		 * B2: never null. `required TimeOnly` on the entity, non-nullable column, constructed
@@ -65,6 +68,7 @@ export class CalendarActivityDaySummary {
 			dayIndex,
 			null,
 			null,
+			null,
 			new Time(0, 0),
 			new Time(0, 0),
 			0,
@@ -81,6 +85,7 @@ export class CalendarActivityDaySummary {
 			convertToEnum(DayType, json.dayType),
 			json.dayIndex,
 			json.label ?? null,
+			json.holidayKey ?? null,
 			json.holidayName ?? null,
 			Time.fromJson(json.wakeUpTime),
 			Time.fromJson(json.bedTime),

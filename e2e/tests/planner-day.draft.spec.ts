@@ -44,8 +44,17 @@ test.describe('Planner calendar (/day-planner)', () => {
 	test.fixme('the "Days to show" filter survives a reload', async () => {})
 	test.fixme('the Duration/Range mode configuration survives a reload', async () => {})
 
-	// Finding B4: holiday names are untranslated Slovak regardless of the account's English locale.
-	test.fixme('holiday names render in the account locale', async () => {})
+	// Finding B4, closed by backend/B19: the server sends a stable `holidayKey` next to the native
+	// `holidayName`, and the client resolves the key through `calendar.holidays.*`. The fixture
+	// account is `locale: 'EN'`, so the two September holidays must render in English. September
+	// is a fixed calendar month, not seed-relative — holidays do not move with `seedDateUtc`.
+	test('holiday names render in the account locale', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/day-planner?month=2026-09')
+		const app = authenticatedPage.locator('#app')
+		await expect(app.getByText(/Constitution Day/)).toBeVisible()
+		await expect(app.getByText(/Our Lady of Sorrows/)).toBeVisible()
+		await expect(app.getByText(/Deň Ústavy Slovenskej republiky/)).toHaveCount(0)
+	})
 })
 
 test.describe('Day planner (/day-planner/:date)', () => {
@@ -88,7 +97,10 @@ test.describe('Day planner (/day-planner/:date)', () => {
 })
 
 test.describe('Task deep link (/day-planner/task/:id)', () => {
-	test('a valid task id redirects to the dated route and highlights the task', async ({ authenticatedPage, seed }) => {
+	test('a valid task id redirects to the dated route and highlights the task', async ({
+		authenticatedPage,
+		seed,
+	}) => {
 		// The seed exposes a plannerTasks COUNT (`seed.counts.plannerTasks`) but no per-task id map, so the
 		// id is read off the DOM rather than guessed — `BaseTaskBlock.vue` renders `data-task-id`.
 		await authenticatedPage.goto(`/day-planner/${seedDateParam(seed)}`)
@@ -131,7 +143,7 @@ test.describe('Planner settings (/day-planner/settings)', () => {
 
 	// Finding B1: switching tabs does not hide the previous tab's content — by the last tab, two other
 	// tabs' panels are still stacked above the real one. This is the semantic claim a fix must satisfy.
-	test.fixme('only the active tab\'s content is visible', async () => {})
+	test.fixme("only the active tab's content is visible", async () => {})
 
 	// Finding B6: the active tab is not reflected in the URL and does not survive a reload.
 	test.fixme('the active tab survives a reload', async () => {})

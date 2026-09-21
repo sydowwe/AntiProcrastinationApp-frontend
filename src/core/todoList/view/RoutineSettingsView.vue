@@ -72,7 +72,8 @@
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { useRoutineTimePeriodCrud } from '@/core/todoList/api/timePeriodApi.ts'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
-	import { handleHttpCodes } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
+	import { handleHttpCodes, ServerErrorType } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
+	import { extractServerErrorType } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
@@ -132,8 +133,8 @@
 
 	// The request runs inside the form's confirm (see `TimePeriodForm`'s `submit` prop) so a refused
 	// save keeps the dialog open. `_silent` for the same reason as `onDelete` below: `lengthInDays` is
-	// unique per account and the server answers a bare 409 from the index, which the interceptor
-	// words as an optimistic-concurrency conflict. The form turns it into an inline field error.
+	// unique per account and the server answers 409 `DbUniqueViolationError` from the index, which the
+	// interceptor would only snackbar. The form turns it into an inline field error instead.
 	function openAddDialog() {
 		openDialog({
 			component: TimePeriodForm,
@@ -174,17 +175,17 @@
 
 	async function onDelete(item: RoutineTimePeriodEntity) {
 		try {
-			// `_silent` so the interceptor's generic 409 message never fires here. This endpoint answers 409
-			// for a *referential* refusal — the period still has routines and the FK is `Restrict`
-			// server-side — not for the optimistic-concurrency case that message was written for, so it
-			// tells the user their record "was changed by someone else" and to refresh, neither of which is
-			// true or helps (findings.md B9). Silencing is per call, so every other status falls through to
-			// the shared handler below and keeps its normal message.
+			// `_silent` because a *referential* refusal — the period still has routines and the FK is
+			// `Restrict` server-side, 409 `DbForeignKeyError` — deserves a dialog naming the way out (and
+			// the count), not the interceptor's one-line sentence (findings.md B9). Silencing is per call,
+			// so every other status, and any other kind of 409, goes through the shared handler below with
+			// its type and keeps its normal message.
 			await deleteEntity(item.id, { _silent: true })
 		} catch (e) {
 			const status = axios.isAxiosError(e) ? e.response?.status : undefined
-			if (status === 409) await showDeleteBlocked(item)
-			else handleHttpCodes(status ?? 0)
+			const errorType = axios.isAxiosError(e) ? extractServerErrorType(e) : undefined
+			if (status === 409 && errorType === ServerErrorType.DbForeignKeyError) await showDeleteBlocked(item)
+			else handleHttpCodes(status ?? 0, errorType)
 			return
 		}
 		timePeriods.value = timePeriods.value.filter(p => p.id !== item.id)

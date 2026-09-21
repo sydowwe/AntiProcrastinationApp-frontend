@@ -1,17 +1,19 @@
 // App-wide namespaces not owned by a single core module — the app-level counterpart of
 // @/_common/_locales/common.en.ts, which has been complete in English since `e04dad2`.
 //
-// How the two meet is decided in `EN.ts`: `general`, `dateTime` and `controls` are DEEP-MERGED
-// (framework keys survive, this app wins collisions), so a key only needs to be here when this app
-// wants a different wording or the framework has no such key. `httpErrors`, `validation`,
-// `calendar` and `iconPicker` below are still shallow replacements — they are complete against
-// the framework's copies today and differ only in wording. If one of them ever falls behind a
-// framework key, move it to the merge in `EN.ts` rather than adding the key by hand.
+// How the two meet is decided in `EN.ts`: `general`, `dateTime`, `controls`, `httpErrors` and
+// `calendar` are DEEP-MERGED (framework keys survive, this app wins collisions), so a key only needs
+// to be here when this app wants a different wording or the framework has no such key. `validation`
+// and `iconPicker` below are still shallow replacements — they are complete against the framework's
+// copies today and differ only in wording. If one of them ever falls behind a framework key, move it
+// to the merge in `EN.ts` rather than adding the key by hand (`httpErrors` and `calendar` went that
+// way 2026-09-21).
 import { en } from 'vuetify/locale'
 
 const common = {
-	// This app's wording for the framework http interceptor's messages. Replaces the framework's
-	// `httpErrors` wholesale (see the header), so it must carry every key the interceptor resolves.
+	// This app's wording for the framework http interceptor's messages. Merged over the framework's
+	// `httpErrors` (see the header), so only the keys this app words differently need to be here —
+	// the typed 409/403 keys (`conflictUnique`, `conflictForeignKey`, …) come from the framework.
 	httpErrors: {
 		badRequest: `The request contains invalid data.`,
 		unauthorized: `You need to sign in to perform this action.`,
@@ -207,8 +209,9 @@ const common = {
 			sun: `Sun`,
 		},
 	},
-	// This app's wording for `_common/component/calendar/CalendarGrid.vue`'s strings. A wholesale
-	// replacement of the framework's `calendar` (see the header), so it must stay complete.
+	// This app's wording for `_common/component/calendar/CalendarGrid.vue`'s strings. Merged over
+	// the framework's `calendar` (see the header) since B19 — the day names are this app's wording;
+	// `holidays` has no framework counterpart.
 	calendar: {
 		daysToShow: `Days to show`,
 		allWeek: `All week`,
@@ -228,6 +231,25 @@ const common = {
 		fri: `Fri`,
 		sat: `Sat`,
 		sun: `Sun`,
+		// Keyed by the backend's stable `holidayKey` (B19) and resolved by the framework's
+		// `useHolidayLabel()`. The set is fixed to Slovak public holidays and never renamed.
+		holidays: {
+			NEW_YEAR: `Day of the Establishment of the Slovak Republic / New Year's Day`,
+			EPIPHANY: `Epiphany (Three Kings)`,
+			GOOD_FRIDAY: `Good Friday`,
+			EASTER_MONDAY: `Easter Monday`,
+			LABOUR_DAY: `Labour Day`,
+			VICTORY_DAY: `Victory over Fascism Day`,
+			CYRIL_AND_METHODIUS: `St. Cyril and Methodius Day`,
+			SNP_ANNIVERSARY: `Slovak National Uprising Anniversary`,
+			CONSTITUTION_DAY: `Constitution Day`,
+			OUR_LADY_OF_SORROWS: `Our Lady of Sorrows`,
+			ALL_SAINTS: `All Saints' Day`,
+			FREEDOM_AND_DEMOCRACY_DAY: `Struggle for Freedom and Democracy Day`,
+			CHRISTMAS_EVE: `Christmas Eve`,
+			CHRISTMAS_DAY: `Christmas Day`,
+			ST_STEPHENS_DAY: `St. Stephen's Day`,
+		},
 	},
 	// This app's wording for `_common/component/inputs/IconPicker.vue` + `IconPickerDialog.vue`.
 	// Same contract as `calendar` above.

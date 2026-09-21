@@ -1336,6 +1336,47 @@ chips now filter. **`F18` and `F60` still land app-side**, unchanged: the server
 `anchorYear`/`anchorMonth` and grew no alias for `year`/`month`, so `F60` is still the client's own slip.
 Both batches' verification blocks said "check the request, not the table"; they can now check the table.
 
+### §8 — ✅ RESOLVED 2026-09-21 (backend `B19` decided and landed, API `dev` @ `fee54a1`; frontend half landed the same day). Public-holiday names now resolve through a stable key; no country preference
+
+**The ask, as it stood in the queue** — `history-review/B4`, then `planner-day/B4` from the other consumer
+(tenth pass), both re-graded `bug` → `polish` (*Contradictions* §30 / §74). Read at the source:
+`CalendarDayFactory.cs:37` wrote `HolidayName = HolidayCalendar.ForDate(date, countryCode)` when a
+`Calendar` row was created, and `HolidayCalendar.cs:31-56` is a **Slovak** table of native names with a
+Czech sibling and `DefaultCountryCode = "SK"`. So the string was the holiday's *proper name*, not app text
+resolved in the wrong locale — which is why it was never batched with §1 — and the finding's other pass
+condition (*"omitted for accounts outside Slovakia"*) had nothing to read, because `User` carries no
+country. Written up as `B19` as a **design decision with two independent halves**: (1) a country
+preference on `/user/preferences`, read at row creation or — better — at read time; (2) a stable key per
+holiday resolved client-side through vue-i18n, the same "send a key" shape §1 offered for notifications.
+The client's stated preference was 1 = yes, 2 = no.
+
+**The answer, 2026-09-21 — the opposite of the client's preference, and the right call.** Half 1: **no**.
+The app has no other country and no country preference; that is the decision, not a gap. Half 2: **yes**.
+Every calendar-day response (`POST /calendar/filter`, the by-date and by-id reads, the History calendar
+endpoint) now carries `holidayKey: string | null` next to the unchanged `holidayName`; both null on an
+ordinary day, always written together from one table entry. The key set is 15 values — Slovak public
+holidays — fixed and never renamed (rows persist them), so the client hard-codes the table. The migration
+backfilled the key onto existing rows, so the seed needed no re-run. The full key → SK → EN table is in
+`prompts/view-docs/backend/_done/B19-holiday-names-country-and-locale-decision.md`.
+
+**The frontend half, the same day.** Framework (`src/_common` `b5478e8`): `ICalendar.holidayKey`; a new
+`composable/general/useHolidayLabel.ts` whose `holidayLabel(day)` looks up `calendar.holidays.<KEY>` behind a
+`te()` guard and falls back to `holidayName` for an unknown key *or* a key-less response, so an older server
+keeps rendering; `CalendarGrid`'s holiday chips go through it, which covers the planner and History
+calendars at once since they share the grid. App side: `Calendar.ts` and `CalendarActivityDaySummary.ts`
+(incl. its `placeholder()`) carry the key; `DayDetailsPanel.vue`'s holiday card resolves it; the 15-key
+table sits in `src/locales/common.{sk,en}.ts` under `calendar.holidays`. Because the app's SK `common` now
+contributes to `calendar` for the first time, **`calendar` joined the deep-merge in `SK.ts` and `EN.ts`**
+rather than shadowing the framework's day names — the same route `httpErrors` took for `B18` earlier the
+same day, and `common.en.ts`'s header no longer lists `calendar` among the wholesale replacements. No
+preferences work, no `userAugmentation.ts` change.
+
+**Verified live.** `planner-day.draft.spec.ts`'s B4 `fixme` is now a real test: `/day-planner?month=2026-09`
+as the EN fixture account renders *Constitution Day* and *Our Lady of Sorrows* and zero occurrences of the
+Slovak string. It passed against the running API on first run, which is also the proof the backfill
+reached the seed rows. SK output is unchanged by construction — the SK table is the exact strings the
+backend already sent. `history-review/B4` and `planner-day/B4` are closed in full.
+
 ### §10 — ✅ RESOLVED 2026-09-16 (backend `B16` landed on its working tree, verified and extended 2026-09-21, **not yet committed there**; frontend half in this tree the same day). Two sentinels for one folded-tail row
 
 **The ask, as it stood in the queue** — source-certain, unobserved on the seed; found in the eleventh pass

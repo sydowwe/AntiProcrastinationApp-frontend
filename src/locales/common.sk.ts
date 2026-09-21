@@ -168,5 +168,28 @@ const common = {
 			sun: `Ne`,
 		},
 	},
+	// Merged over the framework's `calendar` in `SK.ts` (its day names survive). `holidays` is
+	// keyed by the backend's stable `holidayKey` (B19) and resolved by the framework's
+	// `useHolidayLabel()`. The key set is fixed to Slovak public holidays and never renamed, so it is
+	// safe to hard-code; the SK strings are exactly what the backend sends as `holidayName`.
+	calendar: {
+		holidays: {
+			NEW_YEAR: `Deň vzniku Slovenskej republiky / Nový rok`,
+			EPIPHANY: `Zjavenie Pána (Traja králi)`,
+			GOOD_FRIDAY: `Veľký piatok`,
+			EASTER_MONDAY: `Veľkonočný pondelok`,
+			LABOUR_DAY: `Sviatok práce`,
+			VICTORY_DAY: `Deň víťazstva nad fašizmom`,
+			CYRIL_AND_METHODIUS: `Sviatok svätého Cyrila a Metoda`,
+			SNP_ANNIVERSARY: `Výročie SNP`,
+			CONSTITUTION_DAY: `Deň Ústavy Slovenskej republiky`,
+			OUR_LADY_OF_SORROWS: `Sedembolestná Panna Mária`,
+			ALL_SAINTS: `Sviatok Všetkých svätých`,
+			FREEDOM_AND_DEMOCRACY_DAY: `Deň boja za slobodu a demokraciu`,
+			CHRISTMAS_EVE: `Štedrý deň`,
+			CHRISTMAS_DAY: `Prvý sviatok vianočný`,
+			ST_STEPHENS_DAY: `Druhý sviatok vianočný`,
+		},
+	},
 }
 export default common

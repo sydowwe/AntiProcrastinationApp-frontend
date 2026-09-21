@@ -11,6 +11,9 @@ export class Calendar {
 		public readonly dayType: DayType, // DayType enum name
 		public readonly dayIndex: number,
 		public readonly label: string | null,
+		// B19: both null on an ordinary day, and always set together. Resolve the key through
+		// `useHolidayLabel()`; the name is the native-Slovak fallback, never the primary display.
+		public readonly holidayKey: string | null,
 		public readonly holidayName: string | null,
 		public readonly wakeUpTime: Time,
 		public readonly bedTime: Time,
@@ -45,6 +48,7 @@ export class Calendar {
 			convertToEnum(DayType, json.dayType),
 			json.dayIndex,
 			json.label ?? null,
+			json.holidayKey ?? null,
 			json.holidayName ?? null,
 			Time.fromJson(json.wakeUpTime),
 			Time.fromJson(json.bedTime),

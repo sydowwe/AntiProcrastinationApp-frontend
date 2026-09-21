@@ -39,7 +39,7 @@
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
 | Month grid | calendar | one cell per day: date, wake–bed time, `N/M tasks`, a completion %, up to a few colour task chips | raw day fields + `totalTasks`/`completedTasks`; chips are per-task colour from `calendar/task-summaries` | `POST /api/calendar/filter` (day list) + `POST /api/calendar/task-summaries` (chip contents, only for days with tasks) |
-| Holiday strip | list | `<weekday> <date> - <holiday name>` for each holiday in view | raw `holidayName`, **untranslated** — see B3 | `calendar/filter` (`holidayName` field) |
+| Holiday strip | list | `<weekday> <date> - <holiday name>` for each holiday in view | `holidayKey` resolved through `calendar.holidays.*` (`useHolidayLabel()`), `holidayName` as fallback — B4, fixed 2026-09-21 | `calendar/filter` (`holidayKey` + `holidayName` fields) |
 | Footer stats bar | counters | `N/M tasks`, `X% avg`, `N/M days planned` | derived client-side from the loaded `calendar/filter` rows | `CalendarStatsBar.vue` |
 | Plan-vs-actual trend line | chart-like | one point per day in view with a planned/actual comparison | raw aggregate per day | `POST /api/planner-task/plan-vs-actual-trend` |
 

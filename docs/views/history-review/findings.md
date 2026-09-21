@@ -105,8 +105,10 @@
   the framework's generic prefix-matching (which other apps' un-navved routes may depend on as-is).
 
 ### B4. Calendar public-holiday names render in Slovak regardless of the account's English locale
-- **Status:** open
-- **Severity:** bug
+- **Status:** fixed and verified (2026-09-21 — backend `B19` sends a stable `holidayKey` on the History calendar
+  endpoint too; `CalendarGrid`'s holiday chips resolve it through the framework's `useHolidayLabel()`, so this
+  view and the planner closed together. `_fix-queue.md` retired §8; body in the log.)
+- **Severity:** polish (re-graded from `bug`, `_fix-queue.md` *Contradictions* §30 — a proper noun, not app text in the wrong locale)
 - **Where:** `src/_common/component/calendar/CalendarGrid.vue:97-104` (`{{ formatToDateWithDay(holiday.date)
   }} - {{ holiday.holidayName }}`), rendering the `holidayName` field from
   `POST /activity-history/dashboard/calendar`'s response, on `/activity-history/calendar`

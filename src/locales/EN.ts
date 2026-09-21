@@ -22,7 +22,9 @@ import remindersDashboard from '@/_common/modules/reminders/_locales/remindersDa
 // namespaces — see its top-of-file comment.
 //
 // `general`, `dateTime`, `controls` and `user` are merged rather than spread, mirroring SK.ts —
-// see the comment there for why.
+// see the comment there for why. `httpErrors` joined them 2026-09-21: the framework grew the typed
+// 409/403 keys (`conflictUnique`, `conflictForeignKey`, …) and the app's wholesale copy would have
+// resolved them to raw keys, which is exactly the leak the merge exists to prevent.
 const EN = {
 	...common,
 	...appCommon,
@@ -41,9 +43,13 @@ const EN = {
 	...scheduler,
 	...reminders,
 	...remindersDashboard,
+	httpErrors: { ...common.httpErrors, ...appCommon.httpErrors },
 	general: { ...common.general, ...appCommon.general },
 	dateTime: { ...common.dateTime, ...appCommon.dateTime },
 	controls: { ...common.controls, ...appCommon.controls },
 	user: { ...frameworkUser.user, ...appUser.user },
+	// `calendar` joined 2026-09-21 (B19), mirroring SK.ts: the app's copy carries the `holidays`
+	// table the framework has no counterpart for, so it no longer has to stay a complete replacement.
+	calendar: { ...common.calendar, ...appCommon.calendar },
 }
 export default EN

@@ -167,8 +167,10 @@
   encoding rule already used for `mode`.
 
 ### B4. Holiday names render in Slovak regardless of the account's English locale
-- **Status:** open
-- **Severity:** bug
+- **Status:** fixed and verified (2026-09-21 — backend `B19` sends a stable `holidayKey`; the client resolves it
+  through `calendar.holidays.*` via the framework's `useHolidayLabel()`, falling back to `holidayName`. The
+  `fixme` in `planner-day.draft.spec.ts` is now a passing test. `_fix-queue.md` retired §8; body in the log.)
+- **Severity:** polish (re-graded from `bug`, `_fix-queue.md` *Contradictions* §30 — a proper noun, not app text in the wrong locale)
 - **Where:** Holiday strip under the `PlannerCalendarView` month grid; data via `POST /api/calendar/filter`
   (`holidayName` field)
 - **Expected:** With the account locale set to English (confirmed for every other piece of chrome in this

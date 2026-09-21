@@ -41,7 +41,7 @@
 				v-if="calendar?.holidayName"
 				:title="$t('planner.calendar.holidayNameTitle')"
 				color="error"
-				:text="calendar.holidayName"
+				:text="holidayLabel(calendar) ?? undefined"
 				icon="gift"
 			></SubtleCard>
 
@@ -105,6 +105,7 @@
 	import DayTemplatePicker from '@/core/dayPlanner/component/normal/DayTemplatePicker.vue'
 	import RepeatingTasksSection from '@/core/dayPlanner/component/normal/RepeatingTasksSection.vue'
 	import OverdueTasksBanner from '@/core/dayPlanner/component/normal/OverdueTasksBanner.vue'
+	import { useHolidayLabel } from '@/_common/composable/general/useHolidayLabel.ts'
 
 	const { calendar, repeatingTasks, addedIds } = defineProps<{
 		title: string
@@ -118,6 +119,8 @@
 		useTemplate: []
 		addRepeatingTask: [task: SuggestionResponse]
 	}>()
+
+	const { holidayLabel } = useHolidayLabel()
 </script>
 
 <style scoped>

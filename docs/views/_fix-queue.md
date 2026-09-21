@@ -142,11 +142,12 @@
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
 `F85` is blocked on `FW24`) · 23
 framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` is now a batch) ·
-15 escalations (**3 open: §7, §8, §9** — and **§7's ask has now landed**, so what is open there is
-the frontend half, `FW24` + `F85`, not the ask; **§1 closed 2026-09-21** when `B15` landed with no
+15 escalations (**2 open: §7, §9** — and **§7's ask has now landed**, so what is open there is
+the frontend half, `FW24` + `F85`, not the ask; **§8 closed 2026-09-21** when `B19` was decided — a stable
+`holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
 frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
 the fifteenth pass; §10 closed the same day when `B16` landed and its frontend half went in; §1, §2, §3, §4, §5, §6,
-§10, §11, §12, §13, §14 and §15 are closed,
+§8, §10, §11, §12, §13, §14 and §15 are closed,
 their bodies moved to [`_fix-queue-log.md`](_fix-queue-log.md) → *Closed escalations*; §5 closed 2026-09-15
 when `B20` landed with no frontend half left; §12 closed 2026-09-15 when the anchor-eligible-activities
 endpoint landed and `F62` shipped; **§6 and §13 closed together 2026-09-15** when `B11` landed — one
@@ -4035,7 +4036,7 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 > | ~~§11~~ | `_implemented/B10-…` — landed, body in the log | ~~§10~~ | `_implemented/B16-…` — landed, body in the log |
 > | ~~§6 + §13~~ | `_implemented/B11-…` — landed, body in the log | ~~§15~~ | `_implemented/B17-…` — landed, body in the log |
 > | ~~§12~~ | `_implemented/B12-…` — landed, body in the log | §7 | `_implemented/B18-…` — **ask landed 2026-09-21; frontend half open as `FW24` + `F85`** |
-> | ~~§14~~ | `_implemented/B13-…` — landed, body in the log | §8 | `B19-holiday-names-country-and-locale-decision.md` |
+> | ~~§14~~ | `_implemented/B13-…` — landed, body in the log | ~~§8~~ | `_done/B19-…` — decided and landed 2026-09-21, frontend half the same day, body in the log |
 > | §9 | `B14-google-calendar-oauth-cannot-complete.md` | ~~§5~~ | `_implemented/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
 >
@@ -4135,46 +4136,12 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
    The client-side half — what to do at this call site until either lands — is under *Needs verification*
    below, because the message on screen has not actually been observed; only the 409 has.
 
-8. **Public-holiday names are a country table's proper nouns, stored as strings at row creation — there is
-   no locale to key on, and no country preference to omit them by** — `history-review/B4`, re-graded
-   `bug` → `polish` (*Contradictions* §30). Read at the source this pass: `CalendarDayFactory.cs:37` writes
-   `HolidayName = HolidayCalendar.ForDate(date, countryCode)` when a `Calendar` row is created (seeder or
-   lazy provisioner — both go through it), and `HolidayCalendar.cs:31-56` is a **Slovak** table of native
-   names (`"Deň Ústavy Slovenskej republiky"`, `"Sedembolestná Panna Mária"`), with a Czech sibling
-   (`:58-81`) and `DefaultCountryCode = "SK"` — *"the only country this app has ever seeded"* (`:11-12`).
-   The column is `string?`, max 200 (`CalendarConfiguration.cs:20`); the History endpoint projects it
-   as-is (`CalendarActivityEndpoint.cs:95`). So this is **not** the shell's `B1` shape (app text
-   resolved in the wrong locale at dispatch) and should not be batched with it: the string is the
-   holiday's *name*, in the language of the country whose holiday it is, and there is no English
-   variant anywhere to have chosen instead. An EN-locale user in Slovakia arguably *should* see
-   "Sedembolestná Panna Mária" — that is what the day is called. The finding's other pass condition
-   (*"omitted for accounts outside Slovakia"*) has nothing to read: `User` carries no country, and
-   `HolidayCalendar` is only ever called with the default.
-
-   **The ask, if one is wanted, is a design decision with two halves and the client cannot take either
-   alone:**
-   - **A country preference** (`/user/preferences` — it describes the person, CLAUDE.md's ownership
-     table) that `CalendarDayFactory` reads instead of the constant. Without it the "outside Slovakia"
-     branch cannot exist. Note the re-materialisation problem: rows are created once, so a country
-     change would need a backfill or the holiday column would need to become a *lookup* at read time
-     (`HolidayCalendar.ForDate` is cheap and pure, so that is viable).
-   - **If localized names are wanted at all**, store a stable key per holiday (`SK_CONSTITUTION_DAY`) and
-     let each client resolve it through vue-i18n — the same *"send a key + params"* shape §1 asks for
-     notifications. Native-name rendering is a defensible default and costs nothing; it just has to be a
-     decision rather than an accident of `DefaultCountryCode`.
-   Not blocking any unit. `CalendarGrid.vue:104` renders whatever arrives and needs no change either way.
-
-   **Seen a second time from the other consumer (tenth pass) — `planner-day/B4`, merged here.** Unit 7
-   read the same two strings off `POST /api/calendar/filter` on `/day-planner` (*"Deň Ústavy Slovenskej
-   republiky"* on 2026-09-01, *"Sedembolestná Panna Mária"* on 2026-09-15) and filed them as `bug` with
-   the same guess unit 3 made — *"batch with shell B1 in a backend localization session"*. Same
-   re-grade, same reason: `bug` → `polish` (§30), not batched with §1, because the string is a proper
-   noun with no locale to key on, not app text resolved in the wrong locale. Nothing new for the ask;
-   the second observation just confirms both consumers render the column as-is. The finding's
-   suggested fix (*"return a stable holiday key the frontend can map through vue-i18n"*) is the second
-   bullet above, already written. `planner-day.draft.spec.ts:48` is a `fixme` on this and should stay
-   one until the decision is taken — it is not a regression test for a defect, it is a placeholder for
-   a policy.
+<!-- §8 (public-holiday names — `history-review/B4` + `planner-day/B4`) closed 2026-09-21: `B19` was
+     decided on `dev` @ `fee54a1` — half 1 (a country preference) declined, half 2 (localised names)
+     shipped as a stable `holidayKey` next to the unchanged `holidayName` — and the frontend half
+     landed the same day (framework `useHolidayLabel()` + `calendar.holidays` table app-side; `calendar`
+     joined the locale deep-merge). `planner-day.draft.spec.ts`'s `fixme` is a passing test. Body in
+     _fix-queue-log.md → Closed escalations. Number retired, not reused. -->
 
 9. **The Google Calendar OAuth flow cannot complete against this API, for three separate server-side
    reasons — and only the first is the one the unit saw** — `user-settings/B1`. The unit's evidence is

@@ -85,7 +85,7 @@
 | surface | kind | contents | raw/derived | populated by |
 | --- | --- | --- | --- | --- |
 | Day cell | grid cell | wake/bed time row, total duration + session count, up to 2 role/category rows with per-role duration | raw, per-day summary | `POST /activity-history/dashboard/calendar` |
-| Holiday strip | text list | `<date> - <holiday name>` per public holiday in the visible range | raw (server-supplied `holidayName`) | same request | 
+| Holiday strip | text list | `<date> - <holiday name>` per public holiday in the visible range | `holidayKey` resolved through `calendar.holidays.*` (`useHolidayLabel()`), `holidayName` as fallback — B4, fixed 2026-09-21 | same request | 
 | Holiday cell highlight | cell styling | red-tinted cell + gift icon on holiday dates | derived from the same `holidayName` field | same |
 
 **States**
