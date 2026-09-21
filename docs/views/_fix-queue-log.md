@@ -1921,6 +1921,14 @@ Identity's stamp — which `VerifyUserForm` then reported as *"Wrong password"*.
 → `FW25`; the spec waits for `networkidle` before enrolling and says so, and that wait is the line to delete
 to reproduce it.
 
+**Follow-up, later the same day — the four gaps the landing left were closed in one framework commit:**
+`FW25` (with `user-settings/B4`, the sign-out on a wrong step-up password, found while verifying it),
+`FW14`, the wrong-code dead end below (the dialog now closes on a refusal with
+`authorization.codeRejectedSignInAgain` — the single-use token is the framework's own contract, so the
+client does not need the message it is not sent), and the *Show 2FA QR code* button, which now reads
+*Reset authenticator app*. `auth.draft.spec.ts:104` is a real registration test. Item (1) below is
+therefore historical.
+
 **Two things seen on the way, neither filed as a batch.** (1) After a wrong code the dialog says *Wrong code*
 and refocuses the input, but the token is already spent, so every retry from that dialog is a 401
 *"Invalid or expired authentication session"* rendered as the same *Wrong code* — the server distinguishes

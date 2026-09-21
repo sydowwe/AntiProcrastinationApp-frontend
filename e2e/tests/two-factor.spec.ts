@@ -74,7 +74,9 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 
 	test.afterAll(async () => {
 		// Leave `secondaryUser` the way the fixture describes it: 2FA off, so a later cold sign-in of
-		// that account (if its cached state is ever lost) does not land in the code dialog.
+		// that account (if its cached state is ever lost) does not land in the code dialog. The hook
+		// has its own budget, not the describe's — same cold-API reseed, same reason for 60 s.
+		test.setTimeout(60_000)
 		await reseed()
 	})
 
@@ -83,12 +85,12 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		seed,
 	}) => {
 		await secondaryPage.goto('/user/settings')
-		// Let the hydration writes land first. The fixture accounts are seeded in UTC and this browser is
-		// not, so with `syncBrowserTimeZone` every `hydrateFromServer()` pushes a `PUT /user/preferences` —
-		// and the settings page hydrates twice more after sign-in. A PUT still in flight when the toggle
-		// below loads the user row makes the toggle's own save fail Identity's concurrency check (400
-		// "Optimistic concurrency failure"), which is a real race (_fix-queue.md, user-settings/B3),
-		// not something this spec should win by luck.
+		// Let the hydration write land first. The fixture accounts are seeded in UTC and this browser is
+		// not, so with `syncBrowserTimeZone` the first `hydrateFromServer()` pushes a `PUT /user/preferences`;
+		// a PUT still saving when the toggle below loads the user row makes the toggle's own save fail
+		// Identity's concurrency check (400 "Optimistic concurrency failure"). Before FW25 the page fired
+		// three such PUTs and this test failed on every run without the wait; with one, it passes without
+		// it too — the wait stays so the spec does not depend on winning a race (user-settings/B3).
 		await secondaryPage.waitForLoadState('networkidle')
 
 		// `VSwitch` renders a checkbox, not a `switch` role.
@@ -100,6 +102,20 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		const verify = secondaryPage.getByRole('dialog', { name: 'Identity verification' })
 		await expect(verify).toBeVisible()
 		await expect(twoFactorSwitch).not.toBeChecked()
+
+		// A wrong password is the server's answer (401), not a lapsed session: the dialog says so and
+		// stays, and the user stays signed in. Before `_credentialCheck` the interceptor refreshed,
+		// resent the same wrong password and signed the user out on the retry's 401.
+		const refused = secondaryPage.waitForResponse(
+			r => r.url().endsWith('/api/user/2fa/toggle') && r.request().method() === 'POST',
+		)
+		await verify.getByRole('textbox', { name: 'Password' }).fill('not-the-password-1')
+		await verify.getByRole('button', { name: 'Confirm' }).click()
+		expect((await refused).status()).toBe(401)
+		await expect(secondaryPage.getByText('Wrong password')).toBeVisible()
+		await expect(verify).toBeVisible()
+		await expect(secondaryPage).toHaveURL(/\/user\/settings$/)
+
 		await verify.getByRole('textbox', { name: 'Password' }).fill(seed.secondaryUser.password)
 
 		const toggleResponse = secondaryPage.waitForResponse(
@@ -139,7 +155,7 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		await expect(twoFactorSwitch).toBeChecked()
 	})
 
-	test('after the password, a 2FA-enabled account gets the code dialog: a wrong code shows the inline error, the right one signs in (auth/U2)', async ({
+	test('after the password, a 2FA-enabled account gets the code dialog: a wrong code sends you back to the form, the right one signs in (auth/U2)', async ({
 		page,
 		secondaryPage,
 		seed,
@@ -153,23 +169,25 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		let dialog = await signInToCodeDialog(page, seed)
 		await expect(page).toHaveURL('/login')
 
-		const rejected = page.waitForResponse(
-			r => r.url().endsWith('/api/auth/login/2fa') && r.request().method() === 'POST',
-		)
-		await dialog.locator('.v-otp-input input').first().pressSequentially(await wrongCodeFor(sharedKey!))
-		expect((await rejected).status()).toBe(401)
-		await expect(dialog.getByText('Wrong code')).toBeVisible()
-		await expect(dialog).toBeVisible()
-		await expect(page).toHaveURL('/login')
-
 		// Escape does not dismiss it: `MyDialog` is `persistent` by default (FW1 — undecided, so this
 		// pins today's default rather than a fix). Cancel is the way out.
 		await page.keyboard.press('Escape')
 		await expect(dialog).toBeVisible()
 
+		const rejected = page.waitForResponse(
+			r => r.url().endsWith('/api/auth/login/2fa') && r.request().method() === 'POST',
+		)
+		await dialog.locator('.v-otp-input input').first().pressSequentially(await wrongCodeFor(sharedKey!))
+		expect((await rejected).status()).toBe(401)
+		// The pending token is single-use, so the dialog does not invite a retry it knows will fail: it
+		// closes, says so, and the form is there again with the e-mail kept.
+		await expect(page.getByText('The code was not accepted. Sign in again to try a new one.')).toBeVisible()
+		await expect(dialog).toBeHidden()
+		await expect(page).toHaveURL('/login')
+		await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue(seed.secondaryUser.email)
+
 		// --- the right code ---
-		// The API consumes the pending token on the first attempt, right or wrong (a wrong code costs
-		// the whole password step), so the valid code needs its own sign-in rather than a retry here.
+		// A second password step, since the first one's token was spent by the wrong code.
 		dialog = await signInToCodeDialog(page, seed)
 
 		const accepted = page.waitForResponse(

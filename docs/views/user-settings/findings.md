@@ -69,7 +69,9 @@
   `showErrorSnackbar` with a short explanation before redirecting.
 
 ### B3. A step-up action right after opening the page can fail Identity's concurrency check — and is then reported as "Wrong password"
-- **Status:** open — batched as `_fix-queue.md` `FW25`
+- **Status:** fixed — `FW25` landed 2026-09-21 (one in-flight hydration, one zone push per session, a
+  `catch` that words only a 401). `two-factor.spec.ts` test 1 passes with its settle-wait removed, where
+  it failed on every run before; the wait stays anyway.
 - **Severity:** bug
 - **Where:** `/user/settings` → any `VerifyUserForm` action (2FA toggle observed; password/e-mail change,
   delete account and 2FA reset take the same gate). Framework: `authStore.hydrateFromServer`,
@@ -93,6 +95,29 @@
   concurrency stamp. `VerifyUserForm`'s bare `catch` then labels any failure a wrong password.
 - **Suggested fix:** see `FW25` — one in-flight hydration, one time-zone push per session, and a `catch`
   that says *"Wrong password"* only on 401.
+
+### B4. A wrong password in the identity dialog signed the user out
+- **Status:** fixed — same day, in `FW25`'s commit (`_credentialCheck` on the request; the interceptor
+  hands a live-token 401 back to the caller)
+- **Severity:** bug
+- **Where:** every `VerifyUserForm` action on `/user/settings` (2FA toggle observed; password change,
+  e-mail change, delete account and 2FA reset post through the same form). Framework:
+  `axiosConfig.ts`'s 401 branch, `VerifyUserForm.vue`.
+- **Expected:** A mistyped step-up password says so and lets the user try again.
+- **Actual:** The user was signed out and bounced to `/login`. `POST /user/2fa/toggle` → 401 (the gate's
+  answer); the route is not in the interceptor's `AUTH_ENDPOINTS`, so it refreshed the session, **resent
+  the same wrong password**, got 401 again, and the retry's 401 is the interceptor's `logoutClient()`
+  branch.
+- **Evidence:** `playwright-cli` 2026-09-21, secondary account, wrong password in the 2FA toggle's
+  dialog → `POST /api/user/2fa/toggle 401`, `POST /api/auth/refresh 204`, `POST /api/user/2fa/toggle 401`,
+  `location.pathname` → `/login`.
+- **Repro:** 1. Sign in. 2. `/user/settings` → toggle *Use two-factor authentication*. 3. Any wrong
+  password → Confirm.
+- **Verify:** `two-factor.spec.ts` test 1: 401, *"Wrong password"*, dialog still open, still
+  `/user/settings`, then the right password succeeds in the same dialog.
+- **Root cause:** the interceptor could not tell "the credential in this body was refused" from "this
+  session's token lapsed" — both are 401. The API marks the second with `X-Token-Expired`, which is
+  what the fix keys on.
 
 ### A1. Password-field visibility toggles expose a non-descriptive accessible name
 - **Status:** open

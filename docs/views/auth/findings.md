@@ -369,7 +369,9 @@
 ---
 
 ### B8. Registration's 2FA recovery codes are received and then discarded — confirmed live, renumbered from `U1`
-- **Status:** open
+- **Status:** fixed — `FW14` landed 2026-09-21: the QR dialog (now with its manual-entry key, `B22`) is
+  followed by `RecoveryCodesBody`, gated on the acknowledgement, then `/login`. Verified live with a
+  throwaway and by `auth.draft.spec.ts`'s registration test (promoted from its `fixme`).
 - **Severity:** bug — **escalated from `U1` (unverified)** now that the real `RegistrationView` submit path
   is reachable (X2 fixed) and the discarding itself has been observed rendered on screen, not just
   source-read

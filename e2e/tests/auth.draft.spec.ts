@@ -100,15 +100,55 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 		)
 
 		// Registration completes now (O1 → X2, fixed — the empty reCAPTCHA token is sent as-is and the
-		// server decides), but the codes are still discarded: `open2FADialog` opens the QR body only and never
-		// `RecoveryCodesBody` (_fix-queue.md FW14). This stays a fixme until FW14 lands; the settings-side
-		// enrolment, which does show them, is covered by two-factor.spec.ts. Note the QR dialog
-		// on this path now also renders the manual-entry key (B22) — assert on `getByTestId('shared-key')`
-		// when promoting.
-		test.fixme(
-			'completing registration with 2FA shows the QR with its key, then the issued recovery codes (findings.md U1 / _fix-queue.md FW14)',
-			async () => {},
-		)
+		// server decides), and since FW14 the codes are shown after the QR rather than discarded. The
+		// throwaway this creates is not a fixture row: it is unconfirmed, can sign in nowhere, and the next
+		// run's seed wipes it. `/auth/register` has its own 5/min throttle bucket, separate from login's —
+		// one hit per run. The settings-side enrolment is two-factor.spec.ts.
+		test('completing registration with 2FA shows the QR with its key, then the issued recovery codes (findings.md U1 / _fix-queue.md FW14)', async ({
+			page,
+		}) => {
+			const email = `e2e-registration-${Date.now()}@example.com`
+			await page.goto('/registration')
+			await page.getByRole('textbox', { name: 'Email' }).fill(email)
+			// The policy is 2 lowercase, 2 uppercase, 3 digits and a special character — the seed's
+			// `testpass123` does not pass it (see fixtures/seed.ts on `SeedUser.password`).
+			await page.getByRole('textbox', { name: 'New password', exact: true }).fill('ThrowAway-Pass123!')
+			await page.getByRole('textbox', { name: 'Confirm new password' }).fill('ThrowAway-Pass123!')
+			await page.getByRole('checkbox', { name: 'Do you want to use google 2 factor authentication?' }).check()
+			await page.getByRole('checkbox', { name: /I agree to the Terms and conditions/ }).check()
+
+			const registered = page.waitForResponse(
+				r => r.url().endsWith('/api/auth/register') && r.request().method() === 'POST',
+			)
+			await page.getByRole('button', { name: 'Register' }).click()
+			const body = (await (await registered).json()) as {
+				twoFactorEnabled: boolean
+				sharedKey?: string
+				recoveryCodes?: string[]
+			}
+			expect(body.twoFactorEnabled).toBe(true)
+
+			// QR first — the authenticator has to be enrolled before the codes mean anything.
+			const qrDialog = page.getByRole('dialog', { name: 'Two-factor authentication' })
+			await expect(qrDialog).toBeVisible()
+			await expect(qrDialog.getByRole('img', { name: 'QR code for 2FA' })).toBeVisible()
+			const shownKey = (await qrDialog.getByTestId('shared-key').innerText()).replace(/\s+/g, '')
+			expect(shownKey).toBe(body.sharedKey)
+			await qrDialog.getByRole('button', { name: 'Done' }).click()
+
+			// Then the codes, shown once, gated on the acknowledgement.
+			const codesDialog = page.getByRole('dialog', { name: 'Recovery codes' })
+			await expect(codesDialog).toBeVisible()
+			await expect(codesDialog.locator('code')).toHaveCount(body.recoveryCodes!.length)
+			const done = codesDialog.getByRole('button', { name: 'Done' })
+			await expect(done).toBeDisabled()
+			await codesDialog.getByRole('checkbox', { name: 'I have saved these codes somewhere safe' }).check()
+			await done.click()
+
+			// Then the sign-in form, with the address carried over (U5).
+			await expect(page).toHaveURL(/\/login$/)
+			await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue(email)
+		})
 	})
 
 	test.describe('ForgottenPasswordView (/forgotten-password)', () => {
