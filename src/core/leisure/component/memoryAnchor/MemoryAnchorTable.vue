@@ -37,6 +37,7 @@
 				size="x-small"
 				color="primaryOutline"
 				link
+				role="button"
 				:title="$t('leisure.experienced.openSourceHint')"
 				@click="openSource(item, 'leisureBucketList')"
 			>
@@ -47,6 +48,7 @@
 				size="x-small"
 				color="secondaryOutline"
 				link
+				role="button"
 				:title="$t('leisure.experienced.openSourceHint')"
 				@click="openSource(item, 'leisureBacklog')"
 			>

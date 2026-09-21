@@ -34,6 +34,8 @@
 					:prependIcon="option.icon"
 					:variant="isSelected(option.value) ? 'tonal' : 'outlined'"
 					:color="isSelected(option.value) ? 'primaryOutline' : 'textMuted'"
+					role="button"
+					:ariaPressed="isSelected(option.value)"
 					@click="toggle(option.value)"
 				>
 					{{ option.label }}

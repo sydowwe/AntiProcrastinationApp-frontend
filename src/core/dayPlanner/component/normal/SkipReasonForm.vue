@@ -9,6 +9,7 @@
 			size="small"
 			variant="tonal"
 			color="secondaryOutline"
+			role="button"
 			@click="reason = r"
 		>
 			{{ r }}

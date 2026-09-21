@@ -175,15 +175,46 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 	// findings.md B4: calendar holiday names render in Slovak regardless of the account's locale.
 	test.fixme('B4: holiday names render in the account locale, not always Slovak', async () => {})
 
-	// findings.md A1: stacked-bar chart columns have no accessible name.
-	test.fixme('A1: stacked-bar columns expose an accessible name', async () => {})
+	// findings.md A1 (fixed by F29): a bar on Summary is a named button; Enter drills into Detail on
+	// the bar's own date. On Detail, where nothing listens for a click, the same bar is a named graphic.
+	test('A1: stacked-bar columns are named buttons on Summary and named graphics on Detail', async ({
+		authenticatedPage,
+	}) => {
+		await authenticatedPage.goto('/activity-history')
+		const bar = authenticatedPage.getByRole('button', { name: /^View details for .+, .+, .+/ }).first()
+		await bar.waitFor()
+		await bar.focus()
+		await authenticatedPage.keyboard.press('Enter')
+		await expect(authenticatedPage).toHaveURL(/\/activity-history\/detail\?.*date=\d{4}-\d{2}-\d{2}/)
+		// Detail opens on the timeline; the stacked bars are its other view.
+		const date = new URL(authenticatedPage.url()).searchParams.get('date')
+		await authenticatedPage.goto(`/activity-history/detail?date=${date}&view=stackedBars`)
+		const graphic = authenticatedPage.locator('.bar-column').first()
+		await graphic.waitFor()
+		await expect(graphic).toHaveAttribute('role', 'img')
+		await expect(graphic).toHaveAttribute('aria-label', /.+, .+, .+/)
+		await expect(graphic).not.toHaveAttribute('tabindex', /.+/)
+	})
 
 	// findings.md A2: calendar day cells have no accessible name.
 	test.fixme('A2: calendar day cells expose an accessible name naming the date', async () => {})
 
-	// findings.md P1: "View details for X" toggles a cross-highlight filter, not a details view —
-	// label mismatch.
-	test.fixme('P1: the top-activity card label matches its actual (filter, not navigate) behaviour', async () => {})
+	// findings.md P1 (fixed by F30): the card is a toggle, so it says so and exposes aria-pressed.
+	test('P1: the top-activity card is a "Highlight … in the chart" toggle with aria-pressed', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		const date = isoDateOffset(seed, -5)
+		await authenticatedPage.goto(`/activity-history/detail?date=${date}`)
+		const card = authenticatedPage.getByRole('button', { name: /^Highlight .+ in the chart$/ }).first()
+		await card.waitFor()
+		await expect(card).toHaveAttribute('aria-pressed', 'false')
+		await card.focus()
+		await authenticatedPage.keyboard.press('Enter')
+		await expect(card).toHaveAttribute('aria-pressed', 'true')
+		await authenticatedPage.keyboard.press('Enter')
+		await expect(card).toHaveAttribute('aria-pressed', 'false')
+	})
 
 	// findings.md P3: HistoryCalendarView has no <h1>, unlike its two sibling views.
 	test.fixme('P3: the Calendar view renders a page heading like Summary and Detail do', async ({ authenticatedPage }) => {

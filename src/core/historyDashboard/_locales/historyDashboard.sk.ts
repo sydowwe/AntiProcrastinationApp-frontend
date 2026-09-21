@@ -17,7 +17,8 @@ const messages = {
 		topGroup: `Top {group}`,
 		show: `Zobraziť`,
 		total: `Spolu`,
-		viewDetails: `Zobraziť detaily pre {name}`,
+		// Karta je prepínač, ktorý zvýrazní výsek v grafe — nič neotvára (F30).
+		viewDetails: `Zvýrazniť {name} v grafe`,
 		// Kľúčované podľa hodnôt enumu HistoryGroupBy.
 		groupLabel: {
 			ACTIVITY: `Aktivity`,

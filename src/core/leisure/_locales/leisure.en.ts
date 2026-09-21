@@ -51,6 +51,8 @@ const leisure = {
 			timeline: `Timeline`,
 		},
 		readinessBoard: {
+			// The card's whole body opens the edit dialog; nested status/delete buttons name themselves (F78).
+			editCard: `Edit {name}`,
 			empty: `No projects`,
 			moreCount: `+{count} more`,
 		},

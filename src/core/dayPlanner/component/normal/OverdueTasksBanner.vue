@@ -14,7 +14,7 @@
 				:key="t.id"
 				size="small"
 				rounded="sm"
-				style="cursor: pointer"
+				role="button"
 				@click="copyOverdueTask(t)"
 			>
 				{{ t.activity.name }}

@@ -79,6 +79,7 @@
 				:rowUnit
 				:timeFrom
 				:timeTo
+				:interactive
 				@activityClick="handleActivityClick"
 			/>
 		</template>
@@ -104,6 +105,7 @@
 		timeTo,
 		windowSizeOptions,
 		initialWindowSize,
+		interactive = false,
 	} = defineProps<{
 		windows: StackedBarsInputWindow[]
 		loading?: boolean
@@ -112,6 +114,12 @@
 		timeTo: Time
 		windowSizeOptions: number[]
 		initialWindowSize: number
+		/**
+		 * Pass it wherever `@activityClick` is bound. The chart cannot see whether a parent listens,
+		 * and the bars must not be announced as buttons where a click does nothing (F29) — unset, they
+		 * are named graphics with no pointer cursor.
+		 */
+		interactive?: boolean
 	}>()
 
 	const emit = defineEmits<{

@@ -17,7 +17,8 @@ const messages = {
 		topGroup: `Top {group}`,
 		show: `Show`,
 		total: `Total`,
-		viewDetails: `View details for {name}`,
+		// The card is a toggle that cross-highlights the pie slice — it opens nothing (F30).
+		viewDetails: `Highlight {name} in the chart`,
 		// Keyed off the HistoryGroupBy enum values.
 		groupLabel: {
 			ACTIVITY: `Activities`,

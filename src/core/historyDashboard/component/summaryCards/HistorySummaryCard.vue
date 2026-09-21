@@ -5,8 +5,10 @@
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"
+		:aria-pressed="selected"
 		:aria-label="$t('historyDashboard.summaryCards.viewDetails', { name: card.name })"
 		@click="emit('click', historyGroupKey(card))"
+		@keydown.enter.space.prevent="emit('click', historyGroupKey(card))"
 	>
 		<VCardTitle class="text-center pb-2">
 			<VTooltip

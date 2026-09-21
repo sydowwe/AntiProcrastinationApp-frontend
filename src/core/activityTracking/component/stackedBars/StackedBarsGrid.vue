@@ -86,6 +86,8 @@
 					:gridRowStart="bar.gridRowStart"
 					:gridRowEnd="bar.gridRowEnd"
 					:windowMinutes
+					:windowLabel="formatWindowA11yLabel(windows[bar.windowIndex]!)"
+					:interactive
 					@mouseenter="showTooltip($event, bar)"
 					@mouseleave="hideTooltip"
 					@click="emit('activityClick', bar)"
@@ -179,6 +181,8 @@
 		rowUnit: number
 		timeFrom: Time
 		timeTo: Time
+		/** Whether the bars are buttons (a consumer listens to `activityClick`) or named graphics. */
+		interactive?: boolean
 	}>()
 	const emit = defineEmits<{
 		(e: 'activityClick', bar: BarGridSpan): void
@@ -484,6 +488,13 @@
 			return formatTime(start)
 		}
 		return `${formatTime(start)} - ${formatTime(end)}`
+	}
+
+	// The bar's accessible name needs the whole range even where the x-axis label is split across
+	// the time row and the date-group row below it — a label is read on its own, not against a grid.
+	function formatWindowA11yLabel(window: ProcessedWindow): string {
+		if (!isSubDayMultiDay.value) return formatWindowLabel(window)
+		return `${formatDate(window.windowStart)} ${formatTime(window.windowStart)} - ${formatTime(window.windowEnd)}`
 	}
 
 	// Tooltip handlers

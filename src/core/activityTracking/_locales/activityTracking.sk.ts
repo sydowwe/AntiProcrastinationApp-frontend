@@ -43,6 +43,8 @@ const messages = {
 		thisWeek: `Tento týždeň`,
 		last30Days: `Posledných 30 dní`,
 		custom: `Vlastné`,
+		// Prístupný názov skupiny čipov s predvoľbami (F49).
+		presetsLabel: `Rozsah dátumov`,
 		timelineUnavailable: `Časová os je dostupná len pre jeden deň`,
 		timelineFellBack: `Pre viacdňový rozsah sa zobrazuje stĺpcový graf`,
 	},
@@ -114,6 +116,8 @@ const messages = {
 	},
 	stackedBars: {
 		windowLabel: `Okno`,
+		// Prístupný názov jedného stĺpca: titulok tooltipu plus okno, v ktorom leží.
+		barLabel: `{name}, {duration}, {window}`,
 	},
 	focus: {
 		title: `Priebeh dňa`,

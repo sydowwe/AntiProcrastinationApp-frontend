@@ -84,6 +84,8 @@ const dayPlanner = {
 			retry: `Retry`,
 		},
 		dialog: {
+			// Accessible name of the duration chip group in the task dialog (F49).
+			durationPresetsLabel: `Duration`,
 			skipTaskTitle: `Skip task`,
 			rescheduleTasksTitle: `Reschedule tasks`,
 			nothingToUndo: `Nothing to undo`,

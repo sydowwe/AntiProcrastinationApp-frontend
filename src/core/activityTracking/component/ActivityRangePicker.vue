@@ -4,10 +4,17 @@
 			Presets are the primary control, not the two-date picker: "what did I do today" is most
 			sessions, and "today" is one click from anywhere including custom.
 		-->
+		<!--
+			Vuetify's chip is a focusable `span` with no role or state (F49). A mandatory single-select
+			group is a radiogroup; the arrow-key half of that pattern is not wired — Tab reaches every
+			chip, and Enter/Space are Vuetify's own.
+		-->
 		<VChipGroup
 			:modelValue="activePreset"
 			mandatory
 			selectedClass="text-primary"
+			role="radiogroup"
+			:ariaLabel="$t('activityTracking.range.presetsLabel')"
 			@update:modelValue="onPresetSelect"
 		>
 			<VChip
@@ -16,6 +23,8 @@
 				:value="option.value"
 				size="small"
 				variant="outlined"
+				role="radio"
+				:ariaChecked="activePreset === option.value"
 			>
 				{{ option.label }}
 			</VChip>
@@ -23,6 +32,8 @@
 				value="custom"
 				size="small"
 				variant="outlined"
+				role="radio"
+				:ariaChecked="activePreset === 'custom'"
 			>
 				{{ $t('activityTracking.range.custom') }}
 			</VChip>

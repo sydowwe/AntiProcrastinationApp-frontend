@@ -51,6 +51,8 @@ const leisure = {
 			timeline: `Časová os`,
 		},
 		readinessBoard: {
+			// Celé telo karty otvára dialóg úprav; vnorené tlačidlá stavu a mazania sa pomenúvajú samy (F78).
+			editCard: `Upraviť {name}`,
 			empty: `Žiadne projekty`,
 			moreCount: `+{count} ďalších`,
 		},

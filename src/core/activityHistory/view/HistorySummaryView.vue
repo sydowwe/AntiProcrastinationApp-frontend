@@ -51,6 +51,7 @@
 					:windowSizeOptions="windowSizeOptionsMinutes"
 					:initialWindowSize="selectedWindowSize"
 					@windowSizeChange="handleWindowSizeChange"
+					interactive
 					@activityClick="handleActivityClick"
 				>
 					<template #header-right>

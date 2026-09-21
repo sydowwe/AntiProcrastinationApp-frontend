@@ -48,6 +48,8 @@ const todoList = {
 		savedToHistory: `Saved {name} to history`,
 		errorSavingToHistory: `Error saving {name} to history`,
 		clearFilters: `Clear filters`,
+		// Accessible name of the due-state chip group (F49).
+		dueFilterLabel: `Due`,
 		confirmBatchDelete: `Delete {count} selected items?`,
 		moveToList: `Move to list`,
 		destinationList: `Destination list`,

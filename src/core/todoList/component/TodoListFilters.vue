@@ -3,10 +3,13 @@
 		v-if="!isInChangeOrderMode"
 		class="d-flex flex-wrap align-center mb-1"
 	>
+		<!-- Vuetify's chip is a focusable `span` with no role or state; the roles are ours (F49). -->
 		<VChipGroup
 			v-if="availablePriorities.length > 1"
 			v-model="filterPriorityIds"
 			multiple
+			role="group"
+			:ariaLabel="$t('toDoList.priority')"
 		>
 			<VChip
 				v-for="p in availablePriorities"
@@ -15,12 +18,16 @@
 				:color="p.color"
 				filter
 				size="small"
+				role="checkbox"
+				:ariaChecked="filterPriorityIds.includes(p.id)"
 			>
 				{{ p.text }}
 			</VChip>
 		</VChipGroup>
 		<VChipGroup
 			:modelValue="filterDueState"
+			role="radiogroup"
+			:ariaLabel="$t('toDoList.dueFilterLabel')"
 			@update:modelValue="filterDueState = $event ?? null"
 		>
 			<VChip
@@ -29,6 +36,8 @@
 				filter
 				size="small"
 				prependIcon="calendar"
+				role="radio"
+				:ariaChecked="filterDueState === 'overdue'"
 			>
 				{{ $t('toDoList.due.pastDue') }}
 			</VChip>
@@ -38,6 +47,8 @@
 				filter
 				size="small"
 				prependIcon="calendar-day"
+				role="radio"
+				:ariaChecked="filterDueState === 'today'"
 			>
 				{{ $t('toDoList.due.today') }}
 			</VChip>
@@ -48,6 +59,7 @@
 			variant="tonal"
 			color="secondaryOutline"
 			prependIcon="xmark"
+			role="button"
 			@click="emit('clear')"
 		>
 			{{ $t('toDoList.clearFilters') }}

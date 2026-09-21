@@ -49,6 +49,8 @@ const todoList = {
 		savedToHistory: `Uložené {name} do histórie`,
 		errorSavingToHistory: `Chyba pri ukladaní {name} do histórie`,
 		clearFilters: `Vymazať filtre`,
+		// Prístupný názov skupiny čipov podľa termínu (F49).
+		dueFilterLabel: `Termín`,
 		confirmBatchDelete: `Vymazať {count} vybraných úloh?`,
 		moveToList: `Presunúť do zoznamu`,
 		destinationList: `Cieľový zoznam`,

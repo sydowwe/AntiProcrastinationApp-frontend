@@ -114,7 +114,8 @@
 						:key="day.value"
 						:color="data.scheduledDays.includes(day.value) ? 'primary' : undefined"
 						:variant="data.scheduledDays.includes(day.value) ? 'elevated' : 'outlined'"
-						style="cursor: pointer"
+						role="button"
+						:ariaPressed="data.scheduledDays.includes(day.value)"
 						@click="toggleDay(day.value)"
 					>
 						{{ day.label }}
@@ -144,7 +145,8 @@
 						size="small"
 						:color="data.scheduledDates.includes(d) ? 'primary' : undefined"
 						:variant="data.scheduledDates.includes(d) ? 'elevated' : 'outlined'"
-						style="cursor: pointer"
+						role="button"
+						:ariaPressed="data.scheduledDates.includes(d)"
 						@click="toggleDate(d)"
 					>
 						{{ d }}
@@ -203,7 +205,8 @@
 						:prependIcon="getDayTypeIcon(type)"
 						:color="data.scheduledForDayTypes.includes(type) ? getDayTypeColor(type) : undefined"
 						:variant="data.scheduledForDayTypes.includes(type) ? 'elevated' : 'outlined'"
-						style="cursor: pointer"
+						role="button"
+						:ariaPressed="data.scheduledForDayTypes.includes(type)"
 						@click="toggleDayType(type)"
 					>
 						{{ $t(`planner.dayType.${type}`) }}

@@ -91,6 +91,8 @@ const dayPlanner = {
 			retry: `Skúsiť znova`,
 		},
 		dialog: {
+			// Prístupný názov skupiny čipov s trvaním v dialógu úlohy (F49).
+			durationPresetsLabel: `Trvanie`,
 			skipTaskTitle: `Preskočiť úlohu`,
 			rescheduleTasksTitle: `Preplánovať úlohy`,
 			nothingToUndo: `Nie je čo vrátiť späť`,

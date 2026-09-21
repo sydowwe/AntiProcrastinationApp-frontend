@@ -20,13 +20,19 @@
 				v-model:end="data.endTime"
 				@update:start="onStartTimeChange"
 			></TimeRangePicker>
-			<div class="mx-auto d-flex flex-wrap ga-1 mb-2">
+			<div
+				class="mx-auto d-flex flex-wrap ga-1 mb-2"
+				role="radiogroup"
+				:aria-label="$t('planner.dialog.durationPresetsLabel')"
+			>
 				<VChip
 					v-for="d in DURATION_CHIPS"
 					:key="d"
 					size="small"
 					:color="currentDurationMinutes === d ? 'primaryOutline' : undefined"
 					variant="tonal"
+					role="radio"
+					:ariaChecked="currentDurationMinutes === d"
 					@click="setDuration(d)"
 				>
 					{{ formatDurationChip(d) }}

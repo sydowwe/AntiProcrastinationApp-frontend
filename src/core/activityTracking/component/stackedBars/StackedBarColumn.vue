@@ -1,10 +1,21 @@
 <template>
+	<!--
+		A bar is a control only where the parent bound a handler (`interactive`): there it is a
+		button that opens the item's details. Elsewhere it is a named graphic — `role="img"` with the
+		same label the tooltip spells out on hover, since the tooltip is mouse-only and the label is
+		the one thing a screen reader or the accessibility snapshot can read off the chart (F29).
+	-->
 	<div
 		class="bar-column"
+		:class="{ 'bar-column--interactive': interactive }"
 		:style="barContainerStyle"
+		:role="interactive ? 'button' : 'img'"
+		:tabindex="interactive ? 0 : undefined"
+		:aria-label="ariaLabel"
 		@mouseenter="$emit('mouseenter', $event)"
 		@mouseleave="$emit('mouseleave', $event)"
-		@click="$emit('click', $event)"
+		@click="onActivate"
+		@keydown.enter.space.prevent="onActivate"
 	>
 		<!-- Background portion (top, striped) -->
 		<div
@@ -23,9 +34,11 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { ColumnData } from '@/core/activityTracking/component/stackedBars/dto/ColumnData.ts'
 	import { lightenColor } from '@/_common/utils/colorUtils.ts'
+	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 
 	const props = defineProps<{
 		data: ColumnData
@@ -34,15 +47,41 @@
 		gridRowStart: number
 		gridRowEnd: number
 		windowMinutes: number
+		/** The window's time range, already formatted by the grid — the only layer that knows it. */
+		windowLabel: string
+		/** True when the chart's consumer bound a click handler; the bar is then a button, else a graphic. */
+		interactive?: boolean
 	}>()
 
-	defineEmits<{
+	const emit = defineEmits<{
 		(e: 'mouseenter', event: MouseEvent): void
 		(e: 'mouseleave', event: MouseEvent): void
-		(e: 'click', event: MouseEvent): void
+		(e: 'click'): void
 	}>()
 
+	const { t } = useI18n()
+
 	const domainColor = computed(() => props.data.color ?? getDomainColor(props.data.domain))
+
+	const displayName = computed(() =>
+		props.data.domain === '_other' ? t('activityTracking.common.other') : props.data.domain,
+	)
+
+	// The tooltip's headline — name and total time — plus the window, since a focused bar has no
+	// tooltip. Interactive bars borrow the domain card's "View details for" verb so the two kinds of
+	// chart control on one dashboard read as the same kind.
+	const ariaLabel = computed(() => {
+		const label = t('activityTracking.stackedBars.barLabel', {
+			name: displayName.value,
+			duration: fromSeconds(props.data.activeSeconds + props.data.backgroundSeconds),
+			window: props.windowLabel,
+		})
+		return props.interactive ? t('activityTracking.statColumn.viewDetails', { domain: label }) : label
+	})
+
+	function onActivate() {
+		if (props.interactive) emit('click')
+	}
 
 	const barContainerStyle = computed(() => ({
 		gridColumn: `${props.gridColumnStart} / ${props.gridColumnEnd}`,
@@ -75,13 +114,28 @@
 
 <style scoped>
 	.bar-column {
-		cursor: pointer;
 		transition: opacity 0.15s;
 		z-index: 5;
 	}
 
-	.bar-column:hover {
+	.bar-column--interactive {
+		cursor: pointer;
+	}
+
+	.bar-column--interactive:hover {
 		opacity: 0.85;
+	}
+
+	/* Keyboard focus only. Raised above the neighbouring columns' z-index: 5 so the ring is not
+	   painted under the bar one gap over. */
+	.bar-column:focus {
+		outline: none;
+	}
+
+	.bar-column:focus-visible {
+		outline: 2px solid rgb(var(--v-theme-secondary));
+		outline-offset: 2px;
+		z-index: 6;
 	}
 
 	.bar-segment {

@@ -7,6 +7,7 @@
 			variant="tonal"
 			prependIcon="circle-check"
 			link
+			role="button"
 			:title="$t('leisure.experienced.openAnchorHint')"
 			@click="openAnchor"
 		>

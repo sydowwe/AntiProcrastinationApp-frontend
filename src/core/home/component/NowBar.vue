@@ -119,6 +119,7 @@
 					variant="tonal"
 					size="small"
 					link
+					role="button"
 					:prependIcon="timerIcon"
 					:title="timerLabel"
 					:aria-label="timerLabel"

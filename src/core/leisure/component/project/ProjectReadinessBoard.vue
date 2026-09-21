@@ -59,7 +59,11 @@
 							class="readiness-card"
 							variant="outlined"
 							:loading="pendingIds.has(item.activityId)"
+							role="button"
+							tabindex="0"
+							:aria-label="$t('leisure.readinessBoard.editCard', { name: item.activity.name })"
 							@click="onEdit(item)"
+							@keydown.enter.space.self.prevent="onEdit(item)"
 						>
 							<VCardText class="d-flex flex-column ga-2">
 								<div class="d-flex justify-space-between align-start ga-2">
@@ -269,6 +273,11 @@
 
 	.readiness-card {
 		cursor: pointer;
+	}
+
+	.readiness-card:focus-visible {
+		outline: 2px solid rgb(var(--v-theme-secondary));
+		outline-offset: 2px;
 	}
 
 	.readiness-blockers {

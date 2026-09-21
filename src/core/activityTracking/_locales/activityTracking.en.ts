@@ -43,6 +43,8 @@ const messages = {
 		thisWeek: `This week`,
 		last30Days: `Last 30 days`,
 		custom: `Custom`,
+		// Accessible name of the preset chip group (F49).
+		presetsLabel: `Date range`,
 		timelineUnavailable: `The timeline is available for a single day only`,
 		timelineFellBack: `Showing stacked bars for the multi-day range`,
 	},
@@ -113,6 +115,8 @@ const messages = {
 	},
 	stackedBars: {
 		windowLabel: `Window`,
+		// The accessible name of one bar: the tooltip's headline plus the window it sits in.
+		barLabel: `{name}, {duration}, {window}`,
 	},
 	focus: {
 		title: `Shape of the day`,

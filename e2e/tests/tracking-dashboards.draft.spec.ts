@@ -149,13 +149,21 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 		},
 	)
 
-	// findings.md A1: the date-preset chips (ActivityRangePicker.vue) and the unified source-filter
-	// chips (ActivitySourceFilter.vue) are focusable (tabindex=0) but expose no role/aria-label/
-	// aria-pressed.
-	test.fixme('A1: the "Today" date-preset chip exposes an accessible role or name', async ({ authenticatedPage }) => {
-		await authenticatedPage.goto('/activity-tracking')
-		const chip = authenticatedPage.getByText('Today', { exact: true })
-		await expect(chip).toHaveAttribute('role', /.+/)
+	// findings.md A1 (fixed by F49): the date presets are a radiogroup, the source chips are toggle
+	// buttons with aria-pressed.
+	test('A1: the "Today" date-preset chip is a checked radio and the source chips are pressed buttons', async ({
+		authenticatedPage,
+	}) => {
+		await authenticatedPage.goto('/activity-tracking/unified')
+		const presets = authenticatedPage.getByRole('radiogroup', { name: 'Date range' })
+		await expect(presets.getByRole('radio', { name: 'Today' })).toHaveAttribute('aria-checked', 'true')
+		await expect(presets.getByRole('radio', { name: 'Last 7 days' })).toHaveAttribute('aria-checked', 'false')
+		const desktop = authenticatedPage.getByRole('button', { name: /^Desktop/ })
+		await expect(desktop).toHaveAttribute('aria-pressed', 'true')
+		await desktop.click()
+		await expect(desktop).toHaveAttribute('aria-pressed', 'false')
+		await desktop.click()
+		await expect(desktop).toHaveAttribute('aria-pressed', 'true')
 	})
 
 	// findings.md A2: DesktopProcessDetailsPanel.vue's close VBtn has icon="fas fa-xmark" (renders fine)

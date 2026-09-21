@@ -24,6 +24,7 @@
 				:timeTo
 				:windowSizeOptions
 				@windowSizeChange="handleWindowSizeChange"
+				interactive
 				@activityClick="handleActivityClick"
 				@retry="fetchStackedBars"
 			/>

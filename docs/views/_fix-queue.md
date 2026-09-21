@@ -58,8 +58,8 @@
 | F26 | Period-total banner is a `flex: 1 1` (basis `0%`) item — it never has a size to wrap on, so it is squeezed to ~62 px instead of dropping to a new line | app | `history-review/B1` | trivial |
 | F27 | History dashboards have no error state: three fetch owners null or **keep** their data on failure and every panel renders "No data for this period" — the pattern is already built in `useActivityDashboard` | app | `history-review/B2` | med |
 | F28 | `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer | app | `history-review/B3` | trivial |
-| F29 | Stacked-bar columns are bare `div`s: no name, no role, no `tabindex`, no key handler — and on Detail they show a pointer cursor and do nothing | app (`activityTracking/component/stackedBars/`, shared per `migration-revision.md` §7) | `history-review/A1` | low-med |
-| F30 | Summary cards are named "View details for X" and toggle a highlight; the history card does not activate from the keyboard (**`activityTracking` half withdrawn** — §80: its cards open a detail panel and already have key handlers) | app | `history-review/P1` | low |
+| F29 | ✅ **FIXED 2026-09-22** (with `F30`, `F49`, `F78` — one clickable-`div` convention) — `StackedBarColumn` carries a localized `aria-label` (`activityTracking.stackedBars.barLabel`: name, total duration, window range) on every dashboard; where the consumer binds `@activityClick` it passes the new `interactive` prop and the bar is `role="button"` + `tabindex="0"` + Enter/Space, named *"View details for …"* via the domain card's key; unbound (Detail) it is `role="img"` with no pointer. Verified live: Tab + Enter on `/activity-history` drilled to Detail with the bar's date; Detail's bars are `img`, cursor `auto`; `/activity-tracking/unified` Enter set `?selected=`. SK label checked | app (`activityTracking/component/stackedBars/`, shared per `migration-revision.md` §7) | `history-review/A1` | low-med |
+| F30 | ✅ **FIXED 2026-09-22** (with `F29`) — `historyDashboard.summaryCards.viewDetails` now reads *"Highlight {name} in the chart"* / *"Zvýrazniť {name} v grafe"*, the card carries `:aria-pressed="selected"` and `@keydown.enter.space.prevent` to the same emit. `activityTracking`'s card untouched. Verified live: Enter toggles `aria-pressed` true → false, both locales | app | `history-review/P1` | low |
 | F31 | Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas; `isNarrow` is a dead prop | app | `history-review/P2` | low-med |
 | F32 | `/activity-history/calendar` has no `<h1>`, unlike its two siblings | app | `history-review/P3` | trivial |
 | F33 | ✅ **FIXED 2026-09-21** (with the `configured` branch `B14` added, same commit) — Google Calendar connect never sends the OAuth `state` the server's validator requires — the client half of `B1`, unobservable only because the server half breaks the flow one step earlier | app | `user-settings/B1` (client half; server half is §9) | low |
@@ -77,7 +77,7 @@
 | F46 | The pie-chart detail panel's close button was hand-rolled three times and drifted: `mdi-close` in a FontAwesome-only app on the web panel (blank square + console error), no accessible name at all on the desktop panel, and a "Close domain details" label on the unified panel whose items are domains, products *and* apps — one shared key, one identical button | app (`src/core/activityTracking/component/`) | `tracking-dashboards/B1`, `A2` | trivial |
 | F47 | ~~Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`~~ **✅ landed 2026-09-21**, folded into `B23`'s frontend half (§18): `AndroidAppDetailsPanel.vue` renders the three instant rows and, under them, the per-app figures `B23` put on the wire — so the *"session count"* half of `B2`'s original pass condition is met too. The close button uses the `pieChart.closeDetails` key `F46` prescribes; `F46` still has to move the other three onto it | app | ~~`tracking-dashboards/B2`~~ (fixed) | low |
 | F48 | The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
-| F49 | Date-preset chips and source-filter chips are focusable `span`s with no role and no state — Vuetify 3.12's `VChip` adds `tabindex`/keydown when clickable and nothing else; the same state-bearing class sits on `todoList`'s two filter groups, `dayPlanner`'s day-of-week and duration chips, and (**grown**) `leisure`'s *Experienced* chip, where `<VChip link @click>` renders as a bare `generic` and `getByRole('button')` finds nothing (15 chip-controls app-wide, 6 of them toggles/selects) | app (`activityTracking`, `todoList`, `dayPlanner`, **`leisure`**) | `tracking-dashboards/A1`, **`leisure-backlog-picker/A1 (round 2)`** (+ unfiled twins in `TodoListFilters.vue`, `RepeatingTaskDialog.vue`, `BasePlannerTaskDialog.vue`) | low-med |
+| F49 | ✅ **FIXED 2026-09-22** (with `F29`) — roles and states through attrs at every call site: range presets `radiogroup` "Date range" + `radio`/`aria-checked`; source chips `button` + `aria-pressed`; todo priorities `group` "Priority" + `checkbox`/`aria-checked`, due pair `radiogroup` "Due" + `radio`, *Clear filters* `button`; repeating-task day / date / day-type chips `button` + `aria-pressed` (inline `cursor: pointer` dropped — `v-chip--link` sets it); duration chips in a `radiogroup` "Duration" as `radio`s. Second tier (six action chips incl. `ExperiencedCell`, `MemoryAnchorTable`, `NowBar`) got `role="button"`. Arrow keys deliberately not wired. Verified live on `/activity-tracking/unified`, `/todo-list/13001`, both planner dialogs | app (`activityTracking`, `todoList`, `dayPlanner`, `leisure`, `home`) | `tracking-dashboards/A1`, `leisure-backlog-picker/A1 (round 2)` (+ the unfiled twins) | low-med |
 | F50 | The Compare Templates dialog is empty every time — **two** unkeyed `Promise.all` fan-outs from one api instance (`fetchById` ×2, then `fetchFiltered` ×2), each cancelling its own sibling; the finding's fix closes only the first; folds `B3`'s dead *Confirm* button (`:showConfirmBtn` is not a `MyDialog` prop), same file | app (`TemplateComparisonDialog.vue`) | `planner-templates/X1`, `B3` | low |
 | F51 | The template planner's side panel at `<md` is the **open** panel squeezed to 400 × 16 px and pushed off-screen — not a broken "opened" state — and the template planner has **no control that reopens it** once the X is tapped (`panelOpen` is only ever set `false`); the shell is shared with `/day-planner/:date`, whose mobile layout is a different, unchecked shape | app (`PlannerSidePanelShell.vue`, `TemplateDayPlannerView.vue`, `TemplatePlannerHeader.vue`) | `planner-templates/X2` (+ the inventory's misread "collapsed pill") | med |
 | F52 | Template card title row: the name never truncates, so the Active/Inactive switch label wraps one letter per line and the day-type chip hard-clips to "Wee" / "Workd" on every card at 1440 px | app (`TemplateCard.vue`) | `planner-templates/B1` | low |
@@ -126,7 +126,7 @@
 | F75 | `viewEndDate` never rolls an overnight view onto the next day — with the seed's `bedTime` of `00:00` it resolves to **today at midnight**, so `isDayMateriallyDone` is true all day and the plan-vs-actual verdict ("3 tasks never happened") renders at 19:54 on a day that is not over | app (`dayPlannerStore.ts:157-170`) | `planner-day/B7` | low |
 | F76 | ✅ **FIXED 2026-09-21** (same session as `F73`, per its ordering constraint) — `:precision="null"` on the `estimatedHours` `VNumberInput`; the edit dialog now opens on "8.5", and a two-decimal `8.25` submits and persists as `8.25`. Body in the log | app (`NewProjectProfileForm.vue:35-39`) | `leisure-projects/B4` | trivial |
 | F77 | ✅ **FIXED 2026-09-21** (same session as `F63`) — required rules on every field the API's `Create*Validator` rejects empty (backlog Location/Weather/Cost, bucket-list Experience type + Inspiration source, anchor Highlight, project Project area), and a leisure `useServerFieldErrors` composable over `extractServerFieldError` that each wrapper form's `onConfirm` routes a caught 400 through, dialog kept open. Verified live: untouched *Create* → required messages and no `POST`; a server-only refusal (*Read a Novel*, already profiled) → *"Activity already has a backlog profile."* under the Activity field. Body in the log | app (`New{Backlog,BucketList,MemoryAnchor,Project}…Form.vue` + their wrappers, `composable/useServerFieldErrors.ts`) | `leisure-backlog-picker/B3`, `B4`, `leisure-bucket-anchors/B2` (feedback half) | low-med |
-| F78 | Two more primary click targets built as bare `<div>`s: the projects board card (the only way to open the edit dialog) and the template grid's background-task block — no role, no `tabindex`, no key handler; the template one is skipped by Tab *and* immune to Escape while its own help text says "Tab moves between tasks" | app (`ProjectReadinessBoard.vue:64-71`, the template grid's background block) | `leisure-projects/A4`, `planner-templates/A4` | low |
+| F78 | ✅ **FIXED 2026-09-22** (with `F29`) — the board card is `role="button"` + `tabindex="0"` + `aria-label` *"Edit {name}"* with `@keydown.enter.space.self.prevent` (`.self` keeps Enter on the nested status/Delete buttons from also opening the edit dialog); `BackgroundTaskBlock` is `role="button"` + `tabindex="0"` + `aria-pressed` + the composed label as `aria-label`, wired to `useTaskBlockKeyboard` like the foreground block, with a focus ring and a `selected` style. Verified live: Tab from a foreground task lands on the block, Enter selects (*1 selected*), Escape clears and keeps focus, E opens edit; mouse multi-select still 2; Enter on the card's nested *Delete* opens only the delete confirmation | app (`ProjectReadinessBoard.vue`, `BackgroundTaskBlock.vue`) | `leisure-projects/A4`, `planner-templates/A4` | low |
 | F79 | ✅ **FIXED 2026-09-21** (same session as `F61`) — one `LeisureEmptyState` component replaces the seven copies; it branches *failed* → *filtered* (`filter.hasAny()`, passed down as `filtered`) → genuinely empty, and the filtered branch offers *Clear filters* (reassigns a fresh filter DTO) instead of *Add*. Verified `?activityName=zzzz` on all seven surfaces, *Clear filters* drops the param and the rows return, and `secondaryUser` still gets the onboarding copy on every surface — which also settles `leisure-projects/U1`'s table half. Body in the log | app (`src/core/leisure/component/LeisureEmptyState.vue` + 4 tables, board, ladder, timeline, 4 views, locales) | `leisure-projects/P3` | low |
 | F80 | The board card's metadata line reads "Woodworking· 8.5h" — two adjacent `v-if` templates each lead with `· ` and neither emits a leading space | app (`ProjectReadinessBoard.vue:86-98`) | `leisure-projects/P2` | trivial |
 | F81 | The repeating-task dialog asks for `fas fa-calendar-range`, which this app does not bundle — the *Date range* recurrence tab renders with no icon and logs a FontAwesome error every time the dialog opens. **Sixteenth pass proved it and bounded it:** `calendar-range` is a FA **Pro** name absent from all three free packs (aliases included), and a sweep of every static icon literal in `src/` found **exactly two** unresolvable ones app-wide — this and `F46`'s `mdi-close`. Not the tip of an iceberg; `calendar-days` is the substitute | app (`RecurrenceType.ts:15`) | `planner-day/P1` | trivial |
@@ -1176,106 +1176,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None. `extraSegmentSlots` is module-level state; the unmount hook clears it — `F11` proved
   that on the same mechanism.
 
-## F29. Stacked-bar columns are bare `div`s — no name, no role, no `tabindex`, no key handler; and on Detail they show a pointer and do nothing
-
-- **Scope:** app-side `src/core/activityTracking/component/stackedBars/StackedBarColumn.vue`,
-  `StackedBarsGrid.vue`, `StackedBarsChart.vue` — **unit 5's module**, shared with `activityHistory` per
-  `migration-revision.md` §7 (see the note under the summary table)
-- **Closes:** `history-review/A1`
-- **Root cause:** Confirmed. `StackedBarColumn.vue:2-8` is `<div class="bar-column" … @click>` with two
-  coloured child `div`s and nothing else; `.bar-column { cursor: pointer }` (`:77-81`). No `role`, no
-  `tabindex`, no `aria-label`, no `title`, no `@keydown`. The hover tooltip (`StackedBarsGrid.vue:89-90`
-  → `StackedBarsTooltip`) is the only place the bar's name and duration are ever spelled out, and it is
-  mouse-only. So the finding's *"Tab to or inspect"* repro is half impossible — Tab cannot reach a
-  `div` — and the gap is wider than naming: the Summary view's primary drill-down is unreachable without a
-  mouse.
-- **The two consumers disagree about what a bar *is*, and the fix has to know.** `HistorySummaryView.vue:54`
-  binds `@activityClick="handleActivityClick"` (drill into Detail); `HistoryDetailView.vue:91-100` binds
-  **no** click handler at all, and the four tracking dashboards have their own semantics. A blanket
-  `role="button"` would name a control on Detail that does nothing — the same affordance lie `F30` is
-  about, from the other side. Today Detail's bars already lie a little (`cursor: pointer`, no action);
-  fix that here rather than leave it.
-- **Files:** `StackedBarColumn.vue:2-8` (the element), `:30-43` (props/emits), `:76-81` (cursor);
-  `StackedBarsGrid.vue:78-93` (the mount — it has `formatWindowLabel(window)` at `:112` and is the only
-  layer that knows the window's time range); `StackedBarsChart.vue:99-121` (an `interactive?: boolean`
-  prop, or derive it — the component cannot see whether the parent bound `@activityClick`, so a prop it
-  is); the two history views and four tracking dashboards (pass it where a handler is bound).
-- **What to change:** On `StackedBarColumn`: an `:aria-label` built from the domain name (the `_other`
-  bucket via `activityTracking.common.other`), the duration (`fromSeconds(data.activeSeconds)` — the
-  tooltip's own wording, `StackedBarsTooltip.vue`), and the window label the grid passes down;
-  `role="button"`, `tabindex="0"` and `@keydown.enter.space.prevent` **only when `interactive`**, else
-  `role="img"` (a named graphic, not a control) and `cursor: default`. Localize the label pattern —
-  one key in `activityTracking.{sk,en}.ts`, since the component is that module's. Keyboard focus needs
-  a visible ring (`:focus-visible` outline on `.bar-column`); the grid is a positioned CSS grid, so check
-  the ring is not clipped by a neighbouring column's `z-index: 5`.
-- **Do not change:** `StackedBarsGrid`'s tooltip or hit-testing — the mouse path works and unit 3 drilled
-  through it. Do not move the component into `historyDashboard` or `_common` in this batch;
-  `migration-revision.md` §7 already records that decision and its reasons. Do not touch
-  `StackedBarsGrid.vue:460`'s `toLocaleString('en', …)` (`F24`'s *Do not change* named it — unit 5's).
-- **Verification:** `history-review/A1`'s `Verify:` block on `/activity-history` — a bar exposes a
-  localized name in the snapshot (`getByRole('button', { name: /…/ })` resolves), **Tab reaches it**,
-  Enter drills into Detail with the same `date`/`groupBy` as a click. Then `/activity-history/detail`:
-  the bars are `img`, not `button`, and the cursor is no longer a pointer. Then one tracking dashboard
-  (`/activity-tracking`) to confirm its own click semantics are intact and its bars are named. SK as
-  well as EN for the label.
-- **Risk:** Low-medium. Six dashboards render this component; the change is additive markup plus a
-  prop with a `false` default, so an unmodified consumer gets named, non-interactive bars — which is
-  the honest state for a chart nobody bound a handler on. The bar count is data-driven (25–42 on the
-  seed), so check the snapshot stays readable rather than becoming 42 long labels.
-
-## F30. Summary cards are named "View details for X" and toggle a highlight — and the same cloned label sits on `activityTracking`'s domain card
-
-- **Scope:** app-side `src/core/historyDashboard/_locales/historyDashboard.{sk,en}.ts`; adjacent —
-  `historyDashboard/component/summaryCards/HistorySummaryCard.vue`. ~~`activityTracking.{sk,en}.ts`,
-  `ActivityDomainCard.vue`~~ — **withdrawn, eleventh pass (§80).**
-- **Closes:** `history-review/P1`. ~~**Also closes, unfiled:** the identical mismatch on
-  `ActivityDomainCard.vue:7-9` — `activityTracking.statColumn.viewDetails` (*"View details for
-  {domain}"*), whose click is `emit('click', domain)` → `domainClick` → `selectedDomain`
-  (`ActivitySummaryCards.vue:72-73,135-136`): the same select-toggle.~~ **Wrong, and unit 5 is the
-  witness.** On the tracking dashboards `selectedItem` is *also* the pie section's model, and three of
-  the four pie sections answer it with a detail panel: web switches `ActivityDetailsPanel` to `domain`
-  mode (`ActivityPieChartSection.vue:59-66,161`), unified renders `selectedDetails`
-  (`UnifiedPieChartSection.vue:66-116`), desktop fetches `process-details`
-  (`DesktopPieChartSection.vue:169-188`) — all three observed by unit 5
-  (`tracking-dashboards/inventory.md:29,147,153`). *"View details for X"* is the truth there. The one
-  dashboard where it is a lie is Android, and that is `tracking-dashboards/B2` → **`F47`**, which makes
-  the label true instead of renaming it. The history card was built from the tracking one
-  (`HistorySummaryCards.vue:116`'s own comment: *"Reused from activityTracking"*), and the label came
-  with it — but the *behaviour* did not, which is the whole defect: the label is only wrong on the copy.
-- **Root cause:** Confirmed. `HistorySummaryCard.vue:8` binds
-  `:aria-label="$t('historyDashboard.summaryCards.viewDetails', { name })"` on a card whose only effect
-  is `emit('click', historyGroupKey(card))` → `handleGroupSelect` → `selectedGroup` toggles
-  (`useHistoryDashboard.ts:242-244`) and the pie chart highlights the slice. The label describes an
-  action that does not exist. Severity `polish` stands.
-- **Adjacent, source-certain, unobserved — fix while in the file:** ~~both cards are~~ **the history
-  card is** `role="button" tabindex="0"` with `@click` and **no key handler**, and `VCard` adds none
-  (`VCard.js` has no `keydown`/`onKeydown`; it renders a `div` with `onClick` and `tabindex`). So it is
-  focusable, announced as a button, and inert on Enter/Space. Add `@keydown.enter.space.prevent` to the
-  same emit. **The tracking card already has both** — `ActivityDomainCard.vue:10-11`
-  (`@keydown.enter` / `@keydown.space.prevent`), since `5165e2ed` (2026-08-20), before this batch was
-  written; the sixth pass read `VCard.js` and not the card (§80). Copy those two lines rather than
-  designing new ones. Not filed by the unit (it clicked); flagged here because `F29` is settling the
-  same question for the bars and the two should land as one convention.
-- **Files:** `historyDashboard.en.ts:20` / `.sk.ts:20`; `HistorySummaryCard.vue:2-10`.
-  ~~`activityTracking.en.ts:101` / `.sk.ts:101`; `ActivityDomainCard.vue:7-9`~~ — do not touch;
-  `activityTracking.statColumn.viewDetails` stays *"View details for {domain}"* because that is what
-  the click does on every dashboard once `F47` lands
-- **What to change:** Rename ~~the two strings~~ **the history string** to what the click does —
-  *"Highlight {name} in the chart"* / *"Zvýrazniť {name} v grafe"* (or *"Filter to"*, but pick the
-  same verb `F29` uses for its drill-down so the two kinds of chart control read as two kinds). Keep
-  the key name; only the value changes. Since the card is a toggle, `aria-pressed="selected"` is the
-  honest extra and costs one attribute — and it is the same attribute `F49` adds to the source-filter
-  chips, so the two batches should agree on it.
-- **Do not change:** the behaviour. The finding's alternative — make the card actually open details — is a
-  feature, and the pie-chart cross-highlight is the designed interaction (`HistoryPieChartSection.vue`
-  renders the details panel for the selected group; that *is* the detail).
-- **Verification:** `history-review/P1`'s `Verify:` block — the accessible name describes the highlight;
-  Enter on a focused card highlights the slice (and again un-highlights); `aria-pressed` follows
-  `selected`. ~~Repeat on `/activity-tracking`'s domain cards.~~ On `/activity-tracking` confirm the
-  label still reads *"View details for …"* and that Enter opens the domain panel — the control it
-  should be left alone. Both locales.
-- **Risk:** None. One string and one key handler.
-
 ## F31. Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas, and `isNarrow` is a dead prop
 
 - **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue`
@@ -1728,83 +1628,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
 - **Risk:** None for the other dashboards (defaults preserve today's render). The one thing to get
   right is the `viewMode` model on Android: leave it bound and `'total'` so `ActivityPieChart`'s
   `required: true` model is satisfied.
-
-## F49. Date-preset and source-filter chips are focusable `span`s with no role and no state — and every other chip-as-toggle in the app is the same class
-
-- **Scope:** app-side `src/core/activityTracking/component/ActivityRangePicker.vue`,
-  `component/unified/ActivitySourceFilter.vue`, `src/core/todoList/component/TodoListFilters.vue`,
-  `src/core/dayPlanner/component/settings/RepeatingTaskDialog.vue`,
-  `src/core/dayPlanner/component/BasePlannerTaskDialog.vue`
-- **Closes:** `tracking-dashboards/A1` (+ the unfiled twins in `todoList` and `dayPlanner` below)
-- **Root cause — confirmed, and it is Vuetify's default, as the unit guessed.** Vuetify **3.12.4**'s
-  `VChip.js` renders the chip as `props.tag` (`span`) with `tabindex: isClickable ? 0 : undefined`
-  (`:195`) and an `onKeydown` (`:197`) — and **no `role`, no `aria-pressed`, no `aria-checked`**; the
-  only ARIA it writes is `aria-label` on its *close* button (`:134`). `VChipGroup` adds none either.
-  So a chip in a group is keyboard-reachable and Enter/Space-activatable but announced as plain text:
-  no group membership, no selectedness, no affordance. The unit's two eval dumps (`{"tag":"SPAN",
-  "role":null,"tabindex":"0","ariaLabel":null}`; `{"role":null,"tabindex":"0","ariaPressed":null}`)
-  are exactly what that code produces. A tag-level census of `src/` (every `<VChip` whose own
-  attributes carry `@click`, `link` or `to`) finds **15 chips used as controls**, in seven files. They
-  fall into two tiers, and only the first is this finding's defect — a control whose *state* is
-  invisible:
-  | file | shape | what it is |
-  | --- | --- | --- |
-  | `ActivityRangePicker.vue:7-29` | `VChipGroup mandatory` + 5 `VChip :value` | single-select, exactly one on — a **radiogroup** |
-  | `ActivitySourceFilter.vue:31-48` | bare `VChip @click` × 3, on/off via `variant`/`color` | independent toggles — **button + `aria-pressed`** |
-  | `TodoListFilters.vue:6-21` | `VChipGroup multiple` + `VChip filter` per priority | multi-select — **checkbox** group (or button + `aria-pressed`) |
-  | `TodoListFilters.vue:22-44` | `VChipGroup` (non-mandatory) + 2 `VChip filter` | single-select, may be none — **radio** with a clearable state, or two `aria-pressed` buttons |
-  | `RepeatingTaskDialog.vue:112-121,141,200` | bare `VChip @click="toggleDay"` × 7, on/off via `color`/`variant`, `style="cursor: pointer"` | seven independent toggles — **button + `aria-pressed`**; the unit-7 pass did not file it |
-  | `BasePlannerTaskDialog.vue:24-33` | bare `VChip @click="setDuration"` × N, on via `color` | single-select — **radio + `aria-checked`**; unit 7 did not file it |
-  The second tier is **action chips** — a click that does something, with the chip's own text as its
-  name: `TodoListFilters.vue:45-54` (*Clear filters*), `OverdueTasksBanner.vue:12-20`,
-  `SkipReasonForm.vue:6-15`, `NowBar.vue:116-127` and the three `leisure` chips
-  (`ExperiencedCell.vue:3-14`, `MemoryAnchorTable.vue:35,45`) — the last four already carry `link` and
-  a `:title`/`:aria-label`. They lack only `role="button"`; they have no state to expose and are not
-  what `A1` is about. `TimerPresetsSection.vue:35,85` is **`F37`'s** and is not touched here.
-  `SkipReasonsTab.vue:6` is `closable` only — its close is Vuetify's real `<button aria-label>` and
-  needs nothing. Unit 9 (`todo-lists`) did not file its three; its inventory pass predated the a11y
-  evidence discipline the later units have. Same defect, same fix, one batch — the `F35`/`F24` shape,
-  not a per-module one. Every remaining `VChip` in `src/` is a label (status, count, colour swatch);
-  `ChipWithIcon.vue` in `_common` is the same and is not touched.
-- **Files:** `ActivityRangePicker.vue:7-29`; `ActivitySourceFilter.vue:31-48`;
-  `TodoListFilters.vue:6-54`; `RepeatingTaskDialog.vue:112-121` (and its two siblings at `:141`,
-  `:200` if they are the same shape — read them; only `:112` was read this pass);
-  `BasePlannerTaskDialog.vue:24-33`. Second tier, optional in the same commit: the six action chips
-  above get `role="button"` and nothing else
-- **What to change:** At the call sites, through attrs (Vuetify passes unknown attrs to the root
-  `span`): `role="radiogroup"` + `:ariaLabel` on the range `VChipGroup`, `role="radio"` +
-  `:ariaChecked="activePreset === option.value"` on each preset chip; `role="button"` +
-  `:ariaPressed="isSelected(option.value)"` on each source chip (the text already names it — *"Browser
-  1h 22m"* — no `aria-label` needed, but `aria-pressed` is what `F30` also adds to the history cards,
-  so use the same attribute); on `TodoListFilters`, `role="group"` + label on the priority group,
-  `role="checkbox"` + `:ariaChecked` on its chips, `role="radio"`/`aria-checked` on the two due chips,
-  `role="button"` on *Clear filters*; on the two planner dialogs, `role="button"` +
-  `:ariaPressed="data.scheduledDays.includes(day.value)"` on the day chips and `role="radio"` +
-  `:ariaChecked="currentDurationMinutes === d"` on the duration chips (drop the inline
-  `style="cursor: pointer"` at `RepeatingTaskDialog.vue:117` — Vuetify's `v-chip--link` class already
-  sets it once the chip is clickable). **Rule 4 — do not do this in `componentDefaults`**: a global
-  `VChip: { role: 'button' }` would name every status chip in every app a control it is not, and the
-  right role differs per group (radio vs checkbox vs button), which no default can express.
-- **Do not change:** `VChipGroup`'s `mandatory`/`selectedClass` behaviour; the range picker's
-  `isCustomPinned` logic (`:91-92`); the source filter's *last-one-stays* rule (`:195-205`) — a
-  pressed chip that refuses to un-press is fine if its tooltip says why, and it does. Not `_common`:
-  the framework has no chip *group* (grep: `CalendarGrid.vue:96`, `NotificationsView.vue:15`,
-  `SessionsSection.vue:23`, `OverviewGroupCard.vue:40`, `BulkActionOutcomeList.vue:13`,
-  `ReminderKindRow.vue:6` are all labels) — if one appears later it is its own `FW` batch.
-- **Verification:** `A1`'s `Verify:` block — the *Today* chip exposes `role="radio"` +
-  `aria-checked="true"`; the *Browser* chip on `/unified` exposes `role="button"` +
-  `aria-pressed="true"`, and after clicking *Desktop* off, that one reads `false`. Then
-  `/todo-list/13002`: `getByRole('checkbox', { name: <priority> })` and `getByRole('radio', { name:
-  'Today' })` resolve, and `Clear filters` is a `button`. Then `/day-planner/settings` → *Repeating*
-  → open a task: the seven day chips are `button`s with `aria-pressed`; and any planner task dialog:
-  the duration chips are `radio`s with one `aria-checked`. Tab order unchanged; Enter/Space still
-  toggle (that part is Vuetify's and already works). `tracking-dashboards.draft.spec.ts:134` is the
-  `fixme`; `todo-lists.draft.spec.ts` and `planner-day.draft.spec.ts` have none for this and could
-  each gain one structural assertion.
-- **Risk:** None to behaviour — attributes only. One thing to watch: `role="radio"` on a `span` whose
-  Vuetify keydown handles Enter/Space but **not arrow keys** is a partial radiogroup (ARIA expects
-  arrows to move selection). Acceptable here — Tab reaches each chip — but say so in the commit so
-  nobody files it as a regression.
 
 ## F50. The Compare Templates dialog is empty every time — two unkeyed fan-outs, and the finding's fix closes one
 
@@ -3344,40 +3167,6 @@ pointer bump; the app one does not. Do not let a fixing session merge them.
   That is the intended meaning; grep the store's consumers before assuming nothing else depended on the
   bug.
 
-
-## F78. Two more primary click targets built as bare `div`s
-
-- **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:64-71` (the card's
-  `@click="onEdit(item)"`) and the `.background-task-block` in the template day-planner grid
-  (`src/core/dayPlanner/`, rendered on `/day-planner/templates/:templateId` and both split panels)
-- **Closes:** `leisure-projects/A4`, `planner-templates/A4`
-- **Root cause:** one class, two components: an element whose *only* job is to be clicked is a `<div>`
-  with a handler and `cursor: pointer`. `{"tag":"DIV","tabindex":null,"role":null}` on both. The
-  template block is the worse of the two because the surrounding grid is done right — foreground tasks
-  are real `<button>`s with composed `aria-label`s — so the gap is visible as an inconsistency: Tab from
-  a foreground task jumps past the background block to the toolbar's *Delete*, contradicting the grid's
-  own on-screen help text (*"Tab moves between tasks"*), and Escape cannot clear its selection because
-  Escape's handler needs focus inside the grid, which an element with no `tabindex` can never hold. It
-  already renders a visually-hidden *"Background activity: Feature Development, 19:30 to 20:30"* that
-  names nothing, because the element it would name has no role.
-- **Why one batch and not two:** the edit is identical (`role="button"` + `tabindex="0"` +
-  Enter/Space keydown + a composed `aria-label`) and the two findings describe it in the same words. The
-  value of batching is that the *pattern* gets decided once.
-- **It must agree with `F29` and `FW6`, which are the same class in two other places.** `F29` is the
-  stacked-bar columns (`activityTracking`), `FW6` is `CalendarGrid`'s day cells (framework). These stay
-  separate batches — `FW6` by rule 1, `F29` because it also carries a pointer-cursor-that-does-nothing
-  half that is unique to it — but whichever of the three ships first fixes the verb and the keydown
-  shape, and the other two copy it rather than re-deciding. Four different answers to "what is a
-  clickable div called" is the outcome to avoid.
-- **Do not change:** the nested controls. The board card's status buttons and *Delete* are already real,
-  named `<button>`s and already `@click.stop` — only the keyboard-activation path on the card itself is
-  missing, and adding it must not make Enter on a nested button fire both.
-- **Verification:** both findings' `Verify:` blocks. For the template block specifically, run all three
-  of its consequences: Tab reaches it in grid order, Enter/Space selects it, and Escape clears the
-  selection — the finding proved each one separately and each is a different mechanism.
-- **Risk:** Low. Watch the multi-select interaction the finding documented as *working* (clicking a
-  second task adds rather than replaces, "2 selected", and a multi-delete confirms "delete 2 selected
-  tasks?") — that must survive.
 
 ## F80. The board card's metadata line runs two fields together
 
