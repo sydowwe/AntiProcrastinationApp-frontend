@@ -16,7 +16,7 @@
 					variant="outlined"
 					style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px; flex-shrink: 0"
 				>
-					<!-- The tab links carry the coverage so switching tabs and back keeps the chosen view. -->
+					<!-- The tab link carries the filter so switching tabs and back keeps the chosen view. -->
 					<VBtn
 						value="distinctEntries"
 						height="40"
@@ -27,17 +27,18 @@
 					<VBtn
 						value="mappings"
 						height="40"
-						:to="{ name: 'androidSettings', params: { tableView: 'mappings' } }"
+						:to="mappingsRoute"
 					>
 						{{ $t('activityTracking.settings.mappings') }}
 					</VBtn>
 				</VBtnToggle>
 				<AndroidEntriesFilterBar
 					v-model="filter"
+					:patternError
 					@filter="applyFilter"
 				/>
 			</div>
-			<VCardText class="pt-1 d-flex flex-column ga-2">
+			<VCardText class="pt-1 flex-fill d-flex flex-column ga-2">
 				<DismissibleMappingHint storageKey="androidSettingsHintDismissed" />
 				<AndroidDistinctEntriesTable
 					v-if="tableView === 'distinctEntries'"
@@ -51,6 +52,7 @@
 				<AndroidMappingsTable
 					v-else-if="tableView === 'mappings'"
 					ref="mappingsTable"
+					:filter
 					:highlightedId="highlightedMappingId"
 					@edit="edit"
 				/>
@@ -72,10 +74,10 @@
 	import AndroidMappingsTable from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsTable.vue'
 	import DismissibleMappingHint from '@/core/activityTracking/component/settings/DismissibleMappingHint.vue'
 	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
-	import { useCoverageUrlState } from '@/core/activityTracking/composable/useCoverageUrlState.ts'
+	import { useDistinctEntriesUrlState } from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 
 	const { create, update } = useTrackerAndroidMappingCrud()
-	const { filter, formData, mode, editedId, request, saved, clear } = useMappingSettings({
+	const { filter, formData, mode, editedId, request, patternError, saved, clear } = useMappingSettings({
 		filterFactory: () => new AndroidDistinctEntriesFilterRequest(),
 		requestFactory: () => new TrackerAndroidMappingRequest(),
 		create,
@@ -87,13 +89,26 @@
 		route.params.tableView === 'mappings' ? 'mappings' : 'distinctEntries',
 	)
 
-	// `coverage` lives in the URL (B24); the table reads it off `filter` like every other field.
-	const { coverageFromRoute, highlightedMappingId, coverageQuery } = useCoverageUrlState()
-	filter.value.coverage = coverageFromRoute.value
+	// The whole filter lives in the URL (B24, F15); the table reads it off `filter` like before.
+	const { filterFromRoute, filterQuery, withTableParams, highlightedMappingId } =
+		useDistinctEntriesUrlState<AndroidDistinctEntriesFilterRequest>(
+			[
+				{ text: 'appLabel', matchType: 'appLabelMatchType' },
+				{ text: 'packageName', matchType: 'packageNameMatchType' },
+			],
+			() => new AndroidDistinctEntriesFilterRequest(),
+		)
+	filter.value = filterFromRoute()
 	const distinctEntriesRoute = computed(() => ({
 		name: 'androidSettings',
 		params: { tableView: 'distinctEntries' },
-		query: coverageQuery(filter.value.coverage),
+		query: filterQuery(filter.value),
+	}))
+	// The pattern is one search across both tabs (F13), so the Mappings link carries it too.
+	const mappingsRoute = computed(() => ({
+		name: 'androidSettings',
+		params: { tableView: 'mappings' },
+		query: filterQuery(filter.value),
 	}))
 
 	const distinctEntriesTable = ref<InstanceType<typeof AndroidDistinctEntriesTable> | null>(null)
@@ -101,14 +116,17 @@
 
 	/** One handler writes the URL and reloads, so there is no watcher to race `edit()`'s push. */
 	function applyFilter() {
-		router.replace({ query: coverageQuery(filter.value.coverage) })
+		router.replace({ query: withTableParams(filterQuery(filter.value)) })
+		// Whichever tab is mounted; the other ref is `null` (F13 — the Mappings tab's Filter was a no-op).
 		distinctEntriesTable.value?.load()
+		mappingsTable.value?.load()
 	}
 
 	/** Coverage is the view, not the rule pattern being cleared — it survives *Clear*, as the URL does. */
 	function clearKeepingCoverage() {
+		const coverage = filter.value.coverage
 		clear()
-		filter.value.coverage = coverageFromRoute.value
+		filter.value.coverage = coverage
 	}
 
 	/** The new rule's chips appear on reload; without it the rows keep reading *undecided*. */
@@ -120,6 +138,8 @@
 	function edit(item: TrackerAndroidMappingResponse) {
 		editedId.value = item.id
 		request.value = new TrackerAndroidMappingRequest()
+		// The update is a full replace: the row's own value, or an inactive rule re-activates on save (F72).
+		request.value.isActive = item.isActive
 		filter.value.appLabel = item.appLabel ?? undefined
 		filter.value.appLabelMatchType = item.appLabelMatchType ?? filter.value.appLabelMatchType
 		filter.value.packageName = item.packageName ?? undefined

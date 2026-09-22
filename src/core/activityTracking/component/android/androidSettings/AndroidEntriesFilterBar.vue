@@ -6,7 +6,8 @@
 					v-model="filter.appLabel"
 					:label="$t('activityTracking.settings.appLabel')"
 					density="compact"
-					hideDetails
+					:hideDetails="patternError == null"
+					:errorMessages="patternError ?? []"
 					clearable
 					@keyup.enter="emit('filter')"
 				/>
@@ -28,6 +29,7 @@
 					:label="$t('activityTracking.settings.packageName')"
 					density="compact"
 					hideDetails
+					:error="patternError != null"
 					clearable
 					@keyup.enter="emit('filter')"
 				/>
@@ -63,6 +65,8 @@
 	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 
+	/** Set when *Save* found no pattern (F72) — every pattern field turns red, the first one says why. */
+	const { patternError = null } = defineProps<{ patternError?: string | null }>()
 	const emit = defineEmits<{ filter: [] }>()
 	const filter = defineModel<AndroidDistinctEntriesFilterRequest>({ required: true })
 	const matchTypeOptions: PatternMatchType[] = [

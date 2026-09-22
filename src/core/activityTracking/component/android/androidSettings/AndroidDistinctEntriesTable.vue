@@ -38,6 +38,7 @@
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
+	import { useTableUrlState } from '@/_common/composable/table/useTableUrlState.ts'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import AndroidDistinctEntriesActions from '@/core/activityTracking/component/android/androidSettings/AndroidDistinctEntriesActions.vue'
 	import MappingCoverageChip from '@/core/activityTracking/component/settings/MappingCoverageChip.vue'
@@ -62,9 +63,10 @@
 
 	const items = ref<TrackerAndroidDistinctEntriesResponse[]>([])
 	const totalItems = ref(0)
-	const itemsPerPage = ref(25)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([new VSortItem('appLabel', 'asc')])
+	// Page, size and sort round-trip through the URL (F15); the filter is the view's and travels beside them.
+	const { page, itemsPerPage, sortBy } = useTableUrlState({
+		defaultSortBy: [new VSortItem('appLabel', 'asc')],
+	})
 
 	async function load() {
 		const req = new FilteredTableRequest<AndroidDistinctEntriesFilterRequest>(

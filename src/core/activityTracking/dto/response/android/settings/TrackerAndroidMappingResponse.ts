@@ -13,6 +13,11 @@ export class TrackerAndroidMappingResponse {
 		public activity: ActivityFilterFormResponse | null,
 	) {}
 
+	/** What the delete confirmation names (B7) — the form guarantees at least one of the two. */
+	get patternLabel(): string {
+		return this.appLabel ?? this.packageName ?? String(this.id)
+	}
+
 	static fromJson(json: any): TrackerAndroidMappingResponse {
 		return new TrackerAndroidMappingResponse(
 			json.id,
@@ -22,7 +27,8 @@ export class TrackerAndroidMappingResponse {
 			json.packageNameMatchType,
 			json.isActive,
 			json.isIgnored,
-			ActivityFilterFormResponse.fromJson(json.activity),
+			// An ignored rule has no activity; parsing `null` threw and failed the whole page.
+			json.activity ? ActivityFilterFormResponse.fromJson(json.activity) : null,
 		)
 	}
 }

@@ -1,10 +1,14 @@
 <template>
-	<div class="d-flex flex-column ga-2">
+	<!-- `flex-fill` + the table's `flex-1-1`/`min-height: 0`: DataTable's body is `height: 0` and fills
+	     its flex parent, so without a definite-height chain the rows are laid out and clipped (F12). -->
+	<div class="d-flex flex-column flex-fill ga-2">
 		<AndroidMappingsFilter
 			v-model="mappingFilter"
 			v-model:formData="formData"
 		/>
 		<BasicTable
+			class="flex-1-1"
+			style="min-height: 0"
 			:items="mappings"
 			v-model:itemsPerPage="itemsPerPage"
 			v-model:page="page"
@@ -14,33 +18,50 @@
 			:itemsLength="totalItems"
 			:showActionsHeader="false"
 			:highlightedId
+			deleteConfirmationColumn="patternLabel"
 			@onLoadItems="load"
 			@onEdit="emit('edit', $event)"
+			@onDelete="onDelete"
 		/>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
+	import { useTableUrlState } from '@/_common/composable/table/useTableUrlState.ts'
+	import {
+		applyMappingsControlsParams,
+		mappingsControlsToParams,
+	} from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 	import { useTrackerAndroidMappingCrud } from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
 	import type { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
+	import type { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'
 	import { TrackerAndroidMappingsFilter } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingsFilter.ts'
+	import { TrackerAndroidMappingTypeEnum } from '@/core/activityTracking/dto/enum/TrackerAndroidMappingTypeEnum.ts'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import AndroidMappingsFilter from '@/core/activityTracking/component/android/androidSettings/AndroidMappingsFilter.vue'
 
-	/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
-	const { highlightedId = null } = defineProps<{ highlightedId?: number | null }>()
+	const { filter, highlightedId = null } = defineProps<{
+		/** The view's top-bar pattern — the one search both tabs share, applied on its Filter button (F13). */
+		filter: AndroidDistinctEntriesFilterRequest
+		/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
+		highlightedId?: number | null
+	}>()
 	const emit = defineEmits<{ edit: [item: TrackerAndroidMappingResponse] }>()
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
-	const { fetchFilteredTable: fetchFilteredTableMappings, tableLoading: loading } = useTrackerAndroidMappingCrud()
+	const {
+		fetchFilteredTable: fetchFilteredTableMappings,
+		deleteEntity,
+		tableLoading: loading,
+	} = useTrackerAndroidMappingCrud()
 
 	const columns = [
 		new TableColumn('isActive', t('activityTracking.settings.isActive')),
@@ -54,11 +75,71 @@
 
 	const mappings = ref<TrackerAndroidMappingResponse[]>([])
 	const totalItems = ref(0)
-	const itemsPerPage = ref(25)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([new VSortItem('appLabel', 'asc')])
-	const mappingFilter = ref(new TrackerAndroidMappingsFilter())
+	// Page, size, sort and this tab's own controls round-trip through the URL (F15). The default sort
+	// already holds `BasicTable`'s first column, so its mount-time push finds it and writes nothing (F1).
+	const {
+		page,
+		itemsPerPage,
+		sortBy,
+		filter: mappingFilter,
+	} = useTableUrlState<TrackerAndroidMappingsFilter>({
+		defaultSortBy: [new VSortItem('appLabel', 'asc'), new VSortItem('isActive', 'asc')],
+		defaultFilter: new TrackerAndroidMappingsFilter(),
+		filterToParams: controls =>
+			mappingsControlsToParams(
+				controls,
+				TrackerAndroidMappingTypeEnum.Activity,
+				TrackerAndroidMappingTypeEnum.Ignored,
+			),
+		paramsToFilter: params =>
+			applyMappingsControlsParams(
+				new TrackerAndroidMappingsFilter(),
+				params,
+				Object.values(TrackerAndroidMappingTypeEnum),
+			),
+	})
+	// The picker writes `formData`; the URL-synced filter is the one copy the request reads.
 	const formData = ref(new ActivityFormRequest())
+	formData.value.activityId = mappingFilter.value.activityId
+	watch(
+		() => formData.value.activityId,
+		activityId => (mappingFilter.value.activityId = activityId),
+	)
+
+	// The mapping-only controls apply on change. Not a deep watch: the pattern fields wait for Filter,
+	// as they do on the distinct-entries tab. Back to page 1 lets the table's own options event fetch.
+	watch(
+		() => [
+			mappingFilter.value.type,
+			mappingFilter.value.isActive,
+			mappingFilter.value.isIgnored,
+			mappingFilter.value.activityId,
+		],
+		() => {
+			if (page.value !== 1) page.value = 1
+			else load()
+		},
+	)
+
+	/**
+	 * The grid filter: this tab's own controls, plus the view's pattern and the picked activity. Each
+	 * type's control counts only while it is shown — a hidden activity pick would empty the Ignored list.
+	 */
+	function buildFilter(): TrackerAndroidMappingsFilter {
+		const { type, isActive } = mappingFilter.value
+		const isIgnored = type === TrackerAndroidMappingTypeEnum.Ignored ? mappingFilter.value.isIgnored : null
+		const activityId = type === TrackerAndroidMappingTypeEnum.Activity ? mappingFilter.value.activityId : null
+		return new TrackerAndroidMappingsFilter(
+			filter.appLabel?.trim() || undefined,
+			filter.appLabelMatchType,
+			filter.packageName?.trim() || undefined,
+			filter.packageNameMatchType,
+			type,
+			isActive,
+			isIgnored,
+			activityId,
+		)
+	}
 
 	async function load() {
 		const req = new FilteredTableRequest<TrackerAndroidMappingsFilter>(
@@ -66,7 +147,7 @@
 			page.value,
 			sortBy.value,
 			true,
-			mappingFilter.value,
+			buildFilter(),
 		)
 		try {
 			const result = await fetchFilteredTableMappings(req)
@@ -75,6 +156,16 @@
 		} catch {
 			showErrorSnackbar(t('activityTracking.settings.failedToLoadMappings'))
 		}
+	}
+
+	// `BasicTable` has already confirmed by the time this fires; a failure is the interceptor's snackbar.
+	async function onDelete(item: TrackerAndroidMappingResponse) {
+		try {
+			await deleteEntity(item.id)
+		} catch {
+			return
+		}
+		await load()
 	}
 
 	defineExpose({ load })

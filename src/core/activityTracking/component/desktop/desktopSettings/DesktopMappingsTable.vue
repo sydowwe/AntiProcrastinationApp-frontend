@@ -1,10 +1,14 @@
 <template>
-	<div class="d-flex flex-column ga-2">
+	<!-- `flex-fill` + the table's `flex-1-1`/`min-height: 0`: DataTable's body is `height: 0` and fills
+	     its flex parent, so without a definite-height chain the rows are laid out and clipped (F12). -->
+	<div class="d-flex flex-column flex-fill ga-2">
 		<DesktopMappingsFilter
 			v-model="mappingFilter"
 			v-model:formData="formData"
 		/>
 		<BasicTable
+			class="flex-1-1"
+			style="min-height: 0"
 			:items="mappings"
 			v-model:itemsPerPage="itemsPerPage"
 			v-model:page="page"
@@ -14,33 +18,50 @@
 			:itemsLength="totalItems"
 			:showActionsHeader="false"
 			:highlightedId
+			deleteConfirmationColumn="patternLabel"
 			@onLoadItems="load"
 			@onEdit="emit('edit', $event)"
+			@onDelete="onDelete"
 		/>
 	</div>
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
+	import { useTableUrlState } from '@/_common/composable/table/useTableUrlState.ts'
+	import {
+		applyMappingsControlsParams,
+		mappingsControlsToParams,
+	} from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
+	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingsFilter } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingsFilter.ts'
+	import { TrackerDesktopMappingTypeEnum } from '@/core/activityTracking/dto/enum/TrackerDesktopMappingTypeEnum.ts'
 	import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import DesktopMappingsFilter from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsFilter.vue'
 
-	/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
-	const { highlightedId = null } = defineProps<{ highlightedId?: number | null }>()
+	const { filter, highlightedId = null } = defineProps<{
+		/** The view's top-bar pattern — the one search both tabs share, applied on its Filter button (F13). */
+		filter: DesktopDistinctEntriesFilterRequest
+		/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
+		highlightedId?: number | null
+	}>()
 	const emit = defineEmits<{ edit: [item: TrackerDesktopMappingResponse] }>()
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
-	const { fetchFilteredTable: fetchFilteredTableMappings, tableLoading: loading } = useTrackerDesktopMappingCrud()
+	const {
+		fetchFilteredTable: fetchFilteredTableMappings,
+		deleteEntity,
+		tableLoading: loading,
+	} = useTrackerDesktopMappingCrud()
 
 	const columns = [
 		new TableColumn('isActive', t('activityTracking.settings.isActive')),
@@ -56,11 +77,73 @@
 
 	const mappings = ref<TrackerDesktopMappingResponse[]>([])
 	const totalItems = ref(0)
-	const itemsPerPage = ref(25)
-	const page = ref(1)
-	const sortBy = ref<VSortItem[]>([new VSortItem('productName', 'asc')])
-	const mappingFilter = ref(new TrackerDesktopMappingsFilter())
+	// Page, size, sort and this tab's own controls round-trip through the URL (F15). The default sort
+	// already holds `BasicTable`'s first column, so its mount-time push finds it and writes nothing (F1).
+	const {
+		page,
+		itemsPerPage,
+		sortBy,
+		filter: mappingFilter,
+	} = useTableUrlState<TrackerDesktopMappingsFilter>({
+		defaultSortBy: [new VSortItem('productName', 'asc'), new VSortItem('isActive', 'asc')],
+		defaultFilter: new TrackerDesktopMappingsFilter(),
+		filterToParams: controls =>
+			mappingsControlsToParams(
+				controls,
+				TrackerDesktopMappingTypeEnum.Activity,
+				TrackerDesktopMappingTypeEnum.Ignored,
+			),
+		paramsToFilter: params =>
+			applyMappingsControlsParams(
+				new TrackerDesktopMappingsFilter(),
+				params,
+				Object.values(TrackerDesktopMappingTypeEnum),
+			),
+	})
+	// The picker writes `formData`; the URL-synced filter is the one copy the request reads.
 	const formData = ref(new ActivityFormRequest())
+	formData.value.activityId = mappingFilter.value.activityId
+	watch(
+		() => formData.value.activityId,
+		activityId => (mappingFilter.value.activityId = activityId),
+	)
+
+	// The mapping-only controls apply on change. Not a deep watch: the pattern fields wait for Filter,
+	// as they do on the distinct-entries tab. Back to page 1 lets the table's own options event fetch.
+	watch(
+		() => [
+			mappingFilter.value.type,
+			mappingFilter.value.isActive,
+			mappingFilter.value.isIgnored,
+			mappingFilter.value.activityId,
+		],
+		() => {
+			if (page.value !== 1) page.value = 1
+			else load()
+		},
+	)
+
+	/**
+	 * The grid filter: this tab's own controls, plus the view's pattern and the picked activity. Each
+	 * type's control counts only while it is shown — a hidden activity pick would empty the Ignored list.
+	 */
+	function buildFilter(): TrackerDesktopMappingsFilter {
+		const { type, isActive } = mappingFilter.value
+		const isIgnored = type === TrackerDesktopMappingTypeEnum.Ignored ? mappingFilter.value.isIgnored : null
+		const activityId = type === TrackerDesktopMappingTypeEnum.Activity ? mappingFilter.value.activityId : null
+		return new TrackerDesktopMappingsFilter(
+			filter.processName?.trim() || undefined,
+			filter.processNameMatchType,
+			filter.productName?.trim() || undefined,
+			filter.productNameMatchType,
+			filter.windowTitle?.trim() || undefined,
+			filter.windowTitleMatchType,
+			type,
+			isActive,
+			isIgnored,
+			activityId,
+		)
+	}
 
 	async function load() {
 		const req = new FilteredTableRequest<TrackerDesktopMappingsFilter>(
@@ -68,7 +151,7 @@
 			page.value,
 			sortBy.value,
 			true,
-			mappingFilter.value,
+			buildFilter(),
 		)
 		try {
 			const result = await fetchFilteredTableMappings(req)
@@ -77,6 +160,16 @@
 		} catch {
 			showErrorSnackbar(t('activityTracking.settings.failedToLoadMappings'))
 		}
+	}
+
+	// `BasicTable` has already confirmed by the time this fires; a failure is the interceptor's snackbar.
+	async function onDelete(item: TrackerDesktopMappingResponse) {
+		try {
+			await deleteEntity(item.id)
+		} catch {
+			return
+		}
+		await load()
 	}
 
 	defineExpose({ load })

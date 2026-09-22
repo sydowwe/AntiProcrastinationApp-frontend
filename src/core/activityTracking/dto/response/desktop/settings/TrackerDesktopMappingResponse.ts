@@ -17,6 +17,11 @@ export class TrackerDesktopMappingResponse {
 		// public categoryId: number | null,
 	) {}
 
+	/** What the delete confirmation names (B7) — the form guarantees at least one of the three. */
+	get patternLabel(): string {
+		return this.processName ?? this.productName ?? this.windowTitle ?? String(this.id)
+	}
+
 	static fromJson(json: any): TrackerDesktopMappingResponse {
 		return new TrackerDesktopMappingResponse(
 			json.id,
@@ -28,7 +33,8 @@ export class TrackerDesktopMappingResponse {
 			json.windowTitleMatchType,
 			json.isActive,
 			json.isIgnored,
-			ActivityFilterFormResponse.fromJson(json.activity),
+			// An ignored rule has no activity; parsing `null` threw and failed the whole page.
+			json.activity ? ActivityFilterFormResponse.fromJson(json.activity) : null,
 			// json.roleId,
 			// json.categoryId,
 		)

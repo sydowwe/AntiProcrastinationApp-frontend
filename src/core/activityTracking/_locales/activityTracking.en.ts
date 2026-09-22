@@ -153,6 +153,7 @@ const messages = {
 		toIgnored: `To ignored`,
 		hintText: `Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click {save}. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an existing rule, open the {mappingsTab} tab and click edit.`,
 		failedToSaveMapping: `Failed to save mapping`,
+		patternRequired: `Fill in at least one pattern`,
 		failedToLoadDistinctEntries: `Failed to load distinct entries`,
 		failedToLoadMappings: `Failed to load mappings`,
 		processName: `Process Name`,

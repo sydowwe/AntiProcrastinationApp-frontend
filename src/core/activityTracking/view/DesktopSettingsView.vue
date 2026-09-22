@@ -16,7 +16,7 @@
 					variant="outlined"
 					style="border-color: rgba(var(--v-theme-on-surface), 0.3) !important; height: 40px; flex-shrink: 0"
 				>
-					<!-- The tab links carry the coverage so switching tabs and back keeps the chosen view. -->
+					<!-- The tab link carries the filter so switching tabs and back keeps the chosen view. -->
 					<VBtn
 						value="distinctEntries"
 						height="40"
@@ -27,13 +27,14 @@
 					<VBtn
 						value="mappings"
 						height="40"
-						:to="{ name: 'desktopSettings', params: { tableView: 'mappings' } }"
+						:to="mappingsRoute"
 					>
 						{{ $t('activityTracking.settings.mappings') }}
 					</VBtn>
 				</VBtnToggle>
 				<DesktopEntriesFilterBar
 					v-model="filter"
+					:patternError
 					@filter="applyFilter"
 				/>
 			</div>
@@ -51,6 +52,7 @@
 				<DesktopMappingsTable
 					v-else-if="tableView === 'mappings'"
 					ref="mappingsTable"
+					:filter
 					:highlightedId="highlightedMappingId"
 					@edit="edit"
 				/>
@@ -73,10 +75,10 @@
 	import DesktopMappingsTable from '@/core/activityTracking/component/desktop/desktopSettings/DesktopMappingsTable.vue'
 	import DismissibleMappingHint from '@/core/activityTracking/component/settings/DismissibleMappingHint.vue'
 	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
-	import { useCoverageUrlState } from '@/core/activityTracking/composable/useCoverageUrlState.ts'
+	import { useDistinctEntriesUrlState } from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 
 	const { create, update } = useTrackerDesktopMappingCrud()
-	const { filter, formData, mode, editedId, request, saved, clear } = useMappingSettings({
+	const { filter, formData, mode, editedId, request, patternError, saved, clear } = useMappingSettings({
 		filterFactory: () => new DesktopDistinctEntriesFilterRequest(),
 		requestFactory: () => new TrackerDesktopMappingRequest(),
 		create,
@@ -88,13 +90,27 @@
 		route.params.tableView === 'mappings' ? 'mappings' : 'distinctEntries',
 	)
 
-	// `coverage` lives in the URL (B24); the table reads it off `filter` like every other field.
-	const { coverageFromRoute, highlightedMappingId, coverageQuery } = useCoverageUrlState()
-	filter.value.coverage = coverageFromRoute.value
+	// The whole filter lives in the URL (B24, F15); the table reads it off `filter` like before.
+	const { filterFromRoute, filterQuery, withTableParams, highlightedMappingId } =
+		useDistinctEntriesUrlState<DesktopDistinctEntriesFilterRequest>(
+			[
+				{ text: 'processName', matchType: 'processNameMatchType' },
+				{ text: 'productName', matchType: 'productNameMatchType' },
+				{ text: 'windowTitle', matchType: 'windowTitleMatchType' },
+			],
+			() => new DesktopDistinctEntriesFilterRequest(),
+		)
+	filter.value = filterFromRoute()
 	const distinctEntriesRoute = computed(() => ({
 		name: 'desktopSettings',
 		params: { tableView: 'distinctEntries' },
-		query: coverageQuery(filter.value.coverage),
+		query: filterQuery(filter.value),
+	}))
+	// The pattern is one search across both tabs (F13), so the Mappings link carries it too.
+	const mappingsRoute = computed(() => ({
+		name: 'desktopSettings',
+		params: { tableView: 'mappings' },
+		query: filterQuery(filter.value),
 	}))
 
 	const distinctEntriesTable = ref<InstanceType<typeof DesktopDistinctEntriesTable> | null>(null)
@@ -102,14 +118,17 @@
 
 	/** One handler writes the URL and reloads, so there is no watcher to race `edit()`'s push. */
 	function applyFilter() {
-		router.replace({ query: coverageQuery(filter.value.coverage) })
+		router.replace({ query: withTableParams(filterQuery(filter.value)) })
+		// Whichever tab is mounted; the other ref is `null` (F13 — the Mappings tab's Filter was a no-op).
 		distinctEntriesTable.value?.load()
+		mappingsTable.value?.load()
 	}
 
 	/** Coverage is the view, not the rule pattern being cleared — it survives *Clear*, as the URL does. */
 	function clearKeepingCoverage() {
+		const coverage = filter.value.coverage
 		clear()
-		filter.value.coverage = coverageFromRoute.value
+		filter.value.coverage = coverage
 	}
 
 	/** The new rule's chips appear on reload; without it the rows keep reading *undecided*. */
@@ -121,6 +140,8 @@
 	function edit(item: TrackerDesktopMappingResponse) {
 		editedId.value = item.id
 		request.value = new TrackerDesktopMappingRequest()
+		// The update is a full replace: the row's own value, or an inactive rule re-activates on save (F72).
+		request.value.isActive = item.isActive
 		filter.value.processName = item.processName ?? undefined
 		filter.value.processNameMatchType = item.processNameMatchType ?? PatternMatchType.Contains
 		filter.value.productName = item.productName ?? undefined

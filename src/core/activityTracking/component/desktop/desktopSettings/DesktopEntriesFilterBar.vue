@@ -6,7 +6,8 @@
 					v-model="filter.processName"
 					:label="$t('activityTracking.settings.processName')"
 					density="compact"
-					hideDetails
+					:hideDetails="patternError == null"
+					:errorMessages="patternError ?? []"
 					clearable
 					@keyup.enter="emit('filter')"
 				/>
@@ -28,6 +29,7 @@
 					:label="$t('activityTracking.settings.productName')"
 					density="compact"
 					hideDetails
+					:error="patternError != null"
 					clearable
 					@keyup.enter="emit('filter')"
 				/>
@@ -49,6 +51,7 @@
 					:label="$t('activityTracking.settings.windowTitle')"
 					density="compact"
 					hideDetails
+					:error="patternError != null"
 					clearable
 					@keyup.enter="emit('filter')"
 				/>
@@ -84,6 +87,8 @@
 	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 
+	/** Set when *Save* found no pattern (F72) — every pattern field turns red, the first one says why. */
+	const { patternError = null } = defineProps<{ patternError?: string | null }>()
 	const emit = defineEmits<{ filter: [] }>()
 	const filter = defineModel<DesktopDistinctEntriesFilterRequest>({ required: true })
 	const matchTypeOptions: PatternMatchType[] = [

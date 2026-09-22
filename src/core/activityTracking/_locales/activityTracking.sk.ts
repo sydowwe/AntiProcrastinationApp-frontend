@@ -156,6 +156,7 @@ const messages = {
 		toIgnored: `Na ignorované`,
 		hintText: `Pomocou polí filtra definujte vzor zhody, potom vyberte aktivitu alebo označte ako ignorované a kliknite na {save}. Filter sa stane pravidlom – budúce záznamy, ktoré mu zodpovedajú, budú namapované automaticky. Ak chcete upraviť existujúce pravidlo, otvorte záložku {mappingsTab} a kliknite na upraviť.`,
 		failedToSaveMapping: `Uloženie mapovania zlyhalo`,
+		patternRequired: `Vyplňte aspoň jeden vzor`,
 		failedToLoadDistinctEntries: `Načítanie jedinečných záznamov zlyhalo`,
 		failedToLoadMappings: `Načítanie mapovaní zlyhalo`,
 		processName: `Názov procesu`,

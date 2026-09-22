@@ -1,5 +1,9 @@
 <template>
-	<div class="d-flex flex-column justify-md-end flex-md-row align-md-center ga-3 ga-md-4">
+	<VForm
+		ref="form"
+		class="d-flex flex-column justify-md-end flex-md-row align-md-center ga-3 ga-md-4"
+		@submit.prevent
+	>
 		<div
 			v-if="mode === 'toActivity'"
 			class="flex-fill"
@@ -43,18 +47,27 @@
 		<VBtn
 			color="secondary"
 			prependIcon="check"
-			@click="emit('save')"
+			@click="onSave"
 		>
 			{{ $t('general.save') }}
 		</VBtn>
-	</div>
+	</VForm>
 </template>
 
 <script setup lang="ts">
+	import { ref } from 'vue'
+	import { VForm } from 'vuetify/components'
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 
 	const emit = defineEmits<{ clear: []; save: [] }>()
 	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
+	const form = ref<InstanceType<typeof VForm>>()
+
+	/** Marks a missing activity; whether to send at all is `useMappingSettings.saved()`'s call (F72). */
+	async function onSave() {
+		await form.value?.validate()
+		emit('save')
+	}
 </script>
