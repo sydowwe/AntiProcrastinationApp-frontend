@@ -9,6 +9,7 @@
 			link
 			role="button"
 			:title="$t('leisure.experienced.openAnchorHint')"
+			:aria-label="`${$t('leisure.experienced.openAnchorHint')}: ${activityName}`"
 			@click="openAnchor"
 		>
 			{{ $t('leisure.experienced.done') }}

@@ -12,12 +12,16 @@
 					:modelValue="isCompareSelected"
 					hideDetails
 					density="compact"
-					class="flex-grow-0"
+					:aria-label="$t('planner.a11y.compareTemplate', { name: template.name })"
+					class="flex-grow-0 flex-shrink-0 me-1"
 					@click.stop="emit('toggleCompare')"
 				/>
+				<!-- Decorative, and it overlaps the compare checkbox's ripple area — without this the
+				     icon swallows a direct click on the checkbox (F56, control #2). -->
 				<VIcon
 					v-if="template.icon"
 					class="ma-1"
+					style="pointer-events: none"
 				>
 					{{ template.icon }}
 				</VIcon>
@@ -46,6 +50,11 @@
 					variant="text"
 					size="small"
 					:color="isPinned ? 'secondaryOutline' : 'base'"
+					:aria-label="
+						isPinned
+							? $t('planner.a11y.unpinTemplate', { name: template.name })
+							: $t('planner.a11y.pinTemplate', { name: template.name })
+					"
 					@click.stop="emit('togglePin')"
 				/>
 			</div>

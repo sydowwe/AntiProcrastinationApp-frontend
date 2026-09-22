@@ -10,6 +10,7 @@
 				variant="tonal"
 				color="secondaryOutline"
 				icon="bars"
+				:aria-label="panelOpen ? $t('planner.a11y.closePanel') : $t('planner.a11y.openPanel')"
 				@click="panelOpen = !panelOpen"
 			/>
 			<div class="mb-3 nav-btn-wrap">
@@ -71,6 +72,7 @@
 						variant="tonal"
 						color="secondaryOutline"
 						:disabled="!canUndo"
+						:aria-label="undoLabel"
 						@click="emit('undo')"
 					>
 						<VIcon icon="rotate-left" />
@@ -193,6 +195,12 @@
 				.catch(() => {})
 		},
 		{ immediate: true },
+	)
+
+	// The tooltip describes the next undo; the name says what the button is, with the badge's count
+	// folded in so the badge stops being the accessible name (F56, control #6).
+	const undoLabel = computed(() =>
+		stackSize.value > 0 ? t('planner.a11y.undoCount', { count: stackSize.value }) : t('planner.a11y.undo'),
 	)
 
 	const undoTooltip = computed(() => {

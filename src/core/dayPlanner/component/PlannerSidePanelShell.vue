@@ -19,6 +19,7 @@
 						icon="xmark"
 						variant="tonal"
 						size="36"
+						:aria-label="$t('planner.a11y.closePanel')"
 						@click="panelOpen = false"
 					/>
 				</div>

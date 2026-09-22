@@ -23,12 +23,17 @@
 		<template #item.readinessStatus="{ item }">
 			<span>{{ item.readinessStatus == null ? '—' : $t(`enums.readinessStatus.${item.readinessStatus}`) }}</span>
 		</template>
+		<!-- The convention for a boolean icon column, set here (F4): the glyph stays decorative —
+		     `VIcon` renders `aria-hidden` whenever it has no click handler, so an `aria-label` on it
+		     would never reach the accessibility tree — and the cell's meaning is carried by a
+		     `d-sr-only` sibling naming the column's own state, not a bare yes/no. -->
 		<template #item.isMessy="{ item }">
 			<VIcon
 				:color="item.isMessy ? 'warningDark' : 'grey'"
 				:icon="item.isMessy ? 'check' : 'minus'"
 				size="16"
 			/>
+			<span class="d-sr-only">{{ item.isMessy ? $t('leisure.a11y.messy') : $t('leisure.a11y.notMessy') }}</span>
 		</template>
 		<template #noData>
 			<LeisureEmptyState

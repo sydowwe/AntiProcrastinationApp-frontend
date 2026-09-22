@@ -80,6 +80,12 @@ const leisure = {
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,
 		anchorSourceBucketList: `Bucket List`,
+		// Screen-reader-only text — a click-less icon is `aria-hidden`, so the "Messy" state has to be
+		// carried by a `d-sr-only` sibling (F4).
+		a11y: {
+			messy: `Messy`,
+			notMessy: `Not messy`,
+		},
 		createActivity: `Create a new activity`,
 		createActivityNamed: `Create activity "{name}"`,
 		activityRole: `Role`,

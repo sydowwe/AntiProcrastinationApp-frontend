@@ -56,6 +56,10 @@ const todoList = {
 		notScheduled: `Not scheduled`,
 		notScheduledHint: `Click to pick when you'll do it`,
 		quickStartTimer: `Quick start timer`,
+		// `home.markDone` has the same shape, but it is another module's key — this pair is minted
+		// here rather than imported across the boundary (F71).
+		markDone: `Mark done: {name}`,
+		markStepDone: `Mark step done: {name}`,
 		// Form order follows the default (English) plural rule: 0 | 1 | many
 		unscheduledTasksCount: `No tasks are missing a time slot | 1 task has no time slot | {count} tasks have no time slot`,
 		scheduleNow: `Schedule`,

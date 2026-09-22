@@ -22,6 +22,7 @@
 					size="small"
 					variant="text"
 					:title="$t('leisure.timeline.previousYear')"
+					:aria-label="$t('leisure.timeline.previousYear')"
 					:disabled="effectiveYear <= minYear"
 					@click="stepYear(-1)"
 				/>
@@ -32,6 +33,7 @@
 							variant="text"
 							class="text-h6 px-2"
 							:title="$t('leisure.timeline.chooseYear')"
+							:aria-label="`${$t('leisure.timeline.chooseYear')}: ${effectiveYear}`"
 						>
 							{{ effectiveYear }}
 						</VBtn>
@@ -57,6 +59,7 @@
 					size="small"
 					variant="text"
 					:title="$t('leisure.timeline.nextYear')"
+					:aria-label="$t('leisure.timeline.nextYear')"
 					:disabled="effectiveYear >= maxYear"
 					@click="stepYear(1)"
 				/>

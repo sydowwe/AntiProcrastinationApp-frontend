@@ -39,6 +39,7 @@
 				<VCheckboxBtn
 					:modelValue="step.isDone"
 					:disabled
+					:aria-label="$t('toDoList.markStepDone', { name: step.name })"
 					color="grey-lighten-1"
 					density="compact"
 					class="text-medium-emphasis flex-grow-0"

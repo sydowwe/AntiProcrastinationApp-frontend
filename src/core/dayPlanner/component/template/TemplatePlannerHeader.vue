@@ -46,6 +46,7 @@
 						variant="tonal"
 						color="secondaryOutline"
 						:disabled="!canUndo"
+						:aria-label="undoLabel"
 						@click="undo()"
 					>
 						<VIcon icon="rotate-left" />
@@ -75,6 +76,7 @@
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
+	import { useI18n } from 'vue-i18n'
 
 	const { title } = defineProps<{
 		title?: string
@@ -84,6 +86,15 @@
 
 	const store = inject(PLANNER_STORE_KEY)!
 	const { undo, canUndo, stackSize, nextUndoDescription } = useUndoStack()
+	const i18n = useI18n()
+
+	// The badge is decorative; the count belongs in the name, or the button's accessible name is
+	// whatever number the badge happens to show (F56, controls #5/#6).
+	const undoLabel = computed(() =>
+		stackSize.value > 0
+			? i18n.t('planner.a11y.undoCount', { count: stackSize.value })
+			: i18n.t('planner.a11y.undo'),
+	)
 
 	// Written straight onto the store rather than through `$patch` — see the note in DayPlanner.vue.
 	const viewStartTime = computed({

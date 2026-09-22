@@ -80,6 +80,12 @@ const leisure = {
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,
 		anchorSourceBucketList: `Bucket list`,
+		// Texty len pre čítačky obrazovky — ikona bez kliknutia je `aria-hidden`, takže stav
+		// „Špinavé“ musí povedať sprievodný `d-sr-only` text (F4).
+		a11y: {
+			messy: `Špinavé`,
+			notMessy: `Nie je špinavé`,
+		},
 		createActivity: `Vytvoriť novú aktivitu`,
 		createActivityNamed: `Vytvoriť aktivitu „{name}“`,
 		activityRole: `Rola`,

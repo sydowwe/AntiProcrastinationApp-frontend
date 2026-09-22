@@ -23,6 +23,7 @@
 					baseColor="white"
 					color="success"
 					:disabled="isInChangeOrderMode"
+					:aria-label="i18n.t('toDoList.markDone', { name: toDoListItem.activity.name })"
 					:style="isInChangeOrderMode ? 'color:white !important' : ''"
 					@click.prevent.stop="checkboxClicked"
 				/>

@@ -369,6 +369,18 @@ const dayPlanner = {
 			currentTime: `Current time: {time}`,
 			midnight: `Midnight`,
 			toggleDoneShortcut: `D marks the selected tasks as completed or not started.`,
+			// Names for the module's icon-only controls (F56). The panel and undo keys are shared by
+			// the day planner and the template planner — one string each, not one per screen.
+			pinTemplate: `Pin template: {name}`,
+			unpinTemplate: `Unpin template: {name}`,
+			compareTemplate: `Select {name} for comparison`,
+			openPanel: `Open panel`,
+			closePanel: `Close panel`,
+			backToTemplates: `Back to templates`,
+			undo: `Undo`,
+			// The badge's bare number used to be the button's whole accessible name; the count is folded
+			// into the label instead so the badge can stay decorative.
+			undoCount: `Undo ({count})`,
 		},
 	},
 }

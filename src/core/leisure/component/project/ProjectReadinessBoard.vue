@@ -74,6 +74,7 @@
 										variant="text"
 										color="base"
 										:title="$t('general.delete')"
+										:aria-label="`${$t('general.delete')}: ${item.activity.name}`"
 										@click.stop="onDelete(item)"
 									>
 										<VIcon size="14" />
@@ -91,6 +92,14 @@
 										class="ml-1"
 										:title="$t('leisure.fields.isMessy')"
 									/>
+									<!-- Same convention as `ProjectTable`'s Messy column: a click-less `VIcon` is
+									     `aria-hidden`, so the state is carried by sr-only text beside it. -->
+									<span
+										v-if="item.isMessy"
+										class="d-sr-only"
+									>
+										{{ $t('leisure.a11y.messy') }}
+									</span>
 								</div>
 								<div
 									v-if="status === ReadinessStatus.NeedsShopping"

@@ -7,6 +7,7 @@
 				variant="tonal"
 				color="secondaryOutline"
 				size="small"
+				:aria-label="$t('planner.a11y.backToTemplates')"
 				@click="router.push({ name: 'dayPlannerTemplateList' })"
 			/>
 			<span class="text-h5">{{ $t('planner.template.compareEditTitle') }}</span>

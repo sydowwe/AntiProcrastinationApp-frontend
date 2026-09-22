@@ -57,6 +57,10 @@ const todoList = {
 		notScheduled: `Nenaplánované`,
 		notScheduledHint: `Klikni a vyber, kedy to spravíš`,
 		quickStartTimer: `Rýchlo spustiť časovač`,
+		// `home.markDone` má rovnaký tvar, ale patrí inému modulu — túto dvojicu razíme tu, aby sme
+		// neimportovali cez hranicu modulu (F71).
+		markDone: `Označiť ako hotové: {name}`,
+		markStepDone: `Označiť krok ako hotový: {name}`,
 		// Poradie tvarov musí sedieť so slovenským pluralizačným pravidlom v src/i18n.ts: 1 | 2–4 | 0 a 5+
 		unscheduledTasksCount: `1 úloha nemá naplánovaný čas | {count} úlohy nemajú naplánovaný čas | {count} úloh nemá naplánovaný čas`,
 		scheduleNow: `Naplánovať`,

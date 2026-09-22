@@ -12,12 +12,14 @@
 				<VBtn
 					value="board"
 					:title="$t('leisure.viewMode.board')"
+					:aria-label="$t('leisure.viewMode.board')"
 				>
 					<VIcon icon="table-cells" />
 				</VBtn>
 				<VBtn
 					value="table"
 					:title="$t('leisure.viewMode.table')"
+					:aria-label="$t('leisure.viewMode.table')"
 				>
 					<VIcon icon="list" />
 				</VBtn>

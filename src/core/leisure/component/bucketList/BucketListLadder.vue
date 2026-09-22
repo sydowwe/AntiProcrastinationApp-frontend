@@ -118,6 +118,7 @@
 											variant="text"
 											color="base"
 											:title="$t('general.delete')"
+											:aria-label="`${$t('general.delete')}: ${item.activity.name}`"
 											@click.stop="onDelete(item)"
 										>
 											<VIcon size="14" />

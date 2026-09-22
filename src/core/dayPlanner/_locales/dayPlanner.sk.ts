@@ -379,6 +379,18 @@ const dayPlanner = {
 			currentTime: `Aktuálny čas: {time}`,
 			midnight: `Polnoc`,
 			toggleDoneShortcut: `D označí vybrané úlohy ako dokončené alebo nezačaté.`,
+			// Názvy ikonových ovládačov tohto modulu (F56). Kľúče pre panel a späť zdieľa denný
+			// plánovač aj plánovač šablón — jeden reťazec, nie jeden na obrazovku.
+			pinTemplate: `Pripnúť šablónu: {name}`,
+			unpinTemplate: `Odopnúť šablónu: {name}`,
+			compareTemplate: `Vybrať {name} na porovnanie`,
+			openPanel: `Otvoriť panel`,
+			closePanel: `Zavrieť panel`,
+			backToTemplates: `Späť na šablóny`,
+			undo: `Vrátiť späť`,
+			// Číslo v odznaku bolo doteraz celým názvom tlačidla; počet je teraz v názve, takže odznak
+			// môže zostať dekoratívny.
+			undoCount: `Vrátiť späť ({count})`,
 		},
 	},
 }

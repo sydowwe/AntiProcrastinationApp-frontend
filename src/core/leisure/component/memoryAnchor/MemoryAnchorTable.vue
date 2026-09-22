@@ -39,6 +39,7 @@
 				link
 				role="button"
 				:title="$t('leisure.experienced.openSourceHint')"
+				:aria-label="`${$t('leisure.experienced.openSourceHint')}: ${$t('leisure.anchorSourceBucketList')}`"
 				@click="openSource(item, 'leisureBucketList')"
 			>
 				{{ $t('leisure.anchorSourceBucketList') }}
@@ -50,6 +51,7 @@
 				link
 				role="button"
 				:title="$t('leisure.experienced.openSourceHint')"
+				:aria-label="`${$t('leisure.experienced.openSourceHint')}: ${$t('leisure.anchorSourceBacklog')}`"
 				@click="openSource(item, 'leisureBacklog')"
 			>
 				{{ $t('leisure.anchorSourceBacklog') }}
