@@ -6,7 +6,6 @@ import { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
 import type { QuickEditActivityRequest } from '@/core/activity/dto/request/QuickEditActivityRequest.ts'
 import type { MergeActivitiesRequest } from '@/core/activity/dto/request/MergeActivitiesRequest.ts'
 import { MergeActivitiesResult } from '@/core/activity/dto/response/MergeActivitiesResult.ts'
-import type { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
 import { invalidatingActivityOptions, useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
 
 export function useActivityCrud() {
@@ -27,19 +26,21 @@ export function useActivityCrud() {
 	})
 
 	/**
-	 * Overwrite the activity in place, or clone it into a new one. Lives here rather than inline in
+	 * Overwrite the activity in place (`PUT …/quick-edit`, 204). Lives here rather than inline in
 	 * `quickCreateActivityComposition` so it invalidates the option cache like every other mutation —
 	 * that composable carried a `//TODO needs refresh to other activities that are using this activity`
 	 * for exactly this.
 	 */
-	function quickEdit(
-		activityId: number,
-		mode: QuickEditMode,
-		request: QuickEditActivityRequest,
-	): Promise<number | null> {
-		return API.patch(`/${url}/${activityId}/${mode}`, request).then(response =>
-			response.data != null ? Number(response.data) : null,
-		)
+	function quickEdit(activityId: number, request: QuickEditActivityRequest): Promise<void> {
+		return API.put(`/${url}/${activityId}/quick-edit`, request).then(() => undefined)
+	}
+
+	/**
+	 * Leave the activity alone and create a copy carrying the edits (`POST …/clone`, 200 with the new id).
+	 * The server suffixes " (copy)" when the name was left unchanged.
+	 */
+	function clone(activityId: number, request: QuickEditActivityRequest): Promise<number> {
+		return API.post(`/${url}/${activityId}/clone`, request).then(response => Number(response.data))
 	}
 
 	/**
@@ -78,6 +79,7 @@ export function useActivityCrud() {
 		update: invalidatingActivityOptions('activity', update),
 		deleteEntity: invalidatingActivityOptions('activity', deleteEntity),
 		quickEdit: invalidatingActivityOptions('activity', quickEdit),
+		clone: invalidatingActivityOptions('activity', clone),
 		setArchived: invalidatingActivityOptions('activity', setArchived),
 		merge: invalidatingActivityOptions('activity', merge),
 	}

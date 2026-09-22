@@ -143,10 +143,11 @@
 		const isValid = await form.value?.validate()
 		if (!isValid?.valid) return
 
+		// Undefined means the field has already said why (a failed quick edit, an unresolved role, no
+		// activity picked) — stay open, as the other three dialogs mounting it do.
 		const activityFormFieldResult = await activityFormField.value?.execAndReturnStatus()
-		if (activityFormFieldResult) {
-			request.value.activityId = activityFormFieldResult.activityId
-		}
+		if (!activityFormFieldResult) return
+		request.value.activityId = activityFormFieldResult.activityId
 		if (!isRepeated.value) {
 			request.value.totalCount = null
 			if (isEdit.value) {

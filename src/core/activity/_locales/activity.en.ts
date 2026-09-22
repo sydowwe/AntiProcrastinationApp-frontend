@@ -27,6 +27,7 @@ const activity = {
 		quickEditMode: `Quick edit mode`,
 		overwrite: `Overwrite`,
 		clone: `Clone`,
+		quickEditFailed: `The activity change could not be saved, so nothing in this form was saved. Try again, or turn off quick edit to save the rest.`,
 		pleaseSelectActivity: `Please select an activity`,
 		activityNotFound: `Activity with id {id} not found`,
 		systemRole: {

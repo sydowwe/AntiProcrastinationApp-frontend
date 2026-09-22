@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { useActivityCrud } from '@/core/activity/api/activityApi.ts'
 import { useActivityOptionsStore } from '@/core/activity/store/activityOptionsStore.ts'
-import type { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
+import { QuickEditMode } from '@/core/activity/dto/enum/QuickEditMode.ts'
 import type { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 import { QuickActivityToolsDto } from '@/core/activity/dto/response/QuickActivityToolsDto.ts'
 import { ActivityRequest } from '@/core/activity/dto/request/ActivityRequest.ts'
@@ -19,7 +19,7 @@ export type ActivityFormFieldResultStatus = 'edit' | 'create' | 'noChange' | 'fr
  * value that changes approximately never.
  */
 export function useQuickCreateActivity(systemRole: SystemActivityRole) {
-	const { create, quickEdit } = useActivityCrud()
+	const { create, quickEdit, clone } = useActivityCrud()
 	const optionsStore = useActivityOptionsStore()
 	const i18n = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
@@ -46,15 +46,21 @@ export function useQuickCreateActivity(systemRole: SystemActivityRole) {
 		return await create(activityRequest)
 	}
 
-	// Renaming an activity changes what every other picker shows for it; `quickEdit` invalidates the
-	// shared option cache, which is what the old `//TODO needs refresh to other activities that are
-	// using this activity` was asking for.
-	async function quickEditActivity(activityId: number, quickEditMode: QuickEditMode) {
-		return await quickEdit(
-			activityId,
-			quickEditMode,
-			new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId),
-		)
+	/**
+	 * Resolves to the id the caller should point at afterwards: the same activity for an overwrite, the
+	 * new copy for a clone. Rejects on failure — the caller decides what the rest of its form does then.
+	 *
+	 * Renaming an activity changes what every other picker shows for it; both calls invalidate the shared
+	 * option cache, which is what the old `//TODO needs refresh to other activities that are using this
+	 * activity` was asking for.
+	 */
+	async function quickEditActivity(activityId: number, quickEditMode: QuickEditMode): Promise<number> {
+		const request = new QuickEditActivityRequest(dto.value.name, dto.value.text, dto.value.categoryId)
+		if (quickEditMode === QuickEditMode.CLONE) {
+			return await clone(activityId, request)
+		}
+		await quickEdit(activityId, request)
+		return activityId
 	}
 
 	return {

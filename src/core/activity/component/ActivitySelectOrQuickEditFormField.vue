@@ -124,11 +124,17 @@
 		if (isActivityFormHidden.value) {
 			if (isEdit.value && activityBeforeEdit.value?.id) {
 				if (hasObjectChanged(activityBeforeEdit.value, activityFormFieldData.value)) {
-					const cloneId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
-					if (cloneId && quickEditMode.value === QuickEditMode.CLONE) {
-						return { activityId: cloneId, status: 'edit' }
+					// A failed rename keeps the dialog open with everything the user typed, rather than
+					// saving the rest of the task without it: the task save's own success snackbar would
+					// replace this one, so a partial save would read as a full one. All four dialogs treat
+					// `undefined` as "stay open".
+					try {
+						const activityId = await quickEditActivity(activityBeforeEdit.value.id, quickEditMode.value)
+						return { activityId, status: 'edit' }
+					} catch {
+						showErrorSnackbar(i18n.t('activities.quickEditFailed'))
+						return
 					}
-					return { activityId: activityBeforeEdit.value.id, status: 'edit' }
 				}
 				return { activityId: activityBeforeEdit.value.id, status: 'noChange' }
 			} else {

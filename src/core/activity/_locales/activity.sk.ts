@@ -28,6 +28,7 @@ const activity = {
 		quickEditMode: `Režim rýchlej úpravy`,
 		overwrite: `Prepísať`,
 		clone: `Klonovať`,
+		quickEditFailed: `Zmenu aktivity sa nepodarilo uložiť, preto sa z tohto formulára nič neuložilo. Skúste to znova alebo vypnite rýchlu úpravu a uložte zvyšok.`,
 		pleaseSelectActivity: `Prosím vyberte aktivitu`,
 		activityNotFound: `Aktivita s id {id} sa nenašla`,
 		// Názvy troch systémových rolí, pod ktoré padne rýchlo vytvorená aktivita. Kľúče sú hodnoty
