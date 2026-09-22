@@ -18,7 +18,7 @@ import { minutesOfDayInUserZone, timeInUserZone, userTimeZone } from '@/_common/
 import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 import i18n from '@/i18n.ts'
 
-export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone'
+export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone' | 'noPlan'
 
 /** Minutes before a task starts that the "get ready" warning fires. */
 export const TRANSITION_WARNING_MINUTES = 10
@@ -159,11 +159,15 @@ const nextTask = computed(
 const missedTasks = computed(() => sortedTasks.value.filter(isMissed))
 const lastMissedTask = computed(() => missedTasks.value[missedTasks.value.length - 1] ?? null)
 
-// Never claim the day is done while unticked tasks remain — surface the missed one instead.
+// Never claim the day is done while unticked tasks remain — surface the missed one instead. And never
+// claim it with no plan at all: an empty task list is "done" only on a day the user planned.
 export const focusTask = computed(() => activeTask.value ?? nextTask.value ?? lastMissedTask.value)
-export const focusMode = computed<FocusMode>(() =>
-	activeTask.value ? 'now' : nextTask.value ? 'upNext' : lastMissedTask.value ? 'missed' : 'allDone',
-)
+export const focusMode = computed<FocusMode>(() => {
+	if (activeTask.value) return 'now'
+	if (nextTask.value) return 'upNext'
+	if (lastMissedTask.value) return 'missed'
+	return hasPlan.value ? 'allDone' : 'noPlan'
+})
 
 const minutesUntilNext = computed(() =>
 	nextTask.value === null ? null : nextTask.value.startTime.getInMinutes - nowMinutes.value,
@@ -195,6 +199,8 @@ const focusIcon = computed(() => {
 			return 'fa-forward'
 		case 'missed':
 			return 'fa-triangle-exclamation'
+		case 'noPlan':
+			return 'fa-calendar-plus'
 		default:
 			return 'fa-champagne-glasses'
 	}
@@ -265,12 +271,16 @@ async function setStatus(task: PlannerTask, status: PlannerTaskStatus, request?:
 	}
 }
 
+/**
+ * The row checkbox. Ticks an open task done; on a finished one — done *or* skipped — it reopens it.
+ * A skipped task used to be ticked straight to Completed from here, which is not what "un-skip" means.
+ */
 async function toggleTaskStatus(task: PlannerTask) {
-	const isDone = task.status === PlannerTaskStatus.Completed
+	const reopens = isFinished(task)
 	await setStatus(
 		task,
-		isDone ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed,
-		isDone
+		reopens ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed,
+		reopens
 			? new PatchPlannerTaskStatusRequest(PlannerTaskStatus.NotStarted)
 			: new PatchPlannerTaskStatusRequest(
 					PlannerTaskStatus.Completed,
@@ -513,10 +523,19 @@ function wireLifecycle(currentTime: Ref<Date>) {
 			() => userStore.currentUser.id,
 			(id, previousId) => {
 				if (id === previousId) return
-				const hadPlan = planDate.value !== null
+				// `0 → id` is the hydration after a sign-in (`GET /user/data` resolving), not a user
+				// change: nothing of another account can be loaded while the id is 0, because the reset
+				// already ran when it *became* 0. Resetting here bumped `loadToken` under the day-plan
+				// fetch that sign-in had just started, discarded its response, and left the home page on
+				// "No plan for today" — or on a spinner, if that fetch had failed — with nothing to
+				// re-fetch it (F8).
+				if (previousId === 0) return
+				// `loadPromise`, not `planDate`: a fetch still in flight has not set `planDate` yet, and
+				// the reset below discards it — someone asked for this plan, so ask again.
+				const wasRequested = loadPromise !== null
 				resetTodayPlan()
-				// Only refetch if a plan was actually on screen; otherwise the next mount does it.
-				if (hadPlan && id !== 0) void ensureLoaded()
+				// Otherwise nothing is mounted that wants it, and the next mount does it.
+				if (wasRequested && id !== 0) void ensureLoaded()
 			},
 		)
 	})

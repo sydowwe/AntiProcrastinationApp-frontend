@@ -47,7 +47,18 @@
 					class="nowbar__divider"
 				/>
 
-				<template v-if="showError">
+				<!-- Before the first fetch lands there is no state to describe; without this the bar read
+					 "No plan for today" on a day that has one, for as long as the request took. -->
+				<div
+					v-if="loading"
+					class="flex-grow-1 d-flex align-center"
+				>
+					<VProgressCircular
+						indeterminate
+						size="24"
+					/>
+				</div>
+				<template v-else-if="showError">
 					<VIcon
 						icon="fa-triangle-exclamation"
 						color="error"
@@ -78,7 +89,13 @@
 						style="min-width: 0"
 					>
 						<div class="d-flex align-center flex-wrap ga-2">
-							<span class="nowbar__kicker">{{ $t(`home.${focusMode}`) }}</span>
+							<!-- no kicker on a plan-less day: the headline already says it -->
+							<span
+								v-if="focusMode !== 'noPlan'"
+								class="nowbar__kicker"
+							>
+								{{ $t(`home.${focusMode}`) }}
+							</span>
 							<span
 								v-if="focusCountdown"
 								class="text-caption font-weight-bold"
@@ -143,7 +160,7 @@
 			</div>
 
 			<div
-				v-if="showError || focusTask || !hasPlan"
+				v-if="!loading && (showError || focusTask || !hasPlan)"
 				class="nowbar__actions"
 			>
 				<VBtn
@@ -241,6 +258,7 @@
 	const {
 		now,
 		hasPlan,
+		loading,
 		focusTask,
 		focusMode,
 		focusIcon,

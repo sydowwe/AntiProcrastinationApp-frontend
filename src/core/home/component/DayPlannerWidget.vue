@@ -169,23 +169,31 @@
 							class="row"
 							:class="{
 								'row--active': isActive(task),
-								'row--done': isFinished(task),
+								'row--done': isDone(task),
+								'row--skipped': isSkipped(task),
 								'row--missed': isMissed(task),
 							}"
 							:style="{ '--task-color': taskColor(task) }"
 						>
 							<!-- A bare `<button>` with an icon inside is announced as "button" and nothing
-								 else. `aria-pressed` carries the state the fill colour carries visually. -->
+								 else. `aria-pressed` carries the state the fill colour carries visually.
+								 Keyed on the status, not `isFinished`: that one is "no countdown, no alert",
+								 and it is true of a skipped task too — which then read as done. On a skipped
+								 row the button restores it, so it says so and is not "pressed". -->
 							<button
 								type="button"
 								class="check"
-								:class="{ 'check--on': isFinished(task) }"
-								:aria-label="$t('home.markDone', { task: task.activity.name })"
-								:aria-pressed="isFinished(task)"
+								:class="{ 'check--on': isDone(task), 'check--skipped': isSkipped(task) }"
+								:aria-label="
+									$t(isSkipped(task) ? 'home.restoreTask' : 'home.markDone', {
+										task: task.activity.name,
+									})
+								"
+								:aria-pressed="isDone(task)"
 								@click.stop="toggleTaskStatus(task)"
 							>
 								<VIcon
-									icon="fa-check"
+									:icon="isSkipped(task) ? 'fa-rotate-left' : 'fa-check'"
 									size="13"
 								/>
 							</button>
@@ -196,8 +204,13 @@
 							<div class="row__body">
 								<span class="row__title">{{ task.activity.name }}</span>
 								<div
-									v-if="task.activity.category || showStatusChip(task) || isMissed(task)"
-									class="d-flex align-center ga-2 mt-1"
+									v-if="
+										task.activity.category ||
+										showStatusChip(task) ||
+										isMissed(task) ||
+										isSkipped(task)
+									"
+									class="d-flex align-center flex-wrap ga-2 mt-1"
 								>
 									<!-- colour here means "which category", never "how urgent" -->
 									<VChip
@@ -222,6 +235,21 @@
 										prependIcon="fa-triangle-exclamation"
 									>
 										{{ $t('home.missed') }}
+									</VChip>
+									<!-- the reason the skip sent, which used to render nowhere -->
+									<VChip
+										v-if="isSkipped(task)"
+										size="x-small"
+										density="compact"
+										variant="tonal"
+										prependIcon="fa-forward"
+										:title="task.skipReason ?? undefined"
+									>
+										{{
+											task.skipReason
+												? $t('home.skippedBecause', { reason: task.skipReason })
+												: $t('home.skipped')
+										}}
 									</VChip>
 									<VChip
 										v-if="showStatusChip(task)"
@@ -275,7 +303,6 @@
 		streak,
 		isActive,
 		isMissed,
-		isFinished,
 		taskColor,
 		minutesLabel,
 		durationLabel,
@@ -293,7 +320,15 @@
 		return sortedTasks.value[index]!.startTime.getInMinutes - sortedTasks.value[index - 1]!.endTime.getInMinutes
 	}
 
-	/** Done and not-started are already obvious from the tick and the strike-through. */
+	function isDone(task: PlannerTask): boolean {
+		return task.status === PlannerTaskStatus.Completed
+	}
+
+	function isSkipped(task: PlannerTask): boolean {
+		return task.status === PlannerTaskStatus.Cancelled
+	}
+
+	/** Done, skipped and not-started each have their own treatment already — tick, chip, nothing. */
 	function showStatusChip(task: PlannerTask): boolean {
 		return task.status === PlannerTaskStatus.InProgress || task.status === PlannerTaskStatus.OnHold
 	}
@@ -382,6 +417,11 @@
 		text-decoration: line-through;
 	}
 
+	/* Handled too, so just as muted — but not struck: the strike-through is what says "done". */
+	.row--skipped {
+		opacity: 0.6;
+	}
+
 	.row__time {
 		display: flex;
 		flex-direction: column;
@@ -458,6 +498,11 @@
 	.check--on {
 		background: var(--task-color);
 		color: rgb(var(--v-theme-surface));
+	}
+
+	/* Empty and dashed, not filled — the restore icon shows on hover like the tick does. */
+	.check--skipped {
+		border-style: dashed;
 	}
 
 	/*
