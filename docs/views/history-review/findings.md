@@ -135,7 +135,10 @@
   vue-i18n).
 
 ### A1. Stacked-bar chart columns have no accessible name
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F29` — each bar is `button "View details for <name>, <duration>,
+  <window>"` on Summary, Tab reaches it and Enter/Space drill into Detail on the bar's date; on Detail, where
+  nothing listens for a click, the same bar is `role="img"` with the same label and no pointer cursor.
+  `history-review.draft.spec.ts` A1 is promoted from `fixme` to a real test)
 - **Severity:** a11y
 - **Where:** `StackedBarsChart` (`src/core/activityTracking/component/stackedBars/`), mounted by both
   `HistorySummaryView` and `HistoryDetailView` — the per-window bar segments render as unnamed `div`s
@@ -180,7 +183,10 @@
   sense for any consumer (day planner, history).
 
 ### P1. "View details for <name>" button doesn't show details — it toggles a cross-highlight filter
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F30` — the label now reads *"Highlight <name> in the chart"* /
+  *"Zvýrazniť <name> v grafe"*, the card exposes `aria-pressed` that follows the selection, and Enter/Space
+  toggle it the way a click does. Behaviour unchanged. `history-review.draft.spec.ts` P1 is promoted from
+  `fixme` to a real test)
 - **Severity:** polish
 - **Where:** `HistorySummaryCard.vue` (accessible name "View details for {name}"), on `/activity-history`
   and `/activity-history/detail`'s Top Activities cards

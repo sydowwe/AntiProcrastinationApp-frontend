@@ -69,7 +69,11 @@
   Desktop's extra fetch (Android's `AndroidAppPieData` likely has no window-title equivalent to fetch).
 
 ### A1. Date-range and source-filter chips are focusable but expose no accessible role or state
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F49` — roles and states are set through attrs at the call
+  sites: the presets are `radiogroup "Date range"` of `radio` chips with `aria-checked`, the source chips are
+  `button`s with `aria-pressed` that flips on click. Arrow keys do not move the radio selection — Tab reaches
+  every chip and Enter/Space are Vuetify's — which is a known, accepted partial pattern.
+  `tracking-dashboards.draft.spec.ts` A1 is promoted from `fixme` to a real test)
 - **Severity:** a11y
 - **Where:** `src/core/activityTracking/component/ActivityRangePicker.vue:13-28` (`VChip` inside
   `VChipGroup`, the Today/Last 7 days/This week/Last 30 days/Custom row on all four dashboards) **and**

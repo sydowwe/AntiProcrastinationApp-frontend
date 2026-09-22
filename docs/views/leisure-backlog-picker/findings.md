@@ -236,7 +236,11 @@
 ---
 
 ### A1. The "Experienced" chip has no accessible interactive role
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F49`'s action-chip tier — `role="button"` on the chip; Vuetify's
+  `link` already gave it `tabindex="0"` and the Enter/Space keydown, the role was the only missing piece.
+  Verified live on `/leisure/bucket-list`, whose seeded row is anchored: `getByRole('button', { name:
+  'Experienced' })` resolves, Tab reaches it, Enter navigates to `/leisure/memory-anchors?activityName=…`
+  exactly as a click does. The `MemoryAnchorTable` source chips got the same attribute)
 - **Severity:** a11y
 - **Where:** `src/core/leisure/component/ExperiencedCell.vue` — the `<VChip link @click="openAnchor">`
   shown once a row is anchored

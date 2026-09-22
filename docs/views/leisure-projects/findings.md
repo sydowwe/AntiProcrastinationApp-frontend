@@ -309,7 +309,11 @@
 ---
 
 ### A4. The board card's primary click target — open the edit dialog — has no keyboard path
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F78` — the card is `button "Edit <name>"` with `tabindex="0"`,
+  a `:focus-visible` ring, and `@keydown.enter.space.self.prevent` → `onEdit`. Verified live on
+  `/leisure/projects?view=board`: Enter on the focused card opens the edit dialog; Enter on the nested
+  *Delete* opens only the delete confirmation, not the edit dialog — `.self` keeps the nested status/Delete
+  buttons independent)
 - **Severity:** a11y
 - **Where:** `src/core/leisure/component/project/ProjectReadinessBoard.vue:64-71` (`<VCard ... @click="onEdit(item)">`)
 - **Expected:** An element that is the primary way to open an edit dialog should be reachable and

@@ -298,7 +298,12 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   `PlannerSidePanelShell.vue`.
 
 ### A4. A background template task's grid block has no accessible role, name or tabindex — it is completely unreachable by keyboard
-- **Status:** open — **new in round 2 (mutation pass)**
+- **Status:** fixed and verified (2026-09-22, `F78` — `BackgroundTaskBlock` is `role="button"` + `tabindex="0"`
+  + `aria-pressed` + the composed `aria-label` (the former `d-sr-only` sentence, now the element's own name)
+  + `aria-keyshortcuts`, wired to the same `useTaskBlockKeyboard` map the foreground block uses. Verified
+  live on `/day-planner/templates/20001` with a background task created for the pass and deleted after: Tab
+  from the preceding foreground task lands on it, Enter/Space select it ("1 selected"), Escape clears it,
+  and a click on a second task still adds — "2 selected". Was **new in round 2 (mutation pass)**)
 - **Severity:** a11y
 - **Where:** the `.background-task-block` rendered for a template task with `isBackground: true`, on
   `/day-planner/templates/:templateId` (and both panels of the split view) — no seeded fixture task had
