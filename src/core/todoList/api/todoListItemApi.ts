@@ -101,9 +101,13 @@ export function useTodoListItemCrud(todoListId: number) {
 		}
 	}
 
+	/**
+	 * `PATCH /{id}/move` with the destination in the body. A destination the caller cannot see is a 404 —
+	 * the server's IDOR guard, so another account's list id stays unconfirmable.
+	 */
 	async function moveToList(id: number, destinationListId: number) {
 		try {
-			await API.patch(`${url}/move/${id}/${destinationListId}`)
+			await API.patch(`${url}/${id}/move`, { destinationListId })
 			return Promise.resolve()
 		} catch (e: any) {
 			console.error(`Error moving todo list item ${id} to list ${destinationListId}`, e)

@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/auth'
+import { apiUrl, expect, test } from '../fixtures/auth'
 
 // Structural-tier assertions only, captured during the todo-lists inventory pass (docs/views/todo-lists.*).
 // Semantic-tier behaviour (calibration numbers, calibration ratio wording, which items are "overdue",
@@ -227,5 +227,62 @@ test.describe('TodoListView (/todo-list/:id)', () => {
 		await expect(authenticatedPage).toHaveURL(/[?&]sort=priority/)
 		await expect(authenticatedPage.getByLabel('Hide done')).not.toBeChecked()
 		await expect(clearChip).toBeHidden()
+	})
+})
+
+// F70: the client called `PATCH /move/{id}/{dest}` for four months against a server whose only route is
+// `PATCH /{id}/move` + `{ destinationListId }`, and no spec covered it. The item is created here through the
+// API so the fixture's lists stay read-only.
+test.describe('Move to list (/todo-list/:id)', () => {
+	test('moves an item to another list, and a list the user cannot see is a 404 that moves nothing', async ({
+		authenticatedPage,
+		seed,
+	}) => {
+		const api = authenticatedPage.request
+		const created = await api.post(`${apiUrl()}/api/todo-list-item`, {
+			data: {
+				// An item's activity is unique per list, so this must be one *Errands* does not hold — the
+				// fixture's unreferenced activity is the one that cannot turn the move into a 409.
+				activityId: seed.activities.deletable,
+				todoListId: seed.todoLists.empty,
+				taskPriorityId: seed.taskPriorities['This week'],
+			},
+		})
+		expect(created.ok()).toBe(true)
+		const itemId = Number(await created.text())
+
+		try {
+			const itemsOf = async (listId: number) =>
+				(await (await api.get(`${apiUrl()}/api/todo-list-item`, { params: { todoListId: listId } })).json()).map(
+					(item: { id: number }) => item.id,
+				)
+
+			// The IDOR guard: another account's list id is unconfirmable, not forbidden.
+			const foreign = await api.patch(`${apiUrl()}/api/todo-list-item/${itemId}/move`, {
+				data: { destinationListId: seed.todoLists.secondaryWork },
+			})
+			expect(foreign.status()).toBe(404)
+			expect(await itemsOf(seed.todoLists.empty)).toContain(itemId)
+
+			await authenticatedPage.goto(`/todo-list/${seed.todoLists.empty}`)
+			const moreActions = authenticatedPage.getByRole('button', { name: /^More actions:/ })
+			await moreActions.waitFor()
+			await moreActions.click()
+			await authenticatedPage.getByRole('button', { name: 'Move to list' }).click()
+			const dialog = authenticatedPage.getByRole('dialog', { name: 'Move to list' })
+			await dialog.getByRole('combobox').first().click()
+			await authenticatedPage.getByRole('option', { name: 'Errands' }).click()
+
+			const move = authenticatedPage.waitForResponse(
+				response => response.request().method() === 'PATCH' && response.url().endsWith(`/todo-list-item/${itemId}/move`),
+			)
+			await dialog.getByRole('button', { name: 'Confirm' }).click()
+			expect((await move).status()).toBe(204)
+
+			await expect(authenticatedPage.getByText('No tasks')).toBeVisible()
+			expect(await itemsOf(seed.todoLists.errands)).toContain(itemId)
+		} finally {
+			await api.delete(`${apiUrl()}/api/todo-list-item/${itemId}`)
+		}
 	})
 })
