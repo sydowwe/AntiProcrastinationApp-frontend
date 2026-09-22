@@ -1,6 +1,12 @@
-import { onMounted, onUnmounted, watch, type Ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import router from '@/router.ts'
-import { formatDateForApi, isSameDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+import {
+	formatDateForApi,
+	isSameDay,
+	parseDateFromApi,
+	urlStringToUTCDate,
+	usStringToUrlString,
+} from '@/_common/utils/DateTimeHelper.ts'
 import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
@@ -25,13 +31,21 @@ export function useDayNavigation(
 
 	let loadCompleteResolve: (() => void) | null = null
 
+	/**
+	 * The `dd-MM-yyyy` of a day the URL points at but which has no calendar row (F43). Calendars are
+	 * provisioned only by a write, so any unwritten day outside the seeded years is a 404 — not a
+	 * malformed link. While set, the view shows a not-found state instead of the header, and day
+	 * stepping counts from this day rather than from the last one that loaded.
+	 */
+	const missingDate = ref<string | null>(null)
+
 	function navigateToDate(date: Date | null) {
 		store.viewedDate = date ?? new Date()
 		router.replace({ params: { date: usStringToUrlString(formatDateForApi(store.viewedDate)) } })
 	}
 
 	function navigateDate(delta: number) {
-		const date = new Date(store.viewedDate)
+		const date = new Date(missingDate.value ? urlStringToUTCDate(missingDate.value) : store.viewedDate)
 		date.setDate(date.getDate() + delta)
 		navigateToDate(date)
 	}
@@ -63,19 +77,48 @@ export function useDayNavigation(
 		() => store.viewedDate,
 		async () => {
 			showFullScreenLoading()
-			store.resetStore()
-			const dateStr = usStringToUrlString(formatDateForApi(new Date(store.viewedDate)))
-			const newCalendar = await fetchCalendarByDate(dateStr)
-			calendar.value = newCalendar
-			store.viewStartTime = newCalendar.wakeUpTime
-			store.viewEndTime = newCalendar.bedTime
-			await loadTasks()
-			loadCompleteResolve?.()
-			loadCompleteResolve = null
-			hideFullScreenLoading()
+			try {
+				store.resetStore()
+				const dateStr = usStringToUrlString(formatDateForApi(new Date(store.viewedDate)))
+				let newCalendar: Calendar
+				try {
+					newCalendar = await fetchCalendarByDate(dateStr)
+				} catch {
+					// Not `_silent`: the interceptor's toast is the first signal. This only decides what
+					// stays on screen.
+					recoverFromMissingDay(dateStr)
+					return
+				}
+				missingDate.value = null
+				calendar.value = newCalendar
+				store.viewStartTime = newCalendar.wakeUpTime
+				store.viewEndTime = newCalendar.bedTime
+				await loadTasks()
+			} finally {
+				loadCompleteResolve?.()
+				loadCompleteResolve = null
+				// Not left to the error snackbar, which happens to hide it today.
+				hideFullScreenLoading()
+			}
 		},
 		{ deep: true },
 	)
 
-	return { navigateDate, navigateToDate, handleUndo }
+	/**
+	 * The URL has already moved (`navigateToDate`) when the fetch fails, and `calendar` still holds
+	 * the previous day — which used to leave that day's header under the new day's URL. Step back to
+	 * the day that loaded, so header, grid and URL agree again; with nothing to step back to (the
+	 * page was opened on a missing day), show the not-found state for this one.
+	 */
+	function recoverFromMissingDay(dateStr: string) {
+		const previous = calendar.value && parseDateFromApi(calendar.value.date.slice(0, 10))
+		if (previous && !isSameDay(previous, store.viewedDate)) {
+			navigateToDate(previous)
+			return
+		}
+		calendar.value = undefined
+		missingDate.value = dateStr
+	}
+
+	return { navigateDate, navigateToDate, handleUndo, missingDate }
 }

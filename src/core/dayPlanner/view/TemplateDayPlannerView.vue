@@ -9,7 +9,10 @@
 			width="400px"
 		>
 			<template #details>
-				<TemplatePlannerPanel :templateId />
+				<TemplatePlannerPanel
+					:templateId
+					@notFound="notFoundId = $event"
+				/>
 			</template>
 
 			<template #routine>
@@ -27,7 +30,28 @@
 				@delete="crud.del"
 			>
 				<template #header>
-					<TemplatePlannerHeader :title="store.templateName || $t('planner.template.dayTemplateFallback')">
+					<!-- The F43 treatment on the template side: same alert, the list instead of today. -->
+					<VAlert
+						v-if="notFoundId !== null"
+						class="mx-4 mt-4"
+						type="warning"
+						variant="tonal"
+						:title="$t('planner.template.notFoundTitle')"
+						:text="$t('planner.template.notFoundText', { id: notFoundId })"
+					>
+						<template #append>
+							<VBtn
+								variant="text"
+								:to="{ name: 'dayPlannerTemplateList' }"
+							>
+								{{ $t('planner.template.backToList') }}
+							</VBtn>
+						</template>
+					</VAlert>
+					<TemplatePlannerHeader
+						v-else
+						:title="store.templateName || $t('planner.template.dayTemplateFallback')"
+					>
 						<template #headerPrepend>
 							<span
 								v-if="taskStats.taskCount > 0"
@@ -79,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, provide, watch } from 'vue'
+	import { computed, onMounted, provide, ref, watch } from 'vue'
 	import DayPlanner from '@/core/dayPlanner/component/DayPlanner.vue'
 	import PlannerSidePanelShell from '@/core/dayPlanner/component/PlannerSidePanelShell.vue'
 	import TemplatePlannerHeader from '@/core/dayPlanner/component/template/TemplatePlannerHeader.vue'
@@ -174,6 +198,9 @@
 	provide('splitViewStoreId', storeId)
 
 	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
+
+	/** Set by `TemplatePlannerPanel` when the id does not resolve to a template (F55). */
+	const notFoundId = ref<number | null>(null)
 
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground)

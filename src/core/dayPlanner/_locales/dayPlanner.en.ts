@@ -130,6 +130,9 @@ const dayPlanner = {
 			details: `Details`,
 			routine: `Routine`,
 			dayTemplateFallback: `Day Template`,
+			notFoundTitle: `Template not found`,
+			notFoundText: `There is no template with id {id} — it was most likely deleted.`,
+			backToList: `Back to templates`,
 			statsLine: `{count} task · {planned} planned · {free} free | {count} tasks · {planned} planned · {free} free`,
 			compareEditTitle: `Compare & Edit Templates`,
 			leftTemplate: `Left Template`,
@@ -350,6 +353,12 @@ const dayPlanner = {
 			notFoundTitle: `Task not found`,
 			notFoundText: `This task no longer exists — it was most likely deleted in the meantime.`,
 			toCalendar: `Open the calendar`,
+		},
+		// F43: a dated URL whose day has no calendar row — calendars are provisioned only by a write.
+		dayNotFound: {
+			title: `Day not available`,
+			text: `There is no plan for {date} yet.`,
+			toToday: `Back to today`,
 		},
 		a11y: {
 			gridLabel: `Time grid {start} – {end}`,

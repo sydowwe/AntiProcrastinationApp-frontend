@@ -21,7 +21,25 @@
 		>
 			<!-- Header with calendar info -->
 			<template #header>
+				<VAlert
+					v-if="missingDate"
+					class="mx-4 mt-4"
+					type="warning"
+					variant="tonal"
+					:title="$t('planner.dayNotFound.title')"
+					:text="$t('planner.dayNotFound.text', { date: missingDateFormatted })"
+				>
+					<template #append>
+						<VBtn
+							variant="text"
+							@click="goToToday"
+						>
+							{{ $t('planner.dayNotFound.toToday') }}
+						</VBtn>
+					</template>
+				</VAlert>
 				<DayPlannerHeader
+					v-else
 					v-model:activePanel="activePanel"
 					v-model:panelOpen="panelOpen"
 					:title="currentDateFormatted"
@@ -83,6 +101,7 @@
 	import {
 		formatDateForApi,
 		formatToDateWithDay,
+		parseDateFromApi,
 		urlStringToUTCDate,
 		usStringToUrlString,
 	} from '@/_common/utils/DateTimeHelper.ts'
@@ -120,6 +139,7 @@
 	import { useTemplatePreview } from '@/core/dayPlanner/composable/useTemplatePreview.ts'
 	import { useDayNavigation } from '@/core/dayPlanner/composable/useDayNavigation.ts'
 	import { useI18n } from 'vue-i18n'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 
 	const { t } = useI18n()
 	const { runBulk } = useBulkTaskAction()
@@ -186,7 +206,7 @@
 	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
 
 	const { templatePreview, applyTemplate } = useTemplatePreview(store, calendar, fetchTemplateTasks)
-	const { navigateDate, handleUndo } = useDayNavigation(
+	const { navigateDate, navigateToDate, handleUndo, missingDate } = useDayNavigation(
 		store,
 		settingsStore,
 		calendar,
@@ -199,18 +219,33 @@
 		await settingsStore.loadSettings()
 		store.timeSlotDuration = settingsStore.slotDurationMinutes
 
-		const dateParam = router.currentRoute.value.params.date as string | undefined
-		if (!dateParam) {
+		// A missing or malformed `:date` (`not-a-date`, or the ISO `2026-09-11`) opens the user's today —
+		// the user's, not the browser's — with a clean URL and no request for the bad segment (F43).
+		// Same route, so this component is reused rather than remounted: rewrite the URL and carry on
+		// with today, instead of returning and waiting for a mount that never comes.
+		const routeDate = router.currentRoute.value.params.date as string | undefined
+		const dateParam = routeDate && parseDateFromApi(usStringToUrlString(routeDate)) ? routeDate : todayUrlString()
+		if (dateParam !== routeDate) {
 			router.replace({
 				name: 'dayPlanner',
-				// The user's today, not the browser's — this is the date the planner opens on.
-				params: { date: usStringToUrlString(isoDateInUserZone()) },
+				params: { date: dateParam },
+				query: router.currentRoute.value.query,
 			})
+		}
+		// The calendar fetch must not reject this `Promise.all`: a valid date with no calendar row (a
+		// 404 — rows are provisioned only by a write) left `calendar` undefined, the header blank and an
+		// unhandled rejection at the hook boundary. The interceptor's toast still fires.
+		const [calendarData, templates] = await Promise.all([
+			fetchCalendarByDate(dateParam).catch(() => null),
+			fetchAllTemplates(),
+		])
+		allTemplates.value = templates
+		if (!calendarData) {
+			store.resetStore()
+			missingDate.value = dateParam
 			return
 		}
-		const [calendarData, templates] = await Promise.all([fetchCalendarByDate(dateParam), fetchAllTemplates()])
 		calendar.value = calendarData
-		allTemplates.value = templates
 		store.viewedDate = urlStringToUTCDate(dateParam)
 		store.viewStartTime = calendar.value!.wakeUpTime
 		store.viewEndTime = calendar.value!.bedTime
@@ -235,9 +270,23 @@
 	})
 
 	// View-specific computed properties
+	const missingDateFormatted = computed(() =>
+		missingDate.value ? formatToDateWithDay(urlStringToUTCDate(missingDate.value)) : '',
+	)
+
+	// A missing day never reaches `store.viewedDate` (assigning it would re-fetch the same 404), so
+	// the side panel's title reads the URL's day instead of whichever day loaded last.
 	const currentDateFormatted = computed(() => {
-		return formatToDateWithDay(store.viewedDate)
+		return missingDateFormatted.value || formatToDateWithDay(store.viewedDate)
 	})
+
+	function todayUrlString() {
+		return usStringToUrlString(isoDateInUserZone())
+	}
+
+	function goToToday() {
+		navigateToDate(urlStringToUTCDate(todayUrlString()))
+	}
 
 	// Load tasks for the current date
 	async function loadTasks() {
@@ -246,10 +295,21 @@
 		// malformed (see `fetchSuggestionsForCalendar`) its 400 rejected the pair, `store.tasks` was
 		// never assigned, and the planner rendered an empty grid for every day — with the real cause
 		// only visible in the console. A suggestion outage should cost the suggestions, nothing else.
-		const [tasks, fetched] = await Promise.all([
-			fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime)),
-			fetchSuggestionsForCalendar(calendar.value!.id).catch(() => [] as SuggestionResponse[]),
-		])
+		let tasks: PlannerTask[]
+		let fetched: SuggestionResponse[]
+		try {
+			;[tasks, fetched] = await Promise.all([
+				fetchFiltered(new PlannerTaskFilter(calendar.value!.id, store.viewStartTime, store.viewEndTime)),
+				fetchSuggestionsForCalendar(calendar.value!.id).catch(() => [] as SuggestionResponse[]),
+			])
+		} catch (error) {
+			// Mount and the `viewedDate` watcher both load, through one `useFetchFiltered` instance, so
+			// whenever the two overlap the newer aborts the older — first seen once the malformed-date
+			// redirect (F43) shifted their timing. The newer call fills the store; only a real failure
+			// propagates.
+			if (isRequestCanceled(error)) return
+			throw error
+		}
 		store.tasks = tasks
 		suggestions.value = fetched
 		addedSuggestionIds.value = new Set()

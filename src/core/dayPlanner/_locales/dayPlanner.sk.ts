@@ -137,6 +137,9 @@ const dayPlanner = {
 			details: `Detaily`,
 			routine: `Rutina`,
 			dayTemplateFallback: `Šablóna dňa`,
+			notFoundTitle: `Šablóna sa nenašla`,
+			notFoundText: `Šablóna s id {id} neexistuje — pravdepodobne bola vymazaná.`,
+			backToList: `Späť na šablóny`,
 			statsLine: `{count} úloha · naplánované: {planned} · voľné: {free} | {count} úlohy · naplánované: {planned} · voľné: {free} | {count} úloh · naplánované: {planned} · voľné: {free}`,
 			compareEditTitle: `Porovnať a upraviť šablóny`,
 			leftTemplate: `Ľavá šablóna`,
@@ -360,6 +363,12 @@ const dayPlanner = {
 			notFoundTitle: `Úloha sa nenašla`,
 			notFoundText: `Táto úloha už neexistuje — pravdepodobne bola medzitým vymazaná.`,
 			toCalendar: `Otvoriť kalendár`,
+		},
+		// F43: dátumová URL, ktorej deň nemá riadok kalendára — kalendáre vznikajú až pri zápise.
+		dayNotFound: {
+			title: `Deň nie je dostupný`,
+			text: `Pre {date} zatiaľ neexistuje plán.`,
+			toToday: `Späť na dnešok`,
 		},
 		a11y: {
 			gridLabel: `Časová mriežka {start} – {end}`,
