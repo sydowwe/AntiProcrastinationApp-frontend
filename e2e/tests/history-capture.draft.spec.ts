@@ -33,12 +33,21 @@ test.describe('Stopwatch (/activity-history/stopwatch)', () => {
 	test('start/pause/stop round trip, then Cancel on the save dialog discards without writing', async ({
 		authenticatedPage,
 	}) => {
+		// The session has to be long enough to record. Since 2026-09-16 (`useSessionLength`), one that
+		// rounds to zero minutes (under 30 s) is discarded before the save dialog opens, so a stopwatch
+		// stopped straight away never reaches it. The store times everything by `Date.now()`, so the
+		// page clock runs the session for two minutes without the test waiting them out.
+		await authenticatedPage.clock.install()
+		await authenticatedPage.reload()
+		await authenticatedPage.getByRole('button', { name: 'Start' }).waitFor({ state: 'visible' })
+
 		await authenticatedPage.getByRole('combobox', { name: '* Activity' }).click()
 		await authenticatedPage.getByRole('option', { name: 'Bug Fixing' }).click()
 		await authenticatedPage.getByRole('button', { name: 'Start' }).click()
 
 		await expect(authenticatedPage.getByRole('button', { name: 'Start' })).toBeDisabled()
 		await expect(authenticatedPage.getByRole('button', { name: 'Pause' })).toBeEnabled()
+		await authenticatedPage.clock.fastForward('02:00')
 
 		await authenticatedPage.getByRole('button', { name: 'Pause' }).click()
 		await expect(authenticatedPage.getByRole('button', { name: 'Start' })).toBeEnabled()
@@ -57,6 +66,20 @@ test.describe('Stopwatch (/activity-history/stopwatch)', () => {
 		// Session cleared, Start idle again — the round trip left nothing running and wrote nothing.
 		await expect(authenticatedPage.getByRole('button', { name: 'Start' })).toBeEnabled()
 		await expect(authenticatedPage.getByRole('button', { name: 'Pause' })).toBeDisabled()
+	})
+
+	test('a session too short to record is discarded with a message, and no save dialog', async ({
+		authenticatedPage,
+	}) => {
+		await authenticatedPage.getByRole('combobox', { name: '* Activity' }).click()
+		await authenticatedPage.getByRole('option', { name: 'Bug Fixing' }).click()
+		await authenticatedPage.getByRole('button', { name: 'Start' }).click()
+		await expect(authenticatedPage.getByRole('button', { name: 'Pause' })).toBeEnabled()
+
+		await authenticatedPage.getByRole('button', { name: 'Stop' }).click()
+		await expect(authenticatedPage.getByText('That session was too short to record — nothing was saved')).toBeVisible()
+		await expect(authenticatedPage.getByRole('dialog', { name: 'Record new activity' })).toHaveCount(0)
+		await expect(authenticatedPage.getByRole('button', { name: 'Start' })).toBeEnabled()
 	})
 })
 
@@ -99,9 +122,10 @@ test.describe('Timer (/activity-history/timer)', () => {
 		await authenticatedPage.goto('/activity-history/stopwatch')
 		await expect(authenticatedPage.getByRole('button', { name: 'Pause' })).toBeEnabled()
 
-		// Clean up: stop and discard so no session is left running at the end of the test.
+		// Clean up: stop, so no session is left running at the end of the test. The session is seconds
+		// long, so Stop discards it outright (no save dialog since `useSessionLength`, 2026-09-16).
 		await authenticatedPage.getByRole('button', { name: 'Stop' }).click()
-		await authenticatedPage.getByRole('dialog', { name: 'Record new activity' }).getByRole('button', { name: 'Cancel' }).click()
+		await expect(authenticatedPage.getByRole('button', { name: 'Start' })).toBeEnabled()
 	})
 })
 
