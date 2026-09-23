@@ -125,10 +125,10 @@ test.describe('Picker ("What should I do?", /leisure/pick)', () => {
 	})
 
 	test('"Something else" changes the seed without changing other constraints', async ({ authenticatedPage }) => {
-		// At the default 60 min this account shows ZERO suggestions (see X2 — the weather-signal bug
-		// excludes the only backlog entry at every time budget), and "Something else" only renders
-		// inside the suggestions branch of the template, not the empty state. 2 h surfaces a bucket-list
-		// card, which is unaffected by X2, so the button exists to click.
+		// "Something else" only renders inside the suggestions branch of the template, not the empty
+		// state. 2 h surfaces a bucket-list card as well as the backlog one, so the button is there to
+		// click whatever the weather signal says. (Before F64 the backlog card never showed, and 2 h
+		// was the only budget with a card at all.)
 		await authenticatedPage.getByRole('button', { name: '2 h' }).click()
 		await authenticatedPage.getByRole('button', { name: 'Something else' }).waitFor({ state: 'visible' })
 
@@ -165,16 +165,34 @@ test.describe('Picker ("What should I do?", /leisure/pick)', () => {
 		)
 	})
 
-	test.fixme(
-		'a suggestion from the backlog appears when constraints are satisfied',
-		// X2: the picker excludes EVERY backlog entry with any stated weatherDependency (including
-		// the "None" lookup row) whenever GET /leisure-weather-fit returns an empty
-		// matchingWeatherDependencyIds array, because useLeisurePicker.ts's `?? null` fallback does not
-		// treat an empty array the same as "no signal" — contradicting leisureScoring.ts's own stated
-		// rule. Confirmed: the seeded backlog entry never surfaces at any time budget from 15 min to
-		// 4 h. See findings.md X2.
-		async () => {},
-	)
+	test('a suggestion from the backlog appears when constraints are satisfied', async ({ authenticatedPage }) => {
+		// X2 (round 1) / F64: the server answers "no weather location" with an EMPTY match set, and its
+		// contract says that means "no opinion". The picker used to read it as "nothing fits" and drop the
+		// seeded Read a Novel (45 min, 1 person) at every time budget.
+		await expect(authenticatedPage.getByText('Read a Novel')).toBeVisible()
+	})
+
+	test('a "None" weather dependency is never badged by the weather signal', async ({ authenticatedPage }) => {
+		// B1 (round 2) / F64's second half: the server's WeatherFitRule puts the "none" row in EVERY
+		// non-empty match set, so on any day with a weather location Read a Novel (filed under None)
+		// was badged "Good weather for this today" and ranked up. The row now carries
+		// weatherDependencyCode, and a "none" code never reaches the weather logic. Reproduce the
+		// server's real non-empty answer: a set that contains the row's own id.
+		const backlogGrid = authenticatedPage.waitForResponse('**/api/activity-backlog-profile/grid')
+		await authenticatedPage.reload()
+		const { items } = (await (await backlogGrid).json()) as {
+			items: { weatherDependencyId: number; weatherDependencyCode: string | null; activity: { name: string } }[]
+		}
+		const novel = items.find(item => item.activity.name === 'Read a Novel')
+		expect(novel?.weatherDependencyCode).toBe('none')
+
+		await authenticatedPage.route('**/api/leisure-weather-fit', route =>
+			route.fulfill({ json: { matchingWeatherDependencyIds: [novel!.weatherDependencyId] } }),
+		)
+		await authenticatedPage.reload()
+		await expect(authenticatedPage.getByText('Read a Novel')).toBeVisible()
+		await expect(authenticatedPage.getByText('Good weather for this today')).toHaveCount(0)
+	})
 
 	test.fixme(
 		'ranking, staleness and the three empty states',
