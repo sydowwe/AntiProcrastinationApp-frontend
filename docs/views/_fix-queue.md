@@ -117,7 +117,7 @@
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
 | F67 | ✅ **FIXED AND VERIFIED 2026-09-15** (`useSessionLength.ts` — one rounding rule and one discard-with-message for all three capture views, plus the pomodoro's rest record; body in the log) — A session that rounds to zero minutes was handled three different ways by the three capture views, and none of them told the user | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low |
 | F68 | The manual-entry form fires one `POST` per click while the first is in flight, and never resets — so a second click is a `409` from the unique index, and so is *every* re-submit of an unchanged form after a success | app (`AddActivityManuallyView.vue`, `AddActivityManuallyForm.vue`) | `history-capture/B6` (was `U1`) | low |
-| F69 | Deleting a to-do item never confirms, whatever `askBeforeDelete` says — `useUndoableListCrud.deleteItem` was never one of P3's five sites and bypasses `useDeleteConfirmation`; the routine list shares the composable | app (`src/core/todoList/composable/useUndoableListCrud.ts` + its two views) + CLAUDE.md row | `todo-lists/B7` (+ the unfiled routine twin) | low |
+| F69 | ✅ **FIXED AND VERIFIED 2026-09-23** (`723c48ec` — `deleteItem()` asks `shouldConfirm({ cascades: false, undoable: true })` and confirms via `useDialog().confirm()`; the undo entry stays. Verified live on both lists with the preference on (dialog; Cancel → no `DELETE`; Delete → 204 + *Undo*) and off (no dialog, 204 + *Undo*). CLAUDE.md row counts seven sites. Body in the log) — Deleting a to-do item never confirms, whatever `askBeforeDelete` says — `useUndoableListCrud.deleteItem` was never one of P3's five sites and bypasses `useDeleteConfirmation`; the routine list shares the composable | app (`src/core/todoList/composable/useUndoableListCrud.ts` + its two views) + CLAUDE.md row | `todo-lists/B7` (+ the unfiled routine twin) | low |
 | F70 | ✅ **FIXED AND VERIFIED 2026-09-22** (`1bb9ae06` — `PATCH …/{id}/move` + `{ destinationListId }`; live 204 and the item lands in *Errands* under the same id; new `todo-lists.spec.ts` test covers the move and the foreign-list 404. The close-then-call shape is noted in the commit, not fixed. Body in the log) — *Move to list* has 404'd since the day it was written — the client calls `PATCH /move/{id}/{dest}` against a server route that has been `PATCH /{id}/move` + `{ destinationListId }` since 2026-05-15 | app (`todoListItemApi.ts:104-112`) | `todo-lists/B8` | trivial |
 | F71 | ✅ **FIXED 2026-09-22** (with `F4`) — `toDoList.markDone` / `markStepDone` minted in this module (not imported from `home`), bound as `aria-label` on both `VCheckboxBtn`s; Vuetify's `filterInputAttrs` puts them on the `<input>`, so they are the control's name, not the wrapper's. The step key interpolates `step.name` (the queue said `step.text`; the field is `name`). Verified live on `/todo-list/13001` — six item checkboxes and three step checkboxes resolve by name. `DraggedItemPreview`'s decorative copy left alone | app (`BaseTodoListItem.vue:19`, `BaseTodoListItemSteps.vue:39`) | `todo-lists/A3` (+ one unfiled) | trivial |
 | F72 | ✅ **FIXED 2026-09-22** — `saved()` branches on `mode` (*To ignored* → `isIgnored: true`, no ids; *To activity* → the activity id **alone**: `formData`'s role/category only narrow the picker, and sending them beside the activity was a second target, so the server's role/category target is deliberately not reachable from this form); request DTOs default `isActive = true`, `edit()` copies the row's value; a finished save clears `editedId` so a later save cannot re-write the row with the default. Validation: no pattern (blank counts as none) → no request and the filter bar's pattern fields are marked; the action bars are now a `VForm` so *Save* marks a missing activity. The `catch` no longer snackbars over the interceptor — only a request that got no response shows `failedToSaveMapping`. Verified desktop: empty *Save* → no request, 4 fields marked; *To ignored* → 201 with `"isIgnored":true` and null ids; edit of an API-created inactive rule → `PUT` 200 with `"isActive":false`; a duplicate → 409 and exactly one snackbar (the interceptor's typed text). Was: `useMappingSettings.saved()` sends three of the form's five facts: *To ignored* never reaches the wire (`isIgnored` stays `null` → 400 on every ignored save), `isActive` is never sent (→ the update DTO's `required` 400 on every edit), nothing validates before the request, and the view's own `catch` overwrites the interceptor's snackbar with a generic string | app (`useMappingSettings.ts`, the two `Tracker*MappingRequest.ts`, the two views' `edit()`, the two action bars) | `tracking-settings/X2`, `X3`, `B6` | med |
@@ -940,44 +940,7 @@ Vuetify's own markup.
   Reseed after.
 - **Risk:** None.
 
-## F69. Deleting a to-do item never confirms, whatever `askBeforeDelete` says — the item delete was never one of P3's five sites
-
-- **Scope:** app-side `src/core/todoList/composable/useUndoableListCrud.ts:110-125`, its two consumers
-  (`TodoListView.vue`, `RoutineToDoListView.vue`), and one row in CLAUDE.md's *sanctioned cross-module
-  imports* table
-- **Closes:** `todo-lists/B7` (+ the **unfiled routine twin** — `RoutineToDoListView` drives the same
-  composable, so its item delete has the same gap; unit 10 ran seven rounds and never filed it because
-  its deletes were of periods, not items)
-- **Root cause:** Confirmed. `deleteItem()` is `await api.deleteEntity(id)` then `pushDeleteUndo(…)`,
-  with no `shouldConfirm` anywhere in the file (grep: `useDeleteConfirmation` has six importers in
-  `src/core`, none in `todoList/composable/useUndoableListCrud.ts`). `prompts/_done/user/P3-delete-confirmation-granularity.md`
-  listed **five** delete sites, and the item delete was not among them — it was already an undo-only path
-  through `useTodoListUndo` before P3 ran, so P3 never touched it. But P3's own rule covers it exactly:
-  *"a delete that is a LEAF and is UNDOABLE honors the preference, and when the preference says 'don't
-  ask', shows an undo affordance instead of a dialog"* — and `useDeleteConfirmation.resolveDelete()`
-  encodes that (`askBeforeDelete` → `'confirm'` before it ever looks at `undoable`). With the preference
-  **on** (the seed's default, the unit's screenshot), the item delete is the one site in the app that
-  ignores it; with it off, the undo it already shows is the correct answer. So this is not "add a dialog"
-  — it is "route the sixth site through the composable that already decides".
-- **Files:** `useUndoableListCrud.ts:110` (or the two call sites, if the composable is to stay
-  preference-free — it is `todoList`'s own, so importing `core/user`'s composable there is the sanctioned
-  exception, same as `TodoListsView.vue:186`); `CLAUDE.md` — the `useDeleteConfirmation` row says "the
-  five delete sites in `todoList`, `dayPlanner`, `historyDashboard`"; `F19` adds `activity`, this adds a
-  sixth `todoList` site; rewrite the count once, not twice.
-- **What to change:** Before `api.deleteEntity(id)`: `if (shouldConfirm({ cascades: false, undoable:
-  true })) { const ok = await confirm({ title: …, text: t('toDoList.deleteItemConfirm', { name }) }); if
-  (!ok) return }` — `useDialog().confirm()`, the shape `TodoListsView.vue:186-190` already uses for the
-  list delete. `cascades: false` is right (items have no children; steps are a JSON column, not rows —
-  confirm against `TodoListItemConfiguration.cs` before asserting it in a comment). Keep the undo entry
-  either way — P3's *undoable* branch is what makes the "don't ask" case safe.
-- **Do not change:** `useDeleteConfirmation` itself; the list and category sites (correct); the undo stack.
-  Do not read `askBeforeDelete` directly — CLAUDE.md names that as the bug.
-- **Verification:** `B7`'s `Verify:` block with the preference **on**: ⋮ → *Delete* → a dialog; Cancel →
-  no `DELETE`, item still there; Confirm → `DELETE …/todo-list-item/{id}` 204 and the undo button. Then
-  the preference **off**: no dialog, immediate delete, undo button — unchanged from today. Then
-  `/routine-todo-list`, same two checks (create a throwaway routine item through the API first). Both
-  locales for the new key.
-- **Risk:** Low. One branch in a composable two views share — that is the point, and the risk: test both.
+<!-- F69 (deleting a to-do item never confirmed, whatever `askBeforeDelete` said — the sixth delete site bypassed `useDeleteConfirmation`; `todo-lists/B7` + the routine twin) fixed 2026-09-23 in `723c48ec` — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F70 (*Move to list* called `PATCH /move/{id}/{dest}` against a server route that is `PATCH /{id}/move` + body — `todo-lists/B8`) fixed 2026-09-22 in `1bb9ae06` — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

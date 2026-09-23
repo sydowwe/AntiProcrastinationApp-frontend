@@ -8488,3 +8488,65 @@ committed for a full pass because "the working tree" was the scope (§108).
   be using it, and because the `F76` fix would otherwise be app-side folklore.
 - **Risk:** Low, and it is the reason to ship it deliberately rather than folding it into `F76`: any app
   currently using `DECIMAL` is getting integers today and may be relying on that rounding.
+
+## F69. Deleting a to-do item never confirms, whatever `askBeforeDelete` says — the item delete was never one of P3's five sites
+
+> ✅ **FIXED AND VERIFIED 2026-09-23** (`723c48ec`). The fix sits in the composable, as the body allows, since
+> `useUndoableListCrud` is `todoList`'s own and the `core/user` import is the sanctioned exception.
+> `deleteItem()` asks `shouldConfirm({ cascades: false, undoable: true })` and confirms through
+> `useDialog().confirm()` in `TodoListsView`'s shape: title `toDoList.deleteItemConfirm` (*"Delete item?"* /
+> *"Vymazať položku?"*), the item's label as text, and a red *Delete*. The undo entry is kept either way.
+> `cascades: false` is confirmed against the API: steps are `OwnsMany(…).ToJson()`
+> (`TodoListEntityConfigurationExtensions.cs`), and the planner-task and history FKs are `SET NULL`
+> (`PlannerTaskConfiguration.cs`, `ActivityHistoryConfiguration.cs`). A code comment says so.
+> **One thing the body did not say:** the item is re-located *after* the dialog, because the list can
+> resync or reorder while the dialog is open, and the neighbours captured for the undo must be the
+> current ones. CLAUDE.md's `useDeleteConfirmation` row now counts **seven** sites and names this one.
+> The "all five sites" wording in the same cell is now "every site".
+> **Verified live** (`playwright-cli`, form sign-in, throwaway items created through the API and deleted
+> by the checks themselves, so the fixture is unchanged). `/todo-list/13003`, preference **on**: dialog;
+> Cancel → no `DELETE`, item stays; Delete → `DELETE /todo-list-item/14103` 204 + *Undo* button.
+> Preference **off**: no dialog, `…/14104` 204, *Undo*. `/routine-todo-list`, off: no dialog,
+> `DELETE /routine-todo-list/19008` 204, *Undo*. On: dialog; Cancel → no `DELETE`; Delete → `…/19009`
+> 204, *Undo*. The preference was toggled through `/user/settings` and left **on**, the seed default.
+> No console errors. `vue-tsc --build --force` exit 0; eslint clean on the changed files.
+> **Not verified:** the SK dialog by eye (the key exists in both locales). **Not touched:**
+> `TimerPresetDialog.vue:129`, the same class of bug the other way round (it confirms unconditionally),
+> named in `F37`'s *Do not change* note and still unfiled. `todo-lists/B7` closed, with its routine twin.
+
+- **Scope:** app-side `src/core/todoList/composable/useUndoableListCrud.ts:110-125`, its two consumers
+  (`TodoListView.vue`, `RoutineToDoListView.vue`), and one row in CLAUDE.md's *sanctioned cross-module
+  imports* table
+- **Closes:** `todo-lists/B7` (+ the **unfiled routine twin** — `RoutineToDoListView` drives the same
+  composable, so its item delete has the same gap; unit 10 ran seven rounds and never filed it because
+  its deletes were of periods, not items)
+- **Root cause:** Confirmed. `deleteItem()` is `await api.deleteEntity(id)` then `pushDeleteUndo(…)`,
+  with no `shouldConfirm` anywhere in the file (grep: `useDeleteConfirmation` has six importers in
+  `src/core`, none in `todoList/composable/useUndoableListCrud.ts`). `prompts/_done/user/P3-delete-confirmation-granularity.md`
+  listed **five** delete sites, and the item delete was not among them — it was already an undo-only path
+  through `useTodoListUndo` before P3 ran, so P3 never touched it. But P3's own rule covers it exactly:
+  *"a delete that is a LEAF and is UNDOABLE honors the preference, and when the preference says 'don't
+  ask', shows an undo affordance instead of a dialog"* — and `useDeleteConfirmation.resolveDelete()`
+  encodes that (`askBeforeDelete` → `'confirm'` before it ever looks at `undoable`). With the preference
+  **on** (the seed's default, the unit's screenshot), the item delete is the one site in the app that
+  ignores it; with it off, the undo it already shows is the correct answer. So this is not "add a dialog"
+  — it is "route the sixth site through the composable that already decides".
+- **Files:** `useUndoableListCrud.ts:110` (or the two call sites, if the composable is to stay
+  preference-free — it is `todoList`'s own, so importing `core/user`'s composable there is the sanctioned
+  exception, same as `TodoListsView.vue:186`); `CLAUDE.md` — the `useDeleteConfirmation` row says "the
+  five delete sites in `todoList`, `dayPlanner`, `historyDashboard`"; `F19` adds `activity`, this adds a
+  sixth `todoList` site; rewrite the count once, not twice.
+- **What to change:** Before `api.deleteEntity(id)`: `if (shouldConfirm({ cascades: false, undoable:
+  true })) { const ok = await confirm({ title: …, text: t('toDoList.deleteItemConfirm', { name }) }); if
+  (!ok) return }` — `useDialog().confirm()`, the shape `TodoListsView.vue:186-190` already uses for the
+  list delete. `cascades: false` is right (items have no children; steps are a JSON column, not rows —
+  confirm against `TodoListItemConfiguration.cs` before asserting it in a comment). Keep the undo entry
+  either way — P3's *undoable* branch is what makes the "don't ask" case safe.
+- **Do not change:** `useDeleteConfirmation` itself; the list and category sites (correct); the undo stack.
+  Do not read `askBeforeDelete` directly — CLAUDE.md names that as the bug.
+- **Verification:** `B7`'s `Verify:` block with the preference **on**: ⋮ → *Delete* → a dialog; Cancel →
+  no `DELETE`, item still there; Confirm → `DELETE …/todo-list-item/{id}` 204 and the undo button. Then
+  the preference **off**: no dialog, immediate delete, undo button — unchanged from today. Then
+  `/routine-todo-list`, same two checks (create a throwaway routine item through the API first). Both
+  locales for the new key.
+- **Risk:** Low. One branch in a composable two views share — that is the point, and the risk: test both.
