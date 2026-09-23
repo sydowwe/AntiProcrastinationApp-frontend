@@ -4106,6 +4106,101 @@
      that `state-load`, `-s=`, and "am I the only mutating session" are three separate questions.
   The `-s=` half is the one that changes agent behaviour; the other two are one sentence each.
 
+## FW24. `B18` landed and nothing on this side reads it — four different 409s still share one sentence, and today that sentence is the server's English DB prose
+
+> ✅ **FIXED 2026-09-23 — verified live; the code itself had landed two days earlier without the queue
+> knowing.** Items 1–5 below shipped as `vue_framework` `4ab7e61` on 2026-09-21 (the same commit as
+> `FW19`'s message precedence, as the ordering note asked), and reached the app with the pointer bump in
+> `adaae452` (B19's frontend half), which never mentioned it. `8512d67` / `60a3930` later extended the
+> same resolver for B21/B25 (the lockout countdown, the 2FA 401s). What was left was the verification,
+> run 2026-09-23 through the real `API` instance on `:3000` against the live API, reading the rendered
+> snackbar:
+>
+> | case | `errorType` | snackbar |
+> | --- | --- | --- |
+> | `DELETE /activity-role/4` (system) | `Conflict` | the server's own sentence (*"This is a system role … You can rename it instead."*) |
+> | `DELETE /activity-role/11001` (9 activities) | `DbForeignKeyError` | *"This record cannot be removed because other records still refer to it. Remove or move them first."* |
+> | duplicate routine time period *Daily*/1 | `DbUniqueViolationError` | *"A record with this value already exists. Choose another."* — the raw *"Unique constraint violation during Create"* no longer reaches the screen |
+> | duplicate desktop mapping `SteamLauncher.exe` | `DbUniqueViolationError` + `errors.patterns` | **failed at first** — see below; after the fix, *"You already have a mapping for ProcessName 'SteamLauncher.exe'."* |
+> | `GET /activity/999999999` | *(absent)* | *"The requested item was not found."* — fallback unchanged |
+> | `handleHttpCodes(409)`, `(409, 'SomethingNew')` | — | the old refresh sentence, both — an absent or unknown type is indistinguishable from before |
+>
+> **The one verification that failed, and the fix (`vue_framework` `bc96068`).** The desktop-mapping pair
+> exists precisely to check that the typed wording does not swallow a per-field map — and it did: the
+> endpoint's authored `errors.patterns` sentence was replaced by the generic unique-violation one. Read
+> against the API: the CRUD bases forward a DB `Result` through an unkeyed `AddError` (→ `generalErrors`),
+> and only endpoint code keys an entry (`MappingPatternUniquenessExtensions` adds a `ValidationFailure`
+> on `"Patterns"`). So a **keyed** entry is never persistence prose, and the distinction needs no
+> word-matching. `extractTypedErrorDetails` now also returns `fieldMessage` — the first entry under any
+> key but `generalErrors` — and the three DB-derived types show it when present. Docs in `composables.md`
+> and `api.md`. Typecheck 0; no rows created (four time periods before and after, both role deletes
+> refused by the server).
+>
+> **Left as it is, worth knowing:** the in-use role delete's server sentence is authored and better than
+> ours (*"9 activities are still filed under this role … Move them to another role first."*), but it is
+> in `generalErrors`, so the client cannot tell it from DB prose and shows the generic FK sentence. That
+> is the contract as designed (the framework comment says an endpoint with something better to say
+> should send `Conflict` — or, now, key it to a field); it is a one-line backend change if anyone wants
+> the count on screen, not a frontend defect. `DbConcurrencyError` stays wired and untested — still no
+> request DTO carries a row version. `F85` is now unblocked.
+
+- **Scope:** **framework** — `src/_common/composable/general/ErrorHandlingFunctions.ts` (the whole file
+  is 45 lines and switches on one `number`), `src/_common/axiosConfig.ts:220-250` (the interceptor's own
+  status switch), `src/_common/i18n/` locale keys under `httpErrors.*`, and
+  `src/_common/docs/composables.md`. Submodule commit **then** pointer bump — never one commit.
+- **Closes:** escalation §7's frontend half. No unit finding is filed against it, because no unit could
+  see it: the distinction did not exist on the wire until 2026-09-21.
+- **Root cause:** the API now sends `errorType` on every error body it authors — the `ResultErrorType`
+  member name as a plain PascalCase string (`DbUniqueViolationError`, `DbForeignKeyError`,
+  `DbConcurrencyError`, `Conflict`; on 403 `EmailNotConfirmed`, `UserLockedOut`). Landed as
+  `AdhdTimeOrganizer` `cd0a252`, purely additive: the field is **absent**, not null, when the server has
+  nothing better than the status. Nothing on this side reads it. `handleHttpCodes(statusCode: number)`
+  takes only a number — it cannot read it without a signature change — and the interceptor's `case
+  Conflict` is `showErrorSnackbar(serverMessage ?? t('httpErrors.conflict'))`.
+- **The user-facing symptom is not the one escalation §7 describes, and this is the more embarrassing
+  version.** §7 says a unique-index 409 tells the user *"This record was changed by someone else.
+  Refresh the page and try again."* That is true only of the `handleHttpCodes` path (a call site that
+  opted out with `_silent` and then routed the status back through it). On the **default** path the
+  interceptor prefers `serverMessage`, and for a DB-derived 409 that is the API's internal prose —
+  *"Unique constraint violation during Create"* — shown verbatim, in English, in a Slovak UI. Wrong
+  sentence either way; unlocalized developer text on the path that fires most often.
+- **What to change:**
+  1. Give `handleHttpCodes` an optional second parameter (`errorType?: string`) and a per-type branch
+     under `409` and `403`. **Optional, with the current sentence as the fallback** — every other app on
+     this framework, and every older API, must keep working untouched (CLAUDE.md's rule 2 for framework
+     edits). Add an `extractServerErrorType(error)` helper beside `extractServerMessage` in
+     `axiosConfig.ts`, in the same shape (typeof-guarded, `undefined` when absent).
+  2. Four new `httpErrors.*` keys with the wordings the backend spelled out: unique → *pick another
+     value*; FK → *remove or move what still depends on this first*; concurrency → today's refresh
+     sentence; business `Conflict` → **show the server's own message**, which is authored for the user.
+     SK primary, EN alongside.
+  3. In the interceptor's 409 branch, prefer the typed wording over `serverMessage` for the three
+     DB-derived types and keep `serverMessage` for `Conflict`. That is the one behaviour change to state
+     plainly in the commit message: today's raw *"Unique constraint violation during Create"* stops
+     reaching users.
+  4. `403`: branch `EmailNotConfirmed` / `UserLockedOut` behind the same fallback. `auth/B6` was solved
+     another way and this does not reopen it — it stops the *next* consumer having to.
+  5. Update `src/_common/docs/composables.md` in the same commit (rule 3).
+- **Do not change:** the status codes anything maps to; `extractServerMessage`'s precedence — that is
+  **`FW19`**, a different cause (a 400's `errors` map never being reached) that happens to live in the
+  same two files. Keep them as two batches and land them in one framework commit; do not fold `FW19`'s
+  reordering into this one and call it done. Do not touch the app-side call sites — that is `F85`, after
+  the pointer bump.
+- **Verification:** two live 409s, both named by the backend as the clean pair:
+  `DELETE /api/activity-role/{id}` on a **system** role → `errorType: "Conflict"`, and on a role that
+  still has activities → `errorType: "DbForeignKeyError"`. Same status, same endpoint, two different
+  sentences on screen. Then a duplicate routine time period (`DbUniqueViolationError`), a duplicate
+  desktop mapping pattern (`POST …/tracker-desktop-mapping-by-pattern` — also `DbUniqueViolationError`,
+  but **with** an `errors["Patterns"]` map; the backend's 2026-09-21 follow-up named it as the second
+  concrete pair, and it checks that the typed wording does not swallow a per-field map when one is
+  present), and one request against an endpoint that sends no `errorType` at all (any `Send.NotFoundAsync` 404) to confirm the
+  fallback. `DbConcurrencyError` **cannot be produced today** — no request DTO carries a row version, so
+  no endpoint can detect a stale write; wire the branch, do not try to test it.
+- **Risk:** Medium, and entirely in the other direction from usual: this ships to every app on
+  `vue_framework`, and an app whose API does not send `errorType` must see no change at all. The
+  fallback is the whole safety property — write the branch so an absent field is indistinguishable from
+  today.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

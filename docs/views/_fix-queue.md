@@ -155,17 +155,17 @@
 | F84 | The history dashboard's pie renders the server's folded-tail row **raw** — the legend reads the literal `_other`, untranslated in both locales, and the slice is selectable (`handleChartClick` has no sentinel branch, so it emits `{id: null, name: '_other'}` and cross-highlights the summary cards). The `activityTracking` pie has translated and blocked the same sentinel since it was written; `historyDashboard` never got the branch, and `HistoryGroupKey.ts:7-8` already documents the row it does not handle. Found from the other side while closing §10 — the backend's out-of-scope flag on `HistoryPieChartBuilder.cs` was **stale** (`OtherName` is already `"_other"`), so this is app-side with no backend half. **Re-read in the API this pass: `HistoryPieChartBuilder.cs:20` is `public const string OtherName = "_other";`** — confirmed on both sides, and the backend's offer to "do the History side as a follow-up" needs no answer because there is nothing there to change | app (`historyDashboard/component/pieChart/HistoryPieChart.vue:41,75-81,113-121`) | *(unfiled — fell out of §10's closure)* | low |
 | FW22 | `TableCellEditor`'s `DECIMAL` branch sets `:step="0.1"` and no `:precision`, so Vuetify rounds every decimal inline-edit cell to a whole number — `TableCellType.DECIMAL` does not do what it says. Source-certain, **no consumer in this app yet** | **framework** (`inlineEditTable/TableCellEditor.vue:19`) | *(unfiled — the framework twin of `leisure-projects/B4`)* | trivial |
 | FW23 | A second column-header click **adds** a sort key instead of replacing it (`sortBy=activity.name:asc,durationMinutes:asc` from one unmodified click), with no multi-sort affordance anywhere — `VDataTable`'s default, inherited by every table in the app | **framework** (decision: `BasicTable`/`DataTable` default) | `leisure-backlog-picker/P1` (round 2) | low (decision first) |
-| FW24 | **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
+| FW24 | ✅ **FIXED 2026-09-23** — the code had landed 2026-09-21 (`vue_framework` `4ab7e61`, with `FW19`; bump `adaae452`); verified live 2026-09-23 against all five requests. One gap found and fixed: a duplicate desktop mapping's field-keyed `errors.patterns` sentence was swallowed by the generic unique wording (`bc96068`). Body in the log. Was: **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
 | FW25 | ✅ **FIXED 2026-09-21** (filed and landed the same day) — three hydrations per settings visit each pushed the browser time zone, and a `PUT` racing a step-up write failed Identity's concurrency check, reported as "Wrong password"; now one in-flight hydration, one zone push per session, and `VerifyUserForm` words only a 401. **Grown on the way:** a wrong step-up password **signed the user out** (401 → refresh → identical retry → 401 → `logoutClient()`), fixed with `_credentialCheck` on the request. Same commit: the 2FA sign-in dialog closes on a refusal instead of inviting a retry the single-use token cannot honour, and the reset button reads *Reset authenticator app*. Body in the log | **framework** (`authStore.ts`, `timeZoneSync.ts`, `VerifyUserForm.vue`, `axiosConfig.ts`, `LoginVerifyQrCode.vue`) | `user-settings/B3`, `user-settings/B4` | low |
-| F85 | The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (blocked on `FW24`) |
+| F85 | The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (unblocked — `FW24` closed 2026-09-23) |
 | F86 | ✅ **FIXED 2026-09-23** (filed and fixed the same day) — `useCalendarUrlState` re-applies every owned key on an outside navigation; **grown on the way:** a spurious *Failed to load the calendar* snackbar on every month deep link (a cancelled fetch toasted as a failure) swallowed the next Back/Forward, because Vuetify closes an open overlay and aborts the navigation; and the framework `Snackbar.vue` now sets `closeOnBack=false`, so no toast traps Back (framework-wide behaviour change, in `FW16`'s submodule commit). Body in the log. Was: Back/Forward on `/day-planner` moves the URL's `?month=` but not the grid — the codec **pushes** a history entry per month and the view reads the query only on mount, so every entry it has ever pushed is one the grid ignores. Predates `F44`; found verifying it | app (`useCalendarUrlState.ts`, `PlannerCalendarView.vue`) | *(unfiled — fell out of `F44`'s verification; P7's "back/forward walks months")* | low |
 
 85 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
-`F85` is blocked on `FW24`; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
-framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log) ·
+`F85` is unblocked — `FW24` landed and was verified 2026-09-23; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
+framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW24` verified and closed 2026-09-23, body in the log) ·
 20 escalations (**1 open: §7** — §7's ask has landed, so what is open there is
-the frontend half, `FW24` + `F85`, not the ask; **§19 closed 2026-09-21** when `B24` landed and its
+the frontend half — now only `F85`, since `FW24` closed 2026-09-23 — not the ask; **§19 closed 2026-09-21** when `B24` landed and its
 frontend half shipped the same evening with `F16` folded in — no ask is open server-side; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
 frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
@@ -204,7 +204,8 @@ framework batch and no escalation: its blocker splits across the boundary the wa
 *Suggested for day type* should be optional — is settled from the API source as **no**: the column is
 non-nullable and indexed, the request field is `required`, and `/suggestions` is built on it (`F53`).
 
-**Order among the sixteenth-pass batches.** `FW24` before `F85`, necessarily — `F85` reads a field the
+**Order among the sixteenth-pass batches.** *(Settled 2026-09-23: `FW24` and `FW19` did land in one
+framework commit, `4ab7e61`, and `FW24` is closed — `F85` is free to go.)* `FW24` before `F85`, necessarily — `F85` reads a field the
 interceptor does not yet expose, and a pointer bump sits between them. `FW24` is also worth landing in
 the **same framework commit as `FW19`**: they are two different causes (message precedence vs. no
 per-type wording) and stay two batches, but they are the same two files and the same user-visible
@@ -1388,64 +1389,7 @@ Vuetify's own markup.
 - **Risk:** Low, one component. The only trap is the over-broad guard above: `Uncategorized` shares the
   null `groupId` and *is* a real, selectable bucket.
 
-## FW24. `B18` landed and nothing on this side reads it — four different 409s still share one sentence, and today that sentence is the server's English DB prose
-
-- **Scope:** **framework** — `src/_common/composable/general/ErrorHandlingFunctions.ts` (the whole file
-  is 45 lines and switches on one `number`), `src/_common/axiosConfig.ts:220-250` (the interceptor's own
-  status switch), `src/_common/i18n/` locale keys under `httpErrors.*`, and
-  `src/_common/docs/composables.md`. Submodule commit **then** pointer bump — never one commit.
-- **Closes:** escalation §7's frontend half. No unit finding is filed against it, because no unit could
-  see it: the distinction did not exist on the wire until 2026-09-21.
-- **Root cause:** the API now sends `errorType` on every error body it authors — the `ResultErrorType`
-  member name as a plain PascalCase string (`DbUniqueViolationError`, `DbForeignKeyError`,
-  `DbConcurrencyError`, `Conflict`; on 403 `EmailNotConfirmed`, `UserLockedOut`). Landed as
-  `AdhdTimeOrganizer` `cd0a252`, purely additive: the field is **absent**, not null, when the server has
-  nothing better than the status. Nothing on this side reads it. `handleHttpCodes(statusCode: number)`
-  takes only a number — it cannot read it without a signature change — and the interceptor's `case
-  Conflict` is `showErrorSnackbar(serverMessage ?? t('httpErrors.conflict'))`.
-- **The user-facing symptom is not the one escalation §7 describes, and this is the more embarrassing
-  version.** §7 says a unique-index 409 tells the user *"This record was changed by someone else.
-  Refresh the page and try again."* That is true only of the `handleHttpCodes` path (a call site that
-  opted out with `_silent` and then routed the status back through it). On the **default** path the
-  interceptor prefers `serverMessage`, and for a DB-derived 409 that is the API's internal prose —
-  *"Unique constraint violation during Create"* — shown verbatim, in English, in a Slovak UI. Wrong
-  sentence either way; unlocalized developer text on the path that fires most often.
-- **What to change:**
-  1. Give `handleHttpCodes` an optional second parameter (`errorType?: string`) and a per-type branch
-     under `409` and `403`. **Optional, with the current sentence as the fallback** — every other app on
-     this framework, and every older API, must keep working untouched (CLAUDE.md's rule 2 for framework
-     edits). Add an `extractServerErrorType(error)` helper beside `extractServerMessage` in
-     `axiosConfig.ts`, in the same shape (typeof-guarded, `undefined` when absent).
-  2. Four new `httpErrors.*` keys with the wordings the backend spelled out: unique → *pick another
-     value*; FK → *remove or move what still depends on this first*; concurrency → today's refresh
-     sentence; business `Conflict` → **show the server's own message**, which is authored for the user.
-     SK primary, EN alongside.
-  3. In the interceptor's 409 branch, prefer the typed wording over `serverMessage` for the three
-     DB-derived types and keep `serverMessage` for `Conflict`. That is the one behaviour change to state
-     plainly in the commit message: today's raw *"Unique constraint violation during Create"* stops
-     reaching users.
-  4. `403`: branch `EmailNotConfirmed` / `UserLockedOut` behind the same fallback. `auth/B6` was solved
-     another way and this does not reopen it — it stops the *next* consumer having to.
-  5. Update `src/_common/docs/composables.md` in the same commit (rule 3).
-- **Do not change:** the status codes anything maps to; `extractServerMessage`'s precedence — that is
-  **`FW19`**, a different cause (a 400's `errors` map never being reached) that happens to live in the
-  same two files. Keep them as two batches and land them in one framework commit; do not fold `FW19`'s
-  reordering into this one and call it done. Do not touch the app-side call sites — that is `F85`, after
-  the pointer bump.
-- **Verification:** two live 409s, both named by the backend as the clean pair:
-  `DELETE /api/activity-role/{id}` on a **system** role → `errorType: "Conflict"`, and on a role that
-  still has activities → `errorType: "DbForeignKeyError"`. Same status, same endpoint, two different
-  sentences on screen. Then a duplicate routine time period (`DbUniqueViolationError`), a duplicate
-  desktop mapping pattern (`POST …/tracker-desktop-mapping-by-pattern` — also `DbUniqueViolationError`,
-  but **with** an `errors["Patterns"]` map; the backend's 2026-09-21 follow-up named it as the second
-  concrete pair, and it checks that the typed wording does not swallow a per-field map when one is
-  present), and one request against an endpoint that sends no `errorType` at all (any `Send.NotFoundAsync` 404) to confirm the
-  fallback. `DbConcurrencyError` **cannot be produced today** — no request DTO carries a row version, so
-  no endpoint can detect a stale write; wire the branch, do not try to test it.
-- **Risk:** Medium, and entirely in the other direction from usual: this ships to every app on
-  `vue_framework`, and an app whose API does not send `errorType` must see no change at all. The
-  fallback is the whole safety property — write the branch so an absent field is indistinguishable from
-  today.
+<!-- FW24 (B18's frontend half — word each 409/403 by errorType) landed 2026-09-21 as vue_framework 4ab7e61 (bump adaae452, unrecorded at the time), verified live 2026-09-23 with one gap fixed (a field-keyed errors entry now wins over the typed DB-409 wording, vue_framework bc96068) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## F85. The two `_silent` 409 workarounds can read the type now — but `B18`'s own note about deleting them is wrong
 
@@ -1453,7 +1397,11 @@ Vuetify's own markup.
   `src/core/todoList/view/RoutineSettingsView.vue:175-191`
 - **Closes:** escalation §7's app half. The two findings behind those call sites (`todo-routine/B9`,
   `B11`) are already `fixed`; this is their follow-on, not a reopening.
-- **Blocked on `FW24`** and on the pointer bump after it. There is nothing to do here first.
+- ~~**Blocked on `FW24`**~~ — **unblocked 2026-09-23**: `FW24` is in the pointer and verified live.
+  `extractServerErrorType(error)` gives the condition; `ServerErrorType.*` gives the constants to compare
+  against. Note for `TimePeriodForm`: a duplicate time period's body carries **no** field-keyed entry
+  (`errors.generalErrors: ["Unique constraint violation during Create"]`), so which field clashed is
+  still the form's to work out, as it is today.
 - **Root cause:** both sites opted out of the interceptor (`_silent: true`) and worded the 409
   themselves, because a status code was the only thing either could see. With `errorType` on the wire
   they can tell *which* 409 they got, which is the one thing both comments say they cannot.
@@ -1504,7 +1452,7 @@ Vuetify's own markup.
 > | --- | --- | --- | --- |
 > | ~~§11~~ | `_done/B10-…` — landed, body in the log | ~~§10~~ | `_done/B16-…` — landed, body in the log |
 > | ~~§6 + §13~~ | `_done/B11-…` — landed, body in the log | ~~§15~~ | `_done/B17-…` — landed, body in the log |
-> | ~~§12~~ | `_done/B12-…` — landed, body in the log | §7 | `_done/B18-…` — **ask landed 2026-09-21; frontend half open as `FW24` + `F85`** |
+> | ~~§12~~ | `_done/B12-…` — landed, body in the log | §7 | `_done/B18-…` — **ask landed 2026-09-21; frontend half: `FW24` closed 2026-09-23, `F85` open** |
 > | ~~§14~~ | `_done/B13-…` — landed, body in the log | ~~§8~~ | `_done/B19-…` — decided and landed 2026-09-21, frontend half the same day, body in the log |
 > | ~~§9~~ | `_done/B14-…` — landed 2026-09-21 (API `1e0dc3b`), frontend half the same day, body in the log | ~~§5~~ | `_done/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
@@ -1546,9 +1494,9 @@ Vuetify's own markup.
 
 7. ✅ **THE ASK LANDED 2026-09-21** (`AdhdTimeOrganizer` `cd0a252`; the prompt file moved to
    `backend/_done/` and carries the full response). **This paragraph stays only because the
-   frontend half has not started** — it is `FW24` (framework: read `errorType`, word each 409 and 403)
-   and `F85` (app: narrow the two `_silent` call sites), in that order. Delete this entry and move the
-   body to the log when both land.
+   frontend half is not finished** — it is `FW24` (framework: read `errorType`, word each 409 and 403;
+   **closed 2026-09-23**, body in the log) and `F85` (app: narrow the two `_silent` call sites, **still
+   open**). Delete this entry and move the body to the log when `F85` lands.
 
    What shipped, in one line: **every error body the API authors now carries `errorType`**, the
    `ResultErrorType` member name as a plain PascalCase string, **absent** (not null) when the server
