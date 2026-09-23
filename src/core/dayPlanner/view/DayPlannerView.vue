@@ -146,7 +146,7 @@
 	const { showErrorSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
 	const settingsStore = useDayPlannerSettingsStore()
-	const { createWithResponse, update, patch, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
+	const { createWithResponse, update, fetchById, deleteEntity, patchStatus, batchDelete, fetchFiltered } =
 		useTaskPlannerCrud()
 
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
@@ -422,29 +422,31 @@
 		await runBulk(
 			Array.from(store.selectedTaskIds),
 			async id => {
-				const task = store.tasks.find(t => t.id === id) as PlannerTask
+				const task = store.tasks.find(t => t.id === id)
 				if (!task) return
-				await patch(
+				// The status sub-resource, like every other status change in this view. This used to call
+				// the generic `patch()`, which is `PATCH /planner-task/{id}` — the span endpoint, which maps
+				// start/end and nothing else — so a skip persisted neither the status nor the reason and
+				// only looked cancelled until the next read. The server keeps the reason only on a Cancelled
+				// task and clears it on any other status (backend B26).
+				await patchStatus(
 					id,
-					{
-						startTime: task.startTime,
-						endTime: task.endTime,
-						status: PlannerTaskStatus.Cancelled,
-						skipReason: reason,
-					},
+					new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Cancelled, null, null, reason),
 					{ _silent: true },
 				)
-				const idx = store.tasks.findIndex(t => t.id === id)
-				if (idx >= 0) {
-					store.tasks[idx]!.isDone = false
-					store.tasks[idx]!.status = PlannerTaskStatus.Cancelled
-					;(store.tasks[idx] as PlannerTask).skipReason = reason
-				}
+				task.isDone = false
+				task.status = PlannerTaskStatus.Cancelled
+				task.skipReason = reason
+				task.actualStartTime = null
+				task.actualEndTime = null
 			},
 			{
 				partialKey: 'planner.feedback.taskSkipPartial',
 				successKey: 'planner.feedback.taskSkipped',
-				afterSettled: () => store.clearSelection(),
+				afterSettled: () => {
+					calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
+					store.clearSelection()
+				},
 			},
 		)
 	}
