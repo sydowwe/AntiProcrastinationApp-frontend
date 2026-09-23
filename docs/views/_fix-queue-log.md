@@ -6607,6 +6607,54 @@ Run after `F27`, as the row required, so "empty" and "failed" are distinguishabl
     shows two, and neither shows a first-run block. `date=2026-09-22` shows its totals.
   - Type-check exit 0.
 
+### ⚠️ Found while triaging unit 4: `TimePicker` snaps `:58` / `:59` to minute **60** at any interval above 1 — framework, source-certain, unobserved
+
+> ✅ **CONFIRMED AND FIXED 2026-09-24** (`vue_framework` `ecf06b7`, with a pointer bump in the app). No
+> batch number was used; `FW10`, which was held for this, is retired unused.
+>
+> **Confirmed live, and worse than predicted:**
+> - A plain `TimePicker` (the to-do item's due time) showed `09:58` → **`09:60`** and `23:59` →
+>   **`23:60`**.
+> - `DateTimePicker` (the *when* field on `/activity-history/manual`) never showed `:60`, because it
+>   combines the `Time` into a `Date`, and `setHours(23, 60)` carries. That carry moved the **date**: a
+>   typed `23:58` on 24 Sep became **25 Sep** at 00:00, with nothing on screen to say so.
+>
+> **The fix:** `TimePicker` rounds within the whole day (`snapToInterval`, used by both write paths), so
+> the carry goes into the hour. It is capped at the interval's last slot (23:55 at `'5'`), the cap the
+> arrow buttons already used.
+>
+> **Verified live:**
+> - Due time: `09:58 → 10:00`, `23:59 → 23:55`, `09:57 → 09:55`, `14:32 → 14:30`.
+> - *When*: `08:58 → 09:00`, `23:58 → 23:55`, and the date stays 24 Sep.
+> - Console clean. `type-check` exit 0, lint clean.
+>
+> **Also in the framework commit:** `docs/components.md` states the carry, the cap, and that a duration
+> field should pass `'1'`. That answers one of the two framework questions below: the `'5'` default
+> stays, because it suits a time of day. The other question, whether a snap should ever be silent, is
+> **not** decided.
+
+Not filed by any unit; found while reading `B2`'s mechanism. `roundToNearestInterval(58, 5)` is
+`Math.round(11.6) * 5 = 60` (`DateTimeHelper.ts:166-168` — no clamp), and both of `TimePicker.vue`'s
+write paths feed the result straight into a `Time`: the mask watcher builds `"HH:60"` (`:122-123`) and
+the `timeString` setter does `new Time(h, 60)` (`:99-100`). `Time` has no validation (`Time.ts:3-7`),
+so the model becomes `{ hours: h, minutes: 60 }`, `getString()` renders **`00:60`**, and the
+`time` watcher writes it back into the field (`:132-141`), where the mask watcher's `minutes < 60`
+guard (`:121`) then resets `inputValue` to the same `"00:60"` — a stable, visible, invalid state. On the
+wire it is `{ hours: 0, minutes: 60 }`, which the API may or may not normalise. Every interval above 1
+has the case (`'5'`: 58–59; `'10'`: 55–59; `'30'`: 45–59 all round to 60), so `F36`'s `'1'` makes it unreachable on
+unit 4's eight fields and on nothing else — `LogTimeBody`, `ToDoListItemDialog`, `PlanLaterDialog`,
+`DateTimePicker`, `QuietHoursCard`, `TaskPlannerDayTemplateDetailsForm`, `LogTimeForm` and both halves
+of `TimeRangePicker` keep it.
+
+**What would settle it:** ten seconds on `/activity-history/timer` **before** `F36` lands (or on
+`/todo-list` item dialog's due time after it): type `0058` into a `TimePicker` field and read it. If it
+reads `00:60`, this is a **framework batch** (`FW10` next run): clamp in `roundToNearestInterval`
+(`Math.min(60 - interval, …)` is wrong for `59` → it should carry into the hour, so probably
+`Time.fromMinutes(h * 60 + rounded)` at both call sites instead). **While that batch is open, the two
+framework questions `F36` declined to answer belong in it:** whether `'5'` is the right *default* for a
+component that serves both times-of-day and durations, and whether a snap should ever be silent (helper
+text, or a `snapped` emit). Both are decisions for `vue_framework`, not this app.
+
 ## Contradictions & re-grades
 
 Everything below was checked against the **current working-tree source** this pass, by reading the file named.
