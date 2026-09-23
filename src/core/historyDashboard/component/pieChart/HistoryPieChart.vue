@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import VChart from 'vue-echarts'
 	import { use } from 'echarts/core'
 	import { CanvasRenderer } from 'echarts/renderers'
@@ -18,6 +19,7 @@
 	import type { HistoryPieChartItem } from '@/core/historyDashboard/dto/response/HistoryPieChartItem.ts'
 	import {
 		historyGroupKey,
+		isHistoryOtherRollup,
 		isSameHistoryGroup,
 		type HistoryGroupKey,
 	} from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
@@ -36,6 +38,14 @@
 
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
+	const { t } = useI18n()
+
+	// The echarts datum keeps the raw wire name as its identity (the legend is keyed by it); only what
+	// the user reads is translated.
+	function displayName(item: HistoryPieChartItem): string {
+		return isHistoryOtherRollup(item) ? t('history.summary.otherGroup') : item.name
+	}
+
 	const chartOption = computed<EChartsOption>(() => {
 		const data = props.items.map(item => ({
 			name: item.name,
@@ -50,7 +60,8 @@
 			tooltip: {
 				trigger: 'item',
 				formatter(params: any) {
-					const name = params.name
+					const item = props.items[params.dataIndex]
+					const name = item ? displayName(item) : params.name
 					const seconds = params.value
 					const percent = params.percent.toFixed(1)
 					return `<strong>${name}</strong><br/>${fromSeconds(seconds)} (${percent}%)`
@@ -72,13 +83,14 @@
 				},
 				formatter(name: string) {
 					const item = props.items.find(i => i.name === name)
-					const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name
+					const label = item ? displayName(item) : name
+					const truncated = label.length > 25 ? label.substring(0, 25) + '...' : label
 					if (item) {
 						const total = props.items.reduce((sum, i) => sum + i.totalSeconds, 0)
 						const pct = total > 0 ? ((item.totalSeconds / total) * 100).toFixed(1) : '0.0'
-						return `${displayName} (${pct}%)`
+						return `${truncated} (${pct}%)`
 					}
-					return displayName
+					return truncated
 				},
 			},
 			series: [
@@ -115,7 +127,8 @@
 		// Resolve through the index, not `params.data.name` — the echarts datum only carries the display
 		// name, and the id is what identifies the group.
 		const item = props.items[params.dataIndex]
-		if (!item) return
+		// The roll-up stands for many groups at once, so it is not a selectable group (F84).
+		if (!item || isHistoryOtherRollup(item)) return
 		const clicked = historyGroupKey(item)
 		emit('segmentClick', isSameHistoryGroup(props.selectedGroup, clicked) ? null : clicked)
 	}

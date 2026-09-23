@@ -16,6 +16,7 @@
 			<div class="mt-8 w-100 text-center">
 				<VBtn
 					color="primary"
+					:loading="saving"
 					@click="handleSave"
 				>
 					{{ i18n.t('history.recordActivityToHistory') }}
@@ -32,8 +33,17 @@
 
 	const i18n = useI18n()
 	const formRef = ref<InstanceType<typeof AddActivityManuallyForm>>()
+	const saving = ref(false)
 
+	// Re-entry guard: a second click inside the round trip would POST the same (activity, start)
+	// and come back 409 (F68).
 	async function handleSave() {
-		await formRef.value?.saveActivity()
+		if (saving.value) return
+		saving.value = true
+		try {
+			await formRef.value?.saveActivity()
+		} finally {
+			saving.value = false
+		}
 	}
 </script>

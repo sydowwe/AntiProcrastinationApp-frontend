@@ -3,6 +3,7 @@ import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/respon
 import type { HistoryPieChartItem } from '@/core/historyDashboard/dto/response/HistoryPieChartItem.ts'
 import type { HistoryTimeOfDayResponse } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts'
 import type { HistoryTimeOfDayHour } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayHour.ts'
+import { isHistoryOtherRollup } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 
 /**
  * The dashboard's three panels render the period faithfully and conclude nothing about it. This derives
@@ -69,15 +70,6 @@ export const CONCENTRATION_SHARE = 0.5
 export const MAX_CONCENTRATION_HOURS = 6
 
 const HOURS_IN_DAY = 24
-
-/**
- * The pie chart's roll-up bucket: present only when the response was capped at `maxItems`, and standing
- * for an unknown number of real groups at once. Its own entry count is therefore not one group's, and
- * its presence means the group list is not the whole period — so both per-group insights stand down
- * rather than claim a superlative over a truncated set. Named rather than keyed on `groupId === null`
- * because `Uncategorized` shares that null and *is* one real bucket (see `HistoryGroupKey.ts`).
- */
-const OTHER_GROUP_NAME = '_other'
 
 export type HistoryInsightKind = 'sessionLength' | 'timeOfDay' | 'mostFragmented' | 'longestStretches'
 
@@ -156,7 +148,11 @@ function pickExtreme(candidates: HistoryPieChartItem[], prefer: 'lowest' | 'high
  * number the roll-up bucket and every sub-threshold sliver helped set.
  */
 function deriveGroupPace(data: HistoryPieChartResponse): HistoryInsight[] {
-	if (data.items.some(item => item.groupId === null && item.name === OTHER_GROUP_NAME)) return []
+	// The pie chart's roll-up bucket is present only when the response was capped at `maxItems`, and
+	// stands for an unknown number of real groups at once. Its own entry count is therefore not one
+	// group's, and its presence means the group list is not the whole period — so both per-group insights
+	// stand down rather than claim a superlative over a truncated set.
+	if (data.items.some(isHistoryOtherRollup)) return []
 
 	const candidates = data.items.filter(
 		item => item.entries >= MIN_GROUP_ENTRIES && item.totalSeconds >= MIN_GROUP_SECONDS,

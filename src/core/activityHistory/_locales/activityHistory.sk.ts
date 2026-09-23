@@ -27,6 +27,8 @@ const activityHistory = {
 			title: `História aktivít`,
 			dayFrom: `Deň od`,
 			openCalendar: `Otvoriť kalendár`,
+			// Zobrazený názov súhrnného riadku `_other` v koláčovom grafe (pozri HistoryGroupKey.ts).
+			otherGroup: `Ostatné`,
 		},
 		detail: {
 			title: `Detail histórie`,

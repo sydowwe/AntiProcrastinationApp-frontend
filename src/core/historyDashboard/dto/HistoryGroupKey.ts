@@ -23,6 +23,17 @@ export function historyGroupKey(item: { groupId: number | null; name: string }):
 	return { id: item.groupId, name: item.name }
 }
 
+/** The wire name of the pie chart's roll-up row (`HistoryPieChartBuilder.OtherName` in the API). */
+export const HISTORY_OTHER_GROUP_NAME = '_other'
+
+/**
+ * The pie chart's `_other` roll-up — keyed on the id-plus-name pair: the name alone would catch a real
+ * activity called `_other`, and the null id alone would catch `Uncategorized`.
+ */
+export function isHistoryOtherRollup(item: { groupId: number | null; name: string }): boolean {
+	return item.groupId === null && item.name === HISTORY_OTHER_GROUP_NAME
+}
+
 export function isSameHistoryGroup(a: HistoryGroupKey | null, b: HistoryGroupKey | null): boolean {
 	if (!a || !b) return false
 	if (a.id !== null && b.id !== null) return a.id === b.id

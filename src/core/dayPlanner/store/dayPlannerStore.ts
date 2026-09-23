@@ -161,9 +161,14 @@ export const useDayPlannerStore = defineStore(
 			const endHour = core.viewEndTime.value.hours
 			const endMinute = core.viewEndTime.value.minutes
 
+			// viewEndTime comes from bedTime raw, so an overnight day (08:00 → 00:00) arrives as an end hour
+			// below the start hour, not in the ≥ 24 dialect the slot math speaks. Both mean "next day" (F75).
 			if (endHour >= 24) {
 				date.setDate(date.getDate() + Math.floor(endHour / 24))
 				date.setHours(endHour % 24, endMinute, 0, 0)
+			} else if (core.isOverMidnight.value) {
+				date.setDate(date.getDate() + 1)
+				date.setHours(endHour, endMinute, 0, 0)
 			} else {
 				date.setHours(endHour, endMinute, 0, 0)
 			}

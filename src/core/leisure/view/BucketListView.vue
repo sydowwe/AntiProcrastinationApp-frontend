@@ -241,7 +241,7 @@
 					}
 				: null,
 		maxComfortZoneStep: () => null,
-		requiresTravel: boolChip('leisure.fields.requiresTravel', 'plane'),
-		isAnchored: boolChip('leisure.fields.experienced', 'circle-check'),
+		requiresTravel: boolChip('leisure.fields.requiresTravel', 'plane', 'plane-slash'),
+		isAnchored: boolChip('leisure.fields.experienced', 'circle-check', 'circle-xmark'),
 	}
 </script>

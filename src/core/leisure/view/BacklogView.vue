@@ -196,6 +196,6 @@
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
 		isRepeatable: boolChip('leisure.fields.isRepeatable', 'rotate', 'star'),
-		isAnchored: boolChip('leisure.fields.experienced', 'circle-check'),
+		isAnchored: boolChip('leisure.fields.experienced', 'circle-check', 'circle-xmark'),
 	}
 </script>

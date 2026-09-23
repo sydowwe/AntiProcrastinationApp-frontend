@@ -71,14 +71,27 @@
 			showErrorSnackbar(i18n.t('history.lengthNotSet'))
 			return false
 		}
-		await saveActivityToHistory(
+		const newId = await saveActivityToHistory(
 			preselectedActivityId.value,
 			selection.value?.activityName ?? '',
 			dateTime.value,
 			timeLength.value,
 		)
+		if (!newId) return false
+		resetAfterSave()
 		emit('saved')
 		return true
+	}
+
+	// The server's unique (activity, start) index refuses a second save at the same "when", so the
+	// start must move on. It moves to the end of the span just saved rather than to now, so logging
+	// several back-to-back spans needs only a new length each time. The activity is kept for the same
+	// reason (F68).
+	function resetAfterSave() {
+		if (dateTime.value) {
+			dateTime.value = new Date(dateTime.value.getTime() + timeLength.value.getInSeconds * 1000)
+		}
+		timeLength.value = new Time()
 	}
 
 	defineExpose({

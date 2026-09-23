@@ -26,6 +26,8 @@ const activityHistory = {
 			title: `Activity History`,
 			dayFrom: `Day from`,
 			openCalendar: `Open calendar`,
+			// Display name of the pie chart's `_other` roll-up row (see HistoryGroupKey.ts).
+			otherGroup: `Other`,
 		},
 		detail: {
 			title: `History Detail`,

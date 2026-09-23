@@ -194,6 +194,6 @@
 		difficultyLevels: countChip('leisure.fields.difficultyLevel', 'gauge'),
 		readinessStatuses: countChip('leisure.fields.readinessStatus', 'circle-check'),
 		projectArea: textChip('leisure.fields.projectArea', 'map'),
-		isMessy: boolChip('leisure.fields.isMessy', 'broom'),
+		isMessy: boolChip('leisure.fields.isMessy', 'broom', 'soap'),
 	}
 </script>

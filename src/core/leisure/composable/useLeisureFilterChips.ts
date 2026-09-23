@@ -16,7 +16,9 @@ export function useLeisureFilterChips() {
 			value?.length ? { label: `${t(labelKey)} (${value.length})`, icon } : null
 	}
 
-	function boolChip(labelKey: string, trueIcon: string, falseIcon: string = trueIcon) {
+	// falseIcon is required on purpose: a default of trueIcon left four chips showing the "yes"
+	// icon next to a ✗ label (F66).
+	function boolChip(labelKey: string, trueIcon: string, falseIcon: string) {
 		return (value: boolean | null | undefined) => {
 			if (value == null) return null
 			return { label: `${t(labelKey)}: ${value ? '✓' : '✗'}`, icon: value ? trueIcon : falseIcon }
