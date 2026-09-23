@@ -8365,3 +8365,126 @@ committed for a full pass because "the working tree" was the scope (§108).
   locales.
 - **Risk:** Low. Every `MyDateInput` in every app on the framework starts honouring attrs it silently
   dropped — a consumer that passed a `label` and then relied on "Date" rendering is not a real case.
+
+## FW4. `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so
+
+> ✅ **FIXED 2026-09-23** (`vue_framework` `b4eb068` with `FW17`/`FW22`, bump `3067d954`). Docs only, as
+> the body requires: `components.md` → *Data tables* gains a *Layout* subsection. It covers the
+> fill-parent contract (`height="0"` + `flex-fill`), the symptom (rows in the a11y tree but not on
+> screen), the shape to copy (`class="flex-1-1" style="min-height: 0"`, from `ActivityTable.vue`), and
+> the warning not to "fix" it by removing `height="0"`. Default unchanged; the optional dev-mode warn
+> was not filed. The same commit drops the section's stale note that `TableCellEditor` uses
+> `type="number"`: it has rendered a `VNumberInput` for a while.
+> **Verified:** read-through only, which is all the body asks for.
+
+- **Scope:** **[framework]**, **docs only** — `src/_common/docs/components.md`, the *Data tables* section;
+  optionally a one-line comment above `DataTable.vue:7`. Submodule commit, then pointer bump.
+- **Closes:** nothing filed. It exists so the *next* `F12` does not happen: `tracking-settings/X1` cost a
+  blocker grade, three screenshots, an `elementFromPoint` investigation and a wrong framework hypothesis,
+  all for a missing `flex-fill`.
+- **Root cause:** `DataTable.vue:7` renders `VDataTableServer` with `height="0"` — the fill-parent trick
+  described under `F12` — and `BasicTable.vue:2` wraps it in `h-100`. That is a **contract on the
+  consumer**: the table must sit in a flex column whose height is definite all the way up, or its body is
+  0 px tall and its rows are laid out but invisible and un-clickable. `components.md:204-258` documents
+  props, slots, emits and formatters and says nothing about layout. Seventeen consumers got it right by
+  copying a sibling; the two that did not are the only ones that broke.
+- **What to change:** One paragraph in `components.md` under *Data tables*: the table fills its parent and
+  scrolls internally (that is why headers are sticky), the parent chain must therefore be definite-height
+  flex columns, `flex-fill` on the wrapper plus `class="flex-1-1" style="min-height: 0"` on the table is
+  the shape to copy (`ActivityTable.vue:42-43`), and the symptom of getting it wrong is "the row is in the
+  a11y tree but not on screen". **Do not change the default** — a self-sizing body would drop sticky
+  headers app-wide, and per batching rule 4 that is a decision, not a docs fix. If the maintainer wants a
+  guard, a dev-mode `console.warn` when the wrapper measures 0 px after mount is the shape; file it as a
+  separate ask.
+- **Verification:** Read-through; the sentence names the symptom a future unit agent will see.
+- **Risk:** None — docs only. Two repos, two commits, in order.
+
+## FW17. `ActionBar` is centred on the viewport, not the content box — *Delete* is un-clickable under the nav drawer
+
+> ✅ **FIXED 2026-09-23** (`vue_framework` `b4eb068` with `FW4`/`FW22`, bump `3067d954`). Implemented as
+> the body specifies: `left: calc(50% + (var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2)`.
+> `translateX(-50%)`, both transition rules, `z-index` and the mobile block are unchanged, and a comment in
+> the CSS says why. `components.md`'s `ActionBar` entry documents the content-box centring, the
+> right-drawer direction and the `0px` fallback. The commit message says the same.
+> **Verified:** the two `test.fixme('…', async () => {})` stubs in `e2e/tests/dayPlanner.spec.ts` had
+> **empty bodies**, so un-`fixme`ing meant writing them. *"delete action shows a confirmation dialog"*
+> clicks Delete in the bar and expects the dialog. *"cancelling the delete dialog keeps the task"* cancels
+> inside the dialog and asserts both base-day task blocks remain. Neither confirms: the seed account's
+> `askBeforeDelete` is `true` by the API's default (`BaseUser.cs:18`), so no fixture row is touched. The
+> 22-line defect comment above the describe is replaced by a short history plus the "visibility is not
+> occlusion" caveat, which is worth keeping. At the suite's 1280×720 with the drawer expanded: 19 passed,
+> 3 skipped (the unrelated day-details `fixme`s), both new specs green. The Playwright click is itself
+> the occlusion check: it fails on an intercepting element, which is how the defect was first caught.
+> **Not verified:** the rail-collapsed state by eye, and the `elementFromPoint` probe the body suggests.
+> `vue-tsc --build --force` exit 0, `npm run lint` clean, e2e `tsc` clean.
+
+- **Scope:** **[framework]** `src/_common/component/ActionBar.vue:35-41,52-59` — submodule commit, then
+  pointer bump; CSS only
+- **Closes:** nothing filed — and that is the point. The defect was **known before the sweep**
+  (`e2e/tests/dayPlanner.spec.ts:203-224`, a 22-line comment on two `test.fixme`d specs that click
+  *Delete*), was handed to unit 7 as brief item 2 (*"OPEN, NOT FIXED … needs the owner's call"*), was
+  **re-confirmed live** by the unit (`planner-day/inventory.md:144`, *"re-confirmed visually at this
+  viewport width — not re-filed as a new finding"*), and appears in no queue. A finding that three
+  documents agree on and none owns is the thing a triage exists to catch. Evidence is observed, twice;
+  it is batched.
+- **Root cause:** Confirmed by direct read. `.action-bar` is `position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%); z-index: 50` (`ActionBar.vue:36-41`). `left: 50%` on a fixed element is
+  50 % of the **viewport**; Vuetify insets `.v-main` by the drawer's width through
+  `padding-left: var(--v-layout-left)` (`VMain.css:5`), so the bar sits ~144 px left of the content's
+  centre with the drawer expanded, and its leftmost action — the planner's *Delete* — ends under the
+  drawer, whose inline `z-index` is `1000 + …` from the layout composable (`composables/layout.js:7,200-209`)
+  and outranks `50`. Pointer events go to the drawer.
+  Five consumers, all in `dayPlanner` (`SelectionActionBar`, `BulkSelectActionBar`,
+  `ApplyTemplateActionBar`, `UseTemplateActionBar`, `DayPlanner.vue`); any other app on the framework
+  with a permanent drawer has the same offset. Playwright's `toBeVisible()` passes on the occluded button
+  (layout, not occlusion), which is why the presence specs pass and only the two click specs fail — the
+  spec comment says so, and it is worth keeping.
+- **What to change:** Centre on the content box without JavaScript: Vuetify writes
+  `--v-layout-left` / `--v-layout-right` onto `.v-layout` (`composables/layout.js:144-145`), and the bar
+  is a descendant, so `left: calc(50% + (var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2)`
+  keeps `translateX(-50%)` and the two transition rules (`:52-59`) untouched and follows the rail
+  toggle for free. The fallbacks keep the current behaviour in an app with no `.v-layout` ancestor
+  (rule: default to today when nothing is registered). Alternatively raise `z-index` above the drawer
+  — **rejected**: it would draw the bar over the drawer instead of beside the content, and the drawer's
+  own overlay is deliberately higher than page chrome.
+- **Do not change:** the mobile `@media (max-width: 600px)` block (the drawer is temporary there and
+  `--v-layout-left` is `0px`); not `useActionBarFocusReturn` / `migration-revision.md` §11 — that is
+  the bar's *focus* ask, a separate framework item.
+- **Verification:** Un-`fixme` the two click specs in `e2e/tests/dayPlanner.spec.ts` and run them at
+  the suite's 1280×720; then by eye on `/day-planner/<today>` with the sidebar expanded **and** rail:
+  the bar is centred in the white area both times and every action is clickable. `_shell`'s rail
+  toggle is the control to flip. `playwright-cli` can prove occlusion the way the spec cannot:
+  `document.elementFromPoint(x, y)` at the *Delete* button's centre must be the button, not
+  `.v-navigation-drawer`.
+- **Risk:** Low — one `left` declaration — but it ships to every app on the framework that mounts an
+  `ActionBar`, and an app whose `.v-layout` has a *right* drawer moves the bar the other way, which is
+  correct and worth saying in the commit message.
+
+## FW22. `TableCellEditor`'s `DECIMAL` cell rounds to whole numbers
+
+> ✅ **FIXED 2026-09-23** (`vue_framework` `b4eb068` with `FW4`/`FW17`, bump `3067d954`). Exactly the
+> body's change: `:precision="cellType === TableCellType.DECIMAL ? null : 0"` beside the `step`
+> expression. `components.md`'s `TableCellEditor` entry says what each type does. The commit message
+> flags the one real risk: an app already using `DECIMAL` was getting integers until now.
+> **Verified:** source and typecheck only. As the body says, `TableCellType.DECIMAL` has no consumer
+> in this app, and the framework has no fixture harness to host a throwaway decimal column. It rests on
+> `F76`, where the identical `:precision="null"` on a `VNumberInput` was verified live (8.5 and 8.25
+> round-trip).
+
+- **Scope:** **framework** `src/_common/component/dataTable/inlineEditTable/TableCellEditor.vue:19`
+  (submodule commit + pointer bump)
+- **Closes:** *(unfiled)* — found this pass while sizing `F76`. The framework twin of
+  `leisure-projects/B4`, split by rule 1.
+- **Root cause:** the numeric branch is `:step="cellType === TableCellType.DECIMAL ? 0.1 : 1"` with no
+  `:precision`, so Vuetify's default `precision: 0` coerces every value to an integer. A cell declared
+  `TableCellType.DECIMAL` therefore cannot hold a decimal — the type is decorative.
+- **What to change:** `:precision="cellType === TableCellType.DECIMAL ? null : 0"`, matching the shape
+  of the `step` expression beside it. Update `src/_common/docs/components.md` in the same commit (rule 3
+  of the submodule contract).
+- **Honest scope:** `TableCellType.DECIMAL` has **no consumer in this app** — the only two matches for it
+  in `src/` are the enum declaration and this line. So this is source-certain and unobserved, it fixes
+  nothing visible here, and its verification has to be a throwaway decimal column in the framework's own
+  fixtures rather than a screen in this app. It ships because another app on the framework may already
+  be using it, and because the `F76` fix would otherwise be app-side folklore.
+- **Risk:** Low, and it is the reason to ship it deliberately rather than folding it into `F76`: any app
+  currently using `DECIMAL` is getting integers today and may be relying on that rounding.

@@ -124,7 +124,7 @@
 | FW1 | `MyDialog` is `persistent` by default, so Escape closes nothing | **framework** | `_shell/A1` | med (decision first) |
 | FW2 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, in one commit with `FW5`/`FW6`/`FW7`/`FW15` — all six controls gain a localized `title`/`aria-label`: `AppTopBar`'s sidebar toggle (`general.toggleNavigation`), `FilterPanel`'s close (`general.close`), `MonthYearPicker`'s and `MyDateInput`'s chevrons (`dateTime.{previous,next}{Month,Day}`). Verified by typecheck/lint/build; `planner-day.draft.spec.ts` dropped its `nth(5)` positional fallback for `getByRole('button', { name: 'Next month' })`. Body in the log) — **Six** framework icon-only controls have no accessible name (**grown**: `MonthYearPicker`'s prev/next month, `MyDateInput`'s prev/next day) | **framework** | `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled in `MyDateInput`) | low |
 | FW3 | ✅ **CLOSED 2026-09-13** — `Time.fromJson` cannot parse the backend's string shape (the API had already switched to `{hours, minutes}` on 2026-09-11; `fromJson` now accepts both) | **framework** | `todo-lists/B4` | med |
-| FW4 | `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so | **framework** (docs only) | *(none — prevents the next `F12`)* | low |
+| FW4 | ✅ **FIXED 2026-09-23** (`b4eb068` with `FW17`/`FW22`, bump `3067d954` — a *Layout* subsection under *Data tables* in `components.md`: the contract, the symptom, the shape to copy; default unchanged. Body in the log) — `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so | **framework** (docs only) | *(none — prevents the next `F12`)* | low |
 | FW5 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW6`/`FW7`/`FW15` — `DataTable.vue`'s default action button now binds `:title="action.text"` and adds `:aria-label="action.text"`, matching `TableGrid`'s sibling. Body in the log) — `DataTable`'s default row actions render the internal slug as their `title`, not the localized label (**grown**: seen again on both `leisure-bucket-anchors` tables — `title="edit"`/`"delete"`, no `aria-label`) | **framework** | `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half) | trivial |
 | FW6 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW7`/`FW15` — non-empty `day-cell`s gain `role="button"`, `tabindex="0"`, an Enter/Space handler and an `aria-label` from the new `calendar.dayCellLabel` key, formatted through the active i18n locale rather than the `sk`-hardcoded `formatToDateWithDay`; padding cells stay inert; a `:focus-visible` outline was added. App-side mirror: `src/locales/common.en.ts`'s full-duplicate `calendar` block gains the same key (SK's `calendar` only overrides `holidays` and merges the rest from the framework per-key, so it needed no change). Body in the log) — `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
 | FW7 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW6`/`FW15` — `MyPasswordInput.vue` replaces `appendInnerIcon`/`@click:appendInner` with a `#append-inner` `VIconBtn` carrying `user.showPassword`/`user.hidePassword`; `MyVerifyPasswordInput`/`MyNewPasswordInput` inherit it for free since both wrap `MyPasswordInput`. `user.passwordsDontMatch` added to both locales, plus the two new toggle keys. Not verified live — the harness's classifier blocks `fill` on password fields; the draft spec `fixme`s named in the finding were not promoted this pass. Body in the log) — Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
@@ -136,7 +136,7 @@
 | FW14 | ✅ **FIXED 2026-09-21** — registration's 2FA recovery codes were received and discarded; `RegistrationView` now opens `RecoveryCodesBody` after the QR (`utils/recoveryCodes.ts` shared with `SecuritySection`) and the "no QR"/"no codes" arms go on to `/login`. Verified live and by the promoted `auth.draft.spec.ts` registration test. Body in the log | **framework** (`RegistrationView.vue`) | `auth/B8` | low |
 | FW15 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW6`/`FW7` — `v-bind="$attrs"` moved to be the last binding on `MyDateInput`'s `VDateInput`, so a caller's `label`/`hideDetails`/`style` now win. `e2e/tests/history-review.draft.spec.ts:28`'s `getByRole('textbox', { name: 'Date' })` — the defect pinned as expected behaviour — now reads `{ name: 'From' }`, both as the finding required. Body in the log) — `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | ✅ **FIXED 2026-09-23** — `CalendarGrid` gains `v-model:dateRangeMode` / `v-model:dayVisibility` / `v-model:rangeConfig`, `DateRangePicker` gains `v-model:mode` / `v-model:rangeConfig` (types in `dto/DateRangeConfig.ts`); unbound consumers unchanged. Body in the log. Was: `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
-| FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
+| FW17 | ✅ **FIXED 2026-09-23** (`b4eb068` with `FW4`/`FW22`, bump `3067d954` — `left` offset by half of `--v-layout-left − --v-layout-right`, `0px` fallbacks; the two `fixme` stubs had empty bodies and were written: Delete → confirmation, Cancel → both blocks remain, green at 1280×720. Rail state not checked by eye. Body in the log) — `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
 | FW18 | ✅ **FIXED 2026-09-23** (`a939450`, bump `027a8ec0`) — optional `{ requestKey }` on `fetchById`/`fetchByField`, `useFetchFiltered`'s shape, default unchanged (not the id). Unit test added (4 passing), and A1's trap and the CLAUDE.md bullet are rewritten. The `src/` sweep found only the dialog. Body in the log — `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
 | FW19 | ✅ **FIXED 2026-09-23** — landed 2026-09-21 in `vue_framework` `4ab7e61` with `FW24` (bump `adaae452`) and was never closed; verified live: the role-colour 400, a time-period 400 and the system-role 409 all show the specific `errors` text. Body in the log. Was: `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
 | FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap. **The `inspirationSource` half is no longer unfiled and is now proved from inside the running component** (`isPercentKey('inspirationSource')` → `true`, `formatPercent(…)` → `"—"`, `getValue(…)` → the real string), which is why it is the worse of the two: this heuristic does not mis-format real data, it **deletes** it | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B5` (round 2 — round 1's `B1`), **`leisure-bucket-anchors/B3`** | med (decision: word-boundary match vs. opt-in) |
@@ -153,7 +153,7 @@
 | F82 | ✅ **FIXED 2026-09-23** — decided for the asterisk: the server requires `ImportanceId` on repeating tasks only. `planner.importanceRequired`. Verified. Body in the log — *Importance* blocks submission of the New/Edit Repeating Task dialog with "This field is required" and carries no `*`, unlike `* Name` and `* Activity` in the same dialog — and it is genuinely optional in the plain task dialog, so one of the two is wrong | app (`RepeatingTaskDialog.vue`) | `planner-day/P2` | trivial (decision: mark it or relax it) |
 | F83 | ✅ **FIXED 2026-09-23** — "N tasks (+M background)" when M > 0. Verified against a created-and-deleted background task. Body in the log — The template header counts foreground tasks only and does not say so — two blocks on screen, "1 task" in the header; the exclusion itself is correct and confirmed live | app (`TemplateDayPlannerView.vue` `taskStats`) | `planner-templates/P3` (was `U1`) | trivial |
 | F84 | The history dashboard's pie renders the server's folded-tail row **raw** — the legend reads the literal `_other`, untranslated in both locales, and the slice is selectable (`handleChartClick` has no sentinel branch, so it emits `{id: null, name: '_other'}` and cross-highlights the summary cards). The `activityTracking` pie has translated and blocked the same sentinel since it was written; `historyDashboard` never got the branch, and `HistoryGroupKey.ts:7-8` already documents the row it does not handle. Found from the other side while closing §10 — the backend's out-of-scope flag on `HistoryPieChartBuilder.cs` was **stale** (`OtherName` is already `"_other"`), so this is app-side with no backend half. **Re-read in the API this pass: `HistoryPieChartBuilder.cs:20` is `public const string OtherName = "_other";`** — confirmed on both sides, and the backend's offer to "do the History side as a follow-up" needs no answer because there is nothing there to change | app (`historyDashboard/component/pieChart/HistoryPieChart.vue:41,75-81,113-121`) | *(unfiled — fell out of §10's closure)* | low |
-| FW22 | `TableCellEditor`'s `DECIMAL` branch sets `:step="0.1"` and no `:precision`, so Vuetify rounds every decimal inline-edit cell to a whole number — `TableCellType.DECIMAL` does not do what it says. Source-certain, **no consumer in this app yet** | **framework** (`inlineEditTable/TableCellEditor.vue:19`) | *(unfiled — the framework twin of `leisure-projects/B4`)* | trivial |
+| FW22 | ✅ **FIXED 2026-09-23** (`b4eb068` with `FW4`/`FW17`, bump `3067d954` — `:precision="null"` for `DECIMAL`, `0` otherwise; source and typecheck only, no consumer here. Body in the log) — `TableCellEditor`'s `DECIMAL` branch sets `:step="0.1"` and no `:precision`, so Vuetify rounds every decimal inline-edit cell to a whole number — `TableCellType.DECIMAL` does not do what it says. Source-certain, **no consumer in this app yet** | **framework** (`inlineEditTable/TableCellEditor.vue:19`) | *(unfiled — the framework twin of `leisure-projects/B4`)* | trivial |
 | FW23 | A second column-header click **adds** a sort key instead of replacing it (`sortBy=activity.name:asc,durationMinutes:asc` from one unmodified click), with no multi-sort affordance anywhere — `VDataTable`'s default, inherited by every table in the app | **framework** (decision: `BasicTable`/`DataTable` default) | `leisure-backlog-picker/P1` (round 2) | low (decision first) |
 | FW24 | ✅ **FIXED 2026-09-23** — the code had landed 2026-09-21 (`vue_framework` `4ab7e61`, with `FW19`; bump `adaae452`); verified live 2026-09-23 against all five requests. One gap found and fixed: a duplicate desktop mapping's field-keyed `errors.patterns` sentence was swallowed by the generic unique wording (`bc96068`). Body in the log. Was: **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
 | FW25 | ✅ **FIXED 2026-09-21** (filed and landed the same day) — three hydrations per settings visit each pushed the browser time zone, and a `PUT` racing a step-up write failed Identity's concurrency check, reported as "Wrong password"; now one in-flight hydration, one zone push per session, and `VerifyUserForm` words only a 401. **Grown on the way:** a wrong step-up password **signed the user out** (401 → refresh → identical retry → 401 → `logoutClient()`), fixed with `_credentialCheck` on the request. Same commit: the 2FA sign-in dialog closes on a refusal instead of inviting a retry the single-use token cannot honour, and the reset button reads *Reset authenticator app*. Body in the log | **framework** (`authStore.ts`, `timeZoneSync.ts`, `VerifyUserForm.vue`, `axiosConfig.ts`, `LoginVerifyQrCode.vue`) | `user-settings/B3`, `user-settings/B4` | low |
@@ -163,7 +163,7 @@
 85 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
 `F85` landed 2026-09-21 unrecorded and was verified and closed 2026-09-23, body in the log; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
-framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log) ·
+framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log; `FW4`, `FW17` and `FW22` landed together 2026-09-23 in `b4eb068`, bodies in the log; open framework batches are now `FW1`, `FW20`, `FW23` — all three decision-gated, `FW23` decided) ·
 20 escalations (**0 open** — **§7 closed 2026-09-23**, the last one: `B18` had landed 2026-09-21 and its
 frontend half, `FW24` + `F85`, shipped the same day unrecorded and was verified live 2026-09-23; **§19 closed 2026-09-21** when `B24` landed and its
 frontend half shipped the same evening with `F16` folded in — no ask is open server-side; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
@@ -235,8 +235,8 @@ and a fix that teaches only the board to say "no results" leaves three tables ly
 can share a commit, but they are different causes (a missing icon vs. a missing asterisk) and `F82`
 needs a **decision** first — mark it required or relax the validator, because the plain task dialog
 treats the same field as optional.~~ **All four done 2026-09-23** in the trivial sweep; `F82` was decided
-for the asterisk (the API's validator requires `ImportanceId` on repeating tasks only). `FW22` is two repos for one attribute and has **no consumer in this
-app**, so its verification is the framework's own, not ours. `FW23` needs a decision before an edit
+for the asterisk (the API's validator requires `ImportanceId` on repeating tasks only). ~~`FW22` is two repos for one attribute and has **no consumer in this
+app**, so its verification is the framework's own, not ours.~~ **`FW22` landed 2026-09-23** (`b4eb068`). `FW23` needs a decision before an edit
 (rule 4): single-sort is what every table in this app looks like it does, but flipping
 `VDataTable`'s default changes every table in every app on the framework — and one of them may be
 relying on it.
@@ -342,9 +342,11 @@ the same shape as `FW11`/`F39`: a codec for state the grid does not expose chang
 `FW15` and `FW2` edit the same file (`MyDateInput.vue`) — one `vue_framework` commit may carry both if
 its message says so, but they close different findings for different reasons (a label bound in the
 wrong order vs. no label at all) and stay two batches. `FW15` **breaks one draft assertion** on purpose
-(`history-review.draft.spec.ts:28` pins the defect) — fix the spec in the pointer-bump commit. `FW17` is
+(`history-review.draft.spec.ts:28` pins the defect) — fix the spec in the pointer-bump commit. ~~`FW17` is
 independent of everything, CSS only, and is the one that un-`fixme`s two existing specs; run
-`dayPlanner.spec.ts` after the pointer bump rather than driving it by hand.
+`dayPlanner.spec.ts` after the pointer bump rather than driving it by hand.~~ **`FW17` landed
+2026-09-23** (`b4eb068`, bump `3067d954`). The two "existing specs" were empty `fixme` stubs, so the bump
+wrote their bodies too.
 
 **Order among the unit-15 batches.** *(2026-09-23: `FW9`, `FW11` + `F39`, `FW8` folded into `FW12`,
 `FW21` and `FW13` all landed in this order. `F40` and `FW7` are what is left. The paragraph is kept
@@ -1005,29 +1007,7 @@ Vuetify's own markup.
 
 <!-- FW3 (Time.fromJson could not parse the backend's string shape) closed 2026-09-13 — body in _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW4. `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so
-
-- **Scope:** **[framework]**, **docs only** — `src/_common/docs/components.md`, the *Data tables* section;
-  optionally a one-line comment above `DataTable.vue:7`. Submodule commit, then pointer bump.
-- **Closes:** nothing filed. It exists so the *next* `F12` does not happen: `tracking-settings/X1` cost a
-  blocker grade, three screenshots, an `elementFromPoint` investigation and a wrong framework hypothesis,
-  all for a missing `flex-fill`.
-- **Root cause:** `DataTable.vue:7` renders `VDataTableServer` with `height="0"` — the fill-parent trick
-  described under `F12` — and `BasicTable.vue:2` wraps it in `h-100`. That is a **contract on the
-  consumer**: the table must sit in a flex column whose height is definite all the way up, or its body is
-  0 px tall and its rows are laid out but invisible and un-clickable. `components.md:204-258` documents
-  props, slots, emits and formatters and says nothing about layout. Seventeen consumers got it right by
-  copying a sibling; the two that did not are the only ones that broke.
-- **What to change:** One paragraph in `components.md` under *Data tables*: the table fills its parent and
-  scrolls internally (that is why headers are sticky), the parent chain must therefore be definite-height
-  flex columns, `flex-fill` on the wrapper plus `class="flex-1-1" style="min-height: 0"` on the table is
-  the shape to copy (`ActivityTable.vue:42-43`), and the symptom of getting it wrong is "the row is in the
-  a11y tree but not on screen". **Do not change the default** — a self-sizing body would drop sticky
-  headers app-wide, and per batching rule 4 that is a decision, not a docs fix. If the maintainer wants a
-  guard, a dev-mode `console.warn` when the wrapper measures 0 px after mount is the shape; file it as a
-  separate ask.
-- **Verification:** Read-through; the sentence names the symptom a future unit agent will see.
-- **Risk:** None — docs only. Two repos, two commits, in order.
+<!-- FW4 (DataTable/BasicTable's definite-height flex-parent contract was undocumented) fixed 2026-09-23 in vue_framework `b4eb068` with FW17/FW22 (bump `3067d954`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW5 (DataTable's default row actions render the internal slug, not the localized label) fixed 2026-09-23 in vue_framework `5397675` with FW2/FW6/FW7/FW15 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -1051,49 +1031,7 @@ Vuetify's own markup.
 
 <!-- FW16 (CalendarGrid's Days to show and DateRangePicker's mode/range configuration private — `planner-day/B3`, framework half) fixed 2026-09-23, pointer bump carries F44 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW17. `ActionBar` is centred on the viewport, not the content box — *Delete* is un-clickable under the nav drawer
-
-- **Scope:** **[framework]** `src/_common/component/ActionBar.vue:35-41,52-59` — submodule commit, then
-  pointer bump; CSS only
-- **Closes:** nothing filed — and that is the point. The defect was **known before the sweep**
-  (`e2e/tests/dayPlanner.spec.ts:203-224`, a 22-line comment on two `test.fixme`d specs that click
-  *Delete*), was handed to unit 7 as brief item 2 (*"OPEN, NOT FIXED … needs the owner's call"*), was
-  **re-confirmed live** by the unit (`planner-day/inventory.md:144`, *"re-confirmed visually at this
-  viewport width — not re-filed as a new finding"*), and appears in no queue. A finding that three
-  documents agree on and none owns is the thing a triage exists to catch. Evidence is observed, twice;
-  it is batched.
-- **Root cause:** Confirmed by direct read. `.action-bar` is `position: fixed; bottom: 20px; left: 50%;
-  transform: translateX(-50%); z-index: 50` (`ActionBar.vue:36-41`). `left: 50%` on a fixed element is
-  50 % of the **viewport**; Vuetify insets `.v-main` by the drawer's width through
-  `padding-left: var(--v-layout-left)` (`VMain.css:5`), so the bar sits ~144 px left of the content's
-  centre with the drawer expanded, and its leftmost action — the planner's *Delete* — ends under the
-  drawer, whose inline `z-index` is `1000 + …` from the layout composable (`composables/layout.js:7,200-209`)
-  and outranks `50`. Pointer events go to the drawer.
-  Five consumers, all in `dayPlanner` (`SelectionActionBar`, `BulkSelectActionBar`,
-  `ApplyTemplateActionBar`, `UseTemplateActionBar`, `DayPlanner.vue`); any other app on the framework
-  with a permanent drawer has the same offset. Playwright's `toBeVisible()` passes on the occluded button
-  (layout, not occlusion), which is why the presence specs pass and only the two click specs fail — the
-  spec comment says so, and it is worth keeping.
-- **What to change:** Centre on the content box without JavaScript: Vuetify writes
-  `--v-layout-left` / `--v-layout-right` onto `.v-layout` (`composables/layout.js:144-145`), and the bar
-  is a descendant, so `left: calc(50% + (var(--v-layout-left, 0px) - var(--v-layout-right, 0px)) / 2)`
-  keeps `translateX(-50%)` and the two transition rules (`:52-59`) untouched and follows the rail
-  toggle for free. The fallbacks keep the current behaviour in an app with no `.v-layout` ancestor
-  (rule: default to today when nothing is registered). Alternatively raise `z-index` above the drawer
-  — **rejected**: it would draw the bar over the drawer instead of beside the content, and the drawer's
-  own overlay is deliberately higher than page chrome.
-- **Do not change:** the mobile `@media (max-width: 600px)` block (the drawer is temporary there and
-  `--v-layout-left` is `0px`); not `useActionBarFocusReturn` / `migration-revision.md` §11 — that is
-  the bar's *focus* ask, a separate framework item.
-- **Verification:** Un-`fixme` the two click specs in `e2e/tests/dayPlanner.spec.ts` and run them at
-  the suite's 1280×720; then by eye on `/day-planner/<today>` with the sidebar expanded **and** rail:
-  the bar is centred in the white area both times and every action is clickable. `_shell`'s rail
-  toggle is the control to flip. `playwright-cli` can prove occlusion the way the spec cannot:
-  `document.elementFromPoint(x, y)` at the *Delete* button's centre must be the button, not
-  `.v-navigation-drawer`.
-- **Risk:** Low — one `left` declaration — but it ships to every app on the framework that mounts an
-  `ActionBar`, and an app whose `.v-layout` has a *right* drawer moves the bar the other way, which is
-  correct and worth saying in the commit message.
+<!-- FW17 (ActionBar centred on the viewport, so Delete slid under the nav drawer) fixed 2026-09-23 in vue_framework `b4eb068` with FW4/FW22 (bump `3067d954`, which also un-fixmes and writes the two dayPlanner.spec.ts delete specs) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW18 (useEntityQuery.fetchById cancels a sibling id — the framework half of planner-templates/X1) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -1174,25 +1112,7 @@ Vuetify's own markup.
 
 <!-- F80 (board card metadata runs two fields together — leisure-projects/P2), F81 (`calendar-range` is a Pro-only icon — planner-day/P1), F82 (Importance required but unmarked — planner-day/P2) and F83 (template header count omits background tasks — planner-templates/P3) fixed 2026-09-23 — bodies moved to _fix-queue-log.md → Closed batches. Numbers retired, not reused; the summary table keeps their ✅ rows. -->
 
-## FW22. `TableCellEditor`'s `DECIMAL` cell rounds to whole numbers
-
-- **Scope:** **framework** `src/_common/component/dataTable/inlineEditTable/TableCellEditor.vue:19`
-  (submodule commit + pointer bump)
-- **Closes:** *(unfiled)* — found this pass while sizing `F76`. The framework twin of
-  `leisure-projects/B4`, split by rule 1.
-- **Root cause:** the numeric branch is `:step="cellType === TableCellType.DECIMAL ? 0.1 : 1"` with no
-  `:precision`, so Vuetify's default `precision: 0` coerces every value to an integer. A cell declared
-  `TableCellType.DECIMAL` therefore cannot hold a decimal — the type is decorative.
-- **What to change:** `:precision="cellType === TableCellType.DECIMAL ? null : 0"`, matching the shape
-  of the `step` expression beside it. Update `src/_common/docs/components.md` in the same commit (rule 3
-  of the submodule contract).
-- **Honest scope:** `TableCellType.DECIMAL` has **no consumer in this app** — the only two matches for it
-  in `src/` are the enum declaration and this line. So this is source-certain and unobserved, it fixes
-  nothing visible here, and its verification has to be a throwaway decimal column in the framework's own
-  fixtures rather than a screen in this app. It ships because another app on the framework may already
-  be using it, and because the `F76` fix would otherwise be app-side folklore.
-- **Risk:** Low, and it is the reason to ship it deliberately rather than folding it into `F76`: any app
-  currently using `DECIMAL` is getting integers today and may be relying on that rounding.
+<!-- FW22 (TableCellEditor's DECIMAL cell rounded to whole numbers — no consumer in this app) fixed 2026-09-23 in vue_framework `b4eb068` with FW4/FW17 (bump `3067d954`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## FW23. A second column-header click adds a sort key instead of replacing it
 
@@ -1212,6 +1132,12 @@ Vuetify's own markup.
   extending the chip the primary key already has. (a) is a behaviour change for other apps; (b) is more
   work and leaves a URL that grows on every click. Neither is obviously right, which is why this is
   filed as a decision.
+- **Decided 2026-09-23 by the owner: (b)** — keep multi-sort and render the affordance. That matches the
+  code: `DataTable.vue:14` passes `multiSort` **explicitly**, so multi-sort was a choice, not an inherited
+  default, and only the affordance is missing. Before building badges, check what Vuetify already
+  draws. `VDataTableHeaders` renders its own numbered sort badge once more than one key is active, and
+  the finding saw one on the primary key (*"Activity 1"*). So the first question is why the **second**
+  key showed none (a header slot or CSS in `DataTable` hiding it?), not how to draw new ones.
 - **What to check before deciding:** `useTableUrlState`'s `sortBy` codec already round-trips a
   comma-joined list, so (a) does not simplify the URL format — and some consumer may be reading a
   multi-key sort deliberately. Grep the framework and this app for a table passing more than one
