@@ -6655,6 +6655,74 @@ framework questions `F36` declined to answer belong in it:** whether `'5'` is th
 component that serves both times-of-day and durations, and whether a snap should ever be silent (helper
 text, or a `snapped` emit). Both are decisions for `vue_framework`, not this app.
 
+### ⚠️ Found while triaging unit 7: the template picker calls `/suggestions?date=` against a `/{calendarId}` route — the withdrawn `B5` bug on the sibling endpoint, hidden by mount order
+
+> ✅ **CONFIRMED AND FIXED 2026-09-24.** No batch number was used; `F45`, which was held for this, is
+> retired unused.
+>
+> **Confirmed live first, exactly as predicted,** on `/day-planner/24-09-2026`. The first load made no
+> suggestions call. *Routine* → *Details* sent `GET …/suggestions?date=2026-09-24` → **400**, and
+> *Suggested for you* never rendered.
+>
+> **Fixed:**
+> - `fetchSuggestions(calendarId)` calls `GET …/suggestions/{calendarId}` with `_silent`.
+> - `DayTemplatePicker` loads the template list on its own in `onMounted`.
+> - Suggestions come from a `watch(() => calendar?.id, …, { immediate: true })` with `.catch(() => [])`,
+>   and a stale response for a previous calendar is dropped.
+>
+> Together these cover the row's fix shape and its *Consider* line.
+>
+> **Verified live:**
+> - The first load now asks: `/suggestions/997` → 200. It asks again after *Routine* → *Details*, also
+>   200. Neither path gives a 400.
+> - The seed's suggestion view is empty (0 items; it is refreshed by a host job), so a mocked suggestion
+>   built from a real template was used for the section. It rendered *"Relaxed Weekend · Used on
+>   Thursdays · 4×"*, and clicking it selected the template in the picker.
+> - A mocked 500 on suggestions: no snackbar, and the picker still lists all three templates.
+> - Console clean. `type-check` exit 0, lint clean.
+>
+> **Not done, noted:**
+> - `composable/useTemplateSuggestion.ts` is still dead code.
+> - The `.suggestion-item` row is a clickable `div` with no role or key handler, the `F49` class.
+> - Server-side, `GetSuggestionsTaskPlannerDayTemplateEndpoint` loads the calendar by id with
+>   `FindAsync` and **does not check that it belongs to the caller**. The suggestions themselves are
+>   filtered by user, so only another account's calendar date and day type steer the query. It is
+>   unfiled, and a backend question if anyone wants it asked.
+
+**Source-certain, unobserved — `F45`-if-confirmed (rule 5).** `taskPlannerDayTemplateApi.ts:38-41` is
+``API.get(`${url}/suggestions`, { params: { date } })``; the only route is
+`Get("/task-planner-day-template/suggestions/{calendarId:long:required}")`
+(`GetSuggestionsTaskPlannerDayTemplateEndpoint.cs:22`), so the request falls through to the framework's
+generic `GET /{id}` with `"suggestions"` as the id — the exact mechanism `repeatingPlannerTaskApi.ts:25-32`
+now documents for its own fixed twin. The unit's brief presented this endpoint as an *opportunity*
+(*"the client never calls it at all"*); the client has called it since the picker was written.
+
+**Why no unit has seen the 400:** `DayTemplatePicker.vue:212-221` fires the call in `onMounted`, reading
+`calendar?.date` **once**. The picker sits in `DayDetailsPanel` → `DayPlannerSidePanel`, which is
+rendered on the day view's first paint — before `DayPlannerView.vue:211`'s `Promise.all` has resolved the
+calendar — so `calendar` is `undefined` at mount, the guard takes the `Promise.resolve([])` branch, and
+there is no watcher to try again. Net effect today: **the picker's *Suggested for you* section
+(`DayTemplatePicker.vue:13-55`) is fed only by this call and therefore never renders on a normal load** —
+which is presumably why the brief believed the endpoint uncalled. (`composable/useTemplateSuggestion.ts`,
+the client-side scorer, has no importer anywhere in `src/` — dead code, noted, not batched.)
+
+**When it does fire:** `DayPlannerSidePanel.vue:11` is `v-if="activePanel === 'details'"`, so switching
+*Routine* → *Day Details* **remounts** the panel with the calendar now loaded — and the request goes out,
+400s, rejects the picker's `Promise.all`, and `templates.value` is never assigned: the picker shows **no
+templates at all** on the second visit to the tab. Same for a day view opened with the details panel
+collapsed by setting (`detailsPanelExpandedByDefault` off) and expanded later. The unit's draft spec
+switches *to* Routine (`planner-day.draft.spec.ts:80`) and never back, which is why its network section
+lists only the two 4xx it went looking for.
+
+**What would settle it:** ten seconds — `/day-planner/<today>` with the console open, click *Routine*,
+click *Day Details*: expect `GET /api/task-planner-day-template/suggestions?date=…` → **400**, the
+interceptor's toast, and an empty template picker. **Fix shape when confirmed** (two lines plus a
+guard): ``API.get(`${url}/suggestions/${calendarId}`)`` taking `calendar.id`, and `.catch(() => [])` on
+the suggestions leg of the picker's `Promise.all` — the same isolation `DayPlannerView.vue:244-252` added
+for the repeating-task twin, so a suggestion outage never costs the template list again. Consider a
+`watch(() => calendar?.id)` so the first load fetches too, or the endpoint stays uncalled on the path
+every user takes. Not batched with `F43`/`F44` (different cause); would be its own trivial app batch.
+
 ## Contradictions & re-grades
 
 Everything below was checked against the **current working-tree source** this pass, by reading the file named.

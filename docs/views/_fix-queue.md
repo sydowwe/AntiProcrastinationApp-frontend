@@ -161,7 +161,7 @@
 | F86 | ✅ **FIXED 2026-09-23** (filed and fixed the same day) — `useCalendarUrlState` re-applies every owned key on an outside navigation; **grown on the way:** a spurious *Failed to load the calendar* snackbar on every month deep link (a cancelled fetch toasted as a failure) swallowed the next Back/Forward, because Vuetify closes an open overlay and aborts the navigation; and the framework `Snackbar.vue` now sets `closeOnBack=false`, so no toast traps Back (framework-wide behaviour change, in `FW16`'s submodule commit). Body in the log. Was: Back/Forward on `/day-planner` moves the URL's `?month=` but not the grid — the codec **pushes** a history entry per month and the view reads the query only on mount, so every entry it has ever pushed is one the grid ignores. Predates `F44`; found verifying it | app (`useCalendarUrlState.ts`, `PlannerCalendarView.vue`) | *(unfiled — fell out of `F44`'s verification; P7's "back/forward walks months")* | low |
 
 85 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
-`F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
+`F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` was a reserved number, never a batch — the template-suggestions fix it was held for landed 2026-09-24 without one, and the number is retired unused;
 `F85` landed 2026-09-21 unrecorded and was verified and closed 2026-09-23, body in the log; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
 framework (`FW10` was a reserved number, never a batch — the `TimePicker` minute-60 fix it was held for landed 2026-09-24 without one, and the number is retired unused; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log; `FW4`, `FW17` and `FW22` landed together 2026-09-23 in `b4eb068`, bodies in the log; ~~open framework batches are now `FW1`, `FW20`, `FW23`~~ — all three decided and closed 2026-09-23: `FW20` fixed, `FW1` step 1 fixed with step 2 deferred, `FW23` needed no change; bodies in the log. **No framework batch is open**) ·
 20 escalations (**0 open** — **§7 closed 2026-09-23**, the last one: `B18` had landed 2026-09-21 and its
@@ -911,41 +911,7 @@ read added:
   and gets the component's 150 px. Same one-line fix; one look at the Add Task dialog's date field
   width after `FW15` settles it. Not a finding on its own.
 
-### ⚠️ Found while triaging unit 7: the template picker calls `/suggestions?date=` against a `/{calendarId}` route — the withdrawn `B5` bug on the sibling endpoint, hidden by mount order
-
-**Source-certain, unobserved — `F45`-if-confirmed (rule 5).** `taskPlannerDayTemplateApi.ts:38-41` is
-``API.get(`${url}/suggestions`, { params: { date } })``; the only route is
-`Get("/task-planner-day-template/suggestions/{calendarId:long:required}")`
-(`GetSuggestionsTaskPlannerDayTemplateEndpoint.cs:22`), so the request falls through to the framework's
-generic `GET /{id}` with `"suggestions"` as the id — the exact mechanism `repeatingPlannerTaskApi.ts:25-32`
-now documents for its own fixed twin. The unit's brief presented this endpoint as an *opportunity*
-(*"the client never calls it at all"*); the client has called it since the picker was written.
-
-**Why no unit has seen the 400:** `DayTemplatePicker.vue:212-221` fires the call in `onMounted`, reading
-`calendar?.date` **once**. The picker sits in `DayDetailsPanel` → `DayPlannerSidePanel`, which is
-rendered on the day view's first paint — before `DayPlannerView.vue:211`'s `Promise.all` has resolved the
-calendar — so `calendar` is `undefined` at mount, the guard takes the `Promise.resolve([])` branch, and
-there is no watcher to try again. Net effect today: **the picker's *Suggested for you* section
-(`DayTemplatePicker.vue:13-55`) is fed only by this call and therefore never renders on a normal load** —
-which is presumably why the brief believed the endpoint uncalled. (`composable/useTemplateSuggestion.ts`,
-the client-side scorer, has no importer anywhere in `src/` — dead code, noted, not batched.)
-
-**When it does fire:** `DayPlannerSidePanel.vue:11` is `v-if="activePanel === 'details'"`, so switching
-*Routine* → *Day Details* **remounts** the panel with the calendar now loaded — and the request goes out,
-400s, rejects the picker's `Promise.all`, and `templates.value` is never assigned: the picker shows **no
-templates at all** on the second visit to the tab. Same for a day view opened with the details panel
-collapsed by setting (`detailsPanelExpandedByDefault` off) and expanded later. The unit's draft spec
-switches *to* Routine (`planner-day.draft.spec.ts:80`) and never back, which is why its network section
-lists only the two 4xx it went looking for.
-
-**What would settle it:** ten seconds — `/day-planner/<today>` with the console open, click *Routine*,
-click *Day Details*: expect `GET /api/task-planner-day-template/suggestions?date=…` → **400**, the
-interceptor's toast, and an empty template picker. **Fix shape when confirmed** (two lines plus a
-guard): ``API.get(`${url}/suggestions/${calendarId}`)`` taking `calendar.id`, and `.catch(() => [])` on
-the suggestions leg of the picker's `Promise.all` — the same isolation `DayPlannerView.vue:244-252` added
-for the repeating-task twin, so a suggestion outage never costs the template list again. Consider a
-`watch(() => calendar?.id)` so the first load fetches too, or the endpoint stays uncalled on the path
-every user takes. Not batched with `F43`/`F44` (different cause); would be its own trivial app batch.
+<!-- Template picker's `/suggestions?date=` against a `/{calendarId}` route (found triaging unit 7) confirmed and fixed 2026-09-24: the 400 reproduced on Routine → Details. The route now takes the calendar id, the picker fetches on a calendar-id watcher (so the first load asks too), and a suggestion failure is silent and never empties the template list. No batch number; F45, held for it, is retired unused. Body in _fix-queue-log.md → Closed verification items. -->
 
 ### `tracking-dashboards` — nothing open (`U1` closed 2026-09-23 in `F27`'s session — see the log)
 
@@ -1141,7 +1107,9 @@ the client never calls it at all"* — is **not an opportunity, it is a defect**
 is wrong in an instructive way: the client *does* call it (`DayTemplatePicker.vue:216` →
 `taskPlannerDayTemplateApi.ts:38-41`), with `?date=` against a route that takes `/{calendarId}` — the
 withdrawn `B5` bug, byte for byte, on the sibling endpoint — and the call is guarded out at runtime by a
-mount-order accident, which is why nobody has seen the 400. Under *Needs verification*, `F45`-if-confirmed.
+mount-order accident, which is why nobody has seen the 400. ~~Under *Needs verification*, `F45`-if-confirmed.~~
+**Confirmed and fixed 2026-09-24** (body in the log, under *Closed verification items*). The section
+renders whenever the server has suggestions, but the seed has none.
 Nothing for Phase 4 from this unit.
 
 **`tracking-dashboards` filed no `opportunity` finding** (tally `opportunity 0`, body agrees). Two things

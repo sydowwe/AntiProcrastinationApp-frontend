@@ -35,8 +35,14 @@ export function useTaskPlannerDayTemplateTaskCrud() {
 		await API.patch(`${url}/${id}/pinned`, { isPinned })
 	}
 
-	async function fetchSuggestions(date: string): Promise<TemplateSuggestionResponse[]> {
-		const response = await API.get(`${url}/suggestions`, { params: { date } })
+	/**
+	 * The route takes the calendar id in the path; the server reads the date and day type off the calendar.
+	 * It used to send `?date=` to `/suggestions`, which fell through to the generic `GET /{id}` and 400'd,
+	 * the same mistake `repeatingPlannerTaskApi.fetchSuggestionsForCalendar` documents for its twin.
+	 * Silent: suggestions are an optional extra, and the picker degrades to no suggestions on a failure.
+	 */
+	async function fetchSuggestions(calendarId: number): Promise<TemplateSuggestionResponse[]> {
+		const response = await API.get(`${url}/suggestions/${calendarId}`, { _silent: true })
 		return TemplateSuggestionResponse.listFromObjects(response.data)
 	}
 

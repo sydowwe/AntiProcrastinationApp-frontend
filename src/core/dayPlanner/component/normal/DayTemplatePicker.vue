@@ -211,16 +211,25 @@
 	const backendSuggestions = ref<TemplateSuggestionResponse[]>([])
 
 	onMounted(async () => {
-		const [allTemplates, suggestions] = await Promise.all([
-			fetchAll(),
-			calendar?.date ? fetchSuggestions(calendar.date) : Promise.resolve([]),
-		])
-		templates.value = allTemplates
-		backendSuggestions.value = suggestions
+		templates.value = await fetchAll()
 		if (store.templateInPreview) {
 			selectedTemplate.value = store.templateInPreview
 		}
 	})
+
+	// Separate from the template list, so a suggestion failure never empties the picker. Keyed on the
+	// calendar id rather than read once at mount: the picker mounts before the day view's calendar has
+	// loaded, so a mount-time read never asked at all on a normal page load.
+	watch(
+		() => calendar?.id,
+		async calendarId => {
+			backendSuggestions.value = []
+			if (calendarId == null) return
+			const suggestions = await fetchSuggestions(calendarId).catch(() => [] as TemplateSuggestionResponse[])
+			if (calendar?.id === calendarId) backendSuggestions.value = suggestions
+		},
+		{ immediate: true },
+	)
 
 	watch(
 		() => store.templateInPreview,
