@@ -104,7 +104,11 @@ router.beforeEach(to => {
 	}
 
 	const auth = useAuth()
-	if (!auth.isAuthenticated) return { name: 'login' }
+	// Carry the destination so signing in returns to it — the framework's `redirect` contract, the
+	// same param its interceptor writes on a forced logout. Omitted for `/` to keep a plain bounce clean.
+	if (!auth.isAuthenticated) {
+		return { name: 'login', query: to.fullPath === '/' ? undefined : { redirect: to.fullPath } }
+	}
 
 	// Degrades to a no-op in this app (see the adapter's role getters); kept so route tables coming
 	// from the framework keep their gating semantics.

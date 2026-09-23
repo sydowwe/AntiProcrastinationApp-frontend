@@ -45,8 +45,10 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			await expect(passwordInput).toHaveAttribute('type', 'text')
 		})
 
-		// B1: the router guard's redirect and both of LoginView's success handlers discard the
-		// originally-requested deep link. Fixme rather than asserting today's broken behaviour.
+		// B1: fixed (F39 writes `?redirect=`, FW11 reads it; the write half is asserted under *Router guard
+		// behaviour* below). The read half needs a real sign-in through this form, which this file must not
+		// spend — see the throttle note at the top; it would be the run's fifth `/auth/login` hit inside a
+		// minute. Verified by hand with playwright-cli on 2026-09-23 (deep link, `https://…` and `//…`).
 		test.fixme(
 			'signing in from a deep-link redirect returns you to that link, not home (findings.md B1)',
 			async () => {},
@@ -205,9 +207,13 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 	})
 
 	test.describe('Router guard behaviour', () => {
-		test('an unauthenticated deep link redirects to /login', async ({ page, seed }) => {
+		test('an unauthenticated deep link redirects to /login, carrying the destination (findings.md B1, write half — F39)', async ({
+			page,
+			seed,
+		}) => {
 			await page.goto(`/todo-list/${seed.todoLists.focus}`)
-			await expect(page).toHaveURL(/\/login$/)
+			await expect(page).toHaveURL(/\/login\?/)
+			expect(new URL(page.url()).searchParams.get('redirect')).toBe(`/todo-list/${seed.todoLists.focus}`)
 		})
 
 		test('an authenticated visit to /login, /registration or /forgotten-password bounces to /', async ({

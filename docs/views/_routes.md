@@ -8,7 +8,8 @@ documentation pass is measured against: every route below must appear in some `d
 
 ## Legend
 
-- **Guard** — `public` = `meta.public`, reachable signed out · `auth` = default, signed-in only ·
+- **Guard** — `public` = `meta.public`, reachable signed out · `auth` = default, signed-in only (a signed-out visit goes to `/login?redirect=<fullPath>`, and signing
+  in returns there — `F39` / `FW11`; `/` itself bounces to a bare `/login`) ·
   `admin` = `meta.requiredRole: 'admin'`, which **this app always waves through** (its auth adapter answers
   `true` to every role getter — see `src/core/user/authAdapter.ts`), so admin routes are reachable by anyone
 - **Nav** — `sidebar` (with its path in the tree) · `user menu` · `link` (reached only from another view) ·
