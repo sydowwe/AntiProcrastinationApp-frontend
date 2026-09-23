@@ -17,6 +17,7 @@
 				class="mx-auto"
 				:label="$t('dateTime.duration')"
 				viewMode="minute"
+				allowedMinutesSelected="1"
 				variant="outlined"
 				style="max-width: 200px"
 			></TimePicker>

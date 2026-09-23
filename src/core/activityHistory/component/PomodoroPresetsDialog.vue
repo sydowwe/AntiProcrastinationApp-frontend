@@ -50,6 +50,7 @@
 							icon="pen-to-square"
 							size="x-small"
 							variant="tonal"
+							:aria-label="`${$t('general.edit')}: ${preset.name}`"
 							@click.stop="openEditDialog(preset)"
 						></VIconBtn>
 						<VIconBtn
@@ -57,6 +58,7 @@
 							size="x-small"
 							variant="tonal"
 							color="error"
+							:aria-label="`${$t('general.delete')}: ${preset.name}`"
 							@click.stop="deletePreset(preset)"
 						></VIconBtn>
 					</div>

@@ -11,6 +11,7 @@
 			:label="$t('dateTime.length')"
 			minWidth="150px"
 			maxWidth="150px"
+			allowedMinutesSelected="1"
 			hideDetails
 		/>
 		<ActivitySelectionForm

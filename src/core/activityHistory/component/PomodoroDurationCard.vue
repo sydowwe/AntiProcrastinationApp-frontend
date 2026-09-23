@@ -17,6 +17,7 @@
 			label=""
 			color="primaryOutline"
 			viewMode="minute"
+			allowedMinutesSelected="1"
 			hideDetails
 		></TimePicker>
 	</SubtleCard>

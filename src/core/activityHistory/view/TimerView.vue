@@ -16,6 +16,7 @@
 				v-model="initialTime"
 				class="mx-auto"
 				viewMode="minute"
+				allowedMinutesSelected="1"
 				:label="$t('dateTime.length')"
 				color="primaryOutline"
 				density="default"

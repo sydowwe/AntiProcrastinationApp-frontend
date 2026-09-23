@@ -84,6 +84,7 @@
 						v-bind="menuProps"
 						variant="text"
 						size="40"
+						:aria-label="`${$t('general.moreActions')}: ${record.activity.name}`"
 						@click.stop=""
 					/>
 				</template>

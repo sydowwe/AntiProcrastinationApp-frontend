@@ -85,7 +85,7 @@
 | F33 | ✅ **FIXED 2026-09-21** (with the `configured` branch `B14` added, same commit) — Google Calendar connect never sends the OAuth `state` the server's validator requires — the client half of `B1`, unobservable only because the server half breaks the flow one step earlier | app | `user-settings/B1` (client half; server half is §9) | low |
 | F34 | ✅ **FIXED 2026-09-21** (one token, in the `F33` commit — same card, not `FW8`) — Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`, on the very row the unit compared against | app | *(unfiled twin of `user-settings/P1`)* | trivial |
 | F35 | ✅ **FIXED 2026-09-15** (merge chosen) — `dateTime.secondsShort` renders raw on every running clock — and `general.from`/`general.to` on every `TimeRangePicker` in range mode: the app-side `common` mirror is written per consumer, has leaked four times, and should become the deep-merge `SK.ts` already does for `user` | app (`src/locales/`) + CLAUDE.md | `history-capture/B1` (+ two unfiled twins) | low (decision: merge vs. patch) |
-| F36 | Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
+| F36 | ✅ **FIXED 2026-09-24** — `allowedMinutesSelected="1"` on all eight tags, as written. Verified live: `0007` stays `00:07` in all eight fields, and *Short Sprint*'s 3-minute break re-enters as `00:03`. A 7-minute countdown schedules its alarm 7 minutes out. The menu half rests on source only. Body in the log — Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
 | F37 | ✅ **FIXED 2026-09-23** — `#close` → a `v-if="editMode"` `#append` slot with the 16 px pencil, `pr-4` dropped, and `role="button"` on both chip rows. The draft spec's span locators became `getByRole('button', { name: '15m' })`. Verified live: 0 close buttons, the pencil opens the editor on both rows, and Tab lands on the chip. Body in the log — Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
 | F38 | ✅ **FIXED 2026-09-15** (exactly three, as predicted) — Leftover `console.log` in `TimerPresetsSection.vue` — and two more app-side; `no-console` is configured `off` with an allow-list, which is why lint did not catch any of them | app + `eslint.config.ts` | `history-capture/P1`, **`planner-templates/P2`** | trivial |
 | F39 | ✅ **FIXED 2026-09-23** (`7a612d7f`, with `FW11`'s bump. Body in the log) — The auth guard's redirect drops the destination — `router.ts:98` returns `{ name: 'login' }` with no `redirect` query, while the interceptor's own forced-logout path already writes one | app (`src/router.ts`) | `auth/B1` (write half; the read half is `FW11`) | trivial |
@@ -487,52 +487,7 @@ Vuetify's own markup.
 <!-- F33 + F34 (Google Calendar: send `state`; `errorDark` on the Disconnect button) fixed 2026-09-21
      together with the frontend half of `B14` (§9). Bodies in _fix-queue-log.md → Closed batches. -->
 
-## F36. Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take a time-of-day default
-
-- **Scope:** app-side `src/core/activityHistory/` only — **not** `src/_common/component/dateTime/TimePicker.vue`
-- **Closes:** `history-capture/B2`
-- **Root cause:** Confirmed in source. `TimePicker.vue:69` defaults `allowedMinutesSelected = '5'`, and
-  both write paths snap: the mask watcher (`:114-129`) rounds typed minutes through
-  `roundToNearestInterval` (`DateTimeHelper.ts:166-168`, `Math.round(m / i) * i`), and the `timeString`
-  setter (`:97-101`) rounds again for the menu. The finding's evidence is exact (`0007` → `00:05`, `0001`
-  → `00:00`), and the app already states the convention the finding is asking for:
-  `SuggestedTimeFormField.vue:15` passes `allowedMinutesSelected="1"` for a typed duration, while
-  `TaskPlannerDayTemplateDetailsForm.vue:18,25` passes `"10"` and `QuietHoursCard.vue:43,55` `"5"` for
-  times of day. **This module never passes it.** The finding counts three call sites; the module has
-  **eight tags in six files**, every one a duration, every one at the default: `TimerView.vue:14`
-  (Length), `PomodoroDurationCard.vue:15` (mounted three times by `PomodoroSetupPanel.vue:21-31` — the
-  three fields the finding saw), `AddActivityManuallyForm.vue:16` (Length), `EditActivityHistoryForm.vue:8`
-  (Length, on the history record edit dialog — unit 3's screen), `TimerPresetDialog.vue:15` (Duration),
-  `PomodoroPresetFormDialog.vue:75,84,93` (Focus / Short break / Long break).
-- **The preset editors are the reason this is a `bug` and not `polish`.** The API's per-user default
-  seeder ships *Short Sprint* with `ShortBreakDuration = 3` (`PomodoroTimerPresetSeeder.cs:46-50`) — a
-  value that every account has from day one and that `PomodoroPresetFormDialog` cannot re-enter: the
-  field displays `00:03` (reads are not rounded), but the menu's `allowedMinutes` (`TimePicker.vue:91`)
-  greys out 3, a typed `0003` becomes `00:05`, and the arrow buttons step 3 → 8 / 3 → 0. Touch that
-  field once and the preset can never go back to what the server gave it.
-- **Files:** the eight tags above.
-- **What to change:** Add `allowedMinutesSelected="1"` to all eight. That is the whole change. Do it as
-  one commit so the module has one rule (durations are minute-exact), and say so in the message. Two
-  things to leave alone while there, both dead attributes that land on `TimePicker`'s root `div` and do
-  nothing: `variant="outlined"` on `TimerPresetDialog.vue:20` and `PomodoroPresetFormDialog.vue:79,88,97`
-  (`TimePicker` has no `variant` prop — `VMaskInput` takes the app default), and `minWidth`/`maxWidth` on
-  `EditActivityHistoryForm.vue:12-13` (not props either; `width` is). Deleting them is harmless and
-  optional; adding them as real props is a different batch.
-- **Do not change:** `TimePicker.vue`'s default, `roundToNearestInterval`, or the snap itself — a
-  framework-wide default is its own batch (rule 4) and the component has time-of-day consumers for
-  which `'5'` is right. Do not touch the duration fields in other modules that have the same gap —
-  `LogTimeBody.vue:10` (dayPlanner, unit 7 not run) and the framework's `LogTimeForm.vue:15` — they are
-  the same one-attribute edit, but they belong to units that have not filed them, and the second is a
-  submodule commit. Do not add a "rounded to" helper text: at `'1'` there is nothing to explain.
-- **Verification:** `history-capture/B2`'s `Verify:` block, first pass condition (the field **keeps**
-  `00:07`) on `/activity-history/timer`, all three Pomodoro cards and `/activity-history/manual`; then the
-  three the finding did not list — open *Short Sprint* in the Pomodoro presets dialog, type `0003` into
-  Short break, read `00:03`; open a quick-time preset in edit mode on `/timer` (after `F37`, or via the
-  chip label), same check; open a history record's edit dialog on `/activity-history` and type an odd
-  length. Then the menu: click the Length field, confirm every minute is selectable. Then Start a
-  7-minute countdown and confirm `POST timer-alarm/schedule` carries an `endsAt` 7 minutes out, not 5.
-- **Risk:** Low. The only behavioural change is that the arrow buttons now step by one minute instead
-  of five on these fields — fine for a duration, and none of the eight passes `showArrows` anyway.
+<!-- F36 (typed durations snapped to 5 minutes — eight `<TimePicker>` tags in `activityHistory` — history-capture/B2) fixed 2026-09-24 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F37 (preset chips' `#close` slot rendered a live "Close" button that swallowed the edit pencil — history-capture/B3 + the unfiled chip-role A1) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

@@ -5038,6 +5038,89 @@
   is already on (`:4`), so the cost is the option recompute. Check the selection highlight
   (`selectedMode: 'single'`) survives a layout switch mid-selection.
 
+## F36. Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take a time-of-day default
+
+> ✅ **FIXED 2026-09-24.** All eight tags now pass `allowedMinutesSelected="1"`, exactly as written.
+> The source still matched the body: eight tags, none passing the prop. `HistorySummaryView.vue:67`'s
+> `"30"` is a time-of-day picker and was left alone. The dead `variant`/`minWidth`/`maxWidth` attributes
+> were left too, which the body allowed. `type-check` exit 0, lint clean.
+>
+> **Verified live** with `playwright-cli`, typing `0007` and reading the field back after Tab:
+> - `/timer` Length: `00:00 → 00:07`.
+> - All three Pomodoro cards: `00:25` / `00:05` / `00:15 → 00:07`.
+> - `/manual` Length: `00:00 → 00:07`.
+> - The quick-time preset editor (the pencil on *15m*): `00:15 → 00:07`, then Cancel.
+> - The history-record edit dialog (Detail → record menu → *Edit*): `00:30 → 00:07`, then Cancel.
+> - *Short Sprint* in the Pomodoro presets dialog loads Short break as `00:03`, and a typed `0003`
+>   stays `00:03`. Not saved.
+> - A 7-minute countdown sent `POST timer-alarm/schedule` with `boundaryAt` exactly 7 minutes after the
+>   click (`22:24:20.131Z → 22:31:20.155Z`; the body's field is `boundaryAt`, not `endsAt`). Stop sent
+>   `cancel`, and the session was discarded as under a minute: Detail's total stayed 30m.
+>
+> **Not verified live:** the menu half ("every minute selectable"). Vuetify's minute clock renders only
+> its 12 labelled positions, with no disabled marker either way, so it cannot tell `1` from `5`. The menu
+> reads the same `interval` computed as the mask (`TimePicker.vue:90-91`), so this rests on source.
+>
+> On `/manual`, the *when* field's time of day (the framework `DateTimePicker`) still snaps `0007 → 00:05`.
+> That is a time of day, where the default is right, and it is out of scope.
+>
+> **Found while verifying and fixed the same day, unfiled (no batch number):**
+> - The Pomodoro presets dialog's per-card edit and delete `VIconBtn`s (`PomodoroPresetsDialog.vue`) had
+>   no accessible name. They are now `Edit: {preset}` / `Delete: {preset}`.
+> - The timeline record's `ellipsis-vertical` menu button (`HistoryRecordItem.vue`) had none either. It
+>   is now `More actions: {activity}`.
+>
+> Both use `F65`'s row-scoped shape and reuse `general.edit` / `general.delete` / `general.moreActions`.
+> Verified live:
+> - With edit mode on, the presets dialog has 0 nameless buttons.
+> - `getByRole('button', { name: 'Edit: Short Sprint' })` opens *Edit Pomodoro Preset*.
+> - `More actions: Desk Research` opens the Edit/Delete menu.
+
+- **Scope:** app-side `src/core/activityHistory/` only — **not** `src/_common/component/dateTime/TimePicker.vue`
+- **Closes:** `history-capture/B2`
+- **Root cause:** Confirmed in source. `TimePicker.vue:69` defaults `allowedMinutesSelected = '5'`, and
+  both write paths snap: the mask watcher (`:114-129`) rounds typed minutes through
+  `roundToNearestInterval` (`DateTimeHelper.ts:166-168`, `Math.round(m / i) * i`), and the `timeString`
+  setter (`:97-101`) rounds again for the menu. The finding's evidence is exact (`0007` → `00:05`, `0001`
+  → `00:00`), and the app already states the convention the finding is asking for:
+  `SuggestedTimeFormField.vue:15` passes `allowedMinutesSelected="1"` for a typed duration, while
+  `TaskPlannerDayTemplateDetailsForm.vue:18,25` passes `"10"` and `QuietHoursCard.vue:43,55` `"5"` for
+  times of day. **This module never passes it.** The finding counts three call sites; the module has
+  **eight tags in six files**, every one a duration, every one at the default: `TimerView.vue:14`
+  (Length), `PomodoroDurationCard.vue:15` (mounted three times by `PomodoroSetupPanel.vue:21-31` — the
+  three fields the finding saw), `AddActivityManuallyForm.vue:16` (Length), `EditActivityHistoryForm.vue:8`
+  (Length, on the history record edit dialog — unit 3's screen), `TimerPresetDialog.vue:15` (Duration),
+  `PomodoroPresetFormDialog.vue:75,84,93` (Focus / Short break / Long break).
+- **The preset editors are the reason this is a `bug` and not `polish`.** The API's per-user default
+  seeder ships *Short Sprint* with `ShortBreakDuration = 3` (`PomodoroTimerPresetSeeder.cs:46-50`) — a
+  value that every account has from day one and that `PomodoroPresetFormDialog` cannot re-enter: the
+  field displays `00:03` (reads are not rounded), but the menu's `allowedMinutes` (`TimePicker.vue:91`)
+  greys out 3, a typed `0003` becomes `00:05`, and the arrow buttons step 3 → 8 / 3 → 0. Touch that
+  field once and the preset can never go back to what the server gave it.
+- **Files:** the eight tags above.
+- **What to change:** Add `allowedMinutesSelected="1"` to all eight. That is the whole change. Do it as
+  one commit so the module has one rule (durations are minute-exact), and say so in the message. Two
+  things to leave alone while there, both dead attributes that land on `TimePicker`'s root `div` and do
+  nothing: `variant="outlined"` on `TimerPresetDialog.vue:20` and `PomodoroPresetFormDialog.vue:79,88,97`
+  (`TimePicker` has no `variant` prop — `VMaskInput` takes the app default), and `minWidth`/`maxWidth` on
+  `EditActivityHistoryForm.vue:12-13` (not props either; `width` is). Deleting them is harmless and
+  optional; adding them as real props is a different batch.
+- **Do not change:** `TimePicker.vue`'s default, `roundToNearestInterval`, or the snap itself — a
+  framework-wide default is its own batch (rule 4) and the component has time-of-day consumers for
+  which `'5'` is right. Do not touch the duration fields in other modules that have the same gap —
+  `LogTimeBody.vue:10` (dayPlanner, unit 7 not run) and the framework's `LogTimeForm.vue:15` — they are
+  the same one-attribute edit, but they belong to units that have not filed them, and the second is a
+  submodule commit. Do not add a "rounded to" helper text: at `'1'` there is nothing to explain.
+- **Verification:** `history-capture/B2`'s `Verify:` block, first pass condition (the field **keeps**
+  `00:07`) on `/activity-history/timer`, all three Pomodoro cards and `/activity-history/manual`; then the
+  three the finding did not list — open *Short Sprint* in the Pomodoro presets dialog, type `0003` into
+  Short break, read `00:03`; open a quick-time preset in edit mode on `/timer` (after `F37`, or via the
+  chip label), same check; open a history record's edit dialog on `/activity-history` and type an odd
+  length. Then the menu: click the Length field, confirm every minute is selectable. Then Start a
+  7-minute countdown and confirm `POST timer-alarm/schedule` carries an `endsAt` 7 minutes out, not 5.
+- **Risk:** Low. The only behavioural change is that the arrow buttons now step by one minute instead
+  of five on these fields — fine for a duration, and none of the eight passes `showArrows` anyway.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

@@ -17,6 +17,7 @@
 				v-model="timeLength"
 				icon="hourglass-end"
 				:label="i18n.t('dateTime.length')"
+				allowedMinutesSelected="1"
 				hideDetails
 			></TimePicker>
 		</div>
