@@ -88,7 +88,7 @@
 | F36 | Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
 | F37 | Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
 | F38 | ✅ **FIXED 2026-09-15** (exactly three, as predicted) — Leftover `console.log` in `TimerPresetsSection.vue` — and two more app-side; `no-console` is configured `off` with an allow-list, which is why lint did not catch any of them | app + `eslint.config.ts` | `history-capture/P1`, **`planner-templates/P2`** | trivial |
-| F39 | The auth guard's redirect drops the destination — `router.ts:98` returns `{ name: 'login' }` with no `redirect` query, while the interceptor's own forced-logout path already writes one | app (`src/router.ts`) | `auth/B1` (write half; the read half is `FW11`) | trivial |
+| F39 | ✅ **FIXED 2026-09-23** (`7a612d7f`, with `FW11`'s bump. Body in the log) — The auth guard's redirect drops the destination — `router.ts:98` returns `{ name: 'login' }` with no `redirect` query, while the interceptor's own forced-logout path already writes one | app (`src/router.ts`) | `auth/B1` (write half; the read half is `FW11`) | trivial |
 | F40 | ✅ **FIXED 2026-09-15** — Logging out fires `GET /routine/settings` and logs a 401 — `resetAppState()` *creates* `routineReviewStore`, the Pinia plugin calls `ensureLoaded()` on creation, and the load has no signed-out guard and no `catch` | app (`src/core/todoList/store/routineReviewStore.ts`) | `auth/P2` | low |
 | F41 | ✅ **FIXED 2026-09-22** — `DayPlannerSettingsView`'s tabs stack — `d-flex` on two `VTabsWindowItem`s is `display: flex !important`, which beats the inline `display: none` Vuetify's `v-show` sets on an inactive item | app | `planner-day/B1` | trivial |
 | F42 | ✅ **FIXED 2026-09-22** — `/day-planner/settings` active tab is not in the URL — a `?tab=` query, absent for the default, through the new `dayPlanner/composable/useQueryParamRef.ts` (one ref ↔ one param, validated on read, `router.replace`, writes from one tick merged) | app | `planner-day/B6` | trivial |
@@ -128,11 +128,11 @@
 | FW5 | `DataTable`'s default row actions render the internal slug as their `title`, not the localized label (**grown**: seen again on both `leisure-bucket-anchors` tables — `title="edit"`/`"delete"`, no `aria-label`) | **framework** | `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half) | trivial |
 | FW6 | `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
 | FW7 | Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
-| FW8 | Six elevated buttons in the framework's user module use the tonal/outlined colour tokens (`error`/`warning`), and the pairing rule is written only in this app's CLAUDE.md | **framework** | `user-settings/P1` (+ the three on unit 15's signed-out views — pre-empted, and the unit did not re-file them) | trivial |
-| FW9 | The forgotten-password flow cannot complete at either step: ~~the request omits the `required` `recaptchaToken` (400 today)~~ **✅ token half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X1` verified fixed in round 3, 204 for a real and a nonexistent address), and the link the server would mail points at `/reset-password`, **a route and view that exist in no repo on this side** — plus a dead 404 branch the server never takes, a hardcoded snackbar and a `TypeError` on network failure | **framework** (new view + route) | ~~`auth/X1`~~ (fixed), `auth/B3` | med |
-| FW11 | Post-login redirect, read half: `LoginView`'s two success handlers and `LoginVerifyQrCode` hardcode `router.push('/')`, so the `?redirect=` the interceptor already writes (and `F39` will) is never honoured — with an open-redirect guard; folds `P3`'s `console.log(valid)` and the `'No user!!!'` literal, same file | **framework** | `auth/B1` (read half), `auth/P3` | low |
-| FW12 | Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar — **the unit's round 2 re-drove it and now says the same**); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId` (**observed in round 2** — it answers 401 and trips `FW21`), and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
-| FW13 | ~~`RegistrationView` fails closed on an empty reCAPTCHA token~~ **✅ guard half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X2` verified fixed in round 3, a real account created through the UI); what is left: its `catch` overwrites the server's `409 "User already exists"` with *"changed by someone else"* (the round-3 duplicate submit **did** answer 409), and `P1`'s legal links (`target="_blank"`), same file | **framework** | ~~`auth/O1`/`X2`~~ (fixed), `auth/P1` | low |
+| FW8 | ✅ **FIXED 2026-09-23** (folded into `FW12`'s `549ae02`, bump `a0f116a9`; six tokens → `errorDark`/`warningDark`, pairing rule in `SETUP.md`; verified by computed style in both themes. Body in the log) — Six elevated buttons in the framework's user module use the tonal/outlined colour tokens (`error`/`warning`), and the pairing rule is written only in this app's CLAUDE.md | **framework** | `user-settings/P1` (+ the three on unit 15's signed-out views — pre-empted, and the unit did not re-file them) | trivial |
+| FW9 | ✅ **FIXED 2026-09-23** (`0d83a88`, bump `b7423bc2` — new `/reset-password` view and route; the `catch` words only a no-response failure; verified live, bad token → 400 *"Invalid token."*. Body in the log) — The forgotten-password flow cannot complete at either step: ~~the request omits the `required` `recaptchaToken` (400 today)~~ **✅ token half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X1` verified fixed in round 3, 204 for a real and a nonexistent address), and the link the server would mail points at `/reset-password`, **a route and view that exist in no repo on this side** — plus a dead 404 branch the server never takes, a hardcoded snackbar and a `TypeError` on network failure | **framework** (new view + route) | ~~`auth/X1`~~ (fixed), `auth/B3` | med |
+| FW11 | ✅ **FIXED 2026-09-23** (`8dbb5ff`, bump `7a612d7f` with `F39`; deep link → sign in → back there, `https://` and `//` redirects → `/`. Body in the log) — Post-login redirect, read half: `LoginView`'s two success handlers and `LoginVerifyQrCode` hardcode `router.push('/')`, so the `?redirect=` the interceptor already writes (and `F39` will) is never honoured — with an open-redirect guard; folds `P3`'s `console.log(valid)` and the `'No user!!!'` literal, same file | **framework** | `auth/B1` (read half), `auth/P3` | low |
+| FW12 | ✅ **FIXED 2026-09-23** (`549ae02` with `FW8`, bump `a0f116a9`. **Also fixed, unfiled:** the confirm POST had no body and 415'd for *every* link, and both resend calls went to routes the server does not have — resend moved to `POST /auth/resend-confirmation-email { email }`, and `ConfirmEmailView` dropped its Resend. Body in the log) — Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar — **the unit's round 2 re-drove it and now says the same**); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId` (**observed in round 2** — it answers 401 and trips `FW21`), and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
+| FW13 | ✅ **FIXED 2026-09-23** (rest in `37773f3`, bump `4f7391cb` — a duplicate address reads *"An account with this email already exists"*, one snackbar; legal links open a new tab. Body in the log) — ~~`RegistrationView` fails closed on an empty reCAPTCHA token~~ **✅ guard half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X2` verified fixed in round 3, a real account created through the UI); what is left: its `catch` overwrites the server's `409 "User already exists"` with *"changed by someone else"* (the round-3 duplicate submit **did** answer 409), and `P1`'s legal links (`target="_blank"`), same file | **framework** | ~~`auth/O1`/`X2`~~ (fixed), `auth/P1` | low |
 | FW14 | ✅ **FIXED 2026-09-21** — registration's 2FA recovery codes were received and discarded; `RegistrationView` now opens `RecoveryCodesBody` after the QR (`utils/recoveryCodes.ts` shared with `SecuritySection`) and the "no QR"/"no codes" arms go on to `/login`. Verified live and by the promoted `auth.draft.spec.ts` registration test. Body in the log | **framework** (`RegistrationView.vue`) | `auth/B8` | low |
 | FW15 | `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | ✅ **FIXED 2026-09-23** — `CalendarGrid` gains `v-model:dateRangeMode` / `v-model:dayVisibility` / `v-model:rangeConfig`, `DateRangePicker` gains `v-model:mode` / `v-model:rangeConfig` (types in `dto/DateRangeConfig.ts`); unbound consumers unchanged. Body in the log. Was: `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
@@ -140,7 +140,7 @@
 | FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
 | FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
 | FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap. **The `inspirationSource` half is no longer unfiled and is now proved from inside the running component** (`isPercentKey('inspirationSource')` → `true`, `formatPercent(…)` → `"—"`, `getValue(…)` → the real string), which is why it is the worse of the two: this heuristic does not mis-format real data, it **deletes** it | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B5` (round 2 — round 1's `B1`), **`leisure-bucket-anchors/B3`** | med (decision: word-boundary match vs. opt-in) |
-| FW21 | The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
+| FW21 | ✅ **FIXED 2026-09-23** (`2351ce7`, bump `a0f116a9` — the list extended, **not** the `/auth/` prefix: the server has signed-in routes under it; unit-tested both ways. Body in the log) — The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
 | F73 | ✅ **FIXED 2026-09-21** — the three leisure profile DTOs now carry a real `id` (first constructor parameter, destructured in `fromJson`, the getter deleted) and all nine write call sites pass `item.id` / `entityToEdit.id`. Verified live on `/leisure/projects`: status click → `PUT /activity-project-profile/17201` 200, edit → 200 and persisted, delete → 204 and gone after reload. Body in the log | app (`src/core/leisure/dto/response/` ×3 + 9 call sites) | `leisure-projects/X1`, `leisure-backlog-picker/X1`, `leisure-bucket-anchors/X4` | med (effort) / **high** (severity) |
 | F74 | ✅ **FIXED 2026-09-22** (`eb13eb1a` — `PUT …/quick-edit` and `POST …/clone` split; a failed rename keeps the dialog open with a specific snackbar instead of saving the rest, because the task's success snackbar would overwrite the error. Verified live in the planner, to-do and routine dialogs, **clone included** — task repointed at the new id; the repeating-task dialog was not driven, no seeded row. **The toggle-off half does not reproduce:** with quick edit off, the Name field is not rendered at all. Body in the log) — **`quickEdit` posts to a route that has not existed since the rename** — the client sends `PATCH /activity/{id}/Overwrite`\|`/Clone`, the server has `PUT /activity/{id}/quick-edit` and `POST /activity/{id}/clone`; every quick-edit and every quick-clone 404s in four dialogs across two modules, and the rejection is swallowed so the whole form save is discarded with no message. Folds the toggle-off half: with quick-edit **off** the Name field is a live-looking no-op. **Sixteenth pass, from the endpoint source:** the two modes differ in **verb and response shape** (`PUT` → **204, no body**; `POST` → **200 carrying the new id**), so the one templated `API.patch(…/${mode})` cannot be repaired by renaming the path segment — it has to split in two | app (`activityApi.ts`, `QuickEditMode.ts`, `ActivitySelectOrQuickEditFormField.vue`) | `planner-day/X1` (both halves) | med |
 | F75 | `viewEndDate` never rolls an overnight view onto the next day — with the seed's `bedTime` of `00:00` it resolves to **today at midnight**, so `isDayMateriallyDone` is true all day and the plan-vs-actual verdict ("3 tasks never happened") renders at 19:54 on a day that is not over | app (`dayPlannerStore.ts:157-170`) | `planner-day/B7` | low |
@@ -342,7 +342,9 @@ wrong order vs. no label at all) and stay two batches. `FW15` **breaks one draft
 independent of everything, CSS only, and is the one that un-`fixme`s two existing specs; run
 `dayPlanner.spec.ts` after the pointer bump rather than driving it by hand.
 
-**Order among the unit-15 batches.** `FW9` first and alone — it is the sweep's only open `blocker`, it
+**Order among the unit-15 batches.** *(2026-09-23: `FW9`, `FW11` + `F39`, `FW8` folded into `FW12`,
+`FW21` and `FW13` all landed in this order. `F40` and `FW7` are what is left. The paragraph is kept
+for the record.)* `FW9` first and alone — it is the sweep's only open `blocker`, it
 adds a route table entry and a view, and until it lands no other auth batch's verification can
 include the forgotten-password path. **Read the whole batch before editing `ForgottenPasswordView`**:
 the token fix the finding asks for is one line, and applied on its own it moves the failure from a 400
@@ -1155,40 +1157,7 @@ Vuetify's own markup.
   will come out a step larger than today. Check it visually once; if it matters, use the `#append` slot
   with the sized `VIcon` instead of the prop — same fix, no close button either way.
 
-## F39. The auth guard's redirect drops the destination — the write half of `auth/B1`
-
-- **Scope:** app-side `src/router.ts:98`, plus one record in `docs/views/_routes.md`'s guard notes
-- **Closes:** `auth/B1` — **write half only.** The read half is `FW11` (framework, rule 1). Neither
-  half is visible without the other, which is why the finding's own root-cause guess ("two independent
-  gaps that happen to compound … fixing only one side is not enough") is right and is the reason for
-  the two batches rather than an argument against them.
-- **Root cause:** `router.beforeEach` at `src/router.ts:97-98` is `if (!auth.isAuthenticated) return
-  { name: 'login' }` — no `query`. Confirmed by direct read. The framework's interceptor already does
-  it the other way: `_common/axiosConfig.ts:175` pushes `{ name: 'login', query: { redirect:
-  _router!.currentRoute.value.fullPath } }` on a forced logout, so the **`redirect` query contract
-  already exists in the framework** and this guard is the one writer that ignores it. The finding's
-  live evidence — `goto /todo-list/13001` while signed out lands on `/login` with **no query string**,
-  and signing in lands on `/` — is exactly what this line produces. The runbook's decision log put
-  this precise question ("does the login redirect preserve the destination") into unit 15 in place of
-  a signed-out sweep, so the expectation is sourced, not taste.
-- **Files:** `src/router.ts:98`
-- **What to change:** `return { name: 'login', query: to.fullPath === '/' ? undefined : { redirect:
-  to.fullPath } }` — skip the param for the home route so a plain bounce keeps a clean `/login` URL.
-  `to.fullPath` carries the query and hash, so `/day-planner/11-09-2026?tab=x` survives whole. Nothing
-  else: the `SIGNED_OUT_ONLY_ROUTES` branch above it (`:91-93`) is unrelated and must keep sending an
-  *authenticated* visitor to `home`, redirect or not. Update `_routes.md:11`'s guard sentence to say
-  the redirect carries `?redirect=<fullPath>`.
-- **Do not change:** `_common/axiosConfig.ts:175` (already correct, framework). Do not read the query
-  back here — `router.ts` has no business knowing how `LoginView` consumes it; that is `FW11`. Do not
-  add the param to the `hasRequiredRole` bounce at `:102` (that user *is* signed in; there is nothing
-  to return to).
-- **Verification:** `B1`'s `Verify:` block, but only after `FW11` is in the pointer: signed out,
-  `goto /todo-list/13001` → the URL bar reads `/login?redirect=%2Ftodo-list%2F13001`; sign in; the
-  URL bar reads `/todo-list/13001`. Before `FW11` lands the observable is only the first half (the
-  query is present), which is worth asserting on its own so the two halves can be retested
-  independently. The draft spec's `test.fixme` at `e2e/tests/auth.draft.spec.ts:50` is this
-  behaviour — promote it once both halves are in.
-- **Risk:** None. One query param on a route the framework already writes the same param to.
+<!-- F39 (the auth guard's redirect drops the destination — `auth/B1` write half) fixed 2026-09-23 in `7a612d7f` — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F41 (settings tabs stacked — `d-flex` on a `VTabsWindowItem` beat `v-show` — `planner-day/B1`) and F42 (settings tab not in the URL — `planner-day/B6`) fixed 2026-09-22 — bodies moved to _fix-queue-log.md → Closed batches on 2026-09-23. Numbers retired, not reused; the summary table keeps their ✅ rows. -->
 
@@ -1763,355 +1732,15 @@ Vuetify's own markup.
   framework changes its toggle's markup from a Vuetify-managed `<i>` to a `VBtn`. Look at `/login` and
   `/registration` after the pointer bump, in both densities and both themes.
 
-## FW8. Six elevated buttons in the framework's user module use the tonal/outlined colour tokens — and the pairing rule is written only in this app's CLAUDE.md
+<!-- FW8 (six elevated buttons on the tonal/outlined tokens — `user-settings/P1`) fixed 2026-09-23, folded into FW12's framework commit `549ae02` (bump `a0f116a9`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-- **Scope:** **[framework]** `src/_common/modules/user/component/settings/SecuritySection.vue`,
-  `SessionsSection.vue`, `view/ConfirmEmailView.vue`, `view/ConfirmEmailChangeView.vue`,
-  `component/ResendConfirmationEmail.vue`, plus one paragraph in `src/_common/SETUP.md` — submodule
-  commit, then pointer bump
-- **Closes:** `user-settings/P1`. **Pre-empted** the same finding from unit 15 (`auth`) on its three
-  signed-out views — and it worked: unit 15 ran on 2026-09-14, its inventory recorded the buttons, and
-  its `findings.md` does not file them (ninth pass, *Contradictions* §66). `FW12` edits two of the same
-  lines (`ConfirmEmailView.vue:21`, `ConfirmEmailChangeView.vue:20`); land this first or fold it in.
-- **Root cause:** Confirmed by direct read, and wider than filed. The finding names two —
-  `SecuritySection.vue:62` (`color="warning"`) and `:68` (`color="error"`), both with `VBtn`'s
-  framework default `variant="elevated"` (`createAppVuetify.ts:25`). A grep of the module finds four
-  more of the same shape: `SessionsSection.vue:40` (per-row *Revoke*, `error`), `ConfirmEmailView.vue:21`,
-  `ConfirmEmailChangeView.vue:20`, `ResendConfirmationEmail.vue:5` (all `error`). The author knew the
-  rule: `SessionsSection.vue:63-64` pairs `error` with `variant="tonal"` correctly, and the
-  delete-account confirm on `SecuritySection.vue:184` passes `confirmBtnColor: 'errorDark'`. Six
-  buttons drifted, not a convention that was never adopted.
-- **Whose rule is it?** The tokens are the framework's (`bootstrap/theme.ts:23-26` defines `errorDark`
-  / `warningDark` / `successDark` next to `error` / `warning`), the elevated default is the framework's,
-  and framework components already use the Dark tokens (`reminders`, `notifications`, `MyCard`,
-  `SnackbarComposable.ts:30,38`). The *pairing* — elevated takes the Dark token, tonal/outlined the plain
-  one — is written in this app's CLAUDE.md and AGENTS.md and nowhere in `src/_common`: `SETUP.md:289-290`
-  says keep the colour *names* and stops there. So the batch is six tokens **and one sentence** next
-  to that paragraph, so the next framework module has the rule where its buttons are. Not a default
-  change — rule 4 does not bite; nothing about `componentDefaults` moves.
-- **Files:** `SecuritySection.vue:62,68`; `SessionsSection.vue:40`; `ConfirmEmailView.vue:21`;
-  `ConfirmEmailChangeView.vue:20`; `ResendConfirmationEmail.vue:5`; `SETUP.md:289`
-- **What to change:** `warning` → `warningDark` (one), `error` → `errorDark` (five). The SETUP.md
-  sentence: *elevated → `primary`/`secondary`/`errorDark`/`successDark`/`warningDark`; tonal or outlined
-  → `primaryOutline`/`secondaryOutline`/`error`/`success`/`warning`* — CLAUDE.md's own two lines, moved
-  to where the components live.
-- **Do not change:** `SecuritySection.vue:49` (`color="info"` — Vuetify's stock token; the theme
-  declares no `infoDark`, so there is nothing to pair it with; out of scope and worth a separate
-  question of whether `info` belongs in the palette at all). Not the `VChip`s or the `MyDialog`
-  `confirmBtnColor="error"` on `SessionsSection.vue:74` — that prop's variant is `MyDialog`'s business.
-  Not `GoogleCalendarCard.vue` (`F34`, rule 1).
-- **Verification:** `P1`'s `Verify:` block on `/user/settings` in both themes — *Change password* in
-  `warningDark`, *Delete account* and each *Revoke* in `errorDark`, all legible. The three signed-out
-  views are unit 15's to inventory; a one-line source read is enough here, and its agent should not
-  file them again.
-- **Risk:** Visual only, two repos. `warningDark` (`#CA8A04`) is darker and less saturated than the
-  unit's screenshot shows for `warning` — that is the point, but look at it in dark theme where the
-  card is `surface`.
+<!-- FW9 (the forgotten-password flow cannot complete — `auth/X1`, `auth/B3`) fixed 2026-09-23 in `vue_framework` `0d83a88` (bump `b7423bc2`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW9. The forgotten-password flow cannot complete at either step — the request omits `recaptchaToken`, and the reset link points at a view that does not exist
+<!-- FW11 (post-login redirect, read half — `auth/B1` read half, `auth/P3`) fixed 2026-09-23 in `vue_framework` `8dbb5ff` (bump `7a612d7f`, which carries `F39`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-> ✅ **Half landed, 2026-09-15 — the token.** `vue_framework` `6157283` (bump `04c405e9`):
-> `ForgottenPasswordView` now calls `executeRecaptcha('forgot_password')` — the action name this batch
-> derived from the endpoint — and posts `{ email, recaptchaToken }`. Unit 15's round 3 verified it live:
-> **204** for the seeded address and for a nonexistent one, the success `MyDialog` open, no error snackbar.
-> `auth/X1` is `fixed`. **What is still open is everything below from item 2 on**: the `/reset-password`
-> route and view (the larger half — the mail still points at `F20`'s blank page), `B3`'s `catch` (the dead
-> 404 branch, the hardcoded literal, the `TypeError` on no response, the `console.log`), and the optional
-> success-dialog exit. The round-3 note that the two addresses answer identically is the enumeration guard
-> item 3 describes, observed. Read the body as written; skip the token sentences.
+<!-- FW12 (both confirm-e-mail views' error states are a lone button — `auth/B4`, `auth/B5`, settles `U6`) fixed 2026-09-23 in `vue_framework` `549ae02` with `FW8` folded in (bump `a0f116a9`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-- **Scope:** **[framework]** `src/_common/modules/user/view/ForgottenPasswordView.vue`, a **new**
-  `src/_common/modules/user/view/ResetPasswordView.vue`, `src/_common/modules/user/user.routes.ts`,
-  `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/docs/modules/user.md:8` —
-  submodule commit, then pointer bump. App side, in the bump commit: `docs/views/_routes.md` gains one
-  record (`/reset-password`), and `src/router.ts`'s `SIGNED_OUT_ONLY_ROUTES` deliberately does **not**
-  (below). *The number:* `FW9` was reserved by the fifth and sixth passes for the `BasicTable` dialog
-  defect; that was fixed straight into `vue_framework` (`98b92d0`, bump `126d2968`) and never became a
-  batch, so the number is free. `FW10` stays reserved for the `TimePicker` minute-60 item.
-- **Closes:** `auth/X1` (`blocker`, stands), `auth/B3` (re-graded `bug` → `polish`, §59).
-- **Root cause — two gaps, and the unit could only see the first.** Read against the API this pass
-  (`framework/Sydowwe.Framework/application/endpoint/user/command/auth/BaseForgotPasswordEndpoint.cs`,
-  `BaseResetPasswordEndpoint.cs`, the two request records, `AdhdTimeOrganizer/.../ForgotPasswordEndpoint.cs`
-  which is a bare subclass, `Properties/launchSettings.json:23`):
-  1. **The token.** `ForgottenPasswordView.vue:65` posts `{ email }`; `ForgotPasswordRequest.cs:6` is
-     `public required string RecaptchaToken`, so System.Text.Json refuses the body before the endpoint
-     runs — the exact serializer 400 the unit captured. The endpoint then verifies the token with action
-     **`forgot_password`** (`:53`), not `'forgotten-password'` as the finding guessed, and Google's
-     `siteverify` compares the action string exactly (`GoogleRecaptchaService.cs:36`). Locally the
-     verifier is `LocalAlwaysPassRecaptchaService` (§63), so an empty token passes here.
-  2. **The route.** On success the endpoint mails `BuildResetLink` = `{PAGE_URL}/reset-password?userId={id}&token={escaped}`
-     (`:45-49`; `PAGE_URL` is `https://localhost:3000` in dev) and exposes `POST /auth/reset-password`
-     taking `{ userId: long, token, newPassword, recaptchaToken }` with action **`reset_password`**
-     (`BaseResetPasswordEndpoint.cs:31,39`). **`grep -ri reset-password src/` finds only the two locale
-     strings for the button label.** `userRoutes` (`user.routes.ts:14-45`) has five records and none is
-     `/reset-password`; `docs/modules/user.md:8` documents exactly five. So a user who receives the mail
-     clicks into `F20`'s blank main area, and the flow the view promises ("follow the instructions in
-     the email") has never been completable in this app. This is the larger half of the blocker and the
-     reason `X1`'s one-line fix must not ship alone.
-  3. **The error handling the unit filed as `B3`, seen whole.** `BaseForgotPasswordEndpoint.cs:15-18,54-68`
-     answers **204 on every path** — unknown address, unconfirmed address, *and* a failed reCAPTCHA —
-     by design, to avoid an enumeration oracle. So the view's `if (error.response.status === 404)`
-     (`:70`) is a branch the server never takes, `showErrorSnackbar('Email not found')` (`:71`) is a
-     hardcoded English literal on a dead path (a localized `authorization.emailNotFound` exists and is
-     also unneeded), and the finding's headline — *"everything else is silently logged"* — is wrong:
-     the interceptor (`axiosConfig.ts:220-265`) snackbars every status that has a response, which is
-     why the unit saw *"One or more errors occurred!"* for the 400. What is real is narrower: when
-     there is **no response** (server down, CORS, abort), `error.response` is `undefined`, `:70` throws
-     `TypeError` inside the `catch`, the `.finally` still hides the spinner, and the user gets nothing
-     — the interceptor's `status !== undefined` guard (`:221`) skips it too. `LoginView.vue:196-205`
-     already solved this case (`handleHttpCodes(status ?? 0)` → `httpErrors.unknown`). Plus
-     `console.log('Error', …)` at `:73`, which `F38` pre-empted for this batch.
-- **Files:** `ForgottenPasswordView.vue:51-80`; new `ResetPasswordView.vue`; `user.routes.ts:45`;
-  `user.{sk,en}.ts` (`authorization` block — this is the file that **wins** the `authorization`
-  namespace: `SK.ts:48` / `EN.ts:38` spread `frameworkUser` after the framework `common`, whose own
-  `authorization` block at `common.en.ts:475` loses wholesale, so keys added there would never render);
-  `docs/modules/user.md:8`
-- **What to change:**
-  - `ForgottenPasswordView`: import `useRecaptcha`, `recaptchaToken = await executeRecaptcha('forgot_password')`
-    (action name from the endpoint, above), post `{ email, recaptchaToken }`. Replace the `catch` body
-    with the `LoginView` shape: `const status = error.response?.status; if (status === undefined)
-    handleHttpCodes(0)` — and nothing else, because every other status already has an interceptor
-    snackbar and a second one would replace it. Delete the 404 branch and the `console.log`. Optional,
-    same file: the success `MyDialog` has `hasCloseBtn=false`, `hasConfirmBtn=false` and `MyDialog`'s
-    `persistent` default (`FW1`), so it can only be left by navigating — a *Go to login* confirm button
-    (`authorization.goToLogin` exists) costs one prop. Consider wording `passwordResetEmailSent` so it
-    does not promise a mail the server may have declined to send ("If an account with that address
-    exists, …") — the server's enumeration guard makes the current sentence a small lie for unknown
-    addresses; a copy decision, flagged not prescribed.
-  - `ResetPasswordView.vue` (new): reads `route.query.userId` (→ `Number`) and `route.query.token`
-    (vue-router has already URL-decoded it; do not decode again); one `VForm` with `MyNewPasswordInput
-    isNew` (which brings the strength rules and, after `FW7`, the mismatch message); on submit
-    `executeRecaptcha('reset_password')` then `POST /auth/reset-password` `{ userId, token, newPassword,
-    recaptchaToken }`; on 204 show a success state with *Go to login* (`{ name: 'login' }`) — the server
-    has revoked every session (`BaseResetPasswordEndpoint.cs:65-67`), so there is nothing to sign in
-    with automatically. Failures are 400 with `errors.generalErrors` (`"Recaptcha verification failed."`,
-    `"Invalid or expired reset token"`, or Identity's password-rule descriptions) — the interceptor's
-    `BadRequest` arm already shows `serverMessage`, which resolves to the first of those, so the view
-    only needs the `status === undefined` fallback. If `userId` or `token` is missing from the URL,
-    render the same "link is invalid" state without posting. Two new keys, both files: a title
-    (`authorization.setNewPassword`) and the success line (`authorization.passwordResetSuccess`);
-    `authorization.resetPassword` already exists for the button.
-  - `user.routes.ts`: add `{ path: '/reset-password', name: 'resetPassword', component:
-    ResetPasswordView, meta: { public: true, showRecaptchaBadge: true } }`. The path is the server's
-    (`BuildResetLink` is `virtual` and a host may override it — say so in `docs/modules/user.md`, which
-    also changes "five signed-out views" to six).
-- **Do not change:** `src/router.ts`'s `SIGNED_OUT_ONLY_ROUTES` — `/reset-password` processes a
-  token out of an e-mailed link, exactly the case the comment at `:74-77` gives for keeping the two
-  confirm-e-mail routes out of the set, so a signed-in user clicking the mail must still reach the
-  form. Not the interceptor's `AUTH_ENDPOINTS` list (`axiosConfig.ts:63`): neither endpoint answers
-  401, so neither needs the no-refresh treatment. Not `authorization.emailNotFound` — leave the key,
-  just stop using it. Not the server: the 204-on-everything contract is right and is documented as
-  deliberate.
-- **Verification:** `X1`'s `Verify:` block — seeded `test@example.com`, *Reset password*, `POST
-  /api/auth/forgotten-password` → **204** (the finding says "2xx"; it is 204), the *Password reset
-  email has been sent* dialog opens, no error snackbar. **Mind the throttle:** the endpoint is
-  `Throttle(3, 60)` per client IP (`:36`), so a fourth submit inside a minute is a 429 and the
-  interceptor's default arm shows *unknown error* — that is correct behaviour, not a regression. Then
-  the second step, which needs no inbox: `goto /reset-password?userId=10001&token=garbage`, fill a
-  valid new password twice, submit → `POST /api/auth/reset-password` → 400, snackbar *"Invalid or
-  expired reset token"* (Identity's description for a bad token), the form still on screen. Then
-  `goto /reset-password` with no query → the invalid-link state, no request. `B3`'s network case:
-  `playwright-cli route "**/api/auth/forgotten-password"` aborted → *unknown error* snackbar, no
-  `TypeError` in the console. Promote the draft spec's `fixme` at `e2e/tests/auth.draft.spec.ts:121`.
-  A full round trip with a real mail is a manual check against a configured sender and is not
-  required to close either finding.
-- **Risk:** Medium, two repos, and additive: every app on the framework gains a route it did not have,
-  on a path its server may or may not mail (the `BuildResetLink` override). An app whose host mails a
-  different path gets an unreachable-but-harmless view; an app whose host mails **this** path gets a
-  flow that works for the first time. The badge meta and the `public` flag match the other five, so
-  the app-side guard needs nothing.
-
-## FW11. Post-login redirect, read half — the three success handlers hardcode `/`
-
-- **Scope:** **[framework]** `src/_common/modules/user/view/LoginView.vue:156,217`,
-  `src/_common/modules/user/component/LoginVerifyQrCode.vue:64`, a new
-  `src/_common/modules/user/utils/postLoginRedirect.ts`, `src/_common/docs/modules/user.md:43-44` —
-  submodule commit, then pointer bump (which carries `F39`)
-- **Closes:** `auth/B1` (read half — `F39` is the write half, rule 1), **`auth/P3`** (same file,
-  below).
-- **Root cause:** Confirmed by direct read. All three sign-in success paths end in a literal
-  `router.push('/')`: the password path (`LoginView.vue:155-156`), the Google path
-  (`handleGoogleLogin`, `:214-218`) and the 2FA path (`LoginVerifyQrCode.vue:63-64`, a child of
-  `LoginView` so `useRoute()` sees the same `/login?redirect=…`). The framework has been *writing*
-  `redirect` since the interceptor's forced-logout path existed (`axiosConfig.ts:175`), so a user
-  whose session expired mid-task is already sent to `/login?redirect=/where/they/were` today — and
-  then to `/`. `F39` adds the guard as a second writer; this batch is the only reader either of them
-  will ever have.
-- **Files:** the two views above; `utils/postLoginRedirect.ts` (new); `docs/modules/user.md:43-44`
-- **What to change:** One helper, used three times: `resolvePostLoginTarget(route): RouteLocationRaw`
-  — takes `route.query.redirect`, accepts it only when it is a string that starts with `/` and not
-  `//` (a protocol-relative URL is the open-redirect the finding warns about; `\` should fail the same
-  test, since some browsers normalise it to `/`), and returns `'/'` otherwise. `router.push(
-  resolvePostLoginTarget(route))` at all three sites; `LoginView` needs a `useRoute()` import,
-  `LoginVerifyQrCode` too. Note in `docs/modules/user.md` that the `redirect` query is the module's
-  contract, who writes it, and that it is path-only by design. **Folded in, same file:** delete
-  `LoginView.vue:142`'s `console.log(valid)` (`auth/P3`, `F38`'s pre-empt) and replace the hardcoded
-  `showErrorSnackbar('No user!!!')` at `:159` — a 200 with an empty body — with `handleHttpCodes(0)`;
-  the `console.error` beside it can stay. Both are two-line deletions in a function this batch is
-  already editing.
-- **Do not change:** `'/'` as the fallback — `{ name: 'home' }` would assume every host app names its
-  root route `home`, which this module does not otherwise require. Not the `SIGNED_OUT_ONLY_ROUTES`
-  guard app-side: an authenticated visitor to `/login?redirect=x` is bounced to `home` and loses `x`,
-  and that is fine — they are signed in already. Not `RegistrationView.goToLogin()` (`:106-108`): it
-  pushes `{ name: 'login' }` with no redirect, correctly, because a new account has nowhere to return
-  to. Not `axiosConfig.ts:175`.
-- **Verification:** `B1`'s `Verify:` block end to end once `F39` is in the pointer; before that, the
-  interceptor's path proves the read half alone — `goto /login?redirect=%2Ftodo-list%2F13001`, sign
-  in, land on `/todo-list/13001`. The open-redirect guard: `goto
-  /login?redirect=https%3A%2F%2Fexample.com` and `?redirect=%2F%2Fexample.com` both land on `/`.
-  `P3`: no bare `true`/`false` line in the console on submit. The 2FA path stays `unverified` (`U2`)
-  — its line is a one-token change and reads the same helper, so a source read is enough for it.
-- **Risk:** Low, two repos. Every sign-in form in every app changes where it lands *only* when a
-  `redirect` query is present, and the interceptor is the only writer in any app today.
-
-## FW12. Both confirm-e-mail views' error states are a lone button — and the sibling the unit held up as the model is no better
-
-- **Scope:** **[framework]** `src/_common/modules/user/view/ConfirmEmailView.vue`,
-  `src/_common/modules/user/view/ConfirmEmailChangeView.vue`,
-  `src/_common/modules/user/_locales/user.{sk,en}.ts` — submodule commit, then pointer bump. Same
-  lines as `FW8` (`ConfirmEmailView.vue:21`, `ConfirmEmailChangeView.vue:20`); land after it or fold.
-- **Closes:** `auth/B4`, `auth/B5`. **Settles `auth/U6`** — no defect (below).
-- **Root cause, and a correction.** `B4`'s premise is that `ConfirmEmailChangeView`'s error state
-  shows *"a persistent localized explanation plus a 'Go to login page' recovery button"* and its
-  sibling only the resend button. Read both templates and both screenshots this pass:
-  `ConfirmEmailChangeView.vue:15-25`'s error branch is **one `VBtn`** (*Go to login page*) and no text;
-  `ConfirmEmailView.vue:15-26`'s is one `VBtn` (*Resend confirmation email*) and a commented-out
-  `<span>{{ i18n.t('') }}</span>` with an empty key. The "persistent body text" visible in
-  `confirm-email-change--no-token-error.png` is the **error snackbar**, still on screen when that
-  screenshot was taken; `confirm-email--no-token-error.png` was taken after its snackbar had gone.
-  So the defect is real and **both** views have it: after three seconds each shows a button under a
-  blank page with no sentence saying what went wrong. Severity `bug` stands; the fix covers two views,
-  not one. Three more things in the same forty lines, all source-certain: `ConfirmEmailView.vue:69`
-  snackbars the literal `Error` (`B5`, observed) — and `SnackbarComposable.ts:28`'s
-  `customMessage || 'Error'` is the same literal one level down, so an empty string would render it
-  too; the resend at `:64` interpolates `router.currentRoute.value.query['userId']` unguarded, so with
-  no query it posts to `/auth/resend-confirmation-email/undefined` (which is how `B5`'s repro produced
-  its failure); and both success buttons are `color="main"` (`ConfirmEmailView.vue:9`,
-  `ConfirmEmailChangeView.vue:9`) — `bootstrap/theme.ts` defines no `main`, so Vuetify emits
-  `bg-main`, no such class exists, and the *Go to login* button after a **successful** confirmation
-  renders with no fill. Unobserved (success needs a real token), one outcome. Both `console.log(error)`
-  lines (`:57,71`, `:58`) are `F38`'s pre-empt.
-- **Fourteenth pass — unit 15's round 2 re-drove `B4` and now agrees with this batch:** the
-  *"persistent explanation"* on `ConfirmEmailChangeView` was the snackbar mid-fade
-  (`confirm-email-change--mutation-recheck.png` shows the steady state: one button), both views are
-  bare, and `B5`'s `/resend-confirmation-email/undefined` request was observed on the wire — it answers
-  **401** (the API's `FallbackPolicy` on an unmatched `{id:long}` route, not an auth decision) and drags
-  a `/auth/refresh` behind it (`FW21`). The `userId` guard below removes that trigger. One more detail from
-  the same round, adjacent and folded: a no-params visit posts `API.post('/auth' + fullPath)` with **no
-  body**, which the server answers **415**, not 404 — so the initial-confirm `catch` sees a media-type
-  error for a missing token. Guard it the same way: no `userId`/`token` in the query → render the error
-  state without posting at all (the shape `FW9`'s reset view takes for a bad link).
-- **Why `U6` is not a defect:** the unit reasoned that `showFullScreenLoading()` on mount with no
-  `hideFullScreenLoading()` in either `catch`, and an interceptor that hides only on success, should
-  strand the spinner on any error — and then honestly reported that three live attempts never showed
-  one (four, after round 2 — and the unit still lists `U6` as open; it has not read §64). The missing piece is `SnackbarComposable.ts:43-46`: `showSnackbar` calls
-  `hideFullScreenLoading()` unless `dontHideFullScreenLoading` is set, and both views'
-  `catch` blocks call `showErrorSnackbar` first. The spinner is hidden by the snackbar, on every
-  error, by design. Dropped; the unit's "inconclusive, not negative" was the right thing to write.
-- **Files:** `ConfirmEmailView.vue:2-28,54-73`; `ConfirmEmailChangeView.vue:2-26,55-59`;
-  `user.{sk,en}.ts` (`authorization` block)
-- **What to change:** In both error branches, a persistent line above the button(s) reusing the key
-  each view already snackbars — `authorization.errorConfirmingEmail` / `authorization.errorConfirmingEmailChange`
-  — then a *Go to login page* button on `ConfirmEmailView` too (`authorization.goToLogin`, `{ name:
-  'login' }` rather than the literal `'/login'` at `:10,:21` of the sibling). On `ConfirmEmailView`,
-  render *Resend confirmation email* only when `route.query.userId` is present — a link with no id has
-  nothing to resend to — and replace `showErrorSnackbar('Error')` with a real key
-  (`authorization.errorResendingConfirmationEmail`, new, both files). `color="main"` → `color="primary"`
-  on both success buttons. Drop the two `console.log`s. Explicit `hideFullScreenLoading()` in each
-  `catch` is optional — the snackbar does it — but writing it makes the view stop depending on a side
-  effect of another composable, which is worth the one line.
-- **Do not change:** `SnackbarComposable.ts:28`'s `|| 'Error'` fallback — a framework-wide default for
-  callers that pass nothing, and the right fix there is a localized key in a batch of its own if it
-  ever shows; here the caller stops passing a literal, which is the actual bug. Not the button colours
-  `FW8` owns (`error` → `errorDark`) — if this batch lands first, leave `color="error"` and let `FW8`
-  do it; if `FW8` lands first, do not undo it. Not the route-matching `API.post('/auth' + fullPath)`
-  at `ConfirmEmailView.vue:50` — it forwards the mailed query string to the server as-is, which is the
-  contract (`UserEmailSenderService.cs:52` builds `/confirm-email?userId=…&token=…`).
-- **Verification:** `B4`'s and `B5`'s `Verify:` blocks: `/confirm-email` with no query → after the
-  snackbar has gone, a sentence *and* a *Go to login page* button are on screen, **no** *Resend*
-  button (no `userId`); `/confirm-email?userId=10001` with a bad token → sentence, *Resend*, *Go to
-  login*; click *Resend* → `POST /api/auth/resend-confirmation-email/10001` (a real id, not
-  `undefined`), and on failure a full sentence, not `Error`. `/confirm-email-change` with no query →
-  sentence plus button. The `color="main"` fix has no local repro (needs a valid token) — a source
-  read of the two lines is the check. Both locales.
-- **Risk:** Low, two repos, visual. Every app on the framework gains a sentence and a button on two
-  views most users see once.
-
-## FW13. `RegistrationView` fails closed on an empty reCAPTCHA token — the one thing making local registration impossible — and its `catch` overwrites the server's message
-
-> ✅ **Half landed, 2026-09-15 — the guard.** `vue_framework` `6157283` (bump `04c405e9`) deleted the
-> `if (!recaptchaToken) { … return }` block; `RegistrationView.vue:138` now assigns the token as-is, with
-> a comment saying why. Unit 15's round 2 had escalated `O1` to **`X2`** (`blocker`) on the same
-> mechanism this batch described — the server accepts the empty token, the client refused to send it —
-> and round 3 verified the fix: `POST /auth/register` → 200 through the real form, a throwaway account
-> created, `/login` reached with the prefill (`U5` resolved as "working as coded"), and the 2FA dialog
-> reached for the first time (`B8` → `FW14`). **What is still open:** the `catch` at `:163-166`
-> (`handleHttpCodes(error.response?.status)` — the round-3 duplicate submit **did** answer 409, so the
-> *"changed by someone else"* string is now one click away for anyone who registers twice), and `P1`'s
-> two `target="_blank"`s (`:41,46` — unchanged in the commit). The `UseRecaptchaHandler.ts` doc sentence
-> landed too (`docs/composables.md`). Read the body from *Adjacent, source-certain* on.
-
-- **Scope:** **[framework]** `src/_common/modules/user/view/RegistrationView.vue:41,46,131-170`,
-  `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/composable/UseRecaptchaHandler.ts`
-  (doc comment only) — submodule commit, then pointer bump
-- **Closes:** `auth/O1` (**re-graded `opportunity` → `bug`**, §63), **`auth/P1`** (same file, below).
-  **Unblocks** `auth/U1`, `auth/U5` and the enrollment half of `auth/U2` — see *Needs verification*.
-- **Root cause:** The unit filed the Login/Registration disagreement as a policy question with two
-  defensible answers. It is not, once the server is read. `AdhdTimeOrganizer/Program.cs:240-248`
-  registers `LocalAlwaysPassRecaptchaService` whenever the test-seed gate is open — i.e. on exactly the
-  machines this sweep runs on — and that class's own doc comment (`infrastructure/testSupport/LocalAlwaysPassRecaptchaService.cs:11-16`)
-  states the assumption: *"A local developer has no v3 key pair, so the client sends an empty token
-  and login fails …"*. `UseRecaptchaHandler.ts:63-77` says the same from this side: *"This is not a
-  bypass. The token is verified server-side; an empty one fails there exactly as a forged one would."*
-  Both sides have decided the server is the authority. `LoginView.vue:145` follows that decision;
-  `RegistrationView.vue:136-140` does not — `if (!recaptchaToken) { showErrorSnackbar(…); return }`
-  refuses to post, so on a machine where the server would accept the registration, the client
-  declines it. That is the whole of why unit 15 could not complete a registration, could not reach
-  the 2FA-enrolment branch (`U1`), could not see the login prefill (`U5`), and why unit 14 could not
-  enrol 2FA either. Not a preference: a client-side check that contradicts the server's documented
-  contract, with a measurable cost (three unverifiable findings across two units). Hence `bug`.
-
-  **Adjacent, source-certain, same function:** the `catch` at `:166-169` is `handleHttpCodes(error.response?.status)`.
-  The interceptor has already fired for that status *with the server's message* — `axiosConfig.ts:236-238`
-  shows `serverMessage ?? httpErrors.conflict` for a 409 — and `handleHttpCodes` then calls
-  `showErrorSnackbar` again with the status-only text, which `showSnackbar` (`SnackbarComposable.ts:47-55`)
-  replaces the first with. So a duplicate address, which the server answers `409 "User already exists
-  with this email."` (`BaseRegisterUserEndpoint.cs:74-80`), is shown to the user as *"This record was
-  changed by someone else. Refresh the page and try again."* (`common.en.ts:15`); and a real reCAPTCHA
-  failure, `403 "Recaptcha failed."` (`:66-72`), as *"You don't have permission to perform this
-  action."*. Unobserved — no registration has been submitted locally — but there is no other path
-  through those lines.
-- **Files:** `RegistrationView.vue:41,46` (links), `:131-170` (submit); `user.{sk,en}.ts`;
-  `UseRecaptchaHandler.ts:63-77` (add one sentence: callers must not gate on an empty token)
-- **What to change:** Delete `:136-140` and assign the token unconditionally, as `LoginView` does.
-  Replace the `catch` with `LoginView.vue:163-207`'s shape, or the smaller version it reduces to
-  here: `_silent: true` on the request; `const status = error.response?.status; const generalErrors =
-  error.response?.data?.errors?.generalErrors ?? []`; `409` → `showErrorSnackbar(t('authorization.emailAlreadyRegistered'))`
-  (new key, both files — the server's English is not for the user); otherwise `generalErrors[0] ??
-  handleHttpCodes(status ?? 0)`. Keep `hideFullScreenLoading()` where it is. **Folded in, same file:**
-  `auth/P1` — add `target="_blank" rel="noopener"` to the two `RouterLink`s at `:41,46`; vue-router's
-  click guard skips SPA navigation for a `_blank` target, so the legal page opens in a new tab and the
-  half-filled form is untouched (the finding's own fix, confirmed against `RouterLink`'s `guardEvent`).
-  The `authorization.recaptchaFailed` key stays — `LoginView` may want it for the server's 400 one day.
-- **Do not change:** `UseRecaptchaHandler.ts`'s behaviour (resolve-to-empty is the documented,
-  deliberate fix — 2026-09-13). Not the server. Not `open2FADialog` / the `recoveryCodes` handling at
-  `:152-161` — that is `U1`, source-certain but rule 5 keeps it out until `FW13` makes it observable
-  (the shape is written under *Needs verification*, six lines reusing `SecuritySection.vue:269-281`).
-  Not the app-side `googleCalendar` or `user` glue.
-- **Verification:** `O1`'s evidence, inverted: on the seeded local API, fill `/registration` with a
-  throwaway address, both passwords, tick terms, submit → `POST /api/auth/register` **fires** (today it
-  does not) and returns 200 → `/login` with the e-mail prefilled and the resend panel shown — which is
-  `U5`'s verify block for free. Then submit again with the **same** address → 409 → snackbar
-  *"An account with this e-mail already exists"* (or whatever the key says), **not** *"changed by
-  someone else"*. `P1`: type an e-mail, click *Terms and conditions* → a new tab; the registration
-  tab's field still holds the value. Reseed afterwards (`POST /api/test/seed`) — a new account is a
-  mutation. Promote the draft spec's `fixme` at `e2e/tests/auth.draft.spec.ts:91` (`P1`); the one at
-  `:104` (`U1`) becomes runnable here but is `FW14`'s to promote, and `:97` (`B2`) is `FW7`'s.
-- **Risk:** Low, two repos, and it is a *loosening* on the client only: on any deployment with the real
-  verifier, an empty token is still refused — by the server, with a 403 this batch now words
-  correctly. The `_blank` links are a behaviour change for every app's registration page; a host that
-  wants same-tab legal pages has no override, which is acceptable for two links whose whole problem
-  was being same-tab.
+<!-- FW13 (registration fails closed on an empty reCAPTCHA token, and its `catch` overwrites the server's message — `auth/O1`, `auth/P1`) fixed 2026-09-23: guard half `vue_framework` `6157283` (2026-09-15), the rest `37773f3` (bump `4f7391cb`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW14 (registration's 2FA recovery codes discarded) landed 2026-09-21 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused. -->
 
@@ -2308,36 +1937,7 @@ Vuetify's own markup.
 - **Risk:** Medium, framework-wide: loosening the match can un-format a column that another app named
   `vatRate`; tightening it to segments keeps those. Prefer segments.
 
-## FW21. The interceptor's `AUTH_ENDPOINTS` allowlist names the signed-in auth routes and none of the signed-out ones
-
-- **Scope:** **[framework]** `src/_common/axiosConfig.ts:63-65` — submodule commit, then pointer bump
-- **Closes:** `auth/B7` — **re-graded `bug` → `polish`** (§110)
-- **Root cause:** Confirmed. `AUTH_ENDPOINTS = ['/auth/refresh', '/auth/login/2fa', '/auth/login',
-  '/auth/microsoft-sign-in', '/auth/logout']` and `isAuthEndpoint()` is `url === path ||
-  url.endsWith(path)`, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email`
-  or `/auth/resend-confirmation-email/{id}` takes the refresh-and-retry branch (`:180-199`) while no
-  session exists: `POST /auth/refresh` → 401 → `logoutClient()`, which returns at its first line because
-  `auth.isAuthenticated` is already `false` (`:171-172`) → the original rejection. The unit observed the
-  pair on `B5`'s `/resend-confirmation-email/undefined`. **Why that 401 exists at all:** `undefined` does
-  not match `{id:long}`, the route is unmatched, and the API's authorization `FallbackPolicy` answers
-  unmatched paths with 401 (README, *Test data*) — it is not the endpoint saying anything. `FW12`'s
-  `userId` guard removes the only observed trigger; the allowlist gap remains for any future 401 from a
-  signed-out route, and the cost of it is one wasted request and one console line. No user-visible
-  effect, hence `polish`. `FW9`'s *Do not change* on this list stands for the two endpoints it names
-  (neither answers 401); this batch is the class, not those two.
-- **What to change:** Either extend the list with the four signed-out paths (matching
-  `/auth/resend-confirmation-email` by prefix, since it carries an id), or replace the `endsWith` test
-  with "starts with `/auth/`" and keep the list as documentation of which ones exist. The second is
-  smaller and cannot drift again; check that no `/auth/*` route is ever called **signed in** with an
-  expectation of refresh — `/auth/logout` is in the list already, so the answer is no.
-- **Do not change:** the refresh branch itself, or `logoutClient()`'s signed-out early return — that
-  return is what makes this harmless.
-- **Verification:** `B7`'s `Verify:` block after `FW12` has landed needs a different trigger (the
-  `undefined` path is gone): `playwright-cli route "**/api/auth/forgotten-password" --status=401`, submit
-  the form signed out, and confirm `requests` shows **no** `/auth/refresh`. Then sign in and confirm an
-  expired-token refresh on a normal route still works — `CLAUDE.md`'s 401-burst paragraph is the check.
-- **Risk:** None to behaviour; two repos. An app whose signed-out endpoints live under a different prefix
-  gains nothing and loses nothing.
+<!-- FW21 (the interceptor's `AUTH_ENDPOINTS` list names none of the signed-out routes — `auth/B7`) fixed 2026-09-23 in `vue_framework` `2351ce7` (bump `a0f116a9`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 
 <!-- F74 (`quickEdit` called `PATCH /activity/{id}/{mode}`; the server has `PUT …/quick-edit` and `POST …/clone` — `planner-day/X1`) fixed 2026-09-22 in `eb13eb1a` — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
