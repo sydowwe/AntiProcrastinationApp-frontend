@@ -135,7 +135,11 @@ touching `main.ts`. Also exported: `createAppPinia`, `createAppVuetify` (+ `comp
 
 ### `_common/api/` — base API composables
 
-- `useEntityQuery<T>(config)` — `fetchById`, `fetchByField`, `fetchAll`, `fetchSelectOptions`
+- `useEntityQuery<T>(config)` — `fetchById`, `fetchByField`, `fetchAll`, `fetchSelectOptions`.
+  **Each method aborts its own previous in-flight call, per method, not per id.** Two concurrent
+  `fetchById`s from one instance cancel each other unless each passes `{ requestKey }` (`fetchById(id,
+  undefined, { requestKey: id })`; `fetchByField` takes it fourth). That shipped once as an empty
+  Compare Templates dialog (`FW18` / `F50`).
 - `useEntityCommand<T, TCreate, TUpdate>(config)` — `create`, `createWithResponse`, `update`, `updateWithResponse`, `patch`, `patchWithResponse`, `batchedToggle`,
   `deleteEntity`, `batchDelete`
 - `useFetchFiltered` / `useFetchFilteredSorted` / `useFetchSorted` — POST filter/sort.

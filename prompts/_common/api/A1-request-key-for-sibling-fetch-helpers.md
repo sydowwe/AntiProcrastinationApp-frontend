@@ -126,9 +126,12 @@ Then:
 - **`useExperiencedProgress` is the subtle one.** Its two calls are sequential *because* of this bug;
   making them concurrent changes timing that a visible readout depends on. Verify the fraction it renders
   is unchanged, not just that no error appears.
-- **Do not add `requestKey` to `useEntityQuery`.** It already holds a separate controller per method
-  (`fetchById`, `fetchAll`, …), which is the same idea expressed differently. Only the three listed
-  helpers share one controller across every call.
+- **`useEntityQuery` already has its key — do not redo it.** Its controllers are per *method*, which
+  makes each method latest-wins, **not** per call: two `fetchById`s for different ids from one instance
+  cancel each other just like an unkeyed `useFetchFiltered`. This trap used to say "per method is the
+  same idea expressed differently", and that is how `TemplateComparisonDialog` shipped an empty dialog
+  after the 2026-09-11 fix. `FW18` gave `fetchById` / `fetchByField` the same optional `requestKey`
+  (`fetchAll` / `fetchSelectOptions` take no id and stay keyless), so it is out of scope here.
 
 ## Report back with
 
