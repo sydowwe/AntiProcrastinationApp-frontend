@@ -33,9 +33,7 @@ test.describe('Planner calendar (/day-planner)', () => {
 	})
 
 	test('the next-month arrow advances the month query param', async ({ authenticatedPage }) => {
-		// Icon-only, no accessible name (finding A1) — falls back to position within the header row.
-		const nextMonthButton = authenticatedPage.getByRole('button').nth(5)
-		await nextMonthButton.click()
+		await authenticatedPage.getByRole('button', { name: 'Next month' }).click()
 		await expect(authenticatedPage).toHaveURL(/[?&]month=\d{4}-\d{2}/)
 	})
 
@@ -45,7 +43,7 @@ test.describe('Planner calendar (/day-planner)', () => {
 		await authenticatedPage.goto('/day-planner?month=2026-10')
 		const toolbar = authenticatedPage.locator('#app .v-card-title')
 		await expect(toolbar.getByText('October')).toBeVisible()
-		await authenticatedPage.getByRole('button').nth(5).click()
+		await authenticatedPage.getByRole('button', { name: 'Next month' }).click()
 		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-11/)
 		await expect(toolbar.getByText('November')).toBeVisible()
 
@@ -62,7 +60,7 @@ test.describe('Planner calendar (/day-planner)', () => {
 	test('Back restores the Days-to-show filter of the entry it lands on', async ({ authenticatedPage }) => {
 		await authenticatedPage.goto('/day-planner?month=2026-10&days=workdays')
 		await expect(authenticatedPage.locator('#app .day-header')).toHaveCount(5)
-		await authenticatedPage.getByRole('button').nth(5).click()
+		await authenticatedPage.getByRole('button', { name: 'Next month' }).click()
 		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-11/)
 		const app = authenticatedPage.locator('#app')
 		await app.locator('.v-select__selection-text', { hasText: 'Workdays' }).click()

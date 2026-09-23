@@ -214,6 +214,7 @@ const common = {
 	// `holidays` has no framework counterpart.
 	calendar: {
 		daysToShow: `Days to show`,
+		dayCellLabel: `{weekday}, {date}`,
 		allWeek: `All week`,
 		workdays: `Workdays (Mon-Fri)`,
 		weekend: `Weekend (Sat-Sun)`,
