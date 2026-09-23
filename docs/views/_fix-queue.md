@@ -112,7 +112,7 @@
 | F61 | ✅ **FIXED 2026-09-21** (same session as `F79`) — `LADDER_PAGE_SIZE` and `TIMELINE_PAGE_SIZE` are 200 with `ProjectsView`'s comment, both loaders `catch` into a `failed` flag (cancellations excluded via `isRequestCanceled`), and the ladder, timeline **and** board render a distinct *load failed* + *Try again* branch through the new `LeisureEmptyState`. Verified live: both grids 200, the seeded row on rung 3, July and August 2026 shaded; a routed 500 shows the error branch and *Try again* recovers. Body in the log | app (`BucketListView.vue`, `MemoryAnchorsView.vue`, `ProjectsView.vue` (board `catch` only), `component/LeisureEmptyState.vue`) | `leisure-bucket-anchors/X1`, `X2` | low |
 | F62 | ✅ **FIXED 2026-09-15** — `NewMemoryAnchorForm`'s `onMounted` awaits the eligible-activities fetch with no `try/finally`, so any failure leaves the spinner on forever and the "no eligible activities" fallback unreachable — today *every* call fails, because the endpoint does not exist (§12) | app (`NewMemoryAnchorForm.vue:107-112`) | `leisure-bucket-anchors/X3` (frontend half) | trivial |
 | F63 | ✅ **FIXED 2026-09-21** (same session as `F77`, `F63` first per its ordering constraint) — all eight lookup ids are `number | null = null` on the four DTOs, `MemoryAnchorForm` passes `presetActivityId` through. Verified live on `/leisure/backlog`: the fresh *Add* dialog renders the three selects empty, not "0", and an untouched *Create* shows the required message and fires no `POST`. Body in the log | app (`ActivityBacklogProfileRequest.ts`, `ActivityBucketListProfileRequest.ts`, `MemoryAnchorRequest.ts`, `ActivityProjectProfileRequest.ts` + their forms) | `leisure-backlog-picker/B2` (round 2 — round 1's `X3`, the `0` half), `leisure-bucket-anchors/B2` (`0` half), **`leisure-projects/B5`** | low-med |
-| F64 | The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented. **Round 2 narrowed the headline and added a second symptom:** the excluded row's dependency is the *"None"* lookup, so the batch must not hard-exclude *or* badge it, and a mocked non-empty match produced the reason chip *"Good weather for this today"* on an indoor activity | app (`useLeisurePicker.ts:250`, `leisureScoring.ts`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/B1` (round 2 — round 1's `X2`), `P2` (round 1) | low |
+| F64 | ✅ **FIXED 2026-09-23** (with API `e50bd3c`). An empty set collapses to `null` in `fetchTodayFit`. The backlog row carries `weatherDependencyCode`, and `realWeatherDependencyId` keeps *None* and unrecognised rows out of the exclusion, the bonus and both badges. Verified live in both halves; a real sunny/dry/snow row was not checked end to end (no seed row). Body in the log. Was: The picker reads an empty `matchingWeatherDependencyIds` as "nothing fits" and excludes every weather-tagged backlog entry — the server's own contract says empty means "no opinion, exclude nothing"; and the API file's comment still says the endpoint is unimplemented. **Round 2 narrowed the headline and added a second symptom:** the excluded row's dependency is the *"None"* lookup, so the batch must not hard-exclude *or* badge it, and a mocked non-empty match produced the reason chip *"Good weather for this today"* on an indoor activity | app (`useLeisurePicker.ts:250`, `leisureScoring.ts`, `leisureWeatherApi.ts`) | `leisure-backlog-picker/B1` (round 2 — round 1's `X2`), `P2` (round 1) | low |
 | F65 | ✅ **FIXED 2026-09-22** (with `F4`) — `:aria-label` beside every `:title`, same key, `:title` kept as the sighted user's tooltip. Two deliberately carry more than the key: the year menu is *"Pick a year: 2026"* (a bare key would replace the visible year in the name) and the source/experienced chips and the two row-scoped delete buttons append the row (*"Delete: Learn Bouldering"*, *"Open where this came from: Bucket List"*), matching `TodoListCard`'s existing `action: name` shape. Verified live on all three views, the timeline and the ladder | app (`src/core/leisure/`) | `leisure-bucket-anchors/A1` (app half, re-graded `polish`) | trivial |
 | F66 | `boolChip`'s `falseIcon` defaults to `trueIcon`, and four of five call sites pass one icon — a `✗` chip wears a check | app (`useLeisureFilterChips.ts:19` + call sites) | `leisure-bucket-anchors/P1` | trivial |
 | F67 | ✅ **FIXED AND VERIFIED 2026-09-15** (`useSessionLength.ts` — one rounding rule and one discard-with-message for all three capture views, plus the pomodoro's rest record; body in the log) — A session that rounds to zero minutes was handled three different ways by the three capture views, and none of them told the user | app (`src/core/activityHistory/`) | `history-capture/B4`, `B5` (+ the stopwatch twin) | low |
@@ -859,34 +859,7 @@ Vuetify's own markup.
 
 <!-- F59 (a skipped task rendered as done and its checkbox completed it — `home/B4`) fixed 2026-09-22 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. The skip-reason backend gap it surfaced is recorded in the log entry. -->
 
-## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
-
-- **Scope:** app-side `src/core/leisure/composable/useLeisurePicker.ts:250`,
-  `src/core/leisure/api/leisureWeatherApi.ts:3-9` (comment)
-- **Closes:** `leisure-backlog-picker/X2`, `P2`
-- **Root cause:** `GET /leisure-weather-fit` answers `200 { matchingWeatherDependencyIds: [] }` for an
-  account with no weather location — and its endpoint's own doc comment (`GetLeisureWeatherFitEndpoint.cs`)
-  spells out the client's obligation: *"The client reads an empty set and a failed call identically
-  ('no weather opinion'): nothing ranks up, no badge renders, nothing is excluded."* `useWeatherFit.ts`
-  says the same in its header. `useLeisurePicker.ts:250` then does
-  `weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null` — `[]` is not nullish, so
-  `isEligible`'s backlog branch (`leisureScoring.ts:246-253`) sees a non-null list that contains no id and
-  excludes **every** backlog entry with any `weatherDependencyId`, including the seed's one row whose
-  dependency is the *"None"* lookup. `/leisure/pick`'s default landing state shows no backlog card at
-  any time budget. `leisureWeatherApi.ts:3-9` meanwhile still says the endpoint is *"Not implemented
-  server-side yet… Every call fails today"* — `P2`.
-- **What to change:** Collapse the empty set to `null` **once**, at the boundary — in `fetchTodayFit`
-  (return `null` when the array is empty) or in `WeatherFit.fromJson` — so every consumer, not just the
-  picker, gets the contract (`fitsToday` already returns `false` for `null`, so the badge is unchanged).
-  Rewrite the `leisureWeatherApi.ts` comment to describe the live endpoint and the empty-means-no-opinion
-  rule.
-- **Do not change:** `isEligible` — with a non-empty list it is correct, and a real mismatch must still
-  exclude (`X2`'s *Verify* step 4).
-- **Verification:** `X2`'s `Verify:` block — the seeded *Read a Novel* (45 min, 1 person) appears at
-  ≥ 60 min / *Just me*; then `playwright-cli route "**/api/leisure-weather-fit"` fulfilled with an id
-  that is *not* the row's dependency, and confirm it is excluded.
-- **Risk:** None beyond deciding where the collapse lives; put it at the boundary so `O1`'s later
-  `maxParticipants` work does not have to remember it.
+<!-- F64 (the picker read an empty weather set as "nothing fits", and badged every "None" row — `leisure-backlog-picker/X2` (round 1), `B1` (round 2), `P2`) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. The badge half needed API `e50bd3c` (`weatherDependencyCode` on the backlog row). -->
 
 ## F66. `boolChip` reuses the true icon for the false state on four of five chips
 

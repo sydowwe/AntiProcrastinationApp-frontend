@@ -69,7 +69,7 @@ function backlogSuggestion(profile: ActivityBacklogProfile): LeisureSuggestion {
 		effortType: profile.effortType,
 		minParticipants: profile.minParticipants,
 		statedDurationMinutes: duration,
-		weatherDependencyId: profile.weatherDependency.id ?? null,
+		weatherDependencyId: profile.realWeatherDependencyId,
 		readinessStatus: null,
 		comfortZoneStep: null,
 		requiresTravel: false,

@@ -119,7 +119,11 @@ export interface CandidateFacts {
 	minParticipants: number | null
 	/** Backlog only — the duration the user committed to when they filed the activity. */
 	statedDurationMinutes: number | null
-	/** Backlog only — the `activity-weather-dependency` lookup id the entry was filed under. */
+	/**
+	 * Backlog only — the `activity-weather-dependency` lookup id the entry was filed under, and only
+	 * when it is a real dependency: a *None* or unrecognised row is `null` here
+	 * (`ActivityBacklogProfile.realWeatherDependencyId`), so weather neither excludes nor boosts it.
+	 */
 	weatherDependencyId: number | null
 	/** Project only. */
 	readinessStatus: ReadinessStatus | null

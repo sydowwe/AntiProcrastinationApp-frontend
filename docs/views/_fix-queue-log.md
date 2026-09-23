@@ -4452,6 +4452,72 @@
 - **Risk:** None beyond the dialog. If (b) takes the second-instance route, `A1`'s workaround table
   grows by one row until `FW18` retires it — say so in the commit.
 
+## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
+
+> ✅ **FIXED 2026-09-23**, in two halves. The second needed a backend change (API `e50bd3c`).
+>
+> **Exclusion half (as the body prescribes).** `fetchTodayFit` collapses an empty set to `null` at
+> the boundary. The `leisureWeatherApi.ts` comment now describes the live endpoint (`P2`).
+>
+> **Badge half (`B1` round 2, pass condition 2; only the summary row claimed it).** Reading the API
+> source showed it was worse than the finding guessed. `WeatherFitRule.MatchingCodes` puts `none`
+> into **every** non-empty set on purpose, so on any day with a weather location every *None* row
+> got *"Good weather for this today"* plus `WEATHER_MATCH_BONUS`. The client saw only ids. Option (b)
+> was chosen: the backlog row now carries `weatherDependencyCode`, the server's effective code
+> (`WeatherDependencyCodes.Effective`: the stored code, else a guess from the label, else `null`), on
+> grid, GetById and GetAll. The client added a `WeatherDependencyCode` enum and
+> `ActivityBacklogProfile.realWeatherDependencyId`, which is `null` for `none`, `null` or an unknown
+> code. The picker's `CandidateFacts.weatherDependencyId` and `BacklogTable`'s badge read it, so
+> `isEligible`, the bonus and both badges needed no change: they already skip `null`. The same edit
+> closes an unfiled twin: a row with an unrecognised label used to be *excluded* on any day with
+> weather, although the server's contract calls it "no opinion". The fit endpoint itself is unchanged.
+>
+> **Verified:** live on `/leisure/pick` at 60 min / *Just me*, *Read a Novel* renders against the
+> real `200 []`. With the fit routed to `[5]` (its own *None* id, the server's real non-empty shape),
+> the wire carries `"weatherDependencyCode":"none"` and the card renders with **no** weather chip.
+> Earlier the same input badged it. `/leisure/backlog` under the same route shows no *Good for today*
+> chip. There are no console errors. New unit test: `activityBacklogProfileWeatherCode.test.ts`
+> (52/52 leisure tests pass). The e2e spec has both halves as passing tests (the round-1 `X2` fixme
+> is now a real test, plus *a "None" weather dependency is never badged*). Type-check (exit 0), e2e
+> typecheck and lint are clean.
+>
+> **Not verified:** a *real* dependency (sunny/dry/snow) still badging and excluding end to end. The
+> seed has no such backlog row, and adding one is a seed change. That path is covered only by the
+> unit test (`realWeatherDependencyId` passes the id through for `sunny`/`dry`/`snow`) and by the
+> untouched `isEligible` tests. Not verified either: an account with a real weather location. Every
+> non-empty set was routed.
+>
+> **Unrelated failure seen in the same run:** `Backlog › delete confirmation … does not close on
+> Escape` now fails. FW1 step 1 (`8739d08f`, landed by another session during this one) made
+> confirmations close on Escape, and the spec still asserts they do not. That belongs to FW1's owner.
+
+- **Scope:** app-side `src/core/leisure/composable/useLeisurePicker.ts:250`,
+  `src/core/leisure/api/leisureWeatherApi.ts:3-9` (comment)
+- **Closes:** `leisure-backlog-picker/X2`, `P2`
+- **Root cause:** `GET /leisure-weather-fit` answers `200 { matchingWeatherDependencyIds: [] }` for an
+  account with no weather location — and its endpoint's own doc comment (`GetLeisureWeatherFitEndpoint.cs`)
+  spells out the client's obligation: *"The client reads an empty set and a failed call identically
+  ('no weather opinion'): nothing ranks up, no badge renders, nothing is excluded."* `useWeatherFit.ts`
+  says the same in its header. `useLeisurePicker.ts:250` then does
+  `weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null` — `[]` is not nullish, so
+  `isEligible`'s backlog branch (`leisureScoring.ts:246-253`) sees a non-null list that contains no id and
+  excludes **every** backlog entry with any `weatherDependencyId`, including the seed's one row whose
+  dependency is the *"None"* lookup. `/leisure/pick`'s default landing state shows no backlog card at
+  any time budget. `leisureWeatherApi.ts:3-9` meanwhile still says the endpoint is *"Not implemented
+  server-side yet… Every call fails today"* — `P2`.
+- **What to change:** Collapse the empty set to `null` **once**, at the boundary — in `fetchTodayFit`
+  (return `null` when the array is empty) or in `WeatherFit.fromJson` — so every consumer, not just the
+  picker, gets the contract (`fitsToday` already returns `false` for `null`, so the badge is unchanged).
+  Rewrite the `leisureWeatherApi.ts` comment to describe the live endpoint and the empty-means-no-opinion
+  rule.
+- **Do not change:** `isEligible` — with a non-empty list it is correct, and a real mismatch must still
+  exclude (`X2`'s *Verify* step 4).
+- **Verification:** `X2`'s `Verify:` block — the seeded *Read a Novel* (45 min, 1 person) appears at
+  ≥ 60 min / *Just me*; then `playwright-cli route "**/api/leisure-weather-fit"` fulfilled with an id
+  that is *not* the row's dependency, and confirm it is excluded.
+- **Risk:** None beyond deciding where the collapse lives; put it at the boundary so `O1`'s later
+  `maxParticipants` work does not have to remember it.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

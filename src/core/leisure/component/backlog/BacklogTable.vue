@@ -108,7 +108,7 @@
 	const weatherFit = useWeatherFit()
 
 	function isGoodToday(item: ActivityBacklogProfile): boolean {
-		return fitsToday(item.weatherDependency?.id, weatherFit.value)
+		return fitsToday(item.realWeatherDependencyId, weatherFit.value)
 	}
 
 	const columns: TableColumn[] = [

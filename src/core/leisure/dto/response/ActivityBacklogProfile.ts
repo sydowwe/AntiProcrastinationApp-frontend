@@ -3,6 +3,7 @@ import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { ActivityInfo } from '@/core/leisure/dto/response/ActivityInfo.ts'
 import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
 import { EffortType } from '@/core/leisure/dto/enum/EffortType.ts'
+import { WeatherDependencyCode } from '@/core/leisure/dto/enum/WeatherDependencyCode.ts'
 import { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 
 export class ActivityBacklogProfile implements IIdResponse {
@@ -25,7 +26,23 @@ export class ActivityBacklogProfile implements IIdResponse {
 		// API does not carry the field yet (see prompts/leisure/backend/B1-backend.md).
 		public isAnchored: boolean | null,
 		public memoryAnchorId: number | null,
+		// `null` when the server cannot tell what the row means (a user-created label it does not
+		// recognise) — that row takes no part in weather matching.
+		public weatherDependencyCode: WeatherDependencyCode | null,
 	) {}
+
+	/**
+	 * The lookup id when the entry really depends on the weather, else `null`. A *None* row fits every
+	 * day — the server puts it in every non-empty fit set — so letting its id through would badge and
+	 * boost every indoor activity whenever a weather location is set; an unrecognised row is "no
+	 * opinion". Every weather consumer (the picker's eligibility and bonus, both badges) reads this,
+	 * never `weatherDependency.id`.
+	 */
+	get realWeatherDependencyId(): number | null {
+		if (this.weatherDependencyCode === null || this.weatherDependencyCode === WeatherDependencyCode.None)
+			return null
+		return this.weatherDependency.id ?? null
+	}
 
 	static fromJson(object: any) {
 		const {
@@ -43,6 +60,7 @@ export class ActivityBacklogProfile implements IIdResponse {
 			isRepeatable = false,
 			isAnchored = null,
 			memoryAnchorId = null,
+			weatherDependencyCode = null,
 		} = object
 		// The server sends the enum's NAME (`"Low"`, `"Physical"`) — `JsonStringEnumConverter` with no
 		// naming policy — while these enums declare camelCase VALUES (`'low'`) because the `enums.*`
@@ -64,6 +82,9 @@ export class ActivityBacklogProfile implements IIdResponse {
 			isRepeatable,
 			isAnchored,
 			memoryAnchorId,
+			// Not `convertToEnum`: that maps a member NAME, and this field arrives as the value already
+			// (`"sunny"`). A code this client does not know is "no opinion", not a dependency.
+			Object.values(WeatherDependencyCode).includes(weatherDependencyCode) ? weatherDependencyCode : null,
 		)
 	}
 

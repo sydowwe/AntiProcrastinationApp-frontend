@@ -2,7 +2,7 @@ import { expect, test } from '../fixtures/auth'
 
 // Structural tier only, from a live crawl of /leisure/backlog and /leisure/pick (inventory pass,
 // docs/views/leisure-backlog-picker/). Semantic assertions (ranking, scoring, the three blocker
-// findings X1/X2/X3, the percent-format bug B1) are left as named fixme stubs — see findings.md for
+// findings X1/X2/X3) are left as named fixme stubs — see findings.md for
 // the full repro/verify steps. Do not un-skip and assert around any of them without re-reading the
 // finding first; several look like a bug in the code they'd be pinned to, not in the app.
 
@@ -70,27 +70,25 @@ test.describe('Backlog (/leisure/backlog)', () => {
 		async () => {},
 	)
 
-	test('delete confirmation names the activity and does not close on Escape', async ({ authenticatedPage }) => {
+	test('delete confirmation names the activity, and Escape answers "no"', async ({ authenticatedPage }) => {
 		await authenticatedPage.getByRole('button', { name: 'Delete' }).click()
 		const confirmDialog = authenticatedPage.getByRole('dialog', { name: 'Delete confirmation' })
 		await expect(confirmDialog.getByText('Are you sure you want to delete Read a Novel?')).toBeVisible()
 
-		// Framework default (persistent=true) — see docs/views/_shell/inventory.md finding A1. This is
-		// documenting the current behaviour, not endorsing it.
+		// FW1 (_shell finding A1): a yes/no confirmation is not persistent. Escape closes it and nothing
+		// is deleted. This used to pin the opposite, the framework's old everything-persistent default.
 		await authenticatedPage.keyboard.press('Escape')
-		await expect(confirmDialog).toBeVisible()
-
-		await authenticatedPage.getByRole('button', { name: 'Cancel' }).click()
 		await expect(confirmDialog).not.toBeVisible()
+		await expect(authenticatedPage.getByRole('row', { name: /Read a Novel/ })).toBeVisible()
 	})
 
-	test.fixme(
-		'Duration (min) column shows plain minutes, not a percentage',
-		// B1: 'durationMinutes'.toLowerCase() contains 'ratio' as a substring, which
-		// useTableFormatters.ts's keyword heuristic matches to the percent formatter. Renders "45.00 %"
-		// instead of "45". See findings.md B1.
-		async () => {},
-	)
+	test('Duration (min) column shows plain minutes, not a percentage', async ({ authenticatedPage }) => {
+		// B1 / FW20: 'durationMinutes' used to match the percent formatter through the substring
+		// 'ratio' and render "45.00 %". The formatter now matches whole words of the key.
+		const row = authenticatedPage.getByRole('row', { name: /Read a Novel/ })
+		await expect(row.getByRole('cell', { name: '45', exact: true })).toBeVisible()
+		await expect(row).not.toContainText('%')
+	})
 
 	test.fixme(
 		'submitting the create form with no activity selected shows a visible error',
