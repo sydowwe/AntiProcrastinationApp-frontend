@@ -200,28 +200,17 @@ test.describe('Day Planner', () => {
 		})
 	})
 
-	// DELETE IS UNREACHABLE AT THIS SUITE'S VIEWPORT, AND THAT IS A REAL DEFECT — NOT A LOCATOR BUG.
-	// `_common/component/ActionBar.vue` positions the floating selection bar with
-	// `position: fixed; left: 50%; transform: translateX(-50%)`, which centres it on the VIEWPORT while
-	// Vuetify insets the content with `padding-left: 288px` on `.v-main` for the expanded nav drawer.
-	// The bar therefore sits ~144px left of the content it belongs to, and its leftmost action —
-	// Delete — slides under the drawer, which intercepts the pointer events (the drawer outranks the
-	// bar's `z-index: 50`). Playwright reports it as `<div class="v-navigation-drawer__content"> from
-	// <header> subtree intercepts pointer events`, and the failure screenshot shows the bar starting at
-	// EDIT with DELETE clipped off.
+	// These two click specs were `fixme`d until FW17: `ActionBar` centred on the VIEWPORT
+	// (`left: 50%`) while `.v-main` is inset by the expanded nav drawer, so the bar's leftmost action,
+	// Delete, slid under the drawer and the drawer took the click. The bar now centres on the content
+	// box (`--v-layout-left/right`), so the clicks land.
 	//
-	// It is user-facing: at 1280x720 with the sidebar open, a selected planner task cannot be deleted
-	// from the action bar at all. It reproduces on every view that mounts the shared ActionBar, so the
-	// fix belongs in the framework submodule (centre on the content box, not the viewport) and is left
-	// for the owner to direct rather than improvised here.
+	// Keep the asymmetry in mind: the presence spec passed throughout, because Playwright's visibility
+	// check is about layout, not occlusion — a button under the drawer is still "visible". Only a CLICK
+	// catches this class of defect, which is why the two below click rather than assert visibility.
 	//
-	// These were previously `if (count === 0) test.skip()` — they never ran, so this never surfaced.
-	// `fixme` rather than a weakened locator, per the suite's own rule.
-	//
-	// Note the asymmetry below: the bar's presence still asserts and passes, because Playwright's
-	// visibility check is about layout, not occlusion — a button covered by the drawer is still
-	// "visible". Only the two specs that CLICK Delete fail. That gap is worth knowing about: a
-	// visibility assertion cannot catch this class of defect.
+	// Neither confirms. The seed account's `askBeforeDelete` defaults to true (the API's `BaseUser`), so
+	// Delete opens the confirmation rather than deleting, and no fixture row is touched.
 	test.describe('task selection and deletion', () => {
 		test('selecting a task shows the selection action bar', async ({ authenticatedPage }) => {
 			const taskBlocks = authenticatedPage.locator('.task-block')
@@ -230,8 +219,21 @@ test.describe('Day Planner', () => {
 			await expect(authenticatedPage.getByRole('button', { name: /delete/i })).toBeVisible()
 		})
 
-		test.fixme('delete action shows a confirmation dialog', async () => {})
+		test('delete action shows a confirmation dialog', async ({ authenticatedPage }) => {
+			await authenticatedPage.locator('.task-block').first().click()
+			await authenticatedPage.getByRole('button', { name: /delete/i }).click()
+			await expect(authenticatedPage.getByRole('dialog')).toBeVisible()
+		})
 
-		test.fixme('cancelling the delete dialog keeps the task', async () => {})
+		test('cancelling the delete dialog keeps the task', async ({ authenticatedPage }) => {
+			await authenticatedPage.locator('.task-block').first().click()
+			await authenticatedPage.getByRole('button', { name: /delete/i }).click()
+			const dialog = authenticatedPage.getByRole('dialog')
+			await expect(dialog).toBeVisible()
+			// Scoped to the dialog — the action bar has its own Cancel, which clears the selection instead.
+			await dialog.getByRole('button', { name: /cancel/i }).click()
+			await expect(dialog).not.toBeVisible()
+			await expect(authenticatedPage.locator('.task-block')).toHaveCount(VISIBLE_BASE_DAY_TASKS)
+		})
 	})
 })
