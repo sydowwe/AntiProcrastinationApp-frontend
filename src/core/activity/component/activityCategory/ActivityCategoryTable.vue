@@ -11,8 +11,33 @@
 		@onLoadItems="loadItems"
 		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
-		@onDelete="onDelete"
 	>
+		<template #actions="{ item }">
+			<VIconBtn
+				icon="pen"
+				variant="tonal"
+				size="small"
+				color="secondaryOutline"
+				:title="t('general.edit')"
+				:disabled="busyId === item.id"
+				@click="onEdit(item)"
+			>
+				<VIcon size="15"></VIcon>
+			</VIconBtn>
+			<!-- Never disabled: the server deletes a used category and only blanks its activities'
+			     classification. `canDelete` is advisory there, so the count goes into the confirmation. -->
+			<VIconBtn
+				icon="trash"
+				variant="tonal"
+				size="small"
+				color="base"
+				:title="t('general.delete')"
+				:disabled="busyId === item.id"
+				@click="onDeleteCategory(item)"
+			>
+				<VIcon size="15"></VIcon>
+			</VIconBtn>
+		</template>
 		<template #item.color="{ item }">
 			<VSheet
 				v-if="item.color"
@@ -35,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, toRef } from 'vue'
+	import { computed, ref, toRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import TableEmptyState from '@/core/activity/component/TableEmptyState.vue'
@@ -47,13 +72,18 @@
 	import ActivityCategoryForm from '@/core/activity/component/activityCategory/ActivityCategoryForm.vue'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useLookupTable } from '@/core/activity/composable/useLookupTable.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 	const props = defineProps<{ filter: NameTextFilter }>()
 
 	const { t } = useI18n()
 	const { getBgColor } = useColor()
 	const { deleteEntity } = useActivityCategoryCrud()
-	const { openDialog } = useDialog()
+	const { openDialog, confirm } = useDialog()
+	const { shouldConfirm } = useDeleteConfirmation()
+
+	/** The row a delete is in flight for; its actions are dead until it resolves. */
+	const busyId = ref<number | null>(null)
 
 	const columns = computed(() => [
 		// Key stays `role` — the server remaps it to its RoleSortKey. The value is every distinct role
@@ -91,5 +121,32 @@
 			dialogProps: { title: t('activities.editCategory'), confirmBtnLabel: t('general.save') },
 		})
 		if (result) await loadItems()
+	}
+
+	/**
+	 * A used category takes other rows' state with it (its activities lose their classification), so
+	 * it is a cascade in `useDeleteConfirmation`'s sense: it always confirms and says how many, whatever
+	 * `askBeforeDelete` says. An unused one is a plain leaf, and the preference decides. There is no
+	 * undo path here.
+	 */
+	async function onDeleteCategory(item: Category) {
+		const cascades = item.usageCount > 0
+		if (shouldConfirm({ cascades, undoable: false })) {
+			const confirmed = await confirm({
+				title: t('general.deleteConfirmationTitle'),
+				text: t('general.deleteConfirmationText', { name: item.name }),
+				detail: cascades ? t('activities.categoryDeleteCascade', { count: item.usageCount }) : undefined,
+				confirmBtnColor: 'error',
+				confirmBtnLabel: t('general.delete'),
+			})
+			if (!confirmed) return
+		}
+
+		busyId.value = item.id
+		try {
+			await onDelete(item)
+		} finally {
+			busyId.value = null
+		}
 	}
 </script>

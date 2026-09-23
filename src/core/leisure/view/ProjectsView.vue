@@ -26,7 +26,6 @@
 			</VBtnToggle>
 			<FilterPanel
 				v-model="filter"
-				class="flex-1-1"
 				:defaultFactory="() => new ActivityProjectProfileFilter()"
 				:chipFormatters="chipFormatters"
 			>
@@ -62,11 +61,11 @@
 		<div class="flex-fill">
 			<ProjectReadinessBoard
 				v-if="viewMode === 'board'"
-				:items="boardItems"
-				:loading="boardLoading"
+				:items
+				:loading
 				:filtered="isFiltered"
-				:failed="boardFailed"
-				@onReload="loadBoard"
+				:failed
+				@onReload="reload"
 				@onClearFilters="clearFilters"
 			/>
 			<ProjectTable
@@ -101,7 +100,6 @@
 	import { useServerTable } from '@/_common/composable/table/useServerTable.ts'
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
-	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { projectFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
@@ -109,18 +107,33 @@
 	const { textChip, countChip, boolChip } = useLeisureFilterChips()
 
 	const { fetchFilteredTable } = useActivityProjectProfileCrud()
-	// The view owns the table state because FilterPanel needs the same writable filter ref.
+	// A rejected load must not render as "you have none" — the board shows its error branch instead.
+	// A cancellation (a newer load superseded this one) is not a failure.
+	const failed = ref(false)
+
+	// Board and table are one fetch at two page sizes (F2). They used to be two callers of one
+	// `fetchFilteredTable`, whose single AbortController made every board-mode filter change fire
+	// two requests and cancel one — and the cancelled call resolves with the *other* call's result,
+	// so the board could render the table's 25-row page. The view owns the table state because
+	// FilterPanel needs the same writable filter ref.
 	const { items, itemsLength, loading, page, itemsPerPage, sortBy, filter, load, reload } = useServerTable<
 		ActivityProjectProfile,
 		ActivityProjectProfileFilter
 	>({
-		fetch: fetchFilteredTable,
+		fetch: async request => {
+			const result = await fetchFilteredTable(request)
+			failed.value = false
+			return result
+		},
+		onError: error => {
+			if (!isRequestCanceled(error)) failed.value = true
+		},
 		...projectFilterUrlState(),
 	})
 
 	// Board mode groups by readinessStatus rather than paging, so it needs every filtered row at
 	// once. A hobby project list is small, so one oversized page is a simpler answer than a real
-	// pagination scheme.
+	// pagination scheme. Past 200 projects the board silently shows the first 200.
 	//
 	// 200 is not a preference — it is the server's cap. `BaseFilterSortPaginateRequest` validates
 	// `itemsPerPage` with "Must not exceed 200.", so the previous 500 made every board load answer
@@ -128,35 +141,33 @@
 	// default mode, so this was the whole screen. Raising it means raising the server's validator
 	// first.
 	const BOARD_PAGE_SIZE = 200
+	const DEFAULT_TABLE_PAGE_SIZE = 25
 	const route = useRoute()
 	const router = useRouter()
-	const viewMode = ref<'table' | 'board'>(route.query.view === 'table' ? 'table' : 'board')
-	const boardItems = ref<ActivityProjectProfile[]>([])
-	const boardLoading = ref(false)
-	// A rejected load must not render as "you have none" — the board shows its error branch instead.
-	// A cancellation (a newer load superseded this one) is not a failure.
-	const boardFailed = ref(false)
-
-	async function loadBoard() {
-		boardLoading.value = true
-		try {
-			const request = new FilteredTableRequest<ActivityProjectProfileFilter>(
-				BOARD_PAGE_SIZE,
-				1,
-				[],
-				true,
-				filter.value ?? new ActivityProjectProfileFilter(),
-			)
-			const result = await fetchFilteredTable(request)
-			boardItems.value = result.items
-			boardFailed.value = false
-		} catch (error) {
-			if (isRequestCanceled(error)) return
-			boardFailed.value = true
-		} finally {
-			boardLoading.value = false
-		}
+	function viewModeInUrl(): 'table' | 'board' {
+		return route.query.view === 'table' ? 'table' : 'board'
 	}
+	const viewMode = ref(viewModeInUrl())
+	// The table's own page size, parked while the board borrows `itemsPerPage`. A `perPage=200` in
+	// the URL is the board's, not a choice the user made for the table.
+	let tablePageSize = itemsPerPage.value === BOARD_PAGE_SIZE ? DEFAULT_TABLE_PAGE_SIZE : itemsPerPage.value
+
+	// The table loads itself — `BasicTable` emits `onLoadItems` on mount — so only the board needs
+	// an explicit load. Filter changes are `useServerTable`'s own watcher in both modes.
+	watch(
+		viewMode,
+		(mode, previous) => {
+			if (mode === 'board') {
+				if (previous === 'table') tablePageSize = itemsPerPage.value
+				itemsPerPage.value = BOARD_PAGE_SIZE
+				page.value = 1
+				load()
+			} else {
+				itemsPerPage.value = tablePageSize
+			}
+		},
+		{ immediate: true },
+	)
 
 	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
 
@@ -164,14 +175,16 @@
 		filter.value = new ActivityProjectProfileFilter()
 	}
 
-	watch(viewMode, value => router.replace({ query: { ...route.query, view: value } }))
-	watch(
-		[viewMode, filter],
-		() => {
-			if (viewMode.value === 'board') void loadBoard()
-		},
-		{ deep: true, immediate: true },
-	)
+	// `useTableUrlState` also writes the query, and a replace of its started in the same tick as ours
+	// cancels ours outright — `view` never lands. So re-check after every navigation that settles,
+	// spreading the query as it is then, rather than trusting the order of the two writers (F1).
+	// The path guard stops the check stamping `view` onto the next page while this one unmounts.
+	const ownPath = route.path
+	function writeViewToUrl() {
+		if (route.path !== ownPath || viewModeInUrl() === viewMode.value) return
+		void router.replace({ query: { ...route.query, view: viewMode.value } })
+	}
+	watch([viewMode, () => route.fullPath], writeViewToUrl)
 
 	const difficultyOptions = getEnumSelectOptions(DifficultyLevel, 'enums.difficultyLevel')
 	const readinessOptions = getEnumSelectOptions(ReadinessStatus, 'enums.readinessStatus')

@@ -56,6 +56,11 @@ const activity = {
 		noRolesInTable: `Roľa je oblasť života, do ktorej aktivita patrí — napríklad práca, domácnosť alebo štúdium.`,
 		noCategoriesInTable: `Kategória zoskupuje príbuzné aktivity v rámci jednej role.`,
 		noResultsForFilter: `Filtru nezodpovedá žiadny záznam.`,
+		// Roly sa dajú vymazať, len keď ich nič nepoužíva (server to vynucuje). Kategórie sa vymažú vždy
+		// a ich aktivity len prídu o zaradenie, preto vymazanie povie koľko (F19).
+		roleDeleteBlockedSystem: `Túto rolu používa samotná aplikácia, preto sa nedá vymazať.`,
+		roleDeleteBlockedInUse: `Počet aktivít s touto rolou: {count}. Pred vymazaním ich presuňte do inej roly.`,
+		categoryDeleteCascade: `Počet aktivít v tejto kategórii: {count}. Zostanú zachované, ale prídu o kategóriu.`,
 
 		//=========
 		// Archivácia namiesto mazania. Archivovaná aktivita si necháva celú históriu, zmizne z ponúk

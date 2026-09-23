@@ -53,6 +53,11 @@ const activity = {
 		noRolesInTable: `A role is the area of life an activity belongs to — work, home or study, for example.`,
 		noCategoriesInTable: `A category groups related activities within one role.`,
 		noResultsForFilter: `Nothing matches the current filter.`,
+		// Roles delete only when nothing uses them (the server enforces it). Categories always delete, and
+		// their activities just lose the classification, so that delete says how many (F19).
+		roleDeleteBlockedSystem: `The app itself uses this role, so it cannot be deleted.`,
+		roleDeleteBlockedInUse: `Activities with this role: {count}. Move them to another role before deleting it.`,
+		categoryDeleteCascade: `Activities in this category: {count}. They are kept, but lose their category.`,
 
 		//=========
 		archive: {

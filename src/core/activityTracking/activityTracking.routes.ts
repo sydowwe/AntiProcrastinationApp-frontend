@@ -24,6 +24,12 @@ export const activityTrackingRoutes: RouteRecordRaw[] = [
 		name: 'desktopActivityDashboard',
 		component: DesktopActivityDashboard,
 	},
+	// The family paths the sidebar links to (F14): a nav `to` must cover every tab, so it cannot be
+	// one tab's literal path. Each lands on the first tab.
+	{
+		path: '/activity-tracking/desktop/settings',
+		redirect: '/activity-tracking/desktop/settings/distinctEntries',
+	},
 	{
 		path: '/activity-tracking/desktop/settings/:tableView',
 		name: 'desktopSettings',
@@ -33,6 +39,10 @@ export const activityTrackingRoutes: RouteRecordRaw[] = [
 		path: '/activity-tracking/android',
 		name: 'androidActivityDashboard',
 		component: AndroidActivityDashboard,
+	},
+	{
+		path: '/activity-tracking/android/settings',
+		redirect: '/activity-tracking/android/settings/distinctEntries',
 	},
 	{
 		path: '/activity-tracking/android/settings/:tableView',

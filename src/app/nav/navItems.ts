@@ -6,6 +6,11 @@ import type { MenuItem } from '@/_common/nav/navTypes.ts'
 //
 // No item carries `requiredRole` — this app has no role model (see `@/core/user/authAdapter.ts`),
 // so every item is visible to every signed-in user. `title` is an i18n key under `navigation.*`.
+//
+// A tabbed screen is registered by its **family path**, never one tab's literal path. The breadcrumb
+// and the sidebar highlight both prefix-match `to`, so `…/settings/distinctEntries` matched only that
+// one tab. On every other tab the crumb fell back to a sibling screen (F14). The family path
+// redirects to the first tab, so the link still lands in the same place.
 export const navItems: MenuItem[] = [
 	{ title: 'home', icon: 'home', to: '/' },
 	{
@@ -22,13 +27,13 @@ export const navItems: MenuItem[] = [
 		children: [
 			{ title: 'unifiedActivityTracking', icon: 'layer-group', to: '/activity-tracking/unified' },
 			{ title: 'activityTracking', icon: 'globe', to: '/activity-tracking' },
-			{ title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings/distinctEntries' },
+			{ title: 'desktopSettings', icon: 'wrench', to: '/activity-tracking/desktop/settings' },
 			{ title: 'desktopActivityTracking', icon: 'desktop', to: '/activity-tracking/desktop' },
 			{ title: 'androidActivityTracking', icon: 'fa-brands fa-android', to: '/activity-tracking/android' },
-			{ title: 'androidSettings', icon: 'wrench', to: '/activity-tracking/android/settings/distinctEntries' },
+			{ title: 'androidSettings', icon: 'wrench', to: '/activity-tracking/android/settings' },
 		],
 	},
-	{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings/activities' },
+	{ title: 'activitySettings', icon: 'sliders', to: '/activity-settings' },
 	{
 		title: 'toDoList',
 		icon: 'list-check',

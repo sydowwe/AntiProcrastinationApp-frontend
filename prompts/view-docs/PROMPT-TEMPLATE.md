@@ -36,10 +36,14 @@ You are documenting and auditing. You are **not** fixing anything.
    screenshots. If you find a one-line fix that is obviously correct, write it in the findings file as a
    suggestion — do not apply it.
 2. **Drive the browser with `playwright-cli`** — see CLAUDE.md's *Browser verification* section for the config,
-   the sign-in sequence and the `state-load` shortcut. Use your own session and run `playwright-cli close`
-   when you finish. Sessions are isolated, so you share no state with another agent; do not assume state from
-   earlier work either — `open` fresh and assert `location.pathname` rather than trusting where you think you
-   are.
+   the sign-in sequence and the `state-load` shortcut. **Every `playwright-cli` command carries
+   `-s=<unit-name>`**, with no exceptions, and you run `playwright-cli -s=<unit-name> close` when you finish.
+   Omit it and you are in the unnamed `default` session, which every other agent that omitted it is also
+   driving. Named sessions are isolated, so you share no browser state with another agent. Do not assume
+   state from earlier work either: `open` fresh and assert `location.pathname` rather than trusting where you
+   think you are. Session, sign-in and "am I the only mutating agent" are three separate questions. If
+   another agent may already have `state-load`ed `e2e/.state/auth-*.json`, sign in through the form instead
+   (a shared refresh token signs one of you out — the README's *Parallelism* section).
 3. **App dialogs (`MyDialog` / `DialogHost`) are part of what you must document.** Browser-native
    `alert`/`confirm`/`prompt` are not — this app should not be using them, so treat one as a finding if you
    meet it. It will block the page until you clear it with `playwright-cli dialog-accept` or `dialog-dismiss`;
@@ -174,6 +178,8 @@ appears → edit → verify → delete → verify it is gone. While doing so, ch
   to be got wrong once before every later unit documents your residue as if it were seed data. Two conditions:
   it **wipes every account**, so never do it while another unit is mid-run, and it invalidates
   `e2e/.state/auth-*.json`, so say in your report that the next agent must sign in rather than `state-load`.
+  The same hazard runs the other way: if a row you created mid-pass vanishes, or a plain reload loses your
+  edit, suspect **another agent's reseed** before you file it as an app defect.
   If you cannot reseed, fall back to deleting everything you created and restoring anything you edited, and
   note in the findings file anything you could not undo.
 

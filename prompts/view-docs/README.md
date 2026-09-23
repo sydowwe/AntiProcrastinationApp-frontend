@@ -284,8 +284,16 @@ inventory passes can run side by side without touching each other's browser stat
 **Mutation passes still have to be serial.** They share one backend and one seeded account, so two at once corrupt each other's data — and `POST /api/test/seed` is a
 *full reset of every account*, so one run reseeding mid-flight destroys the other's world. Run mutation units one at a time, start to finish.
 
-If you do parallelise inventory passes, give each agent its own session name and have it `state-load` the auth file rather than signing in through the form
-concurrently.
+If you do parallelise inventory passes, three separate questions, each with its own answer (`F23`):
+
+- **Which browser?** Every `playwright-cli` command carries `-s=<unit-name>`, whether or not anything else is running. The unnamed `default` session is shared by
+  every agent that omits `-s=`. One round lost navigations, opened dialogs it never asked for and toggled another unit's fixture rows that way.
+- **Which sign-in?** **One signed-in state per concurrent session.** The API rotates the refresh token on every `POST /api/auth/refresh` and tolerates a stale one
+  for 5 s only. Two sessions `state-load`ed from one `auth-*.json` therefore hold one token, and the second to refresh gets a 401 and a real sign-out, minutes
+  into its pass. Load a state file into **one** session only. Every other session signs in through the form, which is fine as long as sign-ins stay under
+  `/auth/login`'s 5-per-minute limit.
+- **Am I the only mutating session?** Mutation passes are serial (above). A reseed wipes every account, so if a row you just created vanishes, suspect another
+  agent's `POST /api/test/seed` before suspecting the app.
 
 ---
 

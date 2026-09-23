@@ -11,8 +11,41 @@
 		@onLoadItems="loadItems"
 		@onAdd="openCreateDialog"
 		@onEdit="onEdit"
-		@onDelete="onDelete"
 	>
+		<template #actions="{ item }">
+			<VIconBtn
+				icon="pen"
+				variant="tonal"
+				size="small"
+				color="secondaryOutline"
+				:title="t('general.edit')"
+				:disabled="busyId === item.id"
+				@click="onEdit(item)"
+			>
+				<VIcon size="15"></VIcon>
+			</VIconBtn>
+			<!-- The server refuses a system role or a role in use with a 409, and `canDelete` predicts
+			     exactly that, so the button is disabled and says why rather than letting the delete fail.
+			     Same wrapper-tooltip and `aria-label` shape as `ActivityTable`'s trash button. -->
+			<span class="d-inline-flex">
+				<VIconBtn
+					icon="trash"
+					variant="tonal"
+					size="small"
+					color="base"
+					:aria-label="deleteLabel(item)"
+					:disabled="!item.canDelete || busyId === item.id"
+					@click="onDeleteRole(item)"
+				>
+					<VIcon size="15"></VIcon>
+				</VIconBtn>
+				<VTooltip
+					activator="parent"
+					location="top"
+					:text="deleteLabel(item)"
+				/>
+			</span>
+		</template>
 		<template #item.color="{ item }">
 			<VSheet
 				v-if="item.color"
@@ -35,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, toRef } from 'vue'
+	import { computed, ref, toRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import TableEmptyState from '@/core/activity/component/TableEmptyState.vue'
@@ -53,7 +86,10 @@
 	const { t } = useI18n()
 	const { getBgColor } = useColor()
 	const { deleteEntity } = useActivityRoleCrud()
-	const { openDialog } = useDialog()
+	const { openDialog, confirm } = useDialog()
+
+	/** The row a delete is in flight for; its actions are dead until it resolves. */
+	const busyId = ref<number | null>(null)
 
 	const columns = computed(() => [
 		new TableColumn('name', t('general.name')),
@@ -88,5 +124,35 @@
 			dialogProps: { title: t('activities.editRole'), confirmBtnLabel: t('general.save') },
 		})
 		if (result) await loadItems()
+	}
+
+	function deleteLabel(item: Role): string {
+		if (item.canDelete) return t('general.delete')
+		return item.systemKey
+			? t('activities.roleDeleteBlockedSystem')
+			: t('activities.roleDeleteBlockedInUse', { count: item.usageCount })
+	}
+
+	/**
+	 * Confirms unconditionally, like `ActivityTable`'s delete. `canDelete` means nothing references the
+	 * role, so there is nothing to count and nothing for `useDeleteConfirmation` to weigh. A 409 from a
+	 * race (an activity gained the role since the grid loaded) is the interceptor's snackbar.
+	 */
+	async function onDeleteRole(item: Role) {
+		if (!item.canDelete) return
+		const confirmed = await confirm({
+			title: t('general.deleteConfirmationTitle'),
+			text: t('general.deleteConfirmationText', { name: item.name }),
+			confirmBtnColor: 'error',
+			confirmBtnLabel: t('general.delete'),
+		})
+		if (!confirmed) return
+
+		busyId.value = item.id
+		try {
+			await onDelete(item)
+		} finally {
+			busyId.value = null
+		}
 	}
 </script>

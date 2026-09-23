@@ -1,4 +1,5 @@
 import type { TableUrlStateOptions } from '@/_common/composable/table/useTableUrlState.ts'
+import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 import { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
 import { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 import { ActivityProjectProfileFilter } from '@/core/leisure/dto/request/ActivityProjectProfileFilter.ts'
@@ -85,6 +86,10 @@ export function bucketListFilterUrlState(): TableUrlStateOptions<ActivityBucketL
 
 export function projectFilterUrlState(): TableUrlStateOptions<ActivityProjectProfileFilter> {
 	return {
+		// Must match `ProjectTable`'s first column. `BasicTable` pushes that column's sort into
+		// `sortBy` on mount when it is missing, and the resulting URL write raced the view-mode
+		// toggle's and dropped `view=table` (F1). With the key already present it pushes nothing.
+		defaultSortBy: [new VSortItem('activity.name', 'asc')],
 		defaultFilter: new ActivityProjectProfileFilter(),
 		filterToParams: filter => ({
 			activityName: encodeText(filter.activityName),

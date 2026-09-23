@@ -4,7 +4,6 @@
 			<h2 class="text-h6">{{ $t('leisure.backlog') }}</h2>
 			<FilterPanel
 				v-model="filter"
-				class="flex-1-1"
 				:defaultFactory="() => new ActivityBacklogProfileFilter()"
 				:chipFormatters="chipFormatters"
 			>

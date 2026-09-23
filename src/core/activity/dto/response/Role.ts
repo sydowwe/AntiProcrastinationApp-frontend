@@ -14,11 +14,27 @@ export class Role implements INameTextColorIconResponse {
 		 * reliable way to tell a system role apart — `name` is user-editable and may be localized.
 		 */
 		public systemKey: SystemActivityRole | null = null,
+		/**
+		 * Grid and by-id reads only. Nested inside an `Activity` the server sends `0`/`false` and means
+		 * "not asked for", so the defaults are the harmless reading, not a claim about the role.
+		 */
+		public usageCount: number = 0,
+		/** Predicts the delete's answer exactly: `false` for a system role or any role in use (409). */
+		public canDelete: boolean = true,
 	) {}
 
 	static fromJson(object: any) {
-		const { id = 0, name = '', text = '', color = '', icon = '', systemKey = null } = object
-		return new Role(id, name, text, color, icon, systemKey)
+		const {
+			id = 0,
+			name = '',
+			text = '',
+			color = '',
+			icon = '',
+			systemKey = null,
+			usageCount = 0,
+			canDelete = true,
+		} = object
+		return new Role(id, name, text, color, icon, systemKey, usageCount, canDelete)
 	}
 
 	static listFromObjects(objects: any[]) {

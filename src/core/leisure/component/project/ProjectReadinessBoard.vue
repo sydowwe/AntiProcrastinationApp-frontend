@@ -126,6 +126,11 @@
 										<span class="text-caption">{{ blockerLine(item.requiredTools) }}</span>
 									</div>
 								</div>
+								<!-- Inactive is outlined `neutral-600`, not tonal `grey-lighten-2`: that tonal computes to a
+								     transparent background, leaving a near-white glyph on the card (F5). `neutral-600` flips
+								     per theme (#4B5563 light, #9CA3AF dark) and clears 3:1 on both backgrounds; `textMuted`
+								     only scraped 3.0:1 on the light theme's #CCC. Filled-vs-outlined keeps the active status
+								     unmistakable — it is the control's only state indicator. -->
 								<div
 									class="d-flex ga-1"
 									@click.stop
@@ -133,8 +138,8 @@
 									<VBtn
 										v-for="s in COLUMN_ORDER"
 										:key="s"
-										:color="s === item.readinessStatus ? STATUS_META[s].color : 'grey-lighten-2'"
-										:variant="s === item.readinessStatus ? 'elevated' : 'tonal'"
+										:color="s === item.readinessStatus ? STATUS_META[s].color : 'neutral-600'"
+										:variant="s === item.readinessStatus ? 'elevated' : 'outlined'"
 										size="x-small"
 										icon
 										:disabled="pendingIds.has(item.activityId)"

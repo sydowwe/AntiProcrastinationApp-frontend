@@ -116,7 +116,8 @@
 				<!--
 					A disabled VBtn takes no pointer events, so the tooltip hangs off this wrapper instead —
 					saying why the button is dead is the entire point of disabling it rather than letting the
-					delete 409.
+					delete 409. The button's name is `aria-label`, not `title`: the tooltip is already the
+					visual one, and a native `title` would draw a second (F19 / A1).
 				-->
 				<span class="d-inline-flex">
 					<VIconBtn
@@ -124,6 +125,7 @@
 						variant="tonal"
 						size="small"
 						color="base"
+						:aria-label="item.canDelete ? t('general.delete') : t('activities.archive.deleteBlocked')"
 						:disabled="!item.canDelete || busyId === item.id"
 						@click="onDeleteActivity(item)"
 					>

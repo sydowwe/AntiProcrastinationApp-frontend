@@ -11,28 +11,39 @@
 		@retry="load"
 	>
 		<template #headerActions>
-			<VSheet
-				v-for="period in timePeriods"
-				:key="period.id"
-				rounded="lg"
-				class="px-4 py-2 d-flex align-center ga-2"
-				color="neutral-100"
+			<!-- The period count is data, so the chips get their own scroller rather than a width tuned
+			     to today's four (F7). Only the chips scroll: the counter and both buttons stay anchored
+			     and visible at every width. Focusable and named because a scroller with nothing
+			     focusable inside cannot otherwise be scrolled from the keyboard. -->
+			<div
+				class="routine-periods d-flex align-center ga-2"
+				role="region"
+				tabindex="0"
+				:aria-label="$t('home.streaks')"
 			>
-				<span class="text-caption font-weight-medium">{{ period.text }}</span>
-				<VIcon
-					icon="fas fa-fire"
-					color="warning"
-					size="12"
-				/>
-				<span class="text-caption font-weight-bold">{{ period.streak }}</span>
-				<VIcon
-					icon="fas fa-trophy"
-					color="amber"
-					size="12"
-				/>
-				<span class="text-caption text-medium-emphasis">{{ period.bestStreak }}</span>
-			</VSheet>
-			<span class="text-caption text-medium-emphasis">
+				<VSheet
+					v-for="period in timePeriods"
+					:key="period.id"
+					rounded="lg"
+					class="px-4 py-2 d-flex align-center ga-2 flex-shrink-0"
+					color="neutral-100"
+				>
+					<span class="text-caption font-weight-medium text-no-wrap">{{ period.text }}</span>
+					<VIcon
+						icon="fas fa-fire"
+						color="warning"
+						size="12"
+					/>
+					<span class="text-caption font-weight-bold">{{ period.streak }}</span>
+					<VIcon
+						icon="fas fa-trophy"
+						color="amber"
+						size="12"
+					/>
+					<span class="text-caption text-medium-emphasis">{{ period.bestStreak }}</span>
+				</VSheet>
+			</div>
+			<span class="text-caption text-medium-emphasis text-no-wrap">
 				{{ overallProgress.done }}/{{ overallProgress.total }}
 			</span>
 			<VIconBtn
@@ -290,3 +301,39 @@
 		hasError: () => error.value,
 	})
 </script>
+
+<style scoped>
+	/*
+	 * The header does not wrap above `md` (equal-height invariant, see `WidgetCard`), so the chips
+	 * used to overflow it: the two buttons were pushed out of the card, and the title was squeezed to
+	 * 0 px on the way. A zero basis means nothing in the header ever has to shrink. The chip row grows
+	 * into the free space (the large grow factor starves `WidgetCard`'s `VSpacer`) and scrolls whatever
+	 * does not fit. A shrink-based version still took a fraction of a pixel from the title, and that was
+	 * enough to ellipsize it.
+	 */
+	.routine-periods {
+		min-width: 0;
+		overflow-x: auto;
+		scrollbar-width: thin;
+	}
+
+	/* Below `md` the header wraps, and the chips' own width is what sends them onto a row of their
+	   own, so the zero basis applies only where the header cannot wrap. */
+	@media (min-width: 960px) {
+		.routine-periods {
+			flex: 1000 1 0;
+		}
+	}
+
+	/* Keeps the chips beside the buttons when there is room. An auto margin collapses to 0 once the
+	   row overflows, so, unlike `justify-content: flex-end`, it never pushes a chip out of reach. */
+	.routine-periods > :first-child {
+		margin-left: auto;
+	}
+
+	.routine-periods:focus-visible {
+		outline: 2px solid rgb(var(--v-theme-secondary));
+		outline-offset: 2px;
+		border-radius: 8px;
+	}
+</style>

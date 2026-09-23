@@ -26,7 +26,6 @@
 			</VBtnToggle>
 			<FilterPanel
 				v-model="filter"
-				class="flex-1-1"
 				:defaultFactory="() => new ActivityBucketListProfileFilter()"
 				:chipFormatters="chipFormatters"
 			>

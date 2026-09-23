@@ -3235,6 +3235,877 @@
   wants same-tab legal pages has no override, which is acceptable for two links whose whole problem
   was being same-tab.
 
+## F1. The view-mode toggle loses `view=table` to a URL-write race
+> ✅ **FIXED 2026-09-23.** Both halves, app-side only; `useTableUrlState.ts` and `BasicTable.vue` untouched.
+> **Half 1:** `projectFilterUrlState()` passes `defaultSortBy: [new VSortItem('activity.name', 'asc')]`,
+> so from a clean URL `BasicTable`'s mount watcher finds its key and pushes nothing. **Half 2 needed a
+> different shape than the body suggests, and the first attempt failed verification:** re-checking on
+> `route.query.view` never fires. When both replaces start in the same tick, Vue Router **cancels** the
+> earlier one (ours), so `view` never lands in the route and never changes. `ProjectsView` now
+> re-checks on `[viewMode, route.fullPath]`, so after every navigation that *settles*. It re-writes by
+> spreading the query as it is then, so it cannot cancel the other writer's keys. Two guards: a path
+> check (`route.path !== ownPath`) stops it stamping `view` onto the next page during unmount, and a
+> missing `view` counts as `board`, so board mode writes nothing extra.
+> **Verified** in a dedicated `playwright-cli` session (form sign-in, not a shared state file; another
+> session was live): clean `/leisure/projects` → one *Table* click → `?view=table`, and a reload stays on
+> Table. **Case 2**, from `?sortBy=estimatedHours:desc`, is the one half 1 cannot cover:
+> `BasicTable` still appends `activity.name:asc`. With only half 1 it reproduced the bug (`view`
+> absent after the click). With half 2 it gives
+> `?sortBy=estimatedHours:desc,activity.name:asc&page=1&perPage=25&view=table` and survives a reload.
+> A column-header sort write keeps `view=table`, Board → Table round trips write each mode, and
+> navigating to `/` leaves a bare `/`. Console: 0 errors. `npm run type-check` exit 0; eslint on the two
+> files clean.
+> **Not verified:** a sort by `activity.name` against the API, beyond the page loading its rows
+> (the *Risk* line's 500 concern). The other three leisure views keep their two-writer shape, per
+> *Do not change*. `F2` shares this file and is still open. It will delete `loadBoard`, and the
+> view-mode watchers here should survive that.
+
+- **Scope:** app-side `src/core/leisure/view/ProjectsView.vue`, `src/core/leisure/composable/leisureFilterUrlState.ts`
+- **Closes:** `leisure-projects/B1`
+- **Root cause:** Two independent writers of `router.replace({ query })`, each spreading a `route.query`
+  snapshot that Vue Router only refreshes once a navigation *resolves*. Confirmed in source this pass:
+  `ProjectsView.vue:146` is `watch(viewMode, value => router.replace({ query: { ...route.query, view: value } }))`;
+  `useTableUrlState.ts:106-107`'s `syncToUrl()` opens with `const query = { ...route.query }` and is watched on
+  `[page, itemsPerPage, sortBy]` (`:138`). Switching to Table mounts `ProjectTable`/`BasicTable` for the first
+  time, and `BasicTable.vue:191-202` is an `immediate: true` watcher that **pushes a default sort item into the
+  shared `sortBy` ref** when the first column key isn't already there. So one click produces two replaces in the
+  same tick, and whichever resolves second overwrites the other's key. `view` is the one that loses, because
+  `syncToUrl` writes `page`/`perPage`/`sortBy` and knows nothing about `view`.
+- **Why it is intermittent, exactly:** once `sortBy` is already in the URL, `BasicTable`'s watcher finds a match
+  and pushes nothing, so there is only one writer and the click works. That is the finding's own evidence
+  (case 2), and it is also the fix.
+- **Files:** `src/core/leisure/view/ProjectsView.vue:125,146`; `src/core/leisure/composable/leisureFilterUrlState.ts:86-105`
+  (`projectFilterUrlState`); reference only — `src/_common/composable/table/useTableUrlState.ts:106-141`,
+  `src/_common/component/dataTable/BasicTable.vue:191-202`
+- **What to change:** Remove the second writer rather than trying to order the two. `useTableUrlState` already
+  accepts `defaultSortBy` (`:15,:81`) and nothing passes it — give `projectFilterUrlState()` a
+  `defaultSortBy: [new VSortItem('activity.name', 'asc')]` matching `ProjectTable`'s first column, so
+  `BasicTable`'s mount-time watcher finds its key present and pushes nothing. Then make the `view` write
+  resilient on its own terms: after the replace resolves, assert `route.query.view === viewMode.value` and
+  re-write if not (or read `viewMode` from the route as the single source of truth instead of holding a
+  separate `ref`). **Both halves** — the first kills the reproducible case, the second stops any future third
+  writer silently reintroducing it.
+- **Do not change:** `useTableUrlState.ts` or `BasicTable.vue`. A shared query-merge queue in the framework is
+  the "proper" fix and it is a framework batch with its own risk to every table in every app — not a side
+  effect of closing one view's finding. Also do not change the other three leisure views in this batch; they
+  have the same two-writer shape (`BucketListView`, `MemoryAnchorsView` each hold their own
+  `watch(viewMode, …)`) but no finding, and units 11/12 have not run yet.
+- **Verification:** `leisure-projects/B1`'s `Verify:` block verbatim — from a **query-string-free** load, one
+  click on "Table" must put `view=table` in the URL immediately, and a reload must stay on Table. Re-run it
+  twice: once from `/leisure/projects` clean, once from a URL that already carries `sortBy`.
+- **Risk:** Low-medium. `defaultSortBy` means every load now carries `sortBy=activity.name:asc` in the query
+  once anything syncs — harmless, but it also means the *board* default URL advertises a table sort. More
+  importantly, `activity.name` is the exact key that used to 500 this grid (see *Contradictions* §2): if the
+  API's sort-key remap were ever rolled back, defaulting to it would break the table on first load rather than
+  on first header click. **Measured 2026-09-13: it answers 200**, and the risk has shrunk — the key resolves
+  **natively** off the nested `ActivityResponse` now, not through a remap that could be rolled back, so it is
+  only as fragile as the row shape itself. Re-confirm before shipping anyway.
+
+<!-- The trivial sweep, 2026-09-23: F9, F17, F21, F22, F26, F28, F32, F80, F81, F82, F83 — one session.
+     Browser-verified in a dedicated `playwright-cli` session (`-s=trivial`, form sign-in; the shared
+     `e2e/.state/auth-10001.json` was dead, and the session was revoked twice more mid-pass by work
+     elsewhere, so each re-entry was a fresh form sign-in). `npm run type-check` exit 0, `npm run lint`
+     exit 0 after the code edits. -->
+
+## F9. `homeUiStore` never persists, and CLAUDE.md asserts the opposite of what the plugin does
+> ✅ **FIXED 2026-09-23.** `homeUiStore` now passes `{ persist: { storage: sessionStorage } }` as the third
+> `defineStore` argument, matching `dayPlannerStore`. Its doc comment now says the plugin is opt-in and that
+> this argument is what makes it persist. CLAUDE.md was corrected in **both** places that made the claim.
+> One is the Tech Stack *State* bullet, which the body did not name. The other is the `_common/bootstrap/`
+> Persistence item, which now says outright that a store with no `persist` key does not persist, and names
+> this batch as the second bug that claim caused.
+> **Verified:** toggling *Show done* on `/` puts `{"hideDoneTodoList":false,"hideDoneRoutine":true}` in
+> `sessionStorage.homeUi`, and the toggle survives `/todo-list` and back. The toggle was restored afterwards.
+
+- **Scope:** app-side `src/core/home/store/homeUiStore.ts` + docs-only `CLAUDE.md`
+- **Closes:** `home/B3`
+- **Re-verified unchanged this pass:** `homeUiStore.ts:9` is still `defineStore('homeUi', () => {` with no
+  third argument, and the file contains no `persist` key.
+- **Root cause:** `pinia-plugin-persistedstate`'s default export (`createPersistedState()`, called with no
+  arguments in `createAppPinia.ts:11`) resolves `persist = auto` through `options.auto ?? false` → **`false`**.
+  The plugin is registered **opt-in**: a store persists only if it declares `persist: true` or an options
+  object. `homeUiStore` declares neither, so the toggle resets on navigate-away-and-back and
+  `sessionstorage-get homeUi` never finds a key. CLAUDE.md's `_common/bootstrap/` section states the opposite
+  ("every store persists to sessionStorage unless it declares `persist: false`"), and `homeUiStore` was
+  written straight against that wrong claim. Every other store in the app already declares `persist`
+  explicitly, several with a comment noting the real behaviour — `homeUiStore` is the one that didn't, not the
+  first of a pattern.
+- **Files:** `src/core/home/store/homeUiStore.ts:9-14`; `CLAUDE.md`'s "`_common/bootstrap/`" Persistence bullet
+- **What to change:** Add `{ persist: { storage: sessionStorage } }` as the third `defineStore` argument,
+  matching `dayPlannerStore.ts:281`. In the same batch, correct CLAUDE.md to say the plugin is opt-in.
+- **Do not change:** the other six stores — they already declare `persist` correctly.
+- **Verification:** `home/B3`'s `Verify:` block — toggle "Hide done", confirm `sessionstorage-get homeUi`
+  returns a blob containing `"hideDoneTodoList":false`, and that `/todo-list` and back preserves it.
+- **Risk:** None for the store. The CLAUDE.md edit is documentation-only — but it is the second time this
+  claim has cost a bug, so make the correction unambiguous rather than hedged.
+
+## F17. CLAUDE.md's "every settings page" sentence reads wider than `moduleSettingsLinks.ts` means
+> ✅ **FIXED 2026-09-23.** The sentence now reads *"Every **preference** settings page must be reachable
+> from `/user/settings`"*. It names the two entity-management families that are excluded
+> (`/activity-settings/*`, `/activity-tracking/{desktop,android}/settings/*`) and points to
+> `src/core/user/moduleSettingsLinks.ts` as owner of the list and the rule. It also names `/routine-settings`
+> as that file's deliberate borderline case. The file lists it for its streak preferences, so it must not be
+> read as an exclusion. The body cites the file under `component/settings/`, but it lives at
+> `src/core/user/moduleSettingsLinks.ts`. Docs only; nothing to verify in the browser.
+
+- **Scope:** **docs only** — `CLAUDE.md`, the *Where a preference lives* section's second consequence
+- **Closes:** `tracking-settings/P1`
+- **Root cause:** The sentence *"Every settings page must be reachable from `/user/settings`"* is read
+  literally by every unit agent (unit 10 raised it for `/routine-settings`, unit 6 for these two), while
+  `moduleSettingsLinks.ts:10-14` records the actual rule — **preference** pages yes, **entity-management**
+  pages no — and lists these exact routes as the excluded example. The two documents agree; only CLAUDE.md
+  fails to say so where it is read.
+- **What to change:** Qualify the sentence to *"every **preference** settings page"* and cross-reference the
+  `moduleSettingsLinks.ts` comment as the owner of the list. One sentence. Nothing in `src/` moves.
+- **Do not change:** `moduleSettingsLinks.ts` — adding the tracking routes there is the outcome the file's
+  own comment argues against, and no finding asked for it.
+- **Verification:** N/A — read-through. The next unit that inherits the "check `/user/settings`" brief
+  should stop filing it.
+- **Risk:** None.
+
+## F21. Categories table's "Role" column is a comma-joined aggregate presented as a single value
+> ✅ **FIXED 2026-09-23.** The header is the new key `activities.rolesInUse`, "Roles in use" / "Použité roly".
+> The column key stays `role` (the server remaps it to `RoleSortKey`), and a comment in
+> `ActivityCategoryTable.vue` says why. No chips.
+> **Verified:** `/activity-settings/categories` reads "Roles in use". Header clicks cycle
+> `sortBy` through `role` asc → desc → none with no error, and the rows reorder. On the 3-row seed, desc and
+> none happen to return the same order, because the key is a joined string. That is not a click-handler fault.
+
+- **Scope:** app-side `src/core/activity/component/activityCategory/ActivityCategoryTable.vue:59`,
+  `src/core/activity/_locales/activity.{sk,en}.ts`
+- **Closes:** `activity-settings/P1`
+- **Root cause:** By design on the server and merely mislabelled on the client.
+  `ActivityCategoryGridResponse.cs:14-36` documents `Role` as *"every distinct role worn by the
+  activities in this category, alphabetical and comma-joined"* — a category has no role of its own — and
+  the grid sorts the column through a `RoleSortKey` proxy (`:46-47`, mapped from the incoming `role`
+  key). The client header is `t('activities.role')`, the same singular label the Activities tab uses
+  for a real FK. `Category.ts:10` already types it `role: string | null`; `CategoryRequest.ts` correctly
+  has no role field. Severity `polish` stands — nothing is wrong, the header lies.
+- **Files:** `ActivityCategoryTable.vue:59`; `activity.sk.ts` / `activity.en.ts` (one new key)
+- **What to change:** A header that says what it is — *"Used under"* / *"Roles in use"* — as a new
+  locale key; **keep the column key `role`**, because that is the sort key the server remaps. Rendering
+  the string as chips (split on `", "`) is optional and cheap; do it only if the row height stays
+  single-line at the seed's widest value (*"Health & Fitness, Hobbies & Leisure, Work"*).
+- **Do not change:** `Category.ts` or the DTO shape, and do not add a `roleId` to `CategoryRequest` —
+  the server has no such column and the unit's inference about the glossary is a doc question, not a
+  code one.
+- **Verification:** `P1`'s `Verify:` block; sort by the column once in each direction and confirm it
+  still orders (the key must not have changed).
+- **Risk:** None.
+
+## F22. Activities filter bar clips the "Categories" label
+> ✅ **FIXED 2026-09-23 — and the body's fix alone caused a regression.** As written, `flex-wrap` on the
+> filter row plus `min-width: 200px` on both comboboxes fixed the labels. But the extra width came out of
+> `VTabs`, which then clipped its own *Categories* tab to "CATE(" behind a scroll arrow. The screenshot
+> caught it; the a11y tree would not have. `VTabs` now carries `flex-0-0` too, so the filter group wraps
+> instead of the tabs shrinking.
+> **Verified by screenshot** at 1440×900 after the tabs fix: all three tabs, *Roles* and *Categories* are
+> legible, and the Active/Archived/All toggle drops to a second line. 1920×1080 was checked before the tabs
+> fix, with the labels legible.
+
+- **Scope:** app-side `src/core/activity/view/ActivitySettingsView.vue:12-67`
+- **Closes:** `activity-settings/P2`
+- **Root cause:** The filter row `<div class="d-flex ga-2 ml-14 flex-1-1">` holds five controls (two
+  text fields, two chip comboboxes, a three-button toggle) with no `flex-wrap` and no `min-width` on any
+  of them, so at the captured width every child shrinks evenly and the longest label loses. Same class
+  as `F16` (a flex row with shrinkable children in `tracking-settings`) — a different file with a
+  different set of children, so a different edit, and kept separate for that reason; if both land in one
+  session, use the same treatment.
+- **Files:** `ActivitySettingsView.vue:12` (the row) and `:28-51` (the two comboboxes)
+- **What to change:** A `min-width` on the two comboboxes (they also grow chips, so they are the ones
+  that need room) and `flex-wrap` on the row so the toggle drops to a second line before anything
+  truncates. Check 1440 and 1920 — the finding measured 1920 and it clipped there, so 1440 is worse.
+- **Do not change:** `VBtnToggle`'s `flex-0-0` — it is already the one child that must not shrink.
+- **Verification:** `P2`'s `Verify:` block at 1920 and 1440; a screenshot, since the a11y tree cannot
+  see truncation.
+- **Risk:** None beyond layout.
+
+## F26. The period-total banner is a `flex: 1 1` item — it has no size to wrap on
+> ✅ **FIXED 2026-09-23.** `.myAlert { flex: 0 0 auto }` in `HistoryPeriodBanner.vue`, with a comment
+> explaining the zero-basis mechanism. The inline `max-width: fit-content` is removed.
+> **Verified by screenshot** at 1440×900 and 1920: the seeded week renders *"Period total: 26h 23m vs
+> previous: 0m no baseline"* in full on one line. That is the no-baseline branch. The seed had no range with
+> a baseline to render the percentage chip, so the wider variant is covered only by the mechanism, not a
+> screenshot.
+
+- **Scope:** app-side `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue`
+- **Closes:** `history-review/B1`
+- **Root cause — not the one the finding names, and its suggested fix would not work.** Vuetify's own
+  stylesheet sets `.v-alert { display: grid; flex: 1 1; }` (`VAlert.css:1-3`), and the two-value shorthand
+  is `flex: 1 1 0%` — a **zero flex-basis**. So inside `HistorySummaryCards.vue:4`'s
+  `d-flex ga-4 align-center mb-4 flex-wrap` row the banner's *hypothetical* main size is 0 px: the row's
+  wrap test sums title + 170 px + 100 px + three gaps + **0** and finds it fits, so `flex-wrap` never
+  fires. The alert then *grows* into whatever is left over, capped by the inline `max-width: fit-content`
+  (`HistoryPeriodBanner.vue:10`). In the Summary view's `lg="6"` column (`HistorySummaryView.vue:81-85`,
+  ~560 px at 1440 wide) the leftover after *"Top Activities"* and the two selects is about 60 px — which
+  is the 62 px the finding measured. Nothing is *shrinking*; the finding's `flex-shrink: 0` would leave
+  the basis at 0 and change nothing.
+- **Files:** `HistoryPeriodBanner.vue:10` (the inline style) and `:69-73` (the `.myAlert` block)
+- **What to change:** Give `.myAlert` `flex: 0 0 auto` (basis `auto` is the whole fix — the item's
+  hypothetical size becomes its content width, the row wraps it to its own line when it does not fit, and
+  it never grows). Drop the inline `max-width: fit-content`, which was compensating for the grow half of
+  the same shorthand. Keep it a flex item; do not `position` it or move it out of the row — the row's
+  `flex-wrap` is the behaviour the finding asks for.
+- **Do not change:** `HistorySummaryCards.vue:4`'s row. Its `flex-wrap` is correct and the two selects'
+  `min-width`/`max-width` are what keep *them* legible. Also not the `VAlert` `density`/`variant` — the
+  alert is the right size once it is allowed to be its own size.
+- **Verification:** `history-review/B1`'s `Verify:` block at ≥ 1440 px — the banner reads *"Period total:
+  19h 7m vs previous: 7h 16m +163.1%"* in full, on one line or on its own line below the selects. Then
+  `?range=threeDays` or any range with no baseline (`percentChange === null`), so the *"no baseline"*
+  caption branch is exercised at its shorter width; and 1920 wide, where the banner should sit inline.
+- **Risk:** None. One element's flex shorthand.
+
+## F28. `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer
+> ✅ **FIXED 2026-09-23.** `HistoryDetailView` calls `useSetBreadcrumbExtra()` and sets
+> `[{ title: t('history.detail.title') }]` from a `watch(..., { immediate: true })` on the translated string,
+> so it follows a locale switch. There is no date segment; that part was optional.
+> **Verified:** `/activity-history/detail?date=2026-09-23` → *Home › Summary › History Detail*. On
+> `/activity-history` → *Home › Summary*. Detail → calendar icon → *Home › Calendar*, with the extra crumb gone.
+
+- **Scope:** app-side `src/core/activityHistory/view/HistoryDetailView.vue` — not the framework
+- **Closes:** `history-review/B3` (re-graded to `polish` — *Contradictions* §29)
+- **Root cause:** Confirmed, and the finding's own reading is exact. `navItems.ts:12-17` registers the
+  History group with two children, `to: '/activity-history'` (Summary) and `/activity-history/calendar`;
+  `findTrail()` (`useBreadcrumbs.ts:16-39`) keeps the longest `matchesPath` hit and
+  `'/activity-history/detail'.startsWith('/activity-history' + '/')` is true, so Detail inherits Summary's
+  crumb. Same class as `_shell/P1` (`/todo-list/:id` inheriting `/todo-list`), same fix — `F11` —
+  which is now the fourth consumer of `useSetBreadcrumbExtra()` in this tree (`TodoListView.vue:224`
+  and three framework detail views). Not `F14`'s class: that was a nav `to` naming one *tab* of a family;
+  this route is a drill-down with no nav entry at all, by design (`_routes.md`, orphan table, resolved by
+  unit 3).
+- **Files:** `HistoryDetailView.vue` (script setup — one `useSetBreadcrumbExtra()` call, one `watch`)
+- **What to change:** `setBreadcrumbExtra([{ title: t('history.detail.title') }])` on setup — the key
+  already exists (`activityHistory.en.ts:28`, *"History Detail"*). Optionally append the viewed date; if
+  so, format it through `localeTag(locale.value)` (`src/i18n.ts:35`, the `F24` rule) — **not**
+  `formatToDate` from `DateTimeHelper.ts`, which is hardcoded `sk` (*Contradictions* §22) and is already
+  what `periodLabel` uses on this view (in scope to leave, out of scope to copy). Watch `date` so the
+  segment follows the picker. The `onBeforeUnmount` cleanup is the composable's; nothing to add.
+- **Do not change:** `navItems.ts` — registering `/activity-history/detail` would put a landing-page
+  entry in the sidebar for a page that is never a landing destination. Not `useBreadcrumbs.ts` (`F11`'s
+  *Do not change*, same reason). Not the sidebar highlight: `SidebarNavItem.vue:52` will keep lighting
+  *Summary* on Detail through the same `matchesPath`, and for a drill-down that is the right answer.
+- **Verification:** `history-review/B3`'s `Verify:` block — `/activity-history/detail?date=2026-09-09`
+  reads *"Home › Summary › History Detail"* (or with the date); `/activity-history` itself still reads
+  *"Home › Summary"*; navigate Detail → Calendar via the icon button and confirm the extra crumb is gone.
+- **Risk:** None. `extraSegmentSlots` is module-level state; the unmount hook clears it — `F11` proved
+  that on the same mechanism.
+
+## F32. `/activity-history/calendar` has no `<h1>`, unlike its two siblings
+> ✅ **FIXED 2026-09-23.** `HistoryCalendarView` is wrapped in a `px-2 pt-6 w-100 h-100 d-flex flex-column`
+> root. It has a header row with a `chart-line` icon button to Summary (tooltip `history.calendar.openSummary`)
+> and `<h1 class="text-h4">` (`history.calendar.title`, "History Calendar" / "Kalendár histórie").
+> `CalendarGrid` gets `flex-fill` + `min-height: 0`.
+> **Verified by screenshot** at 1440×900: the `h1` sits above the Mode/Month/Year row, and the grid scrolls
+> inside its card. The holiday footer stays on screen, with no page-level scroll. The icon button navigates
+> to `/activity-history`.
+
+- **Scope:** app-side `src/core/activityHistory/view/HistoryCalendarView.vue`,
+  `src/core/activityHistory/_locales/activityHistory.{sk,en}.ts`
+- **Closes:** `history-review/P3`
+- **Root cause:** Confirmed. The view's template (`:1-26`) is a fragment of `HistoryFirstRunState` /
+  `HistoryEmptyState` / `CalendarGrid` with no header row; `HistorySummaryView.vue:19` and
+  `HistoryDetailView.vue:33` both render `<h1 class="text-h4">` inside a `d-flex align-center ga-6
+  flex-wrap` header, each with an icon button linking to the sibling view. `history.calendar.*`
+  (`activityHistory.en.ts:32-37`) has no `title` key to render even if the markup were there.
+- **Files:** `HistoryCalendarView.vue:1-2`; `activityHistory.en.ts:32` / `.sk.ts` (one key,
+  `history.calendar.title`)
+- **What to change:** The siblings' header row, minus the controls the calendar does not have: an
+  icon button to Summary (`chart-line`, the reverse of the siblings' `calendar-days` button — reuse
+  `history.detail.openSummary`'s shape, new key `history.calendar.openSummary`) and
+  `<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>`. Wrap the fragment in a root
+  `d-flex flex-column` so the header sits above the grid and `CalendarGrid`'s `height: 100%` chain
+  (`CalendarGrid.vue:287-292`) still resolves — check the grid still fills to the footer after the header
+  is added; the siblings use `flex-fill` + `min-height: 0` on the body for this.
+- **Do not change:** `CalendarGrid`'s own `VCardTitle` toolbar — it is the date-range control, not a page
+  heading, and it is framework.
+- **Verification:** `history-review/P3`'s `Verify:` block — `document.querySelector('h1')` resolves on
+  `/activity-history/calendar` above the Mode/Month/Year row; the grid still scrolls inside the card at
+  900 px tall rather than pushing the holiday footer off-screen.
+- **Risk:** None beyond layout — but it is the `F12` class of layout (a definite-height flex chain), so
+  look at the result rather than trusting the a11y tree.
+
+## F80. The board card's metadata line runs two fields together
+> ✅ **FIXED 2026-09-23.** `ProjectReadinessBoard.vue` builds the line in a `metaLine(item)` function: an
+> array of the present parts joined with `' · '`. That replaces the two conditional templates.
+> **Verified:** the seeded card reads *"Intermediate · Woodworking · 8.5h"*. No card with only one of the
+> optional fields exists in the seed, so the single-field case is covered by the join, not observed.
+
+- **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue:86-98`
+- **Closes:** `leisure-projects/P2`
+- **Root cause:** two adjacent `<template v-if>` blocks each lead with the literal `· ` (space *after*,
+  none before) and sit with no whitespace between them in the source, so the second separator has no
+  leading space: *"Intermediate · Woodworking· 8.5h"*. Reproduced on the seeded row and on a row created
+  in the pass, so it is not data-shaped.
+- **What to change:** build the line as an array of the present parts and `join(' · ')`, rather than two
+  independent conditional templates each guessing at its own separator. That is also the only form that
+  stays right when a third optional field is added.
+- **Verification:** `P2`'s `Verify:` block, on a card with **both** optional fields and on a card with
+  only one — the second is where a naive `' · '` prefix leaves a leading separator.
+- **Risk:** None.
+
+## F81. The recurrence tab strip asks for an icon this app does not bundle
+> ✅ **FIXED 2026-09-23.** `RecurrenceType.ts` returns `arrows-left-right-to-line` for `DateRange`, which
+> resolves in `fas` (checked against the pack). The body's suggestions were `calendar-days` / `calendar-week`,
+> but those are already the `DayOfMonth` and `DayOfWeek` icons in the same strip, so either would have
+> duplicated a sibling.
+> **Verified:** all four recurrence tabs render an icon, and the console shows 0 errors (no
+> `Could not find one or more icon(s)`). The dialog was cancelled.
+
+- **Scope:** app-side — the recurrence-type tab strip in the New/Edit Repeating Task dialog
+  (`/day-planner/settings` → Repeating Tasks → Add)
+- **Closes:** `planner-day/P1`
+- **Root cause:** the *Date range* tab references `calendar-range`, which is **not** in the three free
+  FontAwesome packs this app bundles. Pinned down this pass rather than guessed: the name is absent
+  from `fas`, `far` *and* `fab`, aliases (the ligature list on each definition) included — it is a
+  Pro-only icon. The one literal is `RecurrenceType.ts:15` (`return 'calendar-range'`), not the
+  template. The tab renders with no icon, misaligned against its three siblings which all have one, and
+  the console logs `Could not find one or more icon(s) {prefix: fas, iconName: calendar-range}` on
+  every dialog open.
+- **It is not the tip of an iceberg, and that was worth checking.** Every static icon literal in
+  `src/` (204 in `.vue`, 79 in `.ts`, `_common` included) was resolved against the three packs this
+  pass. **Exactly two do not resolve:** this one and `F46`'s `mdi-close`. Nothing else to sweep up, and
+  no case for a registry or a lint rule off the back of it.
+- **What to change:** swap to a bundled icon. `calendar-days` is the closest fit for a range;
+  `calendar-week` also resolves. `_common/utils/fontAwesomeIcons.ts` registers the packs wholesale
+  rather than listing names, so it cannot be consulted for what exists — resolve a candidate against
+  the pack instead (`node -e "const {fas}=require('@fortawesome/free-solid-svg-icons'); …"`), or just
+  reuse a name already rendering elsewhere in this app.
+- **Verification:** `P1`'s `Verify:` block — the icon renders and the console logs nothing.
+- **Risk:** None.
+
+## F82. *Importance* is required in the repeating-task dialog, unmarked, and optional in the plain one
+> ✅ **FIXED 2026-09-23 — decided for the asterisk.** The server's `RepeatingPlannerTaskValidator` has
+> `RuleFor(x => x.ImportanceId)` as `NotNull().GreaterThan(0)`. Its integration test
+> (`RepeatingPlannerTaskValidationTests.cs`) says it is required here and merely optional on the other two
+> task shapes. The dialog is right to demand it; it was only unmarked. New key `planner.importanceRequired`
+> ("* Importance" / "* Dôležitosť"), following `activities.nameRequired`'s convention of an asterisk inside
+> the string. The plain task dialog is unchanged.
+> **Verified:** the label reads *"* Importance"* before any submit.
+
+- **Scope:** app-side `src/core/dayPlanner/component/settings/RepeatingTaskDialog.vue` (the Importance
+  select and its validator)
+- **Closes:** `planner-day/P2`
+- **Root cause:** submitting with Importance unset fails with *"This field is required"* under the field,
+  but the label reads plain *"Importance"* while `* Name` and `* Activity` in the same dialog carry the
+  app's asterisk convention. The user gets no upfront cue, and *Location*, *Notes* and *Is background*
+  sit unmarked beside it looking identical.
+- **Decide before editing.** The same field is genuinely optional in the plain Add/Edit Task dialog, so
+  one of the two dialogs is wrong. Marking it is the one-line fix; relaxing the validator is the other,
+  and is the right one if a repeating task has no more reason to demand an importance than a single task
+  does. Check the server's `RepeatingPlannerTask` contract before choosing — if `Importance` is
+  non-nullable there, the answer is the asterisk.
+- **Verification:** `P2`'s `Verify:` block — the cue is present before the first submit attempt. If the
+  validator is relaxed instead, confirm a repeating task created with no importance round-trips and
+  renders sensibly on the day grid.
+- **Risk:** None either way; the risk is shipping the wrong one of the two.
+
+## F83. The template header counts foreground tasks only and does not say so
+> ✅ **FIXED 2026-09-23.** `taskStats` also returns `backgroundCount`. `statsLine` gains a `{background}`
+> slot in every plural form. It is filled with `" " + planner.template.statsBackground` ("(+{count}
+> background)" / "(+{count} na pozadí)") when the count is non-zero, and is empty otherwise.
+> Planned/free arithmetic is untouched.
+> **Verified** on template 20001 against a task created and deleted through the app's own
+> `useTemplatePlannerTaskCrud` (id 20113, `isBackground: true`). Before: *"5 tasks · 5h 25m planned ·
+> 10h 35m free"*. With it: *"5 tasks (+1 background) · 5h 25m planned · 10h 35m free"*. After the delete,
+> back to the original. The fixture is unchanged.
+
+- **Scope:** app-side `src/core/dayPlanner/view/TemplateDayPlannerView.vue` (`taskStats`)
+- **Closes:** `planner-templates/P3` — round 1's `U1`, now **settled**: round 2 created the first
+  `isBackground: true` template task the fixture has ever had and confirmed the exclusion works exactly
+  as the code reads. This is a labelling gap, not a computation bug, and it is re-graded to `polish`
+  accordingly (the unit did this itself).
+- **Root cause:** `taskStats` filters `nonBgTasks` for all three figures. Excluding background time from
+  *planned* / *free* is correct — a background task does not block time. Excluding it from the plain
+  **count** is what leaves a reader with two blocks on screen and *"1 task · 1h planned · 15h free"* in
+  the header.
+- **What to change:** mention the background count when it is non-zero — *"1 task (+1 background) · 1h
+  planned · 15h free"*. One template string and one locale key pair; leave the planned/free arithmetic
+  alone.
+- **Verification:** `P3`'s `Verify:` block. Note it needs a background task to exist — none is seeded, so
+  create one through the API (CLAUDE.md *Mutating specs* rule 1) or repeat round 2's hand-made one and
+  clean up after.
+- **Risk:** None.
+
+## F2. Every board-mode filter change fires two competing grid requests through one `AbortController`
+> ✅ **FIXED 2026-09-23** (`273d327b`, after `F1`'s `576df526` in the same file). This is the
+> recommended shape: **one fetch**. The board renders `useServerTable`'s own `items`/`loading`. A
+> `viewMode` watcher (`immediate`) sets `itemsPerPage = BOARD_PAGE_SIZE`, `page = 1` and calls `load()` on
+> entering board mode. On entering table mode it restores the table's parked page size, and the table
+> then loads itself through `BasicTable`'s `onLoadItems`. `loadBoard`, `boardItems` and `boardLoading`
+> are deleted. The board's error state is now a `fetch` wrapper that clears `failed` plus an `onError`
+> that sets it unless `isRequestCanceled`, both on `useServerTable`'s existing options. No framework
+> change. A `perPage=200` in the URL is treated as the board's, so it never becomes the table's size. The
+> `BOARD_PAGE_SIZE` comment is kept, with the >200 truncation noted in the code as *Risk* asked.
+> **Reproduced first** on `576df526`: one board filter change gave two grid POSTs, one of them
+> `net::ERR_ABORTED`.
+> **Verified** in a dedicated `playwright-cli` session (`-s=f2`, form sign-in):
+> - A clean board load sends one POST, `itemsPerPage: 200`.
+> - A board filter change (*Activity* = "Book") sends **exactly one** POST, carrying 200 and the filter.
+> - Switch to Table sends one POST, `itemsPerPage: 25`, and the URL goes back to `perPage=25` with
+>   `view=table` kept (F1 holds).
+> - A column sort and a table-mode filter change each send one POST.
+> - Back to Board sends one POST at 200.
+> - From `?view=table&perPage=10`, Board → Table restores `perPage=10`.
+> - **0 `ERR_ABORTED`** across the whole run.
+> - `route … --status=500` renders *"Couldn't load this list"*, and *Try again* recovers with one 200.
+> - `npm run type-check` exit 0, eslint on the file clean.
+> **Not verified:** paging across real pages. The seed has one project, so the "one request per page
+> change" half of the check could only be shown through sort and filter, which take the same path
+> (`onLoadItems` → coalesced `load()`). The >25 under-render the finding inferred was never observable on
+> this seed, before or after.
+
+- **Scope:** app-side `src/core/leisure/view/ProjectsView.vue`
+- **Closes:** `leisure-projects/B2`
+- **Root cause:** `ProjectsView` drives **one** `fetchFilteredTable` instance from **two** places. Confirmed in
+  source: `useActivityProjectProfileCrud()` is destructured once (`:103`) and handed to `useServerTable`
+  (`:109`) *and* called directly by `loadBoard()` (`:139`). `useServerTable.ts:107-116` watches `filter`
+  unconditionally — it cannot know its table is unmounted — so a board-mode filter change fires the table's
+  25-row fetch alongside `ProjectsView.vue:147-153`'s own 200-row `loadBoard()`. `useFetchFilteredTable.ts:29-37`
+  holds **one** `AbortController` per instance and aborts the previous call on every new one, so the two race.
+- **The consequence is worse than a wasted round trip**, and this is the part to fix for, not the count:
+  `useFetchFilteredTable.ts:47-55` swallows the cancellation and **resolves the aborted call with `latest`** —
+  the *other* call's result. With more than 25 matching projects, a board-mode filter change can therefore
+  resolve `boardItems` with the table's 25-row page and silently under-render the board. Not reproducible on
+  the current seed (one row), inferred from the code path; the finding says so too.
+- **The finding's own suggested fix does not satisfy its own pass condition.** Giving the board a second
+  `useActivityProjectProfileCrud()` instance separates the controllers — the correctness bug goes — but leaves
+  **two** requests, and `Verify:` step 3 demands exactly one. Pick a shape that gives one fetch:
+- **Files:** `src/core/leisure/view/ProjectsView.vue:103-153`; reference only —
+  `src/_common/composable/table/useServerTable.ts:107-116`, `src/_common/api/useFetchFilteredTable.ts:29-58`
+- **What to change:** Recommended — **collapse the two fetches into one.** Board and table want the same
+  filtered rows at different page sizes, so drive the board off `useServerTable`'s own `items` and set
+  `itemsPerPage` to `BOARD_PAGE_SIZE` while `viewMode === 'board'` (back to 25 on switching to table). That
+  deletes `loadBoard`, `boardItems` and `boardLoading`, leaves one writer of one request, and keeps the page
+  size bookmarkable in the URL where it already is. Keep `BOARD_PAGE_SIZE = 200` and the comment at `:113-122`
+  explaining why it is 200 and not 500 — that constraint is the server's validator and is still live.
+  Acceptable alternative if the single-instance shape turns out to fight the table's paging: a second
+  `useFetchFilteredTable` instance for the board **plus** gating `useServerTable`'s load on
+  `viewMode === 'table'`, and amend the finding's pass condition to say why two instances were needed.
+- **Do not change:** `useServerTable`'s unconditional filter watcher or `useFetchFilteredTable`'s cancellation
+  fallback. Both are framework, both are load-bearing for every other table, and the "suppress the fetch when
+  the consuming table is unmounted" idea needs a framework-level answer (a `enabled` option), not a patch
+  here — see *Escalations* §4 for whether that is worth raising upstream.
+- **Verification:** `leisure-projects/B2`'s `Verify:` block — one filter change in board mode, exactly one
+  `POST /api/activity-project-profile/grid`, carrying the board's page size. Then switch to Table and confirm
+  paging still works and still fires one request per page change. Check `playwright-cli requests` for
+  `net::ERR_ABORTED` entries — there should be none.
+- **Risk:** Medium. Touching the page-size ref changes what lands in the URL for every user of this view, and
+  the board's "fetch everything" assumption only holds under the 200 cap. If a user's project count ever
+  exceeds 200 the board silently truncates either way — out of scope here, worth a note in the code.
+
+## F5. Non-active readiness-status buttons on the board are effectively invisible
+> ✅ **FIXED 2026-09-23** (`cfe9e5be`). Inactive status buttons are now `variant="outlined"`
+> `color="neutral-600"`. That token is theme-aware: `#4B5563` in light, `#9CA3AF` in dark. The active
+> button is unchanged (`elevated` in its `STATUS_META` colour, which *Do not change* protects), and
+> filled-vs-outlined is the state cue.
+> **The first pick, `textMuted`, failed measurement.** The light theme's app background is `#CCCCCC`,
+> not white, because the card is transparent over `.v-application`. On it, `#6B7280` computes to
+> **3.0:1**, right at the threshold. `secondaryOutline` was ruled out without measuring: it would read
+> as a pale Planning, since Planning's active colour is `secondary`.
+> **Verified** at 1440×900 with a dedicated `playwright-cli` session (`-s=f5`). Contrast was computed
+> in-page from the glyph's computed colour against the first opaque ancestor background: **light
+> 4.71:1** (`rgb(75,85,99)` on `rgb(204,204,204)`), **dark 7.38:1** (`rgb(156,163,175)` on
+> `rgb(18,18,18)`), both against 1.4.11's 3:1. Element screenshots in both themes show all three
+> buttons, with the active one clearly filled. The theme was switched with the app's own toggle and
+> switched back to light afterwards. Typecheck exit 0, eslint clean.
+> **Not verified:** clicking an inactive button to move a card. The status-change logic is untouched,
+> and it would mutate the seed's only project.
+
+- **Scope:** app-side `src/core/leisure/component/project/ProjectReadinessBoard.vue`
+- **Closes:** `leisure-projects/A3`
+- **Root cause:** `ProjectReadinessBoard.vue:130-146` colours every non-active status button `grey-lighten-2`
+  with `variant="tonal"` — and `tonal` at that colour computes to `background-color: rgba(0,0,0,0)`, so there
+  is no tint at all and a near-white glyph sits on a white card. Confirmed in source and by the finding's
+  computed-style dump. These are the control the board exists to operate (one click moves a project between
+  columns), so the two you *aren't* on are the two you can't see.
+- **Not a naming gap.** The buttons already carry `:title="$t('enums.readinessStatus.' + s)"` (`:138`), so
+  they have accessible names — this is WCAG 1.4.11 non-text contrast only, which is why it is its own batch and
+  not part of `F4`.
+- **Files:** `src/core/leisure/component/project/ProjectReadinessBoard.vue:133-134` (the `:color`/`:variant`
+  pair)
+- **What to change:** Pick an inactive treatment with real contrast — a darker neutral from the theme's
+  `neutral-*` scale, or `secondaryOutline` with `variant="outlined"` so the glyph gets a border to sit
+  against. Whatever is chosen, the active state must still read as clearly the active one; that contrast is
+  the control's only state indicator.
+- **Do not change:** `STATUS_META`'s active colours (`successDark`/`warningDark`/…) — they are the
+  variant-to-colour pairing CLAUDE.md prescribes for `elevated`, and they are correct.
+- **Verification:** `leisure-projects/A3`'s `Verify:` block, which is a visual check — take the screenshot,
+  don't rely on the accessibility snapshot, which is blind to this by construction. Check in **both** themes:
+  `grey-lighten-2` on a dark card is a different failure, and the finding only measured light.
+- **Risk:** Low, visual only. The board is the default view mode for this route, so it is the first thing seen.
+
+## F6. A dead `class="flex-1-1"` on four `FilterPanel` call sites logs a Vue warning on every render
+> ✅ **FIXED 2026-09-23** (`be6aef84`). The attribute was deleted from all four call sites
+> (`ProjectsView`, `BacklogView`, `BucketListView`, `MemoryAnchorsView`). `FilterPanel.vue` is untouched,
+> and it is still multi-root (`<div>` + `<Teleport>`). The grep's other `flex-1-1` hits are on
+> single-root elements and were left alone.
+> **Reproduction trap, worth knowing:** the framework's `warnHandler` (`installFramework.ts:71`) logs Vue
+> warnings at **info**, so `playwright-cli console warning` reports *0* while the warning is firing.
+> Read `console info` or plain `console` instead.
+> **Verified** with a dedicated `playwright-cli` session (`-s=f6`). All four views were measured before
+> and after, at 1440×900 and 390×844, on the panel's root `flex-fill` box (x, width, height) and on the
+> count of *"Extraneous non-props attributes"* in the console:
+> - **Before:** 4–5 warnings on every view.
+> - **After:** 0 warnings on every view, and the geometry is **pixel-identical** on all eight
+>   view×width pairs. So `flex-fill` alone was doing the work, and the batch's stop condition (a
+>   layout change means fixing the framework) never triggered.
+> - Typecheck exit 0, eslint clean on `src/core/leisure/view/`.
+> **Not verified:** nothing outstanding. No screenshots were taken, because the measured boxes
+> matched exactly.
+
+- **Scope:** app-side — the four leisure views, **not** `src/_common/component/FilterPanel.vue`
+- **Closes:** `leisure-projects/P1`, **`leisure-backlog-picker/P1`** (thirteenth pass — the same
+  warning, observed on `/leisure/backlog`; the finding's *"BacklogView is the only leisure view that
+  passes a `class`"* is wrong, the grep below still returns four — §93)
+- **Root cause:** `FilterPanel.vue`'s template is multi-root (a `<div>` plus a sibling `<Teleport>`,
+  `:1-82`), so Vue cannot auto-inherit attributes and logs *"Extraneous non-props attributes (class) were
+  passed to component…"* for every call site that passes one. Four do — `ProjectsView.vue:27`,
+  `BacklogView.vue:7`, `BucketListView.vue:27`, `MemoryAnchorsView.vue:27` — all passing the same
+  `class="flex-1-1"`. It was never doing anything: the panel's own root `<div>` already declares `flex-fill`
+  (`FilterPanel.vue:2`). The framework's own `FilterPanel` call sites (the four reminders views) pass no class
+  and log nothing.
+- **App-side or framework? App-side, deliberately.** The finding's root-cause guess calls this "same shape as
+  A1", and that is wrong (see *Contradictions* §5) — a missing label and a broken attr inheritance have nothing
+  in common. Making `FilterPanel` single-root would also close it, but that is a submodule commit plus a
+  pointer bump to delete four characters of dead markup in this repo, and it changes the DOM shape for every
+  app on the framework. Removing the dead class is strictly smaller and strictly safer.
+- **Files:** `src/core/leisure/view/ProjectsView.vue:27`, `BacklogView.vue:7`, `BucketListView.vue:27`,
+  `MemoryAnchorsView.vue:27`
+- **What to change:** Delete the `class="flex-1-1"` attribute from all four. Check the panel still fills its
+  row afterwards at desktop and mobile width — `flex-fill` and `flex-1-1` are not identical, and if the layout
+  *does* change, that is the signal to fix the framework instead and this batch should stop and say so rather
+  than re-adding the class.
+- **Do not change:** `src/_common/component/FilterPanel.vue`.
+- **Verification:** `leisure-projects/P1`'s `Verify:` block on `/leisure/projects`, then repeat the console
+  check on the other three leisure views — the warning is per call site, so a fix verified on one view proves
+  nothing about the others.
+- **Risk:** Low, but it is a layout attribute on four screens. Look at each one.
+
+## F7. `RoutineTodoWidget`'s header controls are clipped off-screen at a common desktop width
+> ✅ **FIXED 2026-09-23** (`e3271007`). This is the batch's second option: the period chips get their
+> own scroller, and the counter and both buttons stay anchored. The change is in
+> `RoutineTodoWidget.vue` only (the body's *Files* allows the chip row). `WidgetCard.vue`, the 64 px
+> header and `TodoListWidget` are untouched.
+> The scroller is a `div.routine-periods` with `role="region"`, `tabindex="0"` and
+> `aria-label="home.streaks"`, an existing key. A scroller with nothing focusable inside cannot
+> otherwise be scrolled from the keyboard. Above `md` it has `flex: 1000 1 0; min-width: 0`, and a
+> first-child `margin-left: auto` keeps the chips beside the buttons when there is room.
+> **Two things the body did not know:**
+> 1. **The title was squeezed too.** Before the fix, `.widget-card__title` was 0 px wide at 1440 and
+>    22 px at 1920, because it has `min-width: 0` and gave up its width before the buttons started
+>    overflowing. This was measured by stashing the change.
+> 2. **A shrink-based scroller is not enough.** The first version (`flex: 0 1000 auto`) still took
+>    0.4 px from the title (124.0 px box, 124.4 px text), and that ellipsized it to "Routine tas…".
+>    Flex shrinks every item in proportion. Only the zero-basis/grow shape leaves nothing to shrink.
+>    That shape is scoped to `md` and up, because below `md` the chips' own width is what wraps them
+>    onto their own row. Unscoped, it held them to 81 px on one line at 390.
+> **Verified** with a dedicated `playwright-cli` session (`-s=f7`), measuring all four widget headers at
+> 1280/1440/1920/2560/960/390:
+> - The routine header's `scrollWidth === clientWidth` at every width (was 766/548 at 1440 and 766/468
+>   at 1280).
+> - Both routine buttons are within the header's right edge (1440: 1356/1404 vs 1420, was 1574/1622).
+> - Every header is 64 px and level with its row. At 390 the routine header wraps as before (142 px,
+>   chips on a 326 px row).
+> - The title box is 124.42 px, equal to its text, with no truncation at 960/1440/1920.
+> - At 2560 the chips fit and sit right-aligned (first chip 216 px in).
+> - The hide-done toggle flipped true → false → true by plain `playwright-cli click`, left as found.
+> - *Open* navigated to `/routine-todo-list`.
+> - The chip region takes focus, and ArrowRight scrolls it.
+> - A 1440 element screenshot looks right. Console 0 errors, typecheck exit 0, eslint clean.
+> **Not verified:** an account with more or fewer periods than the seed's four. The shape is
+> count-independent by construction, and that is the claim, not a measurement.
+
+- **Scope:** app-side `src/core/home/component/WidgetCard.vue`
+- **Closes:** `home/B1`
+- **Re-verified unchanged this pass:** `WidgetCard.vue:150-151` is still `flex-wrap: nowrap` above `md`, and
+  `.widget-card` is still `overflow: hidden` (`:130`).
+- **Root cause:** `RoutineTodoWidget`'s header holds a title, four period-streak chips
+  (Daily/Weekly/Monthly/Yearly), a done/total counter and two action buttons — wider than any other widget's
+  header — so at 1440×900 it overflows by ~205px (`scrollWidth: 753` vs `clientWidth: 548`) and the two action
+  buttons land 100-140px past the visible edge. They stay in the DOM and the tab order (so `find` and keyboard
+  users still reach them) but are invisible and unclickable by mouse.
+- **Files:** `src/core/home/component/WidgetCard.vue:142-153`; the chip row itself lives in
+  `RoutineTodoWidget`'s template (in scope to reflow, not to move)
+- **What to change:** Either let the chip row wrap onto its own line below the title (matching what already
+  happens below `md`), or give the chip row its own `overflow-x: auto` scroller that does **not** also capture
+  the two action buttons — those must stay anchored and visible regardless of how many time periods an account
+  has. Do not fix by widening the card or scaling the chips: the chip count is data-driven and any
+  width-tuned fix reproduces at some N.
+- **Do not change:** `TodoListWidget`'s header or the shared 64px `min-height` — both are fine at every width
+  tested, and the "every `WidgetCard` header lines up" invariant is deliberate (see the comment above the rule).
+- **Verification:** `home/B1`'s `Verify:` block — at 1440×900 both the hide/show-done toggle and the
+  open-full-view button must have `getBoundingClientRect().right` ≤ the header's own, and both clickable by
+  `playwright-cli click` with no forced/JS fallback. Confirm the period chips are not clipped either.
+- **Risk:** Low, one component's CSS. Re-check the header still lines up with the other three widgets.
+
+## F14. Tabbed routes get the wrong breadcrumb (and sidebar highlight) because the nav `to` is one tab's literal path
+> ✅ **FIXED 2026-09-23.** Two repos, in order: `vue_framework` `a29135a`, then the app `baf167ac`,
+> which carries the pointer bump.
+> **The data fix as written:** the three nav entries use the family paths
+> (`/activity-tracking/{desktop,android}/settings`, `/activity-settings`). Two redirect routes send the
+> tracking parents to `…/distinctEntries`. `useBreadcrumbs.ts` and `matchesPath` are untouched, as *Do
+> not change* asks. `useSetBreadcrumbExtra` was not added, since it is optional.
+> **The framework half the body did not foresee.** The body's sidebar claim rests on
+> `SidebarNavItem.vue:52`, but that only decides **top-level** items. Children of a group are decided by
+> `SidebarNavGroup.isChildActive`. It suppressed a child whenever *any* sibling prefix-matched the
+> route, without comparing lengths. The measurement, with the data fix applied:
+> - Every crumb was already right.
+> - `/activity-settings/*` highlighted correctly (a top-level item).
+> - The tracking-settings tabs highlighted **nothing**, `distinctEntries` included, which the literal
+>   path used to highlight through the exact match. So the data fix alone was a regression on that tab.
+>
+> The fix makes a sibling suppress only when it is **longer** (longest prefix wins, `useBreadcrumbs`'
+> rule). It is generic and default-preserving: it changes only the cases where nothing was
+> highlighted. Documented in `src/_common/docs/composables.md` → *Active state and breadcrumbs:
+> longest prefix wins*, in the same framework commit. That differs from the matcher change *Do not
+> change* forbids: it is the group's sibling rule, not `matchesPath`, and it needs no
+> `MenuItem.routeName` design.
+> **Verified** with a dedicated `playwright-cli` session (`-s=f14`) at 1440×900, reading the rendered
+> `.v-breadcrumbs` and every `.v-list-item--active` in the drawer:
+> - **All tracking-settings tabs** (the family path, `distinctEntries`, `mappings`, a bogus value, desktop
+>   and android): crumb *Home › Desktop settings* / *Android settings*, highlight *Web tracking ›
+>   Desktop settings* / *Android settings*.
+> - **`/activity-settings`, `/roles`, `/categories`:** *Home › Activity settings*, and *Activity settings*
+>   highlighted.
+> - **Unchanged elsewhere:** the three dashboards, `/day-planner`, `/day-planner/settings`, and the
+>   `/activity-history` summary, calendar and detail pages.
+> - **Also fixed:** `/day-planner/templates/14001` now highlights *Day planner - template*. With the
+>   framework half stashed it measured **empty** (the same stash run also showed the Mappings tab empty).
+> - Console 0 errors, typecheck exit 0, eslint clean on both app files.
+> `_routes.md` updated: 56 records, the two new redirect rows, nav columns, the *Structural notes*
+> redirect line, and the tracker (unit 6 → 4, total 55).
+> **Found, not fixed (pre-existing, not caused by this):** `/activity-history/manual` highlights both
+> *History › Summary* and *Record activity › Manually*. Summary's `/activity-history` prefix-matches it
+> from a **different** group, and the sibling rule cannot see across groups. That needs a tree-wide
+> longest match in the framework. It is left for a batch of its own.
+> **Not verified:** a signed-out visit to a family path (it redirects before the auth guard's
+> `?redirect=`, a standard vue-router redirect).
+
+- **Scope:** app-side `src/app/nav/navItems.ts`, `src/core/activityTracking/activityTracking.routes.ts` —
+  **not** the framework's `useBreadcrumbs.ts` / `navTypes.ts`
+- **Closes:** `tracking-settings/B2`, `activity-settings/B6` (borrowed — see the header note)
+- **Root cause:** Both units guessed it and both were right: `matchesPath()` (`navTypes.ts:41-44`) is
+  `path === to || path.startsWith(to + '/')`, and `findTrail()` (`useBreadcrumbs.ts:16-39`) keeps the
+  longest match. The sidebar registers `desktopSettings` as the **literal `distinctEntries` tab path**
+  (`navItems.ts:25,28`) and `activitySettings` as `/activity-settings/activities`. So
+  `/activity-tracking/desktop/settings/mappings` matches nothing under `settings/` and falls to the longer
+  of the two remaining prefixes — `/activity-tracking/desktop`, i.e. *"Desktop tracking"*, a sibling
+  screen. `/activity-settings/roles` has no shorter prefix in the tree at all, hence *"Home"* alone. One
+  mechanism, two symptoms, two units. **Not filed but source-certain:** `SidebarNavItem.vue:52` uses the
+  same `matchesPath`, so on the Mappings tab the sidebar highlights *Desktop tracking* and on `/roles` it
+  highlights nothing. Listed under *Needs verification*.
+- **Files:** `src/app/nav/navItems.ts:25,28` (and the `activitySettings` entry);
+  `src/core/activityTracking/activityTracking.routes.ts:27-31,37-41`
+- **What to change:** Point the three nav entries at the **family path** — `/activity-tracking/desktop/settings`,
+  `/activity-tracking/android/settings`, `/activity-settings` — and add redirect routes for the two tracking
+  parents to `…/distinctEntries` (`/activity-settings` already redirects to `activities`,
+  `_routes.md:25`). Prefix matching then resolves every tab value, valid or not, to the right crumb *and* the
+  right sidebar item; the sidebar link still lands on the same first tab via the redirect. Optionally append
+  the tab as an extra crumb with `useSetBreadcrumbExtra()` (the `F11` mechanism) — not required by either
+  finding's `Expected`.
+- **Do not change:** the framework matcher. Name-based resolution (the `activity-settings` unit's option 2)
+  is a framework batch with its own risk to every app's sidebar and needs a `MenuItem.routeName` design; the
+  data fix above closes both findings without it. Also do not register the other tabs as extra nav entries —
+  `MenuItem` has no `hidden` flag (`navTypes.ts:10-16`), so they would appear in the sidebar.
+- **Verification:** Both `Verify:` blocks — *"Desktop settings"* / *"Android settings"* on the Mappings tabs
+  and on a bogus tab value; *"Home › Activity settings"* on `/activity-settings/roles` and `/categories`.
+  Add: the sidebar highlights the settings entry, not the dashboard, on every tab.
+- **Risk:** Low. The redirect adds two route records to `_routes.md`'s 53 — update the manifest.
+
+## F19. Roles/Categories tables: parse `canDelete`/`usageCount`, gate the role delete, cascade-confirm the category delete — and name the trash button before copying it
+> ✅ **FIXED 2026-09-23** (`9e93fda5`; the CLAUDE.md importers row is in the working tree). Done as the
+> body prescribes, both halves asymmetric, as the server is:
+> - **DTOs:** `Role`/`Category` parse `usageCount = 0`, `canDelete = true`.
+> - **Roles:** a custom `#actions` slot. A disabled trash button, inside the wrapper `VTooltip`, with an
+>   `aria-label` naming **which** refusal applies: a new `roleDeleteBlockedSystem` key for `systemKey`
+>   roles and `roleDeleteBlockedInUse` with the count for in-use roles.
+>   `activities.archive.deleteBlocked` was **not** reused, because it tells the user to archive, and
+>   roles have no archive. An allowed delete gets an unconditional `useDialog().confirm()`, not
+>   `useDeleteConfirmation`, as *Do not change* says.
+> - **Categories:** delete is never disabled. `shouldConfirm({ cascades: usageCount > 0 })`, with the
+>   count in the dialog's `detail`: *"Activities in this category: {count}. They are kept, but lose
+>   their category."*
+> - **Plurals:** the copy follows the app's existing "Label: {count}." convention (`deleteCascade`,
+>   `templateDelete.cascade`), which sidesteps SK plural forms. There are no `pluralRules` in the app.
+> - **`@onDelete`** was removed from both `BasicTable`s, so the raw-id dialog (`B8`) is gone.
+> - **`ActivityTable`'s trash** gained `:aria-label` (`A1`) before the slot was copied.
+> - **409 race fallback:** left to the interceptor. `FW24`'s parser exists, and no private one was
+>   built.
+>
+> **Verified** with a dedicated `playwright-cli` session (`-s=f19`). The mutations were run on throwaway
+> rows created through the API (role `11105`, category `11602`, activity `12103` in it), never on
+> fixture rows.
+> - **Roles tab:** all three system roles are disabled with *"The app itself uses this role…"*. Work,
+>   Health & Fitness and Hobbies & Leisure are disabled with *"Activities with this role: 10 / 12 / 6…"*.
+>   Only the unused throwaway is enabled. Hovering a disabled one shows exactly **one** tooltip.
+>   Deleting the throwaway gives a dialog naming it (*"…delete F19-tmp role?"*, not an id). It
+>   **closes** after Confirm, the API answers `DELETE /activity-role/11105` **204**, and the row is gone.
+> - **Categories tab:** every trash button is enabled, `title="Delete"`.
+>   - *Errands:* the dialog reads *"…Activities in this category: 10. They are kept, but lose their
+>     category."* Cancel closes it with **no** DELETE sent.
+>   - *The throwaway:* the dialog shows count 1. Confirm → closes → **204** → row gone. `GET
+>     /activity/12103` → 200 with `category: null` and role *Work* intact, which is the SetNull path end
+>     to end.
+> - **Activities tab (A1):** trash buttons carry an `aria-label` and no `title`. Hovering one shows a
+>   single tooltip. `getByRole('button', { name: 'Delete' })` resolved on the throwaway row, and deleting
+>   it through the UI was the cleanup: all three throwaways answer 404 afterwards.
+> - Typecheck exit 0, eslint clean on `src/core/activity/`.
+>
+> **Not verified:** the SK copy on screen (the account is EN; SK strings reviewed in source only). The
+> 409 race path (an activity gaining the role between grid load and delete). The category delete under
+> `askBeforeDelete: false` with `usageCount 0`, which deletes without a dialog by the composable's rule;
+> the seed account has the preference on. *The "BasicTable dialog suspected of never closing" row the
+> body cites was not found under Needs verification* (already gone). The new dialogs were measured
+> closing either way.
+
+- **Scope:** app-side `src/core/activity/dto/response/Role.ts`, `Category.ts`,
+  `src/core/activity/component/activityRole/ActivityRoleTable.vue`,
+  `activityCategory/ActivityCategoryTable.vue`, `ActivityTable.vue:121-137`; plus one row in CLAUDE.md's
+  *sanctioned cross-module imports* table
+- **Closes:** `activity-settings/B7`, `activity-settings/A1`, **`activity-settings/B8`** (thirteenth
+  pass — the generic dialog reads *"Are you sure you want to delete 4?"* because neither table passes
+  `deleteConfirmationColumn`; this batch replaces that dialog with `useDialog().confirm()`, so the raw
+  id goes with it. **If a fixing session keeps `BasicTable`'s built-in dialog for either table**, the
+  one-attribute alternative is `deleteConfirmationColumn="name"` — do one or the other, not neither).
+  **`U2` is now browser-confirmed** (mutation round 2): Delete → Confirm on the *Planner task* system
+  role → `409`, row kept, message hidden behind the generic string — which is `FW19`.
+- **Root cause — and two things the finding's suggested fix gets wrong.** `ActivityRoleTable.vue:2-15`
+  and `ActivityCategoryTable.vue:2-15` use `BasicTable`'s default actions with `@onDelete`, so every row
+  offers an always-enabled delete behind the generic *"Are you sure you want to delete X?"*. The finding
+  proposes copying `ActivityTable.vue`'s `:disabled="!item.canDelete"` slot. That would fail twice:
+  1. **The DTOs drop the field.** The wire carries `canDelete`/`usageCount` on both grids
+     (`GridActivityRoleEndpoint.cs:41-44`, `ActivityCategoryGridResponse.cs:66-67` — and the finding's
+     own evidence shows them), but `Role.fromJson` (`Role.ts:20`) and `Category.fromJson`
+     (`Category.ts:14`) destructure neither. `item.canDelete` is `undefined`, `!undefined` is `true`, and
+     **every** delete button would disable.
+  2. **The two tables must not behave the same, because the server does not.** Read at the source:
+     - **Roles:** `DeleteActivityRoleEndpoint.cs:42-62` refuses with **409** on both a `systemKey` and
+       an in-use role, with a user-readable message — `Activity.RoleId` is `NOT NULL` and the FK is
+       `Cascade` (`ActivityConfiguration.cs:34`), so refusing is the only non-destructive answer.
+       `canDelete: false` is enforced. Mirror `ActivityTable`'s disabled button + tooltip here.
+     - **Categories:** `DeleteActivityCategoryEndpoint.cs` is a bare `BaseDeleteEndpoint`; the FK is
+       `SetNull` (`ActivityConfiguration.cs:42`), and `ActivityCategoryResponse.cs:26-31` says so in as
+       many words: *"⚠ This one is advisory, not a prediction of a 409 … deleting a used category is not
+       destructive — it blanks the classification … the field exists so the settings grid can say
+       **what** a delete will reclassify before it happens."* Disabling it would block an operation the
+       server deliberately allows. The correct shape is CLAUDE.md's cascade rule: a delete that takes
+       other rows' state with it **always confirms and says how many** — `usageCount` activities will
+       lose their category. That is `useDeleteConfirmation`'s `cascades: true` branch, which the
+       generic `BasicTable` dialog cannot express (retired Escalation §2, in the log, is the same gap seen from
+       `/routine-settings`).
+- **Why `A1` is in this batch and not its own.** `ActivityTable.vue:122-131`'s trash `VIconBtn` has no
+  `title`/`aria-label` (confirmed: Edit at `:99` and Archive at `:110` carry `:title`, the trash does
+  not); its `VTooltip` hangs off the wrapping `<span>` because a disabled `VBtn` takes no pointer
+  events. This batch tells a fixing session to copy that slot into two more tables — fix the template
+  **first**, or the defect ships three times. Use **`:aria-label`**, not `:title`: the wrapper's
+  `VTooltip` is already the visual tooltip, and a native `title` on the button would render a second
+  one on hover (the finding's suggested `:title` fix would produce that). Same conditional text as the
+  tooltip: `item.canDelete ? t('general.delete') : t('activities.archive.deleteBlocked')`.
+- **Files:** `Role.ts:4-22`, `Category.ts:3-16` (add `usageCount = 0`, `canDelete = true` to the
+  constructor and `fromJson`, defaults chosen so a non-grid read — the nested `role` on an
+  `ActivityResponse`, which the API documents as carrying meaningless zeros — stays harmless);
+  `ActivityRoleTable.vue` and `ActivityCategoryTable.vue` (custom `#actions` slot, `confirm()` from
+  `useDialog` the way `ActivityTable.vue:296-313` does, then `useLookupTable`'s `onDelete`);
+  `ActivityTable.vue:122` (the `aria-label`); `CLAUDE.md` — add `activity` to the `useDeleteConfirmation`
+  importers row, since the table says "the five delete sites" and this makes a sixth. Locale keys for
+  the category cascade copy go in `activity.{sk,en}.ts` (*"N activities will lose this category"*, with
+  the count); the role tooltip can reuse `activities.archive.deleteBlocked` or get a role-specific key —
+  check the SK reads naturally for a role before reusing.
+- **Since 2026-09-21 the role 409 can be told apart at last, and this batch does not depend on it.**
+  `B18` put `errorType` on the wire, and `DELETE /api/activity-role/{id}` is the pair the backend built
+  it for: a system role answers `Conflict` (the server's own message, meant to be shown), an in-use role
+  answers `DbForeignKeyError`. This batch's `canDelete` gate is pre-flight and still the right shape —
+  the 409 is only the race fallback. If `FW24` has landed by the time this is fixed, that fallback can
+  name which of the two happened; if not, leave it generic and do not build a private parser for it.
+- **Do not change:** the server. The asymmetry is designed and documented; do not file a "make
+  categories 409 too" ask off this batch. Do not route the role delete through
+  `useDeleteConfirmation` — `canDelete: true` means nothing references it, which is
+  `ActivityTable`'s own reasoning at `:291-295`. Do not keep `@onDelete` on `BasicTable` alongside the
+  custom slot; with `showActions` and a slot the default buttons are gone and the emit is dead.
+- **Verification:** `B7`'s `Verify:` block on both tabs — the three system roles and every in-use row
+  render a disabled Delete with a tooltip. Then the category half, which `B7` does not cover: click
+  Delete on *"Errands"* (in use), and the dialog must name the count before Confirm; **cancel it** on the
+  seed. To see the 204 + reclassify path end to end, create a throwaway category and activity through
+  the API first (the mutating-spec rule). `A1`'s block — `getByRole('button', { name: 'Delete' })`
+  resolves on the activities table, and hovering shows **one** tooltip. Then confirm the delete dialog
+  on these two tables **closes** after Confirm — they are now on `useDialog().confirm()` and no longer on
+  `BasicTable`'s built-in dialog, which is the one suspected of never closing (see *Needs
+  verification*).
+- **Risk:** Medium. Widening `Role`/`Category` touches every consumer of those DTOs (the option
+  store, the forms, the nested `role`/`category` on `Activity`) — the additions are optional-with-default
+  so nothing should notice, but run `npm run type-check`. The category cascade copy is a user-facing
+  number; get the plural right in SK.
+
+## F23. Parallel `playwright-cli` sessions must not share one storage-state file — the API rotates refresh tokens
+> ✅ **FIXED 2026-09-23**, docs only, uncommitted with the rest of the queue's docs. Nothing in `src/`.
+> Checked against the current text first: CLAUDE.md had since grown the *"a state file is single-use"*
+> paragraph (the same rotation, one session loading an unsaved file twice), but none of this batch's four
+> points had landed.
+> - **`prompts/view-docs/README.md` → *Parallelism*:** the sentence that told every parallel agent to
+>   `state-load` the shared file is replaced by three separate questions:
+>   - *Which browser?* `-s=<unit-name>` on every command, unconditionally.
+>   - *Which sign-in?* One signed-in state per concurrent session. Load the file into one session only;
+>     the rest use the form, under the 5/min login limit.
+>   - *Am I the only mutating session?* A vanished row means suspect a reseed first.
+> - **`PROMPT-TEMPLATE.md`:** hard constraint 2 makes `-s=<unit-name>` mandatory on every command,
+>   including `close`, names the three questions, and says to use the form if another agent may hold the
+>   state file. The cleanup bullet gains the reverse hazard: a row you created vanishing mid-pass → suspect
+>   another agent's reseed.
+> - **CLAUDE.md:** the 401-burst paragraph gains *"a 401 on `POST /api/auth/refresh` itself is not that
+>   burst"*. A *Name your session* paragraph follows the examples. The examples themselves were left
+>   without `-s=` and the paragraph says so: adding it to about fifteen command lines would bury the
+>   sequence they teach.
+>
+> **Verified:** read-through only, as the batch specifies. The proof is the next parallel run keeping
+> every session. Today's own sessions (`-s=f1` … `-s=f19`, form sign-in because a `trivial` session was
+> live) ran alongside another agent without a single lost session. That is consistent, but not a test.
+
+- **Scope:** **docs only** — `prompts/view-docs/README.md` *Parallelism* paragraph, and CLAUDE.md's
+  *Browser verification — Signing in* section
+- **Closes:** `activity-settings/U3` (re-graded — see *Contradictions* §19)
+- **Root cause:** The runbook says *"If you do parallelise inventory passes, give each agent its own
+  session name and have it `state-load` the auth file"*. Under the API that is wrong on its face:
+  `JwtService.cs:38` calls `RotateRefreshTokenAsync` on **every** refresh, and
+  `RefreshTokenService.cs:35` tolerates a stale concurrent refresh for a **5-second** grace window only.
+  Two sessions loaded from one `auth-10001.json` hold one refresh token; the first to hit the ~15-minute
+  access-token expiry rotates it, and the second, refreshing minutes later, gets `POST /api/auth/refresh`
+  → **401** and a real sign-out — which is precisely the sequence `U3` recorded, on a pass its own
+  operator note says ran alongside two other units. The unit's hypothesis (b) is the mechanism; (a),
+  plain TTL expiry, cannot produce a 401 on `/refresh` for a token that had just been used successfully.
+- **What to change:** Replace the sentence with the rule: **one signed-in state per concurrent
+  session.** Either sign each session in separately (each gets its own refresh token) or `state-load`
+  the file into **one** session only. Add one line to CLAUDE.md's 401-burst paragraph: *"a 401 on
+  `/api/auth/refresh` itself is not the expected burst — it means the refresh token was rotated away,
+  usually by a second session sharing the same state file."* Nothing in `src/` changes.
+- **Do not change:** the API's rotation or grace window. Rotation is the correct security posture and
+  5 s is generous for the SPA's own concurrent-refresh race, which is what it is for.
+- **Verification:** Read-through. The next parallel run should not lose a session.
+- **Risk:** None.
+- **Grown in the fifth pass — two more rules from `todo-routine`'s round-5 environment note, same
+  paragraph, same edit.** That round ran alongside at least two other agents (`playwright-cli list` showed
+  `trkset` and `activity-settings` sessions) and paid for it three ways, each a different mechanism from
+  the refresh-token one above:
+  1. **The unnamed `default` browser session is shared by every agent that omits `-s=`.** Round 5 saw
+     navigations to `/routine-todo-list` land on `/todo-list/13001`, two dialogs open with no action of its
+     own, and two `todo-lists` fixture items (14015, 14013) toggled by clicks that were meant for another
+     tab — all genuinely two agents driving one browser. Switching to `-s=todo-routine` stopped it at once.
+     The runbook's *"give each agent its own session name"* is conditional on *"if you do parallelise"*, and
+     `PROMPT-TEMPLATE.md` never mentions `-s=` at all (grep confirms) — so the unit agent cannot know to.
+     **Make it unconditional in the template:** every `playwright-cli` command in a unit pass carries
+     `-s=<unit-name>`. CLAUDE.md's *Browser verification* examples should carry it too, since agents copy
+     them verbatim.
+  2. **`POST /api/test/seed` is a live hazard mid-pass, not a start/end-of-pass operation.** A reseed
+     wipes every account; round 5's three `B9` attempts each lost a period it had just created — the third
+     time on a plain reload — and its two accidental mutations were reset before it could revert them
+     itself. The template's *"reseed at the end"* advice (`PROMPT-TEMPLATE.md:172`) needs the other half:
+     **never reseed while another unit may be running**, and a mutation pass that sees a row it created
+     vanish should suspect a reseed before suspecting the app.
+  3. **The runbook already forbids concurrent mutation passes** (*Parallelism: inventory passes can,
+     mutation passes cannot*), and round 5 was a mutating retest running concurrently anyway. That is an
+     operator error the runbook cannot prevent, but it can make cheaper to notice: state in the template
+     that `state-load`, `-s=`, and "am I the only mutating session" are three separate questions.
+  The `-s=` half is the one that changes agent behaviour; the other two are one sentence each.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

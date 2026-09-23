@@ -3,7 +3,7 @@
 > Compiled 2026-09-09 from the route tables at commit `acd7db0d`. Nav column cross-checked against the
 > rendered sidebar and user menu captured in [`_shell.md`](_shell.md).
 
-**54 route records** (53 views + 1 redirect — `/reset-password` added 2026-09-23) composed in `src/router.ts`. This file is the manifest the view
+**56 route records** (53 views + 3 redirects: `/reset-password` added 2026-09-23, and the two tracking-settings family paths added the same day by `F14`) composed in `src/router.ts`. This file is the manifest the view
 documentation pass is measured against: every route below must appear in some `docs/views/*.inventory.md`.
 
 ## Legend
@@ -23,8 +23,8 @@ documentation pass is measured against: every route below must appear in some `d
 | Route | Name | View | Guard | Nav | Unit |
 | --- | --- | --- | --- | --- | --- |
 | `/` | `home` | `HomeView` | auth | sidebar › Home | 1 `home` |
-| `/activity-settings` | — | *redirect → `/activity-settings/activities`* | auth | — | 2 `activity-settings` |
-| `/activity-settings/:tab(activities\|roles\|categories)` | `activitySettings` | `ActivitySettingsView` | auth | sidebar › Activity settings (**`activities` tab only**) | 2 `activity-settings` |
+| `/activity-settings` | — | *redirect → `/activity-settings/activities`* | auth | sidebar › Activity settings (the nav `to` since `F14`) | 2 `activity-settings` |
+| `/activity-settings/:tab(activities\|roles\|categories)` | `activitySettings` | `ActivitySettingsView` | auth | sidebar › Activity settings (via the redirect; crumb and highlight hold on every tab) | 2 `activity-settings` |
 | `/activity-history` | `activityHistory` | `HistorySummaryView` | auth | sidebar › History › Summary | 3 `history-review` |
 | `/activity-history/calendar` | `activityHistoryCalendar` | `HistoryCalendarView` | auth | sidebar › History › Calendar | 3 `history-review` |
 | `/activity-history/detail` | `activityHistoryDetail` | `HistoryDetailView` | auth | **—** ⚠️ | 3 `history-review` |
@@ -36,8 +36,10 @@ documentation pass is measured against: every route below must appear in some `d
 | `/activity-tracking/unified` | `unifiedActivityDashboard` | `UnifiedActivityDashboard` | auth | sidebar › Web tracking › All sources | 5 `tracking-dashboards` |
 | `/activity-tracking/desktop` | `desktopActivityDashboard` | `DesktopActivityDashboard` | auth | sidebar › Web tracking › Desktop tracking | 5 `tracking-dashboards` |
 | `/activity-tracking/android` | `androidActivityDashboard` | `AndroidActivityDashboard` | auth | sidebar › Web tracking › Android tracking | 5 `tracking-dashboards` |
-| `/activity-tracking/desktop/settings/:tableView` | `desktopSettings` | `DesktopSettingsView` | auth | sidebar › Web tracking › Desktop settings (`distinctEntries`) | 6 `tracking-settings` |
-| `/activity-tracking/android/settings/:tableView` | `androidSettings` | `AndroidSettingsView` | auth | sidebar › Web tracking › Android settings (`distinctEntries`) | 6 `tracking-settings` |
+| `/activity-tracking/desktop/settings` | — | *redirect → `…/desktop/settings/distinctEntries`* (`F14`) | auth | sidebar › Web tracking › Desktop settings (the nav `to`) | 6 `tracking-settings` |
+| `/activity-tracking/desktop/settings/:tableView` | `desktopSettings` | `DesktopSettingsView` | auth | sidebar › Web tracking › Desktop settings (via the redirect; every tab) | 6 `tracking-settings` |
+| `/activity-tracking/android/settings` | — | *redirect → `…/android/settings/distinctEntries`* (`F14`) | auth | sidebar › Web tracking › Android settings (the nav `to`) | 6 `tracking-settings` |
+| `/activity-tracking/android/settings/:tableView` | `androidSettings` | `AndroidSettingsView` | auth | sidebar › Web tracking › Android settings (via the redirect; every tab) | 6 `tracking-settings` |
 | `/day-planner` | `plannerCalendar` | `PlannerCalendarView` | auth | sidebar › Task planner › Day planner | 7 `planner-day` |
 | `/day-planner/:date` | `dayPlanner` | `DayPlannerView` | auth | link (from the calendar) | 7 `planner-day` |
 | `/day-planner/task/:id(\d+)` | `dayPlannerTask` | `PlannerTaskLinkView` | auth | link (deep link — resolves a task id to its dated planner URL) | 7 `planner-day` |
@@ -118,7 +120,11 @@ that owns each one must resolve which**, and record the answer in its inventory.
 - **The framework's `TermsAndConditionsView.vue` is not routed by this app.** Expected orphan: the app routes its own `TermsView` because the framework's copy is placeholder text baked into the template rather than locale-driven. Documented in `src/core/user/user.routes.ts`. Do not re-report it.
 - **`/day-planner/:date` vs `/day-planner/templates`** — declared with `:date` first, but vue-router ranks static segments above params, so `/day-planner/templates` still wins. Not a bug; noted because the declaration order invites the opposite conclusion.
 - **`meta.requiredRole: 'admin'` is a no-op *client-side*.** Ten routes carry it (all of `reminders-admin` and `scheduler`). This app has no role model, so the guard always passes and the views mount for any signed-in user — it exists so the framework modules stay unmodified. **The server is not a no-op, and the two disagree:** the five `reminders-admin` routes really do require Admin (confirmed 2026-09-13, `B4`), so an ordinary account mounts the view and then gets 403 on its data; the five `scheduler` routes are open to any signed-in user in this host. `GET /api/user/data` returns no `roles` field, so the client has nothing to route on — do not "fix" the adapter by guessing.
-- **`/activity-settings` is the only redirect** in the table.
+- **Three redirects** in the app table: `/activity-settings` and, since `F14` (2026-09-23), the two
+  tracking-settings family paths. Each exists so the sidebar can link to a **family path**. The
+  breadcrumb and highlight prefix-match the nav `to`, so a tabbed screen registered by one tab's
+  literal path loses both on every other tab (`src/_common/docs/composables.md` → *Active state and
+  breadcrumbs*).
 
 ## Coverage tracker
 
@@ -129,7 +135,7 @@ that owns each one must resolve which**, and record the answer in its inventory.
 | 3 `history-review` | 3 | ☑ |
 | 4 `history-capture` | 4 | ☐ |
 | 5 `tracking-dashboards` | 4 | ☐ |
-| 6 `tracking-settings` | 2 | ☐ |
+| 6 `tracking-settings` | 4 (incl. 2 redirects, `F14`) | ☐ |
 | 7 `planner-day` | 4 | ☐ |
 | 8 `planner-templates` | 3 | ☐ |
 | 9 `todo-lists` | 2 | ☑ |
@@ -143,4 +149,4 @@ that owns each one must resolve which**, and record the answer in its inventory.
 | 17 `reminders-admin` | 5 | ☐ |
 | 18 `notifications` | 2 | ☐ |
 | 19 `scheduler` | 4 | ☐ |
-| **Total** | **53** | |
+| **Total** | **55** | |
