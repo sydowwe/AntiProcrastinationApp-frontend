@@ -57,6 +57,7 @@
 
 	<MyDialog
 		v-model="deleteDialog"
+		:persistent="false"
 		:title="$t('general.delete')"
 		:text="$t('planner.settings.deleteRepeatingTaskConfirm')"
 		confirmBtnColor="error"

@@ -102,6 +102,15 @@ test.describe('Day Planner', () => {
 			await authenticatedPage.getByRole('button', { name: /cancel/i }).click()
 			await expect(authenticatedPage.getByText('Add New Task')).not.toBeVisible()
 		})
+
+		// FW1: a dialog holding input stays `persistent`, so a stray Escape cannot throw away a
+		// half-filled form. The delete confirmation below is the other half — it has nothing to lose.
+		test('Escape does not close the creation dialog', async ({ authenticatedPage }) => {
+			await authenticatedPage.getByRole('button', { name: 'Add Task' }).click()
+			await expect(authenticatedPage.getByText('Add New Task')).toBeVisible()
+			await authenticatedPage.keyboard.press('Escape')
+			await expect(authenticatedPage.getByText('Add New Task')).toBeVisible()
+		})
 	})
 
 	test.describe('day details panel', () => {
@@ -232,6 +241,17 @@ test.describe('Day Planner', () => {
 			await expect(dialog).toBeVisible()
 			// Scoped to the dialog — the action bar has its own Cancel, which clears the selection instead.
 			await dialog.getByRole('button', { name: /cancel/i }).click()
+			await expect(dialog).not.toBeVisible()
+			await expect(authenticatedPage.locator('.task-block')).toHaveCount(VISIBLE_BASE_DAY_TASKS)
+		})
+
+		// FW1: a yes/no confirmation is not persistent — Escape answers "no". Nothing is deleted.
+		test('Escape closes the delete dialog and keeps the task', async ({ authenticatedPage }) => {
+			await authenticatedPage.locator('.task-block').first().click()
+			await authenticatedPage.getByRole('button', { name: /delete/i }).click()
+			const dialog = authenticatedPage.getByRole('dialog')
+			await expect(dialog).toBeVisible()
+			await authenticatedPage.keyboard.press('Escape')
 			await expect(dialog).not.toBeVisible()
 			await expect(authenticatedPage.locator('.task-block')).toHaveCount(VISIBLE_BASE_DAY_TASKS)
 		})

@@ -1,6 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
+		:persistent="false"
 		:hasConfirmBtn="false"
 		:closeBtnText="$t('general.close')"
 	>

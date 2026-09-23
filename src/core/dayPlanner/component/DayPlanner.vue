@@ -34,6 +34,7 @@
 		<!-- Delete Confirmation Dialog -->
 		<MyDialog
 			v-model="deleteDialogVisible"
+			:persistent="false"
 			:title="$t('general.deleteConfirmationTitle')"
 			:text="deleteConfirmationText"
 			confirmBtnColor="error"

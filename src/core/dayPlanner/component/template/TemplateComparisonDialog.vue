@@ -1,6 +1,7 @@
 <template>
 	<MyDialog
 		v-model="dialog"
+		:persistent="false"
 		:title="$t('planner.template.compareTemplatesTitle')"
 		maxWidth="1000px"
 		:hasConfirmBtn="false"
