@@ -209,11 +209,12 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useTemplateCardDragAndDrop } from '@/core/dayPlanner/composable/useTemplateCardDragAndDrop.ts'
 	import { useTemplateCompare } from '@/core/dayPlanner/composable/useTemplateCompare.ts'
+	import { useQueryParamRef } from '@/core/dayPlanner/composable/useQueryParamRef.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()
 	const { mdAndUp } = useDisplay()
 	const router = useRouter()
-	const { fetchAll, create, update, deleteEntity, setPinned } = useTaskPlannerDayTemplateTaskCrud()
+	const { fetchAll, update, deleteEntity, setPinned } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
 		useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar } = useSnackbar()
@@ -224,8 +225,13 @@
 	const templates = ref<TaskPlannerDayTemplate[]>([])
 	const templateTasksMap = ref<Map<number, TemplatePlannerTask[]>>(new Map())
 
-	type SortOption = 'mostUsed' | 'recentlyUsed' | 'alphabetical'
-	const sortBy = ref<SortOption>('mostUsed')
+	const SORT_OPTIONS = ['mostUsed', 'recentlyUsed', 'alphabetical'] as const
+	type SortOption = (typeof SORT_OPTIONS)[number]
+	// `?sort=` survives a reload (F54); absent for the default so the bare URL stays clean.
+	const { state: sortBy } = useQueryParamRef<SortOption>('sort', {
+		defaultValue: 'mostUsed',
+		parse: raw => SORT_OPTIONS.find(option => option === raw),
+	})
 	const sortOptions = [
 		{ title: i18n.t('planner.template.sort.mostUsed'), value: 'mostUsed' },
 		{ title: i18n.t('planner.template.sort.recentlyUsed'), value: 'recentlyUsed' },
@@ -336,7 +342,8 @@
 		template: TaskPlannerDayTemplate | null,
 		defaultValues: TaskPlannerDayTemplateRequest | null = null,
 	) {
-		const result = await openDialog<{ request: TaskPlannerDayTemplateRequest }>({
+		// The dialog saves before it closes (F53), so a result means the write already succeeded.
+		const result = await openDialog<{ request: TaskPlannerDayTemplateRequest; savedId: number }>({
 			component: TemplateDetailsForm,
 			componentProps: { template, defaultValues },
 			dialogProps: {
@@ -348,7 +355,7 @@
 			duplicatingFromId = null
 			return
 		}
-		await handleSaveTemplate(template, result.request)
+		await afterSaveTemplate(template !== null, result.savedId)
 	}
 
 	function openCreateDialog() {
@@ -368,17 +375,11 @@
 		openTemplateDialog(null, defaults)
 	}
 
-	async function handleSaveTemplate(
-		editingTemplate: TaskPlannerDayTemplate | null,
-		request: TaskPlannerDayTemplateRequest,
-	) {
-		if (editingTemplate) {
-			await update(editingTemplate.id, request)
+	async function afterSaveTemplate(wasEdit: boolean, newId: number) {
+		if (wasEdit) {
 			await loadTemplates()
 			showSuccessSnackbar(i18n.t('planner.feedback.templateUpdated'))
 		} else {
-			const newId = await create(request)
-
 			// If duplicating, copy all tasks from the original template
 			if (duplicatingFromId) {
 				const originalTasks = await fetchFilteredTasks(
@@ -387,7 +388,7 @@
 				await Promise.all(
 					originalTasks.map(task => {
 						const taskRequest = TemplatePlannerTaskRequest.fromEntity(task)
-						taskRequest.templateId = newId as number
+						taskRequest.templateId = newId
 						return createTaskWithResponse(taskRequest)
 					}),
 				)

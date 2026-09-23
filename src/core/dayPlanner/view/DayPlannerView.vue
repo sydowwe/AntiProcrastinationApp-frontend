@@ -1,6 +1,9 @@
 <!-- DayPlannerView.vue -->
 <template>
-	<div class="py-4 d-flex ga-4 w-100">
+	<!-- `flex-column` below `md`, as the template planner: in a row the full-width mobile panel pushed
+	     the grid off-screen. `min-width: 0` on the grid lets it shrink instead of overflowing at its
+	     max-content width (~1560 px). -->
+	<div class="py-4 d-flex flex-column flex-md-row ga-4 w-100">
 		<!-- Left panel: unified details/routine panel -->
 		<DayPlannerSidePanel
 			v-model:panelOpen="panelOpen"
@@ -16,6 +19,7 @@
 		/>
 		<DayPlanner
 			class="flex-fill"
+			style="min-width: 0"
 			:gridHelpExtra="$t('planner.a11y.toggleDoneShortcut')"
 			@delete="crud.del"
 		>

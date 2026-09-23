@@ -26,6 +26,7 @@
 		>
 			<DayPlanner
 				class="flex-fill"
+				style="min-width: 0"
 				:plannerStore="store"
 				@delete="crud.del"
 			>
@@ -50,6 +51,7 @@
 					</VAlert>
 					<TemplatePlannerHeader
 						v-else
+						v-model:panelOpen="panelOpen"
 						:title="store.templateName || $t('planner.template.dayTemplateFallback')"
 					>
 						<template #headerPrepend>

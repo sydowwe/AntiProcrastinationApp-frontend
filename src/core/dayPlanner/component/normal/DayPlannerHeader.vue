@@ -61,7 +61,7 @@
 		</div>
 
 		<!-- Right: Time + Add -->
-		<div class="d-flex ga-3 align-center">
+		<div class="d-flex flex-wrap ga-3 align-center">
 			<VTooltip
 				:text="undoTooltip"
 				location="bottom"
@@ -226,12 +226,16 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		/* Both rows wrap: below `md` the header is ~500 px of fixed-width controls, and unwrapped it ran
+		   off the card's edge at 390 px. */
+		flex-wrap: wrap;
 		padding: 14px 16px 0;
 		gap: 24px;
 	}
 
 	.left-section {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 12px;
 	}

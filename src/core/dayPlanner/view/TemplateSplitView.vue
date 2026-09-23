@@ -88,6 +88,7 @@
 	import { TemplatePlannerTaskRequest } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskRequest.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import TemplateDayPlannerView from '@/core/dayPlanner/view/TemplateDayPlannerView.vue'
+	import { useQueryParamRef } from '@/core/dayPlanner/composable/useQueryParamRef.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const router = useRouter()
@@ -101,8 +102,27 @@
 
 	const templateOptions = ref<{ id: number; text: string }[]>([])
 	const templateOptionsLoading = ref(false)
-	const leftTemplateId = ref<number | null>(null)
-	const rightTemplateId = ref<number | null>(null)
+
+	// `?left=` / `?right=` survive a reload (F54). Both are read only after the options load and only
+	// when they name a listed template — a bogus id must never reach the grid (`F55`'s 404 path).
+	// The same template on both sides is not a comparison, so the right side also rejects the left's id.
+	function parseTemplateId(raw: string): number | undefined {
+		const id = Number(raw)
+		return Number.isInteger(id) && templateOptions.value.some(option => option.id === id) ? id : undefined
+	}
+	const { state: leftTemplateId, hydrate: hydrateLeft } = useQueryParamRef<number | null>('left', {
+		defaultValue: null,
+		parse: parseTemplateId,
+		immediate: false,
+	})
+	const { state: rightTemplateId, hydrate: hydrateRight } = useQueryParamRef<number | null>('right', {
+		defaultValue: null,
+		parse: raw => {
+			const id = parseTemplateId(raw)
+			return id === leftTemplateId.value ? undefined : id
+		},
+		immediate: false,
+	})
 
 	const leftPanelRef = ref<HTMLElement | null>(null)
 	const rightPanelRef = ref<HTMLElement | null>(null)
@@ -117,6 +137,8 @@
 		const templates = await fetchAll()
 		templateOptions.value = templates.map(t => ({ id: t.id, text: t.name }))
 		templateOptionsLoading.value = false
+		hydrateLeft()
+		hydrateRight()
 
 		setupDropTargets()
 

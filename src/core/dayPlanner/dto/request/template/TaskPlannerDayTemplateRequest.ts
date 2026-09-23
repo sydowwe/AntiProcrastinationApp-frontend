@@ -1,4 +1,4 @@
-import type { DayType } from '@/_common/dto/enum/DayType.ts'
+import { DayType } from '@/_common/dto/enum/DayType.ts'
 import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
@@ -12,7 +12,8 @@ export class TaskPlannerDayTemplateRequest {
 		public isActive: boolean = true,
 		public defaultWakeUpTime: Time = new Time(7, 0),
 		public defaultBedTime: Time = new Time(23, 0),
-		public suggestedForDayType?: DayType,
+		// `required` on the server — a body without it fails deserialisation before validation runs (F53).
+		public suggestedForDayType: DayType = DayType.Workday,
 		public tags: string[] = [],
 		public scheduledDays: DayOfWeek[] = [],
 		public suggestedLocation?: Location,

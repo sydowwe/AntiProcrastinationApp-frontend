@@ -1,12 +1,22 @@
 <!-- TemplatePlannerHeader.vue -->
 <template>
 	<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
-		<div class="d-flex align-center ga-3">
+		<div class="d-flex align-center flex-wrap ga-3">
+			<!-- The panel's X is otherwise the only writer of `panelOpen` below `md` — once closed it
+			     stayed closed until a reload (F51). Same control as DayPlannerHeader's. -->
+			<VIconBtn
+				class="d-md-none"
+				variant="tonal"
+				color="secondaryOutline"
+				icon="bars"
+				:aria-label="panelOpen ? $t('planner.a11y.closePanel') : $t('planner.a11y.openPanel')"
+				@click="panelOpen = !panelOpen"
+			/>
 			<span class="text-h5">{{ title }}</span>
 			<slot name="headerPrepend"></slot>
 		</div>
 
-		<div class="d-flex align-center ga-2">
+		<div class="d-flex align-center flex-wrap ga-2">
 			<TimeRangePicker
 				v-model:start="viewStartTime"
 				v-model:end="viewEndTime"
@@ -81,6 +91,8 @@
 	const { title } = defineProps<{
 		title?: string
 	}>()
+
+	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
 
 	const SNAP_INTERVAL_OPTIONS = [5, 10, 15, 30]
 

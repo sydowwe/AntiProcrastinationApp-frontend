@@ -5,8 +5,14 @@
 		elevation="2"
 		@click="compareMode ? emit('toggleCompare') : emit('click')"
 	>
-		<VCardTitle class="pa-4 pb-2 d-flex justify-space-between align-center">
-			<div class="d-flex align-center ga-2">
+		<!-- The name is the only flexible part of this row: it truncates, the right-hand controls keep
+		     their width. Before, the name held its width and the switch label wrapped a letter per line
+		     while the chip clipped (F52). -->
+		<VCardTitle class="pa-4 pb-2 d-flex justify-space-between align-center ga-2">
+			<div
+				class="d-flex align-center ga-2"
+				style="min-width: 0"
+			>
 				<VCheckbox
 					v-if="compareMode"
 					:modelValue="isCompareSelected"
@@ -25,9 +31,14 @@
 				>
 					{{ template.icon }}
 				</VIcon>
-				<span>{{ template.name }}</span>
+				<span
+					class="text-truncate"
+					:title="template.name"
+				>
+					{{ template.name }}
+				</span>
 			</div>
-			<div class="d-flex align-center ga-3">
+			<div class="d-flex align-center ga-3 flex-shrink-0">
 				<DayTypeChip
 					:dayType="template.suggestedForDayType"
 					isTonal
@@ -38,6 +49,7 @@
 					hideDetails
 					density="compact"
 					color="primary"
+					class="active-switch"
 					:label="
 						template.isActive ? $t('planner.template.activeLabel') : $t('planner.template.inactiveLabel')
 					"
@@ -69,7 +81,9 @@
 				:startTime="template.defaultWakeUpTime"
 				:endTime="template.defaultBedTime"
 			/>
-			<div class="mb-3 d-flex justify-space-between align-center">
+			<!-- Wraps: the times plus seven day buttons are wider than a card column at 1440 px, and the
+			     card clipped Sunday. The same goes for the action row below. -->
+			<div class="mb-3 d-flex flex-wrap justify-space-between align-center ga-2">
 				<div class="text-caption mt-1 d-flex align-center ga-2">
 					<span v-if="template.defaultWakeUpTime">
 						<VIcon
@@ -143,8 +157,8 @@
 			</div>
 		</VCardText>
 
-		<VCardActions class="pa-4 d-flex align-center justify-space-between">
-			<div class="d-flex align-center justify-end ga-2">
+		<VCardActions class="pa-4 d-flex flex-wrap align-center justify-space-between ga-2">
+			<div class="d-flex flex-wrap align-center ga-2">
 				<VBtn
 					variant="outlined"
 					prependIcon="trash"
@@ -221,6 +235,10 @@
 	.pin-unpinned:deep(.v-icon) {
 		transform: rotate(40deg);
 		transition: transform 0.2s ease;
+	}
+
+	.active-switch:deep(.v-label) {
+		white-space: nowrap;
 	}
 
 	.template-card {

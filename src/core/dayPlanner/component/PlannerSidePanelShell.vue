@@ -2,9 +2,9 @@
 <template>
 	<VCard
 		v-show="panelOpen || mdAndUp"
-		class="d-flex flex-column align-self-stretch"
+		class="flex-column align-self-stretch"
 		elevation="2"
-		:style="{ width, minWidth: '280px' }"
+		:style="panelStyle"
 	>
 		<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
 			<div class="d-flex justify-space-between align-center">
@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+	import { computed } from 'vue'
 	import { useDisplay } from 'vuetify'
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 
@@ -84,4 +85,18 @@
 	// The mobile breakpoint is deliberately the panel's own, not the caller's: both views used
 	// `mdAndUp` before, and the `d-md-none` / `d-none d-md-flex` classes above are hard-wired to it.
 	const { mdAndUp } = useDisplay()
+
+	// The caller's width is a desktop width. Below `md` a fixed 400px card overflowed a 390px screen
+	// sideways, and in the template view's `flex-column` it was also squeezed to its title — `flex: 0 0
+	// auto` keeps a column parent from shrinking it (F51).
+	// `display: flex` lives here and not as `d-flex`: that class is `!important` and beat `v-show`'s
+	// inline `display: none`, so the close X below `md` hid nothing. Vue lets `v-show` win over a
+	// bound style.
+	// `flexShrink: 0` at `mdAndUp`: the grid beside it is `flex: 1 1 auto`, so its basis is its whole
+	// max-content width, and shrinking is weighted by basis — the panel lost the `width` it was given
+	// and sat at `minWidth` on every desktop screen.
+	const panelStyle = computed(() => ({
+		display: 'flex',
+		...(mdAndUp.value ? { width, minWidth: '280px', flexShrink: 0 } : { width: '100%', flex: '0 0 auto' }),
+	}))
 </script>

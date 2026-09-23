@@ -28,11 +28,16 @@
 			v-model="activeTab"
 			class="flex-fill"
 		>
+			<!-- No display utility on a window item (F41): `.d-flex` is `!important` and beats the inline
+			     `display: none` Vuetify's `v-show` puts on an inactive item, so the panels stacked. The
+			     flex column lives on an inner wrapper instead. -->
 			<VTabsWindowItem
 				value="repeating"
-				class="flex-fill d-flex flex-column ga-4 pt-3"
+				class="pt-3 h-100"
 			>
-				<RepeatingTasksTab />
+				<div class="h-100 d-flex flex-column ga-4">
+					<RepeatingTasksTab />
+				</div>
 			</VTabsWindowItem>
 
 			<VTabsWindowItem
@@ -51,10 +56,14 @@
 
 			<VTabsWindowItem
 				value="skipReasons"
-				class="pt-3 d-flex flex-column ga-4"
-				style="max-width: 480px"
+				class="pt-3"
 			>
-				<SkipReasonsTab />
+				<div
+					class="d-flex flex-column ga-4"
+					style="max-width: 480px"
+				>
+					<SkipReasonsTab />
+				</div>
 			</VTabsWindowItem>
 
 			<VTabsWindowItem
@@ -68,8 +77,9 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
+	import { onMounted, watch } from 'vue'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
+	import { useQueryParamRef } from '@/core/dayPlanner/composable/useQueryParamRef.ts'
 	import RepeatingTasksTab from '@/core/dayPlanner/component/settings/RepeatingTasksTab.vue'
 	import PlannerRemindersTab from '@/core/dayPlanner/component/settings/PlannerRemindersTab.vue'
 	import ViewDefaultsTab from '@/core/dayPlanner/component/settings/ViewDefaultsTab.vue'
@@ -77,7 +87,15 @@
 	import CalendarViewDefaultsTab from '@/core/dayPlanner/component/settings/CalendarViewDefaultsTab.vue'
 
 	const settingsStore = useDayPlannerSettingsStore()
-	const activeTab = ref('repeating')
+
+	const SETTINGS_TABS = ['repeating', 'reminders', 'viewDefaults', 'skipReasons', 'calendarView'] as const
+	type SettingsTab = (typeof SETTINGS_TABS)[number]
+
+	// `?tab=` survives a reload (F42); absent for the default so the bare URL stays clean.
+	const { state: activeTab } = useQueryParamRef<SettingsTab>('tab', {
+		defaultValue: 'repeating',
+		parse: raw => SETTINGS_TABS.find(tab => tab === raw),
+	})
 
 	onMounted(async () => {
 		await settingsStore.loadSettings()
