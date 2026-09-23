@@ -4955,6 +4955,89 @@
   will come out a step larger than today. Check it visually once; if it matters, use the `#append` slot
   with the sized `VIcon` instead of the prop — same fix, no close button either way.
 
+## F31. Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas, and `isNarrow` is a dead prop
+
+> ✅ **FIXED 2026-09-23.** `HistoryPieChart.vue` measures its own width (`useElementSize` on a wrapper)
+> and lays the chart out in pixels. There are two layouts. **Side:** the legend sits left of the donut,
+> sized to its widest entry and capped at 280 px and at the space the donut leaves, and the pair is
+> centred in the canvas. **Stacked** (`isNarrow`, or less than about 364 px): a one-column legend under
+> the donut, the chart's height grows to fit it, and the donut's radius shrinks on a very narrow canvas.
+> Past the rows that fit, both layouts switch to a `scroll` legend with a pager. Legend names are
+> truncated by **pixels** (`format.truncateText` from `echarts/core`), and the `(n %)` suffix is never
+> cut. `isNarrow` is now read. The colour half was taken too: the legend text, pager and border read the
+> Vuetify theme's `on-surface` / `neutral-500` instead of `#fff` / `#666`. `HistoryPieChartSection`'s
+> chart column got `min-width: 0`.
+> **Three ECharts behaviours found on the way.** Each one looked like a bug in the fix, so they are
+> worth knowing next time:
+> 1. The legend `formatter` runs outside the `computed`, so a width it reads is not tracked. The first
+>    render truncated every name to `''` at width 0 and never re-ran. The width is now captured inside
+>    `chartOption`.
+> 2. A vertical legend with a `width` and no `height` wraps into columns.
+> 3. A `plain` legend counts its padding inside `height`, while a `scroll` legend adds it outside.
+>    Getting this wrong clips a partial row, or pushes the pager off the canvas.
+>
+> **Verified by screenshot** with `playwright-cli`:
+> - Summary (`groupBy=ACTIVITY` week, 8 groups) at 1440 (312 px canvas → stacked, 7 rows + pager) and
+>   at 1920 (552 px → side, all 8 rows).
+> - `groupBy=CATEGORY` at 1920.
+> - A mocked 12-group body with 50-character names at 1440 and 1920: pixel-truncated, percentages
+>   whole, no partial rows, pager visible.
+> - Detail on `2026-09-23` at 1440 (209 px → stacked) and at 1024 (744 px → side, no gap).
+> - The home widget (`isNarrow` → stacked).
+> - A selected slice survives a stacked → side resize: slice pulled out, details card unchanged.
+>
+> The finding's own `?date=2026-09-09` URL is empty in the current seed, so the Detail check used the
+> seed date. `type-check` exit 0, lint clean.
+>
+> **Not verified:**
+> - **The dark theme.** The seed account's theme is explicitly light, and toggling it in the UI writes
+>   the preference back to the server. The colours are read from the theme in source only.
+> - The home widget body is a fixed 216 px band with its own scrollbar, so the stacked legend sits
+>   below the fold there. The old 250 px chart already scrolled in that band, and the batch prescribed
+>   the stacked layout for `isNarrow`.
+>
+> **Seen, not filed:** the details card's `VCardTitle` clips a long group name with no ellipsis.
+> `StackedBarsChart.vue:479`'s `#fff` legend label (unit 5's, named in the body) is untouched.
+
+- **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue`
+- **Closes:** `history-review/P2`
+- **Root cause — not "in-hole", and the suggested fix does not apply.** The legend is not inside the
+  donut; it is an ECharts legend boxed to the **left 58 %** of the canvas (`HistoryPieChart.vue:59-63`:
+  `orient: 'vertical', left: 0, right: '42%'`) while the pie is centred at **74 %** with an outer
+  radius of 75 % (`:87-88`). On a wide canvas the pie's left edge lands at ~57 % and the two just clear.
+  But `HistoryPieChartSection.vue:23-34` puts the chart in a `flex-fill` **beside a 200–250 px details
+  card**, inside the Summary view's `lg="6"` column — so at 1440 the canvas is roughly 300 px wide, the
+  legend box ends at ~175 px and the pie starts at ~130 px. ECharts does not clip legend text to the box
+  (the `formatter` at `:73-82` truncates at 25 *characters*, which is a width the layout never measured),
+  so the entry runs into the slices. Same geometry on Detail's `HistoryInsightsColumn direction="row"`.
+  `isNarrow?: boolean` (`:30`) is declared, passed by `home`'s `ActivityHistoryWidget.vue:26`, and **read
+  nowhere** — it is the hook this fix was supposed to hang on.
+- **Files:** `HistoryPieChart.vue:27-31` (props), `:59-88` (legend and series geometry)
+- **What to change:** Make the layout answer to the width. Either honour `isNarrow` (and have
+  `HistoryPieChartSection` derive it from its own measured width — `useResizeObserver` is already in use
+  in `HistorySummaryCards.vue:137`) or measure inside the chart component; below the threshold, put the
+  legend `orient: 'horizontal'` at `bottom` and centre the pie at `['50%', '45%']`. Above it, keep the
+  side layout but truncate by **pixels** — ECharts 5's `legend.textStyle.width` + `overflow:
+  'truncate'` — instead of by character count, and let the pie `center` follow the legend's actual
+  width rather than a constant 74 %.
+- **Adjacent, source-certain, unobserved:** `textStyle.color: '#fff'` (`:69`) and `borderColor: '#666'`
+  (`:64`) are hardcoded — dark-theme values on a chart that renders in both themes
+  (`createAppVuetify.ts:74` defaults to dark, which is why the sweep never saw white-on-white). Read
+  `useTheme().current.value.colors['on-surface']` instead. Same hardcode in
+  `StackedBarsChart.vue:479` (`.legend-label { color: #fff }`) — unit 5's, out of scope, noted so a
+  fixing session that opens both does not fix one.
+- **Do not change:** the `avoidLabelOverlap: false` / `label.show: false` series settings — slice labels
+  are off by design and the tooltip carries them. Not the 25-item cap on the request
+  (`HistorySummaryView.vue:231`) — fewer entries would dodge the symptom without fixing the layout.
+- **Verification:** `history-review/P2`'s `Verify:` block on `/activity-history/detail?date=2026-09-09`
+  (two groups) — a **screenshot**, since the a11y tree cannot see a canvas: legend text fully clear of
+  the slices. Then `/activity-history` with `?groupBy=activity` and the week range (more entries, longer
+  names), at 1440 and 1920; and the home widget, which passes `isNarrow` and should get the stacked
+  layout. Both themes if the colour half is taken.
+- **Risk:** Low-medium. A width-driven layout switch is a second render on resize; ECharts `autoresize`
+  is already on (`:4`), so the cost is the option recompute. Check the selection highlight
+  (`selectedMode: 'single'`) survives a layout switch mid-selection.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

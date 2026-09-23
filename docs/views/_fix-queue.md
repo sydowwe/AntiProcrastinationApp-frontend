@@ -80,7 +80,7 @@
 | F28 | ✅ **FIXED 2026-09-23** — `useSetBreadcrumbExtra` with `history.detail.title`. Verified. Body in the log — `/activity-history/detail` breadcrumb reads "Home › Summary" — the `F11` mechanism, one more consumer | app | `history-review/B3` | trivial |
 | F29 | ✅ **FIXED 2026-09-22** (with `F30`, `F49`, `F78` — one clickable-`div` convention) — `StackedBarColumn` carries a localized `aria-label` (`activityTracking.stackedBars.barLabel`: name, total duration, window range) on every dashboard; where the consumer binds `@activityClick` it passes the new `interactive` prop and the bar is `role="button"` + `tabindex="0"` + Enter/Space, named *"View details for …"* via the domain card's key; unbound (Detail) it is `role="img"` with no pointer. Verified live: Tab + Enter on `/activity-history` drilled to Detail with the bar's date; Detail's bars are `img`, cursor `auto`; `/activity-tracking/unified` Enter set `?selected=`. SK label checked | app (`activityTracking/component/stackedBars/`, shared per `migration-revision.md` §7) | `history-review/A1` | low-med |
 | F30 | ✅ **FIXED 2026-09-22** (with `F29`) — `historyDashboard.summaryCards.viewDetails` now reads *"Highlight {name} in the chart"* / *"Zvýrazniť {name} v grafe"*, the card carries `:aria-pressed="selected"` and `@keydown.enter.space.prevent` to the same emit. `activityTracking`'s card untouched. Verified live: Enter toggles `aria-pressed` true → false, both locales | app | `history-review/P1` | low |
-| F31 | Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas; `isNarrow` is a dead prop | app | `history-review/P2` | low-med |
+| F31 | ✅ **FIXED 2026-09-23** — a pixel layout from the measured width: a side legend sized to its widest entry, or stacked (`isNarrow`, or under ~364 px) with the chart growing to fit, and a paged legend past what fits. Names truncated by pixels, the `%` never cut, colours from the theme. Verified by screenshot at 1024/1440/1920 plus a mocked 12-group body; the dark theme was not checked. Body in the log — Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas; `isNarrow` is a dead prop | app | `history-review/P2` | low-med |
 | F32 | ✅ **FIXED 2026-09-23** — header row with `<h1>` + Summary button; grid `flex-fill`/`min-height: 0`. Verified by screenshot. Body in the log — `/activity-history/calendar` has no `<h1>`, unlike its two siblings | app | `history-review/P3` | trivial |
 | F33 | ✅ **FIXED 2026-09-21** (with the `configured` branch `B14` added, same commit) — Google Calendar connect never sends the OAuth `state` the server's validator requires — the client half of `B1`, unobservable only because the server half breaks the flow one step earlier | app | `user-settings/B1` (client half; server half is §9) | low |
 | F34 | ✅ **FIXED 2026-09-21** (one token, in the `F33` commit — same card, not `FW8`) — Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`, on the very row the unit compared against | app | *(unfiled twin of `user-settings/P1`)* | trivial |
@@ -480,46 +480,7 @@ Vuetify's own markup.
 
 <!-- F28 (`/activity-history/detail` breadcrumb reads "Home › Summary" — history-review/B3) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F31. Pie legend overlaps the donut — fixed-percentage ECharts layout on a ~300 px canvas, and `isNarrow` is a dead prop
-
-- **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue`
-- **Closes:** `history-review/P2`
-- **Root cause — not "in-hole", and the suggested fix does not apply.** The legend is not inside the
-  donut; it is an ECharts legend boxed to the **left 58 %** of the canvas (`HistoryPieChart.vue:59-63`:
-  `orient: 'vertical', left: 0, right: '42%'`) while the pie is centred at **74 %** with an outer
-  radius of 75 % (`:87-88`). On a wide canvas the pie's left edge lands at ~57 % and the two just clear.
-  But `HistoryPieChartSection.vue:23-34` puts the chart in a `flex-fill` **beside a 200–250 px details
-  card**, inside the Summary view's `lg="6"` column — so at 1440 the canvas is roughly 300 px wide, the
-  legend box ends at ~175 px and the pie starts at ~130 px. ECharts does not clip legend text to the box
-  (the `formatter` at `:73-82` truncates at 25 *characters*, which is a width the layout never measured),
-  so the entry runs into the slices. Same geometry on Detail's `HistoryInsightsColumn direction="row"`.
-  `isNarrow?: boolean` (`:30`) is declared, passed by `home`'s `ActivityHistoryWidget.vue:26`, and **read
-  nowhere** — it is the hook this fix was supposed to hang on.
-- **Files:** `HistoryPieChart.vue:27-31` (props), `:59-88` (legend and series geometry)
-- **What to change:** Make the layout answer to the width. Either honour `isNarrow` (and have
-  `HistoryPieChartSection` derive it from its own measured width — `useResizeObserver` is already in use
-  in `HistorySummaryCards.vue:137`) or measure inside the chart component; below the threshold, put the
-  legend `orient: 'horizontal'` at `bottom` and centre the pie at `['50%', '45%']`. Above it, keep the
-  side layout but truncate by **pixels** — ECharts 5's `legend.textStyle.width` + `overflow:
-  'truncate'` — instead of by character count, and let the pie `center` follow the legend's actual
-  width rather than a constant 74 %.
-- **Adjacent, source-certain, unobserved:** `textStyle.color: '#fff'` (`:69`) and `borderColor: '#666'`
-  (`:64`) are hardcoded — dark-theme values on a chart that renders in both themes
-  (`createAppVuetify.ts:74` defaults to dark, which is why the sweep never saw white-on-white). Read
-  `useTheme().current.value.colors['on-surface']` instead. Same hardcode in
-  `StackedBarsChart.vue:479` (`.legend-label { color: #fff }`) — unit 5's, out of scope, noted so a
-  fixing session that opens both does not fix one.
-- **Do not change:** the `avoidLabelOverlap: false` / `label.show: false` series settings — slice labels
-  are off by design and the tooltip carries them. Not the 25-item cap on the request
-  (`HistorySummaryView.vue:231`) — fewer entries would dodge the symptom without fixing the layout.
-- **Verification:** `history-review/P2`'s `Verify:` block on `/activity-history/detail?date=2026-09-09`
-  (two groups) — a **screenshot**, since the a11y tree cannot see a canvas: legend text fully clear of
-  the slices. Then `/activity-history` with `?groupBy=activity` and the week range (more entries, longer
-  names), at 1440 and 1920; and the home widget, which passes `isNarrow` and should get the stacked
-  layout. Both themes if the colour half is taken.
-- **Risk:** Low-medium. A width-driven layout switch is a second render on resize; ECharts `autoresize`
-  is already on (`:4`), so the cost is the option recompute. Check the selection highlight
-  (`selectedMode: 'single'`) survives a layout switch mid-selection.
+<!-- F31 (pie legend overlaps the donut; `isNarrow` was a dead prop — history-review/P2) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F32 (`/activity-history/calendar` has no `<h1>` — history-review/P3) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

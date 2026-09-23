@@ -26,7 +26,10 @@
 
 		<template v-else>
 			<div class="d-flex ga-2">
-				<div class="flex-fill">
+				<div
+					class="flex-fill"
+					style="min-width: 0"
+				>
 					<HistoryPieChart
 						:items="data.items"
 						:selectedGroup="selectedGroup"
