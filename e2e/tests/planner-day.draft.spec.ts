@@ -39,10 +39,74 @@ test.describe('Planner calendar (/day-planner)', () => {
 		await expect(authenticatedPage).toHaveURL(/[?&]month=\d{4}-\d{2}/)
 	})
 
-	// Finding B3: only `month`/`mode`/`templateId` round-trip. The Days-to-show filter and the
-	// Range/Duration mode configuration are silently lost on reload.
-	test.fixme('the "Days to show" filter survives a reload', async () => {})
-	test.fixme('the Duration/Range mode configuration survives a reload', async () => {})
+	// F86: the route reuses the view on a query-only navigation, so Back used to move the URL and not
+	// the grid. Asserted on the picker's month and the first rendered day, not only on the URL.
+	test('Back and Forward walk the grid through months, not only the URL', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/day-planner?month=2026-10')
+		const toolbar = authenticatedPage.locator('#app .v-card-title')
+		await expect(toolbar.getByText('October')).toBeVisible()
+		await authenticatedPage.getByRole('button').nth(5).click()
+		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-11/)
+		await expect(toolbar.getByText('November')).toBeVisible()
+
+		await authenticatedPage.goBack()
+		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-10/)
+		await expect(toolbar.getByText('October')).toBeVisible()
+		await expect(authenticatedPage.locator('#app .day-cell:not(.empty)').first()).toContainText('01.10.')
+
+		await authenticatedPage.goForward()
+		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-11/)
+		await expect(toolbar.getByText('November')).toBeVisible()
+	})
+
+	test('Back restores the Days-to-show filter of the entry it lands on', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/day-planner?month=2026-10&days=workdays')
+		await expect(authenticatedPage.locator('#app .day-header')).toHaveCount(5)
+		await authenticatedPage.getByRole('button').nth(5).click()
+		await expect(authenticatedPage).toHaveURL(/[?&]month=2026-11/)
+		const app = authenticatedPage.locator('#app')
+		await app.locator('.v-select__selection-text', { hasText: 'Workdays' }).click()
+		await authenticatedPage.getByRole('option', { name: /All week/ }).click()
+		await expect(authenticatedPage.locator('#app .day-header')).toHaveCount(7)
+
+		await authenticatedPage.goBack()
+		await expect(authenticatedPage).toHaveURL(/[?&]days=workdays/)
+		await expect(authenticatedPage.locator('#app .day-header')).toHaveCount(5)
+	})
+
+	// Finding B3, closed by FW16 + F44: the grid toolbar round-trips through the URL, every param absent
+	// while it holds its default. Vuetify's selection text covers a select's input, so a select opens by
+	// clicking its visible value rather than the combobox role.
+	test('the "Days to show" filter survives a reload', async ({ authenticatedPage }) => {
+		const app = authenticatedPage.locator('#app')
+		await app.locator('.v-select__selection-text', { hasText: 'All week' }).click()
+		await authenticatedPage.getByRole('option', { name: /Workdays/ }).click()
+		await expect(authenticatedPage).toHaveURL(/[?&]days=workdays/)
+		await authenticatedPage.reload()
+		await expect(app.locator('.day-header')).toHaveText(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+	})
+
+	test('the Duration/Range mode configuration survives a reload', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/day-planner?range=duration&anchor=end&from=2026-10-14&unit=day&qty=10')
+		await authenticatedPage.getByRole('textbox', { name: 'Quantity' }).waitFor({ state: 'visible' })
+		await authenticatedPage.getByRole('textbox', { name: 'Quantity' }).fill('5')
+		await expect(authenticatedPage).toHaveURL(/[?&]qty=5/)
+		await authenticatedPage.reload()
+		const toolbar = authenticatedPage.locator('#app .v-card-title')
+		await expect(toolbar.getByText('To end')).toBeVisible()
+		await expect(toolbar.getByText('Days', { exact: true })).toBeVisible()
+		await expect(authenticatedPage.getByRole('textbox', { name: 'Quantity' })).toHaveValue('5')
+		await expect(authenticatedPage.getByRole('textbox', { name: 'Date to' })).toHaveValue('10/14/2026')
+	})
+
+	test('the default toolbar leaves a bare URL, and a bad duration is rewritten to what is shown', async ({
+		authenticatedPage,
+	}) => {
+		await expect(authenticatedPage).toHaveURL(/\/day-planner$/)
+		await authenticatedPage.goto('/day-planner?range=duration&from=2026-02-31&qty=99&unit=zzz')
+		await expect(authenticatedPage.getByRole('textbox', { name: 'Quantity' })).toHaveValue('4')
+		await expect(authenticatedPage).not.toHaveURL(/2026-02-31|qty=99|unit=zzz/)
+	})
 
 	// Finding B4, closed by backend/B19: the server sends a stable `holidayKey` next to the native
 	// `holidayName`, and the client resolves the key through `calendar.holidays.*`. The fixture

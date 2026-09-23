@@ -1,6 +1,9 @@
 <template>
 	<CalendarGrid
 		ref="calendarGridRef"
+		v-model:dateRangeMode="dateRangeMode"
+		v-model:dayVisibility="dayVisibility"
+		v-model:rangeConfig="rangeConfig"
 		class="py-4"
 		:days="calendarDays"
 		:loading
@@ -82,6 +85,7 @@
 <script setup lang="ts">
 	import { onMounted, ref } from 'vue'
 	import type { ICalendar } from '@/_common/dto/ICalendar.ts'
+	import type { CalendarDayVisibility, DateRangeConfig, DateRangeMode } from '@/_common/dto/DateRangeConfig.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
 	import { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
@@ -111,7 +115,7 @@
 	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import type { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
-	import { API } from '@/_common/axiosConfig.ts'
+	import { API, isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
@@ -153,10 +157,20 @@
 		toggleDaySelection,
 	} = useCalendarModes()
 
-	const { hydrateFromUrl, syncMonthToUrl } = useCalendarUrlState({
+	// The grid toolbar's state, owned here so it round-trips through the URL (F44). Hydrated by
+	// `useCalendarUrlState` at setup, so the grid mounts already configured.
+	const dateRangeMode = ref<DateRangeMode>('month')
+	const dayVisibility = ref<CalendarDayVisibility>('all')
+	const rangeConfig = ref<DateRangeConfig>()
+
+	const { hydrateFromUrl, syncRangeToUrl } = useCalendarUrlState({
 		mode: calendarMode,
 		applyTemplateId,
 		applyPreviewMode,
+		selectedDayIds,
+		dateRangeMode,
+		dayVisibility,
+		rangeConfig,
 	})
 
 	const calendarGridRef = ref<InstanceType<typeof CalendarGrid> | null>(null)
@@ -180,7 +194,7 @@
 	function handleDateRangeChange(range: { start: Date | null; end: Date | null }) {
 		dateRange.value = range
 		refresh()
-		syncMonthToUrl(range)
+		syncRangeToUrl(range)
 	}
 
 	// Deliberately alongside `refresh`'s Promise.all rather than inside it: this line is secondary to
@@ -215,7 +229,11 @@
 			if (requestId !== refreshRequestId) return
 			calendarDays.value = days
 			dayTasksMap.value = taskSummaries
-		} catch {
+		} catch (error) {
+			// A newer month superseded this one: `useFetchFiltered` aborted the request, which is not a
+			// failure. Toasting it put a snackbar up on every deep link to a month, and an open overlay
+			// swallows the next Back/Forward (Vuetify closes it and aborts the navigation — F86).
+			if (requestId !== refreshRequestId || isRequestCanceled(error)) return
 			// Keep whatever days are already on screen — a transient failure should not blank a
 			// month the user was already looking at. Offer a retry instead of silently losing it.
 			showSnackbar(t('planner.feedback.calendarLoadFailed'), {
