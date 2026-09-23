@@ -56,6 +56,20 @@ const leisure = {
 			empty: `No projects`,
 			moreCount: `+{count} more`,
 		},
+		// A NeedsShopping project's materials and tools become the steps of one to-do item for the
+		// project's own activity (leisure-projects/O1).
+		shoppingHandoff: {
+			addButton: `Add to to-do list`,
+			addButtonA11y: `Add to to-do list: {name}`,
+			title: `Add to to-do list: {name}`,
+			hint: `Creates one to-do item for {project}, with the shopping list below as its steps.`,
+			list: `To-do list`,
+			priority: `Priority`,
+			stepsPreview: `Steps ({count})`,
+			note: `Shopping for {project}`,
+			added: `Added to {list}`,
+			alreadyOnList: `{project} is already on that list`,
+		},
 		ladder: {
 			nextRung: `Your next rung`,
 			nextRungHint: `The smallest step you haven't tried yet.`,

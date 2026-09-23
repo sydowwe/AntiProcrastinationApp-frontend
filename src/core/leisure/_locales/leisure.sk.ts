@@ -56,6 +56,21 @@ const leisure = {
 			empty: `Žiadne projekty`,
 			moreCount: `+{count} ďalších`,
 		},
+		// Materiály a nástroje projektu v stave „Treba nakúpiť" sa stanú krokmi jednej úlohy pre vlastnú
+		// aktivitu projektu (leisure-projects/O1). Názov projektu stojí vždy za dvojbodkou alebo ako
+		// prívlastok, aby ho nebolo treba skloňovať.
+		shoppingHandoff: {
+			addButton: `Pridať do to-do zoznamu`,
+			addButtonA11y: `Pridať do to-do zoznamu: {name}`,
+			title: `Pridať do to-do zoznamu: {name}`,
+			hint: `Vytvorí jednu úlohu pre projekt {project} a nákupný zoznam nižšie z nej urobí kroky.`,
+			list: `To-do zoznam`,
+			priority: `Priorita`,
+			stepsPreview: `Kroky ({count})`,
+			note: `Nákup na projekt: {project}`,
+			added: `Pridané do zoznamu: {list}`,
+			alreadyOnList: `Projekt {project} už v tomto zozname je`,
+		},
 		ladder: {
 			nextRung: `Ďalší krok`,
 			nextRungHint: `Najmenší krok, ktorý ste si ešte nevyskúšali.`,

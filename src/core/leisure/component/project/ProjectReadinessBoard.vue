@@ -125,6 +125,27 @@
 										/>
 										<span class="text-caption">{{ blockerLine(item.requiredTools) }}</span>
 									</div>
+									<!-- `.stop` because the card is itself a button: Enter on this one fires a click that
+									     would otherwise bubble into the card's edit dialog (the card's keydown is `.self`). -->
+									<div
+										v-if="item.materialsNeeded.length || item.requiredTools.length"
+										class="mt-1"
+									>
+										<VBtn
+											color="warning"
+											variant="tonal"
+											size="x-small"
+											prependIcon="list-check"
+											:aria-label="
+												$t('leisure.shoppingHandoff.addButtonA11y', {
+													name: item.activity.name,
+												})
+											"
+											@click.stop="onAddToTodoList(item)"
+										>
+											{{ $t('leisure.shoppingHandoff.addButton') }}
+										</VBtn>
+									</div>
 								</div>
 								<!-- Inactive is outlined `neutral-600`, not tonal `grey-lighten-2`: that tonal computes to a
 								     transparent background, leaving a near-white glyph on the card (F5). `neutral-600` flips
@@ -173,6 +194,7 @@
 	import { useI18n } from 'vue-i18n'
 	import ActivityNameCell from '@/core/leisure/component/ActivityNameCell.vue'
 	import ProjectProfileForm from '@/core/leisure/component/project/ProjectProfileForm.vue'
+	import ShoppingToTodoDialog from '@/core/leisure/component/project/ShoppingToTodoDialog.vue'
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import { ActivityProjectProfileRequest } from '@/core/leisure/dto/request/ActivityProjectProfileRequest.ts'
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
@@ -249,6 +271,24 @@
 			dialogProps: { title: t('leisure.projects'), confirmBtnLabel: t('general.save') },
 		})
 		if (result) emit('onReload')
+	}
+
+	// One item for the project's own activity, its shopping list as steps — no reload: the board
+	// shows nothing about to-do membership, and the project stays NeedsShopping until the user moves it.
+	async function onAddToTodoList(item: ActivityProjectProfile) {
+		await openDialog({
+			component: ShoppingToTodoDialog,
+			componentProps: {
+				activityId: item.activityId,
+				projectName: item.activity.name,
+				materialsNeeded: item.materialsNeeded,
+				requiredTools: item.requiredTools,
+			},
+			dialogProps: {
+				title: t('leisure.shoppingHandoff.title', { name: item.activity.name }),
+				confirmBtnLabel: t('general.add'),
+			},
+		})
 	}
 
 	async function onDelete(item: ActivityProjectProfile) {

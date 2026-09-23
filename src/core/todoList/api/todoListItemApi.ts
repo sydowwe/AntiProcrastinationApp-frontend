@@ -4,6 +4,7 @@ import { TodoListItemEntity } from '@/core/todoList/dto/response/TodoListItemEnt
 import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
+import type { AxiosRequestConfig } from 'axios'
 import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 
 /**
@@ -63,8 +64,11 @@ export function useTodoListItemCrud(todoListId: number) {
 		return response.data.map((item: any) => TodoListItemEntity.fromJson(item))
 	}
 
-	async function createWithResponse(entityData: ToDoListItemRequest): Promise<TodoListItemEntity> {
-		const createResponse = await API.post(url, { ...entityData, todoListId })
+	async function createWithResponse(
+		entityData: ToDoListItemRequest,
+		requestConfig?: AxiosRequestConfig,
+	): Promise<TodoListItemEntity> {
+		const createResponse = await API.post(url, { ...entityData, todoListId }, requestConfig)
 		return fetchById(createResponse.data)
 	}
 
