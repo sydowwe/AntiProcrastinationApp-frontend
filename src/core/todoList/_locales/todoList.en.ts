@@ -51,6 +51,7 @@ const todoList = {
 		// Accessible name of the due-state chip group (F49).
 		dueFilterLabel: `Due`,
 		confirmBatchDelete: `Delete {count} selected items?`,
+		deleteItemConfirm: `Delete item?`,
 		moveToList: `Move to list`,
 		destinationList: `Destination list`,
 		notScheduled: `Not scheduled`,

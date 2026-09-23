@@ -1,8 +1,10 @@
 import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+import { useDialog } from '@/_common/composable/general/useDialog.ts'
 import { hasObjectChanged } from '@/_common/utils/helperMethods.ts'
 import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
+import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 export interface UndoableListItem {
 	id: number
@@ -63,6 +65,8 @@ export function useUndoableListCrud<TEntity extends UndoableListItem, TRequest e
 	const { t } = useI18n()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { pushDeleteUndo, pushUncheckAllUndo, pushReorderUndo, pushEditUndo } = useTodoListUndo()
+	const { shouldConfirm } = useDeleteConfirmation()
+	const { confirm } = useDialog()
 
 	function locate(id: number) {
 		const list = adapter.containerOf(id)
@@ -107,11 +111,26 @@ export function useUndoableListCrud<TEntity extends UndoableListItem, TRequest e
 		})
 	}
 
+	// An item is a leaf — its steps are a JSON column on the row, and the planner tasks and history
+	// rows pointing at it are SET NULL, not cascaded — and it is undoable, so the preference decides.
+	// With it on this confirms; with it off the undo entry below is the safety net.
 	async function deleteItem(id: number) {
 		const located = locate(id)
 		if (!located) return
-		const { list, index } = located
-		const savedItem = list[index]!
+		const savedItem = located.list[located.index]!
+		if (shouldConfirm({ cascades: false, undoable: true })) {
+			const confirmed = await confirm({
+				title: t('toDoList.deleteItemConfirm'),
+				text: adapter.labelOf(savedItem),
+				confirmBtnLabel: t('general.delete'),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
+		}
+		// Re-located after the dialog: the list may have been resynced or reordered while it was open.
+		const current = locate(id)
+		if (!current) return
+		const { list, index } = current
 		const { precedingId, followingId } = neighboursAt(list, index)
 		await api.deleteEntity(id)
 		list.splice(index, 1)

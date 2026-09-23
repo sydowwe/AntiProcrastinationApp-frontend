@@ -52,6 +52,7 @@ const todoList = {
 		// Prístupný názov skupiny čipov podľa termínu (F49).
 		dueFilterLabel: `Termín`,
 		confirmBatchDelete: `Vymazať {count} vybraných úloh?`,
+		deleteItemConfirm: `Vymazať položku?`,
 		moveToList: `Presunúť do zoznamu`,
 		destinationList: `Cieľový zoznam`,
 		notScheduled: `Nenaplánované`,
