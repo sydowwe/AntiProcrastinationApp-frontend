@@ -90,7 +90,7 @@ test.describe('Timer (/activity-history/timer)', () => {
 	})
 
 	test('a Quick Time chip applies its duration to the Length field', async ({ authenticatedPage }) => {
-		await authenticatedPage.locator('span').filter({ hasText: '15m' }).click()
+		await authenticatedPage.getByRole('button', { name: '15m', exact: true }).click()
 		await expect(authenticatedPage.getByRole('textbox', { name: 'Length' })).toHaveValue('00:15')
 	})
 
@@ -106,7 +106,7 @@ test.describe('Timer (/activity-history/timer)', () => {
 
 		// Now try to start a countdown.
 		await authenticatedPage.goto('/activity-history/timer')
-		await authenticatedPage.locator('span').filter({ hasText: '15m' }).click()
+		await authenticatedPage.getByRole('button', { name: '15m', exact: true }).click()
 		await authenticatedPage.getByRole('combobox', { name: '* Activity' }).click()
 		await authenticatedPage.getByRole('option', { name: 'Code Review' }).click()
 		await authenticatedPage.getByRole('button', { name: 'Start' }).click()

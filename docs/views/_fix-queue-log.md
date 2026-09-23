@@ -4887,6 +4887,74 @@
   mobile layout has never been looked at. Screenshot both views at 390 and at 1024 (just above `md`)
   before and after.
 
+## F37. Preset chips define `#close` without `closable` — a live "Close" button that hides the chip, and in edit mode it *is* the pencil
+
+> ✅ **FIXED 2026-09-23.** Both `#close` templates in `TimerPresetsSection.vue` are gone. The pencil
+> moved to a `v-if="editMode"` `#append` slot with the sized `VIcon` (`size="16"`), which is the Risk
+> note's fallback: the `appendIcon` prop would have rendered it a step larger. The `pr-4` hack is gone,
+> and both `VChip`s carry `role="button"`. `history-capture.draft.spec.ts`'s two
+> `locator('span').filter({ hasText: '15m' })` calls are now `getByRole('button', { name: '15m', exact: true })`.
+> **Verified live on `/activity-history/timer`:** `.v-chip__close` count is 0 both outside and inside
+> edit mode. Outside edit mode, Tab from *Edit* lands on the `15m` chip (`role=button`). In edit mode,
+> clicking the **pencil** on *15m* opens *Edit timer preset* with `00:15` loaded, and the chip stays in
+> the row. The same check passes on an activity-preset chip. The seed has none, so a throwaway
+> *25m · Code Review* was created through `+`, then deleted through the dialog's *Delete* → *Confirm*.
+> Screenshot: the pencils are 16 px with even spacing. Console clean. The Timer block of
+> `history-capture.draft.spec.ts` passes (4 passed, 1 skipped as before). `type-check` exit 0, lint
+> clean. **Not done:** the adjacent `TimerPresetDialog.vue:129` unconditional `confirm()`, which skips
+> `useDeleteConfirmation`. It is out of scope per the body and is still unfiled.
+
+- **Scope:** app-side `src/core/activityHistory/component/TimerPresetsSection.vue`
+- **Closes:** `history-capture/B3`, and the chip-role observation the unit's inventory attributes to a
+  finding `A1` that was never filed (`inventory.md:79`, *"no accessible role/name — see finding A1"*;
+  *Contradictions* §49)
+- **Root cause:** Confirmed against Vuetify 3's source, and the finding's guess is right:
+  `VChip.js:179` is `hasClose = !!(slots.close || props.closable)`, so **defining the slot is what
+  renders the button** — `<button class="v-chip__close" aria-label="Close">` (`:274-279`), always, with
+  `closeProps.onClick` (`:136-141`) doing `preventDefault()`, **`stopPropagation()`**, `isActive = false`,
+  `emit('click:close')`. `TimerPresetsSection.vue:44-51,93-100` puts a `v-if="editMode"` pencil *inside*
+  that slot, so outside edit mode the button is empty and still focusable (the finding's observation),
+  and clicking it flips the chip's private `isActive` — client-side only, no listener on `click:close`,
+  back on reload (also the finding's observation). **What the finding did not see, because the pass did
+  not click the pencil:** inside edit mode the pencil sits inside the same button, so a click on the one
+  affordance that says "edit" is swallowed by `stopPropagation` before the chip's own
+  `@click="openEditDialog(preset)"` (`:41,:90`) can run — the chip disappears and no dialog opens. The
+  editor is reachable only by clicking the chip's *label*, which is what the `pr-4` padding hack on
+  `:38` is compensating for. Source-certain; one outcome.
+- **Files:** `TimerPresetsSection.vue:35-52` (quick-time chips), `:85-101` (activity chips)
+- **What to change:** Delete both `#close` templates and move the pencil to the chip's **append** side:
+  `:appendIcon="editMode ? 'pen-to-square' : undefined"` on each `VChip`. That renders no close button
+  in either mode, the pencil becomes part of the chip's own click target, `openEditDialog` handles the
+  click as already written, and the `:class="{ 'pr-4': editMode }"` on `:38` can go (the activity chips
+  never had it — the two rows will finally match). Deletion stays where it is, behind the edit dialog's
+  *Delete* button (`TimerPresetDialog.vue:38,126-133`) — do **not** take the finding's second option
+  ("clicking it actually deletes the preset"): a bare × on a chip with no confirmation is the exact
+  affordance the app already decided against by putting delete in a dialog. **While in the file:** the
+  chips are clickable `span`s with `tabindex="0"` and Enter/Space handling (Vuetify supplies both,
+  `VChip.js:169-174,195-197`) but **no `role`**, which is the inventory's unfiled `A1` and why its
+  locator is `.locator('span').filter({ hasText })`. Add `role="button"` to both `VChip`s — one attribute,
+  same tags, and it makes the draft spec's chip locators `getByRole('button', { name: '15m' })`. That is
+  the whole a11y change; the chip text is already the accessible name.
+- **Do not change:** `TimerPresetDialog.vue` — its delete path is fine for this batch. (Adjacent, not
+  filed, not for this batch: `:129` confirms through `useDialog().confirm()` unconditionally rather than
+  `useDeleteConfirmation`, so a user with `askBeforeDelete = false` is still asked — CLAUDE.md's
+  preference-ownership table lists five delete sites and this is a sixth. Unit 4's mutation pass did
+  **not** exercise it — it skipped `B3`'s surface as unchanged — so it stays source-only; `F69` is the
+  same class in `todoList`, observed, and fixes its site the way this one should be fixed when touched.)
+  Do not add a `closable` prop with a handler — that keeps the button and
+  its "Close" name for a control that does not close anything.
+- **Verification:** `history-capture/B3`'s `Verify:` block, first pass condition: outside edit mode,
+  `document.querySelectorAll('.v-chip__close').length === 0` on `/activity-history/timer`, and Tab from
+  the *Edit* button lands on the first chip, not on a nameless button inside it. Then the half the pass
+  never ran: click *Edit*, click the **pencil** on the *15m* chip — the preset dialog opens with *15m*
+  loaded and the chip is still in the row. Then `find` the chips as `button "15m"` (role check). Repeat
+  the pencil click on an activity-preset chip (create one through the `+` first if the seed has none —
+  `inventory.md:93` says it does not).
+- **Risk:** Low. `appendIcon` renders a `VIcon` with `end: true` and **no size** (`VChip.js:253-256`),
+  where the close slot forced `x-small` (`:283-291`) and the pencil forced `size="16"` — so the icon
+  will come out a step larger than today. Check it visually once; if it matters, use the `#append` slot
+  with the sized `VIcon` instead of the prop — same fix, no close button either way.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

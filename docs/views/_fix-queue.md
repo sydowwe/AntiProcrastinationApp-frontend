@@ -86,7 +86,7 @@
 | F34 | ✅ **FIXED 2026-09-21** (one token, in the `F33` commit — same card, not `FW8`) — Google Calendar card's "Disconnect" is `error` on an elevated button — the app-side twin of `P1`, on the very row the unit compared against | app | *(unfiled twin of `user-settings/P1`)* | trivial |
 | F35 | ✅ **FIXED 2026-09-15** (merge chosen) — `dateTime.secondsShort` renders raw on every running clock — and `general.from`/`general.to` on every `TimeRangePicker` in range mode: the app-side `common` mirror is written per consumer, has leaked four times, and should become the deep-merge `SK.ts` already does for `user` | app (`src/locales/`) + CLAUDE.md | `history-capture/B1` (+ two unfiled twins) | low (decision: merge vs. patch) |
 | F36 | Typed durations snap to 5 minutes with no feedback — eight `<TimePicker>` tags in six `activityHistory` files take the framework's time-of-day default; the server's own *Short Sprint* preset (3-minute rest) cannot be re-entered through the client | app | `history-capture/B2` | low |
-| F37 | Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
+| F37 | ✅ **FIXED 2026-09-23** — `#close` → a `v-if="editMode"` `#append` slot with the 16 px pencil, `pr-4` dropped, and `role="button"` on both chip rows. The draft spec's span locators became `getByRole('button', { name: '15m' })`. Verified live: 0 close buttons, the pencil opens the editor on both rows, and Tab lands on the chip. Body in the log — Preset chips define `#close` without `closable`, so Vuetify renders a live, always-present "Close" button that hides the chip client-side — and in edit mode the pencil *is* that button, so clicking it never opens the editor | app | `history-capture/B3` (+ unfiled inventory `A1`) | low |
 | F38 | ✅ **FIXED 2026-09-15** (exactly three, as predicted) — Leftover `console.log` in `TimerPresetsSection.vue` — and two more app-side; `no-console` is configured `off` with an allow-list, which is why lint did not catch any of them | app + `eslint.config.ts` | `history-capture/P1`, **`planner-templates/P2`** | trivial |
 | F39 | ✅ **FIXED 2026-09-23** (`7a612d7f`, with `FW11`'s bump. Body in the log) — The auth guard's redirect drops the destination — `router.ts:98` returns `{ name: 'login' }` with no `redirect` query, while the interceptor's own forced-logout path already writes one | app (`src/router.ts`) | `auth/B1` (write half; the read half is `FW11`) | trivial |
 | F40 | ✅ **FIXED 2026-09-15** — Logging out fires `GET /routine/settings` and logs a 401 — `resetAppState()` *creates* `routineReviewStore`, the Pinia plugin calls `ensureLoaded()` on creation, and the load has no signed-out guard and no `catch` | app (`src/core/todoList/store/routineReviewStore.ts`) | `auth/P2` | low |
@@ -573,58 +573,7 @@ Vuetify's own markup.
 - **Risk:** Low. The only behavioural change is that the arrow buttons now step by one minute instead
   of five on these fields — fine for a duration, and none of the eight passes `showArrows` anyway.
 
-## F37. Preset chips define `#close` without `closable` — a live "Close" button that hides the chip, and in edit mode it *is* the pencil
-
-- **Scope:** app-side `src/core/activityHistory/component/TimerPresetsSection.vue`
-- **Closes:** `history-capture/B3`, and the chip-role observation the unit's inventory attributes to a
-  finding `A1` that was never filed (`inventory.md:79`, *"no accessible role/name — see finding A1"*;
-  *Contradictions* §49)
-- **Root cause:** Confirmed against Vuetify 3's source, and the finding's guess is right:
-  `VChip.js:179` is `hasClose = !!(slots.close || props.closable)`, so **defining the slot is what
-  renders the button** — `<button class="v-chip__close" aria-label="Close">` (`:274-279`), always, with
-  `closeProps.onClick` (`:136-141`) doing `preventDefault()`, **`stopPropagation()`**, `isActive = false`,
-  `emit('click:close')`. `TimerPresetsSection.vue:44-51,93-100` puts a `v-if="editMode"` pencil *inside*
-  that slot, so outside edit mode the button is empty and still focusable (the finding's observation),
-  and clicking it flips the chip's private `isActive` — client-side only, no listener on `click:close`,
-  back on reload (also the finding's observation). **What the finding did not see, because the pass did
-  not click the pencil:** inside edit mode the pencil sits inside the same button, so a click on the one
-  affordance that says "edit" is swallowed by `stopPropagation` before the chip's own
-  `@click="openEditDialog(preset)"` (`:41,:90`) can run — the chip disappears and no dialog opens. The
-  editor is reachable only by clicking the chip's *label*, which is what the `pr-4` padding hack on
-  `:38` is compensating for. Source-certain; one outcome.
-- **Files:** `TimerPresetsSection.vue:35-52` (quick-time chips), `:85-101` (activity chips)
-- **What to change:** Delete both `#close` templates and move the pencil to the chip's **append** side:
-  `:appendIcon="editMode ? 'pen-to-square' : undefined"` on each `VChip`. That renders no close button
-  in either mode, the pencil becomes part of the chip's own click target, `openEditDialog` handles the
-  click as already written, and the `:class="{ 'pr-4': editMode }"` on `:38` can go (the activity chips
-  never had it — the two rows will finally match). Deletion stays where it is, behind the edit dialog's
-  *Delete* button (`TimerPresetDialog.vue:38,126-133`) — do **not** take the finding's second option
-  ("clicking it actually deletes the preset"): a bare × on a chip with no confirmation is the exact
-  affordance the app already decided against by putting delete in a dialog. **While in the file:** the
-  chips are clickable `span`s with `tabindex="0"` and Enter/Space handling (Vuetify supplies both,
-  `VChip.js:169-174,195-197`) but **no `role`**, which is the inventory's unfiled `A1` and why its
-  locator is `.locator('span').filter({ hasText })`. Add `role="button"` to both `VChip`s — one attribute,
-  same tags, and it makes the draft spec's chip locators `getByRole('button', { name: '15m' })`. That is
-  the whole a11y change; the chip text is already the accessible name.
-- **Do not change:** `TimerPresetDialog.vue` — its delete path is fine for this batch. (Adjacent, not
-  filed, not for this batch: `:129` confirms through `useDialog().confirm()` unconditionally rather than
-  `useDeleteConfirmation`, so a user with `askBeforeDelete = false` is still asked — CLAUDE.md's
-  preference-ownership table lists five delete sites and this is a sixth. Unit 4's mutation pass did
-  **not** exercise it — it skipped `B3`'s surface as unchanged — so it stays source-only; `F69` is the
-  same class in `todoList`, observed, and fixes its site the way this one should be fixed when touched.)
-  Do not add a `closable` prop with a handler — that keeps the button and
-  its "Close" name for a control that does not close anything.
-- **Verification:** `history-capture/B3`'s `Verify:` block, first pass condition: outside edit mode,
-  `document.querySelectorAll('.v-chip__close').length === 0` on `/activity-history/timer`, and Tab from
-  the *Edit* button lands on the first chip, not on a nameless button inside it. Then the half the pass
-  never ran: click *Edit*, click the **pencil** on the *15m* chip — the preset dialog opens with *15m*
-  loaded and the chip is still in the row. Then `find` the chips as `button "15m"` (role check). Repeat
-  the pencil click on an activity-preset chip (create one through the `+` first if the seed has none —
-  `inventory.md:93` says it does not).
-- **Risk:** Low. `appendIcon` renders a `VIcon` with `end: true` and **no size** (`VChip.js:253-256`),
-  where the close slot forced `x-small` (`:283-291`) and the pencil forced `size="16"` — so the icon
-  will come out a step larger than today. Check it visually once; if it matters, use the `#append` slot
-  with the sized `VIcon` instead of the prop — same fix, no close button either way.
+<!-- F37 (preset chips' `#close` slot rendered a live "Close" button that swallowed the edit pencil — history-capture/B3 + the unfiled chip-role A1) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F39 (the auth guard's redirect drops the destination — `auth/B1` write half) fixed 2026-09-23 in `7a612d7f` — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

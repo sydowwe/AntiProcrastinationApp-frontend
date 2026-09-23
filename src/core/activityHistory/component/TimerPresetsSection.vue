@@ -35,18 +35,20 @@
 				<VChip
 					v-for="preset in timeOnlyPresets"
 					:key="preset.id"
-					:class="{ 'pr-4': editMode }"
+					role="button"
 					variant="tonal"
 					color="primaryOutline"
 					@click="editMode ? openEditDialog(preset) : applyPreset(preset)"
 				>
 					{{ preset.durationFormatted }}
-					<template #close>
+					<template
+						v-if="editMode"
+						#append
+					>
 						<VIcon
-							v-if="editMode"
 							icon="pen-to-square"
 							size="16"
-							class="mr-2"
+							class="ms-2"
 						></VIcon>
 					</template>
 				</VChip>
@@ -85,17 +87,20 @@
 				<VChip
 					v-for="preset in activityPresets"
 					:key="preset.id"
+					role="button"
 					variant="tonal"
 					color="secondaryOutline"
 					@click="editMode ? openEditDialog(preset, true) : applyPreset(preset)"
 				>
 					{{ preset.durationFormatted }} · {{ preset.activity?.name }}
-					<template #close>
+					<template
+						v-if="editMode"
+						#append
+					>
 						<VIcon
-							v-if="editMode"
 							icon="pen-to-square"
 							size="16"
-							class="mr-2"
+							class="ms-2"
 						></VIcon>
 					</template>
 				</VChip>
