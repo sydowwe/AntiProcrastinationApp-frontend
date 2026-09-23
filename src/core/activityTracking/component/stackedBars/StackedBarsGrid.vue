@@ -479,8 +479,10 @@
 			const endLabel = formatDate(new Date(end.getTime() - 86400000))
 			return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`
 		}
-		// Full-day empty block (spans the configured day range): show date instead of time
-		if (window.columns.length === 0 && actualMinutes * 60000 >= dayDurationMs.value) {
+		// Full-day empty block (spans the configured day range): show date instead of time. Multi-day
+		// only — on a single day the block's start is one of `StackedBarsChart`'s synthetic slot Dates,
+		// built on `new Date(0)`, so its "date" is 1 January 1970 and printed as "1 Jan".
+		if (isMultiDay.value && window.columns.length === 0 && actualMinutes * 60000 >= dayDurationMs.value) {
 			return formatDate(start)
 		}
 		// Sub-day: if date group row is shown below, display only the time here
