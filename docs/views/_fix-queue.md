@@ -138,7 +138,7 @@
 | FW16 | ✅ **FIXED 2026-09-23** — `CalendarGrid` gains `v-model:dateRangeMode` / `v-model:dayVisibility` / `v-model:rangeConfig`, `DateRangePicker` gains `v-model:mode` / `v-model:rangeConfig` (types in `dto/DateRangeConfig.ts`); unbound consumers unchanged. Body in the log. Was: `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
 | FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
-| FW19 | `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
+| FW19 | ✅ **FIXED 2026-09-23** — landed 2026-09-21 in `vue_framework` `4ab7e61` with `FW24` (bump `adaae452`) and was never closed; verified live: the role-colour 400, a time-period 400 and the system-role 409 all show the specific `errors` text. Body in the log. Was: `extractServerMessage` returns the generic top-level `message` ("One or more errors occurred!") before it looks at `errors`, so against this API's validation shape the specific, human-written text is never shown — a colour-format rule and a system-role 409 both read as the generic string | **framework** (`src/_common/axiosConfig.ts:86-101`) | `activity-settings/B9` | low |
 | FW20 | `useTableFormatters`' zero-config heuristics match raw substrings — `durationMinutes` contains `ratio` and renders "45.00 %", `inspirationSource` contains `ratio` and renders "—" for every seeded string; the framework's own `JobRunHistory.vue` already slots `durationSeconds` and `errorSummary` around the same trap. **The `inspirationSource` half is no longer unfiled and is now proved from inside the running component** (`isPercentKey('inspirationSource')` → `true`, `formatPercent(…)` → `"—"`, `getValue(…)` → the real string), which is why it is the worse of the two: this heuristic does not mis-format real data, it **deletes** it | **framework** (`src/_common/composable/table/useTableFormatters.ts`) | `leisure-backlog-picker/B5` (round 2 — round 1's `B1`), **`leisure-bucket-anchors/B3`** | med (decision: word-boundary match vs. opt-in) |
 | FW21 | ✅ **FIXED 2026-09-23** (`2351ce7`, bump `a0f116a9` — the list extended, **not** the `/auth/` prefix: the server has signed-in routes under it; unit-tested both ways. Body in the log) — The interceptor's `AUTH_ENDPOINTS` allowlist names five signed-in auth routes and none of the signed-out ones, so a 401 from `/auth/register`, `/auth/forgotten-password`, `/auth/confirm-email` or `/auth/resend-confirmation-email/*` costs a `/auth/refresh` round trip while no session exists — one wasted request, nothing visible (`logoutClient()` no-ops signed out) | **framework** (`src/_common/axiosConfig.ts:63-65`) | `auth/B7` (re-graded `bug` → `polish`) | trivial |
 | F73 | ✅ **FIXED 2026-09-21** — the three leisure profile DTOs now carry a real `id` (first constructor parameter, destructured in `fromJson`, the getter deleted) and all nine write call sites pass `item.id` / `entityToEdit.id`. Verified live on `/leisure/projects`: status click → `PUT /activity-project-profile/17201` 200, edit → 200 and persisted, delete → 204 and gone after reload. Body in the log | app (`src/core/leisure/dto/response/` ×3 + 9 call sites) | `leisure-projects/X1`, `leisure-backlog-picker/X1`, `leisure-bucket-anchors/X4` | med (effort) / **high** (severity) |
@@ -157,15 +157,15 @@
 | FW23 | A second column-header click **adds** a sort key instead of replacing it (`sortBy=activity.name:asc,durationMinutes:asc` from one unmodified click), with no multi-sort affordance anywhere — `VDataTable`'s default, inherited by every table in the app | **framework** (decision: `BasicTable`/`DataTable` default) | `leisure-backlog-picker/P1` (round 2) | low (decision first) |
 | FW24 | ✅ **FIXED 2026-09-23** — the code had landed 2026-09-21 (`vue_framework` `4ab7e61`, with `FW19`; bump `adaae452`); verified live 2026-09-23 against all five requests. One gap found and fixed: a duplicate desktop mapping's field-keyed `errors.patterns` sentence was swallowed by the generic unique wording (`bc96068`). Body in the log. Was: **`B18` landed and nothing on this side reads it.** Every error body now carries `errorType` (API `cd0a252`), and the interceptor still branches on status alone — so the four different 409s (unique / FK / concurrency / business) are one sentence, and today that sentence is the API's own untranslated English DB prose, because the 409 branch prefers `serverMessage`. Wire the type into `ErrorHandlingFunctions.handleHttpCodes` and `axiosConfig`'s 409/403 branches, status-only as the fallback | **framework** (`ErrorHandlingFunctions.ts`, `axiosConfig.ts`; submodule commit + pointer bump) | escalation §7's frontend half (+ `auth/B6`'s 403 pair, already fixed another way) | low-med |
 | FW25 | ✅ **FIXED 2026-09-21** (filed and landed the same day) — three hydrations per settings visit each pushed the browser time zone, and a `PUT` racing a step-up write failed Identity's concurrency check, reported as "Wrong password"; now one in-flight hydration, one zone push per session, and `VerifyUserForm` words only a 401. **Grown on the way:** a wrong step-up password **signed the user out** (401 → refresh → identical retry → 401 → `logoutClient()`), fixed with `_credentialCheck` on the request. Same commit: the 2FA sign-in dialog closes on a refusal instead of inviting a retry the single-use token cannot honour, and the reset button reads *Reset authenticator app*. Body in the log | **framework** (`authStore.ts`, `timeZoneSync.ts`, `VerifyUserForm.vue`, `axiosConfig.ts`, `LoginVerifyQrCode.vue`) | `user-settings/B3`, `user-settings/B4` | low |
-| F85 | The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (unblocked — `FW24` closed 2026-09-23) |
+| F85 | ✅ **FIXED 2026-09-23** — landed 2026-09-21 in `adaae452` and was never closed; verified live: a raced name clash and a raced length clash each keep the dialog open with the inline error, and deleting *Daily* gives *"5 routines are still assigned…"*. Closes §7. Body in the log. Was: The two app-side `_silent` 409 workarounds can stop guessing once `FW24` lands — but **not** be deleted as `B18`'s own note suggests: `TimePeriodForm`'s inline conflict error is what keeps the dialog open with the user's input, which an interceptor snackbar cannot do. Branch both call sites on `errorType` instead of on bare status 409, and drop `useDeleteConfirmation` from the change list entirely — it is pre-flight and never sees a response | app (`TimePeriodForm.vue:160-175`, `RoutineSettingsView.vue:175-191`) | escalation §7's app half (`todo-routine/B9`, `B11` — both already fixed; this is their follow-on) | trivial (unblocked — `FW24` closed 2026-09-23) |
 | F86 | ✅ **FIXED 2026-09-23** (filed and fixed the same day) — `useCalendarUrlState` re-applies every owned key on an outside navigation; **grown on the way:** a spurious *Failed to load the calendar* snackbar on every month deep link (a cancelled fetch toasted as a failure) swallowed the next Back/Forward, because Vuetify closes an open overlay and aborts the navigation; and the framework `Snackbar.vue` now sets `closeOnBack=false`, so no toast traps Back (framework-wide behaviour change, in `FW16`'s submodule commit). Body in the log. Was: Back/Forward on `/day-planner` moves the URL's `?month=` but not the grid — the codec **pushes** a history entry per month and the view reads the query only on mount, so every entry it has ever pushed is one the grid ignores. Predates `F44`; found verifying it | app (`useCalendarUrlState.ts`, `PlannerCalendarView.vue`) | *(unfiled — fell out of `F44`'s verification; P7's "back/forward walks months")* | low |
 
 85 app-side (`F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` is a reserved number, not a batch;
-`F85` is unblocked — `FW24` landed and was verified 2026-09-23; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
-framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW24` verified and closed 2026-09-23, body in the log) ·
-20 escalations (**1 open: §7** — §7's ask has landed, so what is open there is
-the frontend half — now only `F85`, since `FW24` closed 2026-09-23 — not the ask; **§19 closed 2026-09-21** when `B24` landed and its
+`F85` landed 2026-09-21 unrecorded and was verified and closed 2026-09-23, body in the log; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
+framework (`FW10` is a reserved number, not a batch — see *Needs verification*; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log) ·
+20 escalations (**0 open** — **§7 closed 2026-09-23**, the last one: `B18` had landed 2026-09-21 and its
+frontend half, `FW24` + `F85`, shipped the same day unrecorded and was verified live 2026-09-23; **§19 closed 2026-09-21** when `B24` landed and its
 frontend half shipped the same evening with `F16` folded in — no ask is open server-side; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
 frontend half and the bell verified English on the EN account; §11 closed 2026-09-16 and the count line said 6 until
@@ -204,8 +204,9 @@ framework batch and no escalation: its blocker splits across the boundary the wa
 *Suggested for day type* should be optional — is settled from the API source as **no**: the column is
 non-nullable and indexed, the request field is `required`, and `/suggestions` is built on it (`F53`).
 
-**Order among the sixteenth-pass batches.** *(Settled 2026-09-23: `FW24` and `FW19` did land in one
-framework commit, `4ab7e61`, and `FW24` is closed — `F85` is free to go.)* `FW24` before `F85`, necessarily — `F85` reads a field the
+**Order among the sixteenth-pass batches.** *(Settled 2026-09-23: all three are closed. `FW24` and `FW19`
+landed in one framework commit, `4ab7e61`, and `F85` came after it in the same app commit that bumped
+the pointer, `adaae452`.)* `FW24` before `F85`, necessarily — `F85` reads a field the
 interceptor does not yet expose, and a pointer bump sits between them. `FW24` is also worth landing in
 the **same framework commit as `FW19`**: they are two different causes (message precedence vs. no
 per-type wording) and stay two batches, but they are the same two files and the same user-visible
@@ -1188,33 +1189,7 @@ Vuetify's own markup.
 
 ---
 
-## FW19. `extractServerMessage` prefers the generic `message` over the specific `errors` — every validation snackbar in the app reads "One or more errors occurred!"
-
-- **Scope:** **[framework]** `src/_common/axiosConfig.ts:86-101` — submodule commit, then pointer bump
-- **Closes:** `activity-settings/B9`
-- **Root cause (source-verified):** `extractServerMessage` returns on the first non-empty of `data`
-  (string) → `detail` → **`message`** → `errors[first list][0]`. FastEndpoints' validation shape is
-  `{ statusCode, message: "One or more errors occurred!", errors: { field: ["…"] } }` — `message` is
-  always present and always generic, so the `errors` branch is unreachable against this API. The
-  mutation pass read two real messages the user never saw: `errors.color` → *"Color must be a valid hex
-  color code…"* (§11) and, on the system-role delete, `errors.generalErrors` → *"This is a system role
-  the app files quick-created activities under, so it cannot be deleted. You can rename it instead."*
-  The same function feeds `useRequestState.run`'s `error.value` (`useRequestState.ts:47-48`), so every
-  composable's error string is generic too. `todo-routine/B9`'s per-call-site `_silent` workaround exists
-  partly because of this.
-- **Files:** `src/_common/axiosConfig.ts:86-101`; `src/_common/docs/api.md` if it documents the
-  extraction order
-- **What to change:** Try `errors` **before** `message`: if `errors` yields a string, return it;
-  otherwise `detail`, then `message`. Keep the 500 branch's `errorId` handling as is — it reads
-  `message` deliberately (`:239-249`) and a 500 body has no `errors`. Consider a field-aware variant
-  (`"<field>: <text>"`) only if another app wants it; this batch is the order swap.
-- **Do not change:** `handleHttpCodes` (`ErrorHandlingFunctions.ts`) — it never reads the body and
-  is not this bug; escalation §7's "carry the error *type*" ask is the separate improvement.
-- **Verification:** `B9`'s `Verify:` block — trigger the role-colour 400 (until §11 lands it is one
-  click away) and the system-role 409; both snackbars show the specific text. Then a 500 with an
-  `errorId` still shows the id.
-- **Risk:** Low, but framework-wide: every app on a backend whose `errors` map holds technical strings
-  will now surface them. On this backend they are authored prose; say so in the commit.
+<!-- FW19 (extractServerMessage read the generic `message` before the `errors` map) landed 2026-09-21 in vue_framework 4ab7e61 with FW24, bump adaae452, unrecorded; verified live 2026-09-23 (role-colour 400, time-period 400, system-role 409) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## FW20. `useTableFormatters`' substring heuristics misclassify columns — `durationMinutes` is a percentage, `inspirationSource` is a dash
 
@@ -1391,49 +1366,7 @@ Vuetify's own markup.
 
 <!-- FW24 (B18's frontend half — word each 409/403 by errorType) landed 2026-09-21 as vue_framework 4ab7e61 (bump adaae452, unrecorded at the time), verified live 2026-09-23 with one gap fixed (a field-keyed errors entry now wins over the typed DB-409 wording, vue_framework bc96068) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F85. The two `_silent` 409 workarounds can read the type now — but `B18`'s own note about deleting them is wrong
-
-- **Scope:** app-side `src/core/todoList/component/routine/dialog/TimePeriodForm.vue:160-175`,
-  `src/core/todoList/view/RoutineSettingsView.vue:175-191`
-- **Closes:** escalation §7's app half. The two findings behind those call sites (`todo-routine/B9`,
-  `B11`) are already `fixed`; this is their follow-on, not a reopening.
-- ~~**Blocked on `FW24`**~~ — **unblocked 2026-09-23**: `FW24` is in the pointer and verified live.
-  `extractServerErrorType(error)` gives the condition; `ServerErrorType.*` gives the constants to compare
-  against. Note for `TimePeriodForm`: a duplicate time period's body carries **no** field-keyed entry
-  (`errors.generalErrors: ["Unique constraint violation during Create"]`), so which field clashed is
-  still the form's to work out, as it is today.
-- **Root cause:** both sites opted out of the interceptor (`_silent: true`) and worded the 409
-  themselves, because a status code was the only thing either could see. With `errorType` on the wire
-  they can tell *which* 409 they got, which is the one thing both comments say they cannot.
-- **`B18`'s "what changes on the frontend" list is wrong twice, and a fixing session following it would
-  regress two things.** Read against the source this pass:
-  - *"Delete the two `_silent` + call-site wordings."* **No.** `TimePeriodForm.onConfirm` sets
-    `conflictError` and **returns without closing the dialog**, so the user keeps everything they typed
-    and sees the message against the form. An interceptor snackbar cannot do that, and the dialog
-    closing before the message arrives is the exact defect `todo-routine/B11` fixed. Keep `_silent`,
-    keep the inline error; what changes is only the **condition** — `errorType ===
-    'DbUniqueViolationError'` rather than `status === 409`, so a concurrency 409 stops being worded as
-    a name collision.
-  - *"`useDeleteConfirmation` can stop guessing about FK refusals it cannot see."* **It never guessed.**
-    `src/core/user/composable/useDeleteConfirmation.ts` is 45 lines of pre-flight policy
-    (`resolveDelete({cascades, undoable})`); it runs *before* the request and never sees a response, so
-    there is nothing in it to change. The post-hoc FK handling lives at the call sites —
-    `RoutineSettingsView.showDeleteBlocked` is the one that exists.
-- **What to change:** in `RoutineSettingsView.onDelete`, branch `showDeleteBlocked` on `errorType ===
-  'DbForeignKeyError'` instead of bare `status === 409`, and let anything else fall through to
-  `handleHttpCodes` (which by then words the rest correctly). In `TimePeriodForm.onConfirm`, the same
-  narrowing for `DbUniqueViolationError`. Both are one condition each.
-- **Also worth a line, not a batch:** `F19` gives the roles table a pre-flight `canDelete` gate, so its
-  409 becomes a race fallback only — but the pair the backend built this field for is exactly that
-  endpoint (system role → `Conflict`, in-use role → `DbForeignKeyError`). If `F19` lands **after**
-  `FW24`, its fallback can say which one happened instead of showing the generic sentence; if it lands
-  before, nothing is lost. Do not hold either for the other.
-- **Verification:** duplicate an existing routine time period's name and its `lengthInDays` in two
-  separate attempts — the dialog stays open both times with a message naming the right field. Then
-  delete a time period that still has routines: the *"remove these first"* dialog, not a snackbar.
-- **Risk:** None beyond the sequencing. If it lands before the pointer bump, `errorType` is `undefined`
-  and both conditions are false, so both sites silently stop handling the 409 they handle today — which
-  is why this is blocked rather than merely ordered.
+<!-- F85 (the two routine-settings `_silent` 409 sites narrowed to errorType) landed 2026-09-21 in adaae452, unrecorded; verified live 2026-09-23 (name race, length race, blocked delete of Daily) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F86 (Back/Forward on /day-planner moved the URL but not the grid — found verifying F44) filed and fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -1452,7 +1385,7 @@ Vuetify's own markup.
 > | --- | --- | --- | --- |
 > | ~~§11~~ | `_done/B10-…` — landed, body in the log | ~~§10~~ | `_done/B16-…` — landed, body in the log |
 > | ~~§6 + §13~~ | `_done/B11-…` — landed, body in the log | ~~§15~~ | `_done/B17-…` — landed, body in the log |
-> | ~~§12~~ | `_done/B12-…` — landed, body in the log | §7 | `_done/B18-…` — **ask landed 2026-09-21; frontend half: `FW24` closed 2026-09-23, `F85` open** |
+> | ~~§12~~ | `_done/B12-…` — landed, body in the log | ~~§7~~ | `_done/B18-…` — landed 2026-09-21 (API `cd0a252`), frontend half (`FW24` + `F85`) verified 2026-09-23, body in the log |
 > | ~~§14~~ | `_done/B13-…` — landed, body in the log | ~~§8~~ | `_done/B19-…` — decided and landed 2026-09-21, frontend half the same day, body in the log |
 > | ~~§9~~ | `_done/B14-…` — landed 2026-09-21 (API `1e0dc3b`), frontend half the same day, body in the log | ~~§5~~ | `_done/B20-…` — landed, body in the log |
 > | ~~§1~~ | `_done/B15-…` — landed 2026-09-21, verified, body in the log | ~~§3~~ | `_done/B9-routine-untick-streak-decision.md` — answered, body in the log |
@@ -1462,7 +1395,7 @@ Vuetify's own markup.
 >
 > **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
 > `_implemented/` for seven of them, a directory that exists and is empty). A landed ask whose frontend
-> half is still open (`B18` today) is also in `_done/`; the open half is tracked by its `FW`/`F` batch, not by
+> half is still open (none today; `B18` was the last, closed 2026-09-23) is also in `_done/`; the open half is tracked by its `FW`/`F` batch, not by
 > the file's location.
 >
 > **The fifteenth pass added none**, out of 23 new findings — the first pass since unit 3 to add zero.
@@ -1492,74 +1425,16 @@ Vuetify's own markup.
      showed a `?roleIds=` bookmark working end to end. -->
 
 
-7. ✅ **THE ASK LANDED 2026-09-21** (`AdhdTimeOrganizer` `cd0a252`; the prompt file moved to
-   `backend/_done/` and carries the full response). **This paragraph stays only because the
-   frontend half is not finished** — it is `FW24` (framework: read `errorType`, word each 409 and 403;
-   **closed 2026-09-23**, body in the log) and `F85` (app: narrow the two `_silent` call sites, **still
-   open**). Delete this entry and move the body to the log when `F85` lands.
+<!-- §7 (four different 409s shared one sentence — the error type never crossed the wire) closed 2026-09-23:
+     `B18` landed 2026-09-21 (API `cd0a252` + the same-day follow-up), and both frontend halves — `FW24`
+     (framework) and `F85` (routine-settings call sites) — had shipped the same day unrecorded and were
+     verified live 2026-09-23, with one gap fixed on the way (a field-keyed `errors` entry now wins over the
+     typed DB-409 wording, `vue_framework` `bc96068`). Body in _fix-queue-log.md → Closed escalations.
+     Number retired, not reused. -->
 
-   What shipped, in one line: **every error body the API authors now carries `errorType`**, the
-   `ResultErrorType` member name as a plain PascalCase string, **absent** (not null) when the server
-   has nothing better than the status; FluentValidation 400s carry none and keep their `errors` map.
-   The values to branch on are `DbUniqueViolationError` / `DbForeignKeyError` / `DbConcurrencyError` /
-   `Conflict` on 409, and `EmailNotConfirmed` / `UserLockedOut` on 403. `DbConcurrencyError` is
-   unreachable today — no request DTO carries a row version — so wire it and do not expect to see it.
-   The backend also named the test pair: `DELETE /api/activity-role/{id}` answers `Conflict` for a
-   system role and `DbForeignKeyError` for a role that still has activities. **Two of the three
-   frontend consequences it lists are wrong** — see `F85`, which corrects them rather than repeating
-   them.
+<!-- §7 was the last open escalation. -->
 
-   **Follow-up 2026-09-21 (same day, appended to the prompt file):** the "every error body" claim was
-   not quite true at landing — eleven hand-written endpoints still picked their 409 with a bare
-   `EndpointHelper.ToStatusCode(...)` and dropped the type. Those are converted and a source-scan test
-   (`ErrorStatusBypassGuardTests`) fails the API build on any new one. **Nothing in the contract
-   changed** and nothing new opens on this side; it only widens the routes `FW24` can rely on: the two
-   `…-mapping-by-pattern` creates/updates (duplicate pattern → `DbUniqueViolationError` **with**
-   `errors["Patterns"]` naming the clash — relevant to `F72`'s field-by-field branch), the three tracker
-   heartbeat/sync posts, `PATCH /activity/{id}/archived`, `POST /activity/merge`, every to-do step and
-   toggle-done write, `PATCH /planner-task/{id}/status` and `POST /planner-task/apply-template`. The
-   follow-up repeats the two wrong frontend consequences (*delete the `_silent` wordings*,
-   *`useDeleteConfirmation` can stop guessing*); `F85` still stands as the correction. `FW24` gains the
-   duplicate mapping pattern as a second verification pair.
 
-   **The record below is what was asked and why; it is kept as the evidence trail, but note one thing
-   it gets wrong about this side.** It says the client "is told *This record was changed by someone
-   else*". That is only the `_silent` + `handleHttpCodes` path. The default path is the interceptor,
-   which prefers the server's `message` — so an ordinary 409 has been showing the API's raw English
-   *"Unique constraint violation during Create"* in a Slovak UI (`FW24`, *Contradictions* §120).
-
-   **Client side closed 2026-09-14; the ask itself stays open, and is smaller than written.** Two corrections
-   from the API source: `Text` is unique per account as well (`RoutineTimePeriodConfiguration.cs:13`), and
-   **the bare 409 is a pinned contract** — `RoutineTimePeriodUniqueIndexTests` asserts `Conflict` for both
-   indexes, so the first ask below (validate → 400) means changing that contract and those tests, which is a
-   backend decision, not a client one. The client no longer needs it: `TimePeriodForm` validates name and
-   length against the account's list before submitting (`e39c01c1`) and words the race-only 409 correctly
-   (`todo-routine/B11`). What is still worth asking for is only the **second** bullet — the error *type* in
-   the 409 body — and it is now a nicety for the framework interceptor, blocking nothing.
-
-   **A time period's `lengthInDays` is unique per account, and the API says so as a bare 409 from the
-   database index** — `todo-routine` round 5, found in passing while setting up `B9`'s retest. Confirmed
-   at the source this pass: `RoutineTimePeriodConfiguration.cs:79` is
-   `HasIndex(t => new { t.UserId, t.LengthInDays }).IsUnique()`, so a second 7-day or 30-day period is
-   refused — round 5 hit it twice, body *"Unique constraint violation during Create"*, status 409. The
-   client cannot tell that 409 from the concurrency one or from `B9`'s referential one:
-   `ErrorHandlingFunctions.ts:23-25` switches on status alone and the body is never read, so the user is
-   told *"This record was changed by someone else. Refresh the page and try again."* — and `TimePeriodForm`
-   has already closed (`openAddDialog` awaits `openDialog` *then* calls `createWithResponse`,
-   `RoutineSettingsView.vue:134-143`), so the typed form is gone with it. Two asks, in order of value:
-   - **Validate it, don't let the index throw.** The endpoint already returns a 400 naming the field for
-     other rule violations (`{"timePeriodId":["Time period not found."]}` is what round 5 saw on the item
-     create), so a `lengthInDays` uniqueness check in the validator would surface as a normal field error
-     the form can render inline, with the dialog still open. That is the same shape the create validator
-     uses today, and it makes the client fix trivial.
-   - **Carry the error *type* in the 409 body**, which is `B9`'s own "worth raising upstream" note: the
-     server distinguishes `DbConcurrencyError` from `DbForeignKeyError` from `DbUniqueViolationError`
-     (`DatabaseExceptionUtils.cs:16,25,27`) and flattens all three to a status code at the boundary. With the type on the wire, the framework's
-     interceptor could word each correctly once, and `B9`'s per-call-site `_silent` pattern would not need
-     copying to every endpoint that can answer 409 for a non-concurrency reason. This one is a framework
-     change on the client side too (`ErrorHandlingFunctions.ts`), so it is a two-repo ask.
-   The client-side half — what to do at this call site until either lands — is under *Needs verification*
-   below, because the message on screen has not actually been observed; only the 409 has.
 
 <!-- §8 (public-holiday names — `history-review/B4` + `planner-day/B4`) closed 2026-09-21: `B19` was
      decided on `dev` @ `fee54a1` — half 1 (a country preference) declined, half 2 (localised names)

@@ -4201,6 +4201,127 @@
   fallback is the whole safety property — write the branch so an absent field is indistinguishable from
   today.
 
+## FW19. `extractServerMessage` prefers the generic `message` over the specific `errors` — every validation snackbar in the app reads "One or more errors occurred!"
+
+> ✅ **FIXED 2026-09-23 — verified live; the code had landed 2026-09-21 unrecorded.** The order swap
+> shipped in `vue_framework` `4ab7e61`, the same commit as `FW24` (as the ordering note asked), and reached
+> the app with the pointer bump in `adaae452`. `extractServerMessage` now reads the `errors` map first,
+> then `detail`, then `message`. Verified through the real `API` instance on `:3000`, reading the
+> rendered snackbar:
+>
+> - `PUT /activity-role/11001` with `color: "not-a-colour"` → 400, snackbar *"Color must be a palette
+>   name: cyan, gold, …"* (the `errors.color` entry). The row was untouched: the validator refuses before
+>   any write.
+> - `POST /routine-time-period` with `lengthInDays: 0` → 400, snackbar *"'length In Days' must be between
+>   1 and 365. You entered 0."*, the first of two map entries.
+> - `DELETE /activity-role/4` (system role) → 409, snackbar is the `errors.generalErrors` sentence
+>   (*"This is a system role … You can rename it instead."*). This is `B9`'s second verification case,
+>   run during `FW24`'s pass.
+>
+> In none of the three did *"One or more errors occurred!"* reach the screen. **Not verified live:** the
+> 500-with-`errorId` case. No request produces one on demand. Checked in source instead: the 500 branch
+> still requires `extractServerErrorId` before it quotes the body, and a 500 body carries no `errors` map,
+> so the swap cannot change what it reads.
+
+- **Scope:** **[framework]** `src/_common/axiosConfig.ts:86-101` — submodule commit, then pointer bump
+- **Closes:** `activity-settings/B9`
+- **Root cause (source-verified):** `extractServerMessage` returns on the first non-empty of `data`
+  (string) → `detail` → **`message`** → `errors[first list][0]`. FastEndpoints' validation shape is
+  `{ statusCode, message: "One or more errors occurred!", errors: { field: ["…"] } }` — `message` is
+  always present and always generic, so the `errors` branch is unreachable against this API. The
+  mutation pass read two real messages the user never saw: `errors.color` → *"Color must be a valid hex
+  color code…"* (§11) and, on the system-role delete, `errors.generalErrors` → *"This is a system role
+  the app files quick-created activities under, so it cannot be deleted. You can rename it instead."*
+  The same function feeds `useRequestState.run`'s `error.value` (`useRequestState.ts:47-48`), so every
+  composable's error string is generic too. `todo-routine/B9`'s per-call-site `_silent` workaround exists
+  partly because of this.
+- **Files:** `src/_common/axiosConfig.ts:86-101`; `src/_common/docs/api.md` if it documents the
+  extraction order
+- **What to change:** Try `errors` **before** `message`: if `errors` yields a string, return it;
+  otherwise `detail`, then `message`. Keep the 500 branch's `errorId` handling as is — it reads
+  `message` deliberately (`:239-249`) and a 500 body has no `errors`. Consider a field-aware variant
+  (`"<field>: <text>"`) only if another app wants it; this batch is the order swap.
+- **Do not change:** `handleHttpCodes` (`ErrorHandlingFunctions.ts`) — it never reads the body and
+  is not this bug; escalation §7's "carry the error *type*" ask is the separate improvement.
+- **Verification:** `B9`'s `Verify:` block — trigger the role-colour 400 (until §11 lands it is one
+  click away) and the system-role 409; both snackbars show the specific text. Then a 500 with an
+  `errorId` still shows the id.
+- **Risk:** Low, but framework-wide: every app on a backend whose `errors` map holds technical strings
+  will now surface them. On this backend they are authored prose; say so in the commit.
+
+## F85. The two `_silent` 409 workarounds can read the type now — but `B18`'s own note about deleting them is wrong
+
+> ✅ **FIXED 2026-09-23 — verified live; the code had landed 2026-09-21 unrecorded**, in `adaae452`
+> (B19's frontend half), the same commit that bumped the pointer past `FW24`. Both conditions are
+> exactly what *What to change* asks for: `TimePeriodForm.onConfirm` words a 409 inline only when
+> `errorType === ServerErrorType.DbUniqueViolationError`, and `RoutineSettingsView.onDelete` calls
+> `showDeleteBlocked` only on `ServerErrorType.DbForeignKeyError`. Anything else goes to
+> `handleHttpCodes(status, errorType)`. Both still pass `_silent`, and `useDeleteConfirmation` was not
+> touched. Verified on `/routine-settings` with `playwright-cli`:
+>
+> - **Name clash.** Opened *Add time period* and filled *F85 race* / 14 days. Then, from outside the
+>   dialog, created a period *F85 race* / 21 days through the API, so the form's name/length checks,
+>   which work off the list loaded with the page, could not see it. *Create* → `POST` 409 → the dialog
+>   **stayed open** with the typed values and the inline *"Another period already uses this name or this
+>   length — both must be unique."* No snackbar.
+> - **Length clash.** In the same dialog, changed to *F85 other* / 21 days → `POST` 409 → same result.
+> - **Blocked delete.** *Delete* on *Daily*, then *Confirm* → `DELETE /routine-time-period/5` 409 →
+>   `GET …/grouped-by-time-period` → snackbar *"Can't delete "Daily" — 5 routines are still assigned to
+>   it. Move or delete them first."* The row stayed.
+> - The race row (id 24) was deleted afterwards. The account is back to its four fixture periods.
+>
+> **Two notes on the batch's own wording.** (1) Its verification says *"a message naming the right
+> field"*. The message names **both** fields, and it cannot do better: the 409 body is
+> `errors.generalErrors: ["Unique constraint violation during Create"]` with no keyed entry, so nothing
+> says which index refused. The pre-flight rules already give the field-specific message for every case
+> except a race. (2) It says *"the remove-these-first dialog, not a snackbar"*. `todo-routine/B9`'s fix
+> was always a **snackbar** with the count (`deleteBlocked`). The requirement that mattered is that the
+> specific sentence shows instead of the generic 409 one, and it does. **Not producible live:** the
+> fall-through (a 409 of another type at either site). No endpoint here sends one. It is one `else`
+> branch, read in source.
+
+- **Scope:** app-side `src/core/todoList/component/routine/dialog/TimePeriodForm.vue:160-175`,
+  `src/core/todoList/view/RoutineSettingsView.vue:175-191`
+- **Closes:** escalation §7's app half. The two findings behind those call sites (`todo-routine/B9`,
+  `B11`) are already `fixed`; this is their follow-on, not a reopening.
+- ~~**Blocked on `FW24`**~~ — **unblocked 2026-09-23**: `FW24` is in the pointer and verified live.
+  `extractServerErrorType(error)` gives the condition; `ServerErrorType.*` gives the constants to compare
+  against. Note for `TimePeriodForm`: a duplicate time period's body carries **no** field-keyed entry
+  (`errors.generalErrors: ["Unique constraint violation during Create"]`), so which field clashed is
+  still the form's to work out, as it is today.
+- **Root cause:** both sites opted out of the interceptor (`_silent: true`) and worded the 409
+  themselves, because a status code was the only thing either could see. With `errorType` on the wire
+  they can tell *which* 409 they got, which is the one thing both comments say they cannot.
+- **`B18`'s "what changes on the frontend" list is wrong twice, and a fixing session following it would
+  regress two things.** Read against the source this pass:
+  - *"Delete the two `_silent` + call-site wordings."* **No.** `TimePeriodForm.onConfirm` sets
+    `conflictError` and **returns without closing the dialog**, so the user keeps everything they typed
+    and sees the message against the form. An interceptor snackbar cannot do that, and the dialog
+    closing before the message arrives is the exact defect `todo-routine/B11` fixed. Keep `_silent`,
+    keep the inline error; what changes is only the **condition** — `errorType ===
+    'DbUniqueViolationError'` rather than `status === 409`, so a concurrency 409 stops being worded as
+    a name collision.
+  - *"`useDeleteConfirmation` can stop guessing about FK refusals it cannot see."* **It never guessed.**
+    `src/core/user/composable/useDeleteConfirmation.ts` is 45 lines of pre-flight policy
+    (`resolveDelete({cascades, undoable})`); it runs *before* the request and never sees a response, so
+    there is nothing in it to change. The post-hoc FK handling lives at the call sites —
+    `RoutineSettingsView.showDeleteBlocked` is the one that exists.
+- **What to change:** in `RoutineSettingsView.onDelete`, branch `showDeleteBlocked` on `errorType ===
+  'DbForeignKeyError'` instead of bare `status === 409`, and let anything else fall through to
+  `handleHttpCodes` (which by then words the rest correctly). In `TimePeriodForm.onConfirm`, the same
+  narrowing for `DbUniqueViolationError`. Both are one condition each.
+- **Also worth a line, not a batch:** `F19` gives the roles table a pre-flight `canDelete` gate, so its
+  409 becomes a race fallback only — but the pair the backend built this field for is exactly that
+  endpoint (system role → `Conflict`, in-use role → `DbForeignKeyError`). If `F19` lands **after**
+  `FW24`, its fallback can say which one happened instead of showing the generic sentence; if it lands
+  before, nothing is lost. Do not hold either for the other.
+- **Verification:** duplicate an existing routine time period's name and its `lengthInDays` in two
+  separate attempts — the dialog stays open both times with a message naming the right field. Then
+  delete a time period that still has routines: the *"remove these first"* dialog, not a snackbar.
+- **Risk:** None beyond the sequencing. If it lands before the pointer bump, `errorType` is `undefined`
+  and both conditions are false, so both sites silently stop handling the 409 they handle today — which
+  is why this is blocked rather than merely ordered.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
@@ -4417,6 +4538,85 @@ on either side would fail silently in exactly the "200 with the wrong rows" way 
 chips now filter. **`F18` and `F60` still land app-side**, unchanged: the server reads
 `anchorYear`/`anchorMonth` and grew no alias for `year`/`month`, so `F60` is still the client's own slip.
 Both batches' verification blocks said "check the request, not the table"; they can now check the table.
+
+### §7 — ✅ RESOLVED 2026-09-23 (backend `B18` landed 2026-09-21, API `cd0a252` + the same-day follow-up; frontend half `FW24` + `F85`, both verified live 2026-09-23). A 409 or 403 is worded by its cause, not its status
+
+**Closure.** Both frontend halves had landed on 2026-09-21 (`vue_framework` `4ab7e61`, app `adaae452`)
+without the queue knowing. They were verified on 2026-09-23 and one gap was fixed: a field-keyed
+`errors` entry now wins over the typed DB-409 wording (`vue_framework` `bc96068`). The batch bodies above
+have the verification tables. What the user sees now: a unique clash says *pick another value*, an FK
+refusal says *remove or move the dependents first*, a business `Conflict` shows the server's authored
+sentence, and the raw English *"Unique constraint violation during Create"* no longer reaches the screen
+on any path. The two routine-settings call sites keep their inline/contextual handling, narrowed to the
+one type each can word. The prompt file stays in `backend/_done/B18-…`.
+
+**The body as it stood in the queue:**
+
+7. ✅ **THE ASK LANDED 2026-09-21** (`AdhdTimeOrganizer` `cd0a252`; the prompt file moved to
+   `backend/_done/` and carries the full response).
+
+   What shipped, in one line: **every error body the API authors now carries `errorType`**, the
+   `ResultErrorType` member name as a plain PascalCase string, **absent** (not null) when the server
+   has nothing better than the status; FluentValidation 400s carry none and keep their `errors` map.
+   The values to branch on are `DbUniqueViolationError` / `DbForeignKeyError` / `DbConcurrencyError` /
+   `Conflict` on 409, and `EmailNotConfirmed` / `UserLockedOut` on 403. `DbConcurrencyError` is
+   unreachable today — no request DTO carries a row version — so wire it and do not expect to see it.
+   The backend also named the test pair: `DELETE /api/activity-role/{id}` answers `Conflict` for a
+   system role and `DbForeignKeyError` for a role that still has activities. **Two of the three
+   frontend consequences it lists are wrong** — see `F85`, which corrects them rather than repeating
+   them.
+
+   **Follow-up 2026-09-21 (same day, appended to the prompt file):** the "every error body" claim was
+   not quite true at landing — eleven hand-written endpoints still picked their 409 with a bare
+   `EndpointHelper.ToStatusCode(...)` and dropped the type. Those are converted and a source-scan test
+   (`ErrorStatusBypassGuardTests`) fails the API build on any new one. **Nothing in the contract
+   changed** and nothing new opens on this side; it only widens the routes `FW24` can rely on: the two
+   `…-mapping-by-pattern` creates/updates (duplicate pattern → `DbUniqueViolationError` **with**
+   `errors["Patterns"]` naming the clash — relevant to `F72`'s field-by-field branch), the three tracker
+   heartbeat/sync posts, `PATCH /activity/{id}/archived`, `POST /activity/merge`, every to-do step and
+   toggle-done write, `PATCH /planner-task/{id}/status` and `POST /planner-task/apply-template`. The
+   follow-up repeats the two wrong frontend consequences (*delete the `_silent` wordings*,
+   *`useDeleteConfirmation` can stop guessing*); `F85` still stands as the correction. `FW24` gains the
+   duplicate mapping pattern as a second verification pair.
+
+   **The record below is what was asked and why; it is kept as the evidence trail, but note one thing
+   it gets wrong about this side.** It says the client "is told *This record was changed by someone
+   else*". That is only the `_silent` + `handleHttpCodes` path. The default path is the interceptor,
+   which prefers the server's `message` — so an ordinary 409 has been showing the API's raw English
+   *"Unique constraint violation during Create"* in a Slovak UI (`FW24`, *Contradictions* §120).
+
+   **Client side closed 2026-09-14; the ask itself stays open, and is smaller than written.** Two corrections
+   from the API source: `Text` is unique per account as well (`RoutineTimePeriodConfiguration.cs:13`), and
+   **the bare 409 is a pinned contract** — `RoutineTimePeriodUniqueIndexTests` asserts `Conflict` for both
+   indexes, so the first ask below (validate → 400) means changing that contract and those tests, which is a
+   backend decision, not a client one. The client no longer needs it: `TimePeriodForm` validates name and
+   length against the account's list before submitting (`e39c01c1`) and words the race-only 409 correctly
+   (`todo-routine/B11`). What is still worth asking for is only the **second** bullet — the error *type* in
+   the 409 body — and it is now a nicety for the framework interceptor, blocking nothing.
+
+   **A time period's `lengthInDays` is unique per account, and the API says so as a bare 409 from the
+   database index** — `todo-routine` round 5, found in passing while setting up `B9`'s retest. Confirmed
+   at the source this pass: `RoutineTimePeriodConfiguration.cs:79` is
+   `HasIndex(t => new { t.UserId, t.LengthInDays }).IsUnique()`, so a second 7-day or 30-day period is
+   refused — round 5 hit it twice, body *"Unique constraint violation during Create"*, status 409. The
+   client cannot tell that 409 from the concurrency one or from `B9`'s referential one:
+   `ErrorHandlingFunctions.ts:23-25` switches on status alone and the body is never read, so the user is
+   told *"This record was changed by someone else. Refresh the page and try again."* — and `TimePeriodForm`
+   has already closed (`openAddDialog` awaits `openDialog` *then* calls `createWithResponse`,
+   `RoutineSettingsView.vue:134-143`), so the typed form is gone with it. Two asks, in order of value:
+   - **Validate it, don't let the index throw.** The endpoint already returns a 400 naming the field for
+     other rule violations (`{"timePeriodId":["Time period not found."]}` is what round 5 saw on the item
+     create), so a `lengthInDays` uniqueness check in the validator would surface as a normal field error
+     the form can render inline, with the dialog still open. That is the same shape the create validator
+     uses today, and it makes the client fix trivial.
+   - **Carry the error *type* in the 409 body**, which is `B9`'s own "worth raising upstream" note: the
+     server distinguishes `DbConcurrencyError` from `DbForeignKeyError` from `DbUniqueViolationError`
+     (`DatabaseExceptionUtils.cs:16,25,27`) and flattens all three to a status code at the boundary. With the type on the wire, the framework's
+     interceptor could word each correctly once, and `B9`'s per-call-site `_silent` pattern would not need
+     copying to every endpoint that can answer 409 for a non-concurrency reason. This one is a framework
+     change on the client side too (`ErrorHandlingFunctions.ts`), so it is a two-repo ask.
+   The client-side half — what to do at this call site until either lands — is under *Needs verification*
+   below, because the message on screen has not actually been observed; only the 409 has.
 
 ### §8 — ✅ RESOLVED 2026-09-21 (backend `B19` decided and landed, API `dev` @ `fee54a1`; frontend half landed the same day). Public-holiday names now resolve through a stable key; no country preference
 
