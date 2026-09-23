@@ -785,7 +785,7 @@ it per-user defaults and nothing else (`E2eFixtureSeeder.cs:213`); no seed chang
 | ~~*(unfiled)* sidebar highlights *Desktop tracking* on the Mappings tab, nothing on `/activity-settings/roles`~~ | ✅ **closed 2026-09-23 with `F14`**, and the row's premise was half wrong: `SidebarNavItem.vue:52` decides only **top-level** items (so `/activity-settings/*` did follow the data fix). Children of a group are decided by `SidebarNavGroup.isChildActive`, which let *any* matching sibling suppress a child. On the tracking-settings tabs the data fix alone therefore highlighted **nothing**, not even `distinctEntries`, which the literal path used to highlight. That was a regression the data fix would have shipped. Fixed in the framework (`a29135a`, longest prefix wins). Measured on every tab afterwards | This is exactly why the row said *checked, not assumed*. The same framework fix restored the highlight on `/day-planner/templates/:id`, measured as empty without it. Body in the log under `F14` |
 | ~~`tracking-settings/B5` — re-graded `bug` → `opportunity`, under *Deferred*~~ | ✅ **closed 2026-09-21** — `B24` landed; the *Rule* column and `?coverage=Uncovered` are the mark and the exclude the finding asked for (§19) | the distinct-entries grid is still the raw observation ledger by default (§103); the chip and the toggle are what say "already covered by a rule" |
 
-### `history-review` — one `unverified` (`U1` closed 2026-09-23 after `F27` — see the log)
+### `history-review` — one `unverified` (`U2`; `U1` closed 2026-09-23 after `F27` — see the log)
 
 | finding | what settles it | note |
 | --- | --- | --- |
@@ -796,11 +796,13 @@ it per-user defaults and nothing else (`E2eFixtureSeeder.cs:213`); no seed chang
 its batch's *Adjacent* / *Root cause*, with a verification step): the timeline and calendar views keeping
 the *previous* period's rows on a failed fetch, with an unhandled rejection (`F27`, cases 2 and 3 —
 **closed 2026-09-23**, both routed to a 500 and seen in `F27`'s verification before the fix held); the
-summary/domain cards being `role="button"` with no key handler (`F30`); Detail's bars showing a pointer
-with no click consumer (`F29`); `HistoryPieChart`'s hardcoded dark-theme legend colours (`F31`); and
-`isNarrow` being a dead prop (`F31`). None of them needs a browser to be *believed* — the code paths
-have one outcome — but each batch's verification is where they get *seen*, and a fixing session that
-finds one of them does not reproduce should stop and say so rather than fix it anyway.
+summary/domain cards being `role="button"` with no key handler (`F30`, **closed 2026-09-22**); Detail's
+bars showing a pointer with no click consumer (`F29`, **closed 2026-09-22**); `HistoryPieChart`'s
+hardcoded dark-theme legend colours and `isNarrow` being a dead prop (`F31`, **closed 2026-09-23**; the
+colours were fixed from source, and the dark theme itself was not seen). **All of these are now
+closed**, so the paragraph stays only as the record of how they were carried. None of them needed a
+browser to be *believed*, since the code paths had one outcome, but each batch's verification is where
+they got *seen*.
 
 ### `user-settings` — one re-graded `bug` and four `unverified`, of which three are settled from source (`U1` closed by the 2FA spec, 2026-09-21, which also filed `B3` → `FW25`)
 
@@ -983,7 +985,7 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
   such legend entry, not two. That second half is the collision the rename surfaced; it is fixed in code
   and unobserved, same as everything else on this list.
 
-### `planner-templates` — three `unverified`: one settled from source, two for the mutation pass
+### `planner-templates` — three `unverified`, two now closed (`U3` into `F56`, `U1` by `F83`); `U2` is the one left, and it is carried in the second `planner-templates` section below
 
 - **`U3` — split view's back button has no accessible name. ✅ Settled from source, closes in `F56`.**
   `TemplateSplitView.vue:5-11` is `<VBtn icon="arrow-left" …>` with no `aria-label`, no `title` and no
@@ -991,7 +993,10 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
   name. There is nothing a browser would add — the unit's own rule (*"eval the button the same way
   A1/A3 were confirmed"*) would return the same `{text: "", aria: null, title: ""}` it already got for
   the pin. Folded as row 4 of `F56` rather than left waiting for a refile as "A4".
-- **`U1` — the header stat line excludes background tasks, never exercised.** Stands as `unverified`;
+- ~~**`U1` — the header stat line excludes background tasks, never exercised.**~~ ✅ **Closed
+  2026-09-23 by `F83`.** The exclusion was confirmed live against a created-and-deleted background
+  task, and the header now reads *"N tasks (+M background)"*. The row's prediction (`polish`, a
+  suffix) is what shipped. Body in the log under `F83`. The original row follows, for the record:
   it is a seed-shape gap (all twelve seeded template tasks are `isBackground: false`) and the
   behaviour is source-certain and deliberate (`TemplateDayPlannerView.vue:178-182` filters
   `nonBgTasks` before counting). What would settle it — **not a seed ask** (CLAUDE.md's *Mutating
@@ -1035,7 +1040,7 @@ every user takes. Not batched with `F43`/`F44` (different cause); would be its o
 | `B1` — numeric and date range filters "silently ignored server-side" on both grids | Restart the local API on a build carrying `B11`, then re-run the three cases: `/leisure/bucket-list?minComfortZoneStep=5` (expect zero rows), `/leisure/memory-anchors?minRating=9` (expect one), `?year=2025` (expect zero) | ⚠️ **Re-graded `bug` → not-a-defect, pending that retest** (*Contradictions* §117). Read at the source this pass, all five fields are applied: `GridActivityBucketListProfileEndpoint.ApplyCustomFiltering` filters `MinComfortZoneStep`/`MaxComfortZoneStep`, `GridMemoryAnchorEndpoint` filters `MinRating`/`AnchorMonth`/`AnchorYear`. Round 2's reconfirmation (2026-09-15) ran against the pre-`B11` local build — the unit's **own round 3** records that it did not restart the backend until 2026-09-16. The `year`/`month` half is additionally explained by `F60`: the client sent those names while the server reads `anchorYear`/`anchorMonth`, which is the rename `F60` shipped and verified. All five cases are accounted for; none is an open server gap |
 | ~~`U1`, `U2`~~ | ✅ both closed — `U1` exercised live by round 2 (create → *I did this* → 201 → the row flips to *Experienced*, progress 1→2), `U2` settled from source in the thirteenth pass and re-confirmed live by round 2's delete. Bodies in the log | — |
 
-### `leisure-projects` — two `unverified`, both blocked on the same thing
+### `leisure-projects` — one `unverified` left (`U2`); `U1` settled 2026-09-21
 
 | finding | what settles it | note |
 | --- | --- | --- |
@@ -1125,8 +1130,8 @@ cell, so there is nothing to ship together.)
 
 `todo-lists/O1` remains `resolved` (round 4). **`history-review` filed no `opportunity` finding** — its
 tally line says `opportunity 0` and the body agrees. Two things it *could* have filed as one, recorded here
-so Phase 4 does not have to rediscover them: `HistoryPieChart.vue`'s `isNarrow` prop is the unfinished
-half of a responsive layout (`F31` takes it), and the Detail view's bars have no click consumer at all
+so Phase 4 does not have to rediscover them: `HistoryPieChart.vue`'s `isNarrow` prop was the unfinished
+half of a responsive layout (`F31` finished it 2026-09-23), and the Detail view's bars have no click consumer at all
 (`F29` names it) — a drill-*through* from a day's window to the timeline filtered to that window would be
 the natural use, and the `activityClick` payload already carries the window. Neither is an opportunity
 finding by the template's definition; both are noted.
