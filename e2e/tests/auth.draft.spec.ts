@@ -85,15 +85,22 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			const privacyLink = page.getByRole('link', { name: 'Privacy Policy' })
 			await expect(termsLink).toHaveAttribute('href', '/legal/terms')
 			await expect(privacyLink).toHaveAttribute('href', '/legal/privacy')
+			const popup = page.waitForEvent('popup')
 			await termsLink.click()
-			await expect(page).toHaveURL(/\/legal\/terms$/)
+			await expect(await popup).toHaveURL(/\/legal\/terms$/)
 		})
 
-		// P1: legal links open in the same tab, so the whole form is lost on back-navigation.
-		test.fixme(
-			'the form retains typed values after visiting a legal link and navigating back (findings.md P1)',
-			async () => {},
-		)
+		// P1 / FW13: the legal links open a new tab, so the half-filled form is never unmounted.
+		test('the form keeps typed values when a legal link is opened (findings.md P1)', async ({ page }) => {
+			await page.goto('/registration')
+			const email = page.getByRole('textbox', { name: 'Email' })
+			await email.fill('someone@example.com')
+			const popup = page.waitForEvent('popup')
+			await page.getByRole('link', { name: 'Privacy Policy' }).click()
+			await expect(await popup).toHaveURL(/\/legal\/privacy$/)
+			await expect(page).toHaveURL(/\/registration$/)
+			await expect(email).toHaveValue('someone@example.com')
+		})
 
 		// B2: the mismatch message is a raw, untranslated i18n key today.
 		test.fixme(
@@ -105,7 +112,7 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 		// server decides), and since FW14 the codes are shown after the QR rather than discarded. The
 		// throwaway this creates is not a fixture row: it is unconfirmed, can sign in nowhere, and the next
 		// run's seed wipes it. `/auth/register` has its own 5/min throttle bucket, separate from login's —
-		// one hit per run. The settings-side enrolment is two-factor.spec.ts.
+		// two hits per run (the account, then the duplicate). The settings-side enrolment is two-factor.spec.ts.
 		test('completing registration with 2FA shows the QR with its key, then the issued recovery codes (findings.md U1 / _fix-queue.md FW14)', async ({
 			page,
 		}) => {
@@ -150,6 +157,19 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			// Then the sign-in form, with the address carried over (U5).
 			await expect(page).toHaveURL(/\/login$/)
 			await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue(email)
+
+			// The same address again is a 409, worded as such — not the generic conflict sentence the
+			// interceptor-then-catch pair used to leave on screen (FW13). Second `/auth/register` hit.
+			await page.goto('/registration')
+			await page.getByRole('textbox', { name: 'Email' }).fill(email)
+			await page.getByRole('textbox', { name: 'New password', exact: true }).fill('ThrowAway-Pass123!')
+			await page.getByRole('textbox', { name: 'Confirm new password' }).fill('ThrowAway-Pass123!')
+			await page.getByRole('checkbox', { name: /I agree to the Terms and conditions/ }).check()
+			const duplicate = page.waitForResponse(r => r.url().endsWith('/api/auth/register'))
+			await page.getByRole('button', { name: 'Register' }).click()
+			expect((await duplicate).status()).toBe(409)
+			await expect(page.getByRole('status').filter({ hasText: 'An account with this email already exists' })).toBeVisible()
+			await expect(page.getByText('changed by someone else')).toHaveCount(0)
 		})
 	})
 
