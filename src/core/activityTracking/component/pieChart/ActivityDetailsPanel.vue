@@ -4,11 +4,11 @@
 			<span>{{ headerText }}</span>
 			<VBtn
 				v-if="mode === 'domain'"
-				icon="mdi-close"
+				icon="fas fa-xmark"
 				variant="text"
 				size="small"
 				density="compact"
-				:aria-label="$t('activityTracking.pieChart.closeDomainDetails')"
+				:ariaLabel="$t('activityTracking.pieChart.closeDetails')"
 				@click="emit('close')"
 			/>
 		</VCardTitle>

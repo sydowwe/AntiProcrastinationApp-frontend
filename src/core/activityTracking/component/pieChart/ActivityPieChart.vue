@@ -7,6 +7,7 @@
 		/>
 
 		<VRadioGroup
+			v-if="showViewMode"
 			v-model="viewMode"
 			inline
 			density="comfortable"
@@ -41,9 +42,16 @@
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { OTHER_DOMAIN, type PieSegment } from './PieSegment.ts'
 
-	const props = defineProps<{
+	const {
+		domains,
+		selectedDomain,
+		showViewMode = true,
+	} = defineProps<{
 		domains: PieSegment[]
 		selectedDomain: string | null
+		// Off for a source with no Active/Background split (Android) — the radio would re-render the
+		// same pie whichever metric is picked.
+		showViewMode?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -58,14 +66,14 @@
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
 	const chartOption = computed<EChartsOption>(() => {
-		const data = props.domains.map(segment => ({
+		const data = domains.map(segment => ({
 			name: segment.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : segment.domain,
 			value: segment.seconds,
 			itemStyle: {
 				color: segment.color,
 			},
 			// Select state
-			selected: props.selectedDomain === segment.domain,
+			selected: selectedDomain === segment.domain,
 		}))
 
 		return {
@@ -92,7 +100,7 @@
 					fontWeight: 300,
 				},
 				formatter: (name: string) => {
-					const segment = props.domains.find(
+					const segment = domains.find(
 						d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === name,
 					)
 					if (segment) {
@@ -140,7 +148,7 @@
 	function handleChartClick(params: any) {
 		if (!params.data) return
 
-		const clickedDomain = props.domains.find(
+		const clickedDomain = domains.find(
 			d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === params.data.name,
 		)
 
@@ -152,7 +160,7 @@
 		}
 
 		// Toggle selection
-		if (props.selectedDomain === clickedDomain.domain) {
+		if (selectedDomain === clickedDomain.domain) {
 			emit('segmentClick', null)
 		} else {
 			emit('segmentClick', clickedDomain.domain)

@@ -94,9 +94,9 @@
 | F42 | ✅ **FIXED 2026-09-22** — `/day-planner/settings` active tab is not in the URL — a `?tab=` query, absent for the default, through the new `dayPlanner/composable/useQueryParamRef.ts` (one ref ↔ one param, validated on read, `router.replace`, writes from one tick merged) | app | `planner-day/B6` | trivial |
 | F43 | ✅ **FIXED 2026-09-22** (malformed date → today in place, a *Day not available* alert for an unprovisioned one, the watcher steps back to the loaded day; body in the log) — `/day-planner/:date` with a malformed or unprovisioned date: two unguarded calendar fetches (`onMounted`'s `Promise.all`, and `useDayNavigation`'s `viewedDate` watcher) leave a blank header, an unhandled rejection and — on the second — a header for the *previous* day under the new URL | app | `planner-day/B5` (date half; the task half is settled, no defect) | low |
 | F44 | ✅ **FIXED 2026-09-23**, in `FW16`'s pointer-bump commit — Calendar "Days to show" and the Range/Duration configuration do not round-trip in the URL. `days=`, `range=duration&anchor=&from=&unit=&qty=`, `range=range&from=&to=`, `month` only in month mode, each absent at its default; hydrated at setup and validated field by field. `useCalendarUrlState` now has **one writer** for every key it owns (push only when `month` changed). Surfaced `F86`. Body in the log | app (**after `FW16`**) | `planner-day/B3` (app half) | med |
-| F46 | The pie-chart detail panel's close button was hand-rolled three times and drifted: `mdi-close` in a FontAwesome-only app on the web panel (blank square + console error), no accessible name at all on the desktop panel, and a "Close domain details" label on the unified panel whose items are domains, products *and* apps — one shared key, one identical button | app (`src/core/activityTracking/component/`) | `tracking-dashboards/B1`, `A2` | trivial |
-| F47 | ~~Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`~~ **✅ landed 2026-09-21**, folded into `B23`'s frontend half (§18): `AndroidAppDetailsPanel.vue` renders the three instant rows and, under them, the per-app figures `B23` put on the wire — so the *"session count"* half of `B2`'s original pass condition is met too. The close button uses the `pieChart.closeDetails` key `F46` prescribes; `F46` still has to move the other three onto it | app | ~~`tracking-dashboards/B2`~~ (fixed) | low |
-| F48 | The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
+| F46 | ✅ **FIXED 2026-09-23** — all four close buttons on `pieChart.closeDetails` (`F47`'s key; `closeDomainDetails` retired), web icon `fas fa-xmark`, desktop named; `B1`/`A2` specs un-`fixme`d and passing. Was: The pie-chart detail panel's close button was hand-rolled three times and drifted: `mdi-close` in a FontAwesome-only app on the web panel (blank square + console error), no accessible name at all on the desktop panel, and a "Close domain details" label on the unified panel whose items are domains, products *and* apps — one shared key, one identical button | app (`src/core/activityTracking/component/`) | `tracking-dashboards/B1`, `A2` | trivial |
+| F47 | ~~Selecting an app on `/activity-tracking/android` opens no detail — the side panel has no branch on `selectedAppLabel`~~ **✅ landed 2026-09-21**, folded into `B23`'s frontend half (§18): `AndroidAppDetailsPanel.vue` renders the three instant rows and, under them, the per-app figures `B23` put on the wire — so the *"session count"* half of `B2`'s original pass condition is met too. The close button uses the `pieChart.closeDetails` key `F46` prescribes; `F46` moved the other three onto it on 2026-09-23 | app | ~~`tracking-dashboards/B2`~~ (fixed) | low |
+| F48 | ✅ **FIXED 2026-09-23** — `ActivityPieChart` `showViewMode` (Android passes `false`); the timeline's *Background* legend entry derived from non-empty secondary lanes; *Split* kept (it splits time, not lanes). Was: The Android dashboard renders two controls for an Active/Background split its source does not have: the pie's Total/Active/Background radio is a **no-op** (`pieSegments` reads only `totalSeconds`; the DTO has no split), and the timeline's Active/Background legend labels a lane that is always empty | app | *(unfiled — source-certain + `tracking-dashboards.draft.spec.ts:103-105`'s own observation)* | low |
 | F49 | ✅ **FIXED 2026-09-22** (with `F29`) — roles and states through attrs at every call site: range presets `radiogroup` "Date range" + `radio`/`aria-checked`; source chips `button` + `aria-pressed`; todo priorities `group` "Priority" + `checkbox`/`aria-checked`, due pair `radiogroup` "Due" + `radio`, *Clear filters* `button`; repeating-task day / date / day-type chips `button` + `aria-pressed` (inline `cursor: pointer` dropped — `v-chip--link` sets it); duration chips in a `radiogroup` "Duration" as `radio`s. Second tier (six action chips incl. `ExperiencedCell`, `MemoryAnchorTable`, `NowBar`) got `role="button"`. Arrow keys deliberately not wired. Verified live on `/activity-tracking/unified`, `/todo-list/13001`, both planner dialogs | app (`activityTracking`, `todoList`, `dayPlanner`, `leisure`, `home`) | `tracking-dashboards/A1`, `leisure-backlog-picker/A1 (round 2)` (+ the unfiled twins) | low-med |
 | F50 | The Compare Templates dialog is empty every time — **two** unkeyed `Promise.all` fan-outs from one api instance (`fetchById` ×2, then `fetchFiltered` ×2), each cancelling its own sibling; the finding's fix closes only the first; folds `B3`'s dead *Confirm* button (`:showConfirmBtn` is not a `MyDialog` prop), same file | app (`TemplateComparisonDialog.vue`) | `planner-templates/X1`, `B3` | low |
 | F51 | The template planner's side panel at `<md` is the **open** panel squeezed to 400 × 16 px and pushed off-screen — not a broken "opened" state — and the template planner has **no control that reopens it** once the X is tapped (`panelOpen` is only ever set `false`); the shell is shared with `/day-planner/:date`, whose mobile layout is a different, unchecked shape | app (`PlannerSidePanelShell.vue`, `TemplateDayPlannerView.vue`, `TemplatePlannerHeader.vue`) | `planner-templates/X2` (+ the inventory's misread "collapsed pill") | med |
@@ -1194,107 +1194,9 @@ Vuetify's own markup.
 
 <!-- F44 (calendar Days to show and Range/Duration configuration in the URL — `planner-day/B3`, app half) fixed 2026-09-23 in FW16's pointer-bump commit — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. The Back-button gap it surfaced was filed and fixed as F86 the same day. -->
 
-## F46. The pie-chart detail panel's close button was hand-rolled three times and drifted — wrong icon set on web, no name on desktop, a domain-only label on unified
+<!-- F46 (pie-chart detail panel close button — one `pieChart.closeDetails` key on all four, `mdi-close` → `fas fa-xmark` — `tracking-dashboards/B1`, `A2`) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-- **Scope:** app-side `src/core/activityTracking/component/pieChart/ActivityDetailsPanel.vue`,
-  `component/desktop/DesktopProcessDetailsPanel.vue`, `component/unified/UnifiedPieChartSection.vue`,
-  `_locales/activityTracking.{sk,en}.ts`
-- **Closes:** `tracking-dashboards/B1`, `tracking-dashboards/A2`
-- **Root cause — confirmed, and the unit's own guess for both is exact.** Three panels, three copies of
-  the same six-line `VBtn`, each missing a different thing:
-  | panel | icon | name | observed |
-  | --- | --- | --- | --- |
-  | web — `ActivityDetailsPanel.vue:5-13` | `icon="mdi-close"` (`:7`) — a Material Design name in a FontAwesome-only app (CLAUDE.md *ICONS*) | `:aria-label="$t('activityTracking.pieChart.closeDomainDetails')"` (`:11`) ✓ | blank square, console *"Could not find one or more icon(s) {prefix: fas, iconName: mdi-close}"* (`B1`, DOM + console + source) |
-  | desktop — `DesktopProcessDetailsPanel.vue:5-11` | `icon="fas fa-xmark"` ✓ | **none** — no `aria-label`, no `title`, no text | `{"hasBtn":true,"ariaLabel":null}` (`A2`, eval + screenshot) |
-  | unified — `UnifiedPieChartSection.vue:69-75` | `icon="fas fa-xmark"` ✓ | `:ariaLabel="$t('activityTracking.pieChart.closeDomainDetails')"` ✓ | not opened by the unit; source-read only — and the label is the wrong noun: this panel's items are domains, desktop products *and* Android apps (`UnifiedActivityItem.label`), so *"Close domain details"* on *"Visual Studio Code"* is a smaller version of the same drift |
-  The FontAwesome plugin cannot resolve `mdi-*` and renders an empty `<i class="v-icon">` — the button
-  keeps its 28 px hit area and its name, so it is operable blind and by screen reader and invisible to
-  everyone else. `grep -r 'mdi-' src/core src/_common` finds **no other consumer**; `B1` is the only
-  one in the tree.
-- **Files:** `ActivityDetailsPanel.vue:7,11`; `DesktopProcessDetailsPanel.vue:5-11`;
-  `UnifiedPieChartSection.vue:70`; `activityTracking.en.ts:89` / `.sk.ts:89`
-- **What to change:** One key, one button. Add `activityTracking.pieChart.closeDetails` — *"Close
-  details"* / *"Zavrieť detaily"* — and use it on all three (and on `F47`'s fourth). Retire
-  `closeDomainDetails` in the same commit, or keep it as the web panel's more specific label and add
-  `closeProcessDetails` for desktop (*"Close process details"* / *"Zavrieť detaily procesu"*) — either
-  is fine; **what is not fine is a fourth hand-typed variant**. Then `icon="fas fa-xmark"` on
-  `ActivityDetailsPanel.vue:7`. While in the three files: the web panel binds `:aria-label`, the
-  unified one `:ariaLabel` — pick the camelCase form (CLAUDE.md *Props*) for all three so the next
-  grep finds them together. Consider extracting the button as `DetailsPanelCloseBtn.vue` in
-  `component/pieChart/` — it is exactly the "diverged for no reason" component the unit's `R2` premise
-  describes and three copies is already one too many — but a shared key alone closes both findings.
-- **Do not change:** `ActivityPieChart.vue` or any pie-section layout; `DesktopPieChartSection.vue`'s
-  `detailsLoading` skeleton (it is the reason the desktop panel's close button appears a beat later
-  than the others — by design, it waits for `process-details`). Do not "fix" the web panel by copying
-  the desktop one — that trades a missing glyph for a missing name.
-- **Verification:** `B1`'s `Verify:` block — `/activity-tracking`, click a *View details for …* card,
-  the top-right of the panel shows an X glyph and `playwright-cli console error` carries no *"Could not
-  find one or more icon(s)"*. `A2`'s `Verify:` block — `/activity-tracking/desktop`, click a *View
-  details for …* card, `getByRole('button', { name: /Close .*details/ })` resolves inside the panel.
-  Then `/activity-tracking/unified`, select *Visual Studio Code* and read the close button's name.
-  **The draft spec pins the old key**: `tracking-dashboards.draft.spec.ts:119`
-  (`getByRole('button', { name: 'Close domain details' })`, inside the `B1` `fixme`) — update the
-  locator to whatever this batch chooses when un-`fixme`-ing it. SK as well as EN.
-- **Risk:** None. Two attributes, one key; every consumer is in this module.
-
-## F48. The Android dashboard renders two controls for an Active/Background split its source does not have — a no-op metric radio on the pie, and a legend for a lane that is always empty
-
-- **Scope:** app-side `src/core/activityTracking/component/pieChart/ActivityPieChart.vue`,
-  `component/android/AndroidPieChartSection.vue`, `component/timeline/ActivityTimeline.vue`,
-  `view/AndroidActivityDashboard.vue`
-- **Closes:** *(unfiled)*. Two observations the unit made and did not file as findings — the inventory
-  lists *Total / Active / Background* as a shared control whose effect is *"changes which metric the pie
-  chart slices represent"* (`tracking-dashboards/inventory.md:31`) and does not mark it as differing on
-  Android (`:185-188`); the draft spec's own comment records that *"the Activity Timeline's own
-  Active/Background legend (shared markup with the other dashboards) renders the word 'Background'
-  unconditionally"* on `/activity-tracking/android` (`tracking-dashboards.draft.spec.ts:103-105`), and
-  scopes its assertion around it. The legend half is **observed** (that comment is the observation);
-  the radio half is **source-certain, unobserved** — nobody clicked *Active* on the Android pie.
-  Batched rather than parked under rule 5 on the `F27`/`F43` precedent: same file as `F47`, same
-  cause, and the fix is a prop with a default that changes nothing for the other three dashboards.
-- **Root cause — confirmed from source.** The Android dashboard is the web dashboard's component tree
-  with Android fetchers plugged in, and two of those components carry a two-metric assumption:
-  1. **`ActivityPieChart.vue:9-28`** renders the `VRadioGroup` (*Total / Active / Background*)
-     unconditionally, bound to a `viewMode` model every section owns. Web and desktop and unified read
-     it in `pieSegments` (`ActivityPieChartSection.vue:104-110`, `DesktopPieChartSection.vue:152-158`,
-     `UnifiedPieChartSection.vue:214-219`). **Android does not** — `AndroidPieChartSection.vue:114-127`
-     maps `seconds: a.totalSeconds` with no reference to `viewMode` — and could not: the DTO has no
-     `activeSeconds`/`backgroundSeconds` (`AndroidAppPieData.ts`), and the server's two fields are
-     identical (§79). Clicking *Active* or *Background* on that view re-renders the same pie.
-  2. **`ActivityTimeline.vue:30-39`** renders the *Active / Background* legend whenever `laneLabels`
-     is absent, i.e. on every per-source dashboard. Android passes `detailSessions: []` and
-     `backgroundSessions: []` with the comment *"Android reports a single lane — it has no detail or
-     background sessions"* (`AndroidActivityDashboard.vue:186-191`), so the legend's second entry
-     describes a hatched style that never appears on that view. `toStackedBarsWindow` (`:136-147`)
-     hardcodes `backgroundSeconds: 0` for the same reason, and the summary cards already handle it
-     correctly (`ActivityDomainCard.vue:33-65` hides a column whose stat is null — the unit noted this
-     as the *right* behaviour, `inventory.md:193`).
-- **Files:** `ActivityPieChart.vue:9-28` (the radio; wrap in `v-if`), `:44-53` (a prop);
-  `AndroidPieChartSection.vue:49-54` (pass it), `:112` (`viewMode` can stay, always `'total'`);
-  `ActivityTimeline.vue:30-39` (the legend), `:148-165` (props); `AndroidActivityDashboard.vue:30-41`
-  (pass it)
-- **What to change:** On `ActivityPieChart`, a `showViewMode?: boolean` prop defaulting to `true` (or
-  `metrics?: ('total'|'active'|'background')[]` if a two-option radio is ever wanted — not now), and
-  `v-if` on the `VRadioGroup`; Android passes `false`. On `ActivityTimeline`, either derive it — hide
-  the *Background* legend entry when `backgroundSessions.length === 0 && detailSessions.length === 0`
-  — or take an explicit `singleLane?: boolean`; **derive it**, because a web day with no background
-  sessions also does not need a legend entry for a style not on screen, and the derivation has no
-  false positives (the entry is decorative when the lane is empty either way). Check the *Single /
-  Split* toggle (`ActivityTimeline.vue:43-62`) on Android while there: with one lane, *Split* has
-  nothing to split — if it renders an empty second row, hide it under the same condition.
-- **Do not change:** `AndroidPieTotals`/`AndroidAppPieData` — do not invent an `activeSeconds` that
-  copies `totalSeconds` to make the radio "work"; the honest state is no radio. Not the unified
-  timeline's `laneLabels` branch (`:13-29`). Not `viewMode`'s model contract on the other three
-  sections.
-- **Verification:** `/activity-tracking/android` — no *Total / Active / Background* radio in the
-  snapshot, the legend beside *Activity Timeline* shows *Active* only (or nothing), the pie renders
-  the same slices as before. `/activity-tracking`, `/desktop`, `/unified` — radio present, three
-  options, *Active* still re-slices the pie; legend unchanged. `tracking-dashboards.draft.spec.ts:101-107`
-  (*"Top Apps cards with no Background row"*) keeps passing and can drop its scoping workaround once
-  the legend word is gone. SK as well as EN is not needed — no new strings.
-- **Risk:** None for the other dashboards (defaults preserve today's render). The one thing to get
-  right is the `viewMode` model on Android: leave it bound and `'total'` so `ActivityPieChart`'s
-  `required: true` model is satisfied.
+<!-- F48 (Android pie's no-op Total/Active/Background radio + the timeline's always-empty Background legend entry — unfiled) fixed 2026-09-23 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## F50. The Compare Templates dialog is empty every time — two unkeyed fan-outs, and the finding's fix closes one
 

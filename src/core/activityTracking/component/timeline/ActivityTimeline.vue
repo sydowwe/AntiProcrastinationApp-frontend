@@ -32,7 +32,12 @@
 							<div class="legend-color legend-active" />
 							<span>{{ $t('activityTracking.viewMode.active') }}</span>
 						</div>
-						<div class="legend-item">
+						<!-- Only when that lane has something in it: Android never does (it reports one lane),
+							and a web day with no background sessions shows no hatched style to name. -->
+						<div
+							v-if="hasSecondaryLanes"
+							class="legend-item"
+						>
 							<div class="legend-color legend-background" />
 							<span>{{ $t('activityTracking.viewMode.background') }}</span>
 						</div>
@@ -176,6 +181,8 @@
 		const midTime = (props.from.getTime() + props.to.getTime()) / 2
 		return new Date(midTime)
 	})
+
+	const hasSecondaryLanes = computed(() => props.detailSessions.length > 0 || props.backgroundSessions.length > 0)
 
 	const stackedBackgroundSessions = computed(() => {
 		return calculateWaterfallStack(props.backgroundSessions)

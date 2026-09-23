@@ -88,7 +88,6 @@ const messages = {
 		playingSound: `Prehrávanie zvuku:`,
 		monitorBreakdown: `Rozdelenie podľa monitora:`,
 		monitor: `Monitor {n}:`,
-		closeDomainDetails: `Zavrieť detaily domény`,
 		closeDetails: `Zavrieť detaily`,
 		shareOfSpan: `Podiel na období:`,
 		packageName: `Balík:`,

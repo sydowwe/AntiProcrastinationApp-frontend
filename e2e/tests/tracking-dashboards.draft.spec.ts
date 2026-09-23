@@ -39,10 +39,15 @@ test.describe('Web-extension dashboard (/activity-tracking)', () => {
 
 	test('URL-seeded date range survives a reload', async ({ authenticatedPage }) => {
 		await authenticatedPage.goto('/activity-tracking?date=2026-09-08&dateTo=2026-09-14&window=240')
-		await authenticatedPage.getByText('08.09.2026').waitFor({ state: 'visible' })
+		// The dates are input values, not text — `getByText` never matches them. The fixture accounts are
+		// `locale: 'EN'`, so the picker renders MM/DD/YYYY.
+		const dateFrom = authenticatedPage.getByRole('textbox', { name: 'Date from' })
+		const dateTo = authenticatedPage.getByRole('textbox', { name: 'Date to' })
+		await expect(dateFrom).toHaveValue('09/08/2026')
 		await authenticatedPage.reload()
 		await expect(authenticatedPage).toHaveURL(/date=2026-09-08.*dateTo=2026-09-14/)
-		await expect(authenticatedPage.getByText('08.09.2026')).toBeVisible()
+		await expect(dateFrom).toHaveValue('09/08/2026')
+		await expect(dateTo).toHaveValue('09/14/2026')
 	})
 
 	test('an unreachable date renders the empty state, not an error', async ({ authenticatedPage }) => {
@@ -100,11 +105,12 @@ test.describe('Android dashboard (/activity-tracking/android)', () => {
 
 	test('shows "Top Apps" cards with no Background row', async ({ authenticatedPage }) => {
 		await expect(authenticatedPage.getByRole('heading', { name: 'Top Apps' })).toBeVisible()
-		// Scoped to the first Top Apps card specifically — the Activity Timeline's own Active/Background
-		// legend (shared markup with the other dashboards) renders the word "Background" unconditionally
-		// even though Android sessions never populate that lane.
 		const firstCard = authenticatedPage.getByRole('button', { name: /^View details for/ }).first()
-		await expect(firstCard.getByText('Background', { exact: true })).toHaveCount(0)
+		await firstCard.waitFor({ state: 'visible' })
+		// F48: no Background anywhere — not on the cards, not in the timeline legend (Android reports
+		// one lane), and no Total/Active/Background radio on the pie (the DTO has no split).
+		await expect(authenticatedPage.locator('#app').getByText('Background', { exact: true })).toHaveCount(0)
+		await expect(authenticatedPage.getByRole('radio', { name: 'Active' })).toHaveCount(0)
 	})
 
 	// findings.md B2 (F47 + backend B23): selecting an app opens that app's own detail — the instant rows
@@ -137,14 +143,14 @@ test.describe('Android dashboard (/activity-tracking/android)', () => {
 })
 
 test.describe('Findings from the inventory pass — semantic tier, not yet fixed', () => {
-	// docs/views/tracking-dashboards/findings.md B1: ActivityDetailsPanel.vue uses icon="mdi-close" in a
-	// FontAwesome-only app, so the close button on the web dashboard's domain-detail panel renders no icon.
-	test.fixme(
+	// docs/views/tracking-dashboards/findings.md B1 (fixed by F46): the web panel's close button used
+	// icon="mdi-close" in a FontAwesome-only app and rendered no glyph.
+	test(
 		'B1: the domain-detail close button on /activity-tracking renders a visible icon',
 		async ({ authenticatedPage }) => {
 			await authenticatedPage.goto('/activity-tracking')
 			await authenticatedPage.getByRole('button', { name: /^View details for/ }).first().click()
-			const closeButton = authenticatedPage.getByRole('button', { name: 'Close domain details' })
+			const closeButton = authenticatedPage.getByRole('button', { name: 'Close details' })
 			await expect(closeButton.locator('svg')).toBeVisible()
 		},
 	)
@@ -166,14 +172,13 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 		await expect(desktop).toHaveAttribute('aria-pressed', 'true')
 	})
 
-	// findings.md A2: DesktopProcessDetailsPanel.vue's close VBtn has icon="fas fa-xmark" (renders fine)
-	// but no aria-label/title — an unnameable icon-only control.
-	test.fixme(
+	// findings.md A2 (fixed by F46): DesktopProcessDetailsPanel.vue's close VBtn had no aria-label/title.
+	test(
 		'A2: the process-detail close button on /activity-tracking/desktop has an accessible name',
 		async ({ authenticatedPage }) => {
 			await authenticatedPage.goto('/activity-tracking/desktop')
 			await authenticatedPage.getByRole('button', { name: /^View details for/ }).first().click()
-			await expect(authenticatedPage.getByRole('button', { name: /close/i })).toBeVisible()
+			await expect(authenticatedPage.getByRole('button', { name: 'Close details' })).toBeVisible()
 		},
 	)
 })

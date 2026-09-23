@@ -7,6 +7,7 @@
 				variant="text"
 				size="small"
 				density="compact"
+				:ariaLabel="$t('activityTracking.pieChart.closeDetails')"
 				@click="emit('close')"
 			/>
 		</VCardTitle>

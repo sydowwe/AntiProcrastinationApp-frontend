@@ -50,6 +50,7 @@
 						v-model="viewMode"
 						:domains="pieSegments"
 						:selectedDomain="selectedAppLabel ?? ''"
+						:showViewMode="false"
 						@segmentClick="onSegmentClick"
 					/>
 				</div>
@@ -132,6 +133,8 @@
 
 	const selectedAppLabel = defineModel<string | null>('selectedAppLabel', { default: null })
 
+	// Always 'total' — the DTO has no Active/Background split, so the radio is hidden (F48); the ref
+	// only satisfies `ActivityPieChart`'s required model.
 	const viewMode = ref<'total' | 'active' | 'background'>('total')
 
 	const pieSegments = computed<PieSegment[]>(() => {

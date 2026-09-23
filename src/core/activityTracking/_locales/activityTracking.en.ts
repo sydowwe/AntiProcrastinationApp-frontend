@@ -88,7 +88,6 @@ const messages = {
 		playingSound: `Playing sound:`,
 		monitorBreakdown: `Monitor breakdown:`,
 		monitor: `Monitor {n}:`,
-		closeDomainDetails: `Close domain details`,
 		closeDetails: `Close details`,
 		shareOfSpan: `Share of period:`,
 		packageName: `Package:`,

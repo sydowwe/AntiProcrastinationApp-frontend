@@ -67,7 +67,7 @@
 							<div class="d-flex align-center justify-space-between mb-2">
 								<span class="font-weight-medium text-truncate">{{ selectedDetails.label }}</span>
 								<VBtn
-									:ariaLabel="$t('activityTracking.pieChart.closeDomainDetails')"
+									:ariaLabel="$t('activityTracking.pieChart.closeDetails')"
 									icon="fas fa-xmark"
 									size="x-small"
 									variant="text"
