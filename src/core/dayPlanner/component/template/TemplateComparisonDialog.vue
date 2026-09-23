@@ -3,7 +3,7 @@
 		v-model="dialog"
 		:title="$t('planner.template.compareTemplatesTitle')"
 		maxWidth="1000px"
-		:showConfirmBtn="false"
+		:hasConfirmBtn="false"
 	>
 		<div
 			v-if="loading"
@@ -15,7 +15,7 @@
 			/>
 		</div>
 		<div
-			v-else
+			v-else-if="sides.every(side => side.template)"
 			class="d-flex ga-4"
 		>
 			<div
@@ -108,24 +108,39 @@
 	const { fetchFiltered } = useTemplatePlannerTaskCrud()
 
 	const loading = ref(false)
-	const sides = ref<{ template: TaskPlannerDayTemplate | null; tasks: TemplatePlannerTask[] }[]>([
-		{ template: null, tasks: [] },
-		{ template: null, tasks: [] },
-	])
+	const sides = ref<{ template: TaskPlannerDayTemplate | null; tasks: TemplatePlannerTask[] }[]>(emptySides())
 
+	function emptySides() {
+		return [
+			{ template: null, tasks: [] },
+			{ template: null, tasks: [] },
+		]
+	}
+
+	// Both fan-outs come from one api instance each, and both helpers abort their previous in-flight
+	// call unless keyed, so every call carries its template id as `requestKey`. Unkeyed, the first of
+	// each pair was cancelled and the dialog rendered empty.
 	watch(dialog, async open => {
 		if (!open || props.templateIds.length < 2) return
 		loading.value = true
+		// Clear the previous open's pair so a failed load reads as nothing loaded, not as stale data.
+		sides.value = emptySides()
 		try {
-			const [t1, t2] = await Promise.all([fetchById(props.templateIds[0]), fetchById(props.templateIds[1])])
-			const [tasks1, tasks2] = await Promise.all([
-				fetchFiltered(new TemplatePlannerTaskFilter(t1.id, t1.defaultWakeUpTime, t1.defaultBedTime)),
-				fetchFiltered(new TemplatePlannerTaskFilter(t2.id, t2.defaultWakeUpTime, t2.defaultBedTime)),
-			])
+			const [t1, t2] = await Promise.all(
+				props.templateIds.slice(0, 2).map(id => fetchById(id, undefined, { requestKey: id })),
+			)
+			const [tasks1, tasks2] = await Promise.all(
+				[t1, t2].map(t => {
+					const filter = new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime)
+					return fetchFiltered(filter, undefined, { requestKey: t.id })
+				}),
+			)
 			sides.value = [
 				{ template: t1, tasks: tasks1 },
 				{ template: t2, tasks: tasks2 },
 			]
+		} catch {
+			// The interceptor has already shown the error toast; the dialog stays on its empty pair.
 		} finally {
 			loading.value = false
 		}
