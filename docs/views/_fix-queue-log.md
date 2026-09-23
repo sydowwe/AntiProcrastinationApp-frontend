@@ -4322,6 +4322,136 @@
   and both conditions are false, so both sites silently stop handling the 409 they handle today — which
   is why this is blocked rather than merely ordered.
 
+## FW18. `useEntityQuery.fetchById` cancels a sibling id — the 2026-09-11 `useFetchFiltered` bug, one helper over
+
+> ✅ **FIXED 2026-09-23** (`vue_framework` `a939450`, bump `027a8ec0`). Landed **before** `F50`, so
+> `F50` never carried the interim workaround and `A1`'s workaround table did not grow. As written:
+> `fetchById(id, requestConfig?, options?)` and `fetchByField(…, requestConfig?, options?)` take
+> `EntityQueryOptions` = `{ requestKey?: string | number }`. There is one `Map` of controllers per method,
+> a module-level `Symbol` default key and identity-guarded cleanup in `finally`, through one private
+> `runKeyed` helper both methods share. The default is **not** the id, as the body requires.
+> `fetchAll` / `fetchSelectOptions` are unchanged. `docs/api.md` documents the option and amends the
+> `useFetchFiltered` sibling note. The pointer-bump commit rewrites `A1`'s trap and the CLAUDE.md
+> `useEntityQuery` bullet.
+> **Verified:** new `src/_common/api/useEntityQuery.test.ts` (4 tests, passing). Distinct keys → both
+> resolve. No key → the second `fetchById` cancels the first even for another id. Same key → only that
+> key's previous call is cancelled. `fetchByField` is keyed on its own controllers. App-level: `F50`'s
+> `requests` check, below. `vue-tsc --build --force` exit 0, `npm run lint` clean. The `src/` sweep
+> for concurrent `fetchById`/`fetchByField` found only the dialog (`TodoListView.vue:332` was checked, and
+> it is a single call in a `.then`, not a fan-out).
+> **Not verified:** that the map is empty after both settle. That is not observable without exposing
+> internals, and a test for it would pass even without the cleanup (aborting a settled controller is a
+> no-op), so none was written. The cleanup is the line-for-line `useFetchFiltered` shape.
+
+- **Scope:** **[framework]** `src/_common/api/useEntityQuery.ts`, `src/_common/docs/api.md`
+  (submodule commit + pointer bump); app-side in the pointer-bump commit: `prompts/_common/api/A1-request-key-for-sibling-fetch-helpers.md:129-131`
+  and CLAUDE.md's `_common/api/` bullet
+- **Closes:** the framework half of `planner-templates/X1` (`F50` is the app half; `X1` itself closes
+  when the dialog renders, which `F50` achieves without this)
+- **Root cause:** `useEntityQuery.ts:29-42` — one `AbortController` per **method**, `fetchById` calls
+  `fetchByIdController?.abort()` before every request regardless of the id. That is right for a detail
+  view switching ids (latest wins) and wrong for two ids fetched concurrently from one instance: the
+  first rejects with `CanceledError`, and `Promise.all` over the pair rejects — exactly the shape
+  `useFetchFiltered` had until 2026-09-11 and now documents in its own `requestKey` doc-comment
+  (`useFetchFiltered.ts:15-40`, which even uses "a fan-out over ids" as its example). **Two documents
+  say this helper does not have the problem, and both are wrong** (*Contradictions* §85):
+  `prompts/_common/api/A1:129-131` — *"Do not add `requestKey` to `useEntityQuery`. It already holds
+  a separate controller per method … which is the same idea expressed differently"* — conflates
+  per-method with per-call, and CLAUDE.md's `_common/api/` bullet lists the three filtered helpers as
+  the ones that "still hold a single controller per instance" and omits this one. The unit's finding
+  cites *"CLAUDE.md's own documented gotcha"* for `useEntityQuery`; CLAUDE.md documents no such thing,
+  which is how a component written after the `useFetchFiltered` fix reintroduced the bug — the author
+  was told this helper was safe.
+- **Files:** `useEntityQuery.ts:29-42` (`fetchById`; `fetchByField` `:44-59` is the same shape and
+  should take the same option — `fetchAll`/`fetchSelectOptions` take no id and are genuinely
+  latest-wins), `src/_common/docs/api.md`; `A1:129-131`; CLAUDE.md `_common/api/` bullet
+- **What to change:** **Additive, default-preserving — not a semantics change (rule 4 does not bite).**
+  Copy `useFetchFiltered.ts:13,47,54-58,71-76` — a module-level `Symbol` default key, a `Map<key,
+  AbortController>`, an optional third argument `{ requestKey }` on `fetchById` (and `fetchByField`),
+  identity-guarded cleanup in `finally`. Omitting the key must reproduce today's abort-previous
+  behaviour exactly, so every existing caller is untouched. **Do not key by `id` by default** — it
+  looks like the obvious fix, but a detail view that switches ids fast today gets the stale response
+  cancelled for free, and keyed-by-id it would get both responses in arrival order; that is a
+  behaviour change every app would inherit, and it is what rule 4 exists for. Then: update
+  `src/_common/docs/api.md` in the same submodule commit; in the pointer-bump commit, rewrite
+  `A1:129-131` to say `useEntityQuery`'s per-method controllers are *latest-wins per method* and
+  `fetchById`/`fetchByField` now take `requestKey` like the others, and add `useEntityQuery` to the
+  CLAUDE.md bullet's list of helpers that abort their previous call. `F50`'s workaround comes out in
+  the same pointer-bump commit.
+- **Do not change:** the abort itself (`A1` constraint 3 — scope it, do not remove it);
+  `useRequestState.run`'s cancellation re-throw (`:45`) — it is what lets a keyed caller tell a
+  cancel from a failure, and `isRequestCanceled()` depends on it.
+- **Verification:** unit-level in the framework: two `fetchById`s with distinct keys from one instance
+  both resolve; two with the same key (or no key) — the first rejects with a cancel; the map is empty
+  after both settle. App-level: `F50`'s `requests` check after the pointer bump, with the workaround
+  removed. Grep `src/` for other `Promise.all([…fetchById` / `fetchByField` — this pass found only the
+  dialog, but the check is cheap and it is the class, not the instance, that ships.
+- **Risk:** Low — opt-in, and `useFetchFiltered` has carried the identical shape since 2026-09-11 with
+  no regression. It does ship to every app on the framework; the `Symbol` default is what makes that
+  safe.
+
+## F50. The Compare Templates dialog is empty every time — two unkeyed fan-outs, and the finding's fix closes one
+
+> ✅ **FIXED 2026-09-23** (`2bf99399`, after `FW18`'s bump `027a8ec0`, so with no interim workaround).
+> All three edits: **(a)** both `fetchFiltered`s pass `{ requestKey: t.id }`. **(b)** both `fetchById`s
+> pass `{ requestKey: id }` (the post-`FW18` form). **(c)** `:hasConfirmBtn="false"` (`B3`). The optional
+> guard was taken too: `sides` resets to the empty pair on every open, the content renders only
+> `v-else-if` both templates are loaded, and a `catch` stops the error escaping the watcher (the
+> interceptor still toasts). A failed load now shows nothing rather than a nameless template with
+> *0 tasks*.
+> **Verified live** (`playwright-cli`, `/day-planner/templates`, *Home Office* vs *Office Day*): both
+> panels show name, day-type chip, tags, `7:00 - 23:00 · 5 tasks` / `6:30 - 22:30 · 4 tasks` and a
+> populated timeline. `requests` shows exactly two `GET /task-planner-day-template/{20001,20002}` and
+> two `POST /template-planner-task/filter`, all 200, none `ERR_ABORTED`. Only *Cancel* renders. Cancel,
+> then reopen with the same two ids: the same four requests, all 200, both panels populated.
+> `console error` is empty.
+> **Not verified:** the failure path (the empty dialog plus toast on a real 4xx/5xx). It was not
+> provoked, and it is read from code only.
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TemplateComparisonDialog.vue`
+- **Closes:** `planner-templates/X1`; folds **`planner-templates/B3`** (same file, one attribute — see
+  below)
+- **Root cause:** Confirmed in source. `TemplateComparisonDialog.vue:107-108` destructures one
+  `useTaskPlannerDayTemplateTaskCrud()` and one `useTemplatePlannerTaskCrud()`, and the `watch(dialog)`
+  at `:116-132` does two fan-outs from them: `:120` `Promise.all([fetchById(ids[0]), fetchById(ids[1])])`
+  and `:121-124` `Promise.all([fetchFiltered(…t1…), fetchFiltered(…t2…)])`. Both helpers abort their
+  own previous call — `useEntityQuery.ts:35` unconditionally (`fetchByIdController?.abort()`, one
+  controller per *method*, so a second id cancels the first), and `useFetchFiltered.ts:54-56` per
+  `requestKey`, defaulting to one shared key when none is passed — so in each pair the first promise
+  rejects with `CanceledError`, `Promise.all` rejects, `run()` re-throws cancellations by design
+  (`useRequestState.ts:45`), and the `try … finally` at `:119-131` never reaches `sides.value = …`.
+  The two-null default renders the `:00 - :00 · 0 tasks` the unit photographed. **The finding sees
+  only the first pair.** Its suggested fix — key or split the two `fetchById`s — makes `:120` resolve
+  and moves the identical failure to `:122`; the dialog stays empty and the console shows the same
+  error one line down. `TemplateListView.vue:315-326`, in this module, already documents and uses the
+  `requestKey: t.id` form for exactly this fan-out.
+- **`B3`, same file:** `:6` passes `:showConfirmBtn="false"`; `MyDialog`'s prop is `hasConfirmBtn`
+  (`MyDialog.vue:94,110`), so the attribute lands in `$attrs` and a live *Confirm* renders that emits
+  `confirmed` to nobody. The other seven call sites in `src/` spell it correctly — one typo, not a
+  class.
+- **Files:** `TemplateComparisonDialog.vue:6` (`B3`), `:107-108`, `:116-132`
+- **What to change:** Three edits. **(a)** `:121-124` — pass `{ requestKey: t1.id }` / `{ requestKey:
+  t2.id }` as the third argument, the form `TemplateListView.vue:326` uses; the keyed API exists today.
+  **(b)** `:120` — until `FW18` lands, either `await` the two `fetchById`s sequentially (one extra
+  round trip inside a dialog that already shows a spinner) or take a second
+  `useTaskPlannerDayTemplateTaskCrud()` instance for the right-hand side **with a comment naming the
+  cause** in the `aborts its previous` wording `prompts/_common/api/A1` greps for, so that batch's
+  Part 2 finds and retires it. After `FW18`: `fetchById(id, undefined, { requestKey: id })` and delete
+  the workaround in the pointer-bump commit. **(c)** `:6` — `:hasConfirmBtn="false"`. Consider a
+  `catch` that shows the interceptor's toast *and* keeps `sides` on the two-null default behind a
+  `v-if="side.template"` guard, so a real failure reads as "nothing loaded" rather than as a template
+  with no name and no tasks — the current empty-state markup is what made this look like data.
+- **Do not change:** `useEntityQuery.ts` (that is `FW18`, a `vue_framework` commit); the
+  `TemplatePlannerTaskFilter` window (`t.defaultWakeUpTime … defaultBedTime`) — the list view uses the
+  same bounds.
+- **Verification:** `X1`'s `Verify:` block — both panels show name, icon, chips and a populated
+  timeline; **`playwright-cli requests` shows two `GET /task-planner-day-template/{id}` and two `POST
+  /template-planner-task/filter`, none `ERR_ABORTED`** (a clean console proves nothing here —
+  cancellations are not logged, `A1`'s *Traps*). Then `B3`'s: only *Cancel* renders. Open → Cancel →
+  reopen with the *same* two ids, since the watcher refetches on every open.
+- **Risk:** None beyond the dialog. If (b) takes the second-instance route, `A1`'s workaround table
+  grows by one row until `FW18` retires it — say so in the commit.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
