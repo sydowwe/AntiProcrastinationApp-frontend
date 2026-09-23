@@ -169,8 +169,8 @@ test.describe('Two-factor authentication (/user/settings enrolment → /login co
 		let dialog = await signInToCodeDialog(page, seed)
 		await expect(page).toHaveURL('/login')
 
-		// Escape does not dismiss it: `MyDialog` is `persistent` by default (FW1 — undecided, so this
-		// pins today's default rather than a fix). Cancel is the way out.
+		// Escape does not dismiss it: a dialog holding input stays `persistent` (FW1 — only confirmations
+		// and input-less dialogs close on Escape). Cancel is the way out.
 		await page.keyboard.press('Escape')
 		await expect(dialog).toBeVisible()
 

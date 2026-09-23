@@ -48,7 +48,7 @@ test.describe('Stopwatch (/activity-history/stopwatch)', () => {
 		await expect(dialog).toBeVisible()
 		await expect(dialog.getByText(/Confirm saving activity "Bug Fixing"/)).toBeVisible()
 
-		// Escape must NOT close it — same framework `persistent=true` default as _shell finding A1.
+		// Escape must NOT close it — an `openDialog()` form keeps `MyDialog`'s persistent default (FW1).
 		await authenticatedPage.keyboard.press('Escape')
 		await expect(dialog).toBeVisible()
 
