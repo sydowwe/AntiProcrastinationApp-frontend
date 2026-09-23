@@ -41,6 +41,16 @@
 						:text="$t('planner.template.notFoundText', { id: notFoundId })"
 					>
 						<template #append>
+							<!-- The alert replaces TemplatePlannerHeader, and with it the header's reopen toggle —
+							     so below `md` a panel closed here stayed closed until a reload (F51). -->
+							<VIconBtn
+								class="d-md-none"
+								variant="tonal"
+								color="secondaryOutline"
+								icon="bars"
+								:aria-label="panelOpen ? $t('planner.a11y.closePanel') : $t('planner.a11y.openPanel')"
+								@click="panelOpen = !panelOpen"
+							/>
 							<VBtn
 								variant="text"
 								:to="{ name: 'dayPlannerTemplateList' }"
