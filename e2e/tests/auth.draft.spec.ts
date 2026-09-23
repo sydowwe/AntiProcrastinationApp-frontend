@@ -232,19 +232,39 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 })
 
 test.describe('Auth — e-mail confirmation views (no real token available)', () => {
-	test('ConfirmEmailView without a token shows the resend option', async ({ page }) => {
+	// B4 / B5 / FW12. No Resend on this view any more: the server resends by address and the link carries
+	// only a user id — LoginView's "email not confirmed" branch offers it instead.
+	test('ConfirmEmailView without a token explains the failure and offers login, posting nothing (findings.md B4)', async ({
+		page,
+	}) => {
+		let posted = false
+		page.on('request', r => {
+			if (r.url().includes('/api/auth/')) posted = true
+		})
 		await page.goto('/confirm-email')
-		await expect(page.getByRole('button', { name: 'Resend confirmation email' })).toBeVisible()
+		await expect(page.getByText('There was an error confirming your email, please try again')).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Go to login page' })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Resend confirmation email' })).toHaveCount(0)
+		expect(posted).toBe(false)
 	})
 
-	// B4: the error state today shows no explanatory text alongside the Resend button.
-	test.fixme(
-		'ConfirmEmailView shows an explanation of the failure, not just the Resend button (findings.md B4)',
-		async () => {},
-	)
+	test('ConfirmEmailView posts userId and token as a JSON body — a bad token is a 400, not a 415 (FW12)', async ({
+		page,
+		seed,
+	}) => {
+		const confirm = page.waitForRequest(r => r.url().endsWith('/api/auth/confirm-email'))
+		await page.goto(`/confirm-email?userId=${seed.primaryUser.id}&token=bad`)
+		const request = await confirm
+		expect(request.postDataJSON()).toEqual({ userId: seed.primaryUser.id, token: 'bad' })
+		expect((await request.response())!.status()).toBe(400)
+		await expect(page.locator('#app').getByText('There was an error confirming your email, please try again').first()).toBeVisible()
+	})
 
-	test('ConfirmEmailChangeView without a token shows an error and a way back to login', async ({ page }) => {
+	test('ConfirmEmailChangeView without a token explains the failure and offers login (findings.md B4)', async ({
+		page,
+	}) => {
 		await page.goto('/confirm-email-change')
+		await expect(page.getByText('There was an error confirming your email change, please try again')).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Go to login page' })).toBeVisible()
 	})
 
