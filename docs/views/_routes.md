@@ -3,7 +3,7 @@
 > Compiled 2026-09-09 from the route tables at commit `acd7db0d`. Nav column cross-checked against the
 > rendered sidebar and user menu captured in [`_shell.md`](_shell.md).
 
-**53 route records** (52 views + 1 redirect) composed in `src/router.ts`. This file is the manifest the view
+**54 route records** (53 views + 1 redirect — `/reset-password` added 2026-09-23) composed in `src/router.ts`. This file is the manifest the view
 documentation pass is measured against: every route below must appear in some `docs/views/*.inventory.md`.
 
 ## Legend
@@ -67,6 +67,7 @@ Findings against these are **submodule** issues — fixes are commits in `vue_fr
 | `/login` | `login` | `LoginView` | **public** + recaptcha | redirect target of the auth guard | 15 `auth` |
 | `/registration` | `registration` | `RegistrationView` | **public** + recaptcha | link (from login) | 15 `auth` |
 | `/forgotten-password` | `forgottenPassword` | `ForgottenPasswordView` | **public** + recaptcha | link (from login) | 15 `auth` |
+| `/reset-password` | `resetPassword` | `ResetPasswordView` | **public** + recaptcha | external (password-reset e-mail link); deliberately **not** in `SIGNED_OUT_ONLY_ROUTES` — added 2026-09-23 by `FW9` | 15 `auth` |
 | `/confirm-email` | `confirmEmail` | `ConfirmEmailView` | **public** + recaptcha | external (e-mail link) | 15 `auth` |
 | `/confirm-email-change` | `confirmEmailChange` | `ConfirmEmailChangeView` | **public** + recaptcha | external (e-mail link) | 15 `auth` |
 | `/pripomienky/moje` | `myReminders` | `MyRemindersView` | auth | user menu › My reminders (**deliberately not in the sidebar** — `navItems.ts:74`) | 16 `reminders-user` |

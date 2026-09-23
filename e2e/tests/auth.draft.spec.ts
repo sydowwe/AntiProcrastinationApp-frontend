@@ -164,11 +164,44 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			await expect(page.getByText('Email is required')).toBeVisible()
 		})
 
-		// X1: the request never includes `recaptchaToken`, so no input can ever succeed today.
-		test.fixme(
-			'a valid registered e-mail shows the "password reset e-mail sent" confirmation (findings.md X1)',
-			async () => {},
-		)
+		// X1 / FW9. `/auth/forgotten-password` is `Throttle(3, 60)` per IP — this is the run's one hit.
+		// The server answers 204 for any address (no enumeration oracle), so the seed's own is enough.
+		test('a registered e-mail shows the "password reset e-mail sent" confirmation, which exits to /login (findings.md X1)', async ({
+			page,
+			seed,
+		}) => {
+			await page.goto('/forgotten-password')
+			await page.getByRole('textbox', { name: 'Email' }).fill(seed.primaryUser.email)
+			const sent = page.waitForResponse(r => r.url().endsWith('/api/auth/forgotten-password'))
+			await page.getByRole('button', { name: 'Reset password' }).click()
+			expect((await sent).status()).toBe(204)
+			await page.getByRole('button', { name: 'Go to login page' }).click()
+			await expect(page).toHaveURL(/\/login$/)
+		})
+	})
+
+	test.describe('ResetPasswordView (/reset-password)', () => {
+		test('a link missing its userId or token says so and posts nothing (FW9)', async ({ page }) => {
+			let posted = false
+			page.on('request', r => {
+				if (r.url().endsWith('/api/auth/reset-password')) posted = true
+			})
+			await page.goto('/reset-password')
+			await expect(page.getByText('This password reset link is incomplete.', { exact: false })).toBeVisible()
+			await expect(page.getByRole('link', { name: 'Go to login page' })).toBeVisible()
+			expect(posted).toBe(false)
+		})
+
+		test('a bad token is refused by the server and the form stays on screen (FW9)', async ({ page, seed }) => {
+			await page.goto(`/reset-password?userId=${seed.primaryUser.id}&token=garbage`)
+			await page.getByRole('textbox', { name: 'New password', exact: true }).fill('ThrowAway-Pass123!')
+			await page.getByRole('textbox', { name: 'Confirm new password' }).fill('ThrowAway-Pass123!')
+			const reset = page.waitForResponse(r => r.url().endsWith('/api/auth/reset-password'))
+			await page.getByRole('button', { name: 'Reset password' }).click()
+			expect((await reset).status()).toBe(400)
+			await expect(page.getByRole('status').filter({ hasText: 'Invalid token.' })).toBeVisible()
+			await expect(page.getByRole('button', { name: 'Reset password' })).toBeVisible()
+		})
 	})
 
 	test.describe('Router guard behaviour', () => {
