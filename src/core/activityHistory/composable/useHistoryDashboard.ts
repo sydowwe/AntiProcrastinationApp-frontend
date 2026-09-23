@@ -223,8 +223,12 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	 * chart counts, so it is empty exactly when the pie chart is and would cast no independent vote.
 	 */
 	async function checkFirstRunIfEmpty() {
+		// The windows' *items*, never their count: both stacked-bars endpoints tile the whole range and
+		// return every window, empty ones included, so a window count is not evidence of activity — it
+		// resolved every account to `true` and the first-run block never rendered on either dashboard
+		// (history-review/U1). `useActivityDashboard.isRoundEmpty` documents the same trap.
 		const hasData =
-			stackedBarsWindows.value.length > 0 ||
+			stackedBarsWindows.value.some(w => w.items.length > 0) ||
 			(pieChartData.value?.items.length ?? 0) > 0 ||
 			(summaryCardsData.value?.cards.length ?? 0) > 0
 		if (hasData) {
