@@ -46,6 +46,7 @@
 					style="min-height: 200px"
 					:windows="stackedBarsWindows"
 					:loading="stackedBarsLoading"
+					:error="stackedBarsError"
 					:timeFrom="chartTimeFrom"
 					:timeTo="chartTimeTo"
 					:windowSizeOptions="windowSizeOptionsMinutes"
@@ -53,6 +54,7 @@
 					@windowSizeChange="handleWindowSizeChange"
 					interactive
 					@activityClick="handleActivityClick"
+					@retry="fetchStackedBars"
 				>
 					<template #header-right>
 						<TimeRangePicker
@@ -92,10 +94,12 @@
 							:selectedBaseline="selectedBaseline"
 							:topN="topN"
 							:loading="summaryCardsLoading"
+							:error="summaryCardsError"
 							:periodLabel
 							@update:selectedBaseline="handleBaselineChange"
 							@update:topN="handleTopNChange"
 							@groupClick="handleGroupSelect"
+							@retry="fetchSummaryCards"
 						/>
 					</VCol>
 					<VCol
@@ -107,7 +111,9 @@
 							v-model:selectedGroup="selectedGroup"
 							:data="pieChartData"
 							:loading="pieChartLoading"
+							:error="pieChartError"
 							:periodLabel
+							@retry="fetchPieChart"
 						/>
 					</VCol>
 				</VRow>
@@ -205,8 +211,13 @@
 		pieChartLoading,
 		summaryCardsLoading,
 		timeOfDayLoading,
+		stackedBarsError,
+		pieChartError,
+		summaryCardsError,
 		hasAnyHistoryEver,
 		fetchStackedBars,
+		fetchPieChart,
+		fetchSummaryCards,
 		fetchAll,
 		handleBaselineChange,
 		handleTopNChange,

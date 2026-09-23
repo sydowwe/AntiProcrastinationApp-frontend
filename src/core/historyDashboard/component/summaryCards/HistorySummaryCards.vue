@@ -44,6 +44,12 @@
 			</div>
 		</div>
 
+		<!-- Error State — before the empty test: a failed request's null is not an empty period (F27) -->
+		<HistoryErrorState
+			v-else-if="error"
+			@retry="emit('retry')"
+		/>
+
 		<!-- Empty State -->
 		<HistoryEmptyState
 			v-else-if="!data || data.cards.length === 0"
@@ -92,6 +98,7 @@
 	import HistorySummaryCard from './HistorySummaryCard.vue'
 	import HistoryPeriodBanner from './HistoryPeriodBanner.vue'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
+	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
 
 	const props = defineProps<{
 		data: HistorySummaryCardsResponse | null
@@ -100,6 +107,7 @@
 		selectedBaseline: BaselineType
 		topN: number
 		loading?: boolean
+		error?: boolean
 		/** Formatted date/range the empty state should name — see H7. */
 		periodLabel?: string
 	}>()
@@ -108,6 +116,7 @@
 		'update:selectedBaseline': [value: BaselineType]
 		'update:topN': [value: number]
 		groupClick: [group: HistoryGroupKey]
+		retry: []
 	}>()
 
 	const { lgAndUp, xlAndUp } = useDisplay()

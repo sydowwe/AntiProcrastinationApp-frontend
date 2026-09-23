@@ -7,6 +7,10 @@
 			v-if="loading"
 			type="list-item-two-line@4"
 		/>
+		<HistoryErrorState
+			v-else-if="error"
+			@retry="fetchData"
+		/>
 		<HistoryEmptyState
 			v-else-if="historyList.length === 0"
 			icon="fas fa-list"
@@ -105,6 +109,7 @@
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
+	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
@@ -121,6 +126,7 @@
 	// --- Data ---
 	const historyList = ref<ActivityHistory[]>([])
 	const loading = ref(false)
+	const error = ref(false)
 	const firstHalf = computed(() => historyList.value.slice(0, Math.ceil(historyList.value.length / 2)))
 	const secondHalf = computed(() => historyList.value.slice(Math.ceil(historyList.value.length / 2)))
 
@@ -153,11 +159,18 @@
 	}
 
 	// --- Fetch ---
+	// A failure clears the list rather than leaving the previous date's records under the new date — the
+	// stale-reads-as-true case `useHistoryDashboard`'s fetchers are written against — and is caught here,
+	// because the watcher below does not await this and the rejection used to escape it (F27).
 	async function fetchData() {
 		loading.value = true
+		error.value = false
 		try {
 			const request = new DetailTimelineRequest(props.date, props.timeFrom, props.timeTo)
 			historyList.value = await getDetailTimeline(request)
+		} catch {
+			historyList.value = []
+			error.value = true
 		} finally {
 			loading.value = false
 		}

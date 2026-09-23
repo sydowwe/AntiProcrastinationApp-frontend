@@ -9,6 +9,7 @@ import type { HistoryWindow } from '@/core/historyDashboard/dto/response/History
 import { isSameHistoryGroup, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
 import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 import { getHasAnyHistoryEver } from '@/core/historyDashboard/api/historyDashboardApi.ts'
+import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 
 /** Both dashboards open on the same number of summary cards; neither exposes it as a preference. */
 export const DEFAULT_TOP_N = 4
@@ -104,6 +105,14 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	const summaryCardsLoading = ref(false)
 	const timeOfDayLoading = ref(false)
 
+	// --- Error States (F27): quiet, per-panel, as in `useActivityDashboard` — the dashboard reads carry
+	// `_silent: true`, so a failure surfaces only as the panel's own retry state and never as "No data
+	// for this period", which is what a nulled response looks like to every consumer. ---
+	const stackedBarsError = ref(false)
+	const pieChartError = ref(false)
+	const summaryCardsError = ref(false)
+	const timeOfDayError = ref(false)
+
 	// --- First-run detection (H7) ---
 	// `null` = not yet known, `true`/`false` = resolved for this session. Once resolved it is never
 	// re-checked: a non-empty period is proof enough of `true`, and a `false` only flips back to `true`
@@ -130,14 +139,17 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 
 	// --- Fetch Functions ---
 	// A failure nulls its own panel's data rather than leaving the previous range's numbers on screen
-	// under the new range's header, which is the one way a stale chart reads as a true one. The axios
-	// interceptor still raises the error snackbar, so the failure itself is not swallowed.
+	// under the new range's header, which is the one way a stale chart reads as a true one — and raises
+	// that panel's error flag, so the null is not then rendered as an empty period. A cancellation is
+	// neither; none of these requests carries a signal today, so the check only guards a future one.
 	async function fetchStackedBars() {
 		stackedBarsLoading.value = true
+		stackedBarsError.value = false
 		try {
 			stackedBarsData.value = await fetchers.fetchStackedBars(selectedWindowSize.value)
-		} catch {
+		} catch (error) {
 			stackedBarsData.value = null
+			if (!isRequestCanceled(error)) stackedBarsError.value = true
 		} finally {
 			stackedBarsLoading.value = false
 		}
@@ -145,10 +157,12 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 
 	async function fetchPieChart() {
 		pieChartLoading.value = true
+		pieChartError.value = false
 		try {
 			pieChartData.value = await fetchers.fetchPieChart()
-		} catch {
+		} catch (error) {
 			pieChartData.value = null
+			if (!isRequestCanceled(error)) pieChartError.value = true
 		} finally {
 			pieChartLoading.value = false
 		}
@@ -156,10 +170,12 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 
 	async function fetchSummaryCards() {
 		summaryCardsLoading.value = true
+		summaryCardsError.value = false
 		try {
 			summaryCardsData.value = await fetchers.fetchSummaryCards(selectedBaseline.value, topN.value)
-		} catch {
+		} catch (error) {
 			summaryCardsData.value = null
+			if (!isRequestCanceled(error)) summaryCardsError.value = true
 		} finally {
 			summaryCardsLoading.value = false
 		}
@@ -167,6 +183,7 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 
 	/** Resolves to null — never leaving the previous range's fold behind — when the view supplies no fetcher. */
 	async function fetchTimeOfDay() {
+		timeOfDayError.value = false
 		if (!fetchers.fetchTimeOfDay) {
 			timeOfDayData.value = null
 			return
@@ -174,8 +191,9 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 		timeOfDayLoading.value = true
 		try {
 			timeOfDayData.value = await fetchers.fetchTimeOfDay()
-		} catch {
+		} catch (error) {
 			timeOfDayData.value = null
+			if (!isRequestCanceled(error)) timeOfDayError.value = true
 		} finally {
 			timeOfDayLoading.value = false
 		}
@@ -205,14 +223,18 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 	 * chart counts, so it is empty exactly when the pie chart is and would cast no independent vote.
 	 */
 	async function checkFirstRunIfEmpty() {
-		const isEmpty =
-			stackedBarsWindows.value.length === 0 &&
-			(pieChartData.value?.items.length ?? 0) === 0 &&
-			(summaryCardsData.value?.cards.length ?? 0) === 0
-		if (!isEmpty) {
+		const hasData =
+			stackedBarsWindows.value.length > 0 ||
+			(pieChartData.value?.items.length ?? 0) > 0 ||
+			(summaryCardsData.value?.cards.length ?? 0) > 0
+		if (hasData) {
 			hasAnyHistoryEver.value = true
 			return
 		}
+		// A failed panel is not an empty one (F27): its null says nothing about the period, so a round
+		// with any failure must neither ask the question nor — worse — answer it `false` and swap every
+		// panel, retry states included, for the onboarding block.
+		if (stackedBarsError.value || pieChartError.value || summaryCardsError.value) return
 		if (hasAnyHistoryEver.value !== null) return
 		// Left unresolved on failure, deliberately: `false` would put the first-run onboarding block on
 		// screen on the strength of a request that never answered. The four panel fetches each swallow
@@ -264,6 +286,10 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 		pieChartLoading,
 		summaryCardsLoading,
 		timeOfDayLoading,
+		stackedBarsError,
+		pieChartError,
+		summaryCardsError,
+		timeOfDayError,
 		hasAnyHistoryEver,
 		fetchStackedBars,
 		fetchPieChart,

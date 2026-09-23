@@ -92,11 +92,13 @@
 					class="w-100"
 					:windows="stackedBarsWindows"
 					:loading="stackedBarsLoading"
+					:error="stackedBarsError"
 					:timeFrom
 					:timeTo
 					:windowSizeOptions="windowSizeOptions"
 					:initialWindowSize="selectedWindowSize"
 					@windowSizeChange="handleWindowSizeChange"
+					@retry="fetchStackedBars"
 				/>
 			</div>
 
@@ -115,10 +117,14 @@
 					:topN
 					:summaryLoading="summaryCardsLoading"
 					:pieLoading="pieChartLoading"
+					:summaryError="summaryCardsError"
+					:pieError="pieChartError"
 					:periodLabel
 					@update:selectedBaseline="handleBaselineChange"
 					@update:topN="handleTopNChange"
 					@groupClick="handleGroupSelect"
+					@retrySummary="fetchSummaryCards"
+					@retryPie="fetchPieChart"
 				/>
 			</div>
 
@@ -155,10 +161,14 @@
 						:topN
 						:summaryLoading="summaryCardsLoading"
 						:pieLoading="pieChartLoading"
+						:summaryError="summaryCardsError"
+						:pieError="pieChartError"
 						:periodLabel
 						@update:selectedBaseline="handleBaselineChange"
 						@update:topN="handleTopNChange"
 						@groupClick="handleGroupSelect"
+						@retrySummary="fetchSummaryCards"
+						@retryPie="fetchPieChart"
 					/>
 				</VCol>
 			</VRow>
@@ -240,7 +250,11 @@
 	const today = new Date()
 	const dateModel = ref<Date>(route.query.date ? new Date(route.query.date as string) : new Date())
 	const timeFrom = ref(parseTimeParam(route.query.timeFrom, new Time(8, 0)))
-	const timeTo = ref(parseTimeParam(route.query.timeTo, new Time(23, 59)))
+	// 00:00, not 23:59: the backend reads the window as half-open with an at-or-before-`from` end rolling
+	// to the next day, so 08:00–00:00 is the rest of the day exactly. 23:59 was also unrepresentable in
+	// `TimeRangePicker`'s duration mode (its minutes input caps at 55), which rewrote it to 23:55 on
+	// mount and fired every panel's request a second time.
+	const timeTo = ref(parseTimeParam(route.query.timeTo, new Time(0, 0)))
 	const groupBy = ref<HistoryGroupBy>(
 		parseEnumParam(route.query.groupBy, Object.values(HistoryGroupBy), HistoryGroupBy.Activity),
 	)
@@ -290,7 +304,13 @@
 		stackedBarsLoading,
 		pieChartLoading,
 		summaryCardsLoading,
+		stackedBarsError,
+		pieChartError,
+		summaryCardsError,
 		hasAnyHistoryEver,
+		fetchStackedBars,
+		fetchPieChart,
+		fetchSummaryCards,
 		fetchAll,
 		handleBaselineChange,
 		handleTopNChange,

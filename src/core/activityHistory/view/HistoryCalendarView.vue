@@ -19,9 +19,15 @@
 			<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>
 		</div>
 
+		<!-- Failed range: outside the grid, which is framework and has no error slot (F27). -->
+		<HistoryErrorState
+			v-if="!loading && error"
+			class="mt-4 mb-2"
+			@retry="retry"
+		/>
 		<!-- Empty range: explain rather than show a grid of identical grey cells with no context (H7). -->
 		<HistoryFirstRunState
-			v-if="!loading && allDaysEmpty && hasAnyHistoryEver === false"
+			v-else-if="!loading && allDaysEmpty && hasAnyHistoryEver === false"
 			compact
 			class="mt-4 mb-2"
 		/>
@@ -64,6 +70,9 @@
 	import HistoryFirstRunState from '@/core/historyDashboard/component/HistoryFirstRunState.vue'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 	import HistoryDayCellContent from '@/core/historyDashboard/component/HistoryDayCellContent.vue'
+	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
+
+	type CalendarRange = { start: Date | null; end: Date | null }
 
 	const days = ref<CalendarActivityDaySummary[]>([])
 	const loading = ref(false)
@@ -75,7 +84,16 @@
 	const hasAnyHistoryEver = ref<boolean | null>(null)
 	const allDaysEmpty = computed(() => days.value.length > 0 && days.value.every(d => d.totalSeconds === 0))
 
-	async function fetchCalendarActivity(range: { start: Date | null; end: Date | null }) {
+	// `CalendarGrid` emits the range only when it changes, so Retry needs the last one held here.
+	const lastRange = ref<CalendarRange | null>(null)
+	const error = ref(false)
+
+	// A failure clears `days` rather than keeping the previous month's rows: the grid looks weeks up by
+	// date, so stale rows rendered a blank card that was neither empty nor an error. Both awaits are
+	// caught because `dateRangeChange` does not await this, and a rejection escaped it (F27).
+	async function fetchCalendarActivity(range: CalendarRange) {
+		lastRange.value = range
+		error.value = false
 		if (!range.start || !range.end) {
 			days.value = []
 			return
@@ -84,12 +102,25 @@
 		try {
 			const request = new CalendarActivityRequest(formatDateForApi(range.start), formatDateForApi(range.end), 3)
 			days.value = fillMissingDays(await getCalendarActivitySummary(request), range.start, range.end)
+		} catch {
+			days.value = []
+			error.value = true
+			return
 		} finally {
 			loading.value = false
 		}
 		if (allDaysEmpty.value && hasAnyHistoryEver.value === null) {
-			hasAnyHistoryEver.value = await getHasAnyHistoryEver()
+			// Left unresolved on failure — see the same check in useHistoryDashboard.ts.
+			try {
+				hasAnyHistoryEver.value = await getHasAnyHistoryEver()
+			} catch {
+				hasAnyHistoryEver.value = null
+			}
 		}
+	}
+
+	function retry() {
+		if (lastRange.value) fetchCalendarActivity(lastRange.value)
 	}
 
 	/**

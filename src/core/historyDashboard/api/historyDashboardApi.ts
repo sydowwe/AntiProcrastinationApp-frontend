@@ -23,46 +23,52 @@ import { MAX_CUSTOM_RANGE_DAYS } from '@/core/historyDashboard/dto/request/custo
 const SUMMARY_URL = '/activity-history/dashboard/summary'
 const DETAIL_URL = '/activity-history/dashboard/detail'
 
+// The seven dashboard reads below are `_silent` (F27): every caller renders a failure itself — a
+// panel's retry state in `useHistoryDashboard`, the home widget's error state, the export's own
+// snackbar — so the interceptor's snackbar would only be a second report of the same failure.
+
 // --- Summary (multi-day, ActivityDateRangeRequest based) ---
 
 export async function getSummaryStackedBars(
 	request: HistorySummaryStackedBarsRequest,
 ): Promise<HistoryStackedBarsResponse> {
-	const { data } = await API.post(`${SUMMARY_URL}/stacked-bars`, request)
+	const { data } = await API.post(`${SUMMARY_URL}/stacked-bars`, request, { _silent: true })
 	return HistoryStackedBarsResponse.fromJson(data)
 }
 
 export async function getSummaryPieChart(request: HistorySummaryPieChartRequest): Promise<HistoryPieChartResponse> {
-	const { data } = await API.post(`${SUMMARY_URL}/pie-chart`, request)
+	const { data } = await API.post(`${SUMMARY_URL}/pie-chart`, request, { _silent: true })
 	return HistoryPieChartResponse.fromJson(data)
 }
 
+/** `silent` is off only for `getHasAnyHistoryEver`, whose failure has no panel to show it. */
 export async function getSummarySummaryCards(
 	request: HistorySummarySummaryCardsRequest,
+	silent = true,
 ): Promise<HistorySummaryCardsResponse> {
-	const { data } = await API.post(`${SUMMARY_URL}/summary-cards`, request)
+	const { data } = await API.post(`${SUMMARY_URL}/summary-cards`, request, { _silent: silent })
 	return HistorySummaryCardsResponse.fromJson(data)
 }
 
 export async function getSummaryTimeOfDay(request: HistorySummaryTimeOfDayRequest): Promise<HistoryTimeOfDayResponse> {
-	const { data } = await API.post(`${SUMMARY_URL}/time-of-day`, request)
+	const { data } = await API.post(`${SUMMARY_URL}/time-of-day`, request, { _silent: true })
 	return HistoryTimeOfDayResponse.fromJson(data)
 }
 
 // --- Detail (single-day, DateAndTimeRangeRequest based) ---
 
 export async function getDetailStackedBars(request: DetailStackedBarsRequest): Promise<HistoryStackedBarsResponse> {
-	const { data } = await API.post(`${DETAIL_URL}/stacked-bars`, request)
+	const { data } = await API.post(`${DETAIL_URL}/stacked-bars`, request, { _silent: true })
 	return HistoryStackedBarsResponse.fromJson(data)
 }
 
 export async function getDetailPieChart(request: DetailPieChartRequest): Promise<HistoryPieChartResponse> {
-	const { data } = await API.post(`${DETAIL_URL}/pie-chart`, request)
+	const { data } = await API.post(`${DETAIL_URL}/pie-chart`, request, { _silent: true })
 	return HistoryPieChartResponse.fromJson(data)
 }
 
 export async function getDetailSummaryCards(request: DetailSummaryCardsRequest): Promise<HistorySummaryCardsResponse> {
-	const { data } = await API.post(`${DETAIL_URL}/summary-cards`, request)
+	const { data } = await API.post(`${DETAIL_URL}/summary-cards`, request, { _silent: true })
 	return HistorySummaryCardsResponse.fromJson(data)
 }
 
@@ -111,6 +117,6 @@ export async function getHasAnyHistoryEver(): Promise<boolean> {
 		1,
 		formatDateForApi(new Date()),
 	)
-	const response = await getSummarySummaryCards(request)
+	const response = await getSummarySummaryCards(request, false)
 	return response.cards.length > 0
 }

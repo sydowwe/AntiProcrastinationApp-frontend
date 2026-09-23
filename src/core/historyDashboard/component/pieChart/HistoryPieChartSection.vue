@@ -11,6 +11,11 @@
 			</div>
 		</template>
 
+		<!-- Before the empty test: a failed request's null is not an empty period (F27). -->
+		<template v-else-if="error">
+			<HistoryErrorState @retry="emit('retry')" />
+		</template>
+
 		<template v-else-if="!data || data.items.length === 0">
 			<HistoryEmptyState
 				icon="fas fa-chart-pie"
@@ -98,6 +103,7 @@
 	import { useI18n } from 'vue-i18n'
 	import HistoryPieChart from './HistoryPieChart.vue'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
+	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import type { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/HistoryPieChartResponse.ts'
 	import {
@@ -109,8 +115,13 @@
 	const props = defineProps<{
 		data: HistoryPieChartResponse | null
 		loading?: boolean
+		error?: boolean
 		/** Formatted date/range the empty state should name — see H7. */
 		periodLabel?: string
+	}>()
+
+	const emit = defineEmits<{
+		retry: []
 	}>()
 
 	const selectedGroup = defineModel<HistoryGroupKey | null>('selectedGroup', { default: null })
