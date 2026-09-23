@@ -4452,6 +4452,144 @@
 - **Risk:** None beyond the dialog. If (b) takes the second-instance route, `A1`'s workaround table
   grows by one row until `FW18` retires it — say so in the commit.
 
+## F52. Template card title row — the name never truncates, so the switch label and the chip pay for it
+
+> ✅ **FIXED 2026-09-23.** The prescribed half landed **unannounced in `fcd8050d`** (the `F42` commit —
+> its message does not mention it): `min-width: 0` on the left group, `text-truncate` + `:title` on the
+> name, `flex-shrink-0` on the right group, `white-space: nowrap` on the switch label. Verified that half
+> first and it met the pass condition (label on one line, *Weekend*/*Workday* whole on all three cards) —
+> but the name was left **~44 px of a 368 px row**, `Re…` / `Ho…` / `Off…`. So the batch's optional step
+> was taken too (uncommitted at time of writing): the switch lost its visible label and is named by
+> `aria-label` = `planner.a11y.templateActive` (*"Active: {name}"* / *"Aktívna: {name}"* — state is the
+> switch's own `checked`, so the name does not branch on it); `planner.template.activeLabel` /
+> `inactiveLabel` had no other consumer and are deleted; the `.active-switch` nowrap rule went with them.
+> **Verified live** at 1440×900: name width 95/98/94 px, *Office Day* whole, the others ellipsised with a
+> `title`; chips unclipped; every title row a single 64 px line; the switch resolves as `checkbox
+> "Active: Home Office" [checked]`. A 40-character name created through *Add Template* truncates at
+> 144 of 392 px with the chip whole. `DayTypeChip` untouched.
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TemplateCard.vue`
+- **Closes:** `planner-templates/B1`
+- **Root cause:** Confirmed in source. `VCardTitle` (`:8`) is `d-flex justify-space-between
+  align-center`; the left group (`:9-25`, checkbox + icon + `<span>{{ template.name }}</span>`) has no
+  `min-width: 0` and no `text-truncate`, so it keeps its intrinsic width, and the right group
+  (`:26-51`, `DayTypeChip` + `VSwitch` with an inline `label` + pin `VIconBtn`) absorbs the shortfall:
+  the switch's label box collapses to ~20 px with `white-space: normal` (one letter per line) and the
+  chip clips with `text-overflow: clip`. Vuetify's `VCardTitle` sets `white-space: nowrap` and
+  `overflow: hidden` on itself, which is why the row clips rather than wraps. Three cards, three
+  column widths — the unit measured it on all three.
+- **Files:** `TemplateCard.vue:8-51`
+- **What to change:** Make the *name* the flexible part: `min-width: 0` + `text-truncate` on the name
+  span (with `:title="template.name"` so the full name is recoverable), and `flex-shrink-0` on the
+  right-hand group so its three controls keep their intrinsic width. Then decide whether the switch
+  needs a visible label at all — the row is already the busiest in the card, and `F56` is about to
+  give the pin a name; a switch named by `aria-label` with the state shown by its own thumb is the
+  usual Vuetify shape. If the label stays, `white-space: nowrap` on it as well. Do **not** solve it by
+  fixing the card grid's column width — the chip count and the name length are both data-driven.
+- **Do not change:** `DayTypeChip` — it is shared with the comparison dialog and the day view; the clip
+  is the row's fault, not the chip's.
+- **Verification:** `B1`'s `Verify:` block at 1440×900 — *Active*/*Inactive* on one line, *Weekend* and
+  *Workday* whole (or an ellipsis + tooltip). Add a template with a 40-character name through *Add
+  Template* (`F53` makes that path safe) and confirm the *name* is what truncates.
+- **Risk:** None — one row's CSS.
+
+## F53. The template form mirrors none of the API's contract — a required enum is optional, and nothing else is checked either
+
+> ✅ **FIXED 2026-09-23.** All of (a)–(c) landed **unannounced in `fcd8050d`** (the `F42` commit).
+> **(a)** `suggestedForDayType: DayType = DayType.Workday`. **(b)** `requiredRule` on the name and the
+> day-type select, both `hideDetails="auto"`; the length limits are a native `maxlength` (100 name,
+> 500 description) rather than a rule — the framework's `RulesComposition` has no length rule, and a
+> cap cannot be failed, so it is the smaller honest mirror. The icon's 50 is not mirrored: it comes from
+> `IconPicker`'s list, never typed. It also fixed a second, unfiled cause of "validates nothing":
+> `validateAndGetData()` tested `await form.validate()` for truthiness, and that resolves to an object —
+> it reads `.valid` now. **(c)** taken: `TemplateDetailsForm` saves inside `onConfirm` under
+> `setLoading`, closing only on success. This session added the missing `catch` (uncommitted at time of
+> writing) — without it the rejection escaped `DialogEntryRenderer.onConfirmed` to Vue's error handler,
+> a third console error; the leisure forms' `catch` is the precedent.
+> **Verified live:** a blank *Add Template* shows *Workday*; an empty *Create* shows *This field is
+> required* under the name, the dialog stays open and **no POST fires**; 120 typed characters land as
+> 100; a 40-character create → one `POST` 201 → `/day-planner/templates/20004`. With the `PUT` routed to
+> a 400 (`playwright-cli route`), *Update* leaves the dialog open with the edited name, spinner cleared,
+> and the console shows only the network line and the interceptor's own log. The server's *real* 400
+> body was not provoked — the client no longer lets one through.
+
+- **Scope:** app-side `src/core/dayPlanner/dto/request/template/TaskPlannerDayTemplateRequest.ts`,
+  `src/core/dayPlanner/component/template/TaskPlannerDayTemplateDetailsForm.vue`
+- **Closes:** `planner-templates/B2`
+- **Root cause:** Confirmed on both sides. The client DTO declares `suggestedForDayType?: DayType`
+  (`TaskPlannerDayTemplateRequest.ts:14`) with no default, so a blank *Add Template* serialises without
+  the key; the server's `TaskPlannerDayTemplateRequest.cs:29` is `public required DayType
+  SuggestedForDayType`, and `System.Text.Json` rejects the body before validation runs — the
+  `serializerErrors` 400 the unit quoted, surfaced by the interceptor as the server's generic title.
+  **Wider than the finding:** the form (`TaskPlannerDayTemplateDetailsForm.vue:6-79`) declares no
+  `:rules` on any field, so `validateAndGetData()`'s `form.validate()` (`:143`) is always `true`;
+  `Name` is `[Required][StringLength(100)]`, `Description` `[StringLength(500)]`, `Icon`
+  `[StringLength(50)]` on the server (`:11-19`), and an empty name or a 101-character one takes the
+  same route — dialog closed, input gone, generic snackbar. *Duplicate* and *Edit* hide all of it
+  because `fromEntity` copies a valid enum in. **Not a backend ask:** the column is non-nullable and
+  indexed (`Initial.Designer.cs:1669,1701`), `/suggestions` matches on it, and every server-side
+  fixture sets it — the field is required by design, and the client is the side that disagrees.
+- **Files:** `TaskPlannerDayTemplateRequest.ts:14` (and `:8-19` generally),
+  `TaskPlannerDayTemplateDetailsForm.vue:6-11` (name), `:30-36` (description), `:38-43` (day type),
+  `:67-72` (icon)
+- **What to change:** **(a)** `suggestedForDayType: DayType = DayType.Workday` (or whichever the owner
+  wants as the blank-form default — the seed's three templates are two `Workday`, one `Weekend`), so
+  the type stops lying and a blank form is a valid body. **(b)** Rules that mirror the contract:
+  required + `maxLength(100)` on the name, `maxLength(500)` on the description, `maxLength(50)` on the
+  icon, required on the day-type select — through `RulesComposition.ts` so the messages are the
+  app's, not hand-written. `hideDetails` on every field means the messages need somewhere to render;
+  drop it on the fields that gain a rule, or use `hideDetails="auto"`. **(c)** Optional but worth the
+  look: the dialog closes on `dialogApi.close({ request })` (`TemplateDetailsForm.vue:32`) and the
+  caller then calls the API (`TemplateListView.vue:337-352,371-402`), so *any* server rejection —
+  a future 409 on a duplicate name, say — still costs the user their input. Moving `create`/`update`
+  inside the dialog's `onConfirm` under `dialogApi.setLoading()` keeps the dialog open on failure.
+  Check how the app's other `openDialog` consumers do it before diverging; if they all close-then-call,
+  this is a pattern decision, not this batch's.
+- **Do not change:** the server DTO; the `Time` defaults (`07:00`/`23:00`) — those already work.
+- **Verification:** `B2`'s `Verify:` block — *Add Template*, name only, *Create*: **either** the select
+  blocks with a required message and the dialog stays open, **or** the template is created with the
+  default and the app lands on `/day-planner/templates/<newId>`; no 400, no *"One or more errors
+  occurred!"*. Then an empty name → blocked in the dialog, not a 400. Confirm the list count went
+  from 3 to 4 and reseed.
+- **Risk:** Low. A default day type means a user who ignores the field gets `Workday` silently — the
+  select shows it, and that is the trade the unit's own *Expected* offers.
+
+## F57. The Scheduled Days picker is clipped to Mon–Fri in the 400 px template panel
+
+> ✅ **FIXED 2026-09-23**, **unannounced in `fcd8050d`** (the `F42` commit). A `wrapping-day-picker`
+> class on the `<DayOfWeekPicker>` tag, and a scoped rule — not the bare `flex-wrap` the batch named:
+> the `VBtnToggle` has a fixed height its buttons fill, so a wrapped second row squeezed both rows into
+> one row's height; the rule sets `height: auto` on the group and `min-height: 36px` on each button.
+> **Deviation from "Do not change … the dialog branch":** the same class applies there, on purpose —
+> beside the icon field, Sunday was clipped off the dialog's edge at 1440 px too.
+> **Verified live:** `/day-planner/templates/<id>` panel (400 px) — all seven buttons on one row inside
+> the card, *Sun* toggles active. *Edit Details* from the list — Mon–Fri on row one, Sat/Sun on row two,
+> 36 px apart, no overlap, all inside the dialog; looks clean with `divided`. `DayOfWeekPicker.vue`
+> untouched.
+
+- **Scope:** app-side `src/core/dayPlanner/component/template/TaskPlannerDayTemplateDetailsForm.vue`
+- **Closes:** `planner-templates/P1`
+- **Root cause:** Confirmed. `:77` renders the framework's `DayOfWeekPicker` — a `VBtnToggle` of
+  seven `size="small"` buttons with `divided`, `display: inline-flex`, no wrap — inside a `div` in a
+  `flex-column` group (`:63-66`, the non-dialog branch of `:65`). Seven small buttons plus dividers need more
+  than the ~360 px the panel leaves after padding, and `VCard`'s `overflow: hidden` clips the rest.
+  In the dialog (`isDialog`, `flex-md-row`) the same picker has the dialog's width and is fine — the
+  400 px panel is the only place it renders narrow.
+- **Files:** `TaskPlannerDayTemplateDetailsForm.vue:73-78` (the label + picker block); reference —
+  `src/_common/component/inputs/DayOfWeekPicker.vue` (single root, so a class on the tag lands on the
+  `VBtnToggle`)
+- **What to change:** App-side, one class: `class="flex-wrap"` on the `<DayOfWeekPicker>` tag lets the
+  toggle break onto a second row at this width (`divided`'s inner borders look odd across a wrap —
+  drop `divided` via the picker if it becomes a prop, or accept it). Alternatively `density="compact"`
+  / `size="x-small"` if the picker grows those props — but that is a `vue_framework` change for a
+  400 px panel this app chose, and `F6`'s reasoning applies: the smaller, app-side edit first. If the
+  owner would rather widen the panel, `F51` is the batch that touches the shell's width and this
+  should ride with it.
+- **Do not change:** `DayOfWeekPicker.vue` (framework) in this batch; the dialog branch.
+- **Verification:** `P1`'s `Verify:` block on `/day-planner/templates/20001` — all seven day buttons
+  visible and togglable; then *Edit Details* from the list to confirm the dialog's row is unchanged.
+- **Risk:** None.
+
 ## F64. The picker treats an empty weather match set as "nothing fits" — the server's contract says it means "no opinion"
 
 > ✅ **FIXED 2026-09-23**, in two halves. The second needed a backend change (API `e50bd3c`).
@@ -4517,6 +4655,237 @@
   that is *not* the row's dependency, and confirm it is excluded.
 - **Risk:** None beyond deciding where the collapse lives; put it at the boundary so `O1`'s later
   `maxParticipants` work does not have to remember it.
+
+## F27. History dashboards have no error state — three fetch owners null or keep their data on failure, and every panel says "No data for this period"
+
+> ✅ **FIXED 2026-09-23** (`f42b3b3a`). The tracking shape, as prescribed. `useHistoryDashboard` holds
+> one error flag per panel. Each fetcher resets its flag, and sets it in `catch` unless the error is a
+> cancellation (`isRequestCanceled`). `checkFirstRunIfEmpty` returns early when any panel failed, so a
+> failed round never asks the first-run question and cannot answer it `false`. The seven dashboard
+> reads are `_silent`. `getSummarySummaryCards` takes a `silent` flag that defaults to `true`, and
+> `getHasAnyHistoryEver` passes `false`, so the existence check still toasts. The summary cards, the pie
+> section and both views' `StackedBarsChart` bind `:error`/`@retry`. `HistoryInsightsColumn` forwards
+> both flags and two retries.
+> **Decision (a), `_silent`:** adopted. The home widget's `getDetailPieChart` inherits it, and that is
+> right: `ActivityHistoryWidget` has its own error state. The export's two uncapped reads inherit it
+> too, and `useCsvExport` toasts its own `historyDashboard.export.error`.
+> **Error component:** a sibling `HistoryErrorState.vue`, not an `error` variant of `HistoryEmptyState`.
+> It has no `periodLabel`, because a failure has proved nothing about the period. The copy reuses
+> `activityTracking.common.loadFailed`/`retry`, the same cross-module reuse the no-data string already
+> makes.
+> **Decision (b), calendar:** the error renders above `CalendarGrid` (the grid is untouched). `days` is
+> cleared to `[]`, and a `lastRange` ref feeds Retry. The `getHasAnyHistoryEver` await after it now has
+> its own `catch` too. It was a second unhandled-rejection path the batch did not name. The timeline
+> clears `historyList` and shows the same state. **Not made `_silent`:** `/activity-history/filter`,
+> because the detail export reads it and must toast, and `dashboard/calendar`, to match. Both still show
+> the interceptor snackbar alongside their panel's state. Make the calendar silent if one surface is
+> wanted there. **`HistoryInsights` needed no change:** it is `v-if="lines.length > 0"` over data that
+> is `null` on failure, so it already hides.
+> **Verified live** (`playwright-cli`, one session, 1440 × 900):
+> - **`detail/pie-chart` → 500:** the pie panel shows *Failed to load* + *Retry*, with no snackbar and no
+>   "No data". After `unroute` → *Retry*: **one** `pie-chart` request, 200, and the panel populates.
+> - **`/activity-history/filter` → 500, then *Previous day* (22 → 21 Sep):** the timeline shows the error
+>   state and none of the 22nd's rows. `console error` has no unhandled rejection. Retry recovers.
+> - **`dashboard/calendar` → 500, then *Previous month*:** the error sits above an empty grid, with no
+>   stale rows and no unhandled rejection. Retry refetches the same range; August 2026 is truly empty,
+>   so it then reads `noActivityInRange`.
+> - **`dashboard/summary/**` → 500 on a fresh load:** three panel error states, **no** first-run block
+>   and no existence-check request. The insights card hides.
+> - **Nothing routed, `date=2026-09-07`:** both panels read *No data for this period · 07.09.2026*.
+> - `tracking-dashboards/U1`'s retest ran in the same session, as the queue asked (log → *Closed
+>   verification items*).
+> - Type-check exit 0; ESLint and Prettier are clean on every touched file.
+>
+> **Found during verification and fixed under this batch** (not filed separately):
+> 1. **`/activity-history/detail` fired every request twice on load.** The default `timeTo` was 23:59.
+>    `TimeRangePicker` opens in duration mode, whose minutes input has `:max="55"`, so 15 h 59 m clamps
+>    to 15 h 55 m and it wrote `end = 23:55` back on mount. The view's watcher then refetched
+>    everything. With `timeTo=23:55` in the URL there was one round. The default is now **00:00**
+>    (in `f42b3b3a`). The API's `DateAndTimeRangeDto.ToDateTimeRange` reads the window half-open and
+>    rolls an end at or before `from` onto the next day, so 08:00–00:00 is exactly the rest of the
+>    day; 23:59 dropped the last minute. Same totals on 22 Sep (7 h 45 m, 7 entries), one round of 4
+>    requests. **Left for `vue_framework`:** the `max="55"` cap itself. Any 56–59-minute duration is
+>    unrepresentable in that input. That is the same family as the `TimePicker` minute-60 note under
+>    `F36`.
+> 2. **A single-day empty stacked-bars block was labelled "1 Jan"** (`8c809cf2`).
+>    `StackedBarsGrid.formatWindowLabel` labels a full-day empty block with its date. On a single day
+>    that block's start is one of `StackedBarsChart.processSmallWindows`' synthetic slot Dates, built on
+>    `new Date(0)`, so it printed 1 January 1970. The date label is now multi-day only. A single day
+>    shows its range (`08:00 - 23:55`). Multi-day charts still show real dates (`31 Aug`, `7 Sep`).
+>    The shared chart lives in `activityTracking`, so the tracking dashboards get the same fix.
+>    **Not fixed:** a slot ending at midnight gets a `slotEnd` *before* its `slotStart` (`endMin` wraps
+>    to 0 on the same epoch day), so its duration is negative. Nothing visible was traced to it.
+> 3. **The first-run block never rendered on Summary or Detail** (`4efbb0c9`). This was found while
+>    settling `history-review/U1`, and it predates this batch. See that item's log entry.
+>
+> **Observed, not filed:** on Summary, `range=Month&date=2020-01-01` is answered with windows from
+> **1 Dec 2019** to 2 Jan 2020, so the wire's `date` is the *end* of a trailing month. The empty states
+> label the period *01.01.2020*, and `periodLabel`'s comment says it shows "the start date always". The
+> label is not false, but the comment's premise is. Worth a line in the H7 comment, or a range label.
+
+- **Scope:** app-side — `src/core/activityHistory/composable/useHistoryDashboard.ts`,
+  `src/core/historyDashboard/component/HistoryTimeline.vue`,
+  `src/core/activityHistory/view/HistoryCalendarView.vue`, and the panel components that render the
+  empty state (`HistorySummaryCards.vue`, `HistoryPieChartSection.vue`, `HistoryInsights.vue`) plus the
+  two views' `<StackedBarsChart>` bindings
+- **Closes:** `history-review/B2`
+- **Root cause — confirmed, and wider than filed.** Three different failure behaviours, none of them an
+  error state:
+  1. **The composable nulls and forgets.** `useHistoryDashboard.ts:135-182` — each of the four fetchers is
+     `try { data = await … } catch { data = null } finally { loading = false }`. Its own comment (`:132-134`)
+     says the null is deliberate so a stale chart never reads as a true one, and that *"the axios
+     interceptor still raises the error snackbar"*. Both true; but `null` is also what an empty response
+     *looks like* to every consumer — `HistorySummaryCards.vue:49` (`!data || data.cards.length === 0`),
+     `HistoryPieChartSection.vue:14`, and `HistorySummaryView.vue:44-55` / `HistoryDetailView.vue:91-100`
+     pass `StackedBarsChart` `:windows`/`:loading` and **no `:error`**, so the chart's own `windows.length
+     === 0` branch (`StackedBarsChart.vue:60-69`) renders the no-data copy. A snackbar that disappears
+     versus a panel that stays on screen saying *"No data for this period · 09.09.2026"* — the panel wins.
+  2. **The timeline keeps the previous day.** `HistoryTimeline.vue:156-164` is `try { historyList = await
+     … } finally { loading = false }` — **no `catch`**. A failed `detail/timeline` request leaves the
+     *previous* date's records under the new date's `periodLabel` (`:14`), which is precisely the
+     stale-reads-as-true case the composable's comment was written to prevent, and the rejection escapes
+     the `watch` at `:166-169` as an unhandled one.
+  3. **The calendar view renders a blank grid.** `HistoryCalendarView.vue:54-69` is the same
+     `try/finally` with no `catch`. On a failed month change `days` keeps the previous month's rows;
+     `CalendarGrid.calendarWeeks` (`:209-266`) looks each week up by date, finds nothing in the new range,
+     pushes no weeks — and `allDaysEmpty` (`:52`) is `false` because the *old* rows have data, so the
+     empty state does not render either. Blank card, no message, unhandled rejection from the
+     `dateRangeChange` emit's watcher.
+  Cases 2 and 3 are **source-certain and unobserved** — the unit mocked only `detail/pie-chart`. They are
+  in this batch because they are the same concern in the same view family with the same fix, not because
+  a browser has seen them; the verification step below is what makes them observed.
+- **The pattern is already written, one module over — copy it, do not design a new one.**
+  `useActivityDashboard.ts:306-316` holds one `ref(false)` error flag per panel; each fetcher resets it,
+  sets it in `catch` (skipping `axios.isCancel`, `:109-110`), and requests carry `_silent: true` so the
+  interceptor's snackbar is suppressed and the failure surfaces **only** as the panel's retry state
+  (`:306-307`); the empty-state test at `:483-496` is guarded on `!…Error` for every panel. The four
+  tracking dashboards then bind `:error`/`@retry` on every panel (`ActivityDashboard.vue:21-87`), and
+  `StackedBarsChart.vue:41-57` **already renders that state** — icon, `activityTracking.common.loadFailed`,
+  a Retry button emitting `retry`. `useHistoryDashboard`'s docstring (`:80-82`) says it was *"shaped after
+  `activityTracking`'s `useActivityDashboard`"*; the error half is the part that was not carried over.
+- **Files:** `useHistoryDashboard.ts:101-105` (add the four flags beside the loading ones), `:135-182`
+  (set/reset), `:207-211` (exclude errored panels from `isEmpty` — a failed round must not trigger the
+  first-run check, and must never resolve `hasAnyHistoryEver` to `false`), `:251-277` (export);
+  `historyDashboardApi.ts:28-103` (`_silent: true` on the seven dashboard reads — **not** on
+  `getHasAnyHistoryEver`, which has its own `catch`); `HistorySummaryCards.vue:47-53` and
+  `HistoryPieChartSection.vue:14-20` (an `error?: boolean` prop and a `retry` emit, rendering the same
+  shape as `ActivityPieChartSection.vue:24` — `HistoryEmptyState` can take an `error` variant, or a
+  sibling `HistoryErrorState`, whichever keeps the H7 `periodLabel` off the error copy); `HistoryTimeline.vue:156-164`
+  and `HistoryCalendarView.vue:54-69` (add the `catch`, an `error` ref, and the state); the two views'
+  `<StackedBarsChart>` (`:error="stackedBarsError" @retry="fetchStackedBars"`) and `HistoryInsights`
+  (which reads `pieChartData`/`timeOfDayData` and should hide, not say "no data", when either errored).
+- **What to change:** Exactly the tracking shape, in the history composable and the two view-local
+  fetchers. **Two decisions to make once, not per panel:** (a) `_silent` — adopt it, so a failed round
+  is one retry state per panel and not four snackbars plus four panels; (b) the Calendar view's error
+  state has to render *outside* `CalendarGrid` (the grid has no error slot and is framework) — the
+  `HistoryEmptyState` slot above it at `:8-13` is the place, with `days` cleared to `[]` on failure so the
+  grid is honestly empty rather than blank-with-stale-rows. Retry for the calendar re-fires
+  `fetchCalendarActivity` with the last range — hold the range in a ref; `CalendarGrid` only emits it
+  on change.
+- **Do not change:** `StackedBarsChart.vue` — it already has the state. `HistoryEmptyState`'s existing
+  callers' copy (`activityTracking.common.noDataForPeriod`) — cross-module locale reuse that the H5
+  comment records as deliberate; the *error* copy can reuse `activityTracking.common.loadFailed`/`retry`
+  the same way or get `historyDashboard.*` keys, but do not fork the no-data string. `checkFirstRunIfEmpty`'s
+  own `catch` (`:217-225`) — it is already right.
+- **Verification:** `history-review/B2`'s `Verify:` block (`playwright-cli route
+  "**/api/activity-history/dashboard/detail/pie-chart" --status=500`, reload `/activity-history/detail`) —
+  the pie panel shows a state visibly distinct from *"No data for this period"*, with a working Retry
+  (`unroute`, click, the panel populates). Then the two cases the unit did not mock: route
+  `**/dashboard/detail/timeline` → 500 and **change the date** — the timeline must not show the previous
+  day's records; route `**/dashboard/calendar` → 500 and **change the month** — the calendar must show an
+  error state, not a blank grid, and `playwright-cli console error` must carry **no** unhandled
+  rejection. Then the summary: route `**/dashboard/summary/*` → 500 on a fresh load and confirm the
+  first-run block does **not** appear (the `isEmpty` guard). Finally, with nothing routed, the seed's
+  empty day (`date=2026-09-07`) must still read *"No data for this period"* — the fix must not turn empty
+  into error.
+- **Risk:** Medium — it touches every panel on three views and changes what a failure looks like for all
+  of them. `_silent` removes a snackbar users may be used to; that is the tracking dashboards' existing
+  behaviour and the consistent choice. The `isEmpty` guard is the subtle part: get it wrong in the other
+  direction and a genuinely-new user with one failed panel never sees the onboarding block.
+
+## F51. The template planner's side panel at `<md` is the open panel, squeezed and off-screen — and nothing reopens it
+
+> ✅ **FIXED 2026-09-23.** All three prescribed parts landed **unannounced in `fcd8050d`**. That is
+> the `F42` commit, and its message does not mention them (the `F52` precedent above). This close-out
+> verified them. One gap it found is fixed in `bd16953c`.
+> **(a)** `PlannerSidePanelShell.vue` applies the caller's `width` only at `mdAndUp`, and below `md` it
+> uses `width: 100%; flex: 0 0 auto` with no `minWidth`. The same commit fixed two things the batch did
+> not name:
+> - The card's `d-flex` class is `!important` and beat `v-show`'s inline `display: none`, so the
+>   close X below `md` hid nothing. `display: flex` now lives in the bound style.
+> - `flexShrink: 0` at `mdAndUp`: the grid's basis is its max-content width, so the panel shrank to its
+>   280 px `minWidth` on every desktop.
+>
+> **(b)** `TemplatePlannerHeader.vue` has the `d-md-none` `bars` toggle on `v-model:panelOpen`, named
+> `planner.a11y.openPanel`/`closePanel` by state. That is the `F56` decision, and no key was minted.
+> **(c)** `DayPlannerView.vue` took `flex-column flex-md-row` plus `min-width: 0` on the grid. The batch
+> said to look before changing it; it was changed first and looked at here (below).
+> **Gap, fixed in `bd16953c`:** on an unknown template id, the `F55` not-found `VAlert` replaces
+> `TemplatePlannerHeader` (`v-else`), and the toggle goes with it. So below `md` a panel closed there
+> stayed closed until a reload. That is this batch's defect on the `F55` path. The alert's `#append`
+> now carries the same toggle. Verified on `/day-planner/templates/99999` at 390: the X closes the
+> panel, the toggle reopens it, and at 1024 the toggle is hidden.
+> **Verified live** (`playwright-cli`):
+> - **`/day-planner/templates/20001` at 390 × 844:** the panel is 374 px wide at `left: 8`, fully on
+>   screen, 829 px tall, and shows *Template Name*. X → `display: none`; the toggle's name flips to
+>   *Open panel* → tap → back. Toggle → toggle works too. `scrollX` 0 and `scrollWidth` 390 throughout.
+>   Screenshot looked at.
+> - **`/day-planner/2026-09-23` at 390:** the same box (374 px, on screen). It is 259 px tall because its
+>   content is short, not squeezed. Close and reopen work, no sideways scroll, screenshot looked at.
+>   This is the first time unit 7's mobile layout has been seen.
+> - **Both at 1024:** the panel is 380 / 400 px beside the grid, `scrollWidth` 1024, toggles hidden.
+>
+> **Not a defect, noted:** the first attempt at 390 met a `404` on template 20001 and an API that
+> refused connections for a few seconds (another session's reseed). A retry was clean. It is recorded
+> only because it briefly looked like the toggle was missing, and that is how the gap above was found.
+
+- **Scope:** app-side `src/core/dayPlanner/component/PlannerSidePanelShell.vue`,
+  `src/core/dayPlanner/view/TemplateDayPlannerView.vue`,
+  `src/core/dayPlanner/component/template/TemplatePlannerHeader.vue`
+- **Closes:** `planner-templates/X2` (+ corrects the inventory's `:162` "mobile panel-open toggle (the
+  collapsed pill)" row — see *Contradictions* §86)
+- **Root cause:** Two halves, and the finding describes the first through a misreading. **(1) Layout.**
+  `PlannerSidePanelShell.vue:7` sets `width` as an inline style (`400px` from
+  `TemplateDayPlannerView.vue:9`, `380px` by default) with `minWidth: '280px'` and no breakpoint
+  override, while `TemplateDayPlannerView.vue:3` switches the container to `flex-column` below `md`
+  and keeps `h-100`. So at 390 px the card is 400 px wide in a 390 px column — the page scrolls
+  sideways, which is the `left: -166` and the second screenshot — and, as a column item with no
+  `flex-shrink: 0` or minimum height beside a `flex-fill` grid, it is squeezed to its 16 px
+  `VCardTitle` sliver. `panelOpen` starts `true` (`useRoutinePlacement.ts:28`), so **the "collapsed
+  pill" the unit tapped *is* the open panel** — the two mobile screenshots show the same element
+  before and after a horizontal scroll, not a closed and an opened state. **(2) No reopen.** The only
+  writer of `panelOpen = true` in the template planner is its initial value: the shell's X sets it
+  `false` (`:22`), `TemplatePlannerHeader.vue` has no toggle, and `v-show="panelOpen || mdAndUp"`
+  (`:4`) then hides the panel until a reload. The day planner has the control the template planner
+  lacks — `DayPlannerHeader.vue:7-14`, a `d-md-none` `bars` `VIconBtn` (itself unnamed; `F56`). The
+  unit's *Expected* (*"the way it does on `DayPlannerSidePanel`'s default 380px"*) is unobserved: unit
+  7 never resized, and `DayPlannerView.vue:3` has **no** `flex-column`, so at 390 px the day view is a
+  380 px panel *beside* the grid — a different failure, not a working reference.
+- **Files:** `PlannerSidePanelShell.vue:3-8` (width/height at `<md`), `:16-23` (close X);
+  `TemplateDayPlannerView.vue:3,9`; `TemplatePlannerHeader.vue:3-8` (where the toggle goes);
+  reference — `DayPlannerHeader.vue:7-14`, `DayPlannerView.vue:3`
+- **What to change:** **(a)** In the shell, apply the caller's `width` only at `mdAndUp` (the composable
+  is already there, `:85`) and go full-width below it — `width: '100%'`, drop the `minWidth` — and
+  give the card `flex: 0 0 auto` (or a `min-height: fit-content`) so a column parent cannot squeeze it.
+  Whether the mobile panel is an in-flow block above the grid or an overlay (`VNavigationDrawer
+  temporary`, or a `VBottomSheet`) is a design choice; in-flow is the smaller change and matches the
+  `flex-column` the view already opts into. **(b)** Add the reopen control to
+  `TemplatePlannerHeader.vue` — the same `d-md-none` `bars` button `DayPlannerHeader.vue:7-14` renders,
+  bound to the view's `panelOpen` (it is not in the header's props today; pass it as a model the way
+  `DayPlannerHeader` takes `v-model:panelOpen`). Name it in the same edit — `F56` lists it. **(c)** Look
+  at `DayPlannerView.vue:3` while there: it should probably take the same `flex-column flex-md-row`
+  the template view has, but that is unit 7's screen and unobserved — verify before changing, and file
+  what is seen rather than fixing blind.
+- **Do not change:** the `mdAndUp` breakpoint (the shell's own comment says why it is not the caller's);
+  `useRoutinePlacement.ts` — `panelOpen` living there is fine, it just needs a second writer.
+- **Verification:** `X2`'s `Verify:` block at 390×844 on `/day-planner/templates/20001`: the panel's
+  bounding box is ≤ viewport width, fully on-screen, tall enough to show *Template Name*; **plus:** tap
+  X → panel gone, tap the new toggle → panel back, no reload; `window.scrollX` stays 0 throughout. Then
+  the same three checks on `/day-planner/<today>` — the shell is shared, and that view's `bars` toggle
+  already exists, so a fix that works only under `flex-column` shows up there.
+- **Risk:** Medium — it is the chrome of both planners at every width below 960 px, and the day view's
+  mobile layout has never been looked at. Screenshot both views at 390 and at 1024 (just above `md`)
+  before and after.
 
 ## Closed escalations
 
@@ -5957,6 +6326,52 @@ reload — and two side fixes: a doubled full stop in the SK freeze tooltip, and
 heatmap, which had never rendered), and `F25`'s *Farba* header is in its closed body. Unit 10's round 8
 (2026-09-15) re-confirmed both views against the round-6/7 numbers with no drift. The table in the queue
 now reads all-closed; it goes to this section next pass.
+
+### `tracking-dashboards/U1` — ✅ closed 2026-09-23 in `F27`'s verification session, as the queue asked
+
+Loading and error states on the tracking dashboards, never exercised before. **Everything the queue
+predicted held, and nothing new was filed.**
+- **`/activity-tracking` with `web-extension/pie-chart` → 500:** the pie card shows the icon, *Failed
+  to load* and *Retry*. `summary-cards`, `stacked-bars`, `focus-metrics` and `timeline` all return 200,
+  and there is **no snackbar**. After `unroute` → *Retry*, `requests` shows exactly **one** more
+  `pie-chart` (200), nothing else refetches, and the panel populates.
+- **Loading half:** `route` with a 6 s delayed `continue` (via `run-code`, because `route` has no delay
+  flag; `page.waitForTimeout`, since `setTimeout` is not defined in that sandbox). The pie card renders
+  its two `VSkeletonLoader`s while the rest of the page has loaded.
+- **`/activity-tracking/unified` with all five panel endpoints → 500 and `sources` left alone:** the
+  *Sources* chips survive with their totals (*Browser 1h 22m*, *Desktop 1h 6m*, *Phone 1h 48m*), the
+  `ActivitySourceFilter.vue` comment's claim, now seen. Four *Failed to load*, **zero** "No data", no
+  snackbar. Four, not five, because stacked bars and the timeline share one slot behind the view
+  toggle. All five bind `:error` (`UnifiedActivityDashboard.vue:19-96`).
+- The queue body's *"route … `/unified`"* is `/activity-tracking/unified`. `/unified` fires no
+  dashboard requests at all.
+
+### `history-review/U1` — ✅ closed 2026-09-23 after `F27`, and it found a real defect: the first-run block could never render on Summary or Detail
+
+Run after `F27`, as the row required, so "empty" and "failed" are distinguishable on screen.
+- **Empty, Summary:** `/activity-history?date=2020-01-01&range=Month` → pie and cards read *No data for
+  this period · 01.01.2020*, with no error and no first-run block. The row expected **three**
+  `HistoryEmptyState`s. The third panel, stacked bars, has no `HistoryEmptyState` and renders its hatched
+  *NO ACTIVITY* block instead, because the endpoint returns every window with empty `items`. That is
+  the chart's idle-block design, not a gap. (On the `Month` semantics that block's label exposed, see
+  `F27`'s *Observed, not filed*.)
+- **Empty, Calendar:** September 2020 via the *Year* select → *No activity recorded in the visible
+  range.* above 30 *Not recorded* cells. That is `fillMissingDays`' placeholder path, exactly as the row
+  predicted. The existence check fires once and, for an account with history, correctly shows no
+  first-run.
+- **First-run:** `adminUser` (10003, zero history, as the queue's rule-1 note says). The calendar showed
+  *No activity recorded yet* + *Log manually* / *Start a timer*. **Summary and Detail did not. They showed
+  empty panels.** Cause: `useHistoryDashboard.checkFirstRunIfEmpty` treated `stackedBarsWindows.length > 0`
+  as evidence of history. Both stacked-bars endpoints tile the whole range and return every window, empty
+  ones included, so every account resolved to `true`, the existence check never fired, and the block
+  never rendered. It predates `F27` (the old `isEmpty` had the same term). It is the trap
+  `useActivityDashboard.isRoundEmpty`'s comment already documents on the tracking side. **Fixed in
+  `4efbb0c9`:** the test is now `stackedBarsWindows.some(w => w.items.length > 0)`. Re-verified both
+  ways:
+  - `adminUser` → both dashboards show the first-run block.
+  - `test@example.com` → `detail?date=2026-09-07` shows three *No data* (timeline view), January 2020
+    shows two, and neither shows a first-run block. `date=2026-09-22` shows its totals.
+  - Type-check exit 0.
 
 ## Contradictions & re-grades
 
@@ -8616,3 +9031,365 @@ committed for a full pass because "the working tree" was the scope (§108).
   `/routine-todo-list`, same two checks (create a throwaway routine item through the API first). Both
   locales for the new key.
 - **Risk:** Low. One branch in a composable two views share — that is the point, and the risk: test both.
+
+<!-- F66, F68, F75, F84 — one session, one commit (`d08a6e90`), 2026-09-23. Browser-verified in a dedicated
+     `playwright-cli` session (`-s=f4`, form sign-in — other sessions were live). Mid-pass, another session
+     reseeded the fixture and restarted the API. That caused one 404 (`Activity not found`, F68's first
+     attempt) and a burst of `ERR_CONNECTION_REFUSED` (F75's first read); both checks were re-run once the
+     API was back, and neither was a finding. `npm run type-check` exit 0, `npm run lint` exit 0. -->
+
+## F66. `boolChip` reuses the true icon for the false state on four of five chips
+
+> ✅ **FIXED AND VERIFIED 2026-09-23** (`d08a6e90`). The body's "fix", not its "patch": `boolChip`'s
+> `falseIcon` is now **required**, with a comment naming this batch. The four sites that used the default
+> now pass `circle-xmark` (*experienced*, bucket list and backlog), `plane-slash` (*travel*) and `soap`
+> (*messy*). FontAwesome has no slashed broom, so *messy*'s opposite is a clean one rather than a
+> struck-through one. All three icons were resolved against `free-solid` before use (the `F81` trap).
+> **Verified live** by reading each chip's leading `<svg>` class, with the filter set through the URL:
+> `/leisure/bucket-list` ✗ → `fa-plane-slash` / `fa-circle-xmark`, ✓ → `fa-plane` / `fa-circle-check`;
+> `/leisure/backlog` ✗ → `fa-star` (unchanged, `isRepeatable`) / `fa-circle-xmark`; `/leisure/projects`
+> ✗ → `fa-soap`. No console errors (no `Could not find one or more icon(s)`).
+
+- **Scope:** app-side `src/core/leisure/composable/useLeisureFilterChips.ts:19`;
+  `BacklogView.vue:192`, `BucketListView.vue:218-219`, `ProjectsView.vue:163`
+- **Closes:** `leisure-bucket-anchors/P1`
+- **Root cause:** `boolChip(labelKey, trueIcon, falseIcon = trueIcon)` — the default was presumably a
+  convenience, and every call site but `isRepeatable` (`rotate`/`star`) took it. The label already
+  flips `✓`/`✗`; the icon does not.
+- **What to change:** Either pass a false icon at the four sites (`circle-xmark` for *experienced*,
+  a slashed variant for *travel*/*messy*), or drop the default and make the parameter required so the
+  next chip cannot forget. The second is the fix; the first is the patch.
+- **Verification:** `P1`'s `Verify:` block on `/leisure/bucket-list`, then the same chip on
+  `/leisure/backlog` and `/leisure/projects`.
+- **Risk:** None.
+
+## F68. The manual-entry form fires one `POST` per click and never resets — the second click, and every re-submit after a success, is a `409`
+
+> ✅ **FIXED AND VERIFIED 2026-09-23** (`d08a6e90`). `AddActivityManuallyView` gates `handleSave` on a
+> `saving` ref (early return, `try/finally`) and binds it to the button's `:loading`. The reset lives
+> inside `saveActivity()` (`resetAfterSave()`), so the view needs no `@saved` binding. **Chosen:**
+> `dateTime + timeLength`, not `new Date()`, for back-to-back logging, and the code comment says why.
+> The length is cleared and the activity kept, as the body asks.
+> **One thing the body did not say:** `saveActivity()` emitted `saved` and returned `true` even when
+> `saveActivityToHistory` returned `null` (a failed save). It now returns `false` without resetting or
+> emitting, so a failed save keeps the form as the user left it. Observed incidentally: the reseed 404
+> above left the form untouched.
+> **Verified live** on `/activity-history/manual` (Grocery Shopping, 30 min): `dblclick` on *Record
+> activity to history* → **one** `POST /api/activity-history` 201; the form then read "when" 21:30,
+> length 00:00, activity kept. A second *Record* at 15 min → a second 201, `startTimestamp` 19:30:00Z
+> against the first's 18:59:54Z, not a 409. No console errors.
+> **Side effect, not a defect:** `DateTimePicker` re-emits at whole-minute precision, so the advanced
+> start is rounded (18:59:54.770 + 30 min went out as 19:30:00.000). The next span can therefore overlap
+> the previous one by under a minute. That is harmless to the unique index, which keys on the start.
+> **Not done:** the body's "Reseed after", because other sessions were running specs against the
+> fixture. The two *Grocery Shopping* records written by the check were gone by the time cleanup was
+> tried later that day: another session's reseed had removed them. `/activity-history/filter` for
+> 2026-09-23 returned only the seed's *Desk Research* row.
+
+- **Scope:** app-side `src/core/activityHistory/view/AddActivityManuallyView.vue:17-23,36-38`,
+  `src/core/activityHistory/component/AddActivityManuallyForm.vue:53-82`
+- **Closes:** `history-capture/B6` (round 1's `U1`, now observed — and the queue's §53 split of it, both
+  halves, is settled below)
+- **Root cause — confirmed, and the reset half is no longer taste.** `handleSave()` is
+  `await formRef.value?.saveActivity()` with no re-entry flag; `saveActivity()` sets nothing while
+  `await saveActivityToHistory(…)` is pending; the button has no `:loading`/`:disabled`. Two clicks inside
+  the round trip are two `create` calls with the **same** `activityId` and `startTimestamp`, and the
+  server's unique index `(UserId, ActivityId, StartTimestamp)` (`ActivityHistoryConfiguration.cs`) turns
+  the second into a **409** — the mechanism the unit guessed and could not verify; confirmed at the
+  source. What the finding did not draw out: `dateTime` is set once at mount (`Form.vue:53`, `new Date()`)
+  and nothing resets it after a success, so a user who records a span and clicks *Record* again —
+  the same activity, the same "when" — gets the same 409, surfaced as `history.errorSavingToHistory`
+  (*"error saving"*) for a save that is not an error but a duplicate. That is why the reset half moves
+  from "unsourced" (§53) to required: without it the form's second use is always a failure. Which fields
+  reset is still the judgement §53 named — a user logging several spans of one activity plausibly wants
+  the activity kept — but *"when"* must advance (to now, or to the end of the span just saved), or the
+  index refuses.
+- **Files:** `AddActivityManuallyView.vue` (a `saving` ref, `:loading="saving"` on the button, `@saved`
+  bound); `AddActivityManuallyForm.vue` (a `reset()` in `defineExpose`, or reset inside `saveActivity()`
+  after `emit('saved')`)
+- **What to change:** Gate `handleSave` on a `saving` ref set around the `await` (the
+  `TimerPresetDialog` confirm shape), bind it to the button's `loading`. Then the reset: on `saved`, set
+  `dateTime` to `new Date()` (or to `dateTime + timeLength`, which is the more useful default for
+  back-to-back logging — pick one and say why in the code) and clear `timeLength`; keep the activity
+  selection. The success snackbar (`history.addedToHistory`) already fires; nothing else is needed to
+  "make it obvious the save happened".
+- **Do not change:** the server's index — a duplicate `(activity, start)` *is* a duplicate; the 409 is
+  right. Not `useSaveActivityToHistory` — its snackbar pair is shared with the three timer views.
+- **Verification:** `B6`'s `Verify:` block — `dblclick` on *Record activity to history* produces **one**
+  `POST /api/activity-history` (`playwright-cli requests`), no 409, no console `AxiosError`; then a
+  single save followed by a second *Record* → a second 201 with a different `startTimestamp`, not a 409.
+  Reseed after.
+- **Risk:** None.
+
+## F75. `viewEndDate` never rolls an overnight view onto the next day, so plan-vs-actual reports a verdict all day
+
+> ✅ **FIXED AND VERIFIED 2026-09-23** (`d08a6e90`; the second half of the verification was finished the same
+> day, see *Completed* below). Exactly
+> the body's change: a branch between the `>= 24` case and the `else` that reuses `core.isOverMidnight`,
+> adds one day and sets the raw hours. The code comment names the two dialects. `dateTimeFromSlotIndex`
+> is untouched, as the body warns. The *Risk* grep: `viewEndDate`'s **only** consumer is
+> `usePlanVsActual.ts:37` (plus its interface declaration), so nothing else changed meaning.
+> **Verified live** by reading the Pinia store (`$pinia._s.get('dayPlanner')`) at 21:01 local on
+> `/day-planner/23-09-2026`: `viewStartDate` Wed 23 08:00, `viewEndDate` **Thu 24 00:00**,
+> `isOverMidnight` true, and no plan-vs-actual line on screen. `22-09-2026` and `21-09-2026` resolve to
+> Wed 23 00:00 and Tue 22 00:00, each the following midnight.
+> **Completed:** the first pass could not see the line *appear*, because the seed has no tasks on past
+> days, and it never exercised an 08:00–23:00 day. Both were done in a second `playwright-cli` session
+> (`-s=f75`), with the clock driven by Playwright's `page.clock` through `run-code` and nothing written
+> to the fixture. On `/day-planner/23-09-2026` (the seed's 08:00 → 00:00 day: one in-progress and one
+> not-started task):
+> - **23:55:** `viewEndDate` Thu 24 00:00, no line. The pre-fix code would have shown it here.
+> - **00:05** (`clock.fastForward`, no reload, so the app's own 60 s tick picked it up): *"Planned 2h ·
+>   logged 0m"* and *"2 tasks never happened"*. The counts match the day.
+> - **08:00–23:00:** the store's `viewEndTime` was set to 23:00 in-page (not persisted). `isOverMidnight`
+>   was false and `viewEndDate` Wed 23 23:00. At **22:31** there was no line; at **23:11** the same two
+>   lines appeared. The branch that already worked is unchanged.
+>
+> The three console errors in that session were SignalR *"Server timeout elapsed"* disconnects, one per
+> clock jump. That is the fake clock tripping the hub's keep-alive, not the app.
+> A trap for the next verifier: `/day-planner/:date` takes `DD-MM-YYYY`. An ISO date silently
+> redirects to today, which reads as "the fix did not change past days".
+
+- **Scope:** app-side `src/core/dayPlanner/store/dayPlannerStore.ts:157-170` (`viewEndDate`)
+- **Closes:** `planner-day/B7`
+- **Root cause:** `viewEndDate`'s only next-day branch is `endHour >= 24`; the `else` sets
+  `date.setHours(endHour, …)` on **today**. The seed's `bedTime` is `{hours: 0, minutes: 0}` — an 08:00
+  → 00:00 day, i.e. midnight *at the end* — so `viewEndDate` resolves to today at 00:00:00, an instant
+  that is in the past from 00:00:01 onward. `usePlanVsActual.ts:36`'s
+  `isDayMateriallyDone = currentTime >= store.viewEndDate` is therefore true all day, and
+  `prompts/_done/day-planner/F2-plan-vs-actual.md`'s own rule — *"Do not compute a drift verdict at
+  10:00 for a day that ends at 23:00"* — never holds. Observed at 19:54 on a day with a task two minutes
+  from starting: *"Planned 3h · logged 0m · 3 tasks never happened"*.
+- **The module already knows the answer, one file over.** `usePlannerStoreCore.ts:99` is
+  `isOverMidnight = viewStartTime.hours > viewEndTime.hours` — which is exactly true for 08:00/00:00.
+  `viewEndDate` is the one place that asks a different question.
+- **What to change:** in `viewEndDate`, treat `endHour < viewStartTime.hours` the same as `endHour >= 24`
+  — roll the date forward one day, then set the hours. Reuse `core.isOverMidnight` rather than
+  re-deriving the comparison.
+- **Check the sibling while there:** `dateTimeFromSlotIndex` (same file, immediately below) uses the same
+  `hours >= 24` convention, and it is *correct* there — `slotIndexToTime` emits hours past 24 for an
+  overnight grid. The asymmetry is the trap: the grid's own math speaks the ≥24 dialect while
+  `viewEndTime.hours` comes from `bedTime` raw. Do not "fix" the slot version to match.
+- **Do not change:** `neverHappenedCount`'s `status !== Completed` test. It is a safe simplification
+  *once* the gate is honest, which is the finding's own reading.
+- **Verification:** `B7`'s `Verify:` block — load today's plan mid-afternoon on an 08:00–00:00 day and
+  confirm the plan-vs-actual line is **absent**; then confirm it appears with correct counts once past
+  the end time. A day configured with an end hour later than its start (e.g. 08:00–23:00) must be
+  unaffected — that is the regression to watch, since it is the branch that works today.
+- **Risk:** Low, but it changes what a *correct* day does too: anything else reading `viewEndDate` (the
+  grid's own extent, `slotIndexToTime` consumers) now gets tomorrow's midnight for an overnight view.
+  That is the intended meaning; grep the store's consumers before assuming nothing else depended on the
+  bug.
+
+## F84. The history dashboard's pie renders the folded-tail sentinel raw — `_other` in the legend, and the slice selects
+
+> ✅ **FIXED AND VERIFIED 2026-09-23** (`d08a6e90`). The body's two decisions went as follows.
+> **Constant:** neither option as written. `HistoryGroupKey.ts`, the DTO file that already documents the
+> roll-up, now exports `HISTORY_OTHER_GROUP_NAME` and a predicate `isHistoryOtherRollup(item)`
+> (`groupId === null && name === '_other'`). `useHistoryInsights.ts` drops its private
+> `OTHER_GROUP_NAME` and calls the predicate. Its suppression logic is unchanged; the explanatory comment
+> moved to the call site. There is one copy of the literal in the module now, not a fourth.
+> **Locale key:** `history.summary.otherGroup` (*Ostatné* / *Other*), in `activityHistory`'s locale
+> files, which own the `history` namespace (`historyDashboard` has none).
+> **Deviation from "used at `:41`":** the echarts datum keeps the **raw** name. The legend is keyed by
+> it, and translating it there would merge the roll-up with a real activity named *Other*/*Ostatné*.
+> Only what the user reads is translated: the legend `formatter` and the tooltip, which now resolves
+> through `dataIndex`. `handleChartClick` returns early on the predicate.
+> **`HistorySummaryCard.vue` untouched, checked as the body asked.** `HistorySummaryCardsBuilder.cs` is
+> top-N with no roll-up; `OtherName` appears only in `HistoryPieChartBuilder.cs`.
+> **Verified live** on `/activity-history` with a `route`-fulfilled body carrying an `_other` row **and**
+> an id-less `Uncategorized` row. The legend reads *Other (19.3%)* and the tooltip *Other*, and the
+> slice is grey (`hsl(0, 0%, 62%)`). Clicking `_other` with nothing selected selected nothing; clicking
+> it with *Feature Development* selected left that selection in place. `Uncategorized` and a real
+> activity both still select. No console errors.
+> **Not verified:** the SK wording by eye (the key exists in both locales); the summary-card highlight
+> directly (it follows the same `selectedGroup` that did not change). The body's verification route,
+> `/activity-history/dashboard`, does not exist. The dashboard is `/activity-history`.
+
+- **Scope:** app-side `src/core/historyDashboard/component/pieChart/HistoryPieChart.vue` (+ one locale key
+  if `activityTracking.common.other` is not reused — decide which, see below)
+- **Closes:** *(unfiled)*. Fell out of §10's closure, from the opposite side: the backend's `B16` answer
+  flagged `AdhdTimeOrganizer.History/application/dashboard/HistoryPieChartBuilder.cs` as out of scope and
+  "probably the identical bug". **It is not — that flag is stale.** `HistoryPieChartBuilder.cs:20` is
+  already `public const string OtherName = "_other"`, and has been; the History slice never had the
+  literal `"Other"` the Tracking pies did. The server side needs nothing. **Re-read in the API repo on
+  2026-09-21 and unchanged**, so the backend's *"say so and I'll do the History side as a follow-up"*
+  can be answered with "nothing to do" — this batch is the whole fix. What is wrong is the *client*:
+  the two modules' pies were written independently and only `activityTracking`'s learned the sentinel.
+- **Root cause — a branch that exists in one pie and not the other.** `ActivityPieChart.vue` translates
+  `OTHER_DOMAIN` on the way into the chart (`:62`), maps it back for the tooltip and the legend formatter
+  (`:96`, `:144`) and returns early rather than emitting a selection (`:150`). `HistoryPieChart.vue` has
+  none of the four: `:41` sets `name: item.name` verbatim, the legend `formatter` (`:75-81`) truncates and
+  percent-suffixes that same raw string, and `handleChartClick` (`:113-121`) resolves the datum by index
+  and emits `historyGroupKey(item)` for *any* slice. So the folded row shows as a literal `_other` in
+  **both** locales and is a selectable group — it cross-highlights the summary cards and the stacked bars
+  through `isSameHistoryGroup`, which matches it by name because its `groupId` is null.
+  `HistoryGroupKey.ts:7-8` already names this row ("the pie chart's `_other` roll-up") as one of the two
+  synthetic, id-less rows, so the DTO layer knew about it and the render layer did not.
+- **Adjacent, already handled — do not "fix" it twice.** The **colour** is fine:
+  `historyGroupColor.ts:47` routes a `groupId === null` row through `getDomainColor(name)`, which
+  special-cases `_other` to grey, so the slice already paints neutrally (this is the same conclusion §11's
+  body reached from the colour side). And `useHistoryInsights.ts:80` already has its own `OTHER_GROUP_NAME
+  = '_other'` constant and suppresses insights derived from the roll-up — a third copy of the literal,
+  which is the argument for a shared constant rather than a fourth.
+- **What to change:** give `HistoryPieChart` the same three touch points `ActivityPieChart` has — a
+  display-name helper used at `:41` and inside the legend `formatter`, and an early return in
+  `handleChartClick` when the resolved item is the roll-up. Branch on `item.groupId === null &&
+  item.name === <sentinel>`, **not on the name alone** — `HistoryGroupKey.ts:10-11` is explicit that a
+  user may name a real activity `_other` and that row carries an id. Two things to decide, both small:
+  (1) **which constant** — `historyDashboard` should not import `activityTracking`'s `OTHER_DOMAIN`
+  (cross-module, and neither is an `api/`/`dto/` export), so either lift one shared constant somewhere
+  both may import or reuse `useHistoryInsights.ts`'s `OTHER_GROUP_NAME` by exporting it; the latter is one
+  line and keeps the module self-contained. (2) **which locale key** — `activityTracking.common.other` is
+  the existing wording (*Ostatné*) but lives in another module's namespace; a `history.*` key with the
+  same two words is the boundary-respecting answer and costs two lines in `sk`/`en`.
+- **Do not change:** `HistoryPieChartBuilder.cs` or anything else server-side — the wire value is already
+  correct. Not `historyGroupColor.ts` (the grey works). Not `useHistoryInsights.ts`'s suppression logic.
+  Not `HistorySummaryCard.vue:21` unless the roll-up actually appears there — the summary-card endpoint is
+  a different builder and this pass did not check whether it folds at all; look before adding a branch.
+- **Verification:** `/activity-history/dashboard` on a `groupBy` and range where the seed has a group
+  under the builder's 1 % threshold (`HistoryPieChartBuilder`'s constant), or one fulfilled `route` body
+  carrying a `{"groupId": null, "name": "_other"}` row. Pass: the legend entry reads *Ostatné* (and its
+  English wording in EN), the slice is grey, and clicking it changes neither the selection nor the
+  summary-card highlight. Re-check that clicking a **real** grey/colourless slice still selects — the
+  guard must key on the id-plus-name pair, not on the colour or on `groupId === null` alone, or
+  `Uncategorized` stops selecting with it.
+- **Risk:** Low, one component. The only trap is the over-broad guard above: `Uncategorized` shares the
+  null `groupId` and *is* a real, selectable bucket.
+
+## FW1. `MyDialog` is `persistent` by default, so Escape closes nothing
+
+> ✅ **FIXED 2026-09-23 — step 1 of 2** (`vue_framework` `90b80e6`, bump `8739d08f`).
+> **Decision (owner, 2026-09-23):** neither of the body's two options as written. What `persistent` protects
+> is **input**, not destructiveness. Escape on a yes/no confirmation is "no", the safe answer even for a
+> delete, so a confirmation has nothing to guard. A half-filled form does.
+> **Step 1, landed:** `MyDialog`'s default is unchanged. `useDialog().confirm()` now passes
+> `persistent: false` (a `persistent` option restores the old behaviour for a confirmation that must be
+> answered explicitly), and ten input-less dialogs opt out:
+> - framework: `BasicTable` and `TableGrid` delete confirms, `CancelReminderDialog`,
+>   `BulkCancelReminderDialog`, `ReplayConfirmDialog`, and `SessionsSection`'s log-out-all confirm;
+> - app: `DayPlanner` and `RepeatingTasksTab` delete confirms, the view-only `TemplateComparisonDialog`,
+>   and `PomodoroPresetsDialog` (its editing happens in a nested form dialog).
+>
+> Kept persistent on purpose: every `openDialog()` body (usually a form), `SnoozeDialog`, `ErrorDialog`,
+> `TrackTimeDialog`'s result state, `RecoveryCodesBody`. `components.md` now says what `persistent` is for;
+> `composables.md` documents `confirm()`'s new default.
+> **Step 2, deferred:** flip the default once every dialog goes through the central dialog opener the
+> owner plans, with a dirty-check "discard changes?" guard on forms instead of blanket persistence.
+> **This body's "a destructive confirm must still resist Escape" is superseded** by the decision above.
+> **Verified live and in specs:** the `/leisure/backlog` delete confirm closes on Escape and *Read a
+> Novel* stays (`leisure-backlog-picker.draft.spec.ts`, which used to pin the opposite, now asserts
+> this). The planner's task form survives Escape, and its delete confirm closes on Escape and keeps the
+> task (`dayPlanner.spec.ts`, two new tests). The 2FA code dialog and the stopwatch save form still
+> resist Escape (`two-factor.spec.ts`, `history-capture.draft.spec.ts`; their comments now cite FW1 as
+> decided). `vue-tsc --build --force` exit 0, lint clean.
+> **Commit oddity:** the backlog spec's FW1/FW20 hunks landed inside `3187c36f` (F64) through a
+> shared-index collision between two sessions, and F64's own hunks followed in `a9d43af8`.
+
+- **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` — submodule commit in `vue_framework`,
+  then a pointer bump in this repo, in that order
+- **Closes:** `_shell/A1`
+- **Re-verified unchanged this pass:** `MyDialog.vue:86` still defaults `persistent = true`; `onEscKey()`
+  (`:136`) is still the only Escape handler.
+- **Its own batch, and it needs a decision before a patch** (rule 4): flipping the default changes dismissal
+  semantics for every dialog in every app on the framework, including destructive confirms. The two options —
+  flip the default and have guarding dialogs opt **in**, versus keep the default and have harmless call sites
+  opt **out** — are not equivalent in risk.
+- **Files:** `src/_common/component/dialog/MyDialog.vue:86,136`; `src/_common/docs/components.md` in the same
+  commit
+- **What to change:** Whichever the decision is, plus the framework docs, plus a default that keeps existing
+  apps working if it goes the opt-in way.
+- **Verification:** `_shell/A1`'s `Verify:` block, **both halves** — a fix that makes every dialog escapable is
+  a regression, not a fix. A destructive confirm must still resist Escape.
+- **Risk:** Highest in this queue. Ships to every app on `vue_framework`, and the failure mode of getting it
+  wrong (a half-filled form dismissed by a stray Escape) is data loss.
+
+## FW20. `useTableFormatters`' substring heuristics misclassify columns — `durationMinutes` is a percentage, `inspirationSource` is a dash
+
+> ✅ **FIXED 2026-09-23** (`vue_framework` `e6f4b68`, bump `8739d08f`).
+> **Decision (owner, 2026-09-23):** both halves of the body's choice. Keys are matched by whole words (split
+> on camelCase, `.`, `_`, `-`; a keyword also matches its plural; the boolean rule reads the first word
+> only), **and** `TableColumn` gains an optional fifth argument `format: TableCellFormat` (`'raw' | 'date'
+> | 'dateTime' | 'boolean' | 'currency' | 'percent'`) that replaces the guess for its column.
+> `DataTable` resolves hint-then-guess once per header set. `detectCellFormat` and the `is*Key` matchers
+> are module-level exports now; the composable still returns them.
+> **Behaviour change for other apps, stated in the commit:** all-lower-case compounds (`subtotal`,
+> `birthdate`) and `updatedAt` (only ever matched through "upDATEd") no longer auto-format; give them a
+> `format`. `vatRate`, `totalPrice` and `isActive` are unchanged.
+> **Verified:** `useTableFormatters.test.ts`, 28 cases, including the body's non-matches plus
+> `durationSeconds`, `errorSummary`, `isolation` and `feedback`. Live: `/leisure/backlog` *Duration (min)*
+> reads **45**, and `/leisure/bucket-list` *Inspiration* shows *"A friend's climbing photos"*. The backlog's
+> auto-formatted yes/no columns (`isRepeatable`, `isAnchored`) still render icons. The spec's `B1`
+> `fixme` is now a passing test. **Correction to the body:** `RoutineSettingsView`'s `isHidden` does
+> not rely on auto-format; it is slotted as a switch (`:52`). `JobRunHistory`'s two workaround slots
+> still win and were left in place. SK locale not checked (the change is key-based, not text-based).
+
+- **Scope:** **[framework]** `src/_common/composable/table/useTableFormatters.ts:4-33` — submodule
+  commit, then pointer bump. **Decision first** (word-boundary/segment matching vs. opt-in auto-format).
+- **Closes:** `leisure-backlog-picker/B1` (+ one unfiled: the *Inspiration source* column on
+  `/leisure/bucket-list` renders **"—"** for the seeded row whose value is *"A friend's climbing
+  photos"* — §96)
+- **Root cause (source-verified):** `isPercentKey` is `['percent','rate','vat','ratio','discount'].some(kw => lower.includes(kw))`
+  (`:6,30-33`); `isCurrencyKey`, `isDateKey`, `isBooleanKey` are the same shape. `DataTable.vue:33-61`
+  applies them to every column without a consumer slot. Tested against all **105** `TableColumn` keys in
+  this app this pass: `durationMinutes` → `ratio` → `formatPercent(45)` = *"45.00 %"* (the finding);
+  `inspirationSource` → `ratio` → `formatPercent("A friend's…")` = *"—"* (`:41`, non-number → dash), no
+  slot in `BucketListTable.vue` (`:19-43` slot five other columns); `expectedCostTier` → `cost`, shielded
+  by a slot. The framework's **own** `JobRunHistory.vue:90,99` slots exactly `durationSeconds` (`ratio`)
+  and `errorSummary` (`sum`) — the trap was hit inside the framework and worked around rather than
+  fixed. Unit 12 listed *Inspiration source* as a rendered column and did not notice its content was a
+  dash; the seed says the row has text.
+- **What to change:** Match on camelCase segments / word boundaries (`durationMinutes` → `duration`,
+  `minutes`; `inspirationSource` → `inspiration`, `source`), or make auto-format opt-in per column
+  (`TableColumn` gains a `format` hint, default `raw`). The first keeps zero-config and is a smaller
+  diff; the second is honest. Either way, add a unit test that feeds every keyword-containing
+  non-match (`duration`, `elevated`, `candidate`, `update`, `assumption`) and asserts `raw`.
+- **Do not change:** the app's tables — no per-table slots as a workaround (see the ordering note
+  above), and no rename of `durationMinutes` (it is the wire field).
+- **Verification:** `B1`'s `Verify:` block (*"45"*, no percent) **and** `/leisure/bucket-list`'s
+  *Inspiration source* showing the seeded text; then every `DataTable` consumer in this app that relies
+  on auto-format — the tracker mapping tables (`isActive`/`isIgnored` booleans), `RoutineSettingsView`
+  (`isHidden`), `ActivityTable` (`isUnavoidable`) — still renders its icons; and the framework's
+  `JobRunHistory` unchanged. Both locales.
+- **Risk:** Medium, framework-wide: loosening the match can un-format a column that another app named
+  `vatRate`; tightening it to segments keeps those. Prefer segments.
+
+## FW23. A second column-header click adds a sort key instead of replacing it
+
+> ✅ **CLOSED 2026-09-23 — no change needed.** **Decision (owner, 2026-09-23): (b)**, keep multi-sort and
+> show the affordance. `DataTable.vue:14` passes `multiSort` explicitly, so multi-sort was already a
+> choice. **The affordance already exists.** On `/leisure/backlog`, one unmodified click on *Duration
+> (min)* after the default *Activity* sort gives `sortBy=activity.name:asc,durationMinutes:asc`, and **both**
+> headers carry Vuetify's numbered badge: *Activity ↑ 1*, *Duration (min) ↑ 2* (DOM and screenshot, a
+> 20 px chip on a 12 % grey ground). Clicking the same header again cycles asc → desc → removed, so the
+> second key can be taken off. `VDataTableHeaders.js:186-190` draws a badge on every sorted column when
+> `multiSort` is on, and nothing in `DataTable` or any consumer overrides the header cells. The finding's
+> "no numbered sort badges beyond the primary key's own chip" does not reproduce; it was probably read
+> before the second key had applied.
+> **Not built, offered as new scope:** a header tooltip spelling out the click cycle, if discoverability
+> is still wanted.
+
+- **Scope:** **framework** — `BasicTable`/`DataTable`'s `VDataTable` configuration
+  (`src/_common/component/dataTable/`). Submodule commit + pointer bump.
+- **Closes:** `leisure-backlog-picker/P1 (round 2)`
+- **Root cause:** one unmodified click on a second header turned `sortBy=activity.name:asc` into
+  `sortBy=activity.name:asc,durationMinutes:asc` — Vuetify's multi-sort behaviour, inherited by every
+  table in the app. The server accepts it; it is simply not what the click looked like it was asking
+  for, and there is no affordance anywhere (no shift-click hint, no numbered sort badges beyond the
+  primary key's own "Activity 1" chip) telling the user a second sort is being layered.
+- **Its own batch by rule 4.** Whatever is decided here applies to every table in every app on the
+  framework, not just the four leisure ones — that needs a decision, not a patch.
+- **The decision, stated plainly:** either (a) make single-sort the default and let a table opt into
+  multi-sort, which matches what every table in this app looks like it does and is the finding's first
+  pass condition; or (b) keep multi-sort and render the affordance — numbered badges on every active key,
+  extending the chip the primary key already has. (a) is a behaviour change for other apps; (b) is more
+  work and leaves a URL that grows on every click. Neither is obviously right, which is why this is
+  filed as a decision.
+- **What to check before deciding:** `useTableUrlState`'s `sortBy` codec already round-trips a
+  comma-joined list, so (a) does not simplify the URL format — and some consumer may be reading a
+  multi-key sort deliberately. Grep the framework and this app for a table passing more than one
+  default sort item.
+- **Verification:** `P1`'s `Verify:` block on `/leisure/backlog`, then the same two clicks on a
+  `DataTable` and a `BasicTable` elsewhere in the app, and on the framework's own `JobRunHistory`.
+- **Risk:** Medium for a trivial-looking change — it ships to every app on the framework and changes a
+  gesture users have already learned, in whichever direction it goes.
