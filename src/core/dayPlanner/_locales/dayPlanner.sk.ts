@@ -31,7 +31,9 @@ const dayPlanner = {
 		},
 		templateSuggestions: {
 			suggestedForYou: `Odporúčané pre vás`,
-			usedOn: `Použité v {label}`,
+			// `{label}` is a day name or a day type in the nominative, so no preposition that would need
+			// to inflect it ("v Štvrtok" was wrong twice over).
+			usedOn: `Zvyčajne: {label}`,
 			timesCount: `{count}×`,
 		},
 		// Zvyšok `TemplateListView.vue` je zatiaľ natvrdo po anglicky; localizované sú len tieto

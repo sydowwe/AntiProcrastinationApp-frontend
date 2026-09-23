@@ -12,7 +12,7 @@
 
 		<!-- Backend Suggestions -->
 		<div
-			v-if="backendSuggestions.length && !store.isTemplateInPreview"
+			v-if="suggestions.length && !store.isTemplateInPreview"
 			class="mb-4"
 		>
 			<div class="d-flex align-center ga-1 mb-2">
@@ -25,11 +25,15 @@
 			</div>
 			<div class="d-flex flex-column ga-2">
 				<div
-					v-for="s in backendSuggestions"
+					v-for="s in suggestions"
 					:key="s.template.id"
 					class="suggestion-item d-flex align-center justify-space-between pa-2 rounded-lg"
+					role="button"
+					tabindex="0"
+					:aria-pressed="selectedTemplate?.id === s.template.id"
 					style="cursor: pointer"
 					@click="selectSuggestion(s.template)"
+					@keydown.enter.space.prevent="selectSuggestion(s.template)"
 				>
 					<div class="d-flex align-center ga-2 flex-wrap">
 						<VIcon
@@ -45,7 +49,7 @@
 							color="primaryOutline"
 							class="flex-shrink-0"
 						>
-							{{ t('planner.templateSuggestions.usedOn', { label: s.patternLabel }) }}
+							{{ t('planner.templateSuggestions.usedOn', { label: patternLabel(s) }) }}
 						</VChip>
 					</div>
 					<span class="text-caption text-medium-emphasis flex-shrink-0 ml-2">
@@ -183,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-	import { onMounted, ref, watch } from 'vue'
+	import { computed, onMounted, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
@@ -202,7 +206,7 @@
 		useTemplate: []
 	}>()
 
-	const { t } = useI18n()
+	const { t, te } = useI18n()
 	const store = useDayPlannerStore()
 	const { fetchAll, fetchSuggestions } = useTaskPlannerDayTemplateTaskCrud()
 
@@ -238,6 +242,26 @@
 		},
 	)
 
+	// One row per template, highest occurrence first (the server's order): a template applied on both
+	// the same weekday and the same day type comes back as two patterns, and two rows with one key.
+	// Inactive templates are skipped; the server does not filter them yet (backend ask B27).
+	const suggestions = computed(() => {
+		const seen = new Set<number>()
+		return backendSuggestions.value.filter(s => {
+			if (!s.template.isActive || seen.has(s.template.id)) return false
+			seen.add(s.template.id)
+			return true
+		})
+	})
+
+	// `patternLabel` is the server's English enum name ("Thursday", "Workday"), so it is translated
+	// through the app's own keys and shown raw only if it is a name this client does not know.
+	function patternLabel(s: TemplateSuggestionResponse): string {
+		const key =
+			s.patternType === 0 ? `calendar.${s.patternLabel.toLowerCase()}` : `planner.dayType.${s.patternLabel}`
+		return te(key) ? t(key) : s.patternLabel
+	}
+
 	function selectSuggestion(template: TaskPlannerDayTemplate) {
 		selectedTemplate.value = template
 	}
@@ -267,7 +291,13 @@
 		transition: background 0.15s;
 	}
 
-	.suggestion-item:hover {
+	.suggestion-item:hover,
+	.suggestion-item[aria-pressed='true'] {
 		background: rgba(var(--v-theme-primary), 0.12);
+	}
+
+	.suggestion-item:focus-visible {
+		outline: 2px solid rgb(var(--v-theme-primary));
+		outline-offset: 2px;
 	}
 </style>
