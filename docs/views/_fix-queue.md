@@ -164,7 +164,7 @@
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` was a reserved number, never a batch — the template-suggestions fix it was held for landed 2026-09-24 without one, and the number is retired unused;
 `F85` landed 2026-09-21 unrecorded and was verified and closed 2026-09-23, body in the log; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 24
 framework (`FW10` was a reserved number, never a batch — the `TimePicker` minute-60 fix it was held for landed 2026-09-24 without one, and the number is retired unused; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log; `FW4`, `FW17` and `FW22` landed together 2026-09-23 in `b4eb068`, bodies in the log; ~~open framework batches are now `FW1`, `FW20`, `FW23`~~ — all three decided and closed 2026-09-23: `FW20` fixed, `FW1` step 1 fixed with step 2 deferred, `FW23` needed no change; bodies in the log. **No framework batch is open**) ·
-21 escalations (**1 open: §22** (`B27`, template suggestions, written 2026-09-24). Before it, **0 open**: **§7 closed 2026-09-23**, the last one: `B18` had landed 2026-09-21 and its
+21 escalations (**0 open** — **§22 closed 2026-09-24**, written, landed and verified the same day (`B27`, template suggestions). Before it, **§7 closed 2026-09-23**: `B18` had landed 2026-09-21 and its
 frontend half, `FW24` + `F85`, shipped the same day unrecorded and was verified live 2026-09-23; **§19 closed 2026-09-21** when `B24` landed and its
 frontend half shipped the same evening with `F16` folded in — no ask is open server-side; **§18 closed 2026-09-21** when `B23` landed and `F47` shipped with it; **§8 closed 2026-09-21** when `B19` was decided — a stable
 `holidayKey`, no country preference — and its frontend half landed the same day; **§1 closed 2026-09-21** when `B15` landed with no
@@ -616,7 +616,7 @@ Vuetify's own markup.
 > | ~~§16~~ | `_done/B21-…` — landed 2026-09-21, frontend half the same day, body in the log | ~~§17~~ | `_done/B22-…` — landed 2026-09-21 as option (b), frontend half and the spec the same day, body in the log |
 > | ~~§18~~ | `_done/B23-…` — landed 2026-09-21 (API `c00e64d`), frontend half the same day (`c2075f61`, with `F47`), body in the log | ~~§19~~ | `_done/B24-…` — landed 2026-09-21 (API dev, uncommitted at the time), frontend half the same evening with `F16` folded in, body in the log |
 > | ~~§20~~ | `_done/B25-…` — landed 2026-09-21 with the decision taken (the code that trips the lock answers `UserLockedOut`), frontend half the same day, body in the log | ~~§21~~ | `_done/B26-…` — landed 2026-09-22 (API dev), verified end to end 2026-09-23, no frontend half, body in the log |
-> | **§22** | **`B27-template-suggestions-ignore-what-the-user-set.md` — open, written 2026-09-24** | | |
+> | ~~§22~~ | `_done/B27-…` — written and landed 2026-09-24, frontend half the same day, verified live, body in the log | | |
 >
 > **Every landed or answered ask lives in `backend/_done/`** (corrected 2026-09-21 — this table said
 > `_implemented/` for seven of them, a directory that exists and is empty). A landed ask whose frontend
@@ -768,28 +768,7 @@ through the API, or `route`-mocks the body. One rule-1 answer found on the way: 
 first-run state needs an account with **zero** history, and `adminUser` (10003) is one — the seeder gives
 it per-user defaults and nothing else (`E2eFixtureSeeder.cs:213`); no seed change needed.
 
-### §22 — template suggestions ignore what the user set on the template (`B27`, open, written 2026-09-24)
-
-This came out of fixing the template picker's route (log → *Closed verification items*, the unit-7 item).
-Once the client called the real `…/suggestions/{calendarId}`, the answer turned out to be empty on the
-seed, and structurally empty for any new account. The endpoint reads only a history view: templates
-applied at least twice on that weekday or day type. It never reads the template's own `ScheduledDays` or
-`SuggestedForDayType`. The repeating-task sibling already returns user-set suggestions before history
-ones; this ask is that shape.
-
-Three smaller rules ride along, and the client **already works around** each of them:
-- one entry per template (the client dedupes);
-- skip inactive templates (the client filters them);
-- keep `PatternLabel` an invariant enum name (the client translates it).
-
-Last, a **test-only** item. Both suggestion endpoints `FindAsync` the calendar without comparing
-`UserId`. That is protected today by the per-user global query filter (another account's id → 404), but
-only while `UserScoping:Enabled`, and no test pins it for these routes. Yesterday's log note called this
-a possible leak; reading the filter settled that it is not one.
-
-**Frontend half, after it lands:** two locale strings (pattern types 2 and 3) and their label mapping in
-`DayTemplatePicker.vue`'s `patternLabel()`. Then drop the client's dedupe and `isActive` filter, or keep
-them as harmless guards.
+<!-- §22 (template suggestions ignored what the user set on the template — B27) resolved 2026-09-24: written and landed the same day, frontend half the same day, verified live with no mocking. Body in _fix-queue-log.md → Closed escalations; the ask and the backend's response in backend/_done/B27-…. Number retired, not reused. -->
 
 ## Needs verification (unverified findings, and what would settle each)
 
@@ -1039,18 +1018,49 @@ read added:
 
 ## Deferred to opportunities
 
-**`leisure-projects/O1` — the first genuinely open `opportunity` finding of the sweep.** Every
-`activity-project-profile/grid` row carries `activity.isOnTodoList` and nothing in `src/` reads it; combined
-with the `materialsNeeded` already rendered on `NeedsShopping` cards, it is the raw material for the
-shopping-list-to-todo handoff `P1-readiness-board.md` asked this module's author to either build or decline in
-writing. Neither happened. Two separable pieces of work, and only the second is an opportunity:
+~~**`leisure-projects/O1` — the first genuinely open `opportunity` finding of the sweep.**~~ — ✅ **built
+2026-09-24.** The entry stays for the audit trail.
 
-- **the written decline is a small docs chore, not a feature** — `migration-revision.md` has no entry, which
-  is the gap `P1` point 4 was trying to prevent. Someone should write the paragraph regardless of whether the
-  feature is ever built.
-- **the feature itself** goes to `docs/opportunities.md` at Phase 4, where it can be weighed against the
-  cross-module map rather than decided from inside one view. Note the constraint when it is: writing through
-  `core/todoList`'s `api/`/`dto/` only, per CLAUDE.md's cross-module rule.
+*What shipped.* A `NeedsShopping` card on the readiness board (`ProjectReadinessBoard.vue`) now has an
+*Add to to-do list* button — small, tonal, icon, accessible name `Add to to-do list: {name}` (F65 shape) —
+shown only when the project has at least one material or tool. It opens `ShoppingToTodoDialog.vue`: required
+list and priority selects, and a read-only preview of the steps. Confirm creates **one** to-do item for the
+project's own activity, with `materialsNeeded` then `requiredTools` as its steps (trimmed, capped at 255,
+blanks and case-insensitive duplicates dropped) and a localized note `Shopping for {project}` so the item
+explains itself on the list. The create is `_silent`: a 409 `DbUniqueViolationError` (the
+`(UserId, ActivityId, TodoListId)` unique index — the project is already on that list) lands as an inline
+error on the list field and the dialog stays open; anything else goes through `handleHttpCodes`. Writes go
+through `core/todoList`'s `api/` + `dto/` only; the one change there is an additive optional
+`requestConfig` on `useTodoListItemCrud().createWithResponse`. The card keeps its status — buying the
+things is the user's call to report, not the item's creation.
+
+*Evaluation — why steps on the project's activity, not an item per material.* A to-do item has no title
+of its own: it is an activity reference (`CreateTodoListItemRequest` extends `ActivityIdRequest`), so there
+is no free-text item to put "Pine boards" in. An item per material would mean minting an activity per
+material, and those would pollute the activity catalogue (pickers, history, tracking mappings) with
+one-off shopping entries. One item on the activity the project already is, with the list as steps, keeps
+the catalogue clean and keeps the shopping visibly attached to the project it unblocks. The unique index
+then gives the natural "already on that list" answer for free. The earlier bullet asking for a *written
+decline* in `migration-revision.md` is superseded by the feature.
+
+*Verified live 2026-09-24* (`playwright-cli`, seed project *Build a Bookshelf*, already `NeedsShopping`):
+the button renders on the card; Tab from the card reaches *Delete*, then the new button, and Enter opens
+only the handoff dialog (one overlay title — the card's edit dialog does not open); adding to *Errands*
+POSTed 6 steps + the note (201), showed one *Added to Errands* snackbar and the item rendered on
+`/todo-list/13002` as *Build a Bookshelf · Shopping for Build a Bookshelf · 0/6 steps*; repeating the add
+got 409 → inline *Build a Bookshelf is already on that list*, dialog open, **zero** snackbars, confirm
+button not left loading; SK checked by flipping the client locale (button, hint, labels, and *Projekt Build
+a Bookshelf už v tomto zozname je*). The test item was deleted afterwards (204). Console: only the two
+lines the expected 409 produces (the browser's network line and the framework interceptor's
+`console.error`, which logs every non-cancel failure regardless of `_silent`). Not verified: the
+button's absence on a `NeedsShopping` card with no materials or tools (the seed has none) — it is a plain
+`v-if`.
+
+Original finding: every `activity-project-profile/grid` row carries `activity.isOnTodoList` and nothing in
+`src/` reads it; combined with the `materialsNeeded` already rendered on `NeedsShopping` cards, it is the raw
+material for the shopping-list-to-todo handoff `P1-readiness-board.md` asked this module's author to either
+build or decline in writing. (The build deliberately does not read `isOnTodoList` — `ActivityInfo`'s doc
+comment says it is left at its default on these routes; the 409 is the reliable signal.)
 
 **`tracking-settings/O1` — a mapping's `isActive` is filterable, displayed, and editable nowhere.** Both
 mapping request DTOs carry it, both grids show it as a column and offer it as a filter, and neither the

@@ -49,10 +49,14 @@
 							color="primaryOutline"
 							class="flex-shrink-0"
 						>
-							{{ t('planner.templateSuggestions.usedOn', { label: patternLabel(s) }) }}
+							{{ patternSentence(s) }}
 						</VChip>
 					</div>
-					<span class="text-caption text-medium-emphasis flex-shrink-0 ml-2">
+					<!-- Only history entries have a count; a settings match (types 2/3) is always 0. -->
+					<span
+						v-if="isHistoryPattern(s)"
+						class="text-caption text-medium-emphasis flex-shrink-0 ml-2"
+					>
 						{{ t('planner.templateSuggestions.timesCount', { count: s.occurrenceCount }) }}
 					</span>
 				</div>
@@ -242,9 +246,9 @@
 		},
 	)
 
-	// One row per template, highest occurrence first (the server's order): a template applied on both
-	// the same weekday and the same day type comes back as two patterns, and two rows with one key.
-	// Inactive templates are skipped; the server does not filter them yet (backend ask B27).
+	// Rendered in the server's order, which is the ranking (history first, then template settings).
+	// Since B27 the server sends one entry per template and active templates only; both guards stay as
+	// a safeguard against an older API build, where a template could arrive twice under one v-for key.
 	const suggestions = computed(() => {
 		const seen = new Set<number>()
 		return backendSuggestions.value.filter(s => {
@@ -257,9 +261,25 @@
 	// `patternLabel` is the server's English enum name ("Thursday", "Workday"), so it is translated
 	// through the app's own keys and shown raw only if it is a name this client does not know.
 	function patternLabel(s: TemplateSuggestionResponse): string {
-		const key =
-			s.patternType === 0 ? `calendar.${s.patternLabel.toLowerCase()}` : `planner.dayType.${s.patternLabel}`
+		const isWeekday = s.patternType === 0 || s.patternType === 2
+		const key = isWeekday ? `calendar.${s.patternLabel.toLowerCase()}` : `planner.dayType.${s.patternLabel}`
 		return te(key) ? t(key) : s.patternLabel
+	}
+
+	function isHistoryPattern(s: TemplateSuggestionResponse): boolean {
+		return s.patternType === 0 || s.patternType === 1
+	}
+
+	// History says what the user did; a settings match says what the template is set up for (B27).
+	const PATTERN_SENTENCE_KEYS = {
+		0: 'planner.templateSuggestions.usedOn',
+		1: 'planner.templateSuggestions.usedOn',
+		2: 'planner.templateSuggestions.scheduledFor',
+		3: 'planner.templateSuggestions.suggestedFor',
+	} as const
+
+	function patternSentence(s: TemplateSuggestionResponse): string {
+		return t(PATTERN_SENTENCE_KEYS[s.patternType] ?? PATTERN_SENTENCE_KEYS[0], { label: patternLabel(s) })
 	}
 
 	function selectSuggestion(template: TaskPlannerDayTemplate) {

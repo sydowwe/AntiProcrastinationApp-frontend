@@ -9,6 +9,20 @@ Nothing here asks for a storage, view or index decision. Where the rule lives is
 > for you* section shows. **Today that answer is empty for almost everyone.** That is the headline below.
 > Parts 2–4 are smaller and the client already works around them. Part 5 asks for a test, not a code
 > change.
+>
+> ✅ **LANDED 2026-09-24. All five parts done, in the shape asked** (the backend's response is at the
+> bottom). Pattern types `2` (Scheduled days) and `3` (Suggested-for day type) are new; the route and
+> the response shape are unchanged.
+>
+> **Frontend half done the same day:** the two new sentences, the label mapping extended to types 2 and
+> 3, and no `N×` count on them. Verified against the live API with **no mocking**:
+> - `/suggestions/997` → *Office Day* (type 2, Thursday) and *Home Office* (type 3, Workday). The
+>   answer was identical over 8 replays, sequential and concurrent.
+> - The planner reads *"Scheduled for Thursdays"* / *"Suggested for Workdays"* in EN, and
+>   *"Naplánované: Štvrtok"* / *"Určené pre: Pracovný deň"* in SK.
+> - Switching *Office Day* off in the template list removed it from the suggestions after a reload.
+>   Switching it back on restored it.
+> - Part 5 (the ownership 404) is pinned by the backend's test, and the client needed no change.
 
 ---
 
@@ -123,3 +137,63 @@ The ask is only that the behaviour is pinned.
 `/day-planner/<a Thursday>` on the e2e seed with no mocking: *Suggested for you* shows the seeded
 templates tagged for Thursday or Workday, with the new *"Scheduled for …"* wording, and no row twice.
 Switch a template off in `/day-planner/templates` and reload: it is gone from the list.
+
+---
+
+## Backend response (2026-09-24, verbatim)
+
+> **B27 · Backend response: template suggestions**
+>
+> Endpoint: `GET /task-planner-day-template/suggestions/{calendarId}`. The route and the response shape
+> are unchanged. `PatternType` has two new values.
+>
+> **What changed**
+>
+> 1. Suggestions no longer need history. An active template is now suggested when its `ScheduledDays`
+>    contains the calendar's weekday, or when its `SuggestedForDayType` equals the calendar's `DayType`.
+>    On the e2e seed, `…/suggestions/997` should now return the templates tagged for Thursday or Workday
+>    instead of `[]`.
+> 2. One entry per template. The client-side "keep the first" dedup can stay, but it will never fire.
+> 3. Active templates only. `IsActive == false` is never suggested, whether it comes from history or from
+>    its settings. The client-side filter can stay as a safeguard or be removed.
+> 4. `PatternLabel` is still the invariant enum member name ("Thursday", "Workday"). It is never localized
+>    server-side.
+> 5. Ownership: another account's `calendarId` returns 404 on both suggestion endpoints. This is now
+>    pinned by a test. The client doesn't need to change anything.
+>
+> **`PatternType` values**
+>
+> | PatternType | Source | PatternLabel | OccurrenceCount | Suggested wording |
+> | --- | --- | --- | --- | --- |
+> | 0 | history: applied on this weekday | DayOfWeek name, e.g. "Thursday" | ≥ 2 | Used on Thursdays · 4× |
+> | 1 | history: applied on this day type | DayType name, e.g. "Workday" | ≥ 2 | Used on Workdays · 3× (existing) |
+> | 2 (new) | template's `ScheduledDays` contains this weekday | DayOfWeek name | 0 | Scheduled for Thursdays |
+> | 3 (new) | template's `SuggestedForDayType` matches this day | DayType name | 0 | Suggested for Workdays |
+>
+> Types 2 and 3 map their labels exactly like 0 and 1 already do: "Thursday" → `calendar.thursday`,
+> "Workday" → `planner.dayType.Workday`. Only the surrounding sentence differs, so you need two new locale
+> strings.
+>
+> **Order of the array** (render it as given, don't re-sort)
+>
+> 1. History entries (types 0 and 1), sorted by `OccurrenceCount` descending. When a template has equal
+>    counts for both, the entry you get is type 0.
+> 2. Entries from template settings (types 2 and 3):
+>    - A template matching both weekday and day type comes first and is reported as type 2, because the
+>      weekday is the more specific match. The client never sees a "both" type.
+>    - Ties are broken by template `UsageCount` descending, then by template id.
+>
+> A template that has history and matching settings appears once, as its history entry.
+>
+> **Frontend to-do**
+>
+> - Add locale strings for pattern types 2 and 3 (e.g. "Scheduled for {day}", "Suggested for {dayType}").
+> - Extend the pattern-type → wording switch to cover 2 / 3. Don't render the `· N×` count for them,
+>   since it is always 0.
+> - Optional: remove the client-side inactive filter and dedup. Both are now guaranteed by the backend.
+>
+> **How to verify**
+>
+> On `/day-planner/<a Thursday>` with the e2e seed and no mocking, *Suggested for you* shows the templates
+> tagged for Thursday or Workday with the new wording, and no row appears twice. Switch one of them off in
+> `/day-planner/templates` and reload: it disappears from the list.

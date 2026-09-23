@@ -6160,6 +6160,52 @@ for today (16008, created through `POST /api/planner-task` and deleted after):
 start/end only, so a skip there saved neither the status nor the reason. It now calls `patchStatus`
 (`d5e57027`).
 
+### §22 — ✅ RESOLVED 2026-09-24 (template suggestions ignored what the user set on the template — `B27`)
+
+Written and landed the same day. The backend did all five parts in the shape asked. The ask and its
+response are in `prompts/view-docs/backend/_done/B27-template-suggestions-ignore-what-the-user-set.md`.
+
+**What the backend changed:**
+- An active template is now suggested from its own `ScheduledDays` (new pattern type `2`) or
+  `SuggestedForDayType` (type `3`), ranked after the history entries (types `0`/`1`).
+- One entry per template, and active templates only.
+- `PatternLabel` stays the invariant enum name.
+- Another account's `calendarId` → 404, now pinned by a test.
+
+**Frontend half, the same day:**
+- `planner.templateSuggestions.scheduledFor` / `.suggestedFor` in both locales. EN: *"Scheduled for
+  {label}s"* / *"Suggested for {label}s"*. SK: *"Naplánované: {label}"* / *"Určené pre: {label}"*,
+  keeping the colon form that needs no inflection.
+- `DayTemplatePicker.vue` maps types 2/3 like 0/1 and picks the sentence by type. The `N×` count is
+  shown only for history entries.
+- The DTO's `patternType` widened to `0 | 1 | 2 | 3`, with a doc comment.
+- The client dedupe and `isActive` filter were **kept** as guards against an older API build. The
+  response calls them optional, and only part 5 is said to be pinned by a test.
+
+**Verified live, no mocking, on the e2e seed:**
+- `/suggestions/997` (Thursday, Workday) → *Office Day* (type 2, Thursday) and *Home Office* (type 3,
+  Workday), each once.
+- Replayed 8 times, sequential and concurrent: the same answer every time.
+- The planner reads *"Office Day · Scheduled for Thursdays"* and *"Home Office · Suggested for
+  Workdays"*, SK *"Naplánované: Štvrtok"* / *"Určené pre: Pracovný deň"*, with no count on either.
+- *Office Day* switched off in `/day-planner/templates` → gone from the suggestions after a reload.
+  Switched back on → restored (fixture unchanged).
+- Console clean. `type-check` exit 0, lint clean.
+
+**Not verified:** a history entry (types 0/1) against the live API. The seed has no calendar with the
+same template applied twice on one weekday, so the history ranking and the *"Used on …s · N×"* row were
+seen only with the earlier mocked bodies.
+
+**The original §22 paragraph**, as it stood in the queue:
+
+This came out of fixing the template picker's route (log → *Closed verification items*, the unit-7 item).
+Once the client called the real `…/suggestions/{calendarId}`, the answer turned out to be empty on the
+seed, and structurally empty for any new account. The endpoint reads only a history view: templates
+applied at least twice on that weekday or day type. It never reads the template's own `ScheduledDays` or
+`SuggestedForDayType`. The repeating-task sibling already returns user-set suggestions before history
+ones; this ask is that shape. Three smaller rules ride along (one entry per template, active only, a
+stable `PatternLabel`), plus a test-only ownership item.
+
 ## Closed verification items
 
 ### `B16` two-halves sequencing note — ✅ SETTLED 2026-09-21, the same day it was written: both halves are committed
@@ -6630,8 +6676,10 @@ Run after `F27`, as the row required, so "empty" and "failed" are distinguishabl
 >
 > **Also in the framework commit:** `docs/components.md` states the carry, the cap, and that a duration
 > field should pass `'1'`. That answers one of the two framework questions below: the `'5'` default
-> stays, because it suits a time of day. The other question, whether a snap should ever be silent, is
-> **not** decided.
+> stays, because it suits a time of day. The other question, whether a snap should ever be silent, was
+> **decided 2026-09-24** by the owner: a time-of-day `TimePicker` keeps rounding silently (`09:07` →
+> `09:05`, no message), because the field shows the rounded value on blur and the clock menu greys out
+> the disallowed minutes. Recorded in the framework's `docs/components.md` `TimePicker.vue` paragraph.
 
 Not filed by any unit; found while reading `B2`'s mechanism. `roundToNearestInterval(58, 5)` is
 `Math.round(11.6) * 5 = 60` (`DateTimeHelper.ts:166-168` — no clamp), and both of `TimePicker.vue`'s

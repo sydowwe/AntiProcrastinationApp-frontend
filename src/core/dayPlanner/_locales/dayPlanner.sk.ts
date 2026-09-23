@@ -34,6 +34,9 @@ const dayPlanner = {
 			// `{label}` is a day name or a day type in the nominative, so no preposition that would need
 			// to inflect it ("v Štvrtok" was wrong twice over).
 			usedOn: `Zvyčajne: {label}`,
+			// Zo šablóny samotnej, nie z histórie (B27): naplánované dni a typ dňa.
+			scheduledFor: `Naplánované: {label}`,
+			suggestedFor: `Určené pre: {label}`,
 			timesCount: `{count}×`,
 		},
 		// Zvyšok `TemplateListView.vue` je zatiaľ natvrdo po anglicky; localizované sú len tieto

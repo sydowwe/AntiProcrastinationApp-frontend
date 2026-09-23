@@ -3,7 +3,13 @@ import { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/
 export class TemplateSuggestionResponse {
 	constructor(
 		public template: TaskPlannerDayTemplate,
-		public patternType: 0 | 1,
+		/**
+		 * 0 = applied on this weekday before, 1 = applied on this day type before (both history, with an
+		 * `occurrenceCount` of at least 2); 2 = the template's Scheduled days include this weekday, 3 = its
+		 * Suggested-for day type is this one (both from the template's own settings, count always 0).
+		 * `patternLabel` is the DayOfWeek name for 0/2 and the DayType name for 1/3 (B27).
+		 */
+		public patternType: 0 | 1 | 2 | 3,
 		public patternLabel: string,
 		public occurrenceCount: number,
 	) {}

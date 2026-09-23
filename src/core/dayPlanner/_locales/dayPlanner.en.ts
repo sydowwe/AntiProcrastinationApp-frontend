@@ -29,7 +29,10 @@ const dayPlanner = {
 		},
 		templateSuggestions: {
 			suggestedForYou: `Suggested for you`,
+			// History (the user applied it on this day before) vs. the template's own settings (B27).
 			usedOn: `Used on {label}s`,
+			scheduledFor: `Scheduled for {label}s`,
+			suggestedFor: `Suggested for {label}s`,
 			timesCount: `{count}×`,
 		},
 		templateDelete: {
