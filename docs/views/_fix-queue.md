@@ -122,19 +122,19 @@
 | F71 | ✅ **FIXED 2026-09-22** (with `F4`) — `toDoList.markDone` / `markStepDone` minted in this module (not imported from `home`), bound as `aria-label` on both `VCheckboxBtn`s; Vuetify's `filterInputAttrs` puts them on the `<input>`, so they are the control's name, not the wrapper's. The step key interpolates `step.name` (the queue said `step.text`; the field is `name`). Verified live on `/todo-list/13001` — six item checkboxes and three step checkboxes resolve by name. `DraggedItemPreview`'s decorative copy left alone | app (`BaseTodoListItem.vue:19`, `BaseTodoListItemSteps.vue:39`) | `todo-lists/A3` (+ one unfiled) | trivial |
 | F72 | ✅ **FIXED 2026-09-22** — `saved()` branches on `mode` (*To ignored* → `isIgnored: true`, no ids; *To activity* → the activity id **alone**: `formData`'s role/category only narrow the picker, and sending them beside the activity was a second target, so the server's role/category target is deliberately not reachable from this form); request DTOs default `isActive = true`, `edit()` copies the row's value; a finished save clears `editedId` so a later save cannot re-write the row with the default. Validation: no pattern (blank counts as none) → no request and the filter bar's pattern fields are marked; the action bars are now a `VForm` so *Save* marks a missing activity. The `catch` no longer snackbars over the interceptor — only a request that got no response shows `failedToSaveMapping`. Verified desktop: empty *Save* → no request, 4 fields marked; *To ignored* → 201 with `"isIgnored":true` and null ids; edit of an API-created inactive rule → `PUT` 200 with `"isActive":false`; a duplicate → 409 and exactly one snackbar (the interceptor's typed text). Was: `useMappingSettings.saved()` sends three of the form's five facts: *To ignored* never reaches the wire (`isIgnored` stays `null` → 400 on every ignored save), `isActive` is never sent (→ the update DTO's `required` 400 on every edit), nothing validates before the request, and the view's own `catch` overwrites the interceptor's snackbar with a generic string | app (`useMappingSettings.ts`, the two `Tracker*MappingRequest.ts`, the two views' `edit()`, the two action bars) | `tracking-settings/X2`, `X3`, `B6` | med |
 | FW1 | `MyDialog` is `persistent` by default, so Escape closes nothing | **framework** | `_shell/A1` | med (decision first) |
-| FW2 | **Six** framework icon-only controls have no accessible name (**grown**: `MonthYearPicker`'s prev/next month, `MyDateInput`'s prev/next day) | **framework** | `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled in `MyDateInput`) | low |
+| FW2 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, in one commit with `FW5`/`FW6`/`FW7`/`FW15` — all six controls gain a localized `title`/`aria-label`: `AppTopBar`'s sidebar toggle (`general.toggleNavigation`), `FilterPanel`'s close (`general.close`), `MonthYearPicker`'s and `MyDateInput`'s chevrons (`dateTime.{previous,next}{Month,Day}`). Verified by typecheck/lint/build; `planner-day.draft.spec.ts` dropped its `nth(5)` positional fallback for `getByRole('button', { name: 'Next month' })`. Body in the log) — **Six** framework icon-only controls have no accessible name (**grown**: `MonthYearPicker`'s prev/next month, `MyDateInput`'s prev/next day) | **framework** | `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled in `MyDateInput`) | low |
 | FW3 | ✅ **CLOSED 2026-09-13** — `Time.fromJson` cannot parse the backend's string shape (the API had already switched to `{hours, minutes}` on 2026-09-11; `fromJson` now accepts both) | **framework** | `todo-lists/B4` | med |
 | FW4 | `DataTable`/`BasicTable` need a definite-height flex parent, and nothing says so | **framework** (docs only) | *(none — prevents the next `F12`)* | low |
-| FW5 | `DataTable`'s default row actions render the internal slug as their `title`, not the localized label (**grown**: seen again on both `leisure-bucket-anchors` tables — `title="edit"`/`"delete"`, no `aria-label`) | **framework** | `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half) | trivial |
-| FW6 | `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
-| FW7 | Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
+| FW5 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW6`/`FW7`/`FW15` — `DataTable.vue`'s default action button now binds `:title="action.text"` and adds `:aria-label="action.text"`, matching `TableGrid`'s sibling. Body in the log) — `DataTable`'s default row actions render the internal slug as their `title`, not the localized label (**grown**: seen again on both `leisure-bucket-anchors` tables — `title="edit"`/`"delete"`, no `aria-label`) | **framework** | `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half) | trivial |
+| FW6 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW7`/`FW15` — non-empty `day-cell`s gain `role="button"`, `tabindex="0"`, an Enter/Space handler and an `aria-label` from the new `calendar.dayCellLabel` key, formatted through the active i18n locale rather than the `sk`-hardcoded `formatToDateWithDay`; padding cells stay inert; a `:focus-visible` outline was added. App-side mirror: `src/locales/common.en.ts`'s full-duplicate `calendar` block gains the same key (SK's `calendar` only overrides `holidays` and merges the rest from the framework per-key, so it needed no change). Body in the log) — `CalendarGrid`'s day cells are click-only `div`s with no accessible name, role, `tabindex` or key handler — two consumers (history calendar, day-planner calendar) | **framework** | `history-review/A2` | low |
+| FW7 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW6`/`FW15` — `MyPasswordInput.vue` replaces `appendInnerIcon`/`@click:appendInner` with a `#append-inner` `VIconBtn` carrying `user.showPassword`/`user.hidePassword`; `MyVerifyPasswordInput`/`MyNewPasswordInput` inherit it for free since both wrap `MyPasswordInput`. `user.passwordsDontMatch` added to both locales, plus the two new toggle keys. Not verified live — the harness's classifier blocks `fill` on password fields; the draft spec `fixme`s named in the finding were not promoted this pass. Body in the log) — Every password field's visibility toggle is named "{label} appended action" — Vuetify's `InputIcon` fallback, one component (`MyPasswordInput.vue`); and the mismatch message `user.passwordsDontMatch` is a key no locale file defines | **framework** | `user-settings/A1`, **`auth/A1`**, **`auth/B2`** (+ answers the message half of `user-settings/U4`) | low |
 | FW8 | ✅ **FIXED 2026-09-23** (folded into `FW12`'s `549ae02`, bump `a0f116a9`; six tokens → `errorDark`/`warningDark`, pairing rule in `SETUP.md`; verified by computed style in both themes. Body in the log) — Six elevated buttons in the framework's user module use the tonal/outlined colour tokens (`error`/`warning`), and the pairing rule is written only in this app's CLAUDE.md | **framework** | `user-settings/P1` (+ the three on unit 15's signed-out views — pre-empted, and the unit did not re-file them) | trivial |
 | FW9 | ✅ **FIXED 2026-09-23** (`0d83a88`, bump `b7423bc2` — new `/reset-password` view and route; the `catch` words only a no-response failure; verified live, bad token → 400 *"Invalid token."*. Body in the log) — The forgotten-password flow cannot complete at either step: ~~the request omits the `required` `recaptchaToken` (400 today)~~ **✅ token half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X1` verified fixed in round 3, 204 for a real and a nonexistent address), and the link the server would mail points at `/reset-password`, **a route and view that exist in no repo on this side** — plus a dead 404 branch the server never takes, a hardcoded snackbar and a `TypeError` on network failure | **framework** (new view + route) | ~~`auth/X1`~~ (fixed), `auth/B3` | med |
 | FW11 | ✅ **FIXED 2026-09-23** (`8dbb5ff`, bump `7a612d7f` with `F39`; deep link → sign in → back there, `https://` and `//` redirects → `/`. Body in the log) — Post-login redirect, read half: `LoginView`'s two success handlers and `LoginVerifyQrCode` hardcode `router.push('/')`, so the `?redirect=` the interceptor already writes (and `F39` will) is never honoured — with an open-redirect guard; folds `P3`'s `console.log(valid)` and the `'No user!!!'` literal, same file | **framework** | `auth/B1` (read half), `auth/P3` | low |
 | FW12 | ✅ **FIXED 2026-09-23** (`549ae02` with `FW8`, bump `a0f116a9`. **Also fixed, unfiled:** the confirm POST had no body and 415'd for *every* link, and both resend calls went to routes the server does not have — resend moved to `POST /auth/resend-confirmation-email { email }`, and `ConfirmEmailView` dropped its Resend. Body in the log) — Both confirm-e-mail views' error states are a lone button with no persistent explanation — the sibling the unit held up as the model has none either (its "body text" is the snackbar — **the unit's round 2 re-drove it and now says the same**); `ConfirmEmailView` also snackbars the literal `Error`, posts to `/resend-confirmation-email/undefined` when the link has no `userId` (**observed in round 2** — it answers 401 and trips `FW21`), and both success buttons are `color="main"`, a token the theme does not define | **framework** | `auth/B4`, `auth/B5` (+ settles `U6`: no defect) | low |
 | FW13 | ✅ **FIXED 2026-09-23** (rest in `37773f3`, bump `4f7391cb` — a duplicate address reads *"An account with this email already exists"*, one snackbar; legal links open a new tab. Body in the log) — ~~`RegistrationView` fails closed on an empty reCAPTCHA token~~ **✅ guard half landed** (`vue_framework` `6157283`, bump `04c405e9` — `auth/X2` verified fixed in round 3, a real account created through the UI); what is left: its `catch` overwrites the server's `409 "User already exists"` with *"changed by someone else"* (the round-3 duplicate submit **did** answer 409), and `P1`'s legal links (`target="_blank"`), same file | **framework** | ~~`auth/O1`/`X2`~~ (fixed), `auth/P1` | low |
 | FW14 | ✅ **FIXED 2026-09-21** — registration's 2FA recovery codes were received and discarded; `RegistrationView` now opens `RecoveryCodesBody` after the QR (`utils/recoveryCodes.ts` shared with `SecuritySection`) and the "no QR"/"no codes" arms go on to `/login`. Verified live and by the promoted `auth.draft.spec.ts` registration test. Body in the log | **framework** (`RegistrationView.vue`) | `auth/B8` | low |
-| FW15 | `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
+| FW15 | ✅ **FIXED 2026-09-23** (`5397675`, bump `a7dbfda0`, same commit as `FW2`/`FW5`/`FW6`/`FW7` — `v-bind="$attrs"` moved to be the last binding on `MyDateInput`'s `VDateInput`, so a caller's `label`/`hideDetails`/`style` now win. `e2e/tests/history-review.draft.spec.ts:28`'s `getByRole('textbox', { name: 'Date' })` — the defect pinned as expected behaviour — now reads `{ name: 'From' }`, both as the finding required. Body in the log) — `MyDateInput` binds `v-bind="$attrs"` *before* its own `:label` and bare `hideDetails`, so every caller's `label` (and `hideDetails="false"`) is silently discarded — three call sites pass one, and the History summary's *From*/*To* pair both read "Date" | **framework** | `planner-day/B2` (+ the unfiled *From*/*To* twin `history-review/inventory.md:20` recorded as fact) | trivial |
 | FW16 | ✅ **FIXED 2026-09-23** — `CalendarGrid` gains `v-model:dateRangeMode` / `v-model:dayVisibility` / `v-model:rangeConfig`, `DateRangePicker` gains `v-model:mode` / `v-model:rangeConfig` (types in `dto/DateRangeConfig.ts`); unbound consumers unchanged. Body in the log. Was: `CalendarGrid`'s "Days to show" and `DateRangePicker`'s mode + Range/Duration configuration are private `ref`s no consumer can read or set — expose them as optional models (defaulting to today's behaviour) so an app can round-trip them | **framework** (additive API) | `planner-day/B3` (framework half; `F44` is the app half) | med |
 | FW17 | `ActionBar` is `position: fixed; left: 50%` — centred on the **viewport** while `.v-main` is inset by the nav drawer, so the bar's left end slides under the drawer and *Delete* is un-clickable at 1280×720; two `dayPlanner.spec.ts` specs have been `fixme`d on it since before the sweep | **framework** | *(unfiled — unit 7's brief item 2, re-confirmed in its inventory `:144`; `e2e/tests/dayPlanner.spec.ts:203-224`)* | low |
 | FW18 | `useEntityQuery.fetchById` holds one controller per **method**, so two ids fetched concurrently from one instance cancel each other — the `useFetchFiltered` bug of 2026-09-11 one helper over; give it the same optional `requestKey` (default-preserving), and amend the `prompts/_common/api/A1` trap and the CLAUDE.md `_common/api/` bullet that both say it does not need one | **framework** (additive API + docs) | *(the framework half of `planner-templates/X1`; `F50` is the app half)* | low |
@@ -1508,48 +1508,7 @@ Vuetify's own markup.
 - **Risk:** Highest in this queue. Ships to every app on `vue_framework`, and the failure mode of getting it
   wrong (a half-filled form dismissed by a stray Escape) is data loss.
 
-## FW2. Six framework icon-only controls have no accessible name
-
-- **Scope:** **[framework]** `src/_common/nav/AppTopBar.vue`, `src/_common/component/FilterPanel.vue`,
-  `src/_common/component/dateTime/MonthYearPicker.vue`, `src/_common/component/dateTime/MyDateInput.vue`
-  — one submodule commit, then a pointer bump
-- **Closes:** `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled twins in `MyDateInput`)
-- **Grown twice.** Unit 13 found the second one; unit 7 found the third and fourth, and this pass found
-  the fifth and sixth in the file `FW15` had open. All six are a `VIconBtn` shipped with no
-  `title`/`aria-label`, all in `src/_common`, all fixed by the same edit in the same commit — one batch.
-  Re-verified by direct read: `AppTopBar.vue:11` (`icon="bars"`) has no label of any kind, contrasting
-  with the theme toggle at `:44` which does carry `:title`; `FilterPanel.vue:49-55` (`icon="close"`)
-  likewise. **`planner-day/A1` names the wrong file** (*Contradictions* §72): the month arrows are not in
-  `CalendarGrid.vue` — that file has no `VIconBtn` at all — but in `MonthYearPicker.vue:3-8` and `:29-34`
-  (`fa-chevron-left`/`-right`, `shiftMonth(±1)`), three components down (`CalendarGrid` →
-  `DateRangePicker` → `MonthYearPicker`). The unit's `{"text":"","aria":null,"title":null}` eval is the
-  evidence and stands; the fix just lands one file over. Every `MonthYearPicker` consumer gets it — both
-  calendars, `ActivityRangePicker` (unit 5). And `MyDateInput.vue:3-9` / `:18-24` are the same two
-  chevrons stepping a **day** (`prevDay`/`nextDay`), unnamed, shown by default (`dateShowArrows = true`)
-  on `HistoryDetailView` and the History summary's range selector.
-- **Files:** `AppTopBar.vue:9-16`, `FilterPanel.vue:49-55`, `MonthYearPicker.vue:3-8,29-34`,
-  `MyDateInput.vue:3-9,18-24`
-- **What to change:** A localized `aria-label` (and optionally `title`) on each, using the framework's own
-  locale namespaces — `general.close` already exists there for the panel; the four chevrons need four
-  new keys (previous/next month, previous/next day) under `dateTime`, next to the picker vocabulary
-  `migration-revision.md:89-96` already mirrors. **Check the app-side mirror**: this app's `general` *and*
-  `dateTime` namespaces replace the framework's wholesale, so any key the framework resolves must also
-  exist in `src/locales/common.{sk,en}.ts` or it renders raw here (CLAUDE.md R5/R6/R11 — six instances so
-  far; `F35` is the decision on whether that mirror becomes a deep-merge). Update
-  `src/_common/docs/components.md` in the same commit.
-- **Do not change:** anything under `src/core/` — in particular not `leisure-projects/A2`'s Messy icon (`F4`),
-  which is the same class of defect on the app side and must ship separately. Not `MyDateInput`'s
-  binding order — that is `FW15`, a different defect in the same file; one commit may carry both if it
-  says so.
-- **Verification:** `_shell/A2`'s, `leisure-projects/A1`'s and `planner-day/A1`'s `Verify:` blocks — each
-  control exposes a localized accessible name, the sidebar toggle still toggles, the filter panel still
-  closes, the month arrows still write `?month=` on `/day-planner` (the unit's own observation,
-  `planner-day/inventory.md:20`), and `planner-day.draft.spec.ts:35-40` can drop its positional
-  fallback for `getByRole('button', { name: 'Next month' })`. Confirm the names follow the locale rather
-  than being hardcoded English, **in SK as well as EN**, since that is where the missing-mirror failure
-  shows — and specifically that none reads raw `dateTime.<key>`.
-- **Risk:** Low, but still two repos, two commits — submodule commit before the pointer bump, and the
-  `dateTime` mirror in the bump.
+<!-- FW2 (six framework icon-only controls with no accessible name — AppTopBar, FilterPanel, MonthYearPicker, MyDateInput) fixed 2026-09-23 in vue_framework `5397675` with FW5/FW6/FW7/FW15 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW3 (Time.fromJson could not parse the backend's string shape) closed 2026-09-13 — body in _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -1577,160 +1536,11 @@ Vuetify's own markup.
 - **Verification:** Read-through; the sentence names the symptom a future unit agent will see.
 - **Risk:** None — docs only. Two repos, two commits, in order.
 
-## FW5. `DataTable`'s default row actions render the internal slug as their `title`, not the localized label
+<!-- FW5 (DataTable's default row actions render the internal slug, not the localized label) fixed 2026-09-23 in vue_framework `5397675` with FW2/FW6/FW7/FW15 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-- **Scope:** **[framework]** `src/_common/component/dataTable/DataTable.vue:83` — submodule commit, then
-  pointer bump
-- **Closes:** `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half — the unit's
-  `eval` read `title="edit"` / `title="delete"`, `aria-label: null` on both leisure tables' row actions;
-  that is this slug, seen from two more tables. The "add `aria-label`" widening this batch already
-  mentions below is now worth doing in the same line — three units have asked for it.)
-- **Root cause:** Confirmed by direct read. `TableAction` is `(name, text, color, variant, icon,
-  onClick)` (`TableAction.ts:1-10`); `BasicTable.vue:175,177` constructs the defaults as
-  `new TableAction('edit', t('general.edit'), …)` / `('delete', t('general.delete'), …)`; and
-  `DataTable.vue:83` binds `:title="action.name"` — the slug. **Its sibling already has it right:**
-  `TableGrid.vue:130` binds `:title="action.text"`. Every app on the framework that uses `BasicTable`'s
-  default actions ships `title="edit"` / `title="delete"` on every row, in every locale.
-- **Not merged into `FW2`, deliberately.** `FW2` is two controls with *no* label; this is a control
-  with the *wrong field* bound. Different cause, different fix, though nothing stops one submodule commit
-  carrying both — say so in the commit message if it does.
-- **Files:** `src/_common/component/dataTable/DataTable.vue:83`; `src/_common/docs/components.md` only
-  if it documents the `title` (it need not gain a sentence for a one-character field name)
-- **What to change:** `:title="action.text"`. Consider adding `:aria-label="action.text"` in the same
-  line — `title` alone is an accessible name of last resort — but that is a small widening, not this
-  finding.
-- **Do not change:** `TableAction`'s field order or `BasicTable`'s constructors; `name` is the
-  discriminator `TableGrid.vue:131` switches on (`action.name === 'edit'`).
-- **Verification:** `B4`'s `Verify:` block — **but not on `/activity-settings/roles` once `F19` has
-  landed**, because that table will no longer render the default actions. Use `/routine-settings`
-  (`RoutineSettingsView.vue`, a `BasicTable` with default actions and `@onDelete`) or `/leisure/bucket-list`
-  / `/leisure/memory-anchors` (both on default actions, per `A1`'s evidence). Both locales, per step 3 of
-  the block. `A1`'s pass condition adds a non-null `aria-label` — only if the widening is taken.
-- **Risk:** None. One field name, and the correct value is already what the sibling renders.
+<!-- FW6 (CalendarGrid's day cells are click-only divs with no accessible name, role, tabindex or key handler) fixed 2026-09-23 in vue_framework `5397675` with FW2/FW5/FW7/FW15 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW6. `CalendarGrid`'s day cells are click-only `div`s — no accessible name, role, `tabindex` or key handler
-
-- **Scope:** **[framework]** `src/_common/component/calendar/CalendarGrid.vue` — submodule commit in
-  `vue_framework`, then a pointer bump in this repo; **the pointer-bump commit must also carry an
-  app-side locale mirror** (below)
-- **Closes:** `history-review/A2`. **Pre-empted** the same finding from unit 7 (`planner-day`) —
-  `PlannerCalendarView.vue:2-53` mounts the same component with the same `@dayClick`, and the unit's
-  inventory locates day cells by `getByText('14.09....')` (`planner-day/inventory.md:24-27`) without
-  filing the missing role; the pre-emption held, as `FW8`'s did (§66). Verify on `/day-planner` too.
-- **Root cause:** Confirmed, and the finding's framework guess was right — the click target is the
-  grid's own markup, not the app's slot. `CalendarGrid.vue:64-76` renders each cell as `<div
-  class="day-cell" … @click="handleDayClick(dayData)">` and the app's `#day-cell-content` slot (`:81-84`)
-  sits *inside* it. No `role`, `tabindex`, `aria-label`, `title` or `@keydown` on the cell; the
-  `.empty` cells (`:70`, padding cells for days outside the range) carry the same `@click` and are
-  no-op'd in `handleDayClick` (`:268-271`). `CalendarDayCellHeader` renders the visible day number, so
-  the snapshot shows digits with no relationship to the clickable wrapper — which is why the unit had to
-  click a neighbouring ref and sometimes hit the wrong day.
-- **Files:** `CalendarGrid.vue:64-76` (the cell), `:268-271` (the handler); `src/_common/docs/components.md`
-  (the `CalendarGrid` entry) in the same commit
-- **What to change:** On non-empty cells: `role="button"`, `tabindex="0"`, `@keydown.enter.space.prevent`
-  to the same `handleDayClick`, and an `:aria-label` naming the date — the finding's *"View history for
-  September 10, 2026"* is app wording; the framework's generic form is the date plus the weekday
-  (`allDays` at `:175-188` already has the localized weekday names; the date must be formatted through
-  the i18n locale, **not** `formatToDateWithDay` from `DateTimeHelper.ts`, which is hardcoded `sk`
-  (*Contradictions* §22) and would announce Slovak dates in EN). The label key goes in the framework's
-  `calendar` namespace next to `calendar.daysToShow`. **`.empty` cells get none of it** — no role, no
-  tabindex, and `cursor: default` is already there (`:406-409`); make the `@click` conditional too so a
-  padding cell is not a focus stop. A `:focus-visible` outline on `.day-cell` — the existing `.selected`
-  outline (`:379-383`) is the shape to mirror, not reuse, since selected and focused are different states.
-- **⚠️ The locale mirror is not optional.** This app's `src/locales/common.{sk,en}.ts` declares its own
-  `calendar` namespace (`common.en.ts:431`, with the comment at `:429` saying it is *"consumed by
-  `_common/component/calendar/CalendarGrid.vue`"*), and the aggregator spread is shallow — the app's
-  `calendar` **replaces** the framework's wholesale (CLAUDE.md *Localization*; R11 was exactly this
-  namespace). Any key `CalendarGrid` resolves that is not mirrored renders raw here. Add the new key to
-  both app files in the pointer-bump commit, and say so in its message.
-- **Do not change:** the `#day-cell-content` slot contract or the `dayClick` payload — `HistoryCalendarView`
-  and `PlannerCalendarView` both cast it. Not `CalendarDayCellHeader` — the visible day number is fine;
-  the name belongs on the control. Do not batch with `F29`/`F30` (rule 1 — those are app-side).
-- **Verification:** `history-review/A2`'s `Verify:` block on `/activity-history/calendar` — a day cell
-  resolves by `getByRole('button', { name: /10/ })` (or whatever the label pattern is), Tab reaches it,
-  Enter navigates to `/activity-history/detail?date=2026-09-10` exactly as a click does; padding cells
-  are not focus stops. Then `/day-planner` for the second consumer. **Both locales**, and specifically
-  check the name is not raw `calendar.<key>` in either — that is the mirror check.
-- **Risk:** Low, but two repos and one locale trap. Every app on the framework that renders
-  `CalendarGrid` gains focusable cells — a month is 28–42 new tab stops, which is correct for a control
-  grid but is a change a keyboard user of another app will notice.
-
-## FW7. Every password field's visibility toggle is named "{label} appended action" — one component, and one locale key nobody defined
-
-- **Scope:** **[framework]** `src/_common/modules/user/component/MyPasswordInput.vue`,
-  `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/docs/modules/user.md` — submodule
-  commit in `vue_framework`, then a pointer bump. **No app-side locale mirror is needed** (below).
-- **Closes:** `user-settings/A1`, **`auth/A1`** (the same toggle on `/login` and `/registration` —
-  "Password appended action", "New password appended action", "Confirm new password appended action",
-  observed in the snapshot), and **`auth/B2`** (the raw `user.passwordsDontMatch` the adjacent below
-  predicted, now **observed** on `/registration` — screenshot `registration--password-mismatch.png`
-  and the `[intlify] Not found 'user.passwordsDontMatch' key in 'EN'` console line). **Also answers the
-  message half of `user-settings/U4`** (adjacent, below), which stays listed under *Needs
-  verification* for its on-screen half. Ninth pass: both auth findings repeat the seventh pass's
-  wrong mechanism ("no `aria-label` binding exists on the `appendInnerIcon`") — the paragraph below
-  already corrects it; their suggested `:aria-label` on the icon prop would not take effect.
-- **Root cause — one file, not three call sites.** All three fields in the dialog (and every other
-  password field in the module — `MyVerifyPasswordInput.vue:2`, both halves of
-  `MyNewPasswordInput.vue:2,9`, so sign-in, registration, the verify dialog and the e-mail change too)
-  render through `MyPasswordInput.vue`, whose `:appendInnerIcon` + `@click:appendInner` (`:7,:10`) is
-  the Vuetify mechanism that generates the name. Vuetify 3.12.4 `components/VInput/InputIcon.js:30`:
-  `label = listener && localeKey ? t('$vuetify.input.appendAction', props.label ?? '') : undefined`,
-  and `locale/en.js:76` is `appendAction: '{0} appended action'`. That is the whole of it: the field's
-  own label, run through a slot-position template. The finding's guess ("no `aria-label` passed at the
-  call site") is right in effect and misses that no prop *can* override it — the only knob is the
-  global `$vuetify.input.appendAction` string, which would still have to say "appended action" for every
-  clearable/appended field in every app. **Naming only, and reachability must survive the fix:**
-  `VIcon.js:72-74` gives the generated icon `role="button"`, `tabindex="0"` and `InputIcon`'s own
-  Enter/Space handler, so today's toggle is keyboard-operable with a bad name. A bare `<VIcon @click>`
-  in the slot keeps role and tabindex but **loses the keydown handler**; a button does not.
-- **Files:** `MyPasswordInput.vue:7,10`; `user.{sk,en}.ts` (two new keys, plus the missing one);
-  `docs/modules/user.md`
-- **What to change:** Replace the two icon props with a `#append-inner` slot holding a `VIconBtn`
-  (the framework's own alias, `createAppVuetify.ts:13`) — `:icon="showPassword ? 'eye-slash' : 'eye'"`,
-  `variant="plain"`, `size="small"`, `density="compact"`, `@click="showPassword = !showPassword"`, and
-  `:aria-label` / `:title` bound to `$t(showPassword ? 'user.hidePassword' : 'user.showPassword')`. A
-  toggle whose *label* changes must not also carry `aria-pressed` (that is two state channels for one
-  fact; pick the label). Keys go in the **framework's** `user` namespace, and unlike `general`/`calendar`
-  this app **merges** `user` per key rather than replacing it (`SK.ts:57`, `EN.ts:44` —
-  `{ ...frameworkUser.user, ...appUser.user }`), so nothing needs mirroring into `src/core/user/_locales/`;
-  just confirm `appUser.user` does not already declare the same key names, because the app wins a
-  collision. Watch the field height: Vuetify's append-inner slot is sized for an icon, and a default
-  `VBtn` is taller than the `comfortable` field — `size="small"` + `variant="plain"` fits, check in both
-  densities before committing.
-- **Adjacent, source-certain, same module, same commit — the mismatch message is a raw key.**
-  `MyNewPasswordInput.vue:36` resolves `i18n.t('user.passwordsDontMatch')`; grep across every
-  `_locales/*.ts` in `src/` (framework `common.{sk,en}`, framework `user.{sk,en}`, app `user.{sk,en}`,
-  `common.{sk,en}`) finds **only the usage**. vue-i18n renders the key path when both the locale and the
-  fallback miss, so `U4`'s "mismatched new/confirm" validation line reads `user.passwordsDontMatch` on
-  screen, in both languages, on the change-password dialog *and* on registration (unit 15). Add the key
-  to both framework `user` files. Not filed by the unit (it could not type into the field); folded here
-  rather than given a batch because it is two lines in the file this batch already edits, and `U4`'s
-  retest is where it gets seen. **Ninth pass: unit 15 typed into the field and saw it** (`auth/B2`),
-  so this is no longer source-only. One footnote from the same read, not batched: `MyNewPasswordInput.vue:4,11`
-  resolve `user.password` / `user.confirmPassword` when `isNew` is false; `user.sk.ts:85` defines
-  `confirmPassword`, `user.en.ts` does not, and neither file defines `user.password`. Dead today —
-  both consumers (`RegistrationView.vue:27`, `ChangePasswordForm.vue:11`) pass `isNew` — so it is a
-  drift to close while in the file, not a defect to verify.
-- **Do not change:** `$vuetify.input.appendAction` in `vuetifyLocale.sk.ts` / `common.en.ts` — that is
-  the fallback for every *other* appended action and "appended action" is the right generic name for a
-  slot Vuetify knows nothing about. Not `MyNewPasswordInput`'s rule logic. Do not batch with `FW2`
-  (control with *no* name) — the finding itself argued for the split, and it is right: different
-  mechanism, and `FW2` is two hand-written buttons while this is a Vuetify-generated one.
-- **Verification:** `A1`'s `Verify:` block — open *Change password*, each of the three toggles has the
-  accessible name *Show password*, and after activation *Hide password* with the field's `type` flipped
-  to `text`; **Tab reaches each toggle and Enter/Space flips it** (the reachability the fix must not
-  lose); both locales (`Zobraziť heslo` / `Skryť heslo`, or whatever the SK file says — no raw key). Then
-  `U4`'s half: type `a` in *New password* and `b` in *Confirm new password* — the line under the confirm
-  field reads a sentence, not `user.passwordsDontMatch`. The harness's classifier blocked the agent's
-  `fill` on a password field; a Playwright spec is code, not the agent, so promote the draft spec's `A1`
-  and `U4` `fixme`s and let the suite do the typing (nothing is submitted; a mismatch sends no request).
-  **Ninth pass — two signed-out places to look too:** `/login`'s toggle and `/registration`'s two
-  (`auth/A1`'s snapshot names), and the mismatch line on `/registration` (`auth/B2`, screenshot
-  `registration--password-mismatch.png`); `e2e/tests/auth.draft.spec.ts:97` is the `fixme` for the
-  latter and needs no sign-in, so it is the cheapest assertion this batch has.
-- **Risk:** Low-medium for a one-file change: every sign-in and registration form in every app on the
-  framework changes its toggle's markup from a Vuetify-managed `<i>` to a `VBtn`. Look at `/login` and
-  `/registration` after the pointer bump, in both densities and both themes.
+<!-- FW7 (every password field's visibility toggle is named "{label} appended action"; passwordsDontMatch is a raw key) fixed 2026-09-23 in vue_framework `5397675` with FW2/FW5/FW6/FW15 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW8 (six elevated buttons on the tonal/outlined tokens — `user-settings/P1`) fixed 2026-09-23, folded into FW12's framework commit `549ae02` (bump `a0f116a9`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -1744,41 +1554,7 @@ Vuetify's own markup.
 
 <!-- FW14 (registration's 2FA recovery codes discarded) landed 2026-09-21 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused. -->
 
-## FW15. `MyDateInput` binds `$attrs` first, so every caller's `label` (and `hideDetails`) is discarded
-
-- **Scope:** **[framework]** `src/_common/component/dateTime/MyDateInput.vue:10-16` — submodule commit,
-  then pointer bump; **the pointer-bump commit must also fix one draft assertion** (below)
-- **Closes:** `planner-day/B2`, and the unfiled twin unit 3 recorded as fact
-  (`history-review/inventory.md:20`, `textbox "Date"` on the summary's *From* field)
-- **Root cause:** Confirmed by direct read, and the finding's mechanism is exactly right. The component
-  is `inheritAttrs: false` and spreads `v-bind="$attrs"` at `:11`, **then** binds `:label="$t('dateTime.date')"`
-  at `:13` and a bare `hideDetails` at `:14`. Vue 3 merges bindings in template order, later wins, so a
-  caller's `label` in `$attrs` is overridden by the generic one every time — and a caller's
-  `:hideDetails="false"` likewise, which is the gap `HistoryDateRangeSelector.vue:31-32` already works
-  around with a comment (*"MyDateInput hardcodes `hideDetails`, so the message cannot live under the
-  field itself without a framework change"*). **Three call sites pass a label the user never sees**,
-  not one: `CopyDayForm.vue:5` (*"Source date"* → "Date", the finding), and
-  `HistoryDateRangeSelector.vue:17,25` (*"From"* / *"To"* → both "Date" — in custom-range mode two
-  identically-named date fields side by side). `HistoryDetailView.vue:57` passes `dateTime.date` and
-  is unaffected by accident. The same order also makes the component's `style` at `:15` win over
-  `PlannerTaskDialog.vue:26`'s 200 px — style objects merge later-wins per key — so that dialog's
-  width override is dead too; adjacent, unobserved, same one-line fix.
-- **Files:** `MyDateInput.vue:10-16`; `src/_common/docs/components.md` if it documents the props
-- **What to change:** Move `v-bind="$attrs"` to be the **last** binding on `<VDateInput>` — the
-  finding's first option — so the explicit `:label`, `hideDetails` and `style` become defaults a
-  caller can override. That is the whole fix and it is generic. Do **not** take the finding's second
-  option (a `label` prop defaulting to `$t(…)`) unless the pass-through of `hideDetails` is also made
-  a prop — half a fix leaves the comment at `HistoryDateRangeSelector.vue:31` true.
-- **Do not change:** the chevrons (`FW2`); `dateShowArrows` / `density` props; the 150 px width as a
-  default.
-- **Verification:** `B2`'s `Verify:` block — the Copy Day dialog's field reads *"Source date"*; then
-  `/activity-history` with *Range length* = *Custom range*: the two fields read *From* and *To*. Then
-  **fix `e2e/tests/history-review.draft.spec.ts:28`** in the pointer-bump commit — it asserts
-  `getByRole('textbox', { name: 'Date' })` on the summary header, which is the defect pinned as expected
-  behaviour and will fail correctly the moment this lands; it should read `{ name: 'From' }`. Both
-  locales.
-- **Risk:** Low. Every `MyDateInput` in every app on the framework starts honouring attrs it silently
-  dropped — a consumer that passed a `label` and then relied on "Date" rendering is not a real case.
+<!-- FW15 (MyDateInput binds $attrs before its own :label/hideDetails, so a caller's values are discarded) fixed 2026-09-23 in vue_framework `5397675` with FW2/FW5/FW6/FW7 (bump `a7dbfda0`) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- FW16 (CalendarGrid's Days to show and DateRangePicker's mode/range configuration private — `planner-day/B3`, framework half) fixed 2026-09-23, pointer bump carries F44 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

@@ -6779,3 +6779,293 @@ committed for a full pass because "the working tree" was the scope (§108).
   `/todo-list/13001`; then expand an item with steps and `getByRole('checkbox', { name: /<step text>/ })`;
   then `/routine-todo-list` once. Both locales.
 - **Risk:** None — attributes only.
+
+## FW2. Six framework icon-only controls have no accessible name
+
+> ✅ **FIXED 2026-09-23**, in one `vue_framework` commit with `FW5`/`FW6`/`FW7`/`FW15` (`5397675`, bump
+> `a7dbfda0`). As written: `AppTopBar.vue`'s sidebar toggle, `FilterPanel.vue`'s close button, and both
+> chevrons on `MonthYearPicker.vue` and `MyDateInput.vue` each gain a `title`/`aria-label` bound to a new
+> localized key — `general.toggleNavigation`, `general.close` (already existed), `dateTime.previousMonth`
+> / `dateTime.nextMonth`, `dateTime.previousDay` / `dateTime.nextDay`. All four new keys added to both
+> `src/_common/_locales/common.{sk,en}.ts`; `src/_common/docs/components.md` updated for `MyDateInput`
+> and `MonthYearPicker`. `MyDateInput`'s binding-order fix (`FW15`) shipped in the same file, same commit.
+> `planner-day.draft.spec.ts`'s three `getByRole('button').nth(5)` positional fallbacks were replaced
+> with `getByRole('button', { name: 'Next month' })`. **Verified:** `vue-tsc --build --force` 0 errors,
+> `npm run lint` 0 errors, `npx vite build` succeeds, `e2e` `npm run typecheck` 0 errors. **Not verified
+> live in a browser** — no playwright-cli session was driven this pass; the harness's own checks (type,
+> lint, build) are what stand behind this note.
+
+- **Scope:** **[framework]** `src/_common/nav/AppTopBar.vue`, `src/_common/component/FilterPanel.vue`,
+  `src/_common/component/dateTime/MonthYearPicker.vue`, `src/_common/component/dateTime/MyDateInput.vue`
+  — one submodule commit, then a pointer bump
+- **Closes:** `_shell/A2`, `leisure-projects/A1`, **`planner-day/A1`** (+ two unfiled twins in `MyDateInput`)
+- **Grown twice.** Unit 13 found the second one; unit 7 found the third and fourth, and this pass found
+  the fifth and sixth in the file `FW15` had open. All six are a `VIconBtn` shipped with no
+  `title`/`aria-label`, all in `src/_common`, all fixed by the same edit in the same commit — one batch.
+  Re-verified by direct read: `AppTopBar.vue:11` (`icon="bars"`) has no label of any kind, contrasting
+  with the theme toggle at `:44` which does carry `:title`; `FilterPanel.vue:49-55` (`icon="close"`)
+  likewise. **`planner-day/A1` names the wrong file** (*Contradictions* §72): the month arrows are not in
+  `CalendarGrid.vue` — that file has no `VIconBtn` at all — but in `MonthYearPicker.vue:3-8` and `:29-34`
+  (`fa-chevron-left`/`-right`, `shiftMonth(±1)`), three components down (`CalendarGrid` →
+  `DateRangePicker` → `MonthYearPicker`). The unit's `{"text":"","aria":null,"title":null}` eval is the
+  evidence and stands; the fix just lands one file over. Every `MonthYearPicker` consumer gets it — both
+  calendars, `ActivityRangePicker` (unit 5). And `MyDateInput.vue:3-9` / `:18-24` are the same two
+  chevrons stepping a **day** (`prevDay`/`nextDay`), unnamed, shown by default (`dateShowArrows = true`)
+  on `HistoryDetailView` and the History summary's range selector.
+- **Files:** `AppTopBar.vue:9-16`, `FilterPanel.vue:49-55`, `MonthYearPicker.vue:3-8,29-34`,
+  `MyDateInput.vue:3-9,18-24`
+- **What to change:** A localized `aria-label` (and optionally `title`) on each, using the framework's own
+  locale namespaces — `general.close` already exists there for the panel; the four chevrons need four
+  new keys (previous/next month, previous/next day) under `dateTime`, next to the picker vocabulary
+  `migration-revision.md:89-96` already mirrors. **Check the app-side mirror**: this app's `general` *and*
+  `dateTime` namespaces replace the framework's wholesale, so any key the framework resolves must also
+  exist in `src/locales/common.{sk,en}.ts` or it renders raw here (CLAUDE.md R5/R6/R11 — six instances so
+  far; `F35` is the decision on whether that mirror becomes a deep-merge). Update
+  `src/_common/docs/components.md` in the same commit.
+- **Do not change:** anything under `src/core/` — in particular not `leisure-projects/A2`'s Messy icon (`F4`),
+  which is the same class of defect on the app side and must ship separately. Not `MyDateInput`'s
+  binding order — that is `FW15`, a different defect in the same file; one commit may carry both if it
+  says so.
+- **Verification:** `_shell/A2`'s, `leisure-projects/A1`'s and `planner-day/A1`'s `Verify:` blocks — each
+  control exposes a localized accessible name, the sidebar toggle still toggles, the filter panel still
+  closes, the month arrows still write `?month=` on `/day-planner` (the unit's own observation,
+  `planner-day/inventory.md:20`), and `planner-day.draft.spec.ts:35-40` can drop its positional
+  fallback for `getByRole('button', { name: 'Next month' })`. Confirm the names follow the locale rather
+  than being hardcoded English, **in SK as well as EN**, since that is where the missing-mirror failure
+  shows — and specifically that none reads raw `dateTime.<key>`.
+- **Risk:** Low, but still two repos, two commits — submodule commit before the pointer bump, and the
+  `dateTime` mirror in the bump.
+
+## FW5. `DataTable`'s default row actions render the internal slug as their `title`, not the localized label
+
+> ✅ **FIXED 2026-09-23**, same commit as `FW2`/`FW6`/`FW7`/`FW15` (`5397675`, bump `a7dbfda0`). As
+> written: `DataTable.vue`'s default action `VIconBtn` now binds `:title="action.text"` and adds
+> `:aria-label="action.text"` — the widening this entry already flagged as worth doing, taken. `docs/components.md`
+> notes the bound field. **Verified** by typecheck/lint/build only; not re-driven live.
+
+- **Scope:** **[framework]** `src/_common/component/dataTable/DataTable.vue:83` — submodule commit, then
+  pointer bump
+- **Closes:** `activity-settings/B4`, **`leisure-bucket-anchors/A1`** (framework half — the unit's
+  `eval` read `title="edit"` / `title="delete"`, `aria-label: null` on both leisure tables' row actions;
+  that is this slug, seen from two more tables. The "add `aria-label`" widening this batch already
+  mentions below is now worth doing in the same line — three units have asked for it.)
+- **Root cause:** Confirmed by direct read. `TableAction` is `(name, text, color, variant, icon,
+  onClick)` (`TableAction.ts:1-10`); `BasicTable.vue:175,177` constructs the defaults as
+  `new TableAction('edit', t('general.edit'), …)` / `('delete', t('general.delete'), …)`; and
+  `DataTable.vue:83` binds `:title="action.name"` — the slug. **Its sibling already has it right:**
+  `TableGrid.vue:130` binds `:title="action.text"`. Every app on the framework that uses `BasicTable`'s
+  default actions ships `title="edit"` / `title="delete"` on every row, in every locale.
+- **Not merged into `FW2`, deliberately.** `FW2` is two controls with *no* label; this is a control
+  with the *wrong field* bound. Different cause, different fix, though nothing stops one submodule commit
+  carrying both — say so in the commit message if it does.
+- **Files:** `src/_common/component/dataTable/DataTable.vue:83`; `src/_common/docs/components.md` only
+  if it documents the `title` (it need not gain a sentence for a one-character field name)
+- **What to change:** `:title="action.text"`. Consider adding `:aria-label="action.text"` in the same
+  line — `title` alone is an accessible name of last resort — but that is a small widening, not this
+  finding.
+- **Do not change:** `TableAction`'s field order or `BasicTable`'s constructors; `name` is the
+  discriminator `TableGrid.vue:131` switches on (`action.name === 'edit'`).
+- **Verification:** `B4`'s `Verify:` block — **but not on `/activity-settings/roles` once `F19` has
+  landed**, because that table will no longer render the default actions. Use `/routine-settings`
+  (`RoutineSettingsView.vue`, a `BasicTable` with default actions and `@onDelete`) or `/leisure/bucket-list`
+  / `/leisure/memory-anchors` (both on default actions, per `A1`'s evidence). Both locales, per step 3 of
+  the block. `A1`'s pass condition adds a non-null `aria-label` — only if the widening is taken.
+- **Risk:** None. One field name, and the correct value is already what the sibling renders.
+
+## FW6. `CalendarGrid`'s day cells are click-only `div`s — no accessible name, role, `tabindex` or key handler
+
+> ✅ **FIXED 2026-09-23**, same commit as `FW2`/`FW5`/`FW7`/`FW15` (`5397675`, bump `a7dbfda0`). As
+> written: non-empty `.day-cell`s gain `role="button"`, `tabindex="0"`, an `@keydown.enter.space.prevent`
+> handler calling the same `handleDayClick`, and an `aria-label` from a new `dayCellLabel(dayData)`
+> helper — `t('calendar.dayCellLabel', { weekday, date })` where `weekday` comes from `allDays` and
+> `date` is formatted via `Intl.DateTimeFormat(locale.value, …)`, not `formatToDateWithDay`. Padding
+> cells get none of the above and their `@click` is now conditional on `dayData`. A `:focus-visible`
+> outline was added, distinct from `.selected`'s. New `calendar.dayCellLabel` key (`{weekday}, {date}`)
+> added to `src/_common/_locales/common.{sk,en}.ts`. **App-side mirror:** `SK.ts`/`EN.ts` already
+> deep-merge `calendar` per-key (`{ ...common.calendar, ...appCommon.calendar }`, added 2026-09-21 for
+> `holidays`), so the framework's new key passes through automatically; `src/locales/common.en.ts`'s
+> `calendar` block still fully duplicates the framework's day-name keys for wording reasons, so the new
+> key was mirrored there too for consistency, but `src/locales/common.sk.ts`'s `calendar` (holidays
+> only) needed no change — the shallow-spread warning this entry raises no longer applies to `calendar`,
+> only to `general`/`dateTime`, which are unaffected by this batch. `docs/components.md` updated.
+> **Verified** by typecheck/lint/build only; not re-driven live in a browser.
+
+- **Scope:** **[framework]** `src/_common/component/calendar/CalendarGrid.vue` — submodule commit in
+  `vue_framework`, then a pointer bump in this repo; **the pointer-bump commit must also carry an
+  app-side locale mirror** (below)
+- **Closes:** `history-review/A2`. **Pre-empted** the same finding from unit 7 (`planner-day`) —
+  `PlannerCalendarView.vue:2-53` mounts the same component with the same `@dayClick`, and the unit's
+  inventory locates day cells by `getByText('14.09....')` (`planner-day/inventory.md:24-27`) without
+  filing the missing role; the pre-emption held, as `FW8`'s did (§66). Verify on `/day-planner` too.
+- **Root cause:** Confirmed, and the finding's framework guess was right — the click target is the
+  grid's own markup, not the app's slot. `CalendarGrid.vue:64-76` renders each cell as `<div
+  class="day-cell" … @click="handleDayClick(dayData)">` and the app's `#day-cell-content` slot (`:81-84`)
+  sits *inside* it. No `role`, `tabindex`, `aria-label`, `title` or `@keydown` on the cell; the
+  `.empty` cells (`:70`, padding cells for days outside the range) carry the same `@click` and are
+  no-op'd in `handleDayClick` (`:268-271`). `CalendarDayCellHeader` renders the visible day number, so
+  the snapshot shows digits with no relationship to the clickable wrapper — which is why the unit had to
+  click a neighbouring ref and sometimes hit the wrong day.
+- **Files:** `CalendarGrid.vue:64-76` (the cell), `:268-271` (the handler); `src/_common/docs/components.md`
+  (the `CalendarGrid` entry) in the same commit
+- **What to change:** On non-empty cells: `role="button"`, `tabindex="0"`, `@keydown.enter.space.prevent`
+  to the same `handleDayClick`, and an `:aria-label` naming the date — the finding's *"View history for
+  September 10, 2026"* is app wording; the framework's generic form is the date plus the weekday
+  (`allDays` at `:175-188` already has the localized weekday names; the date must be formatted through
+  the i18n locale, **not** `formatToDateWithDay` from `DateTimeHelper.ts`, which is hardcoded `sk`
+  (*Contradictions* §22) and would announce Slovak dates in EN). The label key goes in the framework's
+  `calendar` namespace next to `calendar.daysToShow`. **`.empty` cells get none of it** — no role, no
+  tabindex, and `cursor: default` is already there (`:406-409`); make the `@click` conditional too so a
+  padding cell is not a focus stop. A `:focus-visible` outline on `.day-cell` — the existing `.selected`
+  outline (`:379-383`) is the shape to mirror, not reuse, since selected and focused are different states.
+- **⚠️ The locale mirror is not optional.** This app's `src/locales/common.{sk,en}.ts` declares its own
+  `calendar` namespace (`common.en.ts:431`, with the comment at `:429` saying it is *"consumed by
+  `_common/component/calendar/CalendarGrid.vue`"*), and the aggregator spread is shallow — the app's
+  `calendar` **replaces** the framework's wholesale (CLAUDE.md *Localization*; R11 was exactly this
+  namespace). Any key `CalendarGrid` resolves that is not mirrored renders raw here. Add the new key to
+  both app files in the pointer-bump commit, and say so in its message.
+- **Do not change:** the `#day-cell-content` slot contract or the `dayClick` payload — `HistoryCalendarView`
+  and `PlannerCalendarView` both cast it. Not `CalendarDayCellHeader` — the visible day number is fine;
+  the name belongs on the control. Do not batch with `F29`/`F30` (rule 1 — those are app-side).
+- **Verification:** `history-review/A2`'s `Verify:` block on `/activity-history/calendar` — a day cell
+  resolves by `getByRole('button', { name: /10/ })` (or whatever the label pattern is), Tab reaches it,
+  Enter navigates to `/activity-history/detail?date=2026-09-10` exactly as a click does; padding cells
+  are not focus stops. Then `/day-planner` for the second consumer. **Both locales**, and specifically
+  check the name is not raw `calendar.<key>` in either — that is the mirror check.
+- **Risk:** Low, but two repos and one locale trap. Every app on the framework that renders
+  `CalendarGrid` gains focusable cells — a month is 28–42 new tab stops, which is correct for a control
+  grid but is a change a keyboard user of another app will notice.
+
+## FW7. Every password field's visibility toggle is named "{label} appended action" — one component, and one locale key nobody defined
+
+> ✅ **FIXED 2026-09-23**, same commit as `FW2`/`FW5`/`FW6`/`FW15` (`5397675`, bump `a7dbfda0`). As
+> written: `MyPasswordInput.vue` drops `appendInnerIcon`/`@click:appendInner` for a `#append-inner`
+> `VIconBtn` (`variant="plain"`, `size="small"`, `density="compact"`) with `title`/`aria-label` bound to
+> `user.showPassword` / `user.hidePassword`. `MyVerifyPasswordInput.vue` and `MyNewPasswordInput.vue`
+> both wrap `MyPasswordInput` and needed no direct change. `user.passwordsDontMatch` (the adjacent,
+> source-certain finding) added to both `user.{sk,en}.ts`, alongside the two new toggle keys. The
+> `user.password`/`user.confirmPassword` dead-key drift the finding also noted was left alone — it is
+> genuinely unreachable (both consumers pass `isNew`) and touching it was out of scope for this pass.
+> `docs/modules/user.md` gained a short section on the toggle so `appendInnerIcon` is not reintroduced.
+> **Not verified live** — the harness's classifier blocks `fill` on password fields, and the draft-spec
+> `fixme`s the finding named (`A1`, `U4`, plus the two signed-out cases on `/login`/`/registration`) were
+> not promoted this pass; `vue-tsc --build --force`, `npm run lint` and `npx vite build` are what stand
+> behind this note. The field-height check across both densities was also not done in a browser.
+
+- **Scope:** **[framework]** `src/_common/modules/user/component/MyPasswordInput.vue`,
+  `src/_common/modules/user/_locales/user.{sk,en}.ts`, `src/_common/docs/modules/user.md` — submodule
+  commit in `vue_framework`, then a pointer bump. **No app-side locale mirror is needed** (below).
+- **Closes:** `user-settings/A1`, **`auth/A1`** (the same toggle on `/login` and `/registration` —
+  "Password appended action", "New password appended action", "Confirm new password appended action",
+  observed in the snapshot), and **`auth/B2`** (the raw `user.passwordsDontMatch` the adjacent below
+  predicted, now **observed** on `/registration` — screenshot `registration--password-mismatch.png`
+  and the `[intlify] Not found 'user.passwordsDontMatch' key in 'EN'` console line). **Also answers the
+  message half of `user-settings/U4`** (adjacent, below), which stays listed under *Needs
+  verification* for its on-screen half. Ninth pass: both auth findings repeat the seventh pass's
+  wrong mechanism ("no `aria-label` binding exists on the `appendInnerIcon`") — the paragraph below
+  already corrects it; their suggested `:aria-label` on the icon prop would not take effect.
+- **Root cause — one file, not three call sites.** All three fields in the dialog (and every other
+  password field in the module — `MyVerifyPasswordInput.vue:2`, both halves of
+  `MyNewPasswordInput.vue:2,9`, so sign-in, registration, the verify dialog and the e-mail change too)
+  render through `MyPasswordInput.vue`, whose `:appendInnerIcon` + `@click:appendInner` (`:7,:10`) is
+  the Vuetify mechanism that generates the name. Vuetify 3.12.4 `components/VInput/InputIcon.js:30`:
+  `label = listener && localeKey ? t('$vuetify.input.appendAction', props.label ?? '') : undefined`,
+  and `locale/en.js:76` is `appendAction: '{0} appended action'`. That is the whole of it: the field's
+  own label, run through a slot-position template. The finding's guess ("no `aria-label` passed at the
+  call site") is right in effect and misses that no prop *can* override it — the only knob is the
+  global `$vuetify.input.appendAction` string, which would still have to say "appended action" for every
+  clearable/appended field in every app. **Naming only, and reachability must survive the fix:**
+  `VIcon.js:72-74` gives the generated icon `role="button"`, `tabindex="0"` and `InputIcon`'s own
+  Enter/Space handler, so today's toggle is keyboard-operable with a bad name. A bare `<VIcon @click>`
+  in the slot keeps role and tabindex but **loses the keydown handler**; a button does not.
+- **Files:** `MyPasswordInput.vue:7,10`; `user.{sk,en}.ts` (two new keys, plus the missing one);
+  `docs/modules/user.md`
+- **What to change:** Replace the two icon props with a `#append-inner` slot holding a `VIconBtn`
+  (the framework's own alias, `createAppVuetify.ts:13`) — `:icon="showPassword ? 'eye-slash' : 'eye'"`,
+  `variant="plain"`, `size="small"`, `density="compact"`, `@click="showPassword = !showPassword"`, and
+  `:aria-label` / `:title` bound to `$t(showPassword ? 'user.hidePassword' : 'user.showPassword')`. A
+  toggle whose *label* changes must not also carry `aria-pressed` (that is two state channels for one
+  fact; pick the label). Keys go in the **framework's** `user` namespace, and unlike `general`/`calendar`
+  this app **merges** `user` per key rather than replacing it (`SK.ts:57`, `EN.ts:44` —
+  `{ ...frameworkUser.user, ...appUser.user }`), so nothing needs mirroring into `src/core/user/_locales/`;
+  just confirm `appUser.user` does not already declare the same key names, because the app wins a
+  collision. Watch the field height: Vuetify's append-inner slot is sized for an icon, and a default
+  `VBtn` is taller than the `comfortable` field — `size="small"` + `variant="plain"` fits, check in both
+  densities before committing.
+- **Adjacent, source-certain, same module, same commit — the mismatch message is a raw key.**
+  `MyNewPasswordInput.vue:36` resolves `i18n.t('user.passwordsDontMatch')`; grep across every
+  `_locales/*.ts` in `src/` (framework `common.{sk,en}`, framework `user.{sk,en}`, app `user.{sk,en}`,
+  `common.{sk,en}`) finds **only the usage**. vue-i18n renders the key path when both the locale and the
+  fallback miss, so `U4`'s "mismatched new/confirm" validation line reads `user.passwordsDontMatch` on
+  screen, in both languages, on the change-password dialog *and* on registration (unit 15). Add the key
+  to both framework `user` files. Not filed by the unit (it could not type into the field); folded here
+  rather than given a batch because it is two lines in the file this batch already edits, and `U4`'s
+  retest is where it gets seen. **Ninth pass: unit 15 typed into the field and saw it** (`auth/B2`),
+  so this is no longer source-only. One footnote from the same read, not batched: `MyNewPasswordInput.vue:4,11`
+  resolve `user.password` / `user.confirmPassword` when `isNew` is false; `user.sk.ts:85` defines
+  `confirmPassword`, `user.en.ts` does not, and neither file defines `user.password`. Dead today —
+  both consumers (`RegistrationView.vue:27`, `ChangePasswordForm.vue:11`) pass `isNew` — so it is a
+  drift to close while in the file, not a defect to verify.
+- **Do not change:** `$vuetify.input.appendAction` in `vuetifyLocale.sk.ts` / `common.en.ts` — that is
+  the fallback for every *other* appended action and "appended action" is the right generic name for a
+  slot Vuetify knows nothing about. Not `MyNewPasswordInput`'s rule logic. Do not batch with `FW2`
+  (control with *no* name) — the finding itself argued for the split, and it is right: different
+  mechanism, and `FW2` is two hand-written buttons while this is a Vuetify-generated one.
+- **Verification:** `A1`'s `Verify:` block — open *Change password*, each of the three toggles has the
+  accessible name *Show password*, and after activation *Hide password* with the field's `type` flipped
+  to `text`; **Tab reaches each toggle and Enter/Space flips it** (the reachability the fix must not
+  lose); both locales (`Zobraziť heslo` / `Skryť heslo`, or whatever the SK file says — no raw key). Then
+  `U4`'s half: type `a` in *New password* and `b` in *Confirm new password* — the line under the confirm
+  field reads a sentence, not `user.passwordsDontMatch`. The harness's classifier blocked the agent's
+  `fill` on a password field; a Playwright spec is code, not the agent, so promote the draft spec's `A1`
+  and `U4` `fixme`s and let the suite do the typing (nothing is submitted; a mismatch sends no request).
+  **Ninth pass — two signed-out places to look too:** `/login`'s toggle and `/registration`'s two
+  (`auth/A1`'s snapshot names), and the mismatch line on `/registration` (`auth/B2`, screenshot
+  `registration--password-mismatch.png`); `e2e/tests/auth.draft.spec.ts:97` is the `fixme` for the
+  latter and needs no sign-in, so it is the cheapest assertion this batch has.
+- **Risk:** Low-medium for a one-file change: every sign-in and registration form in every app on the
+  framework changes its toggle's markup from a Vuetify-managed `<i>` to a `VBtn`. Look at `/login` and
+  `/registration` after the pointer bump, in both densities and both themes.
+
+## FW15. `MyDateInput` binds `$attrs` first, so every caller's `label` (and `hideDetails`) is discarded
+
+> ✅ **FIXED 2026-09-23**, same commit as `FW2`/`FW5`/`FW6`/`FW7` (`5397675`, bump `a7dbfda0`). As
+> written: `v-bind="$attrs"` moved to be the last binding on `MyDateInput`'s `VDateInput`, after
+> `:label`, `hideDetails` and `style`, so a caller's values now win. `e2e/tests/history-review.draft.spec.ts:28`
+> updated from `getByRole('textbox', { name: 'Date' })` to `{ name: 'From' }` in the pointer-bump commit,
+> as required. **Not verified live** — no playwright-cli session was driven to confirm *Copy Day*'s field
+> now reads "Source date" or that the History summary's custom-range pair reads "From"/"To"; `vue-tsc
+> --build --force`, `npm run lint`, `npx vite build` and `e2e`'s `npm run typecheck` all pass.
+
+- **Scope:** **[framework]** `src/_common/component/dateTime/MyDateInput.vue:10-16` — submodule commit,
+  then pointer bump; **the pointer-bump commit must also fix one draft assertion** (below)
+- **Closes:** `planner-day/B2`, and the unfiled twin unit 3 recorded as fact
+  (`history-review/inventory.md:20`, `textbox "Date"` on the summary's *From* field)
+- **Root cause:** Confirmed by direct read, and the finding's mechanism is exactly right. The component
+  is `inheritAttrs: false` and spreads `v-bind="$attrs"` at `:11`, **then** binds `:label="$t('dateTime.date')"`
+  at `:13` and a bare `hideDetails` at `:14`. Vue 3 merges bindings in template order, later wins, so a
+  caller's `label` in `$attrs` is overridden by the generic one every time — and a caller's
+  `:hideDetails="false"` likewise, which is the gap `HistoryDateRangeSelector.vue:31-32` already works
+  around with a comment (*"MyDateInput hardcodes `hideDetails`, so the message cannot live under the
+  field itself without a framework change"*). **Three call sites pass a label the user never sees**,
+  not one: `CopyDayForm.vue:5` (*"Source date"* → "Date", the finding), and
+  `HistoryDateRangeSelector.vue:17,25` (*"From"* / *"To"* → both "Date" — in custom-range mode two
+  identically-named date fields side by side). `HistoryDetailView.vue:57` passes `dateTime.date` and
+  is unaffected by accident. The same order also makes the component's `style` at `:15` win over
+  `PlannerTaskDialog.vue:26`'s 200 px — style objects merge later-wins per key — so that dialog's
+  width override is dead too; adjacent, unobserved, same one-line fix.
+- **Files:** `MyDateInput.vue:10-16`; `src/_common/docs/components.md` if it documents the props
+- **What to change:** Move `v-bind="$attrs"` to be the **last** binding on `<VDateInput>` — the
+  finding's first option — so the explicit `:label`, `hideDetails` and `style` become defaults a
+  caller can override. That is the whole fix and it is generic. Do **not** take the finding's second
+  option (a `label` prop defaulting to `$t(…)`) unless the pass-through of `hideDetails` is also made
+  a prop — half a fix leaves the comment at `HistoryDateRangeSelector.vue:31` true.
+- **Do not change:** the chevrons (`FW2`); `dateShowArrows` / `density` props; the 150 px width as a
+  default.
+- **Verification:** `B2`'s `Verify:` block — the Copy Day dialog's field reads *"Source date"*; then
+  `/activity-history` with *Range length* = *Custom range*: the two fields read *From* and *To*. Then
+  **fix `e2e/tests/history-review.draft.spec.ts:28`** in the pointer-bump commit — it asserts
+  `getByRole('textbox', { name: 'Date' })` on the summary header, which is the defect pinned as expected
+  behaviour and will fail correctly the moment this lands; it should read `{ name: 'From' }`. Both
+  locales.
+- **Risk:** Low. Every `MyDateInput` in every app on the framework starts honouring attrs it silently
+  dropped — a consumer that passed a `label` and then relied on "Date" rendering is not a real case.
