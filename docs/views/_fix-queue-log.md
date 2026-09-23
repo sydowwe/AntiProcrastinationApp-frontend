@@ -6681,13 +6681,24 @@ text, or a `snapped` emit). Both are decisions for `vue_framework`, not this app
 > - A mocked 500 on suggestions: no snackbar, and the picker still lists all three templates.
 > - Console clean. `type-check` exit 0, lint clean.
 >
-> **Not done, noted:**
-> - `composable/useTemplateSuggestion.ts` is still dead code.
-> - The `.suggestion-item` row is a clickable `div` with no role or key handler, the `F49` class.
-> - Server-side, `GetSuggestionsTaskPlannerDayTemplateEndpoint` loads the calendar by id with
->   `FindAsync` and **does not check that it belongs to the caller**. The suggestions themselves are
->   filtered by user, so only another account's calendar date and day type steer the query. It is
->   unfiled, and a backend question if anyone wants it asked.
+> **Follow-ups, all settled 2026-09-24** (the day after, same commit series):
+> - **`useTemplateSuggestion.ts` deleted.** It was dead by design: commit `76156248` replaced it with
+>   this endpoint, and nothing had imported it since. It scored on the template's own `ScheduledDays` /
+>   `SuggestedForDayType`, which the server's history-only view never reads. That signal is now asked
+>   for server-side as **§22 / `B27`**.
+> - **The suggestion row is a button.** It has `role="button"`, `tabindex="0"`, Enter/Space, and
+>   `aria-pressed` for the selected template, plus a focus ring. Found on the way and fixed with it:
+>   - the pattern label rendered raw English (SK read *"Použité v Thursday"*), and is now translated
+>     through `calendar.*` / `planner.dayType.*`, with SK reworded to *"Zvyčajne: {label}"*;
+>   - a template matching both weekday and day type rendered twice with one `v-for` key, and is now
+>     deduped;
+>   - inactive templates were suggested, and are now dropped.
+>
+>   Verified with a mocked 4-entry body: 2 rows, Enter selects and previews, and the SK and EN wording
+>   is right.
+> - **The ownership note was wrong as a leak.** `Calendar` is `BaseEntityWithUser`, so the per-user
+>   global query filter applies, and `FindAsync` honours it: another account's id → 404. What is true is
+>   that nothing pins it, and it rests on `UserScoping:Enabled`. `B27` part 5 asks for the test.
 
 **Source-certain, unobserved — `F45`-if-confirmed (rule 5).** `taskPlannerDayTemplateApi.ts:38-41` is
 ``API.get(`${url}/suggestions`, { params: { date } })``; the only route is
