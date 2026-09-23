@@ -1,28 +1,52 @@
 <template>
-	<!-- Empty range: explain rather than show a grid of identical grey cells with no context (H7). -->
-	<HistoryFirstRunState
-		v-if="!loading && allDaysEmpty && hasAnyHistoryEver === false"
-		compact
-		class="mb-2"
-	/>
-	<HistoryEmptyState
-		v-else-if="!loading && allDaysEmpty"
-		icon="fas fa-calendar"
-		:message="$t('history.calendar.noActivityInRange')"
-		class="mb-2"
-	/>
-	<CalendarGrid
-		class="py-4"
-		:days
-		:loading
-		:firstDayOfWeek
-		@dayClick="handleDayClick"
-		@dateRangeChange="fetchCalendarActivity"
-	>
-		<template #day-cell-content="{ day }">
-			<HistoryDayCellContent :day="asDaySummary(day)" />
-		</template>
-	</CalendarGrid>
+	<div class="px-2 pt-6 w-100 h-100 d-flex flex-column">
+		<!-- Header — the siblings' row, minus the controls the calendar does not have. -->
+		<div class="w-100 d-flex align-center ga-6 flex-wrap">
+			<VIconBtn
+				icon="chart-line"
+				variant="tonal"
+				style="margin-right: -12px"
+				@click="router.push({ name: 'activityHistory' })"
+			>
+				<VIcon icon="chart-line" />
+				<VTooltip
+					activator="parent"
+					location="bottom"
+				>
+					{{ $t('history.calendar.openSummary') }}
+				</VTooltip>
+			</VIconBtn>
+			<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>
+		</div>
+
+		<!-- Empty range: explain rather than show a grid of identical grey cells with no context (H7). -->
+		<HistoryFirstRunState
+			v-if="!loading && allDaysEmpty && hasAnyHistoryEver === false"
+			compact
+			class="mt-4 mb-2"
+		/>
+		<HistoryEmptyState
+			v-else-if="!loading && allDaysEmpty"
+			icon="fas fa-calendar"
+			:message="$t('history.calendar.noActivityInRange')"
+			class="mt-4 mb-2"
+		/>
+		<!-- `flex-fill` + `min-height: 0` keep `CalendarGrid`'s `height: 100%` chain resolving below the
+		     header, so the grid scrolls inside its card instead of pushing the footer off-screen. -->
+		<CalendarGrid
+			class="py-4 flex-fill"
+			style="min-height: 0"
+			:days
+			:loading
+			:firstDayOfWeek
+			@dayClick="handleDayClick"
+			@dateRangeChange="fetchCalendarActivity"
+		>
+			<template #day-cell-content="{ day }">
+				<HistoryDayCellContent :day="asDaySummary(day)" />
+			</template>
+		</CalendarGrid>
+	</div>
 </template>
 
 <script setup lang="ts">

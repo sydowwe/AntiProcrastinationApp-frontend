@@ -64,6 +64,10 @@
 										'planner.template.statsLine',
 										{
 											count: taskStats.taskCount,
+											background:
+												taskStats.backgroundCount > 0
+													? ` ${$t('planner.template.statsBackground', { count: taskStats.backgroundCount })}`
+													: '',
 											planned: fromMinutes(taskStats.plannedMinutes),
 											free: fromMinutes(taskStats.freeMinutes),
 										},
@@ -205,14 +209,17 @@
 	const notFoundId = ref<number | null>(null)
 
 	const taskStats = computed(() => {
+		// Background tasks do not block time, so they stay out of planned/free — but the count names them
+		// separately, or two blocks on screen read as "1 task".
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground)
 		const taskCount = nonBgTasks.length
+		const backgroundCount = store.tasks.length - taskCount
 		const plannedMinutes = nonBgTasks.reduce((sum, t) => sum + getSpanMinutes(t.startTime, t.endTime), 0)
 		const viewStart = store.viewStartTime.getInMinutes
 		const viewEnd = store.viewEndTime.getInMinutes
 		const totalViewMinutes = viewEnd > viewStart ? viewEnd - viewStart : viewEnd + 1440 - viewStart
 		const freeMinutes = Math.max(0, totalViewMinutes - plannedMinutes)
-		return { taskCount, plannedMinutes, freeMinutes }
+		return { taskCount, backgroundCount, plannedMinutes, freeMinutes }
 	})
 
 	onMounted(async () => {

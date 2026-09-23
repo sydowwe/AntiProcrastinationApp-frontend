@@ -4,6 +4,8 @@ const dayPlanner = {
 		quickCreatePlannerActivity: `Rýchle vytvorenie aktivity v plánovači`,
 		quickEditPlannerActivity: `Rýchla úprava aktivity`,
 		importance: `Dôležitosť`,
+		// Povinná len pri opakovanej úlohe — validátor API ju vyžaduje tam, nie pri bežnej úlohe.
+		importanceRequired: `* Dôležitosť`,
 		ignore: `Ignorovať`,
 		overwrite: `Prepísať`,
 		mergeIgnore: `Zlúčiť a ignorovať`,
@@ -140,7 +142,9 @@ const dayPlanner = {
 			notFoundTitle: `Šablóna sa nenašla`,
 			notFoundText: `Šablóna s id {id} neexistuje — pravdepodobne bola vymazaná.`,
 			backToList: `Späť na šablóny`,
-			statsLine: `{count} úloha · naplánované: {planned} · voľné: {free} | {count} úlohy · naplánované: {planned} · voľné: {free} | {count} úloh · naplánované: {planned} · voľné: {free}`,
+			// `{background}` je prázdne, alebo " " + statsBackground, ak existuje úloha na pozadí.
+			statsLine: `{count} úloha{background} · naplánované: {planned} · voľné: {free} | {count} úlohy{background} · naplánované: {planned} · voľné: {free} | {count} úloh{background} · naplánované: {planned} · voľné: {free}`,
+			statsBackground: `(+{count} na pozadí)`,
 			compareEditTitle: `Porovnať a upraviť šablóny`,
 			leftTemplate: `Ľavá šablóna`,
 			rightTemplate: `Pravá šablóna`,

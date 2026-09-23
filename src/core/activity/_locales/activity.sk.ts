@@ -4,6 +4,7 @@ const activity = {
 	},
 	activities: {
 		role: `Roľa`,
+		rolesInUse: `Použité roly`,
 		category: `Kategória`,
 		activity: `Aktivita`,
 		activityRequired: `* Aktivita`,

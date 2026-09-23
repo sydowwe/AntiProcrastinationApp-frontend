@@ -4,6 +4,7 @@ const activity = {
 	},
 	activities: {
 		role: `Role`,
+		rolesInUse: `Roles in use`,
 		category: `Category`,
 		activity: `Activity`,
 		activityRequired: `* Activity`,

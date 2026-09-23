@@ -1,15 +1,17 @@
 <template>
 	<div class="py-4 h-100 w-100 d-flex flex-column">
 		<div class="d-flex align-center">
+			<!-- `flex-0-0`: the tabs must not shrink — the filter group beside them wraps instead (F22). -->
 			<VTabs
 				v-model="activeTab"
 				color="primaryOutline"
+				class="flex-0-0"
 			>
 				<VTab value="activities">{{ t('activities.activitiesTab') }}</VTab>
 				<VTab value="roles">{{ t('activities.roles') }}</VTab>
 				<VTab value="categories">{{ t('activities.categories') }}</VTab>
 			</VTabs>
-			<div class="d-flex ga-2 ml-14 flex-1-1">
+			<div class="d-flex flex-wrap ga-2 ml-14 flex-1-1">
 				<template v-if="activeTab === 'activities'">
 					<VTextField
 						v-model="activityNameDraft"
@@ -37,6 +39,7 @@
 						closableChips
 						hideDetails
 						density="compact"
+						style="min-width: 200px"
 					/>
 					<VCombobox
 						v-model="categoryCombobox"
@@ -50,6 +53,7 @@
 						closableChips
 						hideDetails
 						density="compact"
+						style="min-width: 200px"
 					/>
 					<VBtnToggle
 						v-model="archivedView"

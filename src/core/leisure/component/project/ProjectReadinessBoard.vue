@@ -81,9 +81,7 @@
 									</VIconBtn>
 								</div>
 								<div class="text-caption text-medium-emphasis">
-									{{ $t(`enums.difficultyLevel.${item.difficultyLevel}`) }}
-									<template v-if="item.projectArea">· {{ item.projectArea }}</template>
-									<template v-if="item.estimatedHours">· {{ item.estimatedHours }}h</template>
+									{{ metaLine(item) }}
 									<VIcon
 										v-if="item.isMessy"
 										icon="broom"
@@ -215,6 +213,15 @@
 		}
 		return map
 	})
+
+	// One join, not a separator per optional field — each field guessing its own `· ` is how two of
+	// them ran together ("Woodworking· 8.5h").
+	function metaLine(item: ActivityProjectProfile): string {
+		const parts = [t(`enums.difficultyLevel.${item.difficultyLevel}`)]
+		if (item.projectArea) parts.push(item.projectArea)
+		if (item.estimatedHours) parts.push(`${item.estimatedHours}h`)
+		return parts.join(' · ')
+	}
 
 	function blockerLine(list: string[], max = 3): string {
 		const shown = list.slice(0, max).join(', ')

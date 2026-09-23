@@ -34,6 +34,8 @@ const activityHistory = {
 			openSummary: `Späť na súhrn za tento týždeň`,
 		},
 		calendar: {
+			title: `Kalendár histórie`,
+			openSummary: `Otvoriť súhrn`,
 			sessions: `{count} relácia | {count} relácie | {count} relácií`,
 			noActivity: `Žiadna aktivita`,
 			notRecorded: `Nezaznamenané`,

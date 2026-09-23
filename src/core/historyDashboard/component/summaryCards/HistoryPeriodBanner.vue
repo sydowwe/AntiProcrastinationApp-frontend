@@ -7,7 +7,6 @@
 		:type="alertType"
 		variant="tonal"
 		density="compact"
-		style="max-width: fit-content"
 	>
 		<div class="d-flex align-center ga-1">
 			<span class="text-high-emphasis font-weight-medium">
@@ -67,6 +66,13 @@
 </script>
 
 <style scoped>
+	/* VAlert ships `flex: 1 1` — a 0% basis, so the parent row's `flex-wrap` sees a 0 px item and never
+	   wraps it; it gets squeezed into the leftover instead. Basis `auto` makes it its content width, so it
+	   wraps onto its own line when it does not fit, and it never grows. */
+	.myAlert {
+		flex: 0 0 auto;
+	}
+
 	.myAlert:deep(.v-alert__prepend) {
 		margin-inline-end: 8px !important;
 	}

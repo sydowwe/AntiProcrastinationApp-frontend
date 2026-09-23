@@ -60,7 +60,7 @@
 			<!-- Importance -->
 			<VIdSelect
 				v-model="data.importanceId"
-				:label="$t('planner.importance')"
+				:label="$t('planner.importanceRequired')"
 				:items="importanceOptions"
 				:prependInnerIcon="currentImportance?.icon"
 				:clearable="false"

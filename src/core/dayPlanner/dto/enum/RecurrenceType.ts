@@ -12,7 +12,8 @@ export function getRecurrenceTypeIcon(type: RecurrenceType): string {
 		case RecurrenceType.DayOfMonth:
 			return 'calendar-days'
 		case RecurrenceType.DateRange:
-			return 'calendar-range'
+			// `calendar-range` is Pro-only; `calendar-days` / `calendar-week` are taken by the two siblings.
+			return 'arrows-left-right-to-line'
 		case RecurrenceType.DayType:
 			return 'tag'
 	}

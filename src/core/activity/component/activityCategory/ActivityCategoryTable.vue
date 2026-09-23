@@ -56,7 +56,9 @@
 	const { openDialog } = useDialog()
 
 	const columns = computed(() => [
-		new TableColumn('role', t('activities.role')),
+		// Key stays `role` — the server remaps it to its RoleSortKey. The value is every distinct role
+		// worn by the category's activities, comma-joined; a category has no role of its own.
+		new TableColumn('role', t('activities.rolesInUse')),
 		new TableColumn('name', t('general.name')),
 		new TableColumn('text', t('general.text'), false),
 		new TableColumn('color', t('activities.color'), false),

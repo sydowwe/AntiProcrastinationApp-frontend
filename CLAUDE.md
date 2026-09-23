@@ -6,7 +6,7 @@
 - **Framework**: Vue 3.5+ (Composition API with `<script setup lang="ts">`)
 - **UI**: Vuetify 3
 - **ICONS** FontAwesome 7
-- **State**: Pinia (Composition API / Setup Stores) — persists to `sessionStorage` by default (set `persist: false` to disable), and a store exposing `ensureLoaded()`
+- **State**: Pinia (Composition API / Setup Stores) — persists only when a store opts in with `persist: { storage: sessionStorage }` (no `persist` key means no persistence), and a store exposing `ensureLoaded()`
   has it called on creation (see `_common/bootstrap/` below)
 - **Routing**: Vue Router
 - **HTTP**: Axios — dual instances: `API` (main, with interceptors) and `refreshClient` (token refresh only, no interceptors). Never use `refreshClient` directly
@@ -120,7 +120,10 @@ touching `main.ts`. Also exported: `createAppPinia`, `createAppVuetify` (+ `comp
 
 `createAppPinia()` installs two plugins, and **both are conventions your store opts into by its shape, not by anything at the call site**:
 
-1. **Persistence** — `pinia-plugin-persistedstate` with no options, so every store persists to `sessionStorage` unless it declares `persist: false`.
+1. **Persistence** — `pinia-plugin-persistedstate` with no options, which makes it **opt-in**: a store persists **only** if it declares `persist: true` or a
+   `persist: { … }` object (this app writes `{ persist: { storage: sessionStorage } }`). A store with no `persist` key does **not** persist. The earlier wording
+   here ("every store persists unless it declares `persist: false`") was backwards, and `homeUiStore` shipped against it (`_fix-queue` F9). `persist: false` is
+   harmless, and still worth writing when a store is deliberately in-memory, because it tells the reader that was a choice.
 2. **`ensureLoaded()`** — any store exposing a method by that name has it **called once, on store creation**. That is the sanctioned way to load a store's data:
    name the method `ensureLoaded`, and creating the store (`useThingStore()` in `App.vue`, or the first consumer to call it) is what triggers the fetch.
    **Components must not call it in `onMounted`** — that is the duplication the plugin exists to remove, and a composable wrapping the store must not register the
@@ -244,7 +247,9 @@ Two consequences worth stating outright, because both have already been got wron
 
 - **Moving a field across the boundary is a backend change, not a frontend refactor.** The client cannot see whether the two endpoints are two tables, two columns on
   one row, or one thing behind two routes. Write the ask (`prompts/_done/user/backend/README.md`) instead of shimming it.
-- **Every settings page must be reachable from `/user/settings`.** A module settings page links back to it, and `ModuleSettingsSection.vue` links out to each of them
+- **Every _preference_ settings page must be reachable from `/user/settings`.** Entity-management screens that happen to be called "settings"
+  (`/activity-settings/*`, `/activity-tracking/{desktop,android}/settings/*`) manage catalogues and mapping rules, not preferences, and do not belong there.
+  `src/core/user/moduleSettingsLinks.ts` owns the list and the rule, including the borderline `/routine-settings`. A module settings page links back to it, and `ModuleSettingsSection.vue` links out to each of them
   by **route name only**. A route name is a string, so this crosses no module boundary — never import another module's view or store to build a settings link.
 
 **The sanctioned cross-module imports** are the three composables in `src/core/user/composable/`. They are a deliberate exception to the "only via `api/` or `dto/`"

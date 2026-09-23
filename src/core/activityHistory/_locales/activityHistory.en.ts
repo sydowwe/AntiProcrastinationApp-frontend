@@ -33,6 +33,8 @@ const activityHistory = {
 			openSummary: `Back to summary for this week`,
 		},
 		calendar: {
+			title: `History Calendar`,
+			openSummary: `Open summary`,
 			sessions: `{count} session | {count} sessions`,
 			noActivity: `No activity`,
 			notRecorded: `Not recorded`,

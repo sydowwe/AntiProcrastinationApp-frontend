@@ -217,6 +217,7 @@
 	} from '@/core/activityHistory/composable/useHistoryExport.ts'
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { useSetBreadcrumbExtra } from '@/_common/composable/general/useBreadcrumbs.ts'
 
 	const VISUALIZATIONS = ['stackedBars', 'timeline'] as const
 	type Visualization = (typeof VISUALIZATIONS)[number]
@@ -225,6 +226,15 @@
 	const router = useRouter()
 	const i18n = useI18n()
 	const { firstDayOfWeek } = useUserPreferences()
+
+	// This drill-down has no nav entry of its own, so the trail stops at the longest prefix match —
+	// Summary's `/activity-history`. Append our own crumb; the composable clears it on unmount.
+	const { setBreadcrumbExtra } = useSetBreadcrumbExtra()
+	watch(
+		() => i18n.t('history.detail.title'),
+		title => setBreadcrumbExtra([{ title }]),
+		{ immediate: true },
+	)
 
 	// --- State: the single day and time-of-day window this view asks its questions over ---
 	const today = new Date()

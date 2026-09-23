@@ -4,6 +4,8 @@ const dayPlanner = {
 		quickCreatePlannerActivity: `Quick create planner activity`,
 		quickEditPlannerActivity: `Quick edit activity`,
 		importance: `Importance`,
+		// Required on a repeating task only — the API's validator demands it there and not on a plain task.
+		importanceRequired: `* Importance`,
 		ignore: `Ignore`,
 		overwrite: `Overwrite`,
 		mergeIgnore: `Merge and ignore`,
@@ -133,7 +135,9 @@ const dayPlanner = {
 			notFoundTitle: `Template not found`,
 			notFoundText: `There is no template with id {id} — it was most likely deleted.`,
 			backToList: `Back to templates`,
-			statsLine: `{count} task · {planned} planned · {free} free | {count} tasks · {planned} planned · {free} free`,
+			// `{background}` is empty, or " " + statsBackground when any background task exists.
+			statsLine: `{count} task{background} · {planned} planned · {free} free | {count} tasks{background} · {planned} planned · {free} free`,
+			statsBackground: `(+{count} background)`,
 			compareEditTitle: `Compare & Edit Templates`,
 			leftTemplate: `Left Template`,
 			rightTemplate: `Right Template`,
