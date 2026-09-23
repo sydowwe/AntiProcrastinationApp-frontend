@@ -7,7 +7,8 @@
 	>
 		<!-- The name is the only flexible part of this row: it truncates, the right-hand controls keep
 		     their width. Before, the name held its width and the switch label wrapped a letter per line
-		     while the chip clipped (F52). -->
+		     while the chip clipped (F52). The switch has no visible label for the same reason — with one,
+		     the name was left two letters; its thumb shows the state and `aria-label` names it. -->
 		<VCardTitle class="pa-4 pb-2 d-flex justify-space-between align-center ga-2">
 			<div
 				class="d-flex align-center ga-2"
@@ -49,10 +50,7 @@
 					hideDetails
 					density="compact"
 					color="primary"
-					class="active-switch"
-					:label="
-						template.isActive ? $t('planner.template.activeLabel') : $t('planner.template.inactiveLabel')
-					"
+					:aria-label="$t('planner.a11y.templateActive', { name: template.name })"
 					@click.stop
 					@update:modelValue="emit('toggleActive')"
 				></VSwitch>
@@ -235,10 +233,6 @@
 	.pin-unpinned:deep(.v-icon) {
 		transform: rotate(40deg);
 		transition: transform 0.2s ease;
-	}
-
-	.active-switch:deep(.v-label) {
-		white-space: nowrap;
 	}
 
 	.template-card {

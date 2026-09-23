@@ -173,8 +173,6 @@ const dayPlanner = {
 			tagsPlaceholder: `Pridať štítky`,
 			iconLabel: `Ikona`,
 			scheduledDaysLabel: `Naplánované dni`,
-			activeLabel: `Aktívna`,
-			inactiveLabel: `Neaktívna`,
 			usedTimes: `Použité {count}×`,
 			lastUsed: `Naposledy: {date}`,
 			deleteAction: `Vymazať`,
@@ -396,6 +394,7 @@ const dayPlanner = {
 			// plánovač aj plánovač šablón — jeden reťazec, nie jeden na obrazovku.
 			pinTemplate: `Pripnúť šablónu: {name}`,
 			unpinTemplate: `Odopnúť šablónu: {name}`,
+			templateActive: `Aktívna: {name}`,
 			compareTemplate: `Vybrať {name} na porovnanie`,
 			openPanel: `Otvoriť panel`,
 			closePanel: `Zavrieť panel`,

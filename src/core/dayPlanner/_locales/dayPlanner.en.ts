@@ -166,8 +166,6 @@ const dayPlanner = {
 			tagsPlaceholder: `Add tags`,
 			iconLabel: `Icon`,
 			scheduledDaysLabel: `Scheduled Days`,
-			activeLabel: `Active`,
-			inactiveLabel: `Inactive`,
 			usedTimes: `Used {count} times`,
 			lastUsed: `Last: {date}`,
 			deleteAction: `Delete`,
@@ -386,6 +384,7 @@ const dayPlanner = {
 			// the day planner and the template planner — one string each, not one per screen.
 			pinTemplate: `Pin template: {name}`,
 			unpinTemplate: `Unpin template: {name}`,
+			templateActive: `Active: {name}`,
 			compareTemplate: `Select {name} for comparison`,
 			openPanel: `Open panel`,
 			closePanel: `Close panel`,

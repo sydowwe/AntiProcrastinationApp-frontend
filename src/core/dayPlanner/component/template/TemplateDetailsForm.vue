@@ -42,6 +42,8 @@
 				const createdId = await create(formData)
 				dialogApi.close({ request: formData, savedId: createdId as number })
 			}
+		} catch {
+			// The interceptor's snackbar already fired; staying open is the whole point.
 		} finally {
 			dialogApi.setLoading(false)
 		}
