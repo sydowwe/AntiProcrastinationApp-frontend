@@ -15,6 +15,8 @@ const user = {
 			planner: `Nastavenia plánovača dňa`,
 			reminders: `Notifikácie a pripomienky`,
 			routine: `Rutinné časové úseky a série`,
+			desktopTracking: `Nastavenia sledovania na počítači`,
+			androidTracking: `Nastavenia sledovania na androide`,
 		},
 		backToSettings: `Späť na nastavenia účtu`,
 		// Export

@@ -11,7 +11,7 @@
 				:key="link.routeName"
 				:prependIcon="link.icon"
 				:title="i18n.t(`user.moduleSettings.${link.labelKey}`)"
-				:to="{ name: link.routeName }"
+				:to="{ name: link.routeName, params: link.params }"
 				appendIcon="chevron-right"
 				rounded="lg"
 			/>

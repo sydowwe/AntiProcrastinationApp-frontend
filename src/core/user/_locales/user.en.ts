@@ -12,6 +12,8 @@ const user = {
 			planner: `Day planner settings`,
 			reminders: `Notifications & reminders`,
 			routine: `Routine time periods & streaks`,
+			desktopTracking: `Desktop tracking settings`,
+			androidTracking: `Android tracking settings`,
 		},
 		backToSettings: `Back to account settings`,
 		// Export
