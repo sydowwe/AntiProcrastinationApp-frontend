@@ -382,7 +382,7 @@ const dayPlanner = {
 			moveOk: `The move is free of conflicts`,
 			currentTime: `Current time: {time}`,
 			midnight: `Midnight`,
-			toggleDoneShortcut: `D marks the selected tasks as completed or not started.`,
+			toggleDoneShortcut: `D opens Log time to complete the selected task, or sets completed tasks back to not started.`,
 			// Names for the module's icon-only controls (F56). The panel and undo keys are shared by
 			// the day planner and the template planner — one string each, not one per screen.
 			pinTemplate: `Pin template: {name}`,

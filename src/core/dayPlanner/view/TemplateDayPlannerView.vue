@@ -1,6 +1,12 @@
 <!-- TemplateDayPlannerView.vue -->
 <template>
-	<div class="py-4 d-flex flex-column flex-md-row ga-4 w-100 h-100">
+	<!-- A row at every width: in a compact planner the panel floats over the grid, anchored here
+	     (`position: relative`), instead of stacking above it or squeezing it (F88). -->
+	<div
+		ref="rootRef"
+		class="py-4 d-flex ga-4 w-100 h-100"
+		style="position: relative"
+	>
 		<PlannerSidePanelShell
 			v-model:panelOpen="panelOpen"
 			v-model:activePanel="activePanel"
@@ -42,9 +48,9 @@
 					>
 						<template #append>
 							<!-- The alert replaces TemplatePlannerHeader, and with it the header's reopen toggle —
-							     so below `md` a panel closed here stayed closed until a reload (F51). -->
+							     so in a compact planner a panel closed here stayed closed until a reload (F51). -->
 							<VIconBtn
-								class="d-md-none"
+								v-if="compact"
 								variant="tonal"
 								color="secondaryOutline"
 								icon="bars"
@@ -127,6 +133,7 @@
 	import TemplatePlannerTaskBlock from '@/core/dayPlanner/component/template/TemplatePlannerTaskBlock.vue'
 	import RoutineSidePanel from '@/core/dayPlanner/component/template/RoutineSidePanel.vue'
 	import { useRoutinePlacement } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
+	import { providePlannerLayout } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 	import {
 		TEMPLATE_PLANNER_STORE_KEY,
 		useSecondaryTemplateDayPlannerStore,
@@ -213,7 +220,10 @@
 	provide('isSplitView', isSplitView)
 	provide('splitViewStoreId', storeId)
 
-	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
+	// Measured on this view's root, so each split-view pane decides for itself (F88).
+	const rootRef = ref<HTMLElement>()
+	const compact = providePlannerLayout(rootRef)
+	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store, compact)
 
 	/** Set by `TemplatePlannerPanel` when the id does not resolve to a template (F55). */
 	const notFoundId = ref<number | null>(null)
@@ -253,7 +263,7 @@
 		const id = templateId.value
 		if (id == null) return
 		const token = ++latestLoadToken
-		if (!isSplitView) showFullScreenLoading()
+		if (!isSplitView) showFullScreenLoading({ manualHide: true })
 		try {
 			const tasks = await fetchFilteredTasks(
 				new TemplatePlannerTaskFilter(id, store.viewStartTime, store.viewEndTime),
@@ -269,7 +279,9 @@
 			// failures still propagate.
 			if (!isRequestCanceled(error)) throw error
 		} finally {
-			if (!isSplitView) hideFullScreenLoading()
+			// Only the newest load owns the overlay: a superseded one settling first would otherwise
+			// uncover the grid while the load that counts is still in flight.
+			if (!isSplitView && token === latestLoadToken) hideFullScreenLoading()
 		}
 	}
 

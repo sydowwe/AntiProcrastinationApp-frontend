@@ -2,10 +2,11 @@
 <template>
 	<VCardTitle class="px-5 pb-0 pt-3 pt-md-4 d-flex justify-space-between align-center flex-wrap ga-2">
 		<div class="d-flex align-center flex-wrap ga-3">
-			<!-- The panel's X is otherwise the only writer of `panelOpen` below `md` — once closed it
-			     stayed closed until a reload (F51). Same control as DayPlannerHeader's. -->
+			<!-- The panel's X is otherwise the only writer of `panelOpen` in a compact planner — once
+			     closed it stayed closed until a reload (F51). Same control as DayPlannerHeader's. Shown by
+			     the planner's own width, not the window's, so each split-view pane has one (F88). -->
 			<VIconBtn
-				class="d-md-none"
+				v-if="compact"
 				variant="tonal"
 				color="secondaryOutline"
 				icon="bars"
@@ -87,12 +88,14 @@
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 	import { useI18n } from 'vue-i18n'
+	import { usePlannerCompact } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 
 	const { title } = defineProps<{
 		title?: string
 	}>()
 
 	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
+	const compact = usePlannerCompact()
 
 	const SNAP_INTERVAL_OPTIONS = [5, 10, 15, 30]
 

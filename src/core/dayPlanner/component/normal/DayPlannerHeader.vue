@@ -6,7 +6,7 @@
 		<!-- Left: Date + Edit -->
 		<div class="left-section">
 			<VIconBtn
-				class="d-md-none"
+				v-if="compact"
 				variant="tonal"
 				color="secondaryOutline"
 				icon="bars"
@@ -100,9 +100,10 @@
 			</VBtn>
 
 			<VBtnToggle
+				v-if="compact"
 				v-model="activePanel"
 				mandatory
-				class="d-flex d-md-none"
+				class="d-flex"
 				density="compact"
 				variant="outlined"
 				color="secondaryOutline"
@@ -152,6 +153,7 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import { useI18n } from 'vue-i18n'
+	import { usePlannerCompact } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 
 	const { title, calendar } = defineProps<{
 		title: string
@@ -164,6 +166,8 @@
 	const activePanel = defineModel<PlannerSidePanelTab>('activePanel', { required: true })
 	const panelOpen = defineModel<boolean>('panelOpen', { required: true })
 	const store = useDayPlannerStore()
+	// The panel toggles show when the planner itself is narrow, not the window (F88).
+	const compact = usePlannerCompact()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
 	const { fetchByDate } = useCalendarQuery()
 	const { fetchFiltered } = useTaskPlannerCrud()

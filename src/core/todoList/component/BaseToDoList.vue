@@ -101,7 +101,7 @@
 				:isInvalidDrop="dragState.isEmptyZoneInvalidDrop"
 			/>
 			<div
-				v-if="items.length === 0 && !isInChangeOrderMode"
+				v-if="items.length === 0 && !isInChangeOrderMode && !fullScreenLoading"
 				class="d-flex flex-column align-center justify-center py-8 text-medium-emphasis ga-3"
 			>
 				<VIcon
@@ -125,6 +125,7 @@
 	import type { IBaseToDoListItem } from '@/core/todoList/dto/response/interface/IBaseToDoListItem.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useTodoListDragAndDrop } from '@/core/todoList/composable/dragAndDrop/useTodoListDragAndDrop.ts'
+	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 
 	const { items, isInChangeOrderMode, listId, activityIds, allItems } = defineProps<{
 		items: TEntity[]
@@ -139,6 +140,9 @@
 		(e: 'crossListDrop', sourceListId: number, targetListId: number, itemId: number, dropTarget: any): void
 		(e: 'uncheckAll', doneIds: number[]): void
 	}>()
+
+	// The loader's scrim is translucent, so an empty state rendered under it reads as the answer (FW26).
+	const { fullScreenLoading } = useLoading()
 
 	// Auto-animate controller
 	const [autoParent] = useAutoAnimate({ duration: 300, easing: 'ease-in-out' })

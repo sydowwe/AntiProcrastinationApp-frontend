@@ -271,7 +271,8 @@
 
 	onMounted(async () => {
 		if (loadFailed.value) return
-		showFullScreenLoading()
+		// Two sequential fetches beside a side request — the overlay must outlast all of it (FW26).
+		showFullScreenLoading({ manualHide: true })
 		void ensureLeisurePairingLoaded()
 		try {
 			// The list before its items: this is the fetch that can 404, and there is nothing worth

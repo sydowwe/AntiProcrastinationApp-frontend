@@ -47,7 +47,7 @@ export function useTemplatePreview(
 		if (!store.templateInPreview) {
 			throw new Error('No template selected')
 		}
-		showFullScreenLoading()
+		showFullScreenLoading({ manualHide: true })
 		try {
 			const tasksIncluded = store.tasks
 				.filter(task => task.id < 0)

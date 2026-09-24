@@ -6,7 +6,7 @@
 		:extraLabelParts
 		extraKeyShortcuts="D"
 		@resizeStart="emit('resizeStart', $event)"
-		@keydown.d.exact.prevent="handleToggleStatusSelected"
+		@keydown.d.exact.prevent="emit('toggleDone', task.id)"
 	>
 		<template #time>
 			<div
@@ -74,7 +74,7 @@
 	import {
 		getPlannerTaskStatusColor,
 		getPlannerTaskStatusIcon,
-		PlannerTaskStatus,
+		type PlannerTaskStatus,
 		usePlannerTaskStatusOptions,
 	} from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
@@ -86,15 +86,17 @@
 	const emit = defineEmits<{
 		resizeStart: [payload: { taskId: number; direction: 'top' | 'bottom'; pointerEvent: PointerEvent }]
 		changeStatus: [taskId: number, status: PlannerTaskStatus]
+		/** The `D` shortcut. The view decides what it means, because completing goes through log time (F89). */
+		toggleDone: [taskId: number]
 	}>()
 
 	const { t } = useI18n()
 
 	const { currentTime } = useCurrentTime()
 
-	// The concrete store, not the injected contract: this reads `status` off each task and calls
-	// `updateTaskStatus`, neither of which the shared contract carries. Safe to reach for the
-	// singleton here — unlike the template planner, the normal planner is never mounted twice.
+	// The concrete store, not the injected contract: `isTemplateInPreview` is not on the shared contract.
+	// Safe to reach for the singleton here, because unlike the template planner the normal planner is
+	// never mounted twice.
 	const store = useDayPlannerStore()
 
 	const statusOptions = usePlannerTaskStatusOptions()
@@ -123,30 +125,6 @@
 			templatePreview: task.id < 0,
 		}
 	})
-
-	function handleToggleStatusSelected(): void {
-		const selectedTaskIds = Array.from(store.selectedTaskIds)
-		const allCompleted = selectedTaskIds.every(id => {
-			const t = store.tasks.find(e => e.id === id)
-			return t?.status === PlannerTaskStatus.Completed
-		})
-		const newStatus = allCompleted ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed
-
-		selectedTaskIds.forEach(taskId => {
-			const taskItem = store.tasks.find(e => e.id === taskId)
-			if (!taskItem) return
-
-			taskItem.status = newStatus
-
-			store.updateTaskStatus(taskId, newStatus).catch(error => {
-				console.error('Error updating task status:', error)
-				taskItem.status =
-					newStatus === PlannerTaskStatus.Completed
-						? PlannerTaskStatus.NotStarted
-						: PlannerTaskStatus.Completed
-			})
-		})
-	}
 </script>
 <style>
 	.status-btn {

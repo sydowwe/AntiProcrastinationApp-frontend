@@ -21,7 +21,8 @@ export class Calendar {
 		public readonly appliedTemplateName: string | null,
 		public readonly weather: string | null,
 		public readonly notes: string | null,
-		public readonly totalTasks: number,
+		// Both writable: the day planner refreshes them from the server after its task list changes (F87).
+		public totalTasks: number,
 		public completedTasks: number,
 		public readonly location: Location | null = null,
 	) {}

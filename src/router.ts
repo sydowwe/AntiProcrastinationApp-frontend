@@ -87,9 +87,12 @@ const { hideFullScreenLoading } = useLoading()
  */
 const SIGNED_OUT_ONLY_ROUTES = new Set(['login', 'registration', 'forgottenPassword'])
 
-router.beforeEach(to => {
+router.beforeEach((to, from) => {
 	// Clear any spinner the outgoing view left behind, so a navigation can never strand the overlay.
-	hideFullScreenLoading()
+	// Only when the view actually changes: `RouterView` is unkeyed, so a same-route navigation (a
+	// param or query replace — the day planner's day step) keeps the view mounted, and it still owns
+	// the overlay it just raised. Hiding here uncovered every day step ~3 ms in (FW26).
+	if (to.name !== from.name) hideFullScreenLoading()
 
 	if (to.meta.public === true) {
 		// `isAuthenticated` is persisted to localStorage by the framework's auth store, so it is

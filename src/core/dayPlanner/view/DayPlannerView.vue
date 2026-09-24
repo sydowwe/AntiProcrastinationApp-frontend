@@ -1,9 +1,14 @@
 <!-- DayPlannerView.vue -->
 <template>
-	<!-- `flex-column` below `md`, as the template planner: in a row the full-width mobile panel pushed
-	     the grid off-screen. `min-width: 0` on the grid lets it shrink instead of overflowing at its
-	     max-content width (~1560 px). -->
-	<div class="py-4 d-flex flex-column flex-md-row ga-4 w-100">
+	<!-- A row at every width: in a compact planner the side panel floats over the grid, anchored here
+	     (`position: relative`), instead of stacking above it and pushing the grid down (F88).
+	     `min-width: 0` on the grid lets it shrink instead of overflowing at its max-content width
+	     (~1560 px). -->
+	<div
+		ref="rootRef"
+		class="py-4 d-flex ga-4 w-100"
+		style="position: relative"
+	>
 		<!-- Left panel: unified details/routine panel -->
 		<DayPlannerSidePanel
 			v-model:panelOpen="panelOpen"
@@ -59,6 +64,7 @@
 					:task="task as PlannerTask"
 					@resizeStart="onResizeStart"
 					@changeStatus="handleStatusChange"
+					@toggleDone="handleToggleDoneShortcut"
 				/>
 			</template>
 
@@ -95,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, provide, ref, watch } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 	import DayPlanner from '@/core/dayPlanner/component/DayPlanner.vue'
 	import DayPlannerHeader from '@/core/dayPlanner/component/normal/DayPlannerHeader.vue'
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
@@ -137,6 +143,7 @@
 	import { useRepeatingPlannerTaskApi } from '@/core/dayPlanner/api/repeatingPlannerTaskApi.ts'
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
 	import { useRoutinePlacement } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
+	import { providePlannerLayout } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
 	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
@@ -155,6 +162,9 @@
 
 	const { fetchById: fetchTemplateById, fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
+	// Its own instance: `useEntityQuery` aborts the previous call per method, so a count refresh sharing
+	// the navigation's instance could cancel a day change — and the reverse.
+	const { fetchById: fetchCalendarForCounts } = useCalendarQuery()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const store = useDayPlannerStore()
 	useTaskReminders(
@@ -207,7 +217,10 @@
 	const addedSuggestionIds = ref<Set<string>>(new Set())
 	const allTemplates = ref<TaskPlannerDayTemplate[]>([])
 
-	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store)
+	// Measured on this view's root, not the window (F88).
+	const rootRef = ref<HTMLElement>()
+	const compact = providePlannerLayout(rootRef)
+	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store, compact)
 
 	const { templatePreview, applyTemplate } = useTemplatePreview(store, calendar, fetchTemplateTasks)
 	const { navigateDate, navigateToDate, handleUndo, missingDate } = useDayNavigation(
@@ -315,6 +328,8 @@
 			throw error
 		}
 		store.tasks = tasks
+		// The calendar just loaded came with these tasks, so its counts already match them.
+		freshlyLoadedTaskKey = taskCountKey.value
 		suggestions.value = fetched
 		addedSuggestionIds.value = new Set()
 		store.initializeTaskGridPositions()
@@ -347,10 +362,25 @@
 				task.status = previousStatus
 				showErrorSnackbar(t('planner.feedback.taskStatusUpdateFailed'))
 			})
-			calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 		} else {
 			logTimeController.value?.openManual(taskId)
 		}
+	}
+
+	/**
+	 * `D` on a task block (F89). Completing is never a bare status flip in this planner: every other
+	 * path to *Completed* (the status menu, the selection bar) opens log time, because a completed task
+	 * carries when it was actually done. No other key opens that dialog, so `D` is the keyboard way in.
+	 * When every selected task is already completed, `D` sets them back to *Not started*, which clears
+	 * their logged times. Both halves are the selection bar's own paths. A block focused with nothing
+	 * selected acts on itself.
+	 */
+	function handleToggleDoneShortcut(taskId: number) {
+		if (store.selectedTaskIds.size === 0) store.toggleTaskSelection(taskId)
+		const selected = store.tasks.filter(t => store.selectedTaskIds.has(t.id))
+		if (selected.length === 0) return
+		const allCompleted = selected.every(t => t.status === PlannerTaskStatus.Completed)
+		void handleChangeStatusOnSelected(allCompleted ? PlannerTaskStatus.NotStarted : PlannerTaskStatus.Completed)
 	}
 
 	async function handleChangeStatusOnSelected(status: PlannerTaskStatus) {
@@ -388,7 +418,6 @@
 				partialKey: 'planner.feedback.statusUpdatePartial',
 				successKey: 'planner.feedback.statusUpdated',
 				afterSettled: () => {
-					calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 					store.clearSelection()
 				},
 			},
@@ -448,7 +477,6 @@
 				partialKey: 'planner.feedback.taskSkipPartial',
 				successKey: 'planner.feedback.taskSkipped',
 				afterSettled: () => {
-					calendar.value!.completedTasks = store.tasks.filter(t => t.isDone).length
 					store.clearSelection()
 				},
 			},
@@ -484,6 +512,50 @@
 		store.viewStartTime = updatedCalendar.wakeUpTime
 		store.viewEndTime = updatedCalendar.bedTime
 	}
+
+	/**
+	 * The header's "N/M tasks" is the server's count for the whole day (F87). Two things rule out
+	 * deriving it from `store.tasks`: the grid only fetches tasks between wake-up and bedtime, and the
+	 * server counts every task on the day. So after any change to the day's tasks, the counts are read
+	 * back from the server rather than recounted here. One watcher covers every path that changes them:
+	 * create, delete, paste, split, duplicate, the status changes, reschedule, and each one's undo.
+	 *
+	 * Previews are left out of the key. Template and copy previews use negative ids, and a cut preview
+	 * duplicates a real task under its own id and status, which the de-duplication absorbs.
+	 */
+	const taskCountKey = computed(() =>
+		[...new Set(store.tasks.filter(t => t.id > 0).map(t => `${t.id}:${t.status}`))].sort().join(','),
+	)
+	let freshlyLoadedTaskKey: string | null = null
+	let countRefreshTimer: ReturnType<typeof setTimeout> | undefined
+
+	watch(taskCountKey, key => {
+		// A load replaces the tasks together with the calendar they came with — nothing to refresh.
+		// One-shot, so an undo that returns to the loaded set still refreshes.
+		const skip = key === freshlyLoadedTaskKey
+		freshlyLoadedTaskKey = null
+		if (skip || !calendar.value) return
+		// Debounced, so a batch paste or a bulk status change is one request, not one per task.
+		clearTimeout(countRefreshTimer)
+		countRefreshTimer = setTimeout(refreshTaskCounts, 300)
+	})
+
+	async function refreshTaskCounts() {
+		const current = calendar.value
+		if (!current) return
+		try {
+			const fresh = await fetchCalendarForCounts(current.id, { _silent: true })
+			// The user may have moved to another day while this was in flight.
+			if (calendar.value !== current) return
+			current.totalTasks = fresh.totalTasks
+			current.completedTasks = fresh.completedTasks
+		} catch {
+			// A newer refresh cancelled this one, or the read failed. Either way the header keeps its last
+			// figure; the next change or the next load corrects it.
+		}
+	}
+
+	onBeforeUnmount(() => clearTimeout(countRefreshTimer))
 
 	// Watch for time range changes
 	watch(

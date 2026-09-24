@@ -211,7 +211,7 @@
 	import { useTemplateCompare } from '@/core/dayPlanner/composable/useTemplateCompare.ts'
 	import { useQueryParamRef } from '@/core/dayPlanner/composable/useQueryParamRef.ts'
 
-	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading, axiosSuccessLoadingHide } = useLoading()
+	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading } = useLoading()
 	const { mdAndUp } = useDisplay()
 	const router = useRouter()
 	const { fetchAll, update, deleteEntity, setPinned } = useTaskPlannerDayTemplateTaskCrud()
@@ -315,27 +315,29 @@
 		useTemplateCompare()
 
 	async function loadTemplates() {
-		showFullScreenLoading()
-		axiosSuccessLoadingHide.value = false
-		templates.value = await fetchAll()
-		// Fetch tasks for mini-timeline previews. `requestKey` is not optional here: these calls share
-		// one `useFetchFiltered` instance, which aborts the previous in-flight request under a given key
-		// — so without a key per template every call but the last is cancelled, this `Promise.all`
-		// rejects, and `hideFullScreenLoading()` below never runs. The page then sits behind the loading
-		// overlay with no cards, which is what it did for every list with two or more templates.
-		const taskResults = await Promise.all(
-			templates.value.map(t =>
-				fetchFilteredTasks(
-					new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime),
-					undefined,
-					{
-						requestKey: t.id,
-					},
-				).then(tasks => [t.id, tasks] as const),
-			),
-		)
-		templateTasksMap.value = new Map(taskResults)
-		hideFullScreenLoading()
+		showFullScreenLoading({ manualHide: true })
+		try {
+			templates.value = await fetchAll()
+			// Fetch tasks for mini-timeline previews. `requestKey` is not optional here: these calls share
+			// one `useFetchFiltered` instance, which aborts the previous in-flight request under a given key
+			// — so without a key per template every call but the last is cancelled, this `Promise.all`
+			// rejects, and the page sat behind the loading overlay with no cards, which is what it did for
+			// every list with two or more templates.
+			const taskResults = await Promise.all(
+				templates.value.map(t =>
+					fetchFilteredTasks(
+						new TemplatePlannerTaskFilter(t.id, t.defaultWakeUpTime, t.defaultBedTime),
+						undefined,
+						{
+							requestKey: t.id,
+						},
+					).then(tasks => [t.id, tasks] as const),
+				),
+			)
+			templateTasksMap.value = new Map(taskResults)
+		} finally {
+			hideFullScreenLoading()
+		}
 	}
 
 	async function openTemplateDialog(

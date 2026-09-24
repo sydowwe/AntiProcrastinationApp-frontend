@@ -1,9 +1,9 @@
 <!-- PlannerSidePanelShell.vue - panel chrome shared by the day planner and the template planner -->
 <template>
 	<VCard
-		v-show="panelOpen || mdAndUp"
+		v-show="panelOpen || !compact"
 		class="flex-column align-self-stretch"
-		elevation="2"
+		:elevation="compact ? 12 : 2"
 		:style="panelStyle"
 	>
 		<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
@@ -14,7 +14,7 @@
 				<div class="d-flex align-center ga-2">
 					<slot name="titleActions"></slot>
 					<VIconBtn
-						class="d-md-none"
+						v-if="compact"
 						color="secondaryOutline"
 						icon="xmark"
 						variant="tonal"
@@ -24,10 +24,11 @@
 					/>
 				</div>
 			</div>
+			<!-- Shown in both layouts. The template planner's header has no tab toggle of its own, so hiding
+			     this one when compact (it was `d-none d-md-flex`) left the routine tab unreachable there. -->
 			<VBtnToggle
 				v-model="activePanel"
 				mandatory
-				class="d-none d-md-flex"
 				style="width: 100%"
 				density="compact"
 				variant="outlined"
@@ -64,8 +65,8 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
-	import { useDisplay } from 'vuetify'
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
+	import { usePlannerCompact } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 
 	const {
 		detailsTitle,
@@ -82,21 +83,31 @@
 	const panelOpen = defineModel<boolean>('panelOpen', { default: true })
 	const activePanel = defineModel<PlannerSidePanelTab>('activePanel', { default: 'details' })
 
-	// The mobile breakpoint is deliberately the panel's own, not the caller's: both views used
-	// `mdAndUp` before, and the `d-md-none` / `d-none d-md-flex` classes above are hard-wired to it.
-	const { mdAndUp } = useDisplay()
+	// The planner's own width, not the window's (F88): in the template split view a desktop window holds
+	// two narrow planners. Provided by the view through `providePlannerLayout`.
+	const compact = usePlannerCompact()
 
-	// The caller's width is a desktop width. Below `md` a fixed 400px card overflowed a 390px screen
-	// sideways, and in the template view's `flex-column` it was also squeezed to its title — `flex: 0 0
-	// auto` keeps a column parent from shrinking it (F51).
 	// `display: flex` lives here and not as `d-flex`: that class is `!important` and beat `v-show`'s
-	// inline `display: none`, so the close X below `md` hid nothing. Vue lets `v-show` win over a
-	// bound style.
-	// `flexShrink: 0` at `mdAndUp`: the grid beside it is `flex: 1 1 auto`, so its basis is its whole
-	// max-content width, and shrinking is weighted by basis — the panel lost the `width` it was given
-	// and sat at `minWidth` on every desktop screen.
+	// inline `display: none`, so the close X hid nothing. Vue lets `v-show` win over a bound style.
+	// Wide: beside the grid. `flexShrink: 0` because the grid is `flex: 1 1 auto`, so its basis is its
+	// whole max-content width and shrinking is weighted by basis — without it the panel lost the `width`
+	// it was given and sat at `minWidth` on every desktop screen.
+	// Compact: over the grid, anchored to the view's root (`position: relative` there). It never takes
+	// width from the grid, which is what squeezed the split view's grid to ~100 px. Capped at the view's
+	// width so it cannot overflow a phone sideways (the F51 bug), and it scrolls on its own when its body
+	// is taller than the planner.
 	const panelStyle = computed(() => ({
 		display: 'flex',
-		...(mdAndUp.value ? { width, minWidth: '280px', flexShrink: 0 } : { width: '100%', flex: '0 0 auto' }),
+		...(compact.value
+			? {
+					position: 'absolute' as const,
+					top: 0,
+					left: 0,
+					zIndex: 30,
+					width: `min(${width}, 100%)`,
+					maxHeight: '100%',
+					overflowY: 'auto' as const,
+				}
+			: { width, minWidth: '280px', flexShrink: 0 }),
 	}))
 </script>

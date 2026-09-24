@@ -251,7 +251,7 @@
 			if (calendarGridRef.value) calendarGridRef.value.dateRange = range
 		})
 
-		showFullScreenLoading()
+		showFullScreenLoading({ manualHide: true })
 		try {
 			await settingsStore.loadSettings()
 			// A URL param must win over the stored default — settings resolve after an await, so the

@@ -9,7 +9,6 @@ import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 import { computed, ref, watch } from 'vue'
 import { deserializeClipboard, serializeClipboard } from '@/core/dayPlanner/composable/usePlannerClipboardStorage.ts'
-import type { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 
 export interface IDayPlannerStore extends IBaseDayPlannerStore<PlannerTask, PlannerTaskRequest> {
 	viewedDate: Date
@@ -200,11 +199,6 @@ export const useDayPlannerStore = defineStore(
 			await patch(eventId, span)
 		}
 
-		async function updateTaskStatus(eventId: number, status: PlannerTaskStatus): Promise<void> {
-			if (isTemplateInPreview.value) return
-			await patch(eventId, { status })
-		}
-
 		function openEditDialog() {
 			if (isTemplateInPreview.value) return
 			core.openEditDialog()
@@ -256,7 +250,6 @@ export const useDayPlannerStore = defineStore(
 			showActionBar,
 			startCut,
 			updateTaskSpan,
-			updateTaskStatus,
 
 			pendingInitialActivityId,
 			pendingInitialTodoListItemId,

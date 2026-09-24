@@ -14,7 +14,7 @@ export function useDataExport() {
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 
 	async function runExport() {
-		showFullScreenLoading()
+		showFullScreenLoading({ manualHide: true })
 		try {
 			// The server names the file itself, stamping the date in the account's own timezone; the
 			// fallback below is the same shape, so the two agree even if the header goes missing.

@@ -23,12 +23,24 @@ export const SELECTED_ROUTINE_ITEM_KEY = Symbol('selectedRoutineItem') as Inject
  * `store` is narrowed to the one field this touches: both concrete stores satisfy it, and the split
  * view's two panels each pass their own store, so nothing here may reach for a store by id.
  */
-export function useRoutinePlacement(store: Pick<AnyDayPlannerStore, 'placingItem'>) {
+export function useRoutinePlacement(store: Pick<AnyDayPlannerStore, 'placingItem'>, compact?: Readonly<Ref<boolean>>) {
 	const activePanel = ref<PlannerSidePanelTab>('details')
-	const panelOpen = ref(true)
+	const panelOpen = ref(!compact?.value)
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 
 	provide(SELECTED_ROUTINE_ITEM_KEY, selectedRoutineItem)
+
+	// A compact planner floats the panel over the grid (F88), so it starts closed there and opens on
+	// demand. A wide one always shows it. Re-applied whenever the layout crosses the threshold.
+	if (compact) {
+		watch(compact, isCompact => {
+			panelOpen.value = !isCompact
+		})
+		// Picking an item is the step before placing it on the grid, which the open overlay covers.
+		watch(selectedRoutineItem, item => {
+			if (item && compact.value) panelOpen.value = false
+		})
+	}
 
 	// Leaving the routine tab drops the pick, and the watcher below then clears the placing item.
 	watch(activePanel, panel => {

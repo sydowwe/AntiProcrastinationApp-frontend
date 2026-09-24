@@ -73,10 +73,19 @@ export function useDayNavigation(
 	onMounted(() => document.addEventListener('keydown', handleArrowKey))
 	onUnmounted(() => document.removeEventListener('keydown', handleArrowKey))
 
+	// Arrow keys pressed in quick succession start a load per day, overlapping. Only the newest may act
+	// on its outcome — write the calendar, resolve the undo handshake, hide the overlay. An older one
+	// settling first used to uncover the grid mid-load; and since the calendar query aborts its own
+	// previous call, the older one always *fails* — which the catch below read as a missing day, and
+	// `recoverFromMissingDay` navigated back to the last day that loaded.
+	let latestLoadToken = 0
+
 	watch(
 		() => store.viewedDate,
 		async () => {
-			showFullScreenLoading()
+			const token = ++latestLoadToken
+			// The calendar, then its tasks — the overlay must cover both (FW26).
+			showFullScreenLoading({ manualHide: true })
 			try {
 				store.resetStore()
 				const dateStr = usStringToUrlString(formatDateForApi(new Date(store.viewedDate)))
@@ -84,21 +93,25 @@ export function useDayNavigation(
 				try {
 					newCalendar = await fetchCalendarByDate(dateStr)
 				} catch {
+					if (token !== latestLoadToken) return
 					// Not `_silent`: the interceptor's toast is the first signal. This only decides what
 					// stays on screen.
 					recoverFromMissingDay(dateStr)
 					return
 				}
+				if (token !== latestLoadToken) return
 				missingDate.value = null
 				calendar.value = newCalendar
 				store.viewStartTime = newCalendar.wakeUpTime
 				store.viewEndTime = newCalendar.bedTime
 				await loadTasks()
 			} finally {
-				loadCompleteResolve?.()
-				loadCompleteResolve = null
-				// Not left to the error snackbar, which happens to hide it today.
-				hideFullScreenLoading()
+				if (token === latestLoadToken) {
+					loadCompleteResolve?.()
+					loadCompleteResolve = null
+					// Not left to the error snackbar, which happens to hide it today.
+					hideFullScreenLoading()
+				}
 			}
 		},
 		{ deep: true },

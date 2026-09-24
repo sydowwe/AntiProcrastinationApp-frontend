@@ -394,7 +394,7 @@ const dayPlanner = {
 			moveOk: `Posun je bez konfliktu`,
 			currentTime: `Aktuálny čas: {time}`,
 			midnight: `Polnoc`,
-			toggleDoneShortcut: `D označí vybrané úlohy ako dokončené alebo nezačaté.`,
+			toggleDoneShortcut: `D otvorí zaznamenanie času na dokončenie vybranej úlohy alebo vráti dokončené úlohy na nezačaté.`,
 			// Názvy ikonových ovládačov tohto modulu (F56). Kľúče pre panel a späť zdieľa denný
 			// plánovač aj plánovač šablón — jeden reťazec, nie jeden na obrazovku.
 			pinTemplate: `Pripnúť šablónu: {name}`,
