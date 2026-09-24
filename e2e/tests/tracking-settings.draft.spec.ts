@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/auth'
+import { apiUrl, expect, test } from '../fixtures/auth'
 
 // Structural-tier facts only, captured live via playwright-cli during the tracking-settings
 // inventory pass (docs/views/tracking-settings/). Semantic-tier claims — anything asserting a
@@ -144,6 +144,62 @@ test.describe('Findings from the inventory pass — semantic tier, not yet fixed
 	// @onDelete, so confirming a delete may be a silent no-op. Blocked on X1 until the button can be
 	// reached with a real click.
 	test.fixme('U1: deleting a mapping actually removes it (blocked on X1)', async () => {})
+})
+
+// F12's second verification step (docs/views/_fix-queue.md, *Seed-data gaps*): two seeded mappings prove
+// a row paints, not that the Mappings body scrolls inside the card. The rows are created through the
+// app's own API and deleted afterwards, so the fixture stays read-only (CLAUDE.md, *Mutating specs* 1).
+test.describe('Mappings body scrolls inside the card (/activity-tracking/desktop/settings/mappings — F12)', () => {
+	const MAPPING_URL = `${apiUrl()}/api/activity-tracking/desktop/settings/tracker-desktop-mapping-by-pattern`
+	const CREATED = 30
+
+	test('more rows than fit: the table wrapper scrolls, the page does not', async ({ authenticatedPage, seed }) => {
+		const ids: number[] = []
+		try {
+			for (let i = 0; i < CREATED; i++) {
+				// Activity-targeted, not ignored: the tab's type control defaults to *Activity*, so an
+				// ignored rule would be filtered out of the very list this is trying to fill.
+				const created = await authenticatedPage.request.post(MAPPING_URL, {
+					data: {
+						processName: `e2e-scroll-${String(i).padStart(2, '0')}.exe`,
+						processNameMatchType: 'Exact',
+						isActive: true,
+						activityId: seed.activities.bugFixing,
+					},
+				})
+				expect(created.ok(), `could not create mapping ${i}`).toBe(true)
+				ids.push(Number(await created.json()))
+			}
+
+			// A page big enough to hold every row, so the overflow is the table's and not the pager's.
+			await authenticatedPage.goto('/activity-tracking/desktop/settings/mappings?perPage=50')
+			const rows = authenticatedPage.locator('#app tbody tr')
+			// Plus the seed's one activity rule (`desktopToActivity`); its ignored rule is under the other type.
+			await expect(rows).toHaveCount(CREATED + 1)
+
+			const wrapper = authenticatedPage.locator('#app .v-table__wrapper')
+			const box = await wrapper.evaluate(el => ({
+				scrollHeight: el.scrollHeight,
+				clientHeight: el.clientHeight,
+				bottom: el.getBoundingClientRect().bottom,
+			}))
+			expect(box.scrollHeight).toBeGreaterThan(box.clientHeight)
+			// The fill-parent contract: the wrapper ends inside the viewport rather than growing the page.
+			expect(box.bottom).toBeLessThanOrEqual(authenticatedPage.viewportSize()!.height)
+			expect(
+				await authenticatedPage.evaluate(
+					() => document.scrollingElement!.scrollHeight <= document.scrollingElement!.clientHeight,
+				),
+			).toBe(true)
+
+			// And it really scrolls: the last row is off-screen until the wrapper moves, then reachable.
+			await expect(rows.last()).not.toBeInViewport()
+			await wrapper.evaluate(el => el.scrollTo(0, el.scrollHeight))
+			await expect(rows.last()).toBeInViewport()
+		} finally {
+			for (const id of ids) await authenticatedPage.request.delete(`${MAPPING_URL}/${id}`)
+		}
+	})
 })
 
 // findings.md B5 → backend B24 (landed 2026-09-21): every distinct row says which active rule covers it.

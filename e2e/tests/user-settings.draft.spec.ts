@@ -151,10 +151,23 @@ test.fixme(
 	async () => {},
 )
 
-test.fixme(
-	'a failed/declined Google Calendar connection (no code, or error= param) shows an error message before redirecting to /user/settings (findings.md B2 — currently silent)',
-	async () => {},
-)
+// findings.md B2, promoted 2026-09-24. It was never silent: the view has always toasted the missing-code
+// branch, and the round's negative evidence was a separate CLI `find` racing a 3 s toast. Playwright
+// polls from the moment `goto` resolves, so it cannot miss it. Google's own Cancel now has its softer
+// wording (`F33`'s optional branch).
+test.describe('Google Calendar callback feedback (/google-calendar/callback — B2)', () => {
+	test('with no code param, says the connection failed', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/google-calendar/callback')
+		await expect(authenticatedPage.getByText('Failed to connect Google Calendar')).toBeVisible()
+		await expect(authenticatedPage).toHaveURL(/\/user\/settings$/)
+	})
+
+	test('with error=access_denied, says the connection was cancelled', async ({ authenticatedPage }) => {
+		await authenticatedPage.goto('/google-calendar/callback?error=access_denied')
+		await expect(authenticatedPage.getByText('Google Calendar connection cancelled')).toBeVisible()
+		await expect(authenticatedPage).toHaveURL(/\/user\/settings$/)
+	})
+})
 
 test.fixme(
 	'each password-field visibility toggle in the "Change password" dialog exposes "Show password"/"Hide password" as its accessible name (findings.md A1 — currently "…appended action")',
@@ -166,15 +179,59 @@ test.fixme(
 	async () => {},
 )
 
-test.fixme(
-	'the Delete account dialog states what will be destroyed before asking for identity confirmation (findings.md U3 — not observed; source suggests it currently only verifies identity; blocked twice by the harness\'s own deletion-safety classifier, not by the app)',
-	async () => {},
-)
+// findings.md U3, promoted 2026-09-24. The old stub said the dialog "only verifies identity" — that
+// described the flow before `SecuritySection.deleteAccount` grew its intent step (F6 / R21). Now it asks
+// "do you mean to" with the itemised warning first, and only a Confirm there opens the identity check.
+// This test clicks Cancel only: nothing may reach `/user/delete-account`.
+test.describe('Delete account asks for intent first (/user/settings — U3)', () => {
+	test('the first dialog states what is destroyed, and Cancel sends nothing', async ({ authenticatedPage }) => {
+		const deleteRequests: string[] = []
+		authenticatedPage.on('request', request => {
+			if (request.url().includes('/user/delete-account')) deleteRequests.push(request.method())
+		})
+		await authenticatedPage.goto('/user/settings')
+		await authenticatedPage.getByRole('button', { name: 'Delete account' }).click()
 
-test.fixme(
-	'submitting a mismatched new/confirm password in the "Change password" dialog shows a validation error and does not enable Confirm (findings.md U4 — not observed; blocked by the harness\'s own safety classifier)',
-	async () => {},
-)
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Delete account' })
+		await expect(dialog).toBeVisible()
+		await expect(dialog.getByText(/Deleting your account is irreversible/)).toBeVisible()
+		await expect(dialog.getByText(/export it first/)).toBeVisible()
+		// Intent comes before identity: no password field yet.
+		await expect(dialog.getByRole('textbox')).toHaveCount(0)
+
+		await dialog.getByRole('button', { name: 'Cancel' }).click()
+		await expect(dialog).toBeHidden()
+		await expect(authenticatedPage.getByRole('dialog')).toHaveCount(0)
+		expect(deleteRequests).toEqual([])
+	})
+})
+
+// findings.md U4, promoted 2026-09-24. The old stub expected Confirm to be disabled — the form does not
+// work that way: Confirm stays enabled and its handler returns on `form.validate()`. So the assertion is
+// the absent request, not a disabled button. The message key the finding saw raw (`FW7`'s adjacent
+// `user.passwordsDontMatch`) is defined in the framework locale now.
+test.describe('Change password rejects a mismatched confirmation (/user/settings — U4)', () => {
+	test('shows "Passwords don\'t match" and sends nothing on Confirm', async ({ authenticatedPage, seed }) => {
+		const changeRequests: string[] = []
+		authenticatedPage.on('request', request => {
+			if (request.url().includes('/user/change-password')) changeRequests.push(request.method())
+		})
+		await authenticatedPage.goto('/user/settings')
+		await authenticatedPage.getByRole('button', { name: 'Change password' }).click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Password change' })
+
+		await dialog.getByRole('textbox', { name: 'Password', exact: true }).fill(seed.primaryUser.password)
+		// Both satisfy the policy (2 lower, 2 upper, 3 digits, 1 special): Vuetify shows only the first
+		// failing rule, and the policy rule runs before the match rule.
+		await dialog.getByRole('textbox', { name: 'New password', exact: true }).fill('AbCdef123!')
+		await dialog.getByRole('textbox', { name: 'Confirm new password' }).fill('AbCdef124!')
+		await expect(dialog.getByText("Passwords don't match")).toBeVisible()
+
+		await dialog.getByRole('button', { name: 'Confirm', exact: true }).click()
+		await expect(dialog).toBeVisible()
+		expect(changeRequests).toEqual([])
+	})
+})
 
 test.fixme(
 	'switching Language to Slovak or Czech updates the account locale and every page re-renders in it (findings.md U5 — not observed; blocked by the harness\'s own safety classifier, and deliberately not forced since this account backs the whole documentation sweep)',

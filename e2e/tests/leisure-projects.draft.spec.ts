@@ -1,4 +1,5 @@
-import { expect, test } from '../fixtures/auth'
+import type { Page } from '@playwright/test'
+import { apiUrl, expect, test } from '../fixtures/auth'
 
 // Structural tier only — facts true by observation, not values that need a human's judgement.
 // See docs/views/leisure-projects/findings.md for the semantic-tier gaps stubbed below (B1-B3).
@@ -86,6 +87,131 @@ test.describe('Leisure projects (/leisure/projects)', () => {
 			await expect(confirmDialog).toBeHidden()
 			// Cleanup check, not an assertion of anything semantic: the card must still be there.
 			await expect(authenticatedPage.getByText('Build a Bookshelf')).toBeVisible()
+		})
+	})
+
+	// The seed holds one project, so the board's grouping was only ever seen with one occupied column
+	// (docs/views/_fix-queue.md, *Seed-data gaps*). One project per status is created through the API —
+	// each on its own throwaway activity, since an activity holds at most one project profile — and
+	// removed afterwards, so the fixture stays read-only (CLAUDE.md, *Mutating specs* 1).
+	test.describe('board grouping across all three readiness statuses', () => {
+		const STATUSES = [
+			{ value: 'readyToStart', label: 'Ready to start' },
+			{ value: 'needsShopping', label: 'Needs shopping' },
+			{ value: 'planning', label: 'Planning' },
+		] as const
+
+		type Created = { activityId: number; profileId: number; name: string; label: string }
+
+		async function createProjects(page: Page, roleId: number): Promise<Created[]> {
+			const created: Created[] = []
+			for (const { value, label } of STATUSES) {
+				const name = `E2E ${label} project`
+				const activity = await page.request.post(`${apiUrl()}/api/activity`, {
+					data: { name, text: '', isUnavoidable: false, roleId },
+				})
+				expect(activity.ok(), `could not create activity "${name}": ${activity.status()} ${await activity.text()}`).toBe(
+					true,
+				)
+				const activityId = Number(await activity.json())
+				// Pushed before the profile, so a failed profile still leaves the activity to clean up.
+				created.push({ activityId, profileId: 0, name, label })
+
+				const profile = await page.request.post(`${apiUrl()}/api/activity-project-profile`, {
+					data: {
+						activityId,
+						difficultyLevel: 'beginner',
+						projectArea: 'E2E',
+						estimatedHours: 2,
+						isMessy: false,
+						materialsNeeded: value === 'needsShopping' ? ['Screws'] : [],
+						requiredTools: [],
+						readinessStatus: value,
+					},
+				})
+				expect(profile.ok(), `could not create the ${value} project: ${profile.status()} ${await profile.text()}`).toBe(
+					true,
+				)
+				created[created.length - 1].profileId = Number(await profile.json())
+			}
+			return created
+		}
+
+		async function removeProjects(page: Page, created: Created[]) {
+			for (const { profileId, activityId } of created) {
+				if (profileId) await page.request.delete(`${apiUrl()}/api/activity-project-profile/${profileId}`)
+				await page.request.delete(`${apiUrl()}/api/activity/${activityId}`)
+			}
+		}
+
+		// By the column's own header, exactly — a `hasText` on the column would also match any card whose
+		// name contains the label, and these cards are named after their status.
+		function column(page: Page, label: string) {
+			return page.locator('#app .readiness-column', { has: page.getByText(label, { exact: true }) })
+		}
+
+		test('each card lands in its own status column, and the table lists them all', async ({
+			authenticatedPage,
+			seed,
+		}) => {
+			const seeded = await authenticatedPage.request.get(`${apiUrl()}/api/activity/${seed.activities.buildABookshelf}`)
+			expect(seeded.ok()).toBe(true)
+			// The response nests the role (`ActivityResponse.Role`); the request takes its id flat.
+			const roleId: number = (await seeded.json()).role.id
+
+			let created: Created[] = []
+			try {
+				created = await createProjects(authenticatedPage, roleId)
+				await authenticatedPage.reload()
+
+				for (const { name, label } of created) {
+					await expect(
+						column(authenticatedPage, label).getByRole('button', { name: `Edit ${name}` }),
+					).toBeVisible()
+					for (const other of STATUSES.filter(s => s.label !== label)) {
+						await expect(
+							column(authenticatedPage, other.label).getByRole('button', { name: `Edit ${name}` }),
+						).toHaveCount(0)
+					}
+				}
+				// No column falls back to its empty placeholder once every status is occupied.
+				await expect(authenticatedPage.locator('#app .readiness-empty')).toHaveCount(0)
+
+				await authenticatedPage.getByRole('button', { name: 'Table' }).click()
+				await expect(authenticatedPage.locator('#app tbody tr')).toHaveCount(created.length + 1)
+				for (const { name } of created) {
+					await expect(authenticatedPage.locator('#app tbody').getByText(name)).toBeVisible()
+				}
+			} finally {
+				await removeProjects(authenticatedPage, created)
+			}
+		})
+
+		test('a status button moves the card to that column', async ({ authenticatedPage, seed }) => {
+			const seeded = await authenticatedPage.request.get(`${apiUrl()}/api/activity/${seed.activities.buildABookshelf}`)
+			const roleId: number = (await seeded.json()).role.id
+
+			let created: Created[] = []
+			try {
+				created = await createProjects(authenticatedPage, roleId)
+				await authenticatedPage.reload()
+
+				const ready = created[0]
+				const card = authenticatedPage.getByRole('button', { name: `Edit ${ready.name}` })
+				await expect(
+					column(authenticatedPage, 'Ready to start').getByRole('button', { name: `Edit ${ready.name}` }),
+				).toBeVisible()
+
+				await card.getByTitle('Planning').click()
+				await expect(
+					column(authenticatedPage, 'Planning').getByRole('button', { name: `Edit ${ready.name}` }),
+				).toBeVisible()
+				await expect(
+					column(authenticatedPage, 'Ready to start').getByRole('button', { name: `Edit ${ready.name}` }),
+				).toHaveCount(0)
+			} finally {
+				await removeProjects(authenticatedPage, created)
+			}
 		})
 	})
 

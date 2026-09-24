@@ -89,7 +89,9 @@ test.describe('Memory anchors (/leisure/memory-anchors — table)', () => {
 		await authenticatedPage.locator('#app tbody tr', { hasText: 'Learn Bouldering' }).waitFor()
 
 		await authenticatedPage.locator('#app tbody tr').getByText('Experienced', { exact: true }).click()
-		await expect(authenticatedPage).toHaveURL(/\/leisure\/memory-anchors\?activityName=Learn\+Bouldering/)
+		// By id, not name — leisure-backlog-picker O2. The chip names the activity back from the loaded rows.
+		await expect(authenticatedPage).toHaveURL(/\/leisure\/memory-anchors\?activityId=\d+/)
+		await expect(authenticatedPage.getByText('Activity: Learn Bouldering')).toBeVisible()
 	})
 
 	test('Table/Timeline toggle writes `view` to the URL and survives a reload', async ({ authenticatedPage }) => {
