@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `63e851ff`
 
-**Tally:** blocker 0 · bug 6 · a11y 0 · polish 1 · opportunity 0 · unverified 0
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (all closed — verified 2026-09-24)
 
 ## Round history
 | round | date | commit | what changed |
@@ -13,7 +13,12 @@
 ---
 
 ### B1. `dateTime.secondsShort` renders as the raw i18n key on every running clock
-- **Status:** open — re-confirmed round 2, visible in `screenshots/stopwatch--mutation-saved.png`
+- **Status:** ✅ **fixed, verified in code 2026-09-24** — not by mirroring the key, but by an
+  architecture change: `dateTime` is now one of the four deep-merged namespaces in
+  `src/locales/{EN,SK}.ts` (`dateTime: { ...common.dateTime, ...appCommon.dateTime }`), and the
+  framework's `src/_common/_locales/common.{en,sk}.ts` already has `secondsShort: 's'`. The app's own
+  `dateTime` block no longer overrides it, so the framework's value survives the merge and the raw-key
+  bug is gone without needing a duplicate entry in the app's locale files.
 - **Severity:** bug
 - **Where:** `src/_common/component/dateTime/TimeDisplay.vue:38` (`t('dateTime.secondsShort')`), consumed by
   `StopWatchView`, `TimerView` and `PomodoroTimerView` via `TimeDisplay`/`TimeDisplayWithProgress`. Root cause:
@@ -41,7 +46,10 @@
   to `minutesShort` at line 375) and `src/locales/common.sk.ts` (next to `minutesShort` at line 166).
 
 ### B2. Typed durations silently round to the nearest 5 minutes, with no feedback
-- **Status:** open — re-confirmed round 2 live on `/activity-history/timer` (typed `0002` → field read `00:00`)
+- **Status:** ✅ **fixed, verified in code 2026-09-24** — every affected `TimePicker` call site now
+  passes `allowedMinutesSelected="1"`: `AddActivityManuallyForm.vue:20`, `TimerView.vue:19`,
+  `PomodoroDurationCard.vue:20`, `TimerPresetDialog.vue:20`, `EditActivityHistoryForm.vue:14`, and all
+  three fields in `PomodoroPresetFormDialog.vue`. No 5-minute floor remains on any of them.
 - **Severity:** bug
 - **Where:** `src/_common/component/dateTime/TimePicker.vue:99,114-129` (`roundToNearestInterval(minutes,
   interval.value)`, `interval` defaulting to `allowedMinutesSelected = '5'`), used with no override by
@@ -73,8 +81,10 @@
   duration entry, or surface the rounding at the point it happens.
 
 ### B3. A preset chip's "Close" button is always present, does nothing useful outside edit mode, and its visible effect is not real
-- **Status:** open — not re-walked round 2 (no code change on `TimerPresetsSection.vue` since round 1; time spent on
-  the mutation pass's entity lifecycle instead)
+- **Status:** ✅ **fixed, verified in code 2026-09-24** — `TimerPresetsSection.vue` was rewritten: the
+  `#close` slot is gone entirely. The pencil icon now lives in the `#append` slot, gated `v-if="editMode"`,
+  and the chip's own `@click` routes to `openEditDialog(...)` in edit mode or `applyPreset(...)` otherwise.
+  No unbound `closable` chrome remains outside edit mode.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/component/TimerPresetsSection.vue:44-51,93-100` (the `#close` template on
   both the Quick Times and Activity Presets `VChip`s), observed on `/activity-history/timer`.
@@ -190,9 +200,11 @@
   user when a session produced nothing to save.
 
 ### B6. Manual entry form fires a second request on a fast double-click, and never resets after a successful save
-- **Status:** open — renumbered from round 1's `U1` now that it has been reproduced live; the description below
-  replaces round 1's source-only account, which guessed the second request would write a duplicate row. It does
-  not — the backend rejects it.
+- **Status:** ✅ **fixed, verified in code 2026-09-24** (`F68`). `AddActivityManuallyView.vue` now has a
+  `saving` re-entry guard (`if (saving.value) return`) plus `:loading="saving"` on the button, so the `409`
+  path is unreachable. `AddActivityManuallyForm.vue`'s `saveActivity()` calls `resetAfterSave()` and
+  `emit('saved')` after a successful save — the date moves past the just-logged span and the length resets
+  to zero, rather than leaving stale values in place.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/view/AddActivityManuallyView.vue` (no `@saved` handler on
   `<AddActivityManuallyForm>`) and `src/core/activityHistory/component/AddActivityManuallyForm.vue:63-82`
@@ -234,7 +246,8 @@
   listen for it today.
 
 ### P1. Leftover `console.log` fires on every Timer/Pomodoro preset load
-- **Status:** open — not re-walked round 2 (no code change since round 1)
+- **Status:** ✅ **fixed, verified in code 2026-09-24** — `TimerPresetsSection.vue` no longer contains any
+  `console.log` call.
 - **Severity:** polish
 - **Where:** `src/core/activityHistory/component/TimerPresetsSection.vue`, in `loadPresetsData()`
   (`console.log(allPresets.value)`, immediately after `allPresets.value = await fetchAll()`)

@@ -2,18 +2,23 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 1 · bug 5 · a11y 4 · polish 3 · opportunity 1 · unverified 2
+**Tally:** blocker 0 (1 fixed) · bug 0 (5 fixed) · a11y 0 (4 fixed) · polish 0 (3 fixed) · opportunity 0 (1 fixed) · unverified 0 (2 verified, both pass)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `430e6f03` | initial inventory pass |
 | 2 | 2026-09-15 | `f457aa0c` | mutation pass. Re-verified every round-1 finding: B1, B2, A1, A2, A3, P1 and O1 still reproduce as described; B3 (activity icon never rendering) is **fixed** — `ActivityInfo.fromJson` now falls back through `category`/`role` for `icon`/`color`. Added X1 (every write 404s — the headline finding of this pass), B4, B5, A4, P2, P3, U1, U2 from exercising create/edit/delete/status-change. |
+| 3 | 2026-09-24 | code check only (no browser pass) | X1, B1, B2, B4, B5, A1, A2, A3, A4, P1, P2, P3, O1 confirmed fixed in code against the fix-queue commits; U1, U2 unchanged (unverified either way) |
+| 4 | 2026-09-24 | live `playwright-cli` pass | U1, U2 exercised via route mocking; both pass as designed |
 
 ---
 
 ### X1. Every write to an existing project profile — status change, edit, delete — 404s
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityProjectProfile` now has a real
+  `id` field read from the response (`dto/response/ActivityProjectProfile.ts:12`, with a comment explaining
+  the old alias bug); `ProjectReadinessBoard.vue`, `ProjectProfileForm.vue` and `ProjectTable.vue` now call
+  `update`/`deleteEntity` with `item.id`/`entityToEdit.id` instead of `activityId`.
 - **Severity:** blocker
 - **Where:** `src/core/leisure/component/project/ProjectReadinessBoard.vue:242` (`update(item.activityId, ...)`),
   `:231` (`deleteEntity(item.activityId)`); `src/core/leisure/component/project/ProjectProfileForm.vue:35`
@@ -59,7 +64,10 @@
 ---
 
 ### B1. Board/Table view mode does not reliably survive a reload, contradicting the requirement it was built for
-- **Status:** open — **reconfirmed 2026-09-15**, twice in a row, unchanged from round 1
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue` now re-checks and
+  re-writes `view` after every settled navigation (`watch([viewMode, () => route.fullPath], writeViewToUrl)`)
+  instead of racing a single `router.replace` against `useTableUrlState`'s own writer, with a comment (F1)
+  explaining the old race.
 - **Severity:** bug
 - **Where:** `src/core/leisure/view/ProjectsView.vue:146` (`watch(viewMode, ...)`) racing
   `src/_common/composable/table/useTableUrlState.ts:106-136` (`syncToUrl`), triggered by
@@ -108,7 +116,10 @@
 ---
 
 ### B2. Every board-mode filter change fires two competing grid requests, breaking the "one fetch per filter change" guarantee
-- **Status:** open — **reconfirmed 2026-09-15**, identical shape to round 1
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue` now shares one
+  `useServerTable`/`fetchFilteredTable` between board and table instead of the board driving a second,
+  competing fetch (F2). Comment in the file documents the old race and the resolved-with-the-other-call's-
+  result risk this closes.
 - **Severity:** bug
 - **Where:** `src/core/leisure/view/ProjectsView.vue:129-153` (`loadBoard()` and its
   `watch([viewMode, filter], ...)`) vs. `src/_common/composable/table/useServerTable.ts:107-116` (its
@@ -178,7 +189,8 @@
 ---
 
 ### B4. Editing a project with a fractional `estimatedHours` silently rounds it — and the rounded value is what gets saved
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `NewProjectProfileForm.vue`'s
+  `VNumberInput` now sets `:precision="null"`.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/project/NewProjectProfileForm.vue:34-39` (`VNumberInput` with
   `:step="0.5"` but no `:precision`), root cause `node_modules/vuetify/lib/components/VNumberInput/VNumberInput.js:40-42`
@@ -210,7 +222,9 @@
 ---
 
 ### B5. Create-dialog's Activity field shows a literal "0" and it leaks into typed search text
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityProjectProfileRequest.activityId`
+  now defaults to `null` (widened to `number | null`), with a doc comment pointing at the sibling backlog
+  fix (F63).
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/ActivityAutocompleteWithCreate.vue` (shared component, `v-model`
   bound to `model.activityId`), root cause `src/core/leisure/dto/request/ActivityProjectProfileRequest.ts:7`
@@ -244,7 +258,8 @@
 ---
 
 ### A1. Filter panel's close (×) button has no accessible name — [framework]
-- **Status:** open — **reconfirmed 2026-09-15**
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `FilterPanel.vue`'s close `VIconBtn`
+  now has both `:title` and `:aria-label` bound to `general.close`.
 - **Severity:** a11y — **[framework]**
 - **Where:** `src/_common/component/FilterPanel.vue:49-54` (`VIconBtn icon="close"`, no `title`/
   `aria-label`)
@@ -266,7 +281,9 @@
 ---
 
 ### A2. Table's "Messy" column renders a bare icon with no accessible text
-- **Status:** open — **reconfirmed 2026-09-15**
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectTable.vue`'s Messy cell now
+  keeps the icon decorative (no click handler, so `aria-hidden` per the app's documented convention, F4)
+  with a `d-sr-only` sibling span carrying `leisure.a11y.messy`/`notMessy`.
 - **Severity:** a11y
 - **Where:** `src/core/leisure/component/project/ProjectTable.vue:25-31`
   (`<template #item.isMessy>` → `<VIcon :color :icon size="16" />`, no label)
@@ -286,7 +303,9 @@
 ---
 
 ### A3. Non-active readiness-status buttons on the board have very low contrast
-- **Status:** open — **reconfirmed 2026-09-15** (same screenshot evidence, unchanged appearance)
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — inactive buttons in
+  `ProjectReadinessBoard.vue` are now `outlined` `neutral-600` instead of tonal `grey-lighten-2` (F5), with
+  a comment recording the contrast measurements (3:1 on both themes) that drove the choice.
 - **Severity:** a11y
 - **Where:** `src/core/leisure/component/project/ProjectReadinessBoard.vue:130-146` (status button row,
   `:color="s === item.readinessStatus ? STATUS_META[s].color : 'grey-lighten-2'"`, `variant="tonal"`)
@@ -337,7 +356,10 @@
 ---
 
 ### P1. `FilterPanel` logs a recurring Vue warning about an attribute it can never use
-- **Status:** open — **reconfirmed 2026-09-15**
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue`'s `<FilterPanel>`
+  call no longer passes a `class` prop, so this warning no longer fires from this view. (Framework-level
+  root cause — `FilterPanel`'s multi-root template — not independently re-checked, but not observable from
+  this view either way now.)
 - **Severity:** polish
 - **Where:** `src/_common/component/FilterPanel.vue` (multi-root template: a `<div>` root plus a sibling
   `<Teleport>`, so Vue cannot auto-inherit attrs); called with `class="flex-1-1"` at
@@ -365,7 +387,9 @@
 ---
 
 ### P2. Card metadata line is missing a space before the second "·" separator
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectReadinessBoard.vue`'s
+  `metaLine()` now builds an array of present parts and joins with `' · '` once, instead of two independent
+  conditional templates each supplying their own separator.
 - **Severity:** polish
 - **Where:** `src/core/leisure/component/project/ProjectReadinessBoard.vue:86-98` — two adjacent
   `<template v-if>` blocks each starting with a literal `· ` (space after, none before)
@@ -386,7 +410,9 @@
 ---
 
 ### P3. Filtering to zero results shows the same "you have no projects at all" empty state and Add button as a genuinely empty list
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — both `ProjectTable.vue` and
+  `ProjectReadinessBoard.vue` now route through `LeisureEmptyState` with a `:filtered` prop and an
+  `@onClearFilters` handler (F79), distinguishing "nothing matches" from "you have none."
 - **Severity:** polish
 - **Where:** `src/core/leisure/component/project/ProjectTable.vue:33-51` (`#noData` slot) and
   `src/core/leisure/component/project/ProjectReadinessBoard.vue:7-24` (`isEmpty` branch) — both keyed only
@@ -415,7 +441,10 @@
 ---
 
 ### O1. `activity.isOnTodoList` rides on every response unread — and P1's own shopping-list-to-todo handoff was never built or declined in writing
-- **Status:** open — **reconfirmed 2026-09-15**
+- **Status:** fixed (2026-09-24, `cfa6434d` — "add a NeedsShopping project to a to-do list (leisure-
+  projects/O1)"), not re-verified live — `ProjectReadinessBoard.vue` now has an "Add to to-do list" button
+  on `NeedsShopping` cards with unmet materials/tools, opening `ShoppingToTodoDialog.vue`, which writes
+  through `core/todoList`'s own api/dto per the cross-module rule.
 - **Severity:** opportunity
 - **Where:** `src/core/leisure/dto/response/ActivityInfo.ts` (does not read `isOnTodoList`); board/table
   components (no todo-list affordance anywhere in this module)
@@ -445,7 +474,10 @@
 ---
 
 ### U1. Genuinely-empty board/table state not reached with current seed
-- **Status:** open
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — mocked `POST **/activity-project-profile/grid`
+  to return `{"items":[],"itemsCount":0}` and loaded `/leisure/projects` signed in as the primary seed user.
+  Both the board (`isEmpty` branch) and the table (`#noData` slot) render "These are things you're building
+  or making. You don't have any projects here yet." with an inline "Add" button, as designed.
 - **Severity:** unverified
 - **What would verify it:** The seed always carries at least one project profile
   (`profiles.project: 17201`), and this pass could not delete it through the UI (X1) or safely delete it
@@ -455,7 +487,10 @@
   row can be deleted and restored via reseed) would confirm this renders as designed.
 
 ### U2. Loading skeleton/progress state not screenshotted
-- **Status:** open
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — delayed `POST **/activity-project-profile/grid`
+  by 4s via `page.route`/`page.waitForTimeout`, then snapshotted immediately after reload on both view modes.
+  Board shows a `progressbar` (`VProgressLinear`) above the column grid; table shows a `progressbar` in its
+  header row plus a `cell "Loading items..."`, confirming both loading states render as designed.
 - **Severity:** unverified
 - **What would verify it:** The board's `VProgressLinear` (visible only for the duration of the initial
   `grid` fetch) was seen once in an early snapshot taken mid-load in this pass, but was too fast to

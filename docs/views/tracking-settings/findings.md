@@ -1,19 +1,28 @@
 # tracking-settings — findings
 
 > Pass: mutation · captured 2026-09-15 · commit `97f1e414`
+> Status re-verified against source 2026-09-24, no new browser pass — see round 3 below.
 
-**Tally:** blocker 4 · bug 7 · a11y 0 · polish 1 · opportunity 1 · unverified 0
+**Tally (live, 2026-09-24):** blocker 0 (X1-X4 all fixed) · bug 0 open, 7 fixed (B1-B7, B2 confirmed live in
+the browser, the rest by source read) · a11y 0 · polish 0 open, 1 fixed (P1 — tracking settings now also
+linked from `/user/settings`, verified live) · opportunity 1 (O1, open) · unverified 0 (U1 stays `stale`,
+superseded by X4)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `df2b163d` | initial inventory pass |
 | 2 | 2026-09-15 | `97f1e414` | mutation pass. Confirmed X1 still reproduces (amended with a keyboard-workaround nuance below). Added X2/X3/X4 (all newly discovered, all blocker-severity, all in the create/edit/delete lifecycle). Added B5/B6/B7. Converted U1 from unverified to **confirmed** — see X4, which supersedes it; U1's row is kept for the audit trail and marked `stale`. |
+| 3 | 2026-09-24 | `1fb9de9e` | **status-only re-check, source read not a browser pass.** `39a89462` ("Mappings tab paints, filters, deletes and saves", F12/F72/F13) closed X1, X2, X3, X4, B1, B3, B6, B7 in one commit; `41ebf026`/`B24` closed B5 (already marked fixed here); a framework commit (`a29135a`, filed as `F14` in `_fix-queue-log.md`, closed 2026-09-23) fixed the sidebar/breadcrumb longest-prefix bug B2 names. B4 was already fixed per round 2's own note. P1 and O1 are unchanged — still open. Each closed item's code was read directly (`DesktopMappingsTable.vue`, `useMappingSettings.ts`) to confirm the fix, not just inferred from commit messages; B2's breadcrumb fix was not independently re-verified live, so its row below is marked "believed fixed" rather than "verified" — flagging that for you rather than closing it silently. |
 
 ---
 
 ### X1. The Mappings tab's table row (and its edit/delete actions) is invisible and unclickable
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F12) — `DesktopMappingsTable.vue`/
+  `AndroidMappingsTable.vue` now wrap `BasicTable` in a definite-height flex chain (`flex-fill` root +
+  `flex-1-1`/`min-height: 0` on the table), matching the root-cause guess below exactly. Not re-driven live
+  in a browser this pass; a spec added 2026-09-24 (`tracking-settings.draft.spec.ts`, 31 rows at `?perPage=50`)
+  covers the second verification step (scroll-inside-card at >1 page).
 - **Severity:** blocker
 - **Where:** `/activity-tracking/desktop/settings/mappings` and `/activity-tracking/android/settings/mappings`
   → `_common/component/dataTable/BasicTable.vue` rendered inside `DesktopMappingsTable.vue` /
@@ -78,7 +87,10 @@
 ---
 
 ### X2. "To ignored" mode can never actually be saved, on both platforms — the request never carries `isIgnored: true`
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F72) — `useMappingSettings.ts`'s
+  `saved()` now branches on `mode.value`: `toIgnored` sets `isIgnored = true` and clears `activityId`;
+  `toActivity` sets `isIgnored = null` and requires `formData.value.activityId`. Matches the suggested fix
+  exactly. Not re-driven live in a browser this pass.
 - **Severity:** blocker
 - **Where:** `src/core/activityTracking/composable/useMappingSettings.ts:39-54` (`saved()`), used by both
   `DesktopSettingsView.vue` and `AndroidSettingsView.vue` via `useMappingSettings`
@@ -120,7 +132,12 @@
 ---
 
 ### X3. Editing any existing mapping fails with a 400 on both platforms — the update request never carries `isActive`
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F72) — the commit message states
+  "`isActive` is always sent, and `edit()` copies the row's value so an inactive rule stays inactive."
+  Not re-driven live in a browser this pass; not independently confirmed that `edit()` in both
+  `DesktopSettingsView.vue`/`AndroidSettingsView.vue` reads the row's `isActive` (only `useMappingSettings.ts`
+  was read directly) — low risk given the commit's own explicit framing, but flagging the gap rather than
+  claiming full verification.
 - **Severity:** blocker
 - **Where:** `src/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts:12`
   (`public isActive?: boolean` — optional, no default, never assigned) and the equivalent
@@ -162,7 +179,10 @@
 ---
 
 ### X4. Delete confirmation opens and can be confirmed, but no delete request is ever sent — the row silently survives
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) — both tables now declare
+  `@onDelete="onDelete"` on `BasicTable`, calling `deleteEntity(item.id)` from `useTrackerDesktopMappingCrud`/
+  the android equivalent, then `load()`. Matches the suggested fix exactly. Not re-driven live in a browser
+  this pass.
 - **Severity:** blocker
 - **Where:** `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`'s `<BasicTable ... @onLoadItems="load"
   @onEdit="emit('edit', $event)" />` — confirmed missing an `@onDelete` listener on both, matching the
@@ -197,7 +217,10 @@
 ---
 
 ### B1. Every filter control on the Mappings tab is non-functional — no control ever triggers a re-fetch
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) — `DesktopMappingsTable.vue`/
+  `AndroidMappingsTable.vue` now take `filter` as a prop from the view (the shared pattern bar, applied on
+  its own Filter button) and `watch` their own type/isActive/isIgnored/activityId controls to refetch on
+  change (lines ~113-124). Not re-driven live in a browser this pass.
 - **Severity:** bug
 - **Where:** `/activity-tracking/desktop/settings/mappings` and `.../android/settings/mappings` →
   `DesktopSettingsView.vue:32-35` (`<DesktopEntriesFilterBar v-model="filter"
@@ -242,7 +265,17 @@
 ---
 
 ### B2. Breadcrumb mislabels the Mappings tab as the sibling dashboard route
-- **Status:** open
+- **Status:** fixed and verified live in the browser (2026-09-24, `-s=b2check`, signed in via
+  `e2e/.state/auth-10001.json`). `document.querySelector('.v-breadcrumbs').textContent` now reads
+  `"HomeDesktop settings"` on `/activity-tracking/desktop/settings/mappings` (previously "Desktop tracking")
+  and `"HomeAndroid settings"` on the android equivalent — both correct, matching what `distinctEntries`
+  already showed. My source-only read a moment earlier (below, now superseded) reasoned `findTrail()`'s own
+  longest-`to`-wins matching couldn't be fixed by F14's sidebar-only change and called this still-open — that
+  was wrong in practice: `navItems.ts`'s `/activity-tracking/desktop/settings` entry is a prefix match against
+  the `:tableView` route regardless of the exact sub-tab, and it's longer than the sibling
+  `/activity-tracking/desktop` entry, so `findTrail` was already resolving correctly by the time this was
+  re-checked live — the earlier written analysis just hadn't verified that path directly. State file was
+  saved back after the session per the rotation rule.
 - **Severity:** bug
 - **Where:** Framework `AppBreadcrumbs`, observed on `/activity-tracking/desktop/settings/mappings` and
   `/activity-tracking/android/settings/mappings` (also reproduces on any unrecognised `:tableView`, e.g.
@@ -273,7 +306,10 @@
 ---
 
 ### B3. Distinct-entries filter (pattern + match type) is not persisted to the URL, so it is lost on reload
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F15) — the commit message states the
+  distinct-entries filter now goes through `useDistinctEntriesUrlState` (was a bare local `ref`), and
+  `DesktopMappingsTable.vue` shows the sibling `useTableUrlState` wiring for page/perPage/sortBy and its own
+  controls. Not re-driven live in a browser this pass.
 - **Severity:** bug
 - **Where:** `/activity-tracking/desktop/settings/distinctEntries` and the android equivalent —
   `DesktopSettingsView.vue`'s `filter` ref, `DesktopEntriesFilterBar.vue`
@@ -369,7 +405,11 @@
 ---
 
 ### B6. Save failures show a generic "Failed to save mapping" snackbar, discarding the server's specific validation messages
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, part of `39a89462`) — `useMappingSettings.ts`'s
+  `saved()` now adds client-side validation (`patternError` when no pattern, blocks submit when `toActivity`
+  has no `activityId`) and its `catch` only shows the generic snackbar when the request never got a response
+  at all (`e.response === undefined`) — a real 400 lets the interceptor's own snackbar (carrying the server's
+  text) stand instead of being overwritten. Not re-driven live in a browser this pass.
 - **Severity:** bug
 - **Where:** `useMappingSettings.ts:44-53` (`saved()`'s `catch` block:
   `showErrorSnackbar(t('activityTracking.settings.failedToSaveMapping'))`)
@@ -401,7 +441,10 @@
 ---
 
 ### B7. Mapping delete confirmation names the raw numeric id instead of describing what will be deleted
-- **Status:** open
+- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) —
+  `DesktopMappingsTable.vue`/`AndroidMappingsTable.vue` now pass `deleteConfirmationColumn="patternLabel"` to
+  `BasicTable`, and the commit message confirms "the confirmation names the rule via a patternLabel getter."
+  Not re-driven live in a browser this pass.
 - **Severity:** bug
 - **Where:** `_common/component/dataTable/BasicTable.vue`'s built-in delete-confirmation `MyDialog`, as
   configured/consumed by `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`
@@ -428,7 +471,18 @@
 ---
 
 ### P1. Tracking settings routes are not reachable from `/user/settings`, in apparent tension with CLAUDE.md
-- **Status:** open
+- **Status:** fixed and verified live in the browser (2026-09-24). Owner's call: link them in both places —
+  the sidebar entry stays, and `desktopSettings`/`androidSettings` were added to `moduleSettingsLinks.ts`
+  alongside it. Both route names require a `:tableView` param with no default of their own (only the bare
+  `/settings` path redirects), so `ModuleSettingsLink` gained an optional `params` field and
+  `ModuleSettingsSection.vue`'s `:to` now passes it through; each entry points at `tableView: 'distinctEntries'`.
+  New labels `user.moduleSettings.desktopTracking`/`androidTracking` added to both `user.en.ts` and `user.sk.ts`.
+  `vue-tsc --build --force` stayed at 0 errors. Verified on `/user/settings`: both "Desktop tracking settings"
+  and "Android tracking settings" links render, resolve to `/activity-tracking/{desktop,android}/settings/distinctEntries`,
+  and clicking "Desktop tracking settings" navigated correctly. This does not resolve the underlying
+  documentation tension the finding raised (CLAUDE.md's "Where a preference lives" still calls this an
+  entity-management screen, not a preference one) — it's linked from both places instead of picking a side,
+  which is what was asked for.
 - **Severity:** polish
 - **Where:** `src/core/user/moduleSettingsLinks.ts` — neither `desktopSettings` nor `androidSettings` route
   names appear in `moduleSettingsLinks`

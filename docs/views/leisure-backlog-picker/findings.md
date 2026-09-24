@@ -2,17 +2,23 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 1 · bug 5 · a11y 1 · polish 1 · opportunity 2 · unverified 5
+**Tally:** blocker 0 (1 fixed) · bug 0 (5 fixed) · a11y 0 (1 fixed) · polish 0 (1 fixed) · opportunity 0 (2 fixed) · unverified 0 (5 verified, all pass)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-15 | `f457aa0c` | initial mutation pass |
+| 2 | 2026-09-24 | code check only (no browser pass) | X1, B1, B2, B3, B4, B5 confirmed fixed in code; A1 already marked fixed and reconfirmed; P1, O1, O2, U1-U5 still open |
+| 3 | 2026-09-24 | live `playwright-cli` pass | U1-U5 all exercised via route mocking + a second-account sign-in; all five pass as designed, no defects found |
+| 4 | 2026-09-24 | uncommitted | O1, O2, P1 fixed (P1 in the framework) |
 
 ---
 
 ### X1. Editing or deleting any backlog profile fails — the frontend uses the wrong id
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfile.id` now carries the
+  server's own row id (constructor param + `fromJson`, with an explanatory comment). `BacklogProfileForm.vue:48`
+  calls `update(entityToEdit.id, …)` and `BacklogTable.vue:144` calls `deleteEntity(item.id)` — both keyed
+  correctly now.
 - **Severity:** blocker
 - **Where:** `src/core/leisure/component/backlog/BacklogProfileForm.vue:48` (`update(entityToEdit.activityId, ...)`),
   `src/core/leisure/component/backlog/BacklogTable.vue:151` (`deleteEntity(item.activityId)`), root
@@ -52,7 +58,10 @@
 ---
 
 ### B1. The picker hard-excludes a "no weather dependency" backlog entry whenever today's weather doesn't match any lookup value — currently blocking the only seeded suggestion
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfile.realWeatherDependencyId`
+  now returns `null` for the "None" weather-dependency code (and for an unrecognised code), and
+  `leisureScoring.ts`'s `CandidateFacts.weatherDependencyId` is fed from that getter, so a "None" row is never
+  hard-excluded or given the weather-match bonus.
 - **Severity:** bug
 - **Where:** `src/core/leisure/composable/leisureScoring.ts` `isEligible()` (backlog branch), fed by
   `src/core/leisure/composable/useWeatherFit.ts` and `useLeisurePicker.ts`'s `redraw()`
@@ -98,7 +107,9 @@
 ---
 
 ### B2. Create-dialog required selects show a literal "0" instead of a placeholder, and it leaks into typed search text
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfileRequest`'s four
+  lookup-id fields now default to `null` (widened to `number | null`), with a doc comment referencing this
+  finding (`_fix-queue.md` F63).
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (Activity, Location,
   Weather, Cost fields), root cause `src/core/leisure/dto/request/ActivityBacklogProfileRequest.ts:6-13`
@@ -132,7 +143,11 @@
 ---
 
 ### B3. Create-form client validation doesn't match server requirements, and the failure is shown as a useless generic message
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — Location/Weather/Cost now carry
+  `:rules="[requiredRule]"` and `:errorMessages="serverErrors.*"` in `NewBacklogProfileForm.vue`; Activity is
+  handled inside `ActivityAutocompleteWithCreate` (also wired to `serverErrors.activityId`). `B2`'s `null`
+  defaults make `requiredRule` correctly block an unpicked field. `BacklogProfileForm.vue`'s `onConfirm` now
+  wraps the write in `try/catch` and calls `formRef.value!.applyServerError(e)` on failure.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (only `Activity` carries
   `:rules="[requiredRule]"`, via `ActivityAutocompleteWithCreate.vue`; Location/Weather/Cost carry
@@ -176,7 +191,9 @@
 ---
 
 ### B4. Same pattern in the memory-anchor form: Highlight is server-required, has no client rule, and the 400 is silent
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — `NewMemoryAnchorForm.vue` now carries
+  `:rules="[requiredRule]"` and `:errorMessages="serverErrors.highlightNote"` on the Highlight field (Activity
+  gets the same treatment), matching B3's fix.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue` (Highlight field, no
   `required` rule observed), `src/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue` (its
@@ -205,7 +222,9 @@
 ---
 
 ### B5. Duration column renders as a percentage — "90.00 %" instead of "90 min"
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24, not re-verified live) — **[framework]** `useTableFormatters.ts` now
+  matches whole words (`keySegments()` splits on `.`/`_`/`-`/camelCase boundaries, `hasWord()` compares whole
+  segments) instead of substrings, so `durationMinutes` no longer collides with the `ratio` keyword.
 - **Severity:** bug — **[framework]**
 - **Where:** `src/_common/composable/table/useTableFormatters.ts` `isPercentKey()` /
   `PERCENT_KEYWORDS`, observed via `src/core/leisure/component/backlog/BacklogTable.vue`'s
@@ -240,7 +259,8 @@
   `link` already gave it `tabindex="0"` and the Enter/Space keydown, the role was the only missing piece.
   Verified live on `/leisure/bucket-list`, whose seeded row is anchored: `getByRole('button', { name:
   'Experienced' })` resolves, Tab reaches it, Enter navigates to `/leisure/memory-anchors?activityName=…`
-  exactly as a click does. The `MemoryAnchorTable` source chips got the same attribute)
+  exactly as a click does. The `MemoryAnchorTable` source chips got the same attribute) — reconfirmed in code
+  2026-09-24: `role="button"` still present on `ExperiencedCell.vue`'s chip.
 - **Severity:** a11y
 - **Where:** `src/core/leisure/component/ExperiencedCell.vue` — the `<VChip link @click="openAnchor">`
   shown once a row is anchored
@@ -266,7 +286,12 @@
 ---
 
 ### P1. Clicking a second column header adds a secondary sort instead of replacing the first
-- **Status:** open
+- **Status:** fixed and verified (2026-09-24) — **[framework]** `DataTable.vue` now passes
+  `multiSort: { key: 'ctrl' }`: a plain header click replaces the sort, Ctrl/⌘-click adds a key, and a
+  multi-key `sortBy` from the URL still applies. Multi-sort itself was kept; only the silent layering on a
+  plain click is gone. Verified live on `/leisure/backlog`: a plain click on Duration →
+  `sortBy=durationMinutes:asc`; a Ctrl-click on Activity → `durationMinutes:asc,activity.name:asc`; a plain
+  click on an existing key still flips its direction. Documented in `_common/docs/components.md`.
 - **Severity:** polish
 - **Where:** `BacklogTable.vue`'s columns, backed by `BasicTable`/`DataTable` (framework) — observed
   clicking "Duration (min)" while already sorted by "Activity"
@@ -294,7 +319,10 @@
 ---
 
 ### O1. `maxParticipants` is captured on every backlog entry and spent nowhere
-- **Status:** open
+- **Status:** fixed (2026-09-24, unit-tested, not browser-verified) — ranks rather than excludes:
+  `CandidateFacts.maxParticipants` feeds a flat `PARTY_TOO_BIG_PENALTY` (−2) in `scoreCandidate` when more
+  people are around than the entry takes (a two-player game is still doable with four around, just a worse
+  answer). `BacklogTable` gains a non-sortable "People" column rendering the range (`2–4`, `1+`, `2`).
 - **Severity:** opportunity
 - **Where:** `NewBacklogProfileForm.vue` (Max people input) → `ActivityBacklogProfileRequest.maxParticipants`
   → `ActivityBacklogProfile.maxParticipants`; no `BacklogTable.vue` column reads it, and
@@ -305,12 +333,20 @@
   two-player game suggested to "A group") or for down-ranking (not excluding) an activity that
   doesn't use all the people available. Right now the field the user filled in has no observable
   effect anywhere in the app.
+- **Confirmed still open (code check 2026-09-24):** `leisureScoring.ts` only references `minParticipants`;
+  `maxParticipants` doesn't appear there, and `BacklogTable.vue`'s column list has no `maxParticipants` entry.
 - **Repro:** 1. Create a backlog entry with Max people = 2. 2. Look for it anywhere in `BacklogTable`'s
   columns (not present) or in the picker's eligibility/ranking for a "who's around: A group" (4+)
   constraint (not read).
 
 ### O2. `ExperiencedCell`'s "open anchor" link navigates by activity name, not the id it already has
-- **Status:** open
+- **Status:** fixed and verified (2026-09-24) — navigates by `activityId` rather than `memoryAnchorId`: the
+  server's `MemoryAnchorFilterRequest` already accepted `ActivityId`, and a one-time activity has at most one
+  anchor, so it is just as exact and needs no new route. `MemoryAnchorFilter` gained `activityId` (URL
+  `?activityId=`, round-tripped in `memoryAnchorFilterUrlState`, sent by the timeline too); its chip names the
+  activity from the loaded rows and is the only way to clear it. `leisure-bucket-anchors.draft.spec.ts`'s
+  chip test now asserts the id URL and the "Activity: Learn Bouldering" chip, and passes live. The reverse
+  direction (`MemoryAnchorTable`'s source chips → backlog/bucket list) still navigates by name.
 - **Severity:** opportunity
 - **Where:** `src/core/leisure/component/ExperiencedCell.vue` `openAnchor()` — navigates to
   `{ name: 'leisureMemoryAnchors', query: { activityName } }`, while `ActivityBacklogProfile` already
@@ -326,44 +362,33 @@
 ---
 
 ### U1. Backlog table empty state not reached with current seed
-- **Status:** open
-- **Severity:** unverified
-- **What would verify it:** The seed always carries at least one backlog row (`activityId:12007`),
-  and this pass could not delete it without breaking every other finding's repro (and because delete
-  is broken anyway — X1). Source (`BacklogTable.vue`'s `#noData` slot, and the "L4 empty state" copy
-  in `_locales/leisure.{sk,en}.ts`) was read but not exercised. A pass with a way to empty the table
-  (or a seed variant with zero backlog rows) would confirm the copy and the inline Add affordance
-  render as designed.
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — mocked `POST **/activity-backlog-profile/grid`
+  to return `{"items":[],"itemsCount":0}` and loaded `/leisure/backlog` signed in as the primary seed user.
+  The `#noData` slot renders "These are things you could do. You don't have any here yet." with an inline
+  "Add" button, as designed.
 
 ### U2. Picker's "nothing filed at all" empty state not reached
-- **Status:** open
-- **Severity:** unverified
-- **What would verify it:** Same blocker as U1 — reaching `poolCount === 0` needs an account with zero
-  eligible rows across all three sources, which the current seed (and this unit's inability to safely
-  delete backlog rows via the UI, per X1) does not allow without disturbing shared seed state.
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — mocked all three `grid` endpoints
+  (`activity-backlog-profile`, `activity-project-profile`, `activity-bucket-list-profile`) to return empty
+  and loaded `/leisure/pick`. Renders "There's nothing to pick from yet. Add a few activities to your backlog
+  and come back." with a "Fill the backlog" link, as designed.
 
 ### U3. Picker's "load failed" empty state not reached
-- **Status:** open
-- **Severity:** unverified
-- **What would verify it:** Would need a genuine network failure on the pool fetch (e.g. `route --status 500`
-  on one of the three `grid` endpoints) rather than the weather mock used in this pass; not attempted
-  since it wasn't needed to confirm the higher-priority B1 finding and risked confusing the request
-  log for the rest of the session.
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — mocked `POST **/activity-backlog-profile/grid`
+  to return a 500 and loaded `/leisure/pick`. Renders "We couldn't load your activities. Try again in a
+  moment." plus the generic error snackbar ("A server error occurred. Please try again later."), as designed.
 
 ### U4. Picker's loading skeleton not screenshotted
-- **Status:** open
-- **Severity:** unverified
-- **What would verify it:** The `VSkeletonLoader` state (`loading && suggestions.length === 0`) is
-  confirmed in source but is only on-screen for the duration of the initial fetch, too fast to
-  reliably catch with this pass's tooling (a screenshot taken immediately after `goto` still showed
-  the resolved state in every attempt).
+- **Status:** verified, passes (2026-09-24, `playwright-cli`) — delayed `POST **/activity-backlog-profile/grid`
+  by 4s via `page.route`/`waitForTimeout`, then snapshotted immediately after `goto /leisure/pick`. The
+  accessibility tree shows three `alert "Loading..."` nodes (the `VSkeletonLoader` state), confirming it
+  renders as designed.
 
 ### U5. `suggestionHistory` storage scoping not verified
-- **Status:** open
-- **Severity:** unverified
-- **What would verify it:** `CLAUDE.md` requires per-user `localStorage` namespacing via
-  `useUserScopedStorage` for anything like "dismissed hints" or "pinned templates" — the picker's
-  staleness/last-committed-effort record (`suggestionHistory.ts`) looks like the same category of
-  state but its implementation was not opened in this pass. A second account signed in on the same
-  browser (`secondaryPage` fixture, or a manual second sign-in) reading `/leisure/pick` and checking
-  whether it inherits the primary account's staleness history would confirm or clear this.
+- **Status:** verified, passes (2026-09-24, `playwright-cli` + code read) — the code comment in
+  `suggestionHistory.ts` already documents this was addressed by a prior fix (P4: "found this key
+  un-namespaced and scoped it by account"), which routes through `readUserScoped`/`writeUserScoped`
+  (`useUserScopedStorage.ts`), keying as `` `${name}::u${accountId}` ``. Live-confirmed: clicking "Something
+  else" as the primary seed user (id 10001) wrote `leisure.picker.history::u10001` to `localStorage`.
+  Signing in as the secondary seed user (id 10002) in the same browser showed no `leisure.picker.history`
+  key at all under that session — no leak, no cross-account read.

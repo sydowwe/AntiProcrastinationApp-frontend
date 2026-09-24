@@ -2,18 +2,25 @@
 
 > Pass: inventory + mutation · captured 2026-09-14 · commit `adc9c67f`
 
-**Tally:** blocker 0 · bug 2 · a11y 1 · polish 1 · opportunity 0 · unverified 5
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 4
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `adc9c67f` | initial inventory pass |
 | 2 | 2026-09-14 | `adc9c67f` | mutation pass — confirmed `askBeforeDelete`/`firstDayOfWeek` save+persist+snackbar live (reverted after), confirmed theme toggle syncs and reverted it, found P1, and hit the harness's own safety classifier on password-field fill, the language switch, and (again) Delete account — all left untouched, see U3-U5 |
+| 3 | 2026-09-24 | `1fb9de9e` | status sweep — all four bug/a11y/polish findings confirmed closed against current source and `_fix-queue.md`: B1+B2 landed together in `fc3c4547` (`B14` frontend half, §9), B3+B4 in `FW25`, A1 in `FW7` (`5397675`), P1 folded into `FW12`'s commit (`549ae02`). U1 was already resolved; U2-U5 remain open, blocked by the harness's own safety classifiers or needing a dedicated throwaway account — nothing actionable from this repo alone |
 
 ---
 
 ### B1. Google Calendar "Connect" leads to a real OAuth error — `client_id` is missing
-- **Status:** open
+- **Status:** fixed — closed `§9` 2026-09-21. Backend `B14` landed all three server-side stops
+  (API `1e0dc3b`, framework `23e13fe`): `configured` on `GET …/status`, 503 `ServiceNotConfigured`
+  from `…/auth-url`, the redirect URI derived from the page URL, the state cookie re-scoped to the
+  `/api` prefix, and `errorType` on the three hand-rolled 400s. Frontend half (`F33` + the
+  `configured` branch + `F34`) landed the same day in `fc3c4547`, which also sends the OAuth `state`
+  the server's validator requires. The real Google round trip still needs the redirect URI
+  registered in the console (ops) — not a frontend concern.
 - **Severity:** bug
 - **Where:** `/user/settings` → Security card → "Connect" (Google Calendar row, app-supplied via the
   `#integrations` slot)
@@ -41,7 +48,11 @@
   since it's entirely downstream of this one root cause.
 
 ### B2. GoogleCalendarCallbackView gives zero feedback on a failed or declined connection
-- **Status:** open
+- **Status:** fixed — landed with `B1` in `fc3c4547` (`B14` frontend half). `GoogleCalendarCallbackView.vue`
+  now branches on `error=access_denied` (a softer "connectCancelled" snackbar) vs. a missing
+  `code`/`state` (`connectFailed`) vs. a failed exchange (`connectExpired`/`connectRejected`/
+  `connectFailed`, keyed off the 400's `errorType`), and shows a snackbar on every path before
+  redirecting to `/user/settings`.
 - **Severity:** bug
 - **Where:** `/google-calendar/callback` (no `code` param, and separately `?error=access_denied`)
 - **Expected:** A user who declines Google's consent screen, or whose connection attempt otherwise
@@ -120,7 +131,9 @@
   what the fix keys on.
 
 ### A1. Password-field visibility toggles expose a non-descriptive accessible name
-- **Status:** open
+- **Status:** fixed — `FW7` landed 2026-09-23 in `vue_framework` `5397675` (bump `a7dbfda0`), folded in
+  with `FW2`/`FW5`/`FW6`/`FW15`. The password field's visibility toggle now carries a real
+  "Show password"/"Hide password" accessible name instead of the "{label} appended action" fallback.
 - **Severity:** a11y — **[framework]**
 - **Where:** the "Password change" dialog opened from `/user/settings` → Security → "Change
   password" — all three fields (Password, New password, Confirm new password)
@@ -150,7 +163,10 @@
   shared password-field component so every consumer gets it for free.
 
 ### P1. "Change password" and "Delete account" use the wrong colour for an elevated button
-- **Status:** open
+- **Status:** fixed — folded into `FW12`'s framework commit (`549ae02`, bump `a0f116a9`), landed
+  2026-09-23 as `FW8` (six elevated buttons on the tonal/outlined colour tokens, this pair among them).
+  `SecuritySection.vue`'s "Change password" and "Delete account" buttons now use `warningDark`/
+  `errorDark`.
 - **Severity:** polish — **[framework]**
 - **Where:** `src/_common/modules/user/component/settings/SecuritySection.vue:61-72` — the "Change
   password" (`color="warning"`) and "Delete account" (`color="error"`) buttons

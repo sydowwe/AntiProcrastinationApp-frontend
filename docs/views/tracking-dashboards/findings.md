@@ -2,17 +2,18 @@
 
 > Pass: inventory · captured 2026-09-14 · commit `6aac48bb`
 
-**Tally:** blocker 0 · bug 2 · a11y 2 · polish 0 · opportunity 0 · unverified 1
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `6aac48bb` | initial inventory pass |
+| 2 | 2026-09-24 | (working tree) | code check: B1, B2, A2 confirmed fixed in code; U1 verified live via `playwright-cli` route mocking — all findings closed |
 
 ---
 
 ### B1. Web dashboard's domain-detail close button renders no icon — wrong icon set (`mdi-*` in a FontAwesome-only app)
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24) — `ActivityDetailsPanel.vue:7` now uses `icon="fas fa-xmark"` and carries `:ariaLabel="$t('activityTracking.pieChart.closeDetails')"`. Not re-verified live in a browser this round.
 - **Severity:** bug
 - **Where:** `src/core/activityTracking/component/pieChart/ActivityDetailsPanel.vue:7` — the close button
   shown when a domain is selected on `/activity-tracking`
@@ -36,7 +37,7 @@
 - **Suggested fix:** Change `icon="mdi-close"` to `icon="fas fa-xmark"` on `ActivityDetailsPanel.vue:7`.
 
 ### B2. Android dashboard's app selection opens no detail panel — Web and Desktop both do
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24) — `AndroidPieChartSection.vue` now renders `AndroidAppDetailsPanel` when `selectedDetails` is set, with its own `fetchAppDetails` request, loading/error state, and `onClose`. Not re-verified live in a browser this round.
 - **Severity:** bug
 - **Where:** `src/core/activityTracking/component/android/AndroidPieChartSection.vue` (whole component) vs.
   `pieChart/ActivityPieChartSection.vue` (web) and `desktop/DesktopPieChartSection.vue` (desktop)
@@ -103,7 +104,7 @@
   `role="radiogroup"`/`role="radio"` (range picker) and `aria-pressed` (source filter) at these call sites.
 
 ### A2. Desktop process-detail panel's close button has no accessible name at all
-- **Status:** open
+- **Status:** fixed (code check 2026-09-24) — `DesktopProcessDetailsPanel.vue:10` now carries `:ariaLabel="$t('activityTracking.pieChart.closeDetails')"`. Not re-verified live in a browser this round.
 - **Severity:** a11y
 - **Where:** `src/core/activityTracking/component/desktop/DesktopProcessDetailsPanel.vue:5-11` — the close
   `VBtn` in the panel opened by selecting a process on `/activity-tracking/desktop`
@@ -129,12 +130,18 @@
   existing `closeDomainDetails` key) to the `VBtn` at `DesktopProcessDetailsPanel.vue:5`.
 
 ### U1. Loading and error states for the four dashboard panels not exercised live
-- **Status:** open
+- **Status:** verified (2026-09-24) — exercised live on `/activity-tracking` (web) with `playwright-cli route`
+  mocking of `**/activity-tracking/web-extension/**`:
+  - **Loading:** delayed all five panel endpoints by 20s and captured the page mid-flight — 11
+    `.v-skeleton-loader` elements rendered across the Timeline, Shape of the day, Top Domains and side-panel
+    cards (screenshot confirmed visually).
+  - **Error:** forced all five endpoints to `500` — each of the five panels independently rendered its own
+    "Failed to load" + Retry block (no shared/global error state).
+  - **Retry scoping:** with `summary-cards` mocked to succeed and the other four still forced to fail, clicking
+    the Top Domains panel's Retry button fired exactly one new request (`summary-cards` → 200) and left the
+    other four panels' requests untouched — confirms retry is scoped per-panel, not global.
+  - Not covered: Desktop/Android/Unified dashboards specifically (same composable/pattern, not spot-checked
+    individually this round).
 - **Severity:** unverified
 - **Where:** `useActivityDashboard.ts` loading/error refs, rendered by `StackedBarsChart.vue`,
   `ActivityTimeline`, `ActivitySummaryCards.vue`, pie-chart sections, `ActivityFocusStrip.vue`
-- **What would verify it:** This pass never saw a `VSkeletonLoader` (fetches settle before a screenshot can
-  catch them) or a panel's error/retry block (no network fault injection available via `playwright-cli`). The
-  code path is `_silent: true` requests with a per-panel `error` ref and a retry button, consistent across all
-  four dashboards — a pass with request-throttling or interception would confirm the retry button actually
-  re-fires only its own panel.

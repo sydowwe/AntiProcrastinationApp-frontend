@@ -2,18 +2,22 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally:** blocker 0 · bug 4 · a11y 1 · polish 0 · opportunity 0 · unverified 0
+**Tally:** blocker 0 · bug 4 · a11y 1 · polish 0 · opportunity 0 · unverified 0 — **all five fixed and verified** (see round 3)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-13 | `430e6f03` | initial inventory pass. All ten `H1`–`H10` prompts (`prompts/_done/home/`) had already landed — verified live, not assumed: real current date in the pie-chart request and the activity-history deep link (H1), route-name fix on "Add to planner" (H1), `resetTodayPlan()`/`effectScope`/day-rollover watcher present (H2), one shared `WidgetCard` shell (H4), due-date chips on to-do rows + persisted-store `hideDone` toggle *attempted* (H8 — see B3), one dashboard-wide refresh coordinator with visibility/day-change/online/interval triggers (H7), NowBar as sole owner of the focus task with `DayPlannerWidget`'s focus block removed (H9). The three bugs below are new, found by driving the browser against real seeded data — none are regressions of a listed H-prompt defect. |
 | 2 | 2026-09-15 | `04c405e9` | mutation pass. B1 re-confirmed open (same 218px header overflow, now measured against fixture `e2e-v4`). B2 **root-caused and widened**: what round 1 described as a narrow, hard-to-hit loading race is in fact a near-deterministic sign-in bug — reproduced on 3 of 4 fresh sign-ins in this pass regardless of network speed, traced to a specific line (`useTodayPlan.ts:512-521`), and shown to have a second, worse variant (a permanently stuck spinner, reproduced by forcing a 500 during sign-in) that also **answers round 1's U1** (H6's error/Retry UI is correct in isolation; this race is what makes it unreachable). B3 re-confirmed open, unchanged. Cross-account isolation (H2) re-verified clean — no leaked plan data switching to the secondary account, folded into B2's evidence rather than filed separately. One new bug found only by actually mutating state, **B4** (skipping a task renders it identically to completing it — the `row--done`/`aria-pressed` distinction the checkbox exists to convey is simply absent for `Cancelled`), and one new **a11y** finding, **A1**, from a masked-input edge case discovered while testing keyboard-shortcut suppression. Full task lifecycle exercised: start/finish/skip/snooze via NowBar, the day-planner-widget checkbox, the shared `TaskActionMenu`, and the **M**/**P**/**T** keyboard shortcuts, plus the hide/show-done toggle (B3). Database reseeded (`POST /api/test/seed`, fixture `e2e-v4`, `seedDateUtc` now `2026-09-15`) at the end to restore known-good state — **this invalidates `e2e/.state/auth-10001.json`; the next agent must sign in through the form rather than `state-load` it.** |
+| 3 | 2026-09-24 | `1fb9de9e` | status sync, no new pass. Every finding had already been fixed and verified through `_fix-queue.md`, but this file still read "open": B1 → `F7` (`e3271007`), B2 → `F8` (`dfd64a6a`), B3 → `F9` (`9e3a9c9e`), B4 → `F59` (`dfd64a6a`), A1 → `F58` (`f457aa0c`). Each finding's source was re-read against the current tree, and the fix is still in place. The verification record for each is in `_fix-queue-log.md` under its F-number. |
 
 ---
 
 ### B1. RoutineTodoWidget's header controls are clipped off-screen at a common desktop width
-- **Status:** open
+- **Status:** fixed and verified (2026-09-23, `F7`, `e3271007`). The period chips get their own
+  zero-basis `overflow-x: auto` scroller (`.routine-periods` in `RoutineTodoWidget.vue`). The counter and
+  both buttons stay anchored inside the card at 1440×900. Not measured on an account with more or fewer
+  than four periods.
 - **Severity:** bug
 - **Where:** `/` → `RoutineTodoWidget`'s `WidgetCard` header (`src/core/home/component/WidgetCard.vue:142-153`, `.widget-card__header { flex-wrap: nowrap }` above 960px, `.widget-card { overflow: hidden }`)
 - **Expected:** Every widget's "hide/show done" toggle and "open full view" button should be reachable
@@ -60,7 +64,10 @@
   this round; the DOM measurement is the same falsifiable check round 1 used.
 
 ### B2. A sign-in race discards the day-plan fetch, leaving NowBar/DayPlannerWidget stuck on a false "No plan for today" — or, if the fetch fails, stuck spinning forever
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F8`, `dfd64a6a`). The user-id watcher in `useTodayPlan.ts`
+  now ignores the `0 → id` hydration and re-fetches on `loadPromise !== null` rather than `planDate`.
+  `NowBar` has a `loading` branch, and `focusMode` returns `'noPlan'` when `hasPlan` is false, so a
+  plan-less day no longer shows the *DONE* kicker. This also settles `U1`.
 - **Severity:** bug
 - **Where:** `/` → `NowBar` (`src/core/home/component/NowBar.vue`) reading `focusMode`/`hasPlan` from
   `useTodayPlan()` (`src/core/home/composable/useTodayPlan.ts:163-166`)
@@ -176,7 +183,8 @@
   unreachable some of the time is this finding, not a gap in H6.
 
 ### B3. `hideDoneTodoList`/`hideDoneRoutine` never persist, and the reason is a stale claim in CLAUDE.md
-- **Status:** open
+- **Status:** fixed and verified (2026-09-23, `F9`, `9e3a9c9e`). `homeUiStore` declares
+  `{ persist: { storage: sessionStorage } }`, and CLAUDE.md now says the plugin is opt-in.
 - **Severity:** bug
 - **Where:** `src/core/home/store/homeUiStore.ts`; conceptually also
   `src/_common/bootstrap/createAppPinia.ts:11` and the "Pinia Stores" persistence claim in the
@@ -230,7 +238,10 @@
   done" state left before navigating.
 
 ### B4. A skipped (`Cancelled`) task renders identically to a completed one in the day-planner widget
-- **Status:** open
+- **Status:** fixed and verified (2026-09-22, `F59`, `dfd64a6a`). A skipped row now gets `row--skipped`, a
+  dashed checkbox with a restore icon, `aria-pressed="false"` and a *Skipped* chip that shows the reason.
+  The checkbox reopens the task to `NotStarted` instead of completing it. The skip reason depended on
+  backend `B26`, which landed on 2026-09-23.
 - **Severity:** bug
 - **Where:** `/` → `DayPlannerWidget`'s task-row checkbox (`src/core/home/component/DayPlannerWidget.vue`,
   the `row row--done` / `check check--on` markup, `aria-pressed`/`aria-label` pair) — found only by
@@ -279,7 +290,8 @@
   advancing it to `Completed`.
 
 ### A1. A Vuetify time-input's keystroke-rejected announcement resolves to a raw i18n key
-- **Status:** open
+- **Status:** fixed and verified (2026-09-15, `F58`, `f457aa0c`). `common.en.ts` imports Vuetify's own `en`
+  export instead of a hand copy that was missing this key and `command.search`.
 - **Severity:** a11y
 - **Where:** `TrackTimeDialog`'s "Length" field (a Vuetify time-mask input), opened from NowBar's Track
   button, `TaskActionMenu`'s Track item, or the **T** shortcut

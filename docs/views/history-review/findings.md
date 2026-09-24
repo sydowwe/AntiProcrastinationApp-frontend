@@ -2,17 +2,22 @@
 
 > Pass: inventory · captured 2026-09-14 · commit `adc9c67f`
 
-**Tally:** blocker 0 · bug 4 · a11y 2 · polish 3 · opportunity 0 · unverified 2
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (everything closed — all of
+B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `adc9c67f` | initial inventory pass |
+| 2 | 2026-09-24 | (code check, no commit) | B1-B3, A2, P2-P3 confirmed fixed in code; U2 confirmed resolved by backend B2 nullability audit |
+| 3 | 2026-09-24 | (browser check, no commit) | U1 closed — both the plain-empty and genuine first-run branches confirmed live on Calendar and Summary |
 
 ---
 
 ### B1. The period-total banner renders clipped to ~2 illegible characters in Summary's Top Activities panel
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24 — `HistoryPeriodBanner.vue`'s `.myAlert` now sets
+  `flex: 0 0 auto` with a comment explaining VAlert's default `flex: 1 1 0%` was the cause; the parent row's
+  `flex-wrap` now activates instead of compressing the alert)
 - **Severity:** bug
 - **Where:** `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue` (the `VAlert`,
   `style="max-width: fit-content"` with no `flex-shrink: 0`) rendered inside
@@ -43,7 +48,11 @@
   `HistoryPeriodBanner.vue`, so the flex-wrap on the parent row activates instead of compressing the alert.
 
 ### B2. A failed dashboard request renders identically to a genuinely empty period
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24, `F27` — `useHistoryDashboard.ts` now tracks a
+  per-panel error ref (`stackedBarsError`/`pieChartError`/`summaryCardsError`/`timeOfDayError`) alongside
+  the nulled data, and `HistoryPieChartSection.vue` (and siblings) branch on `error` to render
+  `HistoryErrorState` with a retry affordance instead of falling through to the empty-state branch; the
+  first-run check also now bails out rather than answering on a failed round)
 - **Severity:** bug
 - **Where:** `src/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue` (and, by the same
   composable, the stacked-bars/summary-cards panels), on `/activity-history/detail`
@@ -74,7 +83,9 @@
   consumer branch on it to render a distinct (even minimally distinct — different icon/copy) error state.
 
 ### B3. Breadcrumb reads "Home › Summary" while viewing the Detail page
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24 — `HistoryDetailView.vue` calls the framework's
+  `useSetBreadcrumbExtra()` and pushes the resolved page title, exactly the suggested fix / the shell pass's
+  P1 pattern)
 - **Severity:** bug
 - **Where:** `src/_common/nav/AppBreadcrumbs.vue` / `src/_common/composable/general/useBreadcrumbs.ts`
   (`matchesPath`, `src/_common/nav/navTypes.ts:41-44`), on `/activity-history/detail`
@@ -161,7 +172,9 @@
   mounted (`activityTracking` dashboards).
 
 ### A2. Calendar day cells have no accessible name
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24 — `CalendarGrid.vue`'s day-cell wrapper now carries
+  `:aria-label="dayData ? dayCellLabel(dayData) : undefined"`, framework-level so day planner's calendar gets
+  it too)
 - **Severity:** a11y
 - **Where:** `CalendarGrid.vue` (framework) day-cell slot, as consumed by `HistoryCalendarView.vue` via the
   `#day-cell-content` slot, on `/activity-history/calendar`
@@ -206,7 +219,10 @@
   rather than "view details."
 
 ### P2. Pie-chart legend text can overlap the donut when it doesn't fit the hole
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24, `F31` — `HistoryPieChart.vue` was rewritten to
+  compute the legend layout from the measured container width in pixels rather than an in-hole percentage
+  layout, with a side legend or a stacked/paged legend depending on available width; a details card now sits
+  beside the donut instead of text inside it)
 - **Severity:** polish
 - **Where:** `HistoryPieChartSection.vue` / the shared pie-chart component, on `/activity-history/detail`
   (2-group day) and visible in a lighter form on `/activity-history` too
@@ -225,7 +241,8 @@
   external legend below/beside the chart once entry count/name length exceeds a threshold.
 
 ### P3. HistoryCalendarView has no page heading, unlike its two sibling views
-- **Status:** open
+- **Status:** fixed and verified (code check 2026-09-24 — `HistoryCalendarView.vue` now renders
+  `<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>` in the header row, matching the sibling views)
 - **Severity:** polish
 - **Where:** `src/core/activityHistory/view/HistoryCalendarView.vue`, on `/activity-history/calendar`
 - **Expected:** Consistency with sibling views — `HistorySummaryView` renders `<h1>Activity History</h1>`
@@ -243,19 +260,36 @@
   matching locale key) that the other two views already use.
 
 ### U1. First-run / all-empty states on Calendar and Summary not independently exercised
-- **Status:** open
-- **Severity:** unverified
+- **Status:** fixed and verified (2026-09-24, browser check via `playwright-cli`). Two branches confirmed
+  live:
+  1. **All-days-empty, account has history elsewhere** (`hasAnyHistoryEver === true`) — signed in as the
+     seed's primary user (`test@example.com`), pointed Calendar at year 2020 and Summary at
+     `date=2020-01-15`. Both rendered the plain empty state ("No activity recorded in the visible range." /
+     "No data for this period", `15.01.2020`), not the first-run onboarding block — correct, since that
+     account has real history in 2026.
+  2. **Genuinely never recorded anything** (`hasAnyHistoryEver === false`) — signed in as the seed's admin
+     account (`admin@example.com`, zero activity history rows) and loaded both `/activity-history/calendar`
+     and `/activity-history`. Both rendered `HistoryFirstRunState`: "No activity recorded yet — Log something
+     you already did, or start a timer for what you're doing now." with working "Log manually" /
+     "Start a timer" links. Calendar's day grid still rendered every day cell as "No activity" underneath the
+     banner, as designed.
+  Both branches behave as H7 specifies. **Detail's** three-panel empty state (a genuinely history-free day,
+  `date=2026-09-07`) was already confirmed live in the original pass and matches H7's stated design.
+- **Severity:** unverified (resolved)
 - **Where:** `HistoryFirstRunState` / `HistoryEmptyState`, as wired into `HistoryCalendarView.vue:3-13` and
   (by shared composable) `HistorySummaryView.vue`
-- **What would verify it:** This seed (`e2e-v4`) always has history rows in the months/weeks this pass
-  viewed, so the "every visible day is empty" and "never recorded anything, anywhere" branches were only
-  confirmed by code read, not observed on screen for Calendar or Summary. **Detail's** three-panel empty
-  state (a genuinely history-free day, `date=2026-09-07`) **was** confirmed live and matches H7's stated
-  design. A future pass with a date range picked further outside the seed's populated window (e.g. year
-  2020) would exercise Calendar's and Summary's empty/first-run branches directly.
+- **What verified it:** Original pass only had the primary/secondary seed accounts on hand, which always
+  carry history in the months/weeks viewed, so the two branches above were confirmed by code read only. This
+  check used the seed's admin account (zero history) for the first-run branch and a 2020 date range on the
+  primary account for the plain-empty branch, closing the gap live.
 
 ### U2. H1's null-wake-up-time fix not exercised against a live null value
-- **Status:** open
+- **Status:** resolved — moot (code check 2026-09-24). `CalendarActivityDaySummary.ts:18-24` now carries a
+  `B2` comment stating `wakeUpTime`/`bedTime` are **never** null — non-nullable backend column, constructed
+  unconditionally, no code path emits null for either. The `git log` on the file shows a `fix(...): apply B2
+  nullability audit` commit after the original H1 fix. The premise this finding asked to verify (a live null
+  value reaching the client) can no longer occur, so there is nothing left to exercise; the "not recorded"
+  case is now represented by the backend's `08:00`/`00:00` defaults instead, per the same comment.
 - **Severity:** unverified
 - **Where:** `src/core/historyDashboard/dto/response/CalendarActivityDaySummary.ts:37-38`,
   `HistoryCalendarView.vue:13-24`

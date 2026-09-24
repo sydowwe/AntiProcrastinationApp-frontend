@@ -5121,6 +5121,105 @@
 - **Risk:** Low. The only behavioural change is that the arrow buttons now step by one minute instead
   of five on these fields — fine for a duration, and none of the eight passes `showArrows` anyway.
 
+## F87. The day header's task total goes stale after a delete — the page's copy of the calendar, not the server
+> ✅ **FIXED 2026-09-24**, filed and fixed the same day, uncommitted. **The shape chosen: read the counts
+> back from the server.** Deriving them from `store.tasks` is wrong here: the grid fetches only tasks
+> between wake-up and bedtime (`PlannerTaskFilter`, pinned server-side by `PlannerTaskFilterWindowTests`),
+> while `CalendarResponse` counts every task on the day. That also made the old code inconsistent:
+> `completedTasks` was recounted from the windowed list, `totalTasks` came from the server.
+>
+> **What changed** (`DayPlannerView.vue`, `Calendar.ts`): one `watch` on a key of the day's real tasks
+> (positive ids only, `id:status`, de-duplicated and sorted, so template/copy previews with negative ids and a
+> cut preview's duplicate change nothing), debounced 300 ms, re-reads the calendar by id and copies
+> `totalTasks`/`completedTasks` onto the existing object. The whole object isn't replaced, because that
+> would re-run the wake/bed watchers. The read goes through its **own** `useCalendarQuery()` instance, so it can
+> cancel only an older count read, never a day change. A one-shot skip after `loadTasks` means loading a day
+> fires nothing extra. `totalTasks` lost its `readonly`. The three local `completedTasks` recounts
+> (`handleStatusChange`, bulk status, skip) are deleted.
+>
+> **Verified live** (1440×900, two API-created tasks on 15-10-2026): loaded *"0/2 tasks"* with no count
+> request; a UI delete (Delete → Confirm) → *"0/1 task"* without a reload, server `totalTasks` 1; one
+> `GET calendar/{id}` per change. A status change (the optimistic flip of the `D` shortcut, reverted by its
+> 400) fired one read and kept the server's figure. **Not driven end to end:** a completion through the UI.
+> The only path to *Completed* is the log-time dialog, and the `D` shortcut that would have been the quick
+> path is broken (`F89`, filed). The refresh copies both counts from the server, so nothing is recomputed
+> locally to get wrong. Test rows deleted; 15-10 back at 0 tasks, 24-09 at the seeded 3/1.
+
+- **Scope:** app-side `src/core/dayPlanner/view/DayPlannerView.vue`, `src/core/dayPlanner/dto/response/Calendar.ts`
+- **Closes:** `planner-day/B8` (not a backend ask; nothing written to `backend/`).
+
+## F88. The split view at desktop width left each template's grid about 100 px wide
+> ✅ **FIXED 2026-09-24**, filed and fixed the same day, uncommitted. **The cause was the question, not the
+> panel:** every layout decision in the planner (`mdAndUp` in `PlannerSidePanelShell`, `d-md-none` on both
+> headers' toggles and the not-found alert's, `flex-md-row` on both views) asked about the **window**. In
+> the split view a 1440 px window holds two ~550 px planners, each running the desktop layout. The panel took
+> 400 of 548 px and the grid got ~100. Worse, `v-show="panelOpen || mdAndUp"` meant the panel could not be
+> closed at desktop width at all, so the queue's first suggestion (start it closed) would have done nothing.
+>
+> **What changed:** `usePlannerLayout.ts` (new) measures the planner view's own root (`useElementSize`) and
+> provides `compact` below 900 px, falling back to the window breakpoint until the first measurement. The
+> shell, both headers and the not-found alert read it through `usePlannerCompact()`. A **compact** planner
+> floats the panel over the grid (`position: absolute` from the view root, `min(width, 100%)` wide, scrolls
+> on its own) instead of beside or above it, so opening it never changes the grid's width.
+> `useRoutinePlacement` takes the flag: the panel starts closed when compact, follows the layout across the
+> threshold, and closes itself when a routine item is picked, so the grid under it can take the placement.
+> The shell's Details/Routine toggle now shows in both layouts (it was `d-none d-md-flex`, which left the
+> routine tab unreachable in the template planner below `md`). Both views' roots are a plain row with
+> `position: relative`.
+>
+> **Verified live:**
+>
+> | view | measured |
+> | --- | --- |
+> | split, 1440×900 | grid **516 px** per pane (was ~100); panel closed; *Open panel* in each pane's header; handles hittable |
+> | split, overlay open | grid still 516; panel `absolute`, 400 px; *Template Name* visible; Routine tab switches; X closes |
+> | split, drag at 1440 | `PUT` with `templateId: 20002`, block moved; dragged back (`templateId: 20001`) — fixture as seeded |
+> | template, 1440 | unchanged: panel 400 beside, grid 680 |
+> | day, 1440 | unchanged: panel 380 beside, grid 700 |
+> | day / template, 390×844 | grid 350 (full width), panel closed; opens as a 374 px overlay, no horizontal overflow; header *Routine* opens it on that tab; picking an item closes it |
+>
+> Screenshot: `.playwright-cli/f88-split-1440-open.png`. **Behaviour change on phones, deliberate:** the
+> panel used to stack above the grid, open, and push the grid a screen down; it now starts closed and opens
+> over the grid. **Not run:** the e2e suites for the planner. Their global setup reseeds the whole database,
+> and two other sessions were live against it.
+
+- **Scope:** app-side `src/core/dayPlanner/composable/usePlannerLayout.ts` (new), `useRoutinePlacement.ts`,
+  `component/PlannerSidePanelShell.vue`, `component/normal/DayPlannerHeader.vue`,
+  `component/template/TemplatePlannerHeader.vue`, `view/DayPlannerView.vue`, `view/TemplateDayPlannerView.vue`
+- **Closes:** nothing filed. Found closing `planner-templates/U2`; together with that entry's
+  `pointer-events` line, the cross-template drag now works at any width.
+
+## F89. The day planner's `D` shortcut had never saved a status — it sent `{ status }` to the time-span endpoint
+> ✅ **FIXED 2026-09-24**, found verifying `F87` and fixed the same day, uncommitted. **The bug:**
+> `PlannerTaskBlock`'s `D` handler called `dayPlannerStore.updateTaskStatus`, which sent `{"status":…}` to the
+> generic `PATCH /planner-task/{id}`. That is the span endpoint, and every call got **400** (*"…
+> `PlannerTaskChangeSpanRequest` was missing required properties including: 'startTime', 'endTime'"*). The
+> block flipped optimistically and reverted, so the shortcut had never worked. `handleSkip` made the same
+> mistake before `B26`.
+>
+> **Decided (owner, 2026-09-24): `D` opens log time to complete.** No other key opens that dialog, and every
+> other path to *Completed* (the status menu, the selection bar) goes through it, because a completed task
+> records when it was actually done. On tasks that are all completed, `D` sets them back to *Not started*,
+> which clears their logged times.
+>
+> **What changed:** the block only emits `toggleDone`. `DayPlannerView.handleToggleDoneShortcut` selects
+> the focused block if nothing is selected, then hands the decision to the selection bar's existing
+> `handleChangeStatusOnSelected` (*Completed* → `openManual(firstId)`; *Not started* → `patchStatus` per task
+> with the rollback and partial-failure snackbar it already has). `updateTaskStatus` is deleted from the store,
+> since the shortcut was its only caller. The grid's spoken help (`planner.a11y.toggleDoneShortcut`) now says
+> what `D` does, in EN and SK. With several tasks selected, *Completed* opens log time for the first one only.
+> That is the selection bar's behaviour too, left as is.
+>
+> **Verified live** (1440×900, an API-created 09:00–10:00 task on 24-09-2026): focus the block, press `D`
+> → *Log time manually*, no request yet → Confirm → `PATCH /planner-task/{id}/status` **204** `completed`
+> 09:00–10:00, header **1/4 → 2/4 without a reload**. This also closes the path `F87`'s verification could not
+> drive. `D` again → **204** `notStarted`, times `null`, header 1/4. After a reload the server holds
+> `NotStarted` with no times. Console clean. Test row deleted; 24-09 back at the seeded 3/1.
+
+- **Scope:** app-side `component/normal/PlannerTaskBlock.vue`, `view/DayPlannerView.vue`,
+  `store/dayPlannerStore.ts`, `_locales/dayPlanner.{en,sk}.ts` (all under `src/core/dayPlanner/`)
+- **Closes:** nothing filed.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)
@@ -6208,6 +6307,88 @@ stable `PatternLabel`), plus a test-only ownership item.
 
 ## Closed verification items
 
+### 2026-09-24 sweep — eleven `unverified` rows closed in one `playwright-cli` session, one new framework finding (`FW26`)
+
+> One session (`-s=fq`, form sign-in on the primary account, a second session `-s=revoke-target` for
+> `user-settings/U2`), against the dev server on :3000 and an API process started 2026-09-24 01:20 local.
+> Every empty / failed / loading state was produced with `run-code` + `page.route` rather than seed or
+> data changes. Two things about the tooling, for the next person: `playwright-cli route` has **no delay
+> flag** (only `--status`/`--body`/`--content-type`/`--header`), and inside `run-code` there is **no
+> `setTimeout`** — a handler that calls it throws and leaves the request hanging forever, which *looks*
+> like a working loading state. Use `await page.waitForTimeout(ms)` inside the handler.
+
+| row | result | evidence |
+| --- | --- | --- |
+| `history-review/U2` — null `wakeUpTime` | ✅ **closed — the path cannot be reached, and the row's premise is stale.** The row expected `H1`'s `Time \| null` with independent rendering; the DTO has since been rewritten under `B2` to *"never null"* (`CalendarActivityDaySummary.ts:18-27`), and the API agrees — `Calendar.cs:29-30` are `required TimeOnly`. Forced anyway (route rewrote day 2 `wakeUpTime`, day 3 `bedTime`, day 4 both to `null`): all 30 cells painted, no console error, and the nulled halves render as **`00:00`**, because `Time.fromJson(null)` falls back to `{0,0}`. That is a fabricated time, but only for a wire value the server cannot emit | cells 1–4 read `08:00 - 00:00`, `00:00 - 00:00`, `08:00 - 00:00`, `00:00 - 00:00` |
+| `leisure-backlog-picker/U1` — backlog table empty | ✅ **passes.** Grid fulfilled `{items: [], itemsCount: 0}` → *"These are things you could do. You don't have any here yet."* + *Add*, footer `0-0 of 0` | `/leisure/backlog` |
+| `leisure-backlog-picker/U2` — picker, nothing filed | ✅ **passes.** Both pool grids (backlog, project — the picker fires two, not the row's three) fulfilled empty → *"There's nothing to pick from yet. Add a few activities to your backlog and come back."* + *Fill the backlog*. Mocked rather than signed in as `secondaryUser`; it is the same branch | `/leisure/pick` |
+| `leisure-backlog-picker/U3` — picker, load failed | ✅ **passes, and it is distinct from empty.** Both pools 500 → *"We couldn't load your activities. Try again in a moment."* plus the interceptor's *"A server error occurred…"* snackbar. The console holds only the interceptor's by-design `ERROR:` lines (`axiosConfig.ts`), no unhandled rejection. Nothing to file against `F61`/`F79` | — |
+| `leisure-backlog-picker/U4` — picker skeleton | ✅ **passes.** Pools delayed 6 s → three `VSkeletonLoader` cards (avatar, two lines, two button blocks) in the result row; 0 after settle, and a real card (*Read a Novel*) replaces them. Screenshot looked at; proportionate | `.playwright-cli/picker-loading.png` |
+| `leisure-projects/U2` — progress bar | ✅ **passes on both views.** Grid delayed → an active `v-progress-linear` in `main` 1.5 s in, on `?view=board` and `?view=table`; none active after settle, rows rendered | — |
+| `_shell/U1` — snackbar stacking | ✅ **settled: it does not stack, last one wins.** `SnackbarComposable.ts` is one module-level slot; `showSnackbar` sets it `false`, awaits a tick, then writes the new message. Live: a 500 and a 404 landing 300 ms apart → exactly one `.v-snackbar`, reading the *second* (*"The requested item was not found."*), gone after its 3 s timeout, no leftover. **Adjacent, not filed:** a toast carrying an action (the undo snackbars) is silently replaced by any toast that follows it inside its timeout, taking the undo with it. Decide whether that matters when an undo path is next touched | — |
+| `_shell/U2` — fullscreen-loading strand | ✅ **closed — it cannot strand; the opposite is true, filed as `FW26`.** `/todo-list/13001` with `GET /api/todo-list/13001` delayed 5 s, Back pressed 1.5 s in: a MutationObserver recorded the loader **on at 65 ms and off at 124 ms**, never again. No strand after the navigation (both `finally` and the interceptor hide it). But it was already gone long before the list arrived — see `FW26` | observer log `[[65,true],[124,false]]` |
+| `user-settings/U2` — Revoke | ✅ **passes, with the row's expectation corrected.** Second session signed in via the form; revoked from the first: `DELETE /api/user/sessions/2` → 204, the row disappears, *"Session revoked"* snackbar. The revoked session's next page load was **all 200s, not a 401** — by design: the access token is a stateless JWT that nothing revalidates, and it lives out its ≤15 min (pinned API-side by `UserDataExportAndDeletionTests.DeleteAccount_ThenReplayingTheOldSession_KillsRefreshButNotTheLiveAccessToken`). The refresh is what dies: `POST /api/auth/refresh` from that session → **401**. The *other* listed session (*"2 minutes ago"*) belonged to a concurrent agent and was left alone | — |
+| `user-settings/U3` — delete-account copy | ✅ **passes** (also closed the same day, independently, by a promoted spec — this is a second observation, not the closing one). *Delete account* → intent dialog titled *Delete account* with the itemised `user.dangerZone.deleteWarning` text (history, day plans and templates, to-do lists and routines, leisure items, Google Calendar connection; *"export it first"*) → *Cancel* closes it; **no** request fired (`requests` shows no delete/verify call). | — |
+| `user-settings/U5` — language switch | ✅ **passes.** *Language* → *Slovak*: `PUT /api/user/preferences` → 204, heading *Uživateľské nastavenia* and the whole sidebar in Slovak immediately, and after a reload. Reverted by hand (*Jazyk* → *Angličtina*) rather than by reseeding, because a reseed truncates `RefreshTokens` and would have signed out the concurrent agent. Primary account is back on English, confirmed after reload | — |
+| `leisure-bucket-anchors/B1` — range filters | ✅ **closed, not a defect** — no restart needed; the API process was already current. Request bodies carry the filters and the server applies them: bucket list unfiltered 1 row (*Learn Bouldering*, step 3) → `?minComfortZoneStep=5` **0**; memory anchors unfiltered `itemsCount` 2 → `?minRating=9` **1** → `?year=2025` **0** (sent as `anchorYear`, `F60`). All three as the row predicted | — |
+
+**Filed from this sweep: `FW26`** (queue summary table). `LoadingFullscreen` is dismissed by the first
+successful response from *anywhere*: the response interceptor calls `hideFullScreenLoading()` whenever
+`axiosSuccessLoadingHide` is true (`axiosConfig.ts:233-237`), and `TodoListView`'s mount fires
+`ensureLeisurePairingLoaded()` in parallel with the list fetch, so the overlay dies ~60 ms in. With the list
+fetch slowed to 5 s, 2 s in, the page read **"Past due Today 0% No tasks"** — a false empty state for the
+whole wait — before switching to the real *0 / 8 … 21%*. Same shape at every call site that shows the
+overlay and lets any other request run meanwhile (eleven sites, `grep showFullScreenLoading\(`). Direction,
+not decided: count outstanding show/hide pairs (a depth counter) and let the interceptor stop hiding at all,
+or give these views a local loading flag the empty state respects.
+
+**`FW26` FIXED 2026-09-24 (same day; uncommitted — framework half and app half both in the working tree).**
+Neither direction above as written: a depth counter would have been corrupted by the unpaired hides the
+snackbar and `router.beforeEach` use as force-resets, and removing the auto-hide would strand every caller
+that relies on it (`RoutineToDoListView.getAllRecords`, and other apps).
+
+- **Framework** (`axiosConfig.ts`): a request interceptor counts `API` requests in flight (flag
+  `_inFlight` on the config, so a refresh-and-retry — which spreads the original config — counts once, and
+  the original is settled by the retry's outcome rather than by its own 401). The success interceptor
+  hides only when the count is back to **0**. Every rejection settles, except the one about to be retried.
+  Callers relying on the auto-hide still get it, just no longer from an unrelated request.
+- **Framework** (`LoadingComposable.ts`): `showFullScreenLoading({ manualHide: true })` — tidier sugar for
+  the existing `axiosSuccessLoadingHide.value = false`. Needed wherever the loaded state takes two
+  *sequential* requests (list → items, calendar → tasks): between them nothing is in flight, so the count
+  alone would hide in the gap. `docs/composables.md` updated.
+- **App:** `manualHide` at `TodoListView`, `PlannerCalendarView`, `TemplateDayPlannerView`,
+  `useTemplatePreview`, `useDayNavigation`, `useDataExport` and `TemplateListView` (whose `loadTemplates`
+  had no `finally` — added). `BaseToDoList` gates *No tasks* on `!fullScreenLoading` (the
+  `TemplateListView` precedent): the overlay's scrim is translucent, so with the overlay correctly up the
+  empty state still read clearly beside the spinner (screenshot).
+- **Verified:** the original repro — overlay on at 75 ms, off at 5242 ms across the 5 s fetch (was
+  65 → 124 ms), *No tasks* absent under it, real items after; the empty seeded list 13003 still renders
+  *No tasks*; the overlay clears on `/day-planner/:date`, `/day-planner`, `/day-planner/templates` and
+  `/routine-todo-list` with zero console errors. `axiosConfig.test.ts` +4 (side request does not hide,
+  `manualHide` never hides, retried 401 counts once, a failure releases its slot) — 17/17. Typecheck 0,
+  lint clean on the touched files. `vitest run` at the root also reports the 24 Playwright files it should
+  not collect and one unrelated failure, `notificationSubjectRoutes.test.ts` (`scheduledJobRun`).
+- ~~**Not done:** overlapping *owned* loads still share one boolean (the first `finally` hides while a second
+  is pending — `TemplateDayPlannerView`'s two concurrent `loadTasks`). Out of this finding's scope.~~
+  **Done the same day**, newest-load-wins rather than a counter (both sites already had or needed a
+  token, and the token is what says which load the overlay belongs to):
+  - `TemplateDayPlannerView.loadTasks` hides only when `token === latestLoadToken`.
+  - `useDayNavigation`'s `viewedDate` watcher gained the same token: only the newest run writes the
+    calendar, resolves the undo handshake and hides. **Found on the way, from source + the network log:**
+    the calendar query aborts its own previous call (`ERR_ABORTED` on the superseded day), so on two quick
+    arrow presses the older run always *failed* — and its `catch` treated the cancellation as a missing day
+    and `recoverFromMissingDay` navigated back to the last day that loaded. The token now drops it.
+  - **`router.beforeEach` was hiding every day step's overlay ~3 ms after it rose** — it called
+    `hideFullScreenLoading()` on every navigation, including the planner's own `router.replace` of the
+    date param. `RouterView` is unkeyed, so a same-route navigation keeps the view mounted and it still
+    owns its overlay; the guard now hides only when `to.name !== from.name`.
+  - **Verified** (observer timelines, 2026-09-24): day planner, one step with the calendar fetch delayed
+    4 s → overlay 771 → 4970 ms (before the router fix: on for 3 ms per step). Two quick steps, the second
+    delayed 3 s → one overlay 784 → 4567 ms, header = URL = the second day. Two quick steps, the *first*
+    delayed → ends on the second day, header matches the URL, no bounce back. Leaving for `/` mid-load →
+    overlay cleared on arrival and never returns. `/day-planner/templates/20001` loads and clears. Typecheck
+    0, lint clean; unit tests 312/313 with the same unrelated `notificationSubjectRoutes` failure.
+
 ### `B16` two-halves sequencing note — ✅ SETTLED 2026-09-21, the same day it was written: both halves are committed
 
 > Moved out of the queue whole. The note below was true at the sixteenth pass's read of the API working
@@ -6315,6 +6496,77 @@ is a real intermittent in the framework, which would be a much bigger finding th
 | ~~≥1 routine time period with `totalPeriodsElapsed > 0` and non-empty `completionHistory`~~ — **`B8` done, `e2e-v4`** | ~~`todo-routine/U1`, `U2`~~ ✅ both verified live, round 6 |
 | ~~≥1 routine item with `streak >= 30` (ideally 90/180/365 too)~~ — **`B8` done, `e2e-v4`** (45 / 120 / 200 / 400) | ~~`todo-routine/U2` (milestone icons)~~ ✅ all five icons verified live, round 6 |
 | ~~≥1 **routine** item with steps~~ — **moot**: `todo-routine/A2` was verified in round 7 (2026-09-14) on a temporary two-step Daily item created and deleted in-session, and the `TodoListStepsFormField` sweep ran on the same dialog | ~~`todo-routine/A2`~~ ✅ both closed, round 7 |
+
+### Seed-data gaps — the last two (mappings past one page, projects in every status), ✅ closed 2026-09-24 by specs, not by the seed
+
+> Moved out of the queue 2026-09-24. Both had been worded as seed asks, and neither was one. CLAUDE.md's
+> *Mutating specs* rule 1 covers them: each spec creates its rows through the app's own API and deletes them
+> in a `finally`, so the fixture stays read-only and the write path is covered too. Both blocks pass.
+
+| gap | closed by |
+| --- | --- |
+| ~~enough desktop mappings to exceed one page~~ (`F12`'s second verification step) | ✅ `e2e/tests/tracking-settings.draft.spec.ts` → *Mappings body scrolls inside the card (F12)*: 30 activity-targeted rules at `?perPage=50`. Passes: 31 rows, `.v-table__wrapper` overflows and scrolls to the last row, its bottom stays inside the 1280×720 viewport, the document does not scroll. Two corrections to the old row: its *"or a smaller page size"* was backwards (fewer rows means less overflow), and the rules must target an activity, because the tab's type control defaults to *Activity* and would filter out ignored ones |
+| ~~projects across all three readiness statuses~~ (unit 13) | ✅ `e2e/tests/leisure-projects.draft.spec.ts` → *board grouping across all three readiness statuses*: one project per status, each on a throwaway activity (an activity holds one project profile). Passes: every card is in its own column and no other, no column shows its empty placeholder, table view lists all four; a second test moves a card Ready → Planning with its status button. `F2`'s under-rendering is moot since `F2` landed (one fetch at 200) |
+
+**`todo-routine/P2`**, which the queue's paragraph above the table still called "not queued here yet", was
+fixed and verified 2026-09-14 in round 6b (`c4b984ca`: `flex-wrap` on `BaseTodoListItem.vue`'s chip row,
+`min-width: 0` on its column; `docs/views/todo-routine/findings.md` P2). The paragraph lagged by ten days.
+
+**Seen on the same run, pre-existing, not filed:** 11 older tests in those two files fail on a clean tree.
+Nine are the tracking-settings `beforeEach`, which waits on `getByRole('heading', { name: 'Distinct Process
+Entries' })`. The title is a `VCardTitle`, a plain `div` with no heading role, and that markup has not
+changed recently, so the wait probably never resolved. Of the two leisure-projects failures, the empty-state
+test expects the onboarding copy where `F79` now renders *"Nothing matches these filters."*, and
+`getByRole('button', { name: 'Add' })` now also matches `O1`'s *Add to to-do list* (needs `exact: true`).
+
+### The judgement-call checks — ✅ closed 2026-09-24: `planner-templates/U2` (a real defect, fixed), `planner-day/B8` (→ `F87`), `user-settings/B2`/`U3`/`U4`, `leisure-backlog-picker` round-1 `X1`/`P2`
+
+> Five `Needs verification` rows that needed a diagnosis rather than a scripted look. All five were
+> driven live; the three user-settings rows are now permanent tests.
+
+**`planner-templates/U2` — cross-template drag. A real defect, fixed; the layout half is `F88`.** The drop
+wiring (`TemplateSplitView.vue` `setupDropTargets` / `monitorForElements`) was complete, and it uses native
+HTML5 drag. The **handle** could not be hit. `BaseTaskBlock.vue:40`'s `.task-content` carries
+`pointer-events-none`, and `.split-drag-handle` never set `auto`. `document.elementFromPoint` at the handle's
+centre returned the block's own `v-sheet`, so every press, from a real mouse as well, started the grid's
+same-grid move. That is exactly what round 2 recorded three times. The normal planner's `PlannerTaskBlock`
+already restores `pointer-events: auto` on its status controls. Fix: the same line on `.split-drag-handle`
+(`TemplatePlannerTaskBlock.vue`), with a comment. **Verified live at 950×900** (below `md`, where the grid
+has room): `dragstart` → `drop` → `dragend`; one `PUT /template-planner-task/20101` with `templateId: 20002`
+and the unchanged 07:30–08:10; the block moved to the right pane; *"Task moved to other template"*. A drop on
+the page title, outside both panels, fired **no** request and left the task in place. Dragged back
+(`templateId: 20001`), so the fixture row is as seeded. **At 1440×900 it still cannot start:** the grid is
+~100 px wide and the handle sits outside it. That is layout, filed as `F88`. No spec: the drag needs a
+viewport below `md` until `F88` lands, which `F88`'s verification covers.
+
+**`planner-day/B8` — stale task count. Client-side, filed as `F87`.** Two API-created tasks on
+15-10-2026, one deleted through the UI (Delete → Confirm): `DELETE` → **204**, server `totalTasks` 2 → 1,
+header still *"0/2 tasks"* until a reload, then *"0/1 task"*. The finding's *"stale after a full reload"* did
+not reproduce, so no backend prompt was written, as the row required. Cause and the fix decision are in
+`F87`. Test rows deleted; the calendar is back at 0.
+
+**`user-settings/B2` — no defect.** Promoted to two tests: no code → *"Failed to connect Google Calendar"*;
+`error=access_denied` → *"Google Calendar connection cancelled"* (the softer branch `F33` added). The
+round's negative evidence was a separate CLI `find` racing a 3 s toast.
+
+**`user-settings/U3` — no defect.** Promoted: *Delete account* opens the intent dialog with the itemised
+warning (*"…irreversible… export it first…"*) and no textbox; Cancel closes it and no request reaches
+`/user/delete-account`. The stub's *"only verifies identity"* described the flow before F6 / R21.
+
+**`user-settings/U4` — no defect.** Promoted: *"Passwords don't match"* renders (the key the finding saw raw
+is defined in the framework locale now), Confirm stays enabled, and clicking it sends no
+`POST /user/change-password`. Two locator notes for whoever edits it: the passwords must satisfy the policy
+(2 lower, 2 upper, 3 digits, 1 special) or the policy message shows instead, since Vuetify renders only the
+first failing rule; and both *New password* and *Confirm* need `exact: true` (they collide with *Confirm new
+password* and its *Clear* button).
+
+**`leisure-backlog-picker` round-1 `X1` and `P2` — both resolved; neither re-filed.** `X1`:
+`/leisure/backlog?view=table&activityName=zzz-nothing` sends `activityName` in the main (25-per-page) grid
+request, the server answers `itemsCount: 0`, and the table shows `F79`'s *"Nothing matches these filters."*.
+The seed holds one backlog row, so a *matching* filter cannot show narrowing; the non-matching one is the
+discriminating case. `P2`: `leisureWeatherApi.ts`'s doc comment no longer says the endpoint is
+unimplemented. It states the `/leisure-weather-fit` contract (empty set = no opinion = `null`), i.e. the
+`F64` rewrite, which the queue's row still listed as open.
 
 ### `todo-lists/U1` and `home/U1` — ✅ closed, moved off *Carried forward* 2026-09-15
 
