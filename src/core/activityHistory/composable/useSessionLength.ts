@@ -39,7 +39,7 @@ export function useSessionLength() {
 	 */
 	function discardIfTooShort(length: Time): boolean {
 		if (length.isNotZero()) return false
-		void showSnackbar(t('history.sessionTooShortToLog'))
+		showSnackbar(t('history.sessionTooShortToLog'))
 		return true
 	}
 
