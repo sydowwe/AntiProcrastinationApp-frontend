@@ -11,6 +11,7 @@ const leisure = {
 			effortType: `Námaha`,
 			minParticipants: `Min ľudí`,
 			maxParticipants: `Max ľudí`,
+			participants: `Ľudia`,
 			expectedCostTier: `Cena`,
 			durationMinutes: `Dĺžka (min)`,
 			isRepeatable: `Opakovateľná aktivita`,

@@ -25,6 +25,7 @@ function facts(overrides: Partial<CandidateFacts> = {}): CandidateFacts {
 		energyIsDerived: false,
 		effortType: null,
 		minParticipants: 1,
+		maxParticipants: null,
 		statedDurationMinutes: 30,
 		weatherDependencyId: null,
 		readinessStatus: null,
@@ -133,6 +134,14 @@ describe('soft signals', () => {
 		expect(scoreCandidate(facts({ statedDurationMinutes: 55 }), ctx)).toBeGreaterThan(
 			scoreCandidate(facts({ statedDurationMinutes: 5 }), ctx),
 		)
+	})
+
+	it('ranks an activity with room for everyone above one that leaves someone out', () => {
+		const ctx = context({ constraints: constraints({ people: 4 }) })
+		const tooSmall = facts({ maxParticipants: 2 })
+		expect(isEligible(tooSmall, ctx.constraints)).toBe(true)
+		expect(scoreCandidate(facts({ maxParticipants: 4 }), ctx)).toBeGreaterThan(scoreCandidate(tooSmall, ctx))
+		expect(scoreCandidate(facts({ maxParticipants: null }), ctx)).toBeGreaterThan(scoreCandidate(tooSmall, ctx))
 	})
 
 	it('buries what was suggested today and favours what never has been', () => {

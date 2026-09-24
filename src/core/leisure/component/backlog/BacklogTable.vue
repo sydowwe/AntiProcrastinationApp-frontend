@@ -53,6 +53,9 @@
 				</ChipWithIcon>
 			</div>
 		</template>
+		<template #item.minParticipants="{ item }">
+			<span>{{ formatParticipants(item) }}</span>
+		</template>
 		<template #item.expectedCostTier="{ item }">
 			<span>{{ item.expectedCostTier?.text ?? '—' }}</span>
 		</template>
@@ -118,10 +121,18 @@
 		new TableColumn('energyLevel', t('leisure.fields.energyLevel'), false),
 		new TableColumn('expectedCostTier', t('leisure.fields.expectedCostTier'), false),
 		new TableColumn('durationMinutes', t('leisure.fields.durationMinutes')),
+		// One column for the range: min and max are only read together ("2–4", "1+", "exactly 2").
+		new TableColumn('minParticipants', t('leisure.fields.participants'), false),
 		new TableColumn('isRepeatable', t('leisure.fields.isRepeatable'), false),
 		// Not sortable until the API accepts `isAnchored` as a sort key — see BucketListTable.
 		new TableColumn('isAnchored', t('leisure.fields.experienced'), false),
 	]
+
+	function formatParticipants(item: ActivityBacklogProfile): string {
+		if (item.maxParticipants == null) return `${item.minParticipants}+`
+		if (item.maxParticipants === item.minParticipants) return `${item.minParticipants}`
+		return `${item.minParticipants}–${item.maxParticipants}`
+	}
 
 	async function openCreateDialog() {
 		const result = await openDialog({

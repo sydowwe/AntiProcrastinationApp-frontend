@@ -11,6 +11,7 @@ const leisure = {
 			effortType: `Effort`,
 			minParticipants: `Min people`,
 			maxParticipants: `Max people`,
+			participants: `People`,
 			expectedCostTier: `Cost`,
 			durationMinutes: `Duration (min)`,
 			isRepeatable: `Repeatable activity`,

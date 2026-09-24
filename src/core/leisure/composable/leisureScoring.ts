@@ -48,6 +48,7 @@ import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
  * | energy fit      | all         | asymmetric: too demanding is worse than too easy              |
  * | duration fit    | backlog     | using most of the free time beats a 5-minute filler           |
  * | weather fit     | backlog     | a match against today's actual conditions is a happy coincidence, worth surfacing |
+ * | party size      | backlog     | more people around than it takes — doable, but leaves someone out |
  * | effort variety  | all         | a different effort type from the last thing committed to      |
  * | staleness       | all         | the same three every visit is the failure mode of a top-3     |
  * | source weight   | all         | bucket list is a rare treat, not the daily driver             |
@@ -117,6 +118,11 @@ export interface CandidateFacts {
 	effortType: EffortType | null
 	/** Backlog only — nothing else records a party size. */
 	minParticipants: number | null
+	/**
+	 * Backlog only, and optional there. Ranks rather than excludes: a two-player game is still
+	 * something to do when four people are around, it is just a worse answer than one for all four.
+	 */
+	maxParticipants: number | null
 	/** Backlog only — the duration the user committed to when they filed the activity. */
 	statedDurationMinutes: number | null
 	/**
@@ -165,6 +171,11 @@ const DURATION_FIT_MAX = 2
 const DURATION_FIT_NEUTRAL = 1
 /** A backlog entry whose stated dependency matches today's actual conditions — a happy coincidence. */
 const WEATHER_MATCH_BONUS = 1.5
+/**
+ * Flat, not per extra person: the picker's top "people" answer means "a group" (4+), so the
+ * distance past the cap is not a number it actually knows.
+ */
+const PARTY_TOO_BIG_PENALTY = -2
 const EFFORT_VARIETY_BONUS = 1
 const STALENESS_NEVER_SUGGESTED = 3
 const STALENESS_FLOOR = -4
@@ -321,6 +332,9 @@ export function scoreCandidate(candidate: CandidateFacts, ctx: RankingContext): 
 		ctx.weatherMatchIds.includes(candidate.weatherDependencyId)
 	) {
 		score += WEATHER_MATCH_BONUS
+	}
+	if (candidate.maxParticipants !== null && ctx.constraints.people > candidate.maxParticipants) {
+		score += PARTY_TOO_BIG_PENALTY
 	}
 	if (
 		candidate.effortType !== null &&
