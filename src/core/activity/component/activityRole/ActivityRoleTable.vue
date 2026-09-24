@@ -46,6 +46,14 @@
 				/>
 			</span>
 		</template>
+		<template #item.icon="{ item }">
+			<VIcon
+				v-if="item.icon"
+				:icon="item.icon"
+				size="18"
+			/>
+			<span v-else>—</span>
+		</template>
 		<template #item.color="{ item }">
 			<VSheet
 				v-if="item.color"
@@ -94,6 +102,7 @@
 	const columns = computed(() => [
 		new TableColumn('name', t('general.name')),
 		new TableColumn('text', t('general.text'), false),
+		new TableColumn('icon', t('activities.icon'), false),
 		new TableColumn('color', t('activities.color'), false),
 	])
 
