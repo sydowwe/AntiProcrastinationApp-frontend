@@ -68,7 +68,11 @@
 </script>
 
 <style scoped>
+	/* `BaseTaskBlock`'s `.task-content` is `pointer-events-none`, so without `auto` here the handle is
+	   never hit: every press lands on the block and starts the same-grid move instead of this drag
+	   (planner-templates/U2). Same override as `PlannerTaskBlock`'s status controls. */
 	.split-drag-handle {
+		pointer-events: auto;
 		cursor: grab;
 		padding: 2px 4px;
 		display: flex;
