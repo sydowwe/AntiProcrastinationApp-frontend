@@ -94,6 +94,8 @@ const common = {
 	// Deep-merged over the framework's `general` in `EN.ts` — only this app's own keys and its
 	// deliberate rewordings live here; anything identical to the framework's copy was deleted (F35).
 	general: {
+		// The name of a toggle group that switches how a screen presents its data (F90).
+		view: `View`,
 		or: `Or`,
 		please: `Please`,
 		close: `Close`,
@@ -266,6 +268,7 @@ const common = {
 		solid: `Solid`,
 		regular: `Regular`,
 		brands: `Brands`,
+		iconStyle: `Icon style`,
 	},
 }
 export default common

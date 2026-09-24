@@ -20,9 +20,10 @@
 			v-else
 			class="d-flex flex-column"
 		>
-			<VBtnToggle
+			<MyBtnToggle
 				v-if="!isRunning && !autoStart"
 				v-model="selectedMethod"
+				:label="$t('history.session.method')"
 				mandatory
 				density="comfortable"
 				color="primary"
@@ -46,7 +47,7 @@
 				>
 					{{ $t('navigation.pomodoroTimer') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 			<StopWatchView
 				v-if="selectedMethod === 'stopwatch'"
 				:activityId
@@ -82,6 +83,7 @@
 	import TimerView from '@/core/activityHistory/view/TimerView.vue'
 	import PomodoroTimerView from '@/core/activityHistory/component/PomodoroTimerView.vue'
 	import { computed, ref, watch } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
 

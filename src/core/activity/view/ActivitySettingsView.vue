@@ -55,8 +55,9 @@
 						density="compact"
 						style="min-width: 200px"
 					/>
-					<VBtnToggle
+					<MyBtnToggle
 						v-model="archivedView"
+						:label="t('general.show')"
 						mandatory
 						divided
 						density="compact"
@@ -69,7 +70,7 @@
 							{{ t('activities.archive.viewArchived') }}
 						</VBtn>
 						<VBtn value="all">{{ t('activities.archive.viewAll') }}</VBtn>
-					</VBtnToggle>
+					</MyBtnToggle>
 				</template>
 				<template v-else>
 					<VTextField
@@ -118,6 +119,7 @@
 <script setup lang="ts">
 	import { useRoute, useRouter } from 'vue-router'
 	import { useI18n } from 'vue-i18n'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import ActivityTable from '@/core/activity/component/ActivityTable.vue'
 	import RoleTable from '@/core/activity/component/activityRole/ActivityRoleTable.vue'
 	import CategoryTable from '@/core/activity/component/activityCategory/ActivityCategoryTable.vue'

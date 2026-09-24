@@ -408,6 +408,10 @@ const dayPlanner = {
 			// Číslo v odznaku bolo doteraz celým názvom tlačidla; počet je teraz v názve, takže odznak
 			// môže zostať dekoratívny.
 			undoCount: `Vrátiť späť ({count})`,
+			// Názvy prepínacích skupín modulu (F90) — popis skupiny tam, kde na obrazovke žiadny nemá.
+			panelSection: `Sekcia panela`,
+			applyMode: `Náhľad alebo použitie`,
+			activitySource: `Zdroj aktivít`,
 		},
 	},
 }

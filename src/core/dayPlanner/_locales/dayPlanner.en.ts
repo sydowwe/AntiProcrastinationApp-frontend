@@ -396,6 +396,10 @@ const dayPlanner = {
 			// The badge's bare number used to be the button's whole accessible name; the count is folded
 			// into the label instead so the badge can stay decorative.
 			undoCount: `Undo ({count})`,
+			// Names for the module's toggle groups (F90) — each group's caption, where it has none on screen.
+			panelSection: `Panel section`,
+			applyMode: `Preview or apply`,
+			activitySource: `Activity source`,
 		},
 	},
 }

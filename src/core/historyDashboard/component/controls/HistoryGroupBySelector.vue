@@ -1,6 +1,7 @@
 <template>
-	<VBtnToggle
+	<MyBtnToggle
 		v-model="model"
+		:label="$t('historyDashboard.summaryCards.groupBy')"
 		mandatory
 		variant="outlined"
 		color="secondaryOutline"
@@ -24,10 +25,11 @@
 		>
 			{{ $t('activities.category') }}
 		</VBtn>
-	</VBtnToggle>
+	</MyBtnToggle>
 </template>
 
 <script setup lang="ts">
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'
 
 	const model = defineModel<HistoryGroupBy>({ required: true })

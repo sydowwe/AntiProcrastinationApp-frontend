@@ -22,8 +22,9 @@
 		>
 			{{ $t('general.clear') }}
 		</VBtn>
-		<VBtnToggle
+		<MyBtnToggle
 			v-model="mode"
+			:label="$t('activityTracking.settings.mappingTarget')"
 			mandatory
 			density="compact"
 			class="my-4"
@@ -43,7 +44,7 @@
 			>
 				{{ $t('activityTracking.settings.toIgnored') }}
 			</VBtn>
-		</VBtnToggle>
+		</MyBtnToggle>
 		<VBtn
 			color="secondary"
 			prependIcon="check"
@@ -57,6 +58,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { VForm } from 'vuetify/components'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 

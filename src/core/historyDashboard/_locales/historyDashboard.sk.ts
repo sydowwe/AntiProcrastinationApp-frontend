@@ -25,6 +25,8 @@ const messages = {
 			ROLE: `Role`,
 			CATEGORY: `Kategórie`,
 		},
+		// Názov prepínacej skupiny Aktivita/Rola/Kategória (F90).
+		groupBy: `Zoskupiť podľa`,
 	},
 	periodBanner: {
 		periodTotal: `Súčet obdobia:`,

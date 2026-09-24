@@ -13,8 +13,9 @@
 			hideDetails
 			minWidth="200"
 		/>
-		<VBtnToggle
+		<MyBtnToggle
 			v-model="previewMode"
+			:label="$t('planner.a11y.applyMode')"
 			mandatory
 			density="compact"
 			divided
@@ -26,7 +27,7 @@
 			<!-- eslint-disable-next-line vue/prefer-true-attribute-shorthand -->
 			<VBtn :value="true">{{ $t('planner.misc.previewLabel') }}</VBtn>
 			<VBtn :value="false">{{ $t('planner.actions.apply') }}</VBtn>
-		</VBtnToggle>
+		</MyBtnToggle>
 		<VSelect
 			v-if="!previewMode"
 			v-model="conflictResolution"
@@ -44,6 +45,7 @@
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const { isShown, activeTemplates } = defineProps<{

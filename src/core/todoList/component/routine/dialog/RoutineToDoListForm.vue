@@ -38,7 +38,10 @@
 				<label class="text-caption text-medium-emphasis mb-1 d-block">
 					{{ $t('routineTodoList.suggestedDays') }}
 				</label>
-				<DayOfWeekPicker v-model="request.suggestedDays" />
+				<DayOfWeekPicker
+					v-model="request.suggestedDays"
+					:label="$t('routineTodoList.suggestedDays')"
+				/>
 			</div>
 			<VNumberInput
 				v-else-if="(timePeriod?.lengthInDays ?? 0) > 14"

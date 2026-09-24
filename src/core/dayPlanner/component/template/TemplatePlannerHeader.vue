@@ -24,8 +24,9 @@
 				startIcon="sun"
 				endIcon="moon"
 			/>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="timeSlotDurationModel"
+				:label="$t('planner.settings.slotSize')"
 				density="compact"
 				variant="outlined"
 				color="primaryOutline"
@@ -39,7 +40,7 @@
 				>
 					{{ option }}m
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 		</div>
 
 		<div class="d-flex ga-2 align-center flex-wrap">
@@ -84,6 +85,7 @@
 
 <script setup lang="ts">
 	import { computed, inject } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'

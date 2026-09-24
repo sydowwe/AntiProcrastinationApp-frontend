@@ -85,8 +85,9 @@
 				<div class="text-caption text-medium-emphasis mb-2 text-uppercase font-weight-bold">
 					{{ $t('planner.settings.recurrenceLabel') }}
 				</div>
-				<VBtnToggle
+				<MyBtnToggle
 					v-model="data.recurrenceType"
+					:label="$t('planner.settings.recurrenceLabel')"
 					mandatory
 					color="primary"
 					density="compact"
@@ -102,7 +103,7 @@
 					>
 						{{ type.label }}
 					</VBtn>
-				</VBtnToggle>
+				</MyBtnToggle>
 			</div>
 
 			<!-- DayOfWeek detail -->
@@ -225,6 +226,7 @@
 
 <script setup lang="ts">
 	import { computed, onMounted, ref } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
 	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'

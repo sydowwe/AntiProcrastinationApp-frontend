@@ -8,8 +8,9 @@
 			     toggle never shrinks, so its labels never truncate. -->
 			<div class="pa-4 pb-0 w-100 d-flex flex-wrap align-center ga-4">
 				<VCardTitle class="pa-0">{{ $t('activityTracking.settings.desktopTitle') }}</VCardTitle>
-				<VBtnToggle
+				<MyBtnToggle
 					:modelValue="tableView"
+					:label="$t('activityTracking.settings.section')"
 					mandatory
 					density="compact"
 					color="primaryOutline"
@@ -31,7 +32,7 @@
 					>
 						{{ $t('activityTracking.settings.mappings') }}
 					</VBtn>
-				</VBtnToggle>
+				</MyBtnToggle>
 				<DesktopEntriesFilterBar
 					v-model="filter"
 					:patternError
@@ -63,6 +64,7 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useRoute } from 'vue-router'
 	import { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'

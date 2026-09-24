@@ -19,8 +19,9 @@
 		/>
 		<div class="d-flex align-center ga-3 pt-1">
 			<span class="text-body-2">{{ $t('planner.settings.slotSize') }}</span>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="settingsStore.slotDurationMinutes"
+				:label="$t('planner.settings.slotSize')"
 				mandatory
 				color="primary"
 				density="compact"
@@ -29,12 +30,13 @@
 				<VBtn :value="10">{{ $t('planner.settings.minutesValue', { n: 10 }) }}</VBtn>
 				<VBtn :value="15">{{ $t('planner.settings.minutesValue', { n: 15 }) }}</VBtn>
 				<VBtn :value="30">{{ $t('planner.settings.minutesValue', { n: 30 }) }}</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 		</div>
 	</VCard>
 </template>
 
 <script setup lang="ts">
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 
 	const settingsStore = useDayPlannerSettingsStore()

@@ -185,7 +185,7 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 `dialog/MyDialog.vue` (base for **all** dialogs), `dialog/{ErrorDialog,LoadingFullscreen,LookupDialog}.vue`,
 `dialog/DialogHost.vue` (mount **once** in `App.vue`; renders the `useDialog()` stack) + `dialog/DialogEntryRenderer.vue` (internal),
 `feedback/{ChipWithIcon,InfoRow,InfoCard,MyCard,SubtleCard,Snackbar,EmailInfoRow}.vue`,
-`inputs/{ColorPicker,DayOfWeekPicker,IconPicker,IconPickerDialog,InputWithButton,MergedInputs,NullFalseTrueCheckbox}.vue`,
+`inputs/{ColorPicker,DayOfWeekPicker,IconPicker,IconPickerDialog,InputWithButton,MergedInputs,MyBtnToggle,NullFalseTrueCheckbox}.vue`,
 `dateTime/{DateRangePicker,DateTimePicker,MonthYearPicker,MyDateInput,TimeDisplay,TimeDisplayWithProgress,TimePicker,TimeRangePicker}.vue`,
 `dataTable/{AdminTableCell,TableGrid,inlineEditTable/TableCellEditor}.vue`, `ActionBar.vue`, `FilterPanel.vue`, `ExportMenu.vue`, `HierarchyTree.vue`,
 `LookupEditTable.vue`, `TabsLayout.vue`, `MyImg.vue`, `MyPdfViewer.vue`, `form/{AddressFormField,LogTimeForm}.vue`, `calendar/CalendarGrid.vue`
@@ -195,6 +195,10 @@ façade), `formatDuration.ts` (`fromSeconds`, `fromSecondsDetailed`, `fromMinute
 
 > Editable-cell values are the exported `EditableCellValue` union (`dto/dto/table/EditableTableCell.ts`) — use it rather than re-declaring
 > `string | number | boolean | …` inline, which is how the four call sites drifted apart before R13.
+
+> Write `<MyBtnToggle :label="…">`, never a bare `<VBtnToggle>`. Vuetify's toggle shows the selected button by colour alone and gives
+> the group no name; the wrapper adds `role="group"`, the name and `aria-pressed` on each button (`_fix-queue` F90). `label` is
+> required. If the group has a visible caption, pass the same string.
 
 > `BasicTable` / `DataTable` take `items` and `loading` as **plain props**, not models — write `:items` / `:loading`, never `v-model="items"`. They emit no update
 > for either, so nothing is lost. `v-model` sends `modelValue`, which lands in attrs while the required `items` prop goes unpassed: the table renders **no rows**

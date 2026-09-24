@@ -3,8 +3,9 @@
 		<div class="d-flex flex-wrap ga-6 align-start">
 			<div>
 				<div class="text-caption text-medium-emphasis mb-1">{{ $t('leisure.picker.timeAvailable') }}</div>
-				<VBtnToggle
+				<MyBtnToggle
 					:modelValue="constraints.minutes"
+					:label="$t('leisure.picker.timeAvailable')"
 					color="primary"
 					variant="outlined"
 					density="comfortable"
@@ -20,13 +21,14 @@
 					>
 						{{ durationLabel(minutes) }}
 					</VBtn>
-				</VBtnToggle>
+				</MyBtnToggle>
 			</div>
 
 			<div>
 				<div class="text-caption text-medium-emphasis mb-1">{{ $t('leisure.picker.energyNow') }}</div>
-				<VBtnToggle
+				<MyBtnToggle
 					:modelValue="constraints.energy"
+					:label="$t('leisure.picker.energyNow')"
 					color="primary"
 					variant="outlined"
 					density="comfortable"
@@ -42,13 +44,14 @@
 					>
 						{{ option.title }}
 					</VBtn>
-				</VBtnToggle>
+				</MyBtnToggle>
 			</div>
 
 			<div>
 				<div class="text-caption text-medium-emphasis mb-1">{{ $t('leisure.picker.whoIsAround') }}</div>
-				<VBtnToggle
+				<MyBtnToggle
 					:modelValue="constraints.people"
+					:label="$t('leisure.picker.whoIsAround')"
 					color="primary"
 					variant="outlined"
 					density="comfortable"
@@ -64,7 +67,7 @@
 					>
 						{{ option.title }}
 					</VBtn>
-				</VBtnToggle>
+				</MyBtnToggle>
 			</div>
 
 			<VBtn
@@ -114,6 +117,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'

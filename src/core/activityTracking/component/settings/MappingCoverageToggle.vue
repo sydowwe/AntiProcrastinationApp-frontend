@@ -1,6 +1,7 @@
 <template>
-	<VBtnToggle
+	<MyBtnToggle
 		:modelValue="model ?? MappingCoverage.All"
+		:label="$t('activityTracking.settings.coverage.filterLabel')"
 		mandatory
 		density="compact"
 		color="primaryOutline"
@@ -16,10 +17,11 @@
 		>
 			{{ $t(`activityTracking.settings.coverage.${option}`) }}
 		</VBtn>
-	</VBtnToggle>
+	</MyBtnToggle>
 </template>
 
 <script setup lang="ts">
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { MappingCoverage } from '@/core/activityTracking/dto/enum/MappingCoverage.ts'
 
 	const emit = defineEmits<{ change: [] }>()

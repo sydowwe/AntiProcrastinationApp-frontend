@@ -15,8 +15,9 @@
 				v-model:end="timeTo"
 				density="compact"
 			/>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="selectedVisualization"
+				:label="$t('general.view')"
 				mandatory
 				variant="outlined"
 				color="secondaryOutline"
@@ -47,7 +48,7 @@
 						{{ $t('activityTracking.range.timelineUnavailable') }}
 					</VTooltip>
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 
 			<span
 				v-if="!isTimelineAvailable && selectedVisualization === 'timeline'"
@@ -61,6 +62,7 @@
 
 <script setup lang="ts">
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import ActivityRangePicker from '@/core/activityTracking/component/ActivityRangePicker.vue'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import type { ActivityVisualization } from '@/core/activityTracking/composable/useActivityDashboard.ts'

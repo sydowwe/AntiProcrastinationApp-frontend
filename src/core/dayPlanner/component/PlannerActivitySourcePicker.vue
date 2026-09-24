@@ -1,7 +1,8 @@
 <template>
 	<div class="d-flex flex-column ga-3">
-		<VBtnToggle
+		<MyBtnToggle
 			v-model="pickerMode"
+			:label="$t('planner.a11y.activitySource')"
 			mandatory
 			density="compact"
 			color="primary"
@@ -30,7 +31,7 @@
 			>
 				{{ $t('planner.template.routine') }}
 			</VBtn>
-		</VBtnToggle>
+		</MyBtnToggle>
 
 		<template v-if="pickerMode === 'todo'">
 			<div class="mb-2 d-flex ga-3">
@@ -101,6 +102,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'

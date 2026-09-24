@@ -141,6 +141,7 @@ const messages = {
 		title: `Časová os aktivity`,
 		single: `Jednoduché`,
 		split: `Rozdelené`,
+		layout: `Rozloženie časovej osi`,
 		start: `Začiatok:`,
 		end: `Koniec:`,
 		duration: `Trvanie:`,
@@ -153,6 +154,8 @@ const messages = {
 		mappings: `Mapovania`,
 		toActivity: `Na aktivitu`,
 		toIgnored: `Na ignorované`,
+		mappingTarget: `Priradiť k`,
+		section: `Sekcia nastavení`,
 		hintText: `Pomocou polí filtra definujte vzor zhody, potom vyberte aktivitu alebo označte ako ignorované a kliknite na {save}. Filter sa stane pravidlom – budúce záznamy, ktoré mu zodpovedajú, budú namapované automaticky. Ak chcete upraviť existujúce pravidlo, otvorte záložku {mappingsTab} a kliknite na upraviť.`,
 		failedToSaveMapping: `Uloženie mapovania zlyhalo`,
 		patternRequired: `Vyplňte aspoň jeden vzor`,
@@ -170,6 +173,7 @@ const messages = {
 		/** B24 — stĺpec *Pravidlo* a trojstavový filter pokrytia na oboch tabuľkách jedinečných záznamov. */
 		coverage: {
 			column: `Pravidlo`,
+			filterLabel: `Pokrytie pravidlom`,
 			All: `Všetky`,
 			Uncovered: `Nerozhodnuté`,
 			Covered: `Pokryté`,

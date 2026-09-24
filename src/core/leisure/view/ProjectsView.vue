@@ -2,8 +2,9 @@
 	<div class="py-4 h-100 w-100 d-flex flex-column ga-3">
 		<div class="d-flex align-center ga-3">
 			<h2 class="text-h6">{{ $t('leisure.projects') }}</h2>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="viewMode"
+				:label="$t('general.view')"
 				mandatory
 				density="compact"
 				variant="outlined"
@@ -23,7 +24,7 @@
 				>
 					<VIcon icon="list" />
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 			<FilterPanel
 				v-model="filter"
 				:defaultFactory="() => new ActivityProjectProfileFilter()"
@@ -87,6 +88,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import ProjectTable from '@/core/leisure/component/project/ProjectTable.vue'

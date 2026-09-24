@@ -31,8 +31,9 @@
 				</VTooltip>
 			</VIconBtn>
 			<h1 class="text-h4">{{ $t('history.detail.title') }}</h1>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="selectedVisualization"
+				:label="$t('general.view')"
 				mandatory
 				variant="outlined"
 				color="secondaryOutline"
@@ -50,7 +51,7 @@
 				>
 					{{ $t('activityTracking.tracker.timeline') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 			<div class="d-flex align-center ga-4 flex-wrap">
 				<MyDateInput
 					v-model="dateModel"
@@ -178,6 +179,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useRoute, useRouter } from 'vue-router'
 	import { HistoryGroupBy } from '@/core/historyDashboard/dto/enum/HistoryGroupBy.ts'

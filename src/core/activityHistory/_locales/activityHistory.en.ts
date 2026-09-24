@@ -52,6 +52,8 @@ const activityHistory = {
 			discardEndedText: `A finished {timer} session for "{activity}" has not been recorded yet. Starting a new one discards it.`,
 			discardEndedTextNoActivity: `A finished {timer} session has not been recorded yet. Starting a new one discards it.`,
 			replaceConfirm: `Discard and start`,
+			// The name of TrackTimeDialog's stopwatch/timer/pomodoro toggle group (F90).
+			method: `Timing method`,
 		},
 		timer: {
 			setDurationFirst: `Please set a timer duration`,
@@ -65,6 +67,7 @@ const activityHistory = {
 			tabBasic: `Basic`,
 			tabWithFocus: `With Focus Activity`,
 			tabWithBoth: `With Both Activities`,
+			presetType: `Preset type`,
 			name: `Preset Name`,
 			defaultName: `Pomodoro Preset`,
 			timerDurations: `Timer Durations`,

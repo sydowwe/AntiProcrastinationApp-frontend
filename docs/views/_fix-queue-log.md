@@ -5220,6 +5220,76 @@
   `store/dayPlannerStore.ts`, `_locales/dayPlanner.{en,sk}.ts` (all under `src/core/dayPlanner/`)
 - **Closes:** nothing filed.
 
+## F90. No toggle group tells a screen reader which option is selected
+> ✅ **FIXED 2026-09-24**, uncommitted in both repos. **Decided (owner, 2026-09-24): option 2, one wrapper in
+> the framework.** The new `src/_common/component/inputs/MyBtnToggle.vue` wraps `VBtnToggle`. It adds
+> `role="group"` and a **required** `label` as the group's `aria-label`, and keeps `aria-pressed` on every child
+> `<button class="v-btn">` in sync with Vuetify's own `v-btn--active` class through a `MutationObserver`
+> (filtered to `class`, so writing the attribute does not re-trigger it). It reads Vuetify's active state
+> rather than comparing values against the model, so `mandatory`'s auto-select and `v-for` children need
+> nothing extra. Link items (`to`) are skipped because Vuetify already gives them `aria-current="page"`.
+> The model is `defineModel<T>({ required: true })`, so `@update:modelValue` handlers keep their narrow
+> types. Vuetify 3.12.4's `VBtn` sets no `aria-pressed` of its own, which was checked first.
+>
+> **All 31 uses moved over:** 29 files, including four framework ones (`IconPickerDialog`,
+> `DayOfWeekPicker`, `AppearanceSection`, `NotificationInboxToolbar`). `DayOfWeekPicker` now takes a required
+> `label` as well, and both of its callers pass their visible caption. Each group is named after its
+> visible caption where it has one. The others got new keys, in EN and SK: `general.view` (app `common`,
+> deep-merged), `iconPicker.iconStyle` (framework EN/SK plus the app's full EN copy of `iconPicker`),
+> `planner.a11y.{panelSection,applyMode,activitySource}`,
+> `activityTracking.settings.{mappingTarget,section,coverage.filterLabel}`,
+> `activityTracking.timeline.layout`, `history.session.method`, `history.pomodoroPreset.presetType` and
+> `historyDashboard.summaryCards.groupBy`. Arrow-key roving (option 3) was not added. Tab stays as it was.
+>
+> **Verified live** (`playwright-cli`, primary account, EN). On `/leisure/pick` the snapshot shows
+> `group "Time available"` › `button "1 h" [pressed]`, `group "Energy right now"` › `"Medium" [pressed]`,
+> `group "Who's around"` › `"Just me" [pressed]`. Space on *Low* gives `Low=true, Medium=false`, and the URL
+> writes `energy=low`. Spot checks: `/user/settings` has *Theme* (Light pressed) and *First day of week*
+> (Mon). `/day-planner/settings?tab=viewDefaults` has *Time slot size* (10 min). The template cards'
+> *Scheduled Days* are `multiple` groups with several pressed. On
+> `/activity-tracking/desktop/settings/distinctEntries`, *Settings section* is links (`aria-current="page"`
+> on the active one, no `aria-pressed`), and *Rule coverage* and *Map to* are pressed groups. No console
+> errors, and no Vue warnings at info level. `vue-tsc --build --force` exits 0, and eslint is clean on the
+> changed app files. **Not verified:** the other screens were checked from source only (history detail,
+> tracking dashboards, timeline, pomodoro and track-time dialogs, planner side panel, apply-template bar,
+> source picker, repeating-task dialog, icon picker, notification inbox), as were the SK strings.
+> **Not changed:** the template card's *Scheduled Days* group is display-only
+> (`pointer-events: none`), but its buttons can still be reached and toggled with Tab. That was true
+> before this change too; it now at least says it is a group of pressed days.
+
+Found 2026-09-24, closing the `leisure-backlog-picker` `ConstraintBar` keyboard row. On `/leisure/pick`
+the three constraint groups (*Time available*, *Energy*, *Who is around*) are `VBtnToggle`s. In the
+accessibility tree they are eleven plain `button`s (`playwright-cli find`): `"15 min"`, `"30 min"`, `"1 h"`,
+…, `"A group"`. **None is `[pressed]`**, though "1 h", "Medium" and "Just me" were selected. The only
+signal is the `v-btn--active` fill, which is colour alone. The groups have no `role="group"` and no
+accessible name either, so the caption above each one is never announced with it. Keyboard use itself is
+fine: Tab reaches every button, and Space/Enter select one.
+
+Vuetify's `VBtnToggle` sets neither attribute, and nothing in the app adds them. There are 31 `<VBtnToggle>`
+uses in 29 files and no `aria-pressed` binding on any of them (the app's `aria-pressed` uses are on custom
+blocks and cards: `BaseTaskBlock`, `BackgroundTaskBlock`, `HistorySummaryCard`, `DayTemplatePicker`). So this
+very likely holds everywhere a toggle group is used: the planner's slot-duration and panel toggles, the
+settings theme buttons, the leisure view modes. Only the picker was observed.
+
+- **Decide first:**
+  1. **Per call site:** `:aria-pressed="model === value"` on each `VBtn`, plus `role="group"` and
+     `aria-labelledby` on each `VBtnToggle` pointing at its caption. Explicit, but 31 sites to touch and
+     easy to forget on the next one.
+  2. **One wrapper in the framework:** a thin component around `VBtnToggle` (or a Vuetify alias with a
+     default slot adapter) that stamps `aria-pressed` from the group's own model and takes a `label` for the
+     group name. Sites then change their tag once. Follows the `F4`/`F49` convention that state lives in the
+     tree, not in colour.
+  3. **Radio semantics** (`role="radiogroup"` / `role="radio"` + `aria-checked` + arrow-key roving). This is
+     the most correct fit for the `mandatory` single-choice groups, and it is also the only option that
+     adds arrow keys. It is the most work, and it changes the Tab behaviour users have today.
+- **Start with** `ConstraintBar.vue` either way. It is the observed case, and its groups already have a
+  caption element to label them with.
+- **Verify:** `playwright-cli find` on `/leisure/pick` shows the selected button in each group as
+  `[pressed]` (or `[checked]` under option 3), and the group as `group "Time available"` (or `radiogroup`).
+  Pressing Space on another option moves the state. Then spot-check one planner toggle and the settings
+  theme buttons.
+- **Closes:** nothing filed. The keyboard row it came from is closed in *Needs verification*.
+
 ## Closed escalations
 
 > Escalation bodies moved out of the queue once the backend answered **and** the frontend half (if any)

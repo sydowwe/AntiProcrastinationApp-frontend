@@ -11,8 +11,9 @@
 		/>
 		<div class="mt-3">
 			<div class="text-medium-emphasis mb-1 text-body-2">{{ i18n.t('user.firstDayOfWeek') }}</div>
-			<VBtnToggle
+			<MyBtnToggle
 				:modelValue="firstDayOfWeek"
+				:label="i18n.t('user.firstDayOfWeek')"
 				mandatory
 				variant="tonal"
 				color="secondaryOutline"
@@ -26,12 +27,13 @@
 				>
 					{{ option.label }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 		</div>
 	</SettingsSection>
 </template>
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useI18n } from 'vue-i18n'
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'

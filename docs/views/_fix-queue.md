@@ -163,9 +163,9 @@
 | F88 | ✅ **FIXED 2026-09-24, uncommitted** — the planner decides its layout from its own width, not the window (`usePlannerLayout.ts`, threshold 900 px); a narrow planner floats the side panel over the grid, closed by default. Split view at 1440: grid 516 px per pane (was ~100), the overlay opens without changing it, and the cross-template drag works. Single-planner desktop layouts unchanged. Body in the log. Was: at desktop width the split view gave each grid ~100 px and clipped the drag handle, and the panel could not be closed | app (`PlannerSidePanelShell.vue`, both planner views and headers, `useRoutinePlacement.ts`) | *(unfiled — found closing `planner-templates/U2`)* | low–medium |
 | F89 | ✅ **FIXED 2026-09-24, uncommitted** — decided: `D` opens *Log time manually* to complete, because no other key opens that dialog and every other path to *Completed* goes through it; on tasks that are all completed it sets them back to *Not started*. Both are the selection bar's own paths (`handleChangeStatusOnSelected`); the store's broken `updateTaskStatus` is deleted; the grid's spoken help says the new behaviour in EN and SK. Verified live: dialog → `PATCH …/status` 204, header 1/4 → 2/4 with no reload; `D` again → 204 `notStarted`, times cleared, survives a reload. Body in the log. Was: the `D` shortcut sent `{ status }` to the time-span endpoint and got a 400 on every task | app (`PlannerTaskBlock.vue`, `DayPlannerView.vue`, `dayPlannerStore.ts`, `dayPlanner.{en,sk}.ts`) | *(unfiled — found verifying `F87`)* | trivial |
 | FW26 | ✅ **FIXED 2026-09-24, uncommitted** — the success interceptor auto-hides only when no `API` request is in flight (a retried 401 counts once); `showFullScreenLoading({ manualHide: true })` sugar for the existing `axiosSuccessLoadingHide` opt-out, used at the six app sites that hide in `finally` (and `TemplateListView` gained its missing `finally`); `BaseToDoList` hides *No tasks* while the overlay is up, because the scrim is translucent. Verified: overlay 75 → 5242 ms across a 5 s list fetch (was 65 → 124 ms), no *No tasks* under it, the empty list 13003 still says it; four unit tests. **Also the same day:** overlapping loads — `TemplateDayPlannerView` and the day planner's day step hide only for the newest load (the day step's cancelled older fetch was also being read as a missing day and navigated back), and `router.beforeEach` no longer hides on a same-route navigation, which had dropped every day step's overlay after ~3 ms. Body in the log. Was: the fullscreen loader is hidden by the first successful response from *any* request (`axiosConfig.ts:233-237`), so a view that runs a side request beside its main fetch loses the overlay in ~60 ms and shows its **empty state** for the rest of a slow load: `/todo-list/:id` read *"0% No tasks"* for 5 s before its 8 items arrived. Cannot strand (the reverse of what `_shell/U2` feared). Needs a decision: a show/hide depth counter with the interceptor no longer hiding, or per-view loading flags the empty states respect. Body in the log (2026-09-24 sweep) | **framework** (`LoadingComposable.ts`, `axiosConfig.ts`); eleven `showFullScreenLoading()` call sites | *(unfiled — found closing `_shell/U2`)* | low–medium (needs a decision) |
-| F90 | **OPEN** — no `VBtnToggle` in the app exposes which option is selected: on `/leisure/pick` the accessibility tree shows the three constraint groups as ten plain buttons, none `[pressed]`, so the selection is colour only, and the groups have no `role="group"` or name. 31 `<VBtnToggle>` uses in 29 files, none binding `aria-pressed` | **framework** or app-wide (decision) — `ConstraintBar.vue` first, then every `VBtnToggle` | *(unfiled — found closing the `ConstraintBar` keyboard row)* | low–medium (needs a decision) |
+| F90 | ✅ **FIXED 2026-09-24, uncommitted** — decided: one framework wrapper. The new `MyBtnToggle` adds `role="group"` and a required `label`, and keeps `aria-pressed` on each button in sync with Vuetify's active class. All 31 `VBtnToggle` uses moved over, framework ones included, and `DayOfWeekPicker` gained a required `label`. Verified live: `/leisure/pick` reads `group "Time available"` › `"1 h" [pressed]`, and Space moves the state. Theme, slot size, scheduled days and tracking settings were spot-checked. Body in the log. Was: no toggle group exposed which option was selected (colour only) and none had a name | **framework** (`inputs/MyBtnToggle.vue`) + 25 app files | *(unfiled — found closing the `ConstraintBar` keyboard row)* | low–medium |
 
-89 app-side (`F90` filed open 2026-09-24 from the `ConstraintBar` check; `F87` and `F88` filed and fixed 2026-09-24 from the planner checks, bodies in the log; `F89` found verifying `F87` and fixed the same day, body in the log; `F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
+89 app-side (`F90` filed 2026-09-24 from the `ConstraintBar` check and fixed the same day through a framework wrapper, body in the log — **no app batch is open**; `F87` and `F88` filed and fixed 2026-09-24 from the planner checks, bodies in the log; `F89` found verifying `F87` and fixed the same day, body in the log; `F9`, `F17`, `F19`, `F23`, `F35` and `F69` include CLAUDE.md or runbook edits; `F17` and
 `F23` are nothing else; `F24`/`F25` are fixed and verified; `F45` was a reserved number, never a batch — the template-suggestions fix it was held for landed 2026-09-24 without one, and the number is retired unused;
 `F85` landed 2026-09-21 unrecorded and was verified and closed 2026-09-23, body in the log; `F9`, `F17`, `F21`, `F22`, `F26`, `F28`, `F32` and `F80`–`F83` landed 2026-09-23 as one trivial sweep, bodies in the log; `F86` was filed and fixed 2026-09-23 while closing `F44`, body in the log; `F73` and `F76` landed together 2026-09-21, then `F63` and `F77`, bodies in the log) · 25
 framework (`FW10` was a reserved number, never a batch — the `TimePicker` minute-60 fix it was held for landed 2026-09-24 without one, and the number is retired unused; `FW14` and `FW25` landed 2026-09-21, bodies in the log; `FW19` and `FW24` landed together 2026-09-21 unrecorded, verified and closed 2026-09-23, bodies in the log; `FW4`, `FW17` and `FW22` landed together 2026-09-23 in `b4eb068`, bodies in the log; ~~open framework batches are now `FW1`, `FW20`, `FW23`~~ — all three decided and closed 2026-09-23: `FW20` fixed, `FW1` step 1 fixed with step 2 deferred, `FW23` needed no change; bodies in the log. ~~**No framework batch is open**~~ — `FW26` filed 2026-09-24 from the `_shell/U2` check and fixed the same day, body in the log; **no framework batch is open again**) ·
@@ -607,40 +607,7 @@ Vuetify's own markup.
 
 <!-- F89 (the `D` shortcut sent `{ status }` to the time-span endpoint and 400'd on every task) filed and fixed 2026-09-24, uncommitted: `D` now opens log time to complete (no other key opens that dialog), and sets completed tasks back to not started — both through the selection bar's own paths; the store's broken `updateTaskStatus` is deleted — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F90. No toggle group tells a screen reader which option is selected
-
-Found 2026-09-24, closing the `leisure-backlog-picker` `ConstraintBar` keyboard row. On `/leisure/pick`
-the three constraint groups (*Time available*, *Energy*, *Who is around*) are `VBtnToggle`s. In the
-accessibility tree they are eleven plain `button`s (`playwright-cli find`): `"15 min"`, `"30 min"`, `"1 h"`,
-…, `"A group"`. **None is `[pressed]`**, though "1 h", "Medium" and "Just me" were selected. The only
-signal is the `v-btn--active` fill, which is colour alone. The groups have no `role="group"` and no
-accessible name either, so the caption above each one is never announced with it. Keyboard use itself is
-fine: Tab reaches every button, and Space/Enter select one.
-
-Vuetify's `VBtnToggle` sets neither attribute, and nothing in the app adds them. There are 31 `<VBtnToggle>`
-uses in 29 files and no `aria-pressed` binding on any of them (the app's `aria-pressed` uses are on custom
-blocks and cards: `BaseTaskBlock`, `BackgroundTaskBlock`, `HistorySummaryCard`, `DayTemplatePicker`). So this
-very likely holds everywhere a toggle group is used: the planner's slot-duration and panel toggles, the
-settings theme buttons, the leisure view modes. Only the picker was observed.
-
-- **Decide first:**
-  1. **Per call site:** `:aria-pressed="model === value"` on each `VBtn`, plus `role="group"` and
-     `aria-labelledby` on each `VBtnToggle` pointing at its caption. Explicit, but 31 sites to touch and
-     easy to forget on the next one.
-  2. **One wrapper in the framework:** a thin component around `VBtnToggle` (or a Vuetify alias with a
-     default slot adapter) that stamps `aria-pressed` from the group's own model and takes a `label` for the
-     group name. Sites then change their tag once. Follows the `F4`/`F49` convention that state lives in the
-     tree, not in colour.
-  3. **Radio semantics** (`role="radiogroup"` / `role="radio"` + `aria-checked` + arrow-key roving). This is
-     the most correct fit for the `mandatory` single-choice groups, and it is also the only option that
-     adds arrow keys. It is the most work, and it changes the Tab behaviour users have today.
-- **Start with** `ConstraintBar.vue` either way. It is the observed case, and its groups already have a
-  caption element to label them with.
-- **Verify:** `playwright-cli find` on `/leisure/pick` shows the selected button in each group as
-  `[pressed]` (or `[checked]` under option 3), and the group as `group "Time available"` (or `radiogroup`).
-  Pressing Space on another option moves the state. Then spot-check one planner toggle and the settings
-  theme buttons.
-- **Closes:** nothing filed. The keyboard row it came from is closed in *Needs verification*.
+<!-- F90 (no toggle group exposed its selected option or its name — found closing the ConstraintBar keyboard row) fixed 2026-09-24, uncommitted: the framework's new `MyBtnToggle` (role="group", a required `label`, `aria-pressed` synced from Vuetify's active class) replaces all 31 `VBtnToggle` uses — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## Escalations (backend / outside this repo)
 

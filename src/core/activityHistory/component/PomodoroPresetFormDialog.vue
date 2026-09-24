@@ -10,8 +10,9 @@
 			class="d-flex flex-column ga-6"
 			@submit.prevent="onConfirmed"
 		>
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="activeTab"
+				:label="$t('history.pomodoroPreset.presetType')"
 				color="primaryOutline"
 				variant="tonal"
 				density="comfortable"
@@ -51,7 +52,7 @@
 					></VIcon>
 					{{ $t('history.pomodoroPreset.tabWithBoth') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 
 			<VTextField
 				v-model="request.name"
@@ -177,6 +178,7 @@
 <script setup lang="ts">
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { computed, onMounted, ref } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useI18n } from 'vue-i18n'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import { PomodoroTimerPresetRequest } from '@/core/activityHistory/dto/request/PomodoroTimerPresetRequest.ts'

@@ -83,6 +83,7 @@
 				     icon field, Sunday was clipped off the dialog's edge at 1440 px. -->
 				<DayOfWeekPicker
 					v-model="formData.scheduledDays"
+					:label="$t('planner.template.scheduledDaysLabel')"
 					class="wrapping-day-picker"
 				/>
 			</div>

@@ -99,9 +99,10 @@
 				{{ $t('planner.misc.addTaskAction') }}
 			</VBtn>
 
-			<VBtnToggle
+			<MyBtnToggle
 				v-if="compact"
 				v-model="activePanel"
+				:label="$t('planner.a11y.panelSection')"
 				mandatory
 				class="d-flex"
 				density="compact"
@@ -123,7 +124,7 @@
 				>
 					{{ $t('planner.template.routine') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 			<VBtn
 				color="secondaryOutline"
 				variant="tonal"
@@ -139,6 +140,7 @@
 
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import TimeRangePicker from '@/_common/component/dateTime/TimeRangePicker.vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'

@@ -55,6 +55,8 @@ const common = {
 	// Deep-merged over the framework's `general` in `SK.ts` — only this app's own keys and its
 	// deliberate rewordings live here; anything identical to the framework's copy was deleted (F35).
 	general: {
+		// Názov prepínacej skupiny, ktorá mení spôsob zobrazenia údajov na obrazovke (F90).
+		view: `Zobrazenie`,
 		or: `Alebo`,
 		please: `Prosím`,
 		close: `Zavrieť`,

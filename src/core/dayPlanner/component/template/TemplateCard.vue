@@ -102,8 +102,9 @@
 					v-if="template.scheduledDays?.length"
 					class="d-flex ga-1"
 				>
-					<VBtnToggle
+					<MyBtnToggle
 						v-model="template.scheduledDays"
+						:label="$t('planner.template.scheduledDaysLabel')"
 						multiple
 						density="compact"
 						color="primaryOutline"
@@ -120,7 +121,7 @@
 						>
 							{{ day.label }}
 						</VBtn>
-					</VBtnToggle>
+					</MyBtnToggle>
 				</div>
 			</div>
 
@@ -199,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/template/TemplatePlannerTask.ts'
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'

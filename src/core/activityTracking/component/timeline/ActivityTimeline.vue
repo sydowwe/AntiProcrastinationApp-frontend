@@ -45,8 +45,9 @@
 				</div>
 			</div>
 
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="viewMode"
+				:label="$t('activityTracking.timeline.layout')"
 				mandatory
 				density="compact"
 				variant="outlined"
@@ -64,7 +65,7 @@
 				>
 					{{ $t('activityTracking.timeline.split') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 		</div>
 
 		<!-- Loading state -->
@@ -144,6 +145,7 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import TimelineGrid from './TimelineGrid.vue'
 	import { calculateWaterfallStack } from './timelineUtils'

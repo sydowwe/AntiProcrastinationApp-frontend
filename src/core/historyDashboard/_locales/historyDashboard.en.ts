@@ -25,6 +25,8 @@ const messages = {
 			ROLE: `Roles`,
 			CATEGORY: `Categories`,
 		},
+		// The name of the Activity/Role/Category toggle group (F90).
+		groupBy: `Group by`,
 	},
 	periodBanner: {
 		periodTotal: `Period total:`,

@@ -26,8 +26,9 @@
 			</div>
 			<!-- Shown in both layouts. The template planner's header has no tab toggle of its own, so hiding
 			     this one when compact (it was `d-none d-md-flex`) left the routine tab unreachable there. -->
-			<VBtnToggle
+			<MyBtnToggle
 				v-model="activePanel"
+				:label="$t('planner.a11y.panelSection')"
 				mandatory
 				style="width: 100%"
 				density="compact"
@@ -48,7 +49,7 @@
 				>
 					{{ $t('planner.template.routine') }}
 				</VBtn>
-			</VBtnToggle>
+			</MyBtnToggle>
 		</VCardTitle>
 		<!-- v-if, not v-show: the bodies are expected to mount/unmount as the tab changes, the way
 			 they did when each view inlined this markup. RoutineSidePanel reloads its list on mount. -->
@@ -65,6 +66,7 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { usePlannerCompact } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 

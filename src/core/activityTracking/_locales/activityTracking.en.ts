@@ -138,6 +138,7 @@ const messages = {
 		title: `Activity Timeline`,
 		single: `Single`,
 		split: `Split`,
+		layout: `Timeline layout`,
 		start: `Start:`,
 		end: `End:`,
 		duration: `Duration:`,
@@ -150,6 +151,8 @@ const messages = {
 		mappings: `Mappings`,
 		toActivity: `To activity`,
 		toIgnored: `To ignored`,
+		mappingTarget: `Map to`,
+		section: `Settings section`,
 		hintText: `Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click {save}. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an existing rule, open the {mappingsTab} tab and click edit.`,
 		failedToSaveMapping: `Failed to save mapping`,
 		patternRequired: `Fill in at least one pattern`,
@@ -167,6 +170,7 @@ const messages = {
 		/** B24 — the *Rule* column and the three-way coverage filter on both distinct-entries grids. */
 		coverage: {
 			column: `Rule`,
+			filterLabel: `Rule coverage`,
 			All: `All`,
 			Uncovered: `Undecided`,
 			Covered: `Covered`,

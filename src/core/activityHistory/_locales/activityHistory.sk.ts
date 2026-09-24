@@ -53,6 +53,8 @@ const activityHistory = {
 			discardEndedText: `Dokončená relácia ({timer}) pre aktivitu „{activity}“ ešte nebola zaznamenaná. Spustením novej ju zahodíte.`,
 			discardEndedTextNoActivity: `Dokončená relácia ({timer}) ešte nebola zaznamenaná. Spustením novej ju zahodíte.`,
 			replaceConfirm: `Zahodiť a spustiť`,
+			// Názov prepínacej skupiny stopky/časovača/pomodora v TrackTimeDialog (F90).
+			method: `Spôsob merania`,
 		},
 		timer: {
 			setDurationFirst: `Prosím nastavte dĺžku časovača`,
@@ -66,6 +68,7 @@ const activityHistory = {
 			tabBasic: `Základné`,
 			tabWithFocus: `S aktivitou sústredenia`,
 			tabWithBoth: `S oboma aktivitami`,
+			presetType: `Typ predvoľby`,
 			name: `Názov predvoľby`,
 			defaultName: `Pomodoro predvoľba`,
 			timerDurations: `Dĺžky časovača`,
