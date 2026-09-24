@@ -140,17 +140,17 @@ describe('leisure filter URL round-trip', () => {
 		expect(paramsToFilter(query)).toEqual(filter)
 	})
 
-	it('memory anchor: all four scalars', () => {
+	it('memory anchor: all five scalars', () => {
 		const { filterToParams, paramsToFilter } = memoryAnchorFilterUrlState()
-		const filter = new MemoryAnchorFilter('trip', 2025, 7, 8)
+		const filter = new MemoryAnchorFilter('trip', 2025, 7, 8, 12005)
 		const query = toQuery(filterToParams(filter))
-		expect(query).toEqual({ activityName: 'trip', year: '2025', month: '7', minRating: '8' })
+		expect(query).toEqual({ activityName: 'trip', year: '2025', month: '7', minRating: '8', activityId: '12005' })
 		expect(paramsToFilter(query)).toEqual(filter)
 	})
 
 	it('clearing a field emits "" so syncToUrl deletes the stale param', () => {
 		const { filterToParams } = memoryAnchorFilterUrlState()
 		const params = filterToParams(new MemoryAnchorFilter('trip', null, null, null))
-		expect(params).toEqual({ activityName: 'trip', year: '', month: '', minRating: '' })
+		expect(params).toEqual({ activityName: 'trip', year: '', month: '', minRating: '', activityId: '' })
 	})
 })

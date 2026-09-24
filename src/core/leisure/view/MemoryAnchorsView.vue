@@ -180,7 +180,9 @@
 	// The timeline's rows only answer to the fields it sends — year and month are navigated and
 	// narrowed client-side (see `loadTimeline`), so a chosen year with nothing in it is still the
 	// genuinely-empty case, not a "nothing matches" one.
-	const isTimelineFiltered = computed(() => !!filter.value?.activityName || filter.value?.minRating != null)
+	const isTimelineFiltered = computed(
+		() => !!filter.value?.activityName || filter.value?.minRating != null || filter.value?.activityId != null,
+	)
 
 	function clearFilters() {
 		filter.value = new MemoryAnchorFilter()
@@ -201,7 +203,7 @@
 	// Deliberately not a deep watch on `filter`: only the fields the timeline actually sends can change
 	// its response, so paging through years must not cost a refetch.
 	watch(
-		[viewMode, () => filter.value?.activityName, () => filter.value?.minRating],
+		[viewMode, () => filter.value?.activityName, () => filter.value?.minRating, () => filter.value?.activityId],
 		() => {
 			if (viewMode.value === 'timeline') void loadTimeline()
 		},
@@ -213,5 +215,14 @@
 		anchorYear: textChip('leisure.fields.anchorYear', 'calendar'),
 		anchorMonth: textChip('leisure.fields.anchorMonth', 'calendar-days'),
 		minRating: v => (v != null ? { label: `${i18n.t('leisure.fields.rating')} ≥ ${v}`, icon: 'star' } : null),
+		// No field in the panel sets this — only the "Experienced" deep link — so the chip is the only way
+		// to clear it. It names the activity from whatever rows are loaded, falling back to the id.
+		activityId: v =>
+			v != null ? { label: `${i18n.t('leisure.fields.activity')}: ${activityNameFor(v)}`, icon: 'link' } : null,
+	}
+
+	function activityNameFor(activityId: number): string {
+		const row = [...items.value, ...timelineItems.value].find(anchor => anchor.activityId === activityId)
+		return row?.activity.name ?? `#${activityId}`
 	}
 </script>

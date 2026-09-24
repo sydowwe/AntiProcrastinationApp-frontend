@@ -120,6 +120,7 @@ export function memoryAnchorFilterUrlState(): TableUrlStateOptions<MemoryAnchorF
 			year: encodeNumber(filter.anchorYear),
 			month: encodeNumber(filter.anchorMonth),
 			minRating: encodeNumber(filter.minRating),
+			activityId: encodeNumber(filter.activityId),
 		}),
 		paramsToFilter: params =>
 			new MemoryAnchorFilter(
@@ -127,6 +128,7 @@ export function memoryAnchorFilterUrlState(): TableUrlStateOptions<MemoryAnchorF
 				decodeNumber(params.year),
 				decodeNumber(params.month),
 				decodeNumber(params.minRating),
+				decodeNumber(params.activityId),
 			),
 	}
 }

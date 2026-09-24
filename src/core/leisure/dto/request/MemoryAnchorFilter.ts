@@ -11,9 +11,20 @@ export class MemoryAnchorFilter implements IFilterRequest {
 		public anchorYear: number | null = null,
 		public anchorMonth: number | null = null,
 		public minRating: number | null = null,
+		/**
+		 * Exact match, unlike `activityName`'s contains. Set only by a deep link ("Experienced" chip),
+		 * which has the id — a name would miss a renamed activity and catch a similarly named one.
+		 */
+		public activityId: number | null = null,
 	) {}
 
 	hasAny(): boolean {
-		return !!this.activityName || this.anchorYear != null || this.anchorMonth != null || this.minRating != null
+		return (
+			!!this.activityName ||
+			this.anchorYear != null ||
+			this.anchorMonth != null ||
+			this.minRating != null ||
+			this.activityId != null
+		)
 	}
 }

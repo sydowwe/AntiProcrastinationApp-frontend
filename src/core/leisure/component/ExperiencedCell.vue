@@ -60,9 +60,9 @@
 		if (await captureAnchor(activityId, activityName)) emit('anchored')
 	}
 
-	// The reciprocal of MemoryAnchorTable's source chip. The anchors table filters by activity name,
-	// which is the handle both tables already share — no new endpoint, and the URL stays shareable.
+	// The reciprocal of MemoryAnchorTable's source chip. By id, not name: the name filter is a contains
+	// match, so it would also catch "Read a Novel II", and a bookmarked link would break on a rename.
 	function openAnchor() {
-		void router.push({ name: 'leisureMemoryAnchors', query: { activityName } })
+		void router.push({ name: 'leisureMemoryAnchors', query: { activityId: String(activityId) } })
 	}
 </script>
