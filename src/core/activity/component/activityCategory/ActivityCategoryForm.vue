@@ -7,7 +7,7 @@
 		<VTextField
 			v-model="request.name"
 			:label="t('general.name')"
-			:rules="[requiredRule, lettersWithDiacriticsAndSpecialCharsRule]"
+			:rules="[requiredRule]"
 		/>
 		<VTextarea
 			v-model="request.text"
@@ -42,7 +42,7 @@
 	const { t } = useI18n()
 	const dialogApi = useDialogApi<{ request: CategoryRequest; createdId?: number; idToEdit?: number }>()
 	const { create, update } = useActivityCategoryCrud()
-	const { lettersWithDiacriticsAndSpecialCharsRule, requiredRule } = useGeneralRules()
+	const { requiredRule } = useGeneralRules()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const request = ref(entityToEdit ? CategoryRequest.fromEntity(entityToEdit) : new CategoryRequest())
