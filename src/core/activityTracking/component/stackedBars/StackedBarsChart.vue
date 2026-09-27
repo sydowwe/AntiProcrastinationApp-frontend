@@ -458,8 +458,12 @@
 		return Array.from(nameMap.values()).sort((a, b) => a.label.localeCompare(b.label))
 	})
 
+	// `bar.windowIndex` indexes `processedWindows` — the grid's input — not `windows`: empty stretches are
+	// merged there, so the two drift apart after the first gap and a raw lookup reported a window hours
+	// off. A bar only renders on a non-empty slot, and those keep the input window's own instants.
 	function handleActivityClick(bar: any) {
-		const window = windows[bar.windowIndex]
+		const start = processedWindows.value[bar.windowIndex]?.windowStart.getTime()
+		const window = windows.find(w => w.windowStart.getTime() === start)
 		if (!window) throw new Error('Window not found')
 		emit('activityClick', window, bar.domain)
 	}

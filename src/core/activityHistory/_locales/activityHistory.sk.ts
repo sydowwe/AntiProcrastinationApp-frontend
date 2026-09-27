@@ -34,6 +34,7 @@ const activityHistory = {
 			title: `Detail histórie`,
 			openCalendar: `Otvoriť kalendár`,
 			openSummary: `Späť na súhrn za tento týždeň`,
+			restoreRange: `Späť na {from}–{to}`,
 		},
 		calendar: {
 			title: `Kalendár histórie`,

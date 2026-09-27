@@ -66,6 +66,20 @@
 					density="compact"
 					hideDetails
 				></TimeRangePicker>
+				<VBtn
+					v-if="rangeBeforeDrill"
+					variant="tonal"
+					color="secondaryOutline"
+					prependIcon="arrow-rotate-left"
+					@click="restoreRange"
+				>
+					{{
+						$t('history.detail.restoreRange', {
+							from: rangeBeforeDrill.timeFrom.getString(),
+							to: rangeBeforeDrill.timeTo.getString(),
+						})
+					}}
+				</VBtn>
 			</div>
 			<HistoryGroupBySelector v-model="groupBy" />
 			<ExportMenu
@@ -99,6 +113,8 @@
 					:windowSizeOptions="windowSizeOptions"
 					:initialWindowSize="selectedWindowSize"
 					@windowSizeChange="handleWindowSizeChange"
+					interactive
+					@activityClick="drillIntoWindow"
 					@retry="fetchStackedBars"
 				/>
 			</div>
@@ -230,6 +246,8 @@
 	import { ActivityDateRangeTypeEnum } from '@/core/activityHistory/dto/request/ActivityDateRangeTypeEnum.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { useSetBreadcrumbExtra } from '@/_common/composable/general/useBreadcrumbs.ts'
+	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 
 	const VISUALIZATIONS = ['stackedBars', 'timeline'] as const
 	type Visualization = (typeof VISUALIZATIONS)[number]
@@ -415,6 +433,31 @@
 			}
 		})
 	}
+
+	// --- Drill-through: a bar narrows the day to its window and opens the timeline over it. ---
+	// The whole view narrows, not just the timeline, so the insights column beside it describes the same
+	// records. `windowStart`/`windowEnd` are instants; the time-of-day window is a user-zone wall clock
+	// (B3), so read them in the user's zone. A window ending at midnight reads 00:00, which the backend
+	// already takes as the end of the day. Only the first drill records the range to go back to, so
+	// drilling again from an already narrowed chart still returns to the original one.
+	const rangeBeforeDrill = ref<{ timeFrom: Time; timeTo: Time } | null>(null)
+
+	function drillIntoWindow(window: StackedBarsInputWindow) {
+		rangeBeforeDrill.value ??= { timeFrom: timeFrom.value, timeTo: timeTo.value }
+		timeFrom.value = timeInUserZone(window.windowStart)
+		timeTo.value = timeInUserZone(window.windowEnd)
+		selectedVisualization.value = 'timeline'
+	}
+
+	function restoreRange() {
+		if (!rangeBeforeDrill.value) return
+		timeFrom.value = rangeBeforeDrill.value.timeFrom
+		timeTo.value = rangeBeforeDrill.value.timeTo
+		rangeBeforeDrill.value = null
+	}
+
+	// A new day is a new question; the range from the old one is not something to go back to.
+	watch(dateModel, () => (rangeBeforeDrill.value = null))
 
 	// --- Back to the summary view for the week containing this day. ---
 	function goToSummaryForWeek() {

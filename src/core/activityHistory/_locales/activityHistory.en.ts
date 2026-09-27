@@ -33,6 +33,7 @@ const activityHistory = {
 			title: `History Detail`,
 			openCalendar: `Open calendar`,
 			openSummary: `Back to summary for this week`,
+			restoreRange: `Back to {from}–{to}`,
 		},
 		calendar: {
 			title: `History Calendar`,
