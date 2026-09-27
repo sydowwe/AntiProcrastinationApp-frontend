@@ -18,11 +18,13 @@ test.describe('Home (/)', () => {
 	test.describe('rendering', () => {
 		test('shows the now bar and all five widgets', async ({ authenticatedPage }) => {
 			await expect(authenticatedPage.locator('.nowbar')).toBeVisible()
-			await expect(authenticatedPage.getByText('Day planner', { exact: true })).toBeVisible()
-			await expect(authenticatedPage.getByText('Routine tasks', { exact: true })).toBeVisible()
-			await expect(authenticatedPage.getByText('Record activity', { exact: true })).toBeVisible()
-			await expect(authenticatedPage.getByText("Today's activity", { exact: true })).toBeVisible()
-			await expect(authenticatedPage.getByText('Upcoming tasks', { exact: true })).toBeVisible()
+			// Scoped to the page body — the sidebar carries nav items with the same labels ("Day planner").
+			const main = authenticatedPage.locator('#main-content')
+			await expect(main.getByText('Day planner', { exact: true })).toBeVisible()
+			await expect(main.getByText('Routine tasks', { exact: true })).toBeVisible()
+			await expect(main.getByText('Record activity', { exact: true })).toBeVisible()
+			await expect(main.getByText("Today's activity", { exact: true })).toBeVisible()
+			await expect(main.getByText('Upcoming tasks', { exact: true })).toBeVisible()
 		})
 
 		// Every icon-only control on this page must resolve an accessible name — the shell's own
@@ -84,6 +86,9 @@ test.describe('Home (/)', () => {
 			// untouched tasks, so this holds under the current fixture. If the fixture ever ships a
 			// day with no plan, this test's own failure is the signal to add a plan-less variant rather
 			// than skip.
+			// `.nowbar` paints in its loading state, before the focus task exists — and the shortcut is
+			// disabled until it does. The bar's own "Track time" button renders only once it has one.
+			await authenticatedPage.locator('.nowbar').getByRole('button', { name: 'Track time' }).waitFor()
 			await authenticatedPage.keyboard.press('t')
 			const dialog = authenticatedPage.getByRole('dialog', { name: /^Log task: / })
 			await expect(dialog).toBeVisible()

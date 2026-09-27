@@ -38,10 +38,8 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			await page.goto('/login')
 			const passwordInput = page.getByRole('textbox', { name: 'Password' })
 			await expect(passwordInput).toHaveAttribute('type', 'password')
-			// Fragile-by-necessity: the toggle's only accessible name is the Vuetify default fallback
-			// "Password appended action" — see findings.md A1. Once A1 is fixed this should become
-			// getByRole('button', { name: /show password/i }).
-			await page.getByRole('button', { name: 'Password appended action' }).click()
+			// A1 fixed: the toggle has its own accessible name instead of Vuetify's "Password appended action".
+			await page.getByRole('button', { name: /show password/i }).click()
 			await expect(passwordInput).toHaveAttribute('type', 'text')
 		})
 

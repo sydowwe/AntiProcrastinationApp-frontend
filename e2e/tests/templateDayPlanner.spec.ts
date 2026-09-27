@@ -40,8 +40,8 @@ test.describe('Template Day Planner (/day-planner/templates/:templateId)', () =>
 
 		test('renders every task the fixture gives this template', async ({ authenticatedPage }) => {
 			// "Home Office" is the 5-task template. Note a foreground task is a `.task-block` while a
-			// background one is a `.background-task-block` in its own lane — none of the twelve seeded
-			// tasks is a background task, which the write-path spec at the bottom covers instead.
+			// background one is a `.background-task-block` in its own lane. The fixture's one background
+			// task sits on `pinned`, not here.
 			await expect(authenticatedPage.locator('.task-block')).toHaveCount(5)
 			await expect(authenticatedPage.locator('.background-task-block')).toHaveCount(0)
 		})
@@ -224,8 +224,7 @@ test.describe('Template write path', () => {
 			await authenticatedPage.goto(`/day-planner/templates/${templateId}`)
 			await authenticatedPage.locator('.calendar-grid').waitFor({ state: 'visible' })
 
-			// One foreground and one background task — the background lane is not otherwise reachable,
-			// since none of the twelve seeded template tasks sets `isBackground`.
+			// One foreground and one background task, both created through the API.
 			await expect(authenticatedPage.locator('.task-block')).toHaveCount(1, { timeout: 15_000 })
 			await expect(authenticatedPage.locator('.background-task-block')).toHaveCount(1)
 			await expect(authenticatedPage.locator('.task-block', { hasText: 'Bug Fixing' })).toContainText(

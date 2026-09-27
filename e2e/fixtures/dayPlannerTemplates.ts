@@ -126,8 +126,8 @@ export async function withTemporaryTemplate<T>(
 /**
  * A template the write-path spec can create without colliding with the fixture's three.
  *
- * It deliberately carries a **background** task: none of the twelve seeded template tasks is one, so
- * `.background-task-block` is otherwise never rendered by any spec.
+ * It deliberately carries a **background** task, so the write path covers creating one. The fixture
+ * seeds one too (on `pinned`), but seeding does not exercise `POST /api/template-planner-task`.
  */
 export function writePathTemplate(seed: SeedResponse): { template: TemplateBody; tasks: TemplateTaskBody[] } {
 	return {

@@ -60,19 +60,27 @@ test.describe('Leisure projects (/leisure/projects)', () => {
 			await expect(authenticatedPage).toHaveURL(/readinessStatuses=needsShopping/)
 		})
 
-		test('filtering to zero matches renders the onboarding empty state', async ({ authenticatedPage }) => {
+		// Filtered-to-zero reads differently from "you have none" since F79 — not the onboarding copy.
+		test('filtering to zero matches offers to clear the filters, not the onboarding empty state', async ({
+			authenticatedPage,
+		}) => {
 			await authenticatedPage.getByRole('button', { name: 'Filter' }).click()
 			await authenticatedPage.getByRole('textbox', { name: 'Area' }).fill('zzz-no-such-area')
 			await authenticatedPage.getByRole('button', { name: 'Confirm' }).click()
+			await expect(authenticatedPage.getByText('Nothing matches these filters.')).toBeVisible()
 			await expect(
 				authenticatedPage.getByText("These are things you're building or making. You don't have any projects here yet."),
-			).toBeVisible()
+			).toBeHidden()
+
+			await authenticatedPage.getByRole('button', { name: 'Clear filters' }).click()
+			await expect(authenticatedPage.getByText('Nothing matches these filters.')).toBeHidden()
 		})
 	})
 
 	test.describe('dialogs', () => {
 		test('Add opens the create dialog; Cancel closes it without creating', async ({ authenticatedPage }) => {
-			await authenticatedPage.getByRole('button', { name: 'Add' }).click()
+			// `exact` — each row's "Add to to-do list: …" button also contains "Add".
+			await authenticatedPage.getByRole('button', { name: 'Add', exact: true }).click()
 			await expect(authenticatedPage.getByRole('dialog', { name: 'Projects' })).toBeVisible()
 			await authenticatedPage.getByRole('button', { name: 'Cancel' }).click()
 			await expect(authenticatedPage.getByRole('dialog', { name: 'Projects' })).toBeHidden()

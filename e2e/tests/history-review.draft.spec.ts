@@ -25,7 +25,8 @@ test.describe('History Summary (/activity-history)', () => {
 
 	test('renders the header controls: range length, date, groupBy toggle, export', async ({ authenticatedPage }) => {
 		await expect(authenticatedPage.getByRole('combobox', { name: 'Range length' })).toBeVisible()
-		await expect(authenticatedPage.getByRole('textbox', { name: 'From' })).toBeVisible()
+		// `exact` — a substring match also hits the day-window's "Day from" time field.
+		await expect(authenticatedPage.getByRole('textbox', { name: 'From', exact: true })).toBeVisible()
 		await expect(authenticatedPage.getByRole('button', { name: 'Activity' })).toBeVisible()
 		await expect(authenticatedPage.getByRole('button', { name: 'Role' })).toBeVisible()
 		await expect(authenticatedPage.getByRole('button', { name: 'Category' })).toBeVisible()

@@ -46,8 +46,9 @@ test.describe('User settings (/user/settings)', () => {
 		await authenticatedPage.getByRole('button', { name: 'Change password' }).click()
 		const dialog = authenticatedPage.getByRole('dialog', { name: 'Password change' })
 		await expect(dialog).toBeVisible()
-		await expect(dialog.getByRole('textbox', { name: 'Password' })).toBeVisible()
-		await expect(dialog.getByRole('textbox', { name: 'New password' })).toBeVisible()
+		// `exact` — the three names nest: "Confirm new password" contains "New password" contains "password".
+		await expect(dialog.getByRole('textbox', { name: 'Password', exact: true })).toBeVisible()
+		await expect(dialog.getByRole('textbox', { name: 'New password', exact: true })).toBeVisible()
 		await expect(dialog.getByRole('textbox', { name: 'Confirm new password' })).toBeVisible()
 
 		await dialog.getByRole('button', { name: 'Cancel' }).click()

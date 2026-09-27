@@ -123,8 +123,9 @@ export type SeedRoutineKey =
 
 /**
  * `homeOffice` (5 tasks) and `officeDay` (4) are the two the split/compare view needs; `pinned`
- * (3 tasks, `Relaxed Weekend`) is the only one with `isPinned` set, so it is the only way to reach the
- * template list's pinned section. None of the twelve seeded tasks is a background task.
+ * (3 tasks plus 1 background, `Relaxed Weekend`) is the only one with `isPinned` set, so it is the only
+ * way to reach the template list's pinned section. That background task (`20113`) is the fixture's only
+ * one; the other twelve seeded tasks are all foreground.
  */
 export type SeedDayPlannerTemplateKey = 'homeOffice' | 'officeDay' | 'pinned'
 
