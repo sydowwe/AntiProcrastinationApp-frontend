@@ -24,6 +24,8 @@
 					v-model:longRestTime="longRestInitialTime"
 					v-model:numberOfCycles="numberOfCycles"
 					v-model:numberOfFocusPeriodsInCycle="numberOfFocusPeriodsInCycle"
+					:presets
+					@applyPreset="selectPreset"
 					@openPresets="openPresets"
 					@resetToDefault="resetPickersToDefault"
 				></PomodoroSetupPanel>
@@ -63,6 +65,7 @@
 				<PomodoroPresetsDialog
 					ref="presetsDialog"
 					@select="selectPreset"
+					@loaded="presets = $event"
 				></PomodoroPresetsDialog>
 			</VCard>
 		</VCol>
@@ -81,6 +84,7 @@
 	import PomodoroPresetsDialog from '@/core/activityHistory/component/PomodoroPresetsDialog.vue'
 	import PomodoroSetupPanel from '@/core/activityHistory/component/PomodoroSetupPanel.vue'
 	import PomodoroActivityPanel from '@/core/activityHistory/component/PomodoroActivityPanel.vue'
+	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
@@ -121,6 +125,8 @@
 
 	const activityPanel = ref<InstanceType<typeof PomodoroActivityPanel>>()
 	const presetsDialog = ref<InstanceType<typeof PomodoroPresetsDialog>>()
+	// The dialog owns the list and reports every load; the setup panel renders it as chips.
+	const presets = ref<PomodoroTimerPreset[]>([])
 
 	// The pickers. Pre-start settings only: once a session exists these are seeded from it and the
 	// inputs are off screen, because the running cycle's durations are the ones it was started with.
@@ -313,25 +319,18 @@
 		presetsDialog.value?.open()
 	}
 
-	function selectPreset(preset: {
-		focusTime: Time
-		shortRestTime: Time
-		longRestTime: Time
-		numberOfFocusPeriodsInCycle: number
-		numberOfCycles: number
-		focusActivityId: number | null
-		restActivityId: number | null
-	}) {
-		focusInitialTime.value = preset.focusTime
-		shortRestInitialTime.value = preset.shortRestTime
-		longRestInitialTime.value = preset.longRestTime
-		numberOfFocusPeriodsInCycle.value = preset.numberOfFocusPeriodsInCycle
+	/** From the presets dialog and from the setup panel's one-tap chips alike. */
+	function selectPreset(preset: PomodoroTimerPreset) {
+		focusInitialTime.value = Time.fromMinutes(preset.focusDuration)
+		shortRestInitialTime.value = Time.fromMinutes(preset.shortBreakDuration)
+		longRestInitialTime.value = Time.fromMinutes(preset.longBreakDuration)
+		numberOfFocusPeriodsInCycle.value = preset.focusPeriodInCycleCount
 		numberOfCycles.value = preset.numberOfCycles
-		if (preset.focusActivityId) {
-			focusActivityId.value = preset.focusActivityId
+		if (preset.focusActivity) {
+			focusActivityId.value = preset.focusActivity.id
 		}
-		if (preset.restActivityId) {
-			restActivityId.value = preset.restActivityId
+		if (preset.restActivity) {
+			restActivityId.value = preset.restActivity.id
 		}
 	}
 </script>

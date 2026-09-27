@@ -17,6 +17,23 @@
 				{{ i18n.t('history.pomodoro.defaults') }}
 			</VBtn>
 		</div>
+		<!-- One tap applies a preset, like the quick-time chips on Timer and Manual; managing them stays in the dialog. -->
+		<div
+			v-if="presets.length > 0"
+			class="d-flex flex-wrap justify-center ga-2 mb-3"
+		>
+			<VChip
+				v-for="preset in presets"
+				:key="preset.id"
+				role="button"
+				variant="tonal"
+				color="primaryOutline"
+				:title="preset.displaySummary"
+				@click="emit('applyPreset', preset)"
+			>
+				{{ preset.name }}
+			</VChip>
+		</div>
 		<div class="d-flex flex-wrap justify-center ga-3">
 			<PomodoroDurationCard
 				v-model="focusTime"
@@ -68,10 +85,16 @@
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import PomodoroDurationCard from '@/core/activityHistory/component/PomodoroDurationCard.vue'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
+
+	const { presets = [] } = defineProps<{
+		presets?: PomodoroTimerPreset[]
+	}>()
 
 	const emit = defineEmits<{
 		openPresets: []
 		resetToDefault: []
+		applyPreset: [preset: PomodoroTimerPreset]
 	}>()
 	const focusTime = defineModel<Time>('focusTime', { required: true })
 	const shortRestTime = defineModel<Time>('shortRestTime', { required: true })

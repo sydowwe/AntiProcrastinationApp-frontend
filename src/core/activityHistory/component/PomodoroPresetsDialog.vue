@@ -126,23 +126,14 @@
 	import PomodoroPresetFormDialog from '@/core/activityHistory/component/PomodoroPresetFormDialog.vue'
 	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 	import { usePomodoroTimerPresetCrud } from '@/core/activityHistory/api/pomodoroTimerPresetApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 
 	const emit = defineEmits<{
-		select: [
-			preset: {
-				focusTime: Time
-				shortRestTime: Time
-				longRestTime: Time
-				numberOfFocusPeriodsInCycle: number
-				numberOfCycles: number
-				focusActivityId: number | null
-				restActivityId: number | null
-			},
-		]
+		select: [preset: PomodoroTimerPreset]
+		// After every (re)load, so the setup panel's one-tap chips show the same list this dialog manages.
+		loaded: [presets: PomodoroTimerPreset[]]
 	}>()
 	const { t } = useI18n()
 	const { confirm } = useDialog()
@@ -160,6 +151,7 @@
 
 	async function loadPresetsData() {
 		presets.value = await fetchAll()
+		emit('loaded', presets.value)
 	}
 
 	function open() {
@@ -194,15 +186,7 @@
 	}
 
 	function selectPreset(preset: PomodoroTimerPreset) {
-		emit('select', {
-			focusTime: Time.fromMinutes(preset.focusDuration),
-			shortRestTime: Time.fromMinutes(preset.shortBreakDuration),
-			longRestTime: Time.fromMinutes(preset.longBreakDuration),
-			numberOfFocusPeriodsInCycle: preset.focusPeriodInCycleCount,
-			numberOfCycles: preset.numberOfCycles,
-			focusActivityId: preset.focusActivity?.id ?? null,
-			restActivityId: preset.restActivity?.id ?? null,
-		})
+		emit('select', preset)
 		dialog.value = false
 	}
 
