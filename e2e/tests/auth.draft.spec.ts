@@ -152,9 +152,16 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			await codesDialog.getByRole('checkbox', { name: 'I have saved these codes somewhere safe' }).check()
 			await done.click()
 
-			// Then the sign-in form, with the address carried over (U5).
-			await expect(page).toHaveURL(/\/login$/)
+			// Then the sign-in form, with the address carried over (U5) and the resend offered — the
+			// `registered` flag, not the remembered address, is what says the account is unconfirmed.
+			await expect(page).toHaveURL(/\/login\?registered=1$/)
 			await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue(email)
+			await expect(page.getByRole('button', { name: 'Resend confirmation email' })).toBeVisible()
+
+			// A plain visit keeps the address (it outlives the page) but not the registration-only offer.
+			await page.goto('/login')
+			await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue(email)
+			await expect(page.getByRole('button', { name: 'Resend confirmation email' })).toHaveCount(0)
 
 			// The same address again is a 409, worded as such — not the generic conflict sentence the
 			// interceptor-then-catch pair used to leave on screen (FW13). Second `/auth/register` hit.
@@ -186,7 +193,7 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 
 		// X1 / FW9. `/auth/forgotten-password` is `Throttle(3, 60)` per IP — this is the run's one hit.
 		// The server answers 204 for any address (no enumeration oracle), so the seed's own is enough.
-		test('a registered e-mail shows the "password reset e-mail sent" confirmation, which exits to /login (findings.md X1)', async ({
+		test('a registered e-mail shows the non-committal "check your inbox" confirmation with a resend offer, which exits to /login (findings.md X1)', async ({
 			page,
 			seed,
 		}) => {
@@ -195,6 +202,11 @@ test.describe('Auth — signed-out views (/login, /registration, /forgotten-pass
 			const sent = page.waitForResponse(r => r.url().endsWith('/api/auth/forgotten-password'))
 			await page.getByRole('button', { name: 'Reset password' }).click()
 			expect((await sent).status()).toBe(204)
+			// The 204 is the same for an unknown or unconfirmed address, so the copy must not promise a
+			// mail, and the unconfirmed case gets its way out.
+			const dialog = page.getByRole('dialog', { name: 'Check your inbox' })
+			await expect(dialog.getByText(`If an account with a confirmed address ${seed.primaryUser.email} exists`)).toBeVisible()
+			await expect(dialog.getByRole('button', { name: 'Resend confirmation email' })).toBeVisible()
 			await page.getByRole('button', { name: 'Go to login page' }).click()
 			await expect(page).toHaveURL(/\/login$/)
 		})

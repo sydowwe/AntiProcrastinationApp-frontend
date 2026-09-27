@@ -1091,6 +1091,12 @@ idea — remembering the last-used e-mail without persisting the whole `User`, a
 link on the forgotten-password page for unconfirmed accounts (the server answers 204 for those too,
 so the user is told a reset mail went out and nothing arrives) — is a `vue_framework` opportunity,
 not this app's. Neither is an opportunity by the template's definition; both are noted.
+**✅ All three done 2026-09-27, in `vue_framework`:** `utils/lastUsedEmail.ts` (written by
+`authStore.login()` and registration, read by `LoginView` / `ForgottenPasswordView`; registration now
+hands off as `/login?registered=1` instead of stuffing `currentUser.email`); the forgotten-password
+dialog says "Check your inbox — *if* an account with a confirmed address {email} exists…" and offers
+`ResendConfirmationEmail`. Covered in `e2e/tests/auth.draft.spec.ts` (registration + X1 tests);
+documented in `src/_common/docs/modules/user.md` → *The signed-out screens*.
 
 **`planner-day` filed no `opportunity` finding** (tally `opportunity 0`, body agrees). The one its
 brief handed it — *"`GET /task-planner-day-template/suggestions/{calendarId}` exists, returns 200, and
