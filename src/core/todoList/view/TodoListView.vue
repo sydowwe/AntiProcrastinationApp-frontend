@@ -349,17 +349,22 @@
 	async function openMoveToList(item: TodoListItemEntity) {
 		const result = await openDialog<{ destinationListId: number }>({
 			component: MoveToListForm,
-			componentProps: { currentListId: todoListId },
+			componentProps: {
+				currentListId: todoListId,
+				activityName: item.activity.name,
+				submit(destinationListId: number) {
+					return moveToList(item.id, destinationListId, { _silent: true })
+				},
+			},
 			dialogProps: {
 				title: i18n.t('toDoList.moveToList'),
 			},
 		})
 		if (!result) return
-		await moveItemToList(item.id, result.destinationListId)
+		removeMovedItem(item.id)
 	}
 
-	async function moveItemToList(itemId: number, destinationListId: number) {
-		await moveToList(itemId, destinationListId)
+	function removeMovedItem(itemId: number) {
 		const index = items.value.findIndex(item => item.id === itemId)
 		if (index !== -1) {
 			items.value.splice(index, 1)

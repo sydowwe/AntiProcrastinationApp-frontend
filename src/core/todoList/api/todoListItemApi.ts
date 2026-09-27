@@ -107,11 +107,13 @@ export function useTodoListItemCrud(todoListId: number) {
 
 	/**
 	 * `PATCH /{id}/move` with the destination in the body. A destination the caller cannot see is a 404 —
-	 * the server's IDOR guard, so another account's list id stays unconfirmable.
+	 * the server's IDOR guard, so another account's list id stays unconfirmable. A destination that already
+	 * holds an item on the same activity is a 409 `DbUniqueViolationError` (the `(UserId, ActivityId,
+	 * TodoListId)` unique index) — `MoveToListForm` words that one inline, so it calls this `_silent`.
 	 */
-	async function moveToList(id: number, destinationListId: number) {
+	async function moveToList(id: number, destinationListId: number, config?: AxiosRequestConfig) {
 		try {
-			await API.patch(`${url}/${id}/move`, { destinationListId })
+			await API.patch(`${url}/${id}/move`, { destinationListId }, config)
 			return Promise.resolve()
 		} catch (e: any) {
 			console.error(`Error moving todo list item ${id} to list ${destinationListId}`, e)

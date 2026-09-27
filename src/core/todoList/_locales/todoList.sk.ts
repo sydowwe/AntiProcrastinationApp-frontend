@@ -55,6 +55,7 @@ const todoList = {
 		deleteItemConfirm: `Vymazať položku?`,
 		moveToList: `Presunúť do zoznamu`,
 		destinationList: `Cieľový zoznam`,
+		alreadyOnDestination: `Zoznam „{list}“ už má úlohu „{activity}“`,
 		notScheduled: `Nenaplánované`,
 		notScheduledHint: `Klikni a vyber, kedy to spravíš`,
 		quickStartTimer: `Rýchlo spustiť časovač`,

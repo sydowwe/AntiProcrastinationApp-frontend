@@ -54,6 +54,7 @@ const todoList = {
 		deleteItemConfirm: `Delete item?`,
 		moveToList: `Move to list`,
 		destinationList: `Destination list`,
+		alreadyOnDestination: `"{list}" already has a "{activity}" task`,
 		notScheduled: `Not scheduled`,
 		notScheduledHint: `Click to pick when you'll do it`,
 		quickStartTimer: `Quick start timer`,
