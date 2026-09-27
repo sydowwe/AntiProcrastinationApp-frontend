@@ -59,6 +59,24 @@
 						clearable
 						hideDetails
 					/>
+					<!-- Both bounds are on the entry's own range, inclusive: "Min people ≥ 2" keeps entries that
+					     need company, "Max people ≤ 2" keeps entries capped at two — and drops uncapped ones. -->
+					<VNumberInput
+						v-model="draft.minParticipants"
+						:label="$t('leisure.fields.minParticipants')"
+						:min="1"
+						:max="100"
+						clearable
+						hideDetails
+					/>
+					<VNumberInput
+						v-model="draft.maxParticipants"
+						:label="$t('leisure.fields.maxParticipants')"
+						:min="1"
+						:max="100"
+						clearable
+						hideDetails
+					/>
 					<NullFalseTrueCheckbox
 						v-model="draft.isRepeatable"
 						:label="$t('leisure.fields.isRepeatable')"
@@ -195,6 +213,10 @@
 		expectedCostTierIds: countChip('leisure.fields.expectedCostTier', 'sack-dollar'),
 		maxDurationMinutes: v =>
 			v != null ? { label: `${i18n.t('leisure.fields.durationMinutes')} ≤ ${v}`, icon: 'clock' } : null,
+		minParticipants: v =>
+			v != null ? { label: `${i18n.t('leisure.fields.minParticipants')} ≥ ${v}`, icon: 'user-group' } : null,
+		maxParticipants: v =>
+			v != null ? { label: `${i18n.t('leisure.fields.maxParticipants')} ≤ ${v}`, icon: 'users' } : null,
 		isRepeatable: boolChip('leisure.fields.isRepeatable', 'rotate', 'star'),
 		isAnchored: boolChip('leisure.fields.experienced', 'circle-check', 'circle-xmark'),
 	}
