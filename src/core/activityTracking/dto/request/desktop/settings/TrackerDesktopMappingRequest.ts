@@ -1,5 +1,6 @@
 import type { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
+import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
 
 export class TrackerDesktopMappingRequest {
 	constructor(
@@ -16,6 +17,23 @@ export class TrackerDesktopMappingRequest {
 		public roleId: number | null = null,
 		public categoryId: number | null = null,
 	) {}
+
+	/** The row as a full-replace body, so a single-field change (the *Is active* toggle, O1) keeps the rest. */
+	static fromRow(row: TrackerDesktopMappingResponse): TrackerDesktopMappingRequest {
+		return new TrackerDesktopMappingRequest(
+			row.processName,
+			row.processNameMatchType,
+			row.productName,
+			row.productNameMatchType,
+			row.windowTitle,
+			row.windowTitleMatchType,
+			row.isActive,
+			row.isIgnored,
+			row.activity?.id ?? null,
+			row.roleId,
+			row.categoryId,
+		)
+	}
 
 	/** A blank field is no pattern — sent as `""` it would satisfy the server's at-least-one-pattern rule. */
 	updatePattern(filter: DesktopDistinctEntriesFilterRequest) {

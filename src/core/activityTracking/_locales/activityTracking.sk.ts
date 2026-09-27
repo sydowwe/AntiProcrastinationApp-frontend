@@ -167,6 +167,7 @@ const messages = {
 		appLabel: `Názov aplikácie`,
 		packageName: `Názov balíka`,
 		isActive: `Je aktívne`,
+		ruleActive: `Pravidlo aktívne: {pattern}`,
 		isIgnored: `Je ignorované`,
 		matchType: `Typ zhody`,
 		type: `Typ`,

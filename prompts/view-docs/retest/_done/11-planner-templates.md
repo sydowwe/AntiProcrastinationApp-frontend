@@ -44,6 +44,8 @@ the order. If a summary and the `Verify:` block disagree, the block wins.
   pass condition is about 1440 px.
 - **B5:** open a valid template first, then navigate to an invalid id. The bug is a **stale** name, so it needs one
   to be stale.
-- **P3** needs a template with a background task. If none of the three seeded templates has one, mark it
-  **blocked**. Do not add a task to a seeded template.
+- **P3** needs a template with a background task. Since 2026-09-25 the fixture seeds one on `pinned`
+  (Relaxed Weekend, task `20113`), so the header there should read "3 tasks (+1 background)". This needs a
+  seed taken after that change: if `pinned` shows no background block, the API or the seed predates it, so
+  mark P3 **blocked** again. Do not add a task to a seeded template.
 - **B2:** if validation fails to stop the submit and a template is created, delete it and reopen B2.

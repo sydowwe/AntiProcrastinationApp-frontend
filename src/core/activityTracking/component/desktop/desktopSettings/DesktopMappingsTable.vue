@@ -22,7 +22,21 @@
 			@onLoadItems="load"
 			@onEdit="emit('edit', $event)"
 			@onDelete="onDelete"
-		/>
+		>
+			<template #item.isActive="{ item }">
+				<VSwitch
+					class="mx-auto"
+					style="width: fit-content"
+					:modelValue="item.isActive"
+					:loading="togglingId === item.id"
+					:disabled="togglingId === item.id"
+					:aria-label="t('activityTracking.settings.ruleActive', { pattern: item.patternLabel })"
+					color="primaryOutline"
+					hideDetails
+					@update:modelValue="onActiveChange(item, $event === true)"
+				/>
+			</template>
+		</BasicTable>
 	</div>
 </template>
 
@@ -40,6 +54,7 @@
 		mappingsControlsToParams,
 	} from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
+	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
 	import { TrackerDesktopMappingsFilter } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingsFilter.ts'
@@ -53,12 +68,16 @@
 		/** The rule a distinct-entries *Rule* chip linked to (`?mappingId=`), tinted when it is on the page. */
 		highlightedId?: number | null
 	}>()
-	const emit = defineEmits<{ edit: [item: TrackerDesktopMappingResponse] }>()
+	const emit = defineEmits<{
+		edit: [item: TrackerDesktopMappingResponse]
+		activeChanged: [id: number, isActive: boolean]
+	}>()
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
 	const {
 		fetchFilteredTable: fetchFilteredTableMappings,
+		update,
 		deleteEntity,
 		tableLoading: loading,
 	} = useTrackerDesktopMappingCrud()
@@ -170,6 +189,30 @@
 			return
 		}
 		await load()
+	}
+
+	const togglingId = ref<number | null>(null)
+
+	/**
+	 * Disables or re-enables a rule without deleting it (O1). There is no patch route — the update is a
+	 * full replace — so the row goes back whole with only `isActive` changed. A failure leaves the switch
+	 * where it was; the interceptor's snackbar says why.
+	 */
+	async function onActiveChange(item: TrackerDesktopMappingResponse, isActive: boolean) {
+		const req = TrackerDesktopMappingRequest.fromRow(item)
+		req.isActive = isActive
+		togglingId.value = item.id
+		try {
+			await update(item.id, req)
+		} catch {
+			return
+		} finally {
+			togglingId.value = null
+		}
+		item.isActive = isActive
+		emit('activeChanged', item.id, isActive)
+		// Filtered on *Is active*, the row no longer belongs on this page.
+		if (mappingFilter.value.isActive != null) await load()
 	}
 
 	defineExpose({ load })

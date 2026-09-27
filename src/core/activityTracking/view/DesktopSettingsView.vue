@@ -7,7 +7,13 @@
 			<!-- Wraps (F16): the filter bar drops to its own line when the row is too narrow, and the tab
 			     toggle never shrinks, so its labels never truncate. -->
 			<div class="pa-4 pb-0 w-100 d-flex flex-wrap align-center ga-4">
-				<VCardTitle class="pa-0">{{ $t('activityTracking.settings.desktopTitle') }}</VCardTitle>
+				<!-- `h1`: the page's own title — VCardTitle is a plain div by default, so the page had no heading. -->
+				<VCardTitle
+					tag="h1"
+					class="pa-0"
+				>
+					{{ $t('activityTracking.settings.desktopTitle') }}
+				</VCardTitle>
 				<MyBtnToggle
 					:modelValue="tableView"
 					:label="$t('activityTracking.settings.section')"
@@ -56,6 +62,7 @@
 					:filter
 					:highlightedId="highlightedMappingId"
 					@edit="edit"
+					@activeChanged="onActiveChanged"
 				/>
 			</VCardText>
 		</VCard>
@@ -159,5 +166,10 @@
 			mode.value = 'toIgnored'
 		}
 		router.push(distinctEntriesRoute.value)
+	}
+
+	/** A rule toggled while it is loaded in the form: the form's copy follows, or *Save* would undo the toggle. */
+	function onActiveChanged(id: number, isActive: boolean) {
+		if (editedId.value === id) request.value.isActive = isActive
 	}
 </script>

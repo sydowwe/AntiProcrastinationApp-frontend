@@ -11,6 +11,10 @@ export class TrackerAndroidMappingResponse {
 		public isActive: boolean,
 		public isIgnored: boolean | null,
 		public activity: ActivityFilterFormResponse | null,
+		/** The role/category target. The form never writes one, but a row may hold it, and the *Is active*
+		 *  toggle re-sends the row as a full replace — dropped here, the PUT would clear the target (O1). */
+		public roleId: number | null,
+		public categoryId: number | null,
 	) {}
 
 	/** What the delete confirmation names (B7) — the form guarantees at least one of the two. */
@@ -29,6 +33,8 @@ export class TrackerAndroidMappingResponse {
 			json.isIgnored,
 			// An ignored rule has no activity; parsing `null` threw and failed the whole page.
 			json.activity ? ActivityFilterFormResponse.fromJson(json.activity) : null,
+			json.roleId ?? null,
+			json.categoryId ?? null,
 		)
 	}
 }

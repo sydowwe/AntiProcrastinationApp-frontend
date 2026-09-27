@@ -164,6 +164,7 @@ const messages = {
 		appLabel: `App Label`,
 		packageName: `Package Name`,
 		isActive: `Is active`,
+		ruleActive: `Rule active: {pattern}`,
 		isIgnored: `Is ignored`,
 		matchType: `Match type`,
 		type: `Type`,
