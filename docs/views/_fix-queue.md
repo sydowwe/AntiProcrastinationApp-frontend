@@ -1074,6 +1074,13 @@ too. A quick time sets *Length*, and an activity preset sets the activity as wel
 `applyPreset`. It deliberately does **not** save: the start time still has to be checked, so it takes two
 taps, not one. Verified live with a throwaway *25m · Code Review* preset (created, applied, deleted:
 `DELETE` 204). Stopwatch was left alone because it has no length for a preset to set.
+✅ **Pomodoro half built 2026-09-27** (uncommitted). The two preset kinds were not merged, because a
+Pomodoro preset is five fields and two activities, not a length. What differed was reach: Pomodoro's
+presets were two clicks deep in `PomodoroPresetsDialog`. `PomodoroSetupPanel` now renders them as one-tap
+chips, from the list the dialog loads (its new `loaded` emit), and both paths go through the view's
+`selectPreset`, which now takes the raw `PomodoroTimerPreset`. The dialog remains the place to manage
+presets. Verified live: *Short Sprint* chip → 15/3/10 min, 4×3; the dialog's *Deep Work* → 90/15/30, and
+the dialog closes. No console errors.
 
 **`auth` filed one `opportunity` finding, `O1`, and it is re-graded `bug` (`FW13`, §63)** — the
 "policy question" it poses was answered on the server before the unit ran, so nothing is deferred.
@@ -1113,6 +1120,18 @@ server's row into their own rather than let it survive as a second one. That gua
 threshold in one place is still the tidy-up, and it is where a *"show the tail"* affordance (expand
 *Other* into its members) would live.
 Neither is an opportunity by the template's definition; both are noted.
+✅ **(2) built 2026-09-27** (uncommitted). There is now one threshold in one place:
+`PIE_TAIL_THRESHOLD_PERCENT` (3) and `foldPieTail` in `PieSegment.ts`, used by all four sections. Desktop
+and Android fold now too. The four dashboards no longer send `minPercent`; it is optional server-side,
+so every row comes back. The tail is folded per metric, so *Active* and *Background* roll up their own
+tail, where before they reused the server's fold by total. The current selection is never folded, and an
+*Other* of one row is not made. `ActivityPieChart` offers *Show n smaller items* / *Group small items*,
+and a click on the *Other* slice expands it too. The legend is now `type: 'scroll'`. **Fixed on the
+way:** the legend text was a hardcoded `#fff`, unreadable on the light theme; it now reads the theme's
+`on-surface`. Verified live on `/activity-tracking/unified?date=2026-09-24`: the request carries no
+`minPercent`, 14 rows come back, *Show 2 smaller items* expands them, and the legend pages 1/2. No console
+errors. **Not verified:** the click on the *Other* slice (canvas), the dark theme, and the Desktop and
+Android dashboards in the browser (typechecked only).
 
 <!-- leisure-backlog-picker/O1 (min/maxParticipants had no filter input and maxParticipants was not ranked) both halves fixed 2026-09-24, ranking in 9f400c79 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
