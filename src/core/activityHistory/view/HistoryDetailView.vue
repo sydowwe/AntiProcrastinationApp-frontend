@@ -441,11 +441,14 @@
 	// already takes as the end of the day. Only the first drill records the range to go back to, so
 	// drilling again from an already narrowed chart still returns to the original one.
 	const rangeBeforeDrill = ref<{ timeFrom: Time; timeTo: Time } | null>(null)
+	/** The range the last drill set — what the view must still show for *Back* to mean anything. */
+	let drilledRange: { timeFrom: Time; timeTo: Time } | null = null
 
 	function drillIntoWindow(window: StackedBarsInputWindow) {
 		rangeBeforeDrill.value ??= { timeFrom: timeFrom.value, timeTo: timeTo.value }
-		timeFrom.value = timeInUserZone(window.windowStart)
-		timeTo.value = timeInUserZone(window.windowEnd)
+		drilledRange = { timeFrom: timeInUserZone(window.windowStart), timeTo: timeInUserZone(window.windowEnd) }
+		timeFrom.value = drilledRange.timeFrom
+		timeTo.value = drilledRange.timeTo
 		selectedVisualization.value = 'timeline'
 	}
 
@@ -453,11 +456,28 @@
 		if (!rangeBeforeDrill.value) return
 		timeFrom.value = rangeBeforeDrill.value.timeFrom
 		timeTo.value = rangeBeforeDrill.value.timeTo
-		rangeBeforeDrill.value = null
+		forgetDrill()
 	}
 
-	// A new day is a new question; the range from the old one is not something to go back to.
-	watch(dateModel, () => (rangeBeforeDrill.value = null))
+	function forgetDrill() {
+		rangeBeforeDrill.value = null
+		drilledRange = null
+	}
+
+	// A range the user set by hand, or a new day, is a new question: going "back" from it would undo their
+	// own edit. Compared by value, not by who wrote it — the picker re-emits the range the drill just set
+	// while it re-renders, so its update events cannot tell a user's edit from the drill's own write.
+	watch([timeFrom, timeTo], ([from, to]) => {
+		if (!drilledRange) return
+		if (
+			from.getInMinutes !== drilledRange.timeFrom.getInMinutes ||
+			to.getInMinutes !== drilledRange.timeTo.getInMinutes
+		) {
+			forgetDrill()
+		}
+	})
+
+	watch(dateModel, forgetDrill)
 
 	// --- Back to the summary view for the week containing this day. ---
 	function goToSummaryForWeek() {
