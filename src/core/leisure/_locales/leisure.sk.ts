@@ -92,6 +92,14 @@ const leisure = {
 			emptyYear: `V roku {year} zatiaľ nemáte zapísaný žiadny moment.`,
 			monthNone: `{month} — nič`,
 			monthBest: `{month} — {count}, najlepšie {best}/10`,
+			sourceBreakdown: `Odkiaľ prišli tohtoročné momenty`,
+			sourceCount: `{source}: {count}`,
+		},
+		// Súčet `financialGoal` z bucket listu pod aktuálnym filtrom (leisure-bucket-anchors/O1).
+		// Server neposiela menu, takže ju neuvádza ani text.
+		savings: {
+			remaining: `Ešte treba našetriť: {remaining}`,
+			lived: `Z cieľov už zažité: {lived} z {total}`,
 		},
 		memoryAnchorPlaceholder: `Vyberte aktivitu (musí mať jednorazový Backlog alebo Bucket list profil)`,
 		anchorSourceBacklog: `Backlog (jednorazové)`,

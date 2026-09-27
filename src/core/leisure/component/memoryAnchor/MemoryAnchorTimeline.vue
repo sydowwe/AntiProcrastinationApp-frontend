@@ -66,6 +66,22 @@
 				<span class="text-caption text-medium-emphasis">
 					{{ $t('leisure.timeline.memoriesCount', { count: yearCount }) }}
 				</span>
+				<div
+					v-if="sourceBreakdown.length > 0"
+					role="group"
+					:aria-label="$t('leisure.timeline.sourceBreakdown')"
+					:title="$t('leisure.timeline.sourceBreakdown')"
+					class="d-flex align-center ga-1"
+				>
+					<VChip
+						v-for="entry in sourceBreakdown"
+						:key="entry.source"
+						size="x-small"
+						variant="tonal"
+					>
+						{{ $t('leisure.timeline.sourceCount', { source: entry.label, count: entry.count }) }}
+					</VChip>
+				</div>
 				<VSpacer />
 				<VBtn
 					color="success"
@@ -305,11 +321,38 @@
 		return t('leisure.timeline.monthBest', { month: label, count, best: bestRating(month) })
 	}
 
-	function sourceLabel(anchor: MemoryAnchor): string | null {
-		if (anchor.hasBucketList) return t('leisure.anchorSourceBucketList')
-		if (anchor.hasBacklog && anchor.backlogIsRepeatable === false) return t('leisure.anchorSourceBacklog')
+	type AnchorSource = 'bucketList' | 'backlog'
+
+	const SOURCE_LABEL_KEYS: Record<AnchorSource, string> = {
+		bucketList: 'leisure.anchorSourceBucketList',
+		backlog: 'leisure.anchorSourceBacklog',
+	}
+
+	function sourceOf(anchor: MemoryAnchor): AnchorSource | null {
+		if (anchor.hasBucketList) return 'bucketList'
+		if (anchor.hasBacklog && anchor.backlogIsRepeatable === false) return 'backlog'
 		return null
 	}
+
+	function sourceLabel(anchor: MemoryAnchor): string | null {
+		const source = sourceOf(anchor)
+		return source ? t(SOURCE_LABEL_KEYS[source]) : null
+	}
+
+	// Where the year's memories came from: a long-held bucket-list wish, or a one-time backlog pick.
+	// An anchor whose source profile is gone since counts in neither — it is not guessed into one.
+	const sourceBreakdown = computed(() => {
+		const counts: Record<AnchorSource, number> = { bucketList: 0, backlog: 0 }
+		for (const month of MONTHS) {
+			for (const anchor of anchorsFor(month)) {
+				const source = sourceOf(anchor)
+				if (source) counts[source]++
+			}
+		}
+		return (Object.keys(counts) as AnchorSource[])
+			.filter(source => counts[source] > 0)
+			.map(source => ({ source, label: t(SOURCE_LABEL_KEYS[source]), count: counts[source] }))
+	})
 
 	async function openCreateDialog() {
 		const result = await openDialog({

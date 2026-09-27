@@ -91,6 +91,14 @@ const leisure = {
 			emptyYear: `Nothing written down in {year} yet.`,
 			monthNone: `{month} — nothing`,
 			monthBest: `{month} — {count}, best {best}/10`,
+			sourceBreakdown: `Where this year's memories came from`,
+			sourceCount: `{source}: {count}`,
+		},
+		// The bucket list's `financialGoal`, summed under the current filter (leisure-bucket-anchors/O1).
+		// The wire carries no currency, so neither does the copy.
+		savings: {
+			remaining: `Still to save: {remaining}`,
+			lived: `{lived} of {total} in goals already lived`,
 		},
 		memoryAnchorPlaceholder: `Select an activity (must have a one-time Backlog or Bucket List profile)`,
 		anchorSourceBacklog: `Backlog (one-time)`,

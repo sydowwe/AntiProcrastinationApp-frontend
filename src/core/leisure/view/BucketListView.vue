@@ -77,6 +77,11 @@
 			:total="experiencedTotal"
 			:visible="experiencedVisible"
 		/>
+		<SavingsGoalsReadout
+			:summary="savingsSummary"
+			:visible="savingsVisible"
+			:showLived="savingsShowLived"
+		/>
 		<div class="flex-fill">
 			<BucketListLadder
 				v-if="viewMode === 'ladder'"
@@ -113,6 +118,7 @@
 	import BucketListTable from '@/core/leisure/component/bucketList/BucketListTable.vue'
 	import BucketListLadder from '@/core/leisure/component/bucketList/BucketListLadder.vue'
 	import ExperiencedProgress from '@/core/leisure/component/ExperiencedProgress.vue'
+	import SavingsGoalsReadout from '@/core/leisure/component/bucketList/SavingsGoalsReadout.vue'
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
@@ -125,6 +131,7 @@
 	import { bucketListFilterUrlState } from '@/core/leisure/composable/leisureFilterUrlState.ts'
 	import { useLeisureFilterChips } from '@/core/leisure/composable/useLeisureFilterChips.ts'
 	import { useExperiencedProgress } from '@/core/leisure/composable/useExperiencedProgress.ts'
+	import { useSavingsGoals } from '@/core/leisure/composable/useSavingsGoals.ts'
 
 	const i18n = useI18n()
 	const { textChip, countChip, boolChip } = useLeisureFilterChips()
@@ -210,16 +217,31 @@
 		cloneFilter: base => Object.assign(new ActivityBucketListProfileFilter(), base),
 	})
 
+	// A third instance, for the same abort reason — the sum's page must not cancel the counts.
+	const { fetchFilteredTable: fetchSavings } = useActivityBucketListProfileCrud()
+	const {
+		summary: savingsSummary,
+		visible: savingsVisible,
+		showLived: savingsShowLived,
+		refresh: refreshSavings,
+	} = useSavingsGoals({
+		fetch: fetchSavings,
+		filter,
+		cloneFilter: base => Object.assign(new ActivityBucketListProfileFilter(), base),
+	})
+
 	// Every reload is a change to the set the fraction is over — a new anchor, a new entry, a deleted
 	// one. The filter has not moved, so nothing else would trigger the recount.
 	function reloadAll() {
 		reload()
 		recount()
+		refreshSavings()
 	}
 
 	function reloadLadder() {
 		void loadLadder()
 		recount()
+		refreshSavings()
 	}
 
 	watch(viewMode, value => router.replace({ query: { ...route.query, view: value } }))

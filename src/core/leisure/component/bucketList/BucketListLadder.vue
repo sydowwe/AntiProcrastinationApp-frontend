@@ -94,7 +94,23 @@
 								@click="onEdit(item)"
 							>
 								<VCardText class="d-flex justify-space-between align-center ga-2 py-2">
-									<ActivityNameCell :activity="item.activity" />
+									<div style="flex: 1 1 auto; min-width: 0">
+										<ActivityNameCell :activity="item.activity" />
+										<!-- The "why this" note belongs here more than in the table: the ladder is where
+										     the entry being avoided is looked at, and the reason is the nudge. -->
+										<div
+											v-if="item.inspirationSource"
+											class="d-flex align-center ga-1 text-caption text-medium-emphasis"
+											:title="item.inspirationSource"
+										>
+											<VIcon
+												icon="lightbulb"
+												size="11"
+											/>
+											<span class="d-sr-only">{{ $t('leisure.fields.inspirationSource') }}</span>
+											<span class="text-truncate font-italic">{{ item.inspirationSource }}</span>
+										</div>
+									</div>
 									<div class="d-flex align-center ga-1">
 										<span
 											v-if="item.experienceType?.text"
