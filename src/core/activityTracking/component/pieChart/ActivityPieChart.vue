@@ -6,6 +6,20 @@
 			@click="handleChartClick"
 		/>
 
+		<VBtn
+			v-if="showTail || foldedCount > 0"
+			:prependIcon="showTail ? 'fas fa-compress' : 'fas fa-expand'"
+			size="small"
+			variant="text"
+			@click="showTail = !showTail"
+		>
+			{{
+				showTail
+					? $t('activityTracking.pieChart.groupTail')
+					: $t('activityTracking.pieChart.showTail', { count: foldedCount })
+			}}
+		</VBtn>
+
 		<VRadioGroup
 			v-if="showViewMode"
 			v-model="viewMode"
@@ -33,6 +47,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { useTheme } from 'vuetify'
 	import VChart from 'vue-echarts'
 	import { use } from 'echarts/core'
 	import { CanvasRenderer } from 'echarts/renderers'
@@ -46,12 +61,15 @@
 		domains,
 		selectedDomain,
 		showViewMode = true,
+		foldedCount = 0,
 	} = defineProps<{
 		domains: PieSegment[]
 		selectedDomain: string | null
 		// Off for a source with no Active/Background split (Android) — the radio would re-render the
 		// same pie whichever metric is picked.
 		showViewMode?: boolean
+		/** How many rows the section folded into "Other" (`foldPieTail`) — offers to expand them. */
+		foldedCount?: number
 	}>()
 
 	const emit = defineEmits<{
@@ -59,8 +77,12 @@
 	}>()
 
 	const viewMode = defineModel<'total' | 'active' | 'background'>({ required: true })
+	/** The tail is expanded: the section folds nothing, and the button offers to group it again. */
+	const showTail = defineModel<boolean>('showTail', { default: false })
 
 	const { t } = useI18n()
+	const theme = useTheme()
+	const onSurface = computed(() => theme.current.value.colors['on-surface'])
 
 	// Register ECharts components
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
@@ -87,6 +109,11 @@
 				},
 			},
 			legend: {
+				// Paged, because an expanded tail can hold more rows than the 250 px canvas fits.
+				type: 'scroll',
+				pageIconColor: onSurface.value,
+				pageIconInactiveColor: '#888',
+				pageTextStyle: { color: onSurface.value },
 				orient: 'vertical',
 				left: 0,
 				top: 'center',
@@ -95,7 +122,8 @@
 				borderWidth: 1,
 				padding: 8,
 				textStyle: {
-					color: '#fff', // Bright white text for accessibility
+					// From the theme — a fixed white was unreadable on the light theme's surface.
+					color: onSurface.value,
 					fontSize: 12,
 					fontWeight: 300,
 				},
@@ -154,8 +182,9 @@
 
 		if (!clickedDomain) return
 
-		// Ignore clicks on "Other" segment
+		// "Other" is not selectable — clicking it expands it into its members instead.
 		if (clickedDomain.domain === OTHER_DOMAIN) {
+			showTail.value = true
 			return
 		}
 

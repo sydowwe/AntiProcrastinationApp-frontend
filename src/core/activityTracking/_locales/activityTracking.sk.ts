@@ -89,6 +89,8 @@ const messages = {
 		monitorBreakdown: `Rozdelenie podľa monitora:`,
 		monitor: `Monitor {n}:`,
 		closeDetails: `Zavrieť detaily`,
+		showTail: `Rozbaliť menšie položky ({count})`,
+		groupTail: `Zoskupiť malé položky`,
 		shareOfSpan: `Podiel na období:`,
 		packageName: `Balík:`,
 		meanSession: `Priemerná relácia:`,

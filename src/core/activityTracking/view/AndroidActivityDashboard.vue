@@ -172,7 +172,8 @@
 		},
 		fetchPieChart(range, signal) {
 			return getAndroidPieChart(
-				new AndroidPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				// No `minPercent`: the section folds the tail itself (`foldPieTail`), so it can expand it.
+				new AndroidPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 		},

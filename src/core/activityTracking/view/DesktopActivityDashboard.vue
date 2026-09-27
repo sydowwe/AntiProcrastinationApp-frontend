@@ -178,7 +178,8 @@
 		},
 		fetchPieChart(range, signal) {
 			return getDesktopPieChart(
-				new DesktopPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				// No `minPercent`: the section folds the tail itself (`foldPieTail`), so it can expand it.
+				new DesktopPieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 		},

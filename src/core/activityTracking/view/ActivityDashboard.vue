@@ -147,7 +147,8 @@
 		},
 		fetchPieChart(range, signal) {
 			return getPieChart(
-				new PieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo, 1),
+				// No `minPercent`: the section folds the tail itself (`foldPieTail`), so it can expand it.
+				new PieChartRequest(range.dateFrom, range.dateTo, range.timeFrom, range.timeTo),
 				signal,
 			)
 		},

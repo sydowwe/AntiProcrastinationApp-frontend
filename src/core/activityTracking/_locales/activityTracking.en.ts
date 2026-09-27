@@ -89,6 +89,8 @@ const messages = {
 		monitorBreakdown: `Monitor breakdown:`,
 		monitor: `Monitor {n}:`,
 		closeDetails: `Close details`,
+		showTail: `Show {count} smaller items`,
+		groupTail: `Group small items`,
 		shareOfSpan: `Share of period:`,
 		packageName: `Package:`,
 		meanSession: `Average session:`,

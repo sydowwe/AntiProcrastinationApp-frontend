@@ -50,7 +50,9 @@
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"
-						:domains="pieSegments"
+						v-model:showTail="showTail"
+						:domains="pie.segments"
+						:foldedCount="pie.foldedCount"
 						:selectedDomain="selectedDomain"
 						@segmentClick="onSegmentClick"
 					/>
@@ -75,7 +77,7 @@
 	import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
-	import { OTHER_DOMAIN, type PieSegment } from './PieSegment.ts'
+	import { foldPieTail } from './PieSegment.ts'
 	import type { DomainPieData } from '@/core/activityTracking/dto/response/pieChart/DomainPieData.ts'
 	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
@@ -85,7 +87,6 @@
 		dayTotals?: DayTotals
 		loading?: boolean
 		error?: boolean
-		otherThresholdPercent?: number
 		emptyProbeState?: ActivityEmptyProbeState
 		isRangeMode?: boolean
 	}>()
@@ -100,51 +101,21 @@
 
 	const selectedDomain = defineModel<string | null>('selectedDomain', { default: null })
 	const viewMode = ref<'total' | 'active' | 'background'>('total')
-	const pieSegments = computed<PieSegment[]>(() => {
+	const showTail = ref(false)
+	// Folded per metric, so the Active/Background views roll up their own tail rather than the total's.
+	const pie = computed(() => {
 		const metric = viewMode.value
 
-		const data = props.domains
-			.map(d => ({
-				domain: d.domain,
-				seconds:
-					metric === 'total' ? d.totalSeconds : metric === 'active' ? d.activeSeconds : d.backgroundSeconds,
-				color: getDomainColor(d.domain),
-			}))
-			.filter(d => d.seconds > 0)
+		const data = props.domains.map(d => ({
+			domain: d.domain,
+			seconds: metric === 'total' ? d.totalSeconds : metric === 'active' ? d.activeSeconds : d.backgroundSeconds,
+			color: getDomainColor(d.domain),
+		}))
 
-		const total = data.reduce((sum, d) => sum + d.seconds, 0)
-
-		if (total === 0) return []
-
-		// Calculate percentages and group small ones into "Other".
-		// The server folds its own tail first (`minPercent: 1`) and sends it as an `OTHER_DOMAIN` row, so
-		// that row is merged into this bucket unconditionally rather than thresholded: above the local
-		// threshold it would otherwise survive as a *second* `OTHER_DOMAIN` segment and the legend would
-		// carry two identical "Ostatné" entries. Two fold thresholds in two places is the real tidy-up
-		// (see `_fix-queue.md` → `tracking-dashboards` deferred (2)); this keeps the sentinel single.
-		const threshold = props.otherThresholdPercent ?? 3
-		const significant: PieSegment[] = []
-		let otherSeconds = 0
-
-		for (const d of data) {
-			const percent = (d.seconds / total) * 100
-			if (d.domain !== OTHER_DOMAIN && percent >= threshold) {
-				significant.push({ ...d, percent })
-			} else {
-				otherSeconds += d.seconds
-			}
-		}
-
-		if (otherSeconds > 0) {
-			significant.push({
-				domain: OTHER_DOMAIN,
-				seconds: otherSeconds,
-				percent: (otherSeconds / total) * 100,
-				color: '#9e9e9e',
-			})
-		}
-
-		return significant.sort((a, b) => b.seconds - a.seconds)
+		return foldPieTail(data, '#9e9e9e', {
+			thresholdPercent: showTail.value ? 0 : undefined,
+			keep: selectedDomain.value,
+		})
 	})
 
 	const selectedDomainDetails = computed(() => {

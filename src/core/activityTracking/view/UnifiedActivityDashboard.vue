@@ -216,8 +216,8 @@
 					range.dateTo,
 					range.timeFrom,
 					range.timeTo,
+					// No `minPercent`: the section folds the tail itself (`foldPieTail`), so it can expand it.
 					sources.value,
-					1,
 				),
 				signal,
 			)

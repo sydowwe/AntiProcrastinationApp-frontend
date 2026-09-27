@@ -48,7 +48,9 @@
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"
-						:domains="pieSegments"
+						v-model:showTail="showTail"
+						:domains="pie.segments"
+						:foldedCount="pie.foldedCount"
 						:selectedDomain="selectedAppLabel ?? ''"
 						:showViewMode="false"
 						@segmentClick="onSegmentClick"
@@ -100,7 +102,7 @@
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import AndroidAppDetailsPanel, { type AndroidAppDetailsError } from './AndroidAppDetailsPanel.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
-	import type { PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { foldPieTail } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { getAndroidAppDetails } from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
 	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
@@ -137,20 +139,19 @@
 	// only satisfies `ActivityPieChart`'s required model.
 	const viewMode = ref<'total' | 'active' | 'background'>('total')
 
-	const pieSegments = computed<PieSegment[]>(() => {
-		const data = props.apps
-			.map(a => ({
+	const showTail = ref(false)
+
+	const pie = computed(() =>
+		foldPieTail(
+			props.apps.map(a => ({
 				domain: a.appLabel,
 				seconds: a.totalSeconds,
 				color: getDomainColor(a.packageName),
-			}))
-			.filter(d => d.seconds > 0)
-
-		const total = data.reduce((sum, d) => sum + d.seconds, 0)
-		if (total === 0) return []
-
-		return data.map(d => ({ ...d, percent: (d.seconds / total) * 100 })).sort((a, b) => b.seconds - a.seconds)
-	})
+			})),
+			'#9e9e9e',
+			{ thresholdPercent: showTail.value ? 0 : undefined, keep: selectedAppLabel.value },
+		),
+	)
 
 	// The instant half of the panel (F47): total, share and package straight off the pie row, so the
 	// panel is never blank while `app-details` is in flight. The folded tail (`_other`) needs no guard —

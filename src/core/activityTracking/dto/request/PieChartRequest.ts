@@ -7,7 +7,7 @@ export class PieChartRequest extends ActivityRangeRequest {
 		dateTo: string,
 		from: Time,
 		to: Time,
-		public minPercent: number,
+		public minPercent?: number,
 	) {
 		super(dateFrom, dateTo, from, to)
 	}

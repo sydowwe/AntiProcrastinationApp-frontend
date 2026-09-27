@@ -51,7 +51,9 @@
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"
-						:domains="pieSegments"
+						v-model:showTail="showTail"
+						:domains="pie.segments"
+						:foldedCount="pie.foldedCount"
 						:selectedDomain="selectedItem"
 						@segmentClick="onSegmentClick"
 					/>
@@ -167,7 +169,7 @@
 	import ChipWithIcon from '@/_common/component/feedback/ChipWithIcon.vue'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { unifiedItemColor, useActivitySources } from '@/core/activityTracking/composable/useActivitySources.ts'
-	import { OTHER_DOMAIN, type PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { foldPieTail, OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import type { UnifiedActivityItem } from '@/core/activityTracking/dto/response/unified/UnifiedActivityItem.ts'
 	import type { UnifiedPieTotals } from '@/core/activityTracking/dto/response/unified/UnifiedPieTotals.ts'
 	import type { ActivitySource } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
@@ -178,7 +180,6 @@
 		totals,
 		loading = false,
 		error = false,
-		otherThresholdPercent = 3,
 		emptyProbeState = 'idle',
 		isRangeMode = false,
 	} = defineProps<{
@@ -186,7 +187,6 @@
 		totals?: UnifiedPieTotals
 		loading?: boolean
 		error?: boolean
-		otherThresholdPercent?: number
 		emptyProbeState?: ActivityEmptyProbeState
 		isRangeMode?: boolean
 	}>()
@@ -207,50 +207,25 @@
 		return sourceOptions.value.find(option => option.value === source)?.icon ?? 'fas fa-question'
 	}
 
-	const pieSegments = computed<PieSegment[]>(() => {
-		const data = items
-			.map(item => ({
-				domain: item.label,
-				seconds:
-					viewMode.value === 'total'
-						? item.totalSeconds
-						: viewMode.value === 'active'
-							? item.activeSeconds
-							: item.backgroundSeconds,
-				// One identity string in, one colour out, whichever source the item came from.
-				color: unifiedItemColor(item.label),
-			}))
-			.filter(segment => segment.seconds > 0)
+	const showTail = ref(false)
 
-		const total = data.reduce((sum, segment) => sum + segment.seconds, 0)
-		if (total === 0) return []
+	const pie = computed(() => {
+		const data = items.map(item => ({
+			domain: item.label,
+			seconds:
+				viewMode.value === 'total'
+					? item.totalSeconds
+					: viewMode.value === 'active'
+						? item.activeSeconds
+						: item.backgroundSeconds,
+			// One identity string in, one colour out, whichever source the item came from.
+			color: unifiedItemColor(item.label),
+		}))
 
-		const significant: PieSegment[] = []
-		let otherSeconds = 0
-
-		// The server folds its own tail first and sends it as an `OTHER_DOMAIN` row, so that row is merged
-		// into this bucket unconditionally rather than thresholded — above `otherThresholdPercent` it would
-		// otherwise survive as a *second* `OTHER_DOMAIN` segment and the legend would carry two identical
-		// "Ostatné" entries. Same guard as `ActivityPieChartSection`, the other locally-bucketing section.
-		for (const segment of data) {
-			const percent = (segment.seconds / total) * 100
-			if (segment.domain !== OTHER_DOMAIN && percent >= otherThresholdPercent) {
-				significant.push({ ...segment, percent })
-			} else {
-				otherSeconds += segment.seconds
-			}
-		}
-
-		if (otherSeconds > 0) {
-			significant.push({
-				domain: OTHER_DOMAIN,
-				seconds: otherSeconds,
-				percent: (otherSeconds / total) * 100,
-				color: unifiedItemColor(OTHER_DOMAIN),
-			})
-		}
-
-		return significant.sort((a, b) => b.seconds - a.seconds)
+		return foldPieTail(data, unifiedItemColor(OTHER_DOMAIN), {
+			thresholdPercent: showTail.value ? 0 : undefined,
+			keep: selectedItem.value,
+		})
 	})
 
 	const selectedDetails = computed(() =>

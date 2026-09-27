@@ -48,7 +48,9 @@
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"
-						:domains="pieSegments"
+						v-model:showTail="showTail"
+						:domains="pie.segments"
+						:foldedCount="pie.foldedCount"
 						:selectedDomain="selectedProductName ?? ''"
 						@segmentClick="onSegmentClick"
 					/>
@@ -112,7 +114,7 @@
 	import DesktopProcessDetailsPanel from './DesktopProcessDetailsPanel.vue'
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
-	import type { PieSegment } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { foldPieTail } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { getDesktopProcessDetails } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
 	import type { DesktopProcessPieData } from '@/core/activityTracking/dto/response/desktop/DesktopProcessPieData.ts'
@@ -148,22 +150,21 @@
 	const processDetails = ref<DesktopProcessDetailsResponse | null>(null)
 	const detailsLoading = ref(false)
 
-	const pieSegments = computed<PieSegment[]>(() => {
+	const showTail = ref(false)
+
+	const pie = computed(() => {
 		const metric = viewMode.value
 
-		const data = props.processes
-			.map(p => ({
-				domain: p.productName,
-				seconds:
-					metric === 'total' ? p.totalSeconds : metric === 'active' ? p.activeSeconds : p.backgroundSeconds,
-				color: getDomainColor(p.processName),
-			}))
-			.filter(d => d.seconds > 0)
+		const data = props.processes.map(p => ({
+			domain: p.productName,
+			seconds: metric === 'total' ? p.totalSeconds : metric === 'active' ? p.activeSeconds : p.backgroundSeconds,
+			color: getDomainColor(p.processName),
+		}))
 
-		const total = data.reduce((sum, d) => sum + d.seconds, 0)
-		if (total === 0) return []
-
-		return data.map(d => ({ ...d, percent: (d.seconds / total) * 100 })).sort((a, b) => b.seconds - a.seconds)
+		return foldPieTail(data, '#9e9e9e', {
+			thresholdPercent: showTail.value ? 0 : undefined,
+			keep: selectedProductName.value,
+		})
 	})
 
 	watch(selectedProductName, async productName => {
