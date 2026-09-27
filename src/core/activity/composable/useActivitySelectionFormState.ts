@@ -2,7 +2,10 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import type { Ref } from 'vue'
 import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 import { ActivityOptionsSource } from '@/core/activity/dto/enum/ActivityOptionsSource.ts'
-import { filterActivityFormSelectOptions } from '@/core/activity/composable/ActivitySelectsComposition.ts'
+import {
+	dropNarrowingThatExcludes,
+	filterActivityFormSelectOptions,
+} from '@/core/activity/composable/ActivitySelectsComposition.ts'
 import {
 	orderActivityOptionsByRecency,
 	pruneRecencyToKnownActivities,
@@ -78,8 +81,12 @@ export function useActivitySelectionFormState(
 		selectedActivityId.value = formData.value.activityId
 	}
 
+	// The parent set the activity (a timer preset): it wins over a role or category that excludes it.
+	// Cleared here, before `formData`'s own watcher refreshes the options — pruning would otherwise drop
+	// the activity along with the narrowing.
 	watch(selectedActivityId, value => {
 		if (formData.value.activityId !== value) {
+			dropNarrowingThatExcludes(allOptionsCombinations.value, formData.value, value)
 			formData.value.activityId = value
 		}
 	})
@@ -190,6 +197,8 @@ export function useActivitySelectionFormState(
 				loadSecondaryOptions(),
 			])
 			allOptionsCombinations.value = combinations
+			// Same rule for a preselection that arrived before the matrix did.
+			dropNarrowingThatExcludes(combinations, formData.value, formData.value.activityId)
 			optionsLoaded.value = true
 			// Only `ALL` sees every activity. The narrower sources are subsets, so pruning against one
 			// of them would delete recency entries that are still valid everywhere else.

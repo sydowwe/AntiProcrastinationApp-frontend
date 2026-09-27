@@ -55,3 +55,30 @@ export function filterActivityFormSelectOptions(
 	)
 	return filteredOptions
 }
+
+/**
+ * An activity set from outside the dropdown — a timer preset, a preselection — wins over the role and
+ * category narrowing it contradicts, so this clears whichever of the two excludes it.
+ *
+ * Without it the two narrow each other out: the role hides the activity, the activity hides the role,
+ * and `pruneSelectionsMissingFromOptions` clears both in one pass, so the form is left with neither.
+ * An id the matrix does not know is left alone — there is nothing to judge the narrowing against.
+ */
+export function dropNarrowingThatExcludes(
+	allOptionsCombinations: ActivitySelectOptionCombination[],
+	formData: ActivityFormRequest,
+	activityId: number | null,
+) {
+	if (activityId == null) return
+	const combinations = allOptionsCombinations.filter(combination => combination.id === activityId)
+	if (combinations.length === 0) return
+	if (formData.roleId != null && !combinations.some(combination => combination.roleOption.id === formData.roleId)) {
+		formData.roleId = null
+	}
+	if (
+		formData.categoryId != null &&
+		!combinations.some(combination => combination.categoryOption?.id === formData.categoryId)
+	) {
+		formData.categoryId = null
+	}
+}
