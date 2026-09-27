@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
 
@@ -158,6 +159,11 @@ export default defineConfig({
 		'import.meta.env.VITE_APP_VERSION': JSON.stringify(
 			JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version,
 		),
+	},
+	test: {
+		// Unit tests only. `e2e/` is a separate Playwright project whose `*.spec.ts` files match
+		// vitest's default glob and fail to load outside Playwright's runner.
+		include: ['src/**/*.{test,spec}.ts'],
 	},
 	server: {
 		// No auto-reload on file change — refresh the browser manually to pick up edits.

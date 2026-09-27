@@ -34,7 +34,7 @@
  * table at the bottom of this file for which, and why.
  */
 globalThis.NOTIFICATION_SUBJECT_ROUTES = {
-	// `/planovac/behy/:id(\d+)` — scheduler.routes.ts. The view already renders a not-found alert
+	// `/planovac/behy/:id(\d+)` — APP_SCHEDULER_PATHS in src/router.ts. The view already renders a not-found alert
 	// when the run is gone, which is what makes a dangling reference safe to link to.
 	scheduledJobRun: function (id) {
 		return '/planovac/behy/' + id

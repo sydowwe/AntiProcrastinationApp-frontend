@@ -2,7 +2,9 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 // `?raw` rather than node:fs — @types/node is not in this project's tsconfig, and importing the
 // route table normally would drag in every scheduler view component for a string comparison.
-import schedulerRoutesSource from '@/_common/modules/scheduler/scheduler.routes.ts?raw'
+// The scheduler's paths are the app's, passed to the framework's `schedulerRoutes()` factory from
+// router.ts — the framework's own defaults are English and not what this app serves.
+import appRouterSource from '@/router.ts?raw'
 import dayPlannerRoutesSource from '@/core/dayPlanner/dayPlanner.routes.ts?raw'
 import todoListRoutesSource from '@/core/todoList/todoList.routes.ts?raw'
 import {
@@ -41,8 +43,8 @@ describe('the map stays in step with the route table', () => {
 	// here instead of silently producing a 404 from a notification.
 	it('scheduledJobRun still points at a path the router serves', () => {
 		expect(globalThis.NOTIFICATION_SUBJECT_ROUTES?.scheduledJobRun(77)).toBe('/planovac/behy/77')
-		// The route declares `/planovac/behy/:id(\d+)`; the built path must share its literal prefix.
-		expect(schedulerRoutesSource).toContain("path: '/planovac/behy/:id")
+		// router.ts declares `runDetail: '/planovac/behy/:id(\d+)'`; the built path must share its literal prefix.
+		expect(appRouterSource).toContain("runDetail: '/planovac/behy/:id")
 	})
 
 	it('plannerTask still points at the redirect route, not at the dated day view', () => {
