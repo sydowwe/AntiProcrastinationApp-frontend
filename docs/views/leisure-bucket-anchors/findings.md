@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (X1-X4 all fixed and verified) · bug 0 (B1, B2, B3 all fixed) · a11y 0 (A1 fixed) · polish 0 (P1 fixed) · opportunity 1 · unverified 0
+**Tally:** blocker 0 (X1-X4 all fixed and verified) · bug 0 (B1, B2, B3 all fixed) · a11y 0 (A1 fixed) · polish 0 (P1 fixed) · opportunity 0 (O1 built) · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
@@ -11,13 +11,15 @@
 | 2 | 2026-09-15 | `f457aa0c` | mutation pass — full create→edit→delete lifecycle exercised for both entities. Found **X4** (edit and delete both silently 404 for every bucket-list profile — a new blocker) and **B3** (Inspiration column always renders "—" regardless of data, a framework formatter bug). Strengthened **B2** with matching evidence on the bucket-list side plus a worse search-corruption wrinkle. Reconfirmed **X1, X2, X3, B1** unchanged. Resolved **U1** and **U2** (both verified working correctly, moved to Resolved section below, no longer counted as findings). **A1** and **P1** were not re-driven this round (time-boxed; no code change expected in the affected files) — carried forward as-is. |
 | 3 | 2026-09-16 | working tree | **X3 closed.** Backend shipped `GET /memory-anchor/anchor-eligible-activities` (`AdhdTimeOrganizer` `dev`, `GetAnchorEligibleActivitiesEndpoint`, pinned by 6 green `AnchorEligibleActivitiesTests`; written up as `prompts/view-docs/backend/_implemented/B12-…`) and the frontend's missing `try/catch/finally` plus a distinct failure alert landed the same day (`_fix-queue.md` `F62`, now closed — bodies in `_fix-queue-log.md` → *Closed batches*/*Closed escalations*, §12). Verified live against the restarted local backend: opening "Add" on `/leisure/memory-anchors` fetches and populates the Activity picker with no console error. |
 | 4 | 2026-09-24 | working tree | Static re-check plus a live spot-check of B1. **X1/X2 closed** — `LADDER_PAGE_SIZE`/`TIMELINE_PAGE_SIZE` are now `200` in `BucketListView.vue`/`MemoryAnchorsView.vue`. **X4 closed** — `ActivityBucketListProfile.id` is now the profile's own primary key (comment: "every write route is keyed by it, not by `activityId`"), and `BucketListTable.vue`/`BucketListLadder.vue`/`BucketListProfileForm.vue` (plus the three sibling views flagged in X4) all call `update`/`deleteEntity` with `item.id`. **B1 closed, verified live** against the running local backend via `playwright-cli` — `minComfortZoneStep=5` on the bucket-list grid and `minRating=9`/`year=2025`/`month=1` on the memory-anchor grid all now correctly narrow the result set (previously all four were silently ignored). **B2 closed** — `ActivityBucketListProfileRequest.activityId`/`.experienceTypeId` and `MemoryAnchorRequest.activityId` are now `number | null = null` (fix landed as part of `F63`, alongside the same fix in `ActivityBacklogProfileRequest`/`ActivityProjectProfileRequest`). **B3 closed** — `useTableFormatters.ts`'s keyword matchers now split the key into whole words (`keySegments`/`hasWord`) instead of bare substring `includes()`; the file's own comment cites this exact `inspirationSource`/`ratio` collision as the reason. **P1 closed** — `boolChip`'s `falseIcon` param is no longer defaulted; both `isAnchored` call sites in `BucketListView.vue`/`BacklogView.vue` now pass a distinct `circle-xmark`. **A1 closed** — `BucketListView.vue`'s Table/Ladder toggles, `MemoryAnchorTimeline.vue`'s year-nav buttons, and `DataTable.vue`'s row edit/delete `VIconBtn`s all now set `aria-label` alongside `title` (one unrelated gap noted: `TableGrid.vue`, a different table variant not used by this unit, still lacks it). |
+| 5 | 2026-09-24 | working tree | **O1 built.** Savings-goal readout on the bucket list, inspiration note on ladder cards, per-source counts in the timeline's year header. Verified live — see O1. |
+| 6 | 2026-09-25 | `d423edcc` | **retest round** — 6 retested live: X1, X2, X4, B2, B3, A1 all pass. Account: primaryUser. Mutations made and reverted: one throwaway bucket-list profile ("Build a Bookshelf", id 17102) created, comfort-zone-step edited 1→4→1, then deleted (201/200/200/204); fixture back to its original 1 bucket-list row and 2 memory anchors, confirmed by row count. No regressions seen outside the Verify blocks; console clean throughout. |
 
 ---
 
 ### X1. Bucket-list ladder view always shows the empty state, even with real data — request always fails with 400
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `LADDER_PAGE_SIZE` in `BucketListView.vue` is now
-  `200`, matching the backend's cap (same fix `ProjectsView.vue`'s `BOARD_PAGE_SIZE` already used). Not
-  re-driven live against a running backend this round; verify the pass condition below before fully closing.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `POST /api/activity-bucket-list-profile/grid`
+  returned 200 (no 400), and the ladder showed the seeded "Learn Bouldering" row under rung 3 ("Solidly
+  outside comfort"), matching the table's "3/5".
 - **Severity:** blocker
 - **Where:** `/leisure/bucket-list` → Ladder toggle → `src/core/leisure/view/BucketListView.vue:65` (`loadLadder`), `LADDER_PAGE_SIZE = 500` at line ~142
 - **Expected:** B2 built the ladder to show every bucket-list row grouped by comfort-zone rung. With one real
@@ -53,8 +55,9 @@
   `LADDER_PAGE_SIZE = 500` constant.
 
 ### X2. Memory-anchors timeline view always shows the empty state, even with real data — same 400 as X1
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `TIMELINE_PAGE_SIZE` in `MemoryAnchorsView.vue` is now
-  `200`. Not re-driven live this round; verify the pass condition below before fully closing.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `POST /api/memory-anchor/grid` returned 200 (no
+  400); the year strip shaded July 2026 ("Retired Hobby", 7/10) and August 2026 ("Learn Bouldering", 9/10),
+  and both anchors' highlight notes rendered under their month.
 - **Severity:** blocker
 - **Where:** `/leisure/memory-anchors` → Timeline toggle → `src/core/leisure/view/MemoryAnchorsView.vue:58`
   (`loadTimeline`), `TIMELINE_PAGE_SIZE = 500` at line ~120
@@ -123,13 +126,12 @@
   entry point only.
 
 ### X4. Editing or deleting a bucket-list profile always fails with a silent 404 — every row's edit and delete is completely non-functional
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `ActivityBucketListProfile.id` is now the profile's
-  own database primary key (not aliased to `activityId`; the getter carries the comment "every write route
-  is keyed by it, not by `activityId`"), and `BucketListTable.vue`, `BucketListLadder.vue` and
-  `BucketListProfileForm.vue` all pass `item.id`/`entityToEdit.id` to `update()`/`deleteEntity()`. The three
-  sibling call sites flagged below are also fixed now: `BacklogTable.vue:144`, `ProjectTable.vue:106`, and
-  `ProjectReadinessBoard.vue:301` all call `deleteEntity(item.id)` too. Not re-driven live; verify the pass
-  condition below before fully closing.
+- **Status:** fixed and verified (retest 2026-09-25, live) — created a throwaway profile ("Build a
+  Bookshelf", `POST /api/activity-bucket-list-profile` → 201, id `17102`); edited its Comfort zone step 1→4
+  (`PUT /api/activity-bucket-list-profile/17102` → 200, table updated to "4/5" with no reload), reverted it
+  4→1 (same URL, 200), then deleted it (`DELETE /api/activity-bucket-list-profile/17102` → 204, row removed
+  live). All three requests used the profile's own `id` (17102), never `activityId`. Fixture restored to its
+  original 1 row afterward.
 - **Severity:** blocker
 - **Where:** `src/core/leisure/component/bucketList/BucketListProfileForm.vue:48` (`update(entityToEdit.activityId, ...)`),
   `src/core/leisure/component/bucketList/BucketListTable.vue:133` (`deleteEntity(item.activityId)`),
@@ -237,11 +239,12 @@
   response still returned the `comfortZoneStep: 3` seeded row (`itemsCount: 1`).
 
 ### B2. Create dialogs show a literal "0" in required pickers, and the required-field rule accepts it — an invalid submission reaches the server
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `ActivityBucketListProfileRequest.activityId` /
-  `.experienceTypeId` and `MemoryAnchorRequest.activityId` are now typed `number | null = null` (landed as
-  part of `F63`, per the comment in `MemoryAnchorRequest.ts`; the sibling `ActivityBacklogProfileRequest` and
-  `ActivityProjectProfileRequest` got the same fix). Not re-driven live; verify the pass condition below
-  before fully closing.
+- **Status:** fixed and verified (retest 2026-09-25, live) — Bucket List's fresh Add dialog: Activity and
+  Experience type comboboxes were empty (input `.value === ""`, no "0"); clicking Create with nothing chosen
+  fired no `POST /api/activity-bucket-list-profile` and showed "This field is required" under Activity,
+  Experience type and Inspiration; typing "Build a Bookshelf" into a fresh Activity field showed the real
+  option in the dropdown with no leading "0" and no need to clear first. Memory Anchors' Add dialog: Activity
+  combobox also empty on open, no "0". Both dialogs cancelled/completed with no residue.
 - **Severity:** bug
 - **Where:** `src/core/leisure/dto/request/ActivityBucketListProfileRequest.ts:4` (`experienceTypeId: number
   = 0`) and `src/core/leisure/dto/request/MemoryAnchorRequest.ts:15` (`activityId: number = 0`), consumed by
@@ -305,11 +308,10 @@
   change needed there once the defaults stop being `0`.
 
 ### B3. The bucket-list table's Inspiration column always renders "—", regardless of the underlying data
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `useTableFormatters.ts` now splits a column key
-  into whole words (`keySegments`) and matches keywords word-for-word (`hasWord`) instead of bare substring
-  `includes()`; the file's own doc comment cites this exact `inspirationSource`/`ratio` collision (plus
-  `durationMinutes`/`ratio` and `errorSummary`/`sum`) as the reason for the rewrite. Not re-driven live;
-  verify the pass condition below before fully closing.
+- **Status:** fixed and verified (retest 2026-09-25, live) — the seeded "Learn Bouldering" row's Inspiration
+  column read "A friend's climbing photos" (not "—"); a freshly created row's Inspiration column also read
+  its real text ("Retest throwaway row") both immediately after create and after an edit, confirmed across
+  both Table and Ladder view (ladder card showed "Inspiration" label with the same text).
 - **Severity:** bug
 - **Where:** `src/_common/composable/table/useTableFormatters.ts:6,30-33` (`PERCENT_KEYWORDS`, `isPercentKey`,
   `formatPercent`), consumed by `src/_common/component/dataTable/DataTable.vue`'s zero-config default
@@ -352,13 +354,12 @@
   name-sniffed, since a heuristic that silently blanks real data is worse than one that under-formats it.
 
 ### A1. Several icon-only controls have a `title` but no `aria-label` across both views
-- **Status:** ✅ **fixed (static re-check 2026-09-24)** — `BucketListView.vue` now sets `aria-label` alongside
-  `title` on the Table/Ladder toggle buttons; `MemoryAnchorTimeline.vue`'s previous/next-year (and
-  choose-year) buttons do too; and the row `edit`/`delete` `VIconBtn`s rendered by `DataTable.vue` (the path
-  `BasicTable` uses) now pass `:aria-label="action.text"` alongside `:title`. One related gap remains:
-  `TableGrid.vue`'s own action-button rendering (used by a different table variant, not this unit's views)
-  still sets only `:title`, no `:aria-label` — out of scope here, worth a one-line follow-up if that
-  component gets touched.
+- **Status:** fixed and verified (retest 2026-09-25, live) — queried every `button[title]` on both views:
+  Table/Ladder and Table/Timeline toggles, Previous/Next-year and Pick-a-year, and every row Edit/Delete all
+  have a non-null `aria-label` matching their `title` (Edit/Delete are the generic per-action label, not
+  row-naming, on the Table view's `DataTable`; the Ladder view's own delete button does name the row —
+  "Delete: Learn Bouldering" — satisfying the "ideally" clause). Only "Switch to dark mode" and "Add" (a
+  labelled, not icon-only, button) lack `aria-label`, both out of this finding's scope.
 - **Severity:** a11y
 - **Where:** Table/Ladder toggle and Table/Timeline toggle (`BucketListView.vue`, `MemoryAnchorsView.vue`),
   row `edit`/`delete` buttons (`BasicTable`, shared framework component), Timeline's previous/next-year
@@ -405,7 +406,26 @@
   parameter and always derive the icon from the label text's own `✓`/`✗` logic.
 
 ### O1. `financialGoal`, `inspirationSource` and the anchor's source flags are captured but never spent
-- **Status:** open
+- **Status:** ✅ **built and verified live 2026-09-24** — all three ideas below shipped:
+  - *Savings readout.* `useSavingsGoals.ts` + `SavingsGoalsReadout.vue`, a second strip under the
+    experienced bar on `/leisure/bucket-list` (both views): *Still to save: {remaining}* plus, when
+    completion is not already filtered on, a bar and *{lived} of {total} in goals already lived*. It sums
+    `financialGoal` over **every** row under the current filter (one 200-row page on its own crud
+    instance, not the table's page), treats a null/zero goal as "no goal", hides when no row has a goal,
+    when the filter is *Experienced: ✓*, and when the set exceeds 200 rows (a truncated sum would be a
+    confident wrong number). No currency — the wire carries none. Refreshed on every reload, like the
+    experienced count. Unit-tested in `useSavingsGoals.test.ts`.
+  - *Inspiration on the ladder.* Each ladder card shows `inspirationSource` under the activity name
+    (truncated, full text in `title`, a `d-sr-only` field label).
+  - *Source breakdown on the timeline.* The year header shows a chip per source — *Bucket List: n*,
+    *Backlog (one-time): n* — for the anchors the year (and month filter) shows, using the same
+    classification as the per-anchor chip. An anchor whose source profile is gone counts in neither; the
+    finding's "planned vs. spontaneous" wording is not used, because anchoring requires a one-time
+    profile, so every anchor is "from a list" when written.
+  - *Verified* via `playwright-cli`: seed state reads *Still to save: 0 · 120 of 120*; with a temporary
+    unexperienced row (goal 250.5, deleted afterwards, 204) it reads *250.5 · 120 of 370.5*, and
+    `?isAnchored=false` shows *Still to save: 250.5* with no bar. Ladder shows both rows' notes; the 2026
+    timeline shows *Bucket List: 1* (the other seeded anchor has no one-time source). Console clean.
 - **Severity:** opportunity
 - **Where:** `ActivityBucketListProfile.financialGoal` / `.inspirationSource` (both views' tables render them
   as plain columns only); `MemoryAnchor.hasBacklog` / `.backlogIsRepeatable` / `.hasBucketList` (used only to

@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (1 fixed) · bug 0 (5 fixed) · a11y 0 (1 fixed) · polish 0 (1 fixed) · opportunity 0 (2 fixed) · unverified 0 (5 verified, all pass)
+**Tally:** blocker 0 (1 fixed and verified live) · bug 0 (5 fixed and verified live) · a11y 0 (1 fixed and verified live) · polish 0 (1 fixed and verified live) · opportunity 0 (2 fixed and verified live) · unverified 0 (5 verified, all pass)
 
 ## Round history
 | round | date | commit | what changed |
@@ -11,14 +11,16 @@
 | 2 | 2026-09-24 | code check only (no browser pass) | X1, B1, B2, B3, B4, B5 confirmed fixed in code; A1 already marked fixed and reconfirmed; P1, O1, O2, U1-U5 still open |
 | 3 | 2026-09-24 | live `playwright-cli` pass | U1-U5 all exercised via route mocking + a second-account sign-in; all five pass as designed, no defects found |
 | 4 | 2026-09-24 | uncommitted | O1, O2, P1 fixed (P1 in the framework) |
+| 5 | 2026-09-25 | `d423edcc` | **retest round** — 7 retested live: X1, B1, B2, B3, B4, B5, O1 pass; none reopened; none blocked (B1's third Verify step — a real weather-dependency entry still excluded/boosted — and O1's ranking-penalty observation could not be exercised: the seed has only one backlog row). Account: primaryUser. Mutations made and reverted: X1 Duration edit on row 17001 (45→46→45); two throwaway backlog rows created and deleted (ids 17002, 17003) for the X1-delete and B4 checks, neither of which produced a memory anchor. No regressions seen outside the Verify blocks; F90 toggle groups on `/leisure/pick` ("Time available"/"Energy right now"/"Who's around") still correctly named and pressed-stated. |
 
 ---
 
 ### X1. Editing or deleting any backlog profile fails — the frontend uses the wrong id
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfile.id` now carries the
-  server's own row id (constructor param + `fromJson`, with an explanatory comment). `BacklogProfileForm.vue:48`
-  calls `update(entityToEdit.id, …)` and `BacklogTable.vue:144` calls `deleteEntity(item.id)` — both keyed
-  correctly now.
+- **Status:** fixed and verified (retest 2026-09-25, live) — edited the seeded row (id 17001): changed Duration
+  45→46 and Saved, dialog closed, table showed "46" (`PUT /api/activity-backlog-profile/17001` → 200); reverted
+  46→45 the same way. Created a throwaway entry (Grocery Shopping) to test delete: `POST
+  /api/activity-backlog-profile` → 201 (id 17002), then deleted it (`DELETE
+  /api/activity-backlog-profile/17002` → 204) — row disappeared and stayed gone after a reload.
 - **Severity:** blocker
 - **Where:** `src/core/leisure/component/backlog/BacklogProfileForm.vue:48` (`update(entityToEdit.activityId, ...)`),
   `src/core/leisure/component/backlog/BacklogTable.vue:151` (`deleteEntity(item.activityId)`), root
@@ -58,10 +60,15 @@
 ---
 
 ### B1. The picker hard-excludes a "no weather dependency" backlog entry whenever today's weather doesn't match any lookup value — currently blocking the only seeded suggestion
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfile.realWeatherDependencyId`
-  now returns `null` for the "None" weather-dependency code (and for an unrecognised code), and
-  `leisureScoring.ts`'s `CandidateFacts.weatherDependencyId` is fed from that getter, so a "None" row is never
-  hard-excluded or given the weather-match bonus.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `GET /leisure-weather-fit` returned
+  `{"matchingWeatherDependencyIds":[]}` (same empty-match condition as the original finding), and "Read a
+  Novel" (weatherDependency "None") still appeared as the picker's suggestion on `/leisure/pick`'s default
+  load — no "Nothing matches those constraints". The Verify block's third step (confirm a real-dependency
+  entry is still excluded/boosted) could not be exercised: the seed has only this one backlog row and none
+  with an actual weather dependency. That half is held by unit tests instead (passing 2026-09-25):
+  `leisureScoring.test.ts` › "excludes a backlog activity whose weather dependency does not fit today…" and
+  "ranks a backlog activity up when its weather dependency matches today", plus
+  `activityBacklogProfileWeatherCode.test.ts` (a *None* row maps to `realWeatherDependencyId: null`).
 - **Severity:** bug
 - **Where:** `src/core/leisure/composable/leisureScoring.ts` `isEligible()` (backlog branch), fed by
   `src/core/leisure/composable/useWeatherFit.ts` and `useLeisurePicker.ts`'s `redraw()`
@@ -107,9 +114,9 @@
 ---
 
 ### B2. Create-dialog required selects show a literal "0" instead of a placeholder, and it leaks into typed search text
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityBacklogProfileRequest`'s four
-  lookup-id fields now default to `null` (widened to `number | null`), with a doc comment referencing this
-  finding (`_fix-queue.md` F63).
+- **Status:** fixed and verified (retest 2026-09-25, live) — fresh create dialog: Activity, Location, Weather
+  and Cost all show their label as a placeholder with no value text; typing "Grocery" into Activity (without
+  clearing first) left the field reading exactly "Grocery", no "0" prefix.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (Activity, Location,
   Weather, Cost fields), root cause `src/core/leisure/dto/request/ActivityBacklogProfileRequest.ts:6-13`
@@ -143,11 +150,9 @@
 ---
 
 ### B3. Create-form client validation doesn't match server requirements, and the failure is shown as a useless generic message
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — Location/Weather/Cost now carry
-  `:rules="[requiredRule]"` and `:errorMessages="serverErrors.*"` in `NewBacklogProfileForm.vue`; Activity is
-  handled inside `ActivityAutocompleteWithCreate` (also wired to `serverErrors.activityId`). `B2`'s `null`
-  defaults make `requiredRule` correctly block an unpicked field. `BacklogProfileForm.vue`'s `onConfirm` now
-  wraps the write in `try/catch` and calls `formRef.value!.applyServerError(e)` on failure.
+- **Status:** fixed and verified (retest 2026-09-25, live) — opened the create dialog and clicked Create with
+  nothing selected: inline "This field is required" appeared under Activity, Location, Weather and Cost, and
+  no `POST /api/activity-backlog-profile` request was sent (confirmed via the network log).
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/backlog/NewBacklogProfileForm.vue` (only `Activity` carries
   `:rules="[requiredRule]"`, via `ActivityAutocompleteWithCreate.vue`; Location/Weather/Cost carry
@@ -191,13 +196,15 @@
 ---
 
 ### B4. Same pattern in the memory-anchor form: Highlight is server-required, has no client rule, and the 400 is silent
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `NewMemoryAnchorForm.vue` now carries
-  `:rules="[requiredRule]"` and `:errorMessages="serverErrors.highlightNote"` on the Highlight field (Activity
-  gets the same treatment), matching B3's fix.
+- **Status:** fixed and verified (retest 2026-09-25, live) — created a throwaway non-repeatable backlog entry,
+  clicked "I did this" to open "Write it down", left Highlight empty, clicked "Save the moment": inline "This
+  field is required" appeared under Highlight and no `POST /api/memory-anchor` request was sent. Cancelled the
+  dialog (no anchor created) and deleted the throwaway backlog row afterward.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/memoryAnchor/NewMemoryAnchorForm.vue` (Highlight field, no
   `required` rule observed), `src/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue` (its
-  `onConfirm`, not inspected for a catch block but the observed behaviour matches B3's pattern exactly)
+  `onConfirm` — at capture time it matched B3's pattern; since the fix it catches the write and routes the
+  server's per-field message through `formRef.applyServerError(e)`, confirmed by source read 2026-09-25)
 - **Expected:** Same as B3 — either block an empty Highlight client-side, or show the server's actual
   complaint.
 - **Actual:** Clicking "Save the moment" with Highlight empty sends the request, gets a 400
@@ -222,9 +229,9 @@
 ---
 
 ### B5. Duration column renders as a percentage — "90.00 %" instead of "90 min"
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — **[framework]** `useTableFormatters.ts` now
-  matches whole words (`keySegments()` splits on `.`/`_`/`-`/camelCase boundaries, `hasWord()` compares whole
-  segments) instead of substrings, so `durationMinutes` no longer collides with the `ratio` keyword.
+- **Status:** fixed and verified (retest 2026-09-25, live) — **[framework]** the Duration (min) column reads
+  "45" (and "46" during the X1 edit check), no "%" in either state. No other duration-like column noticed a
+  regression in the other direction during this pass.
 - **Severity:** bug — **[framework]**
 - **Where:** `src/_common/composable/table/useTableFormatters.ts` `isPercentKey()` /
   `PERCENT_KEYWORDS`, observed via `src/core/leisure/component/backlog/BacklogTable.vue`'s
@@ -319,10 +326,13 @@
 ---
 
 ### O1. `maxParticipants` is captured on every backlog entry and spent nowhere
-- **Status:** fixed (2026-09-24, unit-tested, not browser-verified) — ranks rather than excludes:
-  `CandidateFacts.maxParticipants` feeds a flat `PARTY_TOO_BIG_PENALTY` (−2) in `scoreCandidate` when more
-  people are around than the entry takes (a two-player game is still doable with four around, just a worse
-  answer). `BacklogTable` gains a non-sortable "People" column rendering the range (`2–4`, `1+`, `2`).
+- **Status:** fixed and verified (retest 2026-09-25, live) — on `/leisure/backlog` the "People" column renders
+  (e.g. "1", "1+" for the throwaway row created during this pass). On `/leisure/pick`, setting "Who's around"
+  to "A group" (people=4) still surfaced the seed's one backlog row (`maxParticipants: 1`) as the suggestion —
+  it ranks rather than hard-excludes, as the fix intends. Could not observe the ranking penalty directly
+  (only one backlog candidate exists in the seed), only that exclusion does not occur. The penalty itself is
+  held by `leisureScoring.test.ts` (a `maxParticipants: 2` entry scores below `4` and `null` at people=4;
+  passing 2026-09-25).
 - **Severity:** opportunity
 - **Where:** `NewBacklogProfileForm.vue` (Max people input) → `ActivityBacklogProfileRequest.maxParticipants`
   → `ActivityBacklogProfile.maxParticipants`; no `BacklogTable.vue` column reads it, and

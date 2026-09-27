@@ -7104,6 +7104,244 @@ for the repeating-task twin, so a suggestion outage never costs the template lis
 `watch(() => calendar?.id)` so the first load fetches too, or the endpoint stays uncalled on the path
 every user takes. Not batched with `F43`/`F44` (different cause); would be its own trivial app batch.
 
+### `auth/U4` — ✅ closed 2026-09-21 (both halves live, with `B21`); struck and moved here 2026-09-24
+
+The row reached its end state on 2026-09-21, and its own note says *"Both halves done"*, but it was never
+struck in the queue. There are no new findings. Nothing was re-run on 2026-09-24; this is the move only. The
+row, as the queue last held it:
+
+| finding | what settles it | note |
+| --- | --- | --- |
+| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). ~~The substring match shows the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change.~~ **Ceiling lifted 2026-09-21 (§16 / `B21`):** the 403 now carries `lockoutEndUtc`, the interceptor words it as `httpErrors.forbiddenLockedOutUntil` (*"… o {minutes} min"*, whole minutes rounded up) in the account's locale, and `LoginView.vue`'s substring match is gone — it branches on `errorType === UserLockedOut` and only keeps its `generalErrors[0]` fallback from overwriting the interceptor's snackbar. Without the field (a pre-`B21` server) the wording is the open-ended `forbiddenLockedOut`; the 2FA flow's own lockout branch, which carried neither type nor instant, got both with `B25` the same day (§20, `LoginVerifyQrCode.vue` branches on the type). ~~**Dead code, harmless:** `generalErrors.includes('User locked out for')` is an *exact-element* `Array.includes` against a string the server never sends, and the `!handled` fallback shows `generalErrors[0]` anyway — the same text.~~ **Fixed 2026-09-15** with the retired §14: lockout and *Email not confirmed* are both **403**, so a dead lockout branch was one edit away from offering the resend panel to a locked-out user. The substring match now sits above both status arms; visible text unchanged. **Round 2 found the safe way to see it, and it is now the `B21` verification:** register a throwaway (the UI works now, and so does a direct `POST /api/auth/register`), fail its password **five** times — the 5th wrong password is the one that answers the lockout 403, no 6th needed — read the snackbar, reseed; an unconfirmed throwaway feeds lockout too, so it need not be confirmed first. Mind the login throttle (5/min per IP): the five failures spend it, so the browser's own submit waits a minute. **Both halves done 2026-09-21:** against the pre-`B21` API process the snackbar read the localised *"Too many failed sign-in attempts. Try again later."*, not the server's English sentence; after restarting the API on the `B21` source, the 5th failure's 403 carried `lockoutEndUtc` and the snackbar read *"… Try again in 5 min."* | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
+
+## Closed opportunities
+
+Entries from the queue's *Deferred to opportunities* that were built, fixed or closed. They are moved here
+the same way a closed batch is: the original body sits under a `✅` note, and an HTML-comment tombstone stays
+in the queue. A partly built entry stays in the queue until its last half lands. Most entries here had first been
+struck through in place, which went against the queue's own rule, and they were moved on 2026-09-24. The
+only text changes were that each status paragraph became the note and each "the entry stays for the audit
+trail" line was dropped.
+
+### `leisure-projects/O1` — the first genuinely open `opportunity` finding of the sweep
+
+> ✅ **BUILT 2026-09-24.**
+>
+> *What shipped.* A `NeedsShopping` card on the readiness board (`ProjectReadinessBoard.vue`) now has an
+> *Add to to-do list* button — small, tonal, icon, accessible name `Add to to-do list: {name}` (F65 shape) —
+> shown only when the project has at least one material or tool. It opens `ShoppingToTodoDialog.vue`: required
+> list and priority selects, and a read-only preview of the steps. Confirm creates **one** to-do item for the
+> project's own activity, with `materialsNeeded` then `requiredTools` as its steps (trimmed, capped at 255,
+> blanks and case-insensitive duplicates dropped) and a localized note `Shopping for {project}` so the item
+> explains itself on the list. The create is `_silent`: a 409 `DbUniqueViolationError` (the
+> `(UserId, ActivityId, TodoListId)` unique index — the project is already on that list) lands as an inline
+> error on the list field and the dialog stays open; anything else goes through `handleHttpCodes`. Writes go
+> through `core/todoList`'s `api/` + `dto/` only; the one change there is an additive optional
+> `requestConfig` on `useTodoListItemCrud().createWithResponse`. The card keeps its status — buying the
+> things is the user's call to report, not the item's creation.
+>
+> *Evaluation — why steps on the project's activity, not an item per material.* A to-do item has no title
+> of its own: it is an activity reference (`CreateTodoListItemRequest` extends `ActivityIdRequest`), so there
+> is no free-text item to put "Pine boards" in. An item per material would mean minting an activity per
+> material, and those would pollute the activity catalogue (pickers, history, tracking mappings) with
+> one-off shopping entries. One item on the activity the project already is, with the list as steps, keeps
+> the catalogue clean and keeps the shopping visibly attached to the project it unblocks. The unique index
+> then gives the natural "already on that list" answer for free. The earlier bullet asking for a *written
+> decline* in `migration-revision.md` is superseded by the feature.
+>
+> *Verified live 2026-09-24* (`playwright-cli`, seed project *Build a Bookshelf*, already `NeedsShopping`):
+> the button renders on the card; Tab from the card reaches *Delete*, then the new button, and Enter opens
+> only the handoff dialog (one overlay title — the card's edit dialog does not open); adding to *Errands*
+> POSTed 6 steps + the note (201), showed one *Added to Errands* snackbar and the item rendered on
+> `/todo-list/13002` as *Build a Bookshelf · Shopping for Build a Bookshelf · 0/6 steps*; repeating the add
+> got 409 → inline *Build a Bookshelf is already on that list*, dialog open, **zero** snackbars, confirm
+> button not left loading; SK checked by flipping the client locale (button, hint, labels, and *Projekt Build
+> a Bookshelf už v tomto zozname je*). The test item was deleted afterwards (204). Console: only the two
+> lines the expected 409 produces (the browser's network line and the framework interceptor's
+> `console.error`, which logs every non-cancel failure regardless of `_silent`). Not verified: the
+> button's absence on a `NeedsShopping` card with no materials or tools (the seed has none) — it is a plain
+> `v-if`.
+
+Original finding: every `activity-project-profile/grid` row carries `activity.isOnTodoList` and nothing in
+`src/` reads it; combined with the `materialsNeeded` already rendered on `NeedsShopping` cards, it is the raw
+material for the shopping-list-to-todo handoff `P1-readiness-board.md` asked this module's author to either
+build or decline in writing. (The build deliberately does not read `isOnTodoList` — `ActivityInfo`'s doc
+comment says it is left at its default on these routes; the 409 is the reliable signal.)
+
+### `tracking-settings/O1` — a mapping's `isActive` is filterable, displayed, and editable nowhere
+
+> ✅ **BUILT 2026-09-24.** Note (1)'s shape, with one change. The *Is active* column on both Mappings
+> tables (`DesktopMappingsTable.vue`, `AndroidMappingsTable.vue`) is an inline `VSwitch` in an
+> `#item.isActive` slot. Its accessible name is `Rule active: {pattern}`, and it is disabled with a spinner
+> while its request runs. **`batchedToggle` did not fit:** the mapping routes have no toggle or patch
+> endpoint, only the full-replace PUT (note (3)). So the switch re-sends the whole row through a new
+> `Tracker{Desktop,Android}MappingRequest.fromRow()` with only `isActive` changed. The server always sent
+> `roleId`/`categoryId`, but neither response DTO parsed them. Without them, a toggle on a role/category-target
+> rule would have cleared its target. Both DTOs now carry them. A failed PUT leaves the switch where it was,
+> and the interceptor's snackbar explains why. With the *Is active* filter set, the grid reloads so the row
+> leaves the page. The table emits `activeChanged`, and each view copies the value into the form's request
+> when that rule is the one being edited, so a later *Save* cannot revert the toggle. New key:
+> `activityTracking.settings.ruleActive` (EN + SK). `vue-tsc --build --force` exits 0, and eslint is clean
+> on the module.
+>
+> **Verified live** (`playwright-cli -s=o1`): desktop `rider64.exe` (21001) toggled off →
+> `PUT …/tracker-desktop-mapping-by-pattern/21001` 200. The body was the full row with `isActive: false`
+> and `activityId: 12023`, and the row read unchecked after a fresh sign-in. Android `com.spotify.music`
+> (21101) sent the same shape and got 200. Both were switched back on, and the console showed 0 errors.
+> **Not verified:** a role/category-target row (the seed has none) and the edit-form sync path. The session
+> also lost its refresh token mid-run (`/auth/refresh` 401, which is the `F23` shape, a concurrent session
+> on the account). It signed back in through the form, and the state file was saved back.
+
+Both
+mapping request DTOs carry it, both grids show it as a column and offer it as a filter, and neither the
+create form nor `edit()` binds a control to it — so a rule can only be disabled by deleting it. Goes to
+`docs/opportunities.md` at Phase 4. Two notes for when it is weighed: (1) the cheapest shape is an inline
+toggle on the `isActive` column, which is a `BasicTable` `#item.isActive` slot plus a `patch` — the
+`useEntityCommand` base already has `batchedToggle` for exactly this; (2) ~~it is worth nothing until `F12`
+lands~~ — `F12` landed 2026-09-22, so the column it would live in now renders. **(3), from the mutation round:** the
+update contract makes this less optional than it looked — `UpdateTrackerDesktopMappingRequest.IsActive`
+is `required` and the update is a full replace (`F72`), so the edit path must carry the row's `isActive`
+either way; once it does, a toggle is the one control that makes the value the user's rather than
+whatever the row happened to hold.
+
+### `tracking-settings/B5` — the distinct-entries list never excludes or marks an entry that already has a rule
+
+> ✅ **CLOSED 2026-09-21.** `B24` landed and the *Rule* column + `coverage` toggle shipped (§19 — body
+> under *Closed escalations*).
+
+Filed `bug` by the mutation round, **re-graded `opportunity`** (§103). The expectation is the
+unit's own `usecase.md` (*"not-yet-considered"*), written by the same unit in round 1; no intent source
+(`prompts/_done/activity-tracking/R4-settings-views.md`, `B3`'s seed ask) says the list is an inbox. Read
+at the source: `FetchTableDistinctDesktopEntry.cs` groups the raw `DesktopActivityEntry` ledger by
+`(ProductName, ProcessName, WindowTitle)` with no join to the mappings table, and the heartbeat
+(`DesktopActivityHeartbeatEndpoint.cs:89-104`) **keeps recording** an entry that matches a to-activity
+rule — it attributes the seconds *and* stores the row; only an ignored match is dropped. So a mapped
+process legitimately keeps appearing: the list is what was observed, not what is undecided, and the
+`vlc.exe` row the unit re-found after creating its rule is the ledger working. What is real is the
+product gap the unit names — nothing tells a user which tuples already have a rule — and it has a
+backend half (a flag per tuple, or an exclude toggle; `B3`'s note that the seeder drops *ignored* tuples
+"the way the heartbeat would" is the same design stated from the seed side). ~~Goes to
+`docs/opportunities.md` at Phase 4~~ — **written as `B24` on 2026-09-21** (escalation §19,
+`prompts/view-docs/backend/B24-distinct-entries-say-which-rule-already-covers-them.md`); the client cannot
+join the two grids alone (the unit's own *Suggested fix* says why — pattern match types have no id to join
+on). The write-up found that `AndroidSyncEndpoint` never consults the Android mappings at all, which the ask
+puts to the backend as a question before its Android half can mean anything.
+
+### `activity-settings/O1` — role and category icons are picked in the forms, sent by the API, rendered in the activity picker, and shown in neither settings table
+
+> ✅ **BUILT 2026-09-24** in `de3f5d46`, recorded in the queue later the same day. It went in as a
+> separate optional *Icon* column on both tables (a `#item.icon` slot, with a dash when unset), not folded
+> into the colour swatch as suggested below. **Verified live:** `/activity-settings/roles` shows an icon in
+> every seeded row. On `/activity-settings/categories` the column renders "—" for all three seeded
+> categories, which is correct: the grid response carries `"icon":null` for each. A category with a real
+> icon was not checked; it goes through the same slot as the roles.
+
+Confirmed from the column lists
+(`ActivityRoleTable.vue:58-62`, `ActivityCategoryTable.vue:58-63` — Name/Text/Color, no icon) and the
+wire (`GridActivityRoleEndpoint.cs` projects `Icon`). Goes to `docs/opportunities.md` at Phase 4 as a
+small one. One note for when it is weighed: the cheapest shape is folding the icon into the existing
+`#item.color` swatch cell (a `VIcon` inside the `VSheet`) rather than a fifth column, which keeps the
+row width. (`F21` landed 2026-09-23 as a header-label change only; it did not touch the `#item.color`
+cell, so there is nothing to ship together.)
+
+### `leisure-bucket-anchors/O1` — `financialGoal`, `inspirationSource` and the anchor's source flags are captured but never spent
+
+> ✅ **BUILT 2026-09-24.** All three of the unit's ideas, no backend change.
+>
+> - **Savings readout** (`composable/useSavingsGoals.ts`, `component/bucketList/SavingsGoalsReadout.vue`),
+>   a second strip under the experienced bar on `/leisure/bucket-list`, in both views. It reads *Still to
+>   save: {remaining}*. When the filter does not already fix completion, it adds a bar and *{lived} of
+>   {total} in goals already lived*. It is **not** `useExperiencedProgress`'s count-only shape, because a sum
+>   needs the rows. It fetches one 200-row page under the current filter on its own crud instance (the abort
+>   rule). It hides when no row has a goal, when the filter is *Experienced: ✓*, or when the set is over the
+>   200-row cap (a truncated sum would be a confident wrong number). A null or zero goal counts as "no
+>   goal". No currency, because the wire carries none. It refreshes on every reload, like the experienced
+>   count. `useSavingsGoals.test.ts` (7 tests) covers the summarizer and the visibility rules.
+> - **Inspiration on the ladder**: each card shows `inspirationSource` under the activity name. The note is
+>   truncated, the full text is in `title`, and a `d-sr-only` field label is added.
+> - **Source breakdown on the timeline**: the year header shows one chip per source (*Bucket List: n*,
+>   *Backlog (one-time): n*) in a named group, counted over what the year and month filter show. It uses the
+>   per-anchor chip's classification (`sourceOf()`, now shared). **The finding's "planned vs. spontaneous"
+>   split was not built as worded.** Anchoring requires a one-time Backlog or Bucket List profile, so every
+>   anchor is "planned" when it is written. The honest split is by source. An anchor whose source profile
+>   has since gone counts in neither.
+> - New keys `leisure.savings.{remaining,lived}` and `leisure.timeline.{sourceBreakdown,sourceCount}` (EN +
+>   SK). `vue-tsc --build --force` exits 0, eslint is clean on the module, and all 60 leisure unit tests pass.
+>
+> **Verified live** (`playwright-cli -s=bucket-o1`, form sign-in because session `o1` was live). On the seed
+> the strip read *Still to save: 0 · 120 of 120 in goals already lived*. With a temporary unexperienced row
+> (`activityId` 12009, goal 250.5, created through the API and deleted afterwards with a 204) it read
+> *250.5 · 120 of 370.5*, and the two bars lined up. `?isAnchored=false` showed *Still to save: 250.5* with
+> no bar. The ladder cards showed both notes. The 2026 timeline showed *Bucket List: 1*, because the other
+> seeded anchor has no one-time source. The console showed 0 errors. **Not verified:** the SK number format,
+> and the over-200 hide (unit-tested only).
+
+~~Goes to `docs/opportunities.md` at Phase 4.~~ One correction for when it is
+weighed: the finding says both fields render *"as plain columns"* on the table — `inspirationSource`
+~~does not; it renders **"—"** on every row today (`FW20`), so the honest line is that the field is
+shown nowhere at all.~~ did not until `FW20` (2026-09-23); it rendered **"—"** on every row. It now
+shows its text. The savings-goal progress readout the unit sketches (`useExperiencedProgress`'s
+pattern over `financialGoal`) is the cheapest of the three ideas and needs no backend.
+
+### `leisure-backlog-picker/O2` — `ExperiencedCell`'s *open anchor* link navigates by activity *name* while the row already carries `memoryAnchorId`
+
+> ✅ **FIXED 2026-09-24** (`31503119`).
+>
+> *What shipped.* The chip now pushes `?activityId=`, not `?activityName=`. It uses `activityId` rather than
+> `memoryAnchorId` because the server's `MemoryAnchorFilterRequest` already accepted `ActivityId`, and a
+> one-time activity has at most one anchor, so the match is just as exact and needs no new route.
+> `MemoryAnchorFilter` gained an exact-match `activityId`. It is round-tripped in
+> `memoryAnchorFilterUrlState` (unit test updated) and the timeline sends it too. No panel field sets it:
+> its filter chip names the activity from the loaded rows and is the only way to clear it. *Verified live*
+> through `leisure-bucket-anchors.draft.spec.ts`'s chip test, which now asserts the id URL and the
+> *Activity: Learn Bouldering* chip. **Still by name:** the reverse direction, from `MemoryAnchorTable`'s
+> source chips to the backlog or bucket list. No collision has been observed, so that half is not filed.
+
+*Original entry* (new in round 2): `openAnchor()` pushes
+`{ name: 'leisureMemoryAnchors', query: { activityName } }`, and the anchors filter is a `contains`
+match on that string, so two activities with the same display name land on each other's anchors and a
+rename breaks the link. The unit files it as an `opportunity` and that grading is right *today* — the
+seed has no name collision, so nothing is observably wrong — but note for Phase 4 that this is a
+latent **correctness** risk, not unspent data like the other three here: the moment an id-based filter
+or an anchors detail route exists, this becomes a one-line fix rather than a feature. If a name
+collision is ever seen in the wild, it is re-graded to `bug` and leaves this section.
+
+### `leisure-backlog-picker/O1` — `minParticipants`/`maxParticipants` are filter fields with no input, and `maxParticipants` is never read by the picker's ranking
+
+> ✅ **BOTH HALVES FIXED 2026-09-24** (ranking `9f400c79`; filter in the working tree at the time of the
+> move, not yet committed).
+>
+> *What shipped.* The fix settled the hard-cap-or-penalty question as a penalty, because a two-player game
+> is still doable with four people around, just a worse pick. `CandidateFacts.maxParticipants` is fed by
+> `backlogSuggestion()`. `scoreCandidate` applies a flat `PARTY_TOO_BIG_PENALTY` (−2) when more people are
+> around than the entry takes, and `null` (unbounded) is never penalised. Unit-tested in
+> `leisureScoring.test.ts`, not browser-verified. `BacklogTable` also gained a non-sortable *People* column
+> showing the range (`2–4`, `1+`, `2`), so the field is now visible where it is managed.
+>
+> *Filter half.* `BacklogView`'s `FilterPanel` gains *Min people* and *Max people* `VNumberInput`s (1–100,
+> clearable), stacked like the other fields because side by side the drawer truncated the second label. The
+> filter DTO and `leisureFilterUrlState` already carried both, so the change is the two inputs and two chips.
+> The chips spell out the server's inclusive bounds (`ActivityBacklogProfileFilterRequest`): *Min people ≥ 2*
+> keeps entries needing at least two, and *Max people ≤ 2* keeps entries capped at two or fewer and drops
+> uncapped ones. *Verified live* (`playwright-cli`): `?minParticipants=2` restores its chip and sends
+> `"minParticipants":2` (nothing in the seed matches, so the table shows the filtered-empty state). Setting
+> Max people = 2 in the panel writes `?maxParticipants=2`, keeps *Read a Novel*, and reaches the
+> experienced-count request too. The chip's close button clears it from the URL.
+
+*Original entry.* Two halves, and only the second is
+really an opportunity. The filter half was **moot until §13 landed** — the server read neither field, so
+an input for them then would have been one more chip that filters nothing. **§13 landed 2026-09-15
+(`B11`)**: both `minParticipants` and `maxParticipants` are now read (with `maxParticipants` excluding
+rows whose own `maxParticipants` is `null` — an unbounded entry never fits under a cap), so the filter
+half is a live opportunity again and belongs here, not on a retired escalation number.
+The ranking half is real and app-side: `backlogSuggestion()` (`useLeisurePicker.ts:70`) reads
+`minParticipants` into `CandidateFacts` and not `maxParticipants`, so a one-person entry is offered to
+a four-person draw. The unit is right that `D1-backend.md`'s semantics question is why — *"not clear
+whether it filters or…"* — and that question is a product decision (hard cap vs. penalty), which is
+what makes it Phase-4 material rather than a batch. When it is weighed: `isEligible`'s backlog branch
+is one comparison away, and `F64` will already have decided where the weather signal collapses, so the
+same boundary is where a people cap would go.
+
 ## Contradictions & re-grades
 
 Everything below was checked against the **current working-tree source** this pass, by reading the file named.

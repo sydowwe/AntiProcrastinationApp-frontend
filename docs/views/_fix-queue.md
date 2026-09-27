@@ -850,7 +850,7 @@ re-drive the screen by hand.
 | ~~`U4` — mismatched new/confirm password~~ | ✅ **closed 2026-09-24, no defect** — promoted to a real test: *"Passwords don't match"* renders (the key is defined now), Confirm stays enabled and sends no `POST /user/change-password`. Needs policy-valid passwords, since Vuetify shows only the first failing rule. Body in the log | — |
 | ~~`U5` — language switch~~ ✅ **closed 2026-09-24** | **Seen live on the primary account:** *Slovak* → `PUT /user/preferences` 204, UI Slovak at once and after a reload; reverted by hand to English (not by reseed — that would have signed out a concurrent agent). Body in the log (2026-09-24 sweep). Was: **Mechanism settled.** `onLocaleChange` → `userStore.setPreferences({ locale })` → `await updatePreferences` + `Object.assign(currentUser, partial)` (`authStore.ts:33-36`) → `App.vue`'s deep watcher on `currentUser` → `i18n.locale.value = currentUser.locale` (`App.vue:94`). That is the **same watcher and the same store method** the unit verified live for the theme toggle (theme applies at `:88-93`, four lines above); only the final assignment is untested. Settle on `secondaryUser`, or on the primary account and reseed afterwards — the seed restores `locale: "EN"` (README *Prerequisites* §3) | The sweep-wide "must stay English" concern is real but cheap to honour: `POST /api/test/seed` is the revert |
 
-### `auth` — nothing open (`U3` closed 2026-09-24 with a stand-in badge; the seed gap closed with `B22`, the deliberate one with `B21`)
+### `auth` — nothing open (`U3` closed 2026-09-24 with a stand-in badge; the seed gap closed with `B22`, the deliberate one with `B21`; `U4` struck and moved to the log 2026-09-24)
 
 Unit 15's round 2/3 (committed in `04c405e9`, absorbed in the fourteenth pass) closed three of the six:
 `U1` is **observed** and batched (`FW14`), `U5` is **resolved** (working as coded — the prefill, the
@@ -863,7 +863,7 @@ folded into `FW12`). The three rows below are what is left; `U1`/`U5`/`U6`'s row
 | ~~`U2` — the 2FA login dialog (`LoginVerifyQrCode`) never exercised~~ | ✅ **closed 2026-09-21** — `B22` landed `sharedKey` beside the QR (§17, body in the log), and `e2e/tests/two-factor.spec.ts` now drives the dialog with an `otplib` code: password → dialog, wrong code → 401 + *Wrong code* inline, Escape leaves it open (a form, so it stays persistent under `FW1`'s decision), right code → 204 → `/`. The `?redirect=` line is a `test.fixme` naming `FW11`. Everything below is the pre-`B22` route map, kept for the record | Seen on the way and **fixed later the same day** (in `FW25`'s commit): a retry after a wrong code was a second 401 the dialog rendered as the same *Wrong code* — the token is single-use, so the dialog now closes on any refusal and says to sign in again |
 | *(record)* `U2` as it stood | **Seed gap — and the §14 gate is gone as of 2026-09-15.** Round 2 registered a real 2FA-enabled throwaway through the API and still could not reach the dialog: the account also needs a confirmed e-mail, and an unconfirmed one was answered `401 "Invalid email or password"` before the flow ever reached the 2FA gate (§14 — the `PreSignInCheck` short-circuit, **now fixed**: a confirmed throwaway passes the gate and the flow returns the pending 2FA token as documented). So the routes are: (a) an `e2e-v5` account (`twoFactorUser`, 10004) seeded **confirmed** and with a known TOTP secret the seed response returns, so a spec can `otplib`-generate the code; (b) by hand, now open — needs only a confirmation mail that can be read: enrol a throwaway through registration (works since `FW13`'s half landed), confirm it, read the secret off the QR's `otpauth://` URI. The dialog's *structure* (title, `VOtpInput`, wrong-code line, Escape under `FW1`'s `persistent` default) is reachable with (b) in a minute | Route (a) is a one-paragraph seed ask if the operator wants a spec; it belongs in `B3`'s family (`prompts/view-docs/backend/_done/B3-seed-fixture-coverage.md`), not a new file. Note the `LoginVerifyQrCode` redirect line is `FW11`'s and reads the same helper — a source read covers that half |
 | ~~`U3` — reCAPTCHA badge show/hide never observable~~ | ✅ **closed 2026-09-24, no defect** (`docs/views/auth/findings.md` round 4). The toggle needed an element, not Google's script. A stand-in `.grecaptcha-badge` appended on `/login`, then router pushes across flagged and unflagged public routes: `afterEach` hid it on both legal pages and showed it on `/login`, `/registration`, `/forgotten-password` and `/confirm-email`, correct both ways. The lazy load was checked in source: all five `executeRecaptcha` callers sit on `showRecaptchaBadge` routes, so the late-inserted badge stays visible there and the next navigation off them hides it | Still uncovered: Google's own rendering with a real key. The badge first appears only after a form submit; that is the lazy load as designed, not filed |
-| `U4` — "too many attempts" / "locked out" branches | **Settled from the API source; the numbers the unit wanted are:** `IdentityServiceExtensions.cs:128-129` — **5** failed attempts, **5-minute** lockout; the message is `"Too many failed login attempts. Try again in {m}m {s}s"` (`PasswordSignInFlow.cs:85-93`), sent on the lockout path, and `"Invalid email or password"` for every other miss including unknown addresses (`:73-77,95-101`, enumeration-safe). ~~The substring match shows the server's countdown, in English, in both locales — the countdown is server-only, so that is the ceiling without a contract change.~~ **Ceiling lifted 2026-09-21 (§16 / `B21`):** the 403 now carries `lockoutEndUtc`, the interceptor words it as `httpErrors.forbiddenLockedOutUntil` (*"… o {minutes} min"*, whole minutes rounded up) in the account's locale, and `LoginView.vue`'s substring match is gone — it branches on `errorType === UserLockedOut` and only keeps its `generalErrors[0]` fallback from overwriting the interceptor's snackbar. Without the field (a pre-`B21` server) the wording is the open-ended `forbiddenLockedOut`; the 2FA flow's own lockout branch, which carried neither type nor instant, got both with `B25` the same day (§20, `LoginVerifyQrCode.vue` branches on the type). ~~**Dead code, harmless:** `generalErrors.includes('User locked out for')` is an *exact-element* `Array.includes` against a string the server never sends, and the `!handled` fallback shows `generalErrors[0]` anyway — the same text.~~ **Fixed 2026-09-15** with the retired §14: lockout and *Email not confirmed* are both **403**, so a dead lockout branch was one edit away from offering the resend panel to a locked-out user. The substring match now sits above both status arms; visible text unchanged. **Round 2 found the safe way to see it, and it is now the `B21` verification:** register a throwaway (the UI works now, and so does a direct `POST /api/auth/register`), fail its password **five** times — the 5th wrong password is the one that answers the lockout 403, no 6th needed — read the snackbar, reseed; an unconfirmed throwaway feeds lockout too, so it need not be confirmed first. Mind the login throttle (5/min per IP): the five failures spend it, so the browser's own submit waits a minute. **Both halves done 2026-09-21:** against the pre-`B21` API process the snackbar read the localised *"Too many failed sign-in attempts. Try again later."*, not the server's English sentence; after restarting the API on the `B21` source, the 5th failure's 403 carried `lockoutEndUtc` and the snackbar read *"… Try again in 5 min."* | The unit's caution (do not lock out the shared `test@example.com`) was correct — a lockout would have cost every concurrent unit five minutes. Reseeding clears `LockoutEnd` (the seed recreates the account) if it ever happens by accident |
+| ~~`U4` — "too many attempts" / "locked out" branches~~ | ✅ **closed 2026-09-21, struck 2026-09-24.** Both halves were seen live with `B21`: the pre-`B21` API gave the localised *"Too many failed sign-in attempts. Try again later."*; on the `B21` source, the 5th failure's 403 carried `lockoutEndUtc` and the snackbar read *"… Try again in 5 min."* The full row (numbers from the API source, the `errorType` branch in `LoginView`, the throwaway-account recipe) moved to the log → *Closed verification items* → `auth/U4` | — |
 
 <!-- TimePicker :58/:59 → minute 60 (found triaging unit 4) confirmed and fixed 2026-09-24 in vue_framework ecf06b7 — worse than predicted: a plain TimePicker showed "09:60", and DateTimePicker moved the date to the next day on a typed 23:58. No batch number; FW10, held for it, is retired unused. Body in _fix-queue-log.md → Closed verification items. -->
 
@@ -1028,90 +1028,17 @@ read added:
 
 ## Deferred to opportunities
 
-~~**`leisure-projects/O1` — the first genuinely open `opportunity` finding of the sweep.**~~ — ✅ **built
-2026-09-24.** The entry stays for the audit trail.
+> Built, fixed or closed opportunities move to [`_fix-queue-log.md`](_fix-queue-log.md) → *Closed
+> opportunities*, the same way a closed batch does: the body goes under a `✅` note there, and a tombstone
+> stays here. A partly built entry stays here until its last half lands.
 
-*What shipped.* A `NeedsShopping` card on the readiness board (`ProjectReadinessBoard.vue`) now has an
-*Add to to-do list* button — small, tonal, icon, accessible name `Add to to-do list: {name}` (F65 shape) —
-shown only when the project has at least one material or tool. It opens `ShoppingToTodoDialog.vue`: required
-list and priority selects, and a read-only preview of the steps. Confirm creates **one** to-do item for the
-project's own activity, with `materialsNeeded` then `requiredTools` as its steps (trimmed, capped at 255,
-blanks and case-insensitive duplicates dropped) and a localized note `Shopping for {project}` so the item
-explains itself on the list. The create is `_silent`: a 409 `DbUniqueViolationError` (the
-`(UserId, ActivityId, TodoListId)` unique index — the project is already on that list) lands as an inline
-error on the list field and the dialog stays open; anything else goes through `handleHttpCodes`. Writes go
-through `core/todoList`'s `api/` + `dto/` only; the one change there is an additive optional
-`requestConfig` on `useTodoListItemCrud().createWithResponse`. The card keeps its status — buying the
-things is the user's call to report, not the item's creation.
+<!-- leisure-projects/O1 (shopping-list-to-todo handoff from `NeedsShopping` cards) built 2026-09-24 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-*Evaluation — why steps on the project's activity, not an item per material.* A to-do item has no title
-of its own: it is an activity reference (`CreateTodoListItemRequest` extends `ActivityIdRequest`), so there
-is no free-text item to put "Pine boards" in. An item per material would mean minting an activity per
-material, and those would pollute the activity catalogue (pickers, history, tracking mappings) with
-one-off shopping entries. One item on the activity the project already is, with the list as steps, keeps
-the catalogue clean and keeps the shopping visibly attached to the project it unblocks. The unique index
-then gives the natural "already on that list" answer for free. The earlier bullet asking for a *written
-decline* in `migration-revision.md` is superseded by the feature.
+<!-- tracking-settings/O1 (a mapping's `isActive` is filterable, displayed, and editable nowhere) built 2026-09-24 — inline *Is active* switch on both Mappings tables — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-*Verified live 2026-09-24* (`playwright-cli`, seed project *Build a Bookshelf*, already `NeedsShopping`):
-the button renders on the card; Tab from the card reaches *Delete*, then the new button, and Enter opens
-only the handoff dialog (one overlay title — the card's edit dialog does not open); adding to *Errands*
-POSTed 6 steps + the note (201), showed one *Added to Errands* snackbar and the item rendered on
-`/todo-list/13002` as *Build a Bookshelf · Shopping for Build a Bookshelf · 0/6 steps*; repeating the add
-got 409 → inline *Build a Bookshelf is already on that list*, dialog open, **zero** snackbars, confirm
-button not left loading; SK checked by flipping the client locale (button, hint, labels, and *Projekt Build
-a Bookshelf už v tomto zozname je*). The test item was deleted afterwards (204). Console: only the two
-lines the expected 409 produces (the browser's network line and the framework interceptor's
-`console.error`, which logs every non-cancel failure regardless of `_silent`). Not verified: the
-button's absence on a `NeedsShopping` card with no materials or tools (the seed has none) — it is a plain
-`v-if`.
+<!-- tracking-settings/B5 (distinct-entries list never marks an entry a rule already covers — re-graded opportunity, §103) closed 2026-09-21 via B24/§19 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-Original finding: every `activity-project-profile/grid` row carries `activity.isOnTodoList` and nothing in
-`src/` reads it; combined with the `materialsNeeded` already rendered on `NeedsShopping` cards, it is the raw
-material for the shopping-list-to-todo handoff `P1-readiness-board.md` asked this module's author to either
-build or decline in writing. (The build deliberately does not read `isOnTodoList` — `ActivityInfo`'s doc
-comment says it is left at its default on these routes; the 409 is the reliable signal.)
-
-**`tracking-settings/O1` — a mapping's `isActive` is filterable, displayed, and editable nowhere.** Both
-mapping request DTOs carry it, both grids show it as a column and offer it as a filter, and neither the
-create form nor `edit()` binds a control to it — so a rule can only be disabled by deleting it. Goes to
-`docs/opportunities.md` at Phase 4. Two notes for when it is weighed: (1) the cheapest shape is an inline
-toggle on the `isActive` column, which is a `BasicTable` `#item.isActive` slot plus a `patch` — the
-`useEntityCommand` base already has `batchedToggle` for exactly this; (2) ~~it is worth nothing until `F12`
-lands~~ — `F12` landed 2026-09-22, so the column it would live in now renders. **(3), from the mutation round:** the
-update contract makes this less optional than it looked — `UpdateTrackerDesktopMappingRequest.IsActive`
-is `required` and the update is a full replace (`F72`), so the edit path must carry the row's `isActive`
-either way; once it does, a toggle is the one control that makes the value the user's rather than
-whatever the row happened to hold.
-
-~~**`tracking-settings/B5` — the distinct-entries list never excludes or marks an entry that already has a
-rule**~~ — ✅ **closed 2026-09-21**: `B24` landed and the *Rule* column + `coverage` toggle shipped (§19).
-The entry stays for the audit trail. Filed `bug` by the mutation round, **re-graded `opportunity`** (§103). The expectation is the
-unit's own `usecase.md` (*"not-yet-considered"*), written by the same unit in round 1; no intent source
-(`prompts/_done/activity-tracking/R4-settings-views.md`, `B3`'s seed ask) says the list is an inbox. Read
-at the source: `FetchTableDistinctDesktopEntry.cs` groups the raw `DesktopActivityEntry` ledger by
-`(ProductName, ProcessName, WindowTitle)` with no join to the mappings table, and the heartbeat
-(`DesktopActivityHeartbeatEndpoint.cs:89-104`) **keeps recording** an entry that matches a to-activity
-rule — it attributes the seconds *and* stores the row; only an ignored match is dropped. So a mapped
-process legitimately keeps appearing: the list is what was observed, not what is undecided, and the
-`vlc.exe` row the unit re-found after creating its rule is the ledger working. What is real is the
-product gap the unit names — nothing tells a user which tuples already have a rule — and it has a
-backend half (a flag per tuple, or an exclude toggle; `B3`'s note that the seeder drops *ignored* tuples
-"the way the heartbeat would" is the same design stated from the seed side). ~~Goes to
-`docs/opportunities.md` at Phase 4~~ — **written as `B24` on 2026-09-21** (escalation §19,
-`prompts/view-docs/backend/B24-distinct-entries-say-which-rule-already-covers-them.md`); the client cannot
-join the two grids alone (the unit's own *Suggested fix* says why — pattern match types have no id to join
-on). The write-up found that `AndroidSyncEndpoint` never consults the Android mappings at all, which the ask
-puts to the backend as a question before its Android half can mean anything.
-
-**`activity-settings/O1` — role and category icons are picked in the forms, sent by the API, rendered in
-the activity picker, and shown in neither settings table.** Confirmed from the column lists
-(`ActivityRoleTable.vue:58-62`, `ActivityCategoryTable.vue:58-63` — Name/Text/Color, no icon) and the
-wire (`GridActivityRoleEndpoint.cs` projects `Icon`). Goes to `docs/opportunities.md` at Phase 4 as a
-small one. One note for when it is weighed: the cheapest shape is folding the icon into the existing
-`#item.color` swatch cell (a `VIcon` inside the `VSheet`) rather than a fifth column, which keeps the
-row width. (`F21` landed 2026-09-23 as a header-label change only; it did not touch the `#item.color`
-cell, so there is nothing to ship together.)
+<!-- activity-settings/O1 (role and category icons shown in neither settings table) built 2026-09-24 in de3f5d46 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
 `todo-lists/O1` remains `resolved` (round 4). **`history-review` filed no `opportunity` finding** — its
 tally line says `opportunity 0` and the body agrees. Two things it *could* have filed as one, recorded here
@@ -1120,6 +1047,14 @@ half of a responsive layout (`F31` finished it 2026-09-23), and the Detail view'
 (`F29` names it) — a drill-*through* from a day's window to the timeline filtered to that window would be
 the natural use, and the `activityClick` payload already carries the window. Neither is an opportunity
 finding by the template's definition; both are noted.
+✅ **Drill-through built 2026-09-25** (uncommitted). A Detail bar is now `interactive`: it narrows the
+whole view to its window, in the user's zone, and switches to the timeline. A *Back to {from}–{to}*
+button restores the range drilled from, and a date change drops it. **Unfiled, fixed on the way:** the chart's
+`handleActivityClick` looked up `windows[bar.windowIndex]`, but `windowIndex` indexes
+`processedWindows`, where empty runs are merged. So every bar after the first gap reported the wrong
+window. Summary's drill-through was affected too: a 20 Sep bar opened Detail on **16 Sep** (reproduced with
+the fix stashed). Verified live: Detail 2026-09-23 → 11:00–12:00, seven records, restore → 08:00–00:00;
+Summary → `date=2026-09-20`. The tracking dashboards read only the name, so they were never affected.
 
 **`user-settings` filed no `opportunity` finding** either (tally `opportunity 0`, body agrees). One thing
 worth a line for Phase 4 so it is not rediscovered: `GET /user/google-calendar/status` returns only
@@ -1134,6 +1069,11 @@ Phase 4 so it is not rediscovered: `TimerPresetsSection` is mounted by `TimerVie
 the Stopwatch and Manual views have none — so "quick times" exist for exactly one of the four capture
 flows, and the *activity* presets (duration + activity) are the raw material for a one-tap "record 30 min
 of X" on the Manual view that does not exist. Not an opportunity by the template's definition; noted.
+✅ **Manual half built 2026-09-25** (uncommitted). `TimerPresetsSection` is mounted on the Manual view
+too. A quick time sets *Length*, and an activity preset sets the activity as well, through the form's new
+`applyPreset`. It deliberately does **not** save: the start time still has to be checked, so it takes two
+taps, not one. Verified live with a throwaway *25m · Code Review* preset (created, applied, deleted:
+`DELETE` 204). Stopwatch was left alone because it has no length for a preset to set.
 
 **`auth` filed one `opportunity` finding, `O1`, and it is re-graded `bug` (`FW13`, §63)** — the
 "policy question" it poses was answered on the server before the unit ran, so nothing is deferred.
@@ -1174,39 +1114,13 @@ threshold in one place is still the tidy-up, and it is where a *"show the tail"*
 *Other* into its members) would live.
 Neither is an opportunity by the template's definition; both are noted.
 
-**`leisure-backlog-picker/O1` — `minParticipants`/`maxParticipants` are filter fields with no input,
-and `maxParticipants` is never read by the picker's ranking.** Two halves, and only the second is
-really an opportunity. The filter half was **moot until §13 landed** — the server read neither field, so
-an input for them then would have been one more chip that filters nothing. **§13 landed 2026-09-15
-(`B11`)**: both `minParticipants` and `maxParticipants` are now read (with `maxParticipants` excluding
-rows whose own `maxParticipants` is `null` — an unbounded entry never fits under a cap), so the filter
-half is a live opportunity again and belongs here, not on a retired escalation number.
-The ranking half is real and app-side: `backlogSuggestion()` (`useLeisurePicker.ts:70`) reads
-`minParticipants` into `CandidateFacts` and not `maxParticipants`, so a one-person entry is offered to
-a four-person draw. The unit is right that `D1-backend.md`'s semantics question is why — *"not clear
-whether it filters or…"* — and that question is a product decision (hard cap vs. penalty), which is
-what makes it Phase-4 material rather than a batch. When it is weighed: `isEligible`'s backlog branch
-is one comparison away, and `F64` will already have decided where the weather signal collapses, so the
-same boundary is where a people cap would go.
+<!-- leisure-backlog-picker/O1 (min/maxParticipants had no filter input and maxParticipants was not ranked) both halves fixed 2026-09-24, ranking in 9f400c79 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-**`leisure-bucket-anchors/O1` — `financialGoal`, `inspirationSource` and the anchor's source flags are
-captured but never spent.** Goes to `docs/opportunities.md` at Phase 4. One correction for when it is
-weighed: the finding says both fields render *"as plain columns"* on the table — `inspirationSource`
-~~does not; it renders **"—"** on every row today (`FW20`), so the honest line is that the field is
-shown nowhere at all.~~ did not until `FW20` (2026-09-23); it rendered **"—"** on every row. It now
-shows its text. The savings-goal progress readout the unit sketches (`useExperiencedProgress`'s
-pattern over `financialGoal`) is the cheapest of the three ideas and needs no backend.
+<!-- leisure-bucket-anchors/O1 (`financialGoal`, `inspirationSource` and the anchor's source flags captured but never spent) built 2026-09-24 — savings strip on the bucket list, inspiration on ladder cards, per-source chips on the timeline — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-**`leisure-backlog-picker/O2` — `ExperiencedCell`'s *open anchor* link navigates by activity *name*
-while the row already carries `memoryAnchorId`** (new in round 2). `openAnchor()` pushes
-`{ name: 'leisureMemoryAnchors', query: { activityName } }`, and the anchors filter is a `contains`
-match on that string, so two activities with the same display name land on each other's anchors and a
-rename breaks the link. The unit files it as an `opportunity` and that grading is right *today* — the
-seed has no name collision, so nothing is observably wrong — but note for Phase 4 that this is a
-latent **correctness** risk, not unspent data like the other three here: the moment an id-based filter
-or an anchors detail route exists, this becomes a one-line fix rather than a feature. If a name
-collision is ever seen in the wild, it is re-graded to `bug` and leaves this section.
+<!-- leisure-backlog-picker/O2 (open-anchor link navigated by activity name) fixed 2026-09-24 in 31503119 — body moved to _fix-queue-log.md → Closed opportunities. -->
 
-No other open opportunity findings exist across the fifteen units triaged — and with unit 11's round 2,
+No open opportunity findings remain across the fifteen units triaged (all of them are in the log as of
+2026-09-24). The notes above are Phase-4 leads, not findings. With unit 11's round 2,
 every one of the fifteen has now been read for them at least once.
 

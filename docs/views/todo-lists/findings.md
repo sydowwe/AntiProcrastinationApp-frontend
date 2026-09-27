@@ -2,9 +2,9 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `97f1e414`
 
-**Tally:** blocker 1 (X1, new) · bug 8 (B1–B6 all fixed + verified; B7, B8 new) · a11y 3 (A1–A2 fixed + verified;
-A3 new) · polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
-verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
+**Tally:** blocker 1 (X1, fixed + verified live) · bug 9 (B1–B9 all fixed + verified) · a11y 3 (A1–A3 all fixed + verified)
+· polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
+verified) · settled 1 (U2 → see B3). **0 open items**, none owing a browser pass (retest 2026-09-25).
 
 ## Round history
 | round | date | commit | what changed |
@@ -17,11 +17,20 @@ verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
 | 4 | 2026-09-12 | working tree | `e2e-v2` fixture delivers `suggestedTime` — O1 resolved, U3 verified, calibration specs written. |
 | 5 | 2026-09-13 | working tree | **close-out pass** — every remaining item retested in the browser (SK and EN, `playwright-cli` against `e2e-v3`). **B4 had already been fixed on the API side** (`dueTime` became `{hours, minutes}` on 2026-09-11, backend commit `6395cee`); `Time.fromJson` was made tolerant of both shapes anyway and the two B4 `fixme`s are real specs now. **B3 was not "fixed silently"** as `_fix-queue.md` had it — the round-2 edit moved the `itemClicked` emit *above* the multi-count branch, so a row-body click on a counted item both stepped the counter and opened the dialog; fixed for real this round. Two new bugs surfaced while retesting the counter and are fixed: **B5** (counter steps were never persisted) and **B6** (a dwelling mouse could only decrement, and neither action was keyboard-reachable). U1 superseded by B4. `_shell/P1` (the breadcrumb) fixed from this side. Type-check 0, lint 0, `todo-lists.spec.ts` + `todo-motivation.spec.ts` green. |
 | 6 | 2026-09-15 | `97f1e414` | **formal mutation pass** (this unit's `Pass: mutation` had never been run — rounds 2–5 above were a fix/verification cycle riding on the inventory pass's own data, not a full create→edit→delete lifecycle sweep). Drove `List`, `Category` and `ToDoListItem` through create/edit/delete against fixture `e2e-v4` (seed date 2026-09-14). List and Item CRUD is clean (validation, edit, done-toggle, propagation to the list-card counter, and list deletion all work correctly, including the cascade-aware "Delete list?" confirmation). Four new defects surfaced: **X1** — category creation is 100% broken (client sends a semantic colour name, API requires a hex code); **B7** — item deletion never confirms despite "Ask before deleting single items" being on; **B8** — "Move to list" 404s on every attempt (client and server routes have diverged); **A3** — the item done-checkbox has no accessible name. Account state fully restored by hand (no reseed needed — every created entity was also deleted in-session); the next agent can keep using `e2e/.state/auth-10001.json` if still fresh, or sign in via the form (`test@example.com` / `testpass123` from `e2e/.state/seed.json`) as this session did after the stale token's refresh also 401'd. |
+| 7 | 2026-09-24 | working tree | **status sweep (code read only, no browser pass).** B7, B8 and A3 are fixed in the working tree: `useUndoableListCrud.ts:121` now calls `shouldConfirm`/`confirm` before `deleteItem`'s `api.deleteEntity`; `todoListItemApi.ts:114` now sends `` API.patch(`${url}/${id}/move`, { destinationListId }) ``, matching the backend route/body shape from B8's own suggested fix; `BaseTodoListItem.vue:26` carries `:aria-label="i18n.t('toDoList.markDone', { name: toDoListItem.activity.name })"` on the `VCheckboxBtn`. None of these three carry an explicit "fixed" note of their own from whoever made the change — closing them out from source inspection, not a re-run `Verify:` pass; a browser confirmation is still owed before fully trusting the exact copy/keyboard behaviour. **X1 is unchanged and still fully broken**: `ColorPicker.vue:31` still does `@click="model = color.name"`, `TodoListCategoryForm.vue:49` still round-trips `entityToEdit.color` (or the semantic default `'blue'`) straight into `TodoListCategoryRequest` with no hex translation anywhere in between. Category creation still 400s on every colour choice. |
+| 8 | 2026-09-24 | working tree | **X1 closed — the round-7 read was wrong about the contract, not the code.** The fix went the other way from X1's suggestion: the **API** now requires a palette *name* and rejects hex (`MustBePaletteColor`, `Sydowwe.Framework/application/validator/ColorRuleExtensions.cs`; the name list `ColorPalette.cs` is identical to `colorPalette.ts`'s 29 entries), and the client already sends names. The remaining `"default"` path is gone too — `TodoListCategoryForm` passes `required`, so the "None" swatch is not rendered, and `TodoListCategoryRequest` seeds `'blue'`. Pinned API-side by `NameTextColorIconValidationTests` (route `api/todo-list-category`: every palette name → 2xx; `#abcdef`, `#fff`, `default`, `""`, `Blue` → 400). No frontend change. Browser pass attempted and blocked: form sign-in got a **500** from `POST /api/auth/login`, and another `playwright-cli` session was live, so no shared state file was loaded. |
+| 9 | 2026-09-25 | `d423edcc` | **retest round** — 4 retested live: X1, B7, B8, A3 all pass. Account: `primaryUser`. Mutations made and reverted: created and deleted two categories ("Retest Category Default", "Retest Category Crimson") for X1; opened and cancelled a delete confirmation for B7 (no mutation); moved item 14003 ("Code Review") Focus → Someday → Focus for B8, confirmed back at 0/0 in Someday and present in Focus. `/user/settings` "Ask before deleting single items" was already checked — untouched. **New gap found while running B8's Verify**: moving item 14003 to the "Errands" list (13002) 409s with `DbUniqueViolationError` ("Unique constraint violation during HandleAsync") — the fixed route/body shape works (confirmed 204 to a different destination and back), and the refusal is the deliberate `(UserId, ActivityId, TodoListId)` unique index, since Errands already has a "Code Review"-activity item. Not filed as a finding per retest scope; flagging for triage (→ **B9**, round 10). F90 (routine weekday picker): pass — `group "Suggested days"` with 7 day buttons (Mon–Sun), toggling adds/removes `[pressed]` correctly, no console error or new `console info` entries. Dialog cancelled, nothing saved (no POST in the request log after Cancel). |
+| 10 | 2026-09-25 | working tree | **triage of round 9.** The round-9 row's "silent failure" was overstated — the interceptor did show a snackbar — but the snackbar was the generic `httpErrors.conflictUnique` ("A record with this value already exists. Choose another.") after the dialog had already closed, and the rejection escaped `openMoveToList` unhandled. Filed and fixed as **B9**, verified live. X1's retest Status corrected: the category form's `ColorPicker` is `required`, so the "default" category was created with the seeded `blue`, not a "None" swatch. Round 7's row had a stray empty cell; removed. |
 
 ---
 
 ### X1. Creating a to-do list category always fails — the colour picker sends a semantic name, the API requires a hex code
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — created "Retest Category Default" (colour left at
+  the seeded default, `blue` — the form's `ColorPicker` is `required`, so there is no "None" swatch) and "Retest
+  Category Crimson" (explicit "Crimson" swatch); both `POST /api/todo-list-category`
+  requests returned `201`, and both categories appeared under their typed names in the Categories panel. Both
+  deleted afterward (`DELETE`-confirmed via the "Delete category?" dialog), panel back to its original three
+  categories.
 - **Severity:** blocker
 - **Where:** `/todo-list` → "New category" dialog (`TodoListCategoryForm.vue`) → `src/_common/component/inputs/ColorPicker.vue` — **[framework]**
 - **Expected:** Filling in a name and submitting the "New category" dialog creates the category, per plain user
@@ -64,7 +73,10 @@ verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
   pointer.
 
 ### B7. Deleting a to-do list item never asks for confirmation, even with "Ask before deleting single items" on
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — preference confirmed checked at `/user/settings`
+  ("Ask before deleting single items" `[checked]`, no change needed). On `/todo-list/13001`, deleting the "Code
+  Review" item via its overflow menu opened a `dialog "Delete item?"` naming the item; clicking Cancel closed it
+  with no `DELETE` request fired (confirmed via `requests` before/after) and the item still present afterward.
 - **Severity:** bug
 - **Where:** `/todo-list/:id` → item overflow menu → Delete → `src/core/todoList/composable/useUndoableListCrud.ts:110` (`deleteItem`), wired from `src/core/todoList/view/TodoListView.vue`
 - **Expected:** Per the user's own preference at `/user/settings` — "Ask before deleting single items", **checked
@@ -98,7 +110,13 @@ verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
   already do, gated on the item being a leaf delete (it always is — items have no children).
 
 ### B8. "Move to list" always fails with a 404 — the client and server routes have diverged
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — `PATCH /api/todo-list-item/{id}/move` is the route
+  hit now (no more 404). First attempt (id 14003 "Code Review", Focus → Errands) returned **409**
+  `DbUniqueViolationError` / "Unique constraint violation during HandleAsync" — a data conflict, not a route
+  bug (filed and fixed as **B9**). Retried to a different destination (Focus → "Someday", list
+  13003): `PATCH .../14003/move => 204`, item disappeared from Focus, and appeared in "Someday" with the same id
+  14003 after navigating to it. Moved back Someday → Focus (`204`), confirmed present in Focus again and
+  "Someday" back to 0/0.
 - **Severity:** bug
 - **Where:** `/todo-list/:id` → item overflow menu → "Move to list" → `src/core/todoList/api/todoListItemApi.ts:104-112` (`moveToList`)
 - **Expected:** Per this unit's own `usecase.md` ("Moving an item between lists does not delete/recreate it; the
@@ -136,7 +154,10 @@ verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
   shape.
 
 ### A3. The to-do item's done checkbox has no accessible name
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — on `/todo-list/13001`, `eval` over
+  `input[type=checkbox][aria-label^="Mark done"]` returned one distinct, activity-qualified name per row
+  ("Mark done: Code Review", "Mark done: Build a Bookshelf", "Mark done: Meal Preparation", etc.), matching
+  A2's pattern.
 - **Severity:** a11y
 - **Where:** `/todo-list/:id` — the per-item done checkbox in `src/core/todoList/component/BaseTodoListItem.vue`
   (distinct from the overflow-menu trigger already fixed as A2)
@@ -160,6 +181,35 @@ verified) · settled 1 (U2 → see B3). **4 open items: X1, B7, B8, A3.**
 - **Suggested fix:** Add `:aria-label="`${t('general.markDone')}: ${toDoListItem.activity.name}`"` (or similar,
   reusing whichever key is closest to existing "mark done" copy) to the `VCheckboxBtn` in
   `BaseTodoListItem.vue`.
+
+### B9. "Move to list" into a list that already has the item's activity fails with a misleading, post-close snackbar
+- **Status:** fixed and verified (2026-09-25, live) — Focus → Errands on "Code Review" (14003): `PATCH
+  .../14003/move => 409`, the dialog stayed open with *"Errands" already has a "Code Review" task* under the
+  destination select and no snackbar; picking "Someday" cleared the message, and confirming gave `204`, closed
+  the dialog, removed the row and showed "Moved successfully". Moved back to Focus (`204`); present there
+  again. `console info` empty.
+- **Severity:** bug
+- **Where:** `/todo-list/:id` → item overflow menu → "Move to list" →
+  `src/core/todoList/component/normal/MoveToListForm.vue`, `src/core/todoList/view/TodoListView.vue`
+  (`openMoveToList`)
+- **Expected:** A list holds at most one item per activity (the API's `(UserId, ActivityId, TodoListId)` unique
+  index, `TodoListItemConfiguration.cs:47`), so a move into a list that already has one is refused. The user
+  should be told *that*, and be able to pick another list without reopening the dialog.
+- **Actual:** The dialog closed before the request went out, then the interceptor showed the generic
+  `httpErrors.conflictUnique` — "A record with this value already exists. Choose another." — which names no
+  value the dialog has. The rejection also escaped `openMoveToList` unhandled.
+- **Evidence:** found by the round-9 retest while running B8's `Verify:` —
+  `PATCH /api/todo-list-item/14003/move => [409]`,
+  `{"errorType":"DbUniqueViolationError","errors":{"generalErrors":["Unique constraint violation during HandleAsync"]}}`.
+- **Repro:** 1. `/todo-list/<Focus>` (`seed.todoLists`). 2. "Code Review" → overflow → "Move to list".
+  3. Pick "Errands" (it already has a "Code Review" item). 4. Confirm.
+- **Verify:** 1. Same repro. 2. **Pass condition:** the dialog stays open with an inline message naming the
+  list and the activity, no snackbar appears, and choosing a list without that activity then moves the item
+  (2xx, row gone, success snackbar).
+- **Fix:** the same shape as `TimePeriodForm` and `ShoppingToTodoDialog`. `MoveToListForm` takes a `submit`
+  prop and runs the move inside its own confirm, `_silent`; a 409 `DbUniqueViolationError` becomes the
+  select's `errorMessages` (`toDoList.alreadyOnDestination`, SK + EN), every other status goes through
+  `handleHttpCodes`. `moveToList` in `todoListItemApi.ts` now forwards an `AxiosRequestConfig`.
 
 ### B1. Invalid list id throws an unhandled console exception with no visible error state
 - **Status:** fixed and verified (round 2 / 2a)

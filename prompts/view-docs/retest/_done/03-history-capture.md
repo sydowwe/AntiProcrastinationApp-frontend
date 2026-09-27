@@ -31,6 +31,9 @@ the order. If a summary and the `Verify:` block disagree, the block wins.
   `playwright-cli console info` as well as `console warning`.
 - **Never leave a clock running.** Stop anything you start. A running stopwatch, timer or pomodoro can outlive the
   page and leave a history row behind.
+- **B1/B2 need a state the page does not load in.** The seconds box renders only once a clock is running, and
+  Start stays disabled until Length is non-zero — type a length (or pick a preset) and start, then stop it.
+  A sub-minute stop discards cleanly with no history row (B4/B5), so a short run leaves nothing to delete.
 - **B6:** use a clearly named activity and time so you can find the row again. Delete it on the history screen
   and confirm it is gone. A second row caused by the double-click is exactly the defect, so delete that too if
   it appears.

@@ -465,6 +465,24 @@ file (or an unsaved file loaded twice, above). One signed-in state per concurren
 Worth knowing: `playwright-cli find` searches the snapshot instead of dumping it, `playwright-cli request <n>` shows one request in full, and `playwright-cli close`
 ends the session (`playwright-cli list` shows what is still running).
 
+**Opening a `VIdSelect` / `VIdAutocomplete` (or any `VSelect`): do not click it by role.** `click "getByRole('combobox', { name: 'Location' })"` resolves, then
+times out, because a `data-no-activator` div inside the field intercepts the pointer events (the same div that hid the chip's role in the leisure A1 finding).
+Click the field's wrapper by its label text instead:
+
+```
+playwright-cli click "locator('div').filter({ hasText: /^Location$/ }).nth(1)"
+```
+
+The anchored regex matters, since an unanchored one also matches every ancestor that contains the label. The `.nth(1)` is empirical, so if it opens nothing, `find`
+the label and adjust the index. Found in the 2026-09-25 `leisure-backlog-picker` retest, where every create-dialog select hit it.
+
+When the select is the only one in a dialog, scope to the dialog and click the field input instead — the label locator timed out there (element not visible)
+in the 2026-09-25 `todo-lists` retest ("Move to list"), and this worked first time:
+
+```
+playwright-cli click "getByRole('dialog', { name: 'Move to list' }).locator('.v-field__input')"
+```
+
 **Name your session: `-s=<name>` on every command.** The examples above omit it for brevity. Without it you share the unnamed `default` browser with every other
 agent that also omitted it, and their clicks land in your page (`F23`). `list` first; if anything else is running, also sign in through the form rather than
 `state-load` a file another session may hold.

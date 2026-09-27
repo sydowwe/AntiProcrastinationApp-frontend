@@ -9,11 +9,12 @@
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `6aac48bb` | initial inventory pass |
 | 2 | 2026-09-24 | (working tree) | code check: B1, B2, A2 confirmed fixed in code; U1 verified live via `playwright-cli` route mocking — all findings closed |
+| 3 | 2026-09-25 | `d423edcc` | **retest round** — 3 retested live: B1, B2, A2 pass. Account: primaryUser. Mutations made and reverted: none (date-range radio and `?selected` are URL state only; Android Spotify selection deselected via Close details before moving on). Regressions seen outside the Verify blocks: none. |
 
 ---
 
 ### B1. Web dashboard's domain-detail close button renders no icon — wrong icon set (`mdi-*` in a FontAwesome-only app)
-- **Status:** fixed (code check 2026-09-24) — `ActivityDetailsPanel.vue:7` now uses `icon="fas fa-xmark"` and carries `:ariaLabel="$t('activityTracking.pieChart.closeDetails')"`. Not re-verified live in a browser this round.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-tracking`, opened the github.com detail panel; close button renders `fa-xmark` SVG (`data-icon="xmark"`, `data-prefix="fas"`) and exposes name "Close details"; console clean (0 errors, 0 info) — no "Could not find one or more icon(s)".
 - **Severity:** bug
 - **Where:** `src/core/activityTracking/component/pieChart/ActivityDetailsPanel.vue:7` — the close button
   shown when a domain is selected on `/activity-tracking`
@@ -37,7 +38,7 @@
 - **Suggested fix:** Change `icon="mdi-close"` to `icon="fas fa-xmark"` on `ActivityDetailsPanel.vue:7`.
 
 ### B2. Android dashboard's app selection opens no detail panel — Web and Desktop both do
-- **Status:** fixed (code check 2026-09-24) — `AndroidPieChartSection.vue` now renders `AndroidAppDetailsPanel` when `selectedDetails` is set, with its own `fetchAppDetails` request, loading/error state, and `onClose`. Not re-verified live in a browser this round.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-tracking/android`, selected Spotify; side panel replaced the summary card with `GET /api/activity-tracking/android/app-details?packageName=com.spotify.music&...` (200) showing Total 3h 30m, Share of period 32.4%, Package, **and** Sessions: 6, Average/Longest session, First/Last use, By-day breakdown — the original, un-narrowed pass condition holds (active seconds + session count both present), via the endpoint backend `B23` shipped (§18, API `c00e64d`; frontend `c2075f61` with `F47`). Close details cleared `?selected` and the panel.
 - **Severity:** bug
 - **Where:** `src/core/activityTracking/component/android/AndroidPieChartSection.vue` (whole component) vs.
   `pieChart/ActivityPieChartSection.vue` (web) and `desktop/DesktopPieChartSection.vue` (desktop)
@@ -104,7 +105,7 @@
   `role="radiogroup"`/`role="radio"` (range picker) and `aria-pressed` (source filter) at these call sites.
 
 ### A2. Desktop process-detail panel's close button has no accessible name at all
-- **Status:** fixed (code check 2026-09-24) — `DesktopProcessDetailsPanel.vue:10` now carries `:ariaLabel="$t('activityTracking.pieChart.closeDetails')"`. Not re-verified live in a browser this round.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-tracking/desktop`, opened the JetBrains Rider detail panel; `getByRole('button', { name: 'Close details' })` resolves inside the panel, `aria-label` = "Close details".
 - **Severity:** a11y
 - **Where:** `src/core/activityTracking/component/desktop/DesktopProcessDetailsPanel.vue:5-11` — the close
   `VBtn` in the panel opened by selecting a process on `/activity-tracking/desktop`

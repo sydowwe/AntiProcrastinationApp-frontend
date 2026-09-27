@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (1 fixed) · bug 0 (5 fixed) · a11y 0 (4 fixed) · polish 0 (3 fixed) · opportunity 0 (1 fixed) · unverified 0 (2 verified, both pass)
+**Tally:** blocker 0 (1 fixed and verified live) · bug 0 (5 fixed and verified live) · a11y 0 (4 fixed and verified live) · polish 0 (3 fixed and verified live) · opportunity 0 (1 fixed and verified live) · unverified 0 (2 verified, both pass)
 
 ## Round history
 | round | date | commit | what changed |
@@ -11,11 +11,13 @@
 | 2 | 2026-09-15 | `f457aa0c` | mutation pass. Re-verified every round-1 finding: B1, B2, A1, A2, A3, P1 and O1 still reproduce as described; B3 (activity icon never rendering) is **fixed** — `ActivityInfo.fromJson` now falls back through `category`/`role` for `icon`/`color`. Added X1 (every write 404s — the headline finding of this pass), B4, B5, A4, P2, P3, U1, U2 from exercising create/edit/delete/status-change. |
 | 3 | 2026-09-24 | code check only (no browser pass) | X1, B1, B2, B4, B5, A1, A2, A3, A4, P1, P2, P3, O1 confirmed fixed in code against the fix-queue commits; U1, U2 unchanged (unverified either way) |
 | 4 | 2026-09-24 | live `playwright-cli` pass | U1, U2 exercised via route mocking; both pass as designed |
+| 5 | 2026-09-25 | `d423edcc` | **retest round** — 12 retested live: X1, B1, B2, B4, B5, A1, A2, A3, P1, P2, P3, O1 all pass; none reopened, none blocked. Account: primaryUser. Mutations made and reverted: created a throwaway project ("Throwaway Retest Project", est. hours 8.5/8.75, activity id 12103) for B5/B4/X1, deleted last; added one to-do item via O1 to `/todo-list/13002` (Errands), deleted afterwards. The "Throwaway Retest Project" activity itself (id 12103) outlived its project profile (they are separate deletes); triage removed it from `/activity-settings/activities` afterwards (`DELETE /api/activity/12103` → 204), so no residue remains. No regressions seen outside the Verify blocks. |
 
 ---
 
 ### X1. Every write to an existing project profile — status change, edit, delete — 404s
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityProjectProfile` now has a real
+- **Status:** fixed and verified (retest 2026-09-25, live) — status click on a throwaway project sent `PUT /api/activity-project-profile/17202` → 200 and the card moved column (count updated); edit dialog Save sent the same `PUT` → 200 and closed; Delete sent `DELETE /api/activity-project-profile/17202` → 204 and a reload confirmed the row gone.
+- **Fix applied:** `ActivityProjectProfile` now has a real
   `id` field read from the response (`dto/response/ActivityProjectProfile.ts:12`, with a comment explaining
   the old alias bug); `ProjectReadinessBoard.vue`, `ProjectProfileForm.vue` and `ProjectTable.vue` now call
   `update`/`deleteEntity` with `item.id`/`entityToEdit.id` instead of `activityId`.
@@ -64,7 +66,8 @@
 ---
 
 ### B1. Board/Table view mode does not reliably survive a reload, contradicting the requirement it was built for
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue` now re-checks and
+- **Status:** fixed and verified (retest 2026-09-25, live) — from a query-string-free load of `/leisure/projects`, clicking "Table" put `view=table` in the URL immediately (`eval location.href` checked right after the click), and a reload kept Table (button showed `[pressed]`, table rendered).
+- **Fix applied:** `ProjectsView.vue` now re-checks and
   re-writes `view` after every settled navigation (`watch([viewMode, () => route.fullPath], writeViewToUrl)`)
   instead of racing a single `router.replace` against `useTableUrlState`'s own writer, with a comment (F1)
   explaining the old race.
@@ -116,7 +119,8 @@
 ---
 
 ### B2. Every board-mode filter change fires two competing grid requests, breaking the "one fetch per filter change" guarantee
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue` now shares one
+- **Status:** fixed and verified (retest 2026-09-25, live) — applied a fresh `projectArea=Woodworking` filter from board mode; exactly one `POST /api/activity-project-profile/grid` fired (request #1455), body `itemsPerPage:200` with the filter, → 200. No second/aborted request.
+- **Fix applied:** `ProjectsView.vue` now shares one
   `useServerTable`/`fetchFilteredTable` between board and table instead of the board driving a second,
   competing fetch (F2). Comment in the file documents the old race and the resolved-with-the-other-call's-
   result risk this closes.
@@ -189,7 +193,8 @@
 ---
 
 ### B4. Editing a project with a fractional `estimatedHours` silently rounds it — and the rounded value is what gets saved
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `NewProjectProfileForm.vue`'s
+- **Status:** fixed and verified (retest 2026-09-25, live) — on a throwaway project created with `estimatedHours: 8.5`: edit dialog showed "8.5" and an unmodified Save sent `"estimatedHours":8.5` in the `PUT` body; then entering `8.75` and saving sent `"estimatedHours":8.75` (not truncated).
+- **Fix applied:** `NewProjectProfileForm.vue`'s
   `VNumberInput` now sets `:precision="null"`.
 - **Severity:** bug
 - **Where:** `src/core/leisure/component/project/NewProjectProfileForm.vue:34-39` (`VNumberInput` with
@@ -222,7 +227,8 @@
 ---
 
 ### B5. Create-dialog's Activity field shows a literal "0" and it leaks into typed search text
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ActivityProjectProfileRequest.activityId`
+- **Status:** fixed and verified (retest 2026-09-25, live) — fresh create dialog: Activity field was empty (no "0"); typing "Throwaway Retest Project" without touching Clear left the field containing exactly that text (`input.value` checked), and "Create activity "Throwaway Retest Project"" was offered as expected.
+- **Fix applied:** `ActivityProjectProfileRequest.activityId`
   now defaults to `null` (widened to `number | null`), with a doc comment pointing at the sibling backlog
   fix (F63).
 - **Severity:** bug
@@ -258,7 +264,8 @@
 ---
 
 ### A1. Filter panel's close (×) button has no accessible name — [framework]
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `FilterPanel.vue`'s close `VIconBtn`
+- **Status:** fixed and verified (retest 2026-09-25, live) — opened the Filter panel on `/leisure/projects`; the close button's accessible name is "Close" (both the accessibility snapshot and `getAttribute('aria-label')` on the button returned `"Close"`).
+- **Fix applied:** `FilterPanel.vue`'s close `VIconBtn`
   now has both `:title` and `:aria-label` bound to `general.close`.
 - **Severity:** a11y — **[framework]**
 - **Where:** `src/_common/component/FilterPanel.vue:49-54` (`VIconBtn icon="close"`, no `title`/
@@ -281,7 +288,8 @@
 ---
 
 ### A2. Table's "Messy" column renders a bare icon with no accessible text
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectTable.vue`'s Messy cell now
+- **Status:** fixed and verified (retest 2026-09-25, live) — switched to Table view; the Messy cell for "Build a Bookshelf" now exposes accessible text ("Messy") in the accessibility snapshot instead of an empty cell.
+- **Fix applied:** `ProjectTable.vue`'s Messy cell now
   keeps the icon decorative (no click handler, so `aria-hidden` per the app's documented convention, F4)
   with a `d-sr-only` sibling span carrying `leisure.a11y.messy`/`notMessy`.
 - **Severity:** a11y
@@ -303,7 +311,8 @@
 ---
 
 ### A3. Non-active readiness-status buttons on the board have very low contrast
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — inactive buttons in
+- **Status:** fixed and verified (retest 2026-09-25, live, screenshot) — screenshot `screenshots/retest-2026-09-25-A3.png` shows both inactive icons on the "Build a Bookshelf" card (outlined grey circles with a solid dark icon) clearly visible against the card background, next to the active orange "Needs shopping" button.
+- **Fix applied:** inactive buttons in
   `ProjectReadinessBoard.vue` are now `outlined` `neutral-600` instead of tonal `grey-lighten-2` (F5), with
   a comment recording the contrast measurements (3:1 on both themes) that drove the choice.
 - **Severity:** a11y
@@ -356,7 +365,8 @@
 ---
 
 ### P1. `FilterPanel` logs a recurring Vue warning about an attribute it can never use
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectsView.vue`'s `<FilterPanel>`
+- **Status:** fixed and verified (retest 2026-09-25, live) — navigated to `/leisure/projects` and opened the Filter panel; `playwright-cli console info` showed 0 messages (total console messages: 2, none naming `FilterPanel`).
+- **Fix applied:** `ProjectsView.vue`'s `<FilterPanel>`
   call no longer passes a `class` prop, so this warning no longer fires from this view. (Framework-level
   root cause — `FilterPanel`'s multi-root template — not independently re-checked, but not observable from
   this view either way now.)
@@ -387,7 +397,8 @@
 ---
 
 ### P2. Card metadata line is missing a space before the second "·" separator
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — `ProjectReadinessBoard.vue`'s
+- **Status:** fixed and verified (retest 2026-09-25, live) — board card and screenshot (`retest-2026-09-25-A3.png`) show "Intermediate · Woodworking · 8.5h" with a space on both sides of both separators; a freshly created throwaway project also read "Beginner · Retest Area · 8.5h" correctly spaced.
+- **Fix applied:** `ProjectReadinessBoard.vue`'s
   `metaLine()` now builds an array of present parts and joins with `' · '` once, instead of two independent
   conditional templates each supplying their own separator.
 - **Severity:** polish
@@ -410,7 +421,8 @@
 ---
 
 ### P3. Filtering to zero results shows the same "you have no projects at all" empty state and Add button as a genuinely empty list
-- **Status:** fixed (code check 2026-09-24, not re-verified live) — both `ProjectTable.vue` and
+- **Status:** fixed and verified (retest 2026-09-25, live) — filtered board to `isMessy=false` (excludes the one seeded messy row); rendered "Nothing matches these filters." with a "Clear filters" button, distinct from the true-empty copy. Filter cleared afterwards.
+- **Fix applied:** both `ProjectTable.vue` and
   `ProjectReadinessBoard.vue` now route through `LeisureEmptyState` with a `:filtered` prop and an
   `@onClearFilters` handler (F79), distinguishing "nothing matches" from "you have none."
 - **Severity:** polish
@@ -441,8 +453,8 @@
 ---
 
 ### O1. `activity.isOnTodoList` rides on every response unread — and P1's own shopping-list-to-todo handoff was never built or declined in writing
-- **Status:** fixed (2026-09-24, `cfa6434d` — "add a NeedsShopping project to a to-do list (leisure-
-  projects/O1)"), not re-verified live — `ProjectReadinessBoard.vue` now has an "Add to to-do list" button
+- **Status:** fixed and verified (retest 2026-09-25, live) — drove the flow on "Build a Bookshelf" (`NeedsShopping`): clicked "Add to to-do list: Build a Bookshelf", picked list "Errands" and priority "This week", confirmed → `POST /api/todo-list-item` → 201, item id `14103`. Item appeared on `/todo-list/13002` as "Build a Bookshelf · Shopping for Build a Bookshelf" with steps. Deleted the item afterwards (`DELETE /api/todo-list-item/14103` → 204, "Undo: Delete" snackbar shown and the row gone from the list).
+- **Fix applied (2026-09-24, `cfa6434d`):** `ProjectReadinessBoard.vue` now has an "Add to to-do list" button
   on `NeedsShopping` cards with unmet materials/tools, opening `ShoppingToTodoDialog.vue`, which writes
   through `core/todoList`'s own api/dto per the cross-module rule.
 - **Severity:** opportunity

@@ -5,7 +5,8 @@
 
 **Tally (live, 2026-09-24):** blocker 0 (X1-X4 all fixed) · bug 0 open, 7 fixed (B1-B7, B2 confirmed live in
 the browser, the rest by source read) · a11y 0 · polish 0 open, 1 fixed (P1 — tracking settings now also
-linked from `/user/settings`, verified live) · opportunity 1 (O1, open) · unverified 0 (U1 stays `stale`,
+linked from `/user/settings`, verified live) · opportunity 0 open, 1 built (O1 — inline *Is active* toggle,
+verified live 2026-09-24) · unverified 0 (U1 stays `stale`,
 superseded by X4)
 
 ## Round history
@@ -14,15 +15,17 @@ superseded by X4)
 | 1 | 2026-09-13 | `df2b163d` | initial inventory pass |
 | 2 | 2026-09-15 | `97f1e414` | mutation pass. Confirmed X1 still reproduces (amended with a keyboard-workaround nuance below). Added X2/X3/X4 (all newly discovered, all blocker-severity, all in the create/edit/delete lifecycle). Added B5/B6/B7. Converted U1 from unverified to **confirmed** — see X4, which supersedes it; U1's row is kept for the audit trail and marked `stale`. |
 | 3 | 2026-09-24 | `1fb9de9e` | **status-only re-check, source read not a browser pass.** `39a89462` ("Mappings tab paints, filters, deletes and saves", F12/F72/F13) closed X1, X2, X3, X4, B1, B3, B6, B7 in one commit; `41ebf026`/`B24` closed B5 (already marked fixed here); a framework commit (`a29135a`, filed as `F14` in `_fix-queue-log.md`, closed 2026-09-23) fixed the sidebar/breadcrumb longest-prefix bug B2 names. B4 was already fixed per round 2's own note. P1 and O1 are unchanged — still open. Each closed item's code was read directly (`DesktopMappingsTable.vue`, `useMappingSettings.ts`) to confirm the fix, not just inferred from commit messages; B2's breadcrumb fix was not independently re-verified live, so its row below is marked "believed fixed" rather than "verified" — flagging that for you rather than closing it silently. |
+| 4 | 2026-09-24 | `1ffdd747` (+ working tree) | O1 built: inline *Is active* switch on both Mappings tables. Verified live on desktop and Android. |
+| 5 | 2026-09-24 | `d423edcc` (+ working tree) | **retest round** — 8 retested live, both platforms: X1, X2, X3, X4, B1, B3, B6, B7 pass; none reopened; none blocked. Not driven: X1's >1-page scroll (one row per type in the seed), X3's inactive-row edit. Account: primaryUser (form sign-in, both cached state files were already revoked). Mutations made and reverted: created 21003 / 21103 (ignored `retest-x2*`), deleted via X4; 21001 / 21101 activity edited and restored. Regression seen outside the Verify blocks: at 1440×900 the desktop pattern-bar labels truncate again ("Proc…", "Prod…", "Wind…", `retest-2026-09-24-X1-desktop.png`), against B4's closing note; the info alert below it is clipped. |
 
 ---
 
 ### X1. The Mappings tab's table row (and its edit/delete actions) is invisible and unclickable
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F12) — `DesktopMappingsTable.vue`/
-  `AndroidMappingsTable.vue` now wrap `BasicTable` in a definite-height flex chain (`flex-fill` root +
-  `flex-1-1`/`min-height: 0` on the table), matching the root-cause guess below exactly. Not re-driven live
-  in a browser this pass; a spec added 2026-09-24 (`tracking-settings.draft.spec.ts`, 31 rows at `?perPage=50`)
-  covers the second verification step (scroll-inside-card at >1 page).
+- **Status:** fixed and verified (retest 2026-09-24, live) — row painted on both platforms
+  (`screenshots/retest-2026-09-24-X1-{desktop,android}.png`), `elementFromPoint` resolves inside the edit button, a
+  normal click lands on `distinctEntries?processName=rider64.exe&processNameMatchType=Exact` (android:
+  `?packageName=com.spotify.music…`) with the activity filled, and a real `Tab` walk from the filter row reaches
+  edit/delete; the >1-page scroll-inside-card case was not driven (seed has one row per type).
 - **Severity:** blocker
 - **Where:** `/activity-tracking/desktop/settings/mappings` and `/activity-tracking/android/settings/mappings`
   → `_common/component/dataTable/BasicTable.vue` rendered inside `DesktopMappingsTable.vue` /
@@ -87,10 +90,9 @@ superseded by X4)
 ---
 
 ### X2. "To ignored" mode can never actually be saved, on both platforms — the request never carries `isIgnored: true`
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F72) — `useMappingSettings.ts`'s
-  `saved()` now branches on `mode.value`: `toIgnored` sets `isIgnored = true` and clears `activityId`;
-  `toActivity` sets `isIgnored = null` and requires `formData.value.activityId`. Matches the suggested fix
-  exactly. Not re-driven live in a browser this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — *To ignored* + Save sent `"isIgnored":true` with null
+  ids → 201 on both platforms (`retest-x2.exe` → 21003, `retest-x2` → 21103), and each row showed under Type =
+  Ignored with no activity.
 - **Severity:** blocker
 - **Where:** `src/core/activityTracking/composable/useMappingSettings.ts:39-54` (`saved()`), used by both
   `DesktopSettingsView.vue` and `AndroidSettingsView.vue` via `useMappingSettings`
@@ -132,12 +134,9 @@ superseded by X4)
 ---
 
 ### X3. Editing any existing mapping fails with a 400 on both platforms — the update request never carries `isActive`
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F72) — the commit message states
-  "`isActive` is always sent, and `edit()` copies the row's value so an inactive rule stays inactive."
-  Not re-driven live in a browser this pass; not independently confirmed that `edit()` in both
-  `DesktopSettingsView.vue`/`AndroidSettingsView.vue` reads the row's `isActive` (only `useMappingSettings.ts`
-  was read directly) — low risk given the commit's own explicit framing, but flagging the gap rather than
-  claiming full verification.
+- **Status:** fixed and verified (retest 2026-09-24, live) — editing seeded 21001 (Desk Research → Bug Fixing) and
+  21101 (Read a Novel → Build a Bookshelf) sent `PUT` with `"isActive":true` → 200, the change survived a reload,
+  and both were edited back (200, reload confirmed); the inactive-row path was not re-driven here.
 - **Severity:** blocker
 - **Where:** `src/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts:12`
   (`public isActive?: boolean` — optional, no default, never assigned) and the equivalent
@@ -179,10 +178,8 @@ superseded by X4)
 ---
 
 ### X4. Delete confirmation opens and can be confirmed, but no delete request is ever sent — the row silently survives
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) — both tables now declare
-  `@onDelete="onDelete"` on `BasicTable`, calling `deleteEntity(item.id)` from `useTrackerDesktopMappingCrud`/
-  the android equivalent, then `load()`. Matches the suggested fix exactly. Not re-driven live in a browser
-  this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — Confirm sent `DELETE …/tracker-desktop-mapping-by-pattern/21003`
+  → 204 and `DELETE …/tracker-android-mapping-by-pattern/21103` → 204; both rows gone after the re-fetch.
 - **Severity:** blocker
 - **Where:** `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`'s `<BasicTable ... @onLoadItems="load"
   @onEdit="emit('edit', $event)" />` — confirmed missing an `@onDelete` listener on both, matching the
@@ -217,10 +214,9 @@ superseded by X4)
 ---
 
 ### B1. Every filter control on the Mappings tab is non-functional — no control ever triggers a re-fetch
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) — `DesktopMappingsTable.vue`/
-  `AndroidMappingsTable.vue` now take `filter` as a prop from the view (the shared pattern bar, applied on
-  its own Filter button) and `watch` their own type/isActive/isIgnored/activityId controls to refetch on
-  change (lines ~113-124). Not re-driven live in a browser this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — on both platforms Is active, Type, Is ignored, the
+  Activity picker (`activityId: 12023` / `12007`) and the top-bar pattern + Filter (`processName: "rider"` /
+  `appLabel: "spotify"`) each fired a new `POST …mapping-by-pattern/grid` carrying the value.
 - **Severity:** bug
 - **Where:** `/activity-tracking/desktop/settings/mappings` and `.../android/settings/mappings` →
   `DesktopSettingsView.vue:32-35` (`<DesktopEntriesFilterBar v-model="filter"
@@ -306,10 +302,8 @@ superseded by X4)
 ---
 
 ### B3. Distinct-entries filter (pattern + match type) is not persisted to the URL, so it is lost on reload
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F15) — the commit message states the
-  distinct-entries filter now goes through `useDistinctEntriesUrlState` (was a bare local `ref`), and
-  `DesktopMappingsTable.vue` shows the sibling `useTableUrlState` wiring for page/perPage/sortBy and its own
-  controls. Not re-driven live in a browser this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — Filter wrote `?processName=chrome` (android
+  `?appLabel=spotify`), and a reload of that URL kept the query and the field value on both platforms.
 - **Severity:** bug
 - **Where:** `/activity-tracking/desktop/settings/distinctEntries` and the android equivalent —
   `DesktopSettingsView.vue`'s `filter` ref, `DesktopEntriesFilterBar.vue`
@@ -405,11 +399,9 @@ superseded by X4)
 ---
 
 ### B6. Save failures show a generic "Failed to save mapping" snackbar, discarding the server's specific validation messages
-- **Status:** fixed and verified by source read (2026-09-24, part of `39a89462`) — `useMappingSettings.ts`'s
-  `saved()` now adds client-side validation (`patternError` when no pattern, blocks submit when `toActivity`
-  has no `activityId`) and its `catch` only shows the generic snackbar when the request never got a response
-  at all (`e.response === undefined`) — a real 400 lets the interceptor's own snackbar (carrying the server's
-  text) stand instead of being overwritten. Not re-driven live in a browser this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — on both platforms Clear → Save sent no mapping request
+  and showed "Fill in at least one pattern" inline; a pattern with no activity sent nothing and marked the
+  Activity field as an error.
 - **Severity:** bug
 - **Where:** `useMappingSettings.ts:44-53` (`saved()`'s `catch` block:
   `showErrorSnackbar(t('activityTracking.settings.failedToSaveMapping'))`)
@@ -441,10 +433,8 @@ superseded by X4)
 ---
 
 ### B7. Mapping delete confirmation names the raw numeric id instead of describing what will be deleted
-- **Status:** fixed and verified by source read (2026-09-24, `39a89462`, F13) —
-  `DesktopMappingsTable.vue`/`AndroidMappingsTable.vue` now pass `deleteConfirmationColumn="patternLabel"` to
-  `BasicTable`, and the commit message confirms "the confirmation names the rule via a patternLabel getter."
-  Not re-driven live in a browser this pass.
+- **Status:** fixed and verified (retest 2026-09-24, live) — the dialog read "Are you sure you want to delete
+  retest-x2.exe?" (desktop) and "…delete retest-x2?" (android); cancelled both.
 - **Severity:** bug
 - **Where:** `_common/component/dataTable/BasicTable.vue`'s built-in delete-confirmation `MyDialog`, as
   configured/consumed by `DesktopMappingsTable.vue` / `AndroidMappingsTable.vue`
@@ -513,7 +503,19 @@ superseded by X4)
 ---
 
 ### O1. A mapping's `isActive` flag is filterable but not editable anywhere in this unit
-- **Status:** open
+- **Status:** built and verified live (2026-09-24). The *Is active* column on both Mappings tables is now an
+  inline `VSwitch` (accessible name `Rule active: {pattern}`, disabled with a spinner while its request is in
+  flight). There is no patch route: the update is a full replace, so the switch re-sends the whole row through
+  a new `Tracker{Desktop,Android}MappingRequest.fromRow()` with only `isActive` changed. Both response DTOs now
+  parse `roleId`/`categoryId` (the server always sent them); without them a toggle on a role/category-target
+  rule would have cleared its target. A failed PUT leaves the switch where it was, and the interceptor's
+  snackbar explains why. With the *Is active* filter set, the grid reloads so the row leaves the page. The
+  table emits `activeChanged`, and the view copies it into the form's request when that rule is the one being
+  edited, so a later *Save* does not undo the toggle. Verified with `playwright-cli`: desktop `rider64.exe`
+  (21001) toggled off sent a PUT with the full row and `isActive: false` (200), and it read unchecked after a
+  fresh sign-in. Android `com.spotify.music` (21101) sent the same shape (200). Both were switched back on,
+  and the console showed 0 errors. Not verified live: a role/category-target row (the seed has none) and the
+  edit-form sync path.
 - **Severity:** opportunity
 - **Where:** Both settings views — the Mappings tab's "Is active" filter checkbox reads the field, but neither
   the create form (`DesktopDistinctEntriesActions`/`AndroidDistinctEntriesActions`) nor the edit flow

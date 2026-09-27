@@ -2,23 +2,19 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `63e851ff`
 
-**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (all closed — verified 2026-09-24)
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (all closed — verified live 2026-09-25)
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `5e42b813` | initial inventory pass |
 | 2 | 2026-09-15 | `63e851ff` | mutation pass. No code touching this unit landed between rounds ( `git log 5e42b813..63e851ff` on the four views, the store, `TimePicker.vue`, `TimeDisplay.vue` and both `common.*.ts` locale files is empty), so B1/B2 are re-confirmed live rather than re-discovered; B3/P1 were not re-walked (no code change, low risk of drift, time better spent on the entity lifecycle this pass exists to test). U1 is now reproduced live and **renumbered to B6** with a corrected description — the frontend does fire a second request, but the backend rejects it with `409` rather than writing a duplicate, which the inventory pass could not have known without submitting for real. Two new bugs found doing the create lifecycle: **B4** (Pomodoro writes a zero-length history row behind a malformed confirmation prompt) and **B5** (Timer silently discards a sub-minute session with no feedback at all). Both are the same root shape as the already-open `H11-timer-end-notifications.md` note about the untagged final pomodoro boundary: nobody wrote down what should happen when a session ends before it produces a whole minute. |
+| 3 | 2026-09-25 | `d423edcc` | **retest round** — 5 retested live: B1, B2, B3, B6, P1 pass; none reopened; none blocked. Account: primaryUser. Mutations made and reverted: one manual-entry history row (activity "Journal", `00:07`, id `15502`) created for B6's double-click check, deleted via History Detail → More actions → Delete → Confirm and confirmed gone after reload; no clock left running (both a sub-minute timer and sub-minute pomodoro session were started for B1/B2 checks and discarded with no history row, per the already-verified B4/B5 fixes). No regressions seen outside the Verify blocks. |
 
 ---
 
 ### B1. `dateTime.secondsShort` renders as the raw i18n key on every running clock
-- **Status:** ✅ **fixed, verified in code 2026-09-24** — not by mirroring the key, but by an
-  architecture change: `dateTime` is now one of the four deep-merged namespaces in
-  `src/locales/{EN,SK}.ts` (`dateTime: { ...common.dateTime, ...appCommon.dateTime }`), and the
-  framework's `src/_common/_locales/common.{en,sk}.ts` already has `secondsShort: 's'`. The app's own
-  `dateTime` block no longer overrides it, so the framework's value survives the merge and the raw-key
-  bug is gone without needing a duplicate entry in the app's locale files.
+- **Status:** fixed and verified (retest 2026-09-25, live) — seconds label read "s" on a running stopwatch, timer and pomodoro; `playwright-cli console info`/`console debug` showed no `[intlify] Not found` message on any of the three.
 - **Severity:** bug
 - **Where:** `src/_common/component/dateTime/TimeDisplay.vue:38` (`t('dateTime.secondsShort')`), consumed by
   `StopWatchView`, `TimerView` and `PomodoroTimerView` via `TimeDisplay`/`TimeDisplayWithProgress`. Root cause:
@@ -46,10 +42,7 @@
   to `minutesShort` at line 375) and `src/locales/common.sk.ts` (next to `minutesShort` at line 166).
 
 ### B2. Typed durations silently round to the nearest 5 minutes, with no feedback
-- **Status:** ✅ **fixed, verified in code 2026-09-24** — every affected `TimePicker` call site now
-  passes `allowedMinutesSelected="1"`: `AddActivityManuallyForm.vue:20`, `TimerView.vue:19`,
-  `PomodoroDurationCard.vue:20`, `TimerPresetDialog.vue:20`, `EditActivityHistoryForm.vue:14`, and all
-  three fields in `PomodoroPresetFormDialog.vue`. No 5-minute floor remains on any of them.
+- **Status:** fixed and verified (retest 2026-09-25, live) — typed `0007` into the Length field on `/activity-history/timer`, all three duration fields (Focus/Short rest/Long rest) on `/activity-history/pomodoro`, and the Length field on `/activity-history/manual`; every field read back exactly `00:07`, no rounding.
 - **Severity:** bug
 - **Where:** `src/_common/component/dateTime/TimePicker.vue:99,114-129` (`roundToNearestInterval(minutes,
   interval.value)`, `interval` defaulting to `allowedMinutesSelected = '5'`), used with no override by
@@ -81,10 +74,7 @@
   duration entry, or surface the rounding at the point it happens.
 
 ### B3. A preset chip's "Close" button is always present, does nothing useful outside edit mode, and its visible effect is not real
-- **Status:** ✅ **fixed, verified in code 2026-09-24** — `TimerPresetsSection.vue` was rewritten: the
-  `#close` slot is gone entirely. The pencil icon now lives in the `#append` slot, gated `v-if="editMode"`,
-  and the chip's own `@click` routes to `openEditDialog(...)` in edit mode or `applyPreset(...)` otherwise.
-  No unbound `closable` chrome remains outside edit mode.
+- **Status:** fixed and verified (retest 2026-09-25, live) — on `/activity-history/timer`, `document.querySelectorAll('.v-chip__close').length` was 0 both outside and inside edit mode; edit mode instead shows a pencil icon appended to each chip (screenshot: `screenshots/retest-2026-09-25-B3.png`), no Close/X control anywhere.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/component/TimerPresetsSection.vue:44-51,93-100` (the `#close` template on
   both the Quick Times and Activity Presets `VChip`s), observed on `/activity-history/timer`.
@@ -200,11 +190,7 @@
   user when a session produced nothing to save.
 
 ### B6. Manual entry form fires a second request on a fast double-click, and never resets after a successful save
-- **Status:** ✅ **fixed, verified in code 2026-09-24** (`F68`). `AddActivityManuallyView.vue` now has a
-  `saving` re-entry guard (`if (saving.value) return`) plus `:loading="saving"` on the button, so the `409`
-  path is unreachable. `AddActivityManuallyForm.vue`'s `saveActivity()` calls `resetAfterSave()` and
-  `emit('saved')` after a successful save — the date moves past the just-logged span and the length resets
-  to zero, rather than leaving stale values in place.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `dblclick` on "Record activity to history" (activity "Journal", Length `00:07`) produced exactly one `POST /api/activity-history` (`201`, id `15502`), no console error; after the save the Length field reset to `00:00` and the When time advanced past the logged span (the activity selection is kept by design, for back-to-back logging — `AddActivityManuallyForm.vue` `resetAfterSave`, F68). Created row deleted via `/activity-history/detail?date=2026-09-25` → More actions → Delete → Confirm, and confirmed gone after reload.
 - **Severity:** bug
 - **Where:** `src/core/activityHistory/view/AddActivityManuallyView.vue` (no `@saved` handler on
   `<AddActivityManuallyForm>`) and `src/core/activityHistory/component/AddActivityManuallyForm.vue:63-82`
@@ -246,8 +232,7 @@
   listen for it today.
 
 ### P1. Leftover `console.log` fires on every Timer/Pomodoro preset load
-- **Status:** ✅ **fixed, verified in code 2026-09-24** — `TimerPresetsSection.vue` no longer contains any
-  `console.log` call.
+- **Status:** fixed and verified (retest 2026-09-25, live) — `playwright-cli console debug` on a fresh load of `/activity-history/timer` and `/activity-history/pomodoro` showed only vite HMR debug lines, no `[LOG]` entry from `TimerPresetsSection.vue`.
 - **Severity:** polish
 - **Where:** `src/core/activityHistory/component/TimerPresetsSection.vue`, in `loadPresetsData()`
   (`console.log(allPresets.value)`, immediately after `allPresets.value = await fetchAll()`)

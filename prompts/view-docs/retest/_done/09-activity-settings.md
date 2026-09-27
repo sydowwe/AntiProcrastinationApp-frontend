@@ -24,7 +24,7 @@ the order. If a summary and the `Verify:` block disagree, the block wins.
 | B4 | bug **[framework]** | Row-action buttons show the internal slug instead of a localized label | the titles read "Edit" / "Delete", and change language in SK. **Switch back to EN** | no |
 | B5 | bug | An invalid `:tab` renders a blank page and floods the console with router warnings | a redirect to `activities` or the NotFound view, with no router warnings | no |
 | B6 | bug | The breadcrumb shows only "Home" on Roles and Categories | "Home › Activity settings" when navigating directly to either tab | no |
-| B7 | bug | Roles and Categories never disable Delete for a row that can't be deleted | a row with `canDelete: false` has a disabled Delete with an explanatory tooltip | no |
+| B7 | bug | Roles and Categories never disable Delete for a row that can't be deleted | **Roles:** a row with `canDelete: false` has a disabled Delete with an explanatory tooltip. **Categories** keep Delete enabled by design (`canDelete` is advisory there; they confirm with a cascade count instead, see B8) | no |
 | B8 | bug | The Roles/Categories delete confirmation shows the raw id and a generic "Confirm" | the dialog names the row, and the button reads "Delete". **Cancel** | no |
 | B9 | bug **[framework]** | `extractServerMessage` hides the specific `errors` text behind the generic `message` | the snackbar shows the server's specific text, not "One or more errors occurred!" | see notes |
 | A1 | a11y | The Activities table's Delete button has no accessible name | `getByRole('button', { name: 'Delete' })` resolves, with the localized blocked text when disabled | no |

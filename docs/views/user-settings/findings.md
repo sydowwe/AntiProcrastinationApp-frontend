@@ -10,17 +10,15 @@
 | 1 | 2026-09-14 | `adc9c67f` | initial inventory pass |
 | 2 | 2026-09-14 | `adc9c67f` | mutation pass — confirmed `askBeforeDelete`/`firstDayOfWeek` save+persist+snackbar live (reverted after), confirmed theme toggle syncs and reverted it, found P1, and hit the harness's own safety classifier on password-field fill, the language switch, and (again) Delete account — all left untouched, see U3-U5 |
 | 3 | 2026-09-24 | `1fb9de9e` | status sweep — all four bug/a11y/polish findings confirmed closed against current source and `_fix-queue.md`: B1+B2 landed together in `fc3c4547` (`B14` frontend half, §9), B3+B4 in `FW25`, A1 in `FW7` (`5397675`), P1 folded into `FW12`'s commit (`549ae02`). U1 was already resolved; U2-U5 remain open, blocked by the harness's own safety classifiers or needing a dedicated throwaway account — nothing actionable from this repo alone |
+| 4 | 2026-09-24 | `d423edcc` | **retest round** — 6 retested live: B2, B3, B4, A1, P1 pass; none reopened; B1 blocked (reaches Google with `client_id`, but `redirect_uri_mismatch` — callback URI unregistered, ops). F90 (MyBtnToggle) SK labels: `group "Téma"`, `group "Prvý deň týždňa"` pass, no raw keys. Account(s): `primaryUser` (B1, B2, A1, P1, F90), `secondaryUser` form sign-ins (B3, B4). Mutations made and reverted: theme Light→Dark→Light, locale EN→SK→EN (two `PUT /user/preferences` 204); 2FA enabled on `secondaryUser` by B4 and by B3, each undone by a reseed (three reseeds in all: before B3 for the UTC precondition, after B4, after B3). The unit brief's "cancel at the QR, confirm 2FA off" cannot work: a 200 from `/user/2fa/toggle` has already enabled 2FA, the QR dialog has no close button, and disabling needs a TOTP — a reseed is the only revert. Also: a reseed killed a live access token too (`GET /user/data` 401 → `POST /auth/refresh` 401), contrary to `e2e/fixtures/seed.ts`'s "survives while the access token lives". Regressions: none. U2–U5 left `open` here, though `_fix-queue.md` closes them 2026-09-24 (status drift, untouched) |
 
 ---
 
 ### B1. Google Calendar "Connect" leads to a real OAuth error — `client_id` is missing
-- **Status:** fixed — closed `§9` 2026-09-21. Backend `B14` landed all three server-side stops
-  (API `1e0dc3b`, framework `23e13fe`): `configured` on `GET …/status`, 503 `ServiceNotConfigured`
-  from `…/auth-url`, the redirect URI derived from the page URL, the state cookie re-scoped to the
-  `/api` prefix, and `errorType` on the three hand-rolled 400s. Frontend half (`F33` + the
-  `configured` branch + `F34`) landed the same day in `fc3c4547`, which also sends the OAuth `state`
-  the server's validator requires. The real Google round trip still needs the redirect URI
-  registered in the console (ops) — not a frontend concern.
+- **Status:** fixed, retest blocked 2026-09-24 — "Connect" now reaches Google with `client_id` present
+  (`client_id=579844911566-…apps.googleusercontent.com`), but Google answers `redirect_uri_mismatch`:
+  `https://localhost:3000/google-calendar/callback` is not registered in the console (ops, as `§9` said).
+  The consent screen stays unreachable until it is; not authorized.
 - **Severity:** bug
 - **Where:** `/user/settings` → Security card → "Connect" (Google Calendar row, app-supplied via the
   `#integrations` slot)
@@ -48,11 +46,8 @@
   since it's entirely downstream of this one root cause.
 
 ### B2. GoogleCalendarCallbackView gives zero feedback on a failed or declined connection
-- **Status:** fixed — landed with `B1` in `fc3c4547` (`B14` frontend half). `GoogleCalendarCallbackView.vue`
-  now branches on `error=access_denied` (a softer "connectCancelled" snackbar) vs. a missing
-  `code`/`state` (`connectFailed`) vs. a failed exchange (`connectExpired`/`connectRejected`/
-  `connectFailed`, keyed off the 400's `errorType`), and shows a snackbar on every path before
-  redirecting to `/user/settings`.
+- **Status:** fixed and verified (retest 2026-09-24, live) — `/google-calendar/callback?error=access_denied`
+  redirected to `/user/settings` with `status: "Google Calendar connection cancelled"` in the snapshot.
 - **Severity:** bug
 - **Where:** `/google-calendar/callback` (no `code` param, and separately `?error=access_denied`)
 - **Expected:** A user who declines Google's consent screen, or whose connection attempt otherwise
@@ -80,9 +75,11 @@
   `showErrorSnackbar` with a short explanation before redirecting.
 
 ### B3. A step-up action right after opening the page can fail Identity's concurrency check — and is then reported as "Wrong password"
-- **Status:** fixed — `FW25` landed 2026-09-21 (one in-flight hydration, one zone push per session, a
-  `catch` that words only a 401). `two-factor.spec.ts` test 1 passes with its settle-wait removed, where
-  it failed on every run before; the wait stays anyway.
+- **Status:** fixed and verified (retest 2026-09-24, live) — after a reseed (account on UTC), one
+  `run-code` script signed in as `secondaryUser`, went straight to `/user/settings` and stepped up with
+  no settle-wait: `POST /user/2fa/toggle` → 200 ~470 ms after the page loaded, *Enabling 2FA* open, no
+  "Wrong password"; one `PUT /user/preferences` for the whole run (at sign-in), none from the settings
+  page. Reseeded afterwards to turn 2FA back off.
 - **Severity:** bug
 - **Where:** `/user/settings` → any `VerifyUserForm` action (2FA toggle observed; password/e-mail change,
   delete account and 2FA reset take the same gate). Framework: `authStore.hydrateFromServer`,
@@ -108,8 +105,10 @@
   that says *"Wrong password"* only on 401.
 
 ### B4. A wrong password in the identity dialog signed the user out
-- **Status:** fixed — same day, in `FW25`'s commit (`_credentialCheck` on the request; the interceptor
-  hands a live-token 401 back to the caller)
+- **Status:** fixed and verified (retest 2026-09-24, live) — `secondaryUser`, wrong password →
+  one `POST /user/2fa/toggle` 401 (no refresh, no resend), `status: "Wrong password"`, dialog still
+  open, still `/user/settings`; the right password in the same dialog → 200 and *Enabling 2FA*.
+  Reseeded afterwards to turn 2FA back off.
 - **Severity:** bug
 - **Where:** every `VerifyUserForm` action on `/user/settings` (2FA toggle observed; password change,
   e-mail change, delete account and 2FA reset post through the same form). Framework:
@@ -131,9 +130,9 @@
   what the fix keys on.
 
 ### A1. Password-field visibility toggles expose a non-descriptive accessible name
-- **Status:** fixed — `FW7` landed 2026-09-23 in `vue_framework` `5397675` (bump `a7dbfda0`), folded in
-  with `FW2`/`FW5`/`FW6`/`FW15`. The password field's visibility toggle now carries a real
-  "Show password"/"Hide password" accessible name instead of the "{label} appended action" fallback.
+- **Status:** fixed and verified (retest 2026-09-24, live) — in the open *Change password* dialog all three
+  visibility toggles are named "Show password" (next to "Clear Password" / "Clear New password" /
+  "Clear Confirm new password"); no "…appended action" left.
 - **Severity:** a11y — **[framework]**
 - **Where:** the "Password change" dialog opened from `/user/settings` → Security → "Change
   password" — all three fields (Password, New password, Confirm new password)
@@ -163,10 +162,9 @@
   shared password-field component so every consumer gets it for free.
 
 ### P1. "Change password" and "Delete account" use the wrong colour for an elevated button
-- **Status:** fixed — folded into `FW12`'s framework commit (`549ae02`, bump `a0f116a9`), landed
-  2026-09-23 as `FW8` (six elevated buttons on the tonal/outlined colour tokens, this pair among them).
-  `SecuritySection.vue`'s "Change password" and "Delete account" buttons now use `warningDark`/
-  `errorDark`.
+- **Status:** fixed and verified (retest 2026-09-24, live) — computed backgrounds: light `#CA8A04` /
+  `#B91C1C`, dark `#CA8A04` / `#DC2626` (each theme's `warningDark` / `errorDark`), white text legible in
+  both; `screenshots/retest-2026-09-24-P1-{light,dark}.png`. Theme restored to Light.
 - **Severity:** polish — **[framework]**
 - **Where:** `src/_common/modules/user/component/settings/SecuritySection.vue:61-72` — the "Change
   password" (`color="warning"`) and "Delete account" (`color="error"`) buttons

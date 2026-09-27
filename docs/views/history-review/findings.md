@@ -11,13 +11,14 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
 | 1 | 2026-09-14 | `adc9c67f` | initial inventory pass |
 | 2 | 2026-09-24 | (code check, no commit) | B1-B3, A2, P2-P3 confirmed fixed in code; U2 confirmed resolved by backend B2 nullability audit |
 | 3 | 2026-09-24 | (browser check, no commit) | U1 closed — both the plain-empty and genuine first-run branches confirmed live on Calendar and Summary |
+| 4 | 2026-09-25 | `d423edcc` | **retest round** — 6 retested live: B1, B2, B3, A2, P2, P3 pass; none reopened; none blocked. Account(s): primaryUser (`e2e/.state/auth-10001.json`). Mutations made and reverted: B2's `**/api/activity-history/dashboard/detail/pie-chart` route (500), unrouted and reload confirmed recovery — no residue. No regressions seen outside the Verify blocks. |
 
 ---
 
 ### B1. The period-total banner renders clipped to ~2 illegible characters in Summary's Top Activities panel
-- **Status:** fixed and verified (code check 2026-09-24 — `HistoryPeriodBanner.vue`'s `.myAlert` now sets
-  `flex: 0 0 auto` with a comment explaining VAlert's default `flex: 1 1 0%` was the cause; the parent row's
-  `flex-wrap` now activates instead of compressing the alert)
+- **Status:** fixed and verified (retest 2026-09-25, live) — at 1440×900 on `/activity-history` (default
+  week range, `baseline=last7days`) the alert renders full text "Period total: 19h 7m vs previous: 7h 16m
+  +163.1%" on one line, unclipped; element screenshot confirms
 - **Severity:** bug
 - **Where:** `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue` (the `VAlert`,
   `style="max-width: fit-content"` with no `flex-shrink: 0`) rendered inside
@@ -48,11 +49,9 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   `HistoryPeriodBanner.vue`, so the flex-wrap on the parent row activates instead of compressing the alert.
 
 ### B2. A failed dashboard request renders identically to a genuinely empty period
-- **Status:** fixed and verified (code check 2026-09-24, `F27` — `useHistoryDashboard.ts` now tracks a
-  per-panel error ref (`stackedBarsError`/`pieChartError`/`summaryCardsError`/`timeOfDayError`) alongside
-  the nulled data, and `HistoryPieChartSection.vue` (and siblings) branch on `error` to render
-  `HistoryErrorState` with a retry affordance instead of falling through to the empty-state branch; the
-  first-run check also now bails out rather than answering on a failed round)
+- **Status:** fixed and verified (retest 2026-09-25, live) — routed `**/api/activity-history/dashboard/detail/pie-chart`
+  to 500, reloaded `/activity-history/detail?date=2026-09-23`: pie panel showed "Failed to load" + a "Retry"
+  button, no "No data" text present; unrouted and reloaded, panel recovered with no error state left over
 - **Severity:** bug
 - **Where:** `src/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue` (and, by the same
   composable, the stacked-bars/summary-cards panels), on `/activity-history/detail`
@@ -83,9 +82,9 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   consumer branch on it to render a distinct (even minimally distinct — different icon/copy) error state.
 
 ### B3. Breadcrumb reads "Home › Summary" while viewing the Detail page
-- **Status:** fixed and verified (code check 2026-09-24 — `HistoryDetailView.vue` calls the framework's
-  `useSetBreadcrumbExtra()` and pushes the resolved page title, exactly the suggested fix / the shell pass's
-  P1 pattern)
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-history/detail?date=2026-09-23`
+  breadcrumb reads "Home › Summary › History Detail" (`.v-breadcrumbs` textContent
+  `"HomeSummaryHistory Detail"`); `/activity-history` itself still reads plain "Home › Summary"
 - **Severity:** bug
 - **Where:** `src/_common/nav/AppBreadcrumbs.vue` / `src/_common/composable/general/useBreadcrumbs.ts`
   (`matchesPath`, `src/_common/nav/navTypes.ts:41-44`), on `/activity-history/detail`
@@ -172,9 +171,9 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   mounted (`activityTracking` dashboards).
 
 ### A2. Calendar day cells have no accessible name
-- **Status:** fixed and verified (code check 2026-09-24 — `CalendarGrid.vue`'s day-cell wrapper now carries
-  `:aria-label="dayData ? dayCellLabel(dayData) : undefined"`, framework-level so day planner's calendar gets
-  it too)
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-history/calendar` day cells expose
+  aria-labels like "Wednesday, September 23, 2026"; `getByLabel('Wednesday, September 23, 2026').click()`
+  navigated to `/activity-history/detail?date=2026-09-23` as expected
 - **Severity:** a11y
 - **Where:** `CalendarGrid.vue` (framework) day-cell slot, as consumed by `HistoryCalendarView.vue` via the
   `#day-cell-content` slot, on `/activity-history/calendar`
@@ -219,10 +218,10 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   rather than "view details."
 
 ### P2. Pie-chart legend text can overlap the donut when it doesn't fit the hole
-- **Status:** fixed and verified (code check 2026-09-24, `F31` — `HistoryPieChart.vue` was rewritten to
-  compute the legend layout from the measured container width in pixels rather than an in-hole percentage
-  layout, with a side legend or a stacked/paged legend depending on available width; a details card now sits
-  beside the donut instead of text inside it)
+- **Status:** fixed and verified (retest 2026-09-25, live) — `/activity-history/detail?date=2026-09-23`
+  (7-group day) at 1440×900 renders the legend in an external box beside the donut, fully inside its own
+  panel, no text crossing into the slice area. Screenshot:
+  `docs/views/history-review/screenshots/retest-2026-09-25-P2-full.png`
 - **Severity:** polish
 - **Where:** `HistoryPieChartSection.vue` / the shared pie-chart component, on `/activity-history/detail`
   (2-group day) and visible in a lighter form on `/activity-history` too
@@ -241,8 +240,8 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   external legend below/beside the chart once entry count/name length exceeds a threshold.
 
 ### P3. HistoryCalendarView has no page heading, unlike its two sibling views
-- **Status:** fixed and verified (code check 2026-09-24 — `HistoryCalendarView.vue` now renders
-  `<h1 class="text-h4">{{ $t('history.calendar.title') }}</h1>` in the header row, matching the sibling views)
+- **Status:** fixed and verified (retest 2026-09-25, live) — `document.querySelector('h1')?.textContent`
+  on `/activity-history/calendar` returns "History Calendar", present above the Mode/Month/Year row
 - **Severity:** polish
 - **Where:** `src/core/activityHistory/view/HistoryCalendarView.vue`, on `/activity-history/calendar`
 - **Expected:** Consistency with sibling views — `HistorySummaryView` renders `<h1>Activity History</h1>`

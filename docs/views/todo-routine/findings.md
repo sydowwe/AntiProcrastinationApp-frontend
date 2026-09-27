@@ -62,6 +62,16 @@ streak 11 · 94% · 1d; Weekly best 4 · streak 1 · 69% · 7d), same four-perio
 ("1st") and no cascade regression. Console clean on both views. **No drift since round 7; nothing to re-open.**
 Screenshots: `routine-todo-list--unit10-verify-default.png`, `routine-settings--unit10-verify-default.png`.
 
+**Round 9 (2026-09-24) — source-only spot-check, no browser, no new findings.** Re-read the fix sites for four
+representative findings against commit `222f0051` (nine commits ahead of round 8's `97f1e414`) rather than
+re-driving the screen: B1's `checkboxClicked`/`toggleDone` split is still in `BaseTodoListItem.vue:28,300,312`;
+B5/B9's `deleteConfirmationColumn="text"` and the `_silent` + `deleteBlocked`/`deleteBlockedUnknownCount`
+handling are still in `RoutineSettingsView.vue`; B8's `routineSettings` entry is still in
+`moduleSettingsLinks.ts:36`; B10's `RoutinePeriodTimeline.vue` still resolves dates through
+`useRoutineDateFormat()` rather than `toLocaleDateString(undefined, …)`. `npx vue-tsc --build --force` exits
+clean. **No drift since round 8; nothing to re-open.** Not a substitute for a live pass — no browser was used
+this round, so this only rules out a source-level regression, not a runtime one.
+
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
@@ -78,6 +88,7 @@ Screenshots: `routine-todo-list--unit10-verify-default.png`, `routine-settings--
 | 7 | 2026-09-14 | `81e92cff` | **live verification** — B9, A2 and P1's SK half all confirmed live for the first time (see their entries); incidentally observed a `BasicTable` framework defect (the delete-confirm dialog never closes on either the 409 or the 204 path) — tracked in `_fix-queue.md`, not a todo-routine finding. |
 | 7b | 2026-09-14 | `6aac48bb` | **same-day B11 follow-ups**: the wire now requires a colour (`ColorPicker`'s new `required` prop drops the *None* swatch), and the create/edit form pre-checks name+length uniqueness client-side before sending the request, so the 409 path is now only reachable on a race. Every finding in this file is `fixed and verified`. |
 | 8 | 2026-09-15 | `97f1e414` | **light re-confirmation only, no new findings** — signed in fresh, re-screenshotted both views, diffed against round 6/7's recorded numbers (weekly-review rows, freeze-skip counts, milestone icon, personal bests, EN ordinals). Exact match, console clean on both views. No mutation pass repeated, since round 7 had already closed every open item with live evidence the day before. |
+| 9 | 2026-09-24 | `222f0051` | **source-only spot-check, no browser** — re-read the fix sites for B1, B5/B9, B8 and B10 against the working tree; all four still present as documented. `npx vue-tsc --build --force` exit 0. No new findings, no live re-verification performed. |
 
 ---
 

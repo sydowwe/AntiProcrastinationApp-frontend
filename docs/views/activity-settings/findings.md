@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally (as of round 4):** blocker 0 (X1 fixed and verified live) · bug 0 open (B1 fixed and verified live; B2/B3/B7/B8 also verified live; B4-B6/B9 fixed in code) · a11y 0 open (A1 fixed) · polish 0 open (P1, P2 fixed) · opportunity 0 open (O1 fixed) · unverified 2 (U3/U4, re-checked in code, both left open)
+**Tally (as of round 5):** blocker 0 (X1 fixed and verified live) · bug 0 open (B1–B9 all fixed and verified live) · a11y 0 open (A1 verified live) · polish 0 open (P1, P2 verified live) · opportunity 0 open (O1 built and verified live) · unverified 0 (U1/U2 resolved in round 2, U3 by `F23`, U4 by the `F18` retest). **Nothing open in this unit.**
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@
 | 2 | 2026-09-15 | `04c405e9` | **mutation pass**, fixture `e2e-v4`. Ran the full entity lifecycle (create → edit → archive → unarchive → merge → delete) for Activity — every step worked correctly, including the merge confirmation's exact-count copy and the nested double-confirmation. Attempting the same for Role/Category surfaced a new **blocker** (X1: create/edit is completely broken for both tabs — the framework `ColorPicker` emits a palette name like `"rose"` but the backend now requires a hex string) and a new bug (B8: the generic delete-confirmation dialog they fall back to shows the raw numeric id, not the name). Resolved **U1** (archived-empty copy confirmed correct) and **U2** (system-role delete is correctly refused server-side with a good, specific message — which is itself hidden by a newly-found framework bug, B9). Reconfirmed B1-B7 still open against the new fixture. Tally: blocker 0→1, bug 7→9, unverified 4→2. |
 | 3 | 2026-09-24 | `1fb9de9e` | **code-only re-check** (no browser session, no reseed) — read the current source for every open finding rather than re-driving the UI. **Fixed in code:** B2/B3 (`useActivityFilterDrafts.ts` was rewritten — combobox rebuild is now a pure derivation, filter writes come only from user input via `onRoleComboboxInput`/`onCategoryComboboxInput`, comments at the top of the file cite both bugs by number), B4 (`DataTable.vue:91` now binds `:title="action.text"`), B5 (`src/router.ts` now has a `/:pathMatch(.*)*` → `NotFoundView` catch-all), B6 (`navItems.ts` registers the family path `/activity-settings`, not the literal `activities` tab, with a comment citing F14), B7 (`ActivityRoleTable.vue`/`ActivityCategoryTable.vue` now have a custom `#actions` slot gating Delete on `canDelete`, matching `ActivityTable.vue`'s pattern), B8 (same custom slot passes `item.name` into the confirmation text directly, no more `deleteConfirmationColumn` gap), B9 (`extractServerMessage` in `axiosConfig.ts` now checks `errors` before `message`), A1 (the trash `VIconBtn` now has `:aria-label`, wrapped in a `VTooltip` on the parent span), P1 (Categories' "Role" column renamed to `t('activities.rolesInUse')` = "Roles in use"), P2 (both comboboxes in `ActivitySettingsView.vue` now set explicit `style="min-width: 200px"`). **Still open, confirmed unchanged:** X1 (`ColorPicker.vue:31` still does `model = color.name`, a palette name, not hex — the blocker stands), O1 (still no icon column in either table). **Not verifiable from code alone:** B1 (backend-side filter handling — frontend request shape is unchanged, so it is presumed still open, but this needs a live request/response check against the running API, not a source read). U3/U4 are session-lifetime/one-off observations, not code defects — left as-is. No browser session was run this round, so this is a source-level check only, not a fresh repro. |
 | 4 | 2026-09-24 | `1fb9de9e` | **live check of X1 and B1**, no reseed. Round 3's "X1 still open" read the wrong side: `ColorPicker` emitting a palette name is the *intended* contract. The API moved to it in B10 (`f4ae199`, `b34181e`: `ColorRuleExtensions.MustBePaletteColor`, `ColorPalette` — the same 29 names as `colorPalette.ts`). B1 was the API's filter record declaring `RoleId`/`CategoryId` while the client sent `roleIds`/`categoryIds`, fixed in B11 (`68ec991`). No frontend change was needed for either. Both close as **fixed and verified**; see each finding's Status for evidence. The same session also reconfirmed B2/B3 (URL param survives, one grid request), B7 (disabled Delete with a reason label on in-use/system roles) and B8 (confirmation names the row, button reads "Delete"). The fixture is unchanged: the Health & Fitness edit saved identical values, and the throwaway category was deleted (204). Side fix: the Role/Category Name fields' client-only `lettersWithDiacriticsAndSpecialCharsRule` rejected digits ("letters and special characters only"), so `X1VerifyCategory` could not be submitted. The API only requires non-empty and max length, and a name is the user's own label, so the rule was dropped from `ActivityRoleForm.vue`/`ActivityCategoryForm.vue`, keeping `requiredRule`. The framework rule itself is untouched. |
+| 5 | 2026-09-24 | `d423edcc` | **retest round** — 12 retested live: B2, B3, B4, B5, B6, B7, B8, B9, A1, P1, P2, O1 pass; none reopened; none blocked. Deviations: B4 checked on `/leisure/projects` (Roles/Categories no longer render `DataTable`'s default actions since B7); B9 via a `playwright-cli route` 400 mock, since B7 leaves no clickable server refusal; B7's disabled-Delete condition holds for Roles only, Categories are always-enabled by design. Account(s): primaryUser (10001). Mutations made and reverted: locale EN→SK→EN (twice, confirmed EN); one DELETE route mock, unrouted, row intact; one delete dialog cancelled. Regressions seen outside the Verify blocks: none. Status drift reconciled afterwards: U3 (closed by `F23`) and U4 (closed by the `F18` retest) still read `open` here and are now marked resolved; tally updated. |
 
 **Operator note (round 2):** this round deliberately did **not** run `POST /api/test/seed` to clean up, even though one seeded activity ("Unused Idea", id 12012) was permanently deleted as part of delete-lifecycle testing and could not be restored through the UI (Activity creation works, but the new row would get a different id than the fixture's). Reseeding wipes every account, and this round's own git-status snapshot showed several other `view-docs` units mid-edit, so a shared reseed risked repeating the exact parallel-session collision `findings.md` round 1b already recorded. **Whoever runs the next unit against this account should reseed first** and can then disregard this note.
 
@@ -72,7 +73,7 @@ units' passes look like they lost data or got signed out partway through, this i
   log the raw filter payload server-side and compare field names.
 
 ### B2. `roleIds`/`categoryIds` query params are silently dropped on a fresh page load
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). `useActivityFilterDrafts.ts` no longer writes the filter from the combobox-rebuild path at all; `refreshActivityCombos()` is now a pure derivation and the filter is written only by `onRoleComboboxInput`/`onCategoryComboboxInput`, which fire on user input only.
+- **Status:** fixed and verified (retest 2026-09-24, live) — fresh `goto /activity-settings/activities?roleIds=11001` kept `?roleIds=11001` in the URL, the grid request carried `roleIds:[11001]`, and all 9 returned rows have role "Work".
 - **Severity:** bug
 - **Where:** `/activity-settings/activities?roleIds=…` or `?categoryIds=…`, direct navigation ·
   `src/core/activity/composable/useActivityFilterDrafts.ts` (the `onMounted` → `refreshActivityCombos()` →
@@ -110,7 +111,7 @@ units' passes look like they lost data or got signed out partway through, this i
   read and write).
 
 ### B3. `POST /api/activity/grid` fires twice on every load of the Activities tab
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). Same fix as B2 — the mount-time combobox rebuild no longer writes back into the filter, so it can no longer retrigger the deep filter watch that caused the second `loadItems()`.
+- **Status:** fixed and verified (retest 2026-09-24, live) — `playwright-cli requests` after a fresh navigation shows exactly one `POST /api/activity/grid` (200) and no aborted request before it.
 - **Severity:** bug
 - **Where:** `/activity-settings/activities`, any fresh load or reload
 - **Expected:** One request per table load, per CLAUDE.md's "duplicate requests" check.
@@ -132,7 +133,7 @@ units' passes look like they lost data or got signed out partway through, this i
   writing into the filter when nothing actually changed.
 
 ### B4. Framework `DataTable`'s default row-action buttons show the untranslated internal name, not the localized label
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). `DataTable.vue:91` now binds `:title="action.text"` instead of `action.name`.
+- **Status:** fixed and verified (retest 2026-09-24, live) — checked on `/leisure/projects` (`ProjectTable.vue`, default `DataTable` actions; Roles/Categories now use their own `#actions` slot since B7, so they no longer exercise this path): `title`/`aria-label` read "Edit"/"Delete" in EN and "Upraviť"/"Vymazať" in SK; account switched back to EN.
 - **Severity:** bug — **[framework]**
 - **Where:** `src/_common/component/dataTable/DataTable.vue:83` (`:title="action.name"`); observed via the
   Roles and Categories tabs' default Edit/Delete buttons
@@ -157,7 +158,7 @@ units' passes look like they lost data or got signed out partway through, this i
 - **Suggested fix:** `DataTable.vue:83` — change `:title="action.name"` to `:title="action.text"`.
 
 ### B5. An invalid `:tab` value renders a blank page and floods the console with router warnings
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). `src/router.ts` now has a global `/:pathMatch(.*)*` → `NotFoundView` catch-all route.
+- **Status:** fixed and verified (retest 2026-09-24, live) — `/activity-settings/nonsense` renders the NotFound view ("Page not found" / "Back to home"); `console warning` and `console info` show no router warnings.
 - **Severity:** bug
 - **Where:** `/activity-settings/nonsense` (or any value outside `activities|roles|categories`)
 - **Expected:** `A5-url-state-and-filtering.md` item 4 explicitly asks for "default a missing tab to
@@ -182,7 +183,7 @@ units' passes look like they lost data or got signed out partway through, this i
   global not-found handling if one exists elsewhere in `router.ts`.
 
 ### B6. Breadcrumb shows only "Home" on the Roles and Categories tabs (direct navigation)
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). `navItems.ts` now registers the family path `/activity-settings` rather than the literal `activities` tab path, with a comment explicitly citing this class of bug (F14).
+- **Status:** fixed and verified (retest 2026-09-24, live) — direct navigation to `/activity-settings/roles` and `/activity-settings/categories` both show "Home › Activity settings" with Home as a link.
 - **Severity:** bug
 - **Where:** `AppBreadcrumbs` (framework) on `/activity-settings/roles` and `/activity-settings/categories`
 - **Expected:** Same breadcrumb as the Activities tab — "Home › Activity settings" (confirmed correct there).
@@ -208,7 +209,7 @@ units' passes look like they lost data or got signed out partway through, this i
   first and fall back to path matching only when no name match exists.
 
 ### B7. Roles and Categories tables never disable Delete for a non-deletable row, unlike Activities
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). Both `ActivityRoleTable.vue` and `ActivityCategoryTable.vue` now have a custom `#actions` slot; the Role table's Delete button is `:disabled="!item.canDelete || busyId === item.id"` with a tooltip explaining why (system role vs. in-use). The Category table's Delete stays always-enabled by design (comment: the server allows deleting a used category and just reclassifies its activities, so `canDelete` is advisory there — see B7's original root-cause guess, now superseded by this actual design choice).
+- **Status:** fixed and verified (retest 2026-09-24, live) — all 6 seeded roles are `canDelete:false` and every Role Delete is disabled with a specific reason as its accessible name ("Activities with this role: N. Move them…" / "The app itself uses this role…"). Categories keep Delete enabled **by design** (the server reclassifies a used category's activities, so `canDelete` is advisory there) and confirm with a cascade count instead (see B8).
 - **Severity:** bug
 - **Where:** `/activity-settings/roles`, `/activity-settings/categories` — the default `BasicTable` Delete
   action (`src/_common/component/dataTable/BasicTable.vue:209-216`)
@@ -245,7 +246,7 @@ units' passes look like they lost data or got signed out partway through, this i
   documented here is still open regardless of that finding.
 
 ### B8. Roles/Categories delete confirmation shows the raw numeric id instead of the row's name, and a generic "Confirm" instead of "Delete"
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). Both tables now build their own `confirm({...})` dialog directly (via `useDialog`) instead of falling through to `BasicTable`'s generic default, passing `item.name` into `t('general.deleteConfirmationText', { name: item.name })` and `confirmBtnLabel: t('general.delete')` explicitly.
+- **Status:** fixed and verified (retest 2026-09-24, live) — Delete on category "Errands" opened "Are you sure you want to delete Errands? Activities in this category: 10. They are kept, but lose their category." with a "Delete" button; cancelled.
 - **Severity:** bug
 - **Where:** `/activity-settings/roles`, `/activity-settings/categories` — the default `BasicTable` delete
   confirmation dialog (`src/_common/component/dataTable/BasicTable.vue:199-210`)
@@ -268,7 +269,7 @@ units' passes look like they lost data or got signed out partway through, this i
 - **Suggested fix:** Add `deleteConfirmationColumn="name"` to both `<BasicTable>` usages.
 
 ### B9. `extractServerMessage` shows the generic top-level `message`, hiding the specific, useful text in `errors` — framework-wide
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). `axiosConfig.ts`'s `extractServerMessage` now checks `obj.errors` first (returning the first string in the first non-empty error list) and only falls back to `obj.detail`/`obj.message` after that.
+- **Status:** fixed and verified (retest 2026-09-24, live) — no server refusal is reachable by clicking any more (B7 disables every refusable role Delete), so `DELETE /api/activity-category/11501` was answered by a `playwright-cli route` mock: 400 with generic `message` plus `errors.generalErrors` = the system-role text. The snackbar showed the specific `errors` text, not "One or more errors occurred!"; route removed, row still present.
 - **Severity:** bug — **[framework]**
 - **Where:** `src/_common/axiosConfig.ts:86-101` (`extractServerMessage`), which feeds every automatic error
   snackbar in the app (`axiosConfig.ts:217-262`)
@@ -301,7 +302,7 @@ units' passes look like they lost data or got signed out partway through, this i
 ---
 
 ### A1. The Activities table's Delete button has no accessible name
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). The trash `VIconBtn` in `ActivityTable.vue` now has `:aria-label="item.canDelete ? t('general.delete') : t('activities.archive.deleteBlocked')"`, with a comment explaining why `aria-label` was used over `:title` (avoids a second, visual-only tooltip alongside the wrapper `VTooltip` — F19/A1).
+- **Status:** fixed and verified (retest 2026-09-24, live) — enabled ("Unused Idea", 12012): `aria-label="Delete"`, and `getByRole('button', { name: 'Delete' })` resolves to it; disabled ("Brush Teeth", `canDelete:false`): `aria-label` = the `activities.archive.deleteBlocked` text ("Only an activity nothing refers to can be deleted. Archive this one instead.").
 - **Severity:** a11y
 - **Where:** `src/core/activity/component/ActivityTable.vue:121-137` (the custom `#actions` slot's trash
   `VIconBtn`)
@@ -332,7 +333,7 @@ units' passes look like they lost data or got signed out partway through, this i
 ---
 
 ### P1. Categories table's "Role" column is a derived, potentially multi-value aggregate, not a stored relationship
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). The column header is now `t('activities.rolesInUse')` = "Roles in use" (SK: "Použité roly"), matching the suggested fix exactly.
+- **Status:** fixed and verified (retest 2026-09-24, live) — the Categories column header reads "Roles in use".
 - **Severity:** polish
 - **Where:** `/activity-settings/categories`, "Role" column · `src/core/activity/dto/response/Category.ts`
   (`role: string | null`), `src/core/activity/dto/request/CategoryRequest.ts` (no `roleId` field at all)
@@ -353,7 +354,7 @@ units' passes look like they lost data or got signed out partway through, this i
   either is a low-effort clarity fix once someone decides which framing is intended.
 
 ### P2. The Categories filter combobox's label is visibly truncated
-- **Status:** fixed in code (round 3, 2026-09-24, code-only check — not re-verified live). Both the Roles and Categories comboboxes in `ActivitySettingsView.vue` now set an explicit `style="min-width: 200px"`, so they no longer size purely from an even flex split.
+- **Status:** fixed and verified (retest 2026-09-24, live) — at 1440×900 "Categories" and "Roles" both render in full (`screenshots/retest-2026-09-24-P2.png`).
 - **Severity:** polish
 - **Where:** `/activity-settings/activities`, filter bar, the "Categories" multi-select combobox
 - **Expected:** A label should render in full, or the field should be wide enough for it, consistent with
@@ -372,7 +373,7 @@ units' passes look like they lost data or got signed out partway through, this i
 ---
 
 ### O1. Role/Category icon is captured and used elsewhere, but never shown in the settings tables themselves
-- **Status:** fixed (round 3, 2026-09-24). Added an Icon column to both `ActivityRoleTable.vue` and `ActivityCategoryTable.vue`, rendered as a `VIcon` bound directly to `item.icon` (a `—` placeholder when unset), same treatment as the existing color-swatch cell. `npm run type-check` (`vue-tsc --build --force`) passes clean. Note while fixing: the "used elsewhere" half of the original write-up (`ActivitySelectionForm.vue:92`) turned out to be a **different, hardcoded** icon (`'user-tag'`/`'folder'` for the narrowing chips), not `role.icon`/`category.icon` — doesn't change the fix, just worth knowing the original evidence for that clause was slightly off. Not yet re-verified live in the browser.
+- **Status:** fixed and verified (retest 2026-09-24, live) — Roles: all 6 Icon cells render the row's `icon` (`<svg data-icon>` matched 1:1 against the grid response, e.g. Work → `briefcase`); Categories: all 3 seeded rows have `icon:null` and render "—". Original fix note (round 3): added an Icon column to both `ActivityRoleTable.vue` and `ActivityCategoryTable.vue`, rendered as a `VIcon` bound directly to `item.icon` (a `—` placeholder when unset), same treatment as the existing color-swatch cell. `npm run type-check` (`vue-tsc --build --force`) passes clean. Note while fixing: the "used elsewhere" half of the original write-up (`ActivitySelectionForm.vue:92`) turned out to be a **different, hardcoded** icon (`'user-tag'`/`'folder'` for the narrowing chips), not `role.icon`/`category.icon` — doesn't change the fix, just worth knowing the original evidence for that clause was slightly off. Not yet re-verified live in the browser.
 - **Severity:** opportunity
 - **Where:** `/activity-settings/roles`, `/activity-settings/categories` — no Icon column in either table
 - **Expected:** n/a — nothing is broken; this is spent effort with no payoff at the point of entry.
@@ -413,8 +414,8 @@ units' passes look like they lost data or got signed out partway through, this i
   "One or more errors occurred!" instead. B7 (missing client-side disabled state) is still open regardless —
   the button should never have offered this action in the first place.
 
-### U3. A repeated 401→refresh failure that ends in a real sign-out, not root-caused
-- **Status:** open
+### U3. ~~A repeated 401→refresh failure that ends in a real sign-out, not root-caused~~ — resolved
+- **Status:** resolved (docs only, `F23`, 2026-09-23) — explanation (b) confirmed from the API source: every refresh rotates the token (`JwtService.cs:38`) and a stale one is tolerated for 5 s only (`RefreshTokenService.cs:35`), so two sessions sharing one state file sign each other out. Not a code defect; CLAUDE.md's *Browser verification* section and the view-docs runbook now require one state per session and a `state-save` after every load. See `_fix-queue-log.md` → `F23`.
 - **Severity:** unverified
 - **Where:** mid-pass, on `/activity-settings/activities` (twice, roughly 15-20 minutes apart)
 - **What would verify it:** Both times, an aging session hit a burst of 401s (expected, per CLAUDE.md's
@@ -440,8 +441,8 @@ units' passes look like they lost data or got signed out partway through, this i
   open, unchanged** — this is an environmental/session-lifetime observation, not something fixable in
   `activity-settings` code.
 
-### U4. A single unexplained "0 of 0" result on an unfiltered request, not reproduced on retry
-- **Status:** open
+### U4. ~~A single unexplained "0 of 0" result on an unfiltered request, not reproduced on retry~~ — resolved
+- **Status:** resolved (retested live with `F18`, 2026-09-15) — type "Deep" → clear, three rounds, reading `itemsCount` off each response: `1` then `26` every time, two requests per round and no third. The "0 of 0" did not recur, since `F18` removed the only competing request this view fires. See `_fix-queue-log.md` → `F18`.
 - **Severity:** unverified
 - **Where:** `/activity-settings/activities`, after clearing the Name filter mid-session (following several
   prior filter/tab interactions in the same session)

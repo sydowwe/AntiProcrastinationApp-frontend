@@ -1,19 +1,22 @@
 # planner-day — findings
 
 > Pass: inventory + mutation · captured 2026-09-14, 2026-09-15 · commit `041d9b2d`
+> Re-verified against current tree 2026-09-24 (commit `222f0051`) — **all 12 findings confirmed fixed in code.**
 
-**Tally:** blocker 1 · bug 8 · a11y 1 · polish 2 · opportunity 0 · unverified 0
+**Tally:** blocker 0 (was 1) · bug 0 (was 8) · a11y 0 (was 1) · polish 0 (was 2) · opportunity 0 · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `6aac48bb` | initial inventory pass |
 | 2 | 2026-09-15 | `041d9b2d` | mutation pass — full create/edit/delete lifecycle for `PlannerTask`, `RepeatingPlannerTask` and a skip reason; found X1, B7, B8, P1, P2 |
+| 3 | 2026-09-24 | `222f0051` | verification-only pass (source read, no browser drive) — every open finding checked against current code; all fixed, see per-finding notes below |
+| 4 | 2026-09-24 | `d423edcc` | **retest round** — 11 retested live: X1, B1, B2, B3, B5, B6, B7, B8, A1, P1, P2 pass; none reopened; none blocked. B7's past-day half used a throwaway task on `23-09-2026` because the seed has no tasks before today. Account(s): primaryUser (form sign-in, since the cached `auth-10001.json` refresh token was dead: `POST /auth/refresh` 401). Mutations made and reverted: activity 12003 renamed "Code Review RETEST" and back; throwaway tasks on `23-09-2026` and `24-09-2026` created and deleted; calendar Days/Duration URL state reset to defaults. Regressions seen outside the Verify blocks: none. |
 
 ---
 
 ### X1. Editing a task's name is completely broken — the edit is either silently blocked or silently discarded, in both toggle states
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — toggle on: "Code Review" → "Code Review RETEST" sent `PUT /api/activity/12003/quick-edit` 204 + `PUT /api/planner-task/16003` 200 and the grid showed the new name at once (renamed back, restored); toggle off: the Name field is replaced by a `* Activity` picker, so there's no editable field left to discard.
 - **Severity:** blocker
 - **Where:** `src/core/dayPlanner/component/BasePlannerTaskDialog.vue:120` (`save()`) →
   `src/core/activity/component/ActivitySelectOrQuickEditFormField.vue:65` (`execAndReturnStatus`) →
@@ -71,7 +74,7 @@
 ---
 
 ### B1. `DayPlannerSettingsView`'s tabs stack instead of switching — every tab you've visited stays rendered
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — after clicking all five tabs in repro order, on Calendar View exactly one `.v-window-item` is displayed (`--active`, `offsetHeight` 222); the other four are `display:none`, height 0.
 - **Severity:** bug
 - **Where:** `src/core/dayPlanner/view/DayPlannerSettingsView.vue:31-36` and `:52-58` (the `repeating` and
   `skipReasons` `VTabsWindowItem`s)
@@ -108,7 +111,7 @@
   spacing classes (e.g. `pt-3`), matching how `In-App Nudges` / `View Defaults` are already written.
 
 ### B2. `MyDateInput` ignores the caller's `label` prop — always renders the generic "Date" label
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — the Copy Day dialog's field is `textbox "Source date"`; second consumer `HistoryDateRangeSelector` on `/activity-history` renders `textbox "From"`, and no field there reads "Date".
 - **Severity:** bug — **[framework]**
 - **Where:** `src/_common/component/dateTime/MyDateInput.vue:11-13`; observed via `CopyDayForm.vue`'s "Copy
   tasks to N day(s)" dialog, opened from `/day-planner`'s bulk-select action bar
@@ -134,7 +137,7 @@
   overridden by it.
 
 ### B3. The calendar's range configuration and day-filter do not round-trip in the URL, contrary to this module's own P7 fix
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — "Workdays (Mon-Fri)" wrote `?days=workdays` and survived a reload; Duration with Anchor "To end" and Quantity 4 wrote `?range=duration&anchor=end&from=2026-09-24&qty=4` and came back intact after a reload; both reset to defaults afterwards.
 - **Severity:** bug
 - **Where:** `PlannerCalendarView.vue` / `composable/useCalendarUrlState.ts`
 - **Expected:** `prompts/_done/day-planner/P7-calendar-url-state.md` states plainly: "The displayed month/date
@@ -193,7 +196,7 @@
   frontend can map through vue-i18n (the same shape already used for e.g. `PlannerTaskStatus`).
 
 ### B5. Invalid route params surface as uncaught console exceptions instead of a handled state
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — `/day-planner/not-a-date` and the ISO `/day-planner/2026-09-11` both redirect to `/day-planner/24-09-2026` with no `by-date` request; `/day-planner/31-12-2025` shows "Day not available" + "Back to today"; `/day-planner/task/999999` shows the unchanged "Task not found" card; console has only the interceptor's handled 404 log and no uncaught exception.
 - **Severity:** bug
 - **Where:** `src/core/dayPlanner/view/DayPlannerView.vue:132` (via `useEntityQuery.ts`'s unwrapped throw) and
   `PlannerTaskLinkView`'s equivalent lookup
@@ -230,7 +233,7 @@
   one of the two with no user-facing signal whatsoever.
 
 ### B6. The settings view's active tab is not reflected in the URL
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — each tab click wrote `?tab=<tab>` (e.g. `?tab=calendarView`), a reload on `calendarView` restored it `[selected]`, and the default Repeating Tasks tab leaves the URL bare.
 - **Severity:** bug
 - **Where:** `DayPlannerSettingsView.vue`'s `activeTab` ref
 - **Expected:** CLAUDE.md's URL State rule: "Store filterable/bookmarkable state (filters, tabs, search
@@ -248,7 +251,7 @@
   module's own `useCalendarUrlState.ts`.
 
 ### B7. The plan-vs-actual block treats every day as "materially done" the instant it loads — F2's own withhold-until-over rule never actually holds
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — today (`24-09-2026`, 14:35 local, day 08:00→00:00): the block is absent; past day: no seeded tasks exist before today, so a throwaway task on `23-09-2026` was used, and the block read "Planned 1h · logged 0m · 1 task never happened" (the task was deleted afterwards and the day is back to 0 tasks).
 - **Severity:** bug
 - **Where:** `src/core/dayPlanner/composable/usePlanVsActual.ts:37` (`isDayMateriallyDone`) and
   `src/core/dayPlanner/store/dayPlannerStore.ts:158-171` (`viewEndDate`)
@@ -289,7 +292,7 @@
   calendar day before setting hours.
 
 ### B8. A deleted task's calendar day-summary counters (total/completed/%) never refresh — confirmed stale even after a full reload
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — on `24-09-2026` the seeded "1/3 tasks 33%" went to "1/4 tasks 25%" after creating a throwaway task and back to "1/3 tasks 33%" after deleting it, both without a reload; a full reload still read "1/3 tasks 33%". (Root cause was client-side: `CalendarResponse.cs` counts live, `DayPlannerView.vue` now refetches counts on `taskCountKey` change — F87.)
 - **Severity:** bug
 - **Where:** `DayPlannerProgressBlock.vue:9-22` reads `calendar.completedTasks` / `calendar.totalTasks` /
   `calendar.completionRate` straight from the `Calendar` API payload (`GET /api/calendar/by-date/{date}`);
@@ -323,7 +326,7 @@
 ---
 
 ### A1. Calendar month prev/next arrows have no accessible name
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — both arrows resolve by role as `button "Previous month"` / `button "Next month"` and both work (Next wrote `?month=2026-10` and moved the grid forward, Previous moved it back). The arrows still exist, contrary to the earlier "fixed by redesign" note; they now live in `MonthYearPicker.vue`, labelled through `dateTime.previousMonth/nextMonth`.
 - **Severity:** a11y — **[framework]**
 - **Where:** `src/_common/component/calendar/CalendarGrid.vue`'s prev/next month buttons, rendered on
   `/day-planner`
@@ -342,7 +345,7 @@
 ---
 
 ### P1. Missing FontAwesome icon on the "Date range" recurrence tab — console error, blank icon slot
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — in the New Repeating Task dialog all four recurrence tabs, "Date range" included, render an `<svg>` icon, and the console shows 0 errors on open (no "Could not find one or more icon(s)").
 - **Severity:** polish
 - **Where:** New/Edit Repeating Task dialog (`/day-planner/settings`, Repeating Tasks tab → Add), the
   "Recurrence" tab strip's "Date range" button
@@ -366,7 +369,7 @@
   this module's own recurrence tabs) in whichever component renders the recurrence tab strip.
 
 ### P2. "Importance" is silently required in the New/Edit Repeating Task dialog but shows no required-field asterisk
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-24, live) — the New Repeating Task dialog's Importance field reads `combobox "* Importance"` before any submit attempt.
 - **Severity:** polish
 - **Where:** New/Edit Repeating Task dialog, `Importance` select — contrast with the same dialog's `* Name` /
   `* Activity`, which do carry the asterisk convention used throughout this app's dialogs

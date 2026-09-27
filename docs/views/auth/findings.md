@@ -17,11 +17,14 @@
 | 2 | 2026-09-15 | `50bd6b0d` | mutation pass. Re-verified X1, B1, B2, B3, A1(a11y), P1, P2, P3 live — all unchanged. Corrected B4 (round 1's "persistent explanation" claim on `ConfirmEmailChangeView` was a mid-fade snackbar screenshot, not steady-state; both confirm views are equally bare). Strengthened B5 with the malformed `/undefined` request path. Escalated O1 to **X2** (blocker) after confirming live that the server accepts an empty `recaptchaToken` on `/auth/register` — Registration's own client-side guard is refusing a request the backend would have accepted, so the view is unusable end-to-end in this environment, not merely inconsistent with Login. Added **B6** (a genuinely unconfirmed account's login attempt gets the generic "Invalid email or password" 401, never the dedicated "Email not confirmed" 403 branch) and **B7** (the axios interceptor's `AUTH_ENDPOINTS` allowlist misses this module's own signed-out endpoints, so a 401 from `resend-confirmation-email` triggers a pointless `/auth/refresh` round-trip while fully signed out). U1's evidence strengthened (server response confirmed live to carry `recoveryCodes`), still filed `unverified` per the strict browser-reproduction rule since the discarding itself is still only source-corroborated — the real `RegistrationView` submit path remains unreachable in this environment. U2–U5 unchanged, still blocked on the same missing data. Verified the A1 logout-leak fix holds: `resetAppState()` fires on the `isAuthenticated` watcher and zeroes `dayPlanner`/`templateDayPlanner` sessionStorage content on logout (keys persist, content resets to defaults) — spot-checked only, no real cross-account task data was in play to prove the harder case. Cleaned up via `POST /api/test/seed` at the end (see report). |
 | 3 | 2026-09-15 | `50bd6b0d` + uncommitted `src/_common` | **Scoped retest of X1 and X2 only**, both fixed in the working tree (not yet committed): `ForgottenPasswordView.vue` now calls `executeRecaptcha('forgot_password')` and sends `recaptchaToken`; `RegistrationView.vue` sends `recaptchaToken` as-is instead of refusing to submit on an empty token. **X1 → fixed**: `POST /auth/forgotten-password` now returns 204 and the success `MyDialog` opens, for both a real seeded e-mail and a nonexistent one (identical 204 either way — no user enumeration). **X2 → fixed**: `POST /auth/register` now fires and returns 200 on a valid form submit; a real throwaway account was created. This unblocked two previously-`unverified` items: **U5 → resolved**, confirmed working exactly as coded (e-mail prefilled, password field autofocused, "Resend confirmation email" panel shown on `/login` after registration). **U1 → escalated and renumbered to B8** (bug): registered a second throwaway with 2FA checked; the server response carried real `recoveryCodes` (`response-body` inspected directly), but the QR dialog rendered with only the QR image — the codes are provably discarded, now browser-observed rather than source-corroborated. B2 (raw `passwordsDontMatch` key) re-verified live and unchanged. Checked for B7 (spurious `/auth/refresh` after a 4xx) against both retested endpoints: `/auth/forgotten-password` never returned non-2xx this round (204 both times), and a deliberately duplicated `/auth/register` returned 409 (not 401), so the refresh-trigger condition (`status === 401`) was never met by either endpoint in this round — B7 stays open on its original `resend-confirmation-email` evidence, out of this round's scope. Cleaned up via `POST /api/test/seed` at the end (see report). |
 | 4 | 2026-09-24 | `1fb9de9e` (`vue_framework` `600ecb8`) | **Reconciliation against `_fix-queue.md`, source-checked only.** B1 → `F39` + `FW11`; B2 + A1 → `FW7`; B3 → `FW9`; B4, B5, U6 → `FW12`; B6 → escalation §14; B7 → `FW21`; P1 → `FW13`; P2 → `F40`; P3 → `FW11`. Grepped each fix in source: `resolvePostLoginTarget` on all three success handlers, `router.ts:110` writes `?redirect=`, `passwordsDontMatch`/`showPassword`/`hidePassword` in both `user.*.ts`, `aria-label` on the toggle, signed-out routes in `AUTH_ENDPOINTS`, `.finally(hideFullScreenLoading)` / catch-side hides in all three views, `target="_blank"` on both legal links, no `console.log` in `LoginView`. Browser verification is recorded against each queue item in `_fix-queue-log.md` and was not repeated here. **U3 → resolved:** the `afterEach` badge toggle was driven live with a stand-in `.grecaptcha-badge` across flagged and unflagged public routes, and it is correct both ways; the lazy-load timing was checked in source (see U3). |
+| 5 | 2026-09-24 | `d423edcc` | **retest round** — 14 retested live: X1, X2, B1, B2, B3, B4, B6, B8, A1, P1, P2, P3 pass; B5, B7 pass (verify block run as closest equivalent — the original repro's malformed URL-segment / 401 request no longer exists after `FW12`'s architecture change, so the exact repro couldn't be replayed, but the closest reachable equivalent — `LoginView`'s resend panel — passed cleanly). B3 was first recorded as reopened, then reviewed and re-run: it passes. A snackbar appears for both a mocked 500 and an aborted request; the first check had looked for it once, after it was gone (see B3's Retest line). Account: registered `retest-202609241102@example.com` (2FA-enabled) for X2/B8/B6/B5/B7, left unconfirmed and stays until the next reseed; signed in twice as `test@example.com` (B1, and again for P2 after an accidental session reset from using `open` instead of `goto` mid-run) — both under the 5/min login throttle, no 429 hit. Mutations made and reverted: none needed reverting (registration is additive and expected to persist per the unit's own notes; the `playwright-cli route` mocks for B3 were removed with `unroute`, confirmed via `route-list`). Regressions seen outside the Verify blocks: none. Session left **signed out** at `/login`. |
 
 ---
 
 ### X1. The forgotten-password flow cannot ever succeed — `recaptchaToken` is never sent
-- **Status:** fixed
+- **Status:** fixed and verified (retest 2026-09-24, live) — `POST /auth/forgotten-password` with the real
+  seeded `test@example.com` returned **204**, and the "Password reset email has been sent." `MyDialog` opened
+  (a real e-mail was sent as a side effect of this check)
 - **Severity:** blocker
 - **Where:** `src/_common/modules/user/view/ForgottenPasswordView.vue:65` → `getByRole('button', { name: 'Reset password' })`
 - **Expected:** Submitting a valid, registered e-mail sends a reset link and shows the "Password reset email
@@ -65,7 +68,10 @@
 ---
 
 ### X2. Registration cannot be completed through the UI at all — its own client-side guard refuses a request the server accepts
-- **Status:** fixed
+- **Status:** fixed and verified (retest 2026-09-24, live) — filled a full valid form for
+  `retest-202609241102@example.com` and clicked Register: `POST /auth/register` fired (first attempt hit an
+  unrelated password-length 400 — corrected the password to 10+ chars — then a second submit returned **200**
+  with a real account, including `recoveryCodes` — see B8)
 - **Severity:** blocker — **escalated from round 1's `O1` (opportunity)** with live evidence that this is not
   a mere inconsistency between two views but a fully broken form
 - **Where:** `src/_common/modules/user/view/RegistrationView.vue:132-140` (`validateAndSendForm`) →
@@ -114,8 +120,12 @@
 ---
 
 ### B1. A signed-out redirect never returns you to where you were going
-- **Status:** fixed 2026-09-23 — write half `F39` (`router.ts`, app `7a612d7f`), read half `FW11`
-  (`resolvePostLoginTarget` in `LoginView` ×2 and `LoginVerifyQrCode`, `vue_framework` `8dbb5ff`)
+- **Status:** fixed and verified (retest 2026-09-24, live) — write half `F39` (`router.ts`, app `7a612d7f`),
+  read half `FW11` (`resolvePostLoginTarget` in `LoginView` ×2 and `LoginVerifyQrCode`, `vue_framework`
+  `8dbb5ff`). Signed out, navigated to `/todo-list/13001`, landed on
+  `/login?redirect=/todo-list/13001`, signed in as `test@example.com` and landed back on
+  `/todo-list/13001` (confirmed via `location.pathname`). Repeated a second time (for P2) with the same
+  result on `/routine-todo-list`.
 - **Severity:** bug
 - **Where:** `src/router.ts:98` (`return { name: 'login' }`) and `src/_common/modules/user/view/LoginView.vue:156,217`, `src/_common/modules/user/component/LoginVerifyQrCode.vue:64` (all `router.push('/')`)
 - **Expected:** Visiting a guarded deep link while signed out, then signing in, lands you back on that page —
@@ -148,8 +158,11 @@
 ---
 
 ### B2. Registration's password-mismatch message is a raw, untranslated i18n key
-- **Status:** fixed 2026-09-23 — `FW7` (`vue_framework` `5397675`, bump `a7dbfda0`); `passwordsDontMatch`
-  is defined in both `user.en.ts` and `user.sk.ts`
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW7` (`vue_framework` `5397675`, bump
+  `a7dbfda0`); `passwordsDontMatch` is defined in both `user.en.ts` and `user.sk.ts`. Typed `AAbb123!!` /
+  `AAbb999!!` into the two password fields on `/registration` and clicked Register (validation runs on
+  submit): the "Confirm new password" alert read "Passwords don't match", and the console showed 0
+  errors/warnings/info (no `[intlify] Not found`).
 - **Severity:** bug
 - **Where:** `src/_common/modules/user/component/MyNewPasswordInput.vue:36` (`i18n.t('user.passwordsDontMatch')`) → `getByRole('textbox', { name: 'Confirm new password' })`, rendered on `/registration`
 - **Expected:** A validation message in the user's language, per CLAUDE.md's localization rule and every
@@ -179,7 +192,17 @@
 ---
 
 ### B3. ForgottenPasswordView's error handling only recognises a 404 — everything else is silently logged
-- **Status:** fixed 2026-09-23 — `FW9` (`vue_framework` `0d83a88`, bump `b7423bc2`)
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW9` (`vue_framework` `0d83a88`, bump
+  `b7423bc2`). A status with a response gets the interceptor's snackbar; a request with no response reaches
+  the view's `handleHttpCodes(0)` fallback (`ForgottenPasswordView.vue:81-83`).
+- **Retest:** `playwright-cli route "**/auth/forgotten-password" --status=500`, then submitted
+  `test@example.com` with a `MutationObserver` recording every `.v-snackbar` / `role=alert|status` text as it
+  appeared. `POST /auth/forgotten-password → 500`, and the snackbar read *"A server error occurred. Please
+  try again later."* Then swapped the mock for `route.abort('internetdisconnected')` (no `error.response`):
+  the snackbar read *"An unknown error occurred. Please contact support."* Routes removed, session closed.
+  **Correction:** the round-5 agent pass first recorded this as reopened. It had queried the DOM for
+  `.v-snackbar` once, after the click returned, and found nothing. The snackbar is transient, and a single
+  late query misses it. Watch for it as it appears instead of polling once afterwards.
 - **Severity:** bug
 - **Where:** `src/_common/modules/user/view/ForgottenPasswordView.vue:69-74`
 - **Expected:** Per CLAUDE.md, an interceptor-driven snackbar or a view-specific message on any failure — no
@@ -211,7 +234,14 @@
 ---
 
 ### B4. Neither confirm view shows a persistent explanation on failure — round 1's comparison between them was wrong
-- **Status:** fixed 2026-09-23 — `FW12` (`vue_framework` `549ae02`, bump `a0f116a9`)
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW12` (`vue_framework` `549ae02`, bump
+  `a0f116a9`). `/confirm-email` with no params (and again with `?userId=999&token=bogus`) rendered persistent
+  `<p>` body text — "There was an error confirming your email, please try again" plus "The link may have
+  expired. Log in with your address to get a new one." — next to the "Go to login page" button, not just a
+  transient snackbar. `/confirm-email-change` with no params rendered its own persistent paragraph, "There
+  was an error confirming your email change, please try again", next to its own "Go to login page" button.
+  Both snapshots taken after the page had settled (no fade-out timing needed since it is body text, not a
+  snackbar).
 - **Severity:** bug
 - **Where:** `src/_common/modules/user/view/ConfirmEmailView.vue:15-26` and
   `ConfirmEmailChangeView.vue:15-25`
@@ -254,8 +284,21 @@
 ---
 
 ### B5. ConfirmEmailView's resend-failure message is a hardcoded English literal, and the request itself is malformed
-- **Status:** fixed 2026-09-23 — `FW12` (`vue_framework` `549ae02`, bump `a0f116a9`); `userId` is now a
-  guarded computed, so no request fires with a literal `undefined`
+- **Status:** fixed and verified (retest 2026-09-24, live, verify block run as closest equivalent — see note)
+  — `FW12` (`vue_framework` `549ae02`, bump `a0f116a9`)
+- **Retest note:** The `Verify:` block as written ("click Resend confirmation email on `/confirm-email`")
+  could not be run: `ConfirmEmailView.vue` no longer has a resend button at all (source comment: "the server
+  resends by e-mail address ... this link carries only a user id ... `LoginView` offers the resend there").
+  The resend affordance moved to `LoginView`'s `ResendConfirmationEmail.vue`, which now posts
+  `POST /auth/resend-confirmation-email { email }` (body, not a URL segment) and is reachable after a failed
+  login on an unconfirmed account. Exercised that path live: logged in with the still-unconfirmed
+  `retest-202609241102@example.com` (403), clicked "Resend confirmation email" — `POST
+  /auth/resend-confirmation-email → 204` (a real e-mail was sent), and the UI showed a persistent, fully
+  localized sentence, "A confirmation email has been sent again to your email address. Please check your
+  inbox and click the link in the email to confirm your address. You can close this tab now." — not the bare
+  word "Error". No request with a literal `undefined` segment is possible any more since the id is no longer
+  part of the URL. Judgment call: marking this **fixed and verified** rather than blocked, since the
+  underlying defect (malformed request + hardcoded "Error") is structurally gone, not just unobserved.
 - **Severity:** bug
 - **Where:** `src/_common/modules/user/view/ConfirmEmailView.vue:64,69` (`API.post(\`/auth/resend-confirmation-email/${router.currentRoute.value.query['userId']}\`)` and `showErrorSnackbar('Error')`)
 - **Expected:** Localized text, per CLAUDE.md, and consistent with the same view's own initial-confirm catch
@@ -289,9 +332,13 @@
 ---
 
 ### B6. A genuinely unconfirmed account's login attempt is indistinguishable from a wrong password
-- **Status:** fixed 2026-09-15 — escalation §14 (backend: the `EmailNotConfirmed` 403 branch existed but was
-  dead under `RequireConfirmedEmail`); the client now branches on `errorType`, not the prose. Body in
-  `_fix-queue-log.md` → Closed escalations
+- **Status:** fixed and verified (retest 2026-09-24, live) — escalation §14 (backend: the `EmailNotConfirmed`
+  403 branch existed but was dead under `RequireConfirmedEmail`); the client now branches on `errorType`, not
+  the prose. Body in `_fix-queue-log.md` → Closed escalations. Registered
+  `retest-202609241102@example.com` (unconfirmed) and attempted to log in with the correct password:
+  `POST /auth/login → 403`, body `{"errorType":"EmailNotConfirmed","errors":{"generalErrors":["Email not
+  confirmed"]}}` — clearly distinguished from the generic 401 a wrong password would give. The
+  "Resend confirmation email" panel rendered on the same response.
 - **Severity:** bug
 - **Where:** `src/_common/modules/user/view/LoginView.vue:185-193` (the `status === 403` /
   `'Email not confirmed'` branch)
@@ -339,7 +386,16 @@
 ---
 
 ### B7. The axios interceptor's auth-endpoint allowlist misses this module's own signed-out endpoints, so a 401 there triggers a pointless token-refresh attempt
-- **Status:** fixed 2026-09-23 — `FW21` (`vue_framework` `2351ce7`, bump `a0f116a9`)
+- **Status:** fixed and verified (retest 2026-09-24, live, verify block run as closest equivalent — see note)
+  — `FW21` (`vue_framework` `2351ce7`, bump `a0f116a9`)
+- **Retest note:** The original repro's trigger (`POST /auth/resend-confirmation-email/undefined → 401`) no
+  longer exists — see B5: the endpoint takes `{ email }` in the body, not a URL segment, and now answers
+  **204** for any address rather than 401 (no enumeration oracle, per the source comment). Reproduced the
+  closest equivalent live: logged in with the unconfirmed throwaway (403), clicked "Resend confirmation
+  email". Network panel: `POST /auth/login → 403` then `POST /auth/resend-confirmation-email → 204` — no
+  `/auth/refresh` request appears anywhere in the trace. Since the 401 precondition itself is gone, the
+  interceptor's allowlist gap can no longer be triggered from this endpoint at all, which is a stronger
+  result than the original ask.
 - **Severity:** bug
 - **Where:** `src/_common/axiosConfig.ts:63` (`AUTH_ENDPOINTS = ['/auth/refresh', '/auth/login/2fa', '/auth/login', '/auth/microsoft-sign-in', '/auth/logout']`)
 - **Expected:** Per the code's own comment at `axiosConfig.ts:183` ("Never refresh on the auth endpoints
@@ -380,9 +436,13 @@
 ---
 
 ### B8. Registration's 2FA recovery codes are received and then discarded — confirmed live, renumbered from `U1`
-- **Status:** fixed — `FW14` landed 2026-09-21: the QR dialog (now with its manual-entry key, `B22`) is
-  followed by `RecoveryCodesBody`, gated on the acknowledgement, then `/login`. Verified live with a
-  throwaway and by `auth.draft.spec.ts`'s registration test (promoted from its `fixme`).
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW14` landed 2026-09-21: the QR dialog (now
+  with its manual-entry key, `B22`) is followed by `RecoveryCodesBody`, gated on the acknowledgement, then
+  `/login`. Registered `retest-202609241102@example.com` with 2FA checked: after the QR/manual-key dialog's
+  "Done", a second "Recovery codes" dialog opened showing all 5 codes from the `POST /auth/register` response
+  body (`XRJCF-CJC7F`, `7TBQ6-57DX5`, `RN67C-KC322`, `GNWY3-22CC6`, `TKKBD-B3T62`), with "Copy all" and
+  "Download" buttons and a "Done" button disabled until "I have saved these codes somewhere safe" is checked.
+  Checked it, "Done" enabled, clicked it, landed on `/login`.
 - **Severity:** bug — **escalated from `U1` (unverified)** now that the real `RegistrationView` submit path
   is reachable (X2 fixed) and the discarding itself has been observed rendered on screen, not just
   source-read
@@ -420,8 +480,10 @@
 ---
 
 ### A1. The password show/hide toggle has no descriptive accessible name
-- **Status:** fixed 2026-09-23 — `FW7` (`vue_framework` `5397675`, bump `a7dbfda0`); the toggle carries
-  `aria-label` / `title` of *Show password* / *Hide password*
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW7` (`vue_framework` `5397675`, bump
+  `a7dbfda0`); the toggle carries `aria-label` / `title` of *Show password* / *Hide password*. On `/login`
+  the accessibility snapshot showed `button "Show password"`; clicked it and the same control re-rendered as
+  `button "Hide password"`, with the password `<input>`'s `type` flipping from `password` to `text`.
 - **Severity:** a11y
 - **Where:** `src/_common/modules/user/component/MyPasswordInput.vue:6-10` (`appendInnerIcon` +
   `@click:appendInner`, no `aria-label`) → every password field in this unit: Login's password field,
@@ -447,8 +509,11 @@
 ---
 
 ### P1. Registration's legal links discard the whole form on back-navigation
-- **Status:** fixed 2026-09-23 — `FW13` (`vue_framework` `37773f3`, bump `4f7391cb`); both legal links open
-  with `target="_blank"`
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW13` (`vue_framework` `37773f3`, bump
+  `4f7391cb`); both legal links open with `target="_blank"`. Confirmed directly on `/registration`:
+  `document.querySelectorAll('a')` filtered to the "Terms and conditions" and "Privacy Policy" links both
+  returned `target === "_blank"`, so neither link ever navigates the registration tab away — the form's
+  values structurally cannot be lost this way any more.
 - **Severity:** polish
 - **Where:** `/registration` → `getByRole('link', { name: 'Terms and conditions' })` / `'Privacy Policy'`
 - **Expected:** Reading the terms while filling out a form is a normal thing to do; losing all typed input
@@ -473,8 +538,11 @@
 ---
 
 ### P2. Logging out can leave a stale in-flight request to log a 401 to the console
-- **Status:** fixed 2026-09-15 — `F40`. The root cause was not the one guessed below: `resetAppState()`
-  *created* the store, which fired `ensureLoaded()` with no signed-out guard
+- **Status:** fixed and verified (retest 2026-09-24, live) — `F40`. The root cause was not the one guessed
+  below: `resetAppState()` *created* the store, which fired `ensureLoaded()` with no signed-out guard. Signed
+  in as `test@example.com`, opened `/routine-todo-list` (fetches `/routine/settings`), then logged out via
+  the user menu. `GET /routine/settings → 200` (not 401), and `console error` / `console info` after logout
+  showed 0 errors and no `AxiosError` mention for `routine/settings` at all.
 - **Severity:** polish
 - **Where:** `src/core/todoList/store/routineReviewStore.ts:33-44` (`ensureLoaded`), surfaced via
   `src/core/todoList/api/routineSettingsApi.ts:6`
@@ -506,7 +574,10 @@
 ---
 
 ### P3. A stray debug `console.log` fires on every login attempt
-- **Status:** fixed 2026-09-23 — `FW11` (`vue_framework` `8dbb5ff`)
+- **Status:** fixed and verified (retest 2026-09-24, live) — `FW11` (`vue_framework` `8dbb5ff`). Checked the
+  console (`console debug`) on three separate login submits this round (the unconfirmed throwaway's failed
+  attempt, its resend, and the real `test@example.com` sign-in) — no bare `true`/`false` log line at any
+  point, only vite/DOM/pinia noise unrelated to this finding.
 - **Severity:** polish
 - **Where:** `src/_common/modules/user/view/LoginView.vue:142` (`console.log(valid)`)
 - **Expected:** No debug logging left in shipped framework code.

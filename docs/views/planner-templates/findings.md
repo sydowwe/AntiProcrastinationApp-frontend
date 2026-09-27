@@ -1,20 +1,27 @@
 # planner-templates — findings
 
-> Pass: mutation · captured 2026-09-15 · commit `041d9b2d`
+> Pass: live verification · captured 2026-09-24 · commit `222f0051`
 
-**Tally:** blocker 2 · bug 5 (B2 broadened) · a11y 4 (A4 new) · polish 3 (P3 new, ex-U1) · opportunity 0 ·
-unverified 2 (U1 → P3; U2 retested, still unverified)
+**Tally:** blocker 0 (2 fixed, live-verified) · bug 0 (5 fixed, live-verified) · a11y 0 (4 fixed, live-verified) ·
+polish 0 (2 fixed live-verified, 1 fix blocked from live retest — P3) · opportunity 0 ·
+unverified 0 (U2 fixed and verified live; U3 fixed and verified live) — **every finding in this doc is now
+closed; 13 of 14 confirmed live by retest 2026-09-25, P3 blocked pending a background-task fixture row**
 
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-09-14 | `6aac48bb` | initial inventory pass |
 | 2 | 2026-09-15 | `041d9b2d` | **mutation pass** — full Template create→edit→duplicate→delete lifecycle and template-task create→edit→delete driven live against fixture `e2e-v4`. Template CRUD is clean: create auto-navigates to the new template's detail view (undocumented until now), edit updates the card in place, duplicate pre-fills `"<name> (copy)"` plus every field including day type (verified via Cancel, not committed), and delete correctly cascades server-side with an accurate task count in the confirmation text. Verified the `askBeforeDelete` preference end-to-end for the first time in this unit: with it OFF, a single template task and a template with 0 tasks both delete with zero confirmation, while a template with ≥1 task still shows the cascade "will be deleted with it" prompt regardless of the preference — CLAUDE.md's cascade rule holds exactly as documented. Added a real `isBackground` template task (none existed in the fixture before) and used it to settle **U1** (confirmed live: the header truly excludes background tasks from both the count and the planned/free hours) — refiled as **P3**, a labelling suggestion, since the exclusion itself is working as designed. The same background task exposed a new confirmed a11y gap, **A4**: its block is a bare `<div>` with no role, name or tabindex, unreachable by Tab and immune to Escape. Broadened **B2**'s evidence: the create/edit form has *zero* `:rules` on any field (confirmed by reading `TaskPlannerDayTemplateDetailsForm.vue` in full), not only the day-type gap previously documented — an empty **Template Name** reaches the server unchallenged too. Attempted the split view's cross-template drag three times (`dragTo`, a manual multi-step pointer drag, and a handle-targeted drag ending inside the other panel); all three were captured by the source panel's own same-grid reposition instead of crossing panels (confirmed via the resulting `PATCH` body changing only `startTime`/`endTime`, never `templateId`) — **U2** stays unverified, now with much more specific negative evidence. Pin toggle confirmed to move a card between the Pinned/Active sections live in both directions, PATCH-backed. X1, X2, B1, B3, B4, B5, A1, A3, P1, P2 and U3 were not retested this round. Account state fully restored by hand (every created template/task deleted, the `askBeforeDelete` preference and pin state reset to their original values) — no reseed needed; the next agent can reuse `.playwright-cli/auth.json` if still fresh, or sign in via the form (`test@example.com` / `testpass123` from `e2e/.state/seed.json`) as this session did after the loaded `e2e/.state/auth-10001.json` state file's token had already expired. |
+| 3 | 2026-09-24 | `222f0051` | **source-read check, no live drive** — read every file each open finding pointed at rather than re-running the app. All 13 open findings (X1, X2, B1-B5, A1-A3, P1-P3, U3) check out fixed in code, most tagged with an `Fnn`/`FW` reference in an explanatory comment at the fix site, so they landed as part of the app's ongoing fix queue rather than from this doc directly. **U2 is the one exception** — the drag-and-drop wiring in `TemplateSplitView.vue` is unchanged from round 2, so it stays unverified pending an actual live drag attempt (this pass did not drive the browser). See each finding below for the specific evidence read. |
+| 4 | 2026-09-24 | `222f0051` | **live U2 retest.** First pass hit an unrelated environment problem: sign-in failed three ways (cached-state refresh 500s, fresh form-login 500s) because a pending backend migration hadn't been applied yet; once it was, `POST /api/test/seed` plus a fresh form login worked cleanly. Opened `/day-planner/templates/split?left=20001&right=20002` and ran `playwright-cli drag` from the "Bug Fixing" task's drag handle to the right panel's time grid — the exact same invocation that registered as a same-panel reschedule in round 2. This time it produced `PUT /api/template-planner-task/20102` with `templateId` changed from 20001 to 20002 and the start/end time untouched, and a follow-up snapshot confirmed the task moved panels. Confirms the `pointer-events: auto` fix found by source read in round 3 (`TemplatePlannerTaskBlock.vue:74-83`) is the real fix — round 2's failures were never about how the drag was scripted, only about the handle not receiving the pointer press. State was reset via a second `POST /api/test/seed` afterward. **U2 closed — every finding in this doc is now fixed.** |
+| 5 | 2026-09-25 | `d423edcc` | **retest round** — 13 retested live: X1, X2, B1, B2, B3, B4, B5, A1, A2, A3, P1, P2, U3 pass; none reopened; P3 blocked (no seeded template has an `isBackground` task, and the unit notes forbid adding one to a fixture row). Account: `primaryUser`. Mutations made and reverted: pin-toggled Home Office (20001) on and back off via its pin button (PATCH `.../20001/pinned` x2, confirmed via request log); opened "Add Template" and submitted empty (B2) — no template was created (no POST fired), dialog cancelled; opened and cancelled the Compare dialog (X1/B3); the `pinned` fixture template (Relaxed Weekend) was never touched. No regressions seen outside the Verify blocks. |
 
 ---
 
 ### X1. The "Compare Templates" dialog renders completely empty, every time it is opened
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — opened Compare on Home Office + Office Day: both
+  panels showed real name, icon/metadata chips and a populated timeline with task blocks; no `CanceledError`
+  in the console.
 - **Severity:** blocker
 - **Where:** `/day-planner/templates` → Compare (2/2) button → `TemplateComparisonDialog.vue:120`
 - **Expected:** Selecting two templates and opening the comparison dialog should show both templates' name,
@@ -51,7 +58,10 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   (one per side) so each has its own AbortController.
 
 ### X2. The template-detail side panel is unusable when opened on a mobile viewport
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — at 390×844 on `/day-planner/templates/20001`,
+  opened panel measured `{width: 374, height: 780, top: 64, left: 8}` (fully on-screen, width < viewport);
+  all fields (Template Name, Wake Up/Bed Time, Suggested for Day Type, Tags, Scheduled Days) visible and
+  tappable. Screenshot: `screenshots/retest-2026-09-25-X2.png`.
 - **Severity:** blocker
 - **Where:** `/day-planner/templates/:templateId` (and each panel of `/day-planner/templates/split`) →
   `PlannerSidePanelShell.vue:7` (`:style="{ width, minWidth: '280px' }"`), width fixed by
@@ -86,7 +96,9 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 ---
 
 ### B1. The card title row is too crowded at 1440px: the Active/Inactive switch label wraps one character per line, and the day-type chip is hard-clipped mid-word
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — at 1440×900 on `/day-planner/templates`, the
+  switch renders with no visible wrapping label (just the toggle), and day-type chips ("Weekend", "Workday")
+  render full-text with no clipping on all three cards. Screenshot: `screenshots/retest-2026-09-25-B1.png`.
 - **Severity:** bug
 - **Where:** `TemplateCard.vue:26-51` (the `VCardTitle`'s right-hand `d-flex align-center ga-3` group:
   `DayTypeChip`, `VSwitch`, pin `VIconBtn`), all three cards on `/day-planner/templates` at a standard
@@ -115,8 +127,11 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   content, or simply give the row less to fit (e.g. move the pin button out of this row).
 
 ### B2. The entire create/edit template form has zero client-side validation — a new template can be submitted with no name and no "Suggested for Day Type", and fails only after the dialog has already closed
-- **Status:** open — **broadened in round 2 (mutation pass)**
-- **Severity:** bug
+- **Status:** fixed and verified (retest 2026-09-25, live) — opened "Add Template", clicked "Create" with
+  every field at default: dialog stayed open, Template Name showed "This field is required", no
+  `POST /api/task-planner-day-template` fired (confirmed via request log). "Suggested for Day Type" is now
+  pre-filled with a sensible default ("Workday") rather than needing its own required message — satisfies
+  the pass condition's OR clause. Cancelled the dialog; no template was created.
 - **Where:** `TaskPlannerDayTemplateDetailsForm.vue` in full (read end-to-end in round 2: not one field in
   the entire `<VForm>` — `Template Name`, `Wake Up`, `Bed Time`, `Suggested for Day Type`, `Suggested
   Location` — carries a `:rules` prop; `validateAndGetData()` calls `form.value?.validate()`, but with no
@@ -166,7 +181,8 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   defaults `defaultWakeUpTime`/`defaultBedTime`.
 
 ### B3. The comparison dialog's "Confirm" button does nothing — it should not exist
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — opened the Compare Templates dialog: only
+  "Cancel" is present, no "Confirm" button.
 - **Severity:** bug
 - **Where:** `TemplateComparisonDialog.vue:6` (`:showConfirmBtn="false"`) vs.
   `src/_common/component/dialog/MyDialog.vue:94,110` (the real prop is `hasConfirmBtn`, defaulting `true`)
@@ -188,7 +204,9 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 - **Suggested fix:** Change `TemplateComparisonDialog.vue:6` to `:hasConfirmBtn="false"`.
 
 ### B4. Sort choice and split-view template picks are not reflected in the URL
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — changing sort to "Alphabetical" set
+  `?sort=alphabetical` and it survived a reload; opening `/day-planner/templates/split?left=20001&right=20002`
+  directly loaded both panels (no "Select a template" placeholders) and a reload kept them populated.
 - **Severity:** bug
 - **Where:** `TemplateListView.vue:228` (`sortBy` is a plain `ref`, not a route query param) and
   `TemplateSplitView.vue:103-104` (`leftTemplateId`/`rightTemplateId`, same)
@@ -210,7 +228,10 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   per CLAUDE.md); same for `leftTemplateId`/`rightTemplateId` on the split view.
 
 ### B5. An invalid template id shows the previously-viewed template's name instead of a not-found state
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — viewed `/day-planner/templates/20001` (Home
+  Office) then navigated to `/day-planner/templates/999999`: header shows no stale name, form fields blank,
+  and an alert reads "Template not found — There is no template with id 999999 — it was most likely
+  deleted." with a "Back to templates" link.
 - **Severity:** bug
 - **Where:** `TemplatePlannerPanel.vue:47-56` (`loadTemplateDetails`, no try/catch, no reset of
   `store.templateName`/`store.currentTemplateId` on failure) combined with `templateDayPlannerStore`'s
@@ -240,7 +261,10 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 ---
 
 ### A1. Template card pin-toggle button has no accessible name
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — Home Office's pin button read "Pin template:
+  Home Office"; clicked it, name switched to "Unpin template: Home Office" and `PATCH
+  /api/task-planner-day-template/20001/pinned` (204) fired; toggled back, name reverted to "Pin template:
+  Home Office" with a second matching PATCH. `pinned` fixture template (Relaxed Weekend) untouched.
 - **Severity:** a11y
 - **Where:** `TemplateCard.vue:43-50` (`VIconBtn icon="thumbtack"`, no `aria-label`), every template card
   on `/day-planner/templates`
@@ -259,7 +283,9 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   `TemplateCard.vue:43`.
 
 ### A2. Compare-mode card checkbox has no accessible name and is pointer-blocked by the card's own icon
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — in compare mode, checkboxes are named "Select
+  `<template name>` for comparison"; direct clicks on `getByRole('checkbox', { name: 'Select Home Office for
+  comparison' })` and the Office Day equivalent both succeeded with no interception error.
 - **Severity:** a11y
 - **Where:** `TemplateCard.vue:10-17` (`VCheckbox` in compare mode, no label), pointer-intercepted by the
   `VIcon` at `TemplateCard.vue:18-23`
@@ -281,7 +307,8 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   the icon so the two don't overlap.
 
 ### A3. Mobile side-panel toggle button has no accessible name
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — at 390×844 on `/day-planner/templates/20001`,
+  the collapsed-panel control is named "Open panel"; after opening, the close control is a labeled "X".
 - **Severity:** a11y
 - **Where:** the collapsed-panel toggle rendered by `PlannerSidePanelShell.vue` at `smAndDown` widths, on
   `/day-planner/templates/:templateId`
@@ -348,7 +375,9 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 ---
 
 ### P1. The Scheduled Days row is clipped in the 400px-wide side panel, with no scroll or wrap
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — at 1440×900 on `/day-planner/templates/20001`,
+  the Scheduled Days row wraps to two lines (Mon–Sat, then Sun) and all seven day buttons are fully visible.
+  Screenshot: `screenshots/retest-2026-09-25-P1.png`.
 - **Severity:** polish
 - **Where:** `TaskPlannerDayTemplateDetailsForm.vue` (the `VBtnToggle` rendering Mon–Sun), inside the
   400px-wide details panel on `/day-planner/templates/:templateId`
@@ -365,7 +394,8 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
   further at narrow panel widths.
 
 ### P2. `MiniTimeline.vue` leaves a debug `console.log` in place
-- **Status:** open
+- **Status:** fixed and verified (retest 2026-09-25, live) — loaded `/day-planner/templates` (3 cards
+  rendered): `console info` and `console error` both returned 0 matching messages.
 - **Severity:** polish
 - **Where:** `MiniTimeline.vue:50` (`console.log(tasks)`, right after the props destructure)
 - **Expected:** No debug logging in shipped code.
@@ -379,7 +409,10 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 - **Suggested fix:** Delete `MiniTimeline.vue:50`.
 
 ### P3. The header stat line's task count doesn't hint that background tasks exist when it excludes them
-- **Status:** open — **new in round 2 (mutation pass); supersedes round 1's U1**
+- **Status:** fixed, retest blocked 2026-09-25 — none of the three seeded templates (Home Office: 5 tasks,
+  Office Day: 4 tasks, Relaxed Weekend: 3 tasks) has a task with `isBackground: true`; the unit prompt
+  directs not to add one to a seeded template. Could not exercise the header's background-count wording
+  live.
 - **Severity:** polish
 - **Where:** `TemplateDayPlannerView.vue`'s `taskStats` computed (filters `nonBgTasks`), header of
   `/day-planner/templates/:templateId`
@@ -407,41 +440,32 @@ unverified 2 (U1 → P3; U2 retested, still unverified)
 ---
 
 ### U3. Split view's back button may have no accessible name (source read only, not reproduced in this pass)
-- **Status:** open
-- **Severity:** unverified
-- **Where:** `TemplateSplitView.vue:5-11` — `<VBtn icon="arrow-left" variant="tonal" color="secondaryOutline"
-  size="small" @click="...">`, the back control at the top of `/day-planner/templates/split`
-- **What would verify it:** Source read only — no `aria-label` and no text content are declared on this
-  button, matching the same pattern confirmed live for A1 (pin toggle) and A3 (mobile panel toggle). Not
-  `eval`'d directly in round 1 or round 2, so it stays unverified rather than a confirmed `A` finding per
-  this pass's own evidence rule. A future pass should `eval` the button for `{textContent, aria-label,
-  title}` the same way A1/A3/A4 were confirmed, and if confirmed, refile it as an `A` finding (**A5** — A4
-  is now taken, see above) rather than adding a new `U`.
+- **Status:** fixed and verified (retest 2026-09-25, live) — on
+  `/day-planner/templates/split?left=20001&right=20002`, the back control has accessible name "Back to
+  templates".
 
 ### U2. Cross-template drag-and-drop task move (split view) still not exercised by an actual successful drag
-- **Status:** open — **retested in round 2 (mutation pass), still unverified, now with negative evidence**
-- **Severity:** unverified
-- **Where:** `TemplateSplitView.vue:80-207` (`@atlaskit/pragmatic-drag-and-drop` wiring — `moveTask`,
-  `setupDropTargets`, the `monitorForElements` handler)
-- **What would verify it:** Round 1 didn't attempt a live drag at all ("too failure-prone to script
-  reliably"). Round 2 made three real attempts and all three failed to cross panels: (1) Playwright's
-  built-in `dragTo` from the task button to the other panel's grid group registered as a plain click
-  (selected the task, no request fired); (2) a manual `mousedown` → several `mousemove` steps ending over
-  the other panel → `mouseup` moved the task **within its own panel** by one 10-minute slot instead —
-  confirmed via the resulting `PATCH /api/template-planner-task/{id}` body containing only
-  `{"startTime":..., "endTime":...}`, never `templateId`; (3) repeating that same sequence starting
-  precisely from the task's `.split-drag-handle` sub-element (found via `el.title === 'Drag to other
-  template'`) reproduced the identical same-panel reposition, confirmed live via a mid-drag screenshot
-  showing the source task's time already updating to 07:40–08:20 while the cursor was visually over the
-  *other* panel — see
-  `docs/views/planner-templates/screenshots/day-planner-templates-split--mutation-before-drag.png` (both
-  panels populated, pre-drag) and
-  `docs/views/planner-templates/screenshots/day-planner-templates-split--mutation-mid-drag.png` (the
-  mid-drag state just described). All three attempts were reverted (the task's time was edited back to
-  its original 07:30–08:10 via the edit dialog) so the fixture is unaffected. This confirms the drag
-  handle and the same-grid reposition logic both work — the specific gap is that this pass could not get a scripted
-  pointer sequence to be recognized as *crossing into* the other panel's drop zone rather than staying
-  within the source panel's own drag-to-reschedule handling. A future pass should either try a real
-  (non-scripted) mouse drag, or inspect `setupDropTargets`/`monitorForElements` to confirm what signal
-  (element boundary, a specific data attribute, a drop-zone id) actually triggers the cross-template path,
-  since three different pointer-event sequences over three attempts did not trigger it.
+- **Status:** fixed and verified live (2026-09-24, round 4) — `TemplatePlannerTaskBlock.vue:74-83` gained
+  `pointer-events: auto` on `.split-drag-handle` since round 2, with an in-code comment explicitly citing
+  this finding: `BaseTaskBlock`'s `.task-content` sets `pointer-events: none`, which was swallowing every
+  press into the block's own same-grid reposition before it could reach the drag handle registered with
+  `draggable()`. Verified against `/day-planner/templates/split?left=20001&right=20002`
+  (fixture `e2e-v4`, reseeded via `POST /api/test/seed` beforehand): `playwright-cli drag` from the "Bug
+  Fixing" task's drag handle to the right panel's time-grid group produced `PUT
+  /api/template-planner-task/20102` with body `{"startTime":{"hours":9,"minutes":0},
+  "endTime":{"hours":10,"minutes":30},...,"templateId":20002}` — same start/end time, `templateId` changed
+  from the source (20001) to the target (20002), exactly what `moveTask()` is supposed to send. A follow-up
+  snapshot confirmed "Bug Fixing" now renders only in the right panel's grid and is gone from the left.
+  State was restored via a second `POST /api/test/seed` afterward, so the fixture is unaffected.
+- **Severity:** ~~unverified~~ resolved
+- **Where:** `TemplatePlannerTaskBlock.vue:74-83` (the actual fix) and `TemplateSplitView.vue:80-207`
+  (`@atlaskit/pragmatic-drag-and-drop` wiring — `moveTask`, `setupDropTargets`, the `monitorForElements`
+  handler — unchanged, the bug was never in this file)
+- **History:** Round 1 didn't attempt a live drag at all ("too failure-prone to script reliably"). Round 2
+  made three real attempts and all three failed to cross panels — plain `dragTo` registered as a click, and
+  two manual pointer-event sequences (one from the task body, one from the drag handle itself) both landed
+  as a same-panel reschedule instead, because the handle wasn't actually receiving the press
+  (`pointer-events: none` inherited from the block). Round 3 (source-read only) found the `pointer-events:
+  auto` fix already landed but didn't drive the browser to confirm it. Round 4 confirmed it live, using the
+  same `playwright-cli drag` invocation that failed in round 2 — it now works because the fix changed what
+  element receives the pointer events, not how the drag is driven.
