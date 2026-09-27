@@ -12,6 +12,12 @@
 			xl="6"
 			class="mt-3 mt-md-0"
 		>
+			<TimerPresetsSection
+				timeInputVisible
+				activityPresetsVisible
+				@applyPreset="applyPreset"
+			></TimerPresetsSection>
+			<hr class="mt-6 mb-4" />
 			<AddActivityManuallyForm ref="formRef"></AddActivityManuallyForm>
 			<div class="mt-8 w-100 text-center">
 				<VBtn
@@ -28,12 +34,18 @@
 
 <script setup lang="ts">
 	import AddActivityManuallyForm from '@/core/activityHistory/component/AddActivityManuallyForm.vue'
+	import TimerPresetsSection from '@/core/activityHistory/component/TimerPresetsSection.vue'
+	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 	import { ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 
 	const i18n = useI18n()
 	const formRef = ref<InstanceType<typeof AddActivityManuallyForm>>()
 	const saving = ref(false)
+
+	function applyPreset(preset: TimerPreset) {
+		formRef.value?.applyPreset(preset)
+	}
 
 	// Re-entry guard: a second click inside the round trip would POST the same (activity, start)
 	// and come back 409 (F68).

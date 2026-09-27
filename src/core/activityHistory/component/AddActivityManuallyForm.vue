@@ -34,6 +34,7 @@
 	import TimePicker from '@/_common/component/dateTime/TimePicker.vue'
 	import { useSaveActivityToHistory } from '@/core/activityHistory/composable/useSaveActivityToHistory.ts'
 	import type { ActivitySelection } from '@/core/activity/dto/dto/ActivitySelection.ts'
+	import type { TimerPreset } from '@/core/activityHistory/dto/response/TimerPreset.ts'
 
 	const { formDisabled, initialActivityId, initialDateTime, initialLength } = defineProps<{
 		formDisabled?: boolean
@@ -95,8 +96,17 @@
 		timeLength.value = new Time()
 	}
 
+	// The Timer's presets, reused: a quick time sets the length, an activity preset sets the activity too.
+	// Neither saves — the start time still has to be right, and a one-tap write would be one mis-tap away
+	// from a record nobody meant.
+	function applyPreset(preset: TimerPreset) {
+		timeLength.value = Time.fromMinutes(preset.duration)
+		if (preset.activity) preselectedActivityId.value = preset.activity.id
+	}
+
 	defineExpose({
 		saveActivity,
+		applyPreset,
 		getValues: () => ({ dateTime: dateTime.value, timeLength: timeLength.value }),
 	})
 </script>
