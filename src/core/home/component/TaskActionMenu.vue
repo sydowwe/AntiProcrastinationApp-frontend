@@ -66,12 +66,13 @@
 
 			<VDivider class="my-1" />
 			<VListSubheader>{{ $t('home.skip') }}</VListSubheader>
+			<!-- Sends the key; the label is only what the menu shows (B1). -->
 			<VListItem
-				v-for="reason in SKIP_REASONS"
+				v-for="reason in BUILT_IN_SKIP_REASONS"
 				:key="reason"
-				:title="$t(`home.skipReason.${reason}`)"
+				:title="$t(`planner.skipReason.${reason}`)"
 				prependIcon="fa-forward"
-				@click="skipTask(task, $t(`home.skipReason.${reason}`))"
+				@click="skipTask(task, reason)"
 			/>
 		</VList>
 	</VMenu>
@@ -91,13 +92,13 @@
 		isFinished,
 		isRunning,
 		minutesLabel,
-		SKIP_REASONS,
 		skipTask,
 		SNOOZE_OPTIONS,
 		snoozeTask,
 		startTask,
 	} from '@/core/home/composable/useTodayPlan.ts'
 	import { openTracker } from '@/core/home/composable/useTaskTracker.ts'
+	import { BUILT_IN_SKIP_REASONS } from '@/core/dayPlanner/dto/enum/BuiltInSkipReason.ts'
 
 	const {
 		task,

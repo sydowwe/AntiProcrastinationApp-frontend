@@ -6,6 +6,7 @@ import type { TemplatePlannerTask } from '@/core/dayPlanner/dto/response/templat
 import { TaskImportance } from '@/core/dayPlanner/dto/response/TaskImportance.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
+import { type BuiltInSkipReason, parseBuiltInSkipReason } from '@/core/dayPlanner/dto/enum/BuiltInSkipReason.ts'
 
 export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 	constructor(
@@ -26,6 +27,8 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public isFromTemplate?: boolean,
 		public sourceTemplateTaskId: number | null = null,
 		public skipReason: string | null = null,
+		/** One of the app's own reasons, stored as a key (B1). At most one of this and `skipReason` is set. */
+		public skipReasonKey: BuiltInSkipReason | null = null,
 		public todoListItemId: number | null = null,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
@@ -80,6 +83,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			json.isFromTemplate,
 			json.sourceTemplateTaskId ?? null,
 			json.skipReason ?? null,
+			parseBuiltInSkipReason(json.skipReasonKey),
 			json.todoListItemId ?? null,
 			0,
 			0,

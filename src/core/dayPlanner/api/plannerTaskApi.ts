@@ -11,6 +11,7 @@ import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTa
 import type { AxiosRequestConfig } from 'axios'
 import { BatchOperationResponse } from '@/core/dayPlanner/dto/response/BatchOperationResult.ts'
 import { PlanVsActualTrend } from '@/core/dayPlanner/dto/response/PlanVsActualTrend.ts'
+import { SkipSummary } from '@/core/dayPlanner/dto/response/SkipSummary.ts'
 import type { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
 
 export function useTaskPlannerCrud() {
@@ -68,11 +69,19 @@ export function useTaskPlannerCrud() {
 		return PlanVsActualTrend.fromJson(data)
 	}
 
+	// The trend's filter on purpose: the server takes the same request and validator, so the two lines
+	// under the calendar always cover the same days (B1).
+	async function fetchSkipSummary(filter: PlanVsActualTrendFilter): Promise<SkipSummary> {
+		const { data } = await API.post(`${url}/skip-summary`, filter, { _silent: true })
+		return SkipSummary.fromJson(data)
+	}
+
 	return {
 		fetchById,
 		fetchAll,
 		fetchFiltered,
 		fetchPlanVsActualTrend,
+		fetchSkipSummary,
 		fetchSelectOptions,
 		createWithResponse,
 		create,

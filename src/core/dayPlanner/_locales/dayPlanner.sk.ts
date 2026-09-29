@@ -350,7 +350,28 @@ const dayPlanner = {
 				startedLate: `1 zaznamenaná úloha začala neskôr | {count} zaznamenané úlohy začali neskôr | {count} zaznamenaných úloh začalo neskôr`,
 				ranLonger: `1 zaznamenaná úloha trvala dlhšie | {count} zaznamenané úlohy trvali dlhšie | {count} zaznamenaných úloh trvalo dlhšie`,
 				neverHappened: `1 úloha sa neuskutočnila | {count} úlohy sa neuskutočnili | {count} úloh sa neuskutočnilo`,
+				// C1 / B1, pod trendom. Každá veta len nad svojou hranicou (utils/skipRangeInsights.ts).
+				// Pomery ako „4/6“, nie „4 z 6“: pred číslom sa „z“ mení na „zo“ (zo 6, zo 7, zo 17…)
+				// a z čísla to spoľahlivo neurčíme. Lomka je v SK textoch už zaužívaná ({inPlan}/{count}).
+				topSkipReason: `Najčastejší dôvod preskočenia v tomto období: {reason} — {count}/{total}`,
+				lateSkips: `Preskočené úlohy naplánované od {time}: {skipped}/{planned} · skôr počas dňa: {earlySkipped}/{earlyPlanned}`,
 			},
+			// C1: preskočené úlohy dňa a dôvody vlastnými slovami používateľa. Počet a dôvody, nikdy
+			// hodnotenie („len“, „opäť“). Úloha preskočená bez dôvodu sa započíta, ale nikdy sa
+			// nepýtame, prečo dôvod chýba.
+			skipped: {
+				summary: `Preskočená 1 úloha | Preskočené {count} úlohy | Preskočených {count} úloh`,
+				withReasons: `{tasks}: {reasons}`,
+				reasonWithCount: `{reason} ({count})`,
+				withoutReason: `{count} bez dôvodu`,
+			},
+		},
+		// Dôvody, ktoré ponúka samotná aplikácia (menu Preskočiť na domovskej stránke). Od B1 sa ukladajú
+		// ako kľúče, takže tieto texty sú len na zobrazenie a dajú sa preformulovať — pozri BuiltInSkipReason.ts.
+		skipReason: {
+			noTime: `Nestihol som`,
+			notRelevant: `Už nie je aktuálne`,
+			noEnergy: `Nemal som energiu`,
 		},
 		nowNext: {
 			now: `Teraz: {name}`,

@@ -83,8 +83,17 @@ export function usePlanVsActual(store: IDayPlannerStore) {
 		() => isDayMateriallyDone.value && (loggedTasks.value.length > 0 || neverHappenedCount.value > 0),
 	)
 
+	// The half `eligibleTasks` leaves out on purpose. Kept apart rather than folded into the drift: a
+	// skip is a decision, not an overrun, and a day where everything was skipped has no drift at all
+	// but may well have something to say about why. Gated on the same `isDayMateriallyDone`.
+	const skippedTasks = computed(() =>
+		store.tasks.filter(t => t.id > 0 && !t.isBackground && t.status === PlannerTaskStatus.Cancelled),
+	)
+
 	return {
 		isShown,
+		isDayMateriallyDone,
+		skippedTasks,
 		plannedMinutes,
 		actualMinutes,
 		startedLateCount,

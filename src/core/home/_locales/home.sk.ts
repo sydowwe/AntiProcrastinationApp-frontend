@@ -48,11 +48,6 @@ const home = {
 		giveLonger: `Predĺžiť`,
 		moveLater: `Posunúť neskôr`,
 		skip: `Preskočiť`,
-		skipReason: {
-			noTime: `Nestihol som`,
-			notRelevant: `Už nie je aktuálne`,
-			noEnergy: `Nemal som energiu`,
-		},
 		pomodoroHint: `Rozbehni sa na 25 minút`,
 		alertStartingSoon: `Za {minutes} min začína`,
 		alertStartNow: `Začni teraz`,

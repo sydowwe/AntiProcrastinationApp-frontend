@@ -470,6 +470,10 @@
 				task.isDone = false
 				task.status = PlannerTaskStatus.Cancelled
 				task.skipReason = reason
+				// A re-skip replaces a built-in key from an earlier skip, and a stale key would win over
+				// this text when reasons are counted. If the text is exactly a built-in label, the server
+				// stores it as the key (B1); until the refetch the reason grouping maps it the same way.
+				task.skipReasonKey = null
 				task.actualStartTime = null
 				task.actualEndTime = null
 			},

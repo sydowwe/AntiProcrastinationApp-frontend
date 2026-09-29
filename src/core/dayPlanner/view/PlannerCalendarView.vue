@@ -51,6 +51,7 @@
 			<div class="footer-stack">
 				<CalendarStatsBar :days="calendarDays" />
 				<PlanVsActualTrendLine :trend="planVsActualTrend" />
+				<SkipSummaryLine :summary="skipSummary" />
 			</div>
 		</template>
 	</CalendarGrid>
@@ -95,6 +96,8 @@
 	import CalendarDayCellContent from '@/core/dayPlanner/component/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/core/dayPlanner/component/calendar/CalendarStatsBar.vue'
 	import PlanVsActualTrendLine from '@/core/dayPlanner/component/calendar/PlanVsActualTrendLine.vue'
+	import SkipSummaryLine from '@/core/dayPlanner/component/calendar/SkipSummaryLine.vue'
+	import { SkipSummary } from '@/core/dayPlanner/dto/response/SkipSummary.ts'
 	import BulkApplyTemplateForm from '@/core/dayPlanner/component/calendar/BulkApplyTemplateForm.vue'
 	import CopyDayForm from '@/core/dayPlanner/component/calendar/CopyDayForm.vue'
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
@@ -132,7 +135,7 @@
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
-	const { copyToDays, fetchPlanVsActualTrend } = useTaskPlannerCrud()
+	const { copyToDays, fetchPlanVsActualTrend, fetchSkipSummary } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
 	const {
@@ -185,6 +188,7 @@
 	const detailsDialog = ref(false)
 	const editingDay = ref<Calendar | null>(null)
 	const planVsActualTrend = ref<PlanVsActualTrend>(PlanVsActualTrend.empty())
+	const skipSummary = ref<SkipSummary>(SkipSummary.empty())
 
 	// Guards the calendar/filter + calendar/task-summaries pair: both are in flight together for a
 	// date-range change, and a slow response from a month the user has since navigated away from
@@ -211,16 +215,29 @@
 		}
 	}
 
+	// The trend's sibling (C1 / B1), fetched on its own for the same reasons: a failure costs only this
+	// line, and the shared request id keeps a slow month's skips off a newer month's grid.
+	async function refreshSkipSummary(requestId: number, start: Date, end: Date) {
+		try {
+			const summary = await fetchSkipSummary(PlanVsActualTrendFilter.fromDates(start, end))
+			if (requestId === refreshRequestId) skipSummary.value = summary
+		} catch {
+			if (requestId === refreshRequestId) skipSummary.value = SkipSummary.empty()
+		}
+	}
+
 	async function refresh() {
 		if (!dateRange.value.start || !dateRange.value.end) {
 			calendarDays.value = []
 			dayTasksMap.value = new Map()
 			planVsActualTrend.value = PlanVsActualTrend.empty()
+			skipSummary.value = SkipSummary.empty()
 			return
 		}
 		const requestId = ++refreshRequestId
 		loading.value = true
 		refreshPlanVsActualTrend(requestId, dateRange.value.start, dateRange.value.end)
+		refreshSkipSummary(requestId, dateRange.value.start, dateRange.value.end)
 		try {
 			const [days, taskSummaries] = await Promise.all([
 				fetchCalendars(new CalendarFilter(dateRange.value.start, dateRange.value.end)),

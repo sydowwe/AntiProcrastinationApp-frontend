@@ -340,7 +340,28 @@ const dayPlanner = {
 				startedLate: `{count} logged task started late | {count} logged tasks started late`,
 				ranLonger: `{count} logged task ran longer | {count} logged tasks ran longer`,
 				neverHappened: `{count} task never happened | {count} tasks never happened`,
+				// C1 / B1, under the trend. Each only above its floor (utils/skipRangeInsights.ts), so
+				// `count` and `skipped` are always at least 3 and need no singular form.
+				// {reason} is the user's own text, or a built-in label in the current locale.
+				topSkipReason: `Most common reason for skipping in this period: {reason} — {count} of {total} skips`,
+				lateSkips: `Of the tasks planned from {time} on, {skipped} of {planned} were skipped; earlier in the day, {earlySkipped} of {earlyPlanned}`,
 			},
+			// C1: the day's skipped tasks and the reasons, in the user's own words. A count and the
+			// reasons, never a verdict ("only", "again"). A skip with no reason is counted, and never
+			// asked about.
+			skipped: {
+				summary: `{count} task skipped | {count} tasks skipped`,
+				withReasons: `{tasks}: {reasons}`,
+				reasonWithCount: `{reason} ({count})`,
+				withoutReason: `{count} without a reason`,
+			},
+		},
+		// The reasons the app itself offers (the home page's Skip menu). Stored as keys since B1, so these
+		// are display-only and can be reworded — see BuiltInSkipReason.ts.
+		skipReason: {
+			noTime: `Ran out of time`,
+			notRelevant: `Not relevant any more`,
+			noEnergy: `No energy for it`,
 		},
 		nowNext: {
 			now: `Now: {name}`,

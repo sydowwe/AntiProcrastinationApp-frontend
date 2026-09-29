@@ -7,6 +7,7 @@ import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
+import type { BuiltInSkipReason } from '@/core/dayPlanner/dto/enum/BuiltInSkipReason.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
@@ -29,8 +30,6 @@ export const TRANSITION_WARNING_MINUTES = 10
 export const SNOOZE_OPTIONS = [15, 30, 60] as const
 /** Steps offered by "give it longer" — only meaningful on a task that is already running. */
 export const EXTEND_OPTIONS = [15, 30] as const
-/** Suffixes under the `home.skipReason.*` namespace. */
-export const SKIP_REASONS = ['noTime', 'notRelevant', 'noEnergy'] as const
 
 // Module-level state: the now bar and the planner widget are two views of one plan, so they share
 // one fetch and one set of derived values instead of drifting apart.
@@ -309,12 +308,22 @@ export async function finishTask(task: PlannerTask) {
 	)
 }
 
-export async function skipTask(task: PlannerTask, reason: string) {
+/**
+ * Sends the key, not the label (B1): the reason reads back in whatever language the account is in
+ * later, and counts as one reason across locales. `skipReason` must be null beside a key — a non-blank
+ * pair is a 400.
+ */
+export async function skipTask(task: PlannerTask, reason: BuiltInSkipReason) {
+	const previous = { skipReason: task.skipReason, skipReasonKey: task.skipReasonKey }
+	task.skipReason = null
+	task.skipReasonKey = reason
 	await setStatus(
 		task,
 		PlannerTaskStatus.Cancelled,
-		new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Cancelled, null, null, reason),
+		new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Cancelled, null, null, null, reason),
 	)
+	// `setStatus` reverts the status on failure; the reason goes back with it.
+	if (task.status !== PlannerTaskStatus.Cancelled) Object.assign(task, previous)
 }
 
 /** Move a task later, keeping its length. Clamped so it cannot spill past midnight. */

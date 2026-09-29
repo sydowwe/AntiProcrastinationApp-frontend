@@ -48,11 +48,6 @@ const home = {
 		giveLonger: `Give it longer`,
 		moveLater: `Move later`,
 		skip: `Skip`,
-		skipReason: {
-			noTime: `Ran out of time`,
-			notRelevant: `Not relevant any more`,
-			noEnergy: `No energy for it`,
-		},
 		pomodoroHint: `Get going for 25 minutes`,
 		alertStartingSoon: `Starting in {minutes} min`,
 		alertStartNow: `Start now`,

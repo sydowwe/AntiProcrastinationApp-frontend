@@ -243,11 +243,11 @@
 										density="compact"
 										variant="tonal"
 										prependIcon="fa-forward"
-										:title="task.skipReason ?? undefined"
+										:title="skipReasonText(task) ?? undefined"
 									>
 										{{
-											task.skipReason
-												? $t('home.skippedBecause', { reason: task.skipReason })
+											skipReasonText(task)
+												? $t('home.skippedBecause', { reason: skipReasonText(task) })
 												: $t('home.skipped')
 										}}
 									</VChip>
@@ -326,6 +326,11 @@
 
 	function isSkipped(task: PlannerTask): boolean {
 		return task.status === PlannerTaskStatus.Cancelled
+	}
+
+	/** The app's own reasons arrive as a key (B1) and read in the current locale; the user's own text as written. */
+	function skipReasonText(task: PlannerTask): string | null {
+		return task.skipReasonKey ? t(`planner.skipReason.${task.skipReasonKey}`) : task.skipReason
 	}
 
 	/** Done, skipped and not-started each have their own treatment already — tick, chip, nothing. */
