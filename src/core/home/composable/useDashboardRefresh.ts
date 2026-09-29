@@ -67,6 +67,8 @@ interface RefreshEntry {
 	onTrackingSession: boolean
 	lastRefreshedAt: number
 	inFlight: boolean
+	/** A data-changed trigger arrived mid-flight: run once more when the current refresh settles. */
+	rerunPending: boolean
 }
 
 const entries = new Map<string, RefreshEntry>()
@@ -97,9 +99,19 @@ export const todayDate = computed(() => {
 let dayChangePending = false
 
 // --- fan-out -----------------------------------------------------------------
-function runRefresh(entry: RefreshEntry) {
-	// A slow refresh must not accumulate a queue of duplicates behind it.
-	if (entry.inFlight) return
+/**
+ * `dataChanged` separates the two kinds of trigger. "The data may be old" (staleness, the poll,
+ * coming back online) is answered by a refresh already in flight, so it is dropped. "The data just
+ * changed" (a write finished, the day rolled over) is not: the read in flight may have been issued
+ * before the write, and dropping the trigger would leave the widget showing the old answer until the
+ * next unrelated one. It is held instead, and any number of them collapse into one follow-up read.
+ */
+function runRefresh(entry: RefreshEntry, dataChanged = false) {
+	// A slow refresh must not accumulate a queue of duplicates behind it — at most one follow-up.
+	if (entry.inFlight) {
+		if (dataChanged) entry.rerunPending = true
+		return
+	}
 	entry.inFlight = true
 	void Promise.resolve()
 		.then(() => entry.refresh())
@@ -113,6 +125,11 @@ function runRefresh(entry: RefreshEntry) {
 			// alt-tabs against a down backend from becoming ten rounds of requests. Recovery comes
 			// from the `online` trigger and the widget's own Retry button, not from this clock.
 			entry.lastRefreshedAt = Date.now()
+			if (entry.rerunPending) {
+				entry.rerunPending = false
+				// Still registered? An entry whose last consumer unmounted mid-flight has nobody to show it to.
+				if ([...entries.values()].includes(entry)) runRefresh(entry)
+			}
 		})
 }
 
@@ -126,7 +143,7 @@ function refreshStale() {
 function fanOutDayChange() {
 	dayChangePending = false
 	for (const entry of entries.values()) {
-		if (entry.onDayChange) runRefresh(entry)
+		if (entry.onDayChange) runRefresh(entry, true)
 	}
 }
 
@@ -150,7 +167,7 @@ function syncDate() {
  */
 export function notifyTrackingSessionFinished(): void {
 	for (const entry of entries.values()) {
-		if (entry.onTrackingSession) runRefresh(entry)
+		if (entry.onTrackingSession) runRefresh(entry, true)
 	}
 }
 
@@ -249,6 +266,7 @@ export function useDashboardRefresh(key: string, options: DashboardRefreshOption
 				onTrackingSession: options.onTrackingSession ?? false,
 				lastRefreshedAt: Date.now(),
 				inFlight: false,
+				rerunPending: false,
 			})
 		}
 		if (entries.size === 1) wire(currentTime)
@@ -265,10 +283,13 @@ export function useDashboardRefresh(key: string, options: DashboardRefreshOption
 	})
 
 	return {
-		/** Refresh this subscriber now, bypassing every staleness check. */
+		/**
+		 * Refresh this subscriber now, bypassing every staleness check. Callers use it after a write,
+		 * so a refresh already in flight gets a follow-up rather than swallowing this one.
+		 */
 		refreshNow() {
 			const entry = entries.get(key)
-			if (entry) runRefresh(entry)
+			if (entry) runRefresh(entry, true)
 		},
 	}
 }
