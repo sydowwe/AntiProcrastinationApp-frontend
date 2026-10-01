@@ -33,6 +33,7 @@
 				showTodo
 				showRoutine
 				:initialActivityId="initialPickerActivityId"
+				:initialTodoListItemId="initialPickerTodoListItemId"
 				@selected="
 					(actId: number, todoItemId?: number, suggestedTime?: Time) =>
 						onPickerSelected(actId, todoItemId, suggestedTime, data as PlannerTaskRequest)
@@ -80,6 +81,9 @@
 	const pickerMode = ref<'all' | 'todo' | 'routine'>('all')
 	const selectedDate = ref(new Date())
 	const initialPickerActivityId = ref<number | undefined>(undefined)
+	// Kept past `createEmptyRequest` consuming the store's copy: the picker loads asynchronously and
+	// its selection is what finally writes `todolistId`, so it has to select this exact item.
+	const initialPickerTodoListItemId = ref<number | undefined>(undefined)
 
 	const isEdit = computed(() => store.editedId !== undefined)
 	const suggestedDurationMinutes = computed(() =>
@@ -91,7 +95,8 @@
 	function createEmptyRequest(suggestedDurationMinutes?: number): PlannerTaskRequest {
 		const req = PlannerTaskRequest.createEmpty()
 		if (store.pendingInitialTodoListItemId !== undefined) {
-			req.todoListItemId = store.pendingInitialTodoListItemId
+			req.todolistId = store.pendingInitialTodoListItemId
+			initialPickerTodoListItemId.value = store.pendingInitialTodoListItemId
 			store.$patch({ pendingInitialTodoListItemId: undefined })
 		}
 		if (suggestedDurationMinutes !== undefined) {
@@ -121,7 +126,7 @@
 	) {
 		baseDialog.value?.prefillActivity(activityId)
 		if (todoListItemId != null) {
-			data.todoListItemId = todoListItemId
+			data.todolistId = todoListItemId
 		}
 		if (suggestedTime != null) {
 			data.endTime = Time.fromMinutes(data.startTime.getInMinutes + suggestedTime.getInMinutes)
@@ -141,6 +146,7 @@
 				pickerMode.value = 'all'
 				selectedDate.value = new Date()
 				initialPickerActivityId.value = undefined
+				initialPickerTodoListItemId.value = undefined
 				store.$patch({ pendingSuggestedDuration: undefined })
 				return
 			}

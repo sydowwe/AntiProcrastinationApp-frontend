@@ -446,7 +446,7 @@
 	 * that one is a deadline the user chose, not something the planner gets to overwrite.
 	 */
 	async function adoptPlannerSlotAsDueDate(request: PlannerTaskRequest) {
-		const itemId = request.todoListItemId
+		const itemId = request.todolistId
 		if (itemId == null || !request.date) return
 		const index = items.value.findIndex(item => item.id === itemId)
 		if (index === -1) return

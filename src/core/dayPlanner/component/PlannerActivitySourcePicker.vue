@@ -59,9 +59,10 @@
 			</div>
 			<VAutocomplete
 				v-model="selectedTodoItemId"
-				:items="filteredTodoItems"
-				:itemTitle="(item: TodoListItemEntity) => item.activity.name"
+				:items="filteredTodoEntries"
+				itemTitle="title"
 				itemValue="id"
+				:itemProps="(entry: TodoPickerEntry) => ({ subtitle: entry.subtitle })"
 				:label="$t('planner.misc.selectActivityLabel')"
 				clearable
 				density="comfortable"
@@ -119,10 +120,18 @@
 		showTodo = false,
 		showRoutine = true,
 		initialActivityId,
+		initialTodoListItemId,
 	} = defineProps<{
 		showTodo?: boolean
 		showRoutine?: boolean
 		initialActivityId?: number
+		/**
+		 * The exact to-do item the dialog was opened from ("add to planner" on a row). Takes precedence
+		 * over `initialActivityId` in to-do mode: the same activity can sit on several lists, and
+		 * matching by activity pre-selected whichever list's item came first — which then became the
+		 * task's link, so completing the task ticked a to-do item the user never planned.
+		 */
+		initialTodoListItemId?: number
 	}>()
 
 	const emit = defineEmits<{
@@ -131,10 +140,24 @@
 
 	const pickerMode = defineModel<'all' | 'todo' | 'routine'>('pickerMode', { default: 'all' })
 
+	/**
+	 * One offered to-do item. The picker offers **items**, not activities: the selection becomes the
+	 * planner task's link, and completing a linked task ticks exactly that item — so two lists carrying
+	 * the same activity are two different choices, and the list is what tells them apart.
+	 */
+	interface TodoPickerEntry {
+		id: number
+		/** The activity, plus its list when another offered list carries the same activity. */
+		title: string
+		/** The list, as the dropdown row's second line — unless `title` already names it. */
+		subtitle: string | undefined
+		item: TodoListItemEntity
+	}
+
 	// To-do list mode state
 	const todoLists = ref<TodoListEntity[]>([])
 	const priorities = ref<TaskPriority[]>([])
-	const allTodoItems = ref<TodoListItemEntity[]>([])
+	const allTodoEntries = ref<TodoPickerEntry[]>([])
 	const filterListId = ref<number | null>(null)
 	const filterPriorityId = ref<number | null>(null)
 	const selectedTodoItemId = ref<number | null>(null)
@@ -152,9 +175,9 @@
 	const { fetchAll: fetchAllRoutineItems } = useRoutineTodoListItemCrud()
 	const { fetchSelectOptions: fetchAllPeriods } = useRoutineTimePeriodCrud()
 
-	const filteredTodoItems = computed(() => {
-		if (filterPriorityId.value == null) return allTodoItems.value
-		return allTodoItems.value.filter(item => item.taskPriority.id === filterPriorityId.value)
+	const filteredTodoEntries = computed(() => {
+		if (filterPriorityId.value == null) return allTodoEntries.value
+		return allTodoEntries.value.filter(entry => entry.item.taskPriority.id === filterPriorityId.value)
 	})
 
 	const filteredRoutineItems = computed(() => {
@@ -164,17 +187,46 @@
 
 	/**
 	 * One request per list: `GET /todo-list-item` requires a `todoListId` and no longer serves every item the
-	 * user owns in one unpaged read (backend PERF-1). The dedupe is by **activity**, not by item — the picker
-	 * offers activities, and the same activity can carry an item on more than one list.
+	 * user owns in one unpaged read (backend PERF-1). The response carries no list id, which is why each
+	 * item is labelled with the list it was fetched for rather than one it reports itself.
+	 *
+	 * Every item is offered. This used to dedupe by activity, keeping whichever list's item came first —
+	 * harmless while the link never reached the server, and wrong once it did: picking "Deep Clean
+	 * Kitchen" could link the task to that activity's item on a list the user was not thinking of.
 	 */
-	async function loadTodoItemsFor(listIds: number[]): Promise<TodoListItemEntity[]> {
-		const itemArrays = await Promise.all(listIds.map(id => fetchTodoListItems(id)))
-		const seen = new Set<number>()
-		return itemArrays.flat().filter(item => {
-			if (seen.has(item.activity.id)) return false
-			seen.add(item.activity.id)
-			return true
+	async function loadTodoEntriesFor(lists: TodoListEntity[]): Promise<TodoPickerEntry[]> {
+		const itemArrays = await Promise.all(lists.map(list => fetchTodoListItems(list.id)))
+		const rows = lists.flatMap((list, index) =>
+			(itemArrays[index] ?? []).map(item => ({ item, listName: list.name })),
+		)
+		const listsPerActivity = new Map<number, number>()
+		for (const { item } of rows) {
+			listsPerActivity.set(item.activity.id, (listsPerActivity.get(item.activity.id) ?? 0) + 1)
+		}
+		return rows.map(({ item, listName }) => {
+			// In the title only where it is needed to tell two rows apart: the selected value shows the
+			// title alone, so an ambiguous one would hide which list the task is about to be linked to.
+			// Every row names its list exactly once, one way or the other.
+			const ambiguous = (listsPerActivity.get(item.activity.id) ?? 0) > 1
+			return {
+				id: item.id,
+				title: ambiguous ? `${item.activity.name} · ${listName}` : item.activity.name,
+				subtitle: ambiguous ? undefined : listName,
+				item,
+			}
 		})
+	}
+
+	/**
+	 * The exact item when the dialog was opened from one. With only an activity to go on, a selection is
+	 * made only when a single item carries it — with two, picking one would be a guess about which item
+	 * completing this task should tick, and the user is the one who knows.
+	 */
+	function initialTodoEntry(): TodoPickerEntry | undefined {
+		const exact = allTodoEntries.value.find(entry => entry.id === initialTodoListItemId)
+		if (exact || initialActivityId == null) return exact
+		const byActivity = allTodoEntries.value.filter(entry => entry.item.activity.id === initialActivityId)
+		return byActivity.length === 1 ? byActivity[0] : undefined
 	}
 
 	async function loadTodoData() {
@@ -183,11 +235,9 @@
 			const [lists, prioList] = await Promise.all([fetchFilteredSorted(false, null, null), fetchAllPriorities()])
 			todoLists.value = lists
 			priorities.value = prioList
-			allTodoItems.value = await loadTodoItemsFor(lists.map(list => list.id))
-			if (initialActivityId != null) {
-				const match = allTodoItems.value.find(item => item.activity.id === initialActivityId)
-				if (match) selectedTodoItemId.value = match.id
-			}
+			allTodoEntries.value = await loadTodoEntriesFor(lists)
+			const match = initialTodoEntry()
+			if (match) selectedTodoItemId.value = match.id
 		} finally {
 			loadingTodo.value = false
 		}
@@ -218,8 +268,11 @@
 		try {
 			// Clearing the filter means "all lists", which is now every list asked for by id rather than one
 			// unfiltered call — the same fan-out the initial load already did.
-			const listIds = filterListId.value != null ? [filterListId.value] : todoLists.value.map(list => list.id)
-			allTodoItems.value = await loadTodoItemsFor(listIds)
+			const lists =
+				filterListId.value != null
+					? todoLists.value.filter(list => list.id === filterListId.value)
+					: todoLists.value
+			allTodoEntries.value = await loadTodoEntriesFor(lists)
 		} finally {
 			loadingTodo.value = false
 		}
@@ -246,8 +299,8 @@
 
 	watch(selectedTodoItemId, id => {
 		if (id != null) {
-			const item = allTodoItems.value.find(i => i.id === id)
-			if (item) emit('selected', item.activity.id, item.id)
+			const entry = allTodoEntries.value.find(candidate => candidate.id === id)
+			if (entry) emit('selected', entry.item.activity.id, entry.id)
 		}
 	})
 

@@ -84,7 +84,9 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			json.sourceTemplateTaskId ?? null,
 			json.skipReason ?? null,
 			parseBuiltInSkipReason(json.skipReasonKey),
-			json.todoListItemId ?? null,
+			// The server's spelling (`PlannerTaskResponse.TodolistItemId`). Read as `todoListItemId` this was
+			// always null, and a PUT built from it (`toRequest`) would have unlinked the task.
+			json.todolistItemId ?? null,
 			0,
 			0,
 			false,

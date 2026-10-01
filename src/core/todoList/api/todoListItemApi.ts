@@ -10,7 +10,7 @@ import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 /**
  * `todoListId` is required, and deliberately not optional: the backend rejects the unfiltered call with a 400
  * rather than serving every item the user owns in one unpaged read (PERF-1). A caller that wants several
- * lists asks for each of them — see `PlannerActivitySourcePicker.loadTodoItemsFor`.
+ * lists asks for each of them — see `PlannerActivitySourcePicker.loadTodoEntriesFor`.
  */
 export async function fetchTodoListItems(todoListId: number): Promise<TodoListItemEntity[]> {
 	const response = await API.get('todo-list-item', { params: { todoListId } })

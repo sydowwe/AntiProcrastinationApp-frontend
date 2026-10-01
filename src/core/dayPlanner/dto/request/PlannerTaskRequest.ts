@@ -22,7 +22,16 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 		public activityId?: number,
 		public importanceId: number | null = null,
 		public status: PlannerTaskStatus = PlannerTaskStatus.NotStarted,
-		public todoListItemId: number | null = null,
+		/**
+		 * The to-do item this task was planned from. Spelled as the server binds it (`TodolistId` on
+		 * `PlannerTaskRequest.cs`), not like the response's `todolistItemId` or this app's
+		 * `todoListItemId`: sent as `todoListItemId`, it matched nothing and was dropped, so no task was
+		 * ever linked — and completing one never ticked its item.
+		 *
+		 * Also sent on every PUT, which writes it unconditionally: a request built with this `null`
+		 * unlinks the task. `fromEntity` carries it over for that reason.
+		 */
+		public todolistId: number | null = null,
 		public skipReason: string | null = null,
 		public actualStartTime: Time | null = null,
 		public actualEndTime: Time | null = null,
