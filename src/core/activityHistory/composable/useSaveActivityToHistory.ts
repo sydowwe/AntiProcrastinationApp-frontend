@@ -1,7 +1,8 @@
 import { useI18n } from 'vue-i18n'
 import type { Time } from '@/_common/dto/dto/Time.ts'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
-import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
+import { createActivityHistorySession, useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
+import type { ActivityHistorySessionRequest } from '@/core/activityHistory/dto/request/ActivityHistorySessionRequest.ts'
 
 /**
  * Commit one activity to the history, with the snackbar that goes with it.
@@ -35,5 +36,19 @@ export function useSaveActivityToHistory() {
 		return null
 	}
 
-	return { saveActivityToHistory }
+	/**
+	 * Commit a whole timer session — every phase row, or none of them — with one snackbar for all of
+	 * it. The API writes the session in one transaction, so a failure leaves nothing half-saved.
+	 */
+	async function saveSessionToHistory(request: ActivityHistorySessionRequest, activityName: string) {
+		const created = await createActivityHistorySession(request)
+		if (created) {
+			showSuccessSnackbar(t('history.addedToHistory', { activity: activityName }))
+			return created
+		}
+		showErrorSnackbar(t('history.errorSavingToHistory', { activity: activityName }))
+		return null
+	}
+
+	return { saveActivityToHistory, saveSessionToHistory }
 }

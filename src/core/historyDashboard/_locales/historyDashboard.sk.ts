@@ -80,6 +80,10 @@ const messages = {
 				category: `Kategória`,
 				role: `Rola`,
 				notes: `Poznámka`,
+				// Prázdne pri riadku zapísanom mimo relácie časovača.
+				session: `Relácia časovača`,
+				phase: `Fáza`,
+				outcome: `Výsledok relácie`,
 			},
 		},
 	},

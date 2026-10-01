@@ -72,7 +72,9 @@
 	</VRow>
 </template>
 <script setup lang="ts">
-	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
+	import PomodoroSaveBody from '@/core/activityHistory/component/PomodoroSaveBody.vue'
+	import { pomodoroOutcomeSummary } from '@/core/activityHistory/store/pomodoroSessionLog.ts'
+	import { pomodoroSessionRequest } from '@/core/activityHistory/store/timerSessionRequest.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
@@ -118,7 +120,7 @@
 
 	const i18n = useI18n()
 	const { openDialog } = useDialog()
-	const { saveActivityToHistory } = useSaveActivityToHistory()
+	const { saveActivityToHistory, saveSessionToHistory } = useSaveActivityToHistory()
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
 	const { sessionLengthFromMs, discardIfTooShort } = useSessionLength()
@@ -281,8 +283,10 @@
 				return
 			}
 			const result = await openDialog<boolean>({
-				component: SaveActivityBody,
-				componentProps: { activity: name, timeSpent },
+				component: PomodoroSaveBody,
+				// `timeSpent` is the authoritative number: the rounded focus total, which the focus rows
+				// share out between them (`apportionMinutes`) so they add up to exactly what is quoted.
+				componentProps: { activity: name, timeSpent, summary: pomodoroOutcomeSummary(current) },
 				dialogProps: { title: i18n.t('activities.recordNewActivity') },
 			})
 			if (result) {
@@ -295,9 +299,31 @@
 		}
 	}
 
-	// Two records, one per activity form: the focus activity for the time actually focused, and — only
-	// if one was picked and any rest time accrued — the rest activity for the rest.
+	// One session, written all-or-nothing: a row per focus period against the focus activity and — if
+	// one was picked — a row per break against the rest activity, each dated at its real start, all
+	// carrying the outcome. The server counts it as one sitting everywhere it counts entries (B3).
+	//
+	// Not awaited, and the session is cleared straight after, as before: a tab closed mid-request must
+	// not offer the same save again, which would be refused as a duplicate (409).
+	//
+	// The embedded path (`activityId` pinned, `done` emitted above) stays one summed row: the embedder
+	// links that row to its task, the task's recap and estimate calibration read it as the task's one
+	// sitting, and the rest is not the task's time.
 	function saveActivity(current: PomodoroSession, startTimestamp: Date, timeSpent: Time) {
+		const request = pomodoroSessionRequest(current)
+		if (request !== null) {
+			void saveSessionToHistory(request, current.activityName)
+			return
+		}
+		saveSummedRows(current, startTimestamp, timeSpent)
+	}
+
+	/**
+	 * The save from before sessions existed: the focus total and the rest total as two plain rows, both
+	 * dated at the session's start. Only for what `pomodoroSessionRequest` cannot write as a session —
+	 * one stored in this browser before the segment log existed, or one too long for a single request.
+	 */
+	function saveSummedRows(current: PomodoroSession, startTimestamp: Date, timeSpent: Time) {
 		void saveActivityToHistory(current.activityId, current.activityName, startTimestamp, timeSpent)
 		if (current.restActivityId == null) return
 		// The rest record is the fourth zero-length path: `restElapsedMs > 0` let a 20-second break

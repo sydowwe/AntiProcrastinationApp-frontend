@@ -56,6 +56,24 @@ const activityHistory = {
 			replaceConfirm: `Zahodiť a spustiť`,
 			// Názov prepínacej skupiny stopky/časovača/pomodora v TrackTimeDialog (F90).
 			method: `Spôsob merania`,
+			// Časová os dňa: pomodoro zložené do jedného celku (HistorySessionGroup) a označenia fázy /
+			// výsledku na riadkoch relácie (HistoryRecordItem). Opisné, nikdy nie hodnotenie.
+			pomodoroUnit: `Pomodoro`,
+			focusTotal: `Sústredenie {duration}`,
+			showPhases: `Zobraziť fázy ({count})`,
+			hidePhases: `Skryť fázy`,
+			phase: {
+				focus: `Sústredenie`,
+				shortBreak: `Krátka prestávka`,
+				longBreak: `Dlhá prestávka`,
+			},
+			// Poznámka pri riadku časovača a stĺpec výsledku v CSV detailu. Vlastný riadok pomodora aj
+			// s počtami je history.pomodoro.outcome. Stredný rod, aby sedel na časovač aj pomodoro.
+			outcome: {
+				completed: `Dobehlo do konca`,
+				stoppedEarly: `Zastavené skôr`,
+				ranOutWhileAway: `Skončilo, keď bola aplikácia zatvorená`,
+			},
 		},
 		timer: {
 			setDurationFirst: `Prosím nastavte dĺžku časovača`,
@@ -112,6 +130,13 @@ const activityHistory = {
 			// Vždy pripojené za doneSummary/restedWith, aj keď nebola vybraná aktivita na odpočinok —
 			// zrkadlí pôvodné (mierne čudné) anglické správanie, tento prechod ho nemení.
 			forDuration: ` po dobu {duration}`,
+			// Pod výzvou na uloženie: kam až plán došiel (PomodoroSaveBody). Množné číslo podľa {total}.
+			// Zámerne opisné — zastavená relácia je informácia, nie zlyhanie.
+			outcome: {
+				completed: `Prebehol celý plán: {total} perióda sústredenia | Prebehol celý plán: {total} periódy sústredenia | Prebehol celý plán: {total} periód sústredenia`,
+				stoppedEarly: `Zastavené po {done} z {total} periódy sústredenia | Zastavené po {done} z {total} periód sústredenia | Zastavené po {done} z {total} periód sústredenia`,
+				ranOutWhileAway: `Aplikácia bola zatvorená, takže sa zastavilo po {done} z {total} periódy sústredenia | Aplikácia bola zatvorená, takže sa zastavilo po {done} z {total} periód sústredenia | Aplikácia bola zatvorená, takže sa zastavilo po {done} z {total} periód sústredenia`,
+			},
 		},
 	},
 }

@@ -87,6 +87,44 @@ import { readUserScoped, writeUserScoped } from '@/core/user/composable/useUserS
 export type TimerKind = 'stopwatch' | 'timer' | 'pomodoro'
 export type PomodoroPhase = 'focus' | 'shortBreak' | 'longBreak'
 
+/**
+ * How a countdown or a pomodoro ended — the one procrastination signal this module can measure
+ * directly rather than infer.
+ *
+ * Three values, not the old `endedAutomatically` boolean, because that conflated the first and the
+ * third: a pomodoro reopened after an absence is ended *by the clock* (see `reconcile()`), yet it did
+ * not run its plan. So the question each value answers is "did every planned phase run?", and the
+ * absence case is its own answer rather than a flavour of success:
+ *
+ *  - `completed` — the plan's final boundary was reached. For a countdown that includes one that ran
+ *    out while the app was closed: the whole set duration is what gets logged either way, and it is
+ *    what `reconcile()` has always credited. Likewise a pomodoro whose missed boundary was its *last*.
+ *  - `stoppedEarly` — Stop was pressed before the plan was done, whether running or paused.
+ *  - `ranOutWhileAway` — pomodoro only: the app was closed across a boundary that was not the last,
+ *    so the session stopped there and the phases after it never happened.
+ *
+ * A stopwatch has no plan and never ends on its own, so it has no outcome at all (`null`).
+ */
+export type TimerOutcome = 'completed' | 'stoppedEarly' | 'ranOutWhileAway'
+
+/**
+ * One uninterrupted stretch of a pomodoro phase, as actually run.
+ *
+ * A pause closes the current segment and resume opens the next one *of the same phase*, so a phase is
+ * the run of segments up to and including the first one closed by `boundary`. That is the whole
+ * merge rule, and it is why no cycle or period index is stored here: they would be a second copy of
+ * something the order already says.
+ */
+export interface PomodoroSegment {
+	phase: PomodoroPhase
+	/** Epoch ms. */
+	startedAt: number
+	/** Epoch ms. Credited the way the accumulators are, so never past the phase's own boundary. */
+	endedAt: number
+	/** Only `boundary` means the phase ran its full planned length. */
+	closedBy: 'boundary' | 'pause' | 'stop'
+}
+
 interface SessionBase {
 	kind: TimerKind
 	/** Epoch ms of the moment Start was pressed — the instant the history record is dated from. */
@@ -103,8 +141,11 @@ interface SessionBase {
 	paused: boolean
 	/** The session is over and is waiting for a view to log it. */
 	ended: boolean
-	/** Whether `ended` was reached by the clock rather than by the Stop button. */
-	endedAutomatically: boolean
+	/**
+	 * How it ended — null while it runs, and always null for a stopwatch. Optional so a session
+	 * stored before this field existed still hydrates; it simply has no outcome to report.
+	 */
+	outcome?: TimerOutcome | null
 	/**
 	 * This session's identity to the alarm scheduler, minted at Start.
 	 *
@@ -152,6 +193,15 @@ export interface PomodoroSession extends SessionBase {
 	isFocus: boolean
 	focusElapsedMs: number
 	restElapsedMs: number
+	/**
+	 * Every stretch of every phase, in order — what the two accumulators above sum up. See
+	 * `pomodoroSessionLog.ts` for how it is read.
+	 *
+	 * Optional so a session stored before the log existed still hydrates, and deliberately *left*
+	 * undefined for one: starting a log halfway through would read as a session that began at its
+	 * first logged phase. Undefined means "no log", and readers fall back to the accumulators.
+	 */
+	segments?: PomodoroSegment[]
 	/** Epoch ms the current phase started, or null while paused. */
 	phaseStartedAt: number | null
 	endsAt: number | null
@@ -393,8 +443,12 @@ export const useRunningTimerStore = defineStore(
 		 * `at` is passed rather than read: when a boundary fires it is the boundary's own timestamp,
 		 * not `Date.now()`. A throttled background tab can deliver the callback seconds late, and
 		 * crediting those seconds to the phase would be inventing focus time.
+		 *
+		 * This is also where a pomodoro's segment log is written, for the same reason: the log is a
+		 * breakdown of exactly the time the accumulators bank, so it may not credit a millisecond they
+		 * would not. `closedBy` is what the caller is doing — see `PomodoroSegment`.
 		 */
-		function creditElapsed(current: TimerSession, at: number) {
+		function creditElapsed(current: TimerSession, at: number, closedBy: PomodoroSegment['closedBy']) {
 			if (current.kind === 'stopwatch') {
 				if (current.runningSince !== null) {
 					current.accumulatedMs += Math.max(0, at - current.runningSince)
@@ -405,9 +459,24 @@ export const useRunningTimerStore = defineStore(
 					const elapsed = Math.max(0, at - current.phaseStartedAt)
 					if (current.isFocus) current.focusElapsedMs += elapsed
 					else current.restElapsedMs += elapsed
+					current.segments?.push({
+						phase: pomodoroPhaseOf(current),
+						startedAt: current.phaseStartedAt,
+						endedAt: current.phaseStartedAt + elapsed,
+						closedBy,
+					})
 					current.phaseStartedAt = null
 				}
 			}
+		}
+
+		/** Whether the pomodoro's live phase is the last one its plan has — the only way it completes. */
+		function isFinalPomodoroPhase(current: PomodoroSession): boolean {
+			return (
+				current.isFocus &&
+				current.currentCycle === current.totalCycles &&
+				current.currentFocusPeriod === current.focusPeriodsPerCycle
+			)
 		}
 
 		function startPomodoroPhase(current: PomodoroSession, durationMs: number, from: number) {
@@ -429,7 +498,7 @@ export const useRunningTimerStore = defineStore(
 		 * the cycle advancing and no longer swallows the phase alarms.
 		 */
 		function advancePomodoro(current: PomodoroSession, at: number) {
-			creditElapsed(current, at)
+			creditElapsed(current, at, 'boundary')
 
 			const cycleInfo = t('history.pomodoro.cycleProgress', {
 				current: current.currentCycle,
@@ -561,7 +630,7 @@ export const useRunningTimerStore = defineStore(
 			const current = session.value
 			if (current === null || current.ended || current.paused) return
 			const at = Date.now()
-			creditElapsed(current, at)
+			creditElapsed(current, at, 'pause')
 			if (current.kind !== 'stopwatch' && current.endsAt !== null) {
 				// A paused countdown stores what is LEFT, not an end instant. Storing an end instant
 				// would mean a reload while paused silently resumed the countdown.
@@ -599,13 +668,18 @@ export const useRunningTimerStore = defineStore(
 		 * It is deliberately NOT cleared here: whoever adopts it owns the "save to history or emit
 		 * `done`" step, and that step depends on how the session was embedded. `clearSession()` is
 		 * the counterpart, called once that has happened.
+		 *
+		 * `automatic` is true only when the clock reached the plan's final boundary with the app open
+		 * — a countdown hitting zero, a pomodoro finishing its last focus period — so it maps straight
+		 * to `completed`. The absence case never comes through here; `reconcile()` sets its own.
 		 */
 		function endSession(automatic: boolean, at: number = Date.now()) {
 			const current = session.value
 			if (current === null || current.ended) return
-			if (!current.paused) creditElapsed(current, at)
+			if (!current.paused) creditElapsed(current, at, automatic ? 'boundary' : 'stop')
 			current.ended = true
-			current.endedAutomatically = automatic
+			if (current.kind === 'stopwatch') current.outcome = null
+			else current.outcome = automatic ? 'completed' : 'stoppedEarly'
 			// Pin the clock to the ending instant so a display frozen by the stopped ticker is frozen
 			// on the right number rather than up to one tick short of it.
 			nowMs.value = at
@@ -638,7 +712,7 @@ export const useRunningTimerStore = defineStore(
 				activityName: init.activityName,
 				paused: false,
 				ended: false,
-				endedAutomatically: false,
+				outcome: null,
 				// Minted here rather than at the first schedule: it identifies the *session*, and a
 				// session that starts, registers alarms, and has the tab killed before the response
 				// lands still has to be cancellable by the next page load.
@@ -706,6 +780,7 @@ export const useRunningTimerStore = defineStore(
 				isFocus: true,
 				focusElapsedMs: 0,
 				restElapsedMs: 0,
+				segments: [],
 				phaseStartedAt: at,
 				endsAt: at + init.focusMs,
 				pausedRemainingMs: null,
@@ -738,6 +813,11 @@ export const useRunningTimerStore = defineStore(
 		 *    tab, and fabricated focus minutes in a productivity log are worse than a short session
 		 *    (rule 2). The phase that was live is credited up to its own end, never up to now.
 		 *
+		 * The outcome follows from that last rule: a pomodoro stopped this way is `ranOutWhileAway`
+		 * unless the boundary it stopped at was the plan's last one, in which case nothing was cut
+		 * short and it is `completed`. A countdown has only the one boundary, so it is always the
+		 * latter. See `TimerOutcome`.
+		 *
 		 * A session older than `STALE_AFTER_MS` is dropped outright rather than reconciled.
 		 */
 		function reconcile(at: number = Date.now()) {
@@ -755,10 +835,13 @@ export const useRunningTimerStore = defineStore(
 			if (current.endsAt === null || current.endsAt > at) return
 
 			if (current.kind === 'pomodoro') {
-				creditElapsed(current, current.endsAt)
+				// Read before crediting, while the counters still describe the phase that was live.
+				current.outcome = isFinalPomodoroPhase(current) ? 'completed' : 'ranOutWhileAway'
+				creditElapsed(current, current.endsAt, 'boundary')
+			} else {
+				current.outcome = 'completed'
 			}
 			current.ended = true
-			current.endedAutomatically = true
 			nowMs.value = current.endsAt
 		}
 

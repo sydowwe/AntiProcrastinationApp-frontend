@@ -80,6 +80,10 @@ const messages = {
 				category: `Category`,
 				role: `Role`,
 				notes: `Notes`,
+				// Empty on a row written outside a timer session.
+				session: `Timer session`,
+				phase: `Phase`,
+				outcome: `Session outcome`,
 			},
 		},
 	},

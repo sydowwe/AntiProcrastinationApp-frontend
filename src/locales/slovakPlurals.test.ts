@@ -34,3 +34,19 @@ describe('Slovak plural forms on the count-bearing notification messages', () =>
 		expect(t('notifications.clusterMore', 9)).toBe('a 9 ďalších')
 	})
 })
+
+describe('Slovak plural forms on the pomodoro outcome line', () => {
+	// Pluralised on `{total}` by an explicit plural index, not on `named.count` — the way
+	// PomodoroSaveBody calls it — so this also pins that the custom rule applies on that path.
+	const outcome = (key: string, done: number, total: number) =>
+		i18n.global.t(`history.pomodoro.outcome.${key}`, { done, total }, { locale: 'SK', plural: total })
+
+	it('picks all three forms by the planned total', () => {
+		expect(outcome('stoppedEarly', 0, 1)).toBe('Zastavené po 0 z 1 periódy sústredenia')
+		expect(outcome('stoppedEarly', 2, 4)).toBe('Zastavené po 2 z 4 periód sústredenia')
+		expect(outcome('stoppedEarly', 2, 8)).toBe('Zastavené po 2 z 8 periód sústredenia')
+		expect(outcome('completed', 1, 1)).toBe('Prebehol celý plán: 1 perióda sústredenia')
+		expect(outcome('completed', 3, 3)).toBe('Prebehol celý plán: 3 periódy sústredenia')
+		expect(outcome('completed', 8, 8)).toBe('Prebehol celý plán: 8 periód sústredenia')
+	})
+})

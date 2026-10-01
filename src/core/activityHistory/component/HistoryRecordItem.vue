@@ -66,6 +66,12 @@
 					{{ record.activity.category.name }}
 				</VCardSubtitle>
 				<VCardText
+					v-if="sessionNote"
+					class="px-4 pt-1 pb-0 text-body-2 text-medium-emphasis"
+				>
+					{{ sessionNote }}
+				</VCardText>
+				<VCardText
 					v-if="record.activity.text"
 					class="px-4 pb-3 text-body-2 text-medium-emphasis"
 					style="white-space: pre-line"
@@ -116,7 +122,9 @@
 
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useI18n } from 'vue-i18n'
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
+	import { TimerSessionKind } from '@/core/activityHistory/dto/enum/TimerSessionKind.ts'
 	import { formatToTime } from '@/_common/utils/DateTimeHelper.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 
@@ -125,6 +133,20 @@
 	}>()
 
 	const emit = defineEmits<{ edit: [record: ActivityHistory]; delete: [id: number] }>()
+
+	const { t } = useI18n()
+
+	/**
+	 * What the row's timer session says about it: which phase it was, for a pomodoro row (shown inside
+	 * its folded session), or how the countdown ended, for a countdown's one row. Nothing for a row
+	 * outside a session.
+	 */
+	const sessionNote = computed(() => {
+		const { phase, session } = props.record
+		if (phase !== null) return t(`history.session.phase.${phase}`)
+		if (session?.kind === TimerSessionKind.Timer) return t(`history.session.outcome.${session.outcome}`)
+		return null
+	})
 
 	const actions = [
 		new MenuItem('edit', 'outlined', 'primaryOutline', 'pen-to-square', () => emit('edit', props.record)),

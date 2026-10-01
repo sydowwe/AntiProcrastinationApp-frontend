@@ -22,78 +22,40 @@
 			justify="start"
 			class="my-2 mx-0"
 		>
-			<template v-if="singleColumn">
-				<VCol
-					cols="12"
-					class="py-0 py-md-2 d-flex flex-column"
+			<VCol
+				v-for="(column, c) in columns"
+				:key="c"
+				cols="12"
+				:lg="singleColumn ? undefined : 6"
+				class="py-0 py-md-2 d-flex flex-column"
+			>
+				<template
+					v-for="(unit, i) in column"
+					:key="unit.key"
 				>
-					<template
-						v-for="(record, i) in historyList"
-						:key="record.id"
+					<div
+						v-if="isDayChange(column, i)"
+						class="w-100 bg-blue-grey rounded text-center mb-2"
 					>
-						<div
-							v-if="isDayChange(historyList, i)"
-							class="w-100 bg-blue-grey rounded text-center mb-2"
-						>
-							{{ formatLocalized(record.startTimestamp, 'L') }}
-						</div>
-						<HistoryRecordItem
-							class="my-2 my-md-3 w-100"
-							:record="record"
-							@edit="handleEdit"
-							@delete="handleDeleteRequest"
-						/>
-					</template>
-				</VCol>
-			</template>
-			<template v-else>
-				<VCol
-					cols="12"
-					lg="6"
-					class="py-0 py-md-2 d-flex flex-column"
-				>
-					<template
-						v-for="(record, i) in firstHalf"
-						:key="record.id"
-					>
-						<div
-							v-if="isDayChange(firstHalf, i)"
-							class="w-100 bg-blue-grey rounded text-center mb-2"
-						>
-							{{ formatLocalized(record.startTimestamp, 'L') }}
-						</div>
-						<HistoryRecordItem
-							class="my-2 my-md-3 w-100"
-							:record="record"
-							@edit="handleEdit"
-							@delete="handleDeleteRequest"
-						/>
-					</template>
-				</VCol>
-				<VCol
-					cols="12"
-					lg="6"
-					class="py-0 py-md-2 d-flex flex-column"
-				>
-					<template
-						v-for="(record, i) in secondHalf"
-						:key="record.id"
-					>
-						<div
-							v-if="isDayChange(secondHalf, i)"
-							class="w-100 bg-blue-grey rounded text-center mb-2"
-						>
-							{{ formatLocalized(record.startTimestamp, 'L') }}
-						</div>
-						<HistoryRecordItem
-							class="my-2 my-md-3 w-100"
-							:record="record"
-							@edit="handleEdit"
-							@delete="handleDeleteRequest"
-						/>
-					</template>
-				</VCol>
-			</template>
+						{{ formatLocalized(unit.start, 'L') }}
+					</div>
+					<HistorySessionGroup
+						v-if="unit.kind === 'session'"
+						class="my-2 my-md-3 w-100"
+						:session="unit.session"
+						:records="unit.records"
+						@edit="handleEdit"
+						@delete="handleDeleteRequest"
+					/>
+					<HistoryRecordItem
+						v-else
+						class="my-2 my-md-3 w-100"
+						:record="unit.record"
+						@edit="handleEdit"
+						@delete="handleDeleteRequest"
+					/>
+				</template>
+			</VCol>
 		</VRow>
 	</div>
 </template>
@@ -108,6 +70,8 @@
 	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
+	import HistorySessionGroup from '@/core/historyDashboard/component/HistorySessionGroup.vue'
+	import { groupTimelineUnits, type TimelineUnit } from '@/core/historyDashboard/composable/timelineUnits.ts'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
 	import EditActivityHistoryForm from '@/core/activityHistory/component/EditActivityHistoryForm.vue'
@@ -127,8 +91,14 @@
 	const historyList = ref<ActivityHistory[]>([])
 	const loading = ref(false)
 	const error = ref(false)
-	const firstHalf = computed(() => historyList.value.slice(0, Math.ceil(historyList.value.length / 2)))
-	const secondHalf = computed(() => historyList.value.slice(Math.ceil(historyList.value.length / 2)))
+	// A pomodoro is one unit, however many phase rows it has, so the halves are split by unit — a
+	// session never straddles the two columns.
+	const units = computed(() => groupTimelineUnits(historyList.value))
+	const columns = computed(() => {
+		if (props.singleColumn) return [units.value]
+		const half = Math.ceil(units.value.length / 2)
+		return [units.value.slice(0, half), units.value.slice(half)]
+	})
 
 	// `startTimestamp` is an instant, so these day comparisons are browser-zone (C1 clock audit).
 	// Deliberately left that way: the clock printed on each row next to the separator comes from
@@ -145,11 +115,11 @@
 		)
 	})
 
-	function isDayChange(list: ActivityHistory[], index: number): boolean {
+	function isDayChange(list: TimelineUnit[], index: number): boolean {
 		if (!hasMultipleDays.value) return false
 		if (index === 0) return true
-		const prev = list[index - 1]?.startTimestamp
-		const curr = list[index]?.startTimestamp
+		const prev = list[index - 1]?.start
+		const curr = list[index]?.start
 		if (!prev || !curr) return false
 		return (
 			prev.getFullYear() !== curr.getFullYear() ||

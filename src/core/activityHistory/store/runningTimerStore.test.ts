@@ -70,6 +70,7 @@ import {
 	type PomodoroSession,
 	type StopwatchSession,
 } from '@/core/activityHistory/store/runningTimerStore.ts'
+import { pomodoroOutcomeSummary, pomodoroPhaseSpans } from '@/core/activityHistory/store/pomodoroSessionLog.ts'
 import { cancelTimerAlarms, scheduleTimerAlarms } from '@/core/activityHistory/api/timerAlarmApi.ts'
 import type { ScheduleTimerAlarmsRequest } from '@/core/activityHistory/dto/request/ScheduleTimerAlarmsRequest.ts'
 import { TimerBoundaryPhase } from '@/core/activityHistory/dto/enum/TimerBoundaryPhase.ts'
@@ -260,6 +261,223 @@ describe('a pomodoro', () => {
 		expect(session.ended).toBe(true)
 		expect(session.focusElapsedMs).toBe(7 * MINUTE)
 		expect(session.restElapsedMs).toBe(0)
+	})
+})
+
+/**
+ * The segment log and the outcome (C5).
+ *
+ * The log is a breakdown of the accumulators and must never disagree with them — the assertions
+ * below check both side by side, because a log that credits a second the accumulators do not is
+ * fabricated time wearing a different field name.
+ */
+describe('a pomodoro segment log', () => {
+	it('splits a paused phase into segments that still merge back into one phase', () => {
+		const store = freshStore()
+		startPomodoro(store)
+
+		vi.advanceTimersByTime(10 * MINUTE)
+		store.pauseSession()
+		vi.advanceTimersByTime(3 * MINUTE)
+		store.resumeSession()
+		// The pause pushed the boundary back by its own length.
+		vi.advanceTimersByTime(15 * MINUTE)
+
+		const session = store.session as PomodoroSession
+		expect(session.segments).toEqual([
+			{ phase: 'focus', startedAt: T0, endedAt: T0 + 10 * MINUTE, closedBy: 'pause' },
+			{ phase: 'focus', startedAt: T0 + 13 * MINUTE, endedAt: T0 + 28 * MINUTE, closedBy: 'boundary' },
+		])
+		// One phase, spanning the pause on the wall clock but crediting none of it.
+		expect(pomodoroPhaseSpans(session)).toEqual([
+			{ phase: 'focus', startedAt: T0, endedAt: T0 + 28 * MINUTE, elapsedMs: 25 * MINUTE, completed: true },
+		])
+		expect(session.focusElapsedMs).toBe(25 * MINUTE)
+		expect(session.outcome).toBeNull()
+	})
+
+	it('closes a phase at its boundary and opens the next at that same instant', () => {
+		const store = freshStore()
+		startPomodoro(store)
+
+		// Into the short break, and two minutes through it.
+		vi.advanceTimersByTime(27 * MINUTE)
+		const session = store.session as PomodoroSession
+
+		expect(session.segments).toEqual([
+			{ phase: 'focus', startedAt: T0, endedAt: T0 + 25 * MINUTE, closedBy: 'boundary' },
+		])
+		// The live break is not in the log yet: a segment is written when it is credited, not before.
+		expect(session.phaseStartedAt).toBe(T0 + 25 * MINUTE)
+	})
+
+	it('records Stop mid-rest as stopped early, with the break cut where it was cut', () => {
+		const store = freshStore()
+		startPomodoro(store)
+
+		vi.advanceTimersByTime(25 * MINUTE + 2 * MINUTE)
+		store.endSession(false)
+		const session = store.session as PomodoroSession
+
+		expect(session.outcome).toBe('stoppedEarly')
+		expect(session.segments!.at(-1)).toEqual({
+			phase: 'shortBreak',
+			startedAt: T0 + 25 * MINUTE,
+			endedAt: T0 + 27 * MINUTE,
+			closedBy: 'stop',
+		})
+		expect(session.restElapsedMs).toBe(2 * MINUTE)
+		expect(pomodoroOutcomeSummary(session)).toEqual({
+			outcome: 'stoppedEarly',
+			focusPeriodsCompleted: 1,
+			focusPeriodsPlanned: 8,
+		})
+	})
+
+	it('does not count a focus period cut short by Stop as completed', () => {
+		const store = freshStore()
+		startPomodoro(store)
+
+		vi.advanceTimersByTime(12 * MINUTE)
+		store.pauseSession()
+		store.endSession(false)
+		const session = store.session as PomodoroSession
+
+		// Stopped while paused: the pause already closed the segment, so Stop adds none.
+		expect(session.segments).toEqual([
+			{ phase: 'focus', startedAt: T0, endedAt: T0 + 12 * MINUTE, closedBy: 'pause' },
+		])
+		expect(pomodoroOutcomeSummary(session)).toMatchObject({ outcome: 'stoppedEarly', focusPeriodsCompleted: 0 })
+	})
+
+	it('after an absence, logs the live phase to its own end and says the app was away', async () => {
+		const store = freshStore()
+		startPomodoro(store)
+		vi.advanceTimersByTime(26 * MINUTE)
+
+		// Into the first break, then three hours away — well past every boundary still to come.
+		const reloaded = await reload(3 * HOUR)
+		const session = reloaded.session as PomodoroSession
+
+		expect(session.outcome).toBe('ranOutWhileAway')
+		expect(session.segments).toEqual([
+			{ phase: 'focus', startedAt: T0, endedAt: T0 + 25 * MINUTE, closedBy: 'boundary' },
+			// Credited to the break's own end, not to the moment the tab came back.
+			{ phase: 'shortBreak', startedAt: T0 + 25 * MINUTE, endedAt: T0 + 30 * MINUTE, closedBy: 'boundary' },
+		])
+		expect(session.restElapsedMs).toBe(5 * MINUTE)
+		expect(pomodoroOutcomeSummary(session)).toEqual({
+			outcome: 'ranOutWhileAway',
+			focusPeriodsCompleted: 1,
+			focusPeriodsPlanned: 8,
+		})
+	})
+
+	it('calls it completed when the boundary missed while away was the last one', async () => {
+		const store = freshStore()
+		store.startPomodoro({
+			...UNPINNED,
+			focusMs: MINUTE,
+			shortRestMs: MINUTE,
+			longRestMs: MINUTE,
+			focusPeriodsPerCycle: 2,
+			totalCycles: 1,
+			restActivityId: null,
+			restActivityName: '',
+		})
+		// Focus, break, and ten seconds into the last focus period — then the tab closes.
+		vi.advanceTimersByTime(2 * MINUTE + 10 * SECOND)
+
+		const reloaded = await reload(HOUR)
+		const session = reloaded.session as PomodoroSession
+
+		// Nothing the plan had was cut short: the last focus period ran its whole minute.
+		expect(session.outcome).toBe('completed')
+		expect(pomodoroOutcomeSummary(session)).toMatchObject({ focusPeriodsCompleted: 2, focusPeriodsPlanned: 2 })
+	})
+
+	it('logs every phase of a run that finishes with the app open, and calls it completed', () => {
+		const store = freshStore()
+		startPomodoro(store)
+
+		vi.advanceTimersByTime(8 * (25 * MINUTE) + 6 * (5 * MINUTE) + 15 * MINUTE)
+		const session = store.session as PomodoroSession
+
+		expect(session.ended).toBe(true)
+		expect(session.outcome).toBe('completed')
+		const spans = pomodoroPhaseSpans(session)!
+		expect(spans).toHaveLength(15)
+		expect(spans.every(span => span.completed)).toBe(true)
+		// Contiguous: each phase starts where the one before it ended.
+		expect(spans.every((span, i) => i === 0 || span.startedAt === spans[i - 1]!.endedAt)).toBe(true)
+		expect(spans.map(span => span.phase).filter(phase => phase === 'longBreak')).toHaveLength(1)
+		// The log and the accumulators are the same time, broken down and summed up.
+		const focusMs = spans.filter(span => span.phase === 'focus').reduce((sum, span) => sum + span.elapsedMs, 0)
+		const restMs = spans.filter(span => span.phase !== 'focus').reduce((sum, span) => sum + span.elapsedMs, 0)
+		expect(focusMs).toBe(session.focusElapsedMs)
+		expect(restMs).toBe(session.restElapsedMs)
+	})
+
+	it('starts no log for a session stored before the log existed', async () => {
+		const store = freshStore()
+		startPomodoro(store)
+		// The shape a session had before this field: no log, no outcome.
+		const stored = store.session as PomodoroSession
+		delete stored.segments
+		delete stored.outcome
+
+		const reloaded = await reload(SECOND)
+		vi.advanceTimersByTime(26 * MINUTE)
+		const session = reloaded.session as PomodoroSession
+
+		// A log begun halfway through would claim the session started at its first logged phase.
+		expect(session.segments).toBeUndefined()
+		expect(pomodoroPhaseSpans(session)).toBeNull()
+		expect(session.focusElapsedMs).toBe(25 * MINUTE)
+
+		reloaded.endSession(false)
+		expect(pomodoroOutcomeSummary(session)).toBeNull()
+	})
+})
+
+describe('how a session ended', () => {
+	it('a countdown that reaches zero on screen is completed', () => {
+		const store = freshStore()
+		store.startCountdown({ ...UNPINNED, durationMs: MINUTE })
+		vi.advanceTimersByTime(MINUTE)
+		expect(store.session!.outcome).toBe('completed')
+	})
+
+	it('a countdown stopped before zero is stopped early', () => {
+		const store = freshStore()
+		store.startCountdown({ ...UNPINNED, durationMs: 25 * MINUTE })
+		vi.advanceTimersByTime(4 * MINUTE)
+		store.endSession(false)
+		expect(store.session!.outcome).toBe('stoppedEarly')
+	})
+
+	it('a countdown that ran out while the app was closed is completed, as it is logged', async () => {
+		const store = freshStore()
+		store.startCountdown({ ...UNPINNED, durationMs: MINUTE })
+		const reloaded = await reload(3 * MINUTE)
+		// The whole set duration is what gets offered for logging, so the plan did run.
+		expect(reloaded.session!.outcome).toBe('completed')
+	})
+
+	it('a stopwatch has no outcome, because it has no plan to complete', () => {
+		const store = freshStore()
+		store.startStopwatch(UNPINNED)
+		vi.advanceTimersByTime(5 * MINUTE)
+		store.endSession(false)
+		expect(store.session!.ended).toBe(true)
+		expect(store.session!.outcome).toBeNull()
+	})
+
+	it('has none while it is still running', () => {
+		const store = freshStore()
+		store.startCountdown({ ...UNPINNED, durationMs: 25 * MINUTE })
+		vi.advanceTimersByTime(MINUTE)
+		expect(store.session!.outcome).toBeNull()
 	})
 })
 

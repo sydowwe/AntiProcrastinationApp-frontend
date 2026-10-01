@@ -81,6 +81,7 @@
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
+	import { countdownSessionRequest } from '@/core/activityHistory/store/timerSessionRequest.ts'
 
 	const {
 		activityId = null,
@@ -104,7 +105,7 @@
 	const { showErrorSnackbar } = useSnackbar()
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
-	const { saveActivityToHistory } = useSaveActivityToHistory()
+	const { saveActivityToHistory, saveSessionToHistory } = useSaveActivityToHistory()
 	const store = useRunningTimerStore()
 	const { ensureFreeToStart } = useTimerSessionGuard()
 	const { sessionLengthFromMs, discardIfTooShort } = useSessionLength()
@@ -233,7 +234,11 @@
 				dialogProps: { title: t('activities.recordNewActivity') },
 			})
 			if (result) {
-				await saveActivityToHistory(targetActivityId, name, startTimestamp, length)
+				// A one-row session, so the row carries how the countdown ended. A session stored before the
+				// outcome existed cannot say, and is saved as the plain row it always was.
+				const request = countdownSessionRequest(current, startTimestamp, length)
+				if (request !== null) await saveSessionToHistory(request, name)
+				else await saveActivityToHistory(targetActivityId, name, startTimestamp, length)
 			}
 			// Only now: a reload while the save dialog is open should find the session still there.
 			store.clearSession()

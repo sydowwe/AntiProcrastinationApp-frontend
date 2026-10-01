@@ -55,6 +55,24 @@ const activityHistory = {
 			replaceConfirm: `Discard and start`,
 			// The name of TrackTimeDialog's stopwatch/timer/pomodoro toggle group (F90).
 			method: `Timing method`,
+			// The day's timeline: a pomodoro folded into one unit (HistorySessionGroup), and the phase /
+			// outcome labels on a session's rows (HistoryRecordItem). Descriptive, never a verdict.
+			pomodoroUnit: `Pomodoro`,
+			focusTotal: `Focus {duration}`,
+			showPhases: `Show phases ({count})`,
+			hidePhases: `Hide phases`,
+			phase: {
+				focus: `Focus`,
+				shortBreak: `Short break`,
+				longBreak: `Long break`,
+			},
+			// A countdown row's note, and the Detail CSV's outcome column. The pomodoro's own line, with
+			// its counts, is history.pomodoro.outcome.
+			outcome: {
+				completed: `Ran to the end`,
+				stoppedEarly: `Stopped early`,
+				ranOutWhileAway: `Ended while the app was closed`,
+			},
 		},
 		timer: {
 			setDurationFirst: `Please set a timer duration`,
@@ -111,6 +129,13 @@ const activityHistory = {
 			// Always appended after doneSummary/restedWith, even when no rest activity was picked —
 			// mirrors the original (slightly odd) behaviour; this pass does not change it.
 			forDuration: ` for {duration}`,
+			// Under the save prompt: how far the plan got (PomodoroSaveBody). Plural on {total}.
+			// Descriptive on purpose — a stopped session is information, not a failure.
+			outcome: {
+				completed: `Ran the whole plan: {total} focus period | Ran the whole plan: {total} focus periods`,
+				stoppedEarly: `Stopped after {done} of {total} focus period | Stopped after {done} of {total} focus periods`,
+				ranOutWhileAway: `The app was closed, so it stopped after {done} of {total} focus period | The app was closed, so it stopped after {done} of {total} focus periods`,
+			},
 		},
 	},
 }

@@ -418,6 +418,19 @@
 						header: i18n.t('historyDashboard.export.detail.columns.notes'),
 						value: r => r.activity.text ?? '',
 					},
+					// The session id is what lets a spreadsheet put a pomodoro's phase rows back together.
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.session'),
+						value: r => r.session?.id ?? '',
+					},
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.phase'),
+						value: r => (r.phase === null ? '' : i18n.t(`history.session.phase.${r.phase}`)),
+					},
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.outcome'),
+						value: r => (r.session === null ? '' : i18n.t(`history.session.outcome.${r.session.outcome}`)),
+					},
 				],
 				records,
 			)
