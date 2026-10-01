@@ -2,8 +2,7 @@
 
 Module: `_common`
 
-Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the
-unit's docs have landed and you have read them.
+Run as **Sonnet 5, high effort, clean context**. One unit per session. Move this file to `_done/` when the unit's docs have landed and you have read them.
 
 For the mutation pass, paste the same block with `Pass:` changed to `mutation`.
 
@@ -18,7 +17,7 @@ Fill its Unit block with:
 
 - Unit name: `reminders-user`
 - Module: `_common`
-- Pass: `inventory`
+- Pass: `mutation`
 - Views & routes:
     `MyRemindersView`   `/pripomienky/moje`
 - Intent sources: prompts/_done/_common/reminders/README.md, R10-snooze-dismiss.md,
