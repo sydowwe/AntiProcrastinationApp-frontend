@@ -23,9 +23,10 @@ export async function fetchDashboardTodoListItems(): Promise<TodoListItemEntity[
 }
 
 /**
- * No backend endpoint exists yet for this (see prompts/todo-motivation/backend/N4-backend.md) — `_silent`
- * plus the catch mean a 404 today just leaves the recap card unrendered, not an error toast the user did
- * not ask for.
+ * The items completed on `isoDate`, bounded by the server in the user's zone (B2), each with its paired
+ * reward and whether that reward has been taken. `_silent` plus the catch: the recap card and the
+ * waiting rewards are decoration, so a failure leaves them off rather than raising a toast. `null`
+ * means the read failed, never "nothing completed" — that is an empty `items`.
  */
 export async function fetchDailyRecap(isoDate: string): Promise<DailyRecap | null> {
 	try {

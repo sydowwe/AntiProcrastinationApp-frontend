@@ -174,6 +174,8 @@
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
+	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
+	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
 
 	const props = defineProps<{
 		id: string
@@ -210,6 +212,9 @@
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 	const items = ref([] as TodoListItemEntity[])
 	const listEntity = ref<TodoListEntity | null>(null)
+
+	const earnedRewardsStore = useEarnedRewardsStore()
+	useEarnedRewardTracking(items)
 
 	/**
 	 * A `:id` that names no list is a mistyped or stale URL, not an empty list — but the items fetch
@@ -421,6 +426,9 @@
 		const item = itemId !== undefined ? items.value.find(i => i.id === itemId) : undefined
 		const leisureName = lastStartedLeisureName.value
 		lastStartedLeisureName.value = null
+		// A saved reward is a history row the recap now counts as taken. An item's own log needs no
+		// call here: it toggles the item, and the completion watcher re-reads the recap for that.
+		if (itemId === undefined) void earnedRewardsStore.resync()
 		pushLogTimeUndo(
 			item?.activity.name ?? leisureName ?? '',
 			historyRecordId,
@@ -470,6 +478,9 @@
 	 * The bundling payoff (Milkman, Minson & Volpp 2014): the reward has to arrive attached to the
 	 * completion, not later. It stays a snackbar — non-blocking, dismissible, and it never claims the
 	 * reward on the user's behalf. Skipping it on an uncheck matters: this fires on the same handler.
+	 *
+	 * Ignoring it no longer loses the reward: the daily recap has it (B2), and it waits on the home
+	 * dashboard until the end of the user's day.
 	 */
 	function offerPairedLeisure(id: number) {
 		const item = items.value.find(listItem => listItem.id === id)
@@ -482,25 +493,15 @@
 			// before it is read is the same as no offer.
 			timeout: 8000,
 			actionLabel: i18n.t('toDoList.pairing.startNow'),
-			actionCallback: () => startPairedLeisure(paired),
+			actionCallback: () => startPairedLeisure(id, paired),
 		})
 	}
 
-	/**
-	 * No `itemId` is passed — the leisure activity is not a todo item, so nothing on the list should
-	 * be toggled by logging it. The backlog profile's own duration prefills the timer.
-	 */
-	function startPairedLeisure(paired: ActivityBacklogProfile) {
+	/** Pressing Start is what "taken" means — the reward stops waiting whether or not the timer runs out. */
+	function startPairedLeisure(itemId: number, paired: ActivityBacklogProfile) {
+		earnedRewardsStore.resolve(itemId)
 		lastStartedLeisureName.value = paired.activity.name
-		logTimeController.value?.open(
-			paired.activity.id,
-			paired.activity.name,
-			false,
-			undefined,
-			paired.durationMinutes > 0 ? Time.fromMinutes(paired.durationMinutes) : undefined,
-			undefined,
-			true,
-		)
+		logTimeController.value?.openLeisureReward(paired)
 	}
 
 	async function itemsChanged(changedItems: number[]) {

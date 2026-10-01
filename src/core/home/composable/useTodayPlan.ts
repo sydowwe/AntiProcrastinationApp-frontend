@@ -16,13 +16,21 @@ import { showNotification } from '@/_common/utils/notifications.ts'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 import { PlannerStreak } from '@/core/dayPlanner/dto/response/PlannerStreak.ts'
 import { minutesOfDayInUserZone, timeInUserZone, userTimeZone } from '@/_common/composable/general/useUserClock.ts'
-import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
+import {
+	notifyTodoItemsChanged,
+	todayIsoDate,
+	useDashboardRefresh,
+} from '@/core/home/composable/useDashboardRefresh.ts'
+import { togglesLinkedTodoItem } from '@/core/home/composable/linkedTodoItemSync.ts'
 import i18n from '@/i18n.ts'
 
 export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone' | 'noPlan'
 
 /** Minutes before a task starts that the "get ready" warning fires. */
 export const TRANSITION_WARNING_MINUTES = 10
+
+/** The plan's `useDashboardRefresh` key — also what `setStatus` excludes when it notifies. */
+const TODAY_PLAN_REFRESH_KEY = 'home:todayPlan'
 
 // The action vocabulary, defined once. Both of these used to be declared verbatim in NowBar and in
 // DayPlannerWidget, which is how the two menus were free to offer different things.
@@ -264,6 +272,11 @@ async function setStatus(task: PlannerTask, status: PlannerTaskStatus, request?:
 		// skipped ones in the denominator, so a day reading 4/5 on the ring may well be complete.
 		// One request, and `useDashboardRefresh` collapses it if a refresh is already in flight.
 		if (status !== PlannerTaskStatus.InProgress) void refresh()
+		// The server has already ticked or unticked the linked to-do item by the time the patch
+		// returns; the to-do widget and the waiting rewards cannot see that without being told.
+		if (togglesLinkedTodoItem(task.todoListItemId, previous, status)) {
+			notifyTodoItemsChanged({ except: TODAY_PLAN_REFRESH_KEY })
+		}
 	} catch {
 		task.status = previous
 		reportSaveFailure('home.saveStatusFailed', task)
@@ -566,13 +579,16 @@ export function useTodayPlan() {
 	// `onDayChange` is off deliberately — a rollover here is not a refetch, it is a reset: the
 	// loaded plan and every key in `firedAlerts` belong to yesterday. The `todayIsoDate` watcher in
 	// `wireLifecycle` above handles it, off the same signal, so both fire on one edge.
-	useDashboardRefresh('home:todayPlan', {
+	//
+	// `onTodoItemsChanged`: ticking a to-do item completes or reopens its planner task for today.
+	useDashboardRefresh(TODAY_PLAN_REFRESH_KEY, {
 		load: ensureLoaded,
 		refresh: reload,
 		hasError: () => error.value,
 		intervalMinutes: 5,
 		onDayChange: false,
 		onTrackingSession: true,
+		onTodoItemsChanged: true,
 	})
 
 	return {

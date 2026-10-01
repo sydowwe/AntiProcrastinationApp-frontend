@@ -25,6 +25,16 @@
 			height="2"
 		/>
 		<VDivider v-else />
+		<!-- Above the body's state switch, so it stays put through loading, error and empty: for
+			 content that comes from a request of its own. Outside the body, too, because the states
+			 below centre themselves at `h-100` and anything above them would push them into overflow.
+			 Unpadded vertically — slot content that can be empty must not leave a gap when it is. -->
+		<div
+			v-if="$slots.top"
+			class="flex-0-0 px-4"
+		>
+			<slot name="top" />
+		</div>
 		<VCardText
 			class="widget-card__body"
 			:class="[{ 'widget-card__body--scrollable': scrollable }]"

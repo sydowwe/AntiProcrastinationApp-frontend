@@ -121,6 +121,13 @@ const todoList = {
 			chipTitleDone: `Zaslúžená odmena: {name}`,
 			earned: `Hotovo — teraz {name}`,
 			startNow: `Spustiť`,
+			// Zaslúžená odmena, ktorá čaká na domovskej stránke do konca dňa. Žiadne počítadlo, žiadne
+			// „zmeškané“ — „Dnes nie“ ju len potichu odloží, bez ďalšej hlášky.
+			waitingRegion: `Zaslúžené odmeny`,
+			waitingStart: `Spustiť {name} — zaslúžené za „{task}“`,
+			earnedFor: `za „{task}“`,
+			notToday: `Dnes nie`,
+			notTodayLabel: `Dnes nie: {name}`,
 		},
 		focus: {
 			toggle: `Fokus`,

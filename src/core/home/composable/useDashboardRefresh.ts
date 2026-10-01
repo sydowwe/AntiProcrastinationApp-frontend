@@ -50,6 +50,8 @@ export interface DashboardRefreshOptions {
 	onDayChange?: boolean
 	/** Refetch when a time-tracking session finishes anywhere on the page. */
 	onTrackingSession?: boolean
+	/** Refetch when a write elsewhere on the page may have ticked or unticked a to-do item. */
+	onTodoItemsChanged?: boolean
 }
 
 /**
@@ -65,6 +67,7 @@ interface RefreshEntry {
 	intervalMs: number
 	onDayChange: boolean
 	onTrackingSession: boolean
+	onTodoItemsChanged: boolean
 	lastRefreshedAt: number
 	inFlight: boolean
 	/** A data-changed trigger arrived mid-flight: run once more when the current refresh settles. */
@@ -171,6 +174,21 @@ export function notifyTrackingSessionFinished(): void {
 	}
 }
 
+/**
+ * A to-do item's done state may have changed on the server as a side effect of a write made from
+ * another widget. The server keeps a to-do item and its planner task for today in step, and it does
+ * so before the write's response (`PublishAsync(Mode.WaitForAll)` on both toggles), so every widget
+ * showing the other side is stale the moment the write returns — and nothing tells it.
+ *
+ * Call it after the write settles, never before. `except` is the caller's own key: the writer has
+ * already reconciled its own copy, and refetching it too would only undo that.
+ */
+export function notifyTodoItemsChanged({ except }: { except?: string } = {}): void {
+	for (const [key, entry] of entries) {
+		if (entry.onTodoItemsChanged && key !== except) runRefresh(entry, true)
+	}
+}
+
 // --- triggers ----------------------------------------------------------------
 function handleVisibilityChange() {
 	if (document.hidden) return
@@ -264,6 +282,7 @@ export function useDashboardRefresh(key: string, options: DashboardRefreshOption
 				intervalMs: (options.intervalMinutes ?? 0) * 60_000,
 				onDayChange: options.onDayChange ?? true,
 				onTrackingSession: options.onTrackingSession ?? false,
+				onTodoItemsChanged: options.onTodoItemsChanged ?? false,
 				lastRefreshedAt: Date.now(),
 				inFlight: false,
 				rerunPending: false,

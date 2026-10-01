@@ -1,5 +1,6 @@
 <template>
 	<WidgetCard
+		v-bind="$attrs"
 		:title="$t('home.todoList')"
 		:openRoute="{ name: 'toDoList' }"
 		:loading="loading"
@@ -23,6 +24,13 @@
 			/>
 		</template>
 
+		<!-- Above the list's own states: the rewards come from the daily recap, not from this list,
+			 so neither an empty list (finishing the last task is exactly when a reward is earned) nor
+			 a failed list fetch may take them down. -->
+		<template #top>
+			<EarnedRewardsStrip @start="startReward" />
+		</template>
+
 		<VList
 			density="compact"
 			class="pa-0"
@@ -35,13 +43,19 @@
 				:listId="0"
 				class="my-2"
 				@isDoneChanged="handleIsDoneChanged"
-				@stepToggled="refreshNow"
+				@stepToggled="refreshAfterStep"
 				@edit="router.push({ name: 'toDoList' })"
 				@delete="router.push({ name: 'toDoList' })"
 				@addToPlanner="router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })"
 			/>
 		</VList>
 	</WidgetCard>
+	<!-- Outside the card: the controller is a dialog, not card content. -->
+	<BaseTodoListLogTimeController
+		ref="logTimeController"
+		:kind="ToDoListKind.NORMAL"
+		@logTimeCreated="notifyTrackingSessionFinished"
+	/>
 </template>
 
 <script setup lang="ts">
@@ -55,19 +69,47 @@
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
-	import { todayDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
+	import {
+		notifyTodoItemsChanged,
+		notifyTrackingSessionFinished,
+		todayDate,
+		useDashboardRefresh,
+	} from '@/core/home/composable/useDashboardRefresh.ts'
 	// Imported directly, not through `useTodayPlan()` — calling that would register a refresh
 	// consumer this widget does not want. See the note in useTodayPlan.ts.
 	import { todayUrlDate } from '@/core/home/composable/useTodayPlan.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import EarnedRewardsStrip from '@/core/todoList/component/normal/EarnedRewardsStrip.vue'
+	import BaseTodoListLogTimeController from '@/core/todoList/component/BaseTodoListLogTimeController.vue'
+	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
+	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
+	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
+
+	// Two roots — the card and the reward timer's controller — so HomeView's `class="h-100"` is
+	// forwarded to the card by hand.
+	defineOptions({ inheritAttrs: false })
+
+	/** This list's `useDashboardRefresh` key — also what it excludes when it notifies after a tick. */
+	const TODO_LIST_REFRESH_KEY = 'home:todoList'
 
 	const router = useRouter()
 	const { t } = useI18n()
 	const { showErrorSnackbar } = useSnackbar()
 	const { toggleIsDone } = useTodoListItemCrud(0)
 	const { hideDoneTodoList: hideDone } = storeToRefs(useHomeUiStore())
+	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
 
 	const items = ref<TodoListItemEntity[]>([])
+
+	// A tick here earns the paired reward, and the strip at the top of this same card is the offer —
+	// no snackbar on top of it. The list view needs its snackbar because it has nowhere else to put
+	// the reward; here the reward appears beside the checkbox and does not time out.
+	//
+	// `resync: false`: the row flips before its PATCH lands, so a recap read on the flip could beat
+	// the write and retire the reward with the old answer. `afterToggleSaved` re-reads instead.
+	useEarnedRewardTracking(items, { resync: false })
+	const earnedRewards = useEarnedRewardsStore()
+
 	const loading = ref(true)
 	const refreshing = ref(false)
 	const error = ref(false)
@@ -105,16 +147,40 @@
 		// already showing the step, and only the server knows whether it tipped the item over.
 		if (item.isMultipleCount) {
 			toggleIsDone(id, forceValue)
-				.then(refreshNow)
+				.then(refreshAfterStep)
 				.catch(() => showErrorSnackbar(t('home.toggleTaskFailed', { task: item.activity.name })))
 			return
 		}
 		const previousIsDone = item.isDone
 		item.isDone = forceValue ?? !previousIsDone
-		toggleIsDone(id, forceValue).catch(() => {
+		toggleIsDone(id, forceValue).then(afterToggleSaved, () => {
 			item.isDone = previousIsDone
 			showErrorSnackbar(t('home.toggleTaskFailed', { task: item.activity.name }))
 		})
+	}
+
+	/**
+	 * The server has the tick now, and it has already moved everything that follows from it: the
+	 * recap the waiting rewards read, and today's planner task linked to the item. This list is right
+	 * as it stands — the row was flipped on the click — so it is the one reader left out.
+	 */
+	function afterToggleSaved() {
+		notifyTodoItemsChanged({ except: TODO_LIST_REFRESH_KEY })
+	}
+
+	/**
+	 * A counter step or the last checklist step may have tipped the item to done, and only the server
+	 * knows. This list cannot say so — the endpoint serves open items only, so a finished one simply
+	 * vanishes — so unlike a plain tick it is refetched too, alongside everything else that reads the
+	 * item's done state.
+	 */
+	function refreshAfterStep() {
+		refreshNow()
+		notifyTodoItemsChanged({ except: TODO_LIST_REFRESH_KEY })
+	}
+
+	function startReward(paired: ActivityBacklogProfile) {
+		logTimeController.value?.openLeisureReward(paired)
 	}
 
 	/**
@@ -151,9 +217,24 @@
 	// `refreshNow` rather than `refresh` for the in-widget reload after a step is ticked: going
 	// through the coordinator stamps the freshness clock, so returning to the tab a minute later
 	// does not refetch what was just fetched.
-	const { refreshNow } = useDashboardRefresh('home:todoList', {
+	// `onTodoItemsChanged`: completing a linked planner task in the planner widget completes the item
+	// on the server, and this list serves open items only, so the item has to be fetched away.
+	const { refreshNow } = useDashboardRefresh(TODO_LIST_REFRESH_KEY, {
 		load,
 		refresh,
 		hasError: () => error.value,
+		onTodoItemsChanged: true,
+	})
+
+	// The waiting rewards read the daily recap, which nothing pushes: a completion on the phone, a
+	// planner task ticked done, tracked time crossing an item's estimate — all of them only show up
+	// on the next read. So the recap rides the dashboard's own triggers: on mount, on returning to
+	// the tab, on day rollover, when a timing session finishes anywhere on the page (a saved reward
+	// flips `rewardTaken`), and when a tick here or in the planner widget has been saved.
+	useDashboardRefresh('home:earnedRewards', {
+		load: earnedRewards.resync,
+		refresh: earnedRewards.resync,
+		onTrackingSession: true,
+		onTodoItemsChanged: true,
 	})
 </script>

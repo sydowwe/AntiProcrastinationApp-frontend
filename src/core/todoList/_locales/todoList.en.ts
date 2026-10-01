@@ -114,6 +114,11 @@ const todoList = {
 			chipTitleDone: `Earned: {name}`,
 			earned: `Done — now {name}`,
 			startNow: `Start`,
+			waitingRegion: `Earned rewards`,
+			waitingStart: `Start {name} — earned by “{task}”`,
+			earnedFor: `for “{task}”`,
+			notToday: `Not today`,
+			notTodayLabel: `Not today: {name}`,
 		},
 		focus: {
 			toggle: `Focus`,

@@ -14,7 +14,8 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
-	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
+	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 
 	const { kind } = defineProps<{ kind: ToDoListKind }>()
 
@@ -47,6 +48,25 @@
 		inner.value?.open(activityId, activityName, isManual, initialStartTime, initialLength, autoStart)
 	}
 
+	/**
+	 * Starts an earned leisure reward: a running timer, prefilled with the backlog profile's own
+	 * length. The completion snackbar's Start and a waiting reward's tap both come through here, so
+	 * the two cannot drift apart.
+	 *
+	 * No item id — the leisure activity is not a to-do item, so logging it must toggle nothing.
+	 */
+	function openLeisureReward(paired: ActivityBacklogProfile) {
+		open(
+			paired.activity.id,
+			paired.activity.name,
+			false,
+			undefined,
+			paired.durationMinutes > 0 ? Time.fromMinutes(paired.durationMinutes) : undefined,
+			undefined,
+			true,
+		)
+	}
+
 	async function finalize(startTimestamp: Date, length: Time) {
 		const historyRecordId = await createActivityHistory(startTimestamp, length, currentActivityId.value!)
 		showSuccessSnackbar(t('toDoList.timeLogged'))
@@ -72,5 +92,5 @@
 		await finalize(startTimestamp, length)
 	}
 
-	defineExpose({ open })
+	defineExpose({ open, openLeisureReward })
 </script>
