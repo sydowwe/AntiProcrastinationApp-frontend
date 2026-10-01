@@ -26,6 +26,12 @@ field the user fills in or a fact the app already knows. None of them adds a new
 | C4 | [Routine suggested-day nudges](C4-routine-suggested-day-nudges.md)  | todoList (routine) × reminders | yes     | Sonnet 5     | med–high |
 | C5 | [Timer sessions as sessions ⭐](C5-timer-sessions.md)               | activityHistory × history      | yes     | **Opus 5.5** | high     |
 
+### Status
+
+- **C2 — done.** Frontend shipped 2026-09-28 with its backend ask [B2](backend/B2-earned-rewards-from-the-daily-recap.md), answered and verified the same day.
+  Follow-ups 2026-09-29: the home tick's recap re-read raced its own PATCH, and a planner task ticked on home never told the to-do widget or the waiting rewards.
+  Both are closed; see the end of B2.
+
 ### Why five prompts and not six
 
 The feature list had six items. **C5 folds two of them into one prompt**: grouping a Pomodoro's focus periods and rests as one session, and keeping whether a
