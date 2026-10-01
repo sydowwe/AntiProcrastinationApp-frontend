@@ -126,11 +126,11 @@
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 	import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
-	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
+	import { isRoutineSuggestedOn } from '@/core/todoList/dto/response/routine/routineSuggestedDay.ts'
 	import RoutineTodoListItem from '@/core/todoList/component/routine/RoutineTodoListItem.vue'
 	import WidgetCard from '@/core/home/component/WidgetCard.vue'
 	import { useHomeUiStore } from '@/core/home/store/homeUiStore.ts'
-	import { todayDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
+	import { todayIsoDate, useDashboardRefresh } from '@/core/home/composable/useDashboardRefresh.ts'
 	// Imported directly, not through `useTodayPlan()` — calling that would register a refresh
 	// consumer this widget does not want. See the note in useTodayPlan.ts.
 	import { todayUrlDate } from '@/core/home/composable/useTodayPlan.ts'
@@ -154,31 +154,11 @@
 	// the one it is retrying.
 	let loadToken = 0
 
-	// JS Date#getDay() is 0=Sun..6=Sat; DayOfWeek is a string enum with no numeric ordering of its own.
-	const JS_DAY_TO_DAY_OF_WEEK = [
-		DayOfWeek.Sunday,
-		DayOfWeek.Monday,
-		DayOfWeek.Tuesday,
-		DayOfWeek.Wednesday,
-		DayOfWeek.Thursday,
-		DayOfWeek.Friday,
-		DayOfWeek.Saturday,
-	]
-	// Both from the dashboard-wide date signal, not from a `new Date()` captured at setup. This is a
-	// page people leave open overnight, and `isSuggestedForToday` below reads these on every render:
-	// frozen, the widget spends all of the next day filtering for the previous one.
-	const todayDayOfWeek = computed(() => JS_DAY_TO_DAY_OF_WEEK[todayDate.value.getDay()]!)
-	const todayDayOfMonth = computed(() => todayDate.value.getDate())
-
-	// Confirmed against RoutineTodoListItemEntity.ts and the edit form (RoutineToDoListForm.vue:34-46):
-	// day-of-week and day-of-month are two separate, already-discriminated fields — `suggestedDays`
-	// and `suggestedDayOfMonth` — not one overloaded value. The form itself switches which one it
-	// shows based on `timePeriod.lengthInDays` (weekly: 1 < lengthInDays <= 14, monthly: > 14), so the
-	// same threshold is used here to pick which field to read.
+	// The day comes from the dashboard-wide date signal, not from a `new Date()` captured at setup. This
+	// is a page people leave open overnight, and this is read on every render: frozen, the widget spends
+	// all of the next day filtering for the previous one. The rule itself is todoList's.
 	function isSuggestedForToday(item: RoutineTodoListItemEntity): boolean {
-		if (item.timePeriod.lengthInDays === 1) return true
-		if (item.timePeriod.lengthInDays > 14) return item.suggestedDayOfMonth === todayDayOfMonth.value
-		return item.suggestedDays.includes(todayDayOfWeek.value)
+		return isRoutineSuggestedOn(item, todayIsoDate.value)
 	}
 
 	function todayItems(group: RoutineTodoListGroupedList): RoutineTodoListItemEntity[] {

@@ -48,8 +48,8 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 	// specific target. Not a gap either.
 	ReminderDigest: { icon: 'layer-group', color: 'primary', route: { name: 'myReminders' } },
 
-	// All three carry `routinePeriod`. No destination for it yet, so all three currently land on the
-	// list, exactly as before.
+	// All four carry `routinePeriod`, which the subject map sends to `/routine-todo-list?focus=<id>`;
+	// the list itself is the fallback when a notification has no subject.
 	RoutinePeriodEndingSoon: {
 		icon: 'hourglass-half',
 		color: 'warning',
@@ -63,6 +63,17 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 	RoutineStreakGraceExpiring: {
 		icon: 'fire',
 		color: 'warning',
+		route: n => subjectRoute(n, { name: 'routineToDoList' }),
+	},
+	// B4: the once-a-day digest of routine items suggested for today and not done, sent at the user's
+	// wake-up time. The subject is the period only when every named item shares one; a digest spanning
+	// several periods has none and lands on the list. Same icon as the list's "Today" marker.
+	// Labelled app-side because the framework's `notifications.type.*` block knows only its own types.
+	// Muting is the catalog's row on the notification settings screen, not `reminderLabels`.
+	RoutineSuggestedToday: {
+		icon: 'calendar-check',
+		color: 'secondary',
+		label: 'routineTodoList.suggestedTodayNotificationType',
 		route: n => subjectRoute(n, { name: 'routineToDoList' }),
 	},
 

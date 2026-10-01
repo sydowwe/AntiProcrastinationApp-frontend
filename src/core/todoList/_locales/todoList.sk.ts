@@ -161,6 +161,10 @@ const todoList = {
 		suggestedDays: `Odporúčané dni`,
 		suggestedDayOfMonth: `Odporúčaný deň v mesiaci`,
 		dayOfMonthChip: `Deň {day}`,
+		suggestedTodayChip: `Dnes`,
+		suggestedTodayTooltip: `Odporúčané na dnes a ešte nehotové`,
+		// Názov typu notifikácie `RoutineSuggestedToday` vo filtri schránky (B4).
+		suggestedTodayNotificationType: `Rutina odporúčaná na dnes`,
 		streakTooltip: `Séria: {streak} · najdlhšia: {best}`,
 		gracePeriodActive: `Odklad je aktívny!`,
 		history: `História`,

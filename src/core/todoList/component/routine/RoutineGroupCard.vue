@@ -46,6 +46,7 @@
 						:isInChangeOrderMode
 						:listId="group.timePeriod.id"
 						:isDragging
+						:isSuggestedToday="showTodayMarker(item as RoutineTodoListItemEntity)"
 						:streakConfig="{
 							graceDays: group.timePeriod.streakGraceDays,
 							periodLengthInDays: group.timePeriod.lengthInDays,
@@ -94,6 +95,9 @@
 	import RoutineGroupHeatmap from '@/core/todoList/component/routine/RoutineGroupHeatmap.vue'
 	import RoutinePeriodTimeline from '@/core/todoList/component/routine/RoutinePeriodTimeline.vue'
 	import RoutineGroupStats from '@/core/todoList/component/routine/RoutineGroupStats.vue'
+	import { isDailyRoutine, isRoutineSuggestedOn } from '@/core/todoList/dto/response/routine/routineSuggestedDay.ts'
+	import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
+	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 
 	const { group, isInChangeOrderMode } = defineProps<{
 		group: RoutineTodoListGroupedList
@@ -122,4 +126,15 @@
 	)
 
 	const visibleItems = computed(() => (hideDone.value ? group.items.filter(item => !item.isDone) : [...group.items]))
+
+	// The user's day, re-read on the framework's minute tick and on a timezone change — this list stays
+	// open across midnight, and the marker has to move with the account's day, not the browser's.
+	const { currentTime } = useCurrentTime()
+	const todayIso = computed(() => isoDateInUserZone(currentTime.value))
+
+	// A marker, not a sort: the list's order is the user's own (drag-to-reorder), and an automatic sort
+	// would fight it. Daily routines are left unmarked — every one of them is "today", every day.
+	function showTodayMarker(item: RoutineTodoListItemEntity): boolean {
+		return !item.isDone && !isDailyRoutine(item) && isRoutineSuggestedOn(item, todayIso.value)
+	}
 </script>

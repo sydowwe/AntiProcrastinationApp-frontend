@@ -50,6 +50,23 @@
 			</VTooltip>
 		</template>
 		<template #post-chips>
+			<VTooltip
+				v-if="isSuggestedToday"
+				location="top"
+				:text="$t('routineTodoList.suggestedTodayTooltip')"
+			>
+				<template #activator="{ props: tooltipProps }">
+					<VChip
+						v-bind="tooltipProps"
+						size="x-small"
+						variant="tonal"
+						color="secondaryOutline"
+						prependIcon="calendar-check"
+					>
+						{{ $t('routineTodoList.suggestedTodayChip') }}
+					</VChip>
+				</template>
+			</VTooltip>
 			<VChip
 				v-for="day in toDoListItem.suggestedDays"
 				:key="day"
@@ -85,12 +102,15 @@
 		streakConfig,
 		isInChangeOrderMode = false,
 		isDragging = false,
+		isSuggestedToday = false,
 	} = defineProps<{
 		toDoListItem: RoutineTodoListItemEntity
 		streakConfig?: { graceDays: number; periodLengthInDays: number }
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
+		/** Shows the "Today" marker. The caller decides, because only it knows which day "today" is. */
+		isSuggestedToday?: boolean
 	}>()
 
 	const emits = defineEmits<{

@@ -97,7 +97,12 @@ describe('resolving a subject', () => {
 	})
 
 	it('deep-links every routine type to the period it is about', () => {
-		for (const type of ['RoutinePeriodEndingSoon', 'RoutinePeriodEnded', 'RoutineStreakGraceExpiring']) {
+		for (const type of [
+			'RoutinePeriodEndingSoon',
+			'RoutinePeriodEnded',
+			'RoutineStreakGraceExpiring',
+			'RoutineSuggestedToday',
+		]) {
 			expect(notificationRoute(notification(type, { kind: 'routinePeriod', id: 77 }))).toBe(
 				'/routine-todo-list?focus=77',
 			)
@@ -126,6 +131,11 @@ describe('resolving a subject', () => {
 		expect(notificationRoute(notification('RoutinePeriodEndingSoon'))).toEqual({ name: 'routineToDoList' })
 	})
 
+	it('lands a digest spanning several periods on the routine list', () => {
+		// B4: the server omits the subject when the named items sit in more than one period.
+		expect(notificationRoute(notification('RoutineSuggestedToday'))).toEqual({ name: 'routineToDoList' })
+	})
+
 	it('still navigates nowhere for a failure with no run row', () => {
 		// ScheduledJobFailed omits the subject when the failure has no run (handler not found), and
 		// there is nothing useful to open. Same no-navigation behaviour it had before B2.
@@ -149,6 +159,7 @@ describe('both deliveries of one event land in the same place', () => {
 		['ScheduledJobFailed', { kind: 'scheduledJobRun', id: 77 }, '/planovac/behy/77'],
 		['PersonalReminder', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
 		['RoutinePeriodEndingSoon', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
+		['RoutineSuggestedToday', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
 	])('agrees between the bell and the service worker for %s', (type, subject, expected) => {
 		const inApp = notificationRoute(notification(type as string, subject as { kind: string; id: number }))
 		const push = globalThis.resolveNotificationTargetUrl?.({ id: 91021, type, subject })
@@ -177,6 +188,10 @@ describe('both deliveries of one event land in the same place', () => {
 
 	it('falls back to the root when there is neither', () => {
 		expect(globalThis.resolveNotificationTargetUrl?.({ type: 'ReminderDigest' })).toBe('/')
+		// A multi-period B4 digest: the bell falls back to the routine list (above), but the worker has
+		// no per-type route, so a push click lands on home. Home's routine widget shows exactly today's
+		// suggested items, so the asymmetry is accepted rather than fixed with a second type map here.
+		expect(globalThis.resolveNotificationTargetUrl?.({ type: 'RoutineSuggestedToday' })).toBe('/')
 		expect(globalThis.resolveNotificationTargetUrl?.(undefined)).toBe('/')
 	})
 

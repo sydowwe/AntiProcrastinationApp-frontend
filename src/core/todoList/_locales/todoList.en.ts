@@ -149,6 +149,10 @@ const todoList = {
 		suggestedDays: `Suggested days`,
 		suggestedDayOfMonth: `Suggested day of month`,
 		dayOfMonthChip: `Day {day}`,
+		suggestedTodayChip: `Today`,
+		suggestedTodayTooltip: `Suggested for today and not done yet`,
+		// The inbox's type-filter name for the `RoutineSuggestedToday` notification (B4).
+		suggestedTodayNotificationType: `Routine suggested for today`,
 		streakTooltip: `Streak: {streak} · best: {best}`,
 		gracePeriodActive: `Grace period active!`,
 		history: `History`,
