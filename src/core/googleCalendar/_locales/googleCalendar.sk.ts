@@ -7,7 +7,11 @@ const googleCalendar = {
 		notAvailable: `Tu nie je k dispozícii`,
 		disconnect: `Odpojiť`,
 		sync: `Synchronizovať`,
-		syncSuccess: `{n} úloha synchronizovaná | {n} úloh synchronizovaných do Google Kalendára`,
+		// one | few | many — see the Slovak plural rule in src/i18n.ts.
+		syncSuccess: `{count} úloha synchronizovaná do Google Kalendára | {count} úlohy synchronizované do Google Kalendára | {count} úloh synchronizovaných do Google Kalendára`,
+		// Events of tasks skipped or made background since the last sync.
+		syncRemoved: `{count} udalosť odstránená | {count} udalosti odstránené | {count} udalostí odstránených`,
+		syncSummary: `{synced} · {removed}`,
 		connectSuccess: `Google Kalendár úspešne prepojený`,
 		connectFailed: `Nepodarilo sa prepojiť Google Kalendár`,
 		connectCancelled: `Prepojenie Google Kalendára bolo zrušené`,

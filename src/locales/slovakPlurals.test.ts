@@ -35,6 +35,21 @@ describe('Slovak plural forms on the count-bearing notification messages', () =>
 	})
 })
 
+describe('Slovak plural forms on the Google Calendar sync snackbar', () => {
+	it('picks all three forms for synced tasks, and 0 reads as many', () => {
+		expect(t('googleCalendar.syncSuccess', 1)).toBe('1 úloha synchronizovaná do Google Kalendára')
+		expect(t('googleCalendar.syncSuccess', 3)).toBe('3 úlohy synchronizované do Google Kalendára')
+		expect(t('googleCalendar.syncSuccess', 5)).toBe('5 úloh synchronizovaných do Google Kalendára')
+		expect(t('googleCalendar.syncSuccess', 0)).toBe('0 úloh synchronizovaných do Google Kalendára')
+	})
+
+	it('picks all three forms for removed events', () => {
+		expect(t('googleCalendar.syncRemoved', 1)).toBe('1 udalosť odstránená')
+		expect(t('googleCalendar.syncRemoved', 2)).toBe('2 udalosti odstránené')
+		expect(t('googleCalendar.syncRemoved', 7)).toBe('7 udalostí odstránených')
+	})
+})
+
 describe('Slovak plural forms on the pomodoro outcome line', () => {
 	// Pluralised on `{total}` by an explicit plural index, not on `named.count` — the way
 	// PomodoroSaveBody calls it — so this also pins that the custom rule applies on that path.

@@ -7,7 +7,10 @@ const googleCalendar = {
 		notAvailable: `Not available here`,
 		disconnect: `Disconnect`,
 		sync: `Sync to Google`,
-		syncSuccess: `{n} task synced | {n} tasks synced to Google Calendar`,
+		syncSuccess: `{count} task synced to Google Calendar | {count} tasks synced to Google Calendar`,
+		// Events of tasks skipped or made background since the last sync.
+		syncRemoved: `{count} event removed | {count} events removed`,
+		syncSummary: `{synced} · {removed}`,
 		connectSuccess: `Google Calendar connected successfully`,
 		connectFailed: `Failed to connect Google Calendar`,
 		connectCancelled: `Google Calendar connection cancelled`,

@@ -10,6 +10,15 @@ export interface GoogleCalendarStatus {
 	connected: boolean
 }
 
+/**
+ * `syncedCount` is the events inserted or updated — what is on Google after the sync. `removedCount`
+ * is the events deleted because their task was skipped or made background since the last sync.
+ */
+export interface GoogleCalendarSyncResult {
+	syncedCount: number
+	removedCount: number
+}
+
 export function useGoogleCalendarApi() {
 	async function getStatus(): Promise<GoogleCalendarStatus> {
 		const response = await API.get('/user/google-calendar/status')
@@ -34,9 +43,10 @@ export function useGoogleCalendarApi() {
 		await API.delete('/user/google-calendar/disconnect')
 	}
 
-	async function syncDay(calendarId: number): Promise<number> {
+	async function syncDay(calendarId: number): Promise<GoogleCalendarSyncResult> {
 		const response = await API.post(`/calendar/${calendarId}/sync-to-google`)
-		return response.data.syncedCount as number
+		const { syncedCount = 0, removedCount = 0 } = response.data ?? {}
+		return { syncedCount: syncedCount as number, removedCount: removedCount as number }
 	}
 
 	return { getStatus, getAuthUrl, connect, disconnect, syncDay }
