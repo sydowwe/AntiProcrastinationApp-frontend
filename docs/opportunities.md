@@ -1,0 +1,281 @@
+# Opportunities
+
+> Reconciled 2026-10-01 · commit `0e77f904` · inputs: the *Opportunities* tables of docs/data-map/{todo,planner,history,
+> tracking,leisure,account}.md, plus docs/data-map.md § *Unspent data* and § *Server sends, client drops*.
+>
+> Every one of the seven unit `O` findings is already fixed or built (see *Closed*). So every cluster below is
+> `from data-map`: no unit agent proposed it. Each one covers at least one backlog entry or server-drop gap, and all 58
+> backlog fields are covered. The 63 unspent-by-design fields (data-map.md § *Unspent by design*) get no opportunity.
+
+## Top picks
+
+1. **OP1. Routine periods: warn before the reset, and stop saving over the warning.** Every save from
+   `/routine-settings` silently wipes the server's nudge setting and resets the freeze budget. Small fix, real data loss.
+2. **OP2. Make "Show details panel by default" do something.** It is a saved setting that nothing reads.
+3. **OP3. Keep what's typed into a list's description.** Today the form accepts it and the round trip loses it both ways.
+4. **OP4. Tell the app where you are, so "good weather today" works.** The leisure weather fit has no input the user can set.
+5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
+   none of it.
+6. **OP6. Remember the plan when a timer stops early.** Planned lengths never leave the browser, and timers started from
+   other screens lose their session entirely.
+7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
+8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
+
+### OP1. Routine periods: warn before the reset, and stop saving over the warning
+- **Source:** from data-map (G1; backlog `RoutineTimePeriod.historyDepth`; reverse gap `freezeBudget`)
+- **Data it spends:** `RoutineTimePeriod.reminderLeadDays` and `.lastResetAt` (server sends, client drops),
+  `.freezeBudget` (server accepts, client never sends), `.historyDepth` (echo), and `.nextResetAt` (already spent)
+- **Where it would surface:** `/routine-settings` → `TimePeriodForm` gains a "Nudge me N days before the reset" field.
+  `RoutinePeriodTimeline` can say "nudge on Thu". The heatmap can read "last N periods".
+- **Needs backend:** no. The server's `RoutineTimePeriodRequest` already accepts both fields and its response already
+  sends `reminderLeadDays`. Whether any producer *delivers* the nudge is for `docs/notification-audit.md` to answer.
+- **Size:** S. Two fields added to `TimePeriodRequest` and `RoutineTimePeriodEntity.fromJson`, and one form control.
+- **Value:** Routine items fail quietly at the end of a period, which is when a user with ADHD has stopped looking. The
+  backend has a lead-time nudge for exactly that moment. And right now, editing a period's name also refills or drains
+  the user's streak freezes.
+
+### OP2. Make "Show details panel by default" do something
+- **Source:** from data-map (backlog `UserPlannerSettings.detailsPanelExpandedByDefault`)
+- **Data it spends:** `UserPlannerSettings.detailsPanelExpandedByDefault`
+- **Where it would surface:** the day planner view's details panel, starting open or closed as saved
+- **Needs backend:** no
+- **Size:** S. One read in the day view, where the panel's initial state is set.
+- **Value:** The View Defaults tab promises what a new day view starts out looking like. A toggle that changes nothing
+  teaches the user to stop trusting the settings page.
+
+### OP3. Keep what's typed into a list's description (and let a step carry a note)
+- **Source:** from data-map (backlog `TodoList.description`, G2; reverse gap `TodoListItemStep.note`)
+- **Data it spends:** `TodoList.description` ↔ the server's `text`, and `TodoListItemStep.note`
+- **Where it would surface:** `TodoListCard` (the description line already exists at `TodoListCard.vue:28`).
+  `TodoListStepsFormField` would get a note input, for a note that `BaseTodoListItemSteps` already renders.
+- **Needs backend:** no. Map `description` to `text` in `TodoListRequest` and in `TodoListEntity.fromJson`.
+- **Size:** S. A mapping fix plus one optional input.
+- **Value:** A user who writes "what this list is for" sees it accepted and then gone, and nothing tells them it was lost.
+  The step note is the same shape: shown, but impossible to write.
+
+### OP4. Tell the app where you are, so "good weather today" works
+- **Source:** from data-map (backlog `User.weatherLocation`, G3, C8)
+- **Data it spends:** `User.weatherLocation` (stored and accepted by the server), and through it
+  `WeatherFit.matchingWeatherDependencyIds` plus the whole weather side of the backlog profile
+- **Where it would surface:** a location field on `/user/settings` → Preferences. It describes the person, and the
+  planner's per-day `weather` makes a second reader plausible, so it passes rule 2 of *Where a preference lives*. Add it
+  via `userAugmentation.ts`, not the framework DTO. `/leisure/pick` could show a "set your location" hint while it is empty.
+- **Needs backend:** no for the field itself. U1 (what the fit endpoint does with a null location, and what format the
+  location takes) must be read first.
+- **Size:** M. A preference field, a location input, and a hint on the picker.
+- **Value:** The "good today" chip, the picker's weather exclusion and its weather bonus are all built, and none of them
+  can run. Choosing something to do that fits today's weather is the backlog picker's main job.
+
+### OP5. Show today's day context on home
+- **Source:** from data-map (todo extract contradiction #4; backlog note under dayPlanner)
+- **Data it spends:** `DayPlan.calendar` (`label`, `dayType`, `holidayName`, `notes`, `weather`, `location`, `wakeUpTime`,
+  `bedTime`), already fetched by `useTodayPlan.ts:437`
+- **Where it would surface:** home, next to the NowBar or the planner widget's header
+- **Needs backend:** no. No extra request either.
+- **Size:** S
+- **Value:** Home is where the day starts. "Holiday", a "Travel day" label or a note written the night before changes
+  what's realistic today. The user typed all of it into the planner, and it never comes back on the dashboard.
+
+### OP6. Remember the plan when a timer stops early
+- **Source:** from data-map (history note *the timer's plan never reaches the server*)
+- **Data it spends:** the running timer's `durationMs`, `focusMs`, `shortRestMs`, `longRestMs` (client-only today),
+  `ActivityHistorySession.outcome` and `.plannedFocusPeriods` (already spent)
+- **Where it would surface:** the history detail timeline row ("planned 25m, stopped at 12m"), and later a plan-vs-actual
+  line for timers like the planner's `PlanVsActualTrendLine`. The second half is client-only: timers embedded in
+  `TrackTimeDialog` (from dayPlanner, todoList, the NowBar) should save through the session endpoint too, so they keep
+  `session`, `phase` and `outcome` and log pomodoro rest.
+- **Needs backend:** yes. A planned-length member on the session request and response.
+- **Size:** M. One backend field, the session request, and the embedded save path.
+- **Value:** `outcome = stoppedEarly` is the app's only procrastination signal from timers, and without the plan it can't
+  say by how much. Timers started from a task are the ones most likely to be abandoned, and they record the least.
+
+### OP7. "Streak kept today" on the flame
+- **Source:** from data-map (backlog `PlannerStreak.isTodayComplete`)
+- **Data it spends:** `PlannerStreak.isTodayComplete`
+- **Where it would surface:** the NowBar flame chip and the planner widget's streak tooltip on home
+- **Needs backend:** no
+- **Size:** S
+- **Value:** The flame shows a count. It doesn't say whether today still has to be earned, which is the one thing that
+  would make the user act today. The class doc already asks consumers to read this field.
+
+### OP8. Say when the longest focus block happened
+- **Source:** from data-map (backlog `FocusBlock.startedAt/endedAt`)
+- **Data it spends:** `FocusBlock.startedAt`, `.endedAt`
+- **Where it would surface:** `ActivityFocusStrip`'s *Longest unbroken block* line ("1h 40m, 09:10–10:50")
+- **Needs backend:** no
+- **Size:** S
+- **Value:** Knowing *when* deep focus happens is what lets someone plan hard work into that slot. The strip already has
+  both times.
+
+### OP9. Tell me which days a bulk apply failed on
+- **Source:** from data-map (backlog `BatchOperationResult.results[]`)
+- **Data it spends:** `BatchOperationResult.results[].calendarId`, `.succeeded`
+- **Where it would surface:** the partial-success snackbar in `useBulkTaskAction.ts`, which could name the failed dates
+  or select them on the calendar
+- **Needs backend:** no
+- **Size:** S
+- **Value:** "Applied to 5 of 7 days" leaves the user hunting through a month for the two empty days, the kind of
+  fiddly cleanup that gets put off.
+
+### OP10. Show a repeating task's schedule, and why it is suggested today
+- **Source:** from data-map (backlog `RepeatingPlannerTask` rule fields, echo; `SuggestionResponse` rule fields, unread)
+- **Data it spends:** `RepeatingPlannerTask.scheduledDays`, `.scheduledDates`, `.activeFromDate`, `.activeToDate`,
+  `.scheduledForDayTypes`, `.isActive`, and the same six on `SuggestionResponse`
+- **Where it would surface:** a rule-summary column and dimmed inactive rows in `RepeatingTasksTab`, and a "why"
+  caption on each suggestion in `RepeatingTasksSection` ("every Tue · until 30 Nov")
+- **Needs backend:** no
+- **Size:** S. Formatting only. The day-of-week labels exist (`useDayOfWeekOptions`).
+- **Value:** Today the only way to check a recurrence is to open its dialog, and a suggestion appears with no reason
+  given. A wrong rule then shows up as a suggestion on a day it shouldn't, with no clue why.
+
+### OP11. Tell apart two apps with the same name in tracking
+- **Source:** from data-map (G4; backlog: the four dropped identifiers)
+- **Data it spends:** the server's `Key`/`Label` on 12 per-source DTOs, `DesktopProcessSummaryDto.processName`,
+  `AndroidAppSummaryDto.packageName`, `DesktopTimelineSession.processName`, `AndroidTimelineSession.packageName`
+- **Where it would surface:** every tracking dashboard: selection, `?selected=`, the details lookup, colour hashing
+  (which today uses different fields in the pie and the timeline)
+- **Needs backend:** no. The server already sends `Key`/`Label` for this purpose.
+- **Size:** M. Twelve DTOs, four views' mappers, and a URL key that changes meaning.
+- **Value:** Two desktop processes that share a product name collide on selection and open the wrong detail panel.
+  The user can't trust what they are looking at.
+
+### OP12. Honour the server's 2FA requirements at sign-in, and remember the e-mail
+- **Source:** from data-map (G6; backlog `LoginResponse.email`)
+- **Data it spends:** `LoginResponse.requiresTwoFactorSetup`, Google sign-in `requiresTwoFactor` and
+  `requiresTwoFactorSetup`, the uncalled `SetupTwoFactorForLoginEndpoint`, and the e-mail the user just typed
+- **Where it would surface:** `LoginView` / `GoogleSignIn` branch into the existing 2FA and QR dialogs. `auth.lastUsedEmail`
+  is written on a password sign-in too.
+- **Needs backend:** no
+- **Size:** M. Two new branches into existing dialogs. Verify U2 live first.
+- **Value:** When the server says a sign-in isn't finished, the client should not treat it as finished. The e-mail
+  prefill is a small daily friction for a password user who signs in on a fresh tab.
+
+### OP13. Per-item time in the daily recap
+- **Source:** from data-map (backlog `DailyRecap.items[].timeLoggedSeconds`)
+- **Data it spends:** `DailyRecap.items[].timeLoggedSeconds`
+- **Where it would surface:** `DailyRecapCard` rows on `/todo-list/:id`
+- **Needs backend:** no
+- **Size:** S
+- **Value:** "Done today: 5 items, 2h logged" hides which item took the 2h. Per-row time is what makes the recap feel
+  earned, and it feeds the user's own sense of estimates.
+
+### OP14. Show the baseline behind each "+40%"
+- **Source:** from data-map (backlog `ActivityStat.averageSeconds`, `HistorySummaryCard.averageSeconds`)
+- **Data it spends:** `ActivityStat.averageSeconds` (four tracking ledgers), `HistorySummaryCard.averageSeconds`
+- **Where it would surface:** tracking summary cards and history's Top Activities cards ("usually 25m", or a tooltip)
+- **Needs backend:** no for tracking. For history, first confirm what `averageSeconds` holds: its DTO comment (B2) says
+  the backend assigns the baseline daily average.
+- **Size:** S
+- **Value:** A percentage with no base reads as alarming or reassuring at random. The absolute baseline is what the user
+  can compare to their day.
+
+### OP15. Show which template a task or day came from
+- **Source:** from data-map (backlog `PlannerTask.sourceTemplateTaskId`, `.isFromTemplate`, `Calendar.appliedTemplateId`)
+- **Data it spends:** `PlannerTask.sourceTemplateTaskId` (with `isFromTemplate` derived from it client-side),
+  `Calendar.appliedTemplateId`
+- **Where it would surface:** a small "from template" mark on task blocks. The *Using template …* line in
+  `DayTemplatePicker` and the month cell becomes a link to the template.
+- **Needs backend:** no
+- **Size:** S
+- **Value:** Telling a template task from a hand-added one is how a user sees whether their template still fits their
+  days. The glossary already claims "the origin survives". This makes that true on screen.
+
+### OP16. Web domain detail: which pages took the time
+- **Source:** from data-map (backlog `DomainDetailsResponse.*`, `DayTotals.totalVisits`; G5, G7)
+- **Data it spends:** `DomainDetailsResponse` (endpoint uncalled) with `PageVisitDto.Path/TotalSeconds/ActiveSeconds/
+  BackgroundSeconds`, and `DayTotalsResponse.TotalEntries` in place of the phantom `totalVisits`
+- **Where it would surface:** the web dashboard's detail panel. The page list becomes a ranked list with times, and the
+  *Visits* row becomes *Entries* with a real number.
+- **Needs backend:** no
+- **Size:** M. Call the endpoint, rewrite `fromJson`, and add a ranked list. The `totalVisits` → `totalEntries` swap
+  alone is S.
+- **Value:** "YouTube: 2h" is a fact. "These three videos" is something the user can act on. The *Visits* row has shown
+  "-" since it was built.
+
+### OP17. To-do lists and routine rows: category, counts and colour
+- **Source:** from data-map (backlog `TodoList.category`, `TodoListCategory.listCount`, `RoutineTodoListItem.color`)
+- **Data it spends:** `TodoList.category` (echo), `TodoListCategory.listCount` (phantom), `RoutineTodoListItem.color`
+  (phantom; could take `timePeriod.color`)
+- **Where it would surface:** a category chip on `TodoListCard`, the count badge in `TodoListCategoryPanel` (already
+  built), and the accent bar on routine rows (already supported)
+- **Needs backend:** yes, for `listCount`: the server must send it on `TodoListCategoryResponse`. The other two are
+  client-only.
+- **Size:** S
+- **Value:** Small orientation cues. The count badge also restores the delete-confirm detail ("this category holds 4
+  lists"), which is the safety half.
+
+### OP18. Suggest templates by where you'll be
+- **Source:** from data-map (backlog `TaskPlannerDayTemplate.suggestedLocation`)
+- **Data it spends:** `TaskPlannerDayTemplate.suggestedLocation`, matched against `Calendar.location` (spent)
+- **Where it would surface:** `DayTemplatePicker`, which could mark or float templates whose location matches the day's
+- **Needs backend:** no for a client-side mark. Server-side ranking was put out of scope (B27 §5).
+- **Size:** S
+- **Value:** "Office day" vs "home day" templates are the obvious use of this field. Today the user sets it and nothing
+  ever uses it.
+
+### OP19. Sign-in history: when each session started, and the last login
+- **Source:** from data-map (backlog `UserSession.createdAt`, `User.lastLoginAt`, `LoginRequest.stayLoggedIn`)
+- **Data it spends:** `UserSession.createdAt`, `User.lastLoginAt` (phantom), `LoginRequest.stayLoggedIn` (write-only)
+- **Where it would surface:** `/user/settings` → Active sessions ("signed in 3 Sep", "remembered"), and the Appearance
+  card's "Last login" row (already built)
+- **Needs backend:** yes, for `lastLoginAt` (no user response carries it) and for showing `stayLoggedIn` per session.
+  `createdAt` is client-only.
+- **Size:** S
+- **Value:** A session list without start dates can't show the one thing it's for: a sign-in the user doesn't recognise.
+
+### OP20. Tracking detail panels: show the splits already sent
+- **Source:** from data-map (backlog `DesktopWindowTitleStats.*Seconds`, `Unified*.sources`)
+- **Data it spends:** `DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`,
+  `.soundSeconds`; `UnifiedSummaryItem.sources`, `UnifiedWindowItem.sources`
+- **Where it would surface:** `DesktopProcessDetailsPanel` window-title rows; unified summary cards and the stacked-bar
+  tooltip
+- **Needs backend:** no
+- **Size:** S
+- **Value:** "Was that video playing in the background or watched fullscreen?" is the difference between noise and a
+  lost evening. The source chips already exist on the unified pie.
+
+### OP21. Time-of-day insight: how often, not only how much
+- **Source:** from data-map (backlog `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`)
+- **Data it spends:** `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`
+- **Where it would surface:** the time-of-day insight on `/activity-history` ("mornings, on 12 of 30 days")
+- **Needs backend:** no. But `daysInRange` is unused on purpose today (`useHistoryInsights.ts`), so this is a design
+  decision, not a wiring fix.
+- **Size:** S
+- **Value:** "Most of your time is 9–11" can come from three long days. Frequency tells the user whether it's a habit.
+
+### OP22. Mapping rules aimed at a role or category show their target
+- **Source:** from data-map (backlog `TrackerDesktopMapping.roleId/categoryId` and the Android twins)
+- **Data it spends:** `roleId`, `categoryId` on both mapping responses
+- **Where it would surface:** the Mappings tab's target column, and `edit()` in `DesktopSettingsView` /
+  `AndroidSettingsView`
+- **Needs backend:** no
+- **Size:** S
+- **Value:** This client never creates such a rule. But one that exists renders blank and reopens as "ignored", so a
+  save could silently turn it into an ignore rule. Worth it only if such rows exist in real data.
+
+### OP23. "Experienced" opens the exact memory
+- **Source:** from data-map (backlog `memoryAnchorId` on the backlog and bucket-list profiles; the leftover of
+  leisure-backlog-picker O2, closed)
+- **Data it spends:** `ActivityBacklogProfile.memoryAnchorId`, `ActivityBucketListProfile.memoryAnchorId`
+- **Where it would surface:** `ExperiencedCell`'s link, opening the anchor itself rather than the list filtered by activity
+- **Needs backend:** no
+- **Size:** S
+- **Value:** Small. For a one-time experience the filtered list usually holds one anchor anyway, which is why O2 was
+  closed by `activityId`.
+
+## Closed
+
+- todo-lists **O1**, resolved 2026-09-12: estimate-vs-actual calibration lacked seed data. The fixture now delivers it,
+  with passing specs.
+- activity-settings **O1**, fixed 2026-09-24: Role and Category icons are shown in their settings tables.
+- tracking-settings **O1**, built 2026-09-24: a mapping's `isActive` is editable inline on both Mappings tables.
+- leisure-backlog-picker **O1**, fixed 2026-09-25: `maxParticipants` is shown (People column) and used by the picker.
+- leisure-backlog-picker **O2**, fixed 2026-09-24: the anchor link navigates by `activityId`. The `memoryAnchorId`
+  leftover is OP23.
+- leisure-bucket-anchors **O1**, built 2026-09-24: `financialGoal`, `inspirationSource` and the anchor source flags are
+  spent.
+- leisure-projects **O1**, fixed 2026-09-25: the shopping-list → to-do handoff exists. It is guarded by the server's unique
+  index, not `isOnTodoList`, which is never populated.
+
+Not counted: tracking-settings **B5** (distinct entries mark covered tuples). It was filed as a bug, re-graded to
+opportunity in `_fix-queue.md` §103, and has landed.
