@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/auth'
 
 // Structural-tier facts only, captured live via playwright-cli during the reminders-user inventory pass
-// (docs/views/reminders-user/). Semantic-tier claims and every logged bug/unverified finding are
+// (docs/views/_submodule/reminders-user/). Semantic-tier claims and every logged bug/unverified finding are
 // `test.fixme` stubs, per prompts/view-docs/PROMPT-TEMPLATE.md's "structural vs semantic" split.
 //
 // The route is the framework's Slovak path. `my-upcoming` returns the primary user's three

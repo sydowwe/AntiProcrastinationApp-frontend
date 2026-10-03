@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '../fixtures/auth'
 
 // Structural-tier facts only, captured live via playwright-cli during the reminders-admin inventory pass
-// (docs/views/reminders-admin/). Semantic-tier claims and every logged bug/unverified finding are
+// (docs/views/_submodule/reminders-admin/). Semantic-tier claims and every logged bug/unverified finding are
 // `test.fixme` stubs, per prompts/view-docs/PROMPT-TEMPLATE.md's "structural vs semantic" split.
 //
 // All five routes are Admin-only on the server (403 for the primary user), so every test drives

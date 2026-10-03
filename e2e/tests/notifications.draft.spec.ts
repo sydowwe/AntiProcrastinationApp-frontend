@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '../fixtures/auth'
 
-// Draft from the unit-18 inventory pass (docs/views/notifications/). Structural assertions only;
-// every value/rule claim is a `test.fixme` naming its finding id in docs/views/notifications/findings.md.
+// Draft from the unit-18 inventory pass (docs/views/_submodule/notifications/). Structural assertions only;
+// every value/rule claim is a `test.fixme` naming its finding id in docs/views/_submodule/notifications/findings.md.
 //
 // Framework unit: every view here is src/_common/modules/notifications/.
 //

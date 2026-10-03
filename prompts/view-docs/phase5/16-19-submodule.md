@@ -10,10 +10,13 @@ in this order. This message fills in the unit parameters.
 
 | unit | docs | draft spec | final file |
 | --- | --- | --- | --- |
-| `notifications`   | docs/views/notifications/   | e2e/tests/notifications.draft.spec.ts   | notifications.spec.ts |
-| `reminders-user`  | docs/views/reminders-user/  | e2e/tests/reminders-user.draft.spec.ts  | reminders-user.spec.ts |
-| `scheduler`       | docs/views/scheduler/       | e2e/tests/scheduler.draft.spec.ts       | scheduler.spec.ts |
-| `reminders-admin` | docs/views/reminders-admin/ | e2e/tests/reminders-admin.draft.spec.ts | reminders-admin.spec.ts |
+| `notifications`   | docs/views/_submodule/notifications/   | e2e/tests/notifications.draft.spec.ts   | notifications.spec.ts |
+| `reminders-user`  | docs/views/_submodule/reminders-user/  | e2e/tests/reminders-user.draft.spec.ts  | reminders-user.spec.ts |
+| `scheduler`       | docs/views/_submodule/scheduler/       | e2e/tests/scheduler.draft.spec.ts       | scheduler.spec.ts |
+| `reminders-admin` | docs/views/_submodule/reminders-admin/ | e2e/tests/reminders-admin.draft.spec.ts | reminders-admin.spec.ts |
+
+The docs column wins over the template: read every docs/views/<unit>/ path in it as the folder
+above, including where §3 appends a finding.
 
 If a unit's draft spec doesn't exist, skip that unit and say so in its report block. Give one
 report block per unit, then one extra line: "Framework units: <n>/4 promoted".

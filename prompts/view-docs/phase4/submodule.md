@@ -1,7 +1,7 @@
 # Phase 4 — framework modules (units 16–19), one session
 
 Run as **Sonnet 5, high effort, clean context, no browser.** Run once units 16–19 have their docs in
-`docs/views/`. It does not depend on the app extracts or the app reconcile, so it can run in parallel with them.
+`docs/views/_submodule/`. It does not depend on the app extracts or the app reconcile, so it can run in parallel with them.
 
 These are four small units over three framework modules, with no cross-module reads *into* the app. That's why
 this session does the extraction and the synthesis in one go, rather than extracting in groups and reconciling
@@ -13,7 +13,8 @@ the status vocabulary, the hard constraints). This message changes three things 
 
 - Group: `framework` → write docs/data-map/framework.md
 - Units: 16 `reminders-user`, 17 `reminders-admin`, 18 `notifications`, 19 `scheduler`.
-  Their docs are docs/views/<unit>/. If any unit has no usecase.md yet, stop and say which.
+  Their docs are docs/views/_submodule/<unit>/ (read the template's docs/views/<unit>/ as
+  that). If any unit has no usecase.md yet, stop and say which.
 - Modules (DTO source): src/_common/modules/reminders/, src/_common/modules/notifications/
   (including reminderPreference/), src/_common/modules/scheduler/. Their DTOs sit under each
   module's dto/ subtree.

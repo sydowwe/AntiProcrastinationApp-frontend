@@ -4,7 +4,7 @@
 > commit `4d890646` (framework `b1b82a1`) · viewport 1440×900 · browser TZ UTC+2 (CEST), so `10:00Z` renders `12:00`
 
 Framework module `src/_common/modules/reminders/`. Shell (top bar, sidebar, breadcrumbs, bell, dialog host, snackbars)
-is as documented in [`_shell/inventory.md`](../_shell/inventory.md); only differences are noted here. Every view in
+is as documented in [`_shell/inventory.md`](../../_shell/inventory.md); only differences are noted here. Every view in
 this unit carries `meta: { requiredRole: 'admin' }`, a client-side no-op in this app (`_routes.md`), and the server
 answers 403 to a non-admin. That is correct behaviour and is not re-examined here.
 

@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/auth'
 
 // Structural-tier facts only, captured live via playwright-cli during the scheduler inventory pass
-// (docs/views/scheduler/). Semantic-tier claims and every logged bug/unverified finding are `test.fixme`
+// (docs/views/_submodule/scheduler/). Semantic-tier claims and every logged bug/unverified finding are `test.fixme`
 // stubs, per prompts/view-docs/PROMPT-TEMPLATE.md's "structural vs semantic" split.
 //
 // Scheduler jobs are NOT seed rows — the server's modules register them, so the fixture supplies no ids.

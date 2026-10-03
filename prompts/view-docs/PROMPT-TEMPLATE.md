@@ -188,6 +188,9 @@ appears → edit → verify → delete → verify it is gone. While doing so, ch
 Everything for this unit lives in **one folder**, `docs/views/{{UNIT_NAME}}/`. Create it if needed. Use the
 exact section headings below so the files stay diffable across runs and across units.
 
+**Framework units (Module `_common`, units 16–19) live one level down, in `docs/views/_submodule/{{UNIT_NAME}}/`.**
+Read every `docs/views/{{UNIT_NAME}}/` path in this file as that, screenshots included.
+
 ```
 docs/views/{{UNIT_NAME}}/
   usecase.md

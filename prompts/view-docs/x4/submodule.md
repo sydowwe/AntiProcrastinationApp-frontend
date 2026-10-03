@@ -27,6 +27,8 @@ group parameters.
   takes). /pripomienky/register/:id takes a reminderDefinitions id (23201–23205, 23301), NOT a
   portal id.
 - EVERY finding in this group is [framework]. They live in src/_common/modules/.
+- Docs folder: docs/views/_submodule/<unit>/, not docs/views/<unit>/. Read every
+  docs/views/<unit>/ path in the template as that, screenshots included.
 - Accounts: the reminders-admin routes answer 403 for primaryUser, deliberately. Do the
   primaryUser views first in `-s=x4-fw`, then sign the adminUser in, in `-s=x4-fw-admin`.
   adminUser's credentials are in e2e/.state/seed.json. Use a state file only if one exists for

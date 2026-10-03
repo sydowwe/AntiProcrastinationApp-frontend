@@ -4,7 +4,7 @@
 
 Framework module (`src/_common/modules/scheduler/`). Paths are this app's Slovak overrides from
 `src/router.ts` (`APP_SCHEDULER_PATHS`); every in-module link resolves by route **name**. The shell (top bar,
-sidebar, breadcrumbs, bell, snackbars, dialog host) is as described in [`_shell/inventory.md`](../_shell/inventory.md)
+sidebar, breadcrumbs, bell, snackbars, dialog host) is as described in [`_shell/inventory.md`](../../_shell/inventory.md)
 and is not repeated here.
 
 **Data on the day.** The jobs are real registered jobs, not seed rows: 73 in total — 11 recurring (10 Cron, 2
